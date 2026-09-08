@@ -1,0 +1,63 @@
+; A fault in one parallel chunk STOPS the running siblings (TRAPS.md 3.21).
+;
+; The read is out of bounds for every i >= n/2, so the chunks of the second
+; half fault at their first iteration while the chunks of the first half still
+; have millions of iterations to go. Those survivors must stop where they
+; stand: the wave's fault word is the cancel word, and the emitted chunk loop
+; polls it once per iteration (a MONOTONIC load -- a plain one would be
+; hoisted out of the loop and read once).
+;
+; The observable is the work itself: `acc` is prefilled with a sentinel, so
+; the slots that differ are exactly the iterations that ran.
+;   without cancellation: 2000000 -- the whole first half runs to completion
+;   with it: 0.8M-1.3M depending on how fast the flag arrives
+; The gate therefore asserts STRICTLY BELOW the half, and above zero -- a
+; build that ran nothing at all would otherwise pass.
+; Expected: caught partial
+; ExpectedExit: 0
+
+procedure fill(acc: ref[Vector[int]], src: ref[Vector[int]], n: size_t, skew: size_t)
+{
+    for i in n
+    {
+        let x src[i + skew]
+        acc.put(i, x * 3)
+    }
+}
+
+let host Page.allocate_page()
+let n 4000000 as size_t
+var acc Vector[int]^host(n)
+var src Vector[int]^host(n)
+var k 0 as size_t
+while k < n
+{
+    src.put(k, (k as int))
+    acc.put(k, 0 - 1)
+    set k: k + 1
+}
+
+var caught false
+try fill(&acc, &src, n, n / (2 as size_t))
+else
+    set caught: true
+if caught
+    Console.print "caught "
+
+var written: size_t 0
+var j 0 as size_t
+while j < n
+{
+    if acc[j] <> (0 - 1)
+        set written: written + 1
+    set j: j + 1
+}
+if written = 0
+    Console.println "NOTHING-RAN"
+else
+{
+    if written < n / (2 as size_t)
+        Console.println "partial"
+    else
+        Console.println "FULL-HALF-RAN"
+}

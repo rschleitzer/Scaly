@@ -27488,6 +27488,21 @@ entry:
   ret i1 %ne
 }
 
+define linkonce_odr ptr @_ZN9TaskGroup11cancel_wordEP9TaskGroup(ptr %0) {
+entry:
+  %load.struct = load %_Z9TaskGroup, ptr %0, align 8
+  %guarded = extractvalue %_Z9TaskGroup %load.struct, 4
+  %eq = icmp eq i64 %guarded, 0
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %addr.gep = getelementptr inbounds nuw %_Z9TaskGroup, ptr %0, i32 0, i32 5
+  ret ptr %addr.gep
+}
+
 define linkonce_odr void @_ZN9TaskGroup12record_faultEP9TaskGroup(ptr %0) {
 entry:
   %addr.gep = getelementptr inbounds nuw %_Z9TaskGroup, ptr %0, i32 0, i32 5
@@ -31415,21 +31430,24 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   %parfor.chunk.hi0 = add i64 %parfor.c.lo, %parfor.d.chunk
   %parfor.hilt = icmp slt i64 %parfor.chunk.hi0, %parfor.d.n
   %parfor.chunk.hi = select i1 %parfor.hilt, i64 %parfor.chunk.hi0, i64 %parfor.d.n
-  %parfor.cell = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage, i64 56, i64 8)
-  %parfor.cell.lo = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 0
+  %parfor.cell = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage, i64 64, i64 8)
+  %parfor.cell.lo = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 0
   store i64 %parfor.c.lo, ptr %parfor.cell.lo, align 8
-  %parfor.cell.hi = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 1
+  %parfor.cell.hi = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 1
   store i64 %parfor.chunk.hi, ptr %parfor.cell.hi, align 8
-  %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 2
+  %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 2
   store i64 %5, ptr %parfor.cell.cap, align 8
-  %parfor.cell.cap221 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 3
+  %parfor.cell.cap221 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 3
   store i64 %4, ptr %parfor.cell.cap221, align 8
-  %parfor.cell.cap222 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 4
+  %parfor.cell.cap222 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 4
   store ptr %data, ptr %parfor.cell.cap222, align 8
-  %parfor.cell.cap223 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 5
+  %parfor.cell.cap223 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 5
   store ptr %data2, ptr %parfor.cell.cap223, align 8
-  %parfor.cell.cap224 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 6
+  %parfor.cell.cap224 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 6
   store ptr %2, ptr %parfor.cell.cap224, align 8
+  %parfor.cw = call ptr @_ZN9TaskGroup11cancel_wordEP9TaskGroup(ptr %parfor.d.grp)
+  %parfor.cell.cancel = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 7
+  store ptr %parfor.cw, ptr %parfor.cell.cancel, align 8
   call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor, ptr %parfor.cell, ptr %parfor.d.grp)
   store i64 %parfor.chunk.hi, ptr %parfor.c.slot, align 8
   br label %pfor.sub.cond
@@ -32122,23 +32140,26 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   %parfor.chunk.hi0 = add i64 %parfor.c.lo, %parfor.d.chunk
   %parfor.hilt = icmp slt i64 %parfor.chunk.hi0, %parfor.d.n
   %parfor.chunk.hi = select i1 %parfor.hilt, i64 %parfor.chunk.hi0, i64 %parfor.d.n
-  %parfor.cell = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage, i64 64, i64 8)
-  %parfor.cell.lo = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 0
+  %parfor.cell = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage, i64 72, i64 8)
+  %parfor.cell.lo = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 0
   store i64 %parfor.c.lo, ptr %parfor.cell.lo, align 8
-  %parfor.cell.hi = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 1
+  %parfor.cell.hi = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 1
   store i64 %parfor.chunk.hi, ptr %parfor.cell.hi, align 8
-  %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 2
+  %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 2
   store i64 %4, ptr %parfor.cell.cap, align 8
-  %parfor.cell.cap372 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 3
+  %parfor.cell.cap372 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 3
   store i64 %5, ptr %parfor.cell.cap372, align 8
-  %parfor.cell.cap373 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 4
+  %parfor.cell.cap373 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 4
   store ptr %data, ptr %parfor.cell.cap373, align 8
-  %parfor.cell.cap374 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 5
+  %parfor.cell.cap374 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 5
   store ptr %data2, ptr %parfor.cell.cap374, align 8
-  %parfor.cell.cap375 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 6
+  %parfor.cell.cap375 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 6
   store ptr %2, ptr %parfor.cell.cap375, align 8
-  %parfor.cell.cap376 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 7
+  %parfor.cell.cap376 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 7
   store ptr %data4, ptr %parfor.cell.cap376, align 8
+  %parfor.cw = call ptr @_ZN9TaskGroup11cancel_wordEP9TaskGroup(ptr %parfor.d.grp)
+  %parfor.cell.cancel = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 8
+  store ptr %parfor.cw, ptr %parfor.cell.cancel, align 8
   call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.192, ptr %parfor.cell, ptr %parfor.d.grp)
   store i64 %parfor.chunk.hi, ptr %parfor.c.slot, align 8
   br label %pfor.sub.cond
@@ -32822,25 +32843,28 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   %parfor.chunk.hi0 = add i64 %parfor.c.lo, %parfor.d.chunk
   %parfor.hilt = icmp slt i64 %parfor.chunk.hi0, %parfor.d.n
   %parfor.chunk.hi = select i1 %parfor.hilt, i64 %parfor.chunk.hi0, i64 %parfor.d.n
-  %parfor.cell = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage, i64 72, i64 8)
-  %parfor.cell.lo = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 0
+  %parfor.cell = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage, i64 80, i64 8)
+  %parfor.cell.lo = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 0
   store i64 %parfor.c.lo, ptr %parfor.cell.lo, align 8
-  %parfor.cell.hi = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 1
+  %parfor.cell.hi = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 1
   store i64 %parfor.chunk.hi, ptr %parfor.cell.hi, align 8
-  %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 2
+  %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 2
   store i64 %5, ptr %parfor.cell.cap, align 8
-  %parfor.cell.cap363 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 3
+  %parfor.cell.cap363 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 3
   store i64 %3, ptr %parfor.cell.cap363, align 8
-  %parfor.cell.cap364 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 4
+  %parfor.cell.cap364 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 4
   store ptr %data, ptr %parfor.cell.cap364, align 8
-  %parfor.cell.cap365 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 5
+  %parfor.cell.cap365 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 5
   store i64 %4, ptr %parfor.cell.cap365, align 8
-  %parfor.cell.cap366 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 6
+  %parfor.cell.cap366 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 6
   store ptr %data2, ptr %parfor.cell.cap366, align 8
-  %parfor.cell.cap367 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 7
+  %parfor.cell.cap367 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 7
   store ptr %2, ptr %parfor.cell.cap367, align 8
-  %parfor.cell.cap368 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 8
+  %parfor.cell.cap368 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 8
   store ptr %data4, ptr %parfor.cell.cap368, align 8
+  %parfor.cw = call ptr @_ZN9TaskGroup11cancel_wordEP9TaskGroup(ptr %parfor.d.grp)
+  %parfor.cell.cancel = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 9
+  store ptr %parfor.cw, ptr %parfor.cell.cancel, align 8
   call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.197, ptr %parfor.cell, ptr %parfor.d.grp)
   store i64 %parfor.chunk.hi, ptr %parfor.c.slot, align 8
   br label %pfor.sub.cond
@@ -36736,21 +36760,24 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   %parfor.chunk.hi0 = add i64 %parfor.c.lo, %parfor.d.chunk
   %parfor.hilt = icmp slt i64 %parfor.chunk.hi0, %parfor.d.n
   %parfor.chunk.hi = select i1 %parfor.hilt, i64 %parfor.chunk.hi0, i64 %parfor.d.n
-  %parfor.cell = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage, i64 64, i64 8)
-  %parfor.cell.lo = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 0
+  %parfor.cell = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage, i64 72, i64 8)
+  %parfor.cell.lo = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 0
   store i64 %parfor.c.lo, ptr %parfor.cell.lo, align 8
-  %parfor.cell.hi = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 1
+  %parfor.cell.hi = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 1
   store i64 %parfor.chunk.hi, ptr %parfor.cell.hi, align 8
-  %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 2
+  %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 2
   store i64 %cols10, ptr %parfor.cell.cap, align 8
-  %parfor.cell.cap51 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 3
+  %parfor.cell.cap51 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 3
   store i64 %cols, ptr %parfor.cell.cap51, align 8
-  %parfor.cell.cap52 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 4
+  %parfor.cell.cap52 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 4
   store ptr %data, ptr %parfor.cell.cap52, align 8
-  %parfor.cell.cap53 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 5
+  %parfor.cell.cap53 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 5
   store ptr %data14, ptr %parfor.cell.cap53, align 8
-  %parfor.cell.cap54 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 6
+  %parfor.cell.cap54 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 6
   store %_Z6VectorIfE %value16, ptr %parfor.cell.cap54, align 8
+  %parfor.cw = call ptr @_ZN9TaskGroup11cancel_wordEP9TaskGroup(ptr %parfor.d.grp)
+  %parfor.cell.cancel = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 7
+  store ptr %parfor.cw, ptr %parfor.cell.cancel, align 8
   call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.214, ptr %parfor.cell, ptr %parfor.d.grp)
   store i64 %parfor.chunk.hi, ptr %parfor.c.slot, align 8
   br label %pfor.sub.cond
@@ -37031,17 +37058,20 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   %parfor.chunk.hi0 = add i64 %parfor.c.lo, %parfor.d.chunk
   %parfor.hilt = icmp slt i64 %parfor.chunk.hi0, %parfor.d.n
   %parfor.chunk.hi = select i1 %parfor.hilt, i64 %parfor.chunk.hi0, i64 %parfor.d.n
-  %parfor.cell = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage, i64 48, i64 8)
-  %parfor.cell.lo = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 0
+  %parfor.cell = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage, i64 56, i64 8)
+  %parfor.cell.lo = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 0
   store i64 %parfor.c.lo, ptr %parfor.cell.lo, align 8
-  %parfor.cell.hi = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 1
+  %parfor.cell.hi = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 1
   store i64 %parfor.chunk.hi, ptr %parfor.cell.hi, align 8
-  %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 2
+  %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 2
   store i64 %cols, ptr %parfor.cell.cap, align 8
-  %parfor.cell.cap25 = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 3
+  %parfor.cell.cap25 = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 3
   store ptr %data, ptr %parfor.cell.cap25, align 8
-  %parfor.cell.cap26 = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 4
+  %parfor.cell.cap26 = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 4
   store %_Z6VectorIfE %value5, ptr %parfor.cell.cap26, align 8
+  %parfor.cw = call ptr @_ZN9TaskGroup11cancel_wordEP9TaskGroup(ptr %parfor.d.grp)
+  %parfor.cell.cancel = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 5
+  store ptr %parfor.cw, ptr %parfor.cell.cancel, align 8
   call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.229, ptr %parfor.cell, ptr %parfor.d.grp)
   store i64 %parfor.chunk.hi, ptr %parfor.c.slot, align 8
   br label %pfor.sub.cond
@@ -37389,19 +37419,22 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   %parfor.chunk.hi0 = add i64 %parfor.c.lo, %parfor.d.chunk
   %parfor.hilt = icmp slt i64 %parfor.chunk.hi0, %parfor.d.n
   %parfor.chunk.hi = select i1 %parfor.hilt, i64 %parfor.chunk.hi0, i64 %parfor.d.n
-  %parfor.cell = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage, i64 56, i64 8)
-  %parfor.cell.lo = getelementptr inbounds nuw { i64, i64, ptr, i64, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 0
+  %parfor.cell = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage, i64 64, i64 8)
+  %parfor.cell.lo = getelementptr inbounds nuw { i64, i64, ptr, i64, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 0
   store i64 %parfor.c.lo, ptr %parfor.cell.lo, align 8
-  %parfor.cell.hi = getelementptr inbounds nuw { i64, i64, ptr, i64, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 1
+  %parfor.cell.hi = getelementptr inbounds nuw { i64, i64, ptr, i64, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 1
   store i64 %parfor.chunk.hi, ptr %parfor.cell.hi, align 8
-  %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, ptr, i64, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 2
+  %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, ptr, i64, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 2
   store ptr %data, ptr %parfor.cell.cap, align 8
-  %parfor.cell.cap57 = getelementptr inbounds nuw { i64, i64, ptr, i64, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 3
+  %parfor.cell.cap57 = getelementptr inbounds nuw { i64, i64, ptr, i64, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 3
   store i64 %cols, ptr %parfor.cell.cap57, align 8
-  %parfor.cell.cap58 = getelementptr inbounds nuw { i64, i64, ptr, i64, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 4
+  %parfor.cell.cap58 = getelementptr inbounds nuw { i64, i64, ptr, i64, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 4
   store %_Z6VectorIfE %value5, ptr %parfor.cell.cap58, align 8
-  %parfor.cell.cap59 = getelementptr inbounds nuw { i64, i64, ptr, i64, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 5
+  %parfor.cell.cap59 = getelementptr inbounds nuw { i64, i64, ptr, i64, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 5
   store ptr %data8, ptr %parfor.cell.cap59, align 8
+  %parfor.cw = call ptr @_ZN9TaskGroup11cancel_wordEP9TaskGroup(ptr %parfor.d.grp)
+  %parfor.cell.cancel = getelementptr inbounds nuw { i64, i64, ptr, i64, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 6
+  store ptr %parfor.cw, ptr %parfor.cell.cancel, align 8
   call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.239, ptr %parfor.cell, ptr %parfor.d.grp)
   store i64 %parfor.chunk.hi, ptr %parfor.c.slot, align 8
   br label %pfor.sub.cond
@@ -37762,23 +37795,26 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   %parfor.chunk.hi0 = add i64 %parfor.c.lo, %parfor.d.chunk
   %parfor.hilt = icmp slt i64 %parfor.chunk.hi0, %parfor.d.n
   %parfor.chunk.hi = select i1 %parfor.hilt, i64 %parfor.chunk.hi0, i64 %parfor.d.n
-  %parfor.cell = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage, i64 72, i64 8)
-  %parfor.cell.lo = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 0
+  %parfor.cell = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage, i64 80, i64 8)
+  %parfor.cell.lo = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 0
   store i64 %parfor.c.lo, ptr %parfor.cell.lo, align 8
-  %parfor.cell.hi = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 1
+  %parfor.cell.hi = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 1
   store i64 %parfor.chunk.hi, ptr %parfor.cell.hi, align 8
-  %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 2
+  %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 2
   store i64 %cols, ptr %parfor.cell.cap, align 8
-  %parfor.cell.cap77 = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 3
+  %parfor.cell.cap77 = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 3
   store ptr %data, ptr %parfor.cell.cap77, align 8
-  %parfor.cell.cap78 = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 4
+  %parfor.cell.cap78 = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 4
   store float %eps, ptr %parfor.cell.cap78, align 4
-  %parfor.cell.cap79 = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 5
+  %parfor.cell.cap79 = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 5
   store ptr %data14, ptr %parfor.cell.cap79, align 8
-  %parfor.cell.cap80 = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 6
+  %parfor.cell.cap80 = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 6
   store ptr %data17, ptr %parfor.cell.cap80, align 8
-  %parfor.cell.cap81 = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 7
+  %parfor.cell.cap81 = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 7
   store %_Z6VectorIfE %value19, ptr %parfor.cell.cap81, align 8
+  %parfor.cw = call ptr @_ZN9TaskGroup11cancel_wordEP9TaskGroup(ptr %parfor.d.grp)
+  %parfor.cell.cancel = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 8
+  store ptr %parfor.cw, ptr %parfor.cell.cancel, align 8
   call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.249, ptr %parfor.cell, ptr %parfor.d.grp)
   store i64 %parfor.chunk.hi, ptr %parfor.c.slot, align 8
   br label %pfor.sub.cond
@@ -38055,19 +38091,22 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   %parfor.chunk.hi0 = add i64 %parfor.c.lo, %parfor.d.chunk
   %parfor.hilt = icmp slt i64 %parfor.chunk.hi0, %parfor.d.n
   %parfor.chunk.hi = select i1 %parfor.hilt, i64 %parfor.chunk.hi0, i64 %parfor.d.n
-  %parfor.cell = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage, i64 56, i64 8)
-  %parfor.cell.lo = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 0
+  %parfor.cell = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage, i64 64, i64 8)
+  %parfor.cell.lo = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 0
   store i64 %parfor.c.lo, ptr %parfor.cell.lo, align 8
-  %parfor.cell.hi = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 1
+  %parfor.cell.hi = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 1
   store i64 %parfor.chunk.hi, ptr %parfor.cell.hi, align 8
-  %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 2
+  %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 2
   store ptr %data5, ptr %parfor.cell.cap, align 8
-  %parfor.cell.cap22 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 3
+  %parfor.cell.cap22 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 3
   store i64 %cols, ptr %parfor.cell.cap22, align 8
-  %parfor.cell.cap23 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 4
+  %parfor.cell.cap23 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 4
   store ptr %data, ptr %parfor.cell.cap23, align 8
-  %parfor.cell.cap24 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 5
+  %parfor.cell.cap24 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 5
   store %_Z6VectorIfE %value7, ptr %parfor.cell.cap24, align 8
+  %parfor.cw = call ptr @_ZN9TaskGroup11cancel_wordEP9TaskGroup(ptr %parfor.d.grp)
+  %parfor.cell.cancel = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 6
+  store ptr %parfor.cw, ptr %parfor.cell.cancel, align 8
   call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.254, ptr %parfor.cell, ptr %parfor.d.grp)
   store i64 %parfor.chunk.hi, ptr %parfor.c.slot, align 8
   br label %pfor.sub.cond
@@ -38781,35 +38820,38 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   %parfor.chunk.hi0 = add i64 %parfor.c.lo, %parfor.d.chunk
   %parfor.hilt = icmp slt i64 %parfor.chunk.hi0, %parfor.d.n
   %parfor.chunk.hi = select i1 %parfor.hilt, i64 %parfor.chunk.hi0, i64 %parfor.d.n
-  %parfor.cell = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage, i64 128, i64 8)
-  %parfor.cell.lo = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 0
+  %parfor.cell = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage, i64 136, i64 8)
+  %parfor.cell.lo = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 0
   store i64 %parfor.c.lo, ptr %parfor.cell.lo, align 8
-  %parfor.cell.hi = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 1
+  %parfor.cell.hi = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 1
   store i64 %parfor.chunk.hi, ptr %parfor.cell.hi, align 8
-  %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 2
+  %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 2
   store i64 %win, ptr %parfor.cell.cap, align 8
-  %parfor.cell.cap178 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 3
+  %parfor.cell.cap178 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 3
   store i64 %heads, ptr %parfor.cell.cap178, align 8
-  %parfor.cell.cap179 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 4
+  %parfor.cell.cap179 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 4
   store i64 %sdiv, ptr %parfor.cell.cap179, align 8
-  %parfor.cell.cap180 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 5
+  %parfor.cell.cap180 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 5
   store ptr %data, ptr %parfor.cell.cap180, align 8
-  %parfor.cell.cap181 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 6
+  %parfor.cell.cap181 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 6
   store i64 %cols, ptr %parfor.cell.cap181, align 8
-  %parfor.cell.cap182 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 7
+  %parfor.cell.cap182 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 7
   store ptr %data14, ptr %parfor.cell.cap182, align 8
-  %parfor.cell.cap183 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 8
+  %parfor.cell.cap183 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 8
   store float %fdiv, ptr %parfor.cell.cap183, align 4
-  %parfor.cell.cap184 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 9
+  %parfor.cell.cap184 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 9
   store %_Z6VectorIfE %aux, ptr %parfor.cell.cap184, align 8
-  %parfor.cell.cap185 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 10
+  %parfor.cell.cap185 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 10
   store i64 %rows, ptr %parfor.cell.cap185, align 8
-  %parfor.cell.cap186 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 11
+  %parfor.cell.cap186 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 11
   store ptr %data21, ptr %parfor.cell.cap186, align 8
-  %parfor.cell.cap187 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 12
+  %parfor.cell.cap187 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 12
   store ptr %data17, ptr %parfor.cell.cap187, align 8
-  %parfor.cell.cap188 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 13
+  %parfor.cell.cap188 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 13
   store %_Z6VectorIfE %value23, ptr %parfor.cell.cap188, align 8
+  %parfor.cw = call ptr @_ZN9TaskGroup11cancel_wordEP9TaskGroup(ptr %parfor.d.grp)
+  %parfor.cell.cancel = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 14
+  store ptr %parfor.cw, ptr %parfor.cell.cancel, align 8
   call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.274, ptr %parfor.cell, ptr %parfor.d.grp)
   store i64 %parfor.chunk.hi, ptr %parfor.c.slot, align 8
   br label %pfor.sub.cond
@@ -39094,19 +39136,22 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   %parfor.chunk.hi0 = add i64 %parfor.c.lo, %parfor.d.chunk
   %parfor.hilt = icmp slt i64 %parfor.chunk.hi0, %parfor.d.n
   %parfor.chunk.hi = select i1 %parfor.hilt, i64 %parfor.chunk.hi0, i64 %parfor.d.n
-  %parfor.cell = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage, i64 56, i64 8)
-  %parfor.cell.lo = getelementptr inbounds nuw { i64, i64, i64, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 0
+  %parfor.cell = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage, i64 64, i64 8)
+  %parfor.cell.lo = getelementptr inbounds nuw { i64, i64, i64, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 0
   store i64 %parfor.c.lo, ptr %parfor.cell.lo, align 8
-  %parfor.cell.hi = getelementptr inbounds nuw { i64, i64, i64, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 1
+  %parfor.cell.hi = getelementptr inbounds nuw { i64, i64, i64, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 1
   store i64 %parfor.chunk.hi, ptr %parfor.cell.hi, align 8
-  %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, i64, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 2
+  %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, i64, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 2
   store i64 %cols, ptr %parfor.cell.cap, align 8
-  %parfor.cell.cap30 = getelementptr inbounds nuw { i64, i64, i64, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 3
+  %parfor.cell.cap30 = getelementptr inbounds nuw { i64, i64, i64, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 3
   store %_Z6VectorIfE %value12, ptr %parfor.cell.cap30, align 8
-  %parfor.cell.cap31 = getelementptr inbounds nuw { i64, i64, i64, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 4
+  %parfor.cell.cap31 = getelementptr inbounds nuw { i64, i64, i64, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 4
   store ptr %data, ptr %parfor.cell.cap31, align 8
-  %parfor.cell.cap32 = getelementptr inbounds nuw { i64, i64, i64, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 5
+  %parfor.cell.cap32 = getelementptr inbounds nuw { i64, i64, i64, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 5
   store ptr %data10, ptr %parfor.cell.cap32, align 8
+  %parfor.cw = call ptr @_ZN9TaskGroup11cancel_wordEP9TaskGroup(ptr %parfor.d.grp)
+  %parfor.cell.cancel = getelementptr inbounds nuw { i64, i64, i64, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 6
+  store ptr %parfor.cw, ptr %parfor.cell.cancel, align 8
   call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.264, ptr %parfor.cell, ptr %parfor.d.grp)
   store i64 %parfor.chunk.hi, ptr %parfor.c.slot, align 8
   br label %pfor.sub.cond
@@ -39396,21 +39441,24 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   %parfor.chunk.hi0 = add i64 %parfor.c.lo, %parfor.d.chunk
   %parfor.hilt = icmp slt i64 %parfor.chunk.hi0, %parfor.d.n
   %parfor.chunk.hi = select i1 %parfor.hilt, i64 %parfor.chunk.hi0, i64 %parfor.d.n
-  %parfor.cell = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage, i64 64, i64 8)
-  %parfor.cell.lo = getelementptr inbounds nuw { i64, i64, i64, i64, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 0
+  %parfor.cell = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage, i64 72, i64 8)
+  %parfor.cell.lo = getelementptr inbounds nuw { i64, i64, i64, i64, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 0
   store i64 %parfor.c.lo, ptr %parfor.cell.lo, align 8
-  %parfor.cell.hi = getelementptr inbounds nuw { i64, i64, i64, i64, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 1
+  %parfor.cell.hi = getelementptr inbounds nuw { i64, i64, i64, i64, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 1
   store i64 %parfor.chunk.hi, ptr %parfor.cell.hi, align 8
-  %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, i64, i64, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 2
+  %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, i64, i64, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 2
   store i64 %rows16, ptr %parfor.cell.cap, align 8
-  %parfor.cell.cap33 = getelementptr inbounds nuw { i64, i64, i64, i64, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 3
+  %parfor.cell.cap33 = getelementptr inbounds nuw { i64, i64, i64, i64, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 3
   store i64 %cols, ptr %parfor.cell.cap33, align 8
-  %parfor.cell.cap34 = getelementptr inbounds nuw { i64, i64, i64, i64, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 4
+  %parfor.cell.cap34 = getelementptr inbounds nuw { i64, i64, i64, i64, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 4
   store %_Z6VectorIfE %value12, ptr %parfor.cell.cap34, align 8
-  %parfor.cell.cap35 = getelementptr inbounds nuw { i64, i64, i64, i64, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 5
+  %parfor.cell.cap35 = getelementptr inbounds nuw { i64, i64, i64, i64, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 5
   store ptr %data, ptr %parfor.cell.cap35, align 8
-  %parfor.cell.cap36 = getelementptr inbounds nuw { i64, i64, i64, i64, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 6
+  %parfor.cell.cap36 = getelementptr inbounds nuw { i64, i64, i64, i64, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 6
   store ptr %data10, ptr %parfor.cell.cap36, align 8
+  %parfor.cw = call ptr @_ZN9TaskGroup11cancel_wordEP9TaskGroup(ptr %parfor.d.grp)
+  %parfor.cell.cancel = getelementptr inbounds nuw { i64, i64, i64, i64, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 7
+  store ptr %parfor.cw, ptr %parfor.cell.cancel, align 8
   call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.269, ptr %parfor.cell, ptr %parfor.d.grp)
   store i64 %parfor.chunk.hi, ptr %parfor.c.slot, align 8
   br label %pfor.sub.cond
@@ -39791,23 +39839,26 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   %parfor.chunk.hi0 = add i64 %parfor.c.lo, %parfor.d.chunk
   %parfor.hilt = icmp slt i64 %parfor.chunk.hi0, %parfor.d.n
   %parfor.chunk.hi = select i1 %parfor.hilt, i64 %parfor.chunk.hi0, i64 %parfor.d.n
-  %parfor.cell = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage, i64 72, i64 8)
-  %parfor.cell.lo = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 0
+  %parfor.cell = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage, i64 80, i64 8)
+  %parfor.cell.lo = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 0
   store i64 %parfor.c.lo, ptr %parfor.cell.lo, align 8
-  %parfor.cell.hi = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 1
+  %parfor.cell.hi = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 1
   store i64 %parfor.chunk.hi, ptr %parfor.cell.hi, align 8
-  %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 2
+  %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 2
   store i64 %cols, ptr %parfor.cell.cap, align 8
-  %parfor.cell.cap72 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 3
+  %parfor.cell.cap72 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 3
   store i64 %cols8, ptr %parfor.cell.cap72, align 8
-  %parfor.cell.cap73 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 4
+  %parfor.cell.cap73 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 4
   store ptr %data14, ptr %parfor.cell.cap73, align 8
-  %parfor.cell.cap74 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 5
+  %parfor.cell.cap74 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 5
   store ptr %data12, ptr %parfor.cell.cap74, align 8
-  %parfor.cell.cap75 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 6
+  %parfor.cell.cap75 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 6
   store %_Z6VectorIfE %grad22, ptr %parfor.cell.cap75, align 8
-  %parfor.cell.cap76 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 7
+  %parfor.cell.cap76 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 7
   store ptr %data17, ptr %parfor.cell.cap76, align 8
+  %parfor.cw = call ptr @_ZN9TaskGroup11cancel_wordEP9TaskGroup(ptr %parfor.d.grp)
+  %parfor.cell.cancel = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 8
+  store ptr %parfor.cw, ptr %parfor.cell.cancel, align 8
   call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.219, ptr %parfor.cell, ptr %parfor.d.grp)
   store i64 %parfor.chunk.hi, ptr %parfor.c.slot, align 8
   br label %pfor.sub.cond
@@ -40100,25 +40151,28 @@ pfor.sub.body249:                                 ; preds = %pfor.sub.cond248
   %parfor.chunk.hi0253 = add i64 %parfor.c.lo251, %parfor.d.chunk245
   %parfor.hilt254 = icmp slt i64 %parfor.chunk.hi0253, %parfor.d.n230
   %parfor.chunk.hi255 = select i1 %parfor.hilt254, i64 %parfor.chunk.hi0253, i64 %parfor.d.n230
-  %parfor.cell256 = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage233, i64 80, i64 8)
-  %parfor.cell.lo257 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell256, i32 0, i32 0
+  %parfor.cell256 = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage233, i64 88, i64 8)
+  %parfor.cell.lo257 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell256, i32 0, i32 0
   store i64 %parfor.c.lo251, ptr %parfor.cell.lo257, align 8
-  %parfor.cell.hi258 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell256, i32 0, i32 1
+  %parfor.cell.hi258 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell256, i32 0, i32 1
   store i64 %parfor.chunk.hi255, ptr %parfor.cell.hi258, align 8
-  %parfor.cell.cap259 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell256, i32 0, i32 2
+  %parfor.cell.cap259 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell256, i32 0, i32 2
   store i64 %cols8, ptr %parfor.cell.cap259, align 8
-  %parfor.cell.cap260 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell256, i32 0, i32 3
+  %parfor.cell.cap260 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell256, i32 0, i32 3
   store i64 %rows, ptr %parfor.cell.cap260, align 8
-  %parfor.cell.cap261 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell256, i32 0, i32 4
+  %parfor.cell.cap261 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell256, i32 0, i32 4
   store ptr %data, ptr %parfor.cell.cap261, align 8
-  %parfor.cell.cap262 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell256, i32 0, i32 5
+  %parfor.cell.cap262 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell256, i32 0, i32 5
   store i64 %cols, ptr %parfor.cell.cap262, align 8
-  %parfor.cell.cap263 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell256, i32 0, i32 6
+  %parfor.cell.cap263 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell256, i32 0, i32 6
   store ptr %data14, ptr %parfor.cell.cap263, align 8
-  %parfor.cell.cap264 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell256, i32 0, i32 7
+  %parfor.cell.cap264 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell256, i32 0, i32 7
   store %_Z6VectorIfE %grad24, ptr %parfor.cell.cap264, align 8
-  %parfor.cell.cap265 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell256, i32 0, i32 8
+  %parfor.cell.cap265 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell256, i32 0, i32 8
   store ptr %data20, ptr %parfor.cell.cap265, align 8
+  %parfor.cw266 = call ptr @_ZN9TaskGroup11cancel_wordEP9TaskGroup(ptr %parfor.d.grp232)
+  %parfor.cell.cancel267 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell256, i32 0, i32 9
+  store ptr %parfor.cw266, ptr %parfor.cell.cancel267, align 8
   call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool246, ptr @parfor.224, ptr %parfor.cell256, ptr %parfor.d.grp232)
   store i64 %parfor.chunk.hi255, ptr %parfor.c.slot247, align 8
   br label %pfor.sub.cond248
@@ -40426,21 +40480,24 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   %parfor.chunk.hi0 = add i64 %parfor.c.lo, %parfor.d.chunk
   %parfor.hilt = icmp slt i64 %parfor.chunk.hi0, %parfor.d.n
   %parfor.chunk.hi = select i1 %parfor.hilt, i64 %parfor.chunk.hi0, i64 %parfor.d.n
-  %parfor.cell = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage, i64 64, i64 8)
-  %parfor.cell.lo = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 0
+  %parfor.cell = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage, i64 72, i64 8)
+  %parfor.cell.lo = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 0
   store i64 %parfor.c.lo, ptr %parfor.cell.lo, align 8
-  %parfor.cell.hi = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 1
+  %parfor.cell.hi = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 1
   store i64 %parfor.chunk.hi, ptr %parfor.cell.hi, align 8
-  %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 2
+  %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 2
   store i64 %cols, ptr %parfor.cell.cap, align 8
-  %parfor.cell.cap50 = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 3
+  %parfor.cell.cap50 = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 3
   store ptr %data, ptr %parfor.cell.cap50, align 8
-  %parfor.cell.cap51 = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 4
+  %parfor.cell.cap51 = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 4
   store %_Z6VectorIfE %grad10, ptr %parfor.cell.cap51, align 8
-  %parfor.cell.cap52 = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 5
+  %parfor.cell.cap52 = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 5
   store ptr %data8, ptr %parfor.cell.cap52, align 8
-  %parfor.cell.cap53 = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 6
+  %parfor.cell.cap53 = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 6
   store ptr %data5, ptr %parfor.cell.cap53, align 8
+  %parfor.cw = call ptr @_ZN9TaskGroup11cancel_wordEP9TaskGroup(ptr %parfor.d.grp)
+  %parfor.cell.cancel = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 7
+  store ptr %parfor.cw, ptr %parfor.cell.cancel, align 8
   call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.234, ptr %parfor.cell, ptr %parfor.d.grp)
   store i64 %parfor.chunk.hi, ptr %parfor.c.slot, align 8
   br label %pfor.sub.cond
@@ -40764,21 +40821,24 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   %parfor.chunk.hi0 = add i64 %parfor.c.lo, %parfor.d.chunk
   %parfor.hilt = icmp slt i64 %parfor.chunk.hi0, %parfor.d.n
   %parfor.chunk.hi = select i1 %parfor.hilt, i64 %parfor.chunk.hi0, i64 %parfor.d.n
-  %parfor.cell = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage, i64 64, i64 8)
-  %parfor.cell.lo = getelementptr inbounds nuw { i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 0
+  %parfor.cell = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage, i64 72, i64 8)
+  %parfor.cell.lo = getelementptr inbounds nuw { i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 0
   store i64 %parfor.c.lo, ptr %parfor.cell.lo, align 8
-  %parfor.cell.hi = getelementptr inbounds nuw { i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 1
+  %parfor.cell.hi = getelementptr inbounds nuw { i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 1
   store i64 %parfor.chunk.hi, ptr %parfor.cell.hi, align 8
-  %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 2
+  %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 2
   store i64 %cols, ptr %parfor.cell.cap, align 8
-  %parfor.cell.cap54 = getelementptr inbounds nuw { i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 3
+  %parfor.cell.cap54 = getelementptr inbounds nuw { i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 3
   store ptr %data5, ptr %parfor.cell.cap54, align 8
-  %parfor.cell.cap55 = getelementptr inbounds nuw { i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 4
+  %parfor.cell.cap55 = getelementptr inbounds nuw { i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 4
   store ptr %data, ptr %parfor.cell.cap55, align 8
-  %parfor.cell.cap56 = getelementptr inbounds nuw { i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 5
+  %parfor.cell.cap56 = getelementptr inbounds nuw { i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 5
   store %_Z6VectorIfE %grad10, ptr %parfor.cell.cap56, align 8
-  %parfor.cell.cap57 = getelementptr inbounds nuw { i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 6
+  %parfor.cell.cap57 = getelementptr inbounds nuw { i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 6
   store ptr %data8, ptr %parfor.cell.cap57, align 8
+  %parfor.cw = call ptr @_ZN9TaskGroup11cancel_wordEP9TaskGroup(ptr %parfor.d.grp)
+  %parfor.cell.cancel = getelementptr inbounds nuw { i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 7
+  store ptr %parfor.cw, ptr %parfor.cell.cancel, align 8
   call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.244, ptr %parfor.cell, ptr %parfor.d.grp)
   store i64 %parfor.chunk.hi, ptr %parfor.c.slot, align 8
   br label %pfor.sub.cond
@@ -41534,23 +41594,26 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   %parfor.chunk.hi0 = add i64 %parfor.c.lo, %parfor.d.chunk
   %parfor.hilt = icmp slt i64 %parfor.chunk.hi0, %parfor.d.n
   %parfor.chunk.hi = select i1 %parfor.hilt, i64 %parfor.chunk.hi0, i64 %parfor.d.n
-  %parfor.cell = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage, i64 72, i64 8)
-  %parfor.cell.lo = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float }, ptr %parfor.cell, i32 0, i32 0
+  %parfor.cell = call ptr @_ZN4Page8allocateEmm(ptr %parfor.d.gpage, i64 80, i64 8)
+  %parfor.cell.lo = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float, ptr }, ptr %parfor.cell, i32 0, i32 0
   store i64 %parfor.c.lo, ptr %parfor.cell.lo, align 8
-  %parfor.cell.hi = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float }, ptr %parfor.cell, i32 0, i32 1
+  %parfor.cell.hi = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float, ptr }, ptr %parfor.cell, i32 0, i32 1
   store i64 %parfor.chunk.hi, ptr %parfor.cell.hi, align 8
-  %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float }, ptr %parfor.cell, i32 0, i32 2
+  %parfor.cell.cap = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float, ptr }, ptr %parfor.cell, i32 0, i32 2
   store ptr %data, ptr %parfor.cell.cap, align 8
-  %parfor.cell.cap78 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float }, ptr %parfor.cell, i32 0, i32 3
+  %parfor.cell.cap78 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float, ptr }, ptr %parfor.cell, i32 0, i32 3
   store i64 %cols, ptr %parfor.cell.cap78, align 8
-  %parfor.cell.cap79 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float }, ptr %parfor.cell, i32 0, i32 4
+  %parfor.cell.cap79 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float, ptr }, ptr %parfor.cell, i32 0, i32 4
   store ptr %data5, ptr %parfor.cell.cap79, align 8
-  %parfor.cell.cap80 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float }, ptr %parfor.cell, i32 0, i32 5
+  %parfor.cell.cap80 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float, ptr }, ptr %parfor.cell, i32 0, i32 5
   store %_Z6VectorIfE %grad12, ptr %parfor.cell.cap80, align 8
-  %parfor.cell.cap81 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float }, ptr %parfor.cell, i32 0, i32 6
+  %parfor.cell.cap81 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float, ptr }, ptr %parfor.cell, i32 0, i32 6
   store ptr %data10, ptr %parfor.cell.cap81, align 8
-  %parfor.cell.cap82 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float }, ptr %parfor.cell, i32 0, i32 7
+  %parfor.cell.cap82 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float, ptr }, ptr %parfor.cell, i32 0, i32 7
   store float %fdiv, ptr %parfor.cell.cap82, align 4
+  %parfor.cw = call ptr @_ZN9TaskGroup11cancel_wordEP9TaskGroup(ptr %parfor.d.grp)
+  %parfor.cell.cancel = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float, ptr }, ptr %parfor.cell, i32 0, i32 8
+  store ptr %parfor.cw, ptr %parfor.cell.cancel, align 8
   call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.259, ptr %parfor.cell, ptr %parfor.d.grp)
   store i64 %parfor.chunk.hi, ptr %parfor.c.slot, align 8
   br label %pfor.sub.cond
@@ -42274,20 +42337,22 @@ entry:
   %a01 = alloca float, align 4
   %a00 = alloca float, align 4
   %j = alloca i64, align 8
-  %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr }, ptr %0, i32 0, i32 0
+  %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 0
   %parfor.lo = load i64, ptr %parfor.lo.ptr, align 8
-  %parfor.hi.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr }, ptr %0, i32 0, i32 1
+  %parfor.hi.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 1
   %parfor.hi = load i64, ptr %parfor.hi.ptr, align 8
-  %parfor.cap.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr }, ptr %0, i32 0, i32 2
+  %parfor.cap.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 2
   %n = load i64, ptr %parfor.cap.ptr, align 8
-  %parfor.cap.ptr1 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr }, ptr %0, i32 0, i32 3
+  %parfor.cap.ptr1 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 3
   %kk = load i64, ptr %parfor.cap.ptr1, align 8
-  %parfor.cap.ptr2 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr }, ptr %0, i32 0, i32 4
+  %parfor.cap.ptr2 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 4
   %ap = load ptr, ptr %parfor.cap.ptr2, align 8
-  %parfor.cap.ptr3 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr }, ptr %0, i32 0, i32 5
+  %parfor.cap.ptr3 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 5
   %bp = load ptr, ptr %parfor.cap.ptr3, align 8
-  %parfor.cap.ptr4 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr }, ptr %0, i32 0, i32 6
+  %parfor.cap.ptr4 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 6
   %c = load ptr, ptr %parfor.cap.ptr4, align 8
+  %parfor.cancel.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 7
+  %parfor.cancel = load ptr, ptr %parfor.cancel.ptr, align 8
   %parfor.iv.slot = alloca i64, align 8
   store i64 %parfor.lo, ptr %parfor.iv.slot, align 8
   br label %parfor.chunk.cond
@@ -42295,9 +42360,9 @@ entry:
 parfor.chunk.cond:                                ; preds = %parfor.chunk.inc, %entry
   %parfor.iv = load i64, ptr %parfor.iv.slot, align 8
   %parfor.chunk.more = icmp slt i64 %parfor.iv, %parfor.hi
-  br i1 %parfor.chunk.more, label %parfor.chunk.body, label %parfor.ret
+  br i1 %parfor.chunk.more, label %parfor.chunk.guard, label %parfor.ret
 
-parfor.chunk.body:                                ; preds = %parfor.chunk.cond
+parfor.chunk.body:                                ; preds = %parfor.chunk.poll, %parfor.chunk.guard
   store i64 0, ptr %j, align 1
   br label %while.cond
 
@@ -42307,8 +42372,17 @@ parfor.chunk.inc:                                 ; preds = %while.exit
   store i64 %parfor.iv.next, ptr %parfor.iv.slot, align 8
   br label %parfor.chunk.cond
 
-parfor.ret:                                       ; preds = %parfor.chunk.cond
+parfor.ret:                                       ; preds = %parfor.chunk.poll, %parfor.chunk.cond
   ret ptr null
+
+parfor.chunk.guard:                               ; preds = %parfor.chunk.cond
+  %parfor.cancel.off = icmp eq ptr %parfor.cancel, null
+  br i1 %parfor.cancel.off, label %parfor.chunk.body, label %parfor.chunk.poll
+
+parfor.chunk.poll:                                ; preds = %parfor.chunk.guard
+  %parfor.cancel.flag = load atomic i64, ptr %parfor.cancel monotonic, align 8
+  %parfor.cancel.live = icmp eq i64 %parfor.cancel.flag, 0
+  br i1 %parfor.cancel.live, label %parfor.chunk.body, label %parfor.ret
 
 while.cond:                                       ; preds = %while.exit8, %parfor.chunk.body
   %j5 = load i64, ptr %j, align 8
@@ -42619,22 +42693,24 @@ entry:
   %a01 = alloca float, align 4
   %a00 = alloca float, align 4
   %xt = alloca i64, align 8
-  %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 0
+  %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 0
   %parfor.lo = load i64, ptr %parfor.lo.ptr, align 8
-  %parfor.hi.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 1
+  %parfor.hi.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 1
   %parfor.hi = load i64, ptr %parfor.hi.ptr, align 8
-  %parfor.cap.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 2
+  %parfor.cap.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 2
   %kk = load i64, ptr %parfor.cap.ptr, align 8
-  %parfor.cap.ptr1 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 3
+  %parfor.cap.ptr1 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 3
   %n = load i64, ptr %parfor.cap.ptr1, align 8
-  %parfor.cap.ptr2 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 4
+  %parfor.cap.ptr2 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 4
   %gcp = load ptr, ptr %parfor.cap.ptr2, align 8
-  %parfor.cap.ptr3 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 5
+  %parfor.cap.ptr3 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 5
   %bp = load ptr, ptr %parfor.cap.ptr3, align 8
-  %parfor.cap.ptr4 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 6
+  %parfor.cap.ptr4 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 6
   %ga = load ptr, ptr %parfor.cap.ptr4, align 8
-  %parfor.cap.ptr5 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 7
+  %parfor.cap.ptr5 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 7
   %gap = load ptr, ptr %parfor.cap.ptr5, align 8
+  %parfor.cancel.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 8
+  %parfor.cancel = load ptr, ptr %parfor.cancel.ptr, align 8
   %parfor.iv.slot = alloca i64, align 8
   store i64 %parfor.lo, ptr %parfor.iv.slot, align 8
   br label %parfor.chunk.cond
@@ -42642,9 +42718,9 @@ entry:
 parfor.chunk.cond:                                ; preds = %parfor.chunk.inc, %entry
   %parfor.iv = load i64, ptr %parfor.iv.slot, align 8
   %parfor.chunk.more = icmp slt i64 %parfor.iv, %parfor.hi
-  br i1 %parfor.chunk.more, label %parfor.chunk.body, label %parfor.ret
+  br i1 %parfor.chunk.more, label %parfor.chunk.guard, label %parfor.ret
 
-parfor.chunk.body:                                ; preds = %parfor.chunk.cond
+parfor.chunk.body:                                ; preds = %parfor.chunk.poll, %parfor.chunk.guard
   store i64 0, ptr %xt, align 1
   br label %while.cond
 
@@ -42654,8 +42730,17 @@ parfor.chunk.inc:                                 ; preds = %while.exit
   store i64 %parfor.iv.next, ptr %parfor.iv.slot, align 8
   br label %parfor.chunk.cond
 
-parfor.ret:                                       ; preds = %parfor.chunk.cond
+parfor.ret:                                       ; preds = %parfor.chunk.poll, %parfor.chunk.cond
   ret ptr null
+
+parfor.chunk.guard:                               ; preds = %parfor.chunk.cond
+  %parfor.cancel.off = icmp eq ptr %parfor.cancel, null
+  br i1 %parfor.cancel.off, label %parfor.chunk.body, label %parfor.chunk.poll
+
+parfor.chunk.poll:                                ; preds = %parfor.chunk.guard
+  %parfor.cancel.flag = load atomic i64, ptr %parfor.cancel monotonic, align 8
+  %parfor.cancel.live = icmp eq i64 %parfor.cancel.flag, 0
+  br i1 %parfor.cancel.live, label %parfor.chunk.body, label %parfor.ret
 
 while.cond:                                       ; preds = %while.exit9, %parfor.chunk.body
   %xt6 = load i64, ptr %xt, align 8
@@ -43115,24 +43200,26 @@ entry:
   %a01 = alloca float, align 4
   %a00 = alloca float, align 4
   %j = alloca i64, align 8
-  %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr }, ptr %0, i32 0, i32 0
+  %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 0
   %parfor.lo = load i64, ptr %parfor.lo.ptr, align 8
-  %parfor.hi.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr }, ptr %0, i32 0, i32 1
+  %parfor.hi.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 1
   %parfor.hi = load i64, ptr %parfor.hi.ptr, align 8
-  %parfor.cap.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr }, ptr %0, i32 0, i32 2
+  %parfor.cap.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 2
   %n = load i64, ptr %parfor.cap.ptr, align 8
-  %parfor.cap.ptr1 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr }, ptr %0, i32 0, i32 3
+  %parfor.cap.ptr1 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 3
   %m = load i64, ptr %parfor.cap.ptr1, align 8
-  %parfor.cap.ptr2 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr }, ptr %0, i32 0, i32 4
+  %parfor.cap.ptr2 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 4
   %ap = load ptr, ptr %parfor.cap.ptr2, align 8
-  %parfor.cap.ptr3 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr }, ptr %0, i32 0, i32 5
+  %parfor.cap.ptr3 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 5
   %kk = load i64, ptr %parfor.cap.ptr3, align 8
-  %parfor.cap.ptr4 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr }, ptr %0, i32 0, i32 6
+  %parfor.cap.ptr4 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 6
   %gcp = load ptr, ptr %parfor.cap.ptr4, align 8
-  %parfor.cap.ptr5 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr }, ptr %0, i32 0, i32 7
+  %parfor.cap.ptr5 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 7
   %gb = load ptr, ptr %parfor.cap.ptr5, align 8
-  %parfor.cap.ptr6 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr }, ptr %0, i32 0, i32 8
+  %parfor.cap.ptr6 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 8
   %gbp = load ptr, ptr %parfor.cap.ptr6, align 8
+  %parfor.cancel.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr, ptr }, ptr %0, i32 0, i32 9
+  %parfor.cancel = load ptr, ptr %parfor.cancel.ptr, align 8
   %parfor.iv.slot = alloca i64, align 8
   store i64 %parfor.lo, ptr %parfor.iv.slot, align 8
   br label %parfor.chunk.cond
@@ -43140,9 +43227,9 @@ entry:
 parfor.chunk.cond:                                ; preds = %parfor.chunk.inc, %entry
   %parfor.iv = load i64, ptr %parfor.iv.slot, align 8
   %parfor.chunk.more = icmp slt i64 %parfor.iv, %parfor.hi
-  br i1 %parfor.chunk.more, label %parfor.chunk.body, label %parfor.ret
+  br i1 %parfor.chunk.more, label %parfor.chunk.guard, label %parfor.ret
 
-parfor.chunk.body:                                ; preds = %parfor.chunk.cond
+parfor.chunk.body:                                ; preds = %parfor.chunk.poll, %parfor.chunk.guard
   store i64 0, ptr %j, align 1
   br label %while.cond
 
@@ -43152,8 +43239,17 @@ parfor.chunk.inc:                                 ; preds = %while.exit
   store i64 %parfor.iv.next, ptr %parfor.iv.slot, align 8
   br label %parfor.chunk.cond
 
-parfor.ret:                                       ; preds = %parfor.chunk.cond
+parfor.ret:                                       ; preds = %parfor.chunk.poll, %parfor.chunk.cond
   ret ptr null
+
+parfor.chunk.guard:                               ; preds = %parfor.chunk.cond
+  %parfor.cancel.off = icmp eq ptr %parfor.cancel, null
+  br i1 %parfor.cancel.off, label %parfor.chunk.body, label %parfor.chunk.poll
+
+parfor.chunk.poll:                                ; preds = %parfor.chunk.guard
+  %parfor.cancel.flag = load atomic i64, ptr %parfor.cancel monotonic, align 8
+  %parfor.cancel.live = icmp eq i64 %parfor.cancel.flag, 0
+  br i1 %parfor.cancel.live, label %parfor.chunk.body, label %parfor.ret
 
 while.cond:                                       ; preds = %while.exit10, %parfor.chunk.body
   %j7 = load i64, ptr %j, align 8
@@ -43590,20 +43686,22 @@ entry:
   %x = alloca i64, align 8
   %acc = alloca float, align 4
   %j = alloca i64, align 8
-  %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 0
+  %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 0
   %parfor.lo = load i64, ptr %parfor.lo.ptr, align 8
-  %parfor.hi.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 1
+  %parfor.hi.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 1
   %parfor.hi = load i64, ptr %parfor.hi.ptr, align 8
-  %parfor.cap.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 2
+  %parfor.cap.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 2
   %n = load i64, ptr %parfor.cap.ptr, align 8
-  %parfor.cap.ptr1 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 3
+  %parfor.cap.ptr1 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 3
   %kk = load i64, ptr %parfor.cap.ptr1, align 8
-  %parfor.cap.ptr2 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 4
+  %parfor.cap.ptr2 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 4
   %ap = load ptr, ptr %parfor.cap.ptr2, align 8
-  %parfor.cap.ptr3 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 5
+  %parfor.cap.ptr3 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 5
   %bp = load ptr, ptr %parfor.cap.ptr3, align 8
-  %parfor.cap.ptr4 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 6
+  %parfor.cap.ptr4 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 6
   %out = load %_Z6VectorIfE, ptr %parfor.cap.ptr4, align 8
+  %parfor.cancel.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 7
+  %parfor.cancel = load ptr, ptr %parfor.cancel.ptr, align 8
   %parfor.iv.slot = alloca i64, align 8
   store i64 %parfor.lo, ptr %parfor.iv.slot, align 8
   br label %parfor.chunk.cond
@@ -43611,9 +43709,9 @@ entry:
 parfor.chunk.cond:                                ; preds = %parfor.chunk.inc, %entry
   %parfor.iv = load i64, ptr %parfor.iv.slot, align 8
   %parfor.chunk.more = icmp slt i64 %parfor.iv, %parfor.hi
-  br i1 %parfor.chunk.more, label %parfor.chunk.body, label %parfor.ret
+  br i1 %parfor.chunk.more, label %parfor.chunk.guard, label %parfor.ret
 
-parfor.chunk.body:                                ; preds = %parfor.chunk.cond
+parfor.chunk.body:                                ; preds = %parfor.chunk.poll, %parfor.chunk.guard
   store i64 0, ptr %j, align 1
   br label %while.cond
 
@@ -43623,8 +43721,17 @@ parfor.chunk.inc:                                 ; preds = %while.exit
   store i64 %parfor.iv.next, ptr %parfor.iv.slot, align 8
   br label %parfor.chunk.cond
 
-parfor.ret:                                       ; preds = %parfor.chunk.cond
+parfor.ret:                                       ; preds = %parfor.chunk.poll, %parfor.chunk.cond
   ret ptr null
+
+parfor.chunk.guard:                               ; preds = %parfor.chunk.cond
+  %parfor.cancel.off = icmp eq ptr %parfor.cancel, null
+  br i1 %parfor.cancel.off, label %parfor.chunk.body, label %parfor.chunk.poll
+
+parfor.chunk.poll:                                ; preds = %parfor.chunk.guard
+  %parfor.cancel.flag = load atomic i64, ptr %parfor.cancel monotonic, align 8
+  %parfor.cancel.live = icmp eq i64 %parfor.cancel.flag, 0
+  br i1 %parfor.cancel.live, label %parfor.chunk.body, label %parfor.ret
 
 while.cond:                                       ; preds = %while.exit8, %parfor.chunk.body
   %j5 = load i64, ptr %j, align 8
@@ -43684,22 +43791,24 @@ entry:
   %j = alloca i64, align 8
   %acc = alloca float, align 4
   %x = alloca i64, align 8
-  %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 0
+  %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 0
   %parfor.lo = load i64, ptr %parfor.lo.ptr, align 8
-  %parfor.hi.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 1
+  %parfor.hi.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 1
   %parfor.hi = load i64, ptr %parfor.hi.ptr, align 8
-  %parfor.cap.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 2
+  %parfor.cap.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 2
   %kk = load i64, ptr %parfor.cap.ptr, align 8
-  %parfor.cap.ptr1 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 3
+  %parfor.cap.ptr1 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 3
   %n = load i64, ptr %parfor.cap.ptr1, align 8
-  %parfor.cap.ptr2 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 4
+  %parfor.cap.ptr2 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 4
   %gp = load ptr, ptr %parfor.cap.ptr2, align 8
-  %parfor.cap.ptr3 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 5
+  %parfor.cap.ptr3 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 5
   %bp = load ptr, ptr %parfor.cap.ptr3, align 8
-  %parfor.cap.ptr4 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 6
+  %parfor.cap.ptr4 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 6
   %ga = load %_Z6VectorIfE, ptr %parfor.cap.ptr4, align 8
-  %parfor.cap.ptr5 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 7
+  %parfor.cap.ptr5 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 7
   %gap = load ptr, ptr %parfor.cap.ptr5, align 8
+  %parfor.cancel.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 8
+  %parfor.cancel = load ptr, ptr %parfor.cancel.ptr, align 8
   %parfor.iv.slot = alloca i64, align 8
   store i64 %parfor.lo, ptr %parfor.iv.slot, align 8
   br label %parfor.chunk.cond
@@ -43707,9 +43816,9 @@ entry:
 parfor.chunk.cond:                                ; preds = %parfor.chunk.inc, %entry
   %parfor.iv = load i64, ptr %parfor.iv.slot, align 8
   %parfor.chunk.more = icmp slt i64 %parfor.iv, %parfor.hi
-  br i1 %parfor.chunk.more, label %parfor.chunk.body, label %parfor.ret
+  br i1 %parfor.chunk.more, label %parfor.chunk.guard, label %parfor.ret
 
-parfor.chunk.body:                                ; preds = %parfor.chunk.cond
+parfor.chunk.body:                                ; preds = %parfor.chunk.poll, %parfor.chunk.guard
   store i64 0, ptr %x, align 1
   br label %while.cond
 
@@ -43719,8 +43828,17 @@ parfor.chunk.inc:                                 ; preds = %while.exit
   store i64 %parfor.iv.next, ptr %parfor.iv.slot, align 8
   br label %parfor.chunk.cond
 
-parfor.ret:                                       ; preds = %parfor.chunk.cond
+parfor.ret:                                       ; preds = %parfor.chunk.poll, %parfor.chunk.cond
   ret ptr null
+
+parfor.chunk.guard:                               ; preds = %parfor.chunk.cond
+  %parfor.cancel.off = icmp eq ptr %parfor.cancel, null
+  br i1 %parfor.cancel.off, label %parfor.chunk.body, label %parfor.chunk.poll
+
+parfor.chunk.poll:                                ; preds = %parfor.chunk.guard
+  %parfor.cancel.flag = load atomic i64, ptr %parfor.cancel monotonic, align 8
+  %parfor.cancel.live = icmp eq i64 %parfor.cancel.flag, 0
+  br i1 %parfor.cancel.live, label %parfor.chunk.body, label %parfor.ret
 
 while.cond:                                       ; preds = %while.exit9, %parfor.chunk.body
   %x6 = load i64, ptr %x, align 8
@@ -43786,24 +43904,26 @@ entry:
   %i2 = alloca i64, align 8
   %acc = alloca float, align 4
   %j = alloca i64, align 8
-  %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 0
+  %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 0
   %parfor.lo = load i64, ptr %parfor.lo.ptr, align 8
-  %parfor.hi.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 1
+  %parfor.hi.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 1
   %parfor.hi = load i64, ptr %parfor.hi.ptr, align 8
-  %parfor.cap.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 2
+  %parfor.cap.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 2
   %n = load i64, ptr %parfor.cap.ptr, align 8
-  %parfor.cap.ptr1 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 3
+  %parfor.cap.ptr1 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 3
   %m = load i64, ptr %parfor.cap.ptr1, align 8
-  %parfor.cap.ptr2 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 4
+  %parfor.cap.ptr2 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 4
   %ap = load ptr, ptr %parfor.cap.ptr2, align 8
-  %parfor.cap.ptr3 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 5
+  %parfor.cap.ptr3 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 5
   %kk = load i64, ptr %parfor.cap.ptr3, align 8
-  %parfor.cap.ptr4 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 6
+  %parfor.cap.ptr4 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 6
   %gp = load ptr, ptr %parfor.cap.ptr4, align 8
-  %parfor.cap.ptr5 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 7
+  %parfor.cap.ptr5 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 7
   %gb = load %_Z6VectorIfE, ptr %parfor.cap.ptr5, align 8
-  %parfor.cap.ptr6 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 8
+  %parfor.cap.ptr6 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 8
   %gbp = load ptr, ptr %parfor.cap.ptr6, align 8
+  %parfor.cancel.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 9
+  %parfor.cancel = load ptr, ptr %parfor.cancel.ptr, align 8
   %parfor.iv.slot = alloca i64, align 8
   store i64 %parfor.lo, ptr %parfor.iv.slot, align 8
   br label %parfor.chunk.cond
@@ -43811,9 +43931,9 @@ entry:
 parfor.chunk.cond:                                ; preds = %parfor.chunk.inc, %entry
   %parfor.iv = load i64, ptr %parfor.iv.slot, align 8
   %parfor.chunk.more = icmp slt i64 %parfor.iv, %parfor.hi
-  br i1 %parfor.chunk.more, label %parfor.chunk.body, label %parfor.ret
+  br i1 %parfor.chunk.more, label %parfor.chunk.guard, label %parfor.ret
 
-parfor.chunk.body:                                ; preds = %parfor.chunk.cond
+parfor.chunk.body:                                ; preds = %parfor.chunk.poll, %parfor.chunk.guard
   store i64 0, ptr %j, align 1
   br label %while.cond
 
@@ -43823,8 +43943,17 @@ parfor.chunk.inc:                                 ; preds = %while.exit
   store i64 %parfor.iv.next, ptr %parfor.iv.slot, align 8
   br label %parfor.chunk.cond
 
-parfor.ret:                                       ; preds = %parfor.chunk.cond
+parfor.ret:                                       ; preds = %parfor.chunk.poll, %parfor.chunk.cond
   ret ptr null
+
+parfor.chunk.guard:                               ; preds = %parfor.chunk.cond
+  %parfor.cancel.off = icmp eq ptr %parfor.cancel, null
+  br i1 %parfor.cancel.off, label %parfor.chunk.body, label %parfor.chunk.poll
+
+parfor.chunk.poll:                                ; preds = %parfor.chunk.guard
+  %parfor.cancel.flag = load atomic i64, ptr %parfor.cancel monotonic, align 8
+  %parfor.cancel.live = icmp eq i64 %parfor.cancel.flag, 0
+  br i1 %parfor.cancel.live, label %parfor.chunk.body, label %parfor.ret
 
 while.cond:                                       ; preds = %while.exit10, %parfor.chunk.body
   %j7 = load i64, ptr %j, align 8
@@ -43888,16 +44017,18 @@ define private ptr @parfor.229(ptr %0) {
 entry:
   %arg.tmp = alloca %_Z6VectorIfE, align 8
   %j = alloca i64, align 8
-  %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 0
+  %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 0
   %parfor.lo = load i64, ptr %parfor.lo.ptr, align 8
-  %parfor.hi.ptr = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 1
+  %parfor.hi.ptr = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 1
   %parfor.hi = load i64, ptr %parfor.hi.ptr, align 8
-  %parfor.cap.ptr = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 2
+  %parfor.cap.ptr = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 2
   %n = load i64, ptr %parfor.cap.ptr, align 8
-  %parfor.cap.ptr1 = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 3
+  %parfor.cap.ptr1 = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 3
   %xp = load ptr, ptr %parfor.cap.ptr1, align 8
-  %parfor.cap.ptr2 = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 4
+  %parfor.cap.ptr2 = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 4
   %out = load %_Z6VectorIfE, ptr %parfor.cap.ptr2, align 8
+  %parfor.cancel.ptr = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 5
+  %parfor.cancel = load ptr, ptr %parfor.cancel.ptr, align 8
   %parfor.iv.slot = alloca i64, align 8
   store i64 %parfor.lo, ptr %parfor.iv.slot, align 8
   br label %parfor.chunk.cond
@@ -43905,9 +44036,9 @@ entry:
 parfor.chunk.cond:                                ; preds = %parfor.chunk.inc, %entry
   %parfor.iv = load i64, ptr %parfor.iv.slot, align 8
   %parfor.chunk.more = icmp slt i64 %parfor.iv, %parfor.hi
-  br i1 %parfor.chunk.more, label %parfor.chunk.body, label %parfor.ret
+  br i1 %parfor.chunk.more, label %parfor.chunk.guard, label %parfor.ret
 
-parfor.chunk.body:                                ; preds = %parfor.chunk.cond
+parfor.chunk.body:                                ; preds = %parfor.chunk.poll, %parfor.chunk.guard
   store i64 0, ptr %j, align 1
   br label %while.cond
 
@@ -43917,8 +44048,17 @@ parfor.chunk.inc:                                 ; preds = %while.exit
   store i64 %parfor.iv.next, ptr %parfor.iv.slot, align 8
   br label %parfor.chunk.cond
 
-parfor.ret:                                       ; preds = %parfor.chunk.cond
+parfor.ret:                                       ; preds = %parfor.chunk.poll, %parfor.chunk.cond
   ret ptr null
+
+parfor.chunk.guard:                               ; preds = %parfor.chunk.cond
+  %parfor.cancel.off = icmp eq ptr %parfor.cancel, null
+  br i1 %parfor.cancel.off, label %parfor.chunk.body, label %parfor.chunk.poll
+
+parfor.chunk.poll:                                ; preds = %parfor.chunk.guard
+  %parfor.cancel.flag = load atomic i64, ptr %parfor.cancel monotonic, align 8
+  %parfor.cancel.live = icmp eq i64 %parfor.cancel.flag, 0
+  br i1 %parfor.cancel.live, label %parfor.chunk.body, label %parfor.ret
 
 while.cond:                                       ; preds = %while.body, %parfor.chunk.body
   %j3 = load i64, ptr %j, align 8
@@ -43958,20 +44098,22 @@ define private ptr @parfor.234(ptr %0) {
 entry:
   %arg.tmp = alloca %_Z6VectorIfE, align 8
   %j = alloca i64, align 8
-  %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 0
+  %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %0, i32 0, i32 0
   %parfor.lo = load i64, ptr %parfor.lo.ptr, align 8
-  %parfor.hi.ptr = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 1
+  %parfor.hi.ptr = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %0, i32 0, i32 1
   %parfor.hi = load i64, ptr %parfor.hi.ptr, align 8
-  %parfor.cap.ptr = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 2
+  %parfor.cap.ptr = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %0, i32 0, i32 2
   %n = load i64, ptr %parfor.cap.ptr, align 8
-  %parfor.cap.ptr1 = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 3
+  %parfor.cap.ptr1 = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %0, i32 0, i32 3
   %xp = load ptr, ptr %parfor.cap.ptr1, align 8
-  %parfor.cap.ptr2 = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 4
+  %parfor.cap.ptr2 = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %0, i32 0, i32 4
   %ga = load %_Z6VectorIfE, ptr %parfor.cap.ptr2, align 8
-  %parfor.cap.ptr3 = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 5
+  %parfor.cap.ptr3 = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %0, i32 0, i32 5
   %gxp = load ptr, ptr %parfor.cap.ptr3, align 8
-  %parfor.cap.ptr4 = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 6
+  %parfor.cap.ptr4 = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %0, i32 0, i32 6
   %gp = load ptr, ptr %parfor.cap.ptr4, align 8
+  %parfor.cancel.ptr = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %0, i32 0, i32 7
+  %parfor.cancel = load ptr, ptr %parfor.cancel.ptr, align 8
   %parfor.iv.slot = alloca i64, align 8
   store i64 %parfor.lo, ptr %parfor.iv.slot, align 8
   br label %parfor.chunk.cond
@@ -43979,9 +44121,9 @@ entry:
 parfor.chunk.cond:                                ; preds = %parfor.chunk.inc, %entry
   %parfor.iv = load i64, ptr %parfor.iv.slot, align 8
   %parfor.chunk.more = icmp slt i64 %parfor.iv, %parfor.hi
-  br i1 %parfor.chunk.more, label %parfor.chunk.body, label %parfor.ret
+  br i1 %parfor.chunk.more, label %parfor.chunk.guard, label %parfor.ret
 
-parfor.chunk.body:                                ; preds = %parfor.chunk.cond
+parfor.chunk.body:                                ; preds = %parfor.chunk.poll, %parfor.chunk.guard
   store i64 0, ptr %j, align 1
   br label %while.cond
 
@@ -43991,8 +44133,17 @@ parfor.chunk.inc:                                 ; preds = %while.exit
   store i64 %parfor.iv.next, ptr %parfor.iv.slot, align 8
   br label %parfor.chunk.cond
 
-parfor.ret:                                       ; preds = %parfor.chunk.cond
+parfor.ret:                                       ; preds = %parfor.chunk.poll, %parfor.chunk.cond
   ret ptr null
+
+parfor.chunk.guard:                               ; preds = %parfor.chunk.cond
+  %parfor.cancel.off = icmp eq ptr %parfor.cancel, null
+  br i1 %parfor.cancel.off, label %parfor.chunk.body, label %parfor.chunk.poll
+
+parfor.chunk.poll:                                ; preds = %parfor.chunk.guard
+  %parfor.cancel.flag = load atomic i64, ptr %parfor.cancel monotonic, align 8
+  %parfor.cancel.live = icmp eq i64 %parfor.cancel.flag, 0
+  br i1 %parfor.cancel.live, label %parfor.chunk.body, label %parfor.ret
 
 while.cond:                                       ; preds = %while.body, %parfor.chunk.body
   %j5 = load i64, ptr %j, align 8
@@ -44058,18 +44209,20 @@ entry:
   %sum = alloca float, align 4
   %j = alloca i64, align 8
   %mx = alloca float, align 4
-  %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, ptr, i64, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 0
+  %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, ptr, i64, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 0
   %parfor.lo = load i64, ptr %parfor.lo.ptr, align 8
-  %parfor.hi.ptr = getelementptr inbounds nuw { i64, i64, ptr, i64, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 1
+  %parfor.hi.ptr = getelementptr inbounds nuw { i64, i64, ptr, i64, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 1
   %parfor.hi = load i64, ptr %parfor.hi.ptr, align 8
-  %parfor.cap.ptr = getelementptr inbounds nuw { i64, i64, ptr, i64, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 2
+  %parfor.cap.ptr = getelementptr inbounds nuw { i64, i64, ptr, i64, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 2
   %xp = load ptr, ptr %parfor.cap.ptr, align 8
-  %parfor.cap.ptr1 = getelementptr inbounds nuw { i64, i64, ptr, i64, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 3
+  %parfor.cap.ptr1 = getelementptr inbounds nuw { i64, i64, ptr, i64, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 3
   %n = load i64, ptr %parfor.cap.ptr1, align 8
-  %parfor.cap.ptr2 = getelementptr inbounds nuw { i64, i64, ptr, i64, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 4
+  %parfor.cap.ptr2 = getelementptr inbounds nuw { i64, i64, ptr, i64, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 4
   %out = load %_Z6VectorIfE, ptr %parfor.cap.ptr2, align 8
-  %parfor.cap.ptr3 = getelementptr inbounds nuw { i64, i64, ptr, i64, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 5
+  %parfor.cap.ptr3 = getelementptr inbounds nuw { i64, i64, ptr, i64, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 5
   %op = load ptr, ptr %parfor.cap.ptr3, align 8
+  %parfor.cancel.ptr = getelementptr inbounds nuw { i64, i64, ptr, i64, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 6
+  %parfor.cancel = load ptr, ptr %parfor.cancel.ptr, align 8
   %parfor.iv.slot = alloca i64, align 8
   store i64 %parfor.lo, ptr %parfor.iv.slot, align 8
   br label %parfor.chunk.cond
@@ -44077,9 +44230,9 @@ entry:
 parfor.chunk.cond:                                ; preds = %parfor.chunk.inc, %entry
   %parfor.iv = load i64, ptr %parfor.iv.slot, align 8
   %parfor.chunk.more = icmp slt i64 %parfor.iv, %parfor.hi
-  br i1 %parfor.chunk.more, label %parfor.chunk.body, label %parfor.ret
+  br i1 %parfor.chunk.more, label %parfor.chunk.guard, label %parfor.ret
 
-parfor.chunk.body:                                ; preds = %parfor.chunk.cond
+parfor.chunk.body:                                ; preds = %parfor.chunk.poll, %parfor.chunk.guard
   %mul = mul i64 %parfor.iv, %n
   %ptr.add = getelementptr inbounds float, ptr %xp, i64 %mul
   %deref = load float, ptr %ptr.add, align 4
@@ -44093,8 +44246,17 @@ parfor.chunk.inc:                                 ; preds = %while.exit32
   store i64 %parfor.iv.next, ptr %parfor.iv.slot, align 8
   br label %parfor.chunk.cond
 
-parfor.ret:                                       ; preds = %parfor.chunk.cond
+parfor.ret:                                       ; preds = %parfor.chunk.poll, %parfor.chunk.cond
   ret ptr null
+
+parfor.chunk.guard:                               ; preds = %parfor.chunk.cond
+  %parfor.cancel.off = icmp eq ptr %parfor.cancel, null
+  br i1 %parfor.cancel.off, label %parfor.chunk.body, label %parfor.chunk.poll
+
+parfor.chunk.poll:                                ; preds = %parfor.chunk.guard
+  %parfor.cancel.flag = load atomic i64, ptr %parfor.cancel monotonic, align 8
+  %parfor.cancel.live = icmp eq i64 %parfor.cancel.flag, 0
+  br i1 %parfor.cancel.live, label %parfor.chunk.body, label %parfor.ret
 
 while.cond:                                       ; preds = %if.end, %parfor.chunk.body
   %j4 = load i64, ptr %j, align 8
@@ -44191,20 +44353,22 @@ entry:
   %j2 = alloca i64, align 8
   %j = alloca i64, align 8
   %dot = alloca float, align 4
-  %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 0
+  %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 0
   %parfor.lo = load i64, ptr %parfor.lo.ptr, align 8
-  %parfor.hi.ptr = getelementptr inbounds nuw { i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 1
+  %parfor.hi.ptr = getelementptr inbounds nuw { i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 1
   %parfor.hi = load i64, ptr %parfor.hi.ptr, align 8
-  %parfor.cap.ptr = getelementptr inbounds nuw { i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 2
+  %parfor.cap.ptr = getelementptr inbounds nuw { i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 2
   %n = load i64, ptr %parfor.cap.ptr, align 8
-  %parfor.cap.ptr1 = getelementptr inbounds nuw { i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 3
+  %parfor.cap.ptr1 = getelementptr inbounds nuw { i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 3
   %gp = load ptr, ptr %parfor.cap.ptr1, align 8
-  %parfor.cap.ptr2 = getelementptr inbounds nuw { i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 4
+  %parfor.cap.ptr2 = getelementptr inbounds nuw { i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 4
   %yp = load ptr, ptr %parfor.cap.ptr2, align 8
-  %parfor.cap.ptr3 = getelementptr inbounds nuw { i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 5
+  %parfor.cap.ptr3 = getelementptr inbounds nuw { i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 5
   %ga = load %_Z6VectorIfE, ptr %parfor.cap.ptr3, align 8
-  %parfor.cap.ptr4 = getelementptr inbounds nuw { i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 6
+  %parfor.cap.ptr4 = getelementptr inbounds nuw { i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 6
   %gxp = load ptr, ptr %parfor.cap.ptr4, align 8
+  %parfor.cancel.ptr = getelementptr inbounds nuw { i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 7
+  %parfor.cancel = load ptr, ptr %parfor.cancel.ptr, align 8
   %parfor.iv.slot = alloca i64, align 8
   store i64 %parfor.lo, ptr %parfor.iv.slot, align 8
   br label %parfor.chunk.cond
@@ -44212,9 +44376,9 @@ entry:
 parfor.chunk.cond:                                ; preds = %parfor.chunk.inc, %entry
   %parfor.iv = load i64, ptr %parfor.iv.slot, align 8
   %parfor.chunk.more = icmp slt i64 %parfor.iv, %parfor.hi
-  br i1 %parfor.chunk.more, label %parfor.chunk.body, label %parfor.ret
+  br i1 %parfor.chunk.more, label %parfor.chunk.guard, label %parfor.ret
 
-parfor.chunk.body:                                ; preds = %parfor.chunk.cond
+parfor.chunk.body:                                ; preds = %parfor.chunk.poll, %parfor.chunk.guard
   store float 0.000000e+00, ptr %dot, align 1
   store i64 0, ptr %j, align 1
   br label %while.cond
@@ -44225,8 +44389,17 @@ parfor.chunk.inc:                                 ; preds = %while.exit17
   store i64 %parfor.iv.next, ptr %parfor.iv.slot, align 8
   br label %parfor.chunk.cond
 
-parfor.ret:                                       ; preds = %parfor.chunk.cond
+parfor.ret:                                       ; preds = %parfor.chunk.poll, %parfor.chunk.cond
   ret ptr null
+
+parfor.chunk.guard:                               ; preds = %parfor.chunk.cond
+  %parfor.cancel.off = icmp eq ptr %parfor.cancel, null
+  br i1 %parfor.cancel.off, label %parfor.chunk.body, label %parfor.chunk.poll
+
+parfor.chunk.poll:                                ; preds = %parfor.chunk.guard
+  %parfor.cancel.flag = load atomic i64, ptr %parfor.cancel monotonic, align 8
+  %parfor.cancel.live = icmp eq i64 %parfor.cancel.flag, 0
+  br i1 %parfor.cancel.live, label %parfor.chunk.body, label %parfor.ret
 
 while.cond:                                       ; preds = %while.body, %parfor.chunk.body
   %j5 = load i64, ptr %j, align 8
@@ -44304,22 +44477,24 @@ entry:
   %vsum = alloca float, align 4
   %j = alloca i64, align 8
   %sum = alloca float, align 4
-  %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 0
+  %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 0
   %parfor.lo = load i64, ptr %parfor.lo.ptr, align 8
-  %parfor.hi.ptr = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 1
+  %parfor.hi.ptr = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 1
   %parfor.hi = load i64, ptr %parfor.hi.ptr, align 8
-  %parfor.cap.ptr = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 2
+  %parfor.cap.ptr = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 2
   %n = load i64, ptr %parfor.cap.ptr, align 8
-  %parfor.cap.ptr1 = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 3
+  %parfor.cap.ptr1 = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 3
   %xp = load ptr, ptr %parfor.cap.ptr1, align 8
-  %parfor.cap.ptr2 = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 4
+  %parfor.cap.ptr2 = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 4
   %e = load float, ptr %parfor.cap.ptr2, align 4
-  %parfor.cap.ptr3 = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 5
+  %parfor.cap.ptr3 = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 5
   %gp = load ptr, ptr %parfor.cap.ptr3, align 8
-  %parfor.cap.ptr4 = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 6
+  %parfor.cap.ptr4 = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 6
   %bp = load ptr, ptr %parfor.cap.ptr4, align 8
-  %parfor.cap.ptr5 = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 7
+  %parfor.cap.ptr5 = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 7
   %out = load %_Z6VectorIfE, ptr %parfor.cap.ptr5, align 8
+  %parfor.cancel.ptr = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 8
+  %parfor.cancel = load ptr, ptr %parfor.cancel.ptr, align 8
   %parfor.iv.slot = alloca i64, align 8
   store i64 %parfor.lo, ptr %parfor.iv.slot, align 8
   br label %parfor.chunk.cond
@@ -44327,9 +44502,9 @@ entry:
 parfor.chunk.cond:                                ; preds = %parfor.chunk.inc, %entry
   %parfor.iv = load i64, ptr %parfor.iv.slot, align 8
   %parfor.chunk.more = icmp slt i64 %parfor.iv, %parfor.hi
-  br i1 %parfor.chunk.more, label %parfor.chunk.body, label %parfor.ret
+  br i1 %parfor.chunk.more, label %parfor.chunk.guard, label %parfor.ret
 
-parfor.chunk.body:                                ; preds = %parfor.chunk.cond
+parfor.chunk.body:                                ; preds = %parfor.chunk.poll, %parfor.chunk.guard
   store float 0.000000e+00, ptr %sum, align 1
   store i64 0, ptr %j, align 1
   br label %while.cond
@@ -44340,8 +44515,17 @@ parfor.chunk.inc:                                 ; preds = %while.exit33
   store i64 %parfor.iv.next, ptr %parfor.iv.slot, align 8
   br label %parfor.chunk.cond
 
-parfor.ret:                                       ; preds = %parfor.chunk.cond
+parfor.ret:                                       ; preds = %parfor.chunk.poll, %parfor.chunk.cond
   ret ptr null
+
+parfor.chunk.guard:                               ; preds = %parfor.chunk.cond
+  %parfor.cancel.off = icmp eq ptr %parfor.cancel, null
+  br i1 %parfor.cancel.off, label %parfor.chunk.body, label %parfor.chunk.poll
+
+parfor.chunk.poll:                                ; preds = %parfor.chunk.guard
+  %parfor.cancel.flag = load atomic i64, ptr %parfor.cancel monotonic, align 8
+  %parfor.cancel.live = icmp eq i64 %parfor.cancel.flag, 0
+  br i1 %parfor.cancel.live, label %parfor.chunk.body, label %parfor.ret
 
 while.cond:                                       ; preds = %while.body, %parfor.chunk.body
   %j6 = load i64, ptr %j, align 8
@@ -44440,18 +44624,20 @@ define private ptr @parfor.254(ptr %0) {
 entry:
   %arg.tmp = alloca %_Z6VectorIfE, align 8
   %j = alloca i64, align 8
-  %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 0
+  %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 0
   %parfor.lo = load i64, ptr %parfor.lo.ptr, align 8
-  %parfor.hi.ptr = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 1
+  %parfor.hi.ptr = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 1
   %parfor.hi = load i64, ptr %parfor.hi.ptr, align 8
-  %parfor.cap.ptr = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 2
+  %parfor.cap.ptr = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 2
   %ip = load ptr, ptr %parfor.cap.ptr, align 8
-  %parfor.cap.ptr1 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 3
+  %parfor.cap.ptr1 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 3
   %dim = load i64, ptr %parfor.cap.ptr1, align 8
-  %parfor.cap.ptr2 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 4
+  %parfor.cap.ptr2 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 4
   %tp = load ptr, ptr %parfor.cap.ptr2, align 8
-  %parfor.cap.ptr3 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 5
+  %parfor.cap.ptr3 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 5
   %out = load %_Z6VectorIfE, ptr %parfor.cap.ptr3, align 8
+  %parfor.cancel.ptr = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 6
+  %parfor.cancel = load ptr, ptr %parfor.cancel.ptr, align 8
   %parfor.iv.slot = alloca i64, align 8
   store i64 %parfor.lo, ptr %parfor.iv.slot, align 8
   br label %parfor.chunk.cond
@@ -44459,9 +44645,9 @@ entry:
 parfor.chunk.cond:                                ; preds = %parfor.chunk.inc, %entry
   %parfor.iv = load i64, ptr %parfor.iv.slot, align 8
   %parfor.chunk.more = icmp slt i64 %parfor.iv, %parfor.hi
-  br i1 %parfor.chunk.more, label %parfor.chunk.body, label %parfor.ret
+  br i1 %parfor.chunk.more, label %parfor.chunk.guard, label %parfor.ret
 
-parfor.chunk.body:                                ; preds = %parfor.chunk.cond
+parfor.chunk.body:                                ; preds = %parfor.chunk.poll, %parfor.chunk.guard
   %ptr.add = getelementptr inbounds i64, ptr %ip, i64 %parfor.iv
   %deref = load i64, ptr %ptr.add, align 8
   store i64 0, ptr %j, align 1
@@ -44473,8 +44659,17 @@ parfor.chunk.inc:                                 ; preds = %while.exit
   store i64 %parfor.iv.next, ptr %parfor.iv.slot, align 8
   br label %parfor.chunk.cond
 
-parfor.ret:                                       ; preds = %parfor.chunk.cond
+parfor.ret:                                       ; preds = %parfor.chunk.poll, %parfor.chunk.cond
   ret ptr null
+
+parfor.chunk.guard:                               ; preds = %parfor.chunk.cond
+  %parfor.cancel.off = icmp eq ptr %parfor.cancel, null
+  br i1 %parfor.cancel.off, label %parfor.chunk.body, label %parfor.chunk.poll
+
+parfor.chunk.poll:                                ; preds = %parfor.chunk.guard
+  %parfor.cancel.flag = load atomic i64, ptr %parfor.cancel monotonic, align 8
+  %parfor.cancel.live = icmp eq i64 %parfor.cancel.flag, 0
+  br i1 %parfor.cancel.live, label %parfor.chunk.body, label %parfor.ret
 
 while.cond:                                       ; preds = %while.body, %parfor.chunk.body
   %j4 = load i64, ptr %j, align 8
@@ -44510,22 +44705,24 @@ entry:
   %sum = alloca float, align 4
   %j = alloca i64, align 8
   %mx = alloca float, align 4
-  %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float }, ptr %0, i32 0, i32 0
+  %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float, ptr }, ptr %0, i32 0, i32 0
   %parfor.lo = load i64, ptr %parfor.lo.ptr, align 8
-  %parfor.hi.ptr = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float }, ptr %0, i32 0, i32 1
+  %parfor.hi.ptr = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float, ptr }, ptr %0, i32 0, i32 1
   %parfor.hi = load i64, ptr %parfor.hi.ptr, align 8
-  %parfor.cap.ptr = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float }, ptr %0, i32 0, i32 2
+  %parfor.cap.ptr = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float, ptr }, ptr %0, i32 0, i32 2
   %xp = load ptr, ptr %parfor.cap.ptr, align 8
-  %parfor.cap.ptr1 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float }, ptr %0, i32 0, i32 3
+  %parfor.cap.ptr1 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float, ptr }, ptr %0, i32 0, i32 3
   %n = load i64, ptr %parfor.cap.ptr1, align 8
-  %parfor.cap.ptr2 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float }, ptr %0, i32 0, i32 4
+  %parfor.cap.ptr2 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float, ptr }, ptr %0, i32 0, i32 4
   %tp = load ptr, ptr %parfor.cap.ptr2, align 8
-  %parfor.cap.ptr3 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float }, ptr %0, i32 0, i32 5
+  %parfor.cap.ptr3 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float, ptr }, ptr %0, i32 0, i32 5
   %ga = load %_Z6VectorIfE, ptr %parfor.cap.ptr3, align 8
-  %parfor.cap.ptr4 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float }, ptr %0, i32 0, i32 6
+  %parfor.cap.ptr4 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float, ptr }, ptr %0, i32 0, i32 6
   %gxp = load ptr, ptr %parfor.cap.ptr4, align 8
-  %parfor.cap.ptr5 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float }, ptr %0, i32 0, i32 7
+  %parfor.cap.ptr5 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float, ptr }, ptr %0, i32 0, i32 7
   %scale = load float, ptr %parfor.cap.ptr5, align 4
+  %parfor.cancel.ptr = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float, ptr }, ptr %0, i32 0, i32 8
+  %parfor.cancel = load ptr, ptr %parfor.cancel.ptr, align 8
   %parfor.iv.slot = alloca i64, align 8
   store i64 %parfor.lo, ptr %parfor.iv.slot, align 8
   br label %parfor.chunk.cond
@@ -44533,9 +44730,9 @@ entry:
 parfor.chunk.cond:                                ; preds = %parfor.chunk.inc, %entry
   %parfor.iv = load i64, ptr %parfor.iv.slot, align 8
   %parfor.chunk.more = icmp slt i64 %parfor.iv, %parfor.hi
-  br i1 %parfor.chunk.more, label %parfor.chunk.body, label %parfor.ret
+  br i1 %parfor.chunk.more, label %parfor.chunk.guard, label %parfor.ret
 
-parfor.chunk.body:                                ; preds = %parfor.chunk.cond
+parfor.chunk.body:                                ; preds = %parfor.chunk.poll, %parfor.chunk.guard
   %mul = mul i64 %parfor.iv, %n
   %ptr.add = getelementptr inbounds float, ptr %xp, i64 %mul
   %deref = load float, ptr %ptr.add, align 4
@@ -44549,8 +44746,17 @@ parfor.chunk.inc:                                 ; preds = %while.exit33
   store i64 %parfor.iv.next, ptr %parfor.iv.slot, align 8
   br label %parfor.chunk.cond
 
-parfor.ret:                                       ; preds = %parfor.chunk.cond
+parfor.ret:                                       ; preds = %parfor.chunk.poll, %parfor.chunk.cond
   ret ptr null
+
+parfor.chunk.guard:                               ; preds = %parfor.chunk.cond
+  %parfor.cancel.off = icmp eq ptr %parfor.cancel, null
+  br i1 %parfor.cancel.off, label %parfor.chunk.body, label %parfor.chunk.poll
+
+parfor.chunk.poll:                                ; preds = %parfor.chunk.guard
+  %parfor.cancel.flag = load atomic i64, ptr %parfor.cancel monotonic, align 8
+  %parfor.cancel.live = icmp eq i64 %parfor.cancel.flag, 0
+  br i1 %parfor.cancel.live, label %parfor.chunk.body, label %parfor.ret
 
 while.cond:                                       ; preds = %if.end, %parfor.chunk.body
   %j6 = load i64, ptr %j, align 8
@@ -44665,18 +44871,20 @@ define private ptr @parfor.264(ptr %0) {
 entry:
   %arg.tmp = alloca %_Z6VectorIfE, align 8
   %j = alloca i64, align 8
-  %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, i64, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 0
+  %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, i64, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %0, i32 0, i32 0
   %parfor.lo = load i64, ptr %parfor.lo.ptr, align 8
-  %parfor.hi.ptr = getelementptr inbounds nuw { i64, i64, i64, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 1
+  %parfor.hi.ptr = getelementptr inbounds nuw { i64, i64, i64, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %0, i32 0, i32 1
   %parfor.hi = load i64, ptr %parfor.hi.ptr, align 8
-  %parfor.cap.ptr = getelementptr inbounds nuw { i64, i64, i64, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 2
+  %parfor.cap.ptr = getelementptr inbounds nuw { i64, i64, i64, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %0, i32 0, i32 2
   %n = load i64, ptr %parfor.cap.ptr, align 8
-  %parfor.cap.ptr1 = getelementptr inbounds nuw { i64, i64, i64, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 3
+  %parfor.cap.ptr1 = getelementptr inbounds nuw { i64, i64, i64, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %0, i32 0, i32 3
   %out = load %_Z6VectorIfE, ptr %parfor.cap.ptr1, align 8
-  %parfor.cap.ptr2 = getelementptr inbounds nuw { i64, i64, i64, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 4
+  %parfor.cap.ptr2 = getelementptr inbounds nuw { i64, i64, i64, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %0, i32 0, i32 4
   %xp = load ptr, ptr %parfor.cap.ptr2, align 8
-  %parfor.cap.ptr3 = getelementptr inbounds nuw { i64, i64, i64, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 5
+  %parfor.cap.ptr3 = getelementptr inbounds nuw { i64, i64, i64, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %0, i32 0, i32 5
   %yp = load ptr, ptr %parfor.cap.ptr3, align 8
+  %parfor.cancel.ptr = getelementptr inbounds nuw { i64, i64, i64, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %0, i32 0, i32 6
+  %parfor.cancel = load ptr, ptr %parfor.cancel.ptr, align 8
   %parfor.iv.slot = alloca i64, align 8
   store i64 %parfor.lo, ptr %parfor.iv.slot, align 8
   br label %parfor.chunk.cond
@@ -44684,9 +44892,9 @@ entry:
 parfor.chunk.cond:                                ; preds = %parfor.chunk.inc, %entry
   %parfor.iv = load i64, ptr %parfor.iv.slot, align 8
   %parfor.chunk.more = icmp slt i64 %parfor.iv, %parfor.hi
-  br i1 %parfor.chunk.more, label %parfor.chunk.body, label %parfor.ret
+  br i1 %parfor.chunk.more, label %parfor.chunk.guard, label %parfor.ret
 
-parfor.chunk.body:                                ; preds = %parfor.chunk.cond
+parfor.chunk.body:                                ; preds = %parfor.chunk.poll, %parfor.chunk.guard
   store i64 0, ptr %j, align 1
   br label %while.cond
 
@@ -44696,8 +44904,17 @@ parfor.chunk.inc:                                 ; preds = %while.exit
   store i64 %parfor.iv.next, ptr %parfor.iv.slot, align 8
   br label %parfor.chunk.cond
 
-parfor.ret:                                       ; preds = %parfor.chunk.cond
+parfor.ret:                                       ; preds = %parfor.chunk.poll, %parfor.chunk.cond
   ret ptr null
+
+parfor.chunk.guard:                               ; preds = %parfor.chunk.cond
+  %parfor.cancel.off = icmp eq ptr %parfor.cancel, null
+  br i1 %parfor.cancel.off, label %parfor.chunk.body, label %parfor.chunk.poll
+
+parfor.chunk.poll:                                ; preds = %parfor.chunk.guard
+  %parfor.cancel.flag = load atomic i64, ptr %parfor.cancel monotonic, align 8
+  %parfor.cancel.live = icmp eq i64 %parfor.cancel.flag, 0
+  br i1 %parfor.cancel.live, label %parfor.chunk.body, label %parfor.ret
 
 while.cond:                                       ; preds = %while.body, %parfor.chunk.body
   %j4 = load i64, ptr %j, align 8
@@ -44734,20 +44951,22 @@ define private ptr @parfor.269(ptr %0) {
 entry:
   %arg.tmp = alloca %_Z6VectorIfE, align 8
   %j = alloca i64, align 8
-  %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 0
+  %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %0, i32 0, i32 0
   %parfor.lo = load i64, ptr %parfor.lo.ptr, align 8
-  %parfor.hi.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 1
+  %parfor.hi.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %0, i32 0, i32 1
   %parfor.hi = load i64, ptr %parfor.hi.ptr, align 8
-  %parfor.cap.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 2
+  %parfor.cap.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %0, i32 0, i32 2
   %yr = load i64, ptr %parfor.cap.ptr, align 8
-  %parfor.cap.ptr1 = getelementptr inbounds nuw { i64, i64, i64, i64, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 3
+  %parfor.cap.ptr1 = getelementptr inbounds nuw { i64, i64, i64, i64, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %0, i32 0, i32 3
   %n = load i64, ptr %parfor.cap.ptr1, align 8
-  %parfor.cap.ptr2 = getelementptr inbounds nuw { i64, i64, i64, i64, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 4
+  %parfor.cap.ptr2 = getelementptr inbounds nuw { i64, i64, i64, i64, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %0, i32 0, i32 4
   %out = load %_Z6VectorIfE, ptr %parfor.cap.ptr2, align 8
-  %parfor.cap.ptr3 = getelementptr inbounds nuw { i64, i64, i64, i64, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 5
+  %parfor.cap.ptr3 = getelementptr inbounds nuw { i64, i64, i64, i64, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %0, i32 0, i32 5
   %xp = load ptr, ptr %parfor.cap.ptr3, align 8
-  %parfor.cap.ptr4 = getelementptr inbounds nuw { i64, i64, i64, i64, %_Z6VectorIfE, ptr, ptr }, ptr %0, i32 0, i32 6
+  %parfor.cap.ptr4 = getelementptr inbounds nuw { i64, i64, i64, i64, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %0, i32 0, i32 6
   %yp = load ptr, ptr %parfor.cap.ptr4, align 8
+  %parfor.cancel.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, %_Z6VectorIfE, ptr, ptr, ptr }, ptr %0, i32 0, i32 7
+  %parfor.cancel = load ptr, ptr %parfor.cancel.ptr, align 8
   %parfor.iv.slot = alloca i64, align 8
   store i64 %parfor.lo, ptr %parfor.iv.slot, align 8
   br label %parfor.chunk.cond
@@ -44755,9 +44974,9 @@ entry:
 parfor.chunk.cond:                                ; preds = %parfor.chunk.inc, %entry
   %parfor.iv = load i64, ptr %parfor.iv.slot, align 8
   %parfor.chunk.more = icmp slt i64 %parfor.iv, %parfor.hi
-  br i1 %parfor.chunk.more, label %parfor.chunk.body, label %parfor.ret
+  br i1 %parfor.chunk.more, label %parfor.chunk.guard, label %parfor.ret
 
-parfor.chunk.body:                                ; preds = %parfor.chunk.cond
+parfor.chunk.body:                                ; preds = %parfor.chunk.poll, %parfor.chunk.guard
   %sdiv = sdiv i64 %parfor.iv, %yr
   %mul = mul i64 %sdiv, %yr
   %sub = sub i64 %parfor.iv, %mul
@@ -44771,8 +44990,17 @@ parfor.chunk.inc:                                 ; preds = %while.exit
   store i64 %parfor.iv.next, ptr %parfor.iv.slot, align 8
   br label %parfor.chunk.cond
 
-parfor.ret:                                       ; preds = %parfor.chunk.cond
+parfor.ret:                                       ; preds = %parfor.chunk.poll, %parfor.chunk.cond
   ret ptr null
+
+parfor.chunk.guard:                               ; preds = %parfor.chunk.cond
+  %parfor.cancel.off = icmp eq ptr %parfor.cancel, null
+  br i1 %parfor.cancel.off, label %parfor.chunk.body, label %parfor.chunk.poll
+
+parfor.chunk.poll:                                ; preds = %parfor.chunk.guard
+  %parfor.cancel.flag = load atomic i64, ptr %parfor.cancel monotonic, align 8
+  %parfor.cancel.live = icmp eq i64 %parfor.cancel.flag, 0
+  br i1 %parfor.cancel.live, label %parfor.chunk.body, label %parfor.ret
 
 while.cond:                                       ; preds = %while.body, %parfor.chunk.body
   %j6 = load i64, ptr %j, align 8
@@ -44819,34 +45047,36 @@ entry:
   %j = alloca i64, align 8
   %mx = alloca float, align 4
   %h = alloca i64, align 8
-  %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 0
+  %parfor.lo.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 0
   %parfor.lo = load i64, ptr %parfor.lo.ptr, align 8
-  %parfor.hi.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 1
+  %parfor.hi.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 1
   %parfor.hi = load i64, ptr %parfor.hi.ptr, align 8
-  %parfor.cap.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 2
+  %parfor.cap.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 2
   %w = load i64, ptr %parfor.cap.ptr, align 8
-  %parfor.cap.ptr1 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 3
+  %parfor.cap.ptr1 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 3
   %hs = load i64, ptr %parfor.cap.ptr1, align 8
-  %parfor.cap.ptr2 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 4
+  %parfor.cap.ptr2 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 4
   %dh = load i64, ptr %parfor.cap.ptr2, align 8
-  %parfor.cap.ptr3 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 5
+  %parfor.cap.ptr3 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 5
   %qp = load ptr, ptr %parfor.cap.ptr3, align 8
-  %parfor.cap.ptr4 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 6
+  %parfor.cap.ptr4 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 6
   %d = load i64, ptr %parfor.cap.ptr4, align 8
-  %parfor.cap.ptr5 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 7
+  %parfor.cap.ptr5 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 7
   %kp = load ptr, ptr %parfor.cap.ptr5, align 8
-  %parfor.cap.ptr6 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 8
+  %parfor.cap.ptr6 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 8
   %scale = load float, ptr %parfor.cap.ptr6, align 4
-  %parfor.cap.ptr7 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 9
+  %parfor.cap.ptr7 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 9
   %px = load %_Z6VectorIfE, ptr %parfor.cap.ptr7, align 8
-  %parfor.cap.ptr8 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 10
+  %parfor.cap.ptr8 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 10
   %t = load i64, ptr %parfor.cap.ptr8, align 8
-  %parfor.cap.ptr9 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 11
+  %parfor.cap.ptr9 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 11
   %pp = load ptr, ptr %parfor.cap.ptr9, align 8
-  %parfor.cap.ptr10 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 12
+  %parfor.cap.ptr10 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 12
   %vp = load ptr, ptr %parfor.cap.ptr10, align 8
-  %parfor.cap.ptr11 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %0, i32 0, i32 13
+  %parfor.cap.ptr11 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 13
   %out = load %_Z6VectorIfE, ptr %parfor.cap.ptr11, align 8
+  %parfor.cancel.ptr = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %0, i32 0, i32 14
+  %parfor.cancel = load ptr, ptr %parfor.cancel.ptr, align 8
   %parfor.iv.slot = alloca i64, align 8
   store i64 %parfor.lo, ptr %parfor.iv.slot, align 8
   br label %parfor.chunk.cond
@@ -44854,9 +45084,9 @@ entry:
 parfor.chunk.cond:                                ; preds = %parfor.chunk.inc, %entry
   %parfor.iv = load i64, ptr %parfor.iv.slot, align 8
   %parfor.chunk.more = icmp slt i64 %parfor.iv, %parfor.hi
-  br i1 %parfor.chunk.more, label %parfor.chunk.body, label %parfor.ret
+  br i1 %parfor.chunk.more, label %parfor.chunk.guard, label %parfor.ret
 
-parfor.chunk.body:                                ; preds = %parfor.chunk.cond
+parfor.chunk.body:                                ; preds = %parfor.chunk.poll, %parfor.chunk.guard
   %sdiv = sdiv i64 %parfor.iv, %w
   %mul = mul i64 %sdiv, %w
   store i64 0, ptr %h, align 1
@@ -44868,8 +45098,17 @@ parfor.chunk.inc:                                 ; preds = %while.exit
   store i64 %parfor.iv.next, ptr %parfor.iv.slot, align 8
   br label %parfor.chunk.cond
 
-parfor.ret:                                       ; preds = %parfor.chunk.cond
+parfor.ret:                                       ; preds = %parfor.chunk.poll, %parfor.chunk.cond
   ret ptr null
+
+parfor.chunk.guard:                               ; preds = %parfor.chunk.cond
+  %parfor.cancel.off = icmp eq ptr %parfor.cancel, null
+  br i1 %parfor.cancel.off, label %parfor.chunk.body, label %parfor.chunk.poll
+
+parfor.chunk.poll:                                ; preds = %parfor.chunk.guard
+  %parfor.cancel.flag = load atomic i64, ptr %parfor.cancel monotonic, align 8
+  %parfor.cancel.live = icmp eq i64 %parfor.cancel.flag, 0
+  br i1 %parfor.cancel.live, label %parfor.chunk.body, label %parfor.ret
 
 while.cond:                                       ; preds = %while.exit111, %parfor.chunk.body
   %h12 = load i64, ptr %h, align 8

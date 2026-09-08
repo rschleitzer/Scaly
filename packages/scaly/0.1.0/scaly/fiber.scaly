@@ -2467,6 +2467,34 @@ define TaskGroup
     function is_guarded(g: pointer[TaskGroup]) returns bool
         g.guarded <> 0
 
+    ; The address of the wave's CANCEL WORD, or null when nothing can be
+    ; cancelled. The emitted chunk loop polls it once per iteration, so this
+    ; answer decides what a promoted loop pays:
+    ;
+    ;   unguarded wave -> null -> the loop compares a register against null,
+    ;     a loop-invariant test LLVM hoists (and unswitches on). A program
+    ;     that catches nothing keeps its loop.
+    ;   guarded wave  -> &fault_kind -> one monotonic load per iteration, and
+    ;     the running siblings stop at the next iteration boundary once one
+    ;     of them recorded a fault.
+    ;
+    ; ★★★It is the FAULT WORD itself and not a separate flag: `record_fault`
+    ; claims it with a CAS, so "a fault was recorded" and "the wave is
+    ; cancelled" are one word and cannot disagree.
+    ;
+    ; ★It hands out an ADDRESS rather than letting the Emitter compute the
+    ; field's offset. A byte offset in the compiler would have to track this
+    ; record's layout -- the mistake panic.c's filler was written to avoid.
+    ; ★Its MANGLED name stands in the Emitter (get_parfor_runtime_fn), which
+    ; freezes this parameter list: grep for
+    ; `_ZN9TaskGroup11cancel_wordEP9TaskGroup` before re-signing.
+    function cancel_word(g: pointer[TaskGroup]) returns pointer[u64]
+    {
+        if g.guarded = 0
+            return null
+        &g.fault_kind
+    }
+
     ; Record the fault a worker just caught. FIRST ONE WINS: the kind field
     ; is the claim, taken with a compare-and-swap, and only the winner writes
     ; the words. The losers drop their fault -- one fault per wave is what a

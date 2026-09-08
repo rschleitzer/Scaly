@@ -15263,7 +15263,11 @@ define Emitter
             var base_fields: size_t 2
             if for_expr.is_iterator_loop
                 set base_fields: 3
-            var cell_field_tys Vector[LLVMTypeRef](base_fields + cap_count)
+            ; ★One field more than the captures: the wave's CANCEL WORD (or
+            ; null). It rides the cell rather than being fetched per chunk so
+            ; the thunk needs no call, and it sits LAST so every capture keeps
+            ; its index `base_fields + ci`.
+            var cell_field_tys Vector[LLVMTypeRef](base_fields + cap_count + 1)
             if for_expr.is_iterator_loop
             {
                 cell_field_tys.put(0, ptr_ty)
@@ -15284,7 +15288,8 @@ define Emitter
                 cell_field_tys.put(base_fields + ci, (*st))
                 set ci: ci + 1
             }
-            let cell_ty LLVMStructTypeInContext(context, cell_field_tys.data, (base_fields + cap_count) as int, 0)
+            cell_field_tys.put(base_fields + cap_count, ptr_ty)
+            let cell_ty LLVMStructTypeInContext(context, cell_field_tys.data, (base_fields + cap_count + 1) as int, 0)
 
             ; ---- Outline the body into a private task function ptr(ptr).
             ; Private linkage: llvm-link renames on collision, so the
@@ -15387,11 +15392,22 @@ define Emitter
                 set ci: ci + 1
             }
 
+            ; The wave's cancel word, loaded ONCE: loop-invariant, so the
+            ; null test below costs a register compare that LLVM hoists.
+            let cw_gep LLVMBuildStructGEP2(builder, cell_ty, cell_arg, (base_fields + cap_count) as int, "parfor.cancel.ptr")
+            let cancel_ptr LLVMBuildLoad2(builder, ptr_ty, cw_gep, "parfor.cancel")
+
             ; The chunk loop: i in [lo,hi) — the 4.1 rewrite. The loop
             ; variable rebinds per iteration; `continue` targets the
             ; increment block (3.3's one-cell-per-iteration made continue
             ; and return the same block); break/early exits stay
             ; verification blockers, they cannot occur.
+            ;
+            ; ★★★Since 2026-09-08 the condition has a second half: a GUARDED
+            ; wave stops its running chunks once a sibling recorded a fault
+            ; (TRAPS.md 3.21). The poll is a MONOTONIC load, not a plain one
+            ; — a plain load is loop-invariant to LLVM and would be hoisted
+            ; out, which would read the flag once and never again.
             let iv_slot LLVMBuildAlloca(builder, i64_ty, "parfor.iv.slot")
             LLVMBuildStore(builder, chunk_lo, iv_slot)
             let ck_cond create_block("parfor.chunk.cond")
@@ -15400,10 +15416,30 @@ define Emitter
             let pf_ret_block create_block("parfor.ret")
             LLVMBuildBr(builder, ck_cond)
 
+            let ck_guard create_block("parfor.chunk.guard")
+            let ck_poll create_block("parfor.chunk.poll")
+
             LLVMPositionBuilderAtEnd(builder, ck_cond)
             let iv LLVMBuildLoad2(builder, i64_ty, iv_slot, "parfor.iv")
             let ck_more LLVMBuildICmp(builder, LLVMIntPredicate.SLT(), iv, chunk_hi, "parfor.chunk.more")
-            LLVMBuildCondBr(builder, ck_more, ck_body, pf_ret_block)
+            LLVMBuildCondBr(builder, ck_more, ck_guard, pf_ret_block)
+
+            ; Unguarded (cancel word null): straight into the body.
+            LLVMPositionBuilderAtEnd(builder, ck_guard)
+            let ck_null LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), cancel_ptr, LLVMConstPointerNull(ptr_ty), "parfor.cancel.off")
+            LLVMBuildCondBr(builder, ck_null, ck_body, ck_poll)
+
+            ; Guarded: one monotonic load. Nonzero means a sibling recorded
+            ; the wave's first fault, so this chunk stops where it stands —
+            ; the iterations it already ran keep their writes, which is why
+            ; the caller sees the fault and not a half-written result it
+            ; could mistake for one.
+            LLVMPositionBuilderAtEnd(builder, ck_poll)
+            let ck_flag LLVMBuildLoad2(builder, i64_ty, cancel_ptr, "parfor.cancel.flag")
+            LLVMSetOrdering(ck_flag, 2)
+            LLVMSetAlignment(ck_flag, 8)
+            let ck_live LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), ck_flag, LLVMConstInt(i64_ty, 0, 0), "parfor.cancel.live")
+            LLVMBuildCondBr(builder, ck_live, ck_body, pf_ret_block)
 
             ; Per-iteration element binding. Iterator: load the element
             ; pointer from the drained flat array (the collection outlives
@@ -15544,6 +15580,11 @@ define Emitter
             sub_tys.put(3, ptr_ty)
             let sub_ty LLVMFunctionType(void_ty, sub_tys.data, 4, 0)
             let sub_fn get_parfor_runtime_fn("_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup", sub_ty)
+            ; The wave's cancel word: null unless the submitter stands in a
+            ; try, so an unguarded loop pays a hoisted register compare and
+            ; nothing else.
+            let cw_ty LLVMFunctionType(ptr_ty, p1_tys.data, 1, 0)
+            let cw_fn get_parfor_runtime_fn("_ZN9TaskGroup11cancel_wordEP9TaskGroup", cw_ty)
             let np_ty LLVMFunctionType(i64_ty, null as pointer[LLVMTypeRef], 0, 0)
             let np_fn get_parfor_runtime_fn("_ZN8TaskPool4ncpuEv", np_ty)
             let now_ty LLVMFunctionType(i64_ty, null as pointer[LLVMTypeRef], 0, 0)
@@ -16298,6 +16339,11 @@ define Emitter
                 LLVMBuildStore(builder, (*cv_ptr), sb_cap_gep)
                 set ci: ci + 1
             }
+            var sb_cw_args Vector[LLVMValueRef](1)
+            sb_cw_args.put(0, ds_grp)
+            let sb_cw LLVMBuildCall2(builder, cw_ty, cw_fn, sb_cw_args.data, 1, "parfor.cw")
+            let sb_cw_gep LLVMBuildStructGEP2(builder, cell_ty, sb_cell, (base_fields + cap_count) as int, "parfor.cell.cancel")
+            LLVMBuildStore(builder, sb_cw, sb_cw_gep)
             var sb_sub_args Vector[LLVMValueRef](4)
             sb_sub_args.put(0, ds_pool)
             sb_sub_args.put(1, task_fn)
