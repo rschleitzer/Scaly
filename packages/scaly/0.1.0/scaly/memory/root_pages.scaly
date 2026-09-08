@@ -194,6 +194,7 @@ procedure scaly_panic_jump(what: pointer[const_char], index: size_t, length: siz
 procedure scaly_panic_null_jump(where: pointer[const_char]) returns i32 extern
 procedure scaly_panic_region_jump(what: pointer[const_char], address: size_t) returns i32 extern
 procedure scaly_panic_size_jump(what: pointer[const_char], added: size_t, length: size_t) returns i32 extern
+procedure scaly_panic_oom_jump(what: pointer[const_char], bytes: size_t) returns i32 extern
 function scaly_catch_run(body: pointer[void], arg: pointer[void], mark: pointer[void], unwind: pointer[void], caught: pointer[i32]) returns i64 extern
 function scaly_catch_active() returns i32 extern
 function scaly_panic_last_what() returns pointer[const_char] extern
@@ -480,6 +481,44 @@ procedure scaly_panic_string(what: pointer[const_char], address: size_t)
     exit 11
 }
 
+; The ONE place an out-of-memory ends the program (exit 23).
+;
+; Four requests can fail: an oversized page (`Page.allocate_oversized`), the
+; two bucket creations below, and a received oversized page in
+; `Region.deserialize`. Each of them was a bare `exit` -- 1, 101, 102 -- with
+; no message: three codes for one condition, and the two 1s shared the code a
+; shell reads as "generic failure".
+;
+; ★★★It is the one kind where catching does more than CONTAIN the damage:
+; dropping a region GIVES THE MEMORY BACK, so a catcher can recover and carry
+; on. That is why this kind is catchable while `exit 19` is not, and why the
+; shim keeps a small reserve of catch frames -- a `try` that cannot allocate
+; its own frame would make this kind uncatchable at the one moment it fires.
+;
+; ★`bytes` is what the failed request asked for, which separates "this
+; machine is out" from "this one request was absurd".
+;
+; ★The MANGLED name is pinned in `Emitter.mark_noreturn_callee`: grep for
+; `_Z15scaly_panic_oomP10const_charm` before re-signing.
+mutable panic_oom_count: i64 0
+
+function scaly_panic_oom_count() returns i64
+    panic_oom_count
+
+procedure scaly_panic_oom(what: pointer[const_char], bytes: size_t)
+{
+    set panic_oom_count: panic_oom_count + 1
+
+    scaly_panic_oom_jump(what, bytes)
+
+    scaly_eputs(what)
+    scaly_eputs(": out of memory asking for ")
+    scaly_eputu(bytes as u64)
+    scaly_eputs(" bytes")
+    scaly_eputnl()
+    exit 23
+}
+
 ; Hex digit for a nibble (0..15), computed arithmetically. A fixed-array
 ; `char[]` lookup table would be a module-level array constant, which
 ; stage-1's planner emits as an external declaration (no body) — the
@@ -658,7 +697,7 @@ function create_stack_bucket(prev: pointer[StackBucketHeader]) returns pointer[S
 {
     let mem scaly_aligned_alloc(BUCKET_SIZE as i64, BUCKET_SIZE as i64)
     if mem = null
-        exit 101
+        scaly_panic_oom("Page.create_stack_bucket", BUCKET_SIZE)
 
     let sb mem as pointer[StackBucketHeader]
     set sb.prev: prev
@@ -673,7 +712,7 @@ function create_heap_bucket() returns ref[HeapBucketHeader]
 {
     let mem scaly_aligned_alloc(BUCKET_SIZE as i64, BUCKET_SIZE as i64)
     if mem = null
-        exit 102
+        scaly_panic_oom("Page.create_heap_bucket", BUCKET_SIZE)
 
     let hb mem as pointer[HeapBucketHeader]
     set hb.prev: null

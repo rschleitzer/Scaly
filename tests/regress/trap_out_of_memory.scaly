@@ -1,0 +1,25 @@
+; Runtime trap: the allocator could not get memory (exit 23).
+;
+; Four requests can fail -- an oversized page, the two bucket creations, and a
+; received oversized page in `Region.deserialize`. Each was a bare `exit` with
+; no message: codes 1, 101 and 102 for one condition, and the two 1s used the
+; code a shell reads as "generic failure". Now they name themselves and the
+; size that was asked for.
+;
+; ★The failure is INJECTED (`scaly_alloc_fail_after`, scaly/fiber/eio.c), for
+; the reason SCALYC_STACK_BUDGET exists in the planner: an out-of-memory trap
+; cannot be fired deterministically any other way, and a trap no test fires is
+; a trap that may have stopped working (TRAPS.md 1.5).
+;
+; expect-rc: 23
+; expect-out: Page.allocate_oversized: out of memory asking for 1052672 bytes
+
+function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    let host Page.allocate_page()
+    scaly_alloc_fail_after(0)                   ; the next aligned request fails
+    let p host.allocate(1048576 as size_t, 8 as size_t)
+
+    print "FAIL: the failed allocation went through"
+    0
+}

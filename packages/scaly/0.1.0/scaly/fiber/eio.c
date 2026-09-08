@@ -687,8 +687,39 @@ long long scaly_stack_limit(void)
     return (long long)rl.rlim_cur;
 }
 
+/* --- fault injection for the out-of-memory gates -------------------------
+ *
+ * ★★★It exists for the same reason SCALYC_STACK_BUDGET exists in the
+ * planner: an out-of-memory trap cannot be exercised deterministically any
+ * other way, and a trap no test ever fires is a trap that may have stopped
+ * working (TRAPS.md 1.5). `scaly_alloc_fail_after(n)` makes the (n+1)-th
+ * following aligned allocation answer NULL, once; `scaly_alloc_fail_after(-1)`
+ * disarms it.
+ *
+ * ★It is a FUNCTION and not an environment variable because the variable
+ * would have to be read before the prelude's first allocation, which happens
+ * long before a fixture's first statement.
+ *
+ * ★Plain statics, not __thread: the arming test is single-threaded, and a
+ * per-thread counter would make "the next allocation" mean something else
+ * depending on who allocates. Nothing arms it unless a test does.
+ */
+static long long scaly_alloc_fail_left = -1;
+
+void scaly_alloc_fail_after(long long n)
+{
+    scaly_alloc_fail_left = n;
+}
+
 void* scaly_aligned_alloc(size_t alignment, size_t size)
 {
+    if (scaly_alloc_fail_left >= 0) {
+        if (scaly_alloc_fail_left == 0) {
+            scaly_alloc_fail_left = -1;      /* one shot */
+            return 0;
+        }
+        scaly_alloc_fail_left--;
+    }
     return aligned_alloc(alignment, size);
 }
 

@@ -3838,6 +3838,9 @@ define Emitter
             ; (exit 11).
             if name = "_Z18scaly_panic_stringP10const_charm"
                 set known: true
+            ; And the allocator's out-of-memory (exit 23).
+            if name = "_Z15scaly_panic_oomP10const_charm"
+                set known: true
             if known = false
                 return
 

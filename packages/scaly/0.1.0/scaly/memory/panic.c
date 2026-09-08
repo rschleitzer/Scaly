@@ -49,6 +49,7 @@
 #define SCALY_FAULT_NULL_REFERENCE  1
 #define SCALY_FAULT_INVALID_REGION  2
 #define SCALY_FAULT_SIZE_OVERFLOW   3
+#define SCALY_FAULT_OUT_OF_MEMORY   4
 
 /* The region-stack watermark and the unwind live in Scaly
  * (scaly/memory/root_pages.scaly). They are reached through function POINTERS
@@ -67,6 +68,7 @@ typedef struct scaly_catch_frame {
     const char *what;              /* the panic value, allocation-free: */
     size_t index, length;          /* everything between here and the trap */
     int kind;                      /* which RuntimeFault variant it is */
+    int reserve_slot;              /* >=0: a reserve slot, not malloc'd */
 } scaly_catch_frame;               /* has been given back by then */
 
 static __thread scaly_catch_frame *scaly_catch_top = 0;
@@ -89,7 +91,7 @@ long long scaly_catch_run(scaly_body_fn body, void *arg,
     f.prev = scaly_catch_top;
     f.mark = mark ? mark() : 0;
     f.unwind = unwind;
-    f.what = 0; f.index = 0; f.length = 0; f.kind = 0;
+    f.what = 0; f.index = 0; f.length = 0; f.kind = 0; f.reserve_slot = -1;
 
     if (setjmp(f.buf) == 0) {
         scaly_catch_top = &f;
@@ -189,6 +191,28 @@ int scaly_panic_size_jump(const char *what, size_t added, size_t length)
     return 0;                      /* unreachable; longjmp is noreturn */
 }
 
+/* The allocator could not get memory (scaly/memory/{Page,root_pages}.scaly,
+ * and Region.deserialize for a received oversized page). Raised through
+ * scaly_panic_oom.
+ *
+ * ★★★This is the one kind where catching does more than CONTAIN the damage:
+ * dropping a region gives the memory back, so a catcher can actually recover
+ * and carry on. Which is also why the reserve below exists -- a catch point
+ * that cannot be installed for want of memory would make this kind
+ * uncatchable exactly when it fires.
+ *
+ * `bytes` is what the failed request asked for. */
+int scaly_panic_oom_jump(const char *what, size_t bytes)
+{
+    scaly_catch_frame *t = scaly_catch_top;
+    if (!t)
+        return 0;
+    t->what = what; t->index = bytes; t->length = 0;
+    t->kind = SCALY_FAULT_OUT_OF_MEMORY;
+    longjmp(t->buf, 1);
+    return 0;                      /* unreachable; longjmp is noreturn */
+}
+
 /* --- the three halves a `try` needs, for the EMITTER ---------------------
  *
  * scaly_catch_run above is the library form: it owns the catcher, so the frame
@@ -213,12 +237,49 @@ int scaly_panic_size_jump(const char *what, size_t added, size_t length)
  * loop would grow the stack every iteration. One malloc per guarded region is
  * paid only where somebody catches; a `try` on a hot path is its own topic.
  */
+/* ★★★A RESERVE of frames per thread, and it is used FIRST -- malloc is the
+ * fallback for deeper nesting, not the other way round. Two reasons, and the
+ * second one is why the order matters:
+ *
+ *   1. The out-of-memory kind (SCALY_FAULT_OUT_OF_MEMORY) would be
+ *      uncatchable at the one moment it fires if arming a `try` needed the
+ *      allocator that just failed.
+ *   2. Reserve-first means EVERY `try` in the tree exercises this path, so it
+ *      is covered by every catch gate. A defensive path that only runs when
+ *      memory is short is a path no test ever takes.
+ *
+ * ★Slots carry a BUSY FLAG and the frame remembers its slot INDEX, rather
+ * than a used-counter: with fibers the pops are not globally LIFO (fiber A
+ * can pop while main still holds a later slot), and a counter would hand the
+ * same slot out twice. The chain itself is per fiber (Fiber.swap_allocator);
+ * this array is per thread, which is why it must not assume an order.
+ *
+ * ★The residual is stated rather than hidden: past the reserve AND with
+ * malloc failing, push still answers 0, and the emitted `setjmp` does not
+ * check it. Closing that needs a conditional pop in the Emitter (or the
+ * dynamic alloca the neighbouring comment describes); it is not closed. */
+#define SCALY_CATCH_RESERVE 4
+static __thread scaly_catch_frame scaly_reserve[SCALY_CATCH_RESERVE];
+static __thread unsigned char scaly_reserve_busy[SCALY_CATCH_RESERVE];
+
 void *scaly_catch_push(scaly_mark_fn mark, scaly_unwind_fn unwind)
 {
-    scaly_catch_frame *f = (scaly_catch_frame *)malloc(sizeof *f);
+    scaly_catch_frame *f = 0;
+    int slot = -1;
+    for (int i = 0; i < SCALY_CATCH_RESERVE; i++) {
+        if (!scaly_reserve_busy[i]) {
+            scaly_reserve_busy[i] = 1;
+            f = &scaly_reserve[i];
+            slot = i;
+            break;
+        }
+    }
+    if (!f)
+        f = (scaly_catch_frame *)malloc(sizeof *f);
     if (!f)
         return 0;                  /* the emitted setjmp on a null pointer
                                     * would fault, so the caller checks */
+    f->reserve_slot = slot;
     f->prev = scaly_catch_top;
     f->mark = mark ? mark() : 0;
     f->unwind = unwind;
@@ -234,7 +295,10 @@ void scaly_catch_pop(void)
     if (!f)
         return;
     scaly_catch_top = f->prev;
-    free(f);
+    if (f->reserve_slot >= 0)
+        scaly_reserve_busy[f->reserve_slot] = 0;
+    else
+        free(f);
 }
 
 /* Jump path: unlink FIRST (so a panic raised by the unwind cannot land back
@@ -252,7 +316,10 @@ void scaly_catch_caught(void)
     scaly_last_index = f->index;
     scaly_last_length = f->length;
     scaly_last_kind_v = f->kind;   /* the arm's switch reads this */
-    free(f);
+    if (f->reserve_slot >= 0)
+        scaly_reserve_busy[f->reserve_slot] = 0;
+    else
+        free(f);
 }
 
 /* --- what a `when` arm needs ---------------------------------------------
@@ -280,6 +347,7 @@ int scaly_panic_last_kind(void) { return scaly_last_kind_v; }
  *   NullReferenceFault (where: pointer[const_char])
  *   InvalidRegionFault (what: pointer[const_char], address: size_t)
  *   SizeOverflowFault  (added: size_t, length: size_t)
+ *   OutOfMemoryFault   (what: pointer[const_char], bytes: size_t)
  */
 void scaly_panic_fill(void *dst)
 {
@@ -291,7 +359,8 @@ void scaly_panic_fill(void *dst)
         out[0] = scaly_last_what ? scaly_last_what : "";
         break;
     }
-    case SCALY_FAULT_INVALID_REGION: {
+    case SCALY_FAULT_INVALID_REGION:
+    case SCALY_FAULT_OUT_OF_MEMORY: {
         const char **out = (const char **)dst;
         out[0] = scaly_last_what ? scaly_last_what : "";
         ((size_t *)dst)[1] = scaly_last_index;

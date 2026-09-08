@@ -1,0 +1,95 @@
+; Regression: `try ... when e: OutOfMemory` catches an allocator failure
+; (TRAPS.md 3.17) -- the fifth catchable trap kind, and the only one where
+; catching does more than contain the damage: dropping a region gives the
+; memory back, so a catcher can actually recover.
+;
+; Checked:
+;   (1) the arm binds e with e.what (the site) and e.bytes (the request)
+;   (2) the counter at the panic site counts
+;   (3) RECOVERY: after the catch the program allocates the same size again
+;       and carries on -- the property that makes this kind worth catching
+;   (4) the else form catches the same kind
+;   (5) a request that does not fail takes the success path
+;
+; Expected: PASS
+
+function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    let before Region.panic_oom_count()
+    let host Page.allocate_page()
+
+    scaly_alloc_fail_after(0)
+    try let p host.allocate(1048576 as size_t, 8 as size_t)
+        when e: OutOfMemory
+        {
+            ; (1) the size that was asked for, rounded up to whole pages
+            if e.bytes <> (1052672 as size_t)
+            {
+                print "FAIL: e.bytes does not name the request"
+                return 1
+            }
+            let w String(e.what)
+            if w.equals(String("Page.allocate_oversized")) = false
+            {
+                print "FAIL: e.what does not name the site"
+                print w
+                return 2
+            }
+
+            ; (2) counted
+            if Region.panic_oom_count() - before <> 1
+            {
+                print "FAIL: the oom counter did not count exactly once"
+                return 3
+            }
+        }
+
+    ; (3) and the program can still allocate -- the injector is one-shot, so
+    ;     this is the real question: did the caught fault leave the allocator
+    ;     usable?
+    let q host.allocate(1048576 as size_t, 8 as size_t)
+    if q = null
+    {
+        print "FAIL: the allocator did not recover"
+        return 4
+    }
+    var i 0
+    while i < 20
+    {
+        let s String("a payload on a region built after the caught fault")
+        set i: i + 1
+    }
+
+    ; (4) the else form
+    var caught_else false
+    scaly_alloc_fail_after(0)
+    try let r host.allocate(1048576 as size_t, 8 as size_t)
+    else
+        set caught_else: true
+    if caught_else = false
+    {
+        print "FAIL: the else form did not catch the failure"
+        return 5
+    }
+
+    ; (5) an unarmed request goes through the same try
+    try let t host.allocate(4096 as size_t, 8 as size_t)
+        when e2: OutOfMemory
+        {
+            print "FAIL: an unarmed request panicked"
+            return 6
+        }
+    if t = null
+    {
+        print "FAIL: the unarmed request produced nothing"
+        return 7
+    }
+    if Region.panic_oom_count() - before <> 2
+    {
+        print "FAIL: the total number of catches is wrong"
+        return 8
+    }
+
+    print "PASS"
+    0
+}

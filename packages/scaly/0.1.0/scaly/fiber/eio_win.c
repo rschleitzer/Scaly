@@ -802,8 +802,25 @@ long long scaly_stack_limit(void)
     return (long long)(high - low);
 }
 
+/* The fault injector, same contract as eio.c's (see the account there): it
+ * has to exist on BOTH sides or the out-of-memory gates would be a
+ * POSIX-only measurement, and win-undef.sh would report the symbol missing. */
+static long long scaly_alloc_fail_left = -1;
+
+void scaly_alloc_fail_after(long long n)
+{
+    scaly_alloc_fail_left = n;
+}
+
 void* scaly_aligned_alloc(size_t alignment, size_t size)
 {
+    if (scaly_alloc_fail_left >= 0) {
+        if (scaly_alloc_fail_left == 0) {
+            scaly_alloc_fail_left = -1;      /* one shot */
+            return 0;
+        }
+        scaly_alloc_fail_left--;
+    }
     return _aligned_malloc(size, alignment);   /* note the argument order */
 }
 

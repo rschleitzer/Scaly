@@ -10,6 +10,13 @@
 ; see the block at the end of scaly/fiber/eio.c.
 ; Note: Using i64 for size parameters since Scaly integer literals are signed
 function scaly_aligned_alloc(alignment: i64, size: i64) returns pointer[void] extern
+
+; Fault injection for the out-of-memory gates (scaly/fiber/eio.c): the
+; (n+1)-th following aligned allocation answers null, once; -1 disarms. It is
+; a declaration in the PRELUDE because the gates are ordinary programs, and it
+; exists for the reason SCALYC_STACK_BUDGET exists in the planner -- a trap no
+; test can fire is a trap that may have stopped working.
+procedure scaly_alloc_fail_after(n: i64) extern
 function scaly_aligned_free(ptr: pointer[void]) extern
 function exit(code: i32) extern
 procedure abort() extern
@@ -47,7 +54,7 @@ function memcpy(dest: pointer[void], src: pointer[void], count: size_t) returns 
 ; ★It is a UNION and not a record because that is what `when` arms are: the
 ; planner resolves an arm name to a variant tag of the scrutinee's union
 ; (plan_when -> lookup_variant_tag), so a single record would have no arm to
-; select. Four variants today; the rest of the trap family in TRAPS.md 2.4 --
+; select. Five variants today; the rest of the trap family in TRAPS.md 2.4 --
 ; an oversized page, the fiber codes -- each needs its own decision about
 ; whether it MAY be caught at all, which is why they are not here yet.
 ;
@@ -78,13 +85,15 @@ define OutOfBoundsFault (index: size_t, length: size_t)
 define NullReferenceFault (where: pointer[const_char])
 define InvalidRegionFault (what: pointer[const_char], address: size_t)
 define SizeOverflowFault (added: size_t, length: size_t)
+define OutOfMemoryFault (what: pointer[const_char], bytes: size_t)
 
 define RuntimeFault union
 (
     OutOfBounds: OutOfBoundsFault,
     NullReference: NullReferenceFault,
     InvalidRegion: InvalidRegionFault,
-    SizeOverflow: SizeOverflowFault
+    SizeOverflow: SizeOverflowFault,
+    OutOfMemory: OutOfMemoryFault
 )
 
 define OpaqueFile()

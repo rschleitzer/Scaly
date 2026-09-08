@@ -320,7 +320,7 @@ define Page
         let rounded (size + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1))
         let address scaly_aligned_alloc(PAGE_SIZE, rounded)
         if address = null
-            exit 1
+            scaly_panic_oom("Page.allocate_oversized", rounded)
 
         var page address as pointer[Page]
 

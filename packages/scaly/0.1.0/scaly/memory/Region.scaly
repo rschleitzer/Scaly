@@ -331,7 +331,7 @@ define Region
             {
                 let a scaly_aligned_alloc(PAGE_SIZE as i64, len as i64)
                 if a = null
-                    exit 1
+                    scaly_panic_oom("Region.deserialize", len)
 
                 set np: a as pointer[Page]
             }
@@ -479,6 +479,9 @@ define Region
 
     function panic_string_count() returns i64
         scaly_panic_string_count()
+
+    function panic_oom_count() returns i64
+        scaly_panic_oom_count()
 
     ; Is a catch point installed on this thread's stack? The panic helper asks
     ; the shim the same question implicitly; this is for a caller that wants to
