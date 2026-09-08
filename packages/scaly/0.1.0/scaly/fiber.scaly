@@ -2432,10 +2432,23 @@ define TaskGroup
                                  ; the dispose barrier — see below)
     pipe_read: i32               ; wait blocks reading here
     pipe_write: i32              ; last completion writes one byte
+    guarded: u64                 ; did the SUBMITTER stand in a try? (0/1)
+    fault_kind: u64              ; the first fault of the wave: kind + 1,
+                                 ; 0 = none (atomic, first writer wins)
+    fault_what: pointer[const_char]
+    fault_index: size_t
+    fault_length: size_t
+    fault_code: i32
 )
 {
     ; Create a group on its own heap page. Traps (exit 112) when the
     ; OS refuses a pipe.
+    ;
+    ; ★★★`guarded` is read HERE and not in the worker, because here is the
+    ; submitting thread: it records whether a catch point stood when the wave
+    ; was created. A worker installs one only if it did -- so a program that
+    ; catches nothing keeps exactly today's behaviour, message and code
+    ; included, and pays nothing (TRAPS.md 3.19).
     procedure create() returns ref[TaskGroup]
     {
         let p Page.allocate_page_traced("TaskGroup.record_page")
@@ -2443,8 +2456,32 @@ define TaskGroup
         let rc pipe(fds as pointer[i32])
         if rc <> 0
             scaly_panic_resource("TaskGroup.create: pipe", 0 as size_t, 112 as i32)
-        let g &TaskGroup^p(0, 0, *(fds as pointer[i32]), *(((fds as size_t) + 4) as pointer[i32]))
+        var guard: u64 0
+        if Region.catch_active()
+            set guard: 1 as u64
+        let g &TaskGroup^p(0, 0, *(fds as pointer[i32]), *(((fds as size_t) + 4) as pointer[i32]), guard, 0, null as pointer[const_char], 0, 0, 0 as i32)
         g
+    }
+
+    ; Did the submitter of this wave stand inside a try?
+    function is_guarded(g: pointer[TaskGroup]) returns bool
+        g.guarded <> 0
+
+    ; Record the fault a worker just caught. FIRST ONE WINS: the kind field
+    ; is the claim, taken with a compare-and-swap, and only the winner writes
+    ; the words. The losers drop their fault -- one fault per wave is what a
+    ; caller can act on, and .NET's AggregateException is the shape that
+    ; keeps them all (not built).
+    procedure record_fault(g: pointer[TaskGroup])
+    {
+        let kp &g.fault_kind
+        let claim (scaly_panic_last_kind() as u64) + 1
+        if scaly_atomic_cas_u64(kp, 0 as u64, claim) <> 0
+            return
+        set g.fault_what: scaly_panic_last_what()
+        set g.fault_index: scaly_panic_last_index() as size_t
+        set g.fault_length: scaly_panic_last_length() as size_t
+        set g.fault_code: scaly_panic_last_code()
     }
 
     ; One task finished: drop the pending count; the drop to zero wakes
@@ -2485,6 +2522,19 @@ define TaskGroup
             if n <> 1
                 exit 112
         }
+
+        ; ★★★A fault a worker caught is raised again HERE -- on the
+        ; submitting thread, inside the try the submitter armed. A jump may
+        ; never cross stacks (TRAPS.md 3.16), so this is the only sound route,
+        ; and it is the AggregateException shape with one fault.
+        ;
+        ; ★It happens AFTER the wave is joined, not at the moment of the
+        ; fault: the siblings already running are left to finish, and only
+        ; then does the caller see it. Cancelling in-flight iterations is a
+        ; different feature (and needs the body to be interruptible).
+        let kind g.fault_kind
+        if kind <> 0
+            scaly_panic_reraise((kind - 1) as i32, g.fault_what, g.fault_index, g.fault_length, g.fault_code)
     }
 
     ; Free the group: close the pipe, release the record page (every
@@ -2793,7 +2843,23 @@ procedure task_worker(arg: pointer[void]) returns pointer[void]
         if n <> 1
             return null
         let w TaskPool.take(pl, me)
-        let res scaly_call_ptr(w.fn, w.arg)
-        TaskGroup.finish_one(w.group)
+        let g w.group
+        if TaskGroup.is_guarded(g)
+        {
+            ; The submitter stood in a try: catch the iteration's fault HERE
+            ; (a jump may not cross stacks) and record it for the wait to
+            ; raise again on the submitting thread.
+            var caught: i32 0
+            let res Region.run_guarded(w.fn, w.arg, &caught)
+            if caught <> 0
+                TaskGroup.record_fault(g)
+        }
+        else
+        {
+            ; Nobody is catching: leave the fault its normal course, with the
+            ; message and the exit code it always had.
+            let res scaly_call_ptr(w.fn, w.arg)
+        }
+        TaskGroup.finish_one(g)
     }
 }

@@ -1,0 +1,61 @@
+; A fault inside a SELF-SCALED `for` reaches the caller's catch point
+; (TRAPS.md 3.19).
+;
+; The body runs on worker threads, and a jump may never cross stacks (3.16) --
+; so the worker catches its iteration's fault, records it in the wave's group,
+; and `TaskGroup.wait` raises it again on the SUBMITTING thread, inside the
+; try the caller armed. That is the AggregateException shape with one fault:
+; the first one wins.
+;
+; ★The gate must prove the loop really was PARALLEL, or it would pass on the
+; sequential path -- which catches for entirely ordinary reasons. The proof is
+; the pool's own submit counter: a promoted wave submits, a sequential loop
+; does not.
+; Expected: caught index=n length=n submitted continued
+; ExpectedExit: 0
+
+procedure fill(acc: ref[Vector[int]], src: ref[Vector[int]], n: size_t, skew: size_t)
+{
+    for i in n
+    {
+        let x src[i + skew]
+        acc.put(i, x * 3)
+    }
+}
+
+let host Page.allocate_page()
+let n 200000 as size_t
+var acc Vector[int]^host(n)
+var src Vector[int]^host(n)
+var k 0 as size_t
+while k < n
+{
+    src.put(k, (k as int))
+    set k: k + 1
+}
+
+var idx: size_t 0
+var len: size_t 0
+try fill(&acc, &src, n, 1 as size_t)
+    when e: OutOfBounds
+    {
+        Console.print "caught "
+        set idx: e.index
+        set len: e.length
+    }
+if idx = n
+    Console.print "index=n "
+if len = n
+    Console.print "length=n "
+
+let pl TaskPool.default_pool()
+if TaskPool.submit_count(pl) > (0 as u64)
+    Console.print "submitted "
+
+var j 0
+while j < 20
+{
+    let s String("a payload built after the caught parallel fault")
+    set j: j + 1
+}
+Console.println "continued"

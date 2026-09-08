@@ -70,6 +70,7 @@ typedef struct scaly_catch_frame {
     const char *what;              /* the panic value, allocation-free: */
     size_t index, length;          /* everything between here and the trap */
     int kind;                      /* which RuntimeFault variant it is */
+    int code;                      /* the exit code the raiser would have used */
     int reserve_slot;              /* >=0: a reserve slot, not malloc'd */
 } scaly_catch_frame;               /* has been given back by then */
 
@@ -78,6 +79,7 @@ static __thread const char *scaly_last_what = 0;
 static __thread size_t scaly_last_index = 0;
 static __thread size_t scaly_last_length = 0;
 static __thread int scaly_last_kind_v = 0;
+static __thread int scaly_last_code_v = 0;
 
 /* Run `body(arg)` with a catch point installed. On a panic inside, the region
  * stack is popped back to the watermark and *caught is set; the panic's own
@@ -93,7 +95,7 @@ long long scaly_catch_run(scaly_body_fn body, void *arg,
     f.prev = scaly_catch_top;
     f.mark = mark ? mark() : 0;
     f.unwind = unwind;
-    f.what = 0; f.index = 0; f.length = 0; f.kind = 0; f.reserve_slot = -1;
+    f.what = 0; f.index = 0; f.length = 0; f.kind = 0; f.code = 0; f.reserve_slot = -1;
 
     if (setjmp(f.buf) == 0) {
         scaly_catch_top = &f;
@@ -109,6 +111,7 @@ long long scaly_catch_run(scaly_body_fn body, void *arg,
     scaly_last_index = f.index;
     scaly_last_length = f.length;
     scaly_last_kind_v = f.kind;
+    scaly_last_code_v = f.code;
     if (caught) *caught = 1;
     return 0;
 }
@@ -117,13 +120,14 @@ long long scaly_catch_run(scaly_body_fn body, void *arg,
  * point is installed, and then the caller ends the process as before — the
  * behaviour of every program that does not ask to catch anything stays
  * exactly what it was. */
-int scaly_panic_jump(const char *what, size_t index, size_t length)
+int scaly_panic_jump(const char *what, size_t index, size_t length, int code)
 {
     scaly_catch_frame *t = scaly_catch_top;
     if (!t)
         return 0;
     t->what = what; t->index = index; t->length = length;
     t->kind = SCALY_FAULT_OUT_OF_BOUNDS;
+    t->code = code;
     longjmp(t->buf, 1);
     return 0;                      /* unreachable; longjmp is noreturn */
 }
@@ -135,13 +139,14 @@ int scaly_panic_jump(const char *what, size_t index, size_t length)
  * `where` is the enclosing symbol's MANGLED name, because a run has no source
  * location. It is a static string in the module that raised, so it outlives
  * every region this jump unwinds — which is what lets the payload carry it. */
-int scaly_panic_null_jump(const char *where)
+int scaly_panic_null_jump(const char *where, int code)
 {
     scaly_catch_frame *t = scaly_catch_top;
     if (!t)
         return 0;
     t->what = where; t->index = 0; t->length = 0;
     t->kind = SCALY_FAULT_NULL_REFERENCE;
+    t->code = code;
     longjmp(t->buf, 1);
     return 0;                      /* unreachable; longjmp is noreturn */
 }
@@ -163,13 +168,14 @@ int scaly_panic_null_jump(const char *where)
  * during `fix_graph` leaves a fully built region whose owner holds `rr` and
  * must call `rr.release()` in the catch arm. A jump cannot know which of the
  * two it is. */
-int scaly_panic_region_jump(const char *what, size_t address)
+int scaly_panic_region_jump(const char *what, size_t address, int code)
 {
     scaly_catch_frame *t = scaly_catch_top;
     if (!t)
         return 0;
     t->what = what; t->index = address; t->length = 0;
     t->kind = SCALY_FAULT_INVALID_REGION;
+    t->code = code;
     longjmp(t->buf, 1);
     return 0;                      /* unreachable; longjmp is noreturn */
 }
@@ -182,13 +188,14 @@ int scaly_panic_region_jump(const char *what, size_t address)
  * under-size the allocation and the following memcpy would write past it. The
  * two words it carries are the addition and the current length — the wrapped
  * sum itself says nothing. */
-int scaly_panic_size_jump(const char *what, size_t added, size_t length)
+int scaly_panic_size_jump(const char *what, size_t added, size_t length, int code)
 {
     scaly_catch_frame *t = scaly_catch_top;
     if (!t)
         return 0;
     t->what = what; t->index = added; t->length = length;
     t->kind = SCALY_FAULT_SIZE_OVERFLOW;
+    t->code = code;
     longjmp(t->buf, 1);
     return 0;                      /* unreachable; longjmp is noreturn */
 }
@@ -204,13 +211,14 @@ int scaly_panic_size_jump(const char *what, size_t added, size_t length)
  * uncatchable exactly when it fires.
  *
  * `bytes` is what the failed request asked for. */
-int scaly_panic_oom_jump(const char *what, size_t bytes)
+int scaly_panic_oom_jump(const char *what, size_t bytes, int code)
 {
     scaly_catch_frame *t = scaly_catch_top;
     if (!t)
         return 0;
     t->what = what; t->index = bytes; t->length = 0;
     t->kind = SCALY_FAULT_OUT_OF_MEMORY;
+    t->code = code;
     longjmp(t->buf, 1);
     return 0;                      /* unreachable; longjmp is noreturn */
 }
@@ -228,13 +236,14 @@ int scaly_panic_oom_jump(const char *what, size_t bytes)
  *
  * `requested` is what was asked for where that is a number (stack bytes, the
  * table's limit), 0 where it is not (a pipe, a thread). */
-int scaly_panic_resource_jump(const char *what, size_t requested)
+int scaly_panic_resource_jump(const char *what, size_t requested, int code)
 {
     scaly_catch_frame *t = scaly_catch_top;
     if (!t)
         return 0;
     t->what = what; t->index = requested; t->length = 0;
     t->kind = SCALY_FAULT_RESOURCE;
+    t->code = code;
     longjmp(t->buf, 1);
     return 0;                      /* unreachable; longjmp is noreturn */
 }
@@ -247,13 +256,14 @@ int scaly_panic_resource_jump(const char *what, size_t requested)
  * those say the runtime's own bookkeeping or the OS is broken, and there is
  * nothing a catcher could sensibly do. A deadlock says THIS unit of work is
  * stuck -- exactly the boundary a server wants to lose. */
-int scaly_panic_deadlock_jump(const char *what)
+int scaly_panic_deadlock_jump(const char *what, int code)
 {
     scaly_catch_frame *t = scaly_catch_top;
     if (!t)
         return 0;
     t->what = what; t->index = 0; t->length = 0;
     t->kind = SCALY_FAULT_DEADLOCK;
+    t->code = code;
     longjmp(t->buf, 1);
     return 0;                      /* unreachable; longjmp is noreturn */
 }
@@ -328,7 +338,7 @@ void *scaly_catch_push(scaly_mark_fn mark, scaly_unwind_fn unwind)
     f->prev = scaly_catch_top;
     f->mark = mark ? mark() : 0;
     f->unwind = unwind;
-    f->what = 0; f->index = 0; f->length = 0; f->kind = 0;
+    f->what = 0; f->index = 0; f->length = 0; f->kind = 0; f->code = 0;
     scaly_catch_top = f;
     return (void *)&f->buf;
 }
@@ -361,6 +371,7 @@ void scaly_catch_caught(void)
     scaly_last_index = f->index;
     scaly_last_length = f->length;
     scaly_last_kind_v = f->kind;   /* the arm's switch reads this */
+    scaly_last_code_v = f->code;   /* and a parallel wave re-raises with it */
     if (f->reserve_slot >= 0)
         scaly_reserve_busy[f->reserve_slot] = 0;
     else
@@ -427,6 +438,38 @@ void scaly_panic_fill(void *dst)
 }
 
 int scaly_catch_active(void) { return scaly_catch_top != 0; }
+
+int scaly_panic_last_code(void) { return scaly_last_code_v; }
+
+/* --- re-raising a fault a WORKER caught ----------------------------------
+ *
+ * ★★★A self-scaled `for` runs its body on other threads, and a jump must
+ * never cross stacks (TRAPS.md 3.16). So a fault inside a parallel iteration
+ * is caught ON THE WORKER, recorded in the wave's TaskGroup, and raised again
+ * HERE -- on the submitting thread, inside whatever `try` the submitter
+ * wrapped the loop in. That is the AggregateException shape with one fault:
+ * the first one wins and the siblings are not started.
+ *
+ * ★It carries the kind and the recorded words through unchanged, so the
+ * catching arm binds exactly what the original raise would have bound.
+ *
+ * ★The workers only install a catch point when the submitter HAD one
+ * (TaskGroup.guarded), so this function is normally reached with a catch
+ * point standing. The fallback is defensive: if it vanished between the
+ * submit and the wait, end the process with the code the original raiser
+ * would have used, rather than returning into a caller that believes the
+ * wave succeeded. */
+void scaly_panic_reraise(int kind, const char *what, size_t index,
+                         size_t length, int code)
+{
+    scaly_catch_frame *t = scaly_catch_top;
+    if (t) {
+        t->what = what; t->index = index; t->length = length;
+        t->kind = kind; t->code = code;
+        longjmp(t->buf, 1);
+    }
+    exit(code);
+}
 
 /* --- the chain head, for the FIBER crossings -----------------------------
  *

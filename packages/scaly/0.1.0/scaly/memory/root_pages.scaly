@@ -190,15 +190,23 @@ procedure scaly_eputi(n: i64)
 ; The catch-point shim (scaly/memory/panic.c). scaly_panic_jump answers 0 when
 ; NO catch point is installed and does not return at all when one is: it
 ; longjmps, which is why the helper below stays noreturn either way.
-procedure scaly_panic_jump(what: pointer[const_char], index: size_t, length: size_t) returns i32 extern
-procedure scaly_panic_null_jump(where: pointer[const_char]) returns i32 extern
-procedure scaly_panic_region_jump(what: pointer[const_char], address: size_t) returns i32 extern
-procedure scaly_panic_size_jump(what: pointer[const_char], added: size_t, length: size_t) returns i32 extern
-procedure scaly_panic_oom_jump(what: pointer[const_char], bytes: size_t) returns i32 extern
-procedure scaly_panic_resource_jump(what: pointer[const_char], requested: size_t) returns i32 extern
-procedure scaly_panic_deadlock_jump(what: pointer[const_char]) returns i32 extern
+procedure scaly_panic_jump(what: pointer[const_char], index: size_t, length: size_t, code: i32) returns i32 extern
+procedure scaly_panic_null_jump(where: pointer[const_char], code: i32) returns i32 extern
+procedure scaly_panic_region_jump(what: pointer[const_char], address: size_t, code: i32) returns i32 extern
+procedure scaly_panic_size_jump(what: pointer[const_char], added: size_t, length: size_t, code: i32) returns i32 extern
+procedure scaly_panic_oom_jump(what: pointer[const_char], bytes: size_t, code: i32) returns i32 extern
+procedure scaly_panic_resource_jump(what: pointer[const_char], requested: size_t, code: i32) returns i32 extern
+procedure scaly_panic_deadlock_jump(what: pointer[const_char], code: i32) returns i32 extern
+function scaly_panic_last_code() returns i32 extern
+
+; Raise a fault again on THIS thread, with the kind and words a worker
+; recorded. It is how a fault from a self-scaled `for` reaches the catch point
+; the submitter armed -- a jump may never cross stacks, so the worker catches
+; and the submitting thread raises again (TRAPS.md 3.19). Never returns.
+procedure scaly_panic_reraise(kind: i32, what: pointer[const_char], index: size_t, length: size_t, code: i32) extern
 function scaly_catch_run(body: pointer[void], arg: pointer[void], mark: pointer[void], unwind: pointer[void], caught: pointer[i32]) returns i64 extern
 function scaly_catch_active() returns i32 extern
+function scaly_panic_last_kind() returns i32 extern
 function scaly_panic_last_what() returns pointer[const_char] extern
 function scaly_panic_last_index() returns i64 extern
 function scaly_panic_last_length() returns i64 extern
@@ -270,7 +278,7 @@ procedure scaly_panic_oob(what: pointer[const_char], index: size_t, length: size
     ; the caller decides what that means. Without one this returns 0 and the
     ; program ends exactly as it did before -- a program that never asks to
     ; catch anything sees no change at all.
-    scaly_panic_jump(what, index, length)
+    scaly_panic_jump(what, index, length, 15 as i32)
 
     scaly_eputs(what)
     scaly_eputs(": index out of bounds (index ")
@@ -331,7 +339,7 @@ procedure scaly_panic_null(where: pointer[const_char])
     ; A catch point on the stack takes it, exactly as it takes a bounds
     ; violation: the jump ends the guarded work and the catcher decides what
     ; that means. Without one this returns 0 and the program ends as before.
-    scaly_panic_null_jump(where)
+    scaly_panic_null_jump(where, 21 as i32)
 
     scaly_eputs("Scaly: null unwrapped as ref in ")
     scaly_eputs(where)
@@ -377,7 +385,7 @@ procedure scaly_panic_region(what: pointer[const_char], address: size_t)
 {
     set panic_region_count: panic_region_count + 1
 
-    scaly_panic_region_jump(what, address)
+    scaly_panic_region_jump(what, address, 18 as i32)
 
     scaly_eputs(what)
     if address <> 0
@@ -420,7 +428,7 @@ procedure scaly_panic_size(what: pointer[const_char], added: size_t, length: siz
 {
     set panic_size_count: panic_size_count + 1
 
-    scaly_panic_size_jump(what, added, length)
+    scaly_panic_size_jump(what, added, length, 22 as i32)
 
     scaly_eputs(what)
     scaly_eputs(": adding ")
@@ -511,7 +519,7 @@ procedure scaly_panic_oom(what: pointer[const_char], bytes: size_t)
 {
     set panic_oom_count: panic_oom_count + 1
 
-    scaly_panic_oom_jump(what, bytes)
+    scaly_panic_oom_jump(what, bytes, 23 as i32)
 
     scaly_eputs(what)
     scaly_eputs(": out of memory asking for ")
@@ -560,7 +568,7 @@ procedure scaly_panic_resource(what: pointer[const_char], requested: size_t, cod
 {
     set panic_resource_count: panic_resource_count + 1
 
-    scaly_panic_resource_jump(what, requested)
+    scaly_panic_resource_jump(what, requested, code)
 
     scaly_eputs(what)
     if requested <> 0
@@ -592,7 +600,7 @@ procedure scaly_panic_deadlock(what: pointer[const_char], code: i32)
 {
     set panic_deadlock_count: panic_deadlock_count + 1
 
-    scaly_panic_deadlock_jump(what)
+    scaly_panic_deadlock_jump(what, code)
 
     scaly_eputs(what)
     scaly_eputs(": deadlock -- nothing can make progress")

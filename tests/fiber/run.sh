@@ -42,7 +42,10 @@ for f in tests/fiber/*.scaly; do
   ok=1
   [ "$rc" = "$want_rc" ] || ok=0
   [ "$out" = "$expected" ] || ok=0
-  if [ -n "$want_err" ] && ! grep -q "$want_err" "/tmp/fiber_$t.err"; then ok=0; fi
+  # -F: the expected text is a LITERAL, not a pattern. Without it a message
+  # containing brackets -- `Vector[]: index out of bounds` -- makes grep fail
+  # with "brackets not balanced" and the test go red for the wrong reason.
+  if [ -n "$want_err" ] && ! grep -qF "$want_err" "/tmp/fiber_$t.err"; then ok=0; fi
   if [ "$ok" = "1" ]; then
     pass=$((pass+1))
   else

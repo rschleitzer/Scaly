@@ -1,0 +1,32 @@
+; The other half of TRAPS.md 3.19: a program that catches NOTHING sees no
+; change at all.
+;
+; The same promoted loop with the same out-of-bounds read, but no `try`
+; anywhere. The worker then installs no catch point (the group records at
+; creation whether the submitter stood in one), so the fault takes exactly
+; the course it always took -- the ordinary message, the ordinary code. That
+; is what makes the delivery in the guarded case free for everybody else.
+; ExpectedExit: 15
+; ExpectedErr: Vector[]: index out of bounds (index 200000, length 200000)
+
+procedure fill(acc: ref[Vector[int]], src: ref[Vector[int]], n: size_t, skew: size_t)
+{
+    for i in n
+    {
+        let x src[i + skew]
+        acc.put(i, x * 3)
+    }
+}
+
+let host Page.allocate_page()
+let n 200000 as size_t
+var acc Vector[int]^host(n)
+var src Vector[int]^host(n)
+var k 0 as size_t
+while k < n
+{
+    src.put(k, (k as int))
+    set k: k + 1
+}
+fill(&acc, &src, n, 1 as size_t)
+Console.println "unreachable"
