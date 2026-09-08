@@ -54,7 +54,7 @@ function memcpy(dest: pointer[void], src: pointer[void], count: size_t) returns 
 ; ★It is a UNION and not a record because that is what `when` arms are: the
 ; planner resolves an arm name to a variant tag of the scrutinee's union
 ; (plan_when -> lookup_variant_tag), so a single record would have no arm to
-; select. Five variants today; the rest of the trap family in TRAPS.md 2.4 --
+; select. Seven variants today; the rest of the trap family in TRAPS.md 2.4 --
 ; an oversized page, the fiber codes -- each needs its own decision about
 ; whether it MAY be caught at all, which is why they are not here yet.
 ;
@@ -86,6 +86,8 @@ define NullReferenceFault (where: pointer[const_char])
 define InvalidRegionFault (what: pointer[const_char], address: size_t)
 define SizeOverflowFault (added: size_t, length: size_t)
 define OutOfMemoryFault (what: pointer[const_char], bytes: size_t)
+define ResourceExhaustedFault (what: pointer[const_char], requested: size_t)
+define DeadlockFault (what: pointer[const_char])
 
 define RuntimeFault union
 (
@@ -93,7 +95,9 @@ define RuntimeFault union
     NullReference: NullReferenceFault,
     InvalidRegion: InvalidRegionFault,
     SizeOverflow: SizeOverflowFault,
-    OutOfMemory: OutOfMemoryFault
+    OutOfMemory: OutOfMemoryFault,
+    ResourceExhausted: ResourceExhaustedFault,
+    Deadlock: DeadlockFault
 )
 
 define OpaqueFile()

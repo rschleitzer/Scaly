@@ -483,6 +483,12 @@ define Region
     function panic_oom_count() returns i64
         scaly_panic_oom_count()
 
+    function panic_resource_count() returns i64
+        scaly_panic_resource_count()
+
+    function panic_deadlock_count() returns i64
+        scaly_panic_deadlock_count()
+
     ; Is a catch point installed on this thread's stack? The panic helper asks
     ; the shim the same question implicitly; this is for a caller that wants to
     ; know whether a trap would end the process.

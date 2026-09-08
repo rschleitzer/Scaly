@@ -291,9 +291,7 @@ define Cluster
         if p.chan_count >= NODE_MAX_CHANNELS
         {
             Cluster.release(p)
-            scaly_eputs "node: channel table full"
-            scaly_eputnl()
-            exit 113
+            scaly_panic_resource("node: channel table full", NODE_MAX_CHANNELS, 113 as i32)
         }
         if p.alive = false
         {
@@ -327,9 +325,7 @@ define Cluster
         if p.monitor_count >= NODE_MAX_CHANNELS
         {
             Cluster.release(p)
-            scaly_eputs "node: monitor table full"
-            scaly_eputnl()
-            exit 113
+            scaly_panic_resource("node: monitor table full", NODE_MAX_CHANNELS, 113 as i32)
         }
         let ms p.monitors
         set ms[p.monitor_count]: c

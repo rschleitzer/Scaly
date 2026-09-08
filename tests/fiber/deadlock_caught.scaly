@@ -1,0 +1,43 @@
+; A deadlock is CATCHABLE (TRAPS.md 3.18).
+;
+; Same setup as channel_deadlock.scaly -- a lone main-context receiver on a
+; channel with a live send handle nobody uses, so nothing can ever make
+; progress -- but the receive stands in a `try`. The scheduler's detection
+; then ends the guarded call instead of the process, and the program decides
+; what a stuck unit of work means.
+;
+; ★Why this kind is catchable while a failed poll syscall (107) is not: a
+; deadlock is a PROGRAM error, and it says THIS unit of work is stuck --
+; exactly the boundary a server wants to lose. A broken syscall says the
+; runtime cannot function at all, and a catcher could do nothing with it.
+; Expected: caught what:Scheduler.poll_io counted continued
+; ExpectedExit: 0
+
+let page Page.allocate_page()
+let sched Scheduler.create(page)
+let ch Channel.create()
+let before Region.panic_deadlock_count()
+
+var caught false
+try let raw Channel.receive(ch)
+    when e: Deadlock
+    {
+        set caught: true
+        Console.print "caught "
+        let w String(e.what)
+        Console.print "what:"
+        Console.print w
+        Console.print " "
+    }
+
+if Region.panic_deadlock_count() - before = 1
+    Console.print "counted "
+
+; and the program carries on: a plain region allocation after the catch
+var i 0
+while i < 20
+{
+    let s String("a payload built after the caught deadlock")
+    set i: i + 1
+}
+Console.println "continued"

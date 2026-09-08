@@ -1,0 +1,45 @@
+; A refused OS resource is CATCHABLE (TRAPS.md 3.18).
+;
+; The same refused fiber stack as resource_refused.scaly, inside a `try`: a
+; server that cannot get a stack, a thread or a pipe should shed the request,
+; not die. Checked: the arm binds the size that was asked for, the counter
+; counts, and -- the point of catching a resource failure -- the program still
+; creates and runs a NORMAL fiber afterwards.
+; Expected: caught size-reported counted normal-fiber-ran
+; ExpectedExit: 0
+
+mutable ran: bool false
+
+procedure worker(first_ctx: pointer[void])
+{
+    Fiber.started first_ctx
+    set ran: true
+    Fiber.finish()
+}
+
+let page Page.allocate_page()
+let before Region.panic_resource_count()
+let huge (1 as size_t) << (55 as size_t)
+
+var asked: size_t 0
+try let f Fiber.create_sized(page, &worker, huge)
+    when e: ResourceExhausted
+    {
+        Console.print "caught "
+        set asked: e.requested
+    }
+if asked = huge
+    Console.print "size-reported "
+if Region.panic_resource_count() - before = 1
+    Console.print "counted "
+
+; the recovery that makes catching worth it
+let g Fiber.create(page, &worker)
+while Fiber.resume(g)
+{
+}
+let n Fiber.dispose(g)
+if ran
+    Console.println "normal-fiber-ran"
+else
+    Console.println "NORMAL-FIBER-DID-NOT-RUN"

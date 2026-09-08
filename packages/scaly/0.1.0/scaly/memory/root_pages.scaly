@@ -195,6 +195,8 @@ procedure scaly_panic_null_jump(where: pointer[const_char]) returns i32 extern
 procedure scaly_panic_region_jump(what: pointer[const_char], address: size_t) returns i32 extern
 procedure scaly_panic_size_jump(what: pointer[const_char], added: size_t, length: size_t) returns i32 extern
 procedure scaly_panic_oom_jump(what: pointer[const_char], bytes: size_t) returns i32 extern
+procedure scaly_panic_resource_jump(what: pointer[const_char], requested: size_t) returns i32 extern
+procedure scaly_panic_deadlock_jump(what: pointer[const_char]) returns i32 extern
 function scaly_catch_run(body: pointer[void], arg: pointer[void], mark: pointer[void], unwind: pointer[void], caught: pointer[i32]) returns i64 extern
 function scaly_catch_active() returns i32 extern
 function scaly_panic_last_what() returns pointer[const_char] extern
@@ -517,6 +519,85 @@ procedure scaly_panic_oom(what: pointer[const_char], bytes: size_t)
     scaly_eputs(" bytes")
     scaly_eputnl()
     exit 23
+}
+
+; The ONE place a refused OS RESOURCE ends the program -- and the one helper
+; of this family that keeps its caller's EXIT CODE.
+;
+; Nine sites in `scaly/fiber.scaly` and `scaly/cluster.scaly`: a fiber stack
+; (mmap, 103), its guard page (104), a thread (109, twice), a pipe (111, 112),
+; and the node's two fixed tables (113, twice).
+;
+; ★★★Why `code` is a PARAMETER here while the four earlier kinds each got one
+; code: the earlier consolidations collapsed several codes that meant ONE
+; condition, and there the single code was the improvement. These conditions
+; are DIFFERENT, and the code is the only thing that says which one -- plus
+; `tests/fiber/channel_deadlock.scaly` reads one of them (`ExpectedExit: 106`).
+; A code that carries information is not noise.
+;
+; ★A refused resource is the OOM argument again: a server that cannot spawn a
+; worker or open a pipe should shed the request, not die. What stays fatal is
+; the substrate saying its own bookkeeping is broken -- a failed `munmap`
+; (105), a poll syscall (107), a short read on the wake pipe -- because there
+; is nothing a catcher could do about those.
+;
+; ★`requested` is a number where there is one (stack bytes, the table limit),
+; 0 for a pipe or a thread.
+;
+; ★MANGLED names pinned in `Emitter.mark_noreturn_callee`: grep for
+; `_Z20scaly_panic_resourceP10const_charm3i32` and
+; `_Z20scaly_panic_deadlockP10const_char3i32` before re-signing either.
+; ★★An `i32` parameter mangles as `3i32` -- the Scaly type NAME, not Itanium's
+; `i`. Guessing that cost a round here: the pin silently did not match, so the
+; attribute was not applied and nothing said a word. Read the name out of the
+; emitted `.ll` instead of counting characters.
+mutable panic_resource_count: i64 0
+
+function scaly_panic_resource_count() returns i64
+    panic_resource_count
+
+procedure scaly_panic_resource(what: pointer[const_char], requested: size_t, code: i32)
+{
+    set panic_resource_count: panic_resource_count + 1
+
+    scaly_panic_resource_jump(what, requested)
+
+    scaly_eputs(what)
+    if requested <> 0
+    {
+        scaly_eputs(": refused, asked for ")
+        scaly_eputu(requested as u64)
+    }
+    else
+        scaly_eputs(": refused by the operating system")
+    scaly_eputnl()
+    exit code
+}
+
+; The ONE place a deadlock ends the program (exit 106 at every site).
+;
+; Three sites in the scheduler: `poll_io` with nothing left to wait for,
+; `run` with every fiber blocked, and a `join` whose step cannot happen.
+;
+; ★It is a PROGRAM error, not a substrate failure, and that is the whole
+; reason it is catchable: a deadlock says THIS unit of work is stuck --
+; exactly the boundary a server wants to lose -- while a broken syscall says
+; the runtime cannot function at all.
+mutable panic_deadlock_count: i64 0
+
+function scaly_panic_deadlock_count() returns i64
+    panic_deadlock_count
+
+procedure scaly_panic_deadlock(what: pointer[const_char], code: i32)
+{
+    set panic_deadlock_count: panic_deadlock_count + 1
+
+    scaly_panic_deadlock_jump(what)
+
+    scaly_eputs(what)
+    scaly_eputs(": deadlock -- nothing can make progress")
+    scaly_eputnl()
+    exit code
 }
 
 ; Hex digit for a nibble (0..15), computed arithmetically. A fixed-array

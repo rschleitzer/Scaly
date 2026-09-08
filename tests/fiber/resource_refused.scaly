@@ -1,0 +1,21 @@
+; A refused OS resource names itself and keeps its exit code (TRAPS.md 3.18).
+;
+; A fiber stack of 32 PB is refused by mmap on every target, so this fires the
+; real site -- no injector needed. Before, it was a bare `exit 103` with no
+; message at all; now it says what was asked for, and 103 is still the code
+; (the nine resource sites keep theirs, because unlike the earlier
+; consolidations these are DIFFERENT conditions and the code is what tells
+; them apart -- channel_deadlock.scaly reads one of them).
+; ExpectedExit: 103
+; ExpectedErr: Fiber.create: stack mmap: refused, asked for
+
+procedure worker(first_ctx: pointer[void])
+{
+    Fiber.started first_ctx
+    Fiber.finish()
+}
+
+let page Page.allocate_page()
+let huge (1 as size_t) << (55 as size_t)
+let f Fiber.create_sized(page, &worker, huge)
+Console.println "unreachable"

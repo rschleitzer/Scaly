@@ -757,7 +757,7 @@ define Fiber
         {
             set base: mmap(null, size, PROT_READ_WRITE, MAP_ANON_PRIVATE, (0 - 1) as i32, 0 as i64)
             if (base as i64) = ((0 - 1) as i64)
-                exit 103
+                scaly_panic_resource("Fiber.create: stack mmap", size, 103 as i32)
             ; Through the shim, not mprotect directly: "make this the stack's
             ; overflow guard" is the QUESTION, and the two platforms answer it
             ; with different mechanisms — PROT_NONE on POSIX, PAGE_GUARD on
@@ -766,7 +766,7 @@ define Fiber
             ; before the handler could name it.
             let grc scaly_stack_guard(base, guard_size)
             if grc <> 0
-                exit 104
+                scaly_panic_resource("Fiber.create: stack guard", guard_size, 104 as i32)
         }
         let top ((base as size_t) + size) as pointer[void]
         set f.ctx: scaly_make_context(top, fn, base)
@@ -1206,7 +1206,7 @@ define Scheduler
                     let nb scaly_atomic_load_u64(bp)
                     let nt scaly_atomic_load_u64(tp)
                     if nb >= nt
-                        exit 106
+                        scaly_panic_deadlock("Scheduler.poll_io", 106 as i32)
                 }
             }
             scaly_atomic_add_u64(bp, (0 as u64) - (1 as u64))
@@ -1297,7 +1297,7 @@ define Scheduler
         }
         let s current_scheduler as ref[Scheduler]
         if s.blocked > 0
-            exit 106
+            scaly_panic_deadlock("Scheduler.run", 106 as i32)
     }
 
     ; Wait until t finished. The dispatcher reaps eagerly, so the
@@ -1313,7 +1313,7 @@ define Scheduler
             while not t.done
             {
                 if not Scheduler.step_or_wait()
-                    exit 106
+                    scaly_panic_deadlock("Scheduler.join", 106 as i32)
             }
             return Scheduler.reap(t)
         }
@@ -1704,7 +1704,7 @@ define Io
             var fds u8[8]
             let rc pipe(fds as pointer[i32])
             if rc <> 0
-                exit 111
+                scaly_panic_resource("Io.ensure_pool: pipe", 0 as size_t, 111 as i32)
             set pl.lock: 0
             set pl.head: null
             set pl.tail: null
@@ -2403,7 +2403,7 @@ define Thread
         let hp handle as pointer[size_t]
         let rc pthread_create(hp, null, &scaly_thread_start, cell as pointer[void])
         if rc <> 0
-            exit 109
+            scaly_panic_resource("Thread.spawn: pthread_create", 0 as size_t, 109 as i32)
         *hp
     }
 
@@ -2412,7 +2412,7 @@ define Thread
     {
         let rc pthread_join(t, null as pointer[pointer[void]])
         if rc <> 0
-            exit 109
+            scaly_panic_resource("Thread.join: pthread_join", 0 as size_t, 109 as i32)
     }
 }
 
@@ -2442,7 +2442,7 @@ define TaskGroup
         var fds u8[8]
         let rc pipe(fds as pointer[i32])
         if rc <> 0
-            exit 112
+            scaly_panic_resource("TaskGroup.create: pipe", 0 as size_t, 112 as i32)
         let g &TaskGroup^p(0, 0, *(fds as pointer[i32]), *(((fds as size_t) + 4) as pointer[i32]))
         g
     }
@@ -2610,7 +2610,7 @@ define TaskPool
         var fds u8[8]
         let rc pipe(fds as pointer[i32])
         if rc <> 0
-            exit 112
+            scaly_panic_resource("TaskPool.create: pipe", 0 as size_t, 112 as i32)
         set pl.pipe_read: *(fds as pointer[i32])
         set pl.pipe_write: *(((fds as size_t) + 4) as pointer[i32])
         set pl.deques: p.allocate((n as size_t) * sizeof TaskDeque, alignof TaskDeque) as pointer[TaskDeque]

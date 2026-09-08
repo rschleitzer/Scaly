@@ -3841,6 +3841,13 @@ define Emitter
             ; And the allocator's out-of-memory (exit 23).
             if name = "_Z15scaly_panic_oomP10const_charm"
                 set known: true
+            ; The refused-resource and deadlock helpers keep their callers'
+            ; exit codes, so they take one as a parameter -- the mangled names
+            ; carry it.
+            if name = "_Z20scaly_panic_resourceP10const_charm3i32"
+                set known: true
+            if name = "_Z20scaly_panic_deadlockP10const_char3i32"
+                set known: true
             if known = false
                 return
 

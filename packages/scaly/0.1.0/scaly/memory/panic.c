@@ -50,6 +50,8 @@
 #define SCALY_FAULT_INVALID_REGION  2
 #define SCALY_FAULT_SIZE_OVERFLOW   3
 #define SCALY_FAULT_OUT_OF_MEMORY   4
+#define SCALY_FAULT_RESOURCE        5
+#define SCALY_FAULT_DEADLOCK        6
 
 /* The region-stack watermark and the unwind live in Scaly
  * (scaly/memory/root_pages.scaly). They are reached through function POINTERS
@@ -213,6 +215,49 @@ int scaly_panic_oom_jump(const char *what, size_t bytes)
     return 0;                      /* unreachable; longjmp is noreturn */
 }
 
+/* An OS resource the runtime asked for was refused: a fiber stack (mmap), its
+ * guard page, a thread, a pipe, or one of the node's fixed tables
+ * (scaly/fiber.scaly, scaly/cluster.scaly).
+ *
+ * ★★★Unlike the four kinds before it, these sites keep THEIR OWN exit codes
+ * (103, 104, 109, 111, 112, 113) and only gain the jump. The earlier
+ * consolidations collapsed several codes that meant ONE condition; here the
+ * conditions are different and the code is the only thing that says which --
+ * and `tests/fiber/channel_deadlock.scaly` reads one of them
+ * (`ExpectedExit: 106`). A code that carries information is not noise.
+ *
+ * `requested` is what was asked for where that is a number (stack bytes, the
+ * table's limit), 0 where it is not (a pipe, a thread). */
+int scaly_panic_resource_jump(const char *what, size_t requested)
+{
+    scaly_catch_frame *t = scaly_catch_top;
+    if (!t)
+        return 0;
+    t->what = what; t->index = requested; t->length = 0;
+    t->kind = SCALY_FAULT_RESOURCE;
+    longjmp(t->buf, 1);
+    return 0;                      /* unreachable; longjmp is noreturn */
+}
+
+/* Nothing can make progress: every fiber of this scheduler is blocked, or a
+ * join waits on a step that cannot happen (scaly/fiber.scaly, exit 106).
+ *
+ * ★It is a PROGRAM error and not a substrate failure, which is why it is
+ * catchable while a failed `munmap` (105) or a poll syscall (107) is not:
+ * those say the runtime's own bookkeeping or the OS is broken, and there is
+ * nothing a catcher could sensibly do. A deadlock says THIS unit of work is
+ * stuck -- exactly the boundary a server wants to lose. */
+int scaly_panic_deadlock_jump(const char *what)
+{
+    scaly_catch_frame *t = scaly_catch_top;
+    if (!t)
+        return 0;
+    t->what = what; t->index = 0; t->length = 0;
+    t->kind = SCALY_FAULT_DEADLOCK;
+    longjmp(t->buf, 1);
+    return 0;                      /* unreachable; longjmp is noreturn */
+}
+
 /* --- the three halves a `try` needs, for the EMITTER ---------------------
  *
  * scaly_catch_run above is the library form: it owns the catcher, so the frame
@@ -348,19 +393,23 @@ int scaly_panic_last_kind(void) { return scaly_last_kind_v; }
  *   InvalidRegionFault (what: pointer[const_char], address: size_t)
  *   SizeOverflowFault  (added: size_t, length: size_t)
  *   OutOfMemoryFault   (what: pointer[const_char], bytes: size_t)
+ *   ResourceExhaustedFault (what: pointer[const_char], requested: size_t)
+ *   DeadlockFault      (what: pointer[const_char])
  */
 void scaly_panic_fill(void *dst)
 {
     if (!dst)
         return;
     switch (scaly_last_kind_v) {
+    case SCALY_FAULT_DEADLOCK:
     case SCALY_FAULT_NULL_REFERENCE: {
         const char **out = (const char **)dst;
         out[0] = scaly_last_what ? scaly_last_what : "";
         break;
     }
     case SCALY_FAULT_INVALID_REGION:
-    case SCALY_FAULT_OUT_OF_MEMORY: {
+    case SCALY_FAULT_OUT_OF_MEMORY:
+    case SCALY_FAULT_RESOURCE: {
         const char **out = (const char **)dst;
         out[0] = scaly_last_what ? scaly_last_what : "";
         ((size_t *)dst)[1] = scaly_last_index;
