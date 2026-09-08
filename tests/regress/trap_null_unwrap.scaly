@@ -1,13 +1,13 @@
-; Laufzeit-Trap: `x as ref[T]` traf null (exit 21).
+; Runtime trap: `x as ref[T]` met a null (exit 21).
 ;
-; ★Bis heute hielt KEIN Tor diesen Trap fest -- dieselbe Lage, die TRAPS.md 1.5
-; für die acht Bounds-Traps beschreibt: die Prüfung könnte aufhören zu feuern
-; und jede Suite bliebe grün, weil ein Trap die PASS-Konvention auf stdout gar
-; nicht erreichen kann. Deshalb ein `expect-rc`-Fixture.
+; ★Until today NO gate pinned this trap -- the same situation TRAPS.md 1.5
+; describes for the eight bounds traps, and invisible for the same reason: a
+; trap cannot reach the PASS-on-stdout convention. Hence an `expect-rc`
+; fixture.
 ;
-; Geprüft wird beides, was die Meldung leistet: dass sie überhaupt kommt, und
-; dass sie den ORT nennt -- zur Laufzeit gibt es keine Quellposition, also ist
-; der gemangelte Name des umgebenden Symbols das, was ein Leser greppen kann.
+; Both halves of what the message does are checked: that it arrives at all,
+; and that it names the PLACE -- a run has no source location, so the mangled
+; name of the enclosing symbol is what a reader can grep for.
 ;
 ; expect-rc: 21
 ; expect-out: Scaly: null unwrapped as ref in
@@ -18,7 +18,7 @@ function probe(n: size_t) returns int
     var buf int[2]
     set buf[0]: 10
     let s Slice[int](2, &buf[0])
-    let r s.get(n) as ref[int]         ; die Behauptung, und sie ist falsch
+    let r s.get(n) as ref[int]         ; the claim, and it is false
     r
 }
 

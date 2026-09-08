@@ -3831,6 +3831,9 @@ define Emitter
             ; like the other two.
             if name = "_Z18scaly_panic_regionP10const_charm"
                 set known: true
+            ; And the size-overflow guard in Array.add (exit 22).
+            if name = "_Z16scaly_panic_sizeP10const_charmm"
+                set known: true
             if known = false
                 return
 

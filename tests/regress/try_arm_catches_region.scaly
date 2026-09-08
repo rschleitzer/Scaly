@@ -1,28 +1,27 @@
-; Regression: `try ... when e: InvalidRegion` fängt einen ungültigen
-; EMPFANGENEN Rahmen (TRAPS.md 3.13) — die dritte fangbare Trap-Art, und die
-; erste, die kein Programmierfehler im eigenen Code ist: die Daten kommen von
-; woanders, also muss ein langlebiger Prozess die NACHRICHT verlieren können
-; und nicht sich selbst.
+; Regression: `try ... when e: InvalidRegion` catches an invalid RECEIVED
+; frame (TRAPS.md 3.13) -- the third catchable trap kind, and the first that
+; is not a programmer error in the caller's own code: the data comes from
+; somewhere else, so a long-running process must be able to lose the MESSAGE
+; instead of itself.
 ;
-; Geprüft wird:
-;   (1) der Arm bindet e mit e.what (die Stelle) und e.address (der Zeiger,
-;       an dem die Umrechnung scheiterte)
-;   (2) Locals des Fängers überleben den Sprung
-;   (3) der Zähler am Panic-Ort zählt
-;   (4) die else-Form fängt dieselbe Art
-;   (5) ein GÜLTIGER Rahmen nimmt den Erfolgspfad durch dasselbe try
-;   (6) zweihundert Fänge hintereinander, ohne dass das Programm stirbt
+; Checked:
+;   (1) the arm binds e with e.what (the site) and e.address (the pointer the
+;       mapping choked on)
+;   (2) locals of the catcher survive the jump
+;   (3) the counter at the panic site counts
+;   (4) the else form catches the same kind
+;   (5) a VALID frame takes the success path through the same try
+;   (6) two hundred catches in a row, without the program dying
 ;
-; ★Was dieses Tor NICHT prüft: dass die Seiten des halbgebauten Empfangs
-; zurückkommen. `Region.deserialize` gibt sie vor dem Auslösen über die
-; TABELLE frei, und das ist gemessen (TRAPS.md 3.13: 1,5 MB gegen 21,4 MB
-; Höchststand über 5000 Fänge) — aber nicht von hier aus prüfbar: der
-; HeapBucket vergibt immer den niedrigsten freien Slot, also bleibt die
-; Adresse einer Sondenseite mit und ohne Leck dieselbe. Zwei
-; Sondenfassungen bestanden die Kontrolle ohne die Freigabe; eine vakante
-; Prüfung wäre schlechter als keine.
+; ★What this gate does NOT check: that the pages of the half-built receive
+; come back. `Region.deserialize` gives them back through the TABLE before
+; raising, and that is measured (TRAPS.md 3.13: 1.5 MB against 21.4 MB peak
+; RSS over 5000 catches) -- but it cannot be checked from in here: the
+; HeapBucket always hands out the lowest free slot, so a probe page's address
+; is the same with and without the leak. Two versions of that probe passed the
+; control WITHOUT the release; a vacuous check would be worse than none.
 ;
-; Erwartet: PASS
+; Expected: PASS
 
 define Msg (n: i64, more: pointer[u8])
 
@@ -45,9 +44,9 @@ function make_frame(host: ref[Page], bend: bool) returns pointer[u8]
 
 function main(argc: int, argv: pointer[pointer[const_char]]) returns int
 {
-    var vor 100
-    set vor: vor + argc
-    let vorher Region.panic_region_count()
+    var before_local 100
+    set before_local: before_local + argc
+    let before Region.panic_region_count()
 
     let host Page.allocate_page()
     let bad make_frame(host, true)
@@ -55,38 +54,38 @@ function main(argc: int, argv: pointer[pointer[const_char]]) returns int
     try let rr Region.deserialize(bad, host)
         when e: InvalidRegion
         {
-            ; (2) Locals des Fängers
-            if vor <> 101
+            ; (2) locals of the catcher
+            if before_local <> 101
             {
-                print "FAIL: ein Local des Faengers hat den Sprung nicht ueberlebt"
+                print "FAIL: a local of the catcher did not survive the jump"
                 return 1
             }
 
-            ; (1) die Adresse, an der die Umrechnung scheiterte
+            ; (1) the address the mapping choked on
             if e.address <> (0x1000 as size_t)
             {
-                print "FAIL: e.address nennt nicht die verbogene Wurzel"
+                print "FAIL: e.address does not name the bent root"
                 return 2
             }
 
-            ; (3) gezählt
-            if Region.panic_region_count() - vorher <> 1
+            ; (3) counted
+            if Region.panic_region_count() - before <> 1
             {
-                print "FAIL: der Region-Zaehler zaehlte nicht genau einmal"
+                print "FAIL: the region counter did not count exactly once"
                 return 3
             }
 
-            ; (1) und die Stelle, als Text
+            ; (1) and the site, as text
             let w String(e.what)
             if w.equals(String("Region.deserialize: root outside the received region")) = false
             {
-                print "FAIL: e.what nennt nicht die Stelle"
+                print "FAIL: e.what does not name the site"
                 print w
                 return 4
             }
         }
 
-    ; (4) die else-Form fängt dieselbe Art
+    ; (4) the else form catches the same kind
     var caught_else false
     let host2 Page.allocate_page()
     let bad2 make_frame(host2, true)
@@ -95,18 +94,18 @@ function main(argc: int, argv: pointer[pointer[const_char]]) returns int
         set caught_else: true
     if caught_else = false
     {
-        print "FAIL: die else-Form hat den ungueltigen Rahmen nicht gefangen"
+        print "FAIL: the else form did not catch the invalid frame"
         return 5
     }
 
-    ; (5) ein GÜLTIGER Rahmen geht durch dasselbe try
+    ; (5) a VALID frame goes through the same try
     let host3 Page.allocate_page()
     let good make_frame(host3, false)
     var ok false
     try let rr3 Region.deserialize(good, host3)
         when e3: InvalidRegion
         {
-            print "FAIL: der gueltige Rahmen hat gepanickt"
+            print "FAIL: the valid frame panicked"
             return 6
         }
     if rr3 <> null
@@ -117,11 +116,11 @@ function main(argc: int, argv: pointer[pointer[const_char]]) returns int
     }
     if ok = false
     {
-        print "FAIL: der gueltige Rahmen lieferte keine Region"
+        print "FAIL: the valid frame produced no region"
         return 7
     }
 
-    ; (6) zweihundert Faenge hintereinander
+    ; (6) two hundred catches in a row
     var i 0
     while i < 200
     {
@@ -133,16 +132,16 @@ function main(argc: int, argv: pointer[pointer[const_char]]) returns int
             set c4: true
         if c4 = false
         {
-            print "FAIL: ein spaeterer Fang blieb aus"
+            print "FAIL: a later catch did not happen"
             return 8
         }
         h4.deallocate_extensions()
         Page.release_page(h4)
         set i: i + 1
     }
-    if Region.panic_region_count() - vorher <> 202
+    if Region.panic_region_count() - before <> 202
     {
-        print "FAIL: die Summe der Faenge stimmt nicht"
+        print "FAIL: the total number of catches is wrong"
         return 9
     }
 

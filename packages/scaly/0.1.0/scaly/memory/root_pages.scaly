@@ -127,6 +127,31 @@ procedure scaly_eputnl()
     write(2 as int, buf as pointer[void], 1 as size_t)
 }
 
+; Unsigned decimal. It exists because scaly_eputi takes an i64, and a SIZE
+; printed through it lies in the one case a size diagnostic is about: the
+; wraparound guard in Array.add reported "adding -1 to 2" for a length of
+; SIZE_MAX. A trap's whole job is to name what it saw.
+procedure scaly_eputu(n: u64)
+{
+    let buf scaly_fmt_scratch_ptr()
+    var pos: i64 31
+    var val n
+    if val = 0
+    {
+        set pos: pos - 1
+        set *(buf + pos): "0" as char
+    }
+    while val > 0
+    {
+        set pos: pos - 1
+        let digit val - (val / 10) * 10
+        set *(buf + pos): ((digit as i64) + 48) as char
+        set val: val / 10
+    }
+    let len 31 - pos
+    write(2 as int, (buf + pos) as pointer[void], len as size_t)
+}
+
 procedure scaly_eputi(n: i64)
 {
     let buf scaly_fmt_scratch_ptr()
@@ -168,6 +193,7 @@ procedure scaly_eputi(n: i64)
 procedure scaly_panic_jump(what: pointer[const_char], index: size_t, length: size_t) returns i32 extern
 procedure scaly_panic_null_jump(where: pointer[const_char]) returns i32 extern
 procedure scaly_panic_region_jump(what: pointer[const_char], address: size_t) returns i32 extern
+procedure scaly_panic_size_jump(what: pointer[const_char], added: size_t, length: size_t) returns i32 extern
 function scaly_catch_run(body: pointer[void], arg: pointer[void], mark: pointer[void], unwind: pointer[void], caught: pointer[i32]) returns i64 extern
 function scaly_catch_active() returns i32 extern
 function scaly_panic_last_what() returns pointer[const_char] extern
@@ -359,6 +385,48 @@ procedure scaly_panic_region(what: pointer[const_char], address: size_t)
     }
     scaly_eputnl()
     exit 18
+}
+
+; The ONE place a wrapped SIZE computation ends the program (exit 22).
+;
+; `Array[T].add(items)` computes `length + items.length` in `size_t`; if that
+; wraps it would under-size the allocation and the following memcpy would
+; write past it. The guard was a bare `exit 14` with NO message at all -- the
+; only trap in this family that said nothing, and it shared its code with the
+; Emitter's compile-time aborts (unknown operator, the index invariants). Both
+; halves are fixed here: it names itself, and it is exit 22.
+;
+; ★★★It is the same class as a bounds violation and therefore catchable: the
+; check fires BEFORE any corruption, and what it reports is a size the caller
+; asked for. `added` and `length` are the two words worth having -- the
+; wrapped sum says nothing.
+;
+; ★It is called from inside a GENERIC concept method, which is allowed: a
+; generic body may call a free procedure of another module (CLAUDE.md, the
+; measured-closed rule), and `scaly_panic_oob` in the container subscripts is
+; the precedent.
+;
+; ★The MANGLED name is pinned in `Emitter.mark_noreturn_callee`: grep for
+; `_Z16scaly_panic_sizeP10const_charmm` before re-signing.
+mutable panic_size_count: i64 0
+
+function scaly_panic_size_count() returns i64
+    panic_size_count
+
+procedure scaly_panic_size(what: pointer[const_char], added: size_t, length: size_t)
+{
+    set panic_size_count: panic_size_count + 1
+
+    scaly_panic_size_jump(what, added, length)
+
+    scaly_eputs(what)
+    scaly_eputs(": adding ")
+    scaly_eputu(added as u64)
+    scaly_eputs(" to ")
+    scaly_eputu(length as u64)
+    scaly_eputs(" wraps around")
+    scaly_eputnl()
+    exit 22
 }
 
 ; Hex digit for a nibble (0..15), computed arithmetically. A fixed-array

@@ -1,13 +1,12 @@
-; Regression: der Zähler am Panic-Ort (TRAPS.md 4).
+; Regression: the counter at the panic site (TRAPS.md 4).
 ;
-; Die Bestandsaufnahme nannte als erste Unbekannte, wie oft ein Bounds-Trap im
-; Betrieb wirklich feuert -- keine Zahl, kein Zähler. Seit alle acht Traps
-; durch `scaly_panic_oob` laufen, ist das eine Stelle, und dieses Tor hält
-; fest, dass sie zählt: den GEFANGENEN Trap ebenso wie den tödlichen, denn ein
-; langlebiger Prozess sieht nur die gefangenen und die stehen in keinem
-; Exit-Code.
+; The inventory named as its first unknown how often a bounds trap really
+; fires in operation -- no number, no counter. Since all eight traps route
+; through `scaly_panic_oob` that is ONE place, and this gate pins that it
+; counts: the CAUGHT trap as well as the fatal one, because a long-running
+; process only ever sees the caught ones and those show up in no exit code.
 ;
-; Erwartet: PASS
+; Expected: PASS
 
 function trapper(n: i64) returns i64
 {
@@ -15,7 +14,7 @@ function trapper(n: i64) returns i64
     set buf[0]: 10
     let v Slice[int](2, &buf[0])
     if n > 0
-        return v[(n as size_t) + 4]        ; Index 5 in einer Sicht der Länge 2
+        return v[(n as size_t) + 4]        ; index 5 in a view of length 2
     v[0] as i64
 }
 
@@ -27,43 +26,43 @@ function body_ok(arg: pointer[void]) returns i64
 
 function main(argc: int, argv: pointer[pointer[const_char]]) returns int
 {
-    ; (1) vor dem ersten Trap steht der Zähler auf 0
+    ; (1) before the first trap the counter reads 0
     if Region.panic_oob_count() <> 0
     {
-        print "FAIL: der Zähler stand nicht auf 0"
+        print "FAIL: the counter did not start at 0"
         return 1
     }
 
-    ; (2) ein gültiger Lauf bewegt ihn nicht -- gezählt wird der Trap, nicht
-    ;     der Zugriff, sonst wäre die Zahl eine Zugriffsstatistik
+    ; (2) a valid run does not move it -- what is counted is the TRAP, not the
+    ;     access, or the number would be an access statistic
     var caught_ok: i32 0
     let r0 Region.run_guarded(&body_ok, null as pointer[void], &caught_ok)
     if caught_ok <> 0
     {
-        print "FAIL: der gültige Lauf hat gepanickt"
+        print "FAIL: the valid run panicked"
         return 2
     }
     if Region.panic_oob_count() <> 0
     {
-        print "FAIL: der gültige Lauf hat gezählt"
+        print "FAIL: the valid run counted"
         return 3
     }
 
-    ; (3) ein gefangener Trap zählt genau einmal
+    ; (3) a caught trap counts exactly once
     var caught: i32 0
     let r1 Region.run_guarded(&body_panics, null as pointer[void], &caught)
     if caught = 0
     {
-        print "FAIL: das Panic wurde nicht gefangen"
+        print "FAIL: the panic was not caught"
         return 4
     }
     if Region.panic_oob_count() <> 1
     {
-        print "FAIL: ein gefangener Trap zählte nicht genau einmal"
+        print "FAIL: a caught trap did not count exactly once"
         return 5
     }
 
-    ; (4) und die Zahl ist eine Zahl: 50 Fänge sind 50, nicht "mehr als 0"
+    ; (4) and the number is a number: 50 catches are 50, not "more than 0"
     let before Region.panic_oob_count()
     var i 0
     while i < 50
@@ -72,22 +71,22 @@ function main(argc: int, argv: pointer[pointer[const_char]]) returns int
         let rr Region.run_guarded(&body_panics, null as pointer[void], &c)
         if c = 0
         {
-            print "FAIL: ein späterer Fang blieb aus"
+            print "FAIL: a later catch did not happen"
             return 6
         }
         set i: i + 1
     }
     if Region.panic_oob_count() - before <> 50
     {
-        print "FAIL: die Differenz über 50 Fänge stimmt nicht"
+        print "FAIL: the delta over 50 catches is wrong"
         return 7
     }
 
-    ; (5) der Concept-Static und die freie Funktion sind dieselbe Zelle -- die
-    ;     eine ist die Oberfläche, die andere der Ort
+    ; (5) the concept static and the free function are the same cell -- one is
+    ;     the surface, the other is the place
     if Region.panic_oob_count() <> scaly_panic_oob_count()
     {
-        print "FAIL: Region.panic_oob_count und scaly_panic_oob_count weichen ab"
+        print "FAIL: Region.panic_oob_count and scaly_panic_oob_count disagree"
         return 8
     }
 

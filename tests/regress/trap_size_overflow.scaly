@@ -1,0 +1,32 @@
+; Runtime trap: a size computation wraps around (exit 22).
+;
+; `Array[T].add(items)` computes `length + items.length` in `size_t`. If that
+; wraps, the following allocation would be too small and the memcpy would
+; write past it -- so the check fires BEFORE the damage.
+;
+; ★It used to be a bare `exit 14`: no message, and the same code the Emitter
+; uses for its compile-time aborts (unknown operator, the index invariants).
+; Both halves are fixed -- it names itself, and it is exit 22.
+;
+; ★The overflow is triggered with a BORROW Vector that lies about its length:
+; `Vector[T](len, data)` allocates nothing, so SIZE_MAX there is a claim and
+; not a buffer. That is how the case arises in operation -- a length that came
+; from data.
+;
+; expect-rc: 22
+; expect-out: Array.add: adding 18446744073709551615 to 2 wraps around
+
+function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var arr Array[int]()
+    arr.add(1)
+    arr.add(2)
+
+    var buf int[2]
+    set buf[0]: 7
+    let huge Vector[int]((0 as size_t) - (1 as size_t), &buf[0])
+    arr.add(huge)
+
+    print "FAIL: the overflow went through"
+    0
+}

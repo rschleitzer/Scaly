@@ -117,8 +117,13 @@ define Array[T]
         ; Unsigned-wraparound check: items.length > 0 should grow the
         ; total. If new_length wraps below the existing length we'd
         ; under-size the allocation below and OOB-write the memcpy.
+        ;
+        ; ★It used to be a bare `exit 14` -- no message, and the same code the
+        ; Emitter uses for its compile-time aborts. Since 2026-09-08 it goes
+        ; through the one panic site (exit 22, catchable as
+        ; `when e: SizeOverflow`); the check itself is unchanged.
         if new_length < length
-            exit 14
+            scaly_panic_size("Array.add", items.length, length)
 
         let size sizeof T
         if (vector = null) || (new_length > vector.length)

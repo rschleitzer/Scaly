@@ -1,18 +1,17 @@
-; Laufzeit-Trap: eine EMPFANGENE Region hält nicht zusammen (exit 18).
+; Runtime trap: a RECEIVED region does not hold together (exit 18).
 ;
-; Der Rahmen wird ordentlich serialisiert und dann verbogen — die alte
-; Wurzeladresse im Kopf (`h[3]`) zeigt hinterher auf 0x1000, also auf nichts,
-; was in der Region liegt. Genau das passiert im Betrieb, wenn ein Sender eine
-; Region verschickt, die nicht geschlossen war, wenn ein erzeugter Walker mit
-; der falschen Feldkarte läuft, oder wenn ein Rahmen von der Leitung defekt
-; ankommt.
+; The frame is serialized properly and then bent -- the old root address in
+; its header (`h[3]`) afterwards points at 0x1000, i.e. at nothing inside the
+; region. That is exactly what happens in operation when a sender ships a
+; region that was not closed, when a generated walker runs with the wrong
+; field map, or when a frame arrives corrupt off the wire.
 ;
-; ★Es ist exit 18 und NICHT 17: 17 war beides — dieser Laufzeitfehler UND der
-; Stack-Wächter des Planners, ein Abbruch bei der Übersetzung, der nie fangbar
-; sein darf. Ein Code kann nicht beides heißen; dieses Tor hält die Trennung.
+; ★It is exit 18 and NOT 17: 17 was both this runtime fault AND the planner's
+; stack guard, a compile-time abort that must never be catchable. One code
+; cannot mean both; this gate holds the split.
 ;
-; Geprüft wird außerdem, dass die Meldung die ADRESSE nennt: sie ist es, die
-; einen falschen Walker von einem abgeschnittenen Rahmen trennt.
+; It also checks that the message names the ADDRESS: that is what separates a
+; wrong walker from a truncated frame.
 ;
 ; expect-rc: 18
 ; expect-out: Region.deserialize: root outside the received region
@@ -36,6 +35,6 @@ function main(argc: int, argv: pointer[pointer[const_char]]) returns int
     set *(h + 3): 0x1000 as u64
 
     let rr Region.deserialize(frame, host)
-    print "FAIL: der ungueltige Rahmen lief durch"
+    print "FAIL: the invalid frame went through"
     0
 }

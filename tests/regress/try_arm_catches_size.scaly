@@ -1,0 +1,83 @@
+; Regression: `try ... when e: SizeOverflow` catches the wraparound guard in
+; `Array.add` (TRAPS.md 3.14) -- the fourth catchable trap kind.
+;
+; Checked:
+;   (1) the arm binds e with e.added / e.length
+;   (2) the array is UNCHANGED: the guard fires before any mutation
+;   (3) the counter at the panic site counts
+;   (4) a valid `add` goes through the same try
+;   (5) the else form catches the same kind
+;
+; Expected: PASS
+
+function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    let before Region.panic_size_count()
+
+    var arr Array[int]()
+    arr.add(1)
+    arr.add(2)
+
+    var buf int[2]
+    set buf[0]: 7
+    ; a Vector that lies about its length (see trap_size_overflow.scaly)
+    let huge Vector[int]((0 as size_t) - (1 as size_t), &buf[0])
+
+    try arr.add(huge)
+        when e: SizeOverflow
+        {
+            ; (1) both words, and the telling one is the ADDITION
+            if e.added <> ((0 as size_t) - (1 as size_t))
+            {
+                print "FAIL: e.added does not name the addition"
+                return 1
+            }
+            if e.length <> (2 as size_t)
+            {
+                print "FAIL: e.length does not name the old length"
+                return 2
+            }
+
+            ; (2) nothing happened
+            if arr.get_length() <> (2 as size_t)
+            {
+                print "FAIL: the array was changed before the guard"
+                return 3
+            }
+
+            ; (3) counted
+            if Region.panic_size_count() - before <> 1
+            {
+                print "FAIL: the size counter did not count exactly once"
+                return 4
+            }
+        }
+
+    ; (4) a valid add through the same try
+    let good Vector[int](2 as size_t, &buf[0])
+    try arr.add(good)
+        when e2: SizeOverflow
+        {
+            print "FAIL: the valid add panicked"
+            return 5
+        }
+    if arr.get_length() <> (4 as size_t)
+    {
+        print "FAIL: the valid add appended nothing"
+        return 6
+    }
+
+    ; (5) the else form
+    var caught_else false
+    try arr.add(huge)
+    else
+        set caught_else: true
+    if caught_else = false
+    {
+        print "FAIL: the else form did not catch the overflow"
+        return 7
+    }
+
+    print "PASS"
+    0
+}

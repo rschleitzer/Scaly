@@ -20489,9 +20489,9 @@ define Planner
         ; a value. A `choose` over the call handles it (its subject is an
         ; operation, not a binding), and a `try` plans its binding through
         ; plan_try rather than through plan_statement, so neither reaches here.
-        ; ops_contain_throwing_call#: dieselbe Frage wie
-        ; try_condition_can_throw#, aber über eine nackte Operandenfolge --
-        ; ein `return` und ein `set` haben kein PlannedBinding.
+        ; ops_contain_throwing_call#: the same question as
+        ; try_condition_can_throw#, but over a bare operand sequence -- a
+        ; `return` and a `set` carry no PlannedBinding.
         function ops_contain_throwing_call(ops: ref[Vector[PlannedOperand]]?) returns bool
         {
             if ops = null
@@ -29887,10 +29887,10 @@ define Planner
             choose s
                 when a: Action
                 {
-                    ; ★Deckt `set x: step(b)` UND den impliziten Rückgabewert
-                    ; (der letzte Ausdruck eines Rumpfes ist eine Action) --
-                    ; beide lasen den Wrapper still als Erfolg, gemessen mit
-                    ; rc 168 und rc 0 aus einem Müllwert.
+                    ; ★Covers `set x: step(b)` AND the implicit return value
+                    ; (a body's last expression is an Action) -- both read the
+                    ; wrapper silently as a success, measured as rc 168 and as
+                    ; rc 0 out of a garbage value.
                     let pa this.plan_action(a)
                     this.report_unhandled_throw_ops(pa.source, pa.loc)
                     PlannedStatement.Action(pa)

@@ -48,6 +48,7 @@
 #define SCALY_FAULT_OUT_OF_BOUNDS   0
 #define SCALY_FAULT_NULL_REFERENCE  1
 #define SCALY_FAULT_INVALID_REGION  2
+#define SCALY_FAULT_SIZE_OVERFLOW   3
 
 /* The region-stack watermark and the unwind live in Scaly
  * (scaly/memory/root_pages.scaly). They are reached through function POINTERS
@@ -169,6 +170,25 @@ int scaly_panic_region_jump(const char *what, size_t address)
     return 0;                      /* unreachable; longjmp is noreturn */
 }
 
+/* A size computation wrapped around: a container was asked to grow by an
+ * amount that makes its new length smaller than its old one
+ * (scaly/containers/Array.scaly). Raised through scaly_panic_size.
+ *
+ * ★It is the guard BEFORE the corruption, not after: the wrapped length would
+ * under-size the allocation and the following memcpy would write past it. The
+ * two words it carries are the addition and the current length — the wrapped
+ * sum itself says nothing. */
+int scaly_panic_size_jump(const char *what, size_t added, size_t length)
+{
+    scaly_catch_frame *t = scaly_catch_top;
+    if (!t)
+        return 0;
+    t->what = what; t->index = added; t->length = length;
+    t->kind = SCALY_FAULT_SIZE_OVERFLOW;
+    longjmp(t->buf, 1);
+    return 0;                      /* unreachable; longjmp is noreturn */
+}
+
 /* --- the three halves a `try` needs, for the EMITTER ---------------------
  *
  * scaly_catch_run above is the library form: it owns the catcher, so the frame
@@ -259,6 +279,7 @@ int scaly_panic_last_kind(void) { return scaly_last_kind_v; }
  *   OutOfBoundsFault   (index: size_t, length: size_t)
  *   NullReferenceFault (where: pointer[const_char])
  *   InvalidRegionFault (what: pointer[const_char], address: size_t)
+ *   SizeOverflowFault  (added: size_t, length: size_t)
  */
 void scaly_panic_fill(void *dst)
 {
@@ -277,6 +298,7 @@ void scaly_panic_fill(void *dst)
         break;
     }
     case SCALY_FAULT_OUT_OF_BOUNDS:
+    case SCALY_FAULT_SIZE_OVERFLOW:
     default: {
         size_t *out = (size_t *)dst;
         out[0] = scaly_last_index;
