@@ -3825,6 +3825,12 @@ define Emitter
             ; the module sees a `declare` and infers nothing.
             if name = "_Z16scaly_panic_nullP10const_char"
                 set known: true
+            ; And the region fault, same file: a received region that does not
+            ; hold together (exit 18). It is called from Scaly code only, so it
+            ; arrives here by name from the on-the-fly declaration path just
+            ; like the other two.
+            if name = "_Z18scaly_panic_regionP10const_charm"
+                set known: true
             if known = false
                 return
 

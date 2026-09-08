@@ -167,6 +167,7 @@ procedure scaly_eputi(n: i64)
 ; longjmps, which is why the helper below stays noreturn either way.
 procedure scaly_panic_jump(what: pointer[const_char], index: size_t, length: size_t) returns i32 extern
 procedure scaly_panic_null_jump(where: pointer[const_char]) returns i32 extern
+procedure scaly_panic_region_jump(what: pointer[const_char], address: size_t) returns i32 extern
 function scaly_catch_run(body: pointer[void], arg: pointer[void], mark: pointer[void], unwind: pointer[void], caught: pointer[i32]) returns i64 extern
 function scaly_catch_active() returns i32 extern
 function scaly_panic_last_what() returns pointer[const_char] extern
@@ -307,6 +308,57 @@ procedure scaly_panic_null(where: pointer[const_char])
     scaly_eputs(where)
     scaly_eputnl()
     exit 21
+}
+
+; The ONE place an invalid RECEIVED REGION ends the program (exit 18).
+;
+; Four sites in `scaly/memory/Region.scaly` raise it: the two pointer
+; swizzlers (`ReceivedRegion.fix`, `fix_value`) when an address inside the
+; received data maps to nothing, the sender's page walk when it disagrees with
+; its own count, and `deserialize` when the ROOT maps to nothing.
+;
+; ★★★It is the one fault in this family that is not a programmer error in the
+; caller's own code. The other two say "this program has a bug"; this one says
+; "the data I was handed does not hold together" -- a sender that shipped a
+; region which was not closed, a compiler-generated walker using the wrong
+; field map (the s7.2 symbol-collision class, whose symptom is exactly this
+; message at a site where nothing is wrong), or a truncated frame off the
+; wire. A long-running process must be able to lose the message instead of
+; itself, which is why this one is catchable and `exit 19` is not.
+;
+; ★★★It is exit 18 and NOT 17, and that is a correction: 17 was BOTH this and
+; the Planner's stack guard (`Planner.scaly:2593`), a compile-time abort that
+; must never be catchable. One code cannot mean both -- `expect-rc: 17` in a
+; gate could not tell them apart. The guard keeps 17; the runtime fault moved.
+;
+; ★`address` is the pointer the walk choked on, 0 where there is none (the
+; sender-side walk disagreement). It is what separates a wrong field map from
+; a truncated frame, so it travels in the payload rather than only in the
+; message.
+;
+; ★The MANGLED name is pinned in `Emitter.mark_noreturn_callee` like its two
+; siblings, which freezes these parameter types: grep for
+; `_Z18scaly_panic_regionP10const_charm` before re-signing.
+mutable panic_region_count: i64 0
+
+function scaly_panic_region_count() returns i64
+    panic_region_count
+
+procedure scaly_panic_region(what: pointer[const_char], address: size_t)
+{
+    set panic_region_count: panic_region_count + 1
+
+    scaly_panic_region_jump(what, address)
+
+    scaly_eputs(what)
+    if address <> 0
+    {
+        scaly_eputs(" (address ")
+        scaly_eputp(address as pointer[void])
+        scaly_eputs(")")
+    }
+    scaly_eputnl()
+    exit 18
 }
 
 ; Hex digit for a nibble (0..15), computed arithmetically. A fixed-array

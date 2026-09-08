@@ -47,9 +47,16 @@ function memcpy(dest: pointer[void], src: pointer[void], count: size_t) returns 
 ; ★It is a UNION and not a record because that is what `when` arms are: the
 ; planner resolves an arm name to a variant tag of the scrutinee's union
 ; (plan_when -> lookup_variant_tag), so a single record would have no arm to
-; select. Two variants today; the rest of the trap family in TRAPS.md 2.4 --
+; select. Three variants today; the rest of the trap family in TRAPS.md 2.4 --
 ; an oversized page, the fiber codes -- each needs its own decision about
 ; whether it MAY be caught at all, which is why they are not here yet.
+;
+; ★`InvalidRegion` is the one kind that is not a programmer error in the
+; caller's own code: a RECEIVED region is data from somewhere else, and a
+; long-running process must be able to lose the message instead of itself.
+; ★★It says nothing about CLEANUP -- what a catcher owes there depends on
+; where the fault was raised, and `Region.deserialize`'s comment is the place
+; that spells it out.
 ;
 ; ★The names are deliberately specific: everything here lives in the prelude,
 ; where a short name like `Bounds` would be taken away from every program in
@@ -69,11 +76,13 @@ function memcpy(dest: pointer[void], src: pointer[void], count: size_t) returns 
 ; region the jump unwinds.
 define OutOfBoundsFault (index: size_t, length: size_t)
 define NullReferenceFault (where: pointer[const_char])
+define InvalidRegionFault (what: pointer[const_char], address: size_t)
 
 define RuntimeFault union
 (
     OutOfBounds: OutOfBoundsFault,
-    NullReference: NullReferenceFault
+    NullReference: NullReferenceFault,
+    InvalidRegion: InvalidRegionFault
 )
 
 define OpaqueFile()

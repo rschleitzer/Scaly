@@ -47,6 +47,7 @@
  * kind's payload, and nothing would say a word. Both files carry this note. */
 #define SCALY_FAULT_OUT_OF_BOUNDS   0
 #define SCALY_FAULT_NULL_REFERENCE  1
+#define SCALY_FAULT_INVALID_REGION  2
 
 /* The region-stack watermark and the unwind live in Scaly
  * (scaly/memory/root_pages.scaly). They are reached through function POINTERS
@@ -140,6 +141,34 @@ int scaly_panic_null_jump(const char *where)
     return 0;                      /* unreachable; longjmp is noreturn */
 }
 
+/* A received region did not hold together: a pointer inside it maps to
+ * nothing, or the sender's own page walk disagreed with itself
+ * (scaly/memory/Region.scaly). Raised through scaly_panic_region.
+ *
+ * ★It carries the offending ADDRESS in the frame's `index` slot rather than
+ * adding a field: `index` and `length` are the two words a fault may carry,
+ * and this kind uses one of them. The payload record's second field is that
+ * address, so a catcher can print the pointer the walk choked on — which is
+ * what tells a wrong field map (a walker bug) from a truncated frame.
+ *
+ * ★★★It does NOT free anything. Cleanup belongs to whoever owns the
+ * half-built region: Region.deserialize frees through its own page TABLE
+ * before raising (the links are half-swizzled at that point, so walking them
+ * would follow sender addresses), and a fault raised from a generated walker
+ * during `fix_graph` leaves a fully built region whose owner holds `rr` and
+ * must call `rr.release()` in the catch arm. A jump cannot know which of the
+ * two it is. */
+int scaly_panic_region_jump(const char *what, size_t address)
+{
+    scaly_catch_frame *t = scaly_catch_top;
+    if (!t)
+        return 0;
+    t->what = what; t->index = address; t->length = 0;
+    t->kind = SCALY_FAULT_INVALID_REGION;
+    longjmp(t->buf, 1);
+    return 0;                      /* unreachable; longjmp is noreturn */
+}
+
 /* --- the three halves a `try` needs, for the EMITTER ---------------------
  *
  * scaly_catch_run above is the library form: it owns the catcher, so the frame
@@ -229,6 +258,7 @@ int scaly_panic_last_kind(void) { return scaly_last_kind_v; }
  * The layouts, each in declaration order:
  *   OutOfBoundsFault   (index: size_t, length: size_t)
  *   NullReferenceFault (where: pointer[const_char])
+ *   InvalidRegionFault (what: pointer[const_char], address: size_t)
  */
 void scaly_panic_fill(void *dst)
 {
@@ -238,6 +268,12 @@ void scaly_panic_fill(void *dst)
     case SCALY_FAULT_NULL_REFERENCE: {
         const char **out = (const char **)dst;
         out[0] = scaly_last_what ? scaly_last_what : "";
+        break;
+    }
+    case SCALY_FAULT_INVALID_REGION: {
+        const char **out = (const char **)dst;
+        out[0] = scaly_last_what ? scaly_last_what : "";
+        ((size_t *)dst)[1] = scaly_last_index;
         break;
     }
     case SCALY_FAULT_OUT_OF_BOUNDS:

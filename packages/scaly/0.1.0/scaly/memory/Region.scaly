@@ -15,7 +15,10 @@
 ;
 ; The region must be CLOSED: every pointer reachable from the root object
 ; stays inside the region (enforcement is 7.2/7.3 checker work; until then
-; fix() fails loud, exit 17). Sender-side teardown stays the caller's:
+; fix() fails loud through scaly_panic_region -- exit 18 when nobody catches
+; it, and CATCHABLE as `when e: InvalidRegion` since 2026-09-08, because a
+; received region is somebody else's data and a node must be able to lose the
+; message instead of itself). Sender-side teardown stays the caller's:
 ; serialize only reads. The region's root must be a heap page
 ; (Page.allocate_page), not a stack root page.
 
@@ -68,11 +71,7 @@ define ReceivedRegion
 
         let mapped map(old)
         if mapped = 0
-        {
-            scaly_eputs "ReceivedRegion.fix: pointer outside the received region"
-            scaly_eputnl()
-            exit 17
-        }
+            scaly_panic_region("ReceivedRegion.fix: pointer outside the received region", old)
         set *s: mapped
     }
 
@@ -88,12 +87,55 @@ define ReceivedRegion
 
         let mapped map(old)
         if mapped = 0
-        {
-            scaly_eputs "ReceivedRegion.fix_value: pointer outside the received region"
-            scaly_eputnl()
-            exit 17
-        }
+            scaly_panic_region("ReceivedRegion.fix_value: pointer outside the received region", old)
         mapped
+    }
+
+    ; Swizzle a slot DURING deserialize, where this record still owns every
+    ; page it has allocated and nobody else can free them yet.
+    ;
+    ; ★★★It exists because `fix` above cannot clean up: it is also called from
+    ; the compiler-generated walkers during `fix_graph`, long after
+    ; deserialize returned, where the owner is the CALLER and the right answer
+    ; is `rr.release()` in its catch arm. Inside deserialize there is no such
+    ; owner yet -- a caught fault would leak the whole half-built region --
+    ; so this half frees first and then raises.
+    procedure fix_owned(this: ReceivedRegion, slot: pointer[void])
+    {
+        let s slot as pointer[size_t]
+        let old *s
+        if old = 0
+            return
+
+        let mapped map(old)
+        if mapped = 0
+        {
+            release_pages()
+            scaly_panic_region("ReceivedRegion.fix: pointer outside the received region", old)
+        }
+        set *s: mapped
+    }
+
+    ; Give back every page this record allocated, through the TABLE.
+    ;
+    ; ★★★Through the table and NOT through the page links: while the header
+    ; swizzle is running, `next_page` and `exclusive_pages` still hold SENDER
+    ; addresses on the pages not reached yet, so the link walk in
+    ; `deallocate_extensions` would follow them into nowhere. `new_bases`
+    ; holds all of them, and `release_page` tells the two shapes apart by
+    ; `next_object` (null = an oversized aligned_alloc block), which the
+    ; copied bytes preserve.
+    procedure release_pages(this: ReceivedRegion)
+    {
+        let nb new_bases
+        var i: size_t 0
+        while i < page_count
+        {
+            let pg nb[i] as pointer[Page]
+            if pg <> null
+                Page.release_page(pg)
+            set i: i + 1
+        }
     }
 
     ; Free the received region through the normal lifecycle.
@@ -192,11 +234,7 @@ define Region
         let table host.allocate(n * 16, 8) as pointer[size_t]
         let end fill_pages(region, table, 0)
         if end <> n * 2
-        {
-            scaly_eputs "Region.serialize: page walk disagreement"
-            scaly_eputnl()
-            exit 17
-        }
+            scaly_panic_region("Region.serialize: page walk disagreement", 0 as size_t)
 
         var total 32 + n * 16
         var w: size_t 1
@@ -339,19 +377,19 @@ define Region
                 let obase ob[i]
                 set np.next_object: (nb[i] + (no - obase)) as pointer[void]
                 let cp_slot ((np as size_t) + 8) as pointer[void]
-                rr.fix(cp_slot)
+                rr.fix_owned(cp_slot)
                 let npg_slot ((np as size_t) + 16) as pointer[void]
-                rr.fix(npg_slot)
+                rr.fix_owned(npg_slot)
                 let ex_slot ((np as size_t) + 24) as pointer[void]
-                rr.fix(ex_slot)
+                rr.fix_owned(ex_slot)
                 let rg_slot ((np as size_t) + 32) as pointer[void]
-                rr.fix(rg_slot)
+                rr.fix_owned(rg_slot)
                 var nd np.exclusive_pages.head
                 while nd <> null
                 {
-                    rr.fix(nd as pointer[void])
+                    rr.fix_owned(nd as pointer[void])
                     let next_slot ((nd as size_t) + 8) as pointer[void]
-                    rr.fix(next_slot)
+                    rr.fix_owned(next_slot)
                     set nd: nd.next
                 }
             }
@@ -361,9 +399,17 @@ define Region
         let root_new rr.map(root_old)
         if root_new = 0
         {
-            scaly_eputs "Region.deserialize: root outside the received region"
-            scaly_eputnl()
-            exit 17
+            ; ★★★Give the pages back BEFORE raising, and do it through the
+            ; TABLE rather than through the page LINKS: at this point the
+            ; header swizzle has run, so `release_page`'s walk over
+            ; next_page/exclusive_pages would follow SENDER addresses. The
+            ; table still holds every page this function allocated, in both
+            ; shapes release_page knows. Without this a caught fault would
+            ; leak the whole received region -- and these pages come from the
+            ; HeapBucket, which the panic unwind (a pop of the root-page
+            ; STACK) never touches.
+            rr.release_pages()
+            scaly_panic_region("Region.deserialize: root outside the received region", root_old)
         }
         set rr.root: root_new as pointer[void]
         rr
@@ -424,6 +470,9 @@ define Region
 
     function panic_null_count() returns i64
         scaly_panic_null_count()
+
+    function panic_region_count() returns i64
+        scaly_panic_region_count()
 
     ; Is a catch point installed on this thread's stack? The panic helper asks
     ; the shim the same question implicitly; this is for a caller that wants to

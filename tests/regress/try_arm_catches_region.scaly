@@ -1,0 +1,151 @@
+; Regression: `try ... when e: InvalidRegion` fängt einen ungültigen
+; EMPFANGENEN Rahmen (TRAPS.md 3.13) — die dritte fangbare Trap-Art, und die
+; erste, die kein Programmierfehler im eigenen Code ist: die Daten kommen von
+; woanders, also muss ein langlebiger Prozess die NACHRICHT verlieren können
+; und nicht sich selbst.
+;
+; Geprüft wird:
+;   (1) der Arm bindet e mit e.what (die Stelle) und e.address (der Zeiger,
+;       an dem die Umrechnung scheiterte)
+;   (2) Locals des Fängers überleben den Sprung
+;   (3) der Zähler am Panic-Ort zählt
+;   (4) die else-Form fängt dieselbe Art
+;   (5) ein GÜLTIGER Rahmen nimmt den Erfolgspfad durch dasselbe try
+;   (6) zweihundert Fänge hintereinander, ohne dass das Programm stirbt
+;
+; ★Was dieses Tor NICHT prüft: dass die Seiten des halbgebauten Empfangs
+; zurückkommen. `Region.deserialize` gibt sie vor dem Auslösen über die
+; TABELLE frei, und das ist gemessen (TRAPS.md 3.13: 1,5 MB gegen 21,4 MB
+; Höchststand über 5000 Fänge) — aber nicht von hier aus prüfbar: der
+; HeapBucket vergibt immer den niedrigsten freien Slot, also bleibt die
+; Adresse einer Sondenseite mit und ohne Leck dieselbe. Zwei
+; Sondenfassungen bestanden die Kontrolle ohne die Freigabe; eine vakante
+; Prüfung wäre schlechter als keine.
+;
+; Erwartet: PASS
+
+define Msg (n: i64, more: pointer[u8])
+
+function make_frame(host: ref[Page], bend: bool) returns pointer[u8]
+{
+    let mp Page.allocate_page()
+    let msg mp.allocate(sizeof Msg, alignof Msg) as pointer[Msg]
+    set msg.n: 42
+    set msg.more: mp.allocate(16 as size_t, 8 as size_t) as pointer[u8]
+    let frame Region.serialize(mp, msg as pointer[void], host)
+    mp.deallocate_extensions()
+    Page.release_page(mp)
+    if bend
+    {
+        let h frame as pointer[u64]
+        set *(h + 3): 0x1000 as u64
+    }
+    frame
+}
+
+function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var vor 100
+    set vor: vor + argc
+    let vorher Region.panic_region_count()
+
+    let host Page.allocate_page()
+    let bad make_frame(host, true)
+
+    try let rr Region.deserialize(bad, host)
+        when e: InvalidRegion
+        {
+            ; (2) Locals des Fängers
+            if vor <> 101
+            {
+                print "FAIL: ein Local des Faengers hat den Sprung nicht ueberlebt"
+                return 1
+            }
+
+            ; (1) die Adresse, an der die Umrechnung scheiterte
+            if e.address <> (0x1000 as size_t)
+            {
+                print "FAIL: e.address nennt nicht die verbogene Wurzel"
+                return 2
+            }
+
+            ; (3) gezählt
+            if Region.panic_region_count() - vorher <> 1
+            {
+                print "FAIL: der Region-Zaehler zaehlte nicht genau einmal"
+                return 3
+            }
+
+            ; (1) und die Stelle, als Text
+            let w String(e.what)
+            if w.equals(String("Region.deserialize: root outside the received region")) = false
+            {
+                print "FAIL: e.what nennt nicht die Stelle"
+                print w
+                return 4
+            }
+        }
+
+    ; (4) die else-Form fängt dieselbe Art
+    var caught_else false
+    let host2 Page.allocate_page()
+    let bad2 make_frame(host2, true)
+    try let rr2 Region.deserialize(bad2, host2)
+    else
+        set caught_else: true
+    if caught_else = false
+    {
+        print "FAIL: die else-Form hat den ungueltigen Rahmen nicht gefangen"
+        return 5
+    }
+
+    ; (5) ein GÜLTIGER Rahmen geht durch dasselbe try
+    let host3 Page.allocate_page()
+    let good make_frame(host3, false)
+    var ok false
+    try let rr3 Region.deserialize(good, host3)
+        when e3: InvalidRegion
+        {
+            print "FAIL: der gueltige Rahmen hat gepanickt"
+            return 6
+        }
+    if rr3 <> null
+    {
+        set ok: true
+        let r3 rr3 as ref[ReceivedRegion]
+        r3.release()
+    }
+    if ok = false
+    {
+        print "FAIL: der gueltige Rahmen lieferte keine Region"
+        return 7
+    }
+
+    ; (6) zweihundert Faenge hintereinander
+    var i 0
+    while i < 200
+    {
+        let h4 Page.allocate_page()
+        let f4 make_frame(h4, true)
+        var c4 false
+        try let rr4 Region.deserialize(f4, h4)
+        else
+            set c4: true
+        if c4 = false
+        {
+            print "FAIL: ein spaeterer Fang blieb aus"
+            return 8
+        }
+        h4.deallocate_extensions()
+        Page.release_page(h4)
+        set i: i + 1
+    }
+    if Region.panic_region_count() - vorher <> 202
+    {
+        print "FAIL: die Summe der Faenge stimmt nicht"
+        return 9
+    }
+
+    print "PASS"
+    0
+}

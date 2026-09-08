@@ -249,6 +249,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 @fmt_scratch = thread_local global ptr null
 @panic_oob_count = thread_local global i64 0
 @panic_null_count = thread_local global i64 0
+@panic_region_count = thread_local global i64 0
 @panic_pages_unwound = thread_local global i64 0
 @heap_trace_state = global i64 0
 @heap_trace = global ptr null
@@ -315,218 +316,221 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 @.str.7 = private unnamed_addr constant [10 x i8] c", length \00", align 1
 @.str.8 = private unnamed_addr constant [2 x i8] c")\00", align 1
 @.str.9 = private unnamed_addr constant [33 x i8] c"Scaly: null unwrapped as ref in \00", align 1
-@.str.10 = private unnamed_addr constant [53 x i8] c"scaly_release_root_page: LIFO violation \E2\80\94 release=\00", align 1
-@.str.11 = private unnamed_addr constant [6 x i8] c" top=\00", align 1
-@.str.12 = private unnamed_addr constant [30 x i8] c"scaly_trace_root: UNBALANCED \00", align 1
-@.str.13 = private unnamed_addr constant [7 x i8] c" push=\00", align 1
-@.str.14 = private unnamed_addr constant [6 x i8] c" pop=\00", align 1
-@.str.15 = private unnamed_addr constant [7 x i8] c" leak=\00", align 1
-@.str.16 = private unnamed_addr constant [50 x i8] c"scaly_trace_root: all root-page push/pop balanced\00", align 1
-@.str.17 = private unnamed_addr constant [17 x i8] c"SCALY_TRACE_ROOT\00", align 1
-@.str.18 = private unnamed_addr constant [30 x i8] c"scaly_trace_heap: UNBALANCED \00", align 1
-@.str.19 = private unnamed_addr constant [8 x i8] c" alloc=\00", align 1
-@.str.20 = private unnamed_addr constant [10 x i8] c" release=\00", align 1
-@.str.21 = private unnamed_addr constant [7 x i8] c" leak=\00", align 1
-@.str.22 = private unnamed_addr constant [55 x i8] c"scaly_trace_heap: all heap-page alloc/release balanced\00", align 1
-@.str.23 = private unnamed_addr constant [17 x i8] c"SCALY_TRACE_HEAP\00", align 1
-@.str.24 = private unnamed_addr constant [56 x i8] c"ReceivedRegion.fix: pointer outside the received region\00", align 1
-@.str.25 = private unnamed_addr constant [62 x i8] c"ReceivedRegion.fix_value: pointer outside the received region\00", align 1
-@.str.26 = private unnamed_addr constant [41 x i8] c"Region.serialize: page walk disagreement\00", align 1
-@.str.27 = private unnamed_addr constant [53 x i8] c"Region.deserialize: root outside the received region\00", align 1
-@.str.28 = private unnamed_addr constant [11 x i8] c"Vector.put\00", align 1
-@.str.29 = private unnamed_addr constant [9 x i8] c"Slice.at\00", align 1
-@.str.30 = private unnamed_addr constant [10 x i8] c"Slice.put\00", align 1
-@.str.31 = private unnamed_addr constant [9 x i8] c"Array.at\00", align 1
-@.str.32 = private unnamed_addr constant [10 x i8] c"Array.put\00", align 1
-@.str.33 = private unnamed_addr constant [9 x i8] c"Vector[]\00", align 1
-@.str.34 = private unnamed_addr constant [11 x i8] c"Vector.put\00", align 1
-@.str.35 = private unnamed_addr constant [9 x i8] c"Slice.at\00", align 1
-@.str.36 = private unnamed_addr constant [10 x i8] c"Slice.put\00", align 1
-@.str.37 = private unnamed_addr constant [9 x i8] c"Array.at\00", align 1
-@.str.38 = private unnamed_addr constant [10 x i8] c"Array.put\00", align 1
-@.str.39 = private unnamed_addr constant [11 x i8] c"Vector.put\00", align 1
-@.str.40 = private unnamed_addr constant [9 x i8] c"Slice.at\00", align 1
-@.str.41 = private unnamed_addr constant [10 x i8] c"Slice.put\00", align 1
-@.str.42 = private unnamed_addr constant [9 x i8] c"Array.at\00", align 1
-@.str.43 = private unnamed_addr constant [10 x i8] c"Array.put\00", align 1
-@.str.44 = private unnamed_addr constant [11 x i8] c"Vector.put\00", align 1
-@.str.45 = private unnamed_addr constant [9 x i8] c"Slice.at\00", align 1
-@.str.46 = private unnamed_addr constant [10 x i8] c"Slice.put\00", align 1
-@.str.47 = private unnamed_addr constant [9 x i8] c"Array.at\00", align 1
-@.str.48 = private unnamed_addr constant [10 x i8] c"Array.put\00", align 1
-@.str.49 = private unnamed_addr constant [11 x i8] c"Vector.put\00", align 1
-@.str.50 = private unnamed_addr constant [9 x i8] c"Slice.at\00", align 1
-@.str.51 = private unnamed_addr constant [10 x i8] c"Slice.put\00", align 1
-@.str.52 = private unnamed_addr constant [9 x i8] c"Array.at\00", align 1
-@.str.53 = private unnamed_addr constant [10 x i8] c"Array.put\00", align 1
-@.str.54 = private unnamed_addr constant [11 x i8] c"Vector.put\00", align 1
-@.str.55 = private unnamed_addr constant [9 x i8] c"Slice.at\00", align 1
-@.str.56 = private unnamed_addr constant [10 x i8] c"Slice.put\00", align 1
-@.str.57 = private unnamed_addr constant [9 x i8] c"Array.at\00", align 1
-@.str.58 = private unnamed_addr constant [10 x i8] c"Array.put\00", align 1
-@.str.59 = private unnamed_addr constant [11 x i8] c"Vector.put\00", align 1
-@.str.60 = private unnamed_addr constant [9 x i8] c"Slice.at\00", align 1
-@.str.61 = private unnamed_addr constant [10 x i8] c"Slice.put\00", align 1
-@.str.62 = private unnamed_addr constant [9 x i8] c"Array.at\00", align 1
-@.str.63 = private unnamed_addr constant [10 x i8] c"Array.put\00", align 1
-@.str.64 = private unnamed_addr constant [11 x i8] c"Vector.put\00", align 1
-@.str.65 = private unnamed_addr constant [9 x i8] c"Slice.at\00", align 1
-@.str.66 = private unnamed_addr constant [10 x i8] c"Slice.put\00", align 1
-@.str.67 = private unnamed_addr constant [9 x i8] c"Array.at\00", align 1
-@.str.68 = private unnamed_addr constant [10 x i8] c"Array.put\00", align 1
-@.str.69 = private unnamed_addr constant [11 x i8] c"Vector.put\00", align 1
-@.str.70 = private unnamed_addr constant [9 x i8] c"Slice.at\00", align 1
-@.str.71 = private unnamed_addr constant [10 x i8] c"Slice.put\00", align 1
-@.str.72 = private unnamed_addr constant [9 x i8] c"Array.at\00", align 1
-@.str.73 = private unnamed_addr constant [10 x i8] c"Array.put\00", align 1
-@.str.74 = private unnamed_addr constant [8 x i8] c"Slice[]\00", align 1
-@.str.75 = private unnamed_addr constant [9 x i8] c"Slice.at\00", align 1
-@.str.76 = private unnamed_addr constant [10 x i8] c"Slice.put\00", align 1
+@.str.10 = private unnamed_addr constant [11 x i8] c" (address \00", align 1
+@.str.11 = private unnamed_addr constant [2 x i8] c")\00", align 1
+@.str.12 = private unnamed_addr constant [53 x i8] c"scaly_release_root_page: LIFO violation \E2\80\94 release=\00", align 1
+@.str.13 = private unnamed_addr constant [6 x i8] c" top=\00", align 1
+@.str.14 = private unnamed_addr constant [30 x i8] c"scaly_trace_root: UNBALANCED \00", align 1
+@.str.15 = private unnamed_addr constant [7 x i8] c" push=\00", align 1
+@.str.16 = private unnamed_addr constant [6 x i8] c" pop=\00", align 1
+@.str.17 = private unnamed_addr constant [7 x i8] c" leak=\00", align 1
+@.str.18 = private unnamed_addr constant [50 x i8] c"scaly_trace_root: all root-page push/pop balanced\00", align 1
+@.str.19 = private unnamed_addr constant [17 x i8] c"SCALY_TRACE_ROOT\00", align 1
+@.str.20 = private unnamed_addr constant [30 x i8] c"scaly_trace_heap: UNBALANCED \00", align 1
+@.str.21 = private unnamed_addr constant [8 x i8] c" alloc=\00", align 1
+@.str.22 = private unnamed_addr constant [10 x i8] c" release=\00", align 1
+@.str.23 = private unnamed_addr constant [7 x i8] c" leak=\00", align 1
+@.str.24 = private unnamed_addr constant [55 x i8] c"scaly_trace_heap: all heap-page alloc/release balanced\00", align 1
+@.str.25 = private unnamed_addr constant [17 x i8] c"SCALY_TRACE_HEAP\00", align 1
+@.str.26 = private unnamed_addr constant [56 x i8] c"ReceivedRegion.fix: pointer outside the received region\00", align 1
+@.str.27 = private unnamed_addr constant [62 x i8] c"ReceivedRegion.fix_value: pointer outside the received region\00", align 1
+@.str.28 = private unnamed_addr constant [56 x i8] c"ReceivedRegion.fix: pointer outside the received region\00", align 1
+@.str.29 = private unnamed_addr constant [41 x i8] c"Region.serialize: page walk disagreement\00", align 1
+@.str.30 = private unnamed_addr constant [53 x i8] c"Region.deserialize: root outside the received region\00", align 1
+@.str.31 = private unnamed_addr constant [11 x i8] c"Vector.put\00", align 1
+@.str.32 = private unnamed_addr constant [9 x i8] c"Slice.at\00", align 1
+@.str.33 = private unnamed_addr constant [10 x i8] c"Slice.put\00", align 1
+@.str.34 = private unnamed_addr constant [9 x i8] c"Array.at\00", align 1
+@.str.35 = private unnamed_addr constant [10 x i8] c"Array.put\00", align 1
+@.str.36 = private unnamed_addr constant [9 x i8] c"Vector[]\00", align 1
+@.str.37 = private unnamed_addr constant [11 x i8] c"Vector.put\00", align 1
+@.str.38 = private unnamed_addr constant [9 x i8] c"Slice.at\00", align 1
+@.str.39 = private unnamed_addr constant [10 x i8] c"Slice.put\00", align 1
+@.str.40 = private unnamed_addr constant [9 x i8] c"Array.at\00", align 1
+@.str.41 = private unnamed_addr constant [10 x i8] c"Array.put\00", align 1
+@.str.42 = private unnamed_addr constant [11 x i8] c"Vector.put\00", align 1
+@.str.43 = private unnamed_addr constant [9 x i8] c"Slice.at\00", align 1
+@.str.44 = private unnamed_addr constant [10 x i8] c"Slice.put\00", align 1
+@.str.45 = private unnamed_addr constant [9 x i8] c"Array.at\00", align 1
+@.str.46 = private unnamed_addr constant [10 x i8] c"Array.put\00", align 1
+@.str.47 = private unnamed_addr constant [11 x i8] c"Vector.put\00", align 1
+@.str.48 = private unnamed_addr constant [9 x i8] c"Slice.at\00", align 1
+@.str.49 = private unnamed_addr constant [10 x i8] c"Slice.put\00", align 1
+@.str.50 = private unnamed_addr constant [9 x i8] c"Array.at\00", align 1
+@.str.51 = private unnamed_addr constant [10 x i8] c"Array.put\00", align 1
+@.str.52 = private unnamed_addr constant [11 x i8] c"Vector.put\00", align 1
+@.str.53 = private unnamed_addr constant [9 x i8] c"Slice.at\00", align 1
+@.str.54 = private unnamed_addr constant [10 x i8] c"Slice.put\00", align 1
+@.str.55 = private unnamed_addr constant [9 x i8] c"Array.at\00", align 1
+@.str.56 = private unnamed_addr constant [10 x i8] c"Array.put\00", align 1
+@.str.57 = private unnamed_addr constant [11 x i8] c"Vector.put\00", align 1
+@.str.58 = private unnamed_addr constant [9 x i8] c"Slice.at\00", align 1
+@.str.59 = private unnamed_addr constant [10 x i8] c"Slice.put\00", align 1
+@.str.60 = private unnamed_addr constant [9 x i8] c"Array.at\00", align 1
+@.str.61 = private unnamed_addr constant [10 x i8] c"Array.put\00", align 1
+@.str.62 = private unnamed_addr constant [11 x i8] c"Vector.put\00", align 1
+@.str.63 = private unnamed_addr constant [9 x i8] c"Slice.at\00", align 1
+@.str.64 = private unnamed_addr constant [10 x i8] c"Slice.put\00", align 1
+@.str.65 = private unnamed_addr constant [9 x i8] c"Array.at\00", align 1
+@.str.66 = private unnamed_addr constant [10 x i8] c"Array.put\00", align 1
+@.str.67 = private unnamed_addr constant [11 x i8] c"Vector.put\00", align 1
+@.str.68 = private unnamed_addr constant [9 x i8] c"Slice.at\00", align 1
+@.str.69 = private unnamed_addr constant [10 x i8] c"Slice.put\00", align 1
+@.str.70 = private unnamed_addr constant [9 x i8] c"Array.at\00", align 1
+@.str.71 = private unnamed_addr constant [10 x i8] c"Array.put\00", align 1
+@.str.72 = private unnamed_addr constant [11 x i8] c"Vector.put\00", align 1
+@.str.73 = private unnamed_addr constant [9 x i8] c"Slice.at\00", align 1
+@.str.74 = private unnamed_addr constant [10 x i8] c"Slice.put\00", align 1
+@.str.75 = private unnamed_addr constant [9 x i8] c"Array.at\00", align 1
+@.str.76 = private unnamed_addr constant [10 x i8] c"Array.put\00", align 1
 @.str.77 = private unnamed_addr constant [8 x i8] c"Slice[]\00", align 1
 @.str.78 = private unnamed_addr constant [9 x i8] c"Slice.at\00", align 1
 @.str.79 = private unnamed_addr constant [10 x i8] c"Slice.put\00", align 1
-@.str.80 = private unnamed_addr constant [9 x i8] c"Slice.at\00", align 1
-@.str.81 = private unnamed_addr constant [9 x i8] c"Array.at\00", align 1
-@.str.82 = private unnamed_addr constant [11 x i8] c"Vector.put\00", align 1
-@.str.83 = private unnamed_addr constant [9 x i8] c"Array.at\00", align 1
-@.str.84 = private unnamed_addr constant [10 x i8] c"Array.put\00", align 1
+@.str.80 = private unnamed_addr constant [8 x i8] c"Slice[]\00", align 1
+@.str.81 = private unnamed_addr constant [9 x i8] c"Slice.at\00", align 1
+@.str.82 = private unnamed_addr constant [10 x i8] c"Slice.put\00", align 1
+@.str.83 = private unnamed_addr constant [9 x i8] c"Slice.at\00", align 1
+@.str.84 = private unnamed_addr constant [9 x i8] c"Array.at\00", align 1
+@.str.85 = private unnamed_addr constant [11 x i8] c"Vector.put\00", align 1
+@.str.86 = private unnamed_addr constant [9 x i8] c"Array.at\00", align 1
+@.str.87 = private unnamed_addr constant [10 x i8] c"Array.put\00", align 1
 @.sconst = private constant [6 x i8] c"\04true\00"
-@.sconst.85 = private constant [7 x i8] c"\05false\00"
-@.str.86 = private unnamed_addr constant [18 x i8] c"Thread.spawn_cell\00", align 1
+@.sconst.88 = private constant [7 x i8] c"\05false\00"
+@.str.89 = private unnamed_addr constant [18 x i8] c"Thread.spawn_cell\00", align 1
 @.unwrap.at = private unnamed_addr constant [21 x i8] c"_ZN5Fiber7startedEPv\00", align 1
-@.unwrap.at.87 = private unnamed_addr constant [18 x i8] c"_ZN5Fiber5yieldEv\00", align 1
-@.unwrap.at.88 = private unnamed_addr constant [19 x i8] c"_ZN5Fiber6finishEv\00", align 1
-@.unwrap.at.89 = private unnamed_addr constant [34 x i8] c"_ZN9Scheduler7enqueueER9SchedTask\00", align 1
-@.unwrap.at.90 = private unnamed_addr constant [24 x i8] c"_ZN9Scheduler7dequeueEv\00", align 1
-@.unwrap.at.91 = private unnamed_addr constant [33 x i8] c"_ZN9Scheduler11spawn_sizedEPvPvm\00", align 1
-@.unwrap.at.92 = private unnamed_addr constant [40 x i8] c"_ZN9Scheduler12wake_waitersER9SchedTask\00", align 1
-@.unwrap.at.93 = private unnamed_addr constant [24 x i8] c"_ZN9Scheduler7poll_ioEv\00", align 1
-@.unwrap.at.94 = private unnamed_addr constant [30 x i8] c"_ZN9Scheduler12step_or_waitEv\00", align 1
-@.unwrap.at.95 = private unnamed_addr constant [20 x i8] c"_ZN9Scheduler3runEv\00", align 1
-@.unwrap.at.96 = private unnamed_addr constant [31 x i8] c"_ZN9Scheduler4joinER9SchedTask\00", align 1
-@.unwrap.at.97 = private unnamed_addr constant [15 x i8] c"_Z9io_workerPv\00", align 1
-@.unwrap.at.98 = private unnamed_addr constant [22 x i8] c"_ZN2Io11ensure_pollEv\00", align 1
-@.unwrap.at.99 = private unnamed_addr constant [22 x i8] c"_ZN2Io11ensure_wakeEv\00", align 1
-@.unwrap.at.100 = private unnamed_addr constant [18 x i8] c"_ZN2Io4parkE3i32b\00", align 1
-@.unwrap.at.101 = private unnamed_addr constant [18 x i8] c"_ZN2Io4parkE3i32b\00", align 1
-@.str.102 = private unnamed_addr constant [13 x i8] c"Io.pool_page\00", align 1
-@.unwrap.at.103 = private unnamed_addr constant [22 x i8] c"_ZN2Io11ensure_poolEv\00", align 1
-@.str.104 = private unnamed_addr constant [13 x i8] c"Io.work_page\00", align 1
-@.unwrap.at.105 = private unnamed_addr constant [20 x i8] c"_ZN2Io7offloadEPvPv\00", align 1
-@.unwrap.at.106 = private unnamed_addr constant [20 x i8] c"_ZN2Io7offloadEPvPv\00", align 1
+@.unwrap.at.90 = private unnamed_addr constant [18 x i8] c"_ZN5Fiber5yieldEv\00", align 1
+@.unwrap.at.91 = private unnamed_addr constant [19 x i8] c"_ZN5Fiber6finishEv\00", align 1
+@.unwrap.at.92 = private unnamed_addr constant [34 x i8] c"_ZN9Scheduler7enqueueER9SchedTask\00", align 1
+@.unwrap.at.93 = private unnamed_addr constant [24 x i8] c"_ZN9Scheduler7dequeueEv\00", align 1
+@.unwrap.at.94 = private unnamed_addr constant [33 x i8] c"_ZN9Scheduler11spawn_sizedEPvPvm\00", align 1
+@.unwrap.at.95 = private unnamed_addr constant [40 x i8] c"_ZN9Scheduler12wake_waitersER9SchedTask\00", align 1
+@.unwrap.at.96 = private unnamed_addr constant [24 x i8] c"_ZN9Scheduler7poll_ioEv\00", align 1
+@.unwrap.at.97 = private unnamed_addr constant [30 x i8] c"_ZN9Scheduler12step_or_waitEv\00", align 1
+@.unwrap.at.98 = private unnamed_addr constant [20 x i8] c"_ZN9Scheduler3runEv\00", align 1
+@.unwrap.at.99 = private unnamed_addr constant [31 x i8] c"_ZN9Scheduler4joinER9SchedTask\00", align 1
+@.unwrap.at.100 = private unnamed_addr constant [15 x i8] c"_Z9io_workerPv\00", align 1
+@.unwrap.at.101 = private unnamed_addr constant [22 x i8] c"_ZN2Io11ensure_pollEv\00", align 1
+@.unwrap.at.102 = private unnamed_addr constant [22 x i8] c"_ZN2Io11ensure_wakeEv\00", align 1
+@.unwrap.at.103 = private unnamed_addr constant [18 x i8] c"_ZN2Io4parkE3i32b\00", align 1
+@.unwrap.at.104 = private unnamed_addr constant [18 x i8] c"_ZN2Io4parkE3i32b\00", align 1
+@.str.105 = private unnamed_addr constant [13 x i8] c"Io.pool_page\00", align 1
+@.unwrap.at.106 = private unnamed_addr constant [22 x i8] c"_ZN2Io11ensure_poolEv\00", align 1
 @.str.107 = private unnamed_addr constant [13 x i8] c"Io.work_page\00", align 1
-@.str.108 = private unnamed_addr constant [13 x i8] c"Io.pool_page\00", align 1
-@.str.109 = private unnamed_addr constant [20 x i8] c"Channel.record_page\00", align 1
-@.str.110 = private unnamed_addr constant [20 x i8] c"Channel.record_page\00", align 1
-@.unwrap.at.111 = private unnamed_addr constant [30 x i8] c"_ZN7Channel5routeER9SchedTask\00", align 1
-@.unwrap.at.112 = private unnamed_addr constant [29 x i8] c"_ZN7Channel4sendEP7ChannelPv\00", align 1
-@.unwrap.at.113 = private unnamed_addr constant [30 x i8] c"_ZN7Channel7receiveER7Channel\00", align 1
-@.unwrap.at.114 = private unnamed_addr constant [29 x i8] c"_ZN7Channel10timed_pollE3i32\00", align 1
-@.str.115 = private unnamed_addr constant [18 x i8] c"Thread.spawn_cell\00", align 1
-@.str.116 = private unnamed_addr constant [22 x i8] c"TaskGroup.record_page\00", align 1
-@.str.117 = private unnamed_addr constant [22 x i8] c"TaskGroup.record_page\00", align 1
-@.str.118 = private unnamed_addr constant [19 x i8] c"TaskPool.pool_page\00", align 1
-@.unwrap.at.119 = private unnamed_addr constant [33 x i8] c"_ZN8TaskPool4takeEP8TaskPool3i64\00", align 1
-@.str.120 = private unnamed_addr constant [19 x i8] c"TaskPool.pool_page\00", align 1
-@.unwrap.at.121 = private unnamed_addr constant [29 x i8] c"_ZN8TaskPool12default_poolEv\00", align 1
-@.unwrap.at.122 = private unnamed_addr constant [30 x i8] c"_ZN8TaskPool13drain_defaultEv\00", align 1
-@.str.123 = private unnamed_addr constant [3 x i8] c"rb\00", align 1
-@.str.124 = private unnamed_addr constant [3 x i8] c"wb\00", align 1
-@.str.125 = private unnamed_addr constant [3 x i8] c"rb\00", align 1
-@.str.126 = private unnamed_addr constant [15 x i8] c"File.read_cell\00", align 1
-@.str.127 = private unnamed_addr constant [15 x i8] c"File.read_cell\00", align 1
-@.str.128 = private unnamed_addr constant [15 x i8] c"File.read_cell\00", align 1
-@.str.129 = private unnamed_addr constant [3 x i8] c"wb\00", align 1
-@.str.130 = private unnamed_addr constant [16 x i8] c"File.write_cell\00", align 1
-@.str.131 = private unnamed_addr constant [16 x i8] c"File.write_cell\00", align 1
-@.str.132 = private unnamed_addr constant [2 x i8] c".\00", align 1
-@.unwrap.at.133 = private unnamed_addr constant [24 x i8] c"_Z17node_reader_entryPv\00", align 1
-@.str.134 = private unnamed_addr constant [70 x i8] c"node: connect refused - peer is not a scaly node (bad preamble magic)\00", align 1
-@.str.135 = private unnamed_addr constant [58 x i8] c"node: connect refused - protocol version mismatch: local \00", align 1
-@.str.136 = private unnamed_addr constant [7 x i8] c" peer \00", align 1
-@.str.137 = private unnamed_addr constant [78 x i8] c"node: connect refused - build stamp mismatch (one cluster, one build): local \00", align 1
-@.str.138 = private unnamed_addr constant [7 x i8] c" peer \00", align 1
-@.str.139 = private unnamed_addr constant [25 x i8] c"node: channel table full\00", align 1
-@.str.140 = private unnamed_addr constant [25 x i8] c"node: monitor table full\00", align 1
-@.str.141 = private unnamed_addr constant [11 x i8] c"Vector.put\00", align 1
-@.str.142 = private unnamed_addr constant [9 x i8] c"Slice.at\00", align 1
-@.str.143 = private unnamed_addr constant [10 x i8] c"Slice.put\00", align 1
-@.str.144 = private unnamed_addr constant [9 x i8] c"Array.at\00", align 1
-@.str.145 = private unnamed_addr constant [10 x i8] c"Array.put\00", align 1
+@.unwrap.at.108 = private unnamed_addr constant [20 x i8] c"_ZN2Io7offloadEPvPv\00", align 1
+@.unwrap.at.109 = private unnamed_addr constant [20 x i8] c"_ZN2Io7offloadEPvPv\00", align 1
+@.str.110 = private unnamed_addr constant [13 x i8] c"Io.work_page\00", align 1
+@.str.111 = private unnamed_addr constant [13 x i8] c"Io.pool_page\00", align 1
+@.str.112 = private unnamed_addr constant [20 x i8] c"Channel.record_page\00", align 1
+@.str.113 = private unnamed_addr constant [20 x i8] c"Channel.record_page\00", align 1
+@.unwrap.at.114 = private unnamed_addr constant [30 x i8] c"_ZN7Channel5routeER9SchedTask\00", align 1
+@.unwrap.at.115 = private unnamed_addr constant [29 x i8] c"_ZN7Channel4sendEP7ChannelPv\00", align 1
+@.unwrap.at.116 = private unnamed_addr constant [30 x i8] c"_ZN7Channel7receiveER7Channel\00", align 1
+@.unwrap.at.117 = private unnamed_addr constant [29 x i8] c"_ZN7Channel10timed_pollE3i32\00", align 1
+@.str.118 = private unnamed_addr constant [18 x i8] c"Thread.spawn_cell\00", align 1
+@.str.119 = private unnamed_addr constant [22 x i8] c"TaskGroup.record_page\00", align 1
+@.str.120 = private unnamed_addr constant [22 x i8] c"TaskGroup.record_page\00", align 1
+@.str.121 = private unnamed_addr constant [19 x i8] c"TaskPool.pool_page\00", align 1
+@.unwrap.at.122 = private unnamed_addr constant [33 x i8] c"_ZN8TaskPool4takeEP8TaskPool3i64\00", align 1
+@.str.123 = private unnamed_addr constant [19 x i8] c"TaskPool.pool_page\00", align 1
+@.unwrap.at.124 = private unnamed_addr constant [29 x i8] c"_ZN8TaskPool12default_poolEv\00", align 1
+@.unwrap.at.125 = private unnamed_addr constant [30 x i8] c"_ZN8TaskPool13drain_defaultEv\00", align 1
+@.str.126 = private unnamed_addr constant [3 x i8] c"rb\00", align 1
+@.str.127 = private unnamed_addr constant [3 x i8] c"wb\00", align 1
+@.str.128 = private unnamed_addr constant [3 x i8] c"rb\00", align 1
+@.str.129 = private unnamed_addr constant [15 x i8] c"File.read_cell\00", align 1
+@.str.130 = private unnamed_addr constant [15 x i8] c"File.read_cell\00", align 1
+@.str.131 = private unnamed_addr constant [15 x i8] c"File.read_cell\00", align 1
+@.str.132 = private unnamed_addr constant [3 x i8] c"wb\00", align 1
+@.str.133 = private unnamed_addr constant [16 x i8] c"File.write_cell\00", align 1
+@.str.134 = private unnamed_addr constant [16 x i8] c"File.write_cell\00", align 1
+@.str.135 = private unnamed_addr constant [2 x i8] c".\00", align 1
+@.unwrap.at.136 = private unnamed_addr constant [24 x i8] c"_Z17node_reader_entryPv\00", align 1
+@.str.137 = private unnamed_addr constant [70 x i8] c"node: connect refused - peer is not a scaly node (bad preamble magic)\00", align 1
+@.str.138 = private unnamed_addr constant [58 x i8] c"node: connect refused - protocol version mismatch: local \00", align 1
+@.str.139 = private unnamed_addr constant [7 x i8] c" peer \00", align 1
+@.str.140 = private unnamed_addr constant [78 x i8] c"node: connect refused - build stamp mismatch (one cluster, one build): local \00", align 1
+@.str.141 = private unnamed_addr constant [7 x i8] c" peer \00", align 1
+@.str.142 = private unnamed_addr constant [25 x i8] c"node: channel table full\00", align 1
+@.str.143 = private unnamed_addr constant [25 x i8] c"node: monitor table full\00", align 1
+@.str.144 = private unnamed_addr constant [11 x i8] c"Vector.put\00", align 1
+@.str.145 = private unnamed_addr constant [9 x i8] c"Slice.at\00", align 1
+@.str.146 = private unnamed_addr constant [10 x i8] c"Slice.put\00", align 1
+@.str.147 = private unnamed_addr constant [9 x i8] c"Array.at\00", align 1
+@.str.148 = private unnamed_addr constant [10 x i8] c"Array.put\00", align 1
 @parfor.site.vol = private thread_local global i64 0
 @parfor.site.calns = private thread_local global i64 0
 @parfor.site.caliters = private thread_local global i64 0
 @parfor.site.p1k = private global i64 0
-@parfor.site.vol.147 = private thread_local global i64 0
-@parfor.site.calns.148 = private thread_local global i64 0
-@parfor.site.caliters.149 = private thread_local global i64 0
-@parfor.site.p1k.150 = private global i64 0
-@parfor.site.vol.152 = private thread_local global i64 0
-@parfor.site.calns.153 = private thread_local global i64 0
-@parfor.site.caliters.154 = private thread_local global i64 0
-@parfor.site.p1k.155 = private global i64 0
-@.str.156 = private unnamed_addr constant [11 x i8] c"Vector.put\00", align 1
-@.str.157 = private unnamed_addr constant [9 x i8] c"Slice.at\00", align 1
-@.str.158 = private unnamed_addr constant [10 x i8] c"Slice.put\00", align 1
-@.str.159 = private unnamed_addr constant [9 x i8] c"Array.at\00", align 1
-@.str.160 = private unnamed_addr constant [10 x i8] c"Array.put\00", align 1
-@.str.161 = private unnamed_addr constant [11 x i8] c"Vector.put\00", align 1
-@.str.162 = private unnamed_addr constant [9 x i8] c"Slice.at\00", align 1
-@.str.163 = private unnamed_addr constant [10 x i8] c"Slice.put\00", align 1
-@.str.164 = private unnamed_addr constant [9 x i8] c"Array.at\00", align 1
-@.str.165 = private unnamed_addr constant [10 x i8] c"Array.put\00", align 1
-@parfor.site.vol.167 = private thread_local global i64 0
-@parfor.site.calns.168 = private thread_local global i64 0
-@parfor.site.caliters.169 = private thread_local global i64 0
-@parfor.site.p1k.170 = private global i64 0
-@parfor.site.vol.172 = private thread_local global i64 0
-@parfor.site.calns.173 = private thread_local global i64 0
-@parfor.site.caliters.174 = private thread_local global i64 0
-@parfor.site.p1k.175 = private global i64 0
-@parfor.site.vol.177 = private thread_local global i64 0
-@parfor.site.calns.178 = private thread_local global i64 0
-@parfor.site.caliters.179 = private thread_local global i64 0
-@parfor.site.p1k.180 = private global i64 0
-@parfor.site.vol.182 = private thread_local global i64 0
-@parfor.site.calns.183 = private thread_local global i64 0
-@parfor.site.caliters.184 = private thread_local global i64 0
-@parfor.site.p1k.185 = private global i64 0
-@parfor.site.vol.187 = private thread_local global i64 0
-@parfor.site.calns.188 = private thread_local global i64 0
-@parfor.site.caliters.189 = private thread_local global i64 0
-@parfor.site.p1k.190 = private global i64 0
-@parfor.site.vol.192 = private thread_local global i64 0
-@parfor.site.calns.193 = private thread_local global i64 0
-@parfor.site.caliters.194 = private thread_local global i64 0
-@parfor.site.p1k.195 = private global i64 0
-@parfor.site.vol.197 = private thread_local global i64 0
-@parfor.site.calns.198 = private thread_local global i64 0
-@parfor.site.caliters.199 = private thread_local global i64 0
-@parfor.site.p1k.200 = private global i64 0
-@parfor.site.vol.202 = private thread_local global i64 0
-@parfor.site.calns.203 = private thread_local global i64 0
-@parfor.site.caliters.204 = private thread_local global i64 0
-@parfor.site.p1k.205 = private global i64 0
-@parfor.site.vol.207 = private thread_local global i64 0
-@parfor.site.calns.208 = private thread_local global i64 0
-@parfor.site.caliters.209 = private thread_local global i64 0
-@parfor.site.p1k.210 = private global i64 0
-@parfor.site.vol.212 = private thread_local global i64 0
-@parfor.site.calns.213 = private thread_local global i64 0
-@parfor.site.caliters.214 = private thread_local global i64 0
-@parfor.site.p1k.215 = private global i64 0
-@parfor.site.vol.217 = private thread_local global i64 0
-@parfor.site.calns.218 = private thread_local global i64 0
-@parfor.site.caliters.219 = private thread_local global i64 0
-@parfor.site.p1k.220 = private global i64 0
-@parfor.site.vol.222 = private thread_local global i64 0
-@parfor.site.calns.223 = private thread_local global i64 0
-@parfor.site.caliters.224 = private thread_local global i64 0
-@parfor.site.p1k.225 = private global i64 0
-@parfor.site.vol.227 = private thread_local global i64 0
-@parfor.site.calns.228 = private thread_local global i64 0
-@parfor.site.caliters.229 = private thread_local global i64 0
-@parfor.site.p1k.230 = private global i64 0
+@parfor.site.vol.150 = private thread_local global i64 0
+@parfor.site.calns.151 = private thread_local global i64 0
+@parfor.site.caliters.152 = private thread_local global i64 0
+@parfor.site.p1k.153 = private global i64 0
+@parfor.site.vol.155 = private thread_local global i64 0
+@parfor.site.calns.156 = private thread_local global i64 0
+@parfor.site.caliters.157 = private thread_local global i64 0
+@parfor.site.p1k.158 = private global i64 0
+@.str.159 = private unnamed_addr constant [11 x i8] c"Vector.put\00", align 1
+@.str.160 = private unnamed_addr constant [9 x i8] c"Slice.at\00", align 1
+@.str.161 = private unnamed_addr constant [10 x i8] c"Slice.put\00", align 1
+@.str.162 = private unnamed_addr constant [9 x i8] c"Array.at\00", align 1
+@.str.163 = private unnamed_addr constant [10 x i8] c"Array.put\00", align 1
+@.str.164 = private unnamed_addr constant [11 x i8] c"Vector.put\00", align 1
+@.str.165 = private unnamed_addr constant [9 x i8] c"Slice.at\00", align 1
+@.str.166 = private unnamed_addr constant [10 x i8] c"Slice.put\00", align 1
+@.str.167 = private unnamed_addr constant [9 x i8] c"Array.at\00", align 1
+@.str.168 = private unnamed_addr constant [10 x i8] c"Array.put\00", align 1
+@parfor.site.vol.170 = private thread_local global i64 0
+@parfor.site.calns.171 = private thread_local global i64 0
+@parfor.site.caliters.172 = private thread_local global i64 0
+@parfor.site.p1k.173 = private global i64 0
+@parfor.site.vol.175 = private thread_local global i64 0
+@parfor.site.calns.176 = private thread_local global i64 0
+@parfor.site.caliters.177 = private thread_local global i64 0
+@parfor.site.p1k.178 = private global i64 0
+@parfor.site.vol.180 = private thread_local global i64 0
+@parfor.site.calns.181 = private thread_local global i64 0
+@parfor.site.caliters.182 = private thread_local global i64 0
+@parfor.site.p1k.183 = private global i64 0
+@parfor.site.vol.185 = private thread_local global i64 0
+@parfor.site.calns.186 = private thread_local global i64 0
+@parfor.site.caliters.187 = private thread_local global i64 0
+@parfor.site.p1k.188 = private global i64 0
+@parfor.site.vol.190 = private thread_local global i64 0
+@parfor.site.calns.191 = private thread_local global i64 0
+@parfor.site.caliters.192 = private thread_local global i64 0
+@parfor.site.p1k.193 = private global i64 0
+@parfor.site.vol.195 = private thread_local global i64 0
+@parfor.site.calns.196 = private thread_local global i64 0
+@parfor.site.caliters.197 = private thread_local global i64 0
+@parfor.site.p1k.198 = private global i64 0
+@parfor.site.vol.200 = private thread_local global i64 0
+@parfor.site.calns.201 = private thread_local global i64 0
+@parfor.site.caliters.202 = private thread_local global i64 0
+@parfor.site.p1k.203 = private global i64 0
+@parfor.site.vol.205 = private thread_local global i64 0
+@parfor.site.calns.206 = private thread_local global i64 0
+@parfor.site.caliters.207 = private thread_local global i64 0
+@parfor.site.p1k.208 = private global i64 0
+@parfor.site.vol.210 = private thread_local global i64 0
+@parfor.site.calns.211 = private thread_local global i64 0
+@parfor.site.caliters.212 = private thread_local global i64 0
+@parfor.site.p1k.213 = private global i64 0
+@parfor.site.vol.215 = private thread_local global i64 0
+@parfor.site.calns.216 = private thread_local global i64 0
+@parfor.site.caliters.217 = private thread_local global i64 0
+@parfor.site.p1k.218 = private global i64 0
+@parfor.site.vol.220 = private thread_local global i64 0
+@parfor.site.calns.221 = private thread_local global i64 0
+@parfor.site.caliters.222 = private thread_local global i64 0
+@parfor.site.p1k.223 = private global i64 0
+@parfor.site.vol.225 = private thread_local global i64 0
+@parfor.site.calns.226 = private thread_local global i64 0
+@parfor.site.caliters.227 = private thread_local global i64 0
+@parfor.site.p1k.228 = private global i64 0
+@parfor.site.vol.230 = private thread_local global i64 0
+@parfor.site.calns.231 = private thread_local global i64 0
+@parfor.site.caliters.232 = private thread_local global i64 0
+@parfor.site.p1k.233 = private global i64 0
 
 declare ptr @memcpy(...)
 
@@ -1387,6 +1391,8 @@ declare i32 @scaly_panic_jump(ptr, i64, i64)
 
 declare i32 @scaly_panic_null_jump(ptr)
 
+declare i32 @scaly_panic_region_jump(ptr, i64)
+
 declare i64 @scaly_catch_run(ptr, ptr, ptr, ptr, ptr)
 
 declare i32 @scaly_catch_active()
@@ -1437,6 +1443,35 @@ entry:
   call void @_Z11scaly_eputsP10const_char(ptr %0)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 21)
+  ret void
+}
+
+define linkonce_odr i64 @_Z24scaly_panic_region_countv() {
+entry:
+  %global.load = load i64, ptr @panic_region_count, align 8
+  ret i64 %global.load
+}
+
+define linkonce_odr void @_Z18scaly_panic_regionP10const_charm(ptr %0, i64 %1) {
+entry:
+  %global.load = load i64, ptr @panic_region_count, align 8
+  %add = add i64 %global.load, 1
+  store i64 %add, ptr @panic_region_count, align 8
+  %call = call i32 @scaly_panic_region_jump(ptr %0, i64 %1)
+  call void @_Z11scaly_eputsP10const_char(ptr %0)
+  %ne = icmp ne i64 %1, 0
+  br i1 %ne, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.10)
+  %as.inttoptr = inttoptr i64 %1 to ptr
+  call void @_Z11scaly_eputpPv(ptr %as.inttoptr)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.11)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  call void @_Z12scaly_eputnlv()
+  call void @exit(i64 18)
   ret void
 }
 
@@ -1841,9 +1876,9 @@ entry:
   br i1 %ne, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.10)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.12)
   call void @_Z11scaly_eputpPv(ptr %0)
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.11)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.13)
   %global.load1 = load ptr, ptr @stack_top, align 8
   call void @_Z11scaly_eputpPv(ptr %global.load1)
   call void @_Z12scaly_eputnlv()
@@ -2056,15 +2091,15 @@ if.then:                                          ; preds = %while.body
   %push_count6 = extractvalue %_Z10TraceEntry %load.struct5, 1
   %load.struct7 = load %_Z10TraceEntry, ptr %ptr.add, align 8
   %pop_count8 = extractvalue %_Z10TraceEntry %load.struct7, 2
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.12)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.14)
   %field.inplace = getelementptr inbounds nuw %_Z10TraceEntry, ptr %ptr.add, i32 0, i32 0
   %deref.recv = load ptr, ptr %field.inplace, align 8
   call void @_Z11scaly_eputsP10const_char(ptr %deref.recv)
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.13)
-  call void @_Z11scaly_eputi3i64(i64 %push_count6)
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.14)
-  call void @_Z11scaly_eputi3i64(i64 %pop_count8)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.15)
+  call void @_Z11scaly_eputi3i64(i64 %push_count6)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.16)
+  call void @_Z11scaly_eputi3i64(i64 %pop_count8)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.17)
   %sub = sub i64 %push_count6, %pop_count8
   call void @_Z11scaly_eputi3i64(i64 %sub)
   call void @_Z12scaly_eputnlv()
@@ -2081,7 +2116,7 @@ if.then11:                                        ; preds = %while.exit
   ret void
 
 if.end12:                                         ; preds = %while.exit
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.16)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.18)
   call void @_Z12scaly_eputnlv()
   ret void
 }
@@ -2097,7 +2132,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   store i64 1, ptr @trace_atexit_registered, align 8
-  %call = call ptr @getenv(ptr @.str.17)
+  %call = call ptr @getenv(ptr @.str.19)
   %eq = icmp eq ptr %call, null
   br i1 %eq, label %if.then1, label %if.end2
 
@@ -2266,15 +2301,15 @@ if.then6:                                         ; preds = %while.body
   %push_count9 = extractvalue %_Z10TraceEntry %load.struct8, 1
   %load.struct10 = load %_Z10TraceEntry, ptr %ptr.add, align 8
   %pop_count11 = extractvalue %_Z10TraceEntry %load.struct10, 2
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.18)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.20)
   %field.inplace = getelementptr inbounds nuw %_Z10TraceEntry, ptr %ptr.add, i32 0, i32 0
   %deref.recv = load ptr, ptr %field.inplace, align 8
   call void @_Z11scaly_eputsP10const_char(ptr %deref.recv)
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.19)
-  call void @_Z11scaly_eputi3i64(i64 %push_count9)
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.20)
-  call void @_Z11scaly_eputi3i64(i64 %pop_count11)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.21)
+  call void @_Z11scaly_eputi3i64(i64 %push_count9)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.22)
+  call void @_Z11scaly_eputi3i64(i64 %pop_count11)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.23)
   %sub = sub i64 %push_count9, %pop_count11
   call void @_Z11scaly_eputi3i64(i64 %sub)
   call void @_Z12scaly_eputnlv()
@@ -2291,7 +2326,7 @@ if.then14:                                        ; preds = %while.exit
   ret void
 
 if.end15:                                         ; preds = %while.exit
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.22)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.24)
   call void @_Z12scaly_eputnlv()
   ret void
 }
@@ -2306,7 +2341,7 @@ if.then:                                          ; preds = %entry
   ret void
 
 if.end:                                           ; preds = %entry
-  %call = call ptr @getenv(ptr @.str.23)
+  %call = call ptr @getenv(ptr @.str.25)
   %eq = icmp eq ptr %call, null
   br i1 %eq, label %if.then1, label %if.end2
 
@@ -2557,9 +2592,7 @@ if.end:                                           ; preds = %entry
   br i1 %eq1, label %if.then2, label %if.end3
 
 if.then2:                                         ; preds = %if.end
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.24)
-  call void @_Z12scaly_eputnlv()
-  call void @exit(i64 17)
+  call void @_Z18scaly_panic_regionP10const_charm(ptr @.str.26, i64 %deref)
   br label %if.end3
 
 if.end3:                                          ; preds = %if.then2, %if.end
@@ -2581,13 +2614,72 @@ if.end:                                           ; preds = %entry
   br i1 %eq1, label %if.then2, label %if.end3
 
 if.then2:                                         ; preds = %if.end
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.25)
-  call void @_Z12scaly_eputnlv()
-  call void @exit(i64 17)
+  call void @_Z18scaly_panic_regionP10const_charm(ptr @.str.27, i64 %1)
   br label %if.end3
 
 if.end3:                                          ; preds = %if.then2, %if.end
   ret i64 %call
+}
+
+define linkonce_odr void @_ZN14ReceivedRegion9fix_ownedEPv(ptr %0, ptr %1) {
+entry:
+  %deref = load i64, ptr %1, align 8
+  %eq = icmp eq i64 %deref, 0
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret void
+
+if.end:                                           ; preds = %entry
+  %call = call i64 @_ZN14ReceivedRegion3mapEm(ptr %0, i64 %deref)
+  %eq1 = icmp eq i64 %call, 0
+  br i1 %eq1, label %if.then2, label %if.end3
+
+if.then2:                                         ; preds = %if.end
+  call void @_ZN14ReceivedRegion13release_pagesEv(ptr %0)
+  call void @_Z18scaly_panic_regionP10const_charm(ptr @.str.28, i64 %deref)
+  br label %if.end3
+
+if.end3:                                          ; preds = %if.then2, %if.end
+  store i64 %call, ptr %1, align 8
+  ret void
+}
+
+define linkonce_odr void @_ZN14ReceivedRegion13release_pagesEv(ptr %0) {
+entry:
+  %load.struct = load %_Z14ReceivedRegion, ptr %0, align 8
+  %new_bases = extractvalue %_Z14ReceivedRegion %load.struct, 4
+  %i = alloca i64, align 8
+  store i64 0, ptr %i, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %if.end, %entry
+  %i1 = load i64, ptr %i, align 8
+  %load.struct2 = load %_Z14ReceivedRegion, ptr %0, align 8
+  %page_count = extractvalue %_Z14ReceivedRegion %load.struct2, 2
+  %lt = icmp ult i64 %i1, %page_count
+  br i1 %lt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %i3 = load i64, ptr %i, align 8
+  %ptr.add = getelementptr inbounds i64, ptr %new_bases, i64 %i3
+  %deref = load i64, ptr %ptr.add, align 8
+  %as.inttoptr = inttoptr i64 %deref to ptr
+  %ne = icmp ne ptr %as.inttoptr, null
+  br i1 %ne, label %if.then, label %if.end
+
+while.exit:                                       ; preds = %while.cond
+  ret void
+
+if.then:                                          ; preds = %while.body
+  call void @_ZN4Page12release_pageER4Page(ptr %as.inttoptr)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %while.body
+  %i4 = load i64, ptr %i, align 8
+  %add = add i64 %i4, 1
+  store i64 %add, ptr %i, align 1
+  br label %while.cond
 }
 
 define linkonce_odr void @_ZN14ReceivedRegion7releaseEv(ptr %0) {
@@ -2821,9 +2913,7 @@ entry:
   br i1 %ne, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.26)
-  call void @_Z12scaly_eputnlv()
-  call void @exit(i64 17)
+  call void @_Z18scaly_panic_regionP10const_charm(ptr @.str.29, i64 0)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -3115,19 +3205,19 @@ if.then82:                                        ; preds = %while.body72
   %as.ptrtoint93 = ptrtoint ptr %as.inttoptr79 to i64
   %add94 = add i64 %as.ptrtoint93, 8
   %as.inttoptr95 = inttoptr i64 %add94 to ptr
-  call void @_ZN14ReceivedRegion3fixEPv(ptr %call67, ptr %as.inttoptr95)
+  call void @_ZN14ReceivedRegion9fix_ownedEPv(ptr %call67, ptr %as.inttoptr95)
   %as.ptrtoint96 = ptrtoint ptr %as.inttoptr79 to i64
   %add97 = add i64 %as.ptrtoint96, 16
   %as.inttoptr98 = inttoptr i64 %add97 to ptr
-  call void @_ZN14ReceivedRegion3fixEPv(ptr %call67, ptr %as.inttoptr98)
+  call void @_ZN14ReceivedRegion9fix_ownedEPv(ptr %call67, ptr %as.inttoptr98)
   %as.ptrtoint99 = ptrtoint ptr %as.inttoptr79 to i64
   %add100 = add i64 %as.ptrtoint99, 24
   %as.inttoptr101 = inttoptr i64 %add100 to ptr
-  call void @_ZN14ReceivedRegion3fixEPv(ptr %call67, ptr %as.inttoptr101)
+  call void @_ZN14ReceivedRegion9fix_ownedEPv(ptr %call67, ptr %as.inttoptr101)
   %as.ptrtoint102 = ptrtoint ptr %as.inttoptr79 to i64
   %add103 = add i64 %as.ptrtoint102, 32
   %as.inttoptr104 = inttoptr i64 %add103 to ptr
-  call void @_ZN14ReceivedRegion3fixEPv(ptr %call67, ptr %as.inttoptr104)
+  call void @_ZN14ReceivedRegion9fix_ownedEPv(ptr %call67, ptr %as.inttoptr104)
   %load.struct105 = load %_Z4Page, ptr %as.inttoptr79, align 8
   %exclusive_pages = extractvalue %_Z4Page %load.struct105, 3
   %head = extractvalue %_Z8PageList %exclusive_pages, 0
@@ -3147,12 +3237,12 @@ while.cond106:                                    ; preds = %while.body107, %if.
 
 while.body107:                                    ; preds = %while.cond106
   %nd110 = load ptr, ptr %np, align 8
-  call void @_ZN14ReceivedRegion3fixEPv(ptr %call67, ptr %nd110)
+  call void @_ZN14ReceivedRegion9fix_ownedEPv(ptr %call67, ptr %nd110)
   %nd111 = load ptr, ptr %np, align 8
   %as.ptrtoint112 = ptrtoint ptr %nd111 to i64
   %add113 = add i64 %as.ptrtoint112, 8
   %as.inttoptr114 = inttoptr i64 %add113 to ptr
-  call void @_ZN14ReceivedRegion3fixEPv(ptr %call67, ptr %as.inttoptr114)
+  call void @_ZN14ReceivedRegion9fix_ownedEPv(ptr %call67, ptr %as.inttoptr114)
   %nd115 = load ptr, ptr %np, align 8
   %load.struct116 = load %_Z8PageNode, ptr %nd115, align 8
   %next = extractvalue %_Z8PageNode %load.struct116, 1
@@ -3163,9 +3253,8 @@ while.exit108:                                    ; preds = %while.cond106
   br label %if.end83
 
 if.then121:                                       ; preds = %while.exit73
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.27)
-  call void @_Z12scaly_eputnlv()
-  call void @exit(i64 17)
+  call void @_ZN14ReceivedRegion13release_pagesEv(ptr %call67)
+  call void @_Z18scaly_panic_regionP10const_charm(ptr @.str.30, i64 %deref6)
   br label %if.end122
 
 if.end122:                                        ; preds = %if.then121, %while.exit73
@@ -3208,6 +3297,12 @@ entry:
 define linkonce_odr i64 @_ZN6Region16panic_null_countEv() {
 entry:
   %call = call i64 @_Z22scaly_panic_null_countv()
+  ret i64 %call
+}
+
+define linkonce_odr i64 @_ZN6Region18panic_region_countEv() {
+entry:
+  %call = call i64 @_Z24scaly_panic_region_countv()
   ret i64 %call
 }
 
@@ -3262,7 +3357,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z6VectorIiE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.28, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.31, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -3356,7 +3451,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5SliceIiE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.29, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.32, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -3376,7 +3471,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5SliceIiE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.30, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.33, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -4148,7 +4243,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayIiE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.31, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.34, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -4177,7 +4272,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayIiE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.32, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.35, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -4527,7 +4622,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z6VectorIiE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.33, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.36, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -4941,7 +5036,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z6VectorI6StringE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.34, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.37, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -5036,7 +5131,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5SliceI6StringE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.35, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.38, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -5056,7 +5151,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5SliceI6StringE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.36, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.39, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -5795,7 +5890,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.37, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.40, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -5824,7 +5919,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.38, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.41, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -6174,7 +6269,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z6VectorI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.39, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.42, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -6326,7 +6421,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.40, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.43, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -6346,7 +6441,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.41, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.44, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -7120,7 +7215,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.42, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.45, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -7149,7 +7244,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayI11BuilderListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.43, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.46, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -8034,7 +8129,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z6VectorI6VectorI6StringEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.44, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.47, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -8129,7 +8224,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5SliceI6VectorI6StringEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.45, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.48, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -8149,7 +8244,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5SliceI6VectorI6StringEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.46, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.49, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -8923,7 +9018,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayI6VectorI6StringEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.47, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.50, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -8952,7 +9047,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayI6VectorI6StringEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.48, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.51, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -9797,7 +9892,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6StringiEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.49, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.52, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -9892,7 +9987,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringiEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.50, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.53, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -9912,7 +10007,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringiEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.51, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.54, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -10651,7 +10746,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6StringiEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.52, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.55, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -10680,7 +10775,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6StringiEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.53, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.56, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -10970,7 +11065,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.54, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.57, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -11065,7 +11160,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.55, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.58, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -11085,7 +11180,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.56, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.59, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -11859,7 +11954,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.57, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.60, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -11888,7 +11983,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayI11BuilderListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.58, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.61, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -12648,7 +12743,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z6VectorI6VectorI12KeyValuePairI6StringiEEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.59, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.62, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -12743,7 +12838,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.60, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.63, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -12763,7 +12858,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5SliceI6VectorI12KeyValuePairI6StringiEEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.61, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.64, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -13537,7 +13632,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayI6VectorI12KeyValuePairI6StringiEEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.62, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.65, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -13566,7 +13661,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayI6VectorI12KeyValuePairI6StringiEEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.63, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.66, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -14412,7 +14507,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z6VectorI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.64, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.67, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -14507,7 +14602,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.65, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.68, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -14527,7 +14622,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5SliceI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.66, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.69, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -15301,7 +15396,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.67, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.70, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -15330,7 +15425,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayI11BuilderListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.68, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.71, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -15994,7 +16089,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z6VectorI12KeyValuePairI6StringmEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.69, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.72, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -16089,7 +16184,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringmEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.70, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.73, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -16109,7 +16204,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5SliceI12KeyValuePairI6StringmEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.71, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.74, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -16883,7 +16978,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6StringmEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.72, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.75, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -16912,7 +17007,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6StringmEE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.73, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.76, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -17427,7 +17522,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5SliceIiE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.74, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.77, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -17465,7 +17560,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.75, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.78, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -17485,7 +17580,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.76, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.79, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -17819,7 +17914,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.77, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.80, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -18349,7 +18444,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5SliceIcE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.78, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.81, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -18369,7 +18464,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5SliceIcE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.79, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.82, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -18669,7 +18764,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5Slice, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.80, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.83, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -19391,7 +19486,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayI1TE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.81, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.84, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -21852,7 +21947,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z6VectorIcE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.82, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.85, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -22455,7 +22550,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayIcE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.83, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.86, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -22484,7 +22579,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayIcE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.84, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.87, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -23682,7 +23777,7 @@ if.then:                                          ; preds = %entry
   br label %if.end
 
 if.else:                                          ; preds = %entry
-  store { ptr } { ptr @.sconst.85 }, ptr %arg.tmp1, align 1
+  store { ptr } { ptr @.sconst.88 }, ptr %arg.tmp1, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %0, ptr %arg.tmp1)
   br label %if.end
 
@@ -23989,7 +24084,7 @@ if.end:                                           ; preds = %unwrap.ok, %entry
   ret void
 
 unwrap.trap:                                      ; preds = %if.then
-  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.122)
+  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.125)
   unreachable
 
 unwrap.ok:                                        ; preds = %if.then
@@ -24045,7 +24140,7 @@ while.exit:                                       ; preds = %while.cond
   %call9 = call i32 @close(i64 %as.zext8)
   %call10 = call ptr @_ZN4Page3getEPv(ptr %global.load)
   call void @_ZN4Page21deallocate_extensionsEv(ptr %call10)
-  call void @_ZN4Page19release_page_tracedER4PageP10const_char(ptr %call10, ptr @.str.108)
+  call void @_ZN4Page19release_page_tracedER4PageP10const_char(ptr %call10, ptr @.str.111)
   store ptr null, ptr @io_pool, align 8
   ret void
 }
@@ -24135,7 +24230,7 @@ entry:
   %as.inttoptr = inttoptr i64 %add to ptr
   %deref1 = load i64, ptr %as.inttoptr, align 8
   %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  call void @_ZN4Page19release_page_tracedER4PageP10const_char(ptr %call, ptr @.str.86)
+  call void @_ZN4Page19release_page_tracedER4PageP10const_char(ptr %call, ptr @.str.89)
   %as.inttoptr2 = inttoptr i64 %deref to ptr
   %as.inttoptr3 = inttoptr i64 %deref1 to ptr
   %1 = call ptr %as.inttoptr2(ptr %as.inttoptr3)
@@ -24378,7 +24473,7 @@ entry:
   br i1 %unwrap.isnull, label %unwrap.trap, label %unwrap.ok
 
 unwrap.trap:                                      ; preds = %entry
-  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.87)
+  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.90)
   unreachable
 
 unwrap.ok:                                        ; preds = %entry
@@ -24398,7 +24493,7 @@ entry:
   br i1 %unwrap.isnull, label %unwrap.trap, label %unwrap.ok
 
 unwrap.trap:                                      ; preds = %entry
-  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.88)
+  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.91)
   unreachable
 
 unwrap.ok:                                        ; preds = %entry
@@ -24639,7 +24734,7 @@ entry:
   br i1 %unwrap.isnull, label %unwrap.trap, label %unwrap.ok
 
 unwrap.trap:                                      ; preds = %entry
-  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.89)
+  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.92)
   unreachable
 
 unwrap.ok:                                        ; preds = %entry
@@ -24674,7 +24769,7 @@ entry:
   br i1 %unwrap.isnull, label %unwrap.trap, label %unwrap.ok
 
 unwrap.trap:                                      ; preds = %entry
-  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.90)
+  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.93)
   unreachable
 
 unwrap.ok:                                        ; preds = %entry
@@ -24714,7 +24809,7 @@ entry:
   br i1 %unwrap.isnull, label %unwrap.trap, label %unwrap.ok
 
 unwrap.trap:                                      ; preds = %entry
-  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.91)
+  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.94)
   unreachable
 
 unwrap.ok:                                        ; preds = %entry
@@ -24933,7 +25028,7 @@ entry:
   br i1 %unwrap.isnull, label %unwrap.trap, label %unwrap.ok
 
 unwrap.trap:                                      ; preds = %entry
-  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.92)
+  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.95)
   unreachable
 
 unwrap.ok:                                        ; preds = %entry
@@ -25027,7 +25122,7 @@ entry:
   br i1 %unwrap.isnull, label %unwrap.trap, label %unwrap.ok
 
 unwrap.trap:                                      ; preds = %entry
-  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.93)
+  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.96)
   unreachable
 
 unwrap.ok:                                        ; preds = %entry
@@ -25175,7 +25270,7 @@ if.end:                                           ; preds = %entry
   br i1 %unwrap.isnull, label %unwrap.trap, label %unwrap.ok
 
 unwrap.trap:                                      ; preds = %if.end
-  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.94)
+  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.97)
   unreachable
 
 unwrap.ok:                                        ; preds = %if.end
@@ -25219,7 +25314,7 @@ while.exit:                                       ; preds = %while.cond
   br i1 %unwrap.isnull, label %unwrap.trap, label %unwrap.ok
 
 unwrap.trap:                                      ; preds = %while.exit
-  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.95)
+  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.98)
   unreachable
 
 unwrap.ok:                                        ; preds = %while.exit
@@ -25283,7 +25378,7 @@ if.end9:                                          ; preds = %unwrap.ok, %if.end
   ret i64 %call15
 
 unwrap.trap:                                      ; preds = %if.then8
-  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.96)
+  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.99)
   unreachable
 
 unwrap.ok:                                        ; preds = %if.then8
@@ -25338,7 +25433,7 @@ entry:
   br i1 %unwrap.isnull, label %unwrap.trap, label %unwrap.ok
 
 unwrap.trap:                                      ; preds = %entry
-  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.97)
+  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.100)
   unreachable
 
 unwrap.ok:                                        ; preds = %entry
@@ -25431,7 +25526,7 @@ entry:
   br i1 %unwrap.isnull, label %unwrap.trap, label %unwrap.ok
 
 unwrap.trap:                                      ; preds = %entry
-  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.98)
+  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.101)
   unreachable
 
 unwrap.ok:                                        ; preds = %entry
@@ -25478,7 +25573,7 @@ entry:
   br i1 %unwrap.isnull, label %unwrap.trap, label %unwrap.ok
 
 unwrap.trap:                                      ; preds = %entry
-  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.99)
+  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.102)
   unreachable
 
 unwrap.ok:                                        ; preds = %entry
@@ -25605,7 +25700,7 @@ if.end10:                                         ; preds = %if.then9, %if.then5
   br i1 %unwrap.isnull, label %unwrap.trap, label %unwrap.ok
 
 unwrap.trap:                                      ; preds = %if.end10
-  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.100)
+  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.103)
   unreachable
 
 unwrap.ok:                                        ; preds = %if.end10
@@ -25652,7 +25747,7 @@ if.end26:                                         ; preds = %if.then25, %if.end6
   br i1 %unwrap.isnull28, label %unwrap.trap29, label %unwrap.ok30
 
 unwrap.trap29:                                    ; preds = %if.end26
-  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.101)
+  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.104)
   unreachable
 
 unwrap.ok30:                                      ; preds = %if.end26
@@ -25887,7 +25982,7 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %call = call ptr @_ZN4Page20allocate_page_tracedEP10const_char(ptr @.str.102)
+  %call = call ptr @_ZN4Page20allocate_page_tracedEP10const_char(ptr @.str.105)
   %call2 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z6IoPool, ptr null, i32 1) to i64), i64 8)
   store ptr %call2, ptr %pl, align 1
   %arr.ptr = getelementptr inbounds [8 x i8], ptr %fds, i64 0, i64 0
@@ -25944,7 +26039,7 @@ if.end7:                                          ; preds = %if.then6, %if.then
   br label %if.end
 
 unwrap.trap:                                      ; preds = %if.end
-  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.103)
+  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.106)
   unreachable
 
 unwrap.ok:                                        ; preds = %if.end
@@ -25953,7 +26048,7 @@ unwrap.ok:                                        ; preds = %if.end
 
 define linkonce_odr i64 @_ZN6Thread5spawnEPvPv(ptr %0, ptr %1) {
 entry:
-  %call = call ptr @_ZN4Page20allocate_page_tracedEP10const_char(ptr @.str.115)
+  %call = call ptr @_ZN4Page20allocate_page_tracedEP10const_char(ptr @.str.118)
   %call1 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 16, i64 8)
   %as.ptrtoint = ptrtoint ptr %0 to i64
   store i64 %as.ptrtoint, ptr %call1, align 8
@@ -26003,12 +26098,12 @@ if.end:                                           ; preds = %entry
   %global.load2 = load i64, ptr @io_offloads, align 8
   %add = add i64 %global.load2, 1
   store i64 %add, ptr @io_offloads, align 8
-  %call3 = call ptr @_ZN4Page20allocate_page_tracedEP10const_char(ptr @.str.104)
+  %call3 = call ptr @_ZN4Page20allocate_page_tracedEP10const_char(ptr @.str.107)
   %unwrap.isnull = icmp eq ptr %global.load, null
   br i1 %unwrap.isnull, label %unwrap.trap, label %unwrap.ok
 
 unwrap.trap:                                      ; preds = %if.end
-  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.105)
+  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.108)
   unreachable
 
 unwrap.ok:                                        ; preds = %if.end
@@ -26103,7 +26198,7 @@ if.end28:                                         ; preds = %if.then27, %if.end1
   br i1 %unwrap.isnull39, label %unwrap.trap40, label %unwrap.ok41
 
 unwrap.trap40:                                    ; preds = %if.end28
-  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.106)
+  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.109)
   unreachable
 
 unwrap.ok41:                                      ; preds = %if.end28
@@ -26122,7 +26217,7 @@ unwrap.ok41:                                      ; preds = %if.end28
   %result = extractvalue %_Z6IoWork %load.struct48, 3
   %call49 = call ptr @_ZN4Page3getEPv(ptr %tuple.region)
   call void @_ZN4Page21deallocate_extensionsEv(ptr %call49)
-  call void @_ZN4Page19release_page_tracedER4PageP10const_char(ptr %call49, ptr @.str.107)
+  call void @_ZN4Page19release_page_tracedER4PageP10const_char(ptr %call49, ptr @.str.110)
   ret ptr %result
 }
 
@@ -26185,7 +26280,7 @@ entry:
 
 define linkonce_odr ptr @_ZN7Channel14create_boundedE3i64(i64 %0) {
 entry:
-  %call = call ptr @_ZN4Page20allocate_page_tracedEP10const_char(ptr @.str.109)
+  %call = call ptr @_ZN4Page20allocate_page_tracedEP10const_char(ptr @.str.112)
   %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z7Channel, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z7Channel }, ptr null, i64 0, i32 1) to i64))
   %tuple.field = getelementptr inbounds nuw %_Z7Channel, ptr %tuple.region, i32 0, i32 0
   store i64 0, ptr %tuple.field, align 1
@@ -26224,7 +26319,7 @@ define linkonce_odr void @_ZN7Channel7disposeER7Channel(ptr %0) {
 entry:
   %call = call ptr @_ZN4Page3getEPv(ptr %0)
   call void @_ZN4Page21deallocate_extensionsEv(ptr %call)
-  call void @_ZN4Page19release_page_tracedER4PageP10const_char(ptr %call, ptr @.str.110)
+  call void @_ZN4Page19release_page_tracedER4PageP10const_char(ptr %call, ptr @.str.113)
   ret void
 }
 
@@ -26261,7 +26356,7 @@ if.end:                                           ; preds = %entry
   ret void
 
 unwrap.trap:                                      ; preds = %if.then
-  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.111)
+  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.114)
   unreachable
 
 unwrap.ok:                                        ; preds = %if.then
@@ -26532,7 +26627,7 @@ if.end61:                                         ; preds = %if.else60, %if.then
   br i1 %unwrap.isnull, label %unwrap.trap, label %unwrap.ok
 
 unwrap.trap:                                      ; preds = %if.end61
-  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.112)
+  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.115)
   unreachable
 
 unwrap.ok:                                        ; preds = %if.end61
@@ -26763,7 +26858,7 @@ if.end30:                                         ; preds = %if.else29, %if.then
   br i1 %unwrap.isnull, label %unwrap.trap, label %unwrap.ok
 
 unwrap.trap:                                      ; preds = %if.end30
-  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.113)
+  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.116)
   unreachable
 
 unwrap.ok:                                        ; preds = %if.end30
@@ -26791,7 +26886,7 @@ entry:
   br i1 %unwrap.isnull, label %unwrap.trap, label %unwrap.ok
 
 unwrap.trap:                                      ; preds = %entry
-  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.114)
+  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.117)
   unreachable
 
 unwrap.ok:                                        ; preds = %entry
@@ -26983,7 +27078,7 @@ if.end35:                                         ; preds = %if.then34, %if.end3
 
 define linkonce_odr ptr @_ZN9TaskGroup6createEv() {
 entry:
-  %call = call ptr @_ZN4Page20allocate_page_tracedEP10const_char(ptr @.str.116)
+  %call = call ptr @_ZN4Page20allocate_page_tracedEP10const_char(ptr @.str.119)
   %fds = alloca [8 x i8], align 1
   %arr.ptr = getelementptr inbounds [8 x i8], ptr %fds, i64 0, i64 0
   %fds1 = alloca ptr, align 8
@@ -27098,7 +27193,7 @@ repeat.exit:                                      ; preds = %if.then
   %call3 = call i32 @close(i64 %as.zext2)
   %call4 = call ptr @_ZN4Page3getEPv(ptr %0)
   call void @_ZN4Page21deallocate_extensionsEv(ptr %call4)
-  call void @_ZN4Page19release_page_tracedER4PageP10const_char(ptr %call4, ptr @.str.117)
+  call void @_ZN4Page19release_page_tracedER4PageP10const_char(ptr %call4, ptr @.str.120)
   ret void
 
 if.then:                                          ; preds = %repeat.body
@@ -27177,7 +27272,7 @@ if.then:                                          ; preds = %entry
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
-  %call = call ptr @_ZN4Page20allocate_page_tracedEP10const_char(ptr @.str.118)
+  %call = call ptr @_ZN4Page20allocate_page_tracedEP10const_char(ptr @.str.121)
   %call2 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z8TaskPool, ptr null, i32 1) to i64), i64 8)
   %n3 = load i64, ptr %n, align 8
   %nworkers = getelementptr inbounds nuw %_Z8TaskPool, ptr %call2, i32 0, i32 1
@@ -27465,7 +27560,7 @@ if.end28:                                         ; preds = %if.then27, %if.then
   br i1 %unwrap.isnull, label %unwrap.trap, label %unwrap.ok
 
 unwrap.trap:                                      ; preds = %if.end28
-  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.119)
+  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.122)
   unreachable
 
 unwrap.ok:                                        ; preds = %if.end28
@@ -27511,7 +27606,7 @@ while.exit:                                       ; preds = %while.cond
   %call9 = call i32 @close(i64 %as.zext8)
   %call10 = call ptr @_ZN4Page3getEPv(ptr %0)
   call void @_ZN4Page21deallocate_extensionsEv(ptr %call10)
-  call void @_ZN4Page19release_page_tracedER4PageP10const_char(ptr %call10, ptr @.str.120)
+  call void @_ZN4Page19release_page_tracedER4PageP10const_char(ptr %call10, ptr @.str.123)
   ret void
 }
 
@@ -27540,7 +27635,7 @@ if.end:                                           ; preds = %entry
   ret ptr %call2
 
 unwrap.trap:                                      ; preds = %if.then
-  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.121)
+  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.124)
   unreachable
 
 unwrap.ok:                                        ; preds = %if.then
@@ -27614,7 +27709,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %call2 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %frame, ptr %0)
-  %call3 = call ptr @fopen(ptr %call2, ptr @.str.129)
+  %call3 = call ptr @fopen(ptr %call2, ptr @.str.132)
   store ptr %call3, ptr %file, align 1
   %file4 = load ptr, ptr %file, align 8
   %eq = icmp eq ptr %file4, null
@@ -27651,7 +27746,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   %call1 = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %1, ptr %2)
-  %call2 = call ptr @fopen(ptr %call1, ptr @.str.125)
+  %call2 = call ptr @fopen(ptr %call1, ptr @.str.128)
   store ptr %call2, ptr %file, align 1
   %file3 = load ptr, ptr %file, align 8
   %eq = icmp eq ptr %file3, null
@@ -27839,7 +27934,7 @@ define linkonce_odr void @_ZN4Path18get_directory_nameEPN4scaly6memory4PageE6Str
 entry:
   %call = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %1, ptr %2)
   %call1 = call ptr @dirname(ptr %call)
-  %call2 = call i32 @strcmp(ptr %call1, ptr @.str.132)
+  %call2 = call i32 @strcmp(ptr %call1, ptr @.str.135)
   %eq = icmp eq i32 %call2, 0
   br i1 %eq, label %if.then, label %if.end
 
@@ -27870,7 +27965,7 @@ define linkonce_odr ptr @_Z16file_open_workerPv(ptr %0) {
 entry:
   %deref = load i64, ptr %0, align 8
   %as.inttoptr = inttoptr i64 %deref to ptr
-  %call = call ptr @fopen(ptr %as.inttoptr, ptr @.str.123)
+  %call = call ptr @fopen(ptr %as.inttoptr, ptr @.str.126)
   %file = alloca ptr, align 8
   store ptr %call, ptr %file, align 1
   %file1 = load ptr, ptr %file, align 8
@@ -27948,7 +28043,7 @@ entry:
   %add5 = add i64 %as.ptrtoint4, 16
   %as.inttoptr6 = inttoptr i64 %add5 to ptr
   %deref7 = load i64, ptr %as.inttoptr6, align 8
-  %call = call ptr @fopen(ptr %as.inttoptr, ptr @.str.124)
+  %call = call ptr @fopen(ptr %as.inttoptr, ptr @.str.127)
   %file = alloca ptr, align 8
   store ptr %call, ptr %file, align 1
   %file8 = load ptr, ptr %file, align 8
@@ -27970,7 +28065,7 @@ define linkonce_odr void @_ZN4File24read_to_string_offloadedEPN4scaly6memory4Pag
 entry:
   %ret = alloca ptr, align 8
   %call = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %1, ptr %2)
-  %call1 = call ptr @_ZN4Page20allocate_page_tracedEP10const_char(ptr @.str.126)
+  %call1 = call ptr @_ZN4Page20allocate_page_tracedEP10const_char(ptr @.str.129)
   %call2 = call ptr @_ZN4Page8allocateEmm(ptr %call1, i64 24, i64 8)
   %as.ptrtoint = ptrtoint ptr %call to i64
   store i64 %as.ptrtoint, ptr %call2, align 8
@@ -27980,7 +28075,7 @@ entry:
 
 if.then:                                          ; preds = %entry
   call void @_ZN4Page21deallocate_extensionsEv(ptr %call1)
-  call void @_ZN4Page19release_page_tracedER4PageP10const_char(ptr %call1, ptr @.str.127)
+  call void @_ZN4Page19release_page_tracedER4PageP10const_char(ptr %call1, ptr @.str.130)
   %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6String }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6StringC1Ev(ptr %struct.region)
@@ -28006,7 +28101,7 @@ if.end:                                           ; preds = %entry
   store i64 %as.ptrtoint9, ptr %as.inttoptr12, align 8
   %call13 = call ptr @_ZN2Io7offloadEPvPv(ptr @_Z22file_read_close_workerPv, ptr %call2)
   call void @_ZN4Page21deallocate_extensionsEv(ptr %call1)
-  call void @_ZN4Page19release_page_tracedER4PageP10const_char(ptr %call1, ptr @.str.128)
+  call void @_ZN4Page19release_page_tracedER4PageP10const_char(ptr %call1, ptr @.str.131)
   %ret14 = load ptr, ptr %ret, align 8
   %sret.body15 = load %_Z6String, ptr %ret14, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %ret14, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i1 false)
@@ -28022,7 +28117,7 @@ entry:
   %call = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %frame, ptr %0)
   %call1 = call ptr @_ZN6String10get_bufferEv(ptr %1)
   %call2 = call i64 @_ZN6String10get_lengthEv(ptr %1)
-  %call3 = call ptr @_ZN4Page20allocate_page_tracedEP10const_char(ptr @.str.130)
+  %call3 = call ptr @_ZN4Page20allocate_page_tracedEP10const_char(ptr @.str.133)
   %call4 = call ptr @_ZN4Page8allocateEmm(ptr %call3, i64 24, i64 8)
   %as.ptrtoint = ptrtoint ptr %call to i64
   store i64 %as.ptrtoint, ptr %call4, align 8
@@ -28037,7 +28132,7 @@ entry:
   store i64 %call2, ptr %as.inttoptr9, align 8
   %call10 = call ptr @_ZN2Io7offloadEPvPv(ptr @_Z17file_write_workerPv, ptr %call4)
   call void @_ZN4Page21deallocate_extensionsEv(ptr %call3)
-  call void @_ZN4Page19release_page_tracedER4PageP10const_char(ptr %call3, ptr @.str.131)
+  call void @_ZN4Page19release_page_tracedER4PageP10const_char(ptr %call3, ptr @.str.134)
   %ne = icmp ne ptr %call10, null
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 %ne
@@ -28264,7 +28359,7 @@ entry:
   br i1 %unwrap.isnull, label %unwrap.trap, label %unwrap.ok
 
 unwrap.trap:                                      ; preds = %entry
-  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.133)
+  call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.136)
   unreachable
 
 unwrap.ok:                                        ; preds = %entry
@@ -28416,7 +28511,7 @@ if.end16:                                         ; preds = %while.body
   br label %while.cond
 
 if.then22:                                        ; preds = %while.exit
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.134)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.137)
   call void @_Z12scaly_eputnlv()
   %call24 = call i32 @close(i32 %1)
   ret ptr null
@@ -28428,9 +28523,9 @@ if.end23:                                         ; preds = %while.exit
   br i1 %ne27, label %if.then28, label %if.end29
 
 if.then28:                                        ; preds = %if.end23
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.135)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.138)
   call void @_Z11scaly_eputi3i64(i64 1)
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.136)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.139)
   call void @_Z11scaly_eputi3i64(i64 %deref26)
   call void @_Z12scaly_eputnlv()
   %call30 = call i32 @close(i32 %1)
@@ -28444,10 +28539,10 @@ if.end29:                                         ; preds = %if.end23
   br i1 %ne34, label %if.then35, label %if.end36
 
 if.then35:                                        ; preds = %if.end29
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.137)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.140)
   %as.inttoptr37 = inttoptr i64 %call31 to ptr
   call void @_Z11scaly_eputpPv(ptr %as.inttoptr37)
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.138)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.141)
   %as.inttoptr38 = inttoptr i64 %deref33 to ptr
   call void @_Z11scaly_eputpPv(ptr %as.inttoptr38)
   call void @_Z12scaly_eputnlv()
@@ -28568,7 +28663,7 @@ if.end:                                           ; preds = %while.body
 
 if.then11:                                        ; preds = %while.exit
   call void @_ZN7Cluster7releaseEP8NodePeer(ptr %0)
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.139)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.142)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 113)
   br label %if.end12
@@ -28639,7 +28734,7 @@ if.end:                                           ; preds = %entry
 
 if.then3:                                         ; preds = %if.end
   call void @_ZN7Cluster7releaseEP8NodePeer(ptr %0)
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.140)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.143)
   call void @_Z12scaly_eputnlv()
   call void @exit(i64 113)
   br label %if.end4
@@ -29082,7 +29177,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z6VectorIfE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.141, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.144, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -29176,7 +29271,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5SliceIfE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.142, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.145, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -29196,7 +29291,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5SliceIfE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.143, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.146, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -29968,7 +30063,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayIfE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.144, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.147, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -29997,7 +30092,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayIfE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.145, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.148, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -30942,7 +31037,7 @@ entry:
   store i64 0, ptr %parfor.tentry, align 8
   store i64 0, ptr %parfor.armed, align 8
   store ptr null, ptr %parfor.fork.buf, align 8
-  %parfor.sitep = load i64, ptr @parfor.site.p1k.150, align 8
+  %parfor.sitep = load i64, ptr @parfor.site.p1k.153, align 8
   store i64 %parfor.sitep, ptr %parfor.entryp, align 8
   %parfor.gate.isprom = icmp sgt i64 %parfor.sitep, 0
   br i1 %parfor.gate.isprom, label %pfor.gate.prom, label %pfor.gate.cold
@@ -30984,11 +31079,11 @@ pfor.exit.n:                                      ; preds = %pfor.exit.acct
 
 pfor.exit.add:                                    ; preds = %pfor.exit.n
   %parfor.x.add = mul i64 %parfor.x.iters, 1048576
-  %parfor.x.v0 = load i64, ptr @parfor.site.vol.147, align 8
+  %parfor.x.v0 = load i64, ptr @parfor.site.vol.150, align 8
   %parfor.x.v1 = add i64 %parfor.x.v0, %parfor.x.add
   %parfor.x.over = icmp sgt i64 %parfor.x.v1, 1099511627776
   %parfor.x.v2 = select i1 %parfor.x.over, i64 1099511627776, i64 %parfor.x.v1
-  store i64 %parfor.x.v2, ptr @parfor.site.vol.147, align 8
+  store i64 %parfor.x.v2, ptr @parfor.site.vol.150, align 8
   %parfor.x.t0 = load i64, ptr %parfor.tentry, align 8
   %parfor.x.hot = icmp sgt i64 %parfor.x.t0, 0
   br i1 %parfor.x.hot, label %pfor.exit.meas, label %pfor.done
@@ -30998,12 +31093,12 @@ pfor.exit.meas:                                   ; preds = %pfor.exit.add
   %parfor.x.el0 = sub i64 %parfor.x.te, %parfor.x.t0
   %parfor.x.big = icmp sgt i64 %parfor.x.el0, 262144
   %parfor.x.el = select i1 %parfor.x.big, i64 262144, i64 %parfor.x.el0
-  %parfor.x.cn0 = load i64, ptr @parfor.site.calns.148, align 8
+  %parfor.x.cn0 = load i64, ptr @parfor.site.calns.151, align 8
   %parfor.x.cn1 = add i64 %parfor.x.cn0, %parfor.x.el
-  store i64 %parfor.x.cn1, ptr @parfor.site.calns.148, align 8
-  %parfor.x.ci0 = load i64, ptr @parfor.site.caliters.149, align 8
+  store i64 %parfor.x.cn1, ptr @parfor.site.calns.151, align 8
+  %parfor.x.ci0 = load i64, ptr @parfor.site.caliters.152, align 8
   %parfor.x.ci1 = add i64 %parfor.x.ci0, %parfor.x.iters
-  store i64 %parfor.x.ci1, ptr @parfor.site.caliters.149, align 8
+  store i64 %parfor.x.ci1, ptr @parfor.site.caliters.152, align 8
   %parfor.x.ready0 = icmp sge i64 %parfor.x.cn1, 16384
   %parfor.x.enough = icmp sge i64 %parfor.x.ci1, 512
   %parfor.x.ready = and i1 %parfor.x.ready0, %parfor.x.enough
@@ -31014,7 +31109,7 @@ pfor.exit.pub:                                    ; preds = %pfor.exit.meas
   %parfor.x.p = sdiv i64 %parfor.x.e10, %parfor.x.ci1
   %parfor.x.ppos = icmp sgt i64 %parfor.x.p, 0
   %parfor.x.pf = select i1 %parfor.x.ppos, i64 %parfor.x.p, i64 1
-  store i64 %parfor.x.pf, ptr @parfor.site.p1k.150, align 8
+  store i64 %parfor.x.pf, ptr @parfor.site.p1k.153, align 8
   br label %pfor.done
 
 pfor.inl.cond:                                    ; preds = %pfor.inl.inc, %pfor.gate.hot, %pfor.gate.cold, %pfor.gate.seq
@@ -31088,7 +31183,7 @@ pfor.check.arm:                                   ; preds = %pfor.check.notyet
   br label %pfor.inl.body
 
 pfor.fork:                                        ; preds = %pfor.check.decide
-  store i64 %parfor.p1k, ptr @parfor.site.p1k.150, align 8
+  store i64 %parfor.p1k, ptr @parfor.site.p1k.153, align 8
   %parfor.group370 = call ptr @_ZN9TaskGroup6createEv()
   %parfor.gpage371 = call ptr @_Z3getPv(ptr %parfor.group370)
   store i64 %parfor.i.cur, ptr %parfor.fork.lo, align 8
@@ -31120,7 +31215,7 @@ pfor.gate.seq:                                    ; preds = %pfor.gate.prom
   br label %pfor.inl.cond
 
 pfor.gate.cold:                                   ; preds = %entry
-  %parfor.volv = load i64, ptr @parfor.site.vol.147, align 8
+  %parfor.volv = load i64, ptr @parfor.site.vol.150, align 8
   %parfor.gate.ishot = icmp sge i64 %parfor.volv, 1048576
   br i1 %parfor.gate.ishot, label %pfor.gate.hot, label %pfor.inl.cond
 
@@ -31592,7 +31687,7 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   store ptr %2, ptr %parfor.cell.cap375, align 8
   %parfor.cell.cap376 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 7
   store ptr %data4, ptr %parfor.cell.cap376, align 8
-  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.146, ptr %parfor.cell, ptr %parfor.d.grp)
+  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.149, ptr %parfor.cell, ptr %parfor.d.grp)
   store i64 %parfor.chunk.hi, ptr %parfor.c.slot, align 8
   br label %pfor.sub.cond
 
@@ -31651,7 +31746,7 @@ entry:
   store i64 0, ptr %parfor.tentry, align 8
   store i64 0, ptr %parfor.armed, align 8
   store ptr null, ptr %parfor.fork.buf, align 8
-  %parfor.sitep = load i64, ptr @parfor.site.p1k.155, align 8
+  %parfor.sitep = load i64, ptr @parfor.site.p1k.158, align 8
   store i64 %parfor.sitep, ptr %parfor.entryp, align 8
   %parfor.gate.isprom = icmp sgt i64 %parfor.sitep, 0
   br i1 %parfor.gate.isprom, label %pfor.gate.prom, label %pfor.gate.cold
@@ -31693,11 +31788,11 @@ pfor.exit.n:                                      ; preds = %pfor.exit.acct
 
 pfor.exit.add:                                    ; preds = %pfor.exit.n
   %parfor.x.add = mul i64 %parfor.x.iters, 1048576
-  %parfor.x.v0 = load i64, ptr @parfor.site.vol.152, align 8
+  %parfor.x.v0 = load i64, ptr @parfor.site.vol.155, align 8
   %parfor.x.v1 = add i64 %parfor.x.v0, %parfor.x.add
   %parfor.x.over = icmp sgt i64 %parfor.x.v1, 1099511627776
   %parfor.x.v2 = select i1 %parfor.x.over, i64 1099511627776, i64 %parfor.x.v1
-  store i64 %parfor.x.v2, ptr @parfor.site.vol.152, align 8
+  store i64 %parfor.x.v2, ptr @parfor.site.vol.155, align 8
   %parfor.x.t0 = load i64, ptr %parfor.tentry, align 8
   %parfor.x.hot = icmp sgt i64 %parfor.x.t0, 0
   br i1 %parfor.x.hot, label %pfor.exit.meas, label %pfor.done
@@ -31707,12 +31802,12 @@ pfor.exit.meas:                                   ; preds = %pfor.exit.add
   %parfor.x.el0 = sub i64 %parfor.x.te, %parfor.x.t0
   %parfor.x.big = icmp sgt i64 %parfor.x.el0, 262144
   %parfor.x.el = select i1 %parfor.x.big, i64 262144, i64 %parfor.x.el0
-  %parfor.x.cn0 = load i64, ptr @parfor.site.calns.153, align 8
+  %parfor.x.cn0 = load i64, ptr @parfor.site.calns.156, align 8
   %parfor.x.cn1 = add i64 %parfor.x.cn0, %parfor.x.el
-  store i64 %parfor.x.cn1, ptr @parfor.site.calns.153, align 8
-  %parfor.x.ci0 = load i64, ptr @parfor.site.caliters.154, align 8
+  store i64 %parfor.x.cn1, ptr @parfor.site.calns.156, align 8
+  %parfor.x.ci0 = load i64, ptr @parfor.site.caliters.157, align 8
   %parfor.x.ci1 = add i64 %parfor.x.ci0, %parfor.x.iters
-  store i64 %parfor.x.ci1, ptr @parfor.site.caliters.154, align 8
+  store i64 %parfor.x.ci1, ptr @parfor.site.caliters.157, align 8
   %parfor.x.ready0 = icmp sge i64 %parfor.x.cn1, 16384
   %parfor.x.enough = icmp sge i64 %parfor.x.ci1, 512
   %parfor.x.ready = and i1 %parfor.x.ready0, %parfor.x.enough
@@ -31723,7 +31818,7 @@ pfor.exit.pub:                                    ; preds = %pfor.exit.meas
   %parfor.x.p = sdiv i64 %parfor.x.e10, %parfor.x.ci1
   %parfor.x.ppos = icmp sgt i64 %parfor.x.p, 0
   %parfor.x.pf = select i1 %parfor.x.ppos, i64 %parfor.x.p, i64 1
-  store i64 %parfor.x.pf, ptr @parfor.site.p1k.155, align 8
+  store i64 %parfor.x.pf, ptr @parfor.site.p1k.158, align 8
   br label %pfor.done
 
 pfor.inl.cond:                                    ; preds = %pfor.inl.inc, %pfor.gate.hot, %pfor.gate.cold, %pfor.gate.seq
@@ -31797,7 +31892,7 @@ pfor.check.arm:                                   ; preds = %pfor.check.notyet
   br label %pfor.inl.body
 
 pfor.fork:                                        ; preds = %pfor.check.decide
-  store i64 %parfor.p1k, ptr @parfor.site.p1k.155, align 8
+  store i64 %parfor.p1k, ptr @parfor.site.p1k.158, align 8
   %parfor.group361 = call ptr @_ZN9TaskGroup6createEv()
   %parfor.gpage362 = call ptr @_Z3getPv(ptr %parfor.group361)
   store i64 %parfor.i.cur, ptr %parfor.fork.lo, align 8
@@ -31829,7 +31924,7 @@ pfor.gate.seq:                                    ; preds = %pfor.gate.prom
   br label %pfor.inl.cond
 
 pfor.gate.cold:                                   ; preds = %entry
-  %parfor.volv = load i64, ptr @parfor.site.vol.152, align 8
+  %parfor.volv = load i64, ptr @parfor.site.vol.155, align 8
   %parfor.gate.ishot = icmp sge i64 %parfor.volv, 1048576
   br i1 %parfor.gate.ishot, label %pfor.gate.hot, label %pfor.inl.cond
 
@@ -32294,7 +32389,7 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   store ptr %2, ptr %parfor.cell.cap367, align 8
   %parfor.cell.cap368 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, ptr, ptr }, ptr %parfor.cell, i32 0, i32 8
   store ptr %data4, ptr %parfor.cell.cap368, align 8
-  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.151, ptr %parfor.cell, ptr %parfor.d.grp)
+  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.154, ptr %parfor.cell, ptr %parfor.d.grp)
   store i64 %parfor.chunk.hi, ptr %parfor.c.slot, align 8
   br label %pfor.sub.cond
 
@@ -32348,7 +32443,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z6VectorI3i64E, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.156, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.159, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -32442,7 +32537,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5SliceI3i64E, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.157, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.160, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -32462,7 +32557,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5SliceI3i64E, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.158, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.161, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -33234,7 +33329,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayI3i64E, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.159, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.162, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -33263,7 +33358,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayI3i64E, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.160, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.163, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -33945,7 +34040,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z6VectorI8TapeNodeE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.161, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.164, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -34040,7 +34135,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5SliceI8TapeNodeE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.162, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.165, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -34060,7 +34155,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5SliceI8TapeNodeE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.163, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.166, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -34799,7 +34894,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayI8TapeNodeE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.164, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.167, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -34828,7 +34923,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5ArrayI8TapeNodeE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.165, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.168, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -35924,7 +36019,7 @@ if.end:                                           ; preds = %if.end21, %entry
   store i64 0, ptr %parfor.tentry, align 8
   store i64 0, ptr %parfor.armed, align 8
   store ptr null, ptr %parfor.fork.buf, align 8
-  %parfor.sitep = load i64, ptr @parfor.site.p1k.170, align 8
+  %parfor.sitep = load i64, ptr @parfor.site.p1k.173, align 8
   store i64 %parfor.sitep, ptr %parfor.entryp, align 8
   %parfor.gate.isprom = icmp sgt i64 %parfor.sitep, 0
   br i1 %parfor.gate.isprom, label %pfor.gate.prom, label %pfor.gate.cold
@@ -35976,11 +36071,11 @@ pfor.exit.n:                                      ; preds = %pfor.exit.acct
 
 pfor.exit.add:                                    ; preds = %pfor.exit.n
   %parfor.x.add = mul i64 %parfor.x.iters, 467396
-  %parfor.x.v0 = load i64, ptr @parfor.site.vol.167, align 8
+  %parfor.x.v0 = load i64, ptr @parfor.site.vol.170, align 8
   %parfor.x.v1 = add i64 %parfor.x.v0, %parfor.x.add
   %parfor.x.over = icmp sgt i64 %parfor.x.v1, 1099511627776
   %parfor.x.v2 = select i1 %parfor.x.over, i64 1099511627776, i64 %parfor.x.v1
-  store i64 %parfor.x.v2, ptr @parfor.site.vol.167, align 8
+  store i64 %parfor.x.v2, ptr @parfor.site.vol.170, align 8
   %parfor.x.t0 = load i64, ptr %parfor.tentry, align 8
   %parfor.x.hot = icmp sgt i64 %parfor.x.t0, 0
   br i1 %parfor.x.hot, label %pfor.exit.meas, label %pfor.done
@@ -35990,12 +36085,12 @@ pfor.exit.meas:                                   ; preds = %pfor.exit.add
   %parfor.x.el0 = sub i64 %parfor.x.te, %parfor.x.t0
   %parfor.x.big = icmp sgt i64 %parfor.x.el0, 262144
   %parfor.x.el = select i1 %parfor.x.big, i64 262144, i64 %parfor.x.el0
-  %parfor.x.cn0 = load i64, ptr @parfor.site.calns.168, align 8
+  %parfor.x.cn0 = load i64, ptr @parfor.site.calns.171, align 8
   %parfor.x.cn1 = add i64 %parfor.x.cn0, %parfor.x.el
-  store i64 %parfor.x.cn1, ptr @parfor.site.calns.168, align 8
-  %parfor.x.ci0 = load i64, ptr @parfor.site.caliters.169, align 8
+  store i64 %parfor.x.cn1, ptr @parfor.site.calns.171, align 8
+  %parfor.x.ci0 = load i64, ptr @parfor.site.caliters.172, align 8
   %parfor.x.ci1 = add i64 %parfor.x.ci0, %parfor.x.iters
-  store i64 %parfor.x.ci1, ptr @parfor.site.caliters.169, align 8
+  store i64 %parfor.x.ci1, ptr @parfor.site.caliters.172, align 8
   %parfor.x.ready0 = icmp sge i64 %parfor.x.cn1, 16384
   %parfor.x.enough = icmp sge i64 %parfor.x.ci1, 512
   %parfor.x.ready = and i1 %parfor.x.ready0, %parfor.x.enough
@@ -36006,7 +36101,7 @@ pfor.exit.pub:                                    ; preds = %pfor.exit.meas
   %parfor.x.p = sdiv i64 %parfor.x.e10, %parfor.x.ci1
   %parfor.x.ppos = icmp sgt i64 %parfor.x.p, 0
   %parfor.x.pf = select i1 %parfor.x.ppos, i64 %parfor.x.p, i64 1
-  store i64 %parfor.x.pf, ptr @parfor.site.p1k.170, align 8
+  store i64 %parfor.x.pf, ptr @parfor.site.p1k.173, align 8
   br label %pfor.done
 
 pfor.inl.cond:                                    ; preds = %pfor.inl.inc, %pfor.gate.hot, %pfor.gate.cold, %pfor.gate.seq
@@ -36080,7 +36175,7 @@ pfor.check.arm:                                   ; preds = %pfor.check.notyet
   br label %pfor.inl.body
 
 pfor.fork:                                        ; preds = %pfor.check.decide
-  store i64 %parfor.p1k, ptr @parfor.site.p1k.170, align 8
+  store i64 %parfor.p1k, ptr @parfor.site.p1k.173, align 8
   %parfor.group49 = call ptr @_ZN9TaskGroup6createEv()
   %parfor.gpage50 = call ptr @_Z3getPv(ptr %parfor.group49)
   store i64 %parfor.i.cur, ptr %parfor.fork.lo, align 8
@@ -36112,7 +36207,7 @@ pfor.gate.seq:                                    ; preds = %pfor.gate.prom
   br label %pfor.inl.cond
 
 pfor.gate.cold:                                   ; preds = %if.end
-  %parfor.volv = load i64, ptr @parfor.site.vol.167, align 8
+  %parfor.volv = load i64, ptr @parfor.site.vol.170, align 8
   %parfor.gate.ishot = icmp sge i64 %parfor.volv, 1048576
   br i1 %parfor.gate.ishot, label %pfor.gate.hot, label %pfor.inl.cond
 
@@ -36196,7 +36291,7 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   store ptr %data14, ptr %parfor.cell.cap53, align 8
   %parfor.cell.cap54 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 6
   store %_Z6VectorIfE %value16, ptr %parfor.cell.cap54, align 8
-  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.166, ptr %parfor.cell, ptr %parfor.d.grp)
+  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.169, ptr %parfor.cell, ptr %parfor.d.grp)
   store i64 %parfor.chunk.hi, ptr %parfor.c.slot, align 8
   br label %pfor.sub.cond
 
@@ -36247,7 +36342,7 @@ entry:
   store i64 0, ptr %parfor.tentry, align 8
   store i64 0, ptr %parfor.armed, align 8
   store ptr null, ptr %parfor.fork.buf, align 8
-  %parfor.sitep = load i64, ptr @parfor.site.p1k.185, align 8
+  %parfor.sitep = load i64, ptr @parfor.site.p1k.188, align 8
   store i64 %parfor.sitep, ptr %parfor.entryp, align 8
   %parfor.gate.isprom = icmp sgt i64 %parfor.sitep, 0
   br i1 %parfor.gate.isprom, label %pfor.gate.prom, label %pfor.gate.cold
@@ -36289,11 +36384,11 @@ pfor.exit.n:                                      ; preds = %pfor.exit.acct
 
 pfor.exit.add:                                    ; preds = %pfor.exit.n
   %parfor.x.add = mul i64 %parfor.x.iters, 350404
-  %parfor.x.v0 = load i64, ptr @parfor.site.vol.182, align 8
+  %parfor.x.v0 = load i64, ptr @parfor.site.vol.185, align 8
   %parfor.x.v1 = add i64 %parfor.x.v0, %parfor.x.add
   %parfor.x.over = icmp sgt i64 %parfor.x.v1, 1099511627776
   %parfor.x.v2 = select i1 %parfor.x.over, i64 1099511627776, i64 %parfor.x.v1
-  store i64 %parfor.x.v2, ptr @parfor.site.vol.182, align 8
+  store i64 %parfor.x.v2, ptr @parfor.site.vol.185, align 8
   %parfor.x.t0 = load i64, ptr %parfor.tentry, align 8
   %parfor.x.hot = icmp sgt i64 %parfor.x.t0, 0
   br i1 %parfor.x.hot, label %pfor.exit.meas, label %pfor.done
@@ -36303,12 +36398,12 @@ pfor.exit.meas:                                   ; preds = %pfor.exit.add
   %parfor.x.el0 = sub i64 %parfor.x.te, %parfor.x.t0
   %parfor.x.big = icmp sgt i64 %parfor.x.el0, 262144
   %parfor.x.el = select i1 %parfor.x.big, i64 262144, i64 %parfor.x.el0
-  %parfor.x.cn0 = load i64, ptr @parfor.site.calns.183, align 8
+  %parfor.x.cn0 = load i64, ptr @parfor.site.calns.186, align 8
   %parfor.x.cn1 = add i64 %parfor.x.cn0, %parfor.x.el
-  store i64 %parfor.x.cn1, ptr @parfor.site.calns.183, align 8
-  %parfor.x.ci0 = load i64, ptr @parfor.site.caliters.184, align 8
+  store i64 %parfor.x.cn1, ptr @parfor.site.calns.186, align 8
+  %parfor.x.ci0 = load i64, ptr @parfor.site.caliters.187, align 8
   %parfor.x.ci1 = add i64 %parfor.x.ci0, %parfor.x.iters
-  store i64 %parfor.x.ci1, ptr @parfor.site.caliters.184, align 8
+  store i64 %parfor.x.ci1, ptr @parfor.site.caliters.187, align 8
   %parfor.x.ready0 = icmp sge i64 %parfor.x.cn1, 16384
   %parfor.x.enough = icmp sge i64 %parfor.x.ci1, 512
   %parfor.x.ready = and i1 %parfor.x.ready0, %parfor.x.enough
@@ -36319,7 +36414,7 @@ pfor.exit.pub:                                    ; preds = %pfor.exit.meas
   %parfor.x.p = sdiv i64 %parfor.x.e10, %parfor.x.ci1
   %parfor.x.ppos = icmp sgt i64 %parfor.x.p, 0
   %parfor.x.pf = select i1 %parfor.x.ppos, i64 %parfor.x.p, i64 1
-  store i64 %parfor.x.pf, ptr @parfor.site.p1k.185, align 8
+  store i64 %parfor.x.pf, ptr @parfor.site.p1k.188, align 8
   br label %pfor.done
 
 pfor.inl.cond:                                    ; preds = %pfor.inl.inc, %pfor.gate.hot, %pfor.gate.cold, %pfor.gate.seq
@@ -36393,7 +36488,7 @@ pfor.check.arm:                                   ; preds = %pfor.check.notyet
   br label %pfor.inl.body
 
 pfor.fork:                                        ; preds = %pfor.check.decide
-  store i64 %parfor.p1k, ptr @parfor.site.p1k.185, align 8
+  store i64 %parfor.p1k, ptr @parfor.site.p1k.188, align 8
   %parfor.group23 = call ptr @_ZN9TaskGroup6createEv()
   %parfor.gpage24 = call ptr @_Z3getPv(ptr %parfor.group23)
   store i64 %parfor.i.cur, ptr %parfor.fork.lo, align 8
@@ -36425,7 +36520,7 @@ pfor.gate.seq:                                    ; preds = %pfor.gate.prom
   br label %pfor.inl.cond
 
 pfor.gate.cold:                                   ; preds = %entry
-  %parfor.volv = load i64, ptr @parfor.site.vol.182, align 8
+  %parfor.volv = load i64, ptr @parfor.site.vol.185, align 8
   %parfor.gate.ishot = icmp sge i64 %parfor.volv, 1048576
   br i1 %parfor.gate.ishot, label %pfor.gate.hot, label %pfor.inl.cond
 
@@ -36487,7 +36582,7 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   store ptr %data, ptr %parfor.cell.cap25, align 8
   %parfor.cell.cap26 = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 4
   store %_Z6VectorIfE %value5, ptr %parfor.cell.cap26, align 8
-  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.181, ptr %parfor.cell, ptr %parfor.d.grp)
+  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.184, ptr %parfor.cell, ptr %parfor.d.grp)
   store i64 %parfor.chunk.hi, ptr %parfor.c.slot, align 8
   br label %pfor.sub.cond
 
@@ -36546,7 +36641,7 @@ entry:
   store i64 0, ptr %parfor.tentry, align 8
   store i64 0, ptr %parfor.armed, align 8
   store ptr null, ptr %parfor.fork.buf, align 8
-  %parfor.sitep = load i64, ptr @parfor.site.p1k.195, align 8
+  %parfor.sitep = load i64, ptr @parfor.site.p1k.198, align 8
   store i64 %parfor.sitep, ptr %parfor.entryp, align 8
   %parfor.gate.isprom = icmp sgt i64 %parfor.sitep, 0
   br i1 %parfor.gate.isprom, label %pfor.gate.prom, label %pfor.gate.cold
@@ -36588,11 +36683,11 @@ pfor.exit.n:                                      ; preds = %pfor.exit.acct
 
 pfor.exit.add:                                    ; preds = %pfor.exit.n
   %parfor.x.add = mul i64 %parfor.x.iters, 695895
-  %parfor.x.v0 = load i64, ptr @parfor.site.vol.192, align 8
+  %parfor.x.v0 = load i64, ptr @parfor.site.vol.195, align 8
   %parfor.x.v1 = add i64 %parfor.x.v0, %parfor.x.add
   %parfor.x.over = icmp sgt i64 %parfor.x.v1, 1099511627776
   %parfor.x.v2 = select i1 %parfor.x.over, i64 1099511627776, i64 %parfor.x.v1
-  store i64 %parfor.x.v2, ptr @parfor.site.vol.192, align 8
+  store i64 %parfor.x.v2, ptr @parfor.site.vol.195, align 8
   %parfor.x.t0 = load i64, ptr %parfor.tentry, align 8
   %parfor.x.hot = icmp sgt i64 %parfor.x.t0, 0
   br i1 %parfor.x.hot, label %pfor.exit.meas, label %pfor.done
@@ -36602,12 +36697,12 @@ pfor.exit.meas:                                   ; preds = %pfor.exit.add
   %parfor.x.el0 = sub i64 %parfor.x.te, %parfor.x.t0
   %parfor.x.big = icmp sgt i64 %parfor.x.el0, 262144
   %parfor.x.el = select i1 %parfor.x.big, i64 262144, i64 %parfor.x.el0
-  %parfor.x.cn0 = load i64, ptr @parfor.site.calns.193, align 8
+  %parfor.x.cn0 = load i64, ptr @parfor.site.calns.196, align 8
   %parfor.x.cn1 = add i64 %parfor.x.cn0, %parfor.x.el
-  store i64 %parfor.x.cn1, ptr @parfor.site.calns.193, align 8
-  %parfor.x.ci0 = load i64, ptr @parfor.site.caliters.194, align 8
+  store i64 %parfor.x.cn1, ptr @parfor.site.calns.196, align 8
+  %parfor.x.ci0 = load i64, ptr @parfor.site.caliters.197, align 8
   %parfor.x.ci1 = add i64 %parfor.x.ci0, %parfor.x.iters
-  store i64 %parfor.x.ci1, ptr @parfor.site.caliters.194, align 8
+  store i64 %parfor.x.ci1, ptr @parfor.site.caliters.197, align 8
   %parfor.x.ready0 = icmp sge i64 %parfor.x.cn1, 16384
   %parfor.x.enough = icmp sge i64 %parfor.x.ci1, 512
   %parfor.x.ready = and i1 %parfor.x.ready0, %parfor.x.enough
@@ -36618,7 +36713,7 @@ pfor.exit.pub:                                    ; preds = %pfor.exit.meas
   %parfor.x.p = sdiv i64 %parfor.x.e10, %parfor.x.ci1
   %parfor.x.ppos = icmp sgt i64 %parfor.x.p, 0
   %parfor.x.pf = select i1 %parfor.x.ppos, i64 %parfor.x.p, i64 1
-  store i64 %parfor.x.pf, ptr @parfor.site.p1k.195, align 8
+  store i64 %parfor.x.pf, ptr @parfor.site.p1k.198, align 8
   br label %pfor.done
 
 pfor.inl.cond:                                    ; preds = %pfor.inl.inc, %pfor.gate.hot, %pfor.gate.cold, %pfor.gate.seq
@@ -36696,7 +36791,7 @@ pfor.check.arm:                                   ; preds = %pfor.check.notyet
   br label %pfor.inl.body
 
 pfor.fork:                                        ; preds = %pfor.check.decide
-  store i64 %parfor.p1k, ptr @parfor.site.p1k.195, align 8
+  store i64 %parfor.p1k, ptr @parfor.site.p1k.198, align 8
   %parfor.group55 = call ptr @_ZN9TaskGroup6createEv()
   %parfor.gpage56 = call ptr @_Z3getPv(ptr %parfor.group55)
   store i64 %parfor.i.cur, ptr %parfor.fork.lo, align 8
@@ -36728,7 +36823,7 @@ pfor.gate.seq:                                    ; preds = %pfor.gate.prom
   br label %pfor.inl.cond
 
 pfor.gate.cold:                                   ; preds = %entry
-  %parfor.volv = load i64, ptr @parfor.site.vol.192, align 8
+  %parfor.volv = load i64, ptr @parfor.site.vol.195, align 8
   %parfor.gate.ishot = icmp sge i64 %parfor.volv, 1048576
   br i1 %parfor.gate.ishot, label %pfor.gate.hot, label %pfor.inl.cond
 
@@ -36847,7 +36942,7 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   store %_Z6VectorIfE %value5, ptr %parfor.cell.cap58, align 8
   %parfor.cell.cap59 = getelementptr inbounds nuw { i64, i64, ptr, i64, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 5
   store ptr %data8, ptr %parfor.cell.cap59, align 8
-  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.191, ptr %parfor.cell, ptr %parfor.d.grp)
+  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.194, ptr %parfor.cell, ptr %parfor.d.grp)
   store i64 %parfor.chunk.hi, ptr %parfor.c.slot, align 8
   br label %pfor.sub.cond
 
@@ -36918,7 +37013,7 @@ entry:
   store i64 0, ptr %parfor.tentry, align 8
   store i64 0, ptr %parfor.armed, align 8
   store ptr null, ptr %parfor.fork.buf, align 8
-  %parfor.sitep = load i64, ptr @parfor.site.p1k.205, align 8
+  %parfor.sitep = load i64, ptr @parfor.site.p1k.208, align 8
   store i64 %parfor.sitep, ptr %parfor.entryp, align 8
   %parfor.gate.isprom = icmp sgt i64 %parfor.sitep, 0
   br i1 %parfor.gate.isprom, label %pfor.gate.prom, label %pfor.gate.cold
@@ -36960,11 +37055,11 @@ pfor.exit.n:                                      ; preds = %pfor.exit.acct
 
 pfor.exit.add:                                    ; preds = %pfor.exit.n
   %parfor.x.add = mul i64 %parfor.x.iters, 349022
-  %parfor.x.v0 = load i64, ptr @parfor.site.vol.202, align 8
+  %parfor.x.v0 = load i64, ptr @parfor.site.vol.205, align 8
   %parfor.x.v1 = add i64 %parfor.x.v0, %parfor.x.add
   %parfor.x.over = icmp sgt i64 %parfor.x.v1, 1099511627776
   %parfor.x.v2 = select i1 %parfor.x.over, i64 1099511627776, i64 %parfor.x.v1
-  store i64 %parfor.x.v2, ptr @parfor.site.vol.202, align 8
+  store i64 %parfor.x.v2, ptr @parfor.site.vol.205, align 8
   %parfor.x.t0 = load i64, ptr %parfor.tentry, align 8
   %parfor.x.hot = icmp sgt i64 %parfor.x.t0, 0
   br i1 %parfor.x.hot, label %pfor.exit.meas, label %pfor.done
@@ -36974,12 +37069,12 @@ pfor.exit.meas:                                   ; preds = %pfor.exit.add
   %parfor.x.el0 = sub i64 %parfor.x.te, %parfor.x.t0
   %parfor.x.big = icmp sgt i64 %parfor.x.el0, 262144
   %parfor.x.el = select i1 %parfor.x.big, i64 262144, i64 %parfor.x.el0
-  %parfor.x.cn0 = load i64, ptr @parfor.site.calns.203, align 8
+  %parfor.x.cn0 = load i64, ptr @parfor.site.calns.206, align 8
   %parfor.x.cn1 = add i64 %parfor.x.cn0, %parfor.x.el
-  store i64 %parfor.x.cn1, ptr @parfor.site.calns.203, align 8
-  %parfor.x.ci0 = load i64, ptr @parfor.site.caliters.204, align 8
+  store i64 %parfor.x.cn1, ptr @parfor.site.calns.206, align 8
+  %parfor.x.ci0 = load i64, ptr @parfor.site.caliters.207, align 8
   %parfor.x.ci1 = add i64 %parfor.x.ci0, %parfor.x.iters
-  store i64 %parfor.x.ci1, ptr @parfor.site.caliters.204, align 8
+  store i64 %parfor.x.ci1, ptr @parfor.site.caliters.207, align 8
   %parfor.x.ready0 = icmp sge i64 %parfor.x.cn1, 16384
   %parfor.x.enough = icmp sge i64 %parfor.x.ci1, 512
   %parfor.x.ready = and i1 %parfor.x.ready0, %parfor.x.enough
@@ -36990,7 +37085,7 @@ pfor.exit.pub:                                    ; preds = %pfor.exit.meas
   %parfor.x.p = sdiv i64 %parfor.x.e10, %parfor.x.ci1
   %parfor.x.ppos = icmp sgt i64 %parfor.x.p, 0
   %parfor.x.pf = select i1 %parfor.x.ppos, i64 %parfor.x.p, i64 1
-  store i64 %parfor.x.pf, ptr @parfor.site.p1k.205, align 8
+  store i64 %parfor.x.pf, ptr @parfor.site.p1k.208, align 8
   br label %pfor.done
 
 pfor.inl.cond:                                    ; preds = %pfor.inl.inc, %pfor.gate.hot, %pfor.gate.cold, %pfor.gate.seq
@@ -37065,7 +37160,7 @@ pfor.check.arm:                                   ; preds = %pfor.check.notyet
   br label %pfor.inl.body
 
 pfor.fork:                                        ; preds = %pfor.check.decide
-  store i64 %parfor.p1k, ptr @parfor.site.p1k.205, align 8
+  store i64 %parfor.p1k, ptr @parfor.site.p1k.208, align 8
   %parfor.group75 = call ptr @_ZN9TaskGroup6createEv()
   %parfor.gpage76 = call ptr @_Z3getPv(ptr %parfor.group75)
   store i64 %parfor.i.cur, ptr %parfor.fork.lo, align 8
@@ -37097,7 +37192,7 @@ pfor.gate.seq:                                    ; preds = %pfor.gate.prom
   br label %pfor.inl.cond
 
 pfor.gate.cold:                                   ; preds = %entry
-  %parfor.volv = load i64, ptr @parfor.site.vol.202, align 8
+  %parfor.volv = load i64, ptr @parfor.site.vol.205, align 8
   %parfor.gate.ishot = icmp sge i64 %parfor.volv, 1048576
   br i1 %parfor.gate.ishot, label %pfor.gate.hot, label %pfor.inl.cond
 
@@ -37224,7 +37319,7 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   store ptr %data17, ptr %parfor.cell.cap80, align 8
   %parfor.cell.cap81 = getelementptr inbounds nuw { i64, i64, i64, ptr, float, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 7
   store %_Z6VectorIfE %value19, ptr %parfor.cell.cap81, align 8
-  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.201, ptr %parfor.cell, ptr %parfor.d.grp)
+  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.204, ptr %parfor.cell, ptr %parfor.d.grp)
   store i64 %parfor.chunk.hi, ptr %parfor.c.slot, align 8
   br label %pfor.sub.cond
 
@@ -37278,7 +37373,7 @@ entry:
   store i64 0, ptr %parfor.tentry, align 8
   store i64 0, ptr %parfor.armed, align 8
   store ptr null, ptr %parfor.fork.buf, align 8
-  %parfor.sitep = load i64, ptr @parfor.site.p1k.210, align 8
+  %parfor.sitep = load i64, ptr @parfor.site.p1k.213, align 8
   store i64 %parfor.sitep, ptr %parfor.entryp, align 8
   %parfor.gate.isprom = icmp sgt i64 %parfor.sitep, 0
   br i1 %parfor.gate.isprom, label %pfor.gate.prom, label %pfor.gate.cold
@@ -37320,11 +37415,11 @@ pfor.exit.n:                                      ; preds = %pfor.exit.acct
 
 pfor.exit.add:                                    ; preds = %pfor.exit.n
   %parfor.x.add = mul i64 %parfor.x.iters, 344841
-  %parfor.x.v0 = load i64, ptr @parfor.site.vol.207, align 8
+  %parfor.x.v0 = load i64, ptr @parfor.site.vol.210, align 8
   %parfor.x.v1 = add i64 %parfor.x.v0, %parfor.x.add
   %parfor.x.over = icmp sgt i64 %parfor.x.v1, 1099511627776
   %parfor.x.v2 = select i1 %parfor.x.over, i64 1099511627776, i64 %parfor.x.v1
-  store i64 %parfor.x.v2, ptr @parfor.site.vol.207, align 8
+  store i64 %parfor.x.v2, ptr @parfor.site.vol.210, align 8
   %parfor.x.t0 = load i64, ptr %parfor.tentry, align 8
   %parfor.x.hot = icmp sgt i64 %parfor.x.t0, 0
   br i1 %parfor.x.hot, label %pfor.exit.meas, label %pfor.done
@@ -37334,12 +37429,12 @@ pfor.exit.meas:                                   ; preds = %pfor.exit.add
   %parfor.x.el0 = sub i64 %parfor.x.te, %parfor.x.t0
   %parfor.x.big = icmp sgt i64 %parfor.x.el0, 262144
   %parfor.x.el = select i1 %parfor.x.big, i64 262144, i64 %parfor.x.el0
-  %parfor.x.cn0 = load i64, ptr @parfor.site.calns.208, align 8
+  %parfor.x.cn0 = load i64, ptr @parfor.site.calns.211, align 8
   %parfor.x.cn1 = add i64 %parfor.x.cn0, %parfor.x.el
-  store i64 %parfor.x.cn1, ptr @parfor.site.calns.208, align 8
-  %parfor.x.ci0 = load i64, ptr @parfor.site.caliters.209, align 8
+  store i64 %parfor.x.cn1, ptr @parfor.site.calns.211, align 8
+  %parfor.x.ci0 = load i64, ptr @parfor.site.caliters.212, align 8
   %parfor.x.ci1 = add i64 %parfor.x.ci0, %parfor.x.iters
-  store i64 %parfor.x.ci1, ptr @parfor.site.caliters.209, align 8
+  store i64 %parfor.x.ci1, ptr @parfor.site.caliters.212, align 8
   %parfor.x.ready0 = icmp sge i64 %parfor.x.cn1, 16384
   %parfor.x.enough = icmp sge i64 %parfor.x.ci1, 512
   %parfor.x.ready = and i1 %parfor.x.ready0, %parfor.x.enough
@@ -37350,7 +37445,7 @@ pfor.exit.pub:                                    ; preds = %pfor.exit.meas
   %parfor.x.p = sdiv i64 %parfor.x.e10, %parfor.x.ci1
   %parfor.x.ppos = icmp sgt i64 %parfor.x.p, 0
   %parfor.x.pf = select i1 %parfor.x.ppos, i64 %parfor.x.p, i64 1
-  store i64 %parfor.x.pf, ptr @parfor.site.p1k.210, align 8
+  store i64 %parfor.x.pf, ptr @parfor.site.p1k.213, align 8
   br label %pfor.done
 
 pfor.inl.cond:                                    ; preds = %pfor.inl.inc, %pfor.gate.hot, %pfor.gate.cold, %pfor.gate.seq
@@ -37426,7 +37521,7 @@ pfor.check.arm:                                   ; preds = %pfor.check.notyet
   br label %pfor.inl.body
 
 pfor.fork:                                        ; preds = %pfor.check.decide
-  store i64 %parfor.p1k, ptr @parfor.site.p1k.210, align 8
+  store i64 %parfor.p1k, ptr @parfor.site.p1k.213, align 8
   %parfor.group20 = call ptr @_ZN9TaskGroup6createEv()
   %parfor.gpage21 = call ptr @_Z3getPv(ptr %parfor.group20)
   store i64 %parfor.i.cur, ptr %parfor.fork.lo, align 8
@@ -37458,7 +37553,7 @@ pfor.gate.seq:                                    ; preds = %pfor.gate.prom
   br label %pfor.inl.cond
 
 pfor.gate.cold:                                   ; preds = %entry
-  %parfor.volv = load i64, ptr @parfor.site.vol.207, align 8
+  %parfor.volv = load i64, ptr @parfor.site.vol.210, align 8
   %parfor.gate.ishot = icmp sge i64 %parfor.volv, 1048576
   br i1 %parfor.gate.ishot, label %pfor.gate.hot, label %pfor.inl.cond
 
@@ -37513,7 +37608,7 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   store ptr %data, ptr %parfor.cell.cap23, align 8
   %parfor.cell.cap24 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 5
   store %_Z6VectorIfE %value7, ptr %parfor.cell.cap24, align 8
-  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.206, ptr %parfor.cell, ptr %parfor.d.grp)
+  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.209, ptr %parfor.cell, ptr %parfor.d.grp)
   store i64 %parfor.chunk.hi, ptr %parfor.c.slot, align 8
   br label %pfor.sub.cond
 
@@ -37788,7 +37883,7 @@ entry:
   store i64 0, ptr %parfor.tentry, align 8
   store i64 0, ptr %parfor.armed, align 8
   store ptr null, ptr %parfor.fork.buf, align 8
-  %parfor.sitep = load i64, ptr @parfor.site.p1k.230, align 8
+  %parfor.sitep = load i64, ptr @parfor.site.p1k.233, align 8
   store i64 %parfor.sitep, ptr %parfor.entryp, align 8
   %parfor.gate.isprom = icmp sgt i64 %parfor.sitep, 0
   br i1 %parfor.gate.isprom, label %pfor.gate.prom, label %pfor.gate.cold
@@ -37830,11 +37925,11 @@ pfor.exit.n:                                      ; preds = %pfor.exit.acct
 
 pfor.exit.add:                                    ; preds = %pfor.exit.n
   %parfor.x.add = mul i64 %parfor.x.iters, 1048576
-  %parfor.x.v0 = load i64, ptr @parfor.site.vol.227, align 8
+  %parfor.x.v0 = load i64, ptr @parfor.site.vol.230, align 8
   %parfor.x.v1 = add i64 %parfor.x.v0, %parfor.x.add
   %parfor.x.over = icmp sgt i64 %parfor.x.v1, 1099511627776
   %parfor.x.v2 = select i1 %parfor.x.over, i64 1099511627776, i64 %parfor.x.v1
-  store i64 %parfor.x.v2, ptr @parfor.site.vol.227, align 8
+  store i64 %parfor.x.v2, ptr @parfor.site.vol.230, align 8
   %parfor.x.t0 = load i64, ptr %parfor.tentry, align 8
   %parfor.x.hot = icmp sgt i64 %parfor.x.t0, 0
   br i1 %parfor.x.hot, label %pfor.exit.meas, label %pfor.done
@@ -37844,12 +37939,12 @@ pfor.exit.meas:                                   ; preds = %pfor.exit.add
   %parfor.x.el0 = sub i64 %parfor.x.te, %parfor.x.t0
   %parfor.x.big = icmp sgt i64 %parfor.x.el0, 262144
   %parfor.x.el = select i1 %parfor.x.big, i64 262144, i64 %parfor.x.el0
-  %parfor.x.cn0 = load i64, ptr @parfor.site.calns.228, align 8
+  %parfor.x.cn0 = load i64, ptr @parfor.site.calns.231, align 8
   %parfor.x.cn1 = add i64 %parfor.x.cn0, %parfor.x.el
-  store i64 %parfor.x.cn1, ptr @parfor.site.calns.228, align 8
-  %parfor.x.ci0 = load i64, ptr @parfor.site.caliters.229, align 8
+  store i64 %parfor.x.cn1, ptr @parfor.site.calns.231, align 8
+  %parfor.x.ci0 = load i64, ptr @parfor.site.caliters.232, align 8
   %parfor.x.ci1 = add i64 %parfor.x.ci0, %parfor.x.iters
-  store i64 %parfor.x.ci1, ptr @parfor.site.caliters.229, align 8
+  store i64 %parfor.x.ci1, ptr @parfor.site.caliters.232, align 8
   %parfor.x.ready0 = icmp sge i64 %parfor.x.cn1, 16384
   %parfor.x.enough = icmp sge i64 %parfor.x.ci1, 512
   %parfor.x.ready = and i1 %parfor.x.ready0, %parfor.x.enough
@@ -37860,7 +37955,7 @@ pfor.exit.pub:                                    ; preds = %pfor.exit.meas
   %parfor.x.p = sdiv i64 %parfor.x.e10, %parfor.x.ci1
   %parfor.x.ppos = icmp sgt i64 %parfor.x.p, 0
   %parfor.x.pf = select i1 %parfor.x.ppos, i64 %parfor.x.p, i64 1
-  store i64 %parfor.x.pf, ptr @parfor.site.p1k.230, align 8
+  store i64 %parfor.x.pf, ptr @parfor.site.p1k.233, align 8
   br label %pfor.done
 
 pfor.inl.cond:                                    ; preds = %pfor.inl.inc, %pfor.gate.hot, %pfor.gate.cold, %pfor.gate.seq
@@ -37936,7 +38031,7 @@ pfor.check.arm:                                   ; preds = %pfor.check.notyet
   br label %pfor.inl.body
 
 pfor.fork:                                        ; preds = %pfor.check.decide
-  store i64 %parfor.p1k, ptr @parfor.site.p1k.230, align 8
+  store i64 %parfor.p1k, ptr @parfor.site.p1k.233, align 8
   %parfor.group176 = call ptr @_ZN9TaskGroup6createEv()
   %parfor.gpage177 = call ptr @_Z3getPv(ptr %parfor.group176)
   store i64 %parfor.i.cur, ptr %parfor.fork.lo, align 8
@@ -37968,7 +38063,7 @@ pfor.gate.seq:                                    ; preds = %pfor.gate.prom
   br label %pfor.inl.cond
 
 pfor.gate.cold:                                   ; preds = %entry
-  %parfor.volv = load i64, ptr @parfor.site.vol.227, align 8
+  %parfor.volv = load i64, ptr @parfor.site.vol.230, align 8
   %parfor.gate.ishot = icmp sge i64 %parfor.volv, 1048576
   br i1 %parfor.gate.ishot, label %pfor.gate.hot, label %pfor.inl.cond
 
@@ -38255,7 +38350,7 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   store ptr %data17, ptr %parfor.cell.cap187, align 8
   %parfor.cell.cap188 = getelementptr inbounds nuw { i64, i64, i64, i64, i64, ptr, i64, ptr, float, %_Z6VectorIfE, i64, ptr, ptr, %_Z6VectorIfE }, ptr %parfor.cell, i32 0, i32 13
   store %_Z6VectorIfE %value23, ptr %parfor.cell.cap188, align 8
-  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.226, ptr %parfor.cell, ptr %parfor.d.grp)
+  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.229, ptr %parfor.cell, ptr %parfor.d.grp)
   store i64 %parfor.chunk.hi, ptr %parfor.c.slot, align 8
   br label %pfor.sub.cond
 
@@ -38313,7 +38408,7 @@ entry:
   store i64 0, ptr %parfor.tentry, align 8
   store i64 0, ptr %parfor.armed, align 8
   store ptr null, ptr %parfor.fork.buf, align 8
-  %parfor.sitep = load i64, ptr @parfor.site.p1k.220, align 8
+  %parfor.sitep = load i64, ptr @parfor.site.p1k.223, align 8
   store i64 %parfor.sitep, ptr %parfor.entryp, align 8
   %parfor.gate.isprom = icmp sgt i64 %parfor.sitep, 0
   br i1 %parfor.gate.isprom, label %pfor.gate.prom, label %pfor.gate.cold
@@ -38355,11 +38450,11 @@ pfor.exit.n:                                      ; preds = %pfor.exit.acct
 
 pfor.exit.add:                                    ; preds = %pfor.exit.n
   %parfor.x.add = mul i64 %parfor.x.iters, 345220
-  %parfor.x.v0 = load i64, ptr @parfor.site.vol.217, align 8
+  %parfor.x.v0 = load i64, ptr @parfor.site.vol.220, align 8
   %parfor.x.v1 = add i64 %parfor.x.v0, %parfor.x.add
   %parfor.x.over = icmp sgt i64 %parfor.x.v1, 1099511627776
   %parfor.x.v2 = select i1 %parfor.x.over, i64 1099511627776, i64 %parfor.x.v1
-  store i64 %parfor.x.v2, ptr @parfor.site.vol.217, align 8
+  store i64 %parfor.x.v2, ptr @parfor.site.vol.220, align 8
   %parfor.x.t0 = load i64, ptr %parfor.tentry, align 8
   %parfor.x.hot = icmp sgt i64 %parfor.x.t0, 0
   br i1 %parfor.x.hot, label %pfor.exit.meas, label %pfor.done
@@ -38369,12 +38464,12 @@ pfor.exit.meas:                                   ; preds = %pfor.exit.add
   %parfor.x.el0 = sub i64 %parfor.x.te, %parfor.x.t0
   %parfor.x.big = icmp sgt i64 %parfor.x.el0, 262144
   %parfor.x.el = select i1 %parfor.x.big, i64 262144, i64 %parfor.x.el0
-  %parfor.x.cn0 = load i64, ptr @parfor.site.calns.218, align 8
+  %parfor.x.cn0 = load i64, ptr @parfor.site.calns.221, align 8
   %parfor.x.cn1 = add i64 %parfor.x.cn0, %parfor.x.el
-  store i64 %parfor.x.cn1, ptr @parfor.site.calns.218, align 8
-  %parfor.x.ci0 = load i64, ptr @parfor.site.caliters.219, align 8
+  store i64 %parfor.x.cn1, ptr @parfor.site.calns.221, align 8
+  %parfor.x.ci0 = load i64, ptr @parfor.site.caliters.222, align 8
   %parfor.x.ci1 = add i64 %parfor.x.ci0, %parfor.x.iters
-  store i64 %parfor.x.ci1, ptr @parfor.site.caliters.219, align 8
+  store i64 %parfor.x.ci1, ptr @parfor.site.caliters.222, align 8
   %parfor.x.ready0 = icmp sge i64 %parfor.x.cn1, 16384
   %parfor.x.enough = icmp sge i64 %parfor.x.ci1, 512
   %parfor.x.ready = and i1 %parfor.x.ready0, %parfor.x.enough
@@ -38385,7 +38480,7 @@ pfor.exit.pub:                                    ; preds = %pfor.exit.meas
   %parfor.x.p = sdiv i64 %parfor.x.e10, %parfor.x.ci1
   %parfor.x.ppos = icmp sgt i64 %parfor.x.p, 0
   %parfor.x.pf = select i1 %parfor.x.ppos, i64 %parfor.x.p, i64 1
-  store i64 %parfor.x.pf, ptr @parfor.site.p1k.220, align 8
+  store i64 %parfor.x.pf, ptr @parfor.site.p1k.223, align 8
   br label %pfor.done
 
 pfor.inl.cond:                                    ; preds = %pfor.inl.inc, %pfor.gate.hot, %pfor.gate.cold, %pfor.gate.seq
@@ -38459,7 +38554,7 @@ pfor.check.arm:                                   ; preds = %pfor.check.notyet
   br label %pfor.inl.body
 
 pfor.fork:                                        ; preds = %pfor.check.decide
-  store i64 %parfor.p1k, ptr @parfor.site.p1k.220, align 8
+  store i64 %parfor.p1k, ptr @parfor.site.p1k.223, align 8
   %parfor.group28 = call ptr @_ZN9TaskGroup6createEv()
   %parfor.gpage29 = call ptr @_Z3getPv(ptr %parfor.group28)
   store i64 %parfor.i.cur, ptr %parfor.fork.lo, align 8
@@ -38491,7 +38586,7 @@ pfor.gate.seq:                                    ; preds = %pfor.gate.prom
   br label %pfor.inl.cond
 
 pfor.gate.cold:                                   ; preds = %entry
-  %parfor.volv = load i64, ptr @parfor.site.vol.217, align 8
+  %parfor.volv = load i64, ptr @parfor.site.vol.220, align 8
   %parfor.gate.ishot = icmp sge i64 %parfor.volv, 1048576
   br i1 %parfor.gate.ishot, label %pfor.gate.hot, label %pfor.inl.cond
 
@@ -38552,7 +38647,7 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   store ptr %data, ptr %parfor.cell.cap31, align 8
   %parfor.cell.cap32 = getelementptr inbounds nuw { i64, i64, i64, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 5
   store ptr %data10, ptr %parfor.cell.cap32, align 8
-  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.216, ptr %parfor.cell, ptr %parfor.d.grp)
+  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.219, ptr %parfor.cell, ptr %parfor.d.grp)
   store i64 %parfor.chunk.hi, ptr %parfor.c.slot, align 8
   br label %pfor.sub.cond
 
@@ -38612,7 +38707,7 @@ entry:
   store i64 0, ptr %parfor.tentry, align 8
   store i64 0, ptr %parfor.armed, align 8
   store ptr null, ptr %parfor.fork.buf, align 8
-  %parfor.sitep = load i64, ptr @parfor.site.p1k.225, align 8
+  %parfor.sitep = load i64, ptr @parfor.site.p1k.228, align 8
   store i64 %parfor.sitep, ptr %parfor.entryp, align 8
   %parfor.gate.isprom = icmp sgt i64 %parfor.sitep, 0
   br i1 %parfor.gate.isprom, label %pfor.gate.prom, label %pfor.gate.cold
@@ -38654,11 +38749,11 @@ pfor.exit.n:                                      ; preds = %pfor.exit.acct
 
 pfor.exit.add:                                    ; preds = %pfor.exit.n
   %parfor.x.add = mul i64 %parfor.x.iters, 345104
-  %parfor.x.v0 = load i64, ptr @parfor.site.vol.222, align 8
+  %parfor.x.v0 = load i64, ptr @parfor.site.vol.225, align 8
   %parfor.x.v1 = add i64 %parfor.x.v0, %parfor.x.add
   %parfor.x.over = icmp sgt i64 %parfor.x.v1, 1099511627776
   %parfor.x.v2 = select i1 %parfor.x.over, i64 1099511627776, i64 %parfor.x.v1
-  store i64 %parfor.x.v2, ptr @parfor.site.vol.222, align 8
+  store i64 %parfor.x.v2, ptr @parfor.site.vol.225, align 8
   %parfor.x.t0 = load i64, ptr %parfor.tentry, align 8
   %parfor.x.hot = icmp sgt i64 %parfor.x.t0, 0
   br i1 %parfor.x.hot, label %pfor.exit.meas, label %pfor.done
@@ -38668,12 +38763,12 @@ pfor.exit.meas:                                   ; preds = %pfor.exit.add
   %parfor.x.el0 = sub i64 %parfor.x.te, %parfor.x.t0
   %parfor.x.big = icmp sgt i64 %parfor.x.el0, 262144
   %parfor.x.el = select i1 %parfor.x.big, i64 262144, i64 %parfor.x.el0
-  %parfor.x.cn0 = load i64, ptr @parfor.site.calns.223, align 8
+  %parfor.x.cn0 = load i64, ptr @parfor.site.calns.226, align 8
   %parfor.x.cn1 = add i64 %parfor.x.cn0, %parfor.x.el
-  store i64 %parfor.x.cn1, ptr @parfor.site.calns.223, align 8
-  %parfor.x.ci0 = load i64, ptr @parfor.site.caliters.224, align 8
+  store i64 %parfor.x.cn1, ptr @parfor.site.calns.226, align 8
+  %parfor.x.ci0 = load i64, ptr @parfor.site.caliters.227, align 8
   %parfor.x.ci1 = add i64 %parfor.x.ci0, %parfor.x.iters
-  store i64 %parfor.x.ci1, ptr @parfor.site.caliters.224, align 8
+  store i64 %parfor.x.ci1, ptr @parfor.site.caliters.227, align 8
   %parfor.x.ready0 = icmp sge i64 %parfor.x.cn1, 16384
   %parfor.x.enough = icmp sge i64 %parfor.x.ci1, 512
   %parfor.x.ready = and i1 %parfor.x.ready0, %parfor.x.enough
@@ -38684,7 +38779,7 @@ pfor.exit.pub:                                    ; preds = %pfor.exit.meas
   %parfor.x.p = sdiv i64 %parfor.x.e10, %parfor.x.ci1
   %parfor.x.ppos = icmp sgt i64 %parfor.x.p, 0
   %parfor.x.pf = select i1 %parfor.x.ppos, i64 %parfor.x.p, i64 1
-  store i64 %parfor.x.pf, ptr @parfor.site.p1k.225, align 8
+  store i64 %parfor.x.pf, ptr @parfor.site.p1k.228, align 8
   br label %pfor.done
 
 pfor.inl.cond:                                    ; preds = %pfor.inl.inc, %pfor.gate.hot, %pfor.gate.cold, %pfor.gate.seq
@@ -38762,7 +38857,7 @@ pfor.check.arm:                                   ; preds = %pfor.check.notyet
   br label %pfor.inl.body
 
 pfor.fork:                                        ; preds = %pfor.check.decide
-  store i64 %parfor.p1k, ptr @parfor.site.p1k.225, align 8
+  store i64 %parfor.p1k, ptr @parfor.site.p1k.228, align 8
   %parfor.group31 = call ptr @_ZN9TaskGroup6createEv()
   %parfor.gpage32 = call ptr @_Z3getPv(ptr %parfor.group31)
   store i64 %parfor.i.cur, ptr %parfor.fork.lo, align 8
@@ -38794,7 +38889,7 @@ pfor.gate.seq:                                    ; preds = %pfor.gate.prom
   br label %pfor.inl.cond
 
 pfor.gate.cold:                                   ; preds = %entry
-  %parfor.volv = load i64, ptr @parfor.site.vol.222, align 8
+  %parfor.volv = load i64, ptr @parfor.site.vol.225, align 8
   %parfor.gate.ishot = icmp sge i64 %parfor.volv, 1048576
   br i1 %parfor.gate.ishot, label %pfor.gate.hot, label %pfor.inl.cond
 
@@ -38856,7 +38951,7 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   store ptr %data, ptr %parfor.cell.cap35, align 8
   %parfor.cell.cap36 = getelementptr inbounds nuw { i64, i64, i64, i64, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 6
   store ptr %data10, ptr %parfor.cell.cap36, align 8
-  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.221, ptr %parfor.cell, ptr %parfor.d.grp)
+  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.224, ptr %parfor.cell, ptr %parfor.d.grp)
   store i64 %parfor.chunk.hi, ptr %parfor.c.slot, align 8
   br label %pfor.sub.cond
 
@@ -38979,7 +39074,7 @@ if.then37:                                        ; preds = %if.end
   store i64 0, ptr %parfor.tentry, align 8
   store i64 0, ptr %parfor.armed, align 8
   store ptr null, ptr %parfor.fork.buf, align 8
-  %parfor.sitep = load i64, ptr @parfor.site.p1k.175, align 8
+  %parfor.sitep = load i64, ptr @parfor.site.p1k.178, align 8
   store i64 %parfor.sitep, ptr %parfor.entryp, align 8
   %parfor.gate.isprom = icmp sgt i64 %parfor.sitep, 0
   br i1 %parfor.gate.isprom, label %pfor.gate.prom, label %pfor.gate.cold
@@ -39025,11 +39120,11 @@ pfor.exit.n:                                      ; preds = %pfor.exit.acct
 
 pfor.exit.add:                                    ; preds = %pfor.exit.n
   %parfor.x.add = mul i64 %parfor.x.iters, 467972
-  %parfor.x.v0 = load i64, ptr @parfor.site.vol.172, align 8
+  %parfor.x.v0 = load i64, ptr @parfor.site.vol.175, align 8
   %parfor.x.v1 = add i64 %parfor.x.v0, %parfor.x.add
   %parfor.x.over = icmp sgt i64 %parfor.x.v1, 1099511627776
   %parfor.x.v2 = select i1 %parfor.x.over, i64 1099511627776, i64 %parfor.x.v1
-  store i64 %parfor.x.v2, ptr @parfor.site.vol.172, align 8
+  store i64 %parfor.x.v2, ptr @parfor.site.vol.175, align 8
   %parfor.x.t0 = load i64, ptr %parfor.tentry, align 8
   %parfor.x.hot = icmp sgt i64 %parfor.x.t0, 0
   br i1 %parfor.x.hot, label %pfor.exit.meas, label %pfor.done
@@ -39039,12 +39134,12 @@ pfor.exit.meas:                                   ; preds = %pfor.exit.add
   %parfor.x.el0 = sub i64 %parfor.x.te, %parfor.x.t0
   %parfor.x.big = icmp sgt i64 %parfor.x.el0, 262144
   %parfor.x.el = select i1 %parfor.x.big, i64 262144, i64 %parfor.x.el0
-  %parfor.x.cn0 = load i64, ptr @parfor.site.calns.173, align 8
+  %parfor.x.cn0 = load i64, ptr @parfor.site.calns.176, align 8
   %parfor.x.cn1 = add i64 %parfor.x.cn0, %parfor.x.el
-  store i64 %parfor.x.cn1, ptr @parfor.site.calns.173, align 8
-  %parfor.x.ci0 = load i64, ptr @parfor.site.caliters.174, align 8
+  store i64 %parfor.x.cn1, ptr @parfor.site.calns.176, align 8
+  %parfor.x.ci0 = load i64, ptr @parfor.site.caliters.177, align 8
   %parfor.x.ci1 = add i64 %parfor.x.ci0, %parfor.x.iters
-  store i64 %parfor.x.ci1, ptr @parfor.site.caliters.174, align 8
+  store i64 %parfor.x.ci1, ptr @parfor.site.caliters.177, align 8
   %parfor.x.ready0 = icmp sge i64 %parfor.x.cn1, 16384
   %parfor.x.enough = icmp sge i64 %parfor.x.ci1, 512
   %parfor.x.ready = and i1 %parfor.x.ready0, %parfor.x.enough
@@ -39055,7 +39150,7 @@ pfor.exit.pub:                                    ; preds = %pfor.exit.meas
   %parfor.x.p = sdiv i64 %parfor.x.e10, %parfor.x.ci1
   %parfor.x.ppos = icmp sgt i64 %parfor.x.p, 0
   %parfor.x.pf = select i1 %parfor.x.ppos, i64 %parfor.x.p, i64 1
-  store i64 %parfor.x.pf, ptr @parfor.site.p1k.175, align 8
+  store i64 %parfor.x.pf, ptr @parfor.site.p1k.178, align 8
   br label %pfor.done
 
 pfor.inl.cond:                                    ; preds = %pfor.inl.inc, %pfor.gate.hot, %pfor.gate.cold, %pfor.gate.seq
@@ -39129,7 +39224,7 @@ pfor.check.arm:                                   ; preds = %pfor.check.notyet
   br label %pfor.inl.body
 
 pfor.fork:                                        ; preds = %pfor.check.decide
-  store i64 %parfor.p1k, ptr @parfor.site.p1k.175, align 8
+  store i64 %parfor.p1k, ptr @parfor.site.p1k.178, align 8
   %parfor.group70 = call ptr @_ZN9TaskGroup6createEv()
   %parfor.gpage71 = call ptr @_Z3getPv(ptr %parfor.group70)
   store i64 %parfor.i.cur, ptr %parfor.fork.lo, align 8
@@ -39161,7 +39256,7 @@ pfor.gate.seq:                                    ; preds = %pfor.gate.prom
   br label %pfor.inl.cond
 
 pfor.gate.cold:                                   ; preds = %if.then37
-  %parfor.volv = load i64, ptr @parfor.site.vol.172, align 8
+  %parfor.volv = load i64, ptr @parfor.site.vol.175, align 8
   %parfor.gate.ishot = icmp sge i64 %parfor.volv, 1048576
   br i1 %parfor.gate.ishot, label %pfor.gate.hot, label %pfor.inl.cond
 
@@ -39253,7 +39348,7 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   store %_Z6VectorIfE %grad22, ptr %parfor.cell.cap75, align 8
   %parfor.cell.cap76 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 7
   store ptr %data17, ptr %parfor.cell.cap76, align 8
-  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.171, ptr %parfor.cell, ptr %parfor.d.grp)
+  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.174, ptr %parfor.cell, ptr %parfor.d.grp)
   store i64 %parfor.chunk.hi, ptr %parfor.c.slot, align 8
   br label %pfor.sub.cond
 
@@ -39289,7 +39384,7 @@ if.then86:                                        ; preds = %if.end78
   store i64 0, ptr %parfor.tentry99, align 8
   store i64 0, ptr %parfor.armed101, align 8
   store ptr null, ptr %parfor.fork.buf95, align 8
-  %parfor.sitep126 = load i64, ptr @parfor.site.p1k.180, align 8
+  %parfor.sitep126 = load i64, ptr @parfor.site.p1k.183, align 8
   store i64 %parfor.sitep126, ptr %parfor.entryp98, align 8
   %parfor.gate.isprom127 = icmp sgt i64 %parfor.sitep126, 0
   br i1 %parfor.gate.isprom127, label %pfor.gate.prom121, label %pfor.gate.cold124
@@ -39334,11 +39429,11 @@ pfor.exit.n105:                                   ; preds = %pfor.exit.acct104
 
 pfor.exit.add106:                                 ; preds = %pfor.exit.n105
   %parfor.x.add207 = mul i64 %parfor.x.iters205, 467972
-  %parfor.x.v0208 = load i64, ptr @parfor.site.vol.177, align 8
+  %parfor.x.v0208 = load i64, ptr @parfor.site.vol.180, align 8
   %parfor.x.v1209 = add i64 %parfor.x.v0208, %parfor.x.add207
   %parfor.x.over210 = icmp sgt i64 %parfor.x.v1209, 1099511627776
   %parfor.x.v2211 = select i1 %parfor.x.over210, i64 1099511627776, i64 %parfor.x.v1209
-  store i64 %parfor.x.v2211, ptr @parfor.site.vol.177, align 8
+  store i64 %parfor.x.v2211, ptr @parfor.site.vol.180, align 8
   %parfor.x.t0212 = load i64, ptr %parfor.tentry99, align 8
   %parfor.x.hot213 = icmp sgt i64 %parfor.x.t0212, 0
   br i1 %parfor.x.hot213, label %pfor.exit.meas107, label %pfor.done103
@@ -39348,12 +39443,12 @@ pfor.exit.meas107:                                ; preds = %pfor.exit.add106
   %parfor.x.el0215 = sub i64 %parfor.x.te214, %parfor.x.t0212
   %parfor.x.big216 = icmp sgt i64 %parfor.x.el0215, 262144
   %parfor.x.el217 = select i1 %parfor.x.big216, i64 262144, i64 %parfor.x.el0215
-  %parfor.x.cn0218 = load i64, ptr @parfor.site.calns.178, align 8
+  %parfor.x.cn0218 = load i64, ptr @parfor.site.calns.181, align 8
   %parfor.x.cn1219 = add i64 %parfor.x.cn0218, %parfor.x.el217
-  store i64 %parfor.x.cn1219, ptr @parfor.site.calns.178, align 8
-  %parfor.x.ci0220 = load i64, ptr @parfor.site.caliters.179, align 8
+  store i64 %parfor.x.cn1219, ptr @parfor.site.calns.181, align 8
+  %parfor.x.ci0220 = load i64, ptr @parfor.site.caliters.182, align 8
   %parfor.x.ci1221 = add i64 %parfor.x.ci0220, %parfor.x.iters205
-  store i64 %parfor.x.ci1221, ptr @parfor.site.caliters.179, align 8
+  store i64 %parfor.x.ci1221, ptr @parfor.site.caliters.182, align 8
   %parfor.x.ready0222 = icmp sge i64 %parfor.x.cn1219, 16384
   %parfor.x.enough223 = icmp sge i64 %parfor.x.ci1221, 512
   %parfor.x.ready224 = and i1 %parfor.x.ready0222, %parfor.x.enough223
@@ -39364,7 +39459,7 @@ pfor.exit.pub108:                                 ; preds = %pfor.exit.meas107
   %parfor.x.p226 = sdiv i64 %parfor.x.e10225, %parfor.x.ci1221
   %parfor.x.ppos227 = icmp sgt i64 %parfor.x.p226, 0
   %parfor.x.pf228 = select i1 %parfor.x.ppos227, i64 %parfor.x.p226, i64 1
-  store i64 %parfor.x.pf228, ptr @parfor.site.p1k.180, align 8
+  store i64 %parfor.x.pf228, ptr @parfor.site.p1k.183, align 8
   br label %pfor.done103
 
 pfor.inl.cond109:                                 ; preds = %pfor.inl.inc112, %pfor.gate.hot125, %pfor.gate.cold124, %pfor.gate.seq123
@@ -39438,7 +39533,7 @@ pfor.check.arm119:                                ; preds = %pfor.check.notyet11
   br label %pfor.inl.body111
 
 pfor.fork120:                                     ; preds = %pfor.check.decide117
-  store i64 %parfor.p1k192, ptr @parfor.site.p1k.180, align 8
+  store i64 %parfor.p1k192, ptr @parfor.site.p1k.183, align 8
   %parfor.group201 = call ptr @_ZN9TaskGroup6createEv()
   %parfor.gpage202 = call ptr @_Z3getPv(ptr %parfor.group201)
   store i64 %parfor.i.cur137, ptr %parfor.fork.lo92, align 8
@@ -39470,7 +39565,7 @@ pfor.gate.seq123:                                 ; preds = %pfor.gate.prom121
   br label %pfor.inl.cond109
 
 pfor.gate.cold124:                                ; preds = %if.then86
-  %parfor.volv134 = load i64, ptr @parfor.site.vol.177, align 8
+  %parfor.volv134 = load i64, ptr @parfor.site.vol.180, align 8
   %parfor.gate.ishot135 = icmp sge i64 %parfor.volv134, 1048576
   br i1 %parfor.gate.ishot135, label %pfor.gate.hot125, label %pfor.inl.cond109
 
@@ -39564,7 +39659,7 @@ pfor.sub.body249:                                 ; preds = %pfor.sub.cond248
   store %_Z6VectorIfE %grad24, ptr %parfor.cell.cap264, align 8
   %parfor.cell.cap265 = getelementptr inbounds nuw { i64, i64, i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell256, i32 0, i32 8
   store ptr %data20, ptr %parfor.cell.cap265, align 8
-  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool246, ptr @parfor.176, ptr %parfor.cell256, ptr %parfor.d.grp232)
+  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool246, ptr @parfor.179, ptr %parfor.cell256, ptr %parfor.d.grp232)
   store i64 %parfor.chunk.hi255, ptr %parfor.c.slot247, align 8
   br label %pfor.sub.cond248
 
@@ -39621,7 +39716,7 @@ entry:
   store i64 0, ptr %parfor.tentry, align 8
   store i64 0, ptr %parfor.armed, align 8
   store ptr null, ptr %parfor.fork.buf, align 8
-  %parfor.sitep = load i64, ptr @parfor.site.p1k.190, align 8
+  %parfor.sitep = load i64, ptr @parfor.site.p1k.193, align 8
   store i64 %parfor.sitep, ptr %parfor.entryp, align 8
   %parfor.gate.isprom = icmp sgt i64 %parfor.sitep, 0
   br i1 %parfor.gate.isprom, label %pfor.gate.prom, label %pfor.gate.cold
@@ -39663,11 +39758,11 @@ pfor.exit.n:                                      ; preds = %pfor.exit.acct
 
 pfor.exit.add:                                    ; preds = %pfor.exit.n
   %parfor.x.add = mul i64 %parfor.x.iters, 352964
-  %parfor.x.v0 = load i64, ptr @parfor.site.vol.187, align 8
+  %parfor.x.v0 = load i64, ptr @parfor.site.vol.190, align 8
   %parfor.x.v1 = add i64 %parfor.x.v0, %parfor.x.add
   %parfor.x.over = icmp sgt i64 %parfor.x.v1, 1099511627776
   %parfor.x.v2 = select i1 %parfor.x.over, i64 1099511627776, i64 %parfor.x.v1
-  store i64 %parfor.x.v2, ptr @parfor.site.vol.187, align 8
+  store i64 %parfor.x.v2, ptr @parfor.site.vol.190, align 8
   %parfor.x.t0 = load i64, ptr %parfor.tentry, align 8
   %parfor.x.hot = icmp sgt i64 %parfor.x.t0, 0
   br i1 %parfor.x.hot, label %pfor.exit.meas, label %pfor.done
@@ -39677,12 +39772,12 @@ pfor.exit.meas:                                   ; preds = %pfor.exit.add
   %parfor.x.el0 = sub i64 %parfor.x.te, %parfor.x.t0
   %parfor.x.big = icmp sgt i64 %parfor.x.el0, 262144
   %parfor.x.el = select i1 %parfor.x.big, i64 262144, i64 %parfor.x.el0
-  %parfor.x.cn0 = load i64, ptr @parfor.site.calns.188, align 8
+  %parfor.x.cn0 = load i64, ptr @parfor.site.calns.191, align 8
   %parfor.x.cn1 = add i64 %parfor.x.cn0, %parfor.x.el
-  store i64 %parfor.x.cn1, ptr @parfor.site.calns.188, align 8
-  %parfor.x.ci0 = load i64, ptr @parfor.site.caliters.189, align 8
+  store i64 %parfor.x.cn1, ptr @parfor.site.calns.191, align 8
+  %parfor.x.ci0 = load i64, ptr @parfor.site.caliters.192, align 8
   %parfor.x.ci1 = add i64 %parfor.x.ci0, %parfor.x.iters
-  store i64 %parfor.x.ci1, ptr @parfor.site.caliters.189, align 8
+  store i64 %parfor.x.ci1, ptr @parfor.site.caliters.192, align 8
   %parfor.x.ready0 = icmp sge i64 %parfor.x.cn1, 16384
   %parfor.x.enough = icmp sge i64 %parfor.x.ci1, 512
   %parfor.x.ready = and i1 %parfor.x.ready0, %parfor.x.enough
@@ -39693,7 +39788,7 @@ pfor.exit.pub:                                    ; preds = %pfor.exit.meas
   %parfor.x.p = sdiv i64 %parfor.x.e10, %parfor.x.ci1
   %parfor.x.ppos = icmp sgt i64 %parfor.x.p, 0
   %parfor.x.pf = select i1 %parfor.x.ppos, i64 %parfor.x.p, i64 1
-  store i64 %parfor.x.pf, ptr @parfor.site.p1k.190, align 8
+  store i64 %parfor.x.pf, ptr @parfor.site.p1k.193, align 8
   br label %pfor.done
 
 pfor.inl.cond:                                    ; preds = %pfor.inl.inc, %pfor.gate.hot, %pfor.gate.cold, %pfor.gate.seq
@@ -39767,7 +39862,7 @@ pfor.check.arm:                                   ; preds = %pfor.check.notyet
   br label %pfor.inl.body
 
 pfor.fork:                                        ; preds = %pfor.check.decide
-  store i64 %parfor.p1k, ptr @parfor.site.p1k.190, align 8
+  store i64 %parfor.p1k, ptr @parfor.site.p1k.193, align 8
   %parfor.group48 = call ptr @_ZN9TaskGroup6createEv()
   %parfor.gpage49 = call ptr @_Z3getPv(ptr %parfor.group48)
   store i64 %parfor.i.cur, ptr %parfor.fork.lo, align 8
@@ -39799,7 +39894,7 @@ pfor.gate.seq:                                    ; preds = %pfor.gate.prom
   br label %pfor.inl.cond
 
 pfor.gate.cold:                                   ; preds = %entry
-  %parfor.volv = load i64, ptr @parfor.site.vol.187, align 8
+  %parfor.volv = load i64, ptr @parfor.site.vol.190, align 8
   %parfor.gate.ishot = icmp sge i64 %parfor.volv, 1048576
   br i1 %parfor.gate.ishot, label %pfor.gate.hot, label %pfor.inl.cond
 
@@ -39886,7 +39981,7 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   store ptr %data8, ptr %parfor.cell.cap52, align 8
   %parfor.cell.cap53 = getelementptr inbounds nuw { i64, i64, i64, ptr, %_Z6VectorIfE, ptr, ptr }, ptr %parfor.cell, i32 0, i32 6
   store ptr %data5, ptr %parfor.cell.cap53, align 8
-  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.186, ptr %parfor.cell, ptr %parfor.d.grp)
+  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.189, ptr %parfor.cell, ptr %parfor.d.grp)
   store i64 %parfor.chunk.hi, ptr %parfor.c.slot, align 8
   br label %pfor.sub.cond
 
@@ -39945,7 +40040,7 @@ entry:
   store i64 0, ptr %parfor.tentry, align 8
   store i64 0, ptr %parfor.armed, align 8
   store ptr null, ptr %parfor.fork.buf, align 8
-  %parfor.sitep = load i64, ptr @parfor.site.p1k.200, align 8
+  %parfor.sitep = load i64, ptr @parfor.site.p1k.203, align 8
   store i64 %parfor.sitep, ptr %parfor.entryp, align 8
   %parfor.gate.isprom = icmp sgt i64 %parfor.sitep, 0
   br i1 %parfor.gate.isprom, label %pfor.gate.prom, label %pfor.gate.cold
@@ -39987,11 +40082,11 @@ pfor.exit.n:                                      ; preds = %pfor.exit.acct
 
 pfor.exit.add:                                    ; preds = %pfor.exit.n
   %parfor.x.add = mul i64 %parfor.x.iters, 348041
-  %parfor.x.v0 = load i64, ptr @parfor.site.vol.197, align 8
+  %parfor.x.v0 = load i64, ptr @parfor.site.vol.200, align 8
   %parfor.x.v1 = add i64 %parfor.x.v0, %parfor.x.add
   %parfor.x.over = icmp sgt i64 %parfor.x.v1, 1099511627776
   %parfor.x.v2 = select i1 %parfor.x.over, i64 1099511627776, i64 %parfor.x.v1
-  store i64 %parfor.x.v2, ptr @parfor.site.vol.197, align 8
+  store i64 %parfor.x.v2, ptr @parfor.site.vol.200, align 8
   %parfor.x.t0 = load i64, ptr %parfor.tentry, align 8
   %parfor.x.hot = icmp sgt i64 %parfor.x.t0, 0
   br i1 %parfor.x.hot, label %pfor.exit.meas, label %pfor.done
@@ -40001,12 +40096,12 @@ pfor.exit.meas:                                   ; preds = %pfor.exit.add
   %parfor.x.el0 = sub i64 %parfor.x.te, %parfor.x.t0
   %parfor.x.big = icmp sgt i64 %parfor.x.el0, 262144
   %parfor.x.el = select i1 %parfor.x.big, i64 262144, i64 %parfor.x.el0
-  %parfor.x.cn0 = load i64, ptr @parfor.site.calns.198, align 8
+  %parfor.x.cn0 = load i64, ptr @parfor.site.calns.201, align 8
   %parfor.x.cn1 = add i64 %parfor.x.cn0, %parfor.x.el
-  store i64 %parfor.x.cn1, ptr @parfor.site.calns.198, align 8
-  %parfor.x.ci0 = load i64, ptr @parfor.site.caliters.199, align 8
+  store i64 %parfor.x.cn1, ptr @parfor.site.calns.201, align 8
+  %parfor.x.ci0 = load i64, ptr @parfor.site.caliters.202, align 8
   %parfor.x.ci1 = add i64 %parfor.x.ci0, %parfor.x.iters
-  store i64 %parfor.x.ci1, ptr @parfor.site.caliters.199, align 8
+  store i64 %parfor.x.ci1, ptr @parfor.site.caliters.202, align 8
   %parfor.x.ready0 = icmp sge i64 %parfor.x.cn1, 16384
   %parfor.x.enough = icmp sge i64 %parfor.x.ci1, 512
   %parfor.x.ready = and i1 %parfor.x.ready0, %parfor.x.enough
@@ -40017,7 +40112,7 @@ pfor.exit.pub:                                    ; preds = %pfor.exit.meas
   %parfor.x.p = sdiv i64 %parfor.x.e10, %parfor.x.ci1
   %parfor.x.ppos = icmp sgt i64 %parfor.x.p, 0
   %parfor.x.pf = select i1 %parfor.x.ppos, i64 %parfor.x.p, i64 1
-  store i64 %parfor.x.pf, ptr @parfor.site.p1k.200, align 8
+  store i64 %parfor.x.pf, ptr @parfor.site.p1k.203, align 8
   br label %pfor.done
 
 pfor.inl.cond:                                    ; preds = %pfor.inl.inc, %pfor.gate.hot, %pfor.gate.cold, %pfor.gate.seq
@@ -40092,7 +40187,7 @@ pfor.check.arm:                                   ; preds = %pfor.check.notyet
   br label %pfor.inl.body
 
 pfor.fork:                                        ; preds = %pfor.check.decide
-  store i64 %parfor.p1k, ptr @parfor.site.p1k.200, align 8
+  store i64 %parfor.p1k, ptr @parfor.site.p1k.203, align 8
   %parfor.group52 = call ptr @_ZN9TaskGroup6createEv()
   %parfor.gpage53 = call ptr @_Z3getPv(ptr %parfor.group52)
   store i64 %parfor.i.cur, ptr %parfor.fork.lo, align 8
@@ -40124,7 +40219,7 @@ pfor.gate.seq:                                    ; preds = %pfor.gate.prom
   br label %pfor.inl.cond
 
 pfor.gate.cold:                                   ; preds = %entry
-  %parfor.volv = load i64, ptr @parfor.site.vol.197, align 8
+  %parfor.volv = load i64, ptr @parfor.site.vol.200, align 8
   %parfor.gate.ishot = icmp sge i64 %parfor.volv, 1048576
   br i1 %parfor.gate.ishot, label %pfor.gate.hot, label %pfor.inl.cond
 
@@ -40224,7 +40319,7 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   store %_Z6VectorIfE %grad10, ptr %parfor.cell.cap56, align 8
   %parfor.cell.cap57 = getelementptr inbounds nuw { i64, i64, i64, ptr, ptr, %_Z6VectorIfE, ptr }, ptr %parfor.cell, i32 0, i32 6
   store ptr %data8, ptr %parfor.cell.cap57, align 8
-  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.196, ptr %parfor.cell, ptr %parfor.d.grp)
+  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.199, ptr %parfor.cell, ptr %parfor.d.grp)
   store i64 %parfor.chunk.hi, ptr %parfor.c.slot, align 8
   br label %pfor.sub.cond
 
@@ -40671,7 +40766,7 @@ entry:
   store i64 0, ptr %parfor.tentry, align 8
   store i64 0, ptr %parfor.armed, align 8
   store ptr null, ptr %parfor.fork.buf, align 8
-  %parfor.sitep = load i64, ptr @parfor.site.p1k.215, align 8
+  %parfor.sitep = load i64, ptr @parfor.site.p1k.218, align 8
   store i64 %parfor.sitep, ptr %parfor.entryp, align 8
   %parfor.gate.isprom = icmp sgt i64 %parfor.sitep, 0
   br i1 %parfor.gate.isprom, label %pfor.gate.prom, label %pfor.gate.cold
@@ -40713,11 +40808,11 @@ pfor.exit.n:                                      ; preds = %pfor.exit.acct
 
 pfor.exit.add:                                    ; preds = %pfor.exit.n
   %parfor.x.add = mul i64 %parfor.x.iters, 357724
-  %parfor.x.v0 = load i64, ptr @parfor.site.vol.212, align 8
+  %parfor.x.v0 = load i64, ptr @parfor.site.vol.215, align 8
   %parfor.x.v1 = add i64 %parfor.x.v0, %parfor.x.add
   %parfor.x.over = icmp sgt i64 %parfor.x.v1, 1099511627776
   %parfor.x.v2 = select i1 %parfor.x.over, i64 1099511627776, i64 %parfor.x.v1
-  store i64 %parfor.x.v2, ptr @parfor.site.vol.212, align 8
+  store i64 %parfor.x.v2, ptr @parfor.site.vol.215, align 8
   %parfor.x.t0 = load i64, ptr %parfor.tentry, align 8
   %parfor.x.hot = icmp sgt i64 %parfor.x.t0, 0
   br i1 %parfor.x.hot, label %pfor.exit.meas, label %pfor.done
@@ -40727,12 +40822,12 @@ pfor.exit.meas:                                   ; preds = %pfor.exit.add
   %parfor.x.el0 = sub i64 %parfor.x.te, %parfor.x.t0
   %parfor.x.big = icmp sgt i64 %parfor.x.el0, 262144
   %parfor.x.el = select i1 %parfor.x.big, i64 262144, i64 %parfor.x.el0
-  %parfor.x.cn0 = load i64, ptr @parfor.site.calns.213, align 8
+  %parfor.x.cn0 = load i64, ptr @parfor.site.calns.216, align 8
   %parfor.x.cn1 = add i64 %parfor.x.cn0, %parfor.x.el
-  store i64 %parfor.x.cn1, ptr @parfor.site.calns.213, align 8
-  %parfor.x.ci0 = load i64, ptr @parfor.site.caliters.214, align 8
+  store i64 %parfor.x.cn1, ptr @parfor.site.calns.216, align 8
+  %parfor.x.ci0 = load i64, ptr @parfor.site.caliters.217, align 8
   %parfor.x.ci1 = add i64 %parfor.x.ci0, %parfor.x.iters
-  store i64 %parfor.x.ci1, ptr @parfor.site.caliters.214, align 8
+  store i64 %parfor.x.ci1, ptr @parfor.site.caliters.217, align 8
   %parfor.x.ready0 = icmp sge i64 %parfor.x.cn1, 16384
   %parfor.x.enough = icmp sge i64 %parfor.x.ci1, 512
   %parfor.x.ready = and i1 %parfor.x.ready0, %parfor.x.enough
@@ -40743,7 +40838,7 @@ pfor.exit.pub:                                    ; preds = %pfor.exit.meas
   %parfor.x.p = sdiv i64 %parfor.x.e10, %parfor.x.ci1
   %parfor.x.ppos = icmp sgt i64 %parfor.x.p, 0
   %parfor.x.pf = select i1 %parfor.x.ppos, i64 %parfor.x.p, i64 1
-  store i64 %parfor.x.pf, ptr @parfor.site.p1k.215, align 8
+  store i64 %parfor.x.pf, ptr @parfor.site.p1k.218, align 8
   br label %pfor.done
 
 pfor.inl.cond:                                    ; preds = %pfor.inl.inc, %pfor.gate.hot, %pfor.gate.cold, %pfor.gate.seq
@@ -40821,7 +40916,7 @@ pfor.check.arm:                                   ; preds = %pfor.check.notyet
   br label %pfor.inl.body
 
 pfor.fork:                                        ; preds = %pfor.check.decide
-  store i64 %parfor.p1k, ptr @parfor.site.p1k.215, align 8
+  store i64 %parfor.p1k, ptr @parfor.site.p1k.218, align 8
   %parfor.group76 = call ptr @_ZN9TaskGroup6createEv()
   %parfor.gpage77 = call ptr @_Z3getPv(ptr %parfor.group76)
   store i64 %parfor.i.cur, ptr %parfor.fork.lo, align 8
@@ -40853,7 +40948,7 @@ pfor.gate.seq:                                    ; preds = %pfor.gate.prom
   br label %pfor.inl.cond
 
 pfor.gate.cold:                                   ; preds = %entry
-  %parfor.volv = load i64, ptr @parfor.site.vol.212, align 8
+  %parfor.volv = load i64, ptr @parfor.site.vol.215, align 8
   %parfor.gate.ishot = icmp sge i64 %parfor.volv, 1048576
   br i1 %parfor.gate.ishot, label %pfor.gate.hot, label %pfor.inl.cond
 
@@ -40996,7 +41091,7 @@ pfor.sub.body:                                    ; preds = %pfor.sub.cond
   store ptr %data10, ptr %parfor.cell.cap81, align 8
   %parfor.cell.cap82 = getelementptr inbounds nuw { i64, i64, ptr, i64, ptr, %_Z6VectorIfE, ptr, float }, ptr %parfor.cell, i32 0, i32 7
   store float %fdiv, ptr %parfor.cell.cap82, align 4
-  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.211, ptr %parfor.cell, ptr %parfor.d.grp)
+  call void @_ZN8TaskPool6submitEP8TaskPoolPvPvP9TaskGroup(ptr %parfor.pool, ptr @parfor.214, ptr %parfor.cell, ptr %parfor.d.grp)
   store i64 %parfor.chunk.hi, ptr %parfor.c.slot, align 8
   br label %pfor.sub.cond
 
@@ -42044,7 +42139,7 @@ while.exit8:                                      ; preds = %while.cond6
   br label %while.cond
 }
 
-define private ptr @parfor.146(ptr %0) {
+define private ptr @parfor.149(ptr %0) {
 entry:
   %j = alloca i64, align 8
   %a33 = alloca float, align 4
@@ -42540,7 +42635,7 @@ while.exit9:                                      ; preds = %while.cond7
   br label %while.cond
 }
 
-define private ptr @parfor.151(ptr %0) {
+define private ptr @parfor.154(ptr %0) {
 entry:
   %i = alloca i64, align 8
   %a33 = alloca float, align 4
@@ -43029,7 +43124,7 @@ while.exit10:                                     ; preds = %while.cond8
   br label %while.cond
 }
 
-define private ptr @parfor.166(ptr %0) {
+define private ptr @parfor.169(ptr %0) {
 entry:
   %arg.tmp = alloca %_Z6VectorIfE, align 8
   %x = alloca i64, align 8
@@ -43123,7 +43218,7 @@ while.exit8:                                      ; preds = %while.cond6
   br label %while.cond
 }
 
-define private ptr @parfor.171(ptr %0) {
+define private ptr @parfor.174(ptr %0) {
 entry:
   %arg.tmp = alloca %_Z6VectorIfE, align 8
   %j = alloca i64, align 8
@@ -43225,7 +43320,7 @@ while.exit9:                                      ; preds = %while.cond7
   br label %while.cond
 }
 
-define private ptr @parfor.176(ptr %0) {
+define private ptr @parfor.179(ptr %0) {
 entry:
   %arg.tmp = alloca %_Z6VectorIfE, align 8
   %i2 = alloca i64, align 8
@@ -43329,7 +43424,7 @@ while.exit10:                                     ; preds = %while.cond8
   br label %while.cond
 }
 
-define private ptr @parfor.181(ptr %0) {
+define private ptr @parfor.184(ptr %0) {
 entry:
   %arg.tmp = alloca %_Z6VectorIfE, align 8
   %j = alloca i64, align 8
@@ -43399,7 +43494,7 @@ while.exit:                                       ; preds = %while.cond
   br label %parfor.chunk.inc
 }
 
-define private ptr @parfor.186(ptr %0) {
+define private ptr @parfor.189(ptr %0) {
 entry:
   %arg.tmp = alloca %_Z6VectorIfE, align 8
   %j = alloca i64, align 8
@@ -43494,7 +43589,7 @@ while.exit:                                       ; preds = %while.cond
   br label %parfor.chunk.inc
 }
 
-define private ptr @parfor.191(ptr %0) {
+define private ptr @parfor.194(ptr %0) {
 entry:
   %arg.tmp40 = alloca %_Z6VectorIfE, align 8
   %j3 = alloca i64, align 8
@@ -43630,7 +43725,7 @@ while.exit32:                                     ; preds = %while.cond30
   br label %parfor.chunk.inc
 }
 
-define private ptr @parfor.196(ptr %0) {
+define private ptr @parfor.199(ptr %0) {
 entry:
   %arg.tmp = alloca %_Z6VectorIfE, align 8
   %j2 = alloca i64, align 8
@@ -43741,7 +43836,7 @@ while.exit17:                                     ; preds = %while.cond15
   br label %parfor.chunk.inc
 }
 
-define private ptr @parfor.201(ptr %0) {
+define private ptr @parfor.204(ptr %0) {
 entry:
   %arg.tmp = alloca %_Z6VectorIfE, align 8
   %j3 = alloca i64, align 8
@@ -43881,7 +43976,7 @@ while.exit33:                                     ; preds = %while.cond31
   br label %parfor.chunk.inc
 }
 
-define private ptr @parfor.206(ptr %0) {
+define private ptr @parfor.209(ptr %0) {
 entry:
   %arg.tmp = alloca %_Z6VectorIfE, align 8
   %j = alloca i64, align 8
@@ -43946,7 +44041,7 @@ while.exit:                                       ; preds = %while.cond
   br label %parfor.chunk.inc
 }
 
-define private ptr @parfor.211(ptr %0) {
+define private ptr @parfor.214(ptr %0) {
 entry:
   %arg.tmp = alloca %_Z6VectorIfE, align 8
   %p = alloca float, align 4
@@ -44106,7 +44201,7 @@ if.end46:                                         ; preds = %if.then45, %while.b
   br label %while.cond31
 }
 
-define private ptr @parfor.216(ptr %0) {
+define private ptr @parfor.219(ptr %0) {
 entry:
   %arg.tmp = alloca %_Z6VectorIfE, align 8
   %j = alloca i64, align 8
@@ -44175,7 +44270,7 @@ while.exit:                                       ; preds = %while.cond
   br label %parfor.chunk.inc
 }
 
-define private ptr @parfor.221(ptr %0) {
+define private ptr @parfor.224(ptr %0) {
 entry:
   %arg.tmp = alloca %_Z6VectorIfE, align 8
   %j = alloca i64, align 8
@@ -44249,7 +44344,7 @@ while.exit:                                       ; preds = %while.cond
   br label %parfor.chunk.inc
 }
 
-define private ptr @parfor.226(ptr %0) {
+define private ptr @parfor.229(ptr %0) {
 entry:
   %arg.tmp143 = alloca %_Z6VectorIfE, align 8
   %j4 = alloca i64, align 8

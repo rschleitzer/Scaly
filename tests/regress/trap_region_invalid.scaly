@@ -1,0 +1,41 @@
+; Laufzeit-Trap: eine EMPFANGENE Region hält nicht zusammen (exit 18).
+;
+; Der Rahmen wird ordentlich serialisiert und dann verbogen — die alte
+; Wurzeladresse im Kopf (`h[3]`) zeigt hinterher auf 0x1000, also auf nichts,
+; was in der Region liegt. Genau das passiert im Betrieb, wenn ein Sender eine
+; Region verschickt, die nicht geschlossen war, wenn ein erzeugter Walker mit
+; der falschen Feldkarte läuft, oder wenn ein Rahmen von der Leitung defekt
+; ankommt.
+;
+; ★Es ist exit 18 und NICHT 17: 17 war beides — dieser Laufzeitfehler UND der
+; Stack-Wächter des Planners, ein Abbruch bei der Übersetzung, der nie fangbar
+; sein darf. Ein Code kann nicht beides heißen; dieses Tor hält die Trennung.
+;
+; Geprüft wird außerdem, dass die Meldung die ADRESSE nennt: sie ist es, die
+; einen falschen Walker von einem abgeschnittenen Rahmen trennt.
+;
+; expect-rc: 18
+; expect-out: Region.deserialize: root outside the received region
+; expect-out: 0x0000000000001000
+
+define Msg (n: i64, more: pointer[u8])
+
+function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    let mp Page.allocate_page()
+    let msg mp.allocate(sizeof Msg, alignof Msg) as pointer[Msg]
+    set msg.n: 42
+    set msg.more: mp.allocate(16 as size_t, 8 as size_t) as pointer[u8]
+
+    let host Page.allocate_page()
+    let frame Region.serialize(mp, msg as pointer[void], host)
+    mp.deallocate_extensions()
+    Page.release_page(mp)
+
+    let h frame as pointer[u64]
+    set *(h + 3): 0x1000 as u64
+
+    let rr Region.deserialize(frame, host)
+    print "FAIL: der ungueltige Rahmen lief durch"
+    0
+}
