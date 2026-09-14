@@ -122,13 +122,13 @@ procedure build_sources(o: pointer[Origin], raw: pointer[u8]) returns int
     (s.length as int) + a.target.id
 }
 
-; A store into a `pointer[ref[X]]` buffer goes THROUGH the slot's (uninitialized)
-; pointee, never INTO the slot; the Option element rebinds and is an ordinary
-; store. Both compile at rc 0, which is why the census must tell them apart.
-procedure fill_slots(host: ref[Page], lr: ref[Leaf], buf: pointer[ref[Leaf]], obuf: pointer[ref[Leaf]?], cell: pointer[ref[Leaf]])
+; A VALUE stored into a `pointer[ref[X]]` slot goes THROUGH the slot's pointee; a
+; reference REBINDS the slot (2026-09-14), as the Option element always did.
+procedure fill_slots(host: ref[Page], lr: ref[Leaf], v: Leaf, buf: pointer[ref[Leaf]], obuf: pointer[ref[Leaf]?], cell: pointer[ref[Leaf]])
 {
-    set *(buf + 0): lr                              ; h-store-through-ref-slot (arith)
-    set *cell: lr                                   ; h-store-through-ref-slot (plain)
+    set *(buf + 0): v                               ; h-store-through-ref-slot (arith)
+    set *cell: v                                    ; h-store-through-ref-slot (plain)
+    set *(buf + 1): lr                              ; store-arith: the ref rebinds the slot
     set *(obuf + 0): lr                             ; store-arith: the Option slot rebinds
 }
 

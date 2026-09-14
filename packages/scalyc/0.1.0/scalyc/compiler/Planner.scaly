@@ -23886,6 +23886,51 @@ define Planner
         ; Is this operand a bare MUTABLE variable, i.e. a `var` local?  A
         ; parameter and a `let` are not, and that is what decides an ambiguous
         ; `set` -- see set_target_stores_through#.
+        ; operand_is_rebindable_target#: may a `set` on this target put a REFERENCE
+        ; into it rather than store through it? A mutable variable can be rebound,
+        ; and so can the SLOT a pointer dereference names: `set *(p + i): r` with
+        ; `p: pointer[ref[X]]` writes the reference into the buffer. Answering
+        ; false there made set_target_stores_through# read the element store of
+        ; every generic container instantiated on a non-optional reference --
+        ; `Array[ref[X]].add`, `Vector[ref[X]].put` -- as a copy THROUGH the
+        ; still uninitialized slot: `load ptr` + `store %X`, SIGSEGV on the first
+        ; `add` (2026-09-14, tscaly's semver range; regress
+        ; array_of_ref_elements).
+        ; ★ A dereference of a POINTER only. `*r` on a non-optional `ref[T]` is
+        ; refused by report_deref_of_ref#, and `*opt` on a `ref[T]?` names the
+        ; referent, which is not a slot the statement may re-point.
+        function operand_is_rebindable_target(op: PlannedOperand) returns bool
+        {
+            if Planner.operand_is_mutable_variable(op)
+                return true
+            if op.member_access <> null
+                return false
+            var slot: bool false
+            choose op.expr
+                when call: Call
+                {
+                    if call.name = "*"
+                    {
+                        if call.args <> null
+                        {
+                            if call.args.length = 1
+                            {
+                                let q call.args.get 0
+                                if q <> null
+                                {
+                                    let qv q.unwrap()
+                                    if qv.result_type.name = "pointer"
+                                        set slot: true
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                    0
+            slot
+        }
+
         function operand_is_mutable_variable(op: PlannedOperand) returns bool
         {
             var m: bool false
@@ -25202,7 +25247,7 @@ define Planner
             var set_stores_through: bool false
             if a.target.length > 0
                 if planned_target_collapsed.member_access = null
-                    set set_stores_through: this.set_target_stores_through(planned_target_collapsed.result_type, planned_source_collapsed.result_type, Planner.operand_is_mutable_variable(planned_target_collapsed))
+                    set set_stores_through: this.set_target_stores_through(planned_target_collapsed.result_type, planned_source_collapsed.result_type, Planner.operand_is_rebindable_target(planned_target_collapsed))
             ; ★ The rewrite is UNCONDITIONAL once the decision is made, and
             ; routing it through deref_ref_into_pointee# was a silent dropped
             ; store. That helper re-asks operand_derefs_to_pointee#, a READ-side

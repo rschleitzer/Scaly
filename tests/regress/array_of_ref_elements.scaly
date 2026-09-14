@@ -1,0 +1,85 @@
+; Regression: a generic container instantiated on a NON-OPTIONAL reference
+; element stores the REFERENCE into its buffer (2026-09-14).
+;
+; `Array[T].add` writes `set *(data + length): element`. With T = ref[X] the
+; target is a slot of type ref[X] and the source a ref[X], and
+; set_target_stores_through# asked whether the target may be REBOUND — which
+; it answered with operand_is_mutable_variable# alone. A dereferenced pointer
+; is not a variable, so the store read as a copy THROUGH the slot: the emitter
+; loaded the still uninitialized pointer out of the buffer and copied the
+; element's struct there (`load ptr` + `store %X`), and the first `add`
+; SIGSEGVed. Found in tscaly's semver ranges (`Array[ref[Array[Comparator]]]`),
+; which had been flattened around it.
+;
+; Covered: `Array[ref[Box]]` and `Array[ref[Array[int]]]` (add, then read the
+; elements back), and `Vector[ref[Box]].put`. The `ref[X]?` element — the
+; spelling the tree used instead — is the control. Expected: PASS
+
+use scaly.memory.Page
+use scaly.containers.Array
+use scaly.containers.Vector
+
+define Box (v: int)
+
+function boxes(page: pointer[Page]) returns int
+{
+    let outer &Array[ref[Box]]^page()
+    let a &Box^page(3)
+    let b &Box^page(4)
+    outer.add(a)
+    outer.add(b)
+    let first outer[0]
+    let second outer[1]
+    (first.v * 10) + second.v
+}
+
+function nested(page: pointer[Page]) returns int
+{
+    let outer &Array[ref[Array[int]]]^page()
+    let inner &Array[int]^page()
+    inner.add(5)
+    inner.add(6)
+    outer.add(inner)
+    let other &Array[int]^page()
+    other.add(7)
+    outer.add(other)
+    let f outer[0]
+    let g outer[1]
+    let n outer.get_length() as int
+    (n * 100) + (f[1] * 10) + g[0]
+}
+
+function vector_put(page: pointer[Page]) returns int
+{
+    let v &Vector[ref[Box]]^page(2)
+    let a &Box^page(8)
+    let b &Box^page(9)
+    v.put(0, a)
+    v.put(1, b)
+    let x v[0]
+    let y v[1]
+    (x.v * 10) + y.v
+}
+
+function optional_control(page: pointer[Page]) returns int
+{
+    let outer &Array[ref[Box]?]^page()
+    let a &Box^page(1)
+    outer.add(a)
+    let first outer[0]
+    (first as ref[Box]).v
+}
+
+var failures 0
+if boxes() <> 34
+    set failures: failures + 1
+if nested() <> 267
+    set failures: failures + 2
+if vector_put() <> 89
+    set failures: failures + 4
+if optional_control() <> 1
+    set failures: failures + 8
+if failures = 0
+    print "PASS\n"
+if failures <> 0
+    print "FAIL\n"

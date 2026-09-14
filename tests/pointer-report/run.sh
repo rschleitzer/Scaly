@@ -71,10 +71,11 @@ n=$(printf '%s\n' "$got" | grep -c "fixture.scaly:121:.*h-pointer-into-ref point
 check "pointer into a ref init param is a hazard (got $n)" '[ "$n" = "1" ]'
 check "no init argument read against the wrong slot" '! printf "%s\n" "$got" | grep -q "init(origin)"'
 
-# A store through a `pointer[ref[X]]` slot is the hazard; the Option slot is an
-# ordinary store.
-n=$(printf '%s\n' "$got" | grep -c "fixture.scaly:13[0-9]:.*h-store-through-ref-slot pointer\[ref\[Leaf\]\]")
-check "stores through a pointer[ref[X]] slot are hazards, arith + plain (got $n)" '[ "$n" = "2" ]'
+# A VALUE stored through a `pointer[ref[X]]` slot is the hazard; a reference
+# rebinds the slot (2026-09-14) and the Option slot is an ordinary store.
+n=$(printf '%s\n' "$got" | grep -c "fixture.scaly:1[23][0-9]:.*h-store-through-ref-slot pointer\[ref\[Leaf\]\]")
+check "value stores through a pointer[ref[X]] slot are hazards, arith + plain (got $n)" '[ "$n" = "2" ]'
+check "a reference stored into a pointer[ref[X]] slot rebinds: store-arith" 'printf "%s\n" "$got" | grep -q "fixture.scaly:131:5: store-arith pointer\[ref\[Leaf\]\] base=param(buf)$"'
 n=$(printf '%s\n' "$got" | grep -c "fixture.scaly:13[0-9]:.*store-arith pointer\[Option\[ref\[Leaf\]\]\]")
 check "store into a pointer[ref[X]?] slot is an ordinary store-arith (got $n)" '[ "$n" = "1" ]'
 

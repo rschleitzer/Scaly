@@ -61,14 +61,15 @@
 ;                                  parameters, one campaign's verdict on one
 ;                                  neighbour and none on the other
 ;   h-store-through-ref-slot       HAZARD: `set *(p + i): v` / `set *p: v` on a
-;                                  `pointer[ref[X]]` -- the slot's pointee is a
-;                                  non-optional ref, so the RHS reads as ITS
-;                                  pointee and the target writes as its pointee:
-;                                  a struct copy through whatever pointer the
-;                                  slot holds, never a store INTO the slot
-;                                  (measured 2026-09-05, `and_analyze1`). The
-;                                  Option element `pointer[ref[X]?]` rebinds
-;                                  and is an ordinary store.
+;                                  `pointer[ref[X]]` whose source is a VALUE --
+;                                  the planner rewrites the target into the
+;                                  nested deref and copies the struct through
+;                                  whatever pointer the slot holds, never INTO
+;                                  the slot (measured 2026-09-05, `and_analyze1`).
+;                                  A REFERENCE source rebinds the slot since
+;                                  2026-09-14 (`operand_is_rebindable_target#`),
+;                                  and so does the Option element
+;                                  `pointer[ref[X]?]`: ordinary stores.
 ;
 ; The callee is read off `plan.functions` by `PlannedCall.mangled_name`; a
 ; call's args line up with the callee's `input` INCLUDING its `this`, which is
@@ -1542,21 +1543,17 @@ define PointerCensus
                         let base inner_args.get 0
                         if base <> null
                         {
-                            let bt base.unwrap().result_type
-                            if PointerCensus.is_ref_slot_pointer(bt)
-                                this.record_typed(head.loc.start, "h-store-through-ref-slot", bt)
-                            else
-                                this.record_walk(head.loc.start, "store-arith", base.unwrap())
+                            ; a store into a ref slot that the planner did NOT rewrite
+                            ; into the nested deref rebinds the slot (2026-09-14): an
+                            ; ordinary store
+                            this.record_walk(head.loc.start, "store-arith", base.unwrap())
                         }
                         this.find_operands(inner_args)
                         return true
                     }
                     if PointerCensus.is_pointer_shaped(a.result_type)
                     {
-                        if PointerCensus.is_ref_slot_pointer(a.result_type)
-                            this.record_typed(head.loc.start, "h-store-through-ref-slot", a.result_type)
-                        else
-                            this.record_typed(head.loc.start, "store", a.result_type)
+                        this.record_typed(head.loc.start, "store", a.result_type)
                         this.find_operand(a)
                         return true
                     }
