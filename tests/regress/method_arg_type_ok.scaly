@@ -18,7 +18,7 @@
 ;     receiver's parameters the way the selection loop does is unsound —
 ;     define_type_substitution appends and lookup is first-wins, so an ambient
 ;     binding of the same letter wins. Measured on the stdlib, where
-;     BuilderList[Slot[T]].add's `element: T` planned as the AMBIENT T
+;     List[Slot[T]].add's `element: T` planned as the AMBIENT T
 ;     (String) instead of Slot[String] and the gate rejected working code
 ;   * a this-LESS member through a value receiver, whose receiver fills the
 ;     first DECLARED parameter, so its arguments sit one slot off against the
@@ -43,7 +43,7 @@ define Slot2[T]
 )
 
 ; The ambient-shadowing shape, reduced from the stdlib's
-; BuilderList[Slot[T]].add call inside HashSetBuilder[T]: the receiver's own
+; List[Slot[T]].add call inside HashSetBuilder[T]: the receiver's own
 ; parameter is Slot2[T], while an ambient T is bound to something else
 ; entirely. Bind the receiver's parameters here the way the selection loop
 ; does and `x: T` plans as the AMBIENT T, not as Slot2[int] — the gate would

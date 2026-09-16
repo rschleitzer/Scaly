@@ -99,7 +99,7 @@ define HashMap[K, V]
     ; sibling-method call from an on-demand-planned operator body resolves
     ; to a declaration that is never instantiated (HashMap is not in the
     ; s188 lazy-machinery allowlist) — an undefined symbol at link. The
-    ; machinery generics used below (Vector/BuilderList iterators) ARE
+    ; machinery generics used below (Vector/List iterators) ARE
     ; allowlisted, so the inline body instantiates cleanly.
     operator [](key: K) returns ref[V]?
     {

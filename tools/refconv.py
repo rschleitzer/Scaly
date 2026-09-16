@@ -135,7 +135,7 @@ STAY_GENERIC_PARAM = {'T'}
 #               tree is currently inconsistent about it.  Left as it is rather
 #               than churning two ports to settle a spelling.
 #   Node (5)    the stdlib's INTRUSIVE list node, inside the generic bodies of
-#               List/BuilderList.  Principled to convert, high blast radius for
+#               List.  Principled to convert, high blast radius for
 #               five declarations; not measured.
 #   List, Slice, HashMap, HashSet, KeyValuePair, Iterator (0)
 #               no `pointer[...]` declaration of any of these exists in the
@@ -1264,7 +1264,7 @@ def name_declares(nm, f, li, void_rets, void_props, depth):
 # `ref[X]` element compiles rc 0 and the element is null at run time).
 ELEMENT_HEADS = {
     'Array', 'Vector', 'Slice', 'List', 'HashMap', 'HashMapBuilder',
-    'HashSet', 'HashSetBuilder', 'BuilderList',
+    'HashSet', 'HashSetBuilder',
 }
 
 def code_part(line):

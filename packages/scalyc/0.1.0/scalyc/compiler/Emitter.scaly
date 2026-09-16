@@ -3646,9 +3646,9 @@ define Emitter
             if name = "List"
             {
                 ; List[T] (packages/scaly/0.1.0/scaly/containers/List.scaly):
-                ; `define List[T] (head: pointer[Node[T]] (null))` — ONE field, 8
-                ; bytes. It is a chain, and Node carries (element, next); there is no
-                ; tail and no cached length.
+                ; `(head: pointer[Node[T]] (null), tail: pointer[Node[T]] (null))` —
+                ; TWO fields, 16 bytes, since 2026-09-16 (the list appends). Node
+                ; carries (element, next); there is no cached length.
                 ;
                 ; ★Corrected 2026-08-11. This entry used to claim { head, tail,
                 ; length } = 24 bytes, exactly the class the Array comment above
@@ -3657,9 +3657,10 @@ define Emitter
                 ; to this table (cross-package, no plan layout) sizeof was 24 instead
                 ; of 8 and every field following a by-value List member sat at the
                 ; wrong offset.
-                var fields Vector[LLVMTypeRef](1)
+                var fields Vector[LLVMTypeRef](2)
                 fields.put(0, ptr_ty)
-                return LLVMStructTypeInContext(context, fields.data, 1, 0)
+                fields.put(1, ptr_ty)
+                return LLVMStructTypeInContext(context, fields.data, 2, 0)
             }
             if name = "HashMapBuilder"
             {
@@ -7072,7 +7073,7 @@ define Emitter
                             ; The old inline scan matched only the 4-byte window
                             ; "I1TE", missing K/V and embedded forms like "I1K1VE"
                             ; (the K,V iterator
-                            ; BuilderListIterator<Slot<KeyValuePair<K,V>>>::next
+                            ; ListIterator<Slot<KeyValuePair<K,V>>>::next
                             ; referenced by the dead uninstantiated HashMapBuilder
                             ; template), which then stayed an undefined declaration
                             ; in the seed. Inlining the K/V scan here was
@@ -9872,7 +9873,22 @@ define Emitter
                             if region_field_acts(ft)
                             {
                                 let faddr LLVMBuildStructGEP2(builder, sty, obj, pi as int, "walk.f")
-                                emit_region_value_at(fn, rr, faddr, ft)
+                                ; ★ A List's `tail` points at a cell the `head` chain
+                                ; already reaches: swizzle the slot, never walk it —
+                                ; fix_value is not idempotent, and a second walk of the
+                                ; last cell maps its pointers twice (region panic).
+                                var tail_slot false
+                                if t.name = "List"
+                                {
+                                    if p_ptr.name = "tail"
+                                        set tail_slot: true
+                                }
+                                if tail_slot
+                                {
+                                    let fixed_tail emit_region_fix_slot(rr, faddr)
+                                }
+                                else
+                                    emit_region_value_at(fn, rr, faddr, ft)
                             }
                         }
                         set pi: pi + 1
@@ -11077,7 +11093,7 @@ define Emitter
                     ; VALUE into a temp and emit_intrinsic_unary_op spills it to
                     ; `addr.tmp` (a stack slot), so `return &old_current.element`
                     ; (ListIterator.next) returned a dangling stack address —
-                    ; every iterator / HashMap reference (List/BuilderList/
+                    ; every iterator / HashMap reference (List/
                     ; HashMap/the keyword HashSet) read back garbage in
                     ; stage-emitted code. Mirrors stage-0's `&`-GEP path
                     ; (Emitter.cpp:3506-3536): walk the planned member-access

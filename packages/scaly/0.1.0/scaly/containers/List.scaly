@@ -1,6 +1,19 @@
+use scaly.memory.Page
+
+; A singly linked list that APPENDS: the cells never move, so a reference to an
+; element stays valid while the list grows, and growing leaves no abandoned
+; buffer behind the way a doubling Array does on its small path. It is the
+; collection to reach for where a structure is READ WHILE IT IS STILL GROWING;
+; an Array is for collecting and then freezing into a Vector.
+;
+; Iteration runs in INSERTION order (head to tail). There is no positional
+; access and `count` walks the chain; a table that needs fast lookup keeps its
+; own index beside the list and points into the cells.
 define List[T]
 (
     head: pointer[Node[T]] (null)
+    ; the last cell, so an append is O(1)
+    tail: pointer[Node[T]] (null)
 )
 {
     function get_head(this: List[T]) returns ref[T]?
@@ -20,7 +33,7 @@ define List[T]
         i
     }
 
-    ; ★`remove(element: T)` is GONE (2026-09-06), like BuilderList's: it compared
+    ; ★`remove(element: T)` is GONE (2026-09-06): it compared
     ; `node.element = element` on a GENERIC T, which has no equality for a struct
     ; T, and a method is emitted for EVERY instantiation (List[Slot[String]],
     ; List[WhenSyntax], ...). The emitter used to drop the whole `if` silently;
@@ -30,9 +43,33 @@ define List[T]
     function get_iterator(this: List[T]) returns ListIterator[T]
         ListIterator[T](head)
 
+    ; Append a cell on the list's own page.
     function add(this: List[T], element: T)
     {
-        let new_node Node[T]^this(element, head)
-        set head: new_node
+        let new_node Node[T]^this(element, null)
+        this.link(new_node)
+    }
+
+    ; Append a cell on an EXPLICIT page — a separate NAME rather than an `add`
+    ; overload, because a call reached only from inside another generic's body
+    ; (the hash builders) resolves `add` by name and takes the first. A list that
+    ; sits by value inside a
+    ; larger buffer (the hash builders' slot vectors, which can exceed a page and
+    ; so live in an oversized allocation) has no page header at its masked
+    ; address, and `^this` would allocate from garbage; the caller passes the page
+    ; that owns the buffer. This is what BuilderList existed for until 2026-09-16.
+    function add_on(this: List[T], page: ref[Page], element: T)
+    {
+        let new_node Node[T]^page(element, null)
+        this.link(new_node)
+    }
+
+    function link(this: List[T], new_node: pointer[Node[T]])
+    {
+        if tail = null
+            set head: new_node
+        else
+            set tail.next: new_node
+        set tail: new_node
     }
 }

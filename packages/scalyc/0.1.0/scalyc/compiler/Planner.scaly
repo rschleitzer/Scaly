@@ -1074,7 +1074,7 @@ define Planner
         ; own bindings on top diverges, because the substitution is then
         ; applied to its own result: a generic argument may mention the same
         ; parameter name it binds (`HashSetBuilder[T]` constructing
-        ; `VectorIterator[BuilderList[Slot[T]]]`), and re-expanding that on
+        ; `VectorIterator[List[Slot[T]]]`), and re-expanding that on
         ; every pass drove the planner into its own stack guard (exit 17 at
         ; 52 MB). One simultaneous substitution, from an empty stack, is the
         ; only shape that is both correct and terminating.
@@ -1089,7 +1089,7 @@ define Planner
         ;   - an argument that MENTIONS one of the parameter names it would
         ;     bind. That is the occurs-check, and it is what keeps this
         ;     terminating. `HashSetBuilder[T]` constructs
-        ;     `VectorIterator[BuilderList[Slot[T]]]`, binding the callee's `T`
+        ;     `VectorIterator[List[Slot[T]]]`, binding the callee's `T`
         ;     to a type containing a `T` of its own; substituting under that
         ;     binding grows the type on every pass. Both ways of getting it
         ;     wrong were measured: layering the binding on the ambient stack
@@ -11281,10 +11281,6 @@ define Planner
                                                 ;     set skip_dispatch: true
                                                 if local.binding_type.name = "ListIterator"
                                                     set skip_dispatch: true
-                                                if local.binding_type.name = "BuilderList"
-                                                    set skip_dispatch: true
-                                                if local.binding_type.name = "BuilderListIterator"
-                                                    set skip_dispatch: true
                                                 if local.binding_type.name = "Option"
                                                     set skip_dispatch: true
                                                 if local.binding_type.name = "Result"
@@ -15655,8 +15651,8 @@ define Planner
             ; concept reached via a method CALL rather than a type annotation.
             ; plan_type#'s instantiate_generic# only fires for generic types
             ; written as annotations; methods called transitively from another
-            ; generic's body (BuilderList<Slot<String>>::add from
-            ; HashSetBuilder::add_internal, the Vector<BuilderList<…>> bucket
+            ; generic's body (List<Slot<String>>::add from
+            ; HashSetBuilder::add_internal, the Vector<List<…>> bucket
             ; ops, the iterator next() chain) are reached only as calls, so
             ; their owning structure was never instantiated — declared, never
             ; defined → undefined at seed link. Instantiate the WHOLE structure
@@ -17815,22 +17811,22 @@ define Planner
                     ;     set is_stdlib_generic: true
                     ; if canonical_name.equals("ListIterator")
                     ;     set is_stdlib_generic: true
-                    ; s188: BuilderList + BuilderListIterator lifted (like
+                    ; s188: List + ListIterator lifted (like
                     ; s129 Vector/Array, s148 List/Node, s166 HashSet).
                     ; HashSetBuilder<String> (un-denylisted) holds buckets:
-                    ; Vector[BuilderList[Slot[String]]] and its real
-                    ; add_internal/reallocate call BuilderList<Slot<String>>::
+                    ; Vector[List[Slot[String]]] and its real
+                    ; add_internal/reallocate call List<Slot<String>>::
                     ; {add,get_iterator} + the iterator next() chain. With
                     ; these denylisted, plan_type# resolved them to a mangled
                     ; name only (declare, never define → undefined at seed
                     ; link). instantiate_generic# plans layout + ctor + ALL
                     ; methods consistently. This handles the type-annotation
                     ; path; lookup_method#'s s188 lazy hook handles the
-                    ; call-reached path (BuilderList::add etc. are reached
+                    ; call-reached path (List::add etc. are reached
                     ; only as calls from inside another generic's body).
-                    ; if canonical_name.equals("BuilderList")
+                    ; if canonical_name.equals("List")
                     ;     set is_stdlib_generic: true
-                    ; if canonical_name.equals("BuilderListIterator")
+                    ; if canonical_name.equals("ListIterator")
                     ;     set is_stdlib_generic: true
                     ; s148: Node removed alongside List (see comment above).
                     ; List<T>::add allocates Node<T>; with Node in the
@@ -17841,7 +17837,7 @@ define Planner
                     ; named struct per concrete T.
                     ; if canonical_name.equals("Node")
                     ;     set is_stdlib_generic: true
-                    ; s188: Slot lifted — element type of BuilderList<Slot<T>>,
+                    ; s188: Slot lifted — element type of List<Slot<T>>,
                     ; a pure data class (plan_structure# just records layout).
                     ; if canonical_name.equals("Slot")
                     ;     set is_stdlib_generic: true
@@ -24747,7 +24743,7 @@ define Planner
         ;     define_type_substitution appends and lookup is FIRST-WINS, so an
         ;     AMBIENT binding of the same letter wins over the one just made.
         ;     Measured: `slot_list.add(own_page, Slot[T](…))` on a
-        ;     BuilderList[Slot[T]] inside HashSetBuilder[T] planned its
+        ;     List[Slot[T]] inside HashSetBuilder[T] planned its
         ;     `element: T` as the ambient T (String) instead of the receiver's
         ;     Slot[String], and the gate reported a correct call. The same
         ;     trap sits in the selection loop, where it can only mis-RANK
@@ -32615,7 +32611,7 @@ define Planner
                             ; generic is the opaque wrapper, which the emitter's
                             ; struct-GEP then SIGSEGVs on). The stdlib's
                             ; explicit-`this` idiom passes the concept VALUE
-                            ; (`this: BuilderList[T]`), which correctly needs the
+                            ; (`this: List[T]`), which correctly needs the
                             ; wrap; only a borrowed `this` skips it.
                             ; ★The `ref` half was missing until 2026-08-23 and was
                             ; SILENT: the double wrap left the implicit-property
@@ -39288,19 +39284,17 @@ define Planner
     ; instantiations (Option/Result/Slice from containers::test_*).
     function is_lazy_machinery_generic(name: String) returns bool
     {
-        ; `List` since 2026-09-16: the hash builders' bucket chains move to
-        ; List[Slot[T]], whose methods are reached only as calls from inside another
-        ; generic's body. Added one seed ahead of the stdlib that uses it.
+        ; `List` since 2026-09-16: the hash builders' bucket chains are List[Slot[T]]
+        ; (BuilderList is gone), and their add/get_iterator are reached only as
+        ; calls from inside another generic's body.
         if name <> "List"
-            if name <> "BuilderList"
-                if name <> "BuilderListIterator"
-                    if name <> "ListIterator"
-                        if name <> "VectorIterator"
-                            if name <> "Vector"
-                                if name <> "Node"
-                                    if name <> "Slot"
-                                        if name <> "KeyValuePair"
-                                            return false
+            if name <> "ListIterator"
+                if name <> "VectorIterator"
+                    if name <> "Vector"
+                        if name <> "Node"
+                            if name <> "Slot"
+                                if name <> "KeyValuePair"
+                                    return false
         true
     }
 

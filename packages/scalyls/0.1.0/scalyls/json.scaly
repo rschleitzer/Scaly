@@ -267,11 +267,11 @@ define json
 
         let buf allocate_slice[JsonMember](rp as ref[Page], count)
         var it members.get_iterator()
-        var i count
+        var i: size_t 0
         while let m it.next()
         {
-            set i: i - 1
             buf.put(i, *m)
+            set i: i + 1
         }
         JsonValue.Object(JsonObject(buf))
     }
@@ -310,11 +310,11 @@ define json
 
         let buf allocate_slice[JsonValue](rp as ref[Page], count)
         var it items.get_iterator()
-        var i count
+        var i: size_t 0
         while let e it.next()
         {
-            set i: i - 1
             buf.put(i, *e)
+            set i: i + 1
         }
         JsonValue.Array(JsonArray(buf))
     }

@@ -65,6 +65,7 @@ let msg mp.allocate(sizeof Msg, alignof Msg) as pointer[Msg]
 
 let names mp.allocate(sizeof List[String], alignof List[String]) as pointer[List[String]]
 set names.head: null
+set names.tail: null
 var builder HashMapBuilder[String, i64]()
 var i 0 as size_t
 while i < NAME_COUNT

@@ -9,8 +9,6 @@ define containers
     module List
     module Vector
     module Array
-    module BuilderListIterator
-    module BuilderList
     module Slot
     module KeyValuePair
     module HashSetBuilder
@@ -149,8 +147,8 @@ define containers
 
         var iterator list.get_iterator()
         {
-            var i: int huge_number
-            while i >= 1
+            var i: int 1
+            while i <= huge_number
             {
                 let p iterator.next()
                 if p = null
@@ -159,7 +157,7 @@ define containers
                 if *p <> i
                     return -18
 
-                set i: i - 1
+                set i: i + 1
             }
         }
         0

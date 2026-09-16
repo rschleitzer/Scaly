@@ -95,12 +95,14 @@ for e in frozen
 let ok_frozen = frozen_sum = 33
 
 ; --- get_head hands back a ref TO the element --------------------------------
+; The FIRST element added: List appends since 2026-09-16 (it prepended before,
+; and this line read 22).
 var ok_head false
 let h lst.get_head()
 if h <> null
 {
     let hb *h
-    set ok_head: hb.v = 22
+    set ok_head: hb.v = 11
 }
 
 if ok_offsets

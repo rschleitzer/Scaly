@@ -28,7 +28,7 @@ import re, os, sys, collections
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'refout'))
 from scan import collect, split_args, PEELED
 
-CONTAINERS = ('Array', 'Vector', 'List', 'HashMap', 'HashSet', 'BuilderList', 'StringBuilder')
+CONTAINERS = ('Array', 'Vector', 'List', 'HashMap', 'HashSet', 'StringBuilder')
 MUT = r'(add|put|remove|clear|append|insert|reallocate|push|pop)\w*'
 
 def pkg_of(path):

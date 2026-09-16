@@ -168,7 +168,7 @@ define instlens
     ;
     ; ★Those 20 include shapes one does not picture first, and every one of them
     ; gets a definition: the template stub `Vector[T]`, the template-level
-    ; instantiations another generic asks for (`Vector[BuilderList[Slot[T]]]`,
+    ; instantiations another generic asks for (`Vector[List[Slot[T]]]`,
     ; `Vector[KeyValuePair[K, V]]`), and the bare declaration form
     ; `_ZN6Vector3getE…` with no type argument at all. A "concrete only" filter
     ; was built and REVERTED: `PlannedType.variable` is null for an unsubstituted
