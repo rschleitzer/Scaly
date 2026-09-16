@@ -39288,15 +39288,19 @@ define Planner
     ; instantiations (Option/Result/Slice from containers::test_*).
     function is_lazy_machinery_generic(name: String) returns bool
     {
-        if name <> "BuilderList"
-            if name <> "BuilderListIterator"
-                if name <> "ListIterator"
-                    if name <> "VectorIterator"
-                        if name <> "Vector"
-                            if name <> "Node"
-                                if name <> "Slot"
-                                    if name <> "KeyValuePair"
-                                        return false
+        ; `List` since 2026-09-16: the hash builders' bucket chains move to
+        ; List[Slot[T]], whose methods are reached only as calls from inside another
+        ; generic's body. Added one seed ahead of the stdlib that uses it.
+        if name <> "List"
+            if name <> "BuilderList"
+                if name <> "BuilderListIterator"
+                    if name <> "ListIterator"
+                        if name <> "VectorIterator"
+                            if name <> "Vector"
+                                if name <> "Node"
+                                    if name <> "Slot"
+                                        if name <> "KeyValuePair"
+                                            return false
         true
     }
 
