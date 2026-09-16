@@ -2,10 +2,12 @@
 #   source tools/llvm-env.sh   ->  sets LLVM_PREFIX, LLC, LLVM_LIBDIR, LLVM_LIBNAME
 # Override any of them by exporting before sourcing (e.g. LLVM20=/path).
 # Mirrors build.sh's prefix logic so the C++ bootstrap and the seed agree.
+# Safe under `set -u`: tools/link-lto.sh sources it with nounset on, and every
+# variable below may legitimately be unset on entry.
 
 # 1. LLVM prefix
-if [ -z "$LLVM_PREFIX" ]; then
-  if [ -n "$LLVM20" ]; then
+if [ -z "${LLVM_PREFIX:-}" ]; then
+  if [ -n "${LLVM20:-}" ]; then
     LLVM_PREFIX="$LLVM20"
   elif command -v brew >/dev/null 2>&1 && brew --prefix llvm@20 >/dev/null 2>&1; then
     LLVM_PREFIX="$(brew --prefix llvm@20)"
@@ -17,6 +19,7 @@ if [ -z "$LLVM_PREFIX" ]; then
     LLVM_PREFIX="$(llvm-config --prefix)"
   fi
 fi
+LLVM_PREFIX=${LLVM_PREFIX:-}
 
 # 2. llc — prefer the prefix's own.
 #    ★The LIBRARY version below is the binding one; llc's is not. libLLVM is
@@ -37,7 +40,7 @@ fi
 #    PATH problem and is usually a missing PACKAGE: llc/opt/llvm-link ship in
 #    Ubuntu's `llvm-20`, NOT in `llvm-20-dev`, and libLLVM-20.so may already be
 #    present as another package's dependency. See CLAUDE.md's Dependencies.
-if [ -z "$LLC" ]; then
+if [ -z "${LLC:-}" ]; then
   for cand in "$LLVM_PREFIX/bin/llc" "$LLVM_PREFIX/bin/llc-20" llc-20; do
     if [ -n "$cand" ] && command -v "$cand" >/dev/null 2>&1; then LLC="$cand"; break; fi
   done
@@ -50,16 +53,20 @@ LLVM_LIBNAME=${LLVM_LIBNAME:-LLVM-20}
 # 3b. opt + llvm-link (optional — used for the whole-program -O2 seed build;
 #     the pipeline falls back to per-module llc when either is missing, so
 #     their absence never fails validation).
-if [ -z "$OPT" ]; then
+if [ -z "${OPT:-}" ]; then
   for cand in "$LLVM_PREFIX/bin/opt" "$LLVM_PREFIX/bin/opt-20" opt-20; do
     if [ -n "$cand" ] && command -v "$cand" >/dev/null 2>&1; then OPT="$cand"; break; fi
   done
 fi
-if [ -z "$LLVM_LINK" ]; then
+if [ -z "${LLVM_LINK:-}" ]; then
   for cand in "$LLVM_PREFIX/bin/llvm-link" "$LLVM_PREFIX/bin/llvm-link-20" llvm-link-20; do
     if [ -n "$cand" ] && command -v "$cand" >/dev/null 2>&1; then LLVM_LINK="$cand"; break; fi
   done
 fi
+
+LLC=${LLC:-}
+OPT=${OPT:-}
+LLVM_LINK=${LLVM_LINK:-}
 
 # 4. report / validate
 llvm_env_ok=1
