@@ -3859,6 +3859,29 @@ define Emitter
             ; LLVMAttributeFunctionIndex is -1 in an `unsigned` enum.
             let attr LLVMCreateEnumAttribute(context, kind, 0)
             LLVMAddAttributeAtIndex(fn, 4294967295, attr)
+
+            ; ★★★The Scaly panic helpers are also COLD and NOINLINE (2026-09-17).
+            ; Without it the inliner pulled a helper's body (cost ~270: the
+            ; catch jump and the message writes) INTO every container accessor
+            ; that calls it, which left `Slice[char].operator[]` at cost ~290
+            ; against the caller threshold 225 -- 3 404 out-of-line calls to it
+            ; in tscaly's whole-program build, 1 485 to `Array[ref[AstNode]?]`'s,
+            ; every byte compare a call. Marked, the accessors inline: ganz VS
+            ; Code 16.3 -> 13.9 s user. `exit`/`abort`/`_exit` are libc's and
+            ; keep noreturn alone.
+            if (name = "exit") or (name = "abort") or (name = "_exit")
+                return
+            add_function_attribute(fn, "cold")
+            add_function_attribute(fn, "noinline")
+        }
+
+        procedure add_function_attribute(this, fn: LLVMValueRef, name: String)
+        {
+            let kind LLVMGetEnumAttributeKindForName(name.to_c_string(), name.get_length())
+            if kind = 0
+                return
+            let attr LLVMCreateEnumAttribute(context, kind, 0)
+            LLVMAddAttributeAtIndex(fn, 4294967295, attr)
         }
 
         ; setjmp is the one callee in this compiler that RETURNS TWICE, and
@@ -5087,8 +5110,15 @@ define Emitter
                 set llvm_func: LLVMAddFunction(llvm_module, func_cstr, func_type)
             if llvm_func = null
                 set llvm_func: LLVMAddFunction(llvm_module, func_cstr, func_type)
+            ; for an extern and for a definition alike: the panic helpers are
+            ; DEFINED in the stdlib, and a whole-program build sees that body.
+            ; An extern is known by its C name, a definition by its MANGLED one
+            ; (the list holds the panic helpers' mangled names) -- the first
+            ; version passed `func.name` for both and marked no definition.
             if is_extern
                 mark_noreturn_callee(llvm_func, func.name)
+            else
+                mark_noreturn_callee(llvm_func, func.mangled_name)
 
             ; s89: Apply sret + noalias attributes to first param so AArch64
             ; lowering uses x8 for the indirect-result-location register.

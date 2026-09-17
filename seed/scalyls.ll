@@ -151456,7 +151456,7 @@ entry:
   ret void
 }
 
-; Function Attrs: noreturn
+; Function Attrs: cold noinline noreturn
 declare void @_Z15scaly_panic_oobP10const_charmm(...) #0
 
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
@@ -151466,7 +151466,7 @@ declare void @_Z19scaly_release_frameP5Frame(ptr)
 
 declare i32 @memcmp(...)
 
-; Function Attrs: noreturn
+; Function Attrs: cold noinline noreturn
 declare void @_Z16scaly_panic_sizeP10const_charmm(...) #0
 
 declare ptr @_Z17scaly_force_frameP5Frame(ptr)
@@ -151477,7 +151477,7 @@ declare void @_ZN6StringC1E6String(ptr, ptr)
 
 declare void @_ZN6StringC1Ev(ptr)
 
-; Function Attrs: noreturn
+; Function Attrs: cold noinline noreturn
 declare void @_Z16scaly_panic_nullP10const_char(ptr) #0
 
 declare void @_ZN13StringBuilderC1Ev(ptr)
@@ -151507,7 +151507,8 @@ declare void @_ZN6StringC1EP10const_char(ptr, ptr)
 declare void @_ZN11TaskPlannerC1Ev(ptr)
 
 ; Function Attrs: noreturn
-declare void @exit(...) #0
+declare void @exit(...) #2
 
-attributes #0 = { noreturn }
+attributes #0 = { cold noinline noreturn }
 attributes #1 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
+attributes #2 = { noreturn }

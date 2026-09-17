@@ -1523,7 +1523,8 @@ entry:
   ret i64 %global.load
 }
 
-define linkonce_odr void @_Z15scaly_panic_oobP10const_charmm(ptr %0, i64 %1, i64 %2) {
+; Function Attrs: cold noinline noreturn
+define linkonce_odr void @_Z15scaly_panic_oobP10const_charmm(ptr %0, i64 %1, i64 %2) #1 {
 entry:
   %global.load = load i64, ptr @panic_oob_count, align 8
   %add = add i64 %global.load, 1
@@ -1546,8 +1547,8 @@ entry:
   ret i64 %global.load
 }
 
-; Function Attrs: noreturn
-define linkonce_odr void @_Z16scaly_panic_nullP10const_char(ptr %0) #0 {
+; Function Attrs: cold noinline noreturn
+define linkonce_odr void @_Z16scaly_panic_nullP10const_char(ptr %0) #1 {
 entry:
   %global.load = load i64, ptr @panic_null_count, align 8
   %add = add i64 %global.load, 1
@@ -1566,7 +1567,8 @@ entry:
   ret i64 %global.load
 }
 
-define linkonce_odr void @_Z18scaly_panic_regionP10const_charm(ptr %0, i64 %1) {
+; Function Attrs: cold noinline noreturn
+define linkonce_odr void @_Z18scaly_panic_regionP10const_charm(ptr %0, i64 %1) #1 {
 entry:
   %global.load = load i64, ptr @panic_region_count, align 8
   %add = add i64 %global.load, 1
@@ -1595,7 +1597,8 @@ entry:
   ret i64 %global.load
 }
 
-define linkonce_odr void @_Z16scaly_panic_sizeP10const_charmm(ptr %0, i64 %1, i64 %2) {
+; Function Attrs: cold noinline noreturn
+define linkonce_odr void @_Z16scaly_panic_sizeP10const_charmm(ptr %0, i64 %1, i64 %2) #1 {
 entry:
   %global.load = load i64, ptr @panic_size_count, align 8
   %add = add i64 %global.load, 1
@@ -1618,7 +1621,8 @@ entry:
   ret i64 %global.load
 }
 
-define linkonce_odr void @_Z18scaly_panic_stringP10const_charm(ptr %0, i64 %1) {
+; Function Attrs: cold noinline noreturn
+define linkonce_odr void @_Z18scaly_panic_stringP10const_charm(ptr %0, i64 %1) #1 {
 entry:
   %global.load = load i64, ptr @panic_string_count, align 8
   %add = add i64 %global.load, 1
@@ -1638,7 +1642,8 @@ entry:
   ret i64 %global.load
 }
 
-define linkonce_odr void @_Z15scaly_panic_oomP10const_charm(ptr %0, i64 %1) {
+; Function Attrs: cold noinline noreturn
+define linkonce_odr void @_Z15scaly_panic_oomP10const_charm(ptr %0, i64 %1) #1 {
 entry:
   %global.load = load i64, ptr @panic_oom_count, align 8
   %add = add i64 %global.load, 1
@@ -1659,7 +1664,8 @@ entry:
   ret i64 %global.load
 }
 
-define linkonce_odr void @_Z20scaly_panic_resourceP10const_charm3i32(ptr %0, i64 %1, i32 %2) {
+; Function Attrs: cold noinline noreturn
+define linkonce_odr void @_Z20scaly_panic_resourceP10const_charm3i32(ptr %0, i64 %1, i32 %2) #1 {
 entry:
   %global.load = load i64, ptr @panic_resource_count, align 8
   %add = add i64 %global.load, 1
@@ -1690,7 +1696,8 @@ entry:
   ret i64 %global.load
 }
 
-define linkonce_odr void @_Z20scaly_panic_deadlockP10const_char3i32(ptr %0, i32 %1) {
+; Function Attrs: cold noinline noreturn
+define linkonce_odr void @_Z20scaly_panic_deadlockP10const_char3i32(ptr %0, i32 %1) #1 {
 entry:
   %global.load = load i64, ptr @panic_deadlock_count, align 8
   %add = add i64 %global.load, 1
@@ -42473,7 +42480,7 @@ entry:
 }
 
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #1
+declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #2
 
 define linkonce_odr ptr @_Z3getPv(ptr %0) {
 entry:
@@ -45521,4 +45528,5 @@ while.exit116:                                    ; preds = %while.cond114
 }
 
 attributes #0 = { noreturn }
-attributes #1 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
+attributes #1 = { cold noinline noreturn }
+attributes #2 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
