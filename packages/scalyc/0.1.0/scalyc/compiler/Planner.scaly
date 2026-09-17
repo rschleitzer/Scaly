@@ -2989,6 +2989,50 @@ define Planner
             false
         }
 
+        ; integer_operand_widens: `op` is a NON-literal integer narrower than the
+        ; integer `target_type` and not a control-flow expression (a block or an
+        ; arm whose leaves carry their own types). widen_integer_operand# wraps
+        ; it in `as target_type` so emit_as# extends it by the SOURCE's
+        ; signedness. Measured 2026-09-17 before it existed: an i32 -5 handed to
+        ; an int parameter or returned from a `returns int` function arrived as
+        ; 4294967291 or as 0, rc 0 — emit_call builds the callee type from the
+        ; ARGUMENTS, so nothing downstream widened it at all.
+        function integer_operand_widens(this: Planner, target_type: PlannedType, op: PlannedOperand) returns bool
+        {
+            let tn Planner.normalize_type_name(target_type.name)
+            let sn Planner.normalize_type_name(op.result_type.name)
+            if Planner.is_integer_type(tn) = false
+                return false
+            if Planner.is_integer_type(sn) = false
+                return false
+            if Planner.integer_type_bits(sn) >= Planner.integer_type_bits(tn)
+                return false
+            if this.operand_is_integer_constant(op)
+                return false
+            choose op.expr
+                when bl: Block
+                    return false
+                when ifx: If
+                    return false
+                when mt: Match
+                    return false
+                when ch: Choose
+                    return false
+                when tr: Try
+                    return false
+                else
+                    0
+            true
+        }
+
+        function widen_integer_operand(this: Planner, target_type: PlannedType, op: PlannedOperand) returns PlannedOperand
+        {
+            if this.integer_operand_widens(target_type, op) = false
+                return op
+            let cast PlannedAs(op.loc, target_type, &^this op)
+            PlannedOperand(op.loc, PlannedExpression.As cast, null, target_type)
+        }
+
         ; integer_constant_value: the payload of an operand
         ; operand_is_integer_constant accepted. Zero for anything else — the
         ; callers gate on the predicate first.
@@ -7296,6 +7340,17 @@ define Planner
                 set i15: i15 + 1
             }
 
+            ; Pass 1.6: an integer argument prefers an overload that takes it
+            ; WITHOUT narrowing -- widening_method_candidate#'s rule, same
+            ; signedness first. `g(n.pos)` with an i32 picked `g(c: char)` over
+            ; `g(x: int)` because it was declared first (2026-09-17).
+            let widen_same this.widening_method_candidate(candidates, arg_types, true)
+            if widen_same <> null
+                return this.check_function_match((*widen_same), arg_types, false, false, arg_ops)
+            let widen_any this.widening_method_candidate(candidates, arg_types, false)
+            if widen_any <> null
+                return this.check_function_match((*widen_any), arg_types, false, false, arg_ops)
+
             ; Pass 2: compatible matches (types_compatible, allows widening).
             var k: size_t 0
             while k < candidates.length
@@ -8189,6 +8244,15 @@ define Planner
                                 if Planner.operand_derefs_to_pointee(pt, a)
                                 {
                                     out.add(this.deref_ref_into_pointee(pt, a))
+                                    set folded: true
+                                }
+                            ; A narrower non-literal integer into a wider integer
+                            ; parameter widens by its own signedness --
+                            ; integer_operand_widens#.
+                            if folded = false
+                                if this.integer_operand_widens(pt, a)
+                                {
+                                    out.add(this.widen_integer_operand(pt, a))
                                     set folded: true
                                 }
                         }
@@ -14952,6 +15016,87 @@ define Planner
         ; bool so lookup_method# can pick the right overload among several
         ; same-named methods. `exact_only` selects types_equal (pass 1) vs
         ; types_compatible (pass 2).
+        ; widening_method_candidate#: between the EXACT pass and the first-
+        ; COMPATIBLE pass of lookup_method#, prefer an overload that takes every
+        ; integer argument WITHOUT narrowing it — first one of the argument's own
+        ; signedness (`same_signedness`), then any. Rule 2 makes every integer
+        ; compatible with every other, so the first-compatible pass took the
+        ; first DECLARED overload: `sb.append(n.pos)` with an i32 picked
+        ; `append(character: char)` and appended one garbage byte, rc 0
+        ; (measured 2026-09-17). Every other argument must match exactly.
+        function widening_method_candidate(
+            this: Planner,
+            candidates: Vector[Function],
+            arg_types: Vector[PlannedType],
+            same_signedness: bool
+        ) returns ref[Function]?
+        {
+            var ci: size_t 0
+            while ci < candidates.length
+            {
+                let c_ptr candidates.get ci
+                if c_ptr <> null
+                {
+                    if this.method_params_widen((*c_ptr), arg_types, same_signedness)
+                        return c_ptr
+                }
+                set ci: ci + 1
+            }
+            null
+        }
+
+        function method_params_widen(
+            this: Planner,
+            f: Function,
+            arg_types: Vector[PlannedType],
+            same_signedness: bool
+        ) returns bool
+        {
+            var param_start: size_t 0
+            if f.input.length > 0
+            {
+                let first_ptr f.input.get 0
+                if first_ptr <> null
+                    if first_ptr.name <> null
+                        if (*first_ptr.name) = "this"
+                            set param_start: 1
+            }
+            if (f.input.length - param_start) <> arg_types.length
+                return false
+            var widened false
+            var j: size_t 0
+            while j < arg_types.length
+            {
+                let p_ptr f.input.get(j + param_start)
+                let a_ptr arg_types.get j
+                if p_ptr = null
+                    return false
+                if a_ptr = null
+                    return false
+                if p_ptr.type = null
+                    return false
+                let planned_p this.plan_type((*p_ptr.type))
+                let arg (*a_ptr)
+                if Planner.types_equal(planned_p, arg) = false
+                {
+                    let pn Planner.normalize_type_name(planned_p.name)
+                    let an Planner.normalize_type_name(arg.name)
+                    if Planner.is_integer_type(pn) = false
+                        return false
+                    if Planner.is_integer_type(an) = false
+                        return false
+                    if Planner.integer_type_bits(pn) < Planner.integer_type_bits(an)
+                        return false
+                    if same_signedness
+                        if Planner.integer_name_is_unsigned(pn) <> Planner.integer_name_is_unsigned(an)
+                            return false
+                    set widened: true
+                }
+                set j: j + 1
+            }
+            widened
+        }
+
         function method_params_match(
             this: Planner,
             f: Function,
@@ -15545,6 +15690,10 @@ define Planner
                     }
                     set ci: ci + 1
                 }
+                if chosen = null
+                    set chosen: this.widening_method_candidate(candidates, arg_types, true)
+                if chosen = null
+                    set chosen: this.widening_method_candidate(candidates, arg_types, false)
                 if chosen = null
                 {
                     var ck: size_t 0
@@ -25568,6 +25717,11 @@ define Planner
             if do_tail_check
                 if a.target.length = 0
                     if this.current_return_type <> null
+                        set planned_source_collapsed: this.widen_integer_operand((*this.current_return_type), planned_source_collapsed)
+
+            if do_tail_check
+                if a.target.length = 0
+                    if this.current_return_type <> null
                         if tail_leaves_converted = false
                             this.report_type_mismatch((*this.current_return_type), planned_source_collapsed, planned_source_collapsed.loc, "the returned value")
 
@@ -29875,6 +30029,9 @@ define Planner
             ; as the folds above.
             if this.current_return_type <> null
                 set planned_collapsed: this.deref_ref_into_pointee((*this.current_return_type), planned_collapsed)
+
+            if this.current_return_type <> null
+                set planned_collapsed: this.widen_integer_operand((*this.current_return_type), planned_collapsed)
 
             if this.current_return_type <> null
                 if ret_leaves_converted = false
@@ -36929,6 +37086,27 @@ define Planner
 
     ; is_integer_type: is a normalized type name one of the integer family?
     ; Called post-normalization so both "int" and "i64" answer true.
+    ; Unsigned among the normalized integer names (char is unsigned here, as
+    ; the emitter's is_signed_type# has it).
+    function integer_name_is_unsigned(normalized: String) returns bool
+    {
+        if normalized = "u8"
+            return true
+        if normalized = "u16"
+            return true
+        if normalized = "u32"
+            return true
+        if normalized = "u64"
+            return true
+        if normalized = "size_t"
+            return true
+        if normalized = "uint"
+            return true
+        if normalized = "char"
+            return true
+        false
+    }
+
     ; The width of a normalized integer type name, in bits (64 for the
     ; pointer-sized and default names).
     function integer_type_bits(normalized: String) returns int

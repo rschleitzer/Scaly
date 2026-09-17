@@ -17259,8 +17259,16 @@ define Emitter
                     if src_bits > dst_bits
                         return LLVMBuildTrunc(builder, src_value, dst_type, "as.trunc")
 
+                    ; 2026-09-17: by the SOURCE's signedness. It zero-extended
+                    ; every source, so `n.pos as int` with an i32 -5 answered
+                    ; 4294967291 -- and a C `int` result read as i32 and cast
+                    ; up flipped its sign the same way.
                     if src_bits < dst_bits
+                    {
+                        if is_signed_type as_inner.result_type
+                            return LLVMBuildSExt(builder, src_value, dst_type, "as.sext")
                         return LLVMBuildZExt(builder, src_value, dst_type, "as.zext")
+                    }
 
                     ; Same size - no-op
                     return src_value

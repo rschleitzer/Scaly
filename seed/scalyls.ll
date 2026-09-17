@@ -145887,62 +145887,72 @@ if.then12:                                        ; preds = %if.end10
   %p2c16 = load ptr, ptr %p2c1, align 8
   %ptr.add = getelementptr inbounds i32, ptr %p2c16, i64 1
   %deref = load i32, ptr %ptr.add, align 4
-  %call17 = call i32 @close(i32 %deref)
+  %as.sext = sext i32 %deref to i64
+  %call17 = call i32 @close(i64 %as.sext)
   %c2p18 = load ptr, ptr %c2p5, align 8
   %ptr.add19 = getelementptr inbounds i32, ptr %c2p18, i64 0
   %deref20 = load i32, ptr %ptr.add19, align 4
-  %call21 = call i32 @close(i32 %deref20)
-  %p2c22 = load ptr, ptr %p2c1, align 8
-  %ptr.add23 = getelementptr inbounds i32, ptr %p2c22, i64 0
-  %deref24 = load i32, ptr %ptr.add23, align 4
-  %c2p25 = load ptr, ptr %c2p5, align 8
-  %ptr.add26 = getelementptr inbounds i32, ptr %c2p25, i64 1
-  %deref27 = load i32, ptr %ptr.add26, align 4
-  %call28 = call i64 @_ZN6worker5serveEii(i32 %deref24, i32 %deref27)
-  call void @exit(i64 %call28)
+  %as.sext21 = sext i32 %deref20 to i64
+  %call22 = call i32 @close(i64 %as.sext21)
+  %p2c23 = load ptr, ptr %p2c1, align 8
+  %ptr.add24 = getelementptr inbounds i32, ptr %p2c23, i64 0
+  %deref25 = load i32, ptr %ptr.add24, align 4
+  %as.sext26 = sext i32 %deref25 to i64
+  %c2p27 = load ptr, ptr %c2p5, align 8
+  %ptr.add28 = getelementptr inbounds i32, ptr %c2p27, i64 1
+  %deref29 = load i32, ptr %ptr.add28, align 4
+  %as.sext30 = sext i32 %deref29 to i64
+  %call31 = call i64 @_ZN6worker5serveEii(i64 %as.sext26, i64 %as.sext30)
+  call void @exit(i64 %call31)
   ret void
 
 if.end13:                                         ; preds = %if.end10
   %lt = icmp slt i32 %call11, 0
-  br i1 %lt, label %if.then29, label %if.end30
+  br i1 %lt, label %if.then32, label %if.end33
 
-if.then29:                                        ; preds = %if.end13
-  %p2c31 = load ptr, ptr %p2c1, align 8
-  %ptr.add32 = getelementptr inbounds i32, ptr %p2c31, i64 0
-  %deref33 = load i32, ptr %ptr.add32, align 4
-  %call34 = call i32 @close(i32 %deref33)
-  %p2c35 = load ptr, ptr %p2c1, align 8
-  %ptr.add36 = getelementptr inbounds i32, ptr %p2c35, i64 1
-  %deref37 = load i32, ptr %ptr.add36, align 4
-  %call38 = call i32 @close(i32 %deref37)
-  %c2p39 = load ptr, ptr %c2p5, align 8
-  %ptr.add40 = getelementptr inbounds i32, ptr %c2p39, i64 0
+if.then32:                                        ; preds = %if.end13
+  %p2c34 = load ptr, ptr %p2c1, align 8
+  %ptr.add35 = getelementptr inbounds i32, ptr %p2c34, i64 0
+  %deref36 = load i32, ptr %ptr.add35, align 4
+  %as.sext37 = sext i32 %deref36 to i64
+  %call38 = call i32 @close(i64 %as.sext37)
+  %p2c39 = load ptr, ptr %p2c1, align 8
+  %ptr.add40 = getelementptr inbounds i32, ptr %p2c39, i64 1
   %deref41 = load i32, ptr %ptr.add40, align 4
-  %call42 = call i32 @close(i32 %deref41)
-  %c2p43 = load ptr, ptr %c2p5, align 8
-  %ptr.add44 = getelementptr inbounds i32, ptr %c2p43, i64 1
-  %deref45 = load i32, ptr %ptr.add44, align 4
-  %call46 = call i32 @close(i32 %deref45)
+  %as.sext42 = sext i32 %deref41 to i64
+  %call43 = call i32 @close(i64 %as.sext42)
+  %c2p44 = load ptr, ptr %c2p5, align 8
+  %ptr.add45 = getelementptr inbounds i32, ptr %c2p44, i64 0
+  %deref46 = load i32, ptr %ptr.add45, align 4
+  %as.sext47 = sext i32 %deref46 to i64
+  %call48 = call i32 @close(i64 %as.sext47)
+  %c2p49 = load ptr, ptr %c2p5, align 8
+  %ptr.add50 = getelementptr inbounds i32, ptr %c2p49, i64 1
+  %deref51 = load i32, ptr %ptr.add50, align 4
+  %as.sext52 = sext i32 %deref51 to i64
+  %call53 = call i32 @close(i64 %as.sext52)
   ret void
 
-if.end30:                                         ; preds = %if.end13
-  %p2c47 = load ptr, ptr %p2c1, align 8
-  %ptr.add48 = getelementptr inbounds i32, ptr %p2c47, i64 0
-  %deref49 = load i32, ptr %ptr.add48, align 4
-  %call50 = call i32 @close(i32 %deref49)
-  %c2p51 = load ptr, ptr %c2p5, align 8
-  %ptr.add52 = getelementptr inbounds i32, ptr %c2p51, i64 1
-  %deref53 = load i32, ptr %ptr.add52, align 4
-  %call54 = call i32 @close(i32 %deref53)
+if.end33:                                         ; preds = %if.end13
+  %p2c54 = load ptr, ptr %p2c1, align 8
+  %ptr.add55 = getelementptr inbounds i32, ptr %p2c54, i64 0
+  %deref56 = load i32, ptr %ptr.add55, align 4
+  %as.sext57 = sext i32 %deref56 to i64
+  %call58 = call i32 @close(i64 %as.sext57)
+  %c2p59 = load ptr, ptr %c2p5, align 8
+  %ptr.add60 = getelementptr inbounds i32, ptr %c2p59, i64 1
+  %deref61 = load i32, ptr %ptr.add60, align 4
+  %as.sext62 = sext i32 %deref61 to i64
+  %call63 = call i32 @close(i64 %as.sext62)
   store i32 %call11, ptr @worker_pid, align 4
-  %p2c55 = load ptr, ptr %p2c1, align 8
-  %ptr.add56 = getelementptr inbounds i32, ptr %p2c55, i64 1
-  %deref57 = load i32, ptr %ptr.add56, align 4
-  store i32 %deref57, ptr @worker_in, align 4
-  %c2p58 = load ptr, ptr %c2p5, align 8
-  %ptr.add59 = getelementptr inbounds i32, ptr %c2p58, i64 0
-  %deref60 = load i32, ptr %ptr.add59, align 4
-  store i32 %deref60, ptr @worker_out, align 4
+  %p2c64 = load ptr, ptr %p2c1, align 8
+  %ptr.add65 = getelementptr inbounds i32, ptr %p2c64, i64 1
+  %deref66 = load i32, ptr %ptr.add65, align 4
+  store i32 %deref66, ptr @worker_in, align 4
+  %c2p67 = load ptr, ptr %c2p5, align 8
+  %ptr.add68 = getelementptr inbounds i32, ptr %c2p67, i64 0
+  %deref69 = load i32, ptr %ptr.add68, align 4
+  store i32 %deref69, ptr @worker_out, align 4
   ret void
 }
 
@@ -146081,8 +146091,8 @@ if.then14:                                        ; preds = %if.end
   %field.val = load i64, ptr %field.inplace, align 8
   %call18 = call i64 @write(i64 2, ptr %data17, i64 %field.val)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.943)
-  %as.zext = zext i32 %call to i64
-  call void @_Z11scaly_eputi3i64(i64 %as.zext)
+  %as.sext = sext i32 %call to i64
+  call void @_Z11scaly_eputi3i64(i64 %as.sext)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.944)
   call void @_ZN6worker8shutdownEv()
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)

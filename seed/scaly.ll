@@ -632,8 +632,8 @@ if.end8:                                          ; preds = %if.end12, %if.end
   call void @_Z13bucket_unlockP16HeapBucketHeader(ptr %global.load1)
   %as.ptrtoint = ptrtoint ptr %global.load1 to i64
   %add = add i32 %call2, 1
-  %as.zext = zext i32 %add to i64
-  %mul = mul i64 %as.zext, 4096
+  %as.sext = sext i32 %add to i64
+  %mul = mul i64 %as.sext, 4096
   %add15 = add i64 %as.ptrtoint, %mul
   %as.inttoptr = inttoptr i64 %add15 to ptr
   call void @_Z10reset_pageR4Page(ptr %as.inttoptr)
@@ -24507,8 +24507,8 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %entry
   %load.struct = load %_Z6IoPool, ptr %global.load, align 8
   %pipe_write = extractvalue %_Z6IoPool %load.struct, 4
-  %as.zext = zext i32 %pipe_write to i64
-  %call = call i32 @close(i64 %as.zext)
+  %as.sext = sext i32 %pipe_write to i64
+  %call = call i32 @close(i64 %as.sext)
   store i64 0, ptr %i, align 1
   br label %while.cond
 
@@ -24537,8 +24537,8 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %load.struct7 = load %_Z6IoPool, ptr %global.load, align 8
   %pipe_read = extractvalue %_Z6IoPool %load.struct7, 3
-  %as.zext8 = zext i32 %pipe_read to i64
-  %call9 = call i32 @close(i64 %as.zext8)
+  %as.sext8 = sext i32 %pipe_read to i64
+  %call9 = call i32 @close(i64 %as.sext8)
   %call10 = call ptr @_ZN4Page3getEPv(ptr %global.load)
   call void @_ZN4Page21deallocate_extensionsEv(ptr %call10)
   call void @_ZN4Page19release_page_tracedER4PageP10const_char(ptr %call10, ptr @.str.149)
@@ -24760,8 +24760,8 @@ entry:
   %base = alloca ptr, align 8
   %call = call ptr @_ZN4Page8allocateEmm(ptr %0, i64 ptrtoint (ptr getelementptr (%_Z5Fiber, ptr null, i32 1) to i64), i64 8)
   %call1 = call i32 @getpagesize()
-  %as.zext = zext i32 %call1 to i64
-  store i64 %as.zext, ptr @guard_page_size, align 8
+  %as.sext = sext i32 %call1 to i64
+  store i64 %as.sext, ptr @guard_page_size, align 8
   %global.load = load i1, ptr @guard_installed, align 1
   %not = xor i1 %global.load, true
   br i1 %not, label %if.then, label %if.end
@@ -24816,12 +24816,12 @@ if.then10:                                        ; preds = %if.then5
 
 if.end11:                                         ; preds = %if.then10, %if.then5
   %base12 = load ptr, ptr %base, align 8
-  %call13 = call i32 @scaly_stack_guard(ptr %base12, i64 %as.zext)
+  %call13 = call i32 @scaly_stack_guard(ptr %base12, i64 %as.sext)
   %ne = icmp ne i32 %call13, 0
   br i1 %ne, label %if.then14, label %if.end15
 
 if.then14:                                        ; preds = %if.end11
-  call void @_Z20scaly_panic_resourceP10const_charm3i32(ptr @.str.123, i64 %as.zext, i32 104)
+  call void @_Z20scaly_panic_resourceP10const_charm3i32(ptr @.str.123, i64 %as.sext, i32 104)
   br label %if.end15
 
 if.end15:                                         ; preds = %if.then14, %if.end11
@@ -25610,8 +25610,8 @@ if.end24:                                         ; preds = %if.then23, %if.end
 while.cond:                                       ; preds = %if.end32, %if.end24
   %i25 = load i64, ptr %i, align 8
   %n26 = load i32, ptr %n, align 4
-  %as.zext = zext i32 %n26 to i64
-  %lt = icmp slt i64 %i25, %as.zext
+  %as.sext = sext i32 %n26 to i64
+  %lt = icmp slt i64 %i25, %as.sext
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
@@ -25967,8 +25967,8 @@ if.end5:                                          ; preds = %if.then4, %if.then
   %eio7 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 4
   store i32 %q6, ptr %eio7, align 4
   %q8 = load i32, ptr %q, align 4
-  %as.zext = zext i32 %q8 to i64
-  %add = add i64 %as.zext, 1
+  %as.sext = sext i32 %q8 to i64
+  %add = add i64 %as.sext, 1
   store i64 %add, ptr @io_poller_fd, align 8
   br label %if.end
 }
@@ -26013,8 +26013,8 @@ if.end6:                                          ; preds = %if.then5, %if.then
   %wake8 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load, i32 0, i32 6
   store i32 %w7, ptr %wake8, align 4
   %w9 = load i32, ptr %w, align 4
-  %as.zext = zext i32 %w9 to i64
-  %add = add i64 %as.zext, 1
+  %as.sext = sext i32 %w9 to i64
+  %add = add i64 %as.sext, 1
   store i64 %add, ptr @io_wake_fd, align 8
   br label %if.end
 }
@@ -27318,8 +27318,8 @@ if.end:                                           ; preds = %if.then, %unwrap.ok
 
 while.cond:                                       ; preds = %if.end7, %if.end
   %i3 = load i64, ptr %i, align 8
-  %as.zext = zext i32 %call to i64
-  %lt = icmp slt i64 %i3, %as.zext
+  %as.sext = sext i32 %call to i64
+  %lt = icmp slt i64 %i3, %as.sext
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
@@ -27365,8 +27365,8 @@ entry:
   %call = call i32 @_ZN2Io11ensure_wakeEv()
   %global.load = load ptr, ptr @current_task, align 8
   %call1 = call i64 @scaly_eio_now_ns()
-  %as.zext = zext i32 %1 to i64
-  %mul = mul i64 %as.zext, 1000000
+  %as.sext = sext i32 %1 to i64
+  %mul = mul i64 %as.sext, 1000000
   %add = add i64 %call1, %mul
   br label %repeat.body
 
@@ -27571,8 +27571,8 @@ define linkonce_odr void @_ZN9TaskGroup12record_faultEP9TaskGroup(ptr %0) {
 entry:
   %addr.gep = getelementptr inbounds nuw %_Z9TaskGroup, ptr %0, i32 0, i32 5
   %call = call i32 @scaly_panic_last_kind()
-  %as.zext = zext i32 %call to i64
-  %add = add i64 %as.zext, 1
+  %as.sext = sext i32 %call to i64
+  %add = add i64 %as.sext, 1
   %1 = cmpxchg ptr %addr.gep, i64 0, i64 %add seq_cst seq_cst, align 8
   %cas.old = extractvalue { i64, i1 } %1, 0
   %ne = icmp ne i64 %cas.old, 0
@@ -27690,12 +27690,12 @@ repeat.body:                                      ; preds = %if.end, %entry
 repeat.exit:                                      ; preds = %if.then
   %load.struct = load %_Z9TaskGroup, ptr %0, align 8
   %pipe_write = extractvalue %_Z9TaskGroup %load.struct, 3
-  %as.zext = zext i32 %pipe_write to i64
-  %call = call i32 @close(i64 %as.zext)
+  %as.sext = sext i32 %pipe_write to i64
+  %call = call i32 @close(i64 %as.sext)
   %load.struct1 = load %_Z9TaskGroup, ptr %0, align 8
   %pipe_read = extractvalue %_Z9TaskGroup %load.struct1, 2
-  %as.zext2 = zext i32 %pipe_read to i64
-  %call3 = call i32 @close(i64 %as.zext2)
+  %as.sext2 = sext i32 %pipe_read to i64
+  %call3 = call i32 @close(i64 %as.sext2)
   %call4 = call ptr @_ZN4Page3getEPv(ptr %0)
   call void @_ZN4Page21deallocate_extensionsEv(ptr %call4)
   call void @_ZN4Page19release_page_tracedER4PageP10const_char(ptr %call4, ptr @.str.161)
@@ -28076,8 +28076,8 @@ define linkonce_odr void @_ZN8TaskPool8shutdownER8TaskPool(ptr %0) {
 entry:
   %load.struct = load %_Z8TaskPool, ptr %0, align 8
   %pipe_write = extractvalue %_Z8TaskPool %load.struct, 6
-  %as.zext = zext i32 %pipe_write to i64
-  %call = call i32 @close(i64 %as.zext)
+  %as.sext = sext i32 %pipe_write to i64
+  %call = call i32 @close(i64 %as.sext)
   %i = alloca i64, align 8
   store i64 0, ptr %i, align 1
   br label %while.cond
@@ -28107,8 +28107,8 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %load.struct7 = load %_Z8TaskPool, ptr %0, align 8
   %pipe_read = extractvalue %_Z8TaskPool %load.struct7, 5
-  %as.zext8 = zext i32 %pipe_read to i64
-  %call9 = call i32 @close(i64 %as.zext8)
+  %as.sext8 = sext i32 %pipe_read to i64
+  %call9 = call i32 @close(i64 %as.sext8)
   %call10 = call ptr @_ZN4Page3getEPv(ptr %0)
   call void @_ZN4Page21deallocate_extensionsEv(ptr %call10)
   call void @_ZN4Page19release_page_tracedER4PageP10const_char(ptr %call10, ptr @.str.165)
@@ -28118,8 +28118,8 @@ while.exit:                                       ; preds = %while.cond
 define linkonce_odr i64 @_ZN8TaskPool4ncpuEv() {
 entry:
   %call = call i32 @scaly_eio_ncpu()
-  %as.zext = zext i32 %call to i64
-  ret i64 %as.zext
+  %as.sext = sext i32 %call to i64
+  ret i64 %as.sext
 }
 
 define linkonce_odr ptr @_ZN8TaskPool12default_poolEv() {
@@ -28797,9 +28797,10 @@ repeat.body:                                      ; preds = %if.end18, %entry
 
 repeat.exit:                                      ; preds = %if.then32, %if.then19, %if.then9, %if.then
   call void @_ZN7Cluster8wacquireEP8NodePeer(ptr %0)
-  %field.inplace = getelementptr inbounds nuw %_Z8NodePeer, ptr %0, i32 0, i32 1
-  %field.val = load i32, ptr %field.inplace, align 4
-  %call34 = call i32 @close(i32 %field.val)
+  %load.struct34 = load %_Z8NodePeer, ptr %0, align 8
+  %fd35 = extractvalue %_Z8NodePeer %load.struct34, 1
+  %as.sext = sext i32 %fd35 to i64
+  %call36 = call i32 @close(i64 %as.sext)
   call void @_ZN7Cluster8wreleaseEP8NodePeer(ptr %0)
   ret void
 
@@ -28998,7 +28999,8 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %call7 = call i32 @close(i32 %1)
+  %as.sext = sext i32 %1 to i64
+  %call7 = call i32 @close(i64 %as.sext)
   ret ptr null
 
 if.end:                                           ; preds = %entry
@@ -29025,98 +29027,102 @@ while.body:                                       ; preds = %while.cond
   br i1 %le, label %if.then15, label %if.end16
 
 while.exit:                                       ; preds = %while.cond
-  %inb20 = load ptr, ptr %inb9, align 8
-  %ptr.add21 = getelementptr inbounds i64, ptr %inb20, i64 0
-  %deref = load i64, ptr %ptr.add21, align 8
+  %inb21 = load ptr, ptr %inb9, align 8
+  %ptr.add22 = getelementptr inbounds i64, ptr %inb21, i64 0
+  %deref = load i64, ptr %ptr.add22, align 8
   %ne = icmp ne i64 %deref, 4922239063177642835
-  br i1 %ne, label %if.then22, label %if.end23
+  br i1 %ne, label %if.then23, label %if.end24
 
 if.then15:                                        ; preds = %while.body
-  %call17 = call i32 @close(i32 %1)
+  %as.sext17 = sext i32 %1 to i64
+  %call18 = call i32 @close(i64 %as.sext17)
   ret ptr null
 
 if.end16:                                         ; preds = %while.body
-  %got18 = load i64, ptr %got, align 8
-  %add19 = add i64 %got18, %call14
-  store i64 %add19, ptr %got, align 1
+  %got19 = load i64, ptr %got, align 8
+  %add20 = add i64 %got19, %call14
+  store i64 %add20, ptr %got, align 1
   br label %while.cond
 
-if.then22:                                        ; preds = %while.exit
+if.then23:                                        ; preds = %while.exit
   call void @_Z11scaly_eputsP10const_char(ptr @.str.179)
   call void @_Z12scaly_eputnlv()
-  %call24 = call i32 @close(i32 %1)
+  %as.sext25 = sext i32 %1 to i64
+  %call26 = call i32 @close(i64 %as.sext25)
   ret ptr null
 
-if.end23:                                         ; preds = %while.exit
-  %ptr.add25 = getelementptr inbounds i64, ptr %inb20, i64 1
-  %deref26 = load i64, ptr %ptr.add25, align 8
-  %ne27 = icmp ne i64 %deref26, 1
-  br i1 %ne27, label %if.then28, label %if.end29
+if.end24:                                         ; preds = %while.exit
+  %ptr.add27 = getelementptr inbounds i64, ptr %inb21, i64 1
+  %deref28 = load i64, ptr %ptr.add27, align 8
+  %ne29 = icmp ne i64 %deref28, 1
+  br i1 %ne29, label %if.then30, label %if.end31
 
-if.then28:                                        ; preds = %if.end23
+if.then30:                                        ; preds = %if.end24
   call void @_Z11scaly_eputsP10const_char(ptr @.str.180)
   call void @_Z11scaly_eputi3i64(i64 1)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.181)
-  call void @_Z11scaly_eputi3i64(i64 %deref26)
+  call void @_Z11scaly_eputi3i64(i64 %deref28)
   call void @_Z12scaly_eputnlv()
-  %call30 = call i32 @close(i32 %1)
+  %as.sext32 = sext i32 %1 to i64
+  %call33 = call i32 @close(i64 %as.sext32)
   ret ptr null
 
-if.end29:                                         ; preds = %if.end23
-  %call31 = call i64 @scaly_build_stamp()
-  %ptr.add32 = getelementptr inbounds i64, ptr %inb20, i64 2
-  %deref33 = load i64, ptr %ptr.add32, align 8
-  %ne34 = icmp ne i64 %deref33, %call31
-  br i1 %ne34, label %if.then35, label %if.end36
+if.end31:                                         ; preds = %if.end24
+  %call34 = call i64 @scaly_build_stamp()
+  %ptr.add35 = getelementptr inbounds i64, ptr %inb21, i64 2
+  %deref36 = load i64, ptr %ptr.add35, align 8
+  %ne37 = icmp ne i64 %deref36, %call34
+  br i1 %ne37, label %if.then38, label %if.end39
 
-if.then35:                                        ; preds = %if.end29
+if.then38:                                        ; preds = %if.end31
   call void @_Z11scaly_eputsP10const_char(ptr @.str.182)
-  %as.inttoptr37 = inttoptr i64 %call31 to ptr
-  call void @_Z11scaly_eputpPv(ptr %as.inttoptr37)
+  %as.inttoptr40 = inttoptr i64 %call34 to ptr
+  call void @_Z11scaly_eputpPv(ptr %as.inttoptr40)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.183)
-  %as.inttoptr38 = inttoptr i64 %deref33 to ptr
-  call void @_Z11scaly_eputpPv(ptr %as.inttoptr38)
+  %as.inttoptr41 = inttoptr i64 %deref36 to ptr
+  call void @_Z11scaly_eputpPv(ptr %as.inttoptr41)
   call void @_Z12scaly_eputnlv()
-  %call39 = call i32 @close(i32 %1)
+  %as.sext42 = sext i32 %1 to i64
+  %call43 = call i32 @close(i64 %as.sext42)
   ret ptr null
 
-if.end36:                                         ; preds = %if.end29
-  %call40 = call ptr @_ZN4Page13allocate_pageEv()
-  %call41 = call ptr @_ZN4Page8allocateEmm(ptr %call40, i64 512, i64 8)
-  %call42 = call ptr @_ZN4Page8allocateEmm(ptr %call40, i64 512, i64 8)
-  %call43 = call ptr @_ZN4Page8allocateEmm(ptr %call40, i64 512, i64 8)
-  %call44 = call i64 @scaly_eio_now_ns()
-  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %call40, i64 ptrtoint (ptr getelementptr (%_Z8NodePeer, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z8NodePeer }, ptr null, i64 0, i32 1) to i64))
+if.end39:                                         ; preds = %if.end31
+  %call44 = call ptr @_ZN4Page13allocate_pageEv()
+  %call45 = call ptr @_ZN4Page8allocateEmm(ptr %call44, i64 512, i64 8)
+  %call46 = call ptr @_ZN4Page8allocateEmm(ptr %call44, i64 512, i64 8)
+  %call47 = call ptr @_ZN4Page8allocateEmm(ptr %call44, i64 512, i64 8)
+  %call48 = call i64 @scaly_eio_now_ns()
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %call44, i64 ptrtoint (ptr getelementptr (%_Z8NodePeer, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z8NodePeer }, ptr null, i64 0, i32 1) to i64))
   %tuple.field = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 0
   store i64 0, ptr %tuple.field, align 1
-  %tuple.field45 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 1
-  store i32 %1, ptr %tuple.field45, align 1
-  %tuple.field46 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 2
-  store i1 true, ptr %tuple.field46, align 1
-  %tuple.field47 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 3
-  store i64 %deref33, ptr %tuple.field47, align 1
-  %tuple.field48 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 4
-  store ptr %call41, ptr %tuple.field48, align 1
-  %tuple.field49 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 5
-  store ptr %call42, ptr %tuple.field49, align 1
-  %tuple.field50 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 6
-  store i64 0, ptr %tuple.field50, align 1
-  %tuple.field51 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 7
-  store ptr %call43, ptr %tuple.field51, align 1
-  %tuple.field52 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 8
-  store i64 0, ptr %tuple.field52, align 1
-  %tuple.field53 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 9
-  store i64 0, ptr %tuple.field53, align 1
-  %tuple.field54 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 10
-  store i64 %call44, ptr %tuple.field54, align 1
-  %tuple.field55 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 11
-  store i64 0, ptr %tuple.field55, align 1
-  %tuple.field56 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 12
+  %tuple.field49 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 1
+  store i32 %1, ptr %tuple.field49, align 1
+  %tuple.field50 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 2
+  store i1 true, ptr %tuple.field50, align 1
+  %tuple.field51 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 3
+  store i64 %deref36, ptr %tuple.field51, align 1
+  %tuple.field52 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 4
+  store ptr %call45, ptr %tuple.field52, align 1
+  %tuple.field53 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 5
+  store ptr %call46, ptr %tuple.field53, align 1
+  %tuple.field54 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 6
+  store i64 0, ptr %tuple.field54, align 1
+  %tuple.field55 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 7
+  store ptr %call47, ptr %tuple.field55, align 1
+  %tuple.field56 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 8
   store i64 0, ptr %tuple.field56, align 1
+  %tuple.field57 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 9
+  store i64 0, ptr %tuple.field57, align 1
+  %tuple.field58 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 10
+  store i64 %call48, ptr %tuple.field58, align 1
+  %tuple.field59 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 11
+  store i64 0, ptr %tuple.field59, align 1
+  %tuple.field60 = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 12
+  store i64 0, ptr %tuple.field60, align 1
   call void @_ZN2Io15set_nonblockingE3i32(i32 %1)
-  %call57 = call i64 @_ZN6Thread5spawnEPvPv(ptr @_Z17node_reader_entryPv, ptr %tuple.region)
+  %call61 = call i64 @_ZN6Thread5spawnEPvPv(ptr @_Z17node_reader_entryPv, ptr %tuple.region)
   %reader = getelementptr inbounds nuw %_Z8NodePeer, ptr %tuple.region, i32 0, i32 11
-  store i64 %call57, ptr %reader, align 8
+  store i64 %call61, ptr %reader, align 8
   ret ptr %tuple.region
 }
 

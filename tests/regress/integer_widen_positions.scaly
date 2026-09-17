@@ -1,0 +1,69 @@
+; A narrower SIGNED integer widens by its own signedness at every position a
+; value is read into a wider one (2026-09-17). Before, only the LEFT operand of
+; an operator sign-extended: `n.pos as int`, an argument (free function,
+; method, generic method) and a returned value zero-extended an i32 -5 into
+; 4294967291 or answered 0, and overload selection took the first DECLARED
+; integer overload, so `sb.append(n.pos)` appended one garbage byte and
+; `g(n.pos)` chose `g(c: char)` over `g(x: int)`. All rc 0.
+
+define N (kind: i32  pos: i32)
+{
+    function pos_tail(this) returns int
+        pos
+    function pos_explicit(this) returns int
+    {
+        return pos
+    }
+}
+define Box (v: int)
+{
+    procedure put(this, x: int)
+        set v: x
+}
+define GBox[T] (v: T)
+{
+    procedure put(this, x: T)
+        set v: x
+}
+function f_arg(x: int) returns int
+    x
+function g(c: char) returns int
+    1
+function g(x: int) returns int
+    2
+
+let anchor String("probe")
+let host Page.get(anchor.get_buffer() as pointer[void])
+let n &N^host(3, 0 - 5)
+var fails 0
+if n.pos_tail() <> (0 - 5)
+    set fails: fails + 1
+if n.pos_explicit() <> (0 - 5)
+    set fails: fails + 1
+if f_arg(n.pos) <> (0 - 5)
+    set fails: fails + 1
+let b &Box^host(0)
+b.put(n.pos)
+if b.v <> (0 - 5)
+    set fails: fails + 1
+let gb &GBox[int]^host(0)
+gb.put(n.pos)
+if gb.v <> (0 - 5)
+    set fails: fails + 1
+let c n.pos as int
+if c <> (0 - 5)
+    set fails: fails + 1
+let s "k=`n.pos`"
+if s.equals(String("k=-5")) = false
+    set fails: fails + 1
+var arr Array[int]()
+arr.add(n.pos)
+if arr[0] <> (0 - 5)
+    set fails: fails + 1
+if g(n.pos) <> 2
+    set fails: fails + 1
+
+if fails = 0
+    print("PASS\n")
+else
+    print("FAIL `fails`\n")
