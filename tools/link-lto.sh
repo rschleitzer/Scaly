@@ -48,7 +48,10 @@ sed 's/^define linkonce_odr /define linkonce_odr hidden /' "$WORK/whole.ll" > "$
 "$OPT" -O2 "$WORK/whole_hidden.ll" -o "$WORK/whole.bc" || { echo "link-lto: FAIL (opt)" >&2; exit 1; }
 # -relocation-model=pic: x86-64 Linux links executables as PIE, which rejects
 # llc's default (static) absolute relocations. No-op on Mach-O.
-"$LLC" -relocation-model=pic -O2 -filetype=obj "$WORK/whole.bc" -o "$WORK/whole.o" \
+# LTO_LLC_FLAGS: extra llc flags for a profiling build (e.g. -frame-pointer=all,
+# so that a stack-logging allocator can walk the stacks); empty by default
+# shellcheck disable=SC2086
+"$LLC" ${LTO_LLC_FLAGS:-} -relocation-model=pic -O2 -filetype=obj "$WORK/whole.bc" -o "$WORK/whole.o" \
   || { echo "link-lto: FAIL (llc)" >&2; exit 1; }
 
 # The fiber context-switch primitives, the evented-I/O shim and the civil-time
