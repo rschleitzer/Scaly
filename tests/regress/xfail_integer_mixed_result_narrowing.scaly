@@ -1,0 +1,17 @@
+; xfail: the assigned value narrows int into u32
+;
+; An integer operator's result is the WIDER operand's type, as the emitter
+; computes it. It was the LEFT operand's, so `set n.flags: n.flags | ctx` with a
+; u32 field and an int ctx planned as u32, the emitter built an i64, and the
+; store wrote EIGHT bytes into the four-byte field — overwriting the next one
+; at rc 0, unseen by the narrowing gate (2026-09-17). Spelled
+; `set n.flags: (n.flags | ctx) as u32` now.
+
+define N (flags: u32  pos: i32)
+
+let anchor String("probe")
+let host Page.get(anchor.get_buffer() as pointer[void])
+let n &N^host(1, 7)
+var ctx: int 4
+set n.flags: n.flags | ctx
+print("compiled\n")

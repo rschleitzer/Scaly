@@ -2021,13 +2021,15 @@ declare ptr @memset(...)
 define linkonce_odr i64 @_Z7printlnP2i8(ptr %0) {
 entry:
   %call = call i32 @puts(ptr %0)
-  ret i64 0
+  %as.sext = sext i32 %call to i64
+  ret i64 %as.sext
 }
 
 define linkonce_odr i64 @_Z5printP2i8(ptr %0) {
 entry:
   %call = call i32 @puts(ptr %0)
-  ret i64 0
+  %as.sext = sext i32 %call to i64
+  ret i64 %as.sext
 }
 
 declare i32 @puts(ptr)
@@ -145944,15 +145946,18 @@ if.end33:                                         ; preds = %if.end13
   %deref61 = load i32, ptr %ptr.add60, align 4
   %as.sext62 = sext i32 %deref61 to i64
   %call63 = call i32 @close(i64 %as.sext62)
-  store i32 %call11, ptr @worker_pid, align 4
-  %p2c64 = load ptr, ptr %p2c1, align 8
-  %ptr.add65 = getelementptr inbounds i32, ptr %p2c64, i64 1
-  %deref66 = load i32, ptr %ptr.add65, align 4
-  store i32 %deref66, ptr @worker_in, align 4
-  %c2p67 = load ptr, ptr %c2p5, align 8
-  %ptr.add68 = getelementptr inbounds i32, ptr %c2p67, i64 0
-  %deref69 = load i32, ptr %ptr.add68, align 4
-  store i32 %deref69, ptr @worker_out, align 4
+  %as.sext64 = sext i32 %call11 to i64
+  store i64 %as.sext64, ptr @worker_pid, align 8
+  %p2c65 = load ptr, ptr %p2c1, align 8
+  %ptr.add66 = getelementptr inbounds i32, ptr %p2c65, i64 1
+  %deref67 = load i32, ptr %ptr.add66, align 4
+  %as.sext68 = sext i32 %deref67 to i64
+  store i64 %as.sext68, ptr @worker_in, align 8
+  %c2p69 = load ptr, ptr %c2p5, align 8
+  %ptr.add70 = getelementptr inbounds i32, ptr %c2p69, i64 0
+  %deref71 = load i32, ptr %ptr.add70, align 4
+  %as.sext72 = sext i32 %deref71 to i64
+  store i64 %as.sext72, ptr @worker_out, align 8
   ret void
 }
 

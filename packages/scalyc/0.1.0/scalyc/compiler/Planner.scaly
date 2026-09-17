@@ -3025,6 +3025,31 @@ define Planner
             true
         }
 
+        ; narrow_constant_integer_operand: the one narrowing write the gate lets
+        ; through without a cast -- an operator over literals (`0 - 1`) -- is
+        ; wrapped in `as target` so it is STORED at the target's width, as a bare
+        ; literal is retyped. Without it `set n.pos: 0 - 1` into an i32 field
+        ; stored an i64 and overwrote the next field; in tscaly that was a node's
+        ; payload tag, and the printer met nodes whose arm read back as nothing
+        ; (2026-09-17, 231 casejs crashes).
+        function narrow_constant_integer_operand(this: Planner, target_type: PlannedType, op: PlannedOperand) returns PlannedOperand
+        {
+            let tn Planner.normalize_type_name(target_type.name)
+            let sn Planner.normalize_type_name(op.result_type.name)
+            if Planner.is_integer_type(tn) = false
+                return op
+            if Planner.is_integer_type(sn) = false
+                return op
+            if Planner.integer_type_bits(sn) <= Planner.integer_type_bits(tn)
+                return op
+            if this.operand_is_integer_constant(op)
+                return op
+            if this.operand_is_constant_integer_expression(op) = false
+                return op
+            let cast PlannedAs(op.loc, target_type, &^this op)
+            PlannedOperand(op.loc, PlannedExpression.As cast, null, target_type)
+        }
+
         function widen_integer_operand(this: Planner, target_type: PlannedType, op: PlannedOperand) returns PlannedOperand
         {
             if this.integer_operand_widens(target_type, op) = false
@@ -14449,6 +14474,7 @@ define Planner
                                     set combined_type: result.result_type
                                 if op_name = ">>"
                                     set combined_type: result.result_type
+                                set combined_type: Planner.wider_integer_operand_type(op_name, combined_type, rhs.result_type)
                             }
                         }
 
@@ -22815,6 +22841,8 @@ define Planner
                 this.report_type_mismatch(binding_type, collapsed, b.span, "the initializer")
             if is_stack_array_decl = false
                 this.report_integer_narrowing(binding_type, collapsed, b.span, "the initializer")
+            if is_stack_array_decl = false
+                set collapsed: this.narrow_constant_integer_operand(binding_type, collapsed)
 
             ; Register the local in the current scope.
             if planned_item.name <> null
@@ -25606,6 +25634,13 @@ define Planner
                 this.report_type_mismatch(planned_target_collapsed.result_type, planned_source_collapsed, planned_source_collapsed.loc, "the assigned value")
             if a.target.length > 0
                 this.report_integer_narrowing(planned_target_collapsed.result_type, planned_source_collapsed, planned_source_collapsed.loc, "the assigned value")
+            if a.target.length > 0
+                set planned_source_collapsed: this.narrow_constant_integer_operand(planned_target_collapsed.result_type, planned_source_collapsed)
+            ; ... and a narrower source WIDENS by its own signedness: the store
+            ; wrote only the source's bytes, so `set top: n.pos` into an int local
+            ; that held -1 kept the upper half set (9 read back as -4294967287).
+            if a.target.length > 0
+                set planned_source_collapsed: this.widen_integer_operand(planned_target_collapsed.result_type, planned_source_collapsed)
 
             ; Unknown identifier as the WHOLE source of a `set`: a bare
             ; single-operand RHS has no binary operator whose collapse
@@ -29496,6 +29531,16 @@ define Planner
             if Planner.type_is_float_like(rt)
                 if this.operand_is_float_constant(op)
                     return PlannedOperand^this(op.loc, op.expr, null, rt)
+            ; A narrower integer reaching `ret` through a block or an arm widens
+            ; by its own signedness, as a direct return does
+            ; (integer_operand_widens#). Without it `{ if n = null  return 0
+            ; n.kind }` with an i32 kind returned 0 for every node: the emitter's
+            ; defensive bail answered ConstNull for the width mismatch (2026-09-17).
+            if this.integer_operand_widens(rt, op)
+            {
+                let wcast PlannedAs(op.loc, rt, &^this op)
+                return PlannedOperand^this(op.loc, PlannedExpression.As wcast, null, rt)
+            }
             ; A string literal RETURNED into a Slice[char] — the same
             ; materialisation the ARGUMENT position does
             ; (materialize_string_operand_to_slice#), here for the other three
@@ -37086,6 +37131,33 @@ define Planner
 
     ; is_integer_type: is a normalized type name one of the integer family?
     ; Called post-normalization so both "int" and "i64" answer true.
+    ; wider_integer_operand_type: the result type of an integer ARITHMETIC or
+    ; BITWISE operator is the WIDER operand's, as the emitter computes it
+    ; (emit_intrinsic_binary_op# widens the narrower side). It was the LEFT
+    ; operand's alone, so `set n.flags: n.flags | context_flags` with a u32 field
+    ; and an int context planned as u32 while the emitter produced an i64 and
+    ; stored EIGHT bytes into the four-byte field — overwriting the next one,
+    ; unseen by the narrowing gate because the planner believed nothing narrowed
+    ; (2026-09-17). A SHIFT keeps its left operand's type: its width comes from
+    ; the value shifted, never from the count. `current` is what the caller
+    ; already chose (the left type for the operators that pass through).
+    function wider_integer_operand_type(op_name: String, current: PlannedType, rhs_type: PlannedType) returns PlannedType
+    {
+        if op_name = "<<"
+            return current
+        if op_name = ">>"
+            return current
+        let cn Planner.normalize_type_name(current.name)
+        let rn Planner.normalize_type_name(rhs_type.name)
+        if Planner.is_integer_type(cn) = false
+            return current
+        if Planner.is_integer_type(rn) = false
+            return current
+        if Planner.integer_type_bits(rn) > Planner.integer_type_bits(cn)
+            return rhs_type
+        current
+    }
+
     ; Unsigned among the normalized integer names (char is unsigned here, as
     ; the emitter's is_signed_type# has it).
     function integer_name_is_unsigned(normalized: String) returns bool

@@ -4,8 +4,10 @@
 ; method, generic method) and a returned value zero-extended an i32 -5 into
 ; 4294967291 or answered 0, and overload selection took the first DECLARED
 ; integer overload, so `sb.append(n.pos)` appended one garbage byte and
-; `g(n.pos)` chose `g(c: char)` over `g(x: int)`. All rc 0.
+; `g(n.pos)` chose `g(c: char)` over `g(x: int)`, and a block body's tail
+; (`{ if … return 0  pos }`) returned 0. All rc 0.
 
+define M (flags: u32  pos: i32)
 define N (kind: i32  pos: i32)
 {
     function pos_tail(this) returns int
@@ -13,6 +15,12 @@ define N (kind: i32  pos: i32)
     function pos_explicit(this) returns int
     {
         return pos
+    }
+    function pos_block_tail(this, flag: bool) returns int
+    {
+        if flag
+            return 0
+        pos
     }
 }
 define Box (v: int)
@@ -40,6 +48,8 @@ if n.pos_tail() <> (0 - 5)
     set fails: fails + 1
 if n.pos_explicit() <> (0 - 5)
     set fails: fails + 1
+if n.pos_block_tail(false) <> (0 - 5)
+    set fails: fails + 1
 if f_arg(n.pos) <> (0 - 5)
     set fails: fails + 1
 let b &Box^host(0)
@@ -61,6 +71,20 @@ arr.add(n.pos)
 if arr[0] <> (0 - 5)
     set fails: fails + 1
 if g(n.pos) <> 2
+    set fails: fails + 1
+
+; the mixed operator's result is the wider type, and a cast store keeps the
+; neighbouring field intact
+let m &M^host(1, 7)
+var ctx: int 4
+set m.flags: (m.flags | ctx) as u32
+if m.flags <> 5
+    set fails: fails + 1
+if m.pos <> 7
+    set fails: fails + 1
+let wide m.flags | ctx
+var wide_check: int wide
+if wide_check <> 5
     set fails: fails + 1
 
 if fails = 0

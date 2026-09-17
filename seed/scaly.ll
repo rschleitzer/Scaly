@@ -579,13 +579,15 @@ declare ptr @memset(...)
 define linkonce_odr i64 @_Z7printlnP2i8(ptr %0) {
 entry:
   %call = call i32 @puts(ptr %0)
-  ret i64 0
+  %as.sext = sext i32 %call to i64
+  ret i64 %as.sext
 }
 
 define linkonce_odr i64 @_Z5printP2i8(ptr %0) {
 entry:
   %call = call i32 @puts(ptr %0)
-  ret i64 0
+  %as.sext = sext i32 %call to i64
+  ret i64 %as.sext
 }
 
 declare i32 @puts(ptr)

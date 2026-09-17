@@ -35,6 +35,14 @@ var e: int 0
 set e: n.pos
 if e <> 11
     set fails: fails + 1
+var top: int 0 - 1
+set top: n.kind
+if top <> 7
+    set fails: fails + 1
+set top: 0 - 1
+set top: n.pos
+if top <> 11
+    set fails: fails + 1
 
 if fails = 0
     print("PASS\n")
