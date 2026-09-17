@@ -1,0 +1,42 @@
+; Reads WIDEN, by the source's own signedness (2026-09-17): a narrower
+; initializer of a typed binding and a narrower RIGHT operand. Both were wrong
+; at rc 0 before — `var c: int n.kind` kept an i32 slot that every int read
+; overran, and `big + n.pos` zero-extended an i32 -3 into +4294967293. A
+; narrowing WRITE is spelled with its cast (xfail_integer_narrowing_*).
+
+define N (kind: i32  pos: i32  u: u32)
+
+let anchor String("probe")
+let host Page.get(anchor.get_buffer() as pointer[void])
+let n &N^host(7, 0 - 3, 4000000000)
+var big: int 5000000000
+var one: int 1
+var fails 0
+
+var c: int n.kind
+if c <> 7
+    set fails: fails + 1
+var cneg: int n.pos
+if cneg <> (0 - 3)
+    set fails: fails + 1
+let s1: int n.kind + big
+if s1 <> 5000000007
+    set fails: fails + 1
+let s2: int big + n.pos
+if s2 <> 4999999997
+    set fails: fails + 1
+let s3: int one + n.u
+if s3 <> 4000000001
+    set fails: fails + 1
+set n.pos: (one + 10) as i32
+if n.pos <> 11
+    set fails: fails + 1
+var e: int 0
+set e: n.pos
+if e <> 11
+    set fails: fails + 1
+
+if fails = 0
+    print("PASS\n")
+else
+    print("FAIL `fails`\n")

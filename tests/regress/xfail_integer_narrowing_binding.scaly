@@ -1,0 +1,9 @@
+; xfail: the initializer narrows int into u16
+;
+; The typed-binding half of xfail_integer_narrowing_set: `let w: u16 wide`
+; truncated in the emitter (bind.trunc) and said nothing. A literal that fits
+; is retyped and stays legal; a computed value takes `as u16`.
+
+var wide: int 70000
+let w: u16 wide
+print("compiled\n")

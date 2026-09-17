@@ -1,0 +1,13 @@
+; xfail: the assigned value narrows int into i32
+;
+; A `set` of an int into an i32 field kept the low half at rc 0 (2026-09-17).
+; The write is spelled `set n.pos: offset as i32`.
+
+define N (pos: i32)
+
+let anchor String("probe")
+let host Page.get(anchor.get_buffer() as pointer[void])
+let n &N^host(0)
+var offset: int 5000000000
+set n.pos: offset
+print("compiled\n")

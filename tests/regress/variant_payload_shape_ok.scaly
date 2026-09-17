@@ -1,0 +1,30 @@
+; The accepted shapes of report_variant_payload_shape#: a boxed construction,
+; a reference and the address of a value into a `ref[T]` arm, a construction
+; and a value into a by-value arm — each read back through its binding.
+
+define Big (a: int  b: int  c: int  d: int)
+define U union (B: ref[Big]  V: Big)
+
+function sum(u: U) returns int
+{
+    choose u
+        when b: B
+            return b.a + b.d
+        when v: V
+            return v.a + v.d
+    0
+}
+
+let anchor String("probe")
+let host Page.get(anchor.get_buffer() as pointer[void])
+let big Big(1, 2, 3, 4)
+let r &Big^host(10, 20, 30, 40)
+let s1 sum(U.B(&Big^host(1, 2, 3, 4)))
+let s2 sum(U.B(r))
+let s3 sum(U.B(&big))
+let s4 sum(U.V(Big(100, 0, 0, 1)))
+let s5 sum(U.V(big))
+if (s1 = 5) and (s2 = 50) and (s3 = 5) and (s4 = 101) and (s5 = 5)
+    print("PASS\n")
+else
+    print("FAIL `s1` `s2` `s3` `s4` `s5`\n")

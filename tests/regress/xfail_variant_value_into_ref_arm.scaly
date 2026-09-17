@@ -1,0 +1,12 @@
+; xfail: argument for U.B must be a reference
+;
+; A VALUE handed to a `ref[T]` arm compiled at rc 0 until 2026-09-17 and
+; SIGSEGV'd on the first read through the `when` binding: neither planner path
+; compared the argument with the arm, and the emitter stored the record's
+; first word where the reference belongs. The box is `&Big^page(...)`.
+
+define Big (a: int  b: int  c: int  d: int)
+define U union (B: ref[Big])
+
+let u U.B(Big(1, 2, 3, 4))
+print("compiled\n")

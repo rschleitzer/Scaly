@@ -1,0 +1,14 @@
+; xfail: argument for U.V must be a value
+;
+; The other direction of xfail_variant_value_into_ref_arm: a REFERENCE handed
+; to a by-value arm compiled at rc 0 and read its ADDRESS back as the record's
+; fields (a probe summed two of them to 37522522168).
+
+define Big (a: int  b: int  c: int  d: int)
+define U union (V: Big)
+
+let anchor String("probe")
+let host Page.get(anchor.get_buffer() as pointer[void])
+let r &Big^host(1, 2, 3, 4)
+let u U.V(r)
+print("compiled\n")

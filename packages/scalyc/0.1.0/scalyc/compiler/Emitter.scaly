@@ -11277,8 +11277,9 @@ define Emitter
 
                 let lhs_op left_arg.unwrap()
                 let left emit_operand(lhs_op)
-                let right emit_operand(right_arg.unwrap())
-                return emit_intrinsic_binary_op(call.name, left, right, call.result_type, lhs_op.result_type)
+                let rhs_op right_arg.unwrap()
+                let right emit_operand(rhs_op)
+                return emit_intrinsic_binary_op(call.name, left, right, call.result_type, lhs_op.result_type, rhs_op.result_type)
             }
 
             null
@@ -11438,7 +11439,7 @@ define Emitter
         }
 
         ; Emit an intrinsic binary operator
-        function emit_intrinsic_binary_op(this, op_name: String, left: LLVMValueRef, right: LLVMValueRef, result_type: PlannedType, left_operand_type: PlannedType) returns LLVMValueRef
+        function emit_intrinsic_binary_op(this, op_name: String, left: LLVMValueRef, right: LLVMValueRef, result_type: PlannedType, left_operand_type: PlannedType, right_operand_type: PlannedType) returns LLVMValueRef
         {
             ; s34 root fix: plain copies of the by-ptr struct params (emitBinding
             ; now copies single-ptr-field struct params correctly).
@@ -11546,8 +11547,16 @@ define Emitter
                     let r_width LLVMGetIntTypeWidth(LLVMTypeOf r)
                     if l_width <> r_width
                     {
+                        ; 2026-09-17: the narrower RIGHT operand widens by ITS OWN
+                        ; signedness too. It zero-extended unconditionally, so
+                        ; `big + n.pos` with an i32 -3 added 4294967293.
                         if l_width > r_width
-                            set r: LLVMBuildZExt(builder, r, LLVMTypeOf l, "zext")
+                        {
+                            if is_signed_type right_operand_type
+                                set r: LLVMBuildSExt(builder, r, LLVMTypeOf l, "sext")
+                            else
+                                set r: LLVMBuildZExt(builder, r, LLVMTypeOf l, "zext")
+                        }
                         ; s201: widening the narrower LEFT operand must SIGN-extend
                         ; when it is a signed type — else a negative narrow value
                         ; (e.g. i32 -1 read from a set_pos/keymap sentinel, or the
@@ -18682,6 +18691,23 @@ define Emitter
         }
 
         ; Emit a binding (let/var declaration)
+        ; The signedness of a binding's initializer, read off its planned type
+        ; (the first collapsed operand); signed when nothing says otherwise, as
+        ; is_signed_type# decides.
+        function binding_initializer_is_signed(this, binding: PlannedBinding) returns bool
+        {
+            if binding.operation = null
+                return true
+            let ops (*binding.operation)
+            if ops.length = 0
+                return true
+            let op0_ptr ops.get 0
+            if op0_ptr = null
+                return true
+            let op0 (*op0_ptr)
+            is_signed_type op0.result_type
+        }
+
         function emit_binding(this, binding: PlannedBinding) returns bool
         {
             var value: LLVMValueRef null
@@ -18735,6 +18761,17 @@ define Emitter
                                 let bind_sbits LLVMGetIntTypeWidth(LLVMTypeOf value)
                                 if bind_sbits > bind_dbits
                                     set value: LLVMBuildTrunc(builder, value, fit_mapped, "bind.trunc")
+                                ; 2026-09-17: and a NARROWER initializer widens to
+                                ; the annotation by its own signedness — the slot
+                                ; was typed from the value, so `var c: int n.kind`
+                                ; kept an i32 slot every int read overran.
+                                if bind_sbits < bind_dbits
+                                {
+                                    if this.binding_initializer_is_signed(binding)
+                                        set value: LLVMBuildSExt(builder, value, fit_mapped, "bind.sext")
+                                    else
+                                        set value: LLVMBuildZExt(builder, value, fit_mapped, "bind.zext")
+                                }
                             }
                     }
                 }

@@ -2952,6 +2952,43 @@ define Planner
             false
         }
 
+        ; operand_is_constant_integer_expression: an integer literal, or an
+        ; operator over nothing but such expressions (`0 - 1`, the negative
+        ; sentinel idiom). report_integer_narrowing# exempts it the way a bare
+        ; literal is exempt: it names a constant, not a value that lost bits.
+        function operand_is_constant_integer_expression(this: Planner, op: PlannedOperand) returns bool
+        {
+            if this.operand_is_integer_constant(op)
+                return true
+            if op.member_access <> null
+                return false
+            choose op.expr
+                when call: Call
+                {
+                    if call.is_operator = false
+                        return false
+                    if call.args = null
+                        return false
+                    let args (*call.args)
+                    if args.length = 0
+                        return false
+                    var i: size_t 0
+                    while i < args.length
+                    {
+                        let a args.get i
+                        if a = null
+                            return false
+                        if this.operand_is_constant_integer_expression((*a)) = false
+                            return false
+                        set i: i + 1
+                    }
+                    return true
+                }
+                else
+                    return false
+            false
+        }
+
         ; integer_constant_value: the payload of an operand
         ; operand_is_integer_constant accepted. Zero for anything else — the
         ; callers gate on the predicate first.
@@ -11077,6 +11114,7 @@ define Planner
                                 }
                                 else
                                     0
+                            this.report_variant_payload_shape(ctor_union_type.name, ctor_variant_name, payload_holder, second.loc)
 
                             let vc PlannedVariantConstruction(
                                 second.loc,
@@ -12721,6 +12759,7 @@ define Planner
                                         this.report_variant_arg_arity(bv_union_name, fn_name, call_args_holder.length, result.loc)
                                         if call_args_holder.length > 0
                                             set bv_payload: call_args_holder.get(0)
+                                        this.report_variant_payload_shape(bv_union_name, fn_name, bv_payload, result.loc)
                                         let bv_vc PlannedVariantConstruction(
                                             result.loc,
                                             bv_union_ty,
@@ -22625,6 +22664,8 @@ define Planner
             ; ... and does the initializer's type conform at all -- report_type_mismatch#.
             if is_stack_array_decl = false
                 this.report_type_mismatch(binding_type, collapsed, b.span, "the initializer")
+            if is_stack_array_decl = false
+                this.report_integer_narrowing(binding_type, collapsed, b.span, "the initializer")
 
             ; Register the local in the current scope.
             if planned_item.name <> null
@@ -24141,6 +24182,56 @@ define Planner
             this.make_deref_operand(op, inner)
         }
 
+        ; report_integer_narrowing#: a WRITE into a narrower integer is spelled
+        ; with its cast. types_compatible#'s Rule 2 accepts every integer for
+        ; every other, which is right for READING (the emitter widens, and since
+        ; 2026-09-17 a typed binding and a right operand widen by their own
+        ; signedness) and silent for WRITING: `set n.pos: offset` into an i32
+        ; field kept the low half of an int at rc 0. Decided 2026-09-17 with the
+        ; author: reads widen implicitly, a narrowing store says `as i32`.
+        ;
+        ; Judged at the typed binding and the `set`, the two positions a write
+        ; takes; a bare literal that FITS is exempt because it is retyped to the
+        ; target (operand_retypes_to_integer#), an explicit `as` is exempt
+        ; because its result already has the target's width.
+        function report_integer_narrowing(
+            this: Planner,
+            target_type: PlannedType,
+            source: PlannedOperand,
+            loc: Span,
+            position: String
+        )
+        {
+            if this.type_conformance_unjudgeable(target_type, source)
+                return
+            let tn Planner.normalize_type_name(target_type.name)
+            let sn Planner.normalize_type_name(source.result_type.name)
+            if Planner.is_integer_type(tn) = false
+                return
+            if Planner.is_integer_type(sn) = false
+                return
+            if Planner.integer_type_bits(sn) <= Planner.integer_type_bits(tn)
+                return
+            if this.operand_retypes_to_integer(source, target_type)
+                return
+            if this.operand_is_constant_integer_expression(source)
+                return
+            var sb StringBuilder()
+            ; NO backticks in these literals -- see report_type_mismatch#.
+            let sname Planner.get_readable_name(source.result_type)
+            let tname Planner.get_readable_name(target_type)
+            sb.append position
+            sb.append " narrows "
+            sb.append sname
+            sb.append " into "
+            sb.append tname
+            sb.append ": a narrowing write is spelled with its cast (as "
+            sb.append tname
+            sb.append ")"
+            let nmsg sb.to_string()
+            this.add_diagnostic(loc, String^this(nmsg))
+        }
+
         function report_type_mismatch(
             this: Planner,
             target_type: PlannedType,
@@ -24953,6 +25044,74 @@ define Planner
             this.add_diagnostic(loc, String^this(vmsg))
         }
 
+        ; report_variant_payload_shape#: the payload of a variant construction must
+        ; have the REFERENCE SHAPE its arm declares. Neither planner path compared
+        ; the argument's type with the arm's, and the emitter stores whatever it is
+        ; handed, so both directions compiled at rc 0 (measured 2026-09-17): a VALUE
+        ; into a `ref[T]` arm (`U.B(Big(1, 2, 3, 4))`, `U.B(big)`, and a `Big^page(…)`
+        ; without the `&`) SIGSEGVs on the first read through the binding, and a
+        ; REFERENCE into a by-value arm reads its address back as the record's
+        ; fields. tscaly met the first shape boxing NodeData's large arms and
+        ; checked 254 construction sites by a scan because the compiler would not.
+        ;
+        ; Only the SHAPE is judged, never the pointee: the tuple path's type check
+        ; (report_component_type_mismatch#) carries the measured exemptions for
+        ; the rest. A GENERIC union is not judged either — its arm types name
+        ; parameters this site does not bind (Option[T].Some is the NPO case).
+        ; One statement per call site, as report_variant_arg_arity# above.
+        function report_variant_payload_shape(
+            this: Planner,
+            union_name: String,
+            variant_name: String,
+            payload: ref[PlannedOperand]?,
+            loc: Span
+        )
+        {
+            if payload = null
+                return
+            let concept_ref this.lookup_concept(union_name)
+            if concept_ref = null
+                return
+            let c (*concept_ref)
+            if c.parameters.length > 0
+                return
+            let declared_ref this.lookup_variant_type(union_name, variant_name)
+            if declared_ref = null
+                return
+            let declared (*declared_ref)
+            let p (*payload)
+            let source p.result_type
+            if source.name = ""
+                return
+            if Planner.type_mentions_generic_param(declared)
+                return
+            let wants_reference Planner.type_is_reference_shaped(declared)
+            let is_reference Planner.type_is_reference_shaped(source)
+            if wants_reference = is_reference
+                return
+            var psb StringBuilder()
+            psb.append "argument for "
+            psb.append union_name
+            psb.append "."
+            psb.append variant_name
+            if wants_reference
+            {
+                psb.append " must be a reference: the arm holds a reference and the argument is a "
+                psb.append source.name
+                psb.append " value (box it: \`&"
+                psb.append source.name
+                psb.append "^page(...)\`)"
+            }
+            else
+            {
+                psb.append " must be a value: the arm holds a "
+                psb.append declared.name
+                psb.append " by value and the argument is a reference (dereference it or construct the value)"
+            }
+            let pmsg psb.to_string()
+            this.add_diagnostic(loc, String^this(pmsg))
+        }
+
         ; ★★★ A METHOD CALL WHOSE MEMBER DOES NOT EXIST WAS NOT A CALL AT ALL,
         ; AND THAT IS WHY IT VANISHED. Call detection above accepts exactly two
         ; shapes -- a member_access chain whose LAST HOP is_method, or a
@@ -25296,6 +25455,8 @@ define Planner
             ; ... and does the source conform to the target -- report_type_mismatch#.
             if a.target.length > 0
                 this.report_type_mismatch(planned_target_collapsed.result_type, planned_source_collapsed, planned_source_collapsed.loc, "the assigned value")
+            if a.target.length > 0
+                this.report_integer_narrowing(planned_target_collapsed.result_type, planned_source_collapsed, planned_source_collapsed.loc, "the assigned value")
 
             ; Unknown identifier as the WHOLE source of a `set`: a bare
             ; single-operand RHS has no binary operator whose collapse
@@ -36768,6 +36929,27 @@ define Planner
 
     ; is_integer_type: is a normalized type name one of the integer family?
     ; Called post-normalization so both "int" and "i64" answer true.
+    ; The width of a normalized integer type name, in bits (64 for the
+    ; pointer-sized and default names).
+    function integer_type_bits(normalized: String) returns int
+    {
+        if normalized = "i8"
+            return 8
+        if normalized = "u8"
+            return 8
+        if normalized = "char"
+            return 8
+        if normalized = "i16"
+            return 16
+        if normalized = "u16"
+            return 16
+        if normalized = "i32"
+            return 32
+        if normalized = "u32"
+            return 32
+        64
+    }
+
     function is_integer_type(normalized: String) returns bool
     {
         if normalized = "i64"
