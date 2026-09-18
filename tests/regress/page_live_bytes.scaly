@@ -1,0 +1,37 @@
+; Page.live_bytes and Page.allocation_count — the two counts tsc's --diagnostics
+; prints as `Memory used` and `Memory allocs` (packages/tscaly's statistics table).
+; A dead frame's objects must LEAVE the live count on its way back (the frame page
+; goes LIFO through scaly_release_root_page, its heap extensions and exclusive
+; buffers through release_page), and an object that stays must stay in it. The
+; array grows past a page on purpose, so its buffer takes the oversized route too.
+
+function churn(n: int) returns int
+{
+    let a &Array[int]()
+    var i 0
+    while i < n
+    {
+        a.add(i)
+        set i: i + 1
+    }
+    a.get_length() as int
+}
+
+let live0 Page.live_bytes()
+let allocs0 Page.allocation_count()
+let got churn(3000)
+if got <> 3000
+    exit 1
+if Page.live_bytes() <> live0
+    exit 2
+if Page.allocation_count() <= allocs0
+    exit 3
+
+; kept on main's own page: it stays live
+let kept &Array[int]()
+kept.add(7)
+if Page.live_bytes() <= live0
+    exit 4
+
+print "PASS"
+exit 0

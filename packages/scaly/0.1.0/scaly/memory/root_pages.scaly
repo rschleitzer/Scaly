@@ -872,6 +872,8 @@ function ctz_u64(x: u64) returns i32
 
 procedure scaly_release_root_page(p: pointer[Page])
 {
+    ; the frame's objects leave the live count (Page.live_bytes)
+    set live_object_bytes: live_object_bytes - (((p.next_object as size_t) - ((p as size_t) + sizeof Page)) as i64)
     ; Strict LIFO: the release must pop the current top. A mismatch means
     ; some exit path skipped its release — a real bug.
     if p <> stack_top
