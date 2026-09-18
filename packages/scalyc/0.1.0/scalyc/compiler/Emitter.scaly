@@ -9690,6 +9690,40 @@ define Emitter
             afields.put(1, ptr_ty)
             let aty LLVMStructTypeInContext(context, afields.data, 2, 0)
 
+            ; ★★★THE EMBEDDED LAYOUT (slice 346): an Array of three fields is
+            ; {length, capacity, data} and the buffer is fixed in place — there is
+            ; no inner Vector record to follow, so the whole non-null dance below
+            ; is the OLD shape's and this path returns before it.
+            let aty3 map_type t
+            if LLVMCountStructElementTypes(aty3) = 3
+            {
+                var e3_acts: bool false
+                var e3: PlannedType Planner.make_void_type()
+                if t.generics <> null
+                {
+                    let g3 (*t.generics)
+                    if g3.length > 0
+                    {
+                        let ep3 g3.get 0
+                        if ep3 <> null
+                        {
+                            set e3: (*ep3)
+                            set e3_acts: region_field_acts((*ep3))
+                        }
+                    }
+                }
+                let data_slot3 LLVMBuildStructGEP2(builder, aty3, obj, 2, "walk.adata")
+                let dv3 emit_region_fix_slot(rr, data_slot3)
+                if e3_acts
+                {
+                    let len_ptr3 LLVMBuildStructGEP2(builder, aty3, obj, 0, "walk.alen.ptr")
+                    let len3 LLVMBuildLoad2(builder, i64_ty, len_ptr3, "walk.alen")
+                    LLVMSetAlignment(len3, 1)
+                    emit_region_elem_loop(fn, rr, dv3, len3, e3)
+                }
+                return
+            }
+
             let vec_slot LLVMBuildStructGEP2(builder, aty, obj, 1, "walk.avec")
             let vv emit_region_fix_slot(rr, vec_slot)
 
@@ -12471,6 +12505,7 @@ define Emitter
                             ; result_type of the last collapsed operand carries
                             ; the planner's view ("Array" for `var X Array[T]$()`).
                             var comp0_is_array: bool false
+                            var comp0_arr_ty: LLVMTypeRef null
                             let c0_ptr tuple.components.get 0
                             if c0_ptr <> null
                             {
@@ -12483,7 +12518,15 @@ define Emitter
                                         let lop_ptr c0_ops.get(c0_ops.length - 1)
                                         if lop_ptr <> null
                                             if lop_ptr.result_type.name = "Array"
+                                            {
                                                 set comp0_is_array: true
+                                                ; ★The Array's OWN struct type, not a hand-built one:
+                                                ; the layout is the stdlib's to choose, and the two
+                                                ; conversions below read the field COUNT to tell the
+                                                ; {length, vector-ref} shape from the {length,
+                                                ; capacity, data} one (slice 346 phase 1).
+                                                set comp0_arr_ty: this.map_type(lop_ptr.result_type)
+                                            }
                                     }
                                 }
                             }
@@ -12540,6 +12583,23 @@ define Emitter
                                         let source_name String(source_name_c)
                                         if source_name.starts_with("_Z5Array")
                                         {
+                                            ; ★★★THE EMBEDDED LAYOUT (slice 346): an Array of
+                                            ; three fields is {length, capacity, data} and its
+                                            ; buffer pointer is field 2 — no inner record to
+                                            ; dereference and no null branch, because an empty
+                                            ; Array carries length 0 beside a null data.
+                                            if LLVMCountStructElementTypes(cv0_ty) = 3
+                                            {
+                                                let a_len LLVMBuildExtractValue(builder, cv0, 0, "arr.length")
+                                                let a_data LLVMBuildExtractValue(builder, cv0, 2, "arr.data")
+                                                let l_gep LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, 0, "v.length.ptr")
+                                                LLVMBuildStore(builder, a_len, l_gep)
+                                                let d_gep LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, 1, "v.data.ptr")
+                                                LLVMBuildStore(builder, a_data, d_gep)
+                                                if tuple.is_region_alloc = false
+                                                    return LLVMBuildLoad2(builder, struct_type, tuple_ptr, "tuple.val")
+                                                return tuple_ptr
+                                            }
                                             ; Branch on Array.vector != null: empty
                                             ; Arrays have vector=null and load would
                                             ; SEGV. Store {0, null} for empty,
@@ -12604,6 +12664,24 @@ define Emitter
                                         let tgt_name String(tgt_name_c)
                                         if tgt_name.starts_with("_Z6Vector")
                                         {
+                                            ; the embedded layout again, through the Array's OWN
+                                            ; type rather than a hand-built {i64, ptr}
+                                            if comp0_arr_ty <> null
+                                            {
+                                                if LLVMCountStructElementTypes(comp0_arr_ty) = 3
+                                                {
+                                                    let a_val LLVMBuildLoad2(builder, comp0_arr_ty, cv0, "arrptr.load")
+                                                    let a_len LLVMBuildExtractValue(builder, a_val, 0, "arr.length")
+                                                    let a_data LLVMBuildExtractValue(builder, a_val, 2, "arr.data")
+                                                    let l_gep LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, 0, "v.length.ptr")
+                                                    LLVMBuildStore(builder, a_len, l_gep)
+                                                    let d_gep LLVMBuildStructGEP2(builder, struct_type, tuple_ptr, 1, "v.data.ptr")
+                                                    LLVMBuildStore(builder, a_data, d_gep)
+                                                    if tuple.is_region_alloc = false
+                                                        return LLVMBuildLoad2(builder, struct_type, tuple_ptr, "tuple.val")
+                                                    return tuple_ptr
+                                                }
+                                            }
                                             var arr_ftys Vector[LLVMTypeRef](2)
                                             arr_ftys.put(0, LLVMInt64TypeInContext context)
                                             arr_ftys.put(1, LLVMPointerTypeInContext(context, 0))
