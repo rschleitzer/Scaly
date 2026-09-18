@@ -1,0 +1,100 @@
+; tests/write-report/fixture.scaly — one site per class of `scalyc --write-report`
+; (WriteCensus.scaly), and the functions it must answer `clean` for.
+function memset(dst: pointer[void], c: i32, n: size_t) returns pointer[void] extern
+function memcmp(a: pointer[void], b: pointer[void], n: size_t) returns i32 extern
+
+mutable counter: int 0
+
+define Cell (v: int)
+
+define Box (v: int  items: Array[int])
+{
+    init()
+    {
+        set v: 0
+        set items: Array[int]()
+    }
+
+    ; clean: reads only
+    function peek(this) returns int
+        v
+
+    ; w-field (implicit this)
+    function bump_field(this, x: int) returns int
+    {
+        set v: v + x
+        v
+    }
+
+    ; w-call: Array.add writes its receiver, reached through this
+    function push_item(this, x: int) returns int
+    {
+        items.add(x)
+        x
+    }
+
+    ; transitive: calls a writing sibling
+    function relay(this, x: int) returns int
+        this.bump_field(x)
+
+    ; a-construct on ^this
+    function make_on_this(this) returns int
+    {
+        let c Cell^this(3)
+        c.v
+    }
+
+    ; procedure: counted, not listed
+    procedure set_v(this, x: int)
+    {
+        set v: x
+    }
+}
+
+; w-deref through a pointer parameter
+function poke(p: pointer[int]) returns int
+{
+    set *p: 5
+    0
+}
+
+; w-global
+function tick() returns int
+{
+    set counter: counter + 1
+    counter
+}
+
+; w-extern
+function wipe(p: pointer[int]) returns int
+{
+    memset(p as pointer[void], 0, 8)
+    0
+}
+
+; clean: builds its answer on the caller page
+function fresh(x: int) returns Cell
+    Cell(x)
+
+; clean: a local container is its own memory
+function local_only(x: int) returns int
+{
+    var a Array[int]()
+    a.add(x)
+    a.length as int
+}
+
+; clean: memcmp reads both buffers and writes neither (the extern table)
+function same(a: pointer[int], b: pointer[int]) returns bool
+    memcmp(a as pointer[void], b as pointer[void], 8) = 0
+
+; alias: a local that reaches a parameter
+function via_alias(b: ref[Box]) returns int
+{
+    let items b.items
+    items.add(1)
+    0
+}
+
+let b Box()
+print b.peek()

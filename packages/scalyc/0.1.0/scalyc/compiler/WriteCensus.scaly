@@ -1,0 +1,1916 @@
+; WriteCensus.scaly - the `--write-report` pass: which planned bodies WRITE
+; through memory their PARAMETERS reach, and how. The measurement behind the
+; question whether `function` can be made PURE by rule (R1): no store through
+; a path that starts at a parameter, no allocation on a parameter's page. A
+; `function` that does either today is listed; a `procedure` is only counted.
+;
+; WHAT IS A WRITE (one site each, `<class> <fn> writes <params> <detail>`):
+;   w-field      `set p.f: v` -- a member store whose base reaches a parameter
+;                (the implicit `set f: v` in a method is `this` + `.f`)
+;   w-deref      `set *p: v` / `set *(p + i): v` -- a store through a pointer
+;                (and every `set r: v` on a `ref`, which the planner rewrites
+;                into the deref)
+;   w-global     `set g: v` / `set g.f: v` on a module-level global
+;   w-call       a call whose callee writes the parameter an argument fills --
+;                TRANSITIVE: the callee's summary comes from the fixpoint below
+;   w-extern     a pointer or reference handed to an `extern` (memcpy, ...):
+;                what C does with it is not in the plan, so it counts
+;   a-construct  a construction on a NAMED page that reaches a parameter
+;                (`T^this(...)`, `T^host(...)`, the positional tuple with a
+;                region) -- an allocation writes the page header
+;   a-box        `&^p v` onto such a page
+; The implicit caller page (`_rp`, or the peeled `rp`/`page` parameter) is the
+; RESULT REGION and never a write: a pure function builds its answer there.
+;
+; ALIASING, conservatively. A local whose type is not a scalar inherits the
+; parameters its initializer reaches (a field read, a deref, a cast, a call
+; result -- a call is assumed to hand back something its arguments reach), and
+; so do a `for` variable and a `when` binding. A scalar local reaches nothing.
+; `if`/`choose` VALUES and lambdas are not followed: a local bound to one
+; reaches nothing (under-approximation, named here so a zero is read with it).
+;
+; THE FIXPOINT. Each body's summary is a bit mask over its `input` (bit i =
+; parameter i, `this` included; bit 62 = a parameter past the 62nd; bit 63 = a
+; global). Calls read the callee's current summary, so the walk repeats until
+; no summary grows. Only then are the sites recorded, in one last walk.
+;
+; Reuses PointerCensus for what that pass already knows: the body file of a
+; lazily instantiated generic (`resolve_body_file`), the callee table
+; (`fn_slots`) and the extern names of this root and its packages. Report
+; strings live on this pass's page (`String^this`), the `--task-plan` idiom.
+;
+; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no else).
+
+use scalyc.compiler.Model.*
+use scalyc.compiler.Plan.*
+use scalyc.compiler.Planner.*
+use scalyc.compiler.PointerCensus.PointerCensus
+use scaly.io.File
+
+define WC_GLOBAL u64 0x8000000000000000
+define WC_OVERFLOW u64 0x4000000000000000
+; the FROZEN mode's mark: the value reaches data of a frozen type
+define WC_FROZEN u64 0x2000000000000000
+
+define WriteCensus
+{
+    define WriteCensus
+    (
+        report_files: Array[String]
+        report_offsets: Array[size_t]
+        report_texts: Array[String]
+
+        pc: ref[PointerCensus]?
+        plan_functions: ref[Vector[PlannedFunction]]?
+        ; per plan.functions index: the parameters the body writes through
+        masks: Array[u64]
+
+        ; the body walked: its input, its caller-page name, its summary so far
+        cur_input: ref[Vector[PlannedItem]]?
+        cur_page: String
+        cur_name: String
+        cur_pure: bool
+        ; the RBMM substrate (scaly/memory/): its globals are the allocator's
+        ; own state and are not propagated to every function that allocates
+        cur_substrate: bool
+        body_mask: u64
+        body_direct: bool
+        reporting: bool
+        current_file: String
+        loc_names: Array[String]
+        loc_masks: Array[u64]
+
+        n_bodies: size_t
+        n_pure: size_t
+        n_pure_writing: size_t
+        n_pure_direct: size_t
+        n_proc: size_t
+        n_proc_writing: size_t
+        n_unfiled: size_t
+        n_misaligned: size_t
+        n_rounds: size_t
+        n_sites: size_t
+
+        ; summaries of other roots' bodies, by mangled name (open addressing)
+        summaries_path: String
+        sum_names: Array[String]
+        sum_masks: Array[u64]
+        sum_inputs: Array[size_t]
+        sum_slots: Vector[size_t]
+        n_stub_known: size_t
+        n_stub_unknown: size_t
+
+        ; the frozen mode
+        frozen_mode: bool
+        frozen_names: Array[String]
+        entry_names: Array[String]
+        reach: Array[u64]
+        queue: Array[size_t]
+        edge_mode: bool
+        lock_depth: int
+        n_reachable: size_t
+        n_frozen_sites: size_t
+        n_locked_sites: size_t
+        ; PROVENANCE: a parameter is frozen when some reachable call passes a
+        ; frozen value into it (the entries: by type); a function's result is
+        ; fresh until one of its returns is frozen -- one fixpoint over both
+        param_frozen: Array[u64]
+        returns_fresh: Array[u64]
+        frozen_pass: bool
+        fz_changed: bool
+        cur_fn: size_t
+        n_fz_rounds: size_t
+    )
+    {
+        init()
+        {
+            set report_files: Array[String]^this()
+            set report_offsets: Array[size_t]^this()
+            set report_texts: Array[String]^this()
+            set pc: null
+            set plan_functions: null
+            set masks: Array[u64]^this()
+            set cur_input: null
+            set cur_page: String^this("")
+            set cur_name: String^this("")
+            set cur_pure: false
+            set cur_substrate: false
+            set body_mask: 0
+            set body_direct: false
+            set reporting: false
+            set current_file: String^this("")
+            set loc_names: Array[String]^this()
+            set loc_masks: Array[u64]^this()
+            set n_bodies: 0
+            set n_pure: 0
+            set n_pure_writing: 0
+            set n_pure_direct: 0
+            set n_proc: 0
+            set n_proc_writing: 0
+            set n_unfiled: 0
+            set n_misaligned: 0
+            set n_rounds: 0
+            set n_sites: 0
+            set summaries_path: String^this("")
+            set sum_names: Array[String]^this()
+            set sum_masks: Array[u64]^this()
+            set sum_inputs: Array[size_t]^this()
+            set sum_slots: Vector[size_t]^this(262144)
+            set n_stub_known: 0
+            set n_stub_unknown: 0
+            set frozen_mode: false
+            set frozen_names: Array[String]^this()
+            set entry_names: Array[String]^this()
+            set reach: Array[u64]^this()
+            set queue: Array[size_t]^this()
+            set edge_mode: false
+            set lock_depth: 0
+            set n_reachable: 0
+            set n_frozen_sites: 0
+            set n_locked_sites: 0
+            set param_frozen: Array[u64]^this()
+            set returns_fresh: Array[u64]^this()
+            set frozen_pass: false
+            set fz_changed: false
+            set cur_fn: 0
+            set n_fz_rounds: 0
+        }
+
+        ; ================================================================
+        ; Entry point: the pointer census's tables, the fixpoint, the report.
+        ; ================================================================
+        procedure analyze(this: WriteCensus, plan: Plan, model: ref[Program], census: ref[PointerCensus])
+        {
+            set pc: census
+            this.load_summaries()
+            this.load_frozen()
+            census.walk_model_module(model.module_)
+            var pi: size_t 0
+            while pi < model.packages.length
+            {
+                let pkg model.packages.get pi
+                if pkg <> null
+                    census.collect_externs_module((*pkg))
+                set pi: pi + 1
+            }
+            set census.plan_functions: plan.functions
+            set census.plan_structures: plan.structures
+            census.index_functions()
+            set plan_functions: plan.functions
+            if plan.functions = null
+                return
+            let fns plan.functions
+            var i: size_t 0
+            while i < fns.length
+            {
+                masks.add(0)
+                set i: i + 1
+            }
+            var changed true
+            while changed
+            {
+                set changed: false
+                set n_rounds: n_rounds + 1
+                set i: 0
+                while i < fns.length
+                {
+                    let f_ptr fns.get i
+                    if f_ptr <> null
+                    {
+                        let before masks[i]
+                        let after before | (this.walk_body((*f_ptr)) & (0 - (WC_FROZEN + (1 as u64))))
+                        if after <> before
+                        {
+                            masks.put(i, after)
+                            set changed: true
+                        }
+                    }
+                    set i: i + 1
+                }
+                if n_rounds >= 100
+                    set changed: false
+            }
+            this.save_summaries()
+            if frozen_mode
+            {
+                this.report_frozen()
+                return
+            }
+            set reporting: true
+            set i: 0
+            while i < fns.length
+            {
+                let f_ptr fns.get i
+                if f_ptr <> null
+                    this.report_body((*f_ptr), masks[i])
+                set i: i + 1
+            }
+        }
+
+        function total(this: WriteCensus) returns size_t
+            report_offsets.length
+
+        function in_substrate(path: String) returns bool
+            path.contains(String("/scaly/memory/"))
+
+        function join(a: String, b: String) returns String
+        {
+            var sb StringBuilder()
+            sb.append a
+            sb.append b
+            sb.to_string()
+        }
+
+        ; The summary of one body under the callee summaries known so far.
+        procedure walk_body(this: WriteCensus, func: PlannedFunction) returns u64
+        {
+            choose func.impl
+                when action: Action
+                {
+                    this.enter_body(func)
+                    this.find_action(action)
+                    if frozen_pass
+                        if this.tail_frozen(action)
+                            this.mark_returns_frozen()
+                    return body_mask
+                }
+                else
+                    return 0
+        }
+
+        procedure enter_body(this: WriteCensus, func: PlannedFunction)
+        {
+            set cur_input: func.input
+            set cur_page: String^this("_rp")
+            if func.page_parameter <> null
+                set cur_page: String^this((*func.page_parameter))
+            set cur_name: String^this(func.name)
+            set cur_pure: func.pure
+            set cur_substrate: WriteCensus.in_substrate(func.file)
+            set body_mask: 0
+            set body_direct: false
+            set lock_depth: 0
+            set loc_names: Array[String]^this()
+            set loc_masks: Array[u64]^this()
+        }
+
+        ; The last walk: sites, and one `fn` line per writing pure function.
+        ; The last walk: one `fn`/`proc`/`init` line per body (`clean` or the
+        ; parameters it writes), and the sites of every writing function.
+        procedure report_body(this: WriteCensus, func: PlannedFunction, whole_mask: u64)
+        {
+            var is_body false
+            choose func.impl
+                when action: Action
+                    set is_body: true
+                else
+                    0
+            if is_body = false
+                return
+            let census pc as ref[PointerCensus]
+            let home census.resolve_body_file(func)
+            if home.get_length() = 0
+            {
+                set n_unfiled: n_unfiled + 1
+                return
+            }
+            set current_file: String^this(home)
+            set n_bodies: n_bodies + 1
+            ; an initializer writes its own NEW object (`this`, input 0)
+            var mask whole_mask
+            var kind: String "fn "
+            if func.name = "init"
+            {
+                set mask: mask & ((0 as u64) - (2 as u64))
+                set kind: "init "
+            }
+            else
+            {
+                if func.pure = false
+                    set kind: "proc "
+            }
+            if func.pure
+            {
+                if func.name <> "init"
+                    set n_pure: n_pure + 1
+            }
+            else
+                set n_proc: n_proc + 1
+            this.enter_body(func)
+            var sb StringBuilder()
+            sb.append kind
+            sb.append func.name
+            if mask = 0
+            {
+                sb.append " clean"
+                let clean_text sb.to_string()
+                this.record(func.loc.start, String^this(clean_text))
+                return
+            }
+            sb.append " writes "
+            sb.append(this.mask_names(mask))
+            if func.pure = false
+            {
+                set n_proc_writing: n_proc_writing + 1
+                let proc_text sb.to_string()
+                this.record(func.loc.start, String^this(proc_text))
+                return
+            }
+            this.walk_body(func)
+            if func.name <> "init"
+            {
+                set n_pure_writing: n_pure_writing + 1
+                if body_direct
+                    set n_pure_direct: n_pure_direct + 1
+            }
+            if body_direct
+                sb.append " direct"
+            else
+                sb.append " transitive"
+            let text sb.to_string()
+            this.record(func.loc.start, String^this(text))
+        }
+
+        procedure record(this: WriteCensus, offset: size_t, text: String)
+        {
+            report_files.add(String^this(current_file))
+            report_offsets.add offset
+            report_texts.add text
+        }
+
+        ; ================================================================
+        ; Parameters, locals and the mask of an operand.
+        ; ================================================================
+
+        function param_name(this: WriteCensus, i: size_t) returns String
+        {
+            if cur_input = null
+                return String("?")
+            let it_ptr cur_input.get i
+            if it_ptr = null
+                return String("?")
+            let it (*it_ptr)
+            if it.name = null
+                return String("this")
+            String((*it.name))
+        }
+
+        function param_type_name(this: WriteCensus, i: size_t) returns String
+        {
+            if cur_input = null
+                return String("")
+            let it_ptr cur_input.get i
+            if it_ptr = null
+                return String("")
+            let it (*it_ptr)
+            if it.item_type = null
+                return String("")
+            Planner.get_readable_name((*it.item_type))
+        }
+
+        ; `this:Box host:ref.Page global` for the bits of a mask.
+        function mask_names(this: WriteCensus, mask: u64) returns String
+        {
+            var sb StringBuilder()
+            var first true
+            var i: size_t 0
+            while i < 61
+            {
+                if (mask & ((1 as u64) << (i as u64))) <> (0 as u64)
+                {
+                    if first = false
+                        sb.append ","
+                    set first: false
+                    sb.append(this.param_name(i))
+                    sb.append ":"
+                    sb.append(this.param_type_name(i))
+                }
+                set i: i + 1
+            }
+            if (mask & WC_OVERFLOW) <> (0 as u64)
+            {
+                if first = false
+                    sb.append ","
+                set first: false
+                sb.append "param>61"
+            }
+            if (mask & WC_FROZEN) <> (0 as u64)
+            {
+                if first = false
+                    sb.append ","
+                set first: false
+                sb.append "frozen"
+            }
+            if (mask & WC_GLOBAL) <> (0 as u64)
+            {
+                if first = false
+                    sb.append ","
+                sb.append "global"
+            }
+            sb.to_string()
+        }
+
+        function is_scalar(t: PlannedType) returns bool
+        {
+            let n t.name
+            if n = "int"
+                return true
+            if n = "i8"
+                return true
+            if n = "i16"
+                return true
+            if n = "i32"
+                return true
+            if n = "i64"
+                return true
+            if n = "u8"
+                return true
+            if n = "u16"
+                return true
+            if n = "u32"
+                return true
+            if n = "u64"
+                return true
+            if n = "size_t"
+                return true
+            if n = "bool"
+                return true
+            if n = "char"
+                return true
+            if n = "float"
+                return true
+            if n = "double"
+                return true
+            if n = "f32"
+                return true
+            if n = "f64"
+                return true
+            if n = "void"
+                return true
+            false
+        }
+
+        ; The parameter bit of a name, or a local's inherited mask.
+        function name_mask(this: WriteCensus, name: String) returns u64
+        {
+            var li loc_names.length
+            while li > 0
+            {
+                set li: li - 1
+                let n loc_names.get li
+                if n <> null
+                    if (*n) = name
+                        return loc_masks[li]
+            }
+            if name = cur_page
+                return 0
+            if name = "_rp"
+                return 0
+            if cur_input = null
+                return 0
+            var i: size_t 0
+            while i < cur_input.length
+            {
+                if this.param_name(i) = name
+                {
+                    var fz: u64 0
+                    if this.param_is_frozen(i)
+                        set fz: WC_FROZEN
+                    if i >= 61
+                        return WC_OVERFLOW | fz
+                    return ((1 as u64) << (i as u64)) | fz
+                }
+                set i: i + 1
+            }
+            0
+        }
+
+        function param_is_frozen(this: WriteCensus, i: size_t) returns bool
+        {
+            if frozen_mode = false
+                return false
+            if cur_fn >= param_frozen.length
+                return false
+            if i >= 61
+                return (param_frozen[cur_fn] & WC_OVERFLOW) <> (0 as u64)
+            (param_frozen[cur_fn] & ((1 as u64) << (i as u64))) <> (0 as u64)
+        }
+
+        procedure remember_local(this: WriteCensus, name: String, mask: u64)
+        {
+            loc_names.add(String^this(name))
+            loc_masks.add mask
+        }
+
+        function mask_of_operands(this: WriteCensus, ops: ref[Vector[PlannedOperand]]?) returns u64
+        {
+            if ops = null
+                return 0
+            var m: u64 0
+            var i: size_t 0
+            while i < ops.length
+            {
+                let op_ptr ops.get i
+                if op_ptr <> null
+                    set m: m | this.mask_of(op_ptr.unwrap())
+                set i: i + 1
+            }
+            m
+        }
+
+        ; What an operand's value may alias: the parameters it reaches.
+        function mask_of(this: WriteCensus, op: PlannedOperand) returns u64
+        {
+            ; a scalar value aliases nothing (`i` in `data + i`)
+            if WriteCensus.is_scalar(op.result_type)
+                return 0
+            var fz this.hops_frozen(op)
+            if this.is_frozen_type(op.result_type)
+            {
+                var loaded false
+                if op.member_access <> null
+                    if op.member_access.length > 0
+                        set loaded: true
+                ; a reference read out of a field is whatever that field holds;
+                ; anything else is frozen by its PROVENANCE (value_frozen)
+                if loaded
+                    set fz: WC_FROZEN
+                else
+                    set fz: fz | this.value_frozen(op)
+            }
+            fz | this.mask_of_base(op)
+        }
+
+        ; The provenance of a frozen-typed value ignoring its member chain: a
+        ; construction is fresh, so is the result of a function all of whose
+        ; returns are fresh; a load through a pointer, an unknown callee and an
+        ; expression this pass does not follow are frozen. A variable answers
+        ; through name_mask (its parameter or its initializer).
+        function value_frozen(this: WriteCensus, op: PlannedOperand) returns u64
+        {
+            choose op.expr
+                when v: Variable
+                    return 0
+                when a: As
+                    return 0
+                when tp: Tuple
+                    return 0
+                when vc: VariantConstruction
+                    return 0
+                when bx: Box
+                    return 0
+                when c: Call
+                {
+                    if c.name = "*"
+                        return WC_FROZEN
+                    ; the address of a value has the value's provenance
+                    if c.name = "&"
+                    {
+                        if c.args = null
+                            return WC_FROZEN
+                        if c.args.length <> 1
+                            return WC_FROZEN
+                        let a_ptr c.args.get 0
+                        if a_ptr = null
+                            return WC_FROZEN
+                        let inner a_ptr.unwrap()
+                        return this.value_frozen(inner) | (this.mask_of(inner) & WC_FROZEN)
+                    }
+                    let slot this.callee_index(c.mangled_name)
+                    if slot = 0
+                        return WC_FROZEN
+                    let callee_ptr plan_functions.get(slot - 1)
+                    if callee_ptr = null
+                        return WC_FROZEN
+                    if callee_ptr.unwrap().name = "init"
+                        return 0
+                    if (slot - 1) >= returns_fresh.length
+                        return WC_FROZEN
+                    if returns_fresh[slot - 1] <> 0
+                        return 0
+                    return WC_FROZEN
+                }
+                else
+                    return WC_FROZEN
+        }
+
+        function mask_of_base(this: WriteCensus, op: PlannedOperand) returns u64
+        {
+            choose op.expr
+                when v: Variable
+                    return this.name_mask(v.name)
+                when g: GlobalRef
+                    return WC_GLOBAL
+                when a: As
+                {
+                    if a.value = null
+                        return 0
+                    let r a.value
+                    return this.mask_of((*r))
+                }
+                when c: Call
+                {
+                    if c.args = null
+                        return 0
+                    if c.name = "*"
+                        return this.mask_of_operands(c.args)
+                    ; what C hands back is C's, not an alias of an argument
+                    let census pc as ref[PointerCensus]
+                    if census.is_extern_name(c.name)
+                        return 0
+                    if WriteCensus.is_scalar(op.result_type)
+                        if op.member_access = null
+                            return 0
+                    ; a call result may alias its arguments' PARAMETERS, but
+                    ; whether it is frozen is decided by its OWN type (mask_of):
+                    ; `node_link_of(node)` answers the checker's row, not the node
+                    return this.mask_of_operands(c.args) & (0 - (WC_FROZEN + (1 as u64)))
+                }
+                when tp: Tuple
+                {
+                    var m: u64 0
+                    if tp.components <> null
+                    {
+                        var i: size_t 0
+                        while i < tp.components.length
+                        {
+                            let c_ptr tp.components.get i
+                            if c_ptr <> null
+                                set m: m | this.mask_of_operands(c_ptr.value)
+                            set i: i + 1
+                        }
+                    }
+                    return m
+                }
+                else
+                    return 0
+        }
+
+        ; ================================================================
+        ; Sites.
+        ; ================================================================
+
+        procedure hit(this: WriteCensus, offset: size_t, cls: String, whole_mask: u64, detail: String)
+        {
+            ; an initializer's own `this` is the object it builds
+            var mask whole_mask
+            if cur_name = "init"
+            {
+                ; its own `this` -- and so the frozen mark that came with it
+                if (mask & (1 as u64)) <> (0 as u64)
+                    set mask: mask & (0 - (WC_FROZEN + (1 as u64)))
+                set mask: mask & ((0 as u64) - (2 as u64))
+            }
+            if cur_substrate
+                set mask: mask & (WC_GLOBAL - (1 as u64))
+            if mask = 0
+                return
+            set body_mask: body_mask | mask
+            if cls <> "w-call"
+                set body_direct: true
+            if reporting = false
+                return
+            if frozen_mode
+            {
+                if (mask & WC_FROZEN) = 0
+                    return
+                set n_frozen_sites: n_frozen_sites + 1
+                if lock_depth > 0
+                    set n_locked_sites: n_locked_sites + 1
+            }
+            var sb StringBuilder()
+            sb.append cls
+            sb.append " "
+            sb.append cur_name
+            sb.append " writes "
+            sb.append(this.mask_names(mask))
+            if detail.get_length() > 0
+            {
+                sb.append " "
+                sb.append detail
+            }
+            if frozen_mode
+                if lock_depth > 0
+                    sb.append " locked"
+            let text sb.to_string()
+            this.record(offset, String^this(text))
+            set n_sites: n_sites + 1
+        }
+
+        ; The page a Reference lifetime names, as a mask.
+        procedure note_life(this: WriteCensus, offset: size_t, life: Lifetime, cls: String)
+        {
+            choose life
+                when r: Reference
+                    this.hit(offset, cls, this.name_mask(r.location), WriteCensus.join("^", r.location))
+                else
+                    0
+        }
+
+        ; The index + 1 of a callee in plan.functions (0: none), read off the
+        ; pointer census's table, which prefers a body over a stub.
+        function callee_index(this: WriteCensus, mangled: String) returns size_t
+        {
+            if plan_functions = null
+                return 0
+            if mangled.get_length() = 0
+                return 0
+            let census pc as ref[PointerCensus]
+            let mask (262144 as size_t) - 1
+            var h mangled.hash() & mask
+            var probes: size_t 0
+            while probes < mask
+            {
+                let slot_ptr census.fn_slots.get h
+                if slot_ptr = null
+                    return 0
+                let slot (*slot_ptr)
+                if slot = 0
+                    return 0
+                let cand plan_functions.get(slot - 1)
+                if cand <> null
+                    if cand.unwrap().mangled_name = mangled
+                        return slot
+                set h: (h + 1) & mask
+                set probes: probes + 1
+            }
+            0
+        }
+
+        ; A call: the callee's body in this root, else a summary another
+        ; root wrote (SCALYC_WRITE_SUMMARIES), else a real C extern.
+        procedure note_call(this: WriteCensus, op: PlannedOperand, call: PlannedCall)
+        {
+            if call.name = "enter_shared"
+                set lock_depth: lock_depth + 1
+            if call.name = "leave_shared"
+                set lock_depth: lock_depth - 1
+            this.note_life(op.loc.start, call.life, String("a-construct"))
+            let slot this.callee_index(call.mangled_name)
+            if edge_mode
+            {
+                if slot > 0
+                {
+                    if lock_depth <= 0
+                    {
+                        if reach[slot - 1] = 0
+                        {
+                            reach.put(slot - 1, 1)
+                            queue.add(slot - 1)
+                        }
+                    }
+                }
+            }
+            if frozen_pass
+                this.pass_frozen_args(call, slot)
+            if call.args = null
+                return
+            var stub false
+            if slot > 0
+            {
+                let stub_ptr plan_functions.get(slot - 1)
+                if stub_ptr <> null
+                {
+                    choose stub_ptr.unwrap().impl
+                        when e: Extern
+                            set stub: true
+                        else
+                            0
+                }
+            }
+            if slot > 0
+            {
+                if stub = false
+                {
+                    let callee_ptr plan_functions.get(slot - 1)
+                    if callee_ptr = null
+                        return
+                    let callee callee_ptr.unwrap()
+                    var n_in: size_t 0
+                    if callee.input <> null
+                        set n_in: callee.input.length
+                    this.apply_callee(op, call, masks[slot - 1], callee.name, n_in)
+                    return
+                }
+            }
+            if call.is_intrinsic
+                return
+            if call.is_operator
+                return
+            let census pc as ref[PointerCensus]
+            if census.is_extern_name(call.name)
+            {
+                this.note_extern_call(op, call)
+                return
+            }
+            ; a Scaly body of ANOTHER package: its own root's verdict
+            let row this.summary_index(call.mangled_name)
+            if row = 0
+            {
+                if stub
+                    set n_stub_unknown: n_stub_unknown + 1
+                return
+            }
+            set n_stub_known: n_stub_known + 1
+            this.apply_callee(op, call, sum_masks[row - 1], call.name, sum_inputs[row - 1])
+        }
+
+        ; The written parameters of a callee, mapped onto this call's arguments.
+        procedure apply_callee(this: WriteCensus, op: PlannedOperand, call: PlannedCall, callee_mask: u64, callee_name: String, n_in: size_t)
+        {
+            if callee_mask = 0
+                return
+            if call.args = null
+                return
+            ; a construction passes no receiver while its initializer's
+            ; input starts with `this` -- the NEW object, never a write
+            ; to anything the caller holds
+            var shift: size_t 0
+            if callee_name = "init"
+                if n_in = call.args.length + 1
+                    set shift: 1
+            if n_in <> call.args.length + shift
+            {
+                set n_misaligned: n_misaligned + 1
+                if reporting
+                    this.record(op.loc.start, String^this(WriteCensus.join("misaligned -> ", callee_name)))
+            }
+            var m: u64 callee_mask & WC_GLOBAL
+            var i: size_t 0
+            while i < call.args.length
+            {
+                let pi i + shift
+                var bit: u64 WC_OVERFLOW
+                if pi < 61
+                    set bit: (1 as u64) << (pi as u64)
+                if (callee_mask & bit) <> (0 as u64)
+                {
+                    let a_ptr call.args.get i
+                    if a_ptr <> null
+                        set m: m | this.mask_of(a_ptr.unwrap())
+                }
+                set i: i + 1
+            }
+            this.hit(op.loc.start, String("w-call"), m, WriteCensus.join("-> ", callee_name))
+        }
+
+        ; ================================================================
+        ; The FROZEN mode (SCALYC_WRITE_FROZEN + SCALYC_WRITE_ENTRY): which
+        ; writes reach data of a type that is shared once a phase is over --
+        ; tscaly's AST, symbols and binders after binding -- in everything
+        ; reachable from the entries, procedures included. A value reaches
+        ; frozen data when its type, or the parent of any hop of its member
+        ; chain, is frozen: DEEP, so a container held in a frozen record is
+        ; frozen too. Calls made between `enter_shared()` and
+        ; `leave_shared()` are tagged `locked` and not followed.
+        ; ================================================================
+
+        ; `a,b,*Data` -> patterns; exact, `*Suffix` or `Prefix*`.
+        procedure split_list(this: WriteCensus, text: String, into: ref[Array[String]])
+        {
+            let n text.get_length()
+            var start: size_t 0
+            var i: size_t 0
+            while i <= n
+            {
+                var cut false
+                if i = n
+                    set cut: true
+                else
+                {
+                    if text.get(i) = 44
+                        set cut: true
+                }
+                if cut
+                {
+                    if i > start
+                        into.add(String^this(text.substring(start, i - start)))
+                    set start: i + 1
+                }
+                set i: i + 1
+            }
+        }
+
+        procedure load_frozen(this: WriteCensus)
+        {
+            let fz getenv("SCALYC_WRITE_FROZEN")
+            let en getenv("SCALYC_WRITE_ENTRY")
+            if fz = null
+                return
+            if en = null
+                return
+            this.split_list(String(fz), &frozen_names)
+            this.split_list(String(en), &entry_names)
+            set frozen_mode: true
+        }
+
+        ; The concept a (possibly Option/ref/pointer-wrapped) type names,
+        ; last dotted segment only.
+        function core_name(t: PlannedType) returns String
+        {
+            var cur t
+            var depth 0
+            while depth < 4
+            {
+                var peeled false
+                if (cur.name = "Option") or (cur.name = "ref") or (cur.name = "pointer")
+                {
+                    if cur.generics <> null
+                    {
+                        if cur.generics.length = 1
+                        {
+                            let g_ptr cur.generics.get 0
+                            if g_ptr <> null
+                            {
+                                set cur: g_ptr.unwrap()
+                                set peeled: true
+                            }
+                        }
+                    }
+                }
+                if peeled = false
+                    break
+                set depth: depth + 1
+            }
+            let dot cur.name.last_index_of(46)
+            if dot < 0
+                return String(cur.name)
+            let start (dot + 1) as size_t
+            cur.name.substring(start, cur.name.get_length() - start)
+        }
+
+        ; A VALUE reaches frozen memory when it is a reference (ref/pointer,
+        ; optional or not) to a frozen record -- exactly one indirection. A
+        ; slot (`pointer[ref[AstNode]]`) is the holder's memory, and a record
+        ; held BY VALUE is a copy.
+        function is_frozen_type(this: WriteCensus, t: PlannedType) returns bool
+        {
+            if frozen_mode = false
+                return false
+            var cur t
+            if cur.name = "Option"
+                set cur: WriteCensus.first_generic(cur)
+            if (cur.name <> "ref") and (cur.name <> "pointer")
+                return false
+            let inner WriteCensus.first_generic(cur)
+            if (inner.name = "ref") or (inner.name = "pointer") or (inner.name = "Option")
+                return false
+            this.is_frozen_record(inner)
+        }
+
+        function first_generic(t: PlannedType) returns PlannedType
+        {
+            if t.generics = null
+                return t
+            if t.generics.length <> 1
+                return t
+            let g_ptr t.generics.get 0
+            if g_ptr = null
+                return t
+            g_ptr.unwrap()
+        }
+
+        ; The record itself is frozen (a hop's parent: the memory a member
+        ; access reads or writes in place).
+        function is_frozen_record(this: WriteCensus, t: PlannedType) returns bool
+        {
+            if frozen_mode = false
+                return false
+            let n WriteCensus.core_name(t)
+            if n.get_length() = 0
+                return false
+            var i: size_t 0
+            while i < frozen_names.length
+            {
+                let p frozen_names[i]
+                let k p.get_length()
+                if p = n
+                    return true
+                if k > 1
+                {
+                    if p.get(0) = 42
+                    {
+                        if n.ends_with(p.substring(1, k - 1))
+                            return true
+                    }
+                    if p.get(k - 1) = 42
+                    {
+                        if n.starts_with(p.substring(0, k - 1))
+                            return true
+                    }
+                }
+                set i: i + 1
+            }
+            false
+        }
+
+        ; FROZEN when any hop of the operand's member chain leaves a frozen record.
+        function hops_frozen(this: WriteCensus, op: PlannedOperand) returns u64
+        {
+            if frozen_mode = false
+                return 0
+            if op.member_access = null
+                return 0
+            ; the first hop writes the BASE's own memory: frozen only when the base
+            ; value is (a record local held BY VALUE is a copy; a fresh object or a
+            ; parameter no caller hands frozen data is the caller's own)
+            var i: size_t 0
+            choose op.expr
+                when v: Variable
+                {
+                    if this.is_by_value_local(v)
+                        set i: 1
+                    else
+                    {
+                        if (this.name_mask(v.name) & WC_FROZEN) = 0
+                            set i: 1
+                    }
+                }
+                when c: Call
+                {
+                    if this.value_frozen(op) = 0
+                        set i: 1
+                }
+                else
+                    0
+            while i < op.member_access.length
+            {
+                let h_ptr op.member_access.get i
+                if h_ptr <> null
+                    if this.is_frozen_record(h_ptr.unwrap().parent_type)
+                        return WC_FROZEN
+                set i: i + 1
+            }
+            0
+        }
+
+        function is_reference_name(n: String) returns bool
+        {
+            if n = "ref"
+                return true
+            if n = "pointer"
+                return true
+            n = "Option"
+        }
+
+        function is_by_value_local(this: WriteCensus, v: PlannedVariable) returns bool
+        {
+            let t v.variable_type
+            if (t.name = "ref") or (t.name = "pointer") or (t.name = "Option")
+                return false
+            var li loc_names.length
+            while li > 0
+            {
+                set li: li - 1
+                let n loc_names.get li
+                if n <> null
+                    if (*n) = v.name
+                        return true
+            }
+            false
+        }
+
+        ; `Checker.get_diagnostics` for a method, the bare name otherwise.
+        function entry_key(this: WriteCensus, func: PlannedFunction) returns String
+        {
+            if func.input <> null
+            {
+                if func.input.length > 0
+                {
+                    let it_ptr func.input.get 0
+                    if it_ptr <> null
+                    {
+                        let it it_ptr.unwrap()
+                        var is_this true
+                        if it.name <> null
+                            set is_this: (*it.name) = "this"
+                        if is_this
+                        {
+                            if it.item_type <> null
+                            {
+                                var sb StringBuilder()
+                                sb.append(WriteCensus.core_name((*it.item_type)))
+                                sb.append "."
+                                sb.append func.name
+                                return sb.to_string()
+                            }
+                        }
+                    }
+                }
+            }
+            String(func.name)
+        }
+
+        function is_entry(this: WriteCensus, func: PlannedFunction) returns bool
+        {
+            let key this.entry_key(func)
+            var i: size_t 0
+            while i < entry_names.length
+            {
+                if entry_names[i] = key
+                    return true
+                set i: i + 1
+            }
+            false
+        }
+
+        procedure mark_returns_frozen(this: WriteCensus)
+        {
+            if cur_fn >= returns_fresh.length
+                return
+            if returns_fresh[cur_fn] = 0
+                return
+            returns_fresh.put(cur_fn, 0)
+            set fz_changed: true
+        }
+
+        ; Is the value a body ends with (its tail expression) frozen? Follows a
+        ; block to its last statement and both arms of an `if`.
+        function tail_frozen(this: WriteCensus, act: PlannedAction) returns bool
+        {
+            if act.target <> null
+                return false
+            if act.source = null
+                return false
+            if act.source.length = 0
+                return false
+            let last_ptr act.source.get(act.source.length - 1)
+            if last_ptr = null
+                return false
+            let last last_ptr.unwrap()
+            choose last.expr
+                when blk: Block
+                {
+                    if blk.statements = null
+                        return false
+                    if blk.statements.length = 0
+                        return false
+                    let s_ptr blk.statements.get(blk.statements.length - 1)
+                    if s_ptr = null
+                        return false
+                    return this.statement_tail_frozen(s_ptr)
+                }
+                when iff: If
+                {
+                    if this.statement_tail_frozen(iff.consequent)
+                        return true
+                    return this.statement_tail_frozen(iff.alternative)
+                }
+                else
+                    return (this.mask_of(last) & WC_FROZEN) <> (0 as u64)
+        }
+
+        function statement_tail_frozen(this: WriteCensus, stmt: ref[PlannedStatement]?) returns bool
+        {
+            if stmt = null
+                return false
+            let st stmt as ref[PlannedStatement]
+            choose st
+                when a: Action
+                    return this.tail_frozen(a)
+                else
+                    return false
+        }
+
+        ; A call hands frozen data to the callee's parameters it fills.
+        procedure pass_frozen_args(this: WriteCensus, call: PlannedCall, slot: size_t)
+        {
+            if slot = 0
+                return
+            if call.args = null
+                return
+            let callee_ptr plan_functions.get(slot - 1)
+            if callee_ptr = null
+                return
+            let callee callee_ptr.unwrap()
+            var n_in: size_t 0
+            if callee.input <> null
+                set n_in: callee.input.length
+            var shift: size_t 0
+            if callee.name = "init"
+                if n_in = call.args.length + 1
+                    set shift: 1
+            let idx slot - 1
+            if idx >= param_frozen.length
+                return
+            var bits param_frozen[idx]
+            var i: size_t 0
+            while i < call.args.length
+            {
+                let a_ptr call.args.get i
+                if a_ptr <> null
+                {
+                    if (this.mask_of(a_ptr.unwrap()) & WC_FROZEN) <> (0 as u64)
+                    {
+                        let pi i + shift
+                        var bit: u64 WC_OVERFLOW
+                        if pi < 61
+                            set bit: (1 as u64) << (pi as u64)
+                        set bits: bits | bit
+                    }
+                }
+                set i: i + 1
+            }
+            if bits <> param_frozen[idx]
+            {
+                param_frozen.put(idx, bits)
+                set fz_changed: true
+            }
+        }
+
+        ; The entries' parameters are frozen by their TYPE.
+        function entry_param_bits(this: WriteCensus, func: PlannedFunction) returns u64
+        {
+            if func.input = null
+                return 0
+            var bits: u64 0
+            var i: size_t 0
+            while i < func.input.length
+            {
+                let it_ptr func.input.get i
+                if it_ptr <> null
+                {
+                    let it it_ptr.unwrap()
+                    if it.item_type <> null
+                    {
+                        if this.is_frozen_type((*it.item_type))
+                        {
+                            if i < 61
+                                set bits: bits | ((1 as u64) << (i as u64))
+                            else
+                                set bits: bits | WC_OVERFLOW
+                        }
+                    }
+                }
+                set i: i + 1
+            }
+            bits
+        }
+
+        ; Breadth-first over the call edges from the entries (edge_mode walks),
+        ; then the sites of every reachable body.
+        procedure report_frozen(this: WriteCensus)
+        {
+            let fns plan_functions as ref[Vector[PlannedFunction]]
+            var i: size_t 0
+            while i < fns.length
+            {
+                reach.add(0)
+                let f_ptr fns.get i
+                if f_ptr <> null
+                {
+                    if this.is_entry(f_ptr.unwrap())
+                    {
+                        reach.put(i, 1)
+                        queue.add i
+                    }
+                }
+                set i: i + 1
+            }
+            set edge_mode: true
+            var head: size_t 0
+            while head < queue.length
+            {
+                let idx queue[head]
+                set head: head + 1
+                set cur_fn: idx
+                let f_ptr fns.get idx
+                if f_ptr <> null
+                    this.walk_body(f_ptr.unwrap())
+            }
+            set edge_mode: false
+            ; provenance: parameters by their callers, results by their returns
+            set i: 0
+            while i < fns.length
+            {
+                var bits: u64 0
+                let f_ptr fns.get i
+                if f_ptr <> null
+                    if this.is_entry(f_ptr.unwrap())
+                        set bits: this.entry_param_bits(f_ptr.unwrap())
+                param_frozen.add bits
+                returns_fresh.add 1
+                set i: i + 1
+            }
+            set frozen_pass: true
+            set fz_changed: true
+            while fz_changed
+            {
+                set fz_changed: false
+                set n_fz_rounds: n_fz_rounds + 1
+                var r: size_t 0
+                while r < queue.length
+                {
+                    let idx queue[r]
+                    set r: r + 1
+                    set cur_fn: idx
+                    let f_ptr fns.get idx
+                    if f_ptr <> null
+                        this.walk_body(f_ptr.unwrap())
+                }
+                if n_fz_rounds >= 60
+                    set fz_changed: false
+            }
+            set frozen_pass: false
+            set reporting: true
+            set n_reachable: queue.length
+            var q: size_t 0
+            while q < queue.length
+            {
+                let idx queue[q]
+                set q: q + 1
+                let f_ptr fns.get idx
+                if f_ptr <> null
+                {
+                    let func f_ptr.unwrap()
+                    let census pc as ref[PointerCensus]
+                    let home census.resolve_body_file(func)
+                    if home.get_length() > 0
+                    {
+                        set current_file: String^this(home)
+                        set cur_fn: idx
+                        this.walk_body(func)
+                    }
+                    else
+                        set n_unfiled: n_unfiled + 1
+                }
+            }
+        }
+
+        ; ================================================================
+        ; Summaries across roots: `<mangled>\t<mask>\t<inputs>` per line.
+        ; A root reads what the roots before it wrote and appends its own
+        ; bodies, so a dependency's verdict reaches the packages that call
+        ; it (tools/write-report.sh runs the roots in dependency order).
+        ; ================================================================
+
+        function summary_index(this: WriteCensus, mangled: String) returns size_t
+        {
+            if mangled.get_length() = 0
+                return 0
+            let mask (262144 as size_t) - 1
+            var h mangled.hash() & mask
+            var probes: size_t 0
+            while probes < mask
+            {
+                let slot sum_slots[h]
+                if slot = 0
+                    return 0
+                if sum_names[slot - 1] = mangled
+                    return slot
+                set h: (h + 1) & mask
+                set probes: probes + 1
+            }
+            0
+        }
+
+        ; `mangled` must already live on this pass's page (String^this at the
+        ; call): the escape checker reads a callee that stores its argument
+        ; as storing the caller's local, as in PointerCensus.record.
+        procedure add_summary(this: WriteCensus, mangled: String, m: u64, n_in: size_t)
+        {
+            if sum_names.length * 2 >= (262144 as size_t)
+                return
+            if this.summary_index(mangled) > 0
+                return
+            sum_names.add mangled
+            sum_masks.add m
+            sum_inputs.add n_in
+            let mask (262144 as size_t) - 1
+            var h mangled.hash() & mask
+            while sum_slots[h] <> 0
+                set h: (h + 1) & mask
+            sum_slots.put(h, sum_names.length)
+        }
+
+        procedure load_summaries(this: WriteCensus)
+        {
+            let env getenv("SCALYC_WRITE_SUMMARIES")
+            if env = null
+                return
+            set summaries_path: String^this(env)
+            if File.exists(summaries_path) = false
+                return
+            let text File.read_to_string(summaries_path)
+            let n text.get_length()
+            var i: size_t 0
+            while i < n
+            {
+                var name StringBuilder()
+                while i < n
+                {
+                    let c text.get i
+                    if c = 9
+                        break
+                    name.append(c as char)
+                    set i: i + 1
+                }
+                set i: i + 1
+                var m: u64 0
+                while i < n
+                {
+                    let c text.get i
+                    if (c < 48) or (c > 57)
+                        break
+                    set m: (m * 10) + ((c - 48) as u64)
+                    set i: i + 1
+                }
+                set i: i + 1
+                var k: size_t 0
+                while i < n
+                {
+                    let c text.get i
+                    if (c < 48) or (c > 57)
+                        break
+                    set k: (k * 10) + ((c - 48) as size_t)
+                    set i: i + 1
+                }
+                while i < n
+                {
+                    let c text.get i
+                    set i: i + 1
+                    if c = 10
+                        break
+                }
+                let name_text name.to_string()
+                this.add_summary(String^this(name_text), m, k)
+            }
+        }
+
+        ; Append this root's bodies and write the whole table back.
+        procedure save_summaries(this: WriteCensus)
+        {
+            if summaries_path.get_length() = 0
+                return
+            if plan_functions = null
+                return
+            let fns plan_functions as ref[Vector[PlannedFunction]]
+            var i: size_t 0
+            while i < fns.length
+            {
+                let f_ptr fns.get i
+                if f_ptr <> null
+                {
+                    let f f_ptr.unwrap()
+                    var is_body false
+                    choose f.impl
+                        when action: Action
+                            set is_body: true
+                        else
+                            0
+                    if is_body
+                    {
+                        var n_in: size_t 0
+                        if f.input <> null
+                            set n_in: f.input.length
+                        this.add_summary(String^this(f.mangled_name), masks[i], n_in)
+                    }
+                }
+                set i: i + 1
+            }
+            var sb StringBuilder()
+            var r: size_t 0
+            while r < sum_names.length
+            {
+                sb.append(sum_names[r])
+                sb.append("\t" as char)
+                sb.append(sum_masks[r] as size_t)
+                sb.append("\t" as char)
+                sb.append(sum_inputs[r])
+                sb.append("\n" as char)
+                set r: r + 1
+            }
+            let out_text sb.to_string()
+            File.write_from_string(summaries_path, out_text)
+        }
+
+        ; The argument positions a C function writes, from its documented
+        ; contract; every extern NOT named here writes all of them (the LLVM-C
+        ; API mutates through every handle it is given).
+        function extern_writes(name: String) returns u64
+        {
+            if name = "memcpy"
+                return 1
+            if name = "memmove"
+                return 1
+            if name = "memset"
+                return 1
+            if name = "fread"
+                return 9
+            if name = "fwrite"
+                return 8
+            if name = "memcmp"
+                return 0
+            if name = "strlen"
+                return 0
+            if name = "strcmp"
+                return 0
+            if name = "strncmp"
+                return 0
+            if name = "strdup"
+                return 0
+            if name = "access"
+                return 0
+            if name = "fopen"
+                return 0
+            if name = "mkdir"
+                return 0
+            if name = "rmdir"
+                return 0
+            if name = "opendir"
+                return 0
+            if name = "getenv"
+                return 0
+            if name = "atoll"
+                return 0
+            if name = "write"
+                return 0
+            if name = "puts"
+                return 0
+            if name = "scaly_eputs"
+                return 0
+            0 - (1 as u64)
+        }
+
+        ; The written arguments of an extern call, non-scalar ones only.
+        procedure note_extern_call(this: WriteCensus, op: PlannedOperand, call: PlannedCall)
+        {
+            if call.args = null
+                return
+            let written WriteCensus.extern_writes(call.name)
+            var m: u64 0
+            var i: size_t 0
+            while i < call.args.length
+            {
+                var bit: u64 WC_OVERFLOW
+                if i < 61
+                    set bit: (1 as u64) << (i as u64)
+                let a_ptr call.args.get i
+                if a_ptr <> null
+                {
+                    let a a_ptr.unwrap()
+                    if (written & bit) <> (0 as u64)
+                        if WriteCensus.is_scalar(a.result_type) = false
+                            set m: m | this.mask_of(a)
+                }
+                set i: i + 1
+            }
+            this.hit(op.loc.start, String("w-extern"), m, WriteCensus.join("-> ", call.name))
+        }
+
+        ; ================================================================
+        ; Bodies: the TaskPlanner's closed arm list, as the pointer census.
+        ; ================================================================
+
+        procedure find_operands(this: WriteCensus, ops: ref[Vector[PlannedOperand]]?)
+        {
+            if ops = null
+                return
+            var i: size_t 0
+            while i < ops.length
+            {
+                let op_ptr ops.get i
+                if op_ptr <> null
+                    this.find_operand(op_ptr.unwrap())
+                set i: i + 1
+            }
+        }
+
+        procedure find_statement_ref(this: WriteCensus, stmt: ref[PlannedStatement]?)
+        {
+            if stmt <> null
+            {
+                let s stmt
+                this.find_statement((*s))
+            }
+        }
+
+        ; The store side of a `set`: the target head decides the class.
+        procedure find_action(this: WriteCensus, act: PlannedAction)
+        {
+            this.find_operands(act.source)
+            if act.target = null
+                return
+            if act.target.length > 0
+            {
+                let head_ptr act.target.get 0
+                if head_ptr <> null
+                {
+                    let head (*head_ptr)
+                    var has_members false
+                    if head.member_access <> null
+                        if head.member_access.length > 0
+                            set has_members: true
+                    choose head.expr
+                        when c: Call
+                        {
+                            if has_members
+                            {
+                                ; the call's own result is the record written;
+                                ; its arguments only lend their parameters
+                                let base_mask this.mask_of_operands(c.args) & (0 - (WC_FROZEN + (1 as u64)))
+                                this.hit(head.loc.start, String("w-field"), base_mask | this.hops_frozen(head), String(""))
+                            }
+                            else
+                            {
+                                if c.name = "*"
+                                    this.hit(head.loc.start, String("w-deref"), this.mask_of_operands(c.args), String(""))
+                            }
+                        }
+                        when v: Variable
+                        {
+                            if has_members
+                                this.hit(head.loc.start, String("w-field"), this.name_mask(v.name) | this.hops_frozen(head), String(""))
+                        }
+                        when g: GlobalRef
+                            this.hit(head.loc.start, String("w-global"), WC_GLOBAL, String(g.name))
+                        else
+                        {
+                            if has_members
+                                this.hit(head.loc.start, String("w-field"), this.mask_of(head) | this.hops_frozen(head), String(""))
+                        }
+                }
+            }
+            this.find_operands(act.target)
+        }
+
+        procedure find_statement(this: WriteCensus, stmt: PlannedStatement)
+        {
+            choose stmt
+                when action: Action
+                    this.find_action(action)
+                when binding: Binding
+                    this.note_binding(binding)
+                when ret: Return
+                {
+                    this.find_operands(ret.result)
+                    if frozen_pass
+                        if (this.mask_of_operands(ret.result) & WC_FROZEN) <> (0 as u64)
+                            this.mark_returns_frozen()
+                }
+                when throw_stmt: Throw
+                    this.find_operands(throw_stmt.result)
+                when brk: Break
+                    this.find_operands(brk.result)
+                when cont: Continue
+                    0
+        }
+
+        ; A local inherits what its initializer reaches, unless it is a scalar.
+        procedure note_binding(this: WriteCensus, binding: PlannedBinding)
+        {
+            this.find_operands(binding.operation)
+            if binding.binding_item.name = null
+                return
+            let name (*binding.binding_item.name)
+            var scalar false
+            if binding.binding_item.item_type <> null
+                set scalar: WriteCensus.is_scalar((*binding.binding_item.item_type))
+            else
+            {
+                if binding.operation <> null
+                {
+                    if binding.operation.length = 1
+                    {
+                        let o_ptr binding.operation.get 0
+                        if o_ptr <> null
+                            set scalar: WriteCensus.is_scalar(o_ptr.unwrap().result_type)
+                    }
+                }
+            }
+            var m: u64 0
+            if scalar = false
+                set m: this.mask_of_operands(binding.operation)
+            ; a frozen RECORD bound by value is a copy
+            if binding.binding_item.item_type <> null
+            {
+                let bt (*binding.binding_item.item_type)
+                if WriteCensus.is_reference_name(bt.name) = false
+                    if this.is_frozen_record(bt)
+                        set m: m & (0 - (WC_FROZEN + (1 as u64)))
+            }
+            this.remember_local(name, m)
+        }
+
+        procedure find_operand(this: WriteCensus, op: PlannedOperand)
+        {
+            choose op.expr
+                when call: Call
+                {
+                    this.note_call(op, call)
+                    this.find_operands(call.args)
+                }
+                when as_expr: As
+                {
+                    if as_expr.value <> null
+                    {
+                        let r as_expr.value
+                        this.find_operand((*r))
+                    }
+                }
+                when is_expr: Is
+                {
+                    if is_expr.value <> null
+                    {
+                        let r is_expr.value
+                        this.find_operand((*r))
+                    }
+                }
+                when tp: Tuple
+                {
+                    if tp.is_region_alloc
+                    {
+                        if tp.region_arg <> null
+                        {
+                            let ra tp.region_arg
+                            this.hit(op.loc.start, String("a-construct"), this.mask_of((*ra)), String("region"))
+                        }
+                    }
+                    this.note_life(op.loc.start, tp.life, String("a-construct"))
+                    if tp.components <> null
+                    {
+                        var i: size_t 0
+                        while i < tp.components.length
+                        {
+                            let c_ptr tp.components.get i
+                            if c_ptr <> null
+                                this.find_operands(c_ptr.value)
+                            set i: i + 1
+                        }
+                    }
+                }
+                when blk: Block
+                {
+                    if blk.statements <> null
+                    {
+                        var i: size_t 0
+                        while i < blk.statements.length
+                        {
+                            let s_ptr blk.statements.get i
+                            if s_ptr <> null
+                                this.find_statement(s_ptr.unwrap())
+                            set i: i + 1
+                        }
+                    }
+                }
+                when iff: If
+                {
+                    this.find_operands(iff.condition)
+                    this.find_statement_ref(iff.consequent)
+                    this.find_statement_ref(iff.alternative)
+                }
+                when mt: Match
+                {
+                    this.find_operands(mt.condition)
+                    if mt.branches <> null
+                    {
+                        var i: size_t 0
+                        while i < mt.branches.length
+                        {
+                            let br_ptr mt.branches.get i
+                            if br_ptr <> null
+                            {
+                                let br (*br_ptr)
+                                this.find_statement_ref(br.consequent)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.find_statement_ref(mt.alternative)
+                }
+                when ch: Choose
+                {
+                    this.find_operands(ch.condition)
+                    let subject this.mask_of_operands(ch.condition)
+                    if ch.cases <> null
+                    {
+                        var i: size_t 0
+                        while i < ch.cases.length
+                        {
+                            let w_ptr ch.cases.get i
+                            if w_ptr <> null
+                            {
+                                let w (*w_ptr)
+                                var m: u64 0
+                                if WriteCensus.is_scalar(w.variant_type) = false
+                                    set m: subject
+                                if WriteCensus.is_reference_name(w.variant_type.name) = false
+                                    if this.is_frozen_record(w.variant_type)
+                                        set m: m & (0 - (WC_FROZEN + (1 as u64)))
+                                this.remember_local(w.name, m)
+                                this.find_statement_ref(w.consequent)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.find_statement_ref(ch.alternative)
+                }
+                when fr: For
+                {
+                    this.find_operands(fr.expr)
+                    this.remember_local(fr.identifier, this.mask_of_operands(fr.expr))
+                    this.find_action(fr.body)
+                }
+                when wh: While
+                {
+                    this.note_binding(wh.cond)
+                    this.find_action(wh.body)
+                }
+                when rp: Repeat
+                    this.find_action(rp.body)
+                when tr: Try
+                {
+                    this.note_binding(tr.cond)
+                    if tr.catches <> null
+                    {
+                        var i: size_t 0
+                        while i < tr.catches.length
+                        {
+                            let w_ptr tr.catches.get i
+                            if w_ptr <> null
+                            {
+                                let w (*w_ptr)
+                                this.find_statement_ref(w.consequent)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.find_statement_ref(tr.alternative)
+                }
+                when vc: VariantConstruction
+                {
+                    if vc.value <> null
+                    {
+                        let r vc.value
+                        this.find_operand((*r))
+                    }
+                }
+                when mx: Matrix
+                {
+                    this.note_life(op.loc.start, mx.life, String("a-construct"))
+                    if mx.operations <> null
+                    {
+                        var i: size_t 0
+                        while i < mx.operations.length
+                        {
+                            let row_ptr mx.operations.get i
+                            if row_ptr <> null
+                                this.find_operands(row_ptr)
+                            set i: i + 1
+                        }
+                    }
+                }
+                when bx: Box
+                {
+                    this.hit(op.loc.start, String("a-box"), this.name_mask(bx.target_page), WriteCensus.join("^", bx.target_page))
+                    if bx.value <> null
+                    {
+                        let r bx.value
+                        this.find_operand((*r))
+                    }
+                }
+                else
+                    0
+        }
+    }
+}

@@ -27,6 +27,7 @@ use scalyc.compiler.Model.Program
 use scalyc.compiler.Planner
 use scalyc.compiler.TaskPlanner
 use scalyc.compiler.PointerCensus
+use scalyc.compiler.WriteCensus
 use scalyc.compiler.Plan.Plan
 use scalyc.compiler.Emitter
 use scalyc.compiler.Emitter.EmitterConfig
@@ -66,6 +67,7 @@ define Options
     no_use_vis: bool        ; --no-use-vis: disable strict use visibility
     task_plan: bool         ; --task-plan: stage-3 parallelizability report
     pointer_report: bool    ; --pointer-report: raw-pointer census off the Plan
+    write_report: bool      ; --write-report: writes through parameters, off the Plan
     debug: bool             ; -g: emit DWARF debug info
     run_mode: bool          ; --run <fn>: JIT-compile and execute <fn> in-process
     run_function: String    ; the function name to JIT-run
@@ -96,6 +98,7 @@ define Options
         set no_use_vis: false
         set task_plan: false
         set pointer_report: false
+        set write_report: false
         set debug: false
         set run_mode: false
         set run_function: String()
@@ -196,6 +199,10 @@ define cli
                 else if arg = "--pointer-report"
                 {
                     set opts.pointer_report: true
+                }
+                else if arg = "--write-report"
+                {
+                    set opts.write_report: true
                 }
                 else if arg = "-O0"
                 {
@@ -327,6 +334,7 @@ define cli
         Console.println("  --no-tests     Omit test/test_* functions (seed build)")
         Console.println("  --task-plan    Report the parallelizability verdict of every for loop")
         Console.println("  --pointer-report  Report every raw-pointer site, classified off the Plan")
+        Console.println("  --write-report  Report every write through a parameter, off the Plan")
         Console.println "  --run <fn>     JIT-compile and run <fn> in-process"
         Console.println "  --jit          JIT-compile and run the whole program"
         Console.println "  --target <t>   Cross-emit object for triple <t> (use with -c)"
@@ -573,6 +581,16 @@ define cli
             var census PointerCensus.PointerCensus()
             census.analyze(plan, &model, opts.input_file)
             cli.print_pointer_report(&census)
+        }
+
+        ; --write-report: which bodies write through their parameters (advisory,
+        ; WriteCensus.scaly), in the same slot and for the same reason.
+        if opts.write_report
+        {
+            var wcensus PointerCensus.PointerCensus()
+            var writes WriteCensus.WriteCensus()
+            writes.analyze(plan, &model, &wcensus)
+            cli.print_write_report(&writes)
         }
 
         ; s185 (roadmap Step C): hard diagnostics — constructs the
@@ -1235,6 +1253,52 @@ define cli
         let head_str head.to_string()
         Console.println(head_str.to_c_string())
         cli.print_located("pointer-report: ", &pc.report_files, &pc.report_offsets, &pc.report_texts)
+    }
+
+    function print_write_report(wc: ref[WriteCensus.WriteCensus])
+    {
+        var head StringBuilder()
+        head.append "write-report: "
+        head.append(cli.format_size(wc.total()))
+        head.append " lines; bodies "
+        head.append(cli.format_size(wc.n_bodies))
+        head.append ", functions "
+        head.append(cli.format_size(wc.n_pure))
+        head.append " (writing "
+        head.append(cli.format_size(wc.n_pure_writing))
+        head.append ", direct "
+        head.append(cli.format_size(wc.n_pure_direct))
+        head.append "), procedures "
+        head.append(cli.format_size(wc.n_proc))
+        head.append " (writing "
+        head.append(cli.format_size(wc.n_proc_writing))
+        head.append "); sites "
+        head.append(cli.format_size(wc.n_sites))
+        head.append ", unfiled "
+        head.append(cli.format_size(wc.n_unfiled))
+        head.append ", misaligned calls "
+        head.append(cli.format_size(wc.n_misaligned))
+        head.append ", other-root calls "
+        head.append(cli.format_size(wc.n_stub_known))
+        head.append " (unknown "
+        head.append(cli.format_size(wc.n_stub_unknown))
+        head.append ")"
+        head.append ", rounds "
+        head.append(cli.format_size(wc.n_rounds))
+        if wc.frozen_mode
+        {
+            head.append "; FROZEN: reachable "
+            head.append(cli.format_size(wc.n_reachable))
+            head.append ", sites "
+            head.append(cli.format_size(wc.n_frozen_sites))
+            head.append " (locked "
+            head.append(cli.format_size(wc.n_locked_sites))
+            head.append "), provenance rounds "
+            head.append(cli.format_size(wc.n_fz_rounds))
+        }
+        let head_str head.to_string()
+        Console.println(head_str.to_c_string())
+        cli.print_located("write-report: ", &wc.report_files, &wc.report_offsets, &wc.report_texts)
     }
 
     ; Shared located-report printer: one `<prefix><file>:<line>:<col>: <text>`

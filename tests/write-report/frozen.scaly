@@ -1,0 +1,95 @@
+; tests/write-report/frozen.scaly — the FROZEN mode of `scalyc --write-report`
+; (SCALYC_WRITE_FROZEN=TreeNode,Sym SCALYC_WRITE_ENTRY=Checker.check,Checker.check_fresh):
+; writes that reach frozen data from the entries, by provenance, not by type.
+define TreeNode (flags: int  kids: Array[int])
+{
+    init()
+    {
+        set flags: 0
+        set kids: Array[int]()
+    }
+}
+
+define Sym (id: int  decls: Array[int])
+{
+    init()
+    {
+        set id: 0
+        set decls: Array[int]()
+    }
+}
+
+procedure enter_shared()
+{
+}
+
+procedure leave_shared()
+{
+}
+
+; a setter: frozen only where a caller hands it frozen data
+procedure set_flags_of(t: ref[TreeNode], f: int)
+{
+    set t.flags: f
+}
+
+define Checker (count: int  seen: Array[int]  root: ref[TreeNode]?)
+{
+    init()
+    {
+        set count: 0
+        set seen: Array[int]()
+        set root: null
+    }
+
+    ; fresh: a construction on the checker's page
+    function make_node(this) returns ref[TreeNode]
+    {
+        let t &TreeNode^this()
+        t
+    }
+
+    ; entry 2: fresh objects are the checker's, a field load is frozen
+    procedure check_fresh(this)
+    {
+        let t this.make_node()
+        set t.flags: 2
+        set_flags_of(t, 3)
+        if root <> null
+        {
+            let r root as ref[TreeNode]
+            set_flags_of(r, 4)
+        }
+    }
+
+    ; entry: own state is allowed, frozen state is not
+    procedure check(this, n: ref[TreeNode], s: ref[Sym])
+    {
+        set count: count + 1
+        seen.add(1)
+        set n.flags: 7
+        s.decls.add(3)
+        this.helper(n)
+        enter_shared()
+        set s.id: 9
+        leave_shared()
+    }
+
+    ; reached from check: writes through a local alias of frozen data
+    procedure helper(this, n: ref[TreeNode])
+    {
+        let kids n.kids
+        kids.add(4)
+    }
+
+    ; not reachable from the entry: must not be listed
+    procedure unrelated(this, n: ref[TreeNode])
+    {
+        set n.flags: 1
+    }
+}
+
+var c Checker()
+var n TreeNode()
+var s Sym()
+c.check(&n, &s)
