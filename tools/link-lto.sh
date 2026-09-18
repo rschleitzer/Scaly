@@ -45,7 +45,10 @@ trap 'rm -rf "$WORK"' EXIT
 
 "$LLVM_LINK" -S "$@" -o "$WORK/whole.ll" || { echo "link-lto: FAIL (llvm-link)" >&2; exit 1; }
 sed 's/^define linkonce_odr /define linkonce_odr hidden /' "$WORK/whole.ll" > "$WORK/whole_hidden.ll"
-"$OPT" -O2 "$WORK/whole_hidden.ll" -o "$WORK/whole.bc" || { echo "link-lto: FAIL (opt)" >&2; exit 1; }
+# LTO_OPT_FLAGS: extra opt flags, e.g. profile-guided optimization:
+#   --pgo-kind=pgo-instr-gen-pipeline   (and LINK_EXTRA=<llvm>/lib/clang/20/lib/darwin/libclang_rt.profile_osx.a)
+#   --pgo-kind=pgo-instr-use-pipeline --profile-file=<merged .profdata>
+"$OPT" -O2 ${LTO_OPT_FLAGS:-} "$WORK/whole_hidden.ll" -o "$WORK/whole.bc" || { echo "link-lto: FAIL (opt)" >&2; exit 1; }
 # -relocation-model=pic: x86-64 Linux links executables as PIE, which rejects
 # llc's default (static) absolute relocations. No-op on Mach-O.
 # LTO_LLC_FLAGS: extra llc flags for a profiling build (e.g. -frame-pointer=all,
