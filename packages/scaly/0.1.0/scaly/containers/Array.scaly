@@ -1,7 +1,8 @@
 use scaly.memory.runtime
 
 ; Small-array policy: an Array's first buffers are bump-hosted on the region
-; page (header + data via Vector[T]^own_page) and grow by doubling; only past
+; page (the buffer alone — the handle carries length and capacity) and grow by
+; doubling; only past
 ; 0x400 data bytes does a buffer move to its own exclusive page (the
 ; historical behavior — an exclusive 4-KB page per non-empty Array made
 ; small-array-heavy code pay ~4 KB per element). An abandoned small buffer is
@@ -52,60 +53,63 @@ define ArrayIterator[T]
     }
 }
 
+; ★★★THE BUFFER IS EMBEDDED, NOT REACHED THROUGH A `Vector` RECORD (slice 346).
+; `Array` held `{length, vector: ref[Vector[T]]?}` and the elements were one hop
+; further, so a non-empty array cost 16 bytes of handle plus a 16-byte record
+; plus the buffer, and every access loaded twice. It carries `{length, capacity,
+; buffer}` now: eight bytes less per live array and one load per access.
+;
+; ★★★The record was not pure overhead — it was the HANDLE through which a big
+; buffer's page was found (`Page.get(vector)`), and `Page.get` of an address
+; inside an oversized allocation is the exit-19 trap. What makes the embedding
+; sound is that `allocate_exclusive_buffer` gives the buffer a page of its OWN,
+; registered in the host page's exclusive list in both the ordinary and the
+; oversized case, so `Page.get(buffer)` finds it either way.
 define Array[T]
 (
     length: size_t
-    vector: ref[Vector[T]]?
+    capacity: size_t
+    buffer: pointer[T]
 )
 {
     init ()
     {
         set length: 0
-        set vector: null
+        set capacity: 0
+        set buffer: null
     }
 
     init (size: size_t)
     {
         set length: 0
-        set vector: null
+        set capacity: 0
+        set buffer: null
         if size > 0
         {
             let own_page Page.get(this)
+            set capacity: size
             if size * sizeof T <= 0x400
-                set vector: Vector[T]^own_page(size)
+                set buffer: own_page.allocate(size * sizeof T, alignof T) as pointer[T]
             else
-            {
-                let exclusive_page own_page.allocate_exclusive_page()
-                set vector: Vector[T]^exclusive_page(size)
-            }
+                set buffer: own_page.allocate_exclusive_buffer(size * sizeof T, alignof T) as pointer[T]
         }
     }
 
     function get_buffer(this: Array[T]) returns pointer[T]
-    {
-        if vector = null
-            return null
-
-        return vector.data
-    }
+        buffer
 
     function get_length(this: Array[T]) returns size_t
         length
 
     function get_capacity(this: Array[T]) returns size_t
-    {
-        if vector = null
-            return 0
-
-        return vector.length
-    }
+        capacity
 
     function add(this: Array[T], item: T)
     {
-        if (vector = null) || (length = vector.length)
+        if (buffer = null) || (length = capacity)
             this.reallocate()
 
-        let location vector.data + length
+        let location buffer + length
         set *location: item
 
         set length: length + 1
@@ -126,53 +130,45 @@ define Array[T]
             scaly_panic_size("Array.add", items.length, length)
 
         let size sizeof T
-        if (vector = null) || (new_length > vector.length)
+        if (buffer = null) || (new_length > capacity)
             this.reallocate()
 
-        if new_length > vector.length
+        if new_length > capacity
         {
             ; Manual grow when one reallocate() doubling wasn't enough:
-            ; a whole new vector for new_length items under the same
+            ; a whole new buffer for new_length items under the same
             ; small/exclusive policy as reallocate (the old buffer's
             ; class derives from its capacity; a small one is abandoned
             ; to the region). NB `^page` constructions take LET-bound
             ; page names — a var binding mis-places the construction.
             let own_page Page.get(this)
-            let old_vector vector
-            let old_small (vector.length * size) <= 0x400
+            let old_data buffer
+            let old_small (capacity * size) <= 0x400
             if new_length * size <= 0x400
-            {
-                let new_vector Vector[T]^own_page(new_length)
-                if length > 0
-                    memcpy(new_vector.data, vector.data, length * size)
-                set vector: new_vector
-            }
+                set buffer: own_page.allocate(new_length * size, alignof T) as pointer[T]
             else
-            {
-                let new_exclusive_page own_page.allocate_exclusive_page()
-                let new_vector Vector[T]^new_exclusive_page(new_length)
-                if length > 0
-                    memcpy(new_vector.data, vector.data, length * size)
-                set vector: new_vector
-            }
+                set buffer: own_page.allocate_exclusive_buffer(new_length * size, alignof T) as pointer[T]
+            set capacity: new_length
+            if length > 0
+                memcpy(buffer, old_data, length * size)
             if old_small = false
             {
-                let old_exclusive_page Page.get(old_vector)
+                let old_exclusive_page Page.get(old_data)
                 own_page.deallocate_exclusive_page old_exclusive_page
             }
         }
 
-        ; ★`vector.data` is a `pointer[T]`, so `+` STRIDES BY sizeof T — the
-        ; destination is `data + length`, not `data + length * size`. The old
+        ; ★`buffer` is a `pointer[T]`, so `+` STRIDES BY sizeof T — the
+        ; destination is `buffer + length`, not `buffer + length * size`. The old
         ; spelling multiplied the stride in a second time and so was correct
         ; ONLY for a one-byte element; every caller in the tree was a
         ; `Vector[char]` from StringBuilder, which is why it survived. The
         ; single-element `add` two functions up has always had it right
-        ; (`let location vector.data + length`). Found 2026-08-08 by the first
+        ; (`let location buffer + length`). Found 2026-08-08 by the first
         ; caller with a wider element (opensp's follow sets, pointer[CmNode]):
         ; an instant SIGSEGV, since the write lands sizeof-T times too far out.
         if items.length > 0
-            memcpy(vector.data + length, items.data, items.length * size)
+            memcpy(buffer + length, items.data, items.length * size)
 
         set length: length + items.length
     }
@@ -182,7 +178,7 @@ define Array[T]
         if i >= length
             return null
 
-        vector.data + i
+        buffer + i
     }
 
     ; The REFERENCE twin of operator[], and the third member of a family whose
@@ -223,7 +219,7 @@ define Array[T]
         if i >= length
             scaly_panic_oob("Array.at", i, length)
 
-        vector.data + i
+        buffer + i
     }
 
     ; Drop every element but KEEP the buffer, so refilling costs no allocation
@@ -247,7 +243,7 @@ define Array[T]
         if i >= length
             scaly_panic_oob("Array.put", i, length)
 
-        set *(vector.data + i): item
+        set *(buffer + i): item
     }
 
     function get_iterator(this: Array[T]) returns ArrayIterator[T]
@@ -269,21 +265,21 @@ define Array[T]
     ; buys is the OTHER case — an index the loop cannot bound. Without it LLVM
     ; must assume scaly_panic_oob returns having written memory, so every CSE
     ; across a check dies: two accesses to one index kept two checks and
-    ; reloaded both `length` and `data`. Account in TRAPS.md 1.2.
+    ; reloaded both `length` and `buffer`. Account in TRAPS.md 1.2.
 
     ; The ORDINARY element access, and it reads like the reference ports it
     ; serves: Clark's `v[i]` and tsgo's `x[i]`. An index past the end is a
     ; CALLER BUG, so it traps rather than answering an Option nobody can act
     ; on — `get(i)` above is the lookup that may legitimately miss. The empty
     ; container needs no separate guard: `length` is 0, so `i >= length` fires
-    ; before `vector` (null then) is ever reached.
+    ; before `buffer` (null then) is ever reached.
     operator [](this: Array[T], i: size_t) returns T
     {
         ; `i >= length` avoids the `i + 1` overflow at SIZE_MAX.
         if i >= length
             scaly_panic_oob("Array[]", i, length)
 
-        *(vector.data + i)
+        *(buffer + i)
     }
 
     ; A borrowed view of the whole array — the vehicle that replaces a
@@ -300,46 +296,51 @@ define Array[T]
     {
         let own_page Page.get(this)
         let size sizeof T
-        if vector = null
+        if buffer = null
         {
             ; first buffer: small and bump-hosted (see the policy note above)
-            var capacity 0x20 / size
-            if capacity < 1
-                set capacity: 1
-            if capacity * size <= 0x400
+            var first_cap 0x20 / size
+            if first_cap < 1
+                set first_cap: 1
+            if first_cap * size <= 0x400
             {
-                set vector: Vector[T]^own_page(capacity)
+                set buffer: own_page.allocate(first_cap * size, alignof T) as pointer[T]
+                set capacity: first_cap
                 return
             }
-            let exclusive_page own_page.allocate_exclusive_page()
-            let page_room exclusive_page.get_capacity(alignof T) - sizeof Vector[T]
-            set vector: Vector[T]^exclusive_page(page_room / size)
+            ; one element already exceeds the small bound: a page of its own
+            set buffer: own_page.allocate_exclusive_buffer(first_cap * size, alignof T) as pointer[T]
+            set capacity: first_cap
             return
         }
-        let old_small (vector.length * size) <= 0x400
-        var new_capacity vector.length * 2
+        let old_small (capacity * size) <= 0x400
+        let old_data buffer
+        let old_capacity capacity
+        var new_capacity capacity * 2
         if new_capacity * size <= 0x400
         {
             ; still small: a fresh bump-hosted buffer; the old one is
             ; abandoned to the region (never an exclusive page).
-            let new_vector Vector[T]^own_page(new_capacity)
-            memcpy(new_vector.data, vector.data, vector.length * size)
-            set vector: new_vector
+            set buffer: own_page.allocate(new_capacity * size, alignof T) as pointer[T]
+            set capacity: new_capacity
+            memcpy(buffer, old_data, old_capacity * size)
             return
         }
-        ; big destination: an exclusive page — never carrying less than a
-        ; full page's worth (the small→big crossing jumps to page capacity).
-        let new_exclusive_page own_page.allocate_exclusive_page()
-        let page_room new_exclusive_page.get_capacity(alignof T) - sizeof Vector[T]
+        ; big destination: a buffer with a page of its own — never carrying
+        ; less than a full page's worth (the small→big crossing jumps to page
+        ; capacity), so the doubling does not pay a page per step.
+        let probe_page own_page.allocate_exclusive_page()
+        let page_room probe_page.get_capacity(alignof T)
+        own_page.deallocate_exclusive_page probe_page
         if new_capacity < page_room / size
             set new_capacity: page_room / size
-        let new_vector Vector[T]^new_exclusive_page(new_capacity)
-        memcpy(new_vector.data, vector.data, vector.length * size)
+        set buffer: own_page.allocate_exclusive_buffer(new_capacity * size, alignof T) as pointer[T]
+        set capacity: new_capacity
+        memcpy(buffer, old_data, old_capacity * size)
         if old_small = false
         {
-            let old_exclusive_page Page.get(vector)
+            let old_exclusive_page Page.get(old_data)
             own_page.deallocate_exclusive_page old_exclusive_page
         }
-        set vector: new_vector
     }
 }

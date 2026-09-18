@@ -64,7 +64,7 @@ var arr Array[int]()
 arr.add 10
 arr.add 20
 arr.add 30
-let s Slice[int](arr.length, (*arr.vector).data)
+let s arr.as_slice()
 if s.is_empty()
 {
     print("FAIL")

@@ -391,6 +391,23 @@ define Page
         page
     }
 
+    ; A BUFFER with a page of its own, registered in this page's exclusive list
+    ; either way — which is what makes `Page.get(buffer)` the whole release path
+    ; (slice 346, the embedded Array). Under a page's worth it is an ordinary
+    ; exclusive page with the buffer as its first object; over it the oversized
+    ; route, which registers ITSELF here and returns the object right behind the
+    ; header. The decision belongs here rather than in the caller because the
+    ; caller cannot see PAGE_SIZE: a module-level define does not resolve inside
+    ; a generic body monomorphized into another package.
+    function allocate_exclusive_buffer(this: Page, size: size_t, align: size_t) returns pointer[void]
+    {
+        let gross size + sizeof Page
+        if gross > PAGE_SIZE
+            return allocate_oversized gross
+        let pg this.allocate_exclusive_page()
+        pg.allocate(size, align)
+    }
+
     procedure deallocate_extensions(this: Page)
     {
         ; Oversized pages cannot have extensions

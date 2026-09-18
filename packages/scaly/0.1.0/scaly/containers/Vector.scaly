@@ -99,8 +99,7 @@ define Vector[T]
         if length > 0
         {
             set data: own_page.allocate(length * sizeof T, alignof T) as pointer[T]
-            let arr_vector array.vector
-            memcpy(data, arr_vector.data, length * sizeof T)
+            memcpy(data, array.get_buffer(), length * sizeof T)
         }
         else
             set data: null
