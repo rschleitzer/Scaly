@@ -143,6 +143,22 @@ define WriteCensus
         gwords: Array[u64]
         cur_g: Array[u64]
         g_changed: bool
+        ; the global a local aliases ("" none), beside loc_names
+        loc_globals: Array[String]
+        ; the global the next hit writes through, named by its caller
+        pending_global: String
+        ; the runtime's own state (scaly/memory, fiber, io, cluster): ambient
+        ambient_names: Array[String]
+        ; check mode: the globals the walked body declares (`mutable g, h`)
+        cur_allowed_g: ref[Vector[String]]?
+        ; `shared atomic` cells: written only through scaly_atomic_*
+        atomic_names: Array[String]
+        in_atomic_op: bool
+        cur_atomic_bad: Array[String]
+        ; per plan.functions index: the global a body RETURNS ("" none), so a
+        ; getter's result is an alias of that global
+        ret_globals: Array[String]
+        cur_ret_global: String
     )
     {
         init()
@@ -207,6 +223,15 @@ define WriteCensus
             set gwords: Array[u64]^this()
             set cur_g: Array[u64]^this()
             set g_changed: false
+            set loc_globals: Array[String]^this()
+            set pending_global: String^this("")
+            set ambient_names: Array[String]^this()
+            set cur_allowed_g: null
+            set atomic_names: Array[String]^this()
+            set in_atomic_op: false
+            set cur_atomic_bad: Array[String]^this()
+            set ret_globals: Array[String]^this()
+            set cur_ret_global: String^this("")
         }
 
         ; ================================================================
@@ -250,6 +275,8 @@ define WriteCensus
                 }
                 set i: i + 1
             }
+            ; a getter's result aliases the global it returns
+            this.learn_returned_globals()
             var changed true
             while changed
             {
@@ -318,6 +345,8 @@ define WriteCensus
                 {
                     this.enter_body(func)
                     this.find_action(action)
+                    if action.target = null
+                        this.note_returned(action.source)
                     if frozen_pass
                         if this.tail_frozen(action)
                             this.mark_returns_frozen()
@@ -345,6 +374,9 @@ define WriteCensus
                 set cur_page_mask: this.page_param_mask() | cur_allowed
             set loc_names: Array[String]^this()
             set loc_masks: Array[u64]^this()
+            set loc_globals: Array[String]^this()
+            set cur_atomic_bad: Array[String]^this()
+            set cur_ret_global: String^this("")
         }
 
         ; The last walk: sites, and one `fn` line per writing pure function.
@@ -463,6 +495,17 @@ define WriteCensus
                 this.note_global_id(WC_GW * 64 - 1)
                 return
             }
+            if check_mode
+            {
+                if this.is_atomic_name(name)
+                {
+                    if in_atomic_op = false
+                        cur_atomic_bad.add(String^this(name))
+                    return
+                }
+                if this.is_ambient(name)
+                    return
+            }
             var i: size_t 0
             while i < gnames.length
             {
@@ -513,31 +556,178 @@ define WriteCensus
 
         ; the global an argument's value is rooted in ("" when it is reached
         ; through anything but the global itself)
-        function global_root(op: PlannedOperand) returns String
+        ; the value a body hands back: the last operand of a return or of the
+        ; tail (a block's last statement, both arms of an `if` via the walk)
+        procedure note_returned(mutable this: WriteCensus, ops: ref[Vector[PlannedOperand]]?)
+        {
+            if ops = null
+                return
+            if ops.length = 0
+                return
+            let last_ptr ops.get(ops.length - 1)
+            if last_ptr = null
+                return
+            let last last_ptr.unwrap()
+            choose last.expr
+                when blk: Block
+                {
+                    if blk.statements = null
+                        return
+                    if blk.statements.length = 0
+                        return
+                    let st_ptr blk.statements.get(blk.statements.length - 1)
+                    if st_ptr = null
+                        return
+                    choose (*st_ptr)
+                        when a: Action
+                            if a.target = null
+                                this.note_returned(a.source)
+                        else
+                            0
+                }
+                else
+                {
+                    let r this.global_root_m(last)
+                    if r.get_length() > 0
+                        set cur_ret_global: String^this(r)
+                }
+        }
+
+        ; one walk of every body to learn which bodies return a global
+        procedure learn_returned_globals(mutable this: WriteCensus)
+        {
+            let fns plan_functions as ref[Vector[PlannedFunction]]
+            var i: size_t 0
+            while i < fns.length
+            {
+                ret_globals.add(String^this(""))
+                set i: i + 1
+            }
+            set i: 0
+            while i < fns.length
+            {
+                let f_ptr fns.get i
+                if f_ptr <> null
+                {
+                    this.clear_globals()
+                    set cur_ret_global: String^this("")
+                    this.walk_body(f_ptr.unwrap())
+                    if cur_ret_global.get_length() > 0
+                        ret_globals.put(i, String^this(cur_ret_global))
+                }
+                set i: i + 1
+            }
+        }
+
+        ; the global a local aliases ("" none)
+        function local_global(this: WriteCensus, name: String) returns String
+        {
+            var li loc_names.length
+            while li > 0
+            {
+                set li: li - 1
+                if loc_names[li] = name
+                    return String(loc_globals[li])
+            }
+            String("")
+        }
+
+        function global_root_m(this: WriteCensus, op: PlannedOperand) returns String
         {
             choose op.expr
                 when g: GlobalRef
                     return String(g.name)
+                when v: Variable
+                {
+                    var li loc_names.length
+                    while li > 0
+                    {
+                        set li: li - 1
+                        if loc_names[li] = v.name
+                            return String(loc_globals[li])
+                    }
+                    return String("")
+                }
                 when a: As
                 {
                     if a.value = null
                         return String("")
                     let r a.value
-                    return WriteCensus.global_root((*r))
+                    return this.global_root_m((*r))
+                }
+                when tp: Tuple
+                {
+                    ; a construction holds what its components reach
+                    if tp.components = null
+                        return String("")
+                    var ti: size_t 0
+                    while ti < tp.components.length
+                    {
+                        let c_ptr tp.components.get ti
+                        if c_ptr <> null
+                        {
+                            let vals c_ptr.value
+                            if vals <> null
+                            {
+                                var vi: size_t 0
+                                while vi < vals.length
+                                {
+                                    let v_ptr vals.get vi
+                                    if v_ptr <> null
+                                    {
+                                        let vop v_ptr.unwrap()
+                                        if (this.mask_of(vop) & WC_GLOBAL) <> (0 as u64)
+                                        {
+                                            let r this.global_root_m(vop)
+                                            if r.get_length() > 0
+                                                return r
+                                        }
+                                    }
+                                    set vi: vi + 1
+                                }
+                            }
+                        }
+                        set ti: ti + 1
+                    }
+                    return String("")
                 }
                 when c: Call
                 {
-                    if c.name <> "&"
-                        if c.name <> "*"
-                            return String("")
+                    ; a call into a body that RETURNS a global is that global
+                    if ret_globals.length > 0
+                    {
+                        let slot this.callee_index(c.mangled_name)
+                        if slot > 0
+                        {
+                            if slot <= ret_globals.length
+                            {
+                                let rg ret_globals[slot - 1]
+                                if rg.get_length() > 0
+                                    return String(rg)
+                            }
+                        }
+                    }
                     if c.args = null
                         return String("")
-                    if c.args.length <> 1
-                        return String("")
-                    let inner c.args.get 0
-                    if inner = null
-                        return String("")
-                    return WriteCensus.global_root(inner.unwrap())
+                    ; `&x`/`*x`, and a call RESULT, which the census lets alias
+                    ; its arguments: the first argument that reaches a global
+                    var ai: size_t 0
+                    while ai < c.args.length
+                    {
+                        let inner c.args.get ai
+                        if inner <> null
+                        {
+                            let iop inner.unwrap()
+                            if (this.mask_of(iop) & WC_GLOBAL) <> (0 as u64)
+                            {
+                                let r this.global_root_m(iop)
+                                if r.get_length() > 0
+                                    return r
+                            }
+                        }
+                        set ai: ai + 1
+                    }
+                    return String("")
                 }
                 else
                     return String("")
@@ -567,6 +757,31 @@ define WriteCensus
                 set id: id + 1
             }
             sb.to_string()
+        }
+
+        procedure note_callee_globals(mutable this: WriteCensus, offset: size_t, list: String, callee: String)
+        {
+            let n list.get_length()
+            var i: size_t 0
+            while i < n
+            {
+                var nb StringBuilder()
+                while i < n
+                {
+                    let c list.get i
+                    if c = 44
+                        break
+                    nb.append(c as char)
+                    set i: i + 1
+                }
+                set i: i + 1
+                let one nb.to_string()
+                if one.get_length() > 0
+                {
+                    this.note_global_named(one)
+                    this.note_global_site(offset, one, callee)
+                }
+            }
         }
 
         procedure note_global_list(mutable this: WriteCensus, list: String)
@@ -823,9 +1038,13 @@ define WriteCensus
         }
 
         procedure remember_local(mutable this: WriteCensus, name: String, mask: u64)
+            this.remember_local_of(name, mask, String(""))
+
+        procedure remember_local_of(mutable this: WriteCensus, name: String, mask: u64, global: String)
         {
             loc_names.add(String^this(name))
             loc_masks.add mask
+            loc_globals.add(String^this(global))
         }
 
         function mask_of_operands(this: WriteCensus, ops: ref[Vector[PlannedOperand]]?) returns u64
@@ -936,8 +1155,21 @@ define WriteCensus
                 }
                 when c: Call
                 {
+                    ; a getter's result IS the global it returns
+                    var getter: u64 0
+                    if ret_globals.length > 0
+                    {
+                        let slot this.callee_index(c.mangled_name)
+                        if slot > 0
+                            if slot <= ret_globals.length
+                            {
+                                let rg ret_globals[slot - 1]
+                                if rg.get_length() > 0
+                                    set getter: WC_GLOBAL
+                            }
+                    }
                     if c.args = null
-                        return 0
+                        return getter
                     if c.name = "*"
                         return this.mask_of_operands(c.args)
                     ; what C hands back is C's, not an alias of an argument
@@ -950,7 +1182,7 @@ define WriteCensus
                     ; a call result may alias its arguments' PARAMETERS, but
                     ; whether it is frozen is decided by its OWN type (mask_of):
                     ; `node_link_of(node)` answers the checker's row, not the node
-                    return this.mask_of_operands(c.args) & (0 - (WC_FROZEN + (1 as u64)))
+                    return (this.mask_of_operands(c.args) & (0 - (WC_FROZEN + (1 as u64)))) | getter
                 }
                 when tp: Tuple
                 {
@@ -994,7 +1226,14 @@ define WriteCensus
             if (mask & WC_GLOBAL) <> (0 as u64)
                 if cls <> "w-global"
                     if cls <> "w-call"
-                        this.note_global_id(WC_GW * 64 - 1)
+                    {
+                        if pending_global.get_length() > 0
+                            this.note_global_named(pending_global)
+                        else
+                            this.note_global_id(WC_GW * 64 - 1)
+                        this.note_global_site(offset, pending_global, String(""))
+                    }
+            set pending_global: String^this("")
             if check_mode
                 set mask: mask & (0 - (cur_page_mask + (1 as u64)))
             if mask = 0
@@ -1049,7 +1288,10 @@ define WriteCensus
         {
             choose life
                 when r: Reference
+                {
+                    set pending_global: this.local_global(r.location)
                     this.hit(offset, cls, this.name_mask(r.location), WriteCensus.join("^", r.location))
+                }
                 else
                     0
         }
@@ -1216,7 +1458,7 @@ define WriteCensus
                         set m: m | am
                         if (am & WC_GLOBAL) <> (0 as u64)
                             if cur_substrate = false
-                                this.note_global_named(WriteCensus.global_root(a_ptr.unwrap()))
+                                this.note_global_named(this.global_root_m(a_ptr.unwrap()))
                     }
                 }
                 set i: i + 1
@@ -1749,8 +1991,9 @@ define WriteCensus
                             ; keyed by owner as well as bare: a stub names its
                             ; owner only through its mangled name
                             let marks WriteCensus.model_writable_mask(f.input)
-                            this.note_purity(WriteCensus.purity_key(f.name, f.input.length), f.pure, marks)
-                            this.note_purity(WriteCensus.owned_key(owner, f.name, f.input.length), f.pure, marks)
+                            let gl WriteCensus.join_names(f.writes)
+                            this.note_purity(WriteCensus.purity_key(f.name, f.input.length), f.pure, marks, gl)
+                            this.note_purity(WriteCensus.owned_key(owner, f.name, f.input.length), f.pure, marks, gl)
                         }
                         when c: Concept
                         {
@@ -1793,7 +2036,7 @@ define WriteCensus
 
         ; 1: every declaration of the name is a function; 2: one is a procedure.
         ; The `mutable` positions of every declaration of the name are OR-ed.
-        procedure note_purity(mutable this: WriteCensus, name: String, pure: bool, writable: u64)
+        procedure note_purity(mutable this: WriteCensus, name: String, pure: bool, writable: u64, globals: String)
         {
             var state: u64 1
             if pure = false
@@ -1804,9 +2047,254 @@ define WriteCensus
                 if state > sum_masks[row - 1]
                     sum_masks.put(row - 1, state)
                 sum_inputs.put(row - 1, sum_inputs[row - 1] | (writable as size_t))
+                ; overloads of one key: every declared global counts
+                if globals.get_length() > 0
+                {
+                    let had sum_globals[row - 1]
+                    if had.get_length() = 0
+                        sum_globals.put(row - 1, String^this(globals))
+                    else
+                    {
+                        let both WriteCensus.join(WriteCensus.join(had, String(",")), globals)
+                        sum_globals.put(row - 1, String^this(both))
+                    }
+                }
                 return
             }
-            this.add_summary(String^this(name), state, writable as size_t, String^this(""))
+            this.add_summary(String^this(name), state, writable as size_t, String^this(globals))
+        }
+
+        function join_names(names: Vector[String]) returns String
+        {
+            var sb StringBuilder()
+            var i: size_t 0
+            while i < names.length
+            {
+                if i > 0
+                    sb.append ","
+                sb.append(names[i])
+                set i: i + 1
+            }
+            sb.to_string()
+        }
+
+        ; the runtime's globals, from the Model: declared in scaly/memory,
+        ; scaly/fiber, scaly/io or scaly/cluster
+        procedure collect_ambient_module(mutable this: WriteCensus, m: Module, inside: bool)
+        {
+            var here inside
+            if m.file.contains(String("/scaly/memory/"))
+                set here: true
+            if m.file.contains(String("/scaly/fiber"))
+                set here: true
+            if m.file.contains(String("/scaly/io"))
+                set here: true
+            if m.file.contains(String("/scaly/cluster"))
+                set here: true
+            this.collect_ambient_members(m.members, here)
+            var k: size_t 0
+            while k < m.modules.length
+            {
+                let sub m.modules.get k
+                if sub <> null
+                    this.collect_ambient_module((*sub), here)
+                set k: k + 1
+            }
+        }
+
+        ; globals sit in a module's members and in a namespace's or a
+        ; structure's, whose sub-modules are walked the same way
+        procedure collect_ambient_members(mutable this: WriteCensus, members: Vector[Member], here: bool)
+        {
+            var i: size_t 0
+            while i < members.length
+            {
+                let m_ptr members.get i
+                if m_ptr <> null
+                {
+                    choose (*m_ptr)
+                        when c: Concept
+                        {
+                            choose c.definition
+                                when g: Global
+                                {
+                                    if g.is_atomic
+                                        atomic_names.add(String^this(c.name))
+                                    else if here
+                                        if g.is_mutable
+                                            ambient_names.add(String^this(c.name))
+                                }
+                                when ns: Namespace
+                                {
+                                    this.collect_ambient_members(ns.members, here)
+                                    var k: size_t 0
+                                    while k < ns.modules.length
+                                    {
+                                        let sub ns.modules.get k
+                                        if sub <> null
+                                            this.collect_ambient_module((*sub), here)
+                                        set k: k + 1
+                                    }
+                                }
+                                when st: Structure
+                                {
+                                    this.collect_ambient_members(st.members, here)
+                                    var k: size_t 0
+                                    while k < st.modules.length
+                                    {
+                                        let sub st.modules.get k
+                                        if sub <> null
+                                            this.collect_ambient_module((*sub), here)
+                                        set k: k + 1
+                                    }
+                                }
+                                else
+                                    0
+                        }
+                        when pk: Package
+                        {
+                            var k: size_t 0
+                            while k < pk.length
+                            {
+                                let sub pk.get k
+                                if sub <> null
+                                    this.collect_ambient_module((*sub), here)
+                                set k: k + 1
+                            }
+                        }
+                        else
+                            0
+                }
+                set i: i + 1
+            }
+        }
+
+        function is_atomic_name(this: WriteCensus, name: String) returns bool
+        {
+            var i: size_t 0
+            while i < atomic_names.length
+            {
+                if atomic_names[i] = name
+                    return true
+                set i: i + 1
+            }
+            false
+        }
+
+        function is_ambient(this: WriteCensus, name: String) returns bool
+        {
+            if this.is_atomic_name(name)
+                return true
+            var i: size_t 0
+            while i < ambient_names.length
+            {
+                if ambient_names[i] = name
+                    return true
+                set i: i + 1
+            }
+            false
+        }
+
+        function global_allowed(this: WriteCensus, name: String) returns bool
+        {
+            if cur_allowed_g = null
+                return false
+            let al cur_allowed_g as ref[Vector[String]]
+            var i: size_t 0
+            while i < al.length
+            {
+                if al[i] = name
+                    return true
+                set i: i + 1
+            }
+            false
+        }
+
+        ; check mode, the note walk: a `note:` where an undeclared global is
+        ; written ("" names a global reached through an alias)
+        procedure note_global_site(mutable this: WriteCensus, offset: size_t, name: String, callee: String)
+        {
+            if check_mode = false
+                return
+            if diagnostics = false
+                return
+            if reporting = false
+                return
+            var atomic_write false
+            if name.get_length() > 0
+            {
+                if this.is_atomic_name(name)
+                {
+                    if in_atomic_op
+                        return
+                    set atomic_write: true
+                }
+                else
+                {
+                    if this.is_ambient(name)
+                        return
+                    if this.global_allowed(name)
+                        return
+                }
+            }
+            var sb StringBuilder()
+            if atomic_write
+            {
+                sb.append "note: writes atomic global "
+                sb.append name
+                sb.append " without scaly_atomic_*"
+            }
+            else if name.get_length() > 0
+            {
+                sb.append "note: writes global "
+                sb.append name
+            }
+            else
+                sb.append "note: writes a global through an alias the check cannot name"
+            if callee.get_length() > 0
+            {
+                sb.append " -> "
+                sb.append callee
+            }
+            let text sb.to_string()
+            this.record(offset, String^this(text))
+        }
+
+        ; the names in cur_g a body may not write ("?alias" for the unnamed)
+        function bad_globals(this: WriteCensus) returns String
+        {
+            var sb StringBuilder()
+            var any false
+            var id: size_t 0
+            while id < WC_GW * 64
+            {
+                let w id / 64
+                if (cur_g[w] & ((1 as u64) << ((id - w * 64) as u64))) <> (0 as u64)
+                {
+                    var name String("")
+                    var bad true
+                    if id < gnames.length
+                    {
+                        set name: gnames[id]
+                        if this.is_ambient(name)
+                            set bad: false
+                        if this.global_allowed(name)
+                            set bad: false
+                    }
+                    if bad
+                    {
+                        if any
+                            sb.append ", "
+                        set any: true
+                        if name.get_length() > 0
+                            sb.append name
+                        else
+                            sb.append "(a global reached through an alias)"
+                    }
+                }
+                set id: id + 1
+            }
+            sb.to_string()
         }
 
         ; a stub's row: its OWNER's declarations of that name and arity (the
@@ -2030,6 +2518,8 @@ define WriteCensus
             var known false
             var trusted false
             var writable: u64 0
+            var callee_writes: ref[Vector[String]]? null
+            var stub_globals String("")
             if slot > 0
             {
                 let f_ptr plan_functions.get(slot - 1)
@@ -2052,6 +2542,7 @@ define WriteCensus
                         set known: true
                         set trusted: f.pure
                         set writable: WriteCensus.planned_writable_mask(f.input)
+                        set callee_writes: f.writes
                     }
                 }
             }
@@ -2068,12 +2559,27 @@ define WriteCensus
                     if sum_masks[row - 1] = (1 as u64)
                         set trusted: true
                     set writable: sum_inputs[row - 1] as u64
+                    set stub_globals: sum_globals[row - 1]
                 }
                 else
                     set n_stub_unknown: n_stub_unknown + 1
             }
             if trusted
                 return
+            ; the globals the callee declares it writes are written here
+            if callee_writes <> null
+            {
+                let cw callee_writes as ref[Vector[String]]
+                var ci: size_t 0
+                while ci < cw.length
+                {
+                    this.note_global_named(cw[ci])
+                    this.note_global_site(op.loc.start, cw[ci], call.name)
+                    set ci: ci + 1
+                }
+            }
+            if stub_globals.get_length() > 0
+                this.note_callee_globals(op.loc.start, stub_globals, call.name)
             ; a procedure writes exactly its `mutable` positions; a callee this
             ; root cannot name (an indirect call) may write every argument
             var conservative false
@@ -2099,7 +2605,17 @@ define WriteCensus
                     if counts
                         if WriteCensus.is_scalar(a.result_type) = false
                             if this.is_local_value(a) = false
-                                set m: m | this.mask_of(a)
+                            {
+                                let am this.mask_of(a)
+                                set m: m | am
+                                ; a global handed to a written position
+                                if (am & WC_GLOBAL) <> (0 as u64)
+                                {
+                                    let gn this.global_root_m(a)
+                                    this.note_global_named(gn)
+                                    this.note_global_site(op.loc.start, gn, call.name)
+                                }
+                            }
                 }
                 set i: i + 1
             }
@@ -2140,6 +2656,15 @@ define WriteCensus
         ; page parameters
         procedure run_check(mutable this: WriteCensus, model: ref[Program])
         {
+            this.collect_ambient_module(model.module_, false)
+            var ai: size_t 0
+            while ai < model.packages.length
+            {
+                let apkg model.packages.get ai
+                if apkg <> null
+                    this.collect_ambient_module((*apkg), false)
+                set ai: ai + 1
+            }
             this.collect_purity_module(model.module_)
             var pi: size_t 0
             while pi < model.packages.length
@@ -2149,6 +2674,7 @@ define WriteCensus
                     this.collect_purity_module((*pkg))
                 set pi: pi + 1
             }
+            this.learn_returned_globals()
             let fns plan_functions as ref[Vector[PlannedFunction]]
             set reporting: true
             var i: size_t 0
@@ -2179,9 +2705,15 @@ define WriteCensus
                 }
                 set current_file: String^this(home)
                 set n_pure: n_pure + 1
-                set cur_allowed: 0
+                ; globals are judged by NAME (cur_g against the declaration),
+                ; never by the parameter mask
+                set cur_allowed: WC_GLOBAL
+                set cur_allowed_g: null
                 if func.pure = false
+                {
                     set cur_allowed: marked | WC_GLOBAL
+                    set cur_allowed_g: func.writes
+                }
                 let before n_sites
                 ; as a gate: judge first, then walk the violating body again to
                 ; place a note at every write, after its error
@@ -2191,6 +2723,85 @@ define WriteCensus
                 var violated n_sites > before
                 if diagnostics
                     set violated: mask <> 0
+                if cur_atomic_bad.length > 0
+                {
+                    set n_violations: n_violations + 1
+                    var ab StringBuilder()
+                    if diagnostics
+                    {
+                        ab.append "error: "
+                        ab.append func.name
+                        ab.append " writes atomic global "
+                        ab.append(cur_atomic_bad[0])
+                        ab.append " other than through scaly_atomic_*"
+                    }
+                    else
+                    {
+                        ab.append "violation atomic "
+                        ab.append func.name
+                        ab.append " "
+                        ab.append(cur_atomic_bad[0])
+                    }
+                    let atext ab.to_string()
+                    this.record(func.loc.start, String^this(atext))
+                    if diagnostics
+                    {
+                        set reporting: true
+                        this.walk_body(func)
+                        set reporting: false
+                    }
+                    ; the walk above reset the body state; walk once more so
+                    ; the verdicts below read this body's own sets
+                    set reporting: false
+                    this.walk_body(func)
+                }
+                let bad this.bad_globals()
+                if bad.get_length() > 0
+                {
+                    set n_violations: n_violations + 1
+                    var gb StringBuilder()
+                    if diagnostics
+                    {
+                        if func.pure
+                        {
+                            gb.append "error: function "
+                            gb.append func.name
+                            gb.append " writes global "
+                            gb.append bad
+                            gb.append "; a function writes nothing - make it a procedure and name it after the signature: \`mutable "
+                            gb.append bad
+                            gb.append "\`"
+                        }
+                        else
+                        {
+                            gb.append "error: procedure "
+                            gb.append func.name
+                            gb.append " writes global "
+                            gb.append bad
+                            gb.append ", which its signature does not name: add \`mutable "
+                            gb.append bad
+                            gb.append "\` after it"
+                        }
+                    }
+                    else
+                    {
+                        gb.append "violation globals "
+                        gb.append func.name
+                        gb.append " "
+                        gb.append bad
+                    }
+                    let gtext gb.to_string()
+                    this.record(func.loc.start, String^this(gtext))
+                    if violated = false
+                    {
+                        if diagnostics
+                        {
+                            set reporting: true
+                            this.walk_body(func)
+                            set reporting: false
+                        }
+                    }
+                }
                 if violated
                 {
                     set n_violations: n_violations + 1
@@ -2465,6 +3076,7 @@ define WriteCensus
         {
             if call.args = null
                 return
+            set in_atomic_op: call.name.starts_with(String("scaly_atomic_"))
             let written WriteCensus.extern_writes(call.name)
             var m: u64 0
             var i: size_t 0
@@ -2479,11 +3091,17 @@ define WriteCensus
                     let a a_ptr.unwrap()
                     if (written & bit) <> (0 as u64)
                         if WriteCensus.is_scalar(a.result_type) = false
-                            set m: m | this.mask_of(a)
+                        {
+                            let am this.mask_of(a)
+                            set m: m | am
+                            if (am & WC_GLOBAL) <> (0 as u64)
+                                set pending_global: this.global_root_m(a)
+                        }
                 }
                 set i: i + 1
             }
             this.hit(op.loc.start, String("w-extern"), m, WriteCensus.join("-> ", call.name))
+            set in_atomic_op: false
         }
 
         ; ================================================================
@@ -2542,18 +3160,25 @@ define WriteCensus
                             else
                             {
                                 if c.name = "*"
+                                {
+                                    set pending_global: this.global_root_m(head)
                                     this.hit(head.loc.start, String("w-deref"), this.mask_of_operands(c.args), String(""))
+                                }
                             }
                         }
                         when v: Variable
                         {
                             if has_members
+                            {
+                                set pending_global: this.global_root_m(head)
                                 this.hit(head.loc.start, String("w-field"), this.name_mask(v.name) | this.hops_frozen(head), String(""))
+                            }
                         }
                         when g: GlobalRef
                         {
                             if cur_substrate = false
                                 this.note_global_named(String(g.name))
+                            this.note_global_site(head.loc.start, String(g.name), String(""))
                             this.hit(head.loc.start, String("w-global"), WC_GLOBAL, String(g.name))
                         }
                         else
@@ -2576,6 +3201,7 @@ define WriteCensus
                 when ret: Return
                 {
                     this.find_operands(ret.result)
+                    this.note_returned(ret.result)
                     if frozen_pass
                         if (this.mask_of_operands(ret.result) & WC_FROZEN) <> (0 as u64)
                             this.mark_returns_frozen()
@@ -2621,7 +3247,17 @@ define WriteCensus
                     if this.is_frozen_record(bt)
                         set m: m & (0 - (WC_FROZEN + (1 as u64)))
             }
-            this.remember_local(name, m)
+            ; a local bound to (a part of) a global writes that global
+            var g String("")
+            if (m & WC_GLOBAL) <> (0 as u64)
+                if binding.operation <> null
+                    if binding.operation.length = 1
+                    {
+                        let g_ptr binding.operation.get 0
+                        if g_ptr <> null
+                            set g: this.global_root_m(g_ptr.unwrap())
+                    }
+            this.remember_local_of(name, m, g)
         }
 
         procedure find_operand(mutable this: WriteCensus, op: PlannedOperand)

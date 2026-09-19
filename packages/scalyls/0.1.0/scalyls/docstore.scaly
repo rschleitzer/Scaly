@@ -65,7 +65,7 @@ define docstore
 
     ; Record the workspace root (a filesystem path) as a fresh malloc'd copy,
     ; freeing any previous one. Empty path leaves it null.
-    procedure set_workspace_root(path: String)
+    procedure set_workspace_root(path: String) mutable ws_root_data, ws_root_len
     {
         if ws_root_data <> null
             free(ws_root_data as pointer[void])
@@ -96,7 +96,7 @@ define docstore
     ; Lazily allocate + zero the slot array on first use. A malloc failure
     ; leaves doc_slots null; callers then no-op and navigation falls back to
     ; reading the file from disk.
-    procedure ensure()
+    procedure ensure() mutable doc_slots
     {
         if doc_slots = null
         {
@@ -188,7 +188,7 @@ define docstore
 
     ; Record (or replace) the latest text for `uri`. Called on didOpen and
     ; every didChange. Replacing frees the old text copy first (bounded).
-    procedure put(uri: String, text: String)
+    procedure put(uri: String, text: String) mutable doc_slots
     {
         docstore.ensure()
         if doc_slots = null
@@ -221,7 +221,7 @@ define docstore
     }
 
     ; Drop the entry for `uri` (didClose), freeing its malloc'd copies.
-    procedure remove(uri: String)
+    procedure remove(uri: String) mutable doc_slots
     {
         let idx docstore.find uri
         if idx >= 0
@@ -249,7 +249,7 @@ define docstore
     ; runs and the completion answer arrived 10.83 s later, long after the editor
     ; had given up on it. server.flush_dirty# runs it when the input queue is
     ; empty instead, i.e. once per typing burst.
-    procedure mark_dirty(uri: String)
+    procedure mark_dirty(uri: String) mutable doc_slots
     {
         let idx docstore.find uri
         if idx >= 0
@@ -260,7 +260,7 @@ define docstore
     }
 
     ; Clear `uri`'s owed-analysis mark.
-    procedure clear_dirty(uri: String)
+    procedure clear_dirty(uri: String) mutable doc_slots
     {
         let idx docstore.find uri
         if idx >= 0

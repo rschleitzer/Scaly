@@ -18,7 +18,7 @@ define Msg
 mutable box: pointer[void] null
 mutable total: i64 0
 
-procedure receiver()
+procedure receiver() mutable box, total
 {
     let m box as pointer[Channel]
     var running true

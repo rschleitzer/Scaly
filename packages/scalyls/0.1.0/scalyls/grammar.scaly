@@ -16,6 +16,8 @@ define grammar
             return true
         if word = "as"
             return true
+        if word = "atomic"
+            return true
         if word = "break"
             return true
         if word = "case"

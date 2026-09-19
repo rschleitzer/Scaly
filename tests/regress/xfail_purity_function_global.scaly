@@ -1,0 +1,19 @@
+; Regression (R1, 2026-09-19): a function writes no global, not even through a
+; procedure it calls, and not through a GETTER's result: `current()` returns the
+; global, so writing its field writes the global.
+; xfail: error: function touch writes global box_g; a function writes nothing - make it a procedure and name it after the signature: `mutable box_g`
+
+define Box (v: int)
+shared box_g: ref[Box]? null
+
+function current() returns ref[Box]
+    box_g as ref[Box]
+
+function touch() returns int
+{
+    let b current()
+    set b.v: 5
+    0
+}
+
+let r touch()

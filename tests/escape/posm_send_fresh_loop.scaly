@@ -10,7 +10,7 @@ define Msg
 
 mutable chan: pointer[void] null
 
-procedure producer()
+procedure producer() mutable chan
 {
     let c chan as pointer[Channel]
     var i 0

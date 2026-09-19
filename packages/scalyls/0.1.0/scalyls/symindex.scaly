@@ -110,7 +110,7 @@ define symindex
 
     ; Lazily allocate + zero the slot array on first use. A malloc failure
     ; leaves idx_slots null; callers then treat every file as a cache miss.
-    procedure ensure()
+    procedure ensure() mutable idx_slots
     {
         if idx_slots = null
         {
@@ -137,7 +137,7 @@ define symindex
 
     ; Start a new request epoch. Called once per worker request, which is what
     ; makes `fresh` mean "already validated in THIS request" — see idx_epoch.
-    procedure begin_request()
+    procedure begin_request() mutable idx_epoch
     {
         set idx_epoch: idx_epoch + 1
     }
@@ -159,7 +159,7 @@ define symindex
 
     ; Record that `path`'s cached blob is valid as of this request. Called
     ; after a read+hash confirmed (or refreshed) the slot.
-    procedure touch(path: String)
+    procedure touch(path: String) mutable idx_slots
     {
         let idx symindex.find path
         if idx < 0
@@ -264,7 +264,7 @@ define symindex
 
     ; Record (or replace) the symbol blob + content hash for `path`. Replacing
     ; frees the old blob first (bounded: one live copy per indexed file).
-    procedure put(path: String, chash: size_t, blob: String)
+    procedure put(path: String, chash: size_t, blob: String) mutable idx_slots
     {
         symindex.ensure()
         if idx_slots = null
@@ -309,7 +309,7 @@ define symindex
     ; Small and separate from the file table on purpose: a request touches one
     ; or two directories, while the file table holds thousands of entries and is
     ; searched linearly.
-    procedure ensure_dirs()
+    procedure ensure_dirs() mutable dir_slots
     {
         if dir_slots = null
         {
@@ -376,7 +376,7 @@ define symindex
     ; Cache `listing` for `dir` for the rest of this request. Slots are reused
     ; round-robin: an entry from an earlier epoch is dead by definition, so the
     ; first stale slot is always free to take.
-    procedure put_listing(dir: String, listing: String)
+    procedure put_listing(dir: String, listing: String) mutable dir_slots
     {
         symindex.ensure_dirs()
         if dir_slots = null

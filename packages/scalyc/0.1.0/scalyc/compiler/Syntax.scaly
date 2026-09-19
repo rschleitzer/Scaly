@@ -279,10 +279,17 @@ define BindingSyntax
     operation: ref[Vector[OperandSyntax]]?
 )
 
+define AtomicSyntax
+(
+    start: size_t
+    end: size_t
+)
+
 define SharedSyntax
 (
     start: size_t
     end: size_t
+    atomic_mark: ref[AtomicSyntax]?
     binding: BindingSyntax
 )
 

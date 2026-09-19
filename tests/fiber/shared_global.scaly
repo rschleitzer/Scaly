@@ -10,7 +10,7 @@
 shared cell: u64 0
 mutable tls_cell: u64 7
 
-procedure worker(arg: pointer[void]) returns pointer[void]
+procedure worker(arg: pointer[void]) returns pointer[void] mutable cell, tls_cell
 {
     set cell: 42 as u64
     set tls_cell: 99 as u64

@@ -1,0 +1,24 @@
+; Regression (2026-09-19): `&g` on an INTEGER mutable global is the global's
+; address. emit_global_ref loads a mutable global, and `&` used to pass that
+; loaded VALUE on, so `scaly_atomic_add_u64(&counter, 1)` did its atomicrmw on
+; address 0 and the program died without a word. A `shared atomic` cell is
+; written only through scaly_atomic_*, which is what makes it need no
+; `mutable` clause in the signatures that draw from it.
+; Expected: PASS
+
+shared atomic counter: u64 5
+shared atomic lock: u64 0
+
+procedure fresh() returns u64
+    scaly_atomic_add_u64(&counter, 1 as u64)
+
+let a fresh()
+let b fresh()
+let got scaly_atomic_cas_u64(&lock, 0 as u64, 1 as u64)
+let now scaly_atomic_load_u64(&counter)
+if a = (5 as u64)
+    if b = (6 as u64)
+        if got = (0 as u64)
+            if now = (7 as u64)
+                if lock = (1 as u64)
+                    print "PASS\n"

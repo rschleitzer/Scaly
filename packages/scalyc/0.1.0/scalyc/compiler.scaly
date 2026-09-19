@@ -18,7 +18,7 @@ define compiler
     module LLVM
     module Emitter
 
-    procedure test() returns int
+    procedure test() returns int mutable modeler_error_count
     {
         var result lexer.test()
         if result <> 0

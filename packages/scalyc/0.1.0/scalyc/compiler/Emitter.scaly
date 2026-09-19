@@ -11089,6 +11089,26 @@ define Emitter
                             }
                         }
                     }
+                    ; `&g` on a mutable module global of INTEGER type is the
+                    ; global's ADDRESS (2026-09-19). emit_global_ref LOADS a mutable
+                    ; global, and `&` then fell through with that value, so
+                    ; `scaly_atomic_add_u64(&counter, 1)` did its atomicrmw on the
+                    ; address 0. Pointer- and struct-typed globals keep the old
+                    ; reading: nothing in the tree takes their address yet.
+                    if arg_op.member_access = null
+                    {
+                        choose arg_op.expr
+                            when ag: GlobalRef
+                            {
+                                let agv LLVMGetNamedGlobal(llvm_module, ag.mangled_name.c_data())
+                                if agv <> null
+                                    if LLVMIsGlobalConstant(agv) = 0
+                                        if LLVMGetTypeKind(LLVMGlobalGetValueType(agv)) = LLVMTypeKind.Integer()
+                                            return agv
+                            }
+                            else
+                                0
+                    }
                     if arg_op.member_access = null
                     {
                         choose arg_op.expr
@@ -19543,7 +19563,7 @@ define Emitter
     ; Test function
     ; ============================================================================
 
-    procedure test() returns int
+    procedure test() returns int mutable modeler_error_count
     {
         ; Test EmitterConfig initialization
         let config EmitterConfig()

@@ -1,0 +1,13 @@
+; Regression (R1, 2026-09-19): a procedure names every global it writes in the
+; clause after its signature, including the ones its callees write.
+; xfail: error: procedure outer writes global total, which its signature does not name: add `mutable total` after it
+
+mutable total: int 0
+
+procedure add(n: int) mutable total
+    set total: total + n
+
+procedure outer(n: int)
+    add(n)
+
+outer(3)

@@ -432,7 +432,7 @@ define cli
 
     ; Run the compiler with parsed options
     ; Returns 0 on success, non-zero on error
-    procedure run(mutable opts: Options) returns int
+    procedure run(mutable opts: Options) returns int mutable modeler_error_count
     {
         if opts.show_help
         {
@@ -958,7 +958,7 @@ define cli
     ; functions resolve to the real bodies (see Emitter.jit_run). The `scaly`
     ; stdlib is skipped — its symbols are already in the host scalyc image and
     ; resolve via the ORC process generator. Returns false on any dep failure.
-    procedure compile_jit_dependencies(mutable model: ref[Program], mutable dep_objs: ref[Array[String]], mutable dep_syms: ref[Array[String]]) returns bool
+    procedure compile_jit_dependencies(mutable model: ref[Program], mutable dep_objs: ref[Array[String]], mutable dep_syms: ref[Array[String]]) returns bool mutable modeler_error_count
     {
         var i: size_t 0
         while i < model.packages.length
@@ -1006,7 +1006,7 @@ define cli
     ; an object at out_obj, and append the mangled names it defines to `syms`.
     ; This ROOT path plans the package's bodies correctly (unlike the retired
     ; jit_dep_bodies dependency path). Returns false on any failure.
-    procedure compile_dep_package_to_object(mutable entry_file: String, mutable out_obj: String, mutable syms: ref[Array[String]]) returns bool
+    procedure compile_dep_package_to_object(mutable entry_file: String, mutable out_obj: String, mutable syms: ref[Array[String]]) returns bool mutable modeler_error_count
     {
         var source File.read_to_string(entry_file)
         if source.get_length() = 0
@@ -1499,14 +1499,14 @@ define cli
     }
 
     ; Main entry point
-    procedure main(argc: int, mutable argv: pointer[pointer[char]]) returns int
+    procedure main(argc: int, mutable argv: pointer[pointer[char]]) returns int mutable modeler_error_count
     {
         var opts cli.parse_args(argc, argv)
         return cli.run(opts)
     }
 
     ; Test function
-    procedure test() returns int
+    procedure test() returns int mutable modeler_error_count
     {
         ; Test 1: Check Options initialization
         var opts Options()
@@ -1548,7 +1548,7 @@ define cli
     }
 
     ; Test compiling hello.scaly from disk
-    procedure test_hello_scaly() returns int
+    procedure test_hello_scaly() returns int mutable modeler_error_count
     {
         ; Path to hello.scaly (relative to scalyc/build where tests run)
         var file_path "../../hello.scaly"
@@ -1594,7 +1594,7 @@ define cli
     }
 
     ; Test the compilation pipeline on a minimal program
-    procedure test_pipeline() returns int
+    procedure test_pipeline() returns int mutable modeler_error_count
     {
         ; Minimal valid Scaly program
         var source "function test_func() returns int { 42 }"

@@ -374,6 +374,9 @@ define Global
     value: Vector[Operand]
     is_mutable: bool
     is_shared: bool
+    ; `shared atomic`: a cell written only through scaly_atomic_* (ID
+    ; counters, locks); coordinated by itself, so no signature names it
+    is_atomic: bool
 )
 
 ; Delegate — a named function (closure) type. `define Cb delegate(int) returns int`

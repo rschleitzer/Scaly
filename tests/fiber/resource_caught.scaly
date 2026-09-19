@@ -10,7 +10,7 @@
 
 mutable ran: bool false
 
-procedure worker(first_ctx: pointer[void])
+procedure worker(first_ctx: pointer[void]) mutable ran
 {
     Fiber.started first_ctx
     set ran: true

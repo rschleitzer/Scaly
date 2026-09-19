@@ -1,0 +1,10 @@
+; Regression (R1, 2026-09-19): a `shared atomic` cell may change only through
+; scaly_atomic_*; a plain store would race every atomic operation on it.
+; xfail: error: reset writes atomic global counter other than through scaly_atomic_*
+
+shared atomic counter: u64 0
+
+procedure reset()
+    set counter: 0 as u64
+
+reset()

@@ -459,7 +459,11 @@
 
 <syntax id = Shared
     <content link = shared
+    <content link = Atomic                         optional property = atomic_mark
     <content link = Binding                                 property = binding
+
+<syntax id = Atomic
+    <content link = atomic
 
 <syntax id = Binding
     <content identifier                                     property = name
@@ -623,6 +627,7 @@
 
 <keyword id = alignof
 <keyword id = as
+<keyword id = atomic
 <keyword id = break
 <keyword id = case
 <keyword id = choose

@@ -67,7 +67,7 @@ procedure read_exact(fd: i32, buf: pointer[void], count: size_t) returns bool
     true
 }
 
-procedure chk_byte(b: u8)
+procedure chk_byte(b: u8) mutable chk
     set chk: (chk xor (b as u64)) * (0x100000001b3 as u64)
 
 ; Map an OLD address into the received copies; 0 = unmapped.

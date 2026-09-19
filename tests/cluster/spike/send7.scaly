@@ -70,10 +70,10 @@ procedure read_exact(fd: i32, buf: pointer[void], count: size_t) returns bool
     true
 }
 
-procedure chk_byte(b: u8)
+procedure chk_byte(b: u8) mutable chk
     set chk: (chk xor (b as u64)) * (0x100000001b3 as u64)
 
-procedure add_entry(base: size_t, len: size_t)
+procedure add_entry(base: size_t, len: size_t) mutable pg_cnt, pg_len, pg_old
 {
     let po pg_old
     let pl pg_len
@@ -91,7 +91,7 @@ procedure add_entry(base: size_t, len: size_t)
 ; fix up page headers in raw buffers anyway. Page layout: next_object@0
 ; current_page@8 next_page@16 exclusive_pages.head@24; PageNode:
 ; page@0 next@8.
-procedure walk_exclusives(p: size_t)
+procedure walk_exclusives(p: size_t) mutable pg_cnt, pg_len, pg_old
 {
     var nd *((p + (24 as size_t)) as pointer[size_t])
     while nd <> (0 as size_t)
@@ -109,7 +109,7 @@ procedure walk_exclusives(p: size_t)
     }
 }
 
-procedure walk_region(p: size_t)
+procedure walk_region(p: size_t) mutable pg_cnt, pg_len, pg_old
 {
     add_entry(p, 4096 as size_t)
     walk_exclusives p

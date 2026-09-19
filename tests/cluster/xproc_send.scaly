@@ -20,13 +20,13 @@ define Msg
 
 mutable chk: u64 0
 
-procedure chk_reset()
+procedure chk_reset() mutable chk
     set chk: 0xcbf29ce484222325 as u64
 
-procedure chk_byte(b: u8)
+procedure chk_byte(b: u8) mutable chk
     set chk: (chk xor (b as u64)) * (0x100000001b3 as u64)
 
-procedure chk_word(v: u64)
+procedure chk_word(v: u64) mutable chk
 {
     set chk: (chk xor v) * (0x100000001b3 as u64)
 }

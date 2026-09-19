@@ -81,7 +81,7 @@ define instlens
     ; family). `has_diag` suppresses the not-emitted claim: a root that produced
     ; hard diagnostics may have a truncated plan, and then "not emitted" would be
     ; a statement about the error rather than about demand.
-    procedure fragment(rp, plan: Plan, has_diag: bool, plan_text: String, anchor_text: String) returns String
+    procedure fragment(rp, plan: Plan, has_diag: bool, plan_text: String, anchor_text: String) returns String mutable lc_col, lc_line, lc_off
     {
         let sites instlens.count_routine_sites plan_text
         if sites = 0

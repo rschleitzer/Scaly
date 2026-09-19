@@ -17,7 +17,7 @@ mutable head: pointer[Node] null
 
 function aligned_alloc(alignment: i64, size: i64) returns pointer[void] extern
 
-procedure hang(n: pointer[Node])
+procedure hang(n: pointer[Node]) mutable head
 {
     if head <> null
         set head.prev: n

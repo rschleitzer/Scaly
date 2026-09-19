@@ -53,6 +53,7 @@ define Parser
         var keywords_builder Array[String]()
         keywords_builder.add("alignof")
         keywords_builder.add("as")
+        keywords_builder.add("atomic")
         keywords_builder.add("break")
         keywords_builder.add("case")
         keywords_builder.add("choose")
@@ -3978,6 +3979,19 @@ define Parser
         if ~lexer.parse_keyword("shared")
             throw ParserError.Different(DifferentSyntax())
 
+        let atomic_mark_start lexer.position
+        var atomic_mark: ref[AtomicSyntax]? null
+        choose parse_atomic()
+            when err: Error
+            {
+                choose err
+                    when d: Different {}
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+            }
+            when success: Success
+                set atomic_mark: AtomicSyntax(success.start, success.end)
+
         let binding_start lexer.position
         var binding: BindingSyntax
         choose parse_binding()
@@ -3994,7 +4008,19 @@ define Parser
 
         let end lexer.position
 
-        SharedSyntax(start, end, binding)
+        SharedSyntax(start, end, atomic_mark, binding)
+    }
+
+    procedure parse_atomic(mutable this: Parser) returns AtomicSyntax throws ParserError
+    {
+        let start lexer.previous_position
+
+        if ~lexer.parse_keyword("atomic")
+            throw ParserError.Different(DifferentSyntax())
+
+        let end lexer.position
+
+        AtomicSyntax(start, end)
     }
 
     procedure parse_binding(mutable this: Parser) returns BindingSyntax throws ParserError
