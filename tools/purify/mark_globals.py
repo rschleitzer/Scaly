@@ -150,8 +150,10 @@ def main():
                 edits.append((at, len('function'), 'procedure'))
                 relabelled += 1
             how, off = where
-            # `io` is the outside world: a keyword before the clause, not a name in it
-            wants_io = 'io' in names
+            # `io` is computed since 2026-09-19 -- the generated interfaces say
+            # it, a source does not; a function that reaches it is still
+            # relabelled a procedure (the name set was non-empty)
+            wants_io = False
             names = names - {'io'}
             sig = text[at:off]
             has_io = re.search(r'\)\s.*\bio\s*$', sig) is not None or re.search(r'\bio\s*$', sig) is not None

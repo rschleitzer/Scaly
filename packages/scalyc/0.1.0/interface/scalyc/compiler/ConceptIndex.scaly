@@ -53,10 +53,57 @@ define ConceptIndex (slots: pointer[ConceptSlot](null), cap: size_t(0))
     ; failure (the Planner cannot proceed without its concept index).
     function create(cap: size_t) @page true @direct true returns ConceptIndex linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     ; Insert (or OVERWRITE) the index for `name`. Open addressing, linear probe.
     ; A duplicate key overwrites the stored index (last-write-wins, s95). A full
     ; table exits loudly.
     procedure insert(mutable this: ConceptIndex, name: String, index: size_t) linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     ; Insert the index for `name` ONLY IF the key is absent (FIRST-write-wins).
     ; Used by the Emitter caches, whose linear scans return the FIRST matching
@@ -64,6 +111,52 @@ define ConceptIndex (slots: pointer[ConceptSlot](null), cap: size_t(0))
     ; table exits loudly.
     procedure insert_if_absent(mutable this: ConceptIndex, name: String, index: size_t) linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     ; The registry index for `name`, or -1 if absent.
     function lookup(this: ConceptIndex, name: String) returns i64 linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

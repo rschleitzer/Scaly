@@ -463,10 +463,26 @@ shared deadlock_state: pointer[DeadlockState] linked
 
 procedure ensure_deadlock_state() linked
 
+
+
+
+
+
+
+
+
+
 ; Note a channel wake event (queued send / close / routed task) so a
 ; waiter that observed quiescence just before it does not misread it as a
 ; deadlock. Cheap no-op until the state exists (no waiter can exist yet).
 procedure deadlock_event() linked
+
+
+
+
+
+
+
 
 ; The pthread entry of every Thread.spawn (milestone 2.3b): unpacks the
 ; spawn cell ({fn, arg} on their own heap page, released BEFORE the
@@ -478,6 +494,35 @@ procedure deadlock_event() linked
 ; user entry this frame must stay allocation-free — after the reclaim
 ; there is no allocator left to allocate from.
 procedure scaly_thread_start(mutable raw: pointer[void]) returns pointer[void] io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ; POSIX poll(2) — the no-scheduler readiness wait (milestone 2.5).
 ; struct pollfd (int fd, short events, short revents) and POLLIN=1 /
@@ -605,21 +650,55 @@ define Fiber
     ; whether or not it ever allocated. The teardown proof for tests.
     function freed_region_count() returns i64 linked
 
+
     function freed_page_count() returns i64 linked
+
 
     function freed_bucket_count() returns i64 linked
 
+
     function pooled_stack_count() returns i64 linked
 
+
     function reused_stack_count() returns i64 linked
+
 
     ; Pop a pooled stack (base address) when the pool head matches the
     ; requested size; null otherwise. Only default-sized stacks are ever
     ; pooled, so a custom-size request simply misses.
     procedure take_pooled_stack(size: size_t) returns pointer[void] linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
     ; Hand every pooled stack back to the OS.
     procedure drain_stack_pool() linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     ; Swap the per-side state between the process globals and the record.
     ; Called at every context crossing, keeping the invariant that the record
@@ -646,6 +725,17 @@ define Fiber
     ; this crossing's job.
     procedure swap_allocator(mutable f: ref[Fiber]) linked
 
+
+
+
+
+
+
+
+
+
+
+
     ; Create a suspended fiber. The record lives on the given page; the
     ; entry function fn (take it with &my_fiber) runs on a pooled or
     ; freshly mmap'd stack with a guard page at the low end,
@@ -654,11 +744,60 @@ define Fiber
     ; install just keeps the plain-crash behavior).
     procedure create_sized(host: ref[Page], mutable fn: pointer[void], size: size_t) returns ref[Fiber] linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     procedure create(host: ref[Page], mutable fn: pointer[void]) returns ref[Fiber] linked
+
+
+
+
 
     ; Run the fiber until it yields or finishes. Returns true when the
     ; fiber can be resumed again, false once it finished (or was done).
     procedure resume(mutable f: ref[Fiber]) returns bool linked
+
+
+
+
+
+
+
+
+
+
 
     ; First statement of every fiber entry function: stores the resumer's
     ; context (the entry argument) into the record, establishing the
@@ -666,14 +805,29 @@ define Fiber
     ; allocator state.
     procedure started(first_ctx: pointer[void]) linked
 
+
+
+
+
     ; Suspend the running fiber and return to its resumer. Returns when
     ; the fiber is resumed again.
     procedure yield() linked
+
+
+
+
+
 
     ; Finish the running fiber: marks it done and returns to the resumer
     ; for good. Never returns (resume refuses a done fiber; if the entry
     ; function itself ever returned, the switcher traps).
     procedure finish() linked
+
+
+
+
+
+
 
     ; Free the fiber's whole region and stack: deallocate the extension
     ; and exclusive chains of every root page still on the fiber's stack
@@ -682,6 +836,62 @@ define Fiber
     ; pages torn down. Call after the fiber finished (or to kill it — a
     ; disposed fiber must never be resumed).
     procedure dispose(mutable f: ref[Fiber]) returns int linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
 
 ; Is addr inside the RUNNING fiber's guard page? The overflow classifier
@@ -690,6 +900,20 @@ define Fiber
 ; current fiber suffices; on the main context (or a miss) the handler
 ; falls through to the default action.
 function fiber_guard_hit(addr: pointer[void]) returns i32 linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ; A scheduled task. The entry function pointer MUST stay the FIRST field:
 ; the record doubles as the delegate closure record scheduler_entry calls
@@ -721,6 +945,12 @@ define TaskFn delegate() returns void
 ; dispatcher stores the task into current_task before resuming.
 procedure scheduler_entry(first_ctx: pointer[void]) io linked
 
+
+
+
+
+
+
 define Scheduler
 (
     host: pointer[Page]          ; task records, fibers, and queue live here
@@ -740,11 +970,41 @@ define Scheduler
     ; so they survive any spawning fiber's region teardown.
     procedure create(host: ref[Page]) returns ref[Scheduler] linked
 
+
+
+
+
+
     ; Append a task to the ready-queue tail (round-robin order).
     procedure enqueue(mutable t: ref[SchedTask]) linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
     ; Pop the ready-queue head (null when the queue is empty).
     procedure dequeue() returns ref[SchedTask]? linked
+
+
+
+
+
+
+
+
+
+
+
+
 
     ; Create a task for the given zero-argument procedure (take it with
     ; &my_task) on a fiber stack of the given size, hand it one
@@ -754,18 +1014,44 @@ define Scheduler
     ; running task alike. Non-default stack sizes bypass the stack pool.
     procedure spawn_sized(mutable fn: pointer[void], mutable arg: pointer[void], size: size_t) returns ref[SchedTask] linked
 
+
+
+
+
+
+
+
     ; spawn_sized with the default stack size.
     procedure spawn_arg(mutable fn: pointer[void], mutable arg: pointer[void]) returns ref[SchedTask] linked
+
+
+
+
 
     ; spawn_arg without an argument.
     procedure spawn(mutable fn: pointer[void]) returns ref[SchedTask] linked
 
+
     ; The running task's spawn_arg argument (null on the main context).
     procedure task_arg() returns pointer[void] linked
+
+
+
+
+
+
 
     ; Give up the current time slice: requeue the running task at the
     ; tail and return to the dispatcher. A no-op on the main context.
     procedure yield() linked
+
+
+
+
+
+
+
+
 
     ; Push a channel receiver onto its HOME scheduler's inject queue and
     ; poke that scheduler's wake handle (milestone 2.4). Called from a
@@ -777,10 +1063,30 @@ define Scheduler
     ; initialized values (published by the channel lock).
     procedure inject_task(home: ref[Scheduler], mutable t: ref[SchedTask]) linked
 
+
+
+
+
+
+
+
+
+
+
+
     ; Poke a scheduler's wake handle so a poll_io blocked on it returns.
     ; Safe from any thread; a scheduler that never armed a wake (no
     ; channel receive yet) is simply not waiting — nothing to poke.
     procedure wake_remote(home: ref[Scheduler]) linked
+
+
+
+
+
+
+
+
+
 
     ; Move every remotely-injected channel receiver to the ready queue
     ; (milestone 2.4). Runs only on the scheduler's own thread (start of
@@ -788,6 +1094,37 @@ define Scheduler
     ; CAS is the only contended access. The Treiber stack is LIFO —
     ; reversed here so cross-thread wakes keep arrival order.
     procedure drain_inject() linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     ; Run one ready task until it yields or finishes. A task that
     ; finished is reaped ON THE SPOT — its whole fiber region (stack,
@@ -798,14 +1135,115 @@ define Scheduler
     ; loop runs through here, so no loop needs its own drain).
     procedure step() returns bool linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     ; Move every task blocked on t back to the ready queue.
     procedure wake_waiters(mutable t: ref[SchedTask]) linked
+
+
+
+
+
+
+
+
+
+
+
+
 
     ; Block in the poller until at least one armed fd fires, then wake
     ; every parked task whose readiness arrived (requeue, unblock).
     ; Returns true when the main context's own event (null tag) fired.
     ; Only ever runs on the main context (the dispatcher).
     procedure poll_io() returns bool io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     ; Run one ready task; when the ready queue is empty but tasks await
     ; fd readiness, block in the poller and wake them. Tasks parked on a
@@ -818,6 +1256,22 @@ define Scheduler
     ; that a deadlock.
     procedure step_or_wait() returns bool io linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     ; Dispose a finished task's fiber region exactly once. The
     ; dispatcher already reaps eagerly (step), so this normally finds
     ; the task disposed and returns 0; it stays as the idempotence
@@ -827,10 +1281,24 @@ define Scheduler
     ; proof.)
     procedure reap(mutable t: ref[SchedTask]) returns int linked
 
+
+
+
+
+
+
     ; Round-robin over the ready queue until it drains, blocking in the
     ; poller while I/O waiters remain. Traps (exit 106) if tasks are
     ; still blocked then — a join/channel deadlock.
     procedure run() io linked
+
+
+
+
+
+
+
+
 
     ; Wait until t finished. The dispatcher reaps eagerly, so the
     ; fiber's region is normally gone already (the reap here returns 0
@@ -838,6 +1306,27 @@ define Scheduler
     ; the main context this drives the dispatcher itself; from inside a
     ; task it blocks on t's waiter chain and yields to the dispatcher.
     procedure join(mutable t: ref[SchedTask]) returns int io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
 
 ; One queued blocking operation (milestone 2.5). The record lives on
@@ -880,7 +1369,19 @@ define IoPool
     ; moves, one lock at a time.
     procedure acquire(pl: pointer[IoPool]) linked
 
+
+
+
+
+
+
+
+
     procedure release(pl: pointer[IoPool]) linked
+
+
+
+
 }
 
 ; A pool worker (milestone 2.5): block in the 1-byte pipe read (one
@@ -895,6 +1396,36 @@ define IoPool
 ; (safe since milestone 2.3). The loop never returns.
 procedure io_worker(mutable arg: pointer[void]) returns pointer[void] io linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ; Suspending I/O over the scheduler's readiness poller (milestone 1.5).
 ; A file descriptor must be nonblocking (Io.set_nonblocking, once); read
 ; and write try the syscall and park the running task on would-block.
@@ -908,6 +1439,25 @@ define Io
     ; -1 as i32 — the shim's failure value — not cast and check < 0.)
     procedure ensure_poll() returns i32 io linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     ; Arm the current scheduler's cross-thread wake handle (milestone
     ; 2.4), creating the poller first if needed. Idempotent; called by
     ; Channel.receive BEFORE any park so a remote sender's wake_remote
@@ -917,15 +1467,48 @@ define Io
     ; pointers stay Io-parked tasks).
     procedure ensure_wake() returns i32 io linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     ; Put the fd into nonblocking mode (fcntl lives in the shim: it is
     ; variadic in libc, unreachable through a fixed-prototype extern).
     procedure set_nonblocking(fd: i32) io linked
+
+
+
+
+
 
     ; Block until fd is ready, scheduler-free (milestone 2.5): a plain
     ; poll(2) on one fd, infinite timeout. The result is advisory — the
     ; caller retries its syscall, which reports any hard error itself
     ; (an EINTR or POLLNVAL just loops through one more retry).
     procedure wait_ready(fd: i32, for_write: bool) io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     ; Park until fd is ready. A task arms the fd (oneshot, tagged with
     ; its record) and yields to the dispatcher; the main context arms
@@ -934,14 +1517,77 @@ define Io
     ; any scheduler (milestone 2.5) the wait is a plain poll(2).
     procedure park(fd: i32, for_write: bool) io linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     ; Read up to count bytes; suspends while the fd has nothing to
     ; offer. Returns the byte count, 0 at EOF, -1 on a hard error.
     procedure read(fd: i32, mutable buf: pointer[void], count: size_t) returns i64 io linked
+
+
+
+
+
+
+
+
+
 
     ; Write up to count bytes; suspends while the fd cannot take data.
     ; Returns the byte count written (partial writes possible), -1 on a
     ; hard error.
     procedure write(fd: i32, mutable buf: pointer[void], count: size_t) returns i64 io linked
+
+
+
+
+
+
+
+
+
 
     ; A nonblocking TCP socket listening on 127.0.0.1:port (0 asks the
     ; kernel for an ephemeral port; Io.local_port reads the assignment).
@@ -949,13 +1595,16 @@ define Io
     ; sockaddr_in's layout is OS-specific.
     procedure listen(port: i32) returns i32 io linked
 
+
     ; The local port a bound socket ended up on (-1 on failure).
     procedure local_port(fd: i32) returns i32 io linked
+
 
     ; Connect to 127.0.0.1:port — blocking handshake (instant against a
     ; live local listener); call Io.set_nonblocking on the result before
     ; suspending I/O. Returns the fd, -1 on failure.
     procedure connect(port: i32) returns i32 io linked
+
 
     ; Accept a connection; suspends while none is pending (readiness on
     ; a listening fd = pending connection). Returns the new fd (still
@@ -964,10 +1613,20 @@ define Io
     ; casts zero-extend.)
     procedure accept(fd: i32) returns i32 io linked
 
+
+
+
+
+
+
+
+
+
     ; Listen on ALL interfaces (INADDR_ANY) — a cluster node accepting
     ; real remote peers (stage 7, milestone 7.3). Same contract as
     ; Io.listen otherwise.
     procedure listen_any(port: i32) returns i32 io linked
+
 
     ; Resolve host by NAME (getaddrinfo in the shim, rule a) and
     ; connect — blocking handshake like Io.connect. host must be
@@ -975,15 +1634,36 @@ define Io
     ; failure (resolution or connection).
     procedure connect_host(mutable host: pointer[const_char], port: i32) returns i32 io linked
 
+
     ; SIGPIPE-safe socket write (stage 7): a write racing a peer's death
     ; must return -1/EPIPE, never kill the process. Suspension contract
     ; of Io.write otherwise.
     procedure tcp_write(fd: i32, mutable buf: pointer[void], count: size_t) returns i64 io linked
 
+
+
+
+
+
+
+
+
+
     ; Whole-buffer variant of tcp_write (the Node frame writer). False
     ; on a hard error — the caller treats that as peer suspicion, not a
     ; program error.
     procedure tcp_write_all(fd: i32, buf: pointer[void], count: size_t) returns bool io linked
+
+
+
+
+
+
+
+
+
+
+
 
     ; Write the WHOLE buffer, looping over partial writes (milestone
     ; 2.5 — Console goes through here). Colorless: suspends inside a
@@ -991,17 +1671,52 @@ define Io
     ; context, plain-blocks without a scheduler. False on a hard error.
     procedure write_all(fd: i32, buf: pointer[void], count: size_t) returns bool io linked
 
+
+
+
+
+
+
+
+
+
+
+
     ; Is the caller running inside a scheduled task? File and friends
     ; branch on this: offload inside a task, plain blocking call
     ; otherwise — whether an operation suspends is a runtime property.
     function in_task() returns bool linked
 
+
     ; How many blocking operations this thread shipped to a worker —
     ; the suspension proof for tests.
     function offload_count() returns i64 linked
 
+
     ; This thread's worker pool, created lazily on first offload.
     procedure ensure_pool() returns ref[IoPool] io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     ; Run fn(arg) — a blocking operation, `procedure fn(arg:
     ; pointer[void]) returns pointer[void]` taken with &fn — without
@@ -1017,9 +1732,75 @@ define Io
     ; region: the requesting frame outlives the call.
     procedure offload(mutable fn: pointer[void], mutable arg: pointer[void]) returns pointer[void] io linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     ; Live workers of this thread's pool (0 after drain_pool) — the
     ; reclamation proof for tests.
     function pool_worker_count() returns i64 linked
+
+
+
+
+
+
 
     ; Shut down this thread's worker pool (milestone 2.5 residual):
     ; closing the pipe's write end hands every idle worker's 1-byte
@@ -1032,6 +1813,24 @@ define Io
     ; while a task is parked on an offloaded operation.
     procedure drain_pool() io linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     ; Close this thread's poller and wake handle (milestone 2.5
     ; residual), read from the TLS fd mirrors — NEVER from the
     ; Scheduler record, which may sit on a page the thread entry
@@ -1043,6 +1842,23 @@ define Io
     ; one thread overwrite the mirror; the earlier poller's fds are
     ; the documented leak of that rare pattern.
     procedure close_poller() io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
 
 ; A channel node: one queued message. Allocated on the MESSAGE'S OWN page
@@ -1122,7 +1938,19 @@ define Channel
     ; critical sections are a few pointer moves, one lock at a time.
     procedure acquire(m: pointer[Channel]) linked
 
+
+
+
+
+
+
+
+
     procedure release(m: pointer[Channel]) linked
+
+
+
+
 
     ; Create an UNBOUNDED channel on its OWN heap page (like a message:
     ; the record is shared cross-thread and must not sit in any fiber's
@@ -1130,30 +1958,82 @@ define Channel
     ; first send handle.
     procedure create() returns ref[Channel] linked
 
+
+
+
     ; Create a channel with a bounded queue: at most `capacity`
     ; undelivered messages, after which a send BLOCKS until a receiver
     ; frees a slot (backpressure). capacity 0 is unbounded (== create).
     procedure create_bounded(capacity: i64) returns ref[Channel] linked
+
+
+
+
+
 
     ; Free the channel record's page. Only the receiver calls this,
     ; after receive returned null (closed and drained) — every sender
     ; retired its handle, nothing can touch the record anymore.
     procedure dispose(mutable m: ref[Channel]) linked
 
+
+
+
+
+
     ; Register one more send handle. Call BEFORE handing the channel to
     ; the new sender (spawn argument, cell, ...) — registering from the
     ; new thread would race the creator's close_sender.
     procedure add_sender(mutable m: pointer[Channel]) linked
+
+
+
+
+
 
     ; Hand a woken receiver back to its dispatcher: same thread →
     ; straight to the ready queue (the counters are ours); other thread
     ; → inject queue + wake (its drain_inject adjusts the counters).
     procedure route(mutable r: ref[SchedTask]) linked
 
+
+
+
+
+
+
+
+
+
+
+
+
     procedure pop_receiver(mutable m: ref[Channel]) returns ref[SchedTask]? linked
+
+
+
+
+
+
+
+
+
+
+
 
     ; Pop the oldest sender parked on a full queue (null when none).
     procedure pop_sender(mutable m: ref[Channel]) returns ref[SchedTask]? linked
+
+
+
+
+
+
+
+
+
+
+
 
     ; Send msg through the channel. OWNERSHIP OF THE MESSAGE REGION MOVES
     ; TO THE RECEIVER — the sender must not touch msg afterwards. msg
@@ -1176,12 +2056,151 @@ define Channel
     ; symbol at link time. The asymmetry is forced, not an oversight.
     procedure send(mutable m: pointer[Channel], mutable msg: pointer[void]) io linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     ; Retire one send handle. The LAST retirement closes the channel:
     ; every parked receiver is woken (it finds the queue, then null) and
     ; a main-context waiter on the receiving thread is poked. Wakes are
     ; routed after the lock drops — inject/wake need no lock, and the
     ; receivers were detached atomically.
     procedure close_sender(mutable m: pointer[Channel]) linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     ; Receive the next message; null means closed AND drained. The
     ; caller assumes ownership of the message region and frees it when
@@ -1195,11 +2214,98 @@ define Channel
     ; armed here BEFORE any park so remote senders always find it.
     procedure receive(mutable m: ref[Channel]) returns pointer[void] io linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     ; Bounded poller wait for the timed receive: one wake-handle slice,
     ; io-task tags drained exactly as in poll_io. NO deadlock bracket —
     ; a timed waiter always has its own way out, so it must not count
     ; toward exit 106.
     procedure timed_poll(slice_ms: i32) io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     ; Timed receive (stage 7, memo rule 6 — timeouts are explicit and
     ; local). Exactly receive's contract plus a deadline: a message, or
@@ -1212,6 +2318,56 @@ define Channel
     ; checks (v1: the runtime has no timer wheel — sibling tasks run in
     ; between, an otherwise-idle scheduler spins until the deadline).
     procedure receive_timeout(mutable m: ref[Channel], ms: i32, mutable timed_out: ref[bool]) returns pointer[void] io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
 
 ; An OS thread (milestone 2.1) — the raw primitive under everything in
@@ -1230,8 +2386,34 @@ define Thread
     ; starts; the trampoline releases it.
     procedure spawn(fn: pointer[void], arg: pointer[void]) returns size_t linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     ; Wait until the thread's entry returned (its result is discarded).
     procedure join(t: size_t) linked
+
+
+
+
+
 }
 
 ; A completion group (milestone 3.2): counts a wave of submitted tasks
@@ -1269,8 +2451,21 @@ define TaskGroup
     ; included, and pays nothing (TRAPS.md 3.19).
     procedure create() returns ref[TaskGroup] io linked
 
+
+
+
+
+
+
+
+
+
+
+
+
     ; Did the submitter of this wave stand inside a try?
     function is_guarded(g: pointer[TaskGroup]) returns bool linked
+
 
     ; The address of the wave's CANCEL WORD, or null when nothing can be
     ; cancelled. The emitted chunk loop polls it once per iteration, so this
@@ -1295,12 +2490,27 @@ define TaskGroup
     ; `_ZN9TaskGroup11cancel_wordEP9TaskGroup` before re-signing.
     function cancel_word(g: pointer[TaskGroup]) returns pointer[u64] linked
 
+
+
+
+
+
     ; Record the fault a worker just caught. FIRST ONE WINS: the kind field
     ; is the claim, taken with a compare-and-swap, and only the winner writes
     ; the words. The losers drop their fault -- one fault per wave is what a
     ; caller can act on, and .NET's AggregateException is the shape that
     ; keeps them all (not built).
     procedure record_fault(mutable g: pointer[TaskGroup]) linked
+
+
+
+
+
+
+
+
+
+
 
     ; One task finished: drop the pending count; the drop to zero wakes
     ; the waiter. Runs on worker threads — the counter is the only
@@ -1313,11 +2523,47 @@ define TaskGroup
     ; loops, 2026-07-10).
     procedure finish_one(g: pointer[TaskGroup]) io linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
     ; Block until every submitted task of the wave finished. Call from
     ; the SUBMITTING thread, after all submits (a submit racing a wait
     ; could let a stale zero-crossing byte end the wait early). Blocks
     ; the whole thread — main-context use, not inside a scheduled task.
     procedure wait(mutable g: pointer[TaskGroup]) io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     ; Free the group: close the pipe, release the record page (every
     ; work item of every wave goes with it). Only after wait returned —
@@ -1328,6 +2574,19 @@ define TaskGroup
     ; follow, hence no NEW finisher can enter — the spin is bounded by
     ; one descheduled write.
     procedure dispose(mutable g: pointer[TaskGroup]) io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
 
 ; One submitted task (milestone 3.2). Lives on its group's page (the
@@ -1355,7 +2614,19 @@ define TaskDeque
 {
     procedure acquire(d: pointer[TaskDeque]) linked
 
+
+
+
+
+
+
+
+
     procedure release(d: pointer[TaskDeque]) linked
+
+
+
+
 }
 
 ; The work-stealing pool (milestone 3.2) — see the module header for
@@ -1383,18 +2654,69 @@ define TaskPool
     ; The idx-th worker's deque.
     function deque_at(pl: ref[TaskPool], idx: i64) returns ref[TaskDeque] linked
 
+
     ; How many items workers stole from a foreign deque — observability
     ; for tests (the count is timing-dependent, assert nothing strict).
     function steal_count(pl: pointer[TaskPool]) returns u64 linked
+
+
+
+
 
     ; How many items were ever submitted — observability for the 4.1
     ; chunked emission (a chunked wave submits ~ncpu, not n).
     function submit_count(pl: pointer[TaskPool]) returns u64 linked
 
+
+
+
+
     ; Start a pool of nworkers OS threads (clamped to at least one).
     ; Traps (exit 112) when the OS refuses the pipe; a refused thread
     ; traps in Thread.spawn (exit 109).
     procedure create(nworkers: i64) returns ref[TaskPool] io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     ; Submit fn(arg) — a task entry, `procedure fn(arg: pointer[void])
     ; returns pointer[void]` taken with &fn — into the pool under the
@@ -1404,12 +2726,74 @@ define TaskPool
     ; the pipe byte (a woken worker must find an item).
     procedure submit(mutable pl: pointer[TaskPool], fn: pointer[void], arg: pointer[void], mutable g: pointer[TaskGroup]) io linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     ; Take one item: own deque first, then steal round-robin from the
     ; others. Only called after a pipe byte was consumed, so at least
     ; one item exists SOMEWHERE — a scan pass can still race a push in
     ; flight, hence the outer retry loop (bounded by that push's
     ; completion).
     procedure take(mutable pl: pointer[TaskPool], start: i64) returns ref[TaskItem] linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     ; Shut the pool down: closing the pipe's write end lets the workers
     ; drain every remaining byte (queued work still runs), then hands
@@ -1420,8 +2804,23 @@ define TaskPool
     ; continue.
     procedure shutdown(mutable pl: ref[TaskPool]) io linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     ; Online CPU count — the worker default for default_pool (3.3).
     function ncpu() returns i64 linked
+
 
     ; This thread's default pool, created on first demand with ncpu
     ; workers — the dispatch target of the promoted-for emission.
@@ -1430,12 +2829,27 @@ define TaskPool
     ; cells like any pool).
     procedure default_pool() returns ref[TaskPool] io linked
 
+
+
+
+
+
+
+
     ; Shut this thread's default pool down if one was created. Called by
     ; the thread-exit trampoline BEFORE allocator reclaim (shutdown joins
     ; the workers and frees the pool page). Safe there: every `parallel
     ; for` waits on its group before continuing, so nothing is in flight
     ; when the thread's entry has returned.
     procedure drain_default() io linked
+
+
+
+
+
+
+
+
 }
 
 ; A pool worker (milestone 3.2): consume one pipe byte (blocks between
@@ -1446,3 +2860,34 @@ define TaskPool
 ; (see the module header). Runs on its own OS thread: everything it
 ; touches arrives through the spawn cell.
 procedure task_worker(arg: pointer[void]) returns pointer[void] io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -24,6 +24,22 @@ define HASH_PRIMES: size_t[] [
 ; String::hash calls hash) instead of declare-only → undefined at link.
 function is_prime(candidate: size_t) returns bool linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ; SIZE_MAX is a C macro, not a Scaly name — the port carried it verbatim
 ; and the whole beyond-the-table fallback loop below was silently DEAD
 ; (the planner used to drop statements with unresolvable names; that is
@@ -37,7 +53,53 @@ define SIZE_MAX size_t 0xFFFFFFFFFFFFFFFF
 ; table's return is fixed-point-safe (both stages run the same code).
 function get_prime(size: size_t) returns size_t linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ; FNV-1a hash
 function hash(data: Slice[char]) returns size_t linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 }

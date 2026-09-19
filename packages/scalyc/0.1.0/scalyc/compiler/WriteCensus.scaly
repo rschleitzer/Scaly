@@ -165,12 +165,20 @@ define WriteCensus
         read_pass: bool
         read_index: size_t
         body_reads: Array[String]
+        ; and how it reaches I/O ("" not at all): a procedure does not declare
+        ; it, the check computes it like the reads
+        body_io: Array[String]
         edge_from: Array[size_t]
         edge_to: Array[size_t]
-        ; the `reads g` a declaration names (a linked procedure of another
-        ; package's interface), keyed like the purity table
+        ; what a LINKED declaration (another package's interface) says it
+        ; reads and whether it says `io`: a method under `Owner.name/arity`
+        ; only, a free function under `name/arity` only -- a bare-name
+        ; fallback for a method would hand one package's `get` the effects
+        ; of another's (Page.get, mangled without its owner, read scalyls'
+        ; doc_slots that way)
         decl_read_keys: Array[String]
         decl_read_vals: Array[String]
+        decl_io_keys: Array[String]
         ; per plan.functions index: the global a body RETURNS ("" none), so a
         ; getter's result is an alias of that global
         ret_globals: Array[String]
@@ -251,10 +259,12 @@ define WriteCensus
             set read_pass: false
             set read_index: 0
             set body_reads: Array[String]^this()
+            set body_io: Array[String]^this()
             set edge_from: Array[size_t]^this()
             set edge_to: Array[size_t]^this()
             set decl_read_keys: Array[String]^this()
             set decl_read_vals: Array[String]^this()
+            set decl_io_keys: Array[String]^this()
             set ret_globals: Array[String]^this()
             set cur_ret_global: String^this("")
         }
@@ -2022,13 +2032,33 @@ define WriteCensus
                             let gl WriteCensus.join_names(f.writes)
                             this.note_purity(WriteCensus.purity_key(f.name, f.input.length), f.pure, marks, gl)
                             this.note_purity(WriteCensus.owned_key(owner, f.name, f.input.length), f.pure, marks, gl)
-                            if f.read_globals.length > 0
+                            var linked_decl false
+                            choose f.implementation
+                                when lk: Linked
+                                    set linked_decl: true
+                                else
+                                    0
+                            if linked_decl
                             {
-                                let first f.read_globals[0]
-                                decl_read_keys.add(String^this(WriteCensus.owned_key(owner, f.name, f.input.length)))
-                                decl_read_vals.add(String^this(first))
-                                decl_read_keys.add(String^this(WriteCensus.purity_key(f.name, f.input.length)))
-                                decl_read_vals.add(String^this(first))
+                                var key WriteCensus.purity_key(f.name, f.input.length)
+                                if owner.get_length() > 0
+                                    set key: WriteCensus.owned_key(owner, f.name, f.input.length)
+                                if f.read_globals.length > 0
+                                {
+                                    let first f.read_globals[0]
+                                    decl_read_keys.add(String^this(key))
+                                    decl_read_vals.add(String^this(first))
+                                }
+                                var says_io false
+                                var wi: size_t 0
+                                while wi < f.writes.length
+                                {
+                                    if f.writes[wi] = "io"
+                                        set says_io: true
+                                    set wi: wi + 1
+                                }
+                                if says_io
+                                    decl_io_keys.add(String^this(key))
                             }
                         }
                         when c: Concept
@@ -2344,6 +2374,11 @@ define WriteCensus
         ; does the body reach I/O its declaration does not name?
         function bad_io(this: WriteCensus) returns bool
         {
+            ; a procedure may reach I/O without saying so; a function and an
+            ; initializer may not
+            if cur_pure = false
+                if cur_name <> "init"
+                    return false
             var id: size_t 0
             while id < gnames.length
             {
@@ -2774,10 +2809,16 @@ define WriteCensus
             {
                 ; a stub starts from what its declaration says it reads
                 var declared String("")
+                var declared_io String("")
                 let f_ptr0 fns.get i
                 if f_ptr0 <> null
+                {
                     set declared: this.declared_reads(f_ptr0.unwrap())
+                    if this.stub_declares_io(f_ptr0.unwrap())
+                        set declared_io: String("its declaration")
+                }
                 body_reads.add(String^this(declared))
+                body_io.add(String^this(declared_io))
                 set i: i + 1
             }
             set read_pass: true
@@ -2809,6 +2850,18 @@ define WriteCensus
                         if rb.get_length() > 0
                         {
                             body_reads.put(a, String^this(rb))
+                            set changed: true
+                        }
+                    }
+                    let ia body_io[a]
+                    let ib body_io[b]
+                    if ia.get_length() = 0
+                    {
+                        if ib.get_length() > 0
+                        {
+                            let callee_name fns.get b
+                            if callee_name <> null
+                                body_io.put(a, String^this(callee_name.unwrap().name))
                             set changed: true
                         }
                     }
@@ -2856,7 +2909,112 @@ define WriteCensus
                 sb.append r
                 sb.append "\n"
             }
+            ; and whether it reaches I/O
+            set i: 0
+            while i < fns.length
+            {
+                if i >= body_io.length
+                    break
+                let io_how body_io[i]
+                let g_ptr fns.get i
+                set i: i + 1
+                if g_ptr = null
+                    continue
+                if io_how.get_length() = 0
+                    continue
+                let g g_ptr.unwrap()
+                if g.origin <> null
+                    continue
+                var gbody false
+                choose g.impl
+                    when a: Action
+                        set gbody: true
+                    else
+                        0
+                if gbody = false
+                    continue
+                sb.append "I "
+                sb.append g.file
+                sb.append " "
+                sb.append g.loc.start
+                sb.append "\n"
+            }
             sb.to_string()
+        }
+
+        ; does a stub's declaration (its package's interface) say `io`?
+        function stub_declares_io(this: WriteCensus, f: PlannedFunction) returns bool
+        {
+            var stub false
+            choose f.impl
+                when e: Extern
+                    set stub: true
+                else
+                    0
+            if stub = false
+                return false
+            if f.mangled_name.starts_with(String("_Z")) = false
+                return false
+            let key this.stub_key(f)
+            var i: size_t 0
+            while i < decl_io_keys.length
+            {
+                let k decl_io_keys[i]
+                if k = key
+                    return true
+                set i: i + 1
+            }
+            false
+        }
+
+        ; the key a stub's declaration is filed under: its owner as the
+        ; mangled name spells it, else its bare name
+        function stub_key(this: WriteCensus, f: PlannedFunction) returns String
+        {
+            var n_in: size_t 0
+            if f.input <> null
+                set n_in: f.input.length
+            let owner WriteCensus.mangled_owner(f.mangled_name)
+            if owner.get_length() > 0
+                return WriteCensus.owned_key(owner, f.name, n_in)
+            WriteCensus.purity_key(f.name, n_in)
+        }
+
+        ; is `name` an element of a comma-separated list?
+        function list_has(list: String, name: Slice[char]) returns bool
+        {
+            let n list.get_length()
+            let k name.length
+            var start: size_t 0
+            while start <= n
+            {
+                var stop start
+                while stop < n
+                {
+                    let c list.get(stop)
+                    if c = 44                   ; ','
+                        break
+                    set stop: stop + 1
+                }
+                if stop - start = k
+                {
+                    var same true
+                    var j: size_t 0
+                    while j < k
+                    {
+                        let lc list.get(start + j)
+                        let nc name.get(j)
+                        if nc <> null
+                            if lc <> ((*nc) as u8)
+                                set same: false
+                        set j: j + 1
+                    }
+                    if same
+                        return true
+                }
+                set start: stop + 1
+            }
+            false
         }
 
         ; what a stub's declaration says it reads ("" none, or not a stub)
@@ -2875,16 +3033,12 @@ define WriteCensus
             var n_in: size_t 0
             if f.input <> null
                 set n_in: f.input.length
-            let owner WriteCensus.mangled_owner(f.mangled_name)
-            let k1 WriteCensus.owned_key(owner, f.name, n_in)
-            let k2 WriteCensus.purity_key(f.name, n_in)
+            let key this.stub_key(f)
             var i: size_t 0
             while i < decl_read_keys.length
             {
                 let k decl_read_keys[i]
-                if k = k1
-                    return decl_read_vals[i]
-                if k = k2
+                if k = key
                     return decl_read_vals[i]
                 set i: i + 1
             }
@@ -3388,7 +3542,19 @@ define WriteCensus
                         else
                             0
                     if body
+                    {
+                        ; a body of this root reaches I/O as the pre-pass
+                        ; computed it: nothing in its signature says so
+                        if check_mode
+                            if read_pass = false
+                                if slot - 1 < body_io.length
+                                {
+                                    let r body_io[slot - 1]
+                                    if r.get_length() > 0
+                                        this.note_io(op.loc.start, call.name)
+                                }
                         return
+                    }
                 }
             }
             let census pc as ref[PointerCensus]
@@ -3404,6 +3570,13 @@ define WriteCensus
         {
             if cur_substrate
                 return
+            if read_pass
+            {
+                let had body_io[read_index]
+                if had.get_length() = 0
+                    body_io.put(read_index, String^this(how))
+                return
+            }
             this.note_global_named(String("io"))
             this.note_global_site(offset, String("io"), how)
             if check_mode = false

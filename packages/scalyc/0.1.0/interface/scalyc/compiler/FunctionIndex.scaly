@@ -58,15 +58,111 @@ define FunctionIndex
     ; `entry_cap` entries. Exits loudly on malloc failure.
     function create(cap: size_t, entry_cap: size_t) @page true @direct true returns FunctionIndex linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     ; Append `index` to `name`'s insertion-ordered chain. A new name starts a
     ; one-element chain; an existing name links `index` after the current tail.
     ; `next[index]` is set to the sentinel (entry_cap) so the chain terminates.
     procedure insert(mutable this: FunctionIndex, name: String, index: size_t) linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     ; The head (first-inserted) registry index for `name`, or -1 if absent.
     function lookup_head(this: FunctionIndex, name: String) returns i64 linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     ; The next sibling registry index after entry `i` in insertion order, or -1
     ; at the end of the chain (sentinel == entry_cap).
     function next_of(this: FunctionIndex, i: size_t) returns i64 linked
+
+
+
+
+
+
+
+
+
+
 }

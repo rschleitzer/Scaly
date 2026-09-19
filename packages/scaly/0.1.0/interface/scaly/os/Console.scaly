@@ -8,5 +8,20 @@ define Console
 {
     procedure print(message: pointer[const_char]) io linked
 
+
+
+
+
     procedure println(message: pointer[const_char]) io linked
+
+
+
+
+
+
+
+
+
+
+
 }

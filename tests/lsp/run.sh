@@ -3016,7 +3016,11 @@ def check(cond, label):
     print(("PASS  " if cond else "FAIL  ") + label)
     if not cond: failures += 1
 
-files = sorted(glob.glob("packages/**/*.scaly", recursive=True))
+# the generated package interfaces are machine output (tools/interfaces.sh),
+# not source a formatter owns: a removed body leaves its line breaks behind so
+# that every line keeps its number
+files = sorted(f for f in glob.glob("packages/**/*.scaly", recursive=True)
+               if "/interface/" not in f)
 not_idem, unexpected, still_clean = [], [], []
 for f in files:
     env = dict(os.environ, SCALYLS_FMT_FILE=f)

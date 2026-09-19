@@ -10,11 +10,94 @@ define memory
 
     function test_page_allocate() returns int linked
 
+
+
+
+
+
+
+
+
+
     function test_page_allocate_int() returns int linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     function test_page_multiple_allocs() returns int linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     function test_page_get() returns int linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     function test() returns int linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

@@ -7,6 +7,21 @@ define StringIterator
 
 init(string: String) linked
 
+
+
+
+
+
 procedure next(mutable this: StringIterator) returns pointer[char] linked
+
+
+
+
+
+
+
+
+
+
 
 }

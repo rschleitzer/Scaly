@@ -1,7 +1,8 @@
-; Regression (R1, 2026-09-19): `io` after a signature declares that a procedure
-; talks to the world outside the program, itself or through what it calls. It
-; stands before the `mutable` clause, parses after the parameters, after
-; `returns` and before a braceless body, and changes nothing at run time.
+; Regression (R1, 2026-09-19): `io` after a signature says that a procedure
+; talks to the world outside the program. The compiler COMPUTES that and a
+; generated package interface writes it out; a source may still say it (it
+; stands before the `mutable` clause, after the parameters or `returns`, before
+; a braceless body) and nothing changes at run time.
 ; Expected: PASS
 
 mutable lines: int 0

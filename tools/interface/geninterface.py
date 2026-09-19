@@ -13,11 +13,15 @@ compiler writes those facts (`scalyc --interface-facts`), this tool does the
 text surgery:
 
   * a non-generic routine (function, procedure, operator, init, deinit) keeps
-    its header and ends in ` linked`; its caller page, which the planner infers
-    from the body (R1..R7) and which is part of the mangled name, is written
-    out as a leading `rp`; `@persists true` on its last parameter says it
-    stores an argument beyond its frame (the escape check's pass-to-storing
-    callee); `reads g, h` names the changeable globals it reads;
+    its header and ends in ` linked`. What the planner derives from its body
+    and a caller depends on goes after its parameter list as attributes: the
+    caller page R1..R7 inferred (`@page true`; part of the mangled name; an
+    explicit `rp` in the source stays an `rp`), its memberships in the page
+    sets R6/R7 join through bodies (`@direct`, `@transitive`, `@returnpage`),
+    and whether it stores an argument beyond its frame (`@persists true`, the
+    escape check's pass-to-storing callee). `reads g, h` names the changeable
+    globals it reads and `io` says it reaches I/O -- both computed, a source
+    declares neither;
   * a concept whose initializers or methods place data on its own page says
     `@resident true` (a construction of it must be page-hosted);
   * a `mutable`/`shared` global declares `linked` instead of its initializer;
@@ -29,6 +33,7 @@ Facts, one per line (offsets are byte offsets into the source file):
   C <file> <start> <end> concept <name> generic= page=<resident> ...
   G <file> <start> <end> global <name> ...
   R <file> <start> <globals>        (a routine's reads)
+  I <file> <start>                  (a routine that reaches I/O -- computed)
   M <file>                          (a module file of the package's root)
 """
 import os
@@ -158,6 +163,7 @@ def transform(text, facts):
         return any(a <= s < b for a, b in generic_spans)
 
     reads = {f[2]: f[3] for f in facts if f[0] == 'R'}
+    io_starts = {f[2] for f in facts if f[0] == 'I'}
     for f in facts:
         tag = f[0]
         if tag == 'F':
@@ -177,6 +183,15 @@ def transform(text, facts):
                         facts_attrs += ' @' + key + ' true'
                 rel = close + 1 - s
                 head = head[:rel] + facts_attrs + head[rel:]
+            if s in io_starts and not re.search(r'\)[^;]*\bio\b', head):
+                # computed, never written in a source: before a `mutable`
+                # clause, else at the end of the header
+                m = re.search(r'\smutable\s', head[(close - s) if close is not None else 0:])
+                if m:
+                    at = ((close - s) if close is not None else 0) + m.start()
+                    head = head[:at] + ' io' + head[at:]
+                else:
+                    head = head.rstrip() + ' io'
             if s in reads:
                 head = head.rstrip() + ' reads ' + reads[s]
             edits.append((s, body_end(text, e), head.rstrip() + ' linked'))
@@ -202,9 +217,13 @@ def transform(text, facts):
             k = skip_type(text, m.end())
             edits.append((k, body_end(text, e), ' linked'))
     # apply back to front; a nested edit (a method inside an edited concept
-    # header) never overlaps a body edit
+    # header) never overlaps a body edit. LINE-PRESERVING: whatever a
+    # replacement removes, its line breaks stay, so every line that remains is
+    # on the line it has in the source -- a diagnostic from a generic body
+    # (kept verbatim) then names the right line of the source file too.
     out = text
     for s, e, rep in sorted(edits, key=lambda x: (x[0], x[1]), reverse=True):
+        rep = rep + '\n' * (out[s:e].count('\n') - rep.count('\n'))
         out = out[:s] + rep + out[e:]
     return out
 
@@ -221,7 +240,7 @@ def parse_facts(path):
         if p[0] in ('D', 'T', 'P') and last is not None:
             last[6][{'D': 'direct', 'T': 'transitive', 'P': 'returnpage'}[p[0]]] = '1'
             continue
-        if not p or p[0] not in ('F', 'C', 'G', 'R', 'M'):
+        if not p or p[0] not in ('F', 'C', 'G', 'R', 'I', 'M'):
             continue
         tag, fil = p[0], os.path.normpath(p[1])
         if tag == 'M':
@@ -229,6 +248,9 @@ def parse_facts(path):
             continue
         if tag == 'R':
             by_file[fil].append(('R', fil, int(p[2]), p[3]))
+            continue
+        if tag == 'I':
+            by_file[fil].append(('I', fil, int(p[2])))
             continue
         attrs = {}
         for x in p[6:]:

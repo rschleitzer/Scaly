@@ -56,18 +56,75 @@ define nameset
     ; sequences hash identically.
     function hash_ptr(p: Slice[u8]) returns size_t linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     ; FNV-1a over the byte range s[start,end). Hashes the logical content (after
     ; the String's varint length prefix) via get_buffer, no per-call allocation.
     function hash_range(s: String, start: size_t, end: size_t) returns size_t linked
 
+
+
+
+
+
+
     ; Byte-equality of a[0,len) and b[0,len) over two raw pointers.
     function eq_ptr(a: Slice[u8], b: Slice[u8]) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     ; Allocate + zero a slot array of `cap` entries. null on malloc failure
     ; (callers then treat every name as absent — colours by shape).
     function create(cap: size_t) returns pointer[NameSlot] linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     procedure destroy(mutable slots: pointer[NameSlot]) linked
+
+
+
+
 
     ; Insert (or raise the kind of) the name `name` views with the
     ; precomputed hash `h`. Open addressing, linear probe. An existing entry for
@@ -75,11 +132,103 @@ define nameset
     ; wins regardless of order. A full table drops the name silently.
     procedure insert(mutable slots: pointer[NameSlot], cap: size_t, name: Slice[u8], h: size_t, kind: i64) linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     ; Insert every newline-delimited segment of `list` (a names_from_items# /
     ; primitive_type_list# / tagged_name_list# result) with the given kind. Slots
     ; borrow the list's buffer, so `list` must outlive the table.
     procedure insert_name_list(mutable slots: pointer[NameSlot], cap: size_t, list: String, kind: i64) linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     ; The token kind for source[start,end), or -1 if the name is not in the set.
     function lookup(slots: pointer[NameSlot], cap: size_t, source: String, start: size_t, end: size_t) returns i64 linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

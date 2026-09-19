@@ -27,23 +27,185 @@ define rpc
     ; EOF / error.
     procedure read_byte() returns int io linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     ; Fill exactly `n` bytes from stdin into `buf`. Stops early on EOF.
     procedure read_exact(mutable buf: pointer[void], n: size_t) io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     ; Read one framed message. Returns the JSON body as a String on the
     ; caller's page, or an empty String at EOF / on a malformed frame.
     procedure read_message(rp) @direct true returns String io linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     ; Parse the integer value from a "Header-Name: <digits>" line.
     function parse_header_size(line: String) returns size_t linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     ; Write a JSON body as a framed message to stdout.
     procedure write_message(body: String) io linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     ; Write every byte of `s` to stdout, retrying short writes.
     procedure write_all(s: String) io linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     function format_size(rp, n: size_t) @direct true returns String linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     ; ====================================================================
     ; fd-parameterized variants — same framing, but over an arbitrary fd
@@ -54,11 +216,126 @@ define rpc
 
     procedure read_byte_fd(fd: int) returns int io linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     procedure read_exact_fd(fd: int, mutable buf: pointer[void], n: size_t) io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     procedure read_message_fd(rp, fd: int) @direct true returns String io linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     procedure write_all_fd(fd: int, s: String) io linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     procedure write_message_fd(fd: int, body: String) io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

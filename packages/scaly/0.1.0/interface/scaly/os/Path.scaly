@@ -5,7 +5,33 @@ define Path
 {
     procedure get_directory_name(mutable path: String) @page true @direct true returns String linked
 
+
+
+
+
+
+
+
+
     procedure get_file_name(mutable path: String) @page true @direct true returns String linked
 
+
+
+
+
+
     function join(path1: String, path2: String) @page true @direct true returns String linked
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

@@ -11,7 +11,34 @@ define PageList
 {
     procedure add(mutable this: PageList, element: ref[Page]) linked
 
+
+
+
+
+
     procedure remove(mutable this: PageList, element: ref[Page]) returns bool linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     function get_iterator(this: PageList) @page true @direct true returns PageListIterator linked
+
 }

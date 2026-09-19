@@ -9297,7 +9297,10 @@ define symbols
         uri
     }
 
-    ; Wrap a filesystem path back into a "file://" uri.
+    ; Wrap a filesystem path back into a "file://" uri. A file of a generated
+    ; package interface (a dependency is loaded through it) is answered as its
+    ; SOURCE file: the interface keeps every line where the source has it, so
+    ; a definition's line and column are the source's.
     function path_to_uri(rp, path: String) returns String
     {
         var sb StringBuilder()
@@ -9306,10 +9309,29 @@ define symbols
         let n path.get_length()
         while i < n
         {
+            if symbols.at_interface_dir(path, i)
+                set i: i + 10
             sb.append(path.get(i) as char)
             set i: i + 1
         }
         sb.to_string()
+    }
+
+    ; does `/interface/` start at byte i of path?
+    function at_interface_dir(path: String, i: size_t) returns bool
+    {
+        let needle String("/interface/")
+        let k needle.get_length()
+        if i + k > path.get_length()
+            return false
+        var j: size_t 0
+        while j < k
+        {
+            if path.get(i + j) <> needle.get(j)
+                return false
+            set j: j + 1
+        }
+        true
     }
 
     ; The directory portion of `path` (everything before the last '/'), or "".

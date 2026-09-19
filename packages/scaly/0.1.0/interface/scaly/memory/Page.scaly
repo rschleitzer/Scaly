@@ -65,7 +65,103 @@ define Page
     ; part of the Itanium name, so no caller's symbol moves.
     function allocate_page() returns ref[Page] linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     function release_page(p: ref[Page]) linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     ; Attributed variants of allocate_page/release_page for the
     ; standalone, hand-matched alloc/release pairs in fiber.scaly and
@@ -80,36 +176,280 @@ define Page
     ; mismatched label shows up as a permanent false imbalance.
     procedure allocate_page_traced(mutable site: pointer[const_char]) returns ref[Page] linked
 
+
+
+
+
+
     procedure release_page_traced(p: ref[Page], mutable site: pointer[const_char]) linked
+
+
+
+
 
     ; How many dead buckets THIS thread has drained and freed
     ; (teardown proof for tests; the counter is thread-local).
     function reclaimed_dead_buckets() returns i64 linked
 
+
     ; tsc's `Memory used` and `Memory allocs` (see PageStatistics above): 0 until
     ; enable_statistics()
     function bytes_held() returns i64 linked
 
+
+
+
+
+
+
     function allocation_count() returns i64 linked
 
+
+
+
+
+
+
     function live_bytes() returns i64 linked
+
+
+
+
+
+
 
     ; Turns the three counts on (once; later calls do nothing). Call it while the
     ; process is single-threaded, before the work to be measured.
     procedure enable_statistics() linked
 
+
+
+
+
+
+
+
+
+
+
     function allocate_root_page() returns pointer[Page] linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     procedure reset(this: Page) linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
     procedure allocate(this: Page, size: size_t, align: size_t) returns pointer[void] linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     procedure allocate_oversized(this: Page, size: size_t) returns pointer[void] linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     ; The aligned_alloc block length recorded by allocate_oversized (gross
     ; size rounded up to a PAGE_SIZE multiple). Meaningful only for
     ; oversized pages (next_object == null).
     function oversized_size(p: ref[Page]) returns size_t linked
+
+
+
+
 
     ; Answers a borrowed reference: the page header is always there for a
     ; page-hosted address (a null would mean address 0), and the RETURN is
@@ -118,9 +458,26 @@ define Page
     ; Page.get(...)` was the origin of 551 pointer-into-ref sites in the ports.
     function get(address: pointer[void]) returns ref[Page] linked
 
+
+
+
+
+
     function get_capacity(this: Page, align: size_t) returns size_t linked
 
+
+
+
+
+
+
+
     procedure allocate_exclusive_page(this: Page) returns ref[Page] linked
+
+
+
+
+
 
     ; A BUFFER with a page of its own, registered in this page's exclusive list
     ; either way — which is what makes `Page.get(buffer)` the whole release path
@@ -132,9 +489,51 @@ define Page
     ; a generic body monomorphized into another package.
     procedure allocate_exclusive_buffer(this: Page, size: size_t, align: size_t) returns pointer[void] linked
 
+
+
+
+
+
+
+
     procedure deallocate_extensions(this: Page) linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     procedure deallocate_exclusive_page(this: Page, page: ref[Page]) linked
+
+
+
+
+
+
+
 
     ; Give back everything allocated in this REGION since a MARK was taken on
     ; it. `this` is the region's HEAD; the mark is what the region's end looked
@@ -160,5 +559,48 @@ define Page
     ; reachable: proving that is the caller's job (dazzle's FrameMark and its
     ; six conditions). A wrong rewind is a dangling pointer, not a diagnostic.
     procedure rewind(this: Page, mark_page: pointer[Page], mark: pointer[void], exclusive: pointer[PageNode], head_exclusive: pointer[PageNode]) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 }

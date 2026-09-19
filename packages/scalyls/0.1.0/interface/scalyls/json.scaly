@@ -70,11 +70,15 @@ define json
 
     function null_value() @page true @direct true returns JsonValue linked
 
+
     function bool_value(b: bool) @page true @direct true returns JsonValue linked
+
 
     function number_value(n: i64) @page true @direct true returns JsonValue linked
 
+
     function string_value(s: String) @page true @direct true returns JsonValue linked
+
 
     ; ====================================================================
     ; Accessors
@@ -82,25 +86,102 @@ define json
 
     function is_null(this: JsonValue) returns bool linked
 
+
+
+
+
+
+
+
     function as_i64(this: JsonValue) returns i64 linked
 
+
+
+
+
+
+
+
     function as_bool(this: JsonValue) returns bool linked
+
+
+
+
+
+
+
 
     ; Returns a copy of the string payload, or an empty String otherwise.
     function as_string(rp, this: JsonValue) @direct true returns String linked
 
+
+
+
+
+
+
+
     function array_length(this: JsonValue) returns size_t linked
+
+
+
+
+
+
+
 
     ; Element i of an array, or Null when out of range / not an array.
     ; The returned value aliases the tree (no deep copy).
     function array_get(this: JsonValue, i: size_t) @page true @direct true returns JsonValue linked
+
+
+
+
+
+
+
+
+
+
+
+
 
     ; Look up a member of an object by key. Returns Null when the value is
     ; not an object or the key is absent.
     ; A String member key against a `Slice[char]` literal, byte for byte, no allocation.
     function key_equals(s: String, k: Slice[char]) returns bool linked
 
+
+
+
+
+
+
+
+
+
+
+
+
     function get(this: JsonValue, key: Slice[char]) @page true @direct true returns JsonValue linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     ; ====================================================================
     ; Parsing
@@ -108,13 +189,181 @@ define json
 
     procedure parse(rp, mutable source: String) @direct true returns JsonValue linked
 
+
+
+
+
     procedure parse_value(rp, mutable p: ref[JsonParser]) @direct true returns JsonValue linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     procedure parse_object(rp, mutable p: ref[JsonParser]) @direct true returns JsonValue linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     procedure parse_array(rp, mutable p: ref[JsonParser]) @direct true returns JsonValue linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     procedure parse_string(rp, mutable p: ref[JsonParser]) @direct true returns String linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     ; Maps a single-byte escape letter to its byte. `\u` is NOT handled here
     ; and cannot be: its codepoint encodes to one to four bytes and this
@@ -122,15 +371,81 @@ define json
     ; append_utf8# instead.
     function decode_escape(e: u8) returns char linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     ; Reads the four hex digits of a \uXXXX escape at the cursor (the `u` is
     ; already consumed) and advances past them.
     procedure read_hex4(mutable p: ref[JsonParser]) returns i64 linked
+
+
+
+
+
+
+
+
+
+
+
+
 
     ; Reads a \uXXXX escape and answers its CODEPOINT, joining a
     ; surrogate PAIR (\uD83D\uDE00) into the one codepoint it denotes.
     ; A lone surrogate — which no well-formed document can mean — answers
     ; U+FFFD, so the encoding downstream stays well-formed.
     procedure read_unicode_escape(mutable p: ref[JsonParser]) returns i64 linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     ; Appends the UTF-8 encoding of `cp` to `sb`.
     ;
@@ -144,7 +459,59 @@ define json
     ; tests/lsp/run.sh checks the BYTE COUNT, not only the content.
     procedure append_utf8(mutable sb: ref[StringBuilder], cp: i64) linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     procedure parse_number(mutable p: ref[JsonParser]) returns i64 linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     ; ====================================================================
     ; Low-level cursor helpers
@@ -152,19 +519,72 @@ define json
 
     function peek(p: ref[JsonParser]) returns u8 linked
 
+
+
+
+
+
+
     procedure advance(mutable p: ref[JsonParser]) linked
+
 
     procedure skip_ws(mutable p: ref[JsonParser]) linked
 
+
+
+
+
+
+
+
+
+
     procedure expect(mutable p: ref[JsonParser], c: u8) linked
+
+
+
+
+
+
+
+
 
     function is_digit(c: u8) returns bool linked
 
+
     function hex_value(c: u8) returns i64 linked
+
+
+
+
+
+
+
+
+
+
+
+
 
     ; Matches `lit` at the cursor; advances past it and returns true on a
     ; hit, leaves the cursor untouched and returns false on a miss.
     procedure match_literal(mutable p: ref[JsonParser], lit: Slice[char]) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     ; ====================================================================
     ; Serialization
@@ -182,8 +602,146 @@ define json
 
     function stringify(rp, this: JsonValue) @direct true returns String linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     ; Quote and escape a string into a "..."-wrapped JSON string literal.
     function quote_string(rp, s: String) @direct true returns String linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     function format_i64(rp, n: i64) @direct true returns String linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
