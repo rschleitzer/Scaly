@@ -2415,7 +2415,7 @@ define Modeler
         )
     }
 
-    function handle_constituent(path: String, syntax: MemberSyntax, symbols_builder: ref[HashMapBuilder[String, Nameable]]) returns Member
+    procedure handle_constituent(path: String, syntax: MemberSyntax, symbols_builder: ref[HashMapBuilder[String, Nameable]]) returns Member
     {
         choose syntax
             when def: DefinitionSyntax
@@ -2522,7 +2522,7 @@ define Modeler
         )
     }
 
-    function handle_declaration(path: String, syntax: DeclarationSyntax, symbols_builder: ref[HashMapBuilder[String, Nameable]]) returns Member
+    procedure handle_declaration(path: String, syntax: DeclarationSyntax, symbols_builder: ref[HashMapBuilder[String, Nameable]]) returns Member
     {
         choose syntax
             when private_syntax: PrivateSyntax
@@ -2613,7 +2613,7 @@ define Modeler
                 Member.Package(Vector[Module](0))
     }
 
-    function handle_export(path: String, syntax: ExportSyntax, is_private: bool, symbols_builder: ref[HashMapBuilder[String, Nameable]]) returns Member
+    procedure handle_export(path: String, syntax: ExportSyntax, is_private: bool, symbols_builder: ref[HashMapBuilder[String, Nameable]]) returns Member
     {
         choose syntax
             when def: DefinitionSyntax

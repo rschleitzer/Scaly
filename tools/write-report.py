@@ -12,8 +12,10 @@ import sys
 from collections import Counter, defaultdict
 
 LINE = re.compile(r'^write-report: (?P<loc>[^ ]+:\d+:\d+): (?P<rest>.*)$')
-BODY = re.compile(r'^(?P<kind>fn|proc|init) (?P<name>\S+) (?P<verdict>clean|writes (?P<params>\S*)(?: (?P<how>direct|transitive))?)$')
-SITE = re.compile(r'^(?P<cls>[a-z]-[a-z]+) (?P<name>\S+) writes (?P<params>\S+)(?: (?P<detail>.*))?$')
+# A parameter list may carry spaces (`this:HashMapBuilder[String, int]`): it ends
+# at the verdict, never at the first blank.
+BODY = re.compile(r'^(?P<kind>fn|proc|init) (?P<name>\S+) (?P<verdict>clean|writes (?P<params>.*?)(?: (?P<how>direct|transitive))?)$')
+SITE = re.compile(r'^(?P<cls>[a-z]-[a-z]+) (?P<name>\S+) writes (?P<params>.+?)(?: (?P<detail>(?:->|\^|region).*|locked))?$')
 
 
 def package_of(loc):
@@ -21,10 +23,27 @@ def package_of(loc):
     return m.group(1) if m else '(other)'
 
 
+def split_params(params):
+    """`this:Map[K, V],host:ref[Page]` -> the two entries (commas inside [] stay)."""
+    out, depth, cur = [], 0, ''
+    for ch in params:
+        if ch == '[':
+            depth += 1
+        elif ch == ']':
+            depth -= 1
+        if ch == ',' and depth == 0:
+            out.append(cur)
+            cur = ''
+        else:
+            cur += ch
+    out.append(cur)
+    return out
+
+
 def param_kinds(params):
     """Classify the written parameters: this / page / other param / global."""
     kinds = set()
-    for p in params.split(','):
+    for p in split_params(params):
         if not p:
             continue
         if p == 'global':

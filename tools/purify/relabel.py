@@ -24,12 +24,31 @@ import re
 import sys
 from collections import Counter, defaultdict
 
+# A parameter list may carry spaces (`this:HashMapBuilder[String, int]`); the first
+# version read it as \S* and silently dropped every such body (2026-09-19).
 BODY = re.compile(r'^(?P<file>[^:]+):(?P<line>\d+):(?P<col>\d+): fn (?P<name>\S+) '
-                  r'writes (?P<params>\S*) (?P<how>direct|transitive)$')
+                  r'writes (?P<params>.*) (?P<how>direct|transitive)$')
+
+
+def split_params(params):
+    """`this:Map[K, V],host:ref[Page]` -> the two entries (commas inside [] stay)."""
+    out, depth, cur = [], 0, ''
+    for ch in params:
+        if ch == '[':
+            depth += 1
+        elif ch == ']':
+            depth -= 1
+        if ch == ',' and depth == 0:
+            out.append(cur)
+            cur = ''
+        else:
+            cur += ch
+    out.append(cur)
+    return out
 
 
 def only_pages(params):
-    for p in params.split(','):
+    for p in split_params(params):
         if not p:
             continue
         if p == 'global' or p.startswith('this:'):

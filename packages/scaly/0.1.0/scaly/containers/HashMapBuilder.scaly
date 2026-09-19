@@ -19,7 +19,7 @@ define HashMapBuilder[K, V]
         }
     }
 
-    function reallocate(this: HashMapBuilder[K, V], size: size_t)
+    procedure reallocate(this: HashMapBuilder[K, V], size: size_t)
     {
         let hash_size hashing.get_prime size
         let own_page Page.get(this)
@@ -45,7 +45,7 @@ define HashMapBuilder[K, V]
         set slots: new_slots
     }
 
-    function add(this: HashMapBuilder[K, V], key: K, value: V) returns bool
+    procedure add(this: HashMapBuilder[K, V], key: K, value: V) returns bool
     {
         let hash_size hashing.get_prime(length + 1)
         if slots = null || hash_size > slots.length
@@ -54,7 +54,7 @@ define HashMapBuilder[K, V]
         return add_internal(key, value)
     }
 
-    function add_internal(this: HashMapBuilder[K, V], key: K, value: V) returns bool
+    procedure add_internal(this: HashMapBuilder[K, V], key: K, value: V) returns bool
     {
         let hash_code key.hash()
         let slot_number hash_code % slots.length
@@ -74,7 +74,7 @@ define HashMapBuilder[K, V]
         return true
     }
 
-    function contains(this: HashMapBuilder[K, V], key: K) returns bool
+    procedure contains(this: HashMapBuilder[K, V], key: K) returns bool
     {
         if slots = null
             return false
@@ -93,7 +93,7 @@ define HashMapBuilder[K, V]
         return false
     }
 
-    function get(this: HashMapBuilder[K, V], key: K) returns ref[V]?
+    procedure get(this: HashMapBuilder[K, V], key: K) returns ref[V]?
     {
         if slots = null
             return null
