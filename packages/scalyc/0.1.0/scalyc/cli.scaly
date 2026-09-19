@@ -68,6 +68,7 @@ define Options
     task_plan: bool         ; --task-plan: stage-3 parallelizability report
     pointer_report: bool    ; --pointer-report: raw-pointer census off the Plan
     write_report: bool      ; --write-report: writes through parameters, off the Plan
+    purity_check: bool      ; --purity-check: a function may not write what its parameters reach
     debug: bool             ; -g: emit DWARF debug info
     run_mode: bool          ; --run <fn>: JIT-compile and execute <fn> in-process
     run_function: String    ; the function name to JIT-run
@@ -99,6 +100,7 @@ define Options
         set task_plan: false
         set pointer_report: false
         set write_report: false
+        set purity_check: false
         set debug: false
         set run_mode: false
         set run_function: String()
@@ -203,6 +205,10 @@ define cli
                 else if arg = "--write-report"
                 {
                     set opts.write_report: true
+                }
+                else if arg = "--purity-check"
+                {
+                    set opts.purity_check: true
                 }
                 else if arg = "-O0"
                 {
@@ -335,6 +341,7 @@ define cli
         Console.println("  --task-plan    Report the parallelizability verdict of every for loop")
         Console.println("  --pointer-report  Report every raw-pointer site, classified off the Plan")
         Console.println("  --write-report  Report every write through a parameter, off the Plan")
+        Console.println("  --purity-check  Report every function that writes what its parameters reach")
         Console.println "  --run <fn>     JIT-compile and run <fn> in-process"
         Console.println "  --jit          JIT-compile and run the whole program"
         Console.println "  --target <t>   Cross-emit object for triple <t> (use with -c)"
@@ -591,6 +598,16 @@ define cli
             var writes WriteCensus.WriteCensus()
             writes.analyze(plan, &model, &wcensus)
             cli.print_write_report(&writes)
+        }
+
+        ; --purity-check: R1 step 2 as a report (WriteCensus' check mode)
+        if opts.purity_check
+        {
+            var pcensus PointerCensus.PointerCensus()
+            var purity WriteCensus.WriteCensus()
+            set purity.check_mode: true
+            purity.analyze(plan, &model, &pcensus)
+            cli.print_purity_check(&purity)
         }
 
         ; s185 (roadmap Step C): hard diagnostics — constructs the
@@ -1299,6 +1316,24 @@ define cli
         let head_str head.to_string()
         Console.println(head_str.to_c_string())
         cli.print_located("write-report: ", &wc.report_files, &wc.report_offsets, &wc.report_texts)
+    }
+
+    function print_purity_check(wc: ref[WriteCensus.WriteCensus])
+    {
+        var head StringBuilder()
+        head.append "purity-check: "
+        head.append(cli.format_size(wc.n_violations))
+        head.append " of "
+        head.append(cli.format_size(wc.n_pure))
+        head.append " functions write what their parameters reach; sites "
+        head.append(cli.format_size(wc.n_sites))
+        head.append ", callees of unknown keyword "
+        head.append(cli.format_size(wc.n_stub_unknown))
+        head.append ", unfiled "
+        head.append(cli.format_size(wc.n_unfiled))
+        let head_str head.to_string()
+        Console.println(head_str.to_c_string())
+        cli.print_located("purity-check: ", &wc.report_files, &wc.report_offsets, &wc.report_texts)
     }
 
     ; Shared located-report printer: one `<prefix><file>:<line>:<col>: <text>`

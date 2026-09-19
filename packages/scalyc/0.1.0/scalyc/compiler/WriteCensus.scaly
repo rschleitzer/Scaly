@@ -120,6 +120,10 @@ define WriteCensus
         fz_changed: bool
         cur_fn: size_t
         n_fz_rounds: size_t
+        ; the check mode (--purity-check)
+        check_mode: bool
+        cur_page_mask: u64
+        n_violations: size_t
     )
     {
         init()
@@ -174,6 +178,9 @@ define WriteCensus
             set fz_changed: false
             set cur_fn: 0
             set n_fz_rounds: 0
+            set check_mode: false
+            set cur_page_mask: 0
+            set n_violations: 0
         }
 
         ; ================================================================
@@ -199,6 +206,11 @@ define WriteCensus
             set plan_functions: plan.functions
             if plan.functions = null
                 return
+            if check_mode
+            {
+                this.run_check(model)
+                return
+            }
             let fns plan.functions
             var i: size_t 0
             while i < fns.length
@@ -290,6 +302,9 @@ define WriteCensus
             set body_mask: 0
             set body_direct: false
             set lock_depth: 0
+            set cur_page_mask: 0
+            if check_mode
+                set cur_page_mask: this.page_param_mask()
             set loc_names: Array[String]^this()
             set loc_masks: Array[u64]^this()
         }
@@ -703,6 +718,8 @@ define WriteCensus
             }
             if cur_substrate
                 set mask: mask & (WC_GLOBAL - (1 as u64))
+            if check_mode
+                set mask: mask & (0 - (cur_page_mask + (1 as u64)))
             if mask = 0
                 return
             set body_mask: body_mask | mask
@@ -805,6 +822,11 @@ define WriteCensus
                 this.pass_frozen_args(call, slot)
             if call.args = null
                 return
+            if check_mode
+            {
+                this.check_call(op, call, slot)
+                return
+            }
             var stub false
             if slot > 0
             {
@@ -1373,6 +1395,279 @@ define WriteCensus
                     }
                     else
                         set n_unfiled: n_unfiled + 1
+                }
+            }
+        }
+
+        ; ================================================================
+        ; The CHECK mode (`--purity-check`, R1 step 2): a `function` may not
+        ; write what its parameters reach. Local and compositional, because
+        ; after R1 step 1 the keyword is honest: a callee `function` is
+        ; TRUSTED, a `procedure` may write every non-scalar argument it is
+        ; handed, an extern writes what extern_writes says. Across a package
+        ; the keyword comes from the MODEL (a name any `procedure` carries is
+        ; a procedure), so no summary of another root is needed. Explicit page
+        ; parameters are the result region and exempt, as the caller page is.
+        ; ================================================================
+
+        procedure collect_purity_module(this: WriteCensus, m: Module)
+        {
+            this.collect_purity_members(m.members)
+            var i: size_t 0
+            while i < m.modules.length
+            {
+                let sub m.modules.get i
+                if sub <> null
+                    this.collect_purity_module((*sub))
+                set i: i + 1
+            }
+        }
+
+        procedure collect_purity_members(this: WriteCensus, members: Vector[Member])
+        {
+            var i: size_t 0
+            while i < members.length
+            {
+                let m_ptr members.get i
+                if m_ptr <> null
+                {
+                    let mem (*m_ptr)
+                    choose mem
+                        when f: Function
+                            this.note_purity(f.name, f.pure)
+                        when c: Concept
+                        {
+                            choose c.definition
+                                when st: Structure
+                                {
+                                    this.collect_purity_members(st.members)
+                                    var mi: size_t 0
+                                    while mi < st.modules.length
+                                    {
+                                        let sub st.modules.get mi
+                                        if sub <> null
+                                            this.collect_purity_module((*sub))
+                                        set mi: mi + 1
+                                    }
+                                }
+                                when un: Union
+                                    this.collect_purity_members(un.members)
+                                when ns: Namespace
+                                {
+                                    this.collect_purity_members(ns.members)
+                                    var mi: size_t 0
+                                    while mi < ns.modules.length
+                                    {
+                                        let sub ns.modules.get mi
+                                        if sub <> null
+                                            this.collect_purity_module((*sub))
+                                        set mi: mi + 1
+                                    }
+                                }
+                                else
+                                    0
+                        }
+                        else
+                            0
+                }
+                set i: i + 1
+            }
+        }
+
+        ; 1: every declaration of the name is a function; 2: one is a procedure
+        procedure note_purity(this: WriteCensus, name: String, pure: bool)
+        {
+            var state: u64 1
+            if pure = false
+                set state: 2
+            let row this.summary_index(name)
+            if row > 0
+            {
+                if state > sum_masks[row - 1]
+                    sum_masks.put(row - 1, state)
+                return
+            }
+            this.add_summary(String^this(name), state, 0)
+        }
+
+        ; the parameters of the body walked whose type is a Page
+        function page_param_mask(this) returns u64
+        {
+            if cur_input = null
+                return 0
+            var m: u64 0
+            var i: size_t 0
+            while i < cur_input.length
+            {
+                if i < 61
+                {
+                    if WriteCensus.core_name_is_page(this.param_type_name(i))
+                        set m: m | ((1 as u64) << (i as u64))
+                }
+                set i: i + 1
+            }
+            m
+        }
+
+        function core_name_is_page(readable: String) returns bool
+        {
+            if readable.ends_with(String("Page]"))
+                return true
+            readable.equals(String("Page"))
+        }
+
+        ; A call in a function body under the check: a trusted callee writes nothing.
+        procedure check_call(this: WriteCensus, op: PlannedOperand, call: PlannedCall, slot: size_t)
+        {
+            if call.is_intrinsic
+                return
+            if call.is_operator
+                return
+            ; a construction writes its NEW object
+            if call.name = "init"
+                return
+            if call.mangled_name.contains(String("4initE"))
+                return
+            var known false
+            var trusted false
+            if slot > 0
+            {
+                let f_ptr plan_functions.get(slot - 1)
+                if f_ptr <> null
+                {
+                    let f f_ptr.unwrap()
+                    choose f.impl
+                        when action: Action
+                        {
+                            set known: true
+                            set trusted: f.pure
+                        }
+                        else
+                            0
+                }
+            }
+            if known = false
+            {
+                let census pc as ref[PointerCensus]
+                if census.is_extern_name(call.name)
+                {
+                    this.note_extern_call(op, call)
+                    return
+                }
+                let row this.summary_index(call.name)
+                if row > 0
+                {
+                    if sum_masks[row - 1] = (1 as u64)
+                        set trusted: true
+                }
+                else
+                    set n_stub_unknown: n_stub_unknown + 1
+            }
+            if trusted
+                return
+            var m: u64 0
+            var i: size_t 0
+            while i < call.args.length
+            {
+                let a_ptr call.args.get i
+                if a_ptr <> null
+                {
+                    let a a_ptr.unwrap()
+                    if WriteCensus.is_scalar(a.result_type) = false
+                        if this.is_local_value(a) = false
+                            set m: m | this.mask_of(a)
+                }
+                set i: i + 1
+            }
+            this.hit(op.loc.start, String("w-call"), m, WriteCensus.join("-> ", call.name))
+        }
+
+        ; A local held BY VALUE (not a reference) is the body's own memory: a
+        ; procedure handed it, `it.next()` on an iterator, writes the copy. The
+        ; ASSUMPTION, stated: such a procedure does not write through the
+        ; pointers the copy carries (an iterator's cursor into its container).
+        function is_local_value(this: WriteCensus, a: PlannedOperand) returns bool
+        {
+            if a.member_access <> null
+                if a.member_access.length > 0
+                    return false
+            choose a.expr
+                when v: Variable
+                    return this.is_by_value_local(v)
+                when c: Call
+                {
+                    ; `&it`: the address of a by-value local
+                    if c.name <> "&"
+                        return false
+                    if c.args = null
+                        return false
+                    if c.args.length <> 1
+                        return false
+                    let inner_ptr c.args.get 0
+                    if inner_ptr = null
+                        return false
+                    return this.is_local_value(inner_ptr.unwrap())
+                }
+                else
+                    return false
+        }
+
+        ; one walk of every function body; a violation is a write outside the
+        ; page parameters
+        procedure run_check(this: WriteCensus, model: ref[Program])
+        {
+            this.collect_purity_module(model.module_)
+            var pi: size_t 0
+            while pi < model.packages.length
+            {
+                let pkg model.packages.get pi
+                if pkg <> null
+                    this.collect_purity_module((*pkg))
+                set pi: pi + 1
+            }
+            let fns plan_functions as ref[Vector[PlannedFunction]]
+            set reporting: true
+            var i: size_t 0
+            while i < fns.length
+            {
+                let f_ptr fns.get i
+                set i: i + 1
+                if f_ptr = null
+                    continue
+                let func f_ptr.unwrap()
+                if func.pure = false
+                    continue
+                if func.name = "init"
+                    continue
+                var is_body false
+                choose func.impl
+                    when action: Action
+                        set is_body: true
+                    else
+                        0
+                if is_body = false
+                    continue
+                let census pc as ref[PointerCensus]
+                let home census.resolve_body_file(func)
+                if home.get_length() = 0
+                {
+                    set n_unfiled: n_unfiled + 1
+                    continue
+                }
+                set current_file: String^this(home)
+                set n_pure: n_pure + 1
+                let before n_sites
+                let mask this.walk_body(func)
+                if n_sites > before
+                {
+                    set n_violations: n_violations + 1
+                    var sb StringBuilder()
+                    sb.append "violation fn "
+                    sb.append func.name
+                    sb.append " writes "
+                    sb.append(this.mask_names(mask & (0 - (cur_page_mask + (1 as u64)))))
+                    let text sb.to_string()
+                    this.record(func.loc.start, String^this(text))
                 }
             }
         }
