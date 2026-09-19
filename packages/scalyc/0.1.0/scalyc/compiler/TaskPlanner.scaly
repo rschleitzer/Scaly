@@ -2331,15 +2331,20 @@ define TaskPlanner
                                 this.block_named("transitively impure call ", call.name)
                                 return
                             }
-                            ; The `function` keyword is a purity CONTRACT the
-                            ; compiler does not enforce — the stdlib itself
-                            ; declares argument-mutating methods as functions
-                            ; (List.add writes this.head). The written-params
-                            ; mask says which argument positions the callee
-                            ; can actually write through: only those demand
-                            ; per-iteration state; read-only positions take
-                            ; loop-external values freely (`a.get j`).
-                            let wm this.written_mask(call.mangled_name)
+                            ; Which argument positions the callee writes
+                            ; through: only those demand per-iteration state;
+                            ; read-only positions take loop-external values
+                            ; freely (`a.get j`). Since R1 (2026-09-19) the
+                            ; DECLARATION says it and the compiler checks it
+                            ; against the body: a `function` writes none, a
+                            ; procedure its `mutable` positions. A PAGE
+                            ; parameter counts as written (two iterations
+                            ; allocating on one page race). An initializer's
+                            ; input starts with its own new object, so it
+                            ; keeps the body walk.
+                            var wm this.declared_mask(func)
+                            if func.name = "init"
+                                set wm: this.written_mask(call.mangled_name)
                             if wm = 0
                                 return
                             if this.masked_args_local(call, wm) = false
@@ -2376,6 +2381,71 @@ define TaskPlanner
                 return
             }
             this.block_named("unresolved callee ", call.name)
+        }
+
+        ; The positions a callee's declaration may write: its `mutable`
+        ; parameters (none for a function) and every page parameter.
+        function declared_mask(this: TaskPlanner, func: PlannedFunction) returns size_t
+        {
+            if func.input = null
+                return 0
+            var m: size_t 0
+            var i: size_t 0
+            while i < func.input.length
+            {
+                let it_ptr func.input.get i
+                if it_ptr <> null
+                {
+                    let it it_ptr.unwrap()
+                    var written false
+                    if it.attributes <> null
+                    {
+                        let attrs it.attributes as ref[Vector[PlannedAttribute]]
+                        var k: size_t 0
+                        while k < attrs.length
+                        {
+                            let a_ptr attrs.get k
+                            if a_ptr <> null
+                                if a_ptr.unwrap().name = "mutable"
+                                    set written: true
+                            set k: k + 1
+                        }
+                    }
+                    if it.item_type <> null
+                        if TaskPlanner.is_page_type((*it.item_type))
+                            set written: true
+                    if written
+                    {
+                        if i > 62
+                            return wm_all()
+                        set m: m | ((1 as size_t) << (i as size_t))
+                    }
+                }
+                set i: i + 1
+            }
+            m
+        }
+
+        function is_page_type(t: PlannedType) returns bool
+        {
+            if t.name = "Page"
+                return true
+            if t.generics = null
+                return false
+            if t.generics.length <> 1
+                return false
+            var wraps false
+            if t.name = "ref"
+                set wraps: true
+            if t.name = "pointer"
+                set wraps: true
+            if wraps
+            {
+                let g_ptr t.generics.get 0
+                if g_ptr <> null
+                    return TaskPlanner.is_page_type(g_ptr.unwrap())
+            }
+            false
         }
 
         ; Every argument position the mask marks written must be

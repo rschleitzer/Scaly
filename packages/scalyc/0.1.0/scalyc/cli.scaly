@@ -1340,7 +1340,7 @@ define cli
         cli.print_located("write-report: ", &wc.report_files, &wc.report_offsets, &wc.report_texts)
     }
 
-    function print_purity_check(wc: ref[WriteCensus.WriteCensus])
+    procedure print_purity_check(wc: ref[WriteCensus.WriteCensus])
     {
         var head StringBuilder()
         head.append "purity-check: "
