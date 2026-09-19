@@ -78,7 +78,7 @@ define File
 {
     ; Colorless like the rest (milestone 2.5 residual): the access(2)
     ; probe blocks on disk metadata just like a read does.
-    function exists(path: String) returns bool
+    procedure exists(path: String) returns bool
     {
         if Io.in_task()
         {
@@ -94,7 +94,7 @@ define File
     ; on a worker thread while the task parks; on the main context (or
     ; without a scheduler) it blocks right here — same call, same
     ; result.
-    function read_to_string(path: String) returns String
+    procedure read_to_string(path: String) returns String
     {
         if Io.in_task()
             return File.read_to_string_offloaded(path)
@@ -117,7 +117,7 @@ define File
     ; between the two, on the caller's page by the normal inference) +
     ; close. Zero copies and no result pages; the request cell is the
     ; in/out block.
-    function read_to_string_offloaded(path: String) returns String
+    procedure read_to_string_offloaded(path: String) returns String
     {
         let pc path.to_c_string()
         let p Page.allocate_page_traced("File.read_cell")
@@ -142,7 +142,7 @@ define File
 
     ; Colorless like read_to_string: offloads inside a task, blocks
     ; otherwise.
-    function write_from_string(path: String, contents: String) returns bool
+    procedure write_from_string(path: String, contents: String) returns bool
     {
         if Io.in_task()
             return File.write_from_string_offloaded(path, contents)
@@ -158,7 +158,7 @@ define File
     ; The task path of write_from_string: pack a {path, buffer, length}
     ; request cell on its own heap page (path and buffer point into the
     ; requester's region — alive while parked), offload, free the cell.
-    function write_from_string_offloaded(path: String, contents: String) returns bool
+    procedure write_from_string_offloaded(path: String, contents: String) returns bool
     {
         let pc path.to_c_string()
         let buf contents.get_buffer()

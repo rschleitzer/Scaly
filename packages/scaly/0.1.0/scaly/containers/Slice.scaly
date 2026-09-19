@@ -84,7 +84,7 @@ define Slice[T](length: size_t, data: pointer[T])
     ; result expression when its receiver is constructed in the calling
     ; routine -- an ordinary method is emitted for every instantiation and is
     ; correct in that very build (tools/opzero/scan.py).
-    function put(this, index: size_t, value: T)
+    procedure put(this, index: size_t, value: T)
     {
         if index >= length
             scaly_panic_oob("Slice.put", index, length)
@@ -205,7 +205,7 @@ define SliceIterator[T](slice: Slice[T], position: size_t(0))
         set position: 0
     }
 
-    function next(this) returns pointer[T]
+    procedure next(this) returns pointer[T]
     {
         if position >= slice.length
             return null

@@ -40,7 +40,7 @@ define ArrayIterator[T]
         set position: 0
     }
 
-    function next(this: ArrayIterator[T]) returns pointer[T]
+    procedure next(this: ArrayIterator[T]) returns pointer[T]
     {
         if array = null
             return null
@@ -104,7 +104,7 @@ define Array[T]
     function get_capacity(this: Array[T]) returns size_t
         capacity
 
-    function add(this: Array[T], item: T)
+    procedure add(this: Array[T], item: T)
     {
         if (buffer = null) || (length = capacity)
             this.reallocate()
@@ -115,7 +115,7 @@ define Array[T]
         set length: length + 1
     }
 
-    function add(this: Array[T], items: Vector[T])
+    procedure add(this: Array[T], items: Vector[T])
     {
         var new_length length + items.length
         ; Unsigned-wraparound check: items.length > 0 should grow the
@@ -232,13 +232,13 @@ define Array[T]
     ; The elements are NOT destroyed — Array holds values in a region and this
     ; package frees by region, so "cleared" means unreachable, exactly as it
     ; does when the whole Array goes out of use.
-    function clear(this: Array[T])
+    procedure clear(this: Array[T])
         set length: 0
 
     ; Bounds-checked element assign within the collected length (not
     ; the capacity). Growth goes through add only — an index at or past
     ; length is a caller bug, so it traps.
-    function put(this: Array[T], i: size_t, item: T)
+    procedure put(this: Array[T], i: size_t, item: T)
     {
         if i >= length
             scaly_panic_oob("Array.put", i, length)
@@ -292,7 +292,7 @@ define Array[T]
     function as_slice(this: Array[T]) returns Slice[T]
         Slice[T](length, this.get_buffer())
 
-    function reallocate(this: Array[T])
+    procedure reallocate(this: Array[T])
     {
         let own_page Page.get(this)
         let size sizeof T

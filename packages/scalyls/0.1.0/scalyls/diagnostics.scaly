@@ -78,7 +78,7 @@ use scalyc.compiler.ConceptIndex.*
 define diagnostics
 {
     ; Build a publishDiagnostics notification for `uri` from `text`.
-    function publish_diagnostics(rp, uri: String, text: String) returns String
+    procedure publish_diagnostics(rp, uri: String, text: String) returns String
     {
         var sb StringBuilder()
         sb.append("{" as char)
@@ -262,7 +262,7 @@ define diagnostics
     ; The depth bound is a loop guard, not a semantic limit: nesting in this
     ; tree is 2 (scalyc/compiler/Planner.scaly), and a symlink cycle in the
     ; path must not be able to spin the worker.
-    function package_root(rp, path: String) returns String
+    procedure package_root(rp, path: String) returns String
     {
         var found String("")
         var current: String path
@@ -298,7 +298,7 @@ define diagnostics
     ; visible here` because the file's own `use opensp.StringC.StringC` cannot
     ; match a path with a foreign root segment. The false positives change
     ; wording and stay.
-    function root_program_name(rp, root: String) returns String
+    procedure root_program_name(rp, root: String) returns String
     {
         let base Path.get_file_name(root)
         let len base.get_length()
@@ -338,7 +338,7 @@ define diagnostics
     ; documents for workspace/symbol ("unsaved editor edits, which never touch
     ; disk, are not reflected"). Parse errors are unaffected: publish_
     ; diagnostics# still takes those from the live buffer.
-    function package_report(rp, root: String, path: String) returns String
+    procedure package_report(rp, root: String, path: String) returns String
     {
         var sb StringBuilder()
 
@@ -426,7 +426,7 @@ define diagnostics
     ; another root, whose diagnostics this analysis has no business clearing.
     ; Measured on a two-module probe, where prelude.scaly was the only sibling
     ; the first version reported.
-    function sibling_notifications(rp, m: ref[Module], entry: String, path: String, planner: ref[Planner.Planner]) returns String
+    procedure sibling_notifications(rp, m: ref[Module], entry: String, path: String, planner: ref[Planner.Planner]) returns String
     {
         var sb StringBuilder()
 
@@ -465,7 +465,7 @@ define diagnostics
     ; explains why it is done statelessly. A file that carries diagnostics but
     ; cannot be READ yields nothing at all: its offsets index a text we do not
     ; have, the same bargain the head half makes.
-    function sibling_notification(rp, file: String, planner: ref[Planner.Planner]) returns String
+    procedure sibling_notification(rp, file: String, planner: ref[Planner.Planner]) returns String
     {
         var sb StringBuilder()
 
@@ -717,7 +717,7 @@ define diagnostics
     ; the way there is for a name the repair deleted — the evidence the parser
     ; would need is the very line that is gone — so the honest count of
     ; certain syntax errors in a broken buffer stays one.
-    function broken_buffer_report(rp, path: String, text: String) returns String
+    procedure broken_buffer_report(rp, path: String, text: String) returns String
     {
         var sb StringBuilder()
 

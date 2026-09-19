@@ -11,7 +11,7 @@ define scaly
     module tensor
 
     ; Test entry point that calls all module tests
-    function test() returns int
+    procedure test() returns int
     {
         var result memory.test()
         if result <> 0

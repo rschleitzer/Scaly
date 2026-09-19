@@ -101,13 +101,13 @@ define Parser
         Vector[String](keywords_builder)
     }
 
-    function initialize_keywords(this: Parser) returns HashSet[String]
+    procedure initialize_keywords(this: Parser) returns HashSet[String]
     {
         var hash_set_builder HashSetBuilder[String](keywords_index)
         HashSet[String](hash_set_builder)
     }
 
-    function parse_literal_token(this: Parser) returns Literal throws ParserError
+    procedure parse_literal_token(this: Parser) returns Literal throws ParserError
     {
         choose lexer.token
             when empty: Empty
@@ -145,7 +145,7 @@ define Parser
                 throw ParserError.Different(DifferentSyntax())
     }
 
-    function parse_program(this: Parser) returns ProgramSyntax throws ParserError
+    procedure parse_program(this: Parser) returns ProgramSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -186,7 +186,7 @@ define Parser
         ProgramSyntax(start, end, file, statements)
     }
 
-    function parse_file(this: Parser) returns FileSyntax throws ParserError
+    procedure parse_file(this: Parser) returns FileSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -208,7 +208,7 @@ define Parser
         FileSyntax(start, end, declarations)
     }
 
-    function parse_declaration_list(this: Parser) returns ref[Vector[DeclarationSyntax]]? throws ParserError
+    procedure parse_declaration_list(this: Parser) returns ref[Vector[DeclarationSyntax]]? throws ParserError
     {
         var acc List[DeclarationSyntax]()
         var parsing: bool true
@@ -237,7 +237,7 @@ define Parser
         Vector[DeclarationSyntax](acc)
     }
 
-    function parse_declaration(this: Parser) returns DeclarationSyntax throws ParserError
+    procedure parse_declaration(this: Parser) returns DeclarationSyntax throws ParserError
     {
         choose parse_empty()
             when err: Error
@@ -372,7 +372,7 @@ define Parser
         throw ParserError.Different(DifferentSyntax())
     }
 
-    function parse_private(this: Parser) returns PrivateSyntax throws ParserError
+    procedure parse_private(this: Parser) returns PrivateSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -398,7 +398,7 @@ define Parser
         PrivateSyntax(start, end, export_)
     }
 
-    function parse_export(this: Parser) returns ExportSyntax throws ParserError
+    procedure parse_export(this: Parser) returns ExportSyntax throws ParserError
     {
         choose parse_definition()
             when err: Error
@@ -463,7 +463,7 @@ define Parser
         throw ParserError.Different(DifferentSyntax())
     }
 
-    function parse_member_list(this: Parser) returns ref[Vector[MemberSyntax]]? throws ParserError
+    procedure parse_member_list(this: Parser) returns ref[Vector[MemberSyntax]]? throws ParserError
     {
         var acc List[MemberSyntax]()
         var parsing: bool true
@@ -492,7 +492,7 @@ define Parser
         Vector[MemberSyntax](acc)
     }
 
-    function parse_member(this: Parser) returns MemberSyntax throws ParserError
+    procedure parse_member(this: Parser) returns MemberSyntax throws ParserError
     {
         choose parse_empty()
             when err: Error
@@ -607,7 +607,7 @@ define Parser
         throw ParserError.Different(DifferentSyntax())
     }
 
-    function parse_definition(this: Parser) returns DefinitionSyntax throws ParserError
+    procedure parse_definition(this: Parser) returns DefinitionSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -665,7 +665,7 @@ define Parser
         DefinitionSyntax(start, end, name, parameters, attributes, concept_)
     }
 
-    function parse_genericparameters(this: Parser) returns GenericParametersSyntax throws ParserError
+    procedure parse_genericparameters(this: Parser) returns GenericParametersSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -694,7 +694,7 @@ define Parser
         GenericParametersSyntax(start, end, parameters)
     }
 
-    function parse_genericparameter_list(this: Parser) returns ref[Vector[GenericParameterSyntax]]? throws ParserError
+    procedure parse_genericparameter_list(this: Parser) returns ref[Vector[GenericParameterSyntax]]? throws ParserError
     {
         var acc List[GenericParameterSyntax]()
         var parsing: bool true
@@ -723,7 +723,7 @@ define Parser
         Vector[GenericParameterSyntax](acc)
     }
 
-    function parse_genericparameter(this: Parser) returns GenericParameterSyntax throws ParserError
+    procedure parse_genericparameter(this: Parser) returns GenericParameterSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -751,7 +751,7 @@ define Parser
         GenericParameterSyntax(start, end, name, attributes)
     }
 
-    function parse_concept(this: Parser) returns ConceptSyntax throws ParserError
+    procedure parse_concept(this: Parser) returns ConceptSyntax throws ParserError
     {
         choose parse_class()
             when err: Error
@@ -816,7 +816,7 @@ define Parser
         throw ParserError.Different(DifferentSyntax())
     }
 
-    function parse_class(this: Parser) returns ClassSyntax throws ParserError
+    procedure parse_class(this: Parser) returns ClassSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -848,7 +848,7 @@ define Parser
         ClassSyntax(start, end, structure, body)
     }
 
-    function parse_body(this: Parser) returns BodySyntax throws ParserError
+    procedure parse_body(this: Parser) returns BodySyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -889,7 +889,7 @@ define Parser
         BodySyntax(start, end, uses, members)
     }
 
-    function parse_namespace(this: Parser) returns NamespaceSyntax throws ParserError
+    procedure parse_namespace(this: Parser) returns NamespaceSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -930,7 +930,7 @@ define Parser
         NamespaceSyntax(start, end, uses, declarations)
     }
 
-    function parse_union(this: Parser) returns UnionSyntax throws ParserError
+    procedure parse_union(this: Parser) returns UnionSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -979,7 +979,7 @@ define Parser
         UnionSyntax(start, end, variants, body)
     }
 
-    function parse_variant_list(this: Parser) returns ref[Vector[VariantSyntax]]? throws ParserError
+    procedure parse_variant_list(this: Parser) returns ref[Vector[VariantSyntax]]? throws ParserError
     {
         var acc List[VariantSyntax]()
         var parsing: bool true
@@ -1008,7 +1008,7 @@ define Parser
         Vector[VariantSyntax](acc)
     }
 
-    function parse_variant(this: Parser) returns VariantSyntax throws ParserError
+    procedure parse_variant(this: Parser) returns VariantSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -1050,7 +1050,7 @@ define Parser
         VariantSyntax(start, end, name, attributes, annotation)
     }
 
-    function parse_constant(this: Parser) returns ConstantSyntax throws ParserError
+    procedure parse_constant(this: Parser) returns ConstantSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -1080,7 +1080,7 @@ define Parser
         ConstantSyntax(start, end, type, operation)
     }
 
-    function parse_delegate(this: Parser) returns DelegateSyntax throws ParserError
+    procedure parse_delegate(this: Parser) returns DelegateSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -1144,7 +1144,7 @@ define Parser
         DelegateSyntax(start, end, parameters, attributes, result, error)
     }
 
-    function parse_genericarguments(this: Parser) returns GenericArgumentsSyntax throws ParserError
+    procedure parse_genericarguments(this: Parser) returns GenericArgumentsSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -1172,7 +1172,7 @@ define Parser
         GenericArgumentsSyntax(start, end, generics)
     }
 
-    function parse_genericargument_list(this: Parser) returns ref[Vector[GenericArgumentSyntax]]? throws ParserError
+    procedure parse_genericargument_list(this: Parser) returns ref[Vector[GenericArgumentSyntax]]? throws ParserError
     {
         var acc List[GenericArgumentSyntax]()
         var parsing: bool true
@@ -1201,7 +1201,7 @@ define Parser
         Vector[GenericArgumentSyntax](acc)
     }
 
-    function parse_genericargument(this: Parser) returns GenericArgumentSyntax throws ParserError
+    procedure parse_genericargument(this: Parser) returns GenericArgumentSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -1220,7 +1220,7 @@ define Parser
         GenericArgumentSyntax(start, end, type)
     }
 
-    function parse_optional(this: Parser) returns OptionalSyntax throws ParserError
+    procedure parse_optional(this: Parser) returns OptionalSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -1232,7 +1232,7 @@ define Parser
         OptionalSyntax(start, end)
     }
 
-    function parse_parameterset(this: Parser) returns ParameterSetSyntax throws ParserError
+    procedure parse_parameterset(this: Parser) returns ParameterSetSyntax throws ParserError
     {
         choose parse_parameters()
             when err: Error
@@ -1257,7 +1257,7 @@ define Parser
         throw ParserError.Different(DifferentSyntax())
     }
 
-    function parse_parameters(this: Parser) returns ParametersSyntax throws ParserError
+    procedure parse_parameters(this: Parser) returns ParametersSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -1285,7 +1285,7 @@ define Parser
         ParametersSyntax(start, end, items)
     }
 
-    function parse_item_list(this: Parser) returns ref[Vector[ItemSyntax]]? throws ParserError
+    procedure parse_item_list(this: Parser) returns ref[Vector[ItemSyntax]]? throws ParserError
     {
         var acc List[ItemSyntax]()
         var parsing: bool true
@@ -1314,7 +1314,7 @@ define Parser
         Vector[ItemSyntax](acc)
     }
 
-    function parse_item(this: Parser) returns ItemSyntax throws ParserError
+    procedure parse_item(this: Parser) returns ItemSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -1356,7 +1356,7 @@ define Parser
         ItemSyntax(start, end, name, annotation, attributes)
     }
 
-    function parse_returns(this: Parser) returns ReturnsSyntax throws ParserError
+    procedure parse_returns(this: Parser) returns ReturnsSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -1395,7 +1395,7 @@ define Parser
         ReturnsSyntax(start, end, type, attributes)
     }
 
-    function parse_throws(this: Parser) returns ThrowsSyntax throws ParserError
+    procedure parse_throws(this: Parser) returns ThrowsSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -1434,7 +1434,7 @@ define Parser
         ThrowsSyntax(start, end, type, attributes)
     }
 
-    function parse_use_list(this: Parser) returns ref[Vector[UseSyntax]]? throws ParserError
+    procedure parse_use_list(this: Parser) returns ref[Vector[UseSyntax]]? throws ParserError
     {
         var acc List[UseSyntax]()
         var parsing: bool true
@@ -1463,7 +1463,7 @@ define Parser
         Vector[UseSyntax](acc)
     }
 
-    function parse_use(this: Parser) returns UseSyntax throws ParserError
+    procedure parse_use(this: Parser) returns UseSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -1491,7 +1491,7 @@ define Parser
         UseSyntax(start, end, name)
     }
 
-    function parse_implement(this: Parser) returns ImplementSyntax throws ParserError
+    procedure parse_implement(this: Parser) returns ImplementSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -1564,7 +1564,7 @@ define Parser
         ImplementSyntax(start, end, type, attributes, uses, methods)
     }
 
-    function parse_trait(this: Parser) returns TraitSyntax throws ParserError
+    procedure parse_trait(this: Parser) returns TraitSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -1648,7 +1648,7 @@ define Parser
         TraitSyntax(start, end, name, extension, attributes, uses, functions)
     }
 
-    function parse_method_list(this: Parser) returns ref[Vector[MethodSyntax]]? throws ParserError
+    procedure parse_method_list(this: Parser) returns ref[Vector[MethodSyntax]]? throws ParserError
     {
         var acc List[MethodSyntax]()
         var parsing: bool true
@@ -1677,7 +1677,7 @@ define Parser
         Vector[MethodSyntax](acc)
     }
 
-    function parse_method(this: Parser) returns MethodSyntax throws ParserError
+    procedure parse_method(this: Parser) returns MethodSyntax throws ParserError
     {
         choose parse_function()
             when err: Error
@@ -1712,7 +1712,7 @@ define Parser
         throw ParserError.Different(DifferentSyntax())
     }
 
-    function parse_init_list(this: Parser) returns ref[Vector[InitSyntax]]? throws ParserError
+    procedure parse_init_list(this: Parser) returns ref[Vector[InitSyntax]]? throws ParserError
     {
         var acc List[InitSyntax]()
         var parsing: bool true
@@ -1741,7 +1741,7 @@ define Parser
         Vector[InitSyntax](acc)
     }
 
-    function parse_init(this: Parser) returns InitSyntax throws ParserError
+    procedure parse_init(this: Parser) returns InitSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -1797,7 +1797,7 @@ define Parser
         InitSyntax(start, end, lifetime, parameters, action)
     }
 
-    function parse_deinit(this: Parser) returns DeInitSyntax throws ParserError
+    procedure parse_deinit(this: Parser) returns DeInitSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -1827,7 +1827,7 @@ define Parser
         DeInitSyntax(start, end, action)
     }
 
-    function parse_function(this: Parser) returns FunctionSyntax throws ParserError
+    procedure parse_function(this: Parser) returns FunctionSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -1853,7 +1853,7 @@ define Parser
         FunctionSyntax(start, end, target)
     }
 
-    function parse_procedure(this: Parser) returns ProcedureSyntax throws ParserError
+    procedure parse_procedure(this: Parser) returns ProcedureSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -1879,7 +1879,7 @@ define Parser
         ProcedureSyntax(start, end, target)
     }
 
-    function parse_operator(this: Parser) returns OperatorSyntax throws ParserError
+    procedure parse_operator(this: Parser) returns OperatorSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -1905,7 +1905,7 @@ define Parser
         OperatorSyntax(start, end, target)
     }
 
-    function parse_target(this: Parser) returns TargetSyntax throws ParserError
+    procedure parse_target(this: Parser) returns TargetSyntax throws ParserError
     {
         choose parse_named()
             when err: Error
@@ -1930,7 +1930,7 @@ define Parser
         throw ParserError.Different(DifferentSyntax())
     }
 
-    function parse_named(this: Parser) returns NamedSyntax throws ParserError
+    procedure parse_named(this: Parser) returns NamedSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -1957,7 +1957,7 @@ define Parser
         NamedSyntax(start, end, name, routine)
     }
 
-    function parse_routine(this: Parser) returns RoutineSyntax throws ParserError
+    procedure parse_routine(this: Parser) returns RoutineSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -2062,7 +2062,7 @@ define Parser
         RoutineSyntax(start, end, generics, lifetime, parameters, attributes, returns_, throws_, implementation)
     }
 
-    function parse_implementation(this: Parser) returns ImplementationSyntax throws ParserError
+    procedure parse_implementation(this: Parser) returns ImplementationSyntax throws ParserError
     {
         choose parse_action()
             when err: Error
@@ -2107,7 +2107,7 @@ define Parser
         throw ParserError.Different(DifferentSyntax())
     }
 
-    function parse_extern(this: Parser) returns ExternSyntax throws ParserError
+    procedure parse_extern(this: Parser) returns ExternSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -2119,7 +2119,7 @@ define Parser
         ExternSyntax(start, end)
     }
 
-    function parse_instruction(this: Parser) returns InstructionSyntax throws ParserError
+    procedure parse_instruction(this: Parser) returns InstructionSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -2131,7 +2131,7 @@ define Parser
         InstructionSyntax(start, end)
     }
 
-    function parse_intrinsic(this: Parser) returns IntrinsicSyntax throws ParserError
+    procedure parse_intrinsic(this: Parser) returns IntrinsicSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -2143,7 +2143,7 @@ define Parser
         IntrinsicSyntax(start, end)
     }
 
-    function parse_extends(this: Parser) returns ExtendsSyntax throws ParserError
+    procedure parse_extends(this: Parser) returns ExtendsSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -2168,7 +2168,7 @@ define Parser
         ExtendsSyntax(start, end, extensions)
     }
 
-    function parse_extend_list(this: Parser) returns ref[Vector[ExtendSyntax]]? throws ParserError
+    procedure parse_extend_list(this: Parser) returns ref[Vector[ExtendSyntax]]? throws ParserError
     {
         var acc List[ExtendSyntax]()
         var parsing: bool true
@@ -2197,7 +2197,7 @@ define Parser
         Vector[ExtendSyntax](acc)
     }
 
-    function parse_extend(this: Parser) returns ExtendSyntax throws ParserError
+    procedure parse_extend(this: Parser) returns ExtendSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -2216,7 +2216,7 @@ define Parser
         ExtendSyntax(start, end, type)
     }
 
-    function parse_macro(this: Parser) returns MacroSyntax throws ParserError
+    procedure parse_macro(this: Parser) returns MacroSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -2260,7 +2260,7 @@ define Parser
         MacroSyntax(start, end, name, model, rule)
     }
 
-    function parse_attribute_list(this: Parser) returns ref[Vector[AttributeSyntax]]? throws ParserError
+    procedure parse_attribute_list(this: Parser) returns ref[Vector[AttributeSyntax]]? throws ParserError
     {
         var acc List[AttributeSyntax]()
         var parsing: bool true
@@ -2289,7 +2289,7 @@ define Parser
         Vector[AttributeSyntax](acc)
     }
 
-    function parse_attribute(this: Parser) returns AttributeSyntax throws ParserError
+    procedure parse_attribute(this: Parser) returns AttributeSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -2316,7 +2316,7 @@ define Parser
         AttributeSyntax(start, end, name, model)
     }
 
-    function parse_model(this: Parser) returns ModelSyntax throws ParserError
+    procedure parse_model(this: Parser) returns ModelSyntax throws ParserError
     {
         choose parse_literal()
             when err: Error
@@ -2361,7 +2361,7 @@ define Parser
         throw ParserError.Different(DifferentSyntax())
     }
 
-    function parse_module(this: Parser) returns ModuleSyntax throws ParserError
+    procedure parse_module(this: Parser) returns ModuleSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -2377,7 +2377,7 @@ define Parser
         ModuleSyntax(start, end, name)
     }
 
-    function parse_package_list(this: Parser) returns ref[Vector[PackageSyntax]]? throws ParserError
+    procedure parse_package_list(this: Parser) returns ref[Vector[PackageSyntax]]? throws ParserError
     {
         var acc List[PackageSyntax]()
         var parsing: bool true
@@ -2406,7 +2406,7 @@ define Parser
         Vector[PackageSyntax](acc)
     }
 
-    function parse_package(this: Parser) returns PackageSyntax throws ParserError
+    procedure parse_package(this: Parser) returns PackageSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -2447,7 +2447,7 @@ define Parser
         PackageSyntax(start, end, name, version)
     }
 
-    function parse_version(this: Parser) returns VersionSyntax throws ParserError
+    procedure parse_version(this: Parser) returns VersionSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -2473,7 +2473,7 @@ define Parser
         VersionSyntax(start, end, majorMinor, patch)
     }
 
-    function parse_initializer(this: Parser) returns InitializerSyntax throws ParserError
+    procedure parse_initializer(this: Parser) returns InitializerSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -2502,7 +2502,7 @@ define Parser
         InitializerSyntax(start, end, operands)
     }
 
-    function parse_operand_list(this: Parser) returns ref[Vector[OperandSyntax]]? throws ParserError
+    procedure parse_operand_list(this: Parser) returns ref[Vector[OperandSyntax]]? throws ParserError
     {
         var acc List[OperandSyntax]()
         var parsing: bool true
@@ -2531,7 +2531,7 @@ define Parser
         Vector[OperandSyntax](acc)
     }
 
-    function parse_operand(this: Parser) returns OperandSyntax throws ParserError
+    procedure parse_operand(this: Parser) returns OperandSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -2561,7 +2561,7 @@ define Parser
         OperandSyntax(start, end, expression, members)
     }
 
-    function parse_memberaccess_list(this: Parser) returns ref[Vector[MemberAccessSyntax]]? throws ParserError
+    procedure parse_memberaccess_list(this: Parser) returns ref[Vector[MemberAccessSyntax]]? throws ParserError
     {
         var acc List[MemberAccessSyntax]()
         var parsing: bool true
@@ -2590,7 +2590,7 @@ define Parser
         Vector[MemberAccessSyntax](acc)
     }
 
-    function parse_memberaccess(this: Parser) returns MemberAccessSyntax throws ParserError
+    procedure parse_memberaccess(this: Parser) returns MemberAccessSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -2616,7 +2616,7 @@ define Parser
         MemberAccessSyntax(start, end, name)
     }
 
-    function parse_expression(this: Parser) returns ExpressionSyntax throws ParserError
+    procedure parse_expression(this: Parser) returns ExpressionSyntax throws ParserError
     {
         choose parse_literal()
             when err: Error
@@ -2801,7 +2801,7 @@ define Parser
         throw ParserError.Different(DifferentSyntax())
     }
 
-    function parse_literal(this: Parser) returns LiteralSyntax throws ParserError
+    procedure parse_literal(this: Parser) returns LiteralSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -2817,7 +2817,7 @@ define Parser
         LiteralSyntax(start, end, literal)
     }
 
-    function parse_object(this: Parser) returns ObjectSyntax throws ParserError
+    procedure parse_object(this: Parser) returns ObjectSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -2845,7 +2845,7 @@ define Parser
         ObjectSyntax(start, end, components)
     }
 
-    function parse_component_list(this: Parser) returns ref[Vector[ComponentSyntax]]? throws ParserError
+    procedure parse_component_list(this: Parser) returns ref[Vector[ComponentSyntax]]? throws ParserError
     {
         var acc List[ComponentSyntax]()
         var parsing: bool true
@@ -2874,7 +2874,7 @@ define Parser
         Vector[ComponentSyntax](acc)
     }
 
-    function parse_component(this: Parser) returns ComponentSyntax throws ParserError
+    procedure parse_component(this: Parser) returns ComponentSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -2918,7 +2918,7 @@ define Parser
         ComponentSyntax(start, end, operands, attributes, value)
     }
 
-    function parse_value(this: Parser) returns ValueSyntax throws ParserError
+    procedure parse_value(this: Parser) returns ValueSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -2957,7 +2957,7 @@ define Parser
         ValueSyntax(start, end, value, attributes)
     }
 
-    function parse_vector(this: Parser) returns VectorSyntax throws ParserError
+    procedure parse_vector(this: Parser) returns VectorSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -2999,7 +2999,7 @@ define Parser
         VectorSyntax(start, end, elements, lifetime)
     }
 
-    function parse_element_list(this: Parser) returns ref[Vector[ElementSyntax]]? throws ParserError
+    procedure parse_element_list(this: Parser) returns ref[Vector[ElementSyntax]]? throws ParserError
     {
         var acc List[ElementSyntax]()
         var parsing: bool true
@@ -3028,7 +3028,7 @@ define Parser
         Vector[ElementSyntax](acc)
     }
 
-    function parse_element(this: Parser) returns ElementSyntax throws ParserError
+    procedure parse_element(this: Parser) returns ElementSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -3073,7 +3073,7 @@ define Parser
         ElementSyntax(start, end, operation, optional, attributes)
     }
 
-    function parse_if(this: Parser) returns IfSyntax throws ParserError
+    procedure parse_if(this: Parser) returns IfSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -3129,7 +3129,7 @@ define Parser
         IfSyntax(start, end, condition, consequent, alternative)
     }
 
-    function parse_then(this: Parser) returns ThenSyntax throws ParserError
+    procedure parse_then(this: Parser) returns ThenSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -3146,7 +3146,7 @@ define Parser
         ThenSyntax(start, end, statement)
     }
 
-    function parse_else(this: Parser) returns ElseSyntax throws ParserError
+    procedure parse_else(this: Parser) returns ElseSyntax throws ParserError
     {
         let start lexer.previous_position
         var snapshot lexer.save_state()
@@ -3179,7 +3179,7 @@ define Parser
         ElseSyntax(start, end, alternative)
     }
 
-    function parse_match(this: Parser) returns MatchSyntax throws ParserError
+    procedure parse_match(this: Parser) returns MatchSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -3235,7 +3235,7 @@ define Parser
         MatchSyntax(start, end, scrutinee, branches, alternative)
     }
 
-    function parse_branch_list(this: Parser) returns ref[Vector[BranchSyntax]]? throws ParserError
+    procedure parse_branch_list(this: Parser) returns ref[Vector[BranchSyntax]]? throws ParserError
     {
         var acc List[BranchSyntax]()
         var parsing: bool true
@@ -3264,7 +3264,7 @@ define Parser
         Vector[BranchSyntax](acc)
     }
 
-    function parse_branch(this: Parser) returns BranchSyntax throws ParserError
+    procedure parse_branch(this: Parser) returns BranchSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -3300,7 +3300,7 @@ define Parser
         BranchSyntax(start, end, cases, consequent)
     }
 
-    function parse_case_list(this: Parser) returns ref[Vector[CaseSyntax]]? throws ParserError
+    procedure parse_case_list(this: Parser) returns ref[Vector[CaseSyntax]]? throws ParserError
     {
         var acc List[CaseSyntax]()
         var parsing: bool true
@@ -3329,7 +3329,7 @@ define Parser
         Vector[CaseSyntax](acc)
     }
 
-    function parse_case(this: Parser) returns CaseSyntax throws ParserError
+    procedure parse_case(this: Parser) returns CaseSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -3355,7 +3355,7 @@ define Parser
         CaseSyntax(start, end, condition)
     }
 
-    function parse_while(this: Parser) returns WhileSyntax throws ParserError
+    procedure parse_while(this: Parser) returns WhileSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -3413,7 +3413,7 @@ define Parser
         WhileSyntax(start, end, condition, name, action)
     }
 
-    function parse_choose(this: Parser) returns ChooseSyntax throws ParserError
+    procedure parse_choose(this: Parser) returns ChooseSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -3468,7 +3468,7 @@ define Parser
         ChooseSyntax(start, end, condition, cases, alternative)
     }
 
-    function parse_try(this: Parser) returns TrySyntax throws ParserError
+    procedure parse_try(this: Parser) returns TrySyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -3536,7 +3536,7 @@ define Parser
         TrySyntax(start, end, lifetime, condition, cases, dropper)
     }
 
-    function parse_condition(this: Parser) returns ConditionSyntax throws ParserError
+    procedure parse_condition(this: Parser) returns ConditionSyntax throws ParserError
     {
         choose parse_operation()
             when err: Error
@@ -3561,7 +3561,7 @@ define Parser
         throw ParserError.Different(DifferentSyntax())
     }
 
-    function parse_when_list(this: Parser) returns ref[Vector[WhenSyntax]]? throws ParserError
+    procedure parse_when_list(this: Parser) returns ref[Vector[WhenSyntax]]? throws ParserError
     {
         var acc List[WhenSyntax]()
         var parsing: bool true
@@ -3590,7 +3590,7 @@ define Parser
         Vector[WhenSyntax](acc)
     }
 
-    function parse_when(this: Parser) returns WhenSyntax throws ParserError
+    procedure parse_when(this: Parser) returns WhenSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -3641,7 +3641,7 @@ define Parser
         WhenSyntax(start, end, name, variant, statement)
     }
 
-    function parse_statement_list(this: Parser) returns ref[Vector[StatementSyntax]]? throws ParserError
+    procedure parse_statement_list(this: Parser) returns ref[Vector[StatementSyntax]]? throws ParserError
     {
         var acc List[StatementSyntax]()
         var parsing: bool true
@@ -3670,7 +3670,7 @@ define Parser
         Vector[StatementSyntax](acc)
     }
 
-    function parse_statement(this: Parser) returns StatementSyntax throws ParserError
+    procedure parse_statement(this: Parser) returns StatementSyntax throws ParserError
     {
         choose parse_empty()
             when err: Error
@@ -3775,7 +3775,7 @@ define Parser
         throw ParserError.Different(DifferentSyntax())
     }
 
-    function parse_let(this: Parser) returns LetSyntax throws ParserError
+    procedure parse_let(this: Parser) returns LetSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -3801,7 +3801,7 @@ define Parser
         LetSyntax(start, end, binding)
     }
 
-    function parse_var(this: Parser) returns VarSyntax throws ParserError
+    procedure parse_var(this: Parser) returns VarSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -3827,7 +3827,7 @@ define Parser
         VarSyntax(start, end, binding)
     }
 
-    function parse_mutable(this: Parser) returns MutableSyntax throws ParserError
+    procedure parse_mutable(this: Parser) returns MutableSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -3853,7 +3853,7 @@ define Parser
         MutableSyntax(start, end, binding)
     }
 
-    function parse_shared(this: Parser) returns SharedSyntax throws ParserError
+    procedure parse_shared(this: Parser) returns SharedSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -3879,7 +3879,7 @@ define Parser
         SharedSyntax(start, end, binding)
     }
 
-    function parse_binding(this: Parser) returns BindingSyntax throws ParserError
+    procedure parse_binding(this: Parser) returns BindingSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -3917,7 +3917,7 @@ define Parser
         BindingSyntax(start, end, name, annotation, operation)
     }
 
-    function parse_bindingannotation(this: Parser) returns BindingAnnotationSyntax throws ParserError
+    procedure parse_bindingannotation(this: Parser) returns BindingAnnotationSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -3943,7 +3943,7 @@ define Parser
         BindingAnnotationSyntax(start, end, spec)
     }
 
-    function parse_bindingspec_list(this: Parser) returns ref[Vector[BindingSpecSyntax]]? throws ParserError
+    procedure parse_bindingspec_list(this: Parser) returns ref[Vector[BindingSpecSyntax]]? throws ParserError
     {
         var acc List[BindingSpecSyntax]()
         var parsing: bool true
@@ -3972,7 +3972,7 @@ define Parser
         Vector[BindingSpecSyntax](acc)
     }
 
-    function parse_bindingspec(this: Parser) returns BindingSpecSyntax throws ParserError
+    procedure parse_bindingspec(this: Parser) returns BindingSpecSyntax throws ParserError
     {
         choose parse_structure()
             when err: Error
@@ -4007,7 +4007,7 @@ define Parser
         throw ParserError.Different(DifferentSyntax())
     }
 
-    function parse_array(this: Parser) returns ArraySyntax throws ParserError
+    procedure parse_array(this: Parser) returns ArraySyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -4035,7 +4035,7 @@ define Parser
         ArraySyntax(start, end, members)
     }
 
-    function parse_structure(this: Parser) returns StructureSyntax throws ParserError
+    procedure parse_structure(this: Parser) returns StructureSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -4063,7 +4063,7 @@ define Parser
         StructureSyntax(start, end, parts)
     }
 
-    function parse_part_list(this: Parser) returns ref[Vector[PartSyntax]]? throws ParserError
+    procedure parse_part_list(this: Parser) returns ref[Vector[PartSyntax]]? throws ParserError
     {
         var acc List[PartSyntax]()
         var parsing: bool true
@@ -4092,7 +4092,7 @@ define Parser
         Vector[PartSyntax](acc)
     }
 
-    function parse_part(this: Parser) returns PartSyntax throws ParserError
+    procedure parse_part(this: Parser) returns PartSyntax throws ParserError
     {
         choose parse_field()
             when err: Error
@@ -4117,7 +4117,7 @@ define Parser
         throw ParserError.Different(DifferentSyntax())
     }
 
-    function parse_field(this: Parser) returns FieldSyntax throws ParserError
+    procedure parse_field(this: Parser) returns FieldSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -4143,7 +4143,7 @@ define Parser
         FieldSyntax(start, end, property)
     }
 
-    function parse_property_list(this: Parser) returns ref[Vector[PropertySyntax]]? throws ParserError
+    procedure parse_property_list(this: Parser) returns ref[Vector[PropertySyntax]]? throws ParserError
     {
         var acc List[PropertySyntax]()
         var parsing: bool true
@@ -4172,7 +4172,7 @@ define Parser
         Vector[PropertySyntax](acc)
     }
 
-    function parse_property(this: Parser) returns PropertySyntax throws ParserError
+    procedure parse_property(this: Parser) returns PropertySyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -4229,7 +4229,7 @@ define Parser
         PropertySyntax(start, end, name, annotation, initializer, attributes)
     }
 
-    function parse_typeannotation(this: Parser) returns TypeAnnotationSyntax throws ParserError
+    procedure parse_typeannotation(this: Parser) returns TypeAnnotationSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -4255,7 +4255,7 @@ define Parser
         TypeAnnotationSyntax(start, end, type)
     }
 
-    function parse_continue(this: Parser) returns ContinueSyntax throws ParserError
+    procedure parse_continue(this: Parser) returns ContinueSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -4280,7 +4280,7 @@ define Parser
         ContinueSyntax(start, end, name)
     }
 
-    function parse_break(this: Parser) returns BreakSyntax throws ParserError
+    procedure parse_break(this: Parser) returns BreakSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -4318,7 +4318,7 @@ define Parser
         BreakSyntax(start, end, name, result)
     }
 
-    function parse_loop(this: Parser) returns LoopSyntax throws ParserError
+    procedure parse_loop(this: Parser) returns LoopSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -4334,7 +4334,7 @@ define Parser
         LoopSyntax(start, end, name)
     }
 
-    function parse_return(this: Parser) returns ReturnSyntax throws ParserError
+    procedure parse_return(this: Parser) returns ReturnSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -4359,7 +4359,7 @@ define Parser
         ReturnSyntax(start, end, result)
     }
 
-    function parse_throw(this: Parser) returns ThrowSyntax throws ParserError
+    procedure parse_throw(this: Parser) returns ThrowSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -4384,7 +4384,7 @@ define Parser
         ThrowSyntax(start, end, result)
     }
 
-    function parse_lambda(this: Parser) returns LambdaSyntax throws ParserError
+    procedure parse_lambda(this: Parser) returns LambdaSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -4427,7 +4427,7 @@ define Parser
         LambdaSyntax(start, end, input, block)
     }
 
-    function parse_for(this: Parser) returns ForSyntax throws ParserError
+    procedure parse_for(this: Parser) returns ForSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -4504,7 +4504,7 @@ define Parser
         ForSyntax(start, end, variable, annotation, operation, name, action)
     }
 
-    function parse_label(this: Parser) returns LabelSyntax throws ParserError
+    procedure parse_label(this: Parser) returns LabelSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -4520,7 +4520,7 @@ define Parser
         LabelSyntax(start, end, name)
     }
 
-    function parse_repeat(this: Parser) returns RepeatSyntax throws ParserError
+    procedure parse_repeat(this: Parser) returns RepeatSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -4561,7 +4561,7 @@ define Parser
         RepeatSyntax(start, end, name, action)
     }
 
-    function parse_action_list(this: Parser) returns ref[Vector[ActionSyntax]]? throws ParserError
+    procedure parse_action_list(this: Parser) returns ref[Vector[ActionSyntax]]? throws ParserError
     {
         var acc List[ActionSyntax]()
         var parsing: bool true
@@ -4590,7 +4590,7 @@ define Parser
         Vector[ActionSyntax](acc)
     }
 
-    function parse_action(this: Parser) returns ActionSyntax throws ParserError
+    procedure parse_action(this: Parser) returns ActionSyntax throws ParserError
     {
         choose parse_operation()
             when err: Error
@@ -4625,7 +4625,7 @@ define Parser
         throw ParserError.Different(DifferentSyntax())
     }
 
-    function parse_operation(this: Parser) returns OperationSyntax throws ParserError
+    procedure parse_operation(this: Parser) returns OperationSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -4642,7 +4642,7 @@ define Parser
         OperationSyntax(start, end, operands)
     }
 
-    function parse_set(this: Parser) returns SetSyntax throws ParserError
+    procedure parse_set(this: Parser) returns SetSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -4685,7 +4685,7 @@ define Parser
         SetSyntax(start, end, target, source)
     }
 
-    function parse_block(this: Parser) returns BlockSyntax throws ParserError
+    procedure parse_block(this: Parser) returns BlockSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -4726,7 +4726,7 @@ define Parser
         BlockSyntax(start, end, uses, statements)
     }
 
-    function parse_sizeof(this: Parser) returns SizeOfSyntax throws ParserError
+    procedure parse_sizeof(this: Parser) returns SizeOfSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -4752,7 +4752,7 @@ define Parser
         SizeOfSyntax(start, end, type)
     }
 
-    function parse_alignof(this: Parser) returns AlignOfSyntax throws ParserError
+    procedure parse_alignof(this: Parser) returns AlignOfSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -4778,7 +4778,7 @@ define Parser
         AlignOfSyntax(start, end, type)
     }
 
-    function parse_is(this: Parser) returns IsSyntax throws ParserError
+    procedure parse_is(this: Parser) returns IsSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -4804,7 +4804,7 @@ define Parser
         IsSyntax(start, end, name)
     }
 
-    function parse_as(this: Parser) returns AsSyntax throws ParserError
+    procedure parse_as(this: Parser) returns AsSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -4830,7 +4830,7 @@ define Parser
         AsSyntax(start, end, type)
     }
 
-    function parse_type_list(this: Parser) returns ref[Vector[TypeSyntax]]? throws ParserError
+    procedure parse_type_list(this: Parser) returns ref[Vector[TypeSyntax]]? throws ParserError
     {
         var acc List[TypeSyntax]()
         var parsing: bool true
@@ -4859,7 +4859,7 @@ define Parser
         Vector[TypeSyntax](acc)
     }
 
-    function parse_type(this: Parser) returns TypeSyntax throws ParserError
+    procedure parse_type(this: Parser) returns TypeSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -4915,7 +4915,7 @@ define Parser
         TypeSyntax(start, end, name, generics, optional, lifetime)
     }
 
-    function parse_name(this: Parser) returns NameSyntax throws ParserError
+    procedure parse_name(this: Parser) returns NameSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -4941,7 +4941,7 @@ define Parser
         NameSyntax(start, end, name, extensions)
     }
 
-    function parse_extension_list(this: Parser) returns ref[Vector[ExtensionSyntax]]? throws ParserError
+    procedure parse_extension_list(this: Parser) returns ref[Vector[ExtensionSyntax]]? throws ParserError
     {
         var acc List[ExtensionSyntax]()
         var parsing: bool true
@@ -4970,7 +4970,7 @@ define Parser
         Vector[ExtensionSyntax](acc)
     }
 
-    function parse_extension(this: Parser) returns ExtensionSyntax throws ParserError
+    procedure parse_extension(this: Parser) returns ExtensionSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -4986,7 +4986,7 @@ define Parser
         ExtensionSyntax(start, end, name)
     }
 
-    function parse_lifetime(this: Parser) returns LifetimeSyntax throws ParserError
+    procedure parse_lifetime(this: Parser) returns LifetimeSyntax throws ParserError
     {
         choose parse_call()
             when err: Error
@@ -5021,7 +5021,7 @@ define Parser
         throw ParserError.Different(DifferentSyntax())
     }
 
-    function parse_call(this: Parser) returns CallSyntax throws ParserError
+    procedure parse_call(this: Parser) returns CallSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -5033,7 +5033,7 @@ define Parser
         CallSyntax(start, end)
     }
 
-    function parse_reference(this: Parser) returns ReferenceSyntax throws ParserError
+    procedure parse_reference(this: Parser) returns ReferenceSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -5049,7 +5049,7 @@ define Parser
         ReferenceSyntax(start, end, location)
     }
 
-    function parse_thrown(this: Parser) returns ThrownSyntax throws ParserError
+    procedure parse_thrown(this: Parser) returns ThrownSyntax throws ParserError
     {
         let start lexer.previous_position
 
@@ -5061,7 +5061,7 @@ define Parser
         ThrownSyntax(start, end)
     }
 
-    function parse_empty(this: Parser) returns EmptySyntax throws ParserError
+    procedure parse_empty(this: Parser) returns EmptySyntax throws ParserError
     {
         let start lexer.previous_position
 

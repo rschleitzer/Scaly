@@ -103,7 +103,7 @@ define tasklens
     ;
     ; "" whenever nothing can be said: no `for` loop at all, or a buffer whose
     ; `for` structure no longer matches the saved text.
-    function fragment(rp, plan: Plan, has_diag: bool, entry_file: String, path: String, plan_text: String, anchor_text: String) returns String
+    procedure fragment(rp, plan: Plan, has_diag: bool, entry_file: String, path: String, plan_text: String, anchor_text: String) returns String
     {
         let sites tasklens.count_for_sites plan_text
         if sites = 0
@@ -120,7 +120,7 @@ define tasklens
     ; The CodeLens[] array itself: walk the `for` sites of both texts in
     ; lockstep (the counts were proved equal by code_lenses#), take the
     ; verdict from the plan text's offset and draw it at the buffer's.
-    function lenses_body(rp, tp: ref[TaskPlanner.TaskPlanner], has_diag: bool, path: String, plan_text: String, anchor_text: String) returns String
+    procedure lenses_body(rp, tp: ref[TaskPlanner.TaskPlanner], has_diag: bool, path: String, plan_text: String, anchor_text: String) returns String
     {
         var sb StringBuilder()
 

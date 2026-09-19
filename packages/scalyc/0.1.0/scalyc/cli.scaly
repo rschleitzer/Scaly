@@ -313,7 +313,7 @@ define cli
     }
 
     ; Print usage information
-    function print_usage()
+    procedure print_usage()
     {
         Console.println "Usage: scalyc [options] <input file>"
         Console.println ""
@@ -425,7 +425,7 @@ define cli
 
     ; Run the compiler with parsed options
     ; Returns 0 on success, non-zero on error
-    function run(opts: Options) returns int
+    procedure run(opts: Options) returns int
     {
         if opts.show_help
         {
@@ -1037,7 +1037,7 @@ define cli
     ; s194: format a single parse error as `file:line:col: <message>`,
     ; mirroring print_diagnostics#'s offset→line/col walk (numeric LF
     ; compare — `"\n" as char` mis-compiles under stage-1).
-    function print_parse_error(file_path: String, source: String, offset: size_t, message: String)
+    procedure print_parse_error(file_path: String, source: String, offset: size_t, message: String)
     {
         var line: size_t 1
         var col: size_t 1
@@ -1070,7 +1070,7 @@ define cli
         Console.println(msg_str.to_c_string())
     }
 
-    function print_diagnostics(planner: ref[Planner.Planner], file_path: String, source: String)
+    procedure print_diagnostics(planner: ref[Planner.Planner], file_path: String, source: String)
     {
         var di: size_t 0
         while di < planner.diagnostics.length
@@ -1133,7 +1133,7 @@ define cli
     ; (concept, looking-up file) miss. A [lazy] tag marks a first
     ; sighting during lazy instantiation — those need the visibility-
     ; context switch (nested-planning trap), not a use line.
-    function print_use_vis(planner: ref[Planner.Planner])
+    procedure print_use_vis(planner: ref[Planner.Planner])
     {
         var head StringBuilder()
         head.append "use-vis: "
@@ -1184,7 +1184,7 @@ define cli
     ; line per `for` loop, file:line:col like print_diagnostics — the byte
     ; offset is relative to the loop's own source file, so re-read the file
     ; when it changes (entries arrive grouped by file, one read per file).
-    function print_task_plan(tp: ref[TaskPlanner.TaskPlanner])
+    procedure print_task_plan(tp: ref[TaskPlanner.TaskPlanner])
     {
         var head StringBuilder()
         head.append "task-plan: "
@@ -1199,7 +1199,7 @@ define cli
 
     ; --pointer-report: the head line carries one count per class, then one
     ; located line per site (PointerCensus.scaly has the class list).
-    function print_pointer_report(pc: ref[PointerCensus.PointerCensus])
+    procedure print_pointer_report(pc: ref[PointerCensus.PointerCensus])
     {
         var head StringBuilder()
         head.append "pointer-report: "
@@ -1255,7 +1255,7 @@ define cli
         cli.print_located("pointer-report: ", &pc.report_files, &pc.report_offsets, &pc.report_texts)
     }
 
-    function print_write_report(wc: ref[WriteCensus.WriteCensus])
+    procedure print_write_report(wc: ref[WriteCensus.WriteCensus])
     {
         var head StringBuilder()
         head.append "write-report: "
@@ -1305,7 +1305,7 @@ define cli
     ; line per slot of three parallel arrays. The byte offset is relative to
     ; the slot's own source file, so re-read the file when it changes
     ; (entries arrive grouped by file, one read per file).
-    function print_located(
+    procedure print_located(
         prefix: String,
         files: ref[Array[String]],
         offsets: ref[Array[size_t]],
@@ -1442,14 +1442,14 @@ define cli
     }
 
     ; Main entry point
-    function main(argc: int, argv: pointer[pointer[char]]) returns int
+    procedure main(argc: int, argv: pointer[pointer[char]]) returns int
     {
         var opts cli.parse_args(argc, argv)
         return cli.run(opts)
     }
 
     ; Test function
-    function test() returns int
+    procedure test() returns int
     {
         ; Test 1: Check Options initialization
         var opts Options()
@@ -1491,7 +1491,7 @@ define cli
     }
 
     ; Test compiling hello.scaly from disk
-    function test_hello_scaly() returns int
+    procedure test_hello_scaly() returns int
     {
         ; Path to hello.scaly (relative to scalyc/build where tests run)
         var file_path "../../hello.scaly"
@@ -1537,7 +1537,7 @@ define cli
     }
 
     ; Test the compilation pipeline on a minimal program
-    function test_pipeline() returns int
+    procedure test_pipeline() returns int
     {
         ; Minimal valid Scaly program
         var source "function test_func() returns int { 42 }"

@@ -87,7 +87,7 @@ define placehints
 {
     ; The placement hints for the packed "<sl> <sc> <el> <ec>" range as a
     ; COMMA-JOINED FRAGMENT of InlayHint objects, or "".
-    function fragment(rp, uri: String, text: String, packed: String) returns String
+    procedure fragment(rp, uri: String, text: String, packed: String) returns String
     {
         let path diagnostics.strip_uri uri
         if path.get_length() = 0
@@ -127,7 +127,7 @@ define placehints
     ; load-bearing file in this server for a cosmetic gain. The shape it answers
     ; is known exactly — `[]` or `[...]` — so `[]` becomes `[mine]` and anything
     ; else takes `,mine` before its final byte.
-    function merged(rp, repaired: String, source: String, uri: String, packed: String) returns String
+    procedure merged(rp, repaired: String, source: String, uri: String, packed: String) returns String
     {
         let base symbols.inlay_hints_packed(repaired, uri, packed)
         let mine placehints.fragment(uri, source, packed)
@@ -161,7 +161,7 @@ define placehints
     ; ends after the callee name and its arguments are outside. The start is the
     ; one end of it that reliably sits on the construction's first token.
     ; ====================================================================
-    function build(rp, path: String, text: String) returns String
+    procedure build(rp, path: String, text: String) returns String
     {
         var sb StringBuilder()
 
@@ -838,7 +838,7 @@ define placehints
     ; ====================================================================
     ; Rendering: filter the blob by the requested range, one InlayHint each.
     ; ====================================================================
-    function render(rp, blob: String, source: String, packed: String) returns String
+    procedure render(rp, blob: String, source: String, packed: String) returns String
     {
         ; The packed range is "<start_line> <start_char> <end_line> <end_char>",
         ; 0-based, exactly as symbols.inlay_hints_packed# reads it.

@@ -68,13 +68,13 @@ define Parser
 "        Vector[String](keywords_builder)
     }
 
-    function initialize_keywords(this: Parser) returns HashSet[String]
+    procedure initialize_keywords(this: Parser) returns HashSet[String]
     {
         var hash_set_builder HashSetBuilder[String](keywords_index)
         HashSet[String](hash_set_builder)
     }
 
-    function parse_literal_token(this: Parser) returns Literal throws ParserError
+    procedure parse_literal_token(this: Parser) returns Literal throws ParserError
     {
         choose lexer.token
             when empty: Empty
@@ -115,7 +115,7 @@ define Parser
     (apply-to-selected-children "syntax" (lambda (syntax) ($
         (if (multiple? syntax) ($
 "
-    function parse_"(downcase-string (id syntax))"_list(this: Parser) returns ref[Vector["(id syntax)"Syntax]]? throws ParserError
+    procedure parse_"(downcase-string (id syntax))"_list(this: Parser) returns ref[Vector["(id syntax)"Syntax]]? throws ParserError
     {
         var acc List["(id syntax)"Syntax]()
         var parsing: bool true
@@ -145,7 +145,7 @@ define Parser
     }
 "       ) "")
 "
-    function parse_"(downcase-string (id syntax))"(this: Parser) returns "(id syntax)"Syntax throws ParserError
+    procedure parse_"(downcase-string (id syntax))"(this: Parser) returns "(id syntax)"Syntax throws ParserError
     {
 "       (if (abstract? syntax)
             ;; Abstract syntax - try each alternative

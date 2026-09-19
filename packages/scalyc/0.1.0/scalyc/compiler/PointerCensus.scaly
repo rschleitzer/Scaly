@@ -264,7 +264,7 @@ define PointerCensus
         ; Entry point: declarations over the module tree, then every
         ; planned body plus the program's top-level statements.
         ; ================================================================
-        function analyze(this: PointerCensus, plan: Plan, model: ref[Program], entry_file: String)
+        procedure analyze(this: PointerCensus, plan: Plan, model: ref[Program], entry_file: String)
         {
             this.walk_model_module(model.module_)
             var pi: size_t 0
@@ -402,7 +402,7 @@ define PointerCensus
         ; a copy inside would be made): "argument on the local page is
         ; stored beyond the frame by record".
         ; ================================================================
-        function record(this: PointerCensus, offset: size_t, cls: String, text: String)
+        procedure record(this: PointerCensus, offset: size_t, cls: String, text: String)
         {
             let cid PointerCensus.class_id(cls)
             if this.dedupe_seen(offset, cid)
@@ -416,7 +416,7 @@ define PointerCensus
 
         ; Answers true when (current_file, offset, cid) was recorded before;
         ; otherwise inserts it and answers false.
-        function dedupe_seen(this: PointerCensus, offset: size_t, cid: size_t) returns bool
+        procedure dedupe_seen(this: PointerCensus, offset: size_t, cid: size_t) returns bool
         {
             let fh current_file.hash()
             let mask (DD_CAP as size_t) - 1
@@ -507,7 +507,7 @@ define PointerCensus
             0
         }
 
-        function bump(this: PointerCensus, cid: size_t)
+        procedure bump(this: PointerCensus, cid: size_t)
         {
             if cid = 1
                 set n_extern: n_extern + 1
@@ -551,7 +551,7 @@ define PointerCensus
                 set n_h_store_slot: n_h_store_slot + 1
         }
 
-        function record_typed(this: PointerCensus, offset: size_t, cls: String, t: PlannedType)
+        procedure record_typed(this: PointerCensus, offset: size_t, cls: String, t: PlannedType)
         {
             if this.is_handle(t)
             {
@@ -567,7 +567,7 @@ define PointerCensus
             this.record(offset, cls, text_copy)
         }
 
-        function record_named(this: PointerCensus, offset: size_t, cls: String, t: PlannedType, name: String)
+        procedure record_named(this: PointerCensus, offset: size_t, cls: String, t: PlannedType, name: String)
         {
             if this.is_handle(t)
             {
@@ -651,7 +651,7 @@ define PointerCensus
             sb.to_string()
         }
 
-        function record_model_typed(this: PointerCensus, offset: size_t, cls: String, t: Type, name: String)
+        procedure record_model_typed(this: PointerCensus, offset: size_t, cls: String, t: Type, name: String)
         {
             var sb StringBuilder()
             sb.append cls
@@ -664,7 +664,7 @@ define PointerCensus
             this.record(offset, cls, text_copy)
         }
 
-        function walk_model_module(this: PointerCensus, m: Module)
+        procedure walk_model_module(this: PointerCensus, m: Module)
         {
             set current_file: String^this(m.file)
             this.remember_file(m.file)
@@ -682,7 +682,7 @@ define PointerCensus
             set current_file: String^this(m.file)
         }
 
-        function walk_members(this: PointerCensus, members: Vector[Member])
+        procedure walk_members(this: PointerCensus, members: Vector[Member])
         {
             var i: size_t 0
             while i < members.length
@@ -705,7 +705,7 @@ define PointerCensus
             }
         }
 
-        function walk_model_function(this: PointerCensus, f: Function)
+        procedure walk_model_function(this: PointerCensus, f: Function)
         {
             var is_extern false
             choose f.implementation
@@ -718,7 +718,7 @@ define PointerCensus
             this.walk_model_signature(f.input, f.returns_, is_extern, f.name, f.span.start)
         }
 
-        function remember_extern(this: PointerCensus, name: String)
+        procedure remember_extern(this: PointerCensus, name: String)
         {
             let copy String^this(name)
             extern_names.add copy
@@ -739,7 +739,7 @@ define PointerCensus
         }
 
         ; Dependency packages: only their extern NAMES are wanted.
-        function collect_externs_module(this: PointerCensus, m: Module)
+        procedure collect_externs_module(this: PointerCensus, m: Module)
         {
             this.collect_externs_members(m.members)
             var i: size_t 0
@@ -752,7 +752,7 @@ define PointerCensus
             }
         }
 
-        function collect_externs_members(this: PointerCensus, members: Vector[Member])
+        procedure collect_externs_members(this: PointerCensus, members: Vector[Member])
         {
             var i: size_t 0
             while i < members.length
@@ -827,7 +827,7 @@ define PointerCensus
             PointerCensus.model_is_ref((*inner))
         }
 
-        function walk_model_signature(
+        procedure walk_model_signature(
             this: PointerCensus,
             input: Vector[Item],
             returns_: ref[Type]?,
@@ -914,7 +914,7 @@ define PointerCensus
             }
         }
 
-        function walk_model_concept(this: PointerCensus, c: Concept)
+        procedure walk_model_concept(this: PointerCensus, c: Concept)
         {
             choose c.definition
                 when s: Structure
@@ -1038,7 +1038,7 @@ define PointerCensus
                     return false
         }
 
-        function index_functions(this: PointerCensus)
+        procedure index_functions(this: PointerCensus)
         {
             if plan_functions = null
                 return
@@ -1099,7 +1099,7 @@ define PointerCensus
             }
         }
 
-        function index_initializers(this: PointerCensus)
+        procedure index_initializers(this: PointerCensus)
         {
             if plan_structures = null
                 return
@@ -1255,7 +1255,7 @@ define PointerCensus
         }
 
         ; Walk the children of the slot pointer under `*q` / `*(q + i)`.
-        function walk_below_deref(this: PointerCensus, op: PlannedOperand)
+        procedure walk_below_deref(this: PointerCensus, op: PlannedOperand)
         {
             choose op.expr
                 when call: Call
@@ -1324,7 +1324,7 @@ define PointerCensus
         ; ================================================================
         ; Source files: the join that verifies a body's file.
         ; ================================================================
-        function remember_file(this: PointerCensus, file: String)
+        procedure remember_file(this: PointerCensus, file: String)
         {
             if file.get_length() = 0
                 return
@@ -1345,7 +1345,7 @@ define PointerCensus
         }
 
         ; The text of the i-th remembered file, read on first use.
-        function source_of(this: PointerCensus, i: size_t) returns ref[String]?
+        procedure source_of(this: PointerCensus, i: size_t) returns ref[String]?
         {
             let loaded src_loaded.get i
             if loaded = null
@@ -1418,7 +1418,7 @@ define PointerCensus
         ; instantiated by this root) names a file outside this root's module
         ; tree; it is remembered here on first sight, so its sites are
         ; reported under their true file and the sweep's union dedupes them.
-        function resolve_body_file(this: PointerCensus, func: PlannedFunction) returns String
+        procedure resolve_body_file(this: PointerCensus, func: PlannedFunction) returns String
         {
             this.remember_file(func.file)
             var i: size_t 0
@@ -1462,7 +1462,7 @@ define PointerCensus
         ; off each operand before its children are walked.
         ; ================================================================
 
-        function find_operands(this: PointerCensus, ops: ref[Vector[PlannedOperand]]?)
+        procedure find_operands(this: PointerCensus, ops: ref[Vector[PlannedOperand]]?)
         {
             if ops = null
                 return
@@ -1476,7 +1476,7 @@ define PointerCensus
             }
         }
 
-        function find_statement_ref(this: PointerCensus, stmt: ref[PlannedStatement]?)
+        procedure find_statement_ref(this: PointerCensus, stmt: ref[PlannedStatement]?)
         {
             if stmt <> null
             {
@@ -1487,7 +1487,7 @@ define PointerCensus
 
         ; A `set` whose target is a deref is a store THROUGH a pointer --
         ; the side of a `set` no text scan could tell apart.
-        function find_action(this: PointerCensus, act: PlannedAction)
+        procedure find_action(this: PointerCensus, act: PlannedAction)
         {
             this.find_operands(act.source)
             if act.target = null
@@ -1508,7 +1508,7 @@ define PointerCensus
 
         ; Answers true when the target head is a store through a pointer and
         ; has been reported (and its children walked) here.
-        function note_store_target(this: PointerCensus, head: PlannedOperand) returns bool
+        procedure note_store_target(this: PointerCensus, head: PlannedOperand) returns bool
         {
             if head.member_access <> null
                 return false
@@ -1563,7 +1563,7 @@ define PointerCensus
                     return false
         }
 
-        function find_statement(this: PointerCensus, stmt: PlannedStatement)
+        procedure find_statement(this: PointerCensus, stmt: PlannedStatement)
         {
             choose stmt
                 when action: Action
@@ -1586,7 +1586,7 @@ define PointerCensus
         ; A local whose (declared or inferred) type is a pointer. This is
         ; where `let p allocate(...) as pointer[X]` surfaces -- the cast that
         ; is a declaration without a colon.
-        function note_binding(this: PointerCensus, binding: PlannedBinding)
+        procedure note_binding(this: PointerCensus, binding: PlannedBinding)
         {
             var have_type false
             var t: PlannedType PointerCensus.void_type()
@@ -1644,7 +1644,7 @@ define PointerCensus
         ; ================================================================
 
         ; Remember a pointer-typed local with the KIND of its initializer.
-        function note_local(this: PointerCensus, name: String, ops: ref[Vector[PlannedOperand]]?)
+        procedure note_local(this: PointerCensus, name: String, ops: ref[Vector[PlannedOperand]]?)
         {
             let kind this.initializer_kind(ops)
             loc_names.add(String^this(name))
@@ -2086,7 +2086,7 @@ define PointerCensus
         }
 
         ; A buffer-walk site: class, type, then provenance.
-        function record_walk(this: PointerCensus, offset: size_t, cls: String, base: PlannedOperand)
+        procedure record_walk(this: PointerCensus, offset: size_t, cls: String, base: PlannedOperand)
         {
             let t base.result_type
             if this.is_handle(t)
@@ -2209,7 +2209,7 @@ define PointerCensus
                     return false
         }
 
-        function find_operand(this: PointerCensus, op: PlannedOperand)
+        procedure find_operand(this: PointerCensus, op: PlannedOperand)
         {
             choose op.expr
                 when call: Call
@@ -2431,7 +2431,7 @@ define PointerCensus
 
         ; The call-shaped sites: deref, arithmetic, null comparison, and a
         ; pointer handed to a callee.
-        function note_call(this: PointerCensus, op: PlannedOperand, call: PlannedCall) returns bool
+        procedure note_call(this: PointerCensus, op: PlannedOperand, call: PlannedCall) returns bool
         {
             if call.args = null
                 return false

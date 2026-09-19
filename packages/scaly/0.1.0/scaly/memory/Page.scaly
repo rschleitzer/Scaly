@@ -174,14 +174,14 @@ define Page
     ; cooperation (see SCALY_TRACE_HEAP in root_pages.scaly). Use the
     ; SAME site string at the matching alloc and release call; a
     ; mismatched label shows up as a permanent false imbalance.
-    function allocate_page_traced(site: pointer[const_char]) returns ref[Page]
+    procedure allocate_page_traced(site: pointer[const_char]) returns ref[Page]
     {
         let page Page.allocate_page()
         scaly_heap_trace_alloc site
         page
     }
 
-    function release_page_traced(p: ref[Page], site: pointer[const_char])
+    procedure release_page_traced(p: ref[Page], site: pointer[const_char])
     {
         Page.release_page(p)
         scaly_heap_trace_release site
@@ -274,7 +274,7 @@ define Page
         next_addr
     }
 
-    function reset(this: Page)
+    procedure reset(this: Page)
     {
         set current_page: null
         set next_page: null
@@ -289,7 +289,7 @@ define Page
         set region: (this as size_t) as pointer[Page]
     }
 
-    function allocate(this: Page, size: size_t, align: size_t) returns pointer[void]
+    procedure allocate(this: Page, size: size_t, align: size_t) returns pointer[void]
     {
         let st page_statistics
         if st <> null
@@ -396,7 +396,7 @@ define Page
         return aligned_location as pointer[void]
     }
 
-    function allocate_oversized(this: Page, size: size_t) returns pointer[void]
+    procedure allocate_oversized(this: Page, size: size_t) returns pointer[void]
     {
         ; We allocate oversized objects directly.
         let rounded (size + PAGE_SIZE - 1) & (~(PAGE_SIZE - 1))
@@ -472,7 +472,7 @@ define Page
         capacity
     }
 
-    function allocate_exclusive_page(this: Page) returns ref[Page]
+    procedure allocate_exclusive_page(this: Page) returns ref[Page]
     {
         let page allocate_page()
         exclusive_pages.add page
@@ -487,7 +487,7 @@ define Page
     ; header. The decision belongs here rather than in the caller because the
     ; caller cannot see PAGE_SIZE: a module-level define does not resolve inside
     ; a generic body monomorphized into another package.
-    function allocate_exclusive_buffer(this: Page, size: size_t, align: size_t) returns pointer[void]
+    procedure allocate_exclusive_buffer(this: Page, size: size_t, align: size_t) returns pointer[void]
     {
         let gross size + sizeof Page
         if gross > PAGE_SIZE
@@ -526,7 +526,7 @@ define Page
         }
     }
 
-    function deallocate_exclusive_page(this: Page, page: ref[Page])
+    procedure deallocate_exclusive_page(this: Page, page: ref[Page])
     {
         page.deallocate_extensions()
         release_page(page)

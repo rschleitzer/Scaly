@@ -187,13 +187,13 @@ define json
     ; Parsing
     ; ====================================================================
 
-    function parse(rp, source: String) returns JsonValue
+    procedure parse(rp, source: String) returns JsonValue
     {
         var p JsonParser(source, 0, true)
         json.parse_value(&p)
     }
 
-    function parse_value(rp, p: ref[JsonParser]) returns JsonValue
+    procedure parse_value(rp, p: ref[JsonParser]) returns JsonValue
     {
         json.skip_ws p
         let c json.peek p
@@ -228,7 +228,7 @@ define json
         json.null_value()
     }
 
-    function parse_object(rp, p: ref[JsonParser]) returns JsonValue
+    procedure parse_object(rp, p: ref[JsonParser]) returns JsonValue
     {
         json.expect(p, 0x7B)         ; '{'
         json.skip_ws p
@@ -276,7 +276,7 @@ define json
         JsonValue.Object(JsonObject(buf))
     }
 
-    function parse_array(rp, p: ref[JsonParser]) returns JsonValue
+    procedure parse_array(rp, p: ref[JsonParser]) returns JsonValue
     {
         json.expect(p, 0x5B)         ; '['
         json.skip_ws p
@@ -319,7 +319,7 @@ define json
         JsonValue.Array(JsonArray(buf))
     }
 
-    function parse_string(rp, p: ref[JsonParser]) returns String
+    procedure parse_string(rp, p: ref[JsonParser]) returns String
     {
         if json.peek(p) <> 0x22   ; must open with '"'
         {
@@ -392,7 +392,7 @@ define json
 
     ; Reads the four hex digits of a \uXXXX escape at the cursor (the `u` is
     ; already consumed) and advances past them.
-    function read_hex4(p: ref[JsonParser]) returns i64
+    procedure read_hex4(p: ref[JsonParser]) returns i64
     {
         var value: i64 0
         var k 0
@@ -410,7 +410,7 @@ define json
     ; surrogate PAIR (\uD83D\uDE00) into the one codepoint it denotes.
     ; A lone surrogate — which no well-formed document can mean — answers
     ; U+FFFD, so the encoding downstream stays well-formed.
-    function read_unicode_escape(p: ref[JsonParser]) returns i64
+    procedure read_unicode_escape(p: ref[JsonParser]) returns i64
     {
         let hi json.read_hex4 p
         if hi < 0xD800
@@ -483,7 +483,7 @@ define json
         sb.append((0x80 | (cp & 0x3F)) as char)
     }
 
-    function parse_number(p: ref[JsonParser]) returns i64
+    procedure parse_number(p: ref[JsonParser]) returns i64
     {
         var negative false
         if json.peek(p) = 0x2D  ; '-'
@@ -525,10 +525,10 @@ define json
         p.source.get p.pos
     }
 
-    function advance(p: ref[JsonParser])
+    procedure advance(p: ref[JsonParser])
         set p.pos: p.pos + 1
 
-    function skip_ws(p: ref[JsonParser])
+    procedure skip_ws(p: ref[JsonParser])
     {
         ; space 0x20, tab 0x09, LF 0x0A, CR 0x0D
         var c json.peek p
@@ -539,7 +539,7 @@ define json
         }
     }
 
-    function expect(p: ref[JsonParser], c: u8)
+    procedure expect(p: ref[JsonParser], c: u8)
     {
         if json.peek(p) = c
         {
@@ -568,7 +568,7 @@ define json
 
     ; Matches `lit` at the cursor; advances past it and returns true on a
     ; hit, leaves the cursor untouched and returns false on a miss.
-    function match_literal(p: ref[JsonParser], lit: Slice[char]) returns bool
+    procedure match_literal(p: ref[JsonParser], lit: Slice[char]) returns bool
     {
         let len lit.length
         var i: size_t 0

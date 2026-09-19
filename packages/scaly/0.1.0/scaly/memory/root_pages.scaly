@@ -692,7 +692,7 @@ procedure bucket_unlock(b: pointer[HeapBucketHeader])
 ; is this module's constant, and module globals resolve in planning
 ; order (Page is planned first — reading the constant from there is a
 ; hard "unknown identifier" diagnostic).
-function drain_dead_bucket(b: pointer[HeapBucketHeader]) returns bool
+procedure drain_dead_bucket(b: pointer[HeapBucketHeader]) returns bool
 {
     if b.dead = 0
         return false
@@ -782,7 +782,7 @@ procedure reset_page(p: ref[Page])
 ; Bucket creation
 ; --------------------------------------------------------------------------
 
-function create_stack_bucket(prev: pointer[StackBucketHeader]) returns pointer[StackBucketHeader]
+procedure create_stack_bucket(prev: pointer[StackBucketHeader]) returns pointer[StackBucketHeader]
 {
     let mem scaly_aligned_alloc(BUCKET_SIZE as i64, BUCKET_SIZE as i64)
     if mem = null
@@ -1313,7 +1313,7 @@ procedure heap_trace_unlock(hdr: pointer[HeapTraceHeader])
 }
 
 ; Caller holds hdr's lock.
-function scaly_heap_trace_find_or_add(hdr: ref[HeapTraceHeader], name: pointer[const_char]) returns ref[TraceEntry]?
+procedure scaly_heap_trace_find_or_add(hdr: ref[HeapTraceHeader], name: pointer[const_char]) returns ref[TraceEntry]?
 {
     var i: i64 0
     while i < hdr.count

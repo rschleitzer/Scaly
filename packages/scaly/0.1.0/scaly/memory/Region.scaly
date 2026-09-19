@@ -182,7 +182,7 @@ define Region
 
     ; Fill the interleaved (base, length) table; index counts SLOTS
     ; (two per page); returns the index after the last slot written.
-    function fill_exclusives(p: ref[Page], table: pointer[size_t], index: size_t) returns size_t
+    procedure fill_exclusives(p: ref[Page], table: pointer[size_t], index: size_t) returns size_t
     {
         var w index
         var nd p.exclusive_pages.head
@@ -205,7 +205,7 @@ define Region
         w
     }
 
-    function fill_pages(region: ref[Page], table: pointer[size_t], index: size_t) returns size_t
+    procedure fill_pages(region: ref[Page], table: pointer[size_t], index: size_t) returns size_t
     {
         var w index
         set table[w]: region as size_t
@@ -436,7 +436,7 @@ define Region
     ; watermark and the unwind without writing their Itanium mangled names
     ; into C, which would freeze their signatures (CLAUDE.md, eight symbols
     ; already pay that price).
-    function run_guarded(body: pointer[void], arg: pointer[void], caught: pointer[i32]) returns i64
+    procedure run_guarded(body: pointer[void], arg: pointer[void], caught: pointer[i32]) returns i64
         scaly_catch_run(body, arg, &scaly_panic_mark, &scaly_panic_unwind_to, caught)
 
     ; What the panic said, once run_guarded reported one. Allocation-free by

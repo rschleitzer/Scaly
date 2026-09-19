@@ -24,7 +24,7 @@ define List[T]
         &head.element
     }
 
-    function count(this: List[T]) returns size_t
+    procedure count(this: List[T]) returns size_t
     {
         var list_iterator get_iterator()
         var i: size_t 0
@@ -44,7 +44,7 @@ define List[T]
         ListIterator[T](head)
 
     ; Append a cell on the list's own page.
-    function add(this: List[T], element: T)
+    procedure add(this: List[T], element: T)
     {
         let new_node Node[T]^this(element, null)
         this.link(new_node)
@@ -58,13 +58,13 @@ define List[T]
     ; so live in an oversized allocation) has no page header at its masked
     ; address, and `^this` would allocate from garbage; the caller passes the page
     ; that owns the buffer. This is what BuilderList existed for until 2026-09-16.
-    function add_on(this: List[T], page: ref[Page], element: T)
+    procedure add_on(this: List[T], page: ref[Page], element: T)
     {
         let new_node Node[T]^page(element, null)
         this.link(new_node)
     }
 
-    function link(this: List[T], new_node: pointer[Node[T]])
+    procedure link(this: List[T], new_node: pointer[Node[T]])
     {
         if tail = null
             set head: new_node

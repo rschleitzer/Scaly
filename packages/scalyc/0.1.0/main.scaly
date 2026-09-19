@@ -7,7 +7,7 @@ package scaly 0.1.0
 package scalyc 0.1.0
 use scalyc.cli
 
-function main(argc: int, argv: pointer[pointer[char]]) returns int
+procedure main(argc: int, argv: pointer[pointer[char]]) returns int
 {
     return cli.main(argc, argv)
 }

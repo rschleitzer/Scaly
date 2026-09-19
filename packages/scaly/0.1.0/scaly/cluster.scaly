@@ -479,7 +479,7 @@ define Cluster
     ; Read exactly count bytes; bounded polls keep the suspicion clock
     ; live during a mid-frame stall. False = transport over (EOF,
     ; error, silence past the deadline, or a local close).
-    function read_exact(p: ref[NodePeer], buf: pointer[void], count: size_t) returns bool
+    procedure read_exact(p: ref[NodePeer], buf: pointer[void], count: size_t) returns bool
     {
         let fd p.fd
         var done: size_t 0
@@ -507,7 +507,7 @@ define Cluster
     }
 
     ; One frame past the header: false stops the reader.
-    function dispatch(p: ref[NodePeer], h: pointer[u64]) returns bool
+    procedure dispatch(p: ref[NodePeer], h: pointer[u64]) returns bool
     {
         let kind h[0]
         if kind = NODE_FRAME_HEARTBEAT

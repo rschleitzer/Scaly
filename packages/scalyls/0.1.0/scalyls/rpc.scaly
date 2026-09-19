@@ -47,7 +47,7 @@ define rpc
     }
 
     ; Fill exactly `n` bytes from stdin into `buf`. Stops early on EOF.
-    function read_exact(buf: pointer[void], n: size_t)
+    procedure read_exact(buf: pointer[void], n: size_t)
     {
         var total: size_t 0
         while total < n
@@ -232,7 +232,7 @@ define rpc
         -1
     }
 
-    function read_exact_fd(fd: int, buf: pointer[void], n: size_t)
+    procedure read_exact_fd(fd: int, buf: pointer[void], n: size_t)
     {
         var total: size_t 0
         while total < n

@@ -136,7 +136,7 @@ define Modeler
         sb.to_string()
     }
 
-    function handle_literal(syntax: LiteralSyntax) returns Constant
+    procedure handle_literal(syntax: LiteralSyntax) returns Constant
     {
         let loc Span(syntax.start, syntax.end)
         choose syntax.literal
@@ -317,7 +317,7 @@ define Modeler
     ; Object/Tuple handling
     ; ============================================================================
 
-    function handle_object(syntax: ObjectSyntax) returns Tuple
+    procedure handle_object(syntax: ObjectSyntax) returns Tuple
     {
         var count: size_t 0
         if syntax.components <> null
@@ -343,7 +343,7 @@ define Modeler
         Tuple(Span(syntax.start, syntax.end), components)
     }
 
-    function handle_component(syntax: ComponentSyntax) returns Component
+    procedure handle_component(syntax: ComponentSyntax) returns Component
     {
         var name: ref[String]? null
         var operands handle_operands(syntax.operands)
@@ -416,7 +416,7 @@ define Modeler
         Vector[Operand](cells)
     }
 
-    function handle_vector(syntax: VectorSyntax) returns Matrix
+    procedure handle_vector(syntax: VectorSyntax) returns Matrix
     {
         var count: size_t 0
         if syntax.elements <> null
@@ -471,7 +471,7 @@ define Modeler
     ; Block handling
     ; ============================================================================
 
-    function handle_block(syntax: BlockSyntax) returns Block
+    procedure handle_block(syntax: BlockSyntax) returns Block
     {
         let statements handle_statements(syntax.statements)
         Block(Span(syntax.start, syntax.end), statements)
@@ -521,7 +521,7 @@ define Modeler
     ; it by accident. On a malformed payload the error is reported through
     ; modeler_error_count (cli fails the compile) and the literal is returned
     ; verbatim so modeling continues.
-    function handle_interpolated_string(syntax: LiteralSyntax, raw: String) returns Expression
+    procedure handle_interpolated_string(syntax: LiteralSyntax, raw: String) returns Expression
     {
         let len raw.get_length()
         let buf raw.as_slice()
@@ -704,7 +704,7 @@ define Modeler
     ; Expression handling
     ; ============================================================================
 
-    function handle_expression(syntax: ExpressionSyntax) returns Expression
+    procedure handle_expression(syntax: ExpressionSyntax) returns Expression
     {
         choose syntax
             when lit: LiteralSyntax
@@ -841,7 +841,7 @@ define Modeler
 
     ; Lambda: each input operand should be a simple name; we build an Item
     ; per operand with no type annotation (type inferred from context).
-    function handle_lambda(syntax: LambdaSyntax) returns Lambda
+    procedure handle_lambda(syntax: LambdaSyntax) returns Lambda
     {
         var input Vector[Item](0)
         if syntax.input <> null
@@ -884,7 +884,7 @@ define Modeler
         )
     }
 
-    function handle_repeat(syntax: RepeatSyntax) returns Repeat
+    procedure handle_repeat(syntax: RepeatSyntax) returns Repeat
     {
         let body handle_action(syntax.action)
         var repeat_label: String ""
@@ -901,7 +901,7 @@ define Modeler
     ; Control flow handling
     ; ============================================================================
 
-    function handle_if(syntax: IfSyntax) returns If
+    procedure handle_if(syntax: IfSyntax) returns If
     {
         let condition handle_operands(syntax.condition)
         let cons_stmt handle_command(syntax.consequent.statement)
@@ -924,7 +924,7 @@ define Modeler
         )
     }
 
-    function handle_match(syntax: MatchSyntax) returns Match
+    procedure handle_match(syntax: MatchSyntax) returns Match
     {
         let scrutinee handle_operands(syntax.scrutinee)
 
@@ -966,7 +966,7 @@ define Modeler
         )
     }
 
-    function handle_branch(syntax: BranchSyntax) returns Branch
+    procedure handle_branch(syntax: BranchSyntax) returns Branch
     {
         var case_count: size_t 0
         if syntax.cases <> null
@@ -994,13 +994,13 @@ define Modeler
         Branch(Span(syntax.start, syntax.end), cases, stmt)
     }
 
-    function handle_case(syntax: CaseSyntax) returns Case
+    procedure handle_case(syntax: CaseSyntax) returns Case
     {
         let condition handle_operands(syntax.condition)
         Case(Span(syntax.start, syntax.end), condition)
     }
 
-    function handle_choose(syntax: ChooseSyntax) returns Choose
+    procedure handle_choose(syntax: ChooseSyntax) returns Choose
     {
         let condition handle_operands(syntax.condition)
 
@@ -1042,7 +1042,7 @@ define Modeler
         )
     }
 
-    function handle_when(syntax: WhenSyntax) returns When
+    procedure handle_when(syntax: WhenSyntax) returns When
     {
         ; syntax.variant is a NameSyntax — build the full variant_path
         ; including extensions so dotted paths (`when u: a.b.Union`) keep
@@ -1080,7 +1080,7 @@ define Modeler
         )
     }
 
-    function handle_action(syntax: ActionSyntax) returns Action
+    procedure handle_action(syntax: ActionSyntax) returns Action
     {
         choose syntax
             when op: OperationSyntax
@@ -1091,7 +1091,7 @@ define Modeler
                 Action(Vector[Operand](0), Vector[Operand](0))
     }
 
-    function handle_for(syntax: ForSyntax) returns For
+    procedure handle_for(syntax: ForSyntax) returns For
     {
         let expr handle_operands(syntax.operation)
         let body handle_action(syntax.action)
@@ -1108,7 +1108,7 @@ define Modeler
         )
     }
 
-    function handle_while(syntax: WhileSyntax) returns While
+    procedure handle_while(syntax: WhileSyntax) returns While
     {
         let cond handle_condition(syntax.condition)
         let body handle_action(syntax.action)
@@ -1124,7 +1124,7 @@ define Modeler
         )
     }
 
-    function handle_condition(syntax: ConditionSyntax) returns Binding
+    procedure handle_condition(syntax: ConditionSyntax) returns Binding
     {
         choose syntax
             when op: OperationSyntax
@@ -1152,7 +1152,7 @@ define Modeler
                 Binding(Span(0, 0), "const", Item(Span(0, 0), false, null, null, Vector[Attribute](0)), Vector[Operand](0))
     }
 
-    function handle_try(syntax: TrySyntax) returns Try
+    procedure handle_try(syntax: TrySyntax) returns Try
     {
         let cond handle_condition(syntax.condition)
 
@@ -1242,7 +1242,7 @@ define Modeler
     ; Operand handling
     ; ============================================================================
 
-    function handle_operand(syntax: OperandSyntax) returns Operand
+    procedure handle_operand(syntax: OperandSyntax) returns Operand
     {
         let expr handle_expression(syntax.expression)
 
@@ -1294,7 +1294,7 @@ define Modeler
         Operand(Span(syntax.start, syntax.end), expr, member_access)
     }
 
-    function handle_operands(syntax: ref[Vector[OperandSyntax]]?) returns Vector[Operand]
+    procedure handle_operands(syntax: ref[Vector[OperandSyntax]]?) returns Vector[Operand]
     {
         if syntax = null
             return Vector[Operand](0)
@@ -1316,7 +1316,7 @@ define Modeler
         result
     }
 
-    function handle_operation(syntax: OperationSyntax) returns Vector[Operand]
+    procedure handle_operation(syntax: OperationSyntax) returns Vector[Operand]
         handle_operands(syntax.operands)
 
     ; ============================================================================
@@ -1343,7 +1343,7 @@ define Modeler
         )
     }
 
-    function handle_command(syntax: StatementSyntax) returns Statement
+    procedure handle_command(syntax: StatementSyntax) returns Statement
     {
         choose syntax
             when op: OperationSyntax
@@ -1419,10 +1419,10 @@ define Modeler
                 Statement.Action(Action(Vector[Operand](0), Vector[Operand](0)))
     }
 
-    function handle_statement(syntax: StatementSyntax) returns Statement
+    procedure handle_statement(syntax: StatementSyntax) returns Statement
         handle_command(syntax)
 
-    function handle_statements(syntax: ref[Vector[StatementSyntax]]?) returns Vector[Statement]
+    procedure handle_statements(syntax: ref[Vector[StatementSyntax]]?) returns Vector[Statement]
     {
         if syntax = null
             return Vector[Statement](0)
@@ -1589,7 +1589,7 @@ define Modeler
         )
     }
 
-    function handle_property(is_private: bool, syntax: PropertySyntax) returns Property
+    procedure handle_property(is_private: bool, syntax: PropertySyntax) returns Property
     {
         let prop_type handle_type(syntax.annotation.type)
 
@@ -1617,7 +1617,7 @@ define Modeler
     ; Attribute handling
     ; ============================================================================
 
-    function handle_attribute(syntax: AttributeSyntax) returns Attribute
+    procedure handle_attribute(syntax: AttributeSyntax) returns Attribute
     {
         let model_result handle_model(syntax.model)
 
@@ -1628,7 +1628,7 @@ define Modeler
         )
     }
 
-    function handle_model(syntax: ModelSyntax) returns Model
+    procedure handle_model(syntax: ModelSyntax) returns Model
     {
         choose syntax
             when lit: LiteralSyntax
@@ -1766,7 +1766,7 @@ define Modeler
     ; Implementation handling
     ; ============================================================================
 
-    function handle_implementation(syntax: ImplementationSyntax) returns Implementation
+    procedure handle_implementation(syntax: ImplementationSyntax) returns Implementation
     {
         choose syntax
             when act: ActionSyntax
@@ -1785,7 +1785,7 @@ define Modeler
     ; Function building
     ; ============================================================================
 
-    function build_function(start: size_t, end_pos: size_t, syntax: TargetSyntax, is_private: bool, pure: bool) returns Function
+    procedure build_function(start: size_t, end_pos: size_t, syntax: TargetSyntax, is_private: bool, pure: bool) returns Function
     {
         choose syntax
             when named: NamedSyntax
@@ -1994,7 +1994,7 @@ define Modeler
     ; Operator handling
     ; ============================================================================
 
-    function handle_operator(syntax: OperatorSyntax, is_private: bool) returns Operator
+    procedure handle_operator(syntax: OperatorSyntax, is_private: bool) returns Operator
     {
         choose syntax.target
             when named: NamedSyntax
@@ -2144,7 +2144,7 @@ define Modeler
         (*last_seg) = "Page"
     }
 
-    function handle_initializer(syntax: InitSyntax, is_private: bool) returns Initializer
+    procedure handle_initializer(syntax: InitSyntax, is_private: bool) returns Initializer
     {
         var input Vector[Item](0)
         if syntax.parameters <> null
@@ -2248,7 +2248,7 @@ define Modeler
         )
     }
 
-    function handle_deinitializer(syntax: DeInitSyntax) returns ref[DeInitializer]?
+    procedure handle_deinitializer(syntax: DeInitSyntax) returns ref[DeInitializer]?
     {
         let act handle_action(syntax.action)
         let impl Implementation.Action(act)
@@ -2284,7 +2284,7 @@ define Modeler
     ; Class/Structure handling
     ; ============================================================================
 
-    function handle_class(name: String, path: String, syntax: ClassSyntax, is_private: bool) returns Structure
+    procedure handle_class(name: String, path: String, syntax: ClassSyntax, is_private: bool) returns Structure
     {
         var symbols_builder HashMapBuilder[String, Nameable]()
 
@@ -2464,7 +2464,7 @@ define Modeler
     ; Namespace handling
     ; ============================================================================
 
-    function handle_namespace(name: String, path: String, syntax: NamespaceSyntax, is_private: bool) returns Namespace
+    procedure handle_namespace(name: String, path: String, syntax: NamespaceSyntax, is_private: bool) returns Namespace
     {
         var symbols_builder HashMapBuilder[String, Nameable]()
         var modules Array[Module]()
@@ -2654,7 +2654,7 @@ define Modeler
     ; Union handling
     ; ============================================================================
 
-    function handle_union(name: String, path: String, syntax: UnionSyntax, is_private: bool) returns Union
+    procedure handle_union(name: String, path: String, syntax: UnionSyntax, is_private: bool) returns Union
     {
         var symbols_builder HashMapBuilder[String, Nameable]()
 
@@ -2721,7 +2721,7 @@ define Modeler
     ; Definition handling
     ; ============================================================================
 
-    function handle_definition(path: String, syntax: DefinitionSyntax, is_private: bool) returns Concept
+    procedure handle_definition(path: String, syntax: DefinitionSyntax, is_private: bool) returns Concept
     {
         let name syntax.name
         let loc Span(syntax.start, syntax.end)
@@ -2922,7 +2922,7 @@ define Modeler
 
     ; Reset at the start of each program build (harmless in a fresh process; keeps
     ; the counter honest if build_program is ever called more than once).
-    function reset_errors()
+    procedure reset_errors()
         set modeler_error_count: 0
 
     ; size_t -> decimal String (self-contained; the Planner has its own copy but
@@ -2954,7 +2954,7 @@ define Modeler
     ; Report a sub-module load failure at its real file:line:col and bump the
     ; error counter. `offset` is a byte offset into `source` (the sub-module's own
     ; contents); the line/col walk mirrors cli.print_parse_error's numeric-LF scan.
-    function report_module_error(file_path: String, source: String, offset: size_t, message: String)
+    procedure report_module_error(file_path: String, source: String, offset: size_t, message: String)
     {
         var line: size_t 1
         var col: size_t 1
@@ -3007,7 +3007,7 @@ define Modeler
     ; stub is returned so modeling can continue; cli.run then fails the compile via
     ; had_errors(). A missing/empty file still returns an empty stub silently (an
     ; absent optional module is not itself an error at this layer).
-    function build_referenced_module(path: String, name: String, is_private: bool) returns Module
+    procedure build_referenced_module(path: String, name: String, is_private: bool) returns Module
     {
         ; Compute file path: <path>/<name>.scaly
         var sb StringBuilder()
@@ -3070,7 +3070,7 @@ define Modeler
         build_module(sub_path, file_path, name, syntax.file, is_private)
     }
 
-    function build_module(path: String, file_name: String, name: String, syntax: FileSyntax, is_private: bool) returns Module
+    procedure build_module(path: String, file_name: String, name: String, syntax: FileSyntax, is_private: bool) returns Module
     {
         var symbols_builder HashMapBuilder[String, Nameable]()
 
@@ -3135,7 +3135,7 @@ define Modeler
     ; Program building
     ; ============================================================================
 
-    function build_program(file_name: String, program_name: String, syntax: ProgramSyntax, enable_prelude: bool) returns Program
+    procedure build_program(file_name: String, program_name: String, syntax: ProgramSyntax, enable_prelude: bool) returns Program
     {
         reset_errors()
         var packages Array[Module]()
@@ -3268,7 +3268,7 @@ define Modeler
     ; Test function
     ; ============================================================================
 
-    function test() returns int
+    procedure test() returns int
     {
         ; Test 200: Boolean constant - "true" maps to BooleanConstant with value=true
         var parser Parser("true")

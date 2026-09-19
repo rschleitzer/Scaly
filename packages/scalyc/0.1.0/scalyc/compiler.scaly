@@ -18,7 +18,7 @@ define compiler
     module LLVM
     module Emitter
 
-    function test() returns int
+    procedure test() returns int
     {
         var result lexer.test()
         if result <> 0

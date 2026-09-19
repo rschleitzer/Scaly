@@ -140,7 +140,7 @@ define storelens
 {
     ; The store lenses as a COMMA-JOINED FRAGMENT, or "". The plan is the
     ; caller's — codelens.scaly plans once for every plan-derived family.
-    function fragment(rp, plan: Plan, plan_text: String, anchor_text: String) returns String
+    procedure fragment(rp, plan: Plan, plan_text: String, anchor_text: String) returns String
     {
         let sites storelens.count_set_sites plan_text
         if sites = 0
@@ -849,7 +849,7 @@ define storelens
     ; Rendering: one lens per blob line, drawn at the BUFFER's `set` site of the
     ; same index as the plan text's.
     ; ====================================================================
-    function render(rp, blob: String, plan_text: String, anchor_text: String) returns String
+    procedure render(rp, blob: String, plan_text: String, anchor_text: String) returns String
     {
         var sb StringBuilder()
         var first true
@@ -883,7 +883,7 @@ define storelens
         sb.to_string()
     }
 
-    function lens_for(rp, line: String, plan_text: String, anchor_text: String) returns String
+    procedure lens_for(rp, line: String, plan_text: String, anchor_text: String) returns String
     {
         let offset storelens.field_at(line, 0)
         let param storelens.field_at(line, 1)

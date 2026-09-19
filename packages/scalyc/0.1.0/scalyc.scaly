@@ -4,7 +4,7 @@ define scalyc {
     module compiler
     module cli
 
-    function test() returns int
+    procedure test() returns int
     {
         compiler.test()
     }

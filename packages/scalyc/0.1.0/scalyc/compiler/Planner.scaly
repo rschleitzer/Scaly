@@ -932,12 +932,12 @@ define Planner
         ; Scope management (mirrors Planner::pushScope etc. in C++).
         ; ================================================================
 
-        function push_scope(this: Planner)
+        procedure push_scope(this: Planner)
         {
             scope_boundaries.add scope_bindings.length
         }
 
-        function pop_scope(this: Planner)
+        procedure pop_scope(this: Planner)
         {
             if scope_boundaries.length = 0
                 return
@@ -950,7 +950,7 @@ define Planner
             set scope_boundaries.length: last_idx
         }
 
-        function define_local(
+        procedure define_local(
             this: Planner,
             name: String,
             t: PlannedType,
@@ -971,7 +971,7 @@ define Planner
         ; checker: a struct/pointer parameter is passed by pointer, so writing
         ; `param.field` stores into the CALLER's object (which outlives this
         ; frame's local page). Mirrors Planner.cpp::defineParameter.
-        function define_parameter(this: Planner, name: String, t: PlannedType)
+        procedure define_parameter(this: Planner, name: String, t: PlannedType)
         {
             scope_bindings.add(
                 KeyValuePair[String, LocalBinding](
@@ -1019,12 +1019,12 @@ define Planner
         ; Generic type-parameter substitutions.
         ; ================================================================
 
-        function define_type_substitution(this: Planner, name: String, t: PlannedType)
+        procedure define_type_substitution(this: Planner, name: String, t: PlannedType)
         {
             type_substitutions.add(KeyValuePair[String, PlannedType](name, t))
         }
 
-        function clear_type_substitutions(this: Planner)
+        procedure clear_type_substitutions(this: Planner)
         {
             set type_substitutions.length: 0
         }
@@ -1105,7 +1105,7 @@ define Planner
         ; elsewhere, the one direction that is a memory fault. The honest
         ; spelling costs one argument; `concept_origin_file` is the sibling
         ; whose body allocates nothing and converts free.
-        function enter_concept_generic_scope(
+        procedure enter_concept_generic_scope(
             this: Planner,
             name: String,
             struct_type: PlannedType
@@ -1199,7 +1199,7 @@ define Planner
             snapshot
         }
 
-        function leave_concept_generic_scope(
+        procedure leave_concept_generic_scope(
             this: Planner,
             snapshot: ref[Array[KeyValuePair[String, PlannedType]]]?
         )
@@ -1221,7 +1221,7 @@ define Planner
         ; Fresh type variables for HM inference.
         ; ================================================================
 
-        function fresh_type_var_id(this: Planner) returns size_t
+        procedure fresh_type_var_id(this: Planner) returns size_t
         {
             let id next_type_var_id
             set next_type_var_id: id + 1
@@ -1232,7 +1232,7 @@ define Planner
         ; Concept registry.
         ; ================================================================
 
-        function register_concept(this: Planner, c: Concept)
+        procedure register_concept(this: Planner, c: Concept)
         {
             ; Track delegate (function-pointer type) names for the emitter's
             ; map_type lowering (GAP B).
@@ -1309,7 +1309,7 @@ define Planner
             concept_index.insert(c.name, concepts.length - 1)
         }
 
-        function lookup_concept(this: Planner, name: String) returns ref[Concept]?
+        procedure lookup_concept(this: Planner, name: String) returns ref[Concept]?
         {
             ; O(1) hashed lookup over concept_index, which returns the LAST
             ; index registered for `name` (insert overwrites on duplicate key).
@@ -1404,7 +1404,7 @@ define Planner
         ; lookup_concept already returns null, so the compiler's own emission
         ; is byte-identical (fixpoint-safe) and the fix is strictly additive
         ; (null-default-8 → real-size). Genuinely-unknown names stay null.
-        function lookup_concept_for_layout(this: Planner, name: String) returns ref[Concept]?
+        procedure lookup_concept_for_layout(this: Planner, name: String) returns ref[Concept]?
         {
             let c this.lookup_concept(name)
             if c <> null
@@ -1452,7 +1452,7 @@ define Planner
             null
         }
 
-        function has_concept(this: Planner, name: String) returns bool
+        procedure has_concept(this: Planner, name: String) returns bool
         {
             this.lookup_concept(name) <> null
         }
@@ -1461,7 +1461,7 @@ define Planner
         ; `define Cb delegate(A, B) returns R` names a function type; a lambda
         ; or function whose signature matches is assignable to a Cb-typed
         ; binding/parameter, and a Cb-typed value is callable indirectly.
-        function is_delegate_type(this: Planner, name: String) returns bool
+        procedure is_delegate_type(this: Planner, name: String) returns bool
         {
             let c this.lookup_concept(name)
             if c = null
@@ -1477,7 +1477,7 @@ define Planner
 
         ; The delegate's parameter types as planned types (drives lambda
         ; monomorphization against the declared signature).
-        function delegate_param_types(this: Planner, name: String) returns Vector[PlannedType]
+        procedure delegate_param_types(this: Planner, name: String) returns Vector[PlannedType]
         {
             var result Array[PlannedType]()
             let c this.lookup_concept(name)
@@ -1521,7 +1521,7 @@ define Planner
             Vector[PlannedType](result)
         }
 
-        function delegate_return_type(this: Planner, name: String) returns PlannedType
+        procedure delegate_return_type(this: Planner, name: String) returns PlannedType
         {
             let c this.lookup_concept(name)
             if c <> null
@@ -1539,12 +1539,12 @@ define Planner
         ; Instantiation-cache recording helpers. Called as each planned
         ; aggregate is produced so the final Plan lists everything the
         ; emitter needs to lower.
-        function record_structure(this: Planner, s: PlannedStructure)
+        procedure record_structure(this: Planner, s: PlannedStructure)
         {
             instantiated_structures.add s
         }
 
-        function record_union(this: Planner, u: scalyc.compiler.Plan.PlannedUnion)
+        procedure record_union(this: Planner, u: scalyc.compiler.Plan.PlannedUnion)
         {
             instantiated_unions.add u
         }
@@ -1649,7 +1649,7 @@ define Planner
             null
         }
 
-        function record_function(this: Planner, f: PlannedFunction)
+        procedure record_function(this: Planner, f: PlannedFunction)
         {
             let entry_idx instantiated_functions.length
             instantiated_functions.add f
@@ -1665,7 +1665,7 @@ define Planner
             function_name_index.lookup(mangled) >= 0
         }
 
-        function record_global(this: Planner, g: PlannedGlobal)
+        procedure record_global(this: Planner, g: PlannedGlobal)
         {
             instantiated_globals.add g
         }
@@ -1715,7 +1715,7 @@ define Planner
         ; of the primary program. The sibling is stashed here and
         ; later surfaced by register_sibling_programs right before
         ; the main-module registration pass.
-        function add_sibling_program(this: Planner, prog: Program)
+        procedure add_sibling_program(this: Planner, prog: Program)
         {
             sibling_programs.add prog
         }
@@ -1729,7 +1729,7 @@ define Planner
         ; provided the prefix names a Use-imported alias of the main
         ; program. Mirrors stage-0's Use-alias filter at
         ; Planner.cpp:7752-7789.
-        function record_program_uses(this: Planner, prog: Program)
+        procedure record_program_uses(this: Planner, prog: Program)
         {
             let uses prog.module_.uses
             var i: size_t 0
@@ -1848,7 +1848,7 @@ define Planner
         ; last with "." — the namespace prefix the name (or glob) is
         ; imported from. `use scaly.containers.String` -> "scaly.containers";
         ; single-segment clauses -> "".
-        function dotted_use_prefix(this: Planner, path: Vector[String]) returns String
+        procedure dotted_use_prefix(this: Planner, path: Vector[String]) returns String
         {
             if path.length < 2
                 return String^this("")
@@ -1876,7 +1876,7 @@ define Planner
         ; namespace idiom (module Modeler containing `define Modeler`,
         ; `define scalyc` in the program module scalyc) is addressed
         ; once, matching how use paths spell it.
-        function extend_dotted_path(this: Planner, prefix: String, name: String) returns String
+        procedure extend_dotted_path(this: Planner, prefix: String, name: String) returns String
         {
             if name.get_length() = 0
                 return String^this(prefix)
@@ -1904,7 +1904,7 @@ define Planner
         ; and is stored with name "*". Dedup'd per module file; NOT
         ; recursive — register_module_concepts' own recursion reaches
         ; every sub-module (including namespace-hosted ones).
-        function record_module_uses(this: Planner, m: Module)
+        procedure record_module_uses(this: Planner, m: Module)
         {
             if m.file.get_length() = 0
                 return
@@ -2030,7 +2030,7 @@ define Planner
             false
         }
 
-        function check_use_paths(this: Planner)
+        procedure check_use_paths(this: Planner)
         {
             var i: size_t 0
             while i < use_vis_names.length
@@ -2176,7 +2176,7 @@ define Planner
         ; use_vis_count: classify a lookup_concept hit against the strict
         ; visibility rules and count. Called only under --use-vis; never
         ; changes lookup behavior.
-        function use_vis_count(this: Planner, name: String, idx: size_t)
+        procedure use_vis_count(this: Planner, name: String, idx: size_t)
         {
             if idx >= concept_origin_files.length
                 return
@@ -2229,7 +2229,7 @@ define Planner
         ; (scaly stdlib package or the attached prelude module),
         ; explicit `use ns.Name`, or glob `use ns.*` whose prefix
         ; addresses the origin container.
-        function use_vis_visible(
+        procedure use_vis_visible(
             this: Planner,
             name: String,
             origin_file: String,
@@ -2344,7 +2344,7 @@ define Planner
         ; planned mid-module and must see its OWN module's names), and
         ; memoized per (concept index, current file) since lookup_concept
         ; is the hottest planner function.
-        function use_vis_check(this: Planner, name: String, idx: size_t) returns bool
+        procedure use_vis_check(this: Planner, name: String, idx: size_t) returns bool
         {
             if instantiating_structures.length > 0
                 return true
@@ -2391,7 +2391,7 @@ define Planner
         ; visible from the current file, a "; add: use <path>" hint for
         ; the not-found diagnostic — empty otherwise. Diagnostic paths
         ; only (never hot).
-        function use_vis_hint(this: Planner, name: String) returns String
+        procedure use_vis_hint(this: Planner, name: String) returns String
         {
             if use_vis_enforce = false
                 return ""
@@ -2423,7 +2423,7 @@ define Planner
         ; calling record_function on every package-defined Function,
         ; which lands in instantiated_functions and is then emitted
         ; by the Emitter as both declaration and definition.
-        function plan_loaded_packages(this: Planner)
+        procedure plan_loaded_packages(this: Planner)
         {
             var pi: size_t 0
             while pi < loaded_packages.length
@@ -2455,7 +2455,7 @@ define Planner
         ; namespaces, sub-modules, and struct-internal concepts are
         ; all flattened into the flat maps that lookup_concept /
         ; lookup_functions / lookup_operators consult.
-        function register_sibling_programs(this: Planner)
+        procedure register_sibling_programs(this: Planner)
         {
             var i: size_t 0
             while i < sibling_programs.length
@@ -2473,7 +2473,7 @@ define Planner
         ; Record a diagnostic. Callers don't need to format the message
         ; further — just describe what failed ("function not found: foo",
         ; "no matching initializer for Bar(int, String)", etc.).
-        function add_error(this: Planner, message: String)
+        procedure add_error(this: Planner, message: String)
         {
             errors.add message
         }
@@ -2486,7 +2486,7 @@ define Planner
         ; Record a HARD diagnostic with the construct's source position.
         ; Use this only on paths where the construct is certain to be
         ; dropped from the IR — cli.run fails the compile on these.
-        function add_diagnostic(this: Planner, loc: Span, message: String)
+        procedure add_diagnostic(this: Planner, loc: Span, message: String)
         {
             diagnostics.add(PlannerDiagnostic(loc.start, message, this.file))
         }
@@ -2541,7 +2541,7 @@ define Planner
         ; plan_if -> plan_operand -> plan_operands -> plan_action ->
         ; plan_statement): an `if` is planned as an OPERAND here, so this one
         ; site covers a long else-if chain AND a deeply parenthesized expression.
-        function check_nesting_stack(this: Planner, loc: Span)
+        procedure check_nesting_stack(this: Planner, loc: Span)
         {
             var probe: size_t 0
             let here &probe as size_t
@@ -2601,7 +2601,7 @@ define Planner
         ; Modeler, so a decoded length other than ONE byte cannot be a char —
         ; hard diagnostic instead of the old silent first-byte/garbage.
         ; Non-string operands pass through unchanged.
-        function fold_string_operand_to_char(this: Planner, op: PlannedOperand, char_type: PlannedType) returns PlannedOperand
+        procedure fold_string_operand_to_char(this: Planner, op: PlannedOperand, char_type: PlannedType) returns PlannedOperand
         {
             if op.member_access <> null
                 return op
@@ -2653,7 +2653,7 @@ define Planner
         ; plain NUL-terminated .str global there, and the terminator sits one
         ; past the slice's own length, unseen by every Slice operation and
         ; available to a `data`-taking C callee.
-        function materialize_string_operand_to_slice(
+        procedure materialize_string_operand_to_slice(
             this: Planner,
             op: PlannedOperand,
             slice_type: PlannedType
@@ -3032,7 +3032,7 @@ define Planner
         ; stored an i64 and overwrote the next field; in tscaly that was a node's
         ; payload tag, and the printer met nodes whose arm read back as nothing
         ; (2026-09-17, 231 casejs crashes).
-        function narrow_constant_integer_operand(this: Planner, target_type: PlannedType, op: PlannedOperand) returns PlannedOperand
+        procedure narrow_constant_integer_operand(this: Planner, target_type: PlannedType, op: PlannedOperand) returns PlannedOperand
         {
             let tn Planner.normalize_type_name(target_type.name)
             let sn Planner.normalize_type_name(op.result_type.name)
@@ -3050,7 +3050,7 @@ define Planner
             PlannedOperand(op.loc, PlannedExpression.As cast, null, target_type)
         }
 
-        function widen_integer_operand(this: Planner, target_type: PlannedType, op: PlannedOperand) returns PlannedOperand
+        procedure widen_integer_operand(this: Planner, target_type: PlannedType, op: PlannedOperand) returns PlannedOperand
         {
             if this.integer_operand_widens(target_type, op) = false
                 return op
@@ -3300,7 +3300,7 @@ define Planner
         ; Ask the SHAPE, not the name: `ref[T]?` and `pointer[T]?` both arrive
         ; as an Option wrapper, and a name test that knows only "ref" is the
         ; standing bug of this seam.
-        function npo_option_payload(t: PlannedType, out: ref[PlannedType]) returns bool
+        procedure npo_option_payload(t: PlannedType, out: ref[PlannedType]) returns bool
         {
             if t.name <> "Option"
                 return false
@@ -3327,7 +3327,7 @@ define Planner
         ;
         ; A member chain is deliberately not read: `a.b <> null` proves
         ; something about a FIELD, and a scope shadow can only narrow a name.
-        function narrow_null_test(
+        procedure narrow_null_test(
             this: Planner,
             cond: PlannedOperand,
             out_name: ref[String],
@@ -3355,7 +3355,7 @@ define Planner
         ; keyed by the dotted PATH and carries the chain's own type, which is
         ; the one thing a name-keyed shadow cannot supply. See
         ; define_narrowed_path#.
-        function narrow_null_test_path(
+        procedure narrow_null_test_path(
             this: Planner,
             cond: PlannedOperand,
             out_path: ref[String],
@@ -3377,7 +3377,7 @@ define Planner
         ; hop ends it, and must: `x.f().y` names a fresh value, where narrowing
         ; is a statement about a PLACE. A union payload hop likewise names
         ; something the tag decides, not a field.
-        function operand_path(this: Planner, op: PlannedOperand, out_path: ref[String]) returns bool
+        procedure operand_path(this: Planner, op: PlannedOperand, out_path: ref[String]) returns bool
         {
             if op.member_access = null
                 return false
@@ -3416,7 +3416,7 @@ define Planner
         ; against null is the SUBJECT, and which branch does the test prove?
         ; Split out when the path reader landed -- one copy of this is enough,
         ; and the two readers differ only in what they accept as a subject.
-        function narrow_null_subject(
+        procedure narrow_null_subject(
             this: Planner,
             cond: PlannedOperand,
             out_subject: ref[PlannedOperand],
@@ -3478,7 +3478,7 @@ define Planner
         ; scans innermost-first, so the shadow wins until the scope holding it
         ; is popped -- which is also what un-narrows it, for free. Answers
         ; whether it pushed one.
-        function define_narrowed(this: Planner, name: String) returns bool
+        procedure define_narrowed(this: Planner, name: String) returns bool
         {
             let dn_ref this.lookup_local_binding(name)
             if dn_ref = null
@@ -3542,7 +3542,7 @@ define Planner
         ; ================================================================
 
         ; Record the fact for a dotted path. Answers whether it pushed one.
-        function define_narrowed_path(this: Planner, path: String, t: PlannedType) returns bool
+        procedure define_narrowed_path(this: Planner, path: String, t: PlannedType) returns bool
         {
             var dp_inner: PlannedType t
             if Planner.npo_option_payload(t, &dp_inner) = false
@@ -3568,7 +3568,7 @@ define Planner
 
         ; Clear every path fact. A dotted key is the marker: an identifier
         ; cannot contain a dot, so a key that does is one of ours.
-        function clear_path_narrowings(this: Planner)
+        procedure clear_path_narrowings(this: Planner)
         {
             var cp_i: size_t scope_isolation_base
             while cp_i < scope_bindings.length
@@ -3627,7 +3627,7 @@ define Planner
         ; The live narrowing facts, as indices into scope_bindings. The floor
         ; is scope_isolation_base for the reason lookup_local_binding#'s is:
         ; below it the bindings belong to the enclosing function.
-        function collect_narrowed(this: Planner, acc: ref[Array[size_t]])
+        procedure collect_narrowed(this: Planner, acc: ref[Array[size_t]])
         {
             var cn_i: size_t scope_isolation_base
             while cn_i < scope_bindings.length
@@ -3646,7 +3646,7 @@ define Planner
         ; Set the fact on every index in `idx`. Bounds-guarded: a branch pops
         ; the scopes it pushed, and an index past the end would name a binding
         ; that no longer exists.
-        function set_narrowed_at(this: Planner, idx: Array[size_t], on: bool)
+        procedure set_narrowed_at(this: Planner, idx: Array[size_t], on: bool)
         {
             var sn_i: size_t 0
             while sn_i < idx.length
@@ -3668,7 +3668,7 @@ define Planner
         ; Which of `snap` did the branch just planned RETIRE? Those are the
         ; ones the join re-clears once the OTHER branch has been planned
         ; against the restored facts.
-        function collect_retired(this: Planner, snap: Array[size_t], acc: ref[Array[size_t]])
+        procedure collect_retired(this: Planner, snap: Array[size_t], acc: ref[Array[size_t]])
         {
             var cr_i: size_t 0
             while cr_i < snap.length
@@ -3827,7 +3827,7 @@ define Planner
         ; it into that file via a glob (skipping same-file and prelude
         ; origins, and names an explicit use already disambiguates). Two or
         ; more distinct glob origins for one name is a hard diagnostic.
-        function check_glob_ambiguities(this: Planner)
+        procedure check_glob_ambiguities(this: Planner)
         {
             if use_vis_enforce = false
                 return
@@ -3870,7 +3870,7 @@ define Planner
             }
         }
 
-        function check_file_glob_ambiguities(this: Planner, f: String)
+        procedure check_file_glob_ambiguities(this: Planner, f: String)
         {
             var seen_names Array[String]()
             var ci: size_t 0
@@ -4001,7 +4001,7 @@ define Planner
         }
 
         ; Phase-1 lambda registry: record the model lambda bound to `name`.
-        function record_lambda_model(this: Planner, name: String, lam: Lambda)
+        procedure record_lambda_model(this: Planner, name: String, lam: Lambda)
             lambda_models.add(KeyValuePair[String, Lambda](name, lam))
 
         ; Return the lambda model bound to `name`, or null. Forward scan
@@ -4067,7 +4067,7 @@ define Planner
         ; yet, so the orchestration of "find the .scaly file, parse
         ; it, model it" happens one level up. The Planner just asks
         ; "do you have package X for me?" via load_package_on_demand#.
-        function register_loaded_package(this: Planner, name: String, mod: Module)
+        procedure register_loaded_package(this: Planner, name: String, mod: Module)
         {
             loaded_packages.add(KeyValuePair[String, Module](name, mod))
         }
@@ -4077,7 +4077,7 @@ define Planner
         ; register_loaded_package — parsing + modelling happens
         ; outside the Planner; the Planner consults this cache when
         ; a `use` statement references a peer module file.
-        function register_loaded_module(this: Planner, path: String, mod: Module)
+        procedure register_loaded_module(this: Planner, path: String, mod: Module)
         {
             loaded_module_paths.add(KeyValuePair[String, Module](path, mod))
         }
@@ -4119,14 +4119,14 @@ define Planner
         ; Model-function and operator registries.
         ; ================================================================
 
-        function register_function(this: Planner, f: Function)
+        procedure register_function(this: Planner, f: Function)
         {
             model_functions.add(KeyValuePair[String, Function](f.name, f))
             model_function_index.insert(f.name, model_functions.length - 1)
             function_origin_paths.add(String^this(registering_path))
         }
 
-        function register_operator(this: Planner, o: Operator)
+        procedure register_operator(this: Planner, o: Operator)
         {
             model_operators.add(KeyValuePair[String, Operator](o.name, o))
             model_operator_index.insert(o.name, model_operators.length - 1)
@@ -4188,7 +4188,7 @@ define Planner
         ; Parameter items and return types are built with Type.name
         ; Vectors so resolve_type_base recognises them correctly.
         ; ================================================================
-        function register_runtime_functions(this: Planner)
+        procedure register_runtime_functions(this: Planner)
         {
             ; All Vector / String / Type containers must live on `^this`
             ; (the Planner's OWN page, Page.get(this)) — a no-sigil local
@@ -4332,7 +4332,7 @@ define Planner
         ; collect_methods_in: linear scan of a members Vector, appending
         ; every Function whose name matches. Shared by lookup_methods
         ; across Structure and Union variants.
-        function collect_methods_in(
+        procedure collect_methods_in(
             this: Planner,
             members: Vector[Member],
             method_name: String,
@@ -4360,7 +4360,7 @@ define Planner
             }
         }
 
-        function lookup_methods(
+        procedure lookup_methods(
             this: Planner,
             struct_name: String,
             method_name: String
@@ -4418,7 +4418,7 @@ define Planner
         ; lookup_property: find a struct field by name. Returns a
         ; reference into the Structure's properties Vector — valid as
         ; long as the underlying Concept is live in the registry.
-        function lookup_property(
+        procedure lookup_property(
             this: Planner,
             struct_name: String,
             property_name: String
@@ -4488,7 +4488,7 @@ define Planner
         ; released frame. The mangled name is where it shows: the sibling
         ; restamp_components# carries `PN4scaly6memory4PageE` and this one did
         ; not.
-        function reorder_named_components(
+        procedure reorder_named_components(
             rp,
             this: Planner,
             struct_name: String,
@@ -4525,7 +4525,7 @@ define Planner
 
         ; The Structure half of reorder_named_components#, split out so the
         ; caller stays one statement per rule (the s178 alloca-pool discipline).
-        function place_named_components(
+        procedure place_named_components(
             this: Planner,
             struct_name: String,
             s: Structure,
@@ -4671,7 +4671,7 @@ define Planner
         ; defaults; a full construction and a concept whose missing properties
         ; lack defaults are both no-ops (keeps compiler-own emission unchanged
         ; where every construction provides all args → fixpoint-safe).
-        function fill_default_components(
+        procedure fill_default_components(
             this: Planner,
             struct_name: String,
             loc: Span,
@@ -4971,7 +4971,7 @@ define Planner
         ; its input matches arg_types (after skipping any implicit
         ; page parameter, which is already excluded from input by the
         ; Modeler). `exact_only` selects types_equal vs types_compatible.
-        function check_initializer_match(
+        procedure check_initializer_match(
             this: Planner,
             ini: Initializer,
             arg_types: Vector[PlannedType],
@@ -5035,7 +5035,7 @@ define Planner
         ; through generic `^this` inits). Consulted on the fall-through
         ; construction paths (Unspecified life) in collapse_operand_sequence;
         ; explicit #/^ constructions never reach it.
-        function concept_needs_this_residency(this: Planner, name: String) returns bool
+        procedure concept_needs_this_residency(this: Planner, name: String) returns bool
         {
             let concept_ref this.lookup_concept(name)
             if concept_ref = null
@@ -5470,7 +5470,7 @@ define Planner
             found
         }
 
-        function find_initializer(
+        procedure find_initializer(
             this: Planner,
             struct_name: String,
             arg_types: Vector[PlannedType]
@@ -5561,7 +5561,7 @@ define Planner
 
         ; get_property_index: position of a named property in the struct.
         ; Returns -1 if the type isn't a struct or the property is missing.
-        function get_property_index(
+        procedure get_property_index(
             this: Planner,
             struct_name: String,
             property_name: String
@@ -5646,7 +5646,7 @@ define Planner
         ; lookup_variant: find a union variant by name and return its tag.
         ; Returns -1 if the concept is missing or not a Union, or if the
         ; variant name is not present.
-        function lookup_variant_tag(
+        procedure lookup_variant_tag(
             this: Planner,
             union_name: String,
             variant_name: String
@@ -5734,7 +5734,7 @@ define Planner
         ; the payload type as it must; and the three tests that
         ; cover the rescue (definitions__option-some, result-ok, result-err) all
         ; match on the FIELD name and are the refutation control.
-        function lookup_variant_tag_by_name(
+        procedure lookup_variant_tag_by_name(
             this: Planner,
             union_name: String,
             variant_name: String
@@ -5767,7 +5767,7 @@ define Planner
         ; variant. Returns null when the concept isn't a union, the
         ; variant doesn't exist, or the variant has no payload (tag-only
         ; variants like Option.None).
-        function lookup_variant_type(
+        procedure lookup_variant_type(
             this: Planner,
             union_name: String,
             variant_name: String
@@ -5968,7 +5968,7 @@ define Planner
         ; concrete types. The resulting PlannedFunction has each use of
         ; T replaced with its concrete binding, and is recorded in the
         ; instantiation cache via plan_function.
-        function instantiate_generic_function(
+        procedure instantiate_generic_function(
             this: Planner,
             f: Function,
             args: Vector[KeyValuePair[String, PlannedType]]
@@ -6002,7 +6002,7 @@ define Planner
         ; fall back to a fresh type variable — keeps the planner
         ; productive on incomplete programs.
         ; ================================================================
-        function instantiate_generic(
+        procedure instantiate_generic(
             this: Planner,
             concept_name: String,
             args: Vector[PlannedType],
@@ -6223,7 +6223,7 @@ define Planner
         ; `append(String)`) and the general compatible pass (which would let a
         ; namespace member like Console.print(pointer[const_char]) win for a
         ; bare `print("x")` and then free-mangle to a phantom symbol).
-        function candidate_matches_string_i8(
+        procedure candidate_matches_string_i8(
             this: Planner,
             f: Function,
             arg_types: Vector[PlannedType]
@@ -6297,7 +6297,7 @@ define Planner
             result
         }
 
-        function candidate_matches(
+        procedure candidate_matches(
             this: Planner,
             f: Function,
             arg_types: Vector[PlannedType],
@@ -6356,7 +6356,7 @@ define Planner
         ; is a foldable String constant. Side-effect-free like candidate_matches
         ; (plan_type# only) — the winner is rebuilt by check_function_match#
         ; with char_fold=true, which folds the operand at the call site.
-        function candidate_matches_char_fold(
+        procedure candidate_matches_char_fold(
             this: Planner,
             f: Function,
             arg_types: Vector[PlannedType],
@@ -6478,7 +6478,7 @@ define Planner
         ; mangled name; value = function_persists_param_guts over the model
         ; body, computed once. Only consulted when a call argument carries
         ; Local life (see the resolution sites), so the walk runs rarely.
-        function persists_args_for(this: Planner, mangled: String, f: Function) returns bool
+        procedure persists_args_for(this: Planner, mangled: String, f: Function) returns bool
         {
             var idx: size_t 0
             while idx < persist_summary_names.length
@@ -6522,7 +6522,7 @@ define Planner
             false
         }
 
-        function check_function_match(
+        procedure check_function_match(
             this: Planner,
             f: Function,
             arg_types: Vector[PlannedType],
@@ -6824,7 +6824,7 @@ define Planner
         ; block then rebuilds the namespaced mangled name. Kept whole here so
         ; collapse_operand_sequence# adds no locals (its s178 alloca pool
         ; mis-aliases any added there — see the call site).
-        function resolve_namespace_this_method(
+        procedure resolve_namespace_this_method(
             this: Planner,
             prefix: String,
             suffix: String,
@@ -6877,7 +6877,7 @@ define Planner
         ; the enclosing/sibling `test` — the aggregator self-recursed. Gated to
         ; Structures only: Namespace-member calls (Console.println) keep their
         ; existing bare-then-namespace resolution untouched.
-        function concept_has_static(this: Planner, prefix: String, suffix: String) returns bool
+        procedure concept_has_static(this: Planner, prefix: String, suffix: String) returns bool
         {
             ; A qualified static may be written with a MODULE-dotted prefix
             ; (`Message.MessageFormatter.test()` → prefix "Message.Message
@@ -6962,7 +6962,7 @@ define Planner
         ; Structure's static resolved (that path selects by name and arity and
         ; folds at the construction site). Found converting the compiler's own
         ; ASCII-literal parameters; gate `tests/regress/namespace_literal_slice_arg.scaly`.
-        function resolve_dotted_call(
+        procedure resolve_dotted_call(
             this: Planner,
             prefix: String,
             suffix: String,
@@ -6998,7 +6998,7 @@ define Planner
         ; Overload note: prefer a static whose arity matches the argument count;
         ; otherwise take the first same-named static (mirrors s155's name-only
         ; pick for the single-overload common case).
-        function resolve_static_method_on(
+        procedure resolve_static_method_on(
             this: Planner,
             struct_name: String,
             fn_name: String,
@@ -7198,7 +7198,7 @@ define Planner
         ; list and monomorphise it. Mirrors the inferred path (the
         ; instantiate_generic_function call in lookup_method#) in every respect
         ; but where the bindings come from.
-        function instantiate_explicit_generic_call(
+        procedure instantiate_explicit_generic_call(
             this: Planner,
             f: Function,
             generics: Vector[PlannedType],
@@ -7268,7 +7268,7 @@ define Planner
             )
         }
 
-        function resolve_function_call(
+        procedure resolve_function_call(
             this: Planner,
             name: String,
             arg_types: Vector[PlannedType],
@@ -7285,7 +7285,7 @@ define Planner
         ; `generics` — measured — so it is threaded down here and bound by
         ; POSITION, exactly as instantiate_generic_function binds an inferred
         ; one. Inference still runs first for everything it can reach.
-        function resolve_function_call_generic(
+        procedure resolve_function_call_generic(
             this: Planner,
             name: String,
             arg_types: Vector[PlannedType],
@@ -7501,7 +7501,7 @@ define Planner
         ; the PlannedItem list mangle_operator expects from two
         ; PlannedType arguments. Holder Vectors keep both types alive
         ; on rp so their refs are stable for the Item construction.
-        function mangle_binary_operator(
+        procedure mangle_binary_operator(
             this: Planner,
             op_name: String,
             left: PlannedType,
@@ -7520,7 +7520,7 @@ define Planner
         }
 
         ; mangle_unary_operator: same idea for prefix/unary operators.
-        function mangle_unary_operator(
+        procedure mangle_unary_operator(
             this: Planner,
             op_name: String,
             operand: PlannedType
@@ -7538,7 +7538,7 @@ define Planner
         ; site. Callers provide the mangled symbol, result type, and
         ; planned argument list; flags default to the common
         ; "non-intrinsic, non-operator, non-throwing, no-page" case.
-        function make_planned_call(
+        procedure make_planned_call(
             this: Planner,
             loc: Span,
             name: String,
@@ -7626,7 +7626,7 @@ define Planner
         ; is known. param_types excludes `this` in every resolution path, so
         ; the user arguments are tail-aligned (a prepended receiver, present
         ; for an instance-method dispatch, is absorbed by the offset).
-        function coerce_string_args_to_cstr(
+        procedure coerce_string_args_to_cstr(
             this: Planner,
             args: Vector[PlannedOperand],
             param_types: Vector[PlannedType]
@@ -7770,7 +7770,7 @@ define Planner
         ; String operand -- under-coercion is today's behaviour, over-coercion
         ; would be a new wrong pointer. Emission-neutral where nothing coerces:
         ; the vector is rebuilt only when a component actually changed.
-        function coerce_string_components_to_cstr(
+        procedure coerce_string_components_to_cstr(
             this: Planner,
             struct_name: String,
             comps: ref[Vector[PlannedComponent]]?,
@@ -7873,7 +7873,7 @@ define Planner
         ; declared-type positions use. types_compatible# alone reports the
         ; region-construction and Option-into-pointer shapes that are the
         ; language rather than defects -- its own comment says so.
-        function report_component_type_mismatch(
+        procedure report_component_type_mismatch(
             this: Planner,
             struct_name: String,
             loc: Span,
@@ -7916,7 +7916,7 @@ define Planner
         ; shadows exactly the names the concept declares itself, carries the
         ; occurs check, and is what every other consumer of a concept's own
         ; field types already uses.
-        function check_component_types(
+        procedure check_component_types(
             this: Planner,
             struct_name: String,
             s: Structure,
@@ -7944,7 +7944,7 @@ define Planner
             this.leave_concept_generic_scope(snapshot)
         }
 
-        function check_components_in_scope(
+        procedure check_components_in_scope(
             this: Planner,
             struct_name: String,
             s: Structure,
@@ -7964,7 +7964,7 @@ define Planner
         ; One component against one property. Every early return here is a
         ; position the check deliberately says NOTHING about, and each is a
         ; measured exemption rather than a convenience.
-        function check_one_component_type(
+        procedure check_one_component_type(
             this: Planner,
             struct_name: String,
             s: Structure,
@@ -8098,7 +8098,7 @@ define Planner
         ; is the same finding one position over: the unwrap is named, since
         ; there is no flow narrowing of the TYPE and the cast is where the
         ; exit-21 trap is emitted.
-        function report_option_component(
+        procedure report_option_component(
             this: Planner,
             struct_name: String,
             field_name: String,
@@ -8129,7 +8129,7 @@ define Planner
 
         ; The message half, split out for the reason report_null_arg# splits
         ; its own: the walk above stays one statement per branch.
-        function report_component_mismatch(
+        procedure report_component_mismatch(
             this: Planner,
             struct_name: String,
             field_name: String,
@@ -8165,7 +8165,7 @@ define Planner
         ; raises the hard "not a single character" diagnostic inside
         ; fold_string_operand_to_char. Same tail-alignment as
         ; coerce_string_args_to_cstr (param_types excludes `this`).
-        function fold_string_args_to_char(
+        procedure fold_string_args_to_char(
             this: Planner,
             args: Vector[PlannedOperand],
             param_types: Vector[PlannedType]
@@ -8324,7 +8324,7 @@ define Planner
         ; argument types and synthesizes a concrete top-level function; the
         ; captures it discovers are looked up at the call site (where they are
         ; in scope) and prepended as leading arguments (capture by value).
-        function resolve_lambda_call(this: Planner, head_loc: Span, lc_name: String, lc_lam: Lambda, lc_tp: PlannedTuple) returns PlannedOperand
+        procedure resolve_lambda_call(this: Planner, head_loc: Span, lc_name: String, lc_lam: Lambda, lc_tp: PlannedTuple) returns PlannedOperand
         {
             var lc_arg_ops Array[PlannedOperand]()
             var lc_arg_types Array[PlannedType]()
@@ -8410,7 +8410,7 @@ define Planner
         ; drops operator precedence; a full precedence-climbing version
         ; is a later refactor. Empty and single-element inputs pass
         ; through unchanged.
-        function collapse_operand_sequence(
+        procedure collapse_operand_sequence(
             this: Planner,
             ops: Vector[PlannedOperand]
         ) returns PlannedOperand
@@ -14585,7 +14585,7 @@ define Planner
 
         ; check_operator_match: test a single Operator candidate against
         ; argument types. Same shape as check_function_match.
-        function check_operator_match(
+        procedure check_operator_match(
             this: Planner,
             o: Operator,
             arg_types: Vector[PlannedType],
@@ -14680,7 +14680,7 @@ define Planner
         ; a leading `this`), planned to PlannedType. Used by resolve_operator_
         ; call#'s fold pass to hand the construction site the char/float types it
         ; must fold the literal operands to.
-        function operator_planned_param_types(this: Planner, o: Operator) returns Vector[PlannedType]
+        procedure operator_planned_param_types(this: Planner, o: Operator) returns Vector[PlannedType]
         {
             var param_start: size_t 0
             if o.input.length > 0
@@ -14731,7 +14731,7 @@ define Planner
             r
         }
 
-        function resolve_prefix_operator_call(
+        procedure resolve_prefix_operator_call(
             this: Planner,
             name: String,
             operand: PlannedType
@@ -14790,7 +14790,7 @@ define Planner
 
         ; resolve_operator_call: two-pass overload resolution for binary
         ; operators keyed on the operator symbol registry.
-        function resolve_operator_call(
+        procedure resolve_operator_call(
             this: Planner,
             name: String,
             left: PlannedType,
@@ -15050,7 +15050,7 @@ define Planner
         ; first DECLARED overload: `sb.append(n.pos)` with an i32 picked
         ; `append(character: char)` and appended one garbage byte, rc 0
         ; (measured 2026-09-17). Every other argument must match exactly.
-        function widening_method_candidate(
+        procedure widening_method_candidate(
             this: Planner,
             candidates: Vector[Function],
             arg_types: Vector[PlannedType],
@@ -15071,7 +15071,7 @@ define Planner
             null
         }
 
-        function method_params_widen(
+        procedure method_params_widen(
             this: Planner,
             f: Function,
             arg_types: Vector[PlannedType],
@@ -15123,7 +15123,7 @@ define Planner
             widened
         }
 
-        function method_params_match(
+        procedure method_params_match(
             this: Planner,
             f: Function,
             arg_types: Vector[PlannedType],
@@ -15251,7 +15251,7 @@ define Planner
         ; check_message_pointee: what a fixed pointer slot's TARGET needs.
         ; Scalars/void/const_char buffers and page headers are fix-only;
         ; aggregates recurse.
-        function check_message_pointee(this: Planner, inner: PlannedType, loc: Span, seen: ref[Array[String]]) returns bool
+        procedure check_message_pointee(this: Planner, inner: PlannedType, loc: Span, seen: ref[Array[String]]) returns bool
         {
             if inner.name = "void"
                 return true
@@ -15269,7 +15269,7 @@ define Planner
         ; Also the instantiation-forcing pass: every reachable generic is
         ; instantiated so plan.structures/unions carry its layout for the
         ; Emitter's generator.
-        function check_message_type(this: Planner, t: PlannedType, loc: Span, seen: ref[Array[String]]) returns bool
+        procedure check_message_type(this: Planner, t: PlannedType, loc: Span, seen: ref[Array[String]]) returns bool
         {
             if t.variable <> null
             {
@@ -15445,7 +15445,7 @@ define Planner
         ; — closure violations are hard diagnostics that fail the compile
         ; at the end, so planning continues without a cascading
         ; "function not found".
-        function resolve_fix_graph(
+        procedure resolve_fix_graph(
             this: Planner,
             arg_types: Vector[PlannedType],
             arg_ops: Vector[PlannedOperand]
@@ -15526,7 +15526,7 @@ define Planner
             )
         }
 
-        function lookup_method(
+        procedure lookup_method(
             this: Planner,
             struct_type: PlannedType,
             method_name: String,
@@ -16184,7 +16184,7 @@ define Planner
         ; PlannedOperators are stored but never emitted). Returns null when
         ; the receiver's concept declares no matching operator — the caller
         ; then leaves the operand sequence untouched.
-        function find_member_operator(
+        procedure find_member_operator(
             this: Planner,
             container_type: PlannedType,
             op_name: String,
@@ -16566,7 +16566,7 @@ define Planner
         ; `this` must be a local in the current scope; the unreachable
         ; fallback returns a void placeholder so the type checker still
         ; threads a value through.
-        function generate_page_get_this(this: Planner, loc: Span) returns PlannedOperand
+        procedure generate_page_get_this(this: Planner, loc: Span) returns PlannedOperand
         {
             let this_ty_ref this.lookup_local("this")
             if this_ty_ref = null
@@ -16634,7 +16634,7 @@ define Planner
         ; result_type when every hop resolves as a property — the same
         ; rule as the s175 call-branch fix. Returns the operand
         ; unchanged when the chain is absent or not all-property.
-        function rebind_trailing_chain(
+        procedure rebind_trailing_chain(
             this: Planner,
             operand: PlannedOperand
         ) returns PlannedOperand
@@ -16739,7 +16739,7 @@ define Planner
         ;
         ; The produced access chain feeds `PlannedOperand.member_access`.
         ; ================================================================
-        function resolve_member_access(
+        procedure resolve_member_access(
             this: Planner,
             base_type: PlannedType,
             members: Vector[String]
@@ -17207,7 +17207,7 @@ define Planner
         ; wrapper with `variable` populated. Equivalent to Planner.cpp's
         ; freshTypeVar. `debug_name` is stored on the TypeVariable for
         ; error messages ("expected T, got int").
-        function fresh_type_var(this: Planner, debug_name: String) returns PlannedType
+        procedure fresh_type_var(this: Planner, debug_name: String) returns PlannedType
         {
             let id this.fresh_type_var_id()
             ; Allocate the TypeVariable in a one-element Vector on rp so
@@ -17229,7 +17229,7 @@ define Planner
         ; Constraint management.
         ; ================================================================
 
-        function add_equality_constraint(
+        procedure add_equality_constraint(
             this: Planner,
             left: PlannedType,
             right: PlannedType,
@@ -17246,7 +17246,7 @@ define Planner
         ; if any constraint failed to unify. Constraints are cleared on
         ; success so subsequent add_equality_constraint / solve cycles
         ; start fresh.
-        function solve_and_apply(this: Planner) returns bool
+        procedure solve_and_apply(this: Planner) returns bool
         {
             if constraints.length = 0
                 return true
@@ -17374,7 +17374,7 @@ define Planner
         ; the same reason unknown_identifier_name# carries its long exemption
         ; list. An annotation position needs no such list because a name there
         ; can only be a type.
-        function report_unknown_type(this: Planner, t: PlannedType)
+        procedure report_unknown_type(this: Planner, t: PlannedType)
         {
             let uk this.unknown_type_name(t)
             if uk.get_length() > 0
@@ -17430,7 +17430,7 @@ define Planner
         ; emitter resolves through `this` (opensp's `^host` where host is a
         ; member). The receiver is read off `this`'s OWN binding, because the
         ; planner keeps no current-concept the way the emitter does.
-        function report_unknown_page_name(this: Planner, t: Type)
+        procedure report_unknown_page_name(this: Planner, t: Type)
         {
             var page_name: String ""
             var page_span: Span t.span
@@ -17595,7 +17595,7 @@ define Planner
             Type(t.span, t.name, &out, t.lifetime)
         }
 
-        function plan_type(this: Planner, t: Type) returns PlannedType
+        procedure plan_type(this: Planner, t: Type) returns PlannedType
         {
             this.report_unknown_page_name(t)
             var mt: Type t
@@ -18228,7 +18228,7 @@ define Planner
         ; allocated on this function's rp, so they survive the caller's
         ; use of the returned PlannedItem.
         ; ================================================================
-        function plan_item(this: Planner, i: Item) returns PlannedItem
+        procedure plan_item(this: Planner, i: Item) returns PlannedItem
         {
             var planned_name: ref[String]? null
             if i.name <> null
@@ -18266,7 +18266,7 @@ define Planner
         ; plan_items: batch version of plan_item over a Vector[Item].
         ; Pre-allocates the result Vector at the correct size so we can
         ; use `put(i, ...)` instead of Array.add + copy.
-        function plan_items(this: Planner, items: Vector[Item]) returns Vector[PlannedItem]
+        procedure plan_items(this: Planner, items: Vector[Item]) returns Vector[PlannedItem]
         {
             var result Vector[PlannedItem](items.length)
             var i: size_t 0
@@ -18320,7 +18320,7 @@ define Planner
         ; matching the LLVM struct layout. Without this, Vector(rp,len)
         ; for Vector[Module] allocates len*8 instead of len*80, and
         ; put(i, m) overruns and SEGVs build_program.
-        function plan_sizeof(this: Planner, s: SizeOf) returns PlannedSizeOf
+        procedure plan_sizeof(this: Planner, s: SizeOf) returns PlannedSizeOf
         {
             let sized this.plan_type(s.type)
             ; Delegate to compute_payload_size, which sizes primitives,
@@ -18342,7 +18342,7 @@ define Planner
         ; we resolve the test type and (best-effort) the union_name; the
         ; `variant_tag` and `value` fields get stitched in at the
         ; operand-sequence collapse site, which has the value operand.
-        function plan_is(this: Planner, i: Is) returns PlannedIs
+        procedure plan_is(this: Planner, i: Is) returns PlannedIs
         {
             ; `x is null` — single-segment "null" name. Skip type
             ; resolution; the emitter compares the pointer to zero.
@@ -18386,7 +18386,7 @@ define Planner
         ; plan_as: `x as TargetType` — explicit cast. Resolves the
         ; target type; the value operand is stitched in at the use site
         ; (typically during collapse, like PlannedIs).
-        function plan_as(this: Planner, a: scaly.compiler.Model.As) returns PlannedAs
+        procedure plan_as(this: Planner, a: scaly.compiler.Model.As) returns PlannedAs
         {
             let target this.plan_type(a.target_type)
             PlannedAs(a.span, target, null)
@@ -18397,7 +18397,7 @@ define Planner
         ; of hardcoding 0. Without this, every `alignof T` lowers to a
         ; literal 0 — observed first as init_lifetime's
         ; `page.allocate(sizeof int, alignof int)` passing align=0.
-        function plan_alignof(
+        procedure plan_alignof(
             this: Planner,
             a: scaly.compiler.Model.AlignOf
         ) returns PlannedAlignOf
@@ -18422,7 +18422,7 @@ define Planner
         ; calls, and every real member are left untouched (no false positive).
         ; A parenless reference to a REAL member (`NS.real`, function not called)
         ; is NOT flagged — that is a separate lenient case, out of scope here.
-        function qualified_ref_is_dangling(this: Planner, t: Type) returns bool
+        procedure qualified_ref_is_dangling(this: Planner, t: Type) returns bool
         {
             if t.name.length <> 2
                 return false
@@ -18519,7 +18519,7 @@ define Planner
         ;     call resolution)
         ;   - an actual type name → PlannedExpression.Type with the
         ;     planned type
-        function plan_type_operand(this: Planner, t: Type, loc: Span) returns PlannedOperand
+        procedure plan_type_operand(this: Planner, t: Type, loc: Span) returns PlannedOperand
         {
             ; Single-name references are candidates for local-variable
             ; resolution. Dotted names always go to plan_type.
@@ -19103,7 +19103,7 @@ define Planner
         ; statement, and optionally the alternative. Emits a bool
         ; constraint on the condition and (when an alternative exists)
         ; unifies the two branches' result types.
-        function plan_if(this: Planner, f: If) returns PlannedIf
+        procedure plan_if(this: Planner, f: If) returns PlannedIf
         {
             let planned_cond_flat this.plan_operands(f.condition)
             ; A `ref[bool]` condition is the VALUE -- deref_ref_into_pointee#.
@@ -19247,7 +19247,7 @@ define Planner
         ; If/Match/Block/Choose sub-statements. Used by plan_lambda's
         ; capture-discovery pass — captures are this set minus any
         ; lambda-local names (params + inner bindings).
-        function collect_free_names(
+        procedure collect_free_names(
             this: Planner,
             op: PlannedOperand,
             acc: ref[Array[String]]
@@ -19345,7 +19345,7 @@ define Planner
             false
         }
 
-        function collect_lambda_names_ops(this: Planner, ops_ref: ref[Vector[PlannedOperand]]?, uses: ref[Array[String]], bound: ref[Array[String]])
+        procedure collect_lambda_names_ops(this: Planner, ops_ref: ref[Vector[PlannedOperand]]?, uses: ref[Array[String]], bound: ref[Array[String]])
         {
             if ops_ref = null
                 return
@@ -19360,13 +19360,13 @@ define Planner
             }
         }
 
-        function collect_lambda_names_action(this: Planner, act: PlannedAction, uses: ref[Array[String]], bound: ref[Array[String]])
+        procedure collect_lambda_names_action(this: Planner, act: PlannedAction, uses: ref[Array[String]], bound: ref[Array[String]])
         {
             this.collect_lambda_names_ops(act.source, uses, bound)
             this.collect_lambda_names_ops(act.target, uses, bound)
         }
 
-        function collect_lambda_names_stmt(this: Planner, stmt: PlannedStatement, uses: ref[Array[String]], bound: ref[Array[String]])
+        procedure collect_lambda_names_stmt(this: Planner, stmt: PlannedStatement, uses: ref[Array[String]], bound: ref[Array[String]])
         {
             choose stmt
                 when a: PlannedAction
@@ -19391,7 +19391,7 @@ define Planner
                     0
         }
 
-        function collect_lambda_names_stmts(this: Planner, stmts_ref: ref[Vector[PlannedStatement]]?, uses: ref[Array[String]], bound: ref[Array[String]])
+        procedure collect_lambda_names_stmts(this: Planner, stmts_ref: ref[Vector[PlannedStatement]]?, uses: ref[Array[String]], bound: ref[Array[String]])
         {
             if stmts_ref = null
                 return
@@ -19406,14 +19406,14 @@ define Planner
             }
         }
 
-        function collect_lambda_names_stmt_opt(this: Planner, stmt_ref: ref[PlannedStatement]?, uses: ref[Array[String]], bound: ref[Array[String]])
+        procedure collect_lambda_names_stmt_opt(this: Planner, stmt_ref: ref[PlannedStatement]?, uses: ref[Array[String]], bound: ref[Array[String]])
         {
             if stmt_ref = null
                 return
             this.collect_lambda_names_stmt((*stmt_ref), uses, bound)
         }
 
-        function collect_lambda_names(this: Planner, op: PlannedOperand, uses: ref[Array[String]], bound: ref[Array[String]])
+        procedure collect_lambda_names(this: Planner, op: PlannedOperand, uses: ref[Array[String]], bound: ref[Array[String]])
         {
             choose op.expr
                 when v: PlannedVariable
@@ -19628,7 +19628,7 @@ define Planner
                     0
         }
 
-        function plan_lambda(this: Planner, lam: Lambda) returns PlannedLambda
+        procedure plan_lambda(this: Planner, lam: Lambda) returns PlannedLambda
         {
             this.push_scope()
 
@@ -19764,7 +19764,7 @@ define Planner
         ; intercept in collapse_operand_sequence#). Cached per mangled name
         ; via has_recorded_function so repeated calls with identical arg
         ; types reuse the same function.
-        function monomorphize_lambda(this: Planner, base_name: String, lam: Lambda, arg_types: Vector[PlannedType]) returns LambdaMonoResult
+        procedure monomorphize_lambda(this: Planner, base_name: String, lam: Lambda, arg_types: Vector[PlannedType]) returns LambdaMonoResult
         {
             ; ---- Pass 1: discover captures. Plan the body in a scope with the
             ; lambda's own params defined; the enclosing scope is still on the
@@ -20006,7 +20006,7 @@ define Planner
         ; record; the thunk bridges the uniform `R(ptr self, params)` call
         ; shape to `real(caps..., params)`. `life` is the record's allocation
         ; lifetime (local region, or `#` caller page when the closure escapes).
-        function make_closure(this: Planner, base_name: String, lam: Lambda, dparams: Vector[PlannedType], dret: PlannedType, del_pt: PlannedType, life: Lifetime) returns PlannedClosure
+        procedure make_closure(this: Planner, base_name: String, lam: Lambda, dparams: Vector[PlannedType], dret: PlannedType, del_pt: PlannedType, life: Lifetime) returns PlannedClosure
         {
             let mono this.monomorphize_lambda(base_name, lam, dparams)
             var cap_ops Array[PlannedOperand]()
@@ -20063,7 +20063,7 @@ define Planner
         ; plan_repeat: do-while body runs at least once; the terminating
         ; condition lives inside the body action via `break` or an
         ; embedded if. Nothing else to constrain at this level.
-        function plan_repeat(this: Planner, r: Repeat) returns PlannedRepeat
+        procedure plan_repeat(this: Planner, r: Repeat) returns PlannedRepeat
         {
             this.push_scope()
             let planned_body this.plan_action(r.action)
@@ -20229,7 +20229,7 @@ define Planner
         ; that the planned binding's type is bool (the solver promotes
         ; `while let maybe_x = ...` through Option's None sentinel, so
         ; this is a reasonable approximation today).
-        function plan_while(this: Planner, w: While) returns PlannedWhile
+        procedure plan_while(this: Planner, w: While) returns PlannedWhile
         {
             this.push_scope()
             let planned_cond this.plan_binding(w.condition)
@@ -20348,7 +20348,7 @@ define Planner
         ;      iterator type; the element type is what `next` returns.
         ; Option[T] and ref/pointer wrappers on the collection type are
         ; peeled before the dispatch.
-        function plan_for(this: Planner, f: For) returns PlannedFor
+        procedure plan_for(this: Planner, f: For) returns PlannedFor
         {
             this.push_scope()
             let planned_expr this.plan_operands(f.expression)
@@ -20580,7 +20580,7 @@ define Planner
         ; catches NOTHING from one that MIXES a fault arm with a foreign one --
         ; two different mistakes, and the second one's message was misleading
         ; while both said "the when arms are unreachable".
-        function try_fault_arm_count(this: Planner, t: Try) returns size_t
+        procedure try_fault_arm_count(this: Planner, t: Try) returns size_t
         {
             var found: size_t 0
             var fi: size_t 0
@@ -20610,7 +20610,7 @@ define Planner
         ; is a confusion, and answering "yes" would send the other arm into the
         ; panic path where its tag matches nothing. A mixed try keeps the hard
         ; diagnosis below instead.
-        function try_arms_are_faults(this: Planner, t: Try) returns bool
+        procedure try_arms_are_faults(this: Planner, t: Try) returns bool
         {
             if t.catches.length = 0
                 return false
@@ -20762,7 +20762,7 @@ define Planner
         }
 
         ; plan_try: try { binding } catch WhenPatterns else alt.
-        function plan_try(this: Planner, t: Try) returns PlannedTry
+        procedure plan_try(this: Planner, t: Try) returns PlannedTry
         {
             ; The try-bound variable (e.g. `try let q ...`) leaks into the
             ; ENCLOSING scope: the success path is the only way execution
@@ -20855,7 +20855,7 @@ define Planner
         ; extract the payload and compare tags correctly. When union_type
         ; is void (the fallback from plan_try with no exception type),
         ; the arm still plans but variant_type stays void and tag stays 0.
-        function plan_when(
+        procedure plan_when(
             this: Planner,
             w: When,
             union_type: PlannedType,
@@ -21178,7 +21178,7 @@ define Planner
             this.stmt_flows_payload_to_escaping(w.consequent, w.name)
         }
 
-        function plan_choose(this: Planner, c: Choose) returns PlannedChoose
+        procedure plan_choose(this: Planner, c: Choose) returns PlannedChoose
         {
             let planned_cond this.plan_operands(c.condition)
             ; Fold the choose condition down to a single value to
@@ -21363,14 +21363,14 @@ define Planner
         }
 
         ; plan_case / plan_branch / plan_match: the full match-expression form.
-        function plan_case(this: Planner, cs: Case) returns PlannedCase
+        procedure plan_case(this: Planner, cs: Case) returns PlannedCase
         {
             let planned_cond this.plan_operands(cs.condition)
             var cond_holder Vector[PlannedOperand](planned_cond)
             PlannedCase(cs.span, &cond_holder)
         }
 
-        function plan_branch(this: Planner, b: Branch) returns PlannedBranch
+        procedure plan_branch(this: Planner, b: Branch) returns PlannedBranch
         {
             var cases_arr Array[PlannedCase]()
             var i: size_t 0
@@ -21391,7 +21391,7 @@ define Planner
             PlannedBranch(b.span, &cases_holder, cons_box)
         }
 
-        function plan_match(this: Planner, m: Match) returns PlannedMatch
+        procedure plan_match(this: Planner, m: Match) returns PlannedMatch
         {
             let planned_cond this.plan_operands(m.condition)
             ; Fold the match condition so its result_type is
@@ -21512,7 +21512,7 @@ define Planner
         ; raw operand sequence. emit_tuple's grouping shortcut emits
         ; comp.value[0], so without this collapse `(*p).field` would
         ; emit only the leading `Type("*")` operand and produce null.
-        function plan_component(this: Planner, c: Component) returns PlannedComponent
+        procedure plan_component(this: Planner, c: Component) returns PlannedComponent
         {
             let planned_value this.plan_operands(c.value)
             var name_ref: ref[String]? null
@@ -21708,7 +21708,7 @@ define Planner
             PlannedComponent(c.span, name_ref, &value_holder, null)
         }
 
-        function plan_tuple(this: Planner, t: Tuple) returns PlannedTuple
+        procedure plan_tuple(this: Planner, t: Tuple) returns PlannedTuple
         {
             var comps_arr Array[PlannedComponent]()
             var i: size_t 0
@@ -21764,7 +21764,7 @@ define Planner
             )
         }
 
-        function plan_matrix(this: Planner, m: Matrix) returns scalyc.compiler.Plan.PlannedMatrix
+        procedure plan_matrix(this: Planner, m: Matrix) returns scalyc.compiler.Plan.PlannedMatrix
         {
             var rows_arr Array[Vector[PlannedOperand]]()
             var i: size_t 0
@@ -21794,7 +21794,7 @@ define Planner
         ; table, so we plan the type skeleton and arguments and leave
         ; the call layout for later resolution. For now we model it as
         ; a PlannedTuple carrying the argument list and the planned type.
-        function plan_new(this: Planner, n: New) returns PlannedTuple
+        procedure plan_new(this: Planner, n: New) returns PlannedTuple
         {
             let planned_ty this.plan_type(n.type)
             let planned_args this.plan_tuple(n.arguments)
@@ -21852,7 +21852,7 @@ define Planner
         ; plan_operand: dispatch by Expression variant, then wrap with
         ; any member-access chain declared on the operand.
         ; ================================================================
-        function plan_operand(this: Planner, op: scalyc.compiler.Model.Operand) returns PlannedOperand
+        procedure plan_operand(this: Planner, op: scalyc.compiler.Model.Operand) returns PlannedOperand
         {
             ; Stack guard: one nesting level per plan_operand frame. Emission is
             ; untouched — this only trades a SIGSEGV for a message.
@@ -22067,7 +22067,7 @@ define Planner
         ; with no value. Returns null when the shape doesn't match so
         ; the caller falls back to plan_operand#. Locals win — a
         ; shadowing local binding disqualifies the union lookup.
-        function try_plan_unit_variant(
+        procedure try_plan_unit_variant(
             this: Planner,
             t: Type,
             loc: Span
@@ -22141,7 +22141,7 @@ define Planner
             )
         }
 
-        function plan_operands(
+        procedure plan_operands(
             this: Planner,
             ops: Vector[scalyc.compiler.Model.Operand]
         ) returns Vector[PlannedOperand]
@@ -22250,7 +22250,7 @@ define Planner
             ops
         }
 
-        function plan_binding(this: Planner, b: Binding) returns PlannedBinding
+        procedure plan_binding(this: Planner, b: Binding) returns PlannedBinding
         {
             ; Names starting with `_` are reserved for compiler internals —
             ; the emitter resolves the implicit caller-page slot as `_rp`.
@@ -22897,7 +22897,7 @@ define Planner
         ; otherwise "". Such an operand emits as null downstream and used
         ; to drop the enclosing statement SILENTLY. Dotted names keep the
         ; lenient path (namespace machinery owns them).
-        function unknown_identifier_name(this: Planner, op: PlannedOperand) returns String
+        procedure unknown_identifier_name(this: Planner, op: PlannedOperand) returns String
         {
             if op.member_access <> null
             {
@@ -23031,7 +23031,7 @@ define Planner
         ;
         ; ONE statement at each call site: an inline branch in the hot planners
         ; perturbs the s178 alloca pool (six -g checks, measured).
-        function report_null_into_ref(
+        procedure report_null_into_ref(
             this: Planner,
             target_type: PlannedType,
             source: PlannedOperand,
@@ -23145,7 +23145,7 @@ define Planner
         ; types_compatible# already refuses at a parameter, so every call site
         ; spells the `x as ref[X]` unwrap), and it never fires on the `?`
         ; spelling, since the s113 wrapper arrives named "Option".
-        function report_null_into_ref_arg(
+        procedure report_null_into_ref_arg(
             this: Planner,
             args: Vector[PlannedOperand],
             param_types: Vector[PlannedType],
@@ -23226,7 +23226,7 @@ define Planner
         ; for the same reason. ★A `null` into an OPTIONAL field stays correct
         ; and stays silent: the s113 wrapper arrives named "Option", so the
         ; `ref` name test excludes it, exactly as in the other two gates.
-        function report_null_into_ref_field(
+        procedure report_null_into_ref_field(
             this: Planner,
             s: Structure,
             arg_types: Vector[PlannedType],
@@ -23260,7 +23260,7 @@ define Planner
 
         ; The message half, split out for the reason report_null_into_ref#
         ; splits its own: the walk above stays one statement per branch.
-        function report_null_arg(this: Planner, param_type: PlannedType, loc: Span)
+        procedure report_null_arg(this: Planner, param_type: PlannedType, loc: Span)
         {
             var sb StringBuilder()
             ; NO backticks in these literals -- an unescaped backtick opens a
@@ -23304,7 +23304,7 @@ define Planner
         ; Ask the SHAPE, not the name -- both `ref[T]?` and `pointer[T]?`
         ; arrive as an Option around something pointer-shaped, and a name test
         ; that knows only "ref" is the standing bug of this seam.
-        function option_arg_into_plain_ref(param_type: PlannedType, arg_type: PlannedType) returns bool
+        procedure option_arg_into_plain_ref(param_type: PlannedType, arg_type: PlannedType) returns bool
         {
             if param_type.name <> "ref"
                 return false
@@ -23329,7 +23329,7 @@ define Planner
         ; only be asked here -- and it is what separates a guarded forward
         ; from a lie. Measured on the untouched tree: 2459 sites report
         ; without it, 1222 of them behind a guard the author already wrote.
-        function option_arg_reaches_plain_ref(this: Planner, param_type: PlannedType, arg: PlannedOperand) returns bool
+        procedure option_arg_reaches_plain_ref(this: Planner, param_type: PlannedType, arg: PlannedOperand) returns bool
         {
             if Planner.option_arg_into_plain_ref(param_type, arg.result_type) = false
                 return false
@@ -23360,7 +23360,7 @@ define Planner
         ; The message names the unwrap, because there IS no flow narrowing of
         ; the TYPE: a caller who has just tested the value still owes the
         ; cast, and that cast is where the exit-21 trap is emitted.
-        function report_option_arg(this: Planner, param_type: PlannedType, arg_type: PlannedType, loc: Span, callee: String, index: size_t)
+        procedure report_option_arg(this: Planner, param_type: PlannedType, arg_type: PlannedType, loc: Span, callee: String, index: size_t)
         {
             var osb StringBuilder()
             ; NO backticks in these literals -- an unescaped backtick opens a
@@ -23428,7 +23428,7 @@ define Planner
         ; Does this type's HEAD name a concept this root laid out, a
         ; primitive, or one of the language's own wrappers? Anything else is
         ; an unresolved name wearing a type's clothes.
-        function type_head_is_resolvable(this: Planner, t: PlannedType) returns bool
+        procedure type_head_is_resolvable(this: Planner, t: PlannedType) returns bool
         {
             let n Planner.normalize_type_name(t.name)
             if Planner.is_integer_type(n)
@@ -23453,7 +23453,7 @@ define Planner
                 return true
             false
         }
-        function type_conformance_unjudgeable(
+        procedure type_conformance_unjudgeable(
             this: Planner,
             target_type: PlannedType,
             source: PlannedOperand
@@ -23584,7 +23584,7 @@ define Planner
         ; question lookup_variant_tag# already answers (it keys on the PAYLOAD
         ; TYPE's name, which is what `choose ... when TypeName:` needs), so the
         ; check borrows it rather than re-deriving the union's arm list.
-        function type_conforms_as_variant(this: Planner, target_type: PlannedType, source_type: PlannedType) returns bool
+        procedure type_conforms_as_variant(this: Planner, target_type: PlannedType, source_type: PlannedType) returns bool
         {
             this.variant_payload_accepts(target_type.name, source_type.name, 3)
         }
@@ -23597,7 +23597,7 @@ define Planner
         ; The depth is bounded rather than trusted: a union reachable from
         ; itself would otherwise not terminate, and three levels covers every
         ; shape in the tree with one to spare.
-        function variant_payload_accepts(this: Planner, union_name: String, source_name: String, depth: int) returns bool
+        procedure variant_payload_accepts(this: Planner, union_name: String, source_name: String, depth: int) returns bool
         {
             let tag this.lookup_variant_tag(union_name, source_name)
             if tag >= 0
@@ -23713,7 +23713,7 @@ define Planner
 
         ; Peel ONE `pointer`/`ref` wrapper off `t` into `out`, answering
         ; whether there was one to peel.
-        function type_strip_one_reference(t: PlannedType, out: ref[PlannedType]) returns bool
+        procedure type_strip_one_reference(t: PlannedType, out: ref[PlannedType]) returns bool
         {
             if t.name <> "pointer"
                 if t.name <> "ref"
@@ -23804,7 +23804,7 @@ define Planner
         ;
         ; Both are asked AFTER types_compatible#, so the common answer stays
         ; one call.
-        function type_conformance_accepted(target_type: PlannedType, source_type: PlannedType) returns bool
+        procedure type_conformance_accepted(target_type: PlannedType, source_type: PlannedType) returns bool
         {
             var stripped_src: PlannedType source_type
             if Planner.types_compatible(target_type, source_type)
@@ -23927,7 +23927,7 @@ define Planner
         ; builds, for a value that is already planned.  Same intrinsic
         ; operator call, same mangled name, same result type -- so a
         ; transparent read emits byte-identically to the `*r` it replaces.
-        function make_deref_operand(
+        procedure make_deref_operand(
             this: Planner,
             op: PlannedOperand,
             elem: PlannedType
@@ -23972,7 +23972,7 @@ define Planner
         ; separate so a call site that must know WHETHER it converted can ask
         ; -- the same split `operand_retypes_to_integer` /
         ; `retype_integer_operand` uses.
-        function operand_derefs_to_pointee(target_type: PlannedType, op: PlannedOperand) returns bool
+        procedure operand_derefs_to_pointee(target_type: PlannedType, op: PlannedOperand) returns bool
         {
             if op.result_type.name <> "ref"
                 return false
@@ -24089,7 +24089,7 @@ define Planner
         ; behaves the same here.
         ; The pointee of a `ref[T]`/`pointer[T]`, or the type itself when
         ; there is nothing to peel.
-        function strip_one_reference_or_self(t: PlannedType) returns PlannedType
+        procedure strip_one_reference_or_self(t: PlannedType) returns PlannedType
         {
             var inner: PlannedType t
             if Planner.type_strip_one_reference(t, &inner)
@@ -24179,7 +24179,7 @@ define Planner
         ; ★ `pointer` counts as well as `Option`: a pointer pointee is nullable
         ; by construction, which is the same reason report_null_into_ref#
         ; leaves a `pointer[T]` TARGET alone.
-        function ref_pointee_may_be_null(t: PlannedType) returns bool
+        procedure ref_pointee_may_be_null(t: PlannedType) returns bool
         {
             if t.name <> "ref"
                 return false
@@ -24219,7 +24219,7 @@ define Planner
         ; member-access chain names the REFERENCE, not the pointee -- and the
         ; two must agree, or the gate would fall silent on a statement the
         ; rewrite does not take.
-        function null_set_target(target: PlannedOperand) returns PlannedType
+        procedure null_set_target(target: PlannedOperand) returns PlannedType
         {
             if target.member_access <> null
                 return target.result_type
@@ -24231,7 +24231,7 @@ define Planner
             inner
         }
 
-        function set_target_stores_through(this: Planner, target_type: PlannedType, source_type: PlannedType, target_is_mutable: bool) returns bool
+        procedure set_target_stores_through(this: Planner, target_type: PlannedType, source_type: PlannedType, target_is_mutable: bool) returns bool
         {
             if target_type.name <> "ref"
                 return false
@@ -24303,7 +24303,7 @@ define Planner
         ; failure an entity or a subdoc). The store-through rewrite is what
         ; normally saves such a statement; when it does not fire, saying so is
         ; the only thing between the author and a dropped assignment.
-        function report_unassignable_ref_target(
+        procedure report_unassignable_ref_target(
             this: Planner,
             target: PlannedOperand,
             loc: Span
@@ -24345,7 +24345,7 @@ define Planner
             this.add_diagnostic(loc, String^this(umsg))
         }
 
-        function deref_ref_into_pointee(
+        procedure deref_ref_into_pointee(
             this: Planner,
             target_type: PlannedType,
             op: PlannedOperand
@@ -24371,7 +24371,7 @@ define Planner
         ; takes; a bare literal that FITS is exempt because it is retyped to the
         ; target (operand_retypes_to_integer#), an explicit `as` is exempt
         ; because its result already has the target's width.
-        function report_integer_narrowing(
+        procedure report_integer_narrowing(
             this: Planner,
             target_type: PlannedType,
             source: PlannedOperand,
@@ -24409,7 +24409,7 @@ define Planner
             this.add_diagnostic(loc, String^this(nmsg))
         }
 
-        function report_type_mismatch(
+        procedure report_type_mismatch(
             this: Planner,
             target_type: PlannedType,
             source: PlannedOperand,
@@ -24530,7 +24530,7 @@ define Planner
         ; that answers `pointer[T]`/`ref[T]` NAMES a slot, and a store through
         ; one is the accessor-store the emitter's ISet arm already serves; only
         ; a by-value answer has nowhere to put the value.
-        function report_subscript_assignment(this: Planner, target: PlannedOperand)
+        procedure report_subscript_assignment(this: Planner, target: PlannedOperand)
         {
             choose target.expr
                 when subscript_call: Call
@@ -24599,7 +24599,7 @@ define Planner
             let inner (*inner_ptr)
             inner.name = "ref"
         }
-        function report_ref_arithmetic(
+        procedure report_ref_arithmetic(
             this: Planner,
             lhs_type: PlannedType,
             rhs_type: PlannedType,
@@ -24684,7 +24684,7 @@ define Planner
             false
         }
 
-        function report_deref_of_non_pointer(
+        procedure report_deref_of_non_pointer(
             this: Planner,
             operand_type: PlannedType,
             loc: Span
@@ -24723,7 +24723,7 @@ define Planner
         ; `*opt` remains the spelling at several hundred sites. The gate asks
         ; the NAME here on purpose, which is the one place in this family where
         ; that is right: `Option` is exactly what must NOT be caught.
-        function report_deref_of_ref(
+        procedure report_deref_of_ref(
             this: Planner,
             operand_type: PlannedType,
             loc: Span
@@ -24778,7 +24778,7 @@ define Planner
         ; ONE statement at the call site: an inline branch in
         ; collapse_operand_sequence# perturbs its s178 alloca pool (six -g
         ; checks, measured).
-        function report_null_test_on_ref(
+        procedure report_null_test_on_ref(
             this: Planner,
             lhs: PlannedOperand,
             rhs: PlannedOperand,
@@ -24846,7 +24846,7 @@ define Planner
             this.add_diagnostic(loc, String^this(rmsg))
         }
 
-        function report_receiver_arity(
+        procedure report_receiver_arity(
             this: Planner,
             is_dispatch: bool,
             match_ref: ref[MethodMatch]?,
@@ -25032,7 +25032,7 @@ define Planner
         ;
         ; Record and CONTINUE, like the arity gate: add_diagnostic is fatal at
         ; the cli.scaly gate, so resolution proceeds exactly as it did before.
-        function report_method_arg_types(
+        procedure report_method_arg_types(
             this: Planner,
             f: Function,
             lookup_st: PlannedType,
@@ -25197,7 +25197,7 @@ define Planner
         ; A payload record with several fields is constructed on its own
         ; (`U.First(Rec(11, 22, 33))`); spelling its fields into the variant
         ; construction is what this names.
-        function report_variant_arg_arity(
+        procedure report_variant_arg_arity(
             this: Planner,
             union_name: String,
             variant_name: String,
@@ -25236,7 +25236,7 @@ define Planner
         ; the rest. A GENERIC union is not judged either — its arm types name
         ; parameters this site does not bind (Option[T].Some is the NPO case).
         ; One statement per call site, as report_variant_arg_arity# above.
-        function report_variant_payload_shape(
+        procedure report_variant_payload_shape(
             this: Planner,
             union_name: String,
             variant_name: String,
@@ -25316,7 +25316,7 @@ define Planner
         ; did not resolve, already reported at its own line); a resolved
         ; property hop carries its own type, so a delegate-typed field called
         ; through `obj.f(args)` is untouched.
-        function report_unresolved_method_call(
+        procedure report_unresolved_method_call(
             this: Planner,
             is_call: bool,
             recv: PlannedOperand,
@@ -25372,7 +25372,7 @@ define Planner
             this.add_diagnostic(second.loc, String^this(rumc_msg))
         }
 
-        function report_unknown_identifier(this: Planner, op: PlannedOperand)
+        procedure report_unknown_identifier(this: Planner, op: PlannedOperand)
         {
             let uname this.unknown_identifier_name(op)
             if uname.get_length() > 0
@@ -25508,7 +25508,7 @@ define Planner
             )
         }
 
-        function plan_action(this: Planner, a: Action) returns PlannedAction
+        procedure plan_action(this: Planner, a: Action) returns PlannedAction
         {
             ; Read-and-clear the tail-return flag: only THIS (outermost body)
             ; action is the function's implicit return. Nested actions planned
@@ -27244,7 +27244,7 @@ define Planner
         ; region_of_arg_path#. Call-result / opaque initializers are not Tuples,
         ; so they are never seeded (sound: see the current_fn_fpt_* field
         ; comment). Runs in every pass; consulted only by the phase-4 check.
-        function escape_record_field_points_to(this: Planner, binding: PlannedBinding)
+        procedure escape_record_field_points_to(this: Planner, binding: PlannedBinding)
         {
             if binding.binding_item.name = null
                 return
@@ -27335,7 +27335,7 @@ define Planner
         ; reference, record a summary entry. Reuses the Vector-2 store shape
         ; (value = a bare reference-like param; target = param.field / global
         ; / deref). Runs only in collect mode.
-        function escape_handle_store(this: Planner, act: PlannedAction)
+        procedure escape_handle_store(this: Planner, act: PlannedAction)
         {
             if escape_checking
                 return
@@ -27521,7 +27521,7 @@ define Planner
         }
 
         ; Pass 1: check one call against one summary entry.
-        function escape_check_call_record(this: Planner, call: PlannedCall, rec: EscapeRecord)
+        procedure escape_check_call_record(this: Planner, call: PlannedCall, rec: EscapeRecord)
         {
             if escape_found
                 return
@@ -27613,7 +27613,7 @@ define Planner
         ; the non-transitivity hole for a chain whose escaping hop is an
         ; unresolved (function-pointer) call — the direct-call summary path
         ; keys on mangled_name, which an indirect call does not have.
-        function escape_check_indirect_call(this: Planner, call: PlannedCall)
+        procedure escape_check_indirect_call(this: Planner, call: PlannedCall)
         {
             if escape_found
                 return
@@ -27654,7 +27654,7 @@ define Planner
 
         ; Pass 1: a call may match several summary entries (e.g. two escaping
         ; params); check each.
-        function escape_handle_call(this: Planner, call: PlannedCall)
+        procedure escape_handle_call(this: Planner, call: PlannedCall)
         {
             if escape_found
                 return
@@ -27719,7 +27719,7 @@ define Planner
         ; several persisting callee slots; test the current summary against each
         ; matching record. Snapshot the length so records added during this call
         ; are not re-processed here (the outer fixpoint loop propagates them).
-        function escape_forward_call(this: Planner, call: PlannedCall)
+        procedure escape_forward_call(this: Planner, call: PlannedCall)
         {
             let n escape_records.length
             var ri: size_t 0
@@ -27745,7 +27745,7 @@ define Planner
         ; (no member hop) into an indirect call, record that the current
         ; function persists that parameter frame-external (dest_kind 1). args[0]
         ; is the callee; scan args[1..]. Dedup'd so the fixpoint terminates.
-        function escape_forward_indirect_call(this: Planner, call: PlannedCall)
+        procedure escape_forward_indirect_call(this: Planner, call: PlannedCall)
         {
             if call.args = null
                 return
@@ -27791,7 +27791,7 @@ define Planner
         ; parameter — into whatever the callee's destination maps to from the
         ; current frame. Records a new summary entry for the current function
         ; (dedup'd). Mirrors the arg<->param mapping of escape_check_call_record.
-        function escape_forward_call_record(this: Planner, call: PlannedCall, rec: EscapeRecord)
+        procedure escape_forward_call_record(this: Planner, call: PlannedCall, rec: EscapeRecord)
         {
             let callee instantiated_functions.get rec.callee_fn_index
             if callee = null
@@ -27924,7 +27924,7 @@ define Planner
         ; ref[Vector]? field directly + auto-derefs (a by-value Vector param
         ; corrupts .length). Element passed by value via .unwrap(), mirroring
         ; emit_operands -> emit_operand(first.unwrap()).
-        function escape_walk_operands(this: Planner, ops: ref[Vector[PlannedOperand]]?)
+        procedure escape_walk_operands(this: Planner, ops: ref[Vector[PlannedOperand]]?)
         {
             if escape_found
                 return
@@ -27943,7 +27943,7 @@ define Planner
         }
 
         ; Walk one statement reached through a ref[PlannedStatement]? field.
-        function escape_walk_statement_ref(this: Planner, stmt: ref[PlannedStatement]?)
+        procedure escape_walk_statement_ref(this: Planner, stmt: ref[PlannedStatement]?)
         {
             if escape_found
                 return
@@ -27956,7 +27956,7 @@ define Planner
 
         ; Walk one operand by value. choose op.expr mirrors emit_operand;
         ; the recursive arms mirror Planner.cpp::escapeWalkOperand.
-        function escape_walk_operand(this: Planner, op: PlannedOperand)
+        procedure escape_walk_operand(this: Planner, op: PlannedOperand)
         {
             if escape_found
                 return
@@ -28126,7 +28126,7 @@ define Planner
         }
 
         ; Walk one statement by value. choose stmt mirrors emit_statement.
-        function escape_walk_statement(this: Planner, stmt: PlannedStatement)
+        procedure escape_walk_statement(this: Planner, stmt: PlannedStatement)
         {
             if escape_found
                 return
@@ -28192,7 +28192,7 @@ define Planner
         ; Walk one action by value (the whole PlannedAction, mirroring
         ; emit_action(action)). Handle the store first, then recurse into
         ; the source/target operand vectors.
-        function escape_walk_action(this: Planner, act: PlannedAction)
+        procedure escape_walk_action(this: Planner, act: PlannedAction)
         {
             if escape_found
                 return
@@ -28203,7 +28203,7 @@ define Planner
 
         ; Walk one function body. Mirrors emit_function_body: choose func.impl
         ; and feed the whole Action by value to escape_walk_action.
-        function escape_walk_function_body(this: Planner, func: PlannedFunction)
+        procedure escape_walk_function_body(this: Planner, func: PlannedFunction)
         {
             ; Reset the per-function stack-closure name set; it is repopulated
             ; in evaluation order as escape_walk_statement encounters each
@@ -28223,7 +28223,7 @@ define Planner
         }
 
         ; Post-pass entry: two passes over instantiated_functions.
-        function check_interprocedural_escapes(this: Planner)
+        procedure check_interprocedural_escapes(this: Planner)
         {
             ; --jit dependency-body path (jit_dep_bodies): skip the WHOLE-PROGRAM
             ; interprocedural escape summary+check. This pass has a latent walk
@@ -28338,7 +28338,7 @@ define Planner
         ; the dead frame page and the stored handle would dangle (a
         ; later reader decodes a garbage varint length and the copy's
         ; allocation goes wild).
-        function move_unmark(this: Planner, name: String)
+        procedure move_unmark(this: Planner, name: String)
         {
             var i: size_t 0
             while i < move_moved_names.length
@@ -28364,7 +28364,7 @@ define Planner
         ; single-value parens/derefs; only a bare Variable (no member hop)
         ; marks — a sent field/global/call-result has no bare name to
         ; track (documented residual).
-        function move_mark_sent(this: Planner, op: PlannedOperand)
+        procedure move_mark_sent(this: Planner, op: PlannedOperand)
         {
             if op.member_access <> null
             {
@@ -28403,7 +28403,7 @@ define Planner
 
         ; Record bind_name as an alias of the bare variable op reads
         ; (root-resolved, so alias chains collapse to one root).
-        function move_note_alias(this: Planner, bind_name: String, op: PlannedOperand)
+        procedure move_note_alias(this: Planner, bind_name: String, op: PlannedOperand)
         {
             if op.member_access <> null
             {
@@ -28447,7 +28447,7 @@ define Planner
         ; A binding gives its name a fresh value: clear stale facts, then
         ; record a bare reference alias (`let q m`, cast/paren peeled) so a
         ; send of either name flags a use of the other.
-        function move_note_binding(this: Planner, binding: PlannedBinding)
+        procedure move_note_binding(this: Planner, binding: PlannedBinding)
         {
             if binding.binding_item.name = null
                 return
@@ -28471,7 +28471,7 @@ define Planner
 
         ; A read of a moved (channel-sent) name — directly or through the
         ; alias map — is a hard use-after-send diagnostic.
-        function move_check_use(this: Planner, op: PlannedOperand)
+        procedure move_check_use(this: Planner, op: PlannedOperand)
         {
             if move_found
                 return
@@ -28507,7 +28507,7 @@ define Planner
                     0
         }
 
-        function move_walk_operands(this: Planner, ops: ref[Vector[PlannedOperand]]?)
+        procedure move_walk_operands(this: Planner, ops: ref[Vector[PlannedOperand]]?)
         {
             if move_found
                 return
@@ -28525,7 +28525,7 @@ define Planner
             }
         }
 
-        function move_walk_statement_ref(this: Planner, stmt: ref[PlannedStatement]?)
+        procedure move_walk_statement_ref(this: Planner, stmt: ref[PlannedStatement]?)
         {
             if move_found
                 return
@@ -28542,7 +28542,7 @@ define Planner
         ; moved name is itself a use), then the message argument (the last
         ; arg) is marked moved. Loop bodies re-walk once when their first
         ; walk moved a new name (wrap-around uses).
-        function move_walk_operand(this: Planner, op: PlannedOperand)
+        procedure move_walk_operand(this: Planner, op: PlannedOperand)
         {
             if move_found
                 return
@@ -28745,7 +28745,7 @@ define Planner
                     0
         }
 
-        function move_walk_statement(this: Planner, stmt: PlannedStatement)
+        procedure move_walk_statement(this: Planner, stmt: PlannedStatement)
         {
             if move_found
                 return
@@ -28774,7 +28774,7 @@ define Planner
         ; target then un-moves the name (fresh value, e.g. re-arming a
         ; message variable in a producer loop) — any other target shape
         ; (field store, deref) READS the base and is use-checked.
-        function move_walk_action(this: Planner, act: PlannedAction)
+        procedure move_walk_action(this: Planner, act: PlannedAction)
         {
             if move_found
                 return
@@ -28815,7 +28815,7 @@ define Planner
         ; Post-pass entry (after the escape checks): use-after-send over
         ; every instantiated function. Programs without channel sends walk
         ; each body once against empty name sets and record nothing.
-        function check_channel_moves(this: Planner)
+        procedure check_channel_moves(this: Planner)
         {
             ; See check_interprocedural_escapes: skip whole-program plan-walk for
             ; --jit dependency bodies (same latent walk crash on large dep-package
@@ -28859,7 +28859,7 @@ define Planner
         ; re-stamped (everything else copied verbatim): rebuilding the
         ; result_type, which embeds the Lifetime union, by value trips the
         ; s34/s196 union-struct-copy ABI hazard and crashes the emitter.
-        function restamp_operand_life(this: Planner, op: PlannedOperand, new_life: Lifetime) returns ref[PlannedOperand]?
+        procedure restamp_operand_life(this: Planner, op: PlannedOperand, new_life: Lifetime) returns ref[PlannedOperand]?
         {
             if Planner.result_owns_page_guts(op.result_type) = false
                 return null
@@ -28940,7 +28940,7 @@ define Planner
         ; verbatim — restamp_operand_life# returns null for them. Bound-local
         ; args (a Variable) are likewise kept (their own binding is promoted via
         ; the name-graph); only INLINE constructions are restamped here.
-        function restamp_args(this: Planner, args: Vector[PlannedOperand], new_life: Lifetime) returns ref[Vector[PlannedOperand]]?
+        procedure restamp_args(this: Planner, args: Vector[PlannedOperand], new_life: Lifetime) returns ref[Vector[PlannedOperand]]?
         {
             var out Vector[PlannedOperand](args.length)
             var i: size_t 0
@@ -28975,7 +28975,7 @@ define Planner
         ; args are all kept verbatim (restamp_operand_life# returns null for
         ; them — explicit-# is Call life, gated out — so this stays NEUTRAL on
         ; sigiled source).
-        function restamp_putadd_constructions(this: Planner, args: Vector[PlannedOperand], new_life: Lifetime) returns ref[Vector[PlannedOperand]]?
+        procedure restamp_putadd_constructions(this: Planner, args: Vector[PlannedOperand], new_life: Lifetime) returns ref[Vector[PlannedOperand]]?
         {
             var out Vector[PlannedOperand](args.length)
             var i: size_t 0
@@ -29026,7 +29026,7 @@ define Planner
             }
             &out
         }
-        function restamp_components(this: Planner, comps: Vector[PlannedComponent], new_life: Lifetime) returns ref[Vector[PlannedComponent]]?
+        procedure restamp_components(this: Planner, comps: Vector[PlannedComponent], new_life: Lifetime) returns ref[Vector[PlannedComponent]]?
         {
             var out Vector[PlannedComponent](comps.length)
             var i: size_t 0
@@ -29064,7 +29064,7 @@ define Planner
         ; caller keeps the operand verbatim, so sigiled source whose nested
         ; constructions carry explicit #/^ lifetimes stays byte-identical). All
         ; rebuilds copy PlannedType/String fields verbatim (s34/s196 hazard).
-        function promote_escaping_guts(this: Planner, op: PlannedOperand, new_life: Lifetime) returns ref[PlannedOperand]?
+        procedure promote_escaping_guts(this: Planner, op: PlannedOperand, new_life: Lifetime) returns ref[PlannedOperand]?
         {
             choose op.expr
                 when c: PlannedCall
@@ -29148,7 +29148,7 @@ define Planner
                     return null
             null
         }
-        function promote_escaping_args(this: Planner, args: Vector[PlannedOperand], new_life: Lifetime) returns ref[Vector[PlannedOperand]]?
+        procedure promote_escaping_args(this: Planner, args: Vector[PlannedOperand], new_life: Lifetime) returns ref[Vector[PlannedOperand]]?
         {
             var changed false
             var out Vector[PlannedOperand](args.length)
@@ -29173,7 +29173,7 @@ define Planner
                 return null
             &out
         }
-        function promote_escaping_components(this: Planner, comps: Vector[PlannedComponent], new_life: Lifetime) returns ref[Vector[PlannedComponent]]?
+        procedure promote_escaping_components(this: Planner, comps: Vector[PlannedComponent], new_life: Lifetime) returns ref[Vector[PlannedComponent]]?
         {
             var changed false
             var out Vector[PlannedComponent](comps.length)
@@ -29218,7 +29218,7 @@ define Planner
         ; fields verbatim and only swap the promoted sub-operand, avoiding the
         ; s34/s196 result_type-rebuild hazard.
         ; ================================================================
-        function promote_tail_operand(this: Planner, op: PlannedOperand, new_life: Lifetime) returns ref[PlannedOperand]?
+        procedure promote_tail_operand(this: Planner, op: PlannedOperand, new_life: Lifetime) returns ref[PlannedOperand]?
         {
             ; Direct construction/call placed on the LOCAL page (Local life on
             ; the PlannedCall/PlannedTuple). Gated on operand_is_local_page_
@@ -29455,7 +29455,7 @@ define Planner
         ; target carries an implicit value; a Return is already handled by R2
         ; (plan_return#), so leave it (return null). The action's value is its
         ; single source operand.
-        function promote_tail_statement(this: Planner, stmt: PlannedStatement, new_life: Lifetime) returns ref[PlannedStatement]?
+        procedure promote_tail_statement(this: Planner, stmt: PlannedStatement, new_life: Lifetime) returns ref[PlannedStatement]?
         {
             choose stmt
                 when a: PlannedAction
@@ -29509,7 +29509,7 @@ define Planner
         ; would convert twice. Returns null when nothing applies, so it is
         ; a no-op after a direct conversion has already fired.
         ; ================================================================
-        function convert_tail_literal(this: Planner, op: PlannedOperand, rt: PlannedType) returns ref[PlannedOperand]?
+        procedure convert_tail_literal(this: Planner, op: PlannedOperand, rt: PlannedType) returns ref[PlannedOperand]?
         {
             var rt_is_charlike: bool false
             if rt.name = "char"
@@ -29720,7 +29720,7 @@ define Planner
 
         ; The statement half of convert_tail_literal#. Only an Action with no
         ; store target carries an implicit value; a Return is plan_return#'s.
-        function convert_tail_literal_statement(this: Planner, stmt: PlannedStatement, rt: PlannedType) returns ref[PlannedStatement]?
+        procedure convert_tail_literal_statement(this: Planner, stmt: PlannedStatement, rt: PlannedType) returns ref[PlannedStatement]?
         {
             choose stmt
                 when a: PlannedAction
@@ -29757,7 +29757,7 @@ define Planner
         ; block last statement); at each leaf flags a Local-ranked reference
         ; (region_of_operand below the escape threshold, or a tainted-field
         ; read) that gap-1 does not cover. READ-ONLY: no restamp, no rebuild.
-        function check_tail_ref_escape(this: Planner, op: PlannedOperand, loc: Span)
+        procedure check_tail_ref_escape(this: Planner, op: PlannedOperand, loc: Span)
         {
             var recursed false
             choose op.expr
@@ -29903,7 +29903,7 @@ define Planner
         ; Tail-statement hop for check_tail_ref_escape#: only an Action with
         ; no store target carries an implicit value; explicit Returns are
         ; already checked by plan_return#.
-        function check_tail_ref_escape_statement(this: Planner, stmt: PlannedStatement, loc: Span)
+        procedure check_tail_ref_escape_statement(this: Planner, stmt: PlannedStatement, loc: Span)
         {
             choose stmt
                 when a: PlannedAction
@@ -29923,7 +29923,7 @@ define Planner
                     0
         }
 
-        function plan_return(this: Planner, r: Return) returns PlannedReturn
+        procedure plan_return(this: Planner, r: Return) returns PlannedReturn
         {
             ; GAP B: `return \x: …` where the function's return type is a delegate
             ; yields an ESCAPING closure — env on the caller page (`#`) so it
@@ -30185,7 +30185,7 @@ define Planner
             PlannedReturn(r.span, &holder)
         }
 
-        function plan_break(this: Planner, b: Break) returns PlannedBreak
+        procedure plan_break(this: Planner, b: Break) returns PlannedBreak
         {
             ; Collapse the operand sequence so a break value like `break -1`
             ; or `break parse(line)` folds into a single typed operand (same
@@ -30203,7 +30203,7 @@ define Planner
             PlannedBreak(b.span, &holder, b.loop_label)
         }
 
-        function plan_throw(this: Planner, t: Throw) returns PlannedThrow
+        procedure plan_throw(this: Planner, t: Throw) returns PlannedThrow
         {
             ; Collapse the operand sequence the same way plan_return# does.
             ; A thrown value like `MyError.Different(DifferentSyntax())` arrives
@@ -30286,7 +30286,7 @@ define Planner
         ; variant-specific plan_* method. `Continue` is trivial — just
         ; carries the location.
         ; ================================================================
-        function plan_statement(this: Planner, s: Statement) returns PlannedStatement
+        procedure plan_statement(this: Planner, s: Statement) returns PlannedStatement
         {
             choose s
                 when a: Action
@@ -30336,7 +30336,7 @@ define Planner
         ; rp in scope (a page-less function keeps the local page); sigiled
         ; `#` calls carry Call life, which restamp_operand_life# refuses ->
         ; NEUTRAL on sigiled source.
-        function promote_discarded_pagecall(this: Planner, stmt: PlannedStatement) returns ref[PlannedStatement]?
+        procedure promote_discarded_pagecall(this: Planner, stmt: PlannedStatement) returns ref[PlannedStatement]?
         {
             if this.lookup_local_binding("_rp") = null
                 return null
@@ -30408,7 +30408,7 @@ define Planner
         ; (a procedure called for its effect, a builder whose return value is not
         ; needed), and a bare variable or literal as a statement, while equally
         ; dead, is not a shape that has cost anyone anything here.
-        function report_effect_free_statement(this: Planner, stmt: PlannedStatement)
+        procedure report_effect_free_statement(this: Planner, stmt: PlannedStatement)
         {
             choose stmt
                 when a: PlannedAction
@@ -30746,7 +30746,7 @@ define Planner
         ; shadows. A nested `set` clears an outer narrowing too, which is the
         ; conservative direction -- lookup_local_binding# finds the same shadow
         ; from any depth.
-        function retire_narrowing(this: Planner, st: ref[PlannedStatement])
+        procedure retire_narrowing(this: Planner, st: ref[PlannedStatement])
         {
             ; The blunt half -- see clear_path_narrowings#. A field can be
             ; rebound through any alias of its object, and there is no alias
@@ -30792,7 +30792,7 @@ define Planner
         ;
         ; An `else` disqualifies it: the if is then a fork, plan_if# has
         ; already narrowed each side, and nothing is proven afterwards.
-        function early_exit_narrows(
+        procedure early_exit_narrows(
             this: Planner,
             st: ref[PlannedStatement],
             out_name: ref[String]
@@ -30848,7 +30848,7 @@ define Planner
             false
         }
 
-        function plan_statements(
+        procedure plan_statements(
             this: Planner,
             stmts: Vector[Statement]
         ) returns Vector[PlannedStatement]
@@ -30895,7 +30895,7 @@ define Planner
         ; ================================================================
         ; plan_block: push a fresh scope, plan every statement, pop.
         ; ================================================================
-        function plan_block(this: Planner, b: Block) returns PlannedBlock
+        procedure plan_block(this: Planner, b: Block) returns PlannedBlock
         {
             this.push_scope()
             let planned_stmts this.plan_statements(b.statements)
@@ -30993,7 +30993,7 @@ define Planner
         ; `offset` is 0 until compute_property_offsets runs as part of
         ; the enclosing struct's layout pass.
         ; ================================================================
-        function plan_property(this: Planner, p: Property) returns PlannedProperty
+        procedure plan_property(this: Planner, p: Property) returns PlannedProperty
         {
             var prop_type: PlannedType this.fresh_type_var("")
             if p.type <> null
@@ -31095,7 +31095,7 @@ define Planner
         ; walkers below stopped requiring rp (they are now plain locals). With
         ; those holders local, no scan-machinery function needs rp threaded from
         ; add_escaping_*, so `^this` here no longer collapses the rp web.
-        function add_escaping_local(this: Planner, name: String)
+        procedure add_escaping_local(this: Planner, name: String)
         {
             if this.array_contains_name(escaping_return_locals, name) = false
                 escaping_return_locals.add(String^this(name))
@@ -31202,7 +31202,7 @@ define Planner
         ; Over-collection is merely leaky, never unsafe; under-collection
         ; dangles. The mutually-recursive collect_flow_stmt# unwraps a branch
         ; statement (Action/Return) to its value operands.
-        function collect_flow_locals(this: Planner, ops: Vector[Operand])
+        procedure collect_flow_locals(this: Planner, ops: Vector[Operand])
         {
             ; A trailing `as` is transparent here for the same reason it is in
             ; ret_page_ops_tail# -- see ops_length_without_trailing_cast#. Without
@@ -31553,7 +31553,7 @@ define Planner
         }
         ; Unwrap a value-yielding branch statement to its value operands so
         ; collect_flow_locals# can descend a choose/if/match/block branch.
-        function collect_flow_stmt(this: Planner, s: Statement)
+        procedure collect_flow_stmt(this: Planner, s: Statement)
         {
             choose s
                 when a: Action
@@ -31571,7 +31571,7 @@ define Planner
         ; then promotes their binding in plan_binding#); INLINE constructions in
         ; a put/add value position have no binding and are left `#` at the source
         ; (the de-sigil skips put/add inline args), so they stay caller-page.
-        function add_escaping_target(this: Planner, name: String)
+        procedure add_escaping_target(this: Planner, name: String)
         {
             if this.array_contains_name(escaping_targets, name) = false
                 escaping_targets.add(String^this(name))
@@ -31697,7 +31697,7 @@ define Planner
                     0
             ""
         }
-        function collect_store_value_locals(this: Planner, source: Vector[Operand])
+        procedure collect_store_value_locals(this: Planner, source: Vector[Operand])
         {
             if source.length >= 2
             {
@@ -31860,7 +31860,7 @@ define Planner
         ; sees it — the drain idiom's element alias `m` had no back-prop and
         ; the escape chain (m -> it -> container) broke at the loop head.
         ; Mirrors the Binding arm's escaping-alias essentials.
-        function collect_returns_while_binding(this: Planner, bind: Binding)
+        procedure collect_returns_while_binding(this: Planner, bind: Binding)
         {
             if bind.item.name <> null
             {
@@ -31879,7 +31879,7 @@ define Planner
             }
         }
 
-        function collect_returns_stmt(this: Planner, s: Statement)
+        procedure collect_returns_stmt(this: Planner, s: Statement)
         {
             choose s
                 when r: Return
@@ -32007,7 +32007,7 @@ define Planner
                 else
                     0
         }
-        function collect_returns_operand(this: Planner, op: Operand)
+        procedure collect_returns_operand(this: Planner, op: Operand)
         {
             choose op.expression
                 when b: Block
@@ -32107,7 +32107,7 @@ define Planner
                 else
                     0
         }
-        function collect_returns_action(this: Planner, a: Action)
+        procedure collect_returns_action(this: Planner, a: Action)
         {
             var i: size_t 0
             while i < a.source.length
@@ -32243,12 +32243,12 @@ define Planner
         ; restamp owns-page-guts) only fires for the intended shape. Mirrors
         ; the recursion structure of operand_mentions_set#.
         ; ================================================================
-        function add_address_taken(this: Planner, name: String)
+        procedure add_address_taken(this: Planner, name: String)
         {
             if this.array_contains_name(address_taken_locals, name) = false
                 address_taken_locals.add(String^this(name))
         }
-        function scan_addr_taken_ops(this: Planner, ops: Vector[Operand])
+        procedure scan_addr_taken_ops(this: Planner, ops: Vector[Operand])
         {
             var i: size_t 0
             while i < ops.length
@@ -32303,12 +32303,12 @@ define Planner
                 set i: i + 1
             }
         }
-        function scan_addr_taken_action(this: Planner, a: Action)
+        procedure scan_addr_taken_action(this: Planner, a: Action)
         {
             this.scan_addr_taken_ops(a.source)
             this.scan_addr_taken_ops(a.target)
         }
-        function scan_addr_taken_stmt(this: Planner, s: Statement)
+        procedure scan_addr_taken_stmt(this: Planner, s: Statement)
         {
             choose s
                 when a: Action
@@ -32324,7 +32324,7 @@ define Planner
                 else
                     0
         }
-        function scan_addr_taken_operand(this: Planner, op: Operand)
+        procedure scan_addr_taken_operand(this: Planner, op: Operand)
         {
             choose op.expression
                 when tup: Tuple
@@ -32468,12 +32468,12 @@ define Planner
         ; fires for the intended holder shape, and promotion to the caller
         ; page is the page an escaping interior reference requires.
         ; ================================================================
-        function add_getref_arg(this: Planner, name: String)
+        procedure add_getref_arg(this: Planner, name: String)
         {
             if this.array_contains_name(getref_arg_locals, name) = false
                 getref_arg_locals.add(String^this(name))
         }
-        function add_getref_alias(this: Planner, alias_name: String, recv: String)
+        procedure add_getref_alias(this: Planner, alias_name: String, recv: String)
         {
             getref_alias_names.add(String^this(alias_name))
             getref_alias_receivers.add(String^this(recv))
@@ -32573,7 +32573,7 @@ define Planner
                     0
             ""
         }
-        function scan_getref_ops(this: Planner, ops: Vector[Operand], in_args: bool)
+        procedure scan_getref_ops(this: Planner, ops: Vector[Operand], in_args: bool)
         {
             var i: size_t 0
             while i < ops.length
@@ -32646,7 +32646,7 @@ define Planner
                 set i: i + 1
             }
         }
-        function scan_getref_action(this: Planner, a: Action)
+        procedure scan_getref_action(this: Planner, a: Action)
         {
             ; `set X: RECV.get(i)` — X aliases RECV's element guts.
             if a.target.length = 1
@@ -32666,7 +32666,7 @@ define Planner
             this.scan_getref_ops(a.source, false)
             this.scan_getref_ops(a.target, false)
         }
-        function scan_getref_stmt(this: Planner, s: Statement)
+        procedure scan_getref_stmt(this: Planner, s: Statement)
         {
             choose s
                 when a: Action
@@ -32691,7 +32691,7 @@ define Planner
                 else
                     0
         }
-        function scan_getref_operand(this: Planner, op: Operand, in_args: bool)
+        procedure scan_getref_operand(this: Planner, op: Operand, in_args: bool)
         {
             choose op.expression
                 when tup: Tuple
@@ -32857,7 +32857,7 @@ define Planner
                     0
         }
 
-        function plan_implementation(this: Planner, impl: Implementation) returns PlannedImplementation
+        procedure plan_implementation(this: Planner, impl: Implementation) returns PlannedImplementation
         {
             choose impl
                 when a: Action
@@ -32883,7 +32883,7 @@ define Planner
         ; `origin` (instantiation source) and `scheme` (post-solver
         ; type scheme) remain null for now.
         ; ================================================================
-        function plan_function(
+        procedure plan_function(
             this: Planner,
             f: Function,
             parent: ref[PlannedType]?
@@ -33638,7 +33638,7 @@ define Planner
         ; — page_parameter on the wrapper is left null to avoid the
         ; emit_function_decl page-prepend; the page slot is just a
         ; regular input item.
-        function plan_initializer(
+        procedure plan_initializer(
             this: Planner,
             ini: Initializer,
             parent: ref[PlannedType]?
@@ -33881,7 +33881,7 @@ define Planner
 
         ; plan_deinitializer: Model.DeInitializer → Plan.PlannedDeInitializer.
         ; Even simpler than plan_initializer — no parameters.
-        function plan_deinitializer(
+        procedure plan_deinitializer(
             this: Planner,
             dei: DeInitializer,
             parent: ref[PlannedType]?
@@ -33903,7 +33903,7 @@ define Planner
         ; plan_operator: Model.Operator → Plan.PlannedOperator.
         ; Structurally identical to plan_function modulo the two missing
         ; fields (no `pure`, no `lifetime`).
-        function plan_operator(
+        procedure plan_operator(
             this: Planner,
             op: Operator,
             parent: ref[PlannedType]?
@@ -34106,7 +34106,7 @@ define Planner
         ; within the union; we can't see sibling variants from here).
         ; `mangled_name` is left empty for the same reason as
         ; plan_property.
-        function plan_variant(this: Planner, v: Variant, tag: int) returns PlannedVariant
+        procedure plan_variant(this: Planner, v: Variant, tag: int) returns PlannedVariant
         {
             var var_type: ref[PlannedType]? null
             if v.type <> null
@@ -34136,7 +34136,7 @@ define Planner
         ; deinitializer. mangled_name is built via mangle_structure so
         ; method/operator mangling can reference the parent.
         ; ================================================================
-        function plan_structure(this: Planner, s: Structure, name: String) returns PlannedStructure
+        procedure plan_structure(this: Planner, s: Structure, name: String) returns PlannedStructure
         {
             var planned_props Array[PlannedProperty]()
             var i: size_t 0
@@ -34325,7 +34325,7 @@ define Planner
         ; Skipping methods avoids the planner-side crashes (null this in
         ; check_function_match → String::get_buffer) that would otherwise
         ; happen when walking generic/cross-module method bodies.
-        function plan_structure_layout(this: Planner, s: Structure, name: String) returns PlannedStructure
+        procedure plan_structure_layout(this: Planner, s: Structure, name: String) returns PlannedStructure
             this.plan_structure_layout_opt(s, name, true)
 
         ; plan_structure_layout_opt#: as plan_structure_layout# but with a
@@ -34340,7 +34340,7 @@ define Planner
         ; `ConceptIndex.create#` call to a bare `_Z6createm` and fails to
         ; link). With plan_inits=false the struct stays declare-only here
         ; and the real body is resolved cross-unit at link time.
-        function plan_structure_layout_opt(this: Planner, s: Structure, name: String, plan_inits: bool) returns PlannedStructure
+        procedure plan_structure_layout_opt(this: Planner, s: Structure, name: String, plan_inits: bool) returns PlannedStructure
         {
             var planned_props Array[PlannedProperty]()
             var i: size_t 0
@@ -34455,7 +34455,7 @@ define Planner
         ; definition is a Structure. Skips the Concept if its name is
         ; already in instantiated_structures (avoids duplicate entries
         ; when the same module is also walked by the full planner).
-        function register_struct_layouts_in_module(this: Planner, m: Module)
+        procedure register_struct_layouts_in_module(this: Planner, m: Module)
         {
             var i: size_t 0
             while i < m.members.length
@@ -34492,7 +34492,7 @@ define Planner
         ; register_struct_layouts_in_concept#: if the concept's
         ; definition is a Structure, register its layout. If it's a
         ; Namespace, recurse into namespace members and modules.
-        function register_struct_layouts_in_concept(this: Planner, c: Concept)
+        procedure register_struct_layouts_in_concept(this: Planner, c: Concept)
         {
             ; Only handle parameterless concepts here — generic
             ; structures get planned per-instantiation by the existing
@@ -34568,7 +34568,7 @@ define Planner
         ; ABI-opaque stdlib structs are excluded (is_runtime_opaque_struct) so
         ; the scaly/scalyc/main fixed point stays byte-identical. Generic
         ; concepts are left to instantiate_generic# (parameterless guard).
-        function ensure_member_layout(this: Planner, name: String)
+        procedure ensure_member_layout(this: Planner, name: String)
         {
             if Planner.is_runtime_opaque_struct(name)
                 return
@@ -34651,7 +34651,7 @@ define Planner
         ; Same fixed-point safety as ensure_member_layout#: opaque stdlib
         ; types are excluded, generic concepts are left to instantiate_generic#,
         ; and pinning is to owning_page (persistent plan storage).
-        function ensure_union_layout(this: Planner, name: String)
+        procedure ensure_union_layout(this: Planner, name: String)
         {
             if Planner.is_runtime_opaque_struct(name)
                 return
@@ -34740,7 +34740,7 @@ define Planner
         ; safe for the same reason as the two underlying helpers: scaly/scalyc/
         ; main pass no unplanned cross-package types by value (every in-package
         ; type is already registered → no-op).
-        function ensure_type_layout(this: Planner, t: PlannedType)
+        procedure ensure_type_layout(this: Planner, t: PlannedType)
             this.ensure_layout_by_name(t.name)
 
         ; By-name twin of ensure_type_layout#: lay out whichever kind (struct
@@ -34749,7 +34749,7 @@ define Planner
         ; / generic / unknown (primitives, pointer, ref). Both helpers RECURSE
         ; into the type's by-value constituents (see their bodies), so this also
         ; lays out the whole by-value subgraph reachable from `name`.
-        function ensure_layout_by_name(this: Planner, name: String)
+        procedure ensure_layout_by_name(this: Planner, name: String)
         {
             if name.get_length() = 0
                 return
@@ -34760,7 +34760,7 @@ define Planner
         ; plan_global: Model.Global → Plan.PlannedGlobal.
         ; The `name` comes from the enclosing Concept — Global itself has
         ; no name field.
-        function plan_global(this: Planner, g: Global, name: String) returns PlannedGlobal
+        procedure plan_global(this: Planner, g: Global, name: String) returns PlannedGlobal
         {
             let planned_type this.plan_type(g.type)
             ; Annotation position — see report_unknown_type#. This is the site
@@ -35057,7 +35057,7 @@ define Planner
         ; the namespace path) and the call site mangles without a namespace, so
         ; a namespace operator behaves as a free operator — hence plan it with a
         ; null parent and record it exactly like the top-level case.
-        function record_free_operator(this: Planner, o: Operator, po: PlannedOperator)
+        procedure record_free_operator(this: Planner, o: Operator, po: PlannedOperator)
         {
             var op_has_body: bool false
             choose o.implementation
@@ -35111,7 +35111,7 @@ define Planner
             }
         }
 
-        function plan_namespace(this: Planner, ns: Namespace, name: String) returns PlannedNamespace
+        procedure plan_namespace(this: Planner, ns: Namespace, name: String) returns PlannedNamespace
         {
             ; Build the parent PlannedType that tags every Function /
             ; Operator inside this namespace for mangling. Name alone
@@ -35217,7 +35217,7 @@ define Planner
         ; A bare `plan_module(sub)` call (no `equals("X") = false`
         ; negation) avoids the stage-0 codegen SEGV that originally
         ; motivated the positive-enumeration allowlist.
-        function plan_namespace_module_one(rp, this: Planner, sub: Module)
+        procedure plan_namespace_module_one(rp, this: Planner, sub: Module)
         {
             ; Walk EVERY sub-module of the namespace being compiled.
             ; Only the COMPILATION ROOT package's namespace modules reach
@@ -35256,7 +35256,7 @@ define Planner
         ; return into plan_namespace#'s own struct construction
         ; corrupts the frame on stage-0 codegen (session-43 pattern);
         ; the helper isolates the call.
-        function plan_namespace_modules(rp, this: Planner, ns: Namespace)
+        procedure plan_namespace_modules(rp, this: Planner, ns: Namespace)
         {
             var mi: size_t 0
             while mi < ns.modules.length
@@ -35277,7 +35277,7 @@ define Planner
         ; (`let p get x` inside a method) so s135 doesn't mis-peel the
         ; method name as a type. A FIELD named `name` is not a method, so
         ; this stays false for casts like `data as pointer[u8]`.
-        function has_this_method(this: Planner, name: String) returns bool
+        procedure has_this_method(this: Planner, name: String) returns bool
         {
             let this_ref this.lookup_local("this")
             if this_ref = null
@@ -35344,7 +35344,7 @@ define Planner
         ; is a Namespace, recurse into the namespace's members so inner
         ; Concepts / Functions / Operators are all visible by
         ; unqualified name during later planning.
-        function register_concept_recursive(this: Planner, c: Concept)
+        procedure register_concept_recursive(this: Planner, c: Concept)
         {
             this.register_concept(c)
             ; Use-visibility stage 1: members registered while descending
@@ -35467,7 +35467,7 @@ define Planner
         ; later in the file). Recurses into sub-modules and into
         ; namespace-shaped concepts so deeply nested definitions are
         ; reachable by their short name.
-        function register_module_concepts(this: Planner, m: Module)
+        procedure register_module_concepts(this: Planner, m: Module)
         {
             ; Use-visibility stage 1: switch the registration context so
             ; register_concept records each concept's origin, then record
@@ -35547,7 +35547,7 @@ define Planner
         ; module's tree, then plan sub-modules and members. This makes
         ; forward references resolve — `struct A { b: B }` works even
         ; when B is defined later in the same module.
-        function plan_module(this: Planner, m: Module) returns PlannedModule
+        procedure plan_module(this: Planner, m: Module) returns PlannedModule
         {
             ; Track the current source file for diagnostics (mirrors stage-0
             ; planModule: `OldFile = File; if (!Mod.File.empty()) File = Mod.File`).
@@ -35717,7 +35717,7 @@ define Planner
             concept_origin_files.get i
         }
 
-        function plan_concept(this: Planner, c: Concept) returns PlannedConcept
+        procedure plan_concept(this: Planner, c: Concept) returns PlannedConcept
         {
             ; s107: generic data-class concepts (Structure with no
             ; members/initializers) defer body planning to
@@ -35794,7 +35794,7 @@ define Planner
         ; walks registered Concept Structures' property lists when
         ; the name is a struct. Default 8 (matches the catch-all in
         ; get_primitive_alignment for unknown names).
-        function compute_payload_size(this: Planner, name: String) returns size_t
+        procedure compute_payload_size(this: Planner, name: String) returns size_t
         {
             var size: size_t Planner.get_primitive_alignment(name)
             if name = "Vector"
@@ -35947,7 +35947,7 @@ define Planner
         ; plan_union: Model.Union → Plan.PlannedUnion.
         ; Similar scope to plan_structure: plans variants and computes
         ; size/alignment; skips methods/operators for now.
-        function plan_union(this: Planner, u: scalyc.compiler.Model.Union, name: String) returns scalyc.compiler.Plan.PlannedUnion
+        procedure plan_union(this: Planner, u: scalyc.compiler.Model.Union, name: String) returns scalyc.compiler.Plan.PlannedUnion
             this.plan_union_opt(u, name, true)
 
         ; plan_union_opt#: as plan_union# with a `plan_methods` switch. The
@@ -35957,7 +35957,7 @@ define Planner
         ; right offset), but NOT the union's methods/operators — those
         ; belong to the union's own package's object (same reasoning as
         ; plan_structure_layout_opt#).
-        function plan_union_opt(this: Planner, u: scalyc.compiler.Model.Union, name: String, plan_methods: bool) returns scalyc.compiler.Plan.PlannedUnion
+        procedure plan_union_opt(this: Planner, u: scalyc.compiler.Model.Union, name: String, plan_methods: bool) returns scalyc.compiler.Plan.PlannedUnion
         {
             var planned_vs Array[PlannedVariant]()
             var tag: int 0
@@ -36101,7 +36101,7 @@ define Planner
         ; are left null — the per-kind planned data lives inside the
         ; PlannedModule tree for now. The separate caches come online
         ; once the instantiate-generic pass is ported.
-        function plan_program(this: Planner, prog: Program) returns ref[Plan]?
+        procedure plan_program(this: Planner, prog: Program) returns ref[Plan]?
         {
             ; Stash the program's main-module Use aliases up front
             ; so the dotted-call extern-decl gate can consult them
@@ -36202,7 +36202,7 @@ define Planner
 
         ; Collect every Function member of a concept (struct/union) into acc.
         ; Mirrors collect_methods_in# but takes no name filter.
-        function gather_member_functions(this: Planner, members: Vector[Member], acc: ref[Array[Function]])
+        procedure gather_member_functions(this: Planner, members: Vector[Member], acc: ref[Array[Function]])
         {
             var i: size_t 0
             while i < members.length
@@ -36233,7 +36233,7 @@ define Planner
         ; void dispatcher cluster. NEUTRAL on the sigiled source: every function
         ; added is still `#` there (it forwards rp today), so has_page is
         ; unchanged; the set only matters once the explicit `#`/rp is removed.
-        function build_transitive_page_set(this: Planner)
+        procedure build_transitive_page_set(this: Planner)
         {
             var all Array[Function]()
             ; parallel to `all`: the name of the concept a function is a member
@@ -42032,7 +42032,7 @@ define Planner
     ; the whole parameter list here, `this` aside, because a member function's
     ; explicit page sits at index 1 (takes_explicit_page_arg, which keys the
     ; name-based fallback veto, only ever saw index 0).
-    function ret_page_func_needs(pl: Planner, f: Function) returns bool
+    procedure ret_page_func_needs(pl: Planner, f: Function) returns bool
     {
         var i: size_t 0
         while i < f.input.length
@@ -42576,7 +42576,7 @@ define Planner
     ; decide over the functions named `method` among these members:
     ;   1 = needs our page, 0 = does not, -1 = no such member, or the overload set
     ;       disagrees even after the arity filter (then the caller falls back).
-    function ret_page_members_decision(pl: Planner, members: Vector[Member], method: String, argc: size_t) returns int
+    procedure ret_page_members_decision(pl: Planner, members: Vector[Member], method: String, argc: size_t) returns int
     {
         var yes: size_t 0
         var no: size_t 0
@@ -42634,7 +42634,7 @@ define Planner
         0
     }
 
-    function ret_page_concept_decision(pl: Planner, concept_name: String, method: String, argc: size_t) returns int
+    procedure ret_page_concept_decision(pl: Planner, concept_name: String, method: String, argc: size_t) returns int
     {
         let cr pl.lookup_concept_any(concept_name)
         if cr = null
@@ -42653,7 +42653,7 @@ define Planner
     ; the same decision over the FREE functions of that name (a bare `f(x)`).
     ; Walks the registry's hash chain in place — building a Vector of matches here
     ; would allocate on the pre-pass frame once per call site per fixpoint round.
-    function ret_page_functions_decision(pl: Planner, name: String, argc: size_t) returns int
+    procedure ret_page_functions_decision(pl: Planner, name: String, argc: size_t) returns int
     {
         var yes: size_t 0
         var no: size_t 0
@@ -42743,7 +42743,7 @@ define Planner
 
     ; resolve `path(argc args)` to the function it actually calls and answer its
     ; page-need: 1 yes, 0 no, -1 not resolvable here.
-    function ret_page_resolve_call(pl: Planner, owner: ref[String]?, func: Function, scope: Vector[Statement], path: Vector[String], argc: size_t) returns int
+    procedure ret_page_resolve_call(pl: Planner, owner: ref[String]?, func: Function, scope: Vector[Statement], path: Vector[String], argc: size_t) returns int
     {
         let n path.length
         if n = 0
@@ -42784,7 +42784,7 @@ define Planner
     ; name), or the LAST member_access segment when the call rides a hop off a
     ; non-name primary (`(*p).m(...)`). A head carrying a lifetime marker is a
     ; CONSTRUCTION, not a plain call, and is left to body_has_call_lifetime.
-    function ret_page_call_head(pl: Planner, owner: ref[String]?, func: Function, scope: Vector[Statement], op: Operand, argc: size_t) returns bool
+    procedure ret_page_call_head(pl: Planner, owner: ref[String]?, func: Function, scope: Vector[Statement], op: Operand, argc: size_t) returns bool
     {
         if op.member_access <> null
         {
@@ -42842,7 +42842,7 @@ define Planner
     }
 
     ; find `let`/`var name <ops>` in this block and test its initializer.
-    function ret_page_binding(pl: Planner, owner: ref[String]?, func: Function, scope: Vector[Statement], name: String, depth: int) returns bool
+    procedure ret_page_binding(pl: Planner, owner: ref[String]?, func: Function, scope: Vector[Statement], name: String, depth: int) returns bool
     {
         var i: size_t 0
         while i < scope.length
@@ -42907,7 +42907,7 @@ define Planner
         len
     }
 
-    function ret_page_ops_tail(pl: Planner, owner: ref[String]?, func: Function, ops: Vector[Operand], scope: Vector[Statement], depth: int) returns bool
+    procedure ret_page_ops_tail(pl: Planner, owner: ref[String]?, func: Function, ops: Vector[Operand], scope: Vector[Statement], depth: int) returns bool
     {
         if ops.length = 0
             return false
@@ -43003,7 +43003,7 @@ define Planner
         false
     }
 
-    function ret_page_stmt_tail(pl: Planner, owner: ref[String]?, func: Function, s: Statement, scope: Vector[Statement], depth: int) returns bool
+    procedure ret_page_stmt_tail(pl: Planner, owner: ref[String]?, func: Function, s: Statement, scope: Vector[Statement], depth: int) returns bool
     {
         choose s
             when a: Action
@@ -43020,7 +43020,7 @@ define Planner
 
     ; a block's return positions: every explicit `return` anywhere inside it, plus
     ; its LAST statement (the tail).
-    function ret_page_stmts_tail(pl: Planner, owner: ref[String]?, func: Function, stmts: Vector[Statement], depth: int) returns bool
+    procedure ret_page_stmts_tail(pl: Planner, owner: ref[String]?, func: Function, stmts: Vector[Statement], depth: int) returns bool
     {
         if Planner.ret_page_stmts_returns(pl, owner, func, stmts, depth)
             return true
@@ -43036,7 +43036,7 @@ define Planner
     ; the explicit-`return` walk: every Return in the body, however deeply nested.
     ; Non-tail statements are descended into ONLY to find those returns — their own
     ; values are not return positions.
-    function ret_page_stmts_returns(pl: Planner, owner: ref[String]?, func: Function, stmts: Vector[Statement], depth: int) returns bool
+    procedure ret_page_stmts_returns(pl: Planner, owner: ref[String]?, func: Function, stmts: Vector[Statement], depth: int) returns bool
     {
         var i: size_t 0
         while i < stmts.length
@@ -43050,7 +43050,7 @@ define Planner
         false
     }
 
-    function ret_page_stmt_returns(pl: Planner, owner: ref[String]?, func: Function, s: Statement, scope: Vector[Statement], depth: int) returns bool
+    procedure ret_page_stmt_returns(pl: Planner, owner: ref[String]?, func: Function, s: Statement, scope: Vector[Statement], depth: int) returns bool
     {
         choose s
             when r: Return
@@ -43073,7 +43073,7 @@ define Planner
         false
     }
 
-    function ret_page_ops_returns(pl: Planner, owner: ref[String]?, func: Function, ops: Vector[Operand], depth: int) returns bool
+    procedure ret_page_ops_returns(pl: Planner, owner: ref[String]?, func: Function, ops: Vector[Operand], depth: int) returns bool
     {
         var i: size_t 0
         while i < ops.length
@@ -43137,7 +43137,7 @@ define Planner
     ; entry point: does this function return the result of a page-needing call?
     ; `owner` names the concept it is a member of (EMPTY for a free function) —
     ; the anchor for receiver-type resolution.
-    function body_returns_page_needing_call(pl: Planner, owner: ref[String]?, func: Function) returns bool
+    procedure body_returns_page_needing_call(pl: Planner, owner: ref[String]?, func: Function) returns bool
     {
         if Planner.is_extern_impl(func.implementation)
             return false
@@ -43435,7 +43435,7 @@ define Planner
         scaly_eputs "\n"
     }
 
-    function function_needs_caller_page(pl: Planner, func: Function) returns bool
+    procedure function_needs_caller_page(pl: Planner, func: Function) returns bool
     {
         ; ★A TYPE ALIAS in the return position (`define NICRef pointer[NIC]`)
         ; is resolved to its target BEFORE any of the seven rules reads
