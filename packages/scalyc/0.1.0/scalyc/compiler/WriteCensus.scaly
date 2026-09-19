@@ -2360,6 +2360,55 @@ define WriteCensus
             this.summary_index(WriteCensus.purity_key(call.name, n_args))
         }
 
+        ; After the gate passed: every stub of another package's body carries
+        ; its declaration's keyword into the plan. The planner records a stub
+        ; as a procedure whatever it calls, so without this the TaskPlanner
+        ; could trust `function` only for bodies it can see. An overloaded
+        ; key counts as a function only if every overload is one.
+        procedure mark_stub_purity(this: WriteCensus, mutable plan: Plan)
+        {
+            if plan.functions = null
+                return
+            let fns plan.functions as ref[Vector[PlannedFunction]]
+            var i: size_t 0
+            while i < fns.length
+            {
+                let f_ptr fns.get i
+                set i: i + 1
+                if f_ptr = null
+                    continue
+                let f f_ptr.unwrap()
+                if f.pure
+                    continue
+                var stub false
+                choose f.impl
+                    when e: Extern
+                        set stub: true
+                    else
+                        0
+                if stub = false
+                    continue
+                if f.mangled_name.starts_with(String("_Z")) = false
+                    continue
+                var n_in: size_t 0
+                if f.input <> null
+                    set n_in: f.input.length
+                var row: size_t 0
+                let owner WriteCensus.mangled_owner(f.mangled_name)
+                if owner.get_length() > 0
+                    set row: this.summary_index(WriteCensus.owned_key(owner, f.name, n_in))
+                if row = 0
+                    set row: this.summary_index(WriteCensus.purity_key(f.name, n_in))
+                if row = 0
+                    continue
+                if sum_masks[row - 1] <> (1 as u64)
+                    continue
+                var g f
+                set g.pure: true
+                fns.put(i - 1, g)
+            }
+        }
+
         function owned_key(owner: String, name: String, arity: size_t) returns String
         {
             var sb StringBuilder()

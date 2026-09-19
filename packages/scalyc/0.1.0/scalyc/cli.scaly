@@ -639,6 +639,7 @@ define cli
                     cli.print_located("", &purity_gate.report_files, &purity_gate.report_offsets, &purity_gate.report_texts)
                     return 4
                 }
+                purity_gate.mark_stub_purity(plan)
             }
         }
 
