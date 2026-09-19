@@ -14,7 +14,7 @@
 ; silently fails where no \tmp directory exists. Both writers unlink at the
 ; end; a run that dies early leaves one small file behind.
 
-procedure reader_task() io
+procedure reader_task()
 {
     let path String("scaly_m25_reclaim.tmp")
     let back File.read_to_string(path)
@@ -23,7 +23,7 @@ procedure reader_task() io
         exit 5
 }
 
-procedure thread_entry(arg: pointer[void]) returns pointer[void] io
+procedure thread_entry(arg: pointer[void]) returns pointer[void]
 {
     var page Page.allocate_page()
     let sched Scheduler.create(page)

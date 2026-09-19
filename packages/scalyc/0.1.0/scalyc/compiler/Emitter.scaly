@@ -449,7 +449,7 @@ define Emitter
         ; ========================================================================
 
         ; Initialize the emitter (create LLVM context, builder, etc.)
-        procedure initialize(mutable this, mutable module_name: String) io
+        procedure initialize(mutable this, mutable module_name: String)
         {
             ; Create LLVM context (or adopt the JIT ThreadSafeContext's context).
             if has_external_context
@@ -488,7 +488,7 @@ define Emitter
         ; TargetMachine and copy its DataLayout string onto the module. Best
         ; effort: on any failure the module keeps no layout — the llc path
         ; still works exactly as before.
-        procedure apply_target_layout(mutable this) io
+        procedure apply_target_layout(mutable this)
         {
             LLVMInitializeAArch64TargetInfo()
             LLVMInitializeAArch64Target()
@@ -6679,7 +6679,7 @@ define Emitter
             func.name.starts_with("test_")
         }
 
-        procedure emit(mutable this, mutable plan: Plan, mutable module_name: String) returns bool io
+        procedure emit(mutable this, mutable plan: Plan, mutable module_name: String) returns bool
         {
             initialize(module_name)
             set current_plan: plan
@@ -7302,7 +7302,7 @@ define Emitter
         ; symbol in that set must NOT be stubbed — the ORC object linker resolves
         ; it to the real dependency body; a null-returning stub here would shadow
         ; it (the old jit_dep_bodies false-pass). Everything else is unchanged.
-        procedure emit_jit_stubs(mutable this, dep_symbols: ref[Array[String]]) io
+        procedure emit_jit_stubs(mutable this, dep_symbols: ref[Array[String]])
         {
             ; Skip symbols the host process already exports so the ORC process
             ; generator can resolve the REAL function (see the per-symbol note
@@ -7407,7 +7407,7 @@ define Emitter
         ; Print an ORC/LLVM error (a non-null LLVMErrorRef) and consume it.
         ; LLVMGetErrorMessage itself consumes the error and yields a C string the
         ; caller must dispose; do NOT also call LLVMConsumeError.
-        procedure report_jit_error(this, mutable err: LLVMErrorRef, ctx: Slice[char]) io
+        procedure report_jit_error(this, mutable err: LLVMErrorRef, ctx: Slice[char])
         {
             write(1, ctx.data as pointer[void], ctx.length)
             Console.println("")
@@ -7438,7 +7438,7 @@ define Emitter
         ; the emitter crashed on them). dep_object_symbols: the mangled names those
         ; objects define, so emit_jit_stubs leaves them as declarations. Both null
         ; when the program has no non-scaly dependencies (behavior unchanged).
-        procedure jit_run(mutable this, mutable plan: Plan, mutable module_name: String, mutable fn_mangled: String, mutable dep_object_files: ref[Array[String]]?, dep_object_symbols: ref[Array[String]]) returns i64 io
+        procedure jit_run(mutable this, mutable plan: Plan, mutable module_name: String, mutable fn_mangled: String, mutable dep_object_files: ref[Array[String]]?, dep_object_symbols: ref[Array[String]]) returns i64
         {
             let tsc LLVMOrcCreateNewThreadSafeContext()
             let jit_ctx LLVMOrcThreadSafeContextGetContext(tsc)
@@ -7611,7 +7611,7 @@ define Emitter
         ; The extra copy (print-to-string, then write) is what it costs: ~18 MB for
         ; the compiler's own module, against a build that already works in
         ; hundreds. `-c` is untouched — an object file has no line endings.
-        procedure write_module_to_file(mutable this, filename: String) returns bool io
+        procedure write_module_to_file(mutable this, filename: String) returns bool
         {
             let ir LLVMPrintModuleToString(llvm_module)
             if ir = null
@@ -7623,7 +7623,7 @@ define Emitter
         }
 
         ; Write bitcode to file
-        procedure write_bitcode_to_file(mutable this, mutable filename: String) returns bool io
+        procedure write_bitcode_to_file(mutable this, mutable filename: String) returns bool
         {
             let c_name filename.to_c_string()
             let result LLVMWriteBitcodeToFile(llvm_module, c_name)
@@ -7632,7 +7632,7 @@ define Emitter
 
         ; Write native object file via host target machine.
         ; LLVMObjectFile codegen type = 1. Reloc=PIC(2), OptLevel=None(0).
-        procedure write_object_to_file(mutable this, mutable filename: String) returns bool io
+        procedure write_object_to_file(mutable this, mutable filename: String) returns bool
         {
             ; Initialize both AArch64 and X86 backends so stage-1 runs on arm64
             ; macOS and x86_64 Linux. LLVMInitializeNativeTarget is a static-inline
@@ -19563,7 +19563,7 @@ define Emitter
     ; Test function
     ; ============================================================================
 
-    procedure test() returns int io mutable modeler_error_count
+    procedure test() returns int mutable modeler_error_count
     {
         ; Test EmitterConfig initialization
         let config EmitterConfig()

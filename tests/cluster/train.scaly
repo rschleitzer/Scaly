@@ -134,7 +134,7 @@ function parse_int(s: pointer[const_char]) returns int
     v
 }
 
-procedure env_int(name: pointer[const_char], dflt: int) returns int io
+procedure env_int(name: pointer[const_char], dflt: int) returns int
 {
     let e getenv(name)
     if e = null

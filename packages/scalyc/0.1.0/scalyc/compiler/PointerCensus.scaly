@@ -264,7 +264,7 @@ define PointerCensus
         ; Entry point: declarations over the module tree, then every
         ; planned body plus the program's top-level statements.
         ; ================================================================
-        procedure analyze(mutable this: PointerCensus, plan: Plan, model: ref[Program], entry_file: String) io
+        procedure analyze(mutable this: PointerCensus, plan: Plan, model: ref[Program], entry_file: String)
         {
             this.walk_model_module(model.module_)
             var pi: size_t 0
@@ -1345,7 +1345,7 @@ define PointerCensus
         }
 
         ; The text of the i-th remembered file, read on first use.
-        procedure source_of(mutable this: PointerCensus, i: size_t) returns ref[String]? io
+        procedure source_of(mutable this: PointerCensus, i: size_t) returns ref[String]?
         {
             let loaded src_loaded.get i
             if loaded = null
@@ -1418,7 +1418,7 @@ define PointerCensus
         ; instantiated by this root) names a file outside this root's module
         ; tree; it is remembered here on first sight, so its sites are
         ; reported under their true file and the sweep's union dedupes them.
-        procedure resolve_body_file(mutable this: PointerCensus, func: PlannedFunction) returns String io
+        procedure resolve_body_file(mutable this: PointerCensus, func: PlannedFunction) returns String
         {
             this.remember_file(func.file)
             var i: size_t 0

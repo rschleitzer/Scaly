@@ -7,7 +7,7 @@
 ; the teardown proof is the freed-bucket counter: one region per task).
 ; Expected: a b c a b c a b c done freed
 
-procedure worker_a() io
+procedure worker_a()
 {
     var i 0
     while i < 3
@@ -24,7 +24,7 @@ procedure worker_a() io
     }
 }
 
-procedure worker_b() io
+procedure worker_b()
 {
     var i 0
     while i < 3
@@ -41,7 +41,7 @@ procedure worker_b() io
     }
 }
 
-procedure worker_c() io
+procedure worker_c()
 {
     var i 0
     while i < 3

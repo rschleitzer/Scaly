@@ -24,7 +24,7 @@ function body_panics(arg: pointer[void]) returns i64
 function body_ok(arg: pointer[void]) returns i64
     trapper(0)
 
-procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int io
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
 {
     ; (1) before the first trap the counter reads 0
     if Region.panic_oob_count() <> 0

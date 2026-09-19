@@ -16,7 +16,7 @@ define Msg
 
 mutable chan: pointer[void] null
 
-procedure producer() io mutable chan
+procedure producer() mutable chan
 {
     let c chan as pointer[Channel]
     ; region-allocate inside the fiber so dispose has something to free

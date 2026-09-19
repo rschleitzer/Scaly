@@ -16,7 +16,7 @@ function close(fd: i32) returns i32 extern
 mutable listen_fd: int 0
 mutable server_port: int 0
 
-procedure server() io
+procedure server()
 {
     let cfd Io.accept(listen_fd as i32)
     if cfd = ((0 - 1) as i32)
@@ -43,7 +43,7 @@ procedure server() io
     close(cfd)
 }
 
-procedure client() io
+procedure client()
 {
     let fd Io.connect(server_port as i32)
     if fd = ((0 - 1) as i32)

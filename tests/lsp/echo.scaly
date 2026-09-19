@@ -9,7 +9,7 @@ package scalyls 0.1.0
 use scaly.containers.String
 use scalyls.rpc
 
-procedure run() io
+procedure run()
 {
     while true
     {

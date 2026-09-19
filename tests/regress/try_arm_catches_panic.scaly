@@ -27,7 +27,7 @@ function deep(n: i64) returns i64
     (s.get_length() as i64)
 }
 
-procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int io
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
 {
     var vor 100
     set vor: vor + argc

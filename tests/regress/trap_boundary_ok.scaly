@@ -3,7 +3,7 @@
 ; Fixture-Muster IMMER trappt -- ein Pruefer, der nicht auch bestehen kann,
 ; beweist nichts. Erwartet: PASS.
 
-procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int io
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
 {
     let last (argc as size_t) - 1        ; argc = 1 -> Index 0
 

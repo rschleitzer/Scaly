@@ -18,7 +18,7 @@ define Msg
 mutable box: pointer[void] null
 mutable total: i64 0
 
-procedure receiver() io mutable box, total
+procedure receiver() mutable box, total
 {
     let m box as pointer[Channel]
     var running true
@@ -41,7 +41,7 @@ procedure receiver() io mutable box, total
     }
 }
 
-procedure sender(mutable arg: pointer[void]) returns pointer[void] io
+procedure sender(mutable arg: pointer[void]) returns pointer[void]
 {
     let m arg as pointer[Channel]
     var i 1

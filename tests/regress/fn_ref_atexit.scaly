@@ -6,17 +6,17 @@
 
 procedure atexit(cb: pointer[void]) returns int extern
 
-procedure on_exit_handler() io
+procedure on_exit_handler()
 {
     print "PASS"
 }
 
-procedure unary_cb(data: pointer[void]) io
+procedure unary_cb(data: pointer[void])
 {
     print "unary"
 }
 
-procedure check(p: pointer[void]) io
+procedure check(p: pointer[void])
 {
     if p = null
         print "FAIL null fn ref"

@@ -41,7 +41,7 @@ function num_to_string(n: i64) returns String
     sb.to_string()
 }
 
-procedure report(tag: pointer[const_char], value: i64, unit: pointer[const_char]) io
+procedure report(tag: pointer[const_char], value: i64, unit: pointer[const_char])
 {
     var sb StringBuilder()
     var lbl String(tag)
@@ -54,7 +54,7 @@ procedure report(tag: pointer[const_char], value: i64, unit: pointer[const_char]
     Console.println(line.to_c_string())
 }
 
-procedure read_exact(fd: i32, buf: pointer[void], count: size_t) returns bool io
+procedure read_exact(fd: i32, buf: pointer[void], count: size_t) returns bool
 {
     var done 0 as size_t
     while done < count
@@ -96,7 +96,7 @@ procedure map_addr(a: size_t) returns size_t
 
 ; Swizzle one pointer slot in place; a nonnull unmapped value is a
 ; hard fail — the region was NOT closed.
-procedure fix_ptr(addr: size_t) io
+procedure fix_ptr(addr: size_t)
 {
     let slot addr as pointer[size_t]
     let old *slot

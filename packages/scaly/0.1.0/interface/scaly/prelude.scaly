@@ -1,12 +1,12 @@
 ; Scaly Prelude - automatically loaded unless --no-prelude is specified
 ; Provides common functions for scripting and REPL use
 
-procedure println(msg: pointer[i8]) returns int io
+procedure println(msg: pointer[i8]) returns int
 {
     puts msg
 }
 
-procedure print(msg: pointer[i8]) returns int io
+procedure print(msg: pointer[i8]) returns int
 {
     puts msg
 }

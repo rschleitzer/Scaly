@@ -14,7 +14,7 @@ define Msg
 
 mutable chan: pointer[void] null
 
-procedure sender(mutable arg: pointer[void]) returns pointer[void] io
+procedure sender(mutable arg: pointer[void]) returns pointer[void]
 {
     let c arg as pointer[Channel]
     var i 1

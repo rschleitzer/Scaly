@@ -943,7 +943,7 @@ define TaskFn delegate() returns void
 ; The fiber entry of every scheduled task: wraps the started/finish
 ; protocol around an indirect call of the task's own procedure. The
 ; dispatcher stores the task into current_task before resuming.
-procedure scheduler_entry(first_ctx: pointer[void]) io linked
+procedure scheduler_entry(first_ctx: pointer[void]) linked
 
 
 

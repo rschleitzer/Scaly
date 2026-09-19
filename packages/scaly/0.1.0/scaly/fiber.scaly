@@ -493,7 +493,7 @@ procedure deadlock_event()
 ; dead, freed by their last release_page from any thread). Outside the
 ; user entry this frame must stay allocation-free — after the reclaim
 ; there is no allocator left to allocate from.
-procedure scaly_thread_start(mutable raw: pointer[void]) returns pointer[void] io
+procedure scaly_thread_start(mutable raw: pointer[void]) returns pointer[void]
 {
     let cell raw as pointer[size_t]
     let fn_v *cell
@@ -943,7 +943,7 @@ define TaskFn delegate() returns void
 ; The fiber entry of every scheduled task: wraps the started/finish
 ; protocol around an indirect call of the task's own procedure. The
 ; dispatcher stores the task into current_task before resuming.
-procedure scheduler_entry(first_ctx: pointer[void]) io
+procedure scheduler_entry(first_ctx: pointer[void])
 {
     Fiber.started first_ctx
     let f current_task as TaskFn
@@ -1170,7 +1170,7 @@ define Scheduler
     ; every parked task whose readiness arrived (requeue, unblock).
     ; Returns true when the main context's own event (null tag) fired.
     ; Only ever runs on the main context (the dispatcher).
-    procedure poll_io() returns bool io
+    procedure poll_io() returns bool
     {
         let s current_scheduler as ref[Scheduler]
         var tagbuf u8[512]
@@ -1254,7 +1254,7 @@ define Scheduler
     ; Returns false only when nothing can run again without outside
     ; help — the caller decides whether remaining blocked tasks make
     ; that a deadlock.
-    procedure step_or_wait() returns bool io
+    procedure step_or_wait() returns bool
     {
         if Scheduler.step()
             return true
@@ -1290,7 +1290,7 @@ define Scheduler
     ; Round-robin over the ready queue until it drains, blocking in the
     ; poller while I/O waiters remain. Traps (exit 106) if tasks are
     ; still blocked then — a join/channel deadlock.
-    procedure run() io
+    procedure run()
     {
         while Scheduler.step_or_wait()
         {
@@ -1305,7 +1305,7 @@ define Scheduler
     ; then — it only frees when a caller disposed nothing yet). From
     ; the main context this drives the dispatcher itself; from inside a
     ; task it blocks on t's waiter chain and yields to the dispatcher.
-    procedure join(mutable t: ref[SchedTask]) returns int io
+    procedure join(mutable t: ref[SchedTask]) returns int
     {
         let me current_task as ref[SchedTask]?
         if me = null
@@ -1394,7 +1394,7 @@ define IoPool
 ; operation, on this worker's own thread-local allocator; a result
 ; lives on its own heap page, freed cross-thread by the requester
 ; (safe since milestone 2.3). The loop never returns.
-procedure io_worker(mutable arg: pointer[void]) returns pointer[void] io
+procedure io_worker(mutable arg: pointer[void]) returns pointer[void]
 {
     let pl arg as ref[IoPool]
     repeat
@@ -1437,7 +1437,7 @@ define Io
     ; The current scheduler's poller fd, created lazily on first use.
     ; (i32-to-i64 casts zero-extend, so a sign test must compare against
     ; -1 as i32 — the shim's failure value — not cast and check < 0.)
-    procedure ensure_poll() returns i32 io
+    procedure ensure_poll() returns i32
     {
         let s current_scheduler as ref[Scheduler]
         var q s.eio
@@ -1465,7 +1465,7 @@ define Io
     ; 1 — poll_io recognizes it as "drain the inject queue / re-check
     ; the channel" (0 stays the main context's own-event tag, real
     ; pointers stay Io-parked tasks).
-    procedure ensure_wake() returns i32 io
+    procedure ensure_wake() returns i32
     {
         let q Io.ensure_poll()
         let s current_scheduler as ref[Scheduler]
@@ -1484,7 +1484,7 @@ define Io
 
     ; Put the fd into nonblocking mode (fcntl lives in the shim: it is
     ; variadic in libc, unreachable through a fixed-prototype extern).
-    procedure set_nonblocking(fd: i32) io
+    procedure set_nonblocking(fd: i32)
     {
         let rc scaly_eio_set_nonblocking(fd)
         if rc <> 0
@@ -1495,7 +1495,7 @@ define Io
     ; poll(2) on one fd, infinite timeout. The result is advisory — the
     ; caller retries its syscall, which reports any hard error itself
     ; (an EINTR or POLLNVAL just loops through one more retry).
-    procedure wait_ready(fd: i32, for_write: bool) io
+    procedure wait_ready(fd: i32, for_write: bool)
     {
         var pfd u8[8]
         set *(pfd as pointer[i32]): fd
@@ -1515,7 +1515,7 @@ define Io
     ; with a null tag and drives the dispatcher until its event fires,
     ; running ready tasks first (mirrors a main-context join). Without
     ; any scheduler (milestone 2.5) the wait is a plain poll(2).
-    procedure park(fd: i32, for_write: bool) io
+    procedure park(fd: i32, for_write: bool)
     {
         if current_scheduler = null
         {
@@ -1564,7 +1564,7 @@ define Io
 
     ; Read up to count bytes; suspends while the fd has nothing to
     ; offer. Returns the byte count, 0 at EOF, -1 on a hard error.
-    procedure read(fd: i32, mutable buf: pointer[void], count: size_t) returns i64 io
+    procedure read(fd: i32, mutable buf: pointer[void], count: size_t) returns i64
     {
         var r scaly_eio_read(fd, buf, count)
         while r = ((0 - 2) as i64)
@@ -1578,7 +1578,7 @@ define Io
     ; Write up to count bytes; suspends while the fd cannot take data.
     ; Returns the byte count written (partial writes possible), -1 on a
     ; hard error.
-    procedure write(fd: i32, mutable buf: pointer[void], count: size_t) returns i64 io
+    procedure write(fd: i32, mutable buf: pointer[void], count: size_t) returns i64
     {
         var r scaly_eio_write(fd, buf, count)
         while r = ((0 - 2) as i64)
@@ -1593,17 +1593,17 @@ define Io
     ; kernel for an ephemeral port; Io.local_port reads the assignment).
     ; Returns the fd, -1 on failure. Socket setup lives in the shim:
     ; sockaddr_in's layout is OS-specific.
-    procedure listen(port: i32) returns i32 io
+    procedure listen(port: i32) returns i32
         scaly_eio_tcp_listen(port)
 
     ; The local port a bound socket ended up on (-1 on failure).
-    procedure local_port(fd: i32) returns i32 io
+    procedure local_port(fd: i32) returns i32
         scaly_eio_tcp_port(fd)
 
     ; Connect to 127.0.0.1:port — blocking handshake (instant against a
     ; live local listener); call Io.set_nonblocking on the result before
     ; suspending I/O. Returns the fd, -1 on failure.
-    procedure connect(port: i32) returns i32 io
+    procedure connect(port: i32) returns i32
         scaly_eio_tcp_connect(port)
 
     ; Accept a connection; suspends while none is pending (readiness on
@@ -1611,7 +1611,7 @@ define Io
     ; blocking — Io.set_nonblocking it for suspending I/O), -1 on a
     ; hard error. (Sign tests on i32 must compare against -1 as i32:
     ; casts zero-extend.)
-    procedure accept(fd: i32) returns i32 io
+    procedure accept(fd: i32) returns i32
     {
         var r scaly_eio_accept(fd)
         while r = ((0 - 2) as i32)
@@ -1625,20 +1625,20 @@ define Io
     ; Listen on ALL interfaces (INADDR_ANY) — a cluster node accepting
     ; real remote peers (stage 7, milestone 7.3). Same contract as
     ; Io.listen otherwise.
-    procedure listen_any(port: i32) returns i32 io
+    procedure listen_any(port: i32) returns i32
         scaly_eio_tcp_listen_any(port)
 
     ; Resolve host by NAME (getaddrinfo in the shim, rule a) and
     ; connect — blocking handshake like Io.connect. host must be
     ; NUL-terminated (String.to_c_string). Returns the fd, -1 on
     ; failure (resolution or connection).
-    procedure connect_host(mutable host: pointer[const_char], port: i32) returns i32 io
+    procedure connect_host(mutable host: pointer[const_char], port: i32) returns i32
         scaly_eio_tcp_connect_host(host, port)
 
     ; SIGPIPE-safe socket write (stage 7): a write racing a peer's death
     ; must return -1/EPIPE, never kill the process. Suspension contract
     ; of Io.write otherwise.
-    procedure tcp_write(fd: i32, mutable buf: pointer[void], count: size_t) returns i64 io
+    procedure tcp_write(fd: i32, mutable buf: pointer[void], count: size_t) returns i64
     {
         var r scaly_eio_tcp_write(fd, buf, count)
         while r = ((0 - 2) as i64)
@@ -1652,7 +1652,7 @@ define Io
     ; Whole-buffer variant of tcp_write (the Node frame writer). False
     ; on a hard error — the caller treats that as peer suspicion, not a
     ; program error.
-    procedure tcp_write_all(fd: i32, buf: pointer[void], count: size_t) returns bool io
+    procedure tcp_write_all(fd: i32, buf: pointer[void], count: size_t) returns bool
     {
         var done: size_t 0
         while done < count
@@ -1669,7 +1669,7 @@ define Io
     ; 2.5 — Console goes through here). Colorless: suspends inside a
     ; task on a nonblocking fd, drives the dispatcher from the main
     ; context, plain-blocks without a scheduler. False on a hard error.
-    procedure write_all(fd: i32, buf: pointer[void], count: size_t) returns bool io
+    procedure write_all(fd: i32, buf: pointer[void], count: size_t) returns bool
     {
         var done: size_t 0
         while done < count
@@ -1694,7 +1694,7 @@ define Io
         io_offloads
 
     ; This thread's worker pool, created lazily on first offload.
-    procedure ensure_pool() returns ref[IoPool] io
+    procedure ensure_pool() returns ref[IoPool]
     {
         var pl io_pool as ref[IoPool]?
         if pl = null
@@ -1730,7 +1730,7 @@ define Io
     ; rooted on its own fresh heap page — the caller consumes and frees
     ; it like a channel message. arg may point into the caller's
     ; region: the requesting frame outlives the call.
-    procedure offload(mutable fn: pointer[void], mutable arg: pointer[void]) returns pointer[void] io
+    procedure offload(mutable fn: pointer[void], mutable arg: pointer[void]) returns pointer[void]
     {
         let me current_task as ref[SchedTask]?
         if me = null
@@ -1811,7 +1811,7 @@ define Io
     ; automatically at thread exit (scaly_thread_start) and is callable
     ; any time — the next offload builds a fresh pool. Must not run
     ; while a task is parked on an offloaded operation.
-    procedure drain_pool() io
+    procedure drain_pool()
     {
         let pl io_pool as ref[IoPool]?
         if pl = null
@@ -1841,7 +1841,7 @@ define Io
     ; polling its (now closed) fd and trap. Sequential schedulers on
     ; one thread overwrite the mirror; the earlier poller's fds are
     ; the documented leak of that rare pattern.
-    procedure close_poller() io
+    procedure close_poller()
     {
         let q io_poller_fd
         if q = 0
@@ -2054,7 +2054,7 @@ define Channel
     ; `ref[Channel]`: the Planner emits a call to this by its Itanium name
     ; (`_ZN7Channel4sendEP7ChannelPv`), so re-signing it is an undefined
     ; symbol at link time. The asymmetry is forced, not an oversight.
-    procedure send(mutable m: pointer[Channel], mutable msg: pointer[void]) io
+    procedure send(mutable m: pointer[Channel], mutable msg: pointer[void])
     {
         let host Page.get(msg)
         let n &ChannelNode^host(null, msg)
@@ -2212,7 +2212,7 @@ define Channel
     ; blocks on the wake handle when nothing is runnable. The receiving
     ; thread needs a scheduler (Scheduler.create) — the wake handle is
     ; armed here BEFORE any park so remote senders always find it.
-    procedure receive(mutable m: ref[Channel]) returns pointer[void] io
+    procedure receive(mutable m: ref[Channel]) returns pointer[void]
     {
         Io.ensure_wake()
         let me current_task as ref[SchedTask]?
@@ -2282,7 +2282,7 @@ define Channel
     ; io-task tags drained exactly as in poll_io. NO deadlock bracket —
     ; a timed waiter always has its own way out, so it must not count
     ; toward exit 106.
-    procedure timed_poll(slice_ms: i32) io
+    procedure timed_poll(slice_ms: i32)
     {
         let s current_scheduler as ref[Scheduler]
         var tagbuf u8[512]
@@ -2317,7 +2317,7 @@ define Channel
     ; (CHAN_DEADLOCK_MS). A TASK caller cooperatively yields between
     ; checks (v1: the runtime has no timer wheel — sibling tasks run in
     ; between, an otherwise-idle scheduler spins until the deadline).
-    procedure receive_timeout(mutable m: ref[Channel], ms: i32, mutable timed_out: ref[bool]) returns pointer[void] io
+    procedure receive_timeout(mutable m: ref[Channel], ms: i32, mutable timed_out: ref[bool]) returns pointer[void]
     {
         set timed_out: false
         Io.ensure_wake()
@@ -2449,7 +2449,7 @@ define TaskGroup
     ; was created. A worker installs one only if it did -- so a program that
     ; catches nothing keeps exactly today's behaviour, message and code
     ; included, and pays nothing (TRAPS.md 3.19).
-    procedure create() returns ref[TaskGroup] io
+    procedure create() returns ref[TaskGroup]
     {
         let p Page.allocate_page_traced("TaskGroup.record_page")
         var fds u8[8]
@@ -2521,7 +2521,7 @@ define TaskGroup
     ; pipe closes, and the late byte lands in a dead — or, after fd
     ; reuse, a foreign — descriptor (SIGPIPE killed tiny-wave promoted
     ; loops, 2026-07-10).
-    procedure finish_one(g: pointer[TaskGroup]) io
+    procedure finish_one(g: pointer[TaskGroup])
     {
         let ap &g.active
         let prev scaly_atomic_add_u64(ap, 1 as u64)
@@ -2540,7 +2540,7 @@ define TaskGroup
     ; the SUBMITTING thread, after all submits (a submit racing a wait
     ; could let a stale zero-crossing byte end the wait early). Blocks
     ; the whole thread — main-context use, not inside a scheduled task.
-    procedure wait(mutable g: pointer[TaskGroup]) io
+    procedure wait(mutable g: pointer[TaskGroup])
     {
         let pp &g.pending
         while scaly_atomic_load_u64(pp) > 0
@@ -2573,7 +2573,7 @@ define TaskGroup
     ; bracket empty before closing: pending is zero and no submits
     ; follow, hence no NEW finisher can enter — the spin is bounded by
     ; one descheduled write.
-    procedure dispose(mutable g: pointer[TaskGroup]) io
+    procedure dispose(mutable g: pointer[TaskGroup])
     {
         let ap &g.active
         repeat
@@ -2674,7 +2674,7 @@ define TaskPool
     ; Start a pool of nworkers OS threads (clamped to at least one).
     ; Traps (exit 112) when the OS refuses the pipe; a refused thread
     ; traps in Thread.spawn (exit 109).
-    procedure create(nworkers: i64) returns ref[TaskPool] io
+    procedure create(nworkers: i64) returns ref[TaskPool]
     {
         var n nworkers
         if n < 1
@@ -2724,7 +2724,7 @@ define TaskPool
     ; submitting thread per group); the pending increment comes FIRST
     ; (a task may finish before submit returns), the deque push BEFORE
     ; the pipe byte (a woken worker must find an item).
-    procedure submit(mutable pl: pointer[TaskPool], fn: pointer[void], arg: pointer[void], mutable g: pointer[TaskGroup]) io
+    procedure submit(mutable pl: pointer[TaskPool], fn: pointer[void], arg: pointer[void], mutable g: pointer[TaskGroup])
     {
         let sc &pl.submitted
         scaly_atomic_add_u64(sc, 1 as u64)
@@ -2802,7 +2802,7 @@ define TaskPool
     ; Only when no group has work in flight that another thread still
     ; waits on; the pool is gone afterwards — create a new one to
     ; continue.
-    procedure shutdown(mutable pl: ref[TaskPool]) io
+    procedure shutdown(mutable pl: ref[TaskPool])
     {
         close(pl.pipe_write as int)
         var i: i64 0
@@ -2827,7 +2827,7 @@ define TaskPool
     ; Reached through the TLS cell task_default_pool (never handed to
     ; another thread's TLS — workers reach the pool via their spawn
     ; cells like any pool).
-    procedure default_pool() returns ref[TaskPool] io
+    procedure default_pool() returns ref[TaskPool]
     {
         if task_default_pool <> null
             return task_default_pool as ref[TaskPool]
@@ -2841,7 +2841,7 @@ define TaskPool
     ; the workers and frees the pool page). Safe there: every `parallel
     ; for` waits on its group before continuing, so nothing is in flight
     ; when the thread's entry has returned.
-    procedure drain_default() io
+    procedure drain_default()
     {
         if task_default_pool <> null
         {
@@ -2859,7 +2859,7 @@ define TaskPool
 ; per task; results the task keeps go into caller-owned disjoint slots
 ; (see the module header). Runs on its own OS thread: everything it
 ; touches arrives through the spawn cell.
-procedure task_worker(arg: pointer[void]) returns pointer[void] io
+procedure task_worker(arg: pointer[void]) returns pointer[void]
 {
     let cell arg as pointer[size_t]
     let pl (*cell) as pointer[TaskPool]

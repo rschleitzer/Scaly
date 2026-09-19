@@ -18,7 +18,7 @@
 ; expect-rc: 11
 ; expect-out: String.get_length: malformed string length prefix at 0x
 
-procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int io
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
 {
     var buf u8[16]
     var i 0

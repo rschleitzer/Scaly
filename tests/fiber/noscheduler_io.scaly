@@ -5,7 +5,7 @@
 ; in read before the client writes.
 ; Expected: got-hi done
 
-procedure client_entry(arg: pointer[void]) returns pointer[void] io
+procedure client_entry(arg: pointer[void]) returns pointer[void]
 {
     let port (arg as size_t) as i32
     let fd Io.connect(port)

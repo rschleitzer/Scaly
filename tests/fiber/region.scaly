@@ -6,7 +6,7 @@
 ; (munmap is rc-checked inside dispose, exit 105 on failure).
 ; Expected: work work work done region-freed
 
-procedure worker(first_ctx: pointer[void]) io
+procedure worker(first_ctx: pointer[void])
 {
     Fiber.started first_ctx
     var i 0

@@ -42,7 +42,7 @@ function make_frame(host: ref[Page], bend: bool) returns pointer[u8]
     frame
 }
 
-procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int io
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
 {
     var before_local 100
     set before_local: before_local + argc

@@ -7,7 +7,7 @@ package scaly 0.1.0
 package scalyc 0.1.0
 use scalyc.cli
 
-procedure main(argc: int, mutable argv: pointer[pointer[char]]) returns int io mutable modeler_error_count
+procedure main(argc: int, mutable argv: pointer[pointer[char]]) returns int mutable modeler_error_count
 {
     return cli.main(argc, argv)
 }

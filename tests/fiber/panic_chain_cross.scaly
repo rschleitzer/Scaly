@@ -13,7 +13,7 @@
 ; ExpectedExit: 15
 ; ExpectedErr: index out of bounds
 
-procedure worker(first_ctx: pointer[void]) io
+procedure worker(first_ctx: pointer[void])
 {
     Fiber.started first_ctx
     Console.print "fiber:armed "

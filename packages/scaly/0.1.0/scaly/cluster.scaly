@@ -114,7 +114,7 @@ define NodePeer
 )
 
 ; The reader thread's entry (free procedure: taken with &).
-procedure node_reader_entry(mutable arg: pointer[void]) returns pointer[void] io
+procedure node_reader_entry(mutable arg: pointer[void]) returns pointer[void]
 {
     let p arg as ref[NodePeer]
     Cluster.reader_loop(p)
@@ -167,16 +167,16 @@ define Cluster
 
     ; Listen on ALL interfaces (a cluster node accepts real remote
     ; peers). 0 asks for an ephemeral port; Cluster.local_port reads it.
-    procedure listen(port: i32) returns i32 io
+    procedure listen(port: i32) returns i32
         Io.listen_any(port)
 
-    procedure local_port(fd: i32) returns i32 io
+    procedure local_port(fd: i32) returns i32
         Io.local_port(fd)
 
     ; Accept one peer: TCP accept, then the frozen-preamble handshake.
     ; Returns null when the connect was refused (mismatch — already
     ; reported loudly) or the transport failed.
-    procedure accept(lfd: i32) returns ref[NodePeer]? io
+    procedure accept(lfd: i32) returns ref[NodePeer]?
     {
         let fd Io.accept(lfd)
         if fd < 0
@@ -187,7 +187,7 @@ define Cluster
     ; Connect to host:port (getaddrinfo — real hosts), then the frozen-
     ; preamble handshake. host must be NUL-terminated (a string
     ; literal, or String.to_c_string). Returns null when refused.
-    procedure connect(mutable host: pointer[const_char], port: i32) returns ref[NodePeer]? io
+    procedure connect(mutable host: pointer[const_char], port: i32) returns ref[NodePeer]?
     {
         let fd Io.connect_host(host, port)
         if fd < 0
@@ -198,7 +198,7 @@ define Cluster
     ; Both directions run the same handshake: send our preamble
     ; immediately, read theirs, compare BEFORE any other byte is
     ; parsed. Mismatch = loud refuse with both stamps (rule 10).
-    procedure setup(fd: i32) returns ref[NodePeer]? io
+    procedure setup(fd: i32) returns ref[NodePeer]?
     {
         var pre u8[24]
         let pw pre as pointer[u64]
@@ -311,7 +311,7 @@ define Cluster
     ; A down-notice channel (memo rule 5): receives ONE NodeDown when
     ; the peer is suspected dead or said goodbye, then closes. On a
     ; peer already down the notice is delivered immediately.
-    procedure monitor(mutable p: pointer[NodePeer]) returns ref[Channel] io
+    procedure monitor(mutable p: pointer[NodePeer]) returns ref[Channel]
     {
         let c Channel.create()
         Cluster.acquire(p)
@@ -334,7 +334,7 @@ define Cluster
         c
     }
 
-    procedure deliver_down(mutable c: pointer[Channel], reason: i64) io
+    procedure deliver_down(mutable c: pointer[Channel], reason: i64)
     {
         let dp Page.allocate_page()
         let nd &NodeDown^dp(reason)
@@ -353,7 +353,7 @@ define Cluster
     ; region (the 7.2 walker rules; the receiver runs fix_graph). A
     ; send to a suspected-dead peer is silently dropped — death
     ; surfaces as channel close + monitor notice, never a send error.
-    procedure send(p: pointer[NodePeer], id: u64, mutable msg: pointer[void]) io
+    procedure send(p: pointer[NodePeer], id: u64, mutable msg: pointer[void])
     {
         let region Page.get(msg)
         let host Page.allocate_page()
@@ -379,7 +379,7 @@ define Cluster
 
     ; Heartbeat/BYE writer. try_only skips the frame when a data write
     ; holds the lock — flowing data is its own liveness signal.
-    procedure send_control(p: pointer[NodePeer], kind: u64, try_only: bool) io
+    procedure send_control(p: pointer[NodePeer], kind: u64, try_only: bool)
     {
         if try_only
         {
@@ -404,7 +404,7 @@ define Cluster
     ; fire every monitor. Idempotent; counts are final once alive
     ; drops. Runs on the reader (suspicion, EOF, BYE) or on the app
     ; thread (Cluster.close).
-    procedure teardown(mutable p: pointer[NodePeer], reason: i64) io
+    procedure teardown(mutable p: pointer[NodePeer], reason: i64)
     {
         Cluster.acquire(p)
         if p.alive = false
@@ -436,7 +436,7 @@ define Cluster
     ; Graceful goodbye: BYE frame, then the local teardown (our receive
     ; channels close, monitors fire NODE_DOWN_CLOSED). The reader
     ; notices alive=false within a heartbeat slice and closes the fd.
-    procedure close(mutable p: pointer[NodePeer]) io
+    procedure close(mutable p: pointer[NodePeer])
     {
         Cluster.send_control(p, NODE_FRAME_BYE, false)
         Cluster.teardown(p, NODE_DOWN_CLOSED)
@@ -467,7 +467,7 @@ define Cluster
 
     ; --- the reader thread ---
 
-    procedure poll_in(fd: i32, ms: i32) io
+    procedure poll_in(fd: i32, ms: i32)
     {
         var pfd u8[8]
         set *(pfd as pointer[i32]): fd
@@ -479,7 +479,7 @@ define Cluster
     ; Read exactly count bytes; bounded polls keep the suspicion clock
     ; live during a mid-frame stall. False = transport over (EOF,
     ; error, silence past the deadline, or a local close).
-    procedure read_exact(mutable p: ref[NodePeer], buf: pointer[void], count: size_t) returns bool io
+    procedure read_exact(mutable p: ref[NodePeer], buf: pointer[void], count: size_t) returns bool
     {
         let fd p.fd
         var done: size_t 0
@@ -507,7 +507,7 @@ define Cluster
     }
 
     ; One frame past the header: false stops the reader.
-    procedure dispatch(mutable p: ref[NodePeer], h: pointer[u64]) returns bool io
+    procedure dispatch(mutable p: ref[NodePeer], h: pointer[u64]) returns bool
     {
         let kind h[0]
         if kind = NODE_FRAME_HEARTBEAT
@@ -560,7 +560,7 @@ define Cluster
         true
     }
 
-    procedure reader_loop(mutable p: pointer[NodePeer]) io
+    procedure reader_loop(mutable p: pointer[NodePeer])
     {
         let fd p.fd
         var hdr u8[24]

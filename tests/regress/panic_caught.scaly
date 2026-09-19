@@ -37,7 +37,7 @@ function body_panics(arg: pointer[void]) returns i64
 function body_ok(arg: pointer[void]) returns i64
     deep1(0)
 
-procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int io
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
 {
     ; (1) ohne Fangpunkt wuerde derselbe Zugriff den Prozess beenden --
     ;     das prueft trap_slice_subscript.scaly, hier nur die Aussage:

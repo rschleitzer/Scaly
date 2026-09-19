@@ -19,7 +19,7 @@
 
 define Msg (n: i64, more: pointer[u8])
 
-procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int io
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
 {
     let mp Page.allocate_page()
     let msg mp.allocate(sizeof Msg, alignof Msg) as pointer[Msg]

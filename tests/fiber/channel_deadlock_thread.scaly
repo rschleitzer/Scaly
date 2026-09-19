@@ -8,7 +8,7 @@
 ; via Scheduler.run.)
 ; ExpectedExit: 106
 
-procedure worker(mutable arg: pointer[void]) returns pointer[void] io
+procedure worker(mutable arg: pointer[void]) returns pointer[void]
 {
     let page Page.allocate_page()
     let sched Scheduler.create(page)

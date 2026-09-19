@@ -11,7 +11,7 @@
 ; bug could get wrong — and 40 elements in total, which crosses the small
 ; buffer's doubling so the grow path is exercised as well.
 
-procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int io
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
 {
     var src Vector[int](20)
     var k: size_t 0

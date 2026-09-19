@@ -3,7 +3,7 @@
 ; the RESULT SHAPE of the `[]` call, so a subscript that answers a slot is not
 ; caught -- the pointer form has its own pin in pointer_subscript.scaly.
 
-procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int io
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
 {
     var a Array[int]()
     a.add(1)

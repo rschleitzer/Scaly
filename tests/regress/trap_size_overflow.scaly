@@ -16,7 +16,7 @@
 ; expect-rc: 22
 ; expect-out: Array.add: adding 18446744073709551615 to 2 wraps around
 
-procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int io
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
 {
     var arr Array[int]()
     arr.add(1)

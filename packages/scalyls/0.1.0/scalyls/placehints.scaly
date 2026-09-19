@@ -87,7 +87,7 @@ define placehints
 {
     ; The placement hints for the packed "<sl> <sc> <el> <ec>" range as a
     ; COMMA-JOINED FRAGMENT of InlayHint objects, or "".
-    procedure fragment(rp, mutable uri: String, mutable text: String, packed: String) returns String io mutable lc_col, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used
+    procedure fragment(rp, mutable uri: String, mutable text: String, packed: String) returns String mutable lc_col, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used
     {
         let path diagnostics.strip_uri uri
         if path.get_length() = 0
@@ -127,7 +127,7 @@ define placehints
     ; load-bearing file in this server for a cosmetic gain. The shape it answers
     ; is known exactly — `[]` or `[...]` — so `[]` becomes `[mine]` and anything
     ; else takes `,mine` before its final byte.
-    procedure merged(rp, mutable repaired: String, mutable source: String, mutable uri: String, packed: String) returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig
+    procedure merged(rp, mutable repaired: String, mutable source: String, mutable uri: String, packed: String) returns String mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig
     {
         let base symbols.inlay_hints_packed(repaired, uri, packed)
         let mine placehints.fragment(uri, source, packed)
@@ -161,7 +161,7 @@ define placehints
     ; ends after the callee name and its arguments are outside. The start is the
     ; one end of it that reliably sits on the construction's first token.
     ; ====================================================================
-    procedure build(rp, mutable path: String, mutable text: String) returns String io mutable modeler_error_count
+    procedure build(rp, mutable path: String, mutable text: String) returns String mutable modeler_error_count
     {
         var sb StringBuilder()
 

@@ -4,7 +4,7 @@ define scalyc {
     module compiler
     module cli
 
-    procedure test() returns int io mutable modeler_error_count
+    procedure test() returns int mutable modeler_error_count
     {
         compiler.test()
     }

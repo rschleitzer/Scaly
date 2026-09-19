@@ -29,7 +29,7 @@ procedure square_task(arg: pointer[void]) returns pointer[void]
 ; slot sum into the caller's result cell. The second default_pool()
 ; call must hand back the same pool — a fresh one per call would spawn
 ; ncpu threads per wave.
-procedure run_wave(mutable arg: pointer[void]) returns pointer[void] io
+procedure run_wave(mutable arg: pointer[void]) returns pointer[void]
 {
     let out arg as pointer[size_t]
     let pool TaskPool.default_pool()

@@ -6,13 +6,13 @@ use scaly.fiber.Io
 ; nonblocking, and needs no scheduler at all — colorless I/O.
 define Console
 {
-    procedure print(message: pointer[const_char]) io
+    procedure print(message: pointer[const_char])
     {
         var len strlen message
         Io.write_all(1, message as pointer[void], len)
     }
 
-    procedure println(message: pointer[const_char]) io
+    procedure println(message: pointer[const_char])
     {
         Console.print message
         ; Numeric LF byte: the lexer stores the "\n" string literal raw as
