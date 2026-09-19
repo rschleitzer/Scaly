@@ -17,7 +17,7 @@ define Holder
     name: String
 )
 {
-    procedure set_name(this: Holder, text: pointer[const_char])
+    procedure set_name(mutable this: Holder, text: pointer[const_char])
     {
         set this.name: String(text)
     }

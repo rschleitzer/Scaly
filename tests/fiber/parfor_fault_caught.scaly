@@ -14,7 +14,7 @@
 ; Expected: caught index=n length=n submitted continued
 ; ExpectedExit: 0
 
-procedure fill(acc: ref[Vector[int]], src: ref[Vector[int]], n: size_t, skew: size_t)
+procedure fill(mutable acc: ref[Vector[int]], src: ref[Vector[int]], n: size_t, skew: size_t)
 {
     for i in n
     {

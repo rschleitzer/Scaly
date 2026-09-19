@@ -22,10 +22,10 @@
 
 define Item (v: int)
 
-procedure fill(c: ref[ref[Item]?], p: ref[Item])
+procedure fill(mutable c: ref[ref[Item]?], p: ref[Item])
     set c: p
 
-procedure clear(c: ref[ref[Item]?])
+procedure clear(mutable c: ref[ref[Item]?])
     set c: null
 
 ; The cell is READ through a typed binding: the transparent read fires at a

@@ -19,11 +19,11 @@ define Sink
     slot: pointer[Box]
 )
 {
-    procedure stash(this, pr: pointer[Node])
+    procedure stash(mutable this, pr: pointer[Node])
         set this.slot: (*pr).next.val
 }
 
-procedure trigger(sink: Sink, n: pointer[Node])
+procedure trigger(mutable sink: Sink, n: pointer[Node])
 {
     sink.stash(n)
 }

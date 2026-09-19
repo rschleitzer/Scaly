@@ -5,7 +5,8 @@
 ; (no false positive on borrow-to-indirect-callback). Self-hosted-only.
 define PtrSink delegate(p: pointer[int]) returns int
 
-function via(sink: PtrSink, p: pointer[int]) returns int
+; an indirect callee may write every argument it is handed (R1)
+procedure via(sink: PtrSink, mutable p: pointer[int]) returns int
 {
     sink(p)
     0

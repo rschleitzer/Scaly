@@ -4,7 +4,8 @@
 define IntFn delegate(int) returns int
 define Runner delegate(IntFn) returns int
 
-function via(r: Runner, f: IntFn) returns int
+; an indirect callee may write every argument it is handed (R1)
+procedure via(r: Runner, mutable f: IntFn) returns int
     r(f)
 
 function main() returns int

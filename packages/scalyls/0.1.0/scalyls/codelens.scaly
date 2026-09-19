@@ -69,7 +69,7 @@ define codelens
 {
     ; The whole CodeLens[] array for `uri`. `text` is the source the worker
     ; resolved (the parent's buffer, or the file from disk when it had none).
-    procedure lenses(rp, uri: String, text: String) returns String
+    procedure lenses(rp, mutable uri: String, mutable text: String) returns String
     {
         let path diagnostics.strip_uri uri
 
@@ -127,7 +127,7 @@ define codelens
     ; planned as itself. `plan_text` is the text whose offsets the plan carries —
     ; the file ON DISK for a member, because the modeler reads from disk.
     ; ====================================================================
-    procedure planned_fragment(rp, path: String, text: String) returns String
+    procedure planned_fragment(rp, mutable path: String, mutable text: String) returns String
     {
         let root diagnostics.package_root path
         if root.get_length() > 0
@@ -135,7 +135,7 @@ define codelens
         codelens.document_planned_fragment(path, text)
     }
 
-    procedure root_planned_fragment(rp, root: String, path: String, text: String) returns String
+    procedure root_planned_fragment(rp, mutable root: String, path: String, text: String) returns String
     {
         let plan_text File.read_to_string(path)
         if plan_text.get_length() = 0
@@ -169,7 +169,7 @@ define codelens
         result
     }
 
-    procedure document_planned_fragment(rp, path: String, text: String) returns String
+    procedure document_planned_fragment(rp, mutable path: String, mutable text: String) returns String
     {
         if text.get_length() = 0
             return ""
@@ -242,7 +242,7 @@ define codelens
     ; walk over the statement union. Two lenses at one position are what an
     ; editor shows side by side, which is the conventional look for this.
     ; ====================================================================
-    procedure head_fragment(rp, path: String, text: String) returns String
+    procedure head_fragment(rp, path: String, mutable text: String) returns String
     {
         var sb StringBuilder()
         var first true
@@ -270,7 +270,7 @@ define codelens
     ; none, so it gets no Run lens — which is the whole distinction the CLI
     ; makes too. A buffer that does not parse gets none either: `--jit` on it
     ; would print a diagnostic the editor is already showing.
-    procedure has_top_level_statements(text: String) returns bool
+    procedure has_top_level_statements(mutable text: String) returns bool
     {
         var p parser.Parser(text)
         choose p.parse_program()
@@ -395,7 +395,7 @@ define codelens
     ; `base` below is that search directory, threaded exactly as the Modeler
     ; threads it; `dir` is the document's own directory, used only for display.
     ; ====================================================================
-    procedure declaration_fragment(rp, text: String, path: String) returns String
+    procedure declaration_fragment(rp, mutable text: String, mutable path: String) returns String
     {
         let dir codelens.directory_of path
         var p parser.Parser(text)
@@ -411,7 +411,7 @@ define codelens
         result
     }
 
-    procedure declarations_fragment(rp, text: String, path: String, base: String, dir: String, decls: ref[Vector[DeclarationSyntax]]?) returns String
+    procedure declarations_fragment(rp, text: String, mutable path: String, mutable base: String, dir: String, decls: ref[Vector[DeclarationSyntax]]?) returns String
     {
         var sb StringBuilder()
         if decls = null
@@ -441,7 +441,7 @@ define codelens
 
     ; One declaration: a lens for `package` / `module`, a recursion for a
     ; namespace, nothing for the rest.
-    procedure declaration_lens(rp, text: String, path: String, base: String, dir: String, decl: DeclarationSyntax) returns String
+    procedure declaration_lens(rp, text: String, mutable path: String, mutable base: String, dir: String, decl: DeclarationSyntax) returns String
     {
         choose decl
             when pkg: PackageSyntax
@@ -596,7 +596,7 @@ define codelens
     ; Literals of VersionSyntax: a syntax node's `end` runs to the start of the
     ; next token, so a span would carry trailing trivia — while "digits and
     ; dots from version.start" is exactly a version and nothing else.
-    procedure package_lens(rp, text: String, path: String, pkg: PackageSyntax) returns String
+    procedure package_lens(rp, text: String, mutable path: String, pkg: PackageSyntax) returns String
     {
         if pkg.version = null
             return ""
@@ -648,7 +648,7 @@ define codelens
     ; the Modeler would use (see the section comment above). Shown relative to
     ; the document's own directory, so a sibling reads "lexer.scaly" and a
     ; namespace child reads "scalyls/json.scaly".
-    procedure module_lens(rp, text: String, base: String, dir: String, m: ModuleSyntax) returns String
+    procedure module_lens(rp, text: String, mutable base: String, dir: String, m: ModuleSyntax) returns String
     {
         var t StringBuilder()
         t.append(m.name)
@@ -705,7 +705,7 @@ define codelens
     ; `packages` directory is the checkout the compiler would be invoked from,
     ; which is the same answer for every real in-repo case and no answer at all
     ; outside one.
-    procedure resolution_base(rp, path: String) returns String
+    procedure resolution_base(rp, mutable path: String) returns String
     {
         let home getenv "SCALY_HOME"
         if home <> null

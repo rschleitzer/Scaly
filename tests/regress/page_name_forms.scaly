@@ -31,7 +31,7 @@ define Holder (host: pointer[Page], tag: int)
     }
 
     ; ^this: the receiver's own page
-    function via_this(this: ref[Holder]) returns int
+    procedure via_this(mutable this: ref[Holder]) returns int
     {
         let l Leaf^this(5)
         l.n

@@ -9,7 +9,7 @@
 ; after) makes the output deterministic.
 ; Expected: hello from thread answer 42 done
 
-procedure thread_entry(arg: pointer[void]) returns pointer[void]
+procedure thread_entry(mutable arg: pointer[void]) returns pointer[void]
 {
     Console.print "hello from thread "
     let cell arg as pointer[i64]

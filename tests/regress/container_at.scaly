@@ -21,7 +21,7 @@
 
 define Rec (a: int, b: int)
 
-procedure bump(rows: ref[Array[Rec]], i: size_t)
+procedure bump(mutable rows: ref[Array[Rec]], i: size_t)
 {
     ; the ports' shape: a ref[Array] parameter, a record reference out of it
     let node rows.at(i)

@@ -14,7 +14,7 @@ function gelu_scalar(v: float) returns float
     0.5 * v * (1.0 + t)
 }
 
-procedure gelu_f32(x: Vector[float], out: Vector[float], rows: int, n: int)
+procedure gelu_f32(x: Vector[float], mutable out: Vector[float], rows: int, n: int)
 {
     let xp x.data
     for r in rows

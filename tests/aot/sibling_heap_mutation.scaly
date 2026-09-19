@@ -6,7 +6,7 @@ define Inner
     value: int
 )
 {
-    procedure set_value(this, v: int)
+    procedure set_value(mutable this, v: int)
         set value: v
 
     function get_value(this) returns int
@@ -18,10 +18,10 @@ define Outer
     inner: Inner
 )
 {
-    procedure update_inner(this)
+    procedure update_inner(mutable this)
         inner.set_value(42)
 
-    procedure run_sibling(this)
+    procedure run_sibling(mutable this)
         update_inner()
 
     function get_inner_value(this) returns int

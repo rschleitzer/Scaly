@@ -44,7 +44,7 @@ function num_to_string(n: i64) returns String
     sb.to_string()
 }
 
-procedure fill(v: Vector[double], n: size_t, x: double)
+procedure fill(mutable v: Vector[double], n: size_t, x: double)
 {
     var i: size_t 0
     while i < n
@@ -55,7 +55,7 @@ procedure fill(v: Vector[double], n: size_t, x: double)
 }
 
 ; C[i,j] = sum_k A[i,k] * B[k,j]; row-major.
-procedure matmul(a: Vector[double], b: Vector[double], c: Vector[double], m: int, kk: int, n: int)
+procedure matmul(a: Vector[double], b: Vector[double], mutable c: Vector[double], m: int, kk: int, n: int)
 {
     for i in m
     {
@@ -84,7 +84,7 @@ procedure matmul(a: Vector[double], b: Vector[double], c: Vector[double], m: int
 }
 
 ; Same arithmetic, deliberately blocked (sequential baseline).
-procedure matmul_seq(a: Vector[double], b: Vector[double], c: Vector[double], m: int, kk: int, n: int, sink: Vector[i64])
+procedure matmul_seq(a: Vector[double], b: Vector[double], mutable c: Vector[double], m: int, kk: int, n: int, mutable sink: Vector[i64])
 {
     for i in m
     {
@@ -118,7 +118,7 @@ procedure matmul_seq(a: Vector[double], b: Vector[double], c: Vector[double], m:
 ; call); the disjoint c.put write stays, it is what the classifier's
 ; locality proof keys on. ap/bp are loop-external read-only aliases —
 ; admitted by the per-param write-mask analysis.
-procedure matmul_ptr(a: Vector[double], b: Vector[double], c: Vector[double], m: int, kk: int, n: int)
+procedure matmul_ptr(a: Vector[double], b: Vector[double], mutable c: Vector[double], m: int, kk: int, n: int)
 {
     let ap a.data
     let bp b.data
@@ -141,7 +141,7 @@ procedure matmul_ptr(a: Vector[double], b: Vector[double], c: Vector[double], m:
 }
 
 ; Same arithmetic, deliberately blocked (call-free sequential baseline).
-procedure matmul_ptr_seq(a: Vector[double], b: Vector[double], c: Vector[double], m: int, kk: int, n: int, sink: Vector[i64])
+procedure matmul_ptr_seq(a: Vector[double], b: Vector[double], mutable c: Vector[double], m: int, kk: int, n: int, mutable sink: Vector[i64])
 {
     let ap a.data
     let bp b.data

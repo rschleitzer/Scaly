@@ -120,7 +120,7 @@ define nameset
         slots
     }
 
-    procedure destroy(slots: pointer[NameSlot])
+    procedure destroy(mutable slots: pointer[NameSlot])
     {
         if slots <> null
             free(slots as pointer[void])
@@ -130,7 +130,7 @@ define nameset
     ; precomputed hash `h`. Open addressing, linear probe. An existing entry for
     ; the same name is only ever raised (kind 2 function > 1 type), so function
     ; wins regardless of order. A full table drops the name silently.
-    procedure insert(slots: pointer[NameSlot], cap: size_t, name: Slice[u8], h: size_t, kind: i64)
+    procedure insert(mutable slots: pointer[NameSlot], cap: size_t, name: Slice[u8], h: size_t, kind: i64)
     {
         if name.length > 0
         {
@@ -163,7 +163,7 @@ define nameset
     ; Insert every newline-delimited segment of `list` (a names_from_items# /
     ; primitive_type_list# / tagged_name_list# result) with the given kind. Slots
     ; borrow the list's buffer, so `list` must outlive the table.
-    procedure insert_name_list(slots: pointer[NameSlot], cap: size_t, list: String, kind: i64)
+    procedure insert_name_list(mutable slots: pointer[NameSlot], cap: size_t, list: String, kind: i64)
     {
         let llen list.get_length()
         if llen > 0

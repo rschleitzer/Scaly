@@ -35,11 +35,11 @@
 define Item (v: int)
 
 ; the two references: the store must actually land in the cell
-procedure rebind(c: ref[ref[Item]], p: ref[Item])
+procedure rebind(mutable c: ref[ref[Item]], p: ref[Item])
     set c: p
 
 ; a VALUE source into the same cell, and the explicit `&` beside it
-procedure fill_both(host: pointer[Page], v_cell: ref[ref[Item]], a_cell: ref[ref[Item]])
+procedure fill_both(host: pointer[Page], mutable v_cell: ref[ref[Item]], mutable a_cell: ref[ref[Item]])
 {
     let it Item^host(41)
     set v_cell: it

@@ -78,7 +78,7 @@ use scalyc.compiler.ConceptIndex.*
 define diagnostics
 {
     ; Build a publishDiagnostics notification for `uri` from `text`.
-    procedure publish_diagnostics(rp, uri: String, text: String) returns String
+    procedure publish_diagnostics(rp, mutable uri: String, mutable text: String) returns String
     {
         var sb StringBuilder()
         sb.append("{" as char)
@@ -262,7 +262,7 @@ define diagnostics
     ; The depth bound is a loop guard, not a semantic limit: nesting in this
     ; tree is 2 (scalyc/compiler/Planner.scaly), and a symlink cycle in the
     ; path must not be able to spin the worker.
-    procedure package_root(rp, path: String) returns String
+    procedure package_root(rp, mutable path: String) returns String
     {
         var found String("")
         var current: String path
@@ -298,7 +298,7 @@ define diagnostics
     ; visible here` because the file's own `use opensp.StringC.StringC` cannot
     ; match a path with a foreign root segment. The false positives change
     ; wording and stay.
-    procedure root_program_name(rp, root: String) returns String
+    procedure root_program_name(rp, mutable root: String) returns String
     {
         let base Path.get_file_name(root)
         let len base.get_length()
@@ -338,7 +338,7 @@ define diagnostics
     ; documents for workspace/symbol ("unsaved editor edits, which never touch
     ; disk, are not reflected"). Parse errors are unaffected: publish_
     ; diagnostics# still takes those from the live buffer.
-    procedure package_report(rp, root: String, path: String) returns String
+    procedure package_report(rp, mutable root: String, path: String) returns String
     {
         var sb StringBuilder()
 
@@ -717,7 +717,7 @@ define diagnostics
     ; the way there is for a name the repair deleted — the evidence the parser
     ; would need is the very line that is gone — so the honest count of
     ; certain syntax errors in a broken buffer stays one.
-    procedure broken_buffer_report(rp, path: String, text: String) returns String
+    procedure broken_buffer_report(rp, mutable path: String, mutable text: String) returns String
     {
         var sb StringBuilder()
 
@@ -793,7 +793,7 @@ define diagnostics
 
     ; Register every loaded package's concepts with the planner
     ; (inlined mirror of cli.register_packages).
-    procedure register_packages(planner: ref[Planner.Planner], model: ref[Program])
+    procedure register_packages(mutable planner: ref[Planner.Planner], model: ref[Program])
     {
         var i: size_t 0
         while i < model.packages.length

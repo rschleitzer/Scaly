@@ -112,7 +112,7 @@ function fixed6(f: float) returns String
     sb.to_string()
 }
 
-procedure fill_random(v: Vector[float], count: int, s0: int) returns int
+procedure fill_random(mutable v: Vector[float], count: int, s0: int) returns int
 {
     var s s0
     var i 0
@@ -130,7 +130,7 @@ procedure fill_random(v: Vector[float], count: int, s0: int) returns int
 ; C = A * B, the CPU baseline: verbatim copy of the tape's 4x4
 ; register-tiled kernel (scaly/tensor.scaly mm_tiled), compiled -O2
 ; with this program and self-scaled by the stage-4 engine.
-procedure mm_cpu(a: Vector[float], b: Vector[float], c: Vector[float], m: int, kk: int, n: int)
+procedure mm_cpu(a: Vector[float], b: Vector[float], mutable c: Vector[float], m: int, kk: int, n: int)
 {
     let ap a.data
     let bp b.data

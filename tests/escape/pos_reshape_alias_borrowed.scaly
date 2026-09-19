@@ -6,13 +6,13 @@
 define Box ( v: int )
 define Holder ( b: pointer[Box] )
 {
-    procedure stash(this, p: pointer[Box])
+    procedure stash(mutable this, p: pointer[Box])
     {
         let q p
         set this.b: q
     }
 }
-procedure fill(c: Holder, bx: pointer[Box])
+procedure fill(mutable c: Holder, bx: pointer[Box])
     c.stash(bx)
 function main() returns int
     0

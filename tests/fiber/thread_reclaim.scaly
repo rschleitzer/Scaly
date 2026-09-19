@@ -10,7 +10,7 @@
 ; counter must tick exactly once.
 ; Expected: reclaim-ok done
 
-procedure reclaim_entry(arg: pointer[void]) returns pointer[void]
+procedure reclaim_entry(mutable arg: pointer[void]) returns pointer[void]
 {
     let cell arg as pointer[size_t]
     ; Keep one page live past thread exit — its bucket dies DEAD.

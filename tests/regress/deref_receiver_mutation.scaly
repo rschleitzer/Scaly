@@ -13,7 +13,7 @@ define Counter
     count: int
 )
 {
-    procedure bump(this: Counter)
+    procedure bump(mutable this: Counter)
     {
         set count: count + 1
     }
@@ -22,7 +22,7 @@ define Counter
         count
 }
 
-procedure bump_through(p: pointer[Counter])
+procedure bump_through(mutable p: pointer[Counter])
 {
     (*p).bump()
     (*p).bump()

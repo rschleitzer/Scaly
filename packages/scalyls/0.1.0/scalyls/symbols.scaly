@@ -150,7 +150,7 @@ define symbols
 
     ; Build the documentSymbol result ARRAY from `source`. On a parse error
     ; the array is empty (the diagnostics path reports the error separately).
-    procedure document_symbols(rp, source: String) returns String
+    procedure document_symbols(rp, mutable source: String) returns String
     {
         var sb StringBuilder()
         sb.append("[" as char)
@@ -1523,7 +1523,7 @@ define symbols
 
     ; Append every buffer identifier whose distance from `name` is exactly `d`,
     ; skipping duplicates and stopping at three in total.
-    procedure append_candidates_at(sb: ref[StringBuilder], count: ref[size_t], source: String, name: String, d: size_t)
+    procedure append_candidates_at(mutable sb: ref[StringBuilder], mutable count: ref[size_t], source: String, name: String, d: size_t)
     {
         let n source.get_length()
         var i: size_t 0
@@ -1899,7 +1899,7 @@ define symbols
         symbols.substring(source, s, e)
     }
 
-    procedure folding_ranges(rp, source: String) returns String
+    procedure folding_ranges(rp, mutable source: String) returns String
     {
         var sb StringBuilder()
         sb.append("[" as char)
@@ -2281,7 +2281,7 @@ define symbols
     ; NOT decoded by the lexer, so a `\"` in a literal would land raw.
     ; ====================================================================
 
-    procedure semantic_tokens(rp, source: String, uri: String) returns String
+    procedure semantic_tokens(rp, mutable source: String, mutable uri: String) returns String
     {
         var sb StringBuilder()
         sb.append("{" as char)
@@ -2982,7 +2982,7 @@ define symbols
 
     ; Extract a newline-delimited, newline-bracketed list of the labels in a
     ; completion-items JSON array whose kind is k1 or k2. ("\nadd\nfoo\n")
-    procedure names_from_items(rp, items_json: String, k1: i64, k2: i64) returns String
+    procedure names_from_items(rp, mutable items_json: String, k1: i64, k2: i64) returns String
     {
         var sb StringBuilder()
         sb.append("\n" as char)                    ; leading newline
@@ -3461,7 +3461,7 @@ define symbols
     }
 
     ; Build the whole scope/field table from one parse of the program.
-    procedure scope_table(rp, source: String) returns String
+    procedure scope_table(rp, mutable source: String) returns String
     {
         var sb StringBuilder()
         var p parser.Parser(source)
@@ -3734,7 +3734,7 @@ define symbols
     ; — the same large-append hazard documented in the STRING/JSON NOTE.
     ; ====================================================================
 
-    procedure completion_items(rp, source: String) returns String
+    procedure completion_items(rp, mutable source: String) returns String
     {
         var sb StringBuilder()
         sb.append("[" as char)
@@ -4161,7 +4161,7 @@ define symbols
     ; the top of this file: a single StringBuilder.append(String) that more than
     ; doubles the buffer takes Array.add's manual-grow path, which SIGSEGVs past
     ; one exclusive page, and a member list is exactly a potentially-large piece.
-    procedure append_fragment(sb: ref[StringBuilder], fragment: String)
+    procedure append_fragment(mutable sb: ref[StringBuilder], fragment: String)
     {
         var i: size_t 0
         let n fragment.get_length()
@@ -4417,7 +4417,7 @@ define symbols
     ; whose meaning is carried by the line structure. The signature is NOT
     ; repeated here — the entry's `detail` already carries it, and a client
     ; renders detail above documentation.
-    procedure completion_documentation(rp, source: String, uri: String, name: String) returns String
+    procedure completion_documentation(rp, mutable source: String, mutable uri: String, mutable name: String) returns String
     {
         let doc symbols.completion_doc_text(source, uri, name)
         if doc.get_length() = 0
@@ -4449,7 +4449,7 @@ define symbols
     ; construction the block above the declaration the editor would jump to.
     ; Its limit is that walk's own and is inherited rather than re-decided here:
     ; the FIRST declaration of the name in the file wins.
-    procedure completion_doc_text(rp, source: String, uri: String, name: String) returns String
+    procedure completion_doc_text(rp, mutable source: String, mutable uri: String, mutable name: String) returns String
     {
         let loc symbols.find_definition(source, uri, name)
         if loc.get_length() = 0
@@ -4493,7 +4493,7 @@ define symbols
     ; repaired copy, and every lookup that PARSES reads that one, or a single
     ; unfinished line answers nothing at all. Blanking preserves length, so one
     ; cursor offset is valid in both.
-    procedure completion_packed(rp, source: String, parse_source: String, uri: String, packed: String) returns String
+    procedure completion_packed(rp, source: String, mutable parse_source: String, mutable uri: String, packed: String) returns String
     {
         var line: size_t 0
         var character: size_t 0
@@ -4656,7 +4656,7 @@ define symbols
 
     ; The flat all-names list of THIS document, tagged with its own uri so
     ; completionItem/resolve knows where to read the doc blocks from.
-    procedure flat_items(rp, parse_source: String, uri: String) returns String
+    procedure flat_items(rp, mutable parse_source: String, uri: String) returns String
     {
         let items symbols.completion_items parse_source
         symbols.with_item_data(items, uri)
@@ -4704,7 +4704,7 @@ define symbols
 
     ; `source` when it parses; else a copy with the offending line (or two)
     ; blanked out, if that parses; else `source` unchanged.
-    procedure repaired_source(rp, source: String) returns String
+    procedure repaired_source(rp, mutable source: String) returns String
     {
         var current source
         var rounds: size_t 0
@@ -4725,7 +4725,7 @@ define symbols
     ; source parses. A `Different` error carries no offset — the construct was
     ; not recognised at all — and answers "no repair" rather than have
     ; blank_line_at# guess a line.
-    procedure parse_error_offset(rp, source: String) returns size_t
+    procedure parse_error_offset(rp, mutable source: String) returns size_t
     {
         let no_error source.get_length() + 1
         var p parser.Parser(source)
@@ -4899,7 +4899,7 @@ define symbols
     ; "" when the cursor is not inside one. Parse-only, like every other walk
     ; here; the innermost wins, so a nested define inside a namespace or a class
     ; body answers for its own body.
-    procedure enclosing_concept_name(rp, source: String, offset: size_t) returns String
+    procedure enclosing_concept_name(rp, mutable source: String, offset: size_t) returns String
     {
         var p parser.Parser(source)
         var result ""
@@ -5049,7 +5049,7 @@ define symbols
     ; the workspace hit with the uri of whichever file declared the concept —
     ; which is the whole point of tagging here rather than at the caller, since
     ; only this function knows which of the two answered.
-    procedure members_for_type(rp, source: String, uri: String, type_name: String) returns String
+    procedure members_for_type(rp, mutable source: String, mutable uri: String, type_name: String) returns String
     {
         let here symbols.member_completions(source, type_name)
         if here.get_length() > 0
@@ -5062,7 +5062,7 @@ define symbols
     ; find_definition_in_workspace#: the current file's directory tree first,
     ; then ON A MISS the package dependency tree (so stdlib String/StringBuilder/
     ; Vector members complete). "" if none.
-    procedure member_completions_in_workspace(rp, uri: String, type_name: String) returns String
+    procedure member_completions_in_workspace(rp, mutable uri: String, type_name: String) returns String
     {
         let path symbols.uri_to_path uri
         let dir symbols.dir_of path
@@ -5084,7 +5084,7 @@ define symbols
     ; detail field = the concept's bracketless member-completion fragment, so the
     ; member list is rebuilt from the cache (members_from_ws_blob#) — no re-parse,
     ; shared with workspace/symbol + cross-file definition + semanticTokens.
-    procedure member_completions_in_dir(rp, dir: String, self_path: String, type_name: String) returns String
+    procedure member_completions_in_dir(rp, mutable dir: String, self_path: String, type_name: String) returns String
     {
         if dir.get_length() = 0
             return ""
@@ -5350,7 +5350,7 @@ define symbols
     ; The type (base concept name) of member `member_name` of concept
     ; `type_name`, searching THIS source only: a field/property's declared type,
     ; or a method's return type. "" when the concept or member is not found here.
-    procedure member_type(rp, source: String, type_name: String, member_name: String) returns String
+    procedure member_type(rp, mutable source: String, type_name: String, member_name: String) returns String
     {
         var p parser.Parser(source)
         var result ""
@@ -5532,7 +5532,7 @@ define symbols
     ; member_type# across the workspace: THIS source first, then the current
     ; file's directory tree, then the package tree (so stdlib field/method types
     ; resolve). "" when the concept/member is found nowhere.
-    procedure member_type_ws(rp, source: String, uri: String, type_name: String, member_name: String) returns String
+    procedure member_type_ws(rp, mutable source: String, mutable uri: String, type_name: String, member_name: String) returns String
     {
         let here symbols.member_type(source, type_name, member_name)
         if here.get_length() > 0
@@ -5555,7 +5555,7 @@ define symbols
     ; member_type_from_ws_blob# — no per-request, per-segment re-parse. Shared
     ; with workspace/symbol + def + sig + member-completion + type-hint +
     ; semanticTokens. Structured like return_type_in_dir#.
-    procedure member_type_in_dir(rp, dir: String, self_path: String, type_name: String, member_name: String) returns String
+    procedure member_type_in_dir(rp, mutable dir: String, self_path: String, type_name: String, member_name: String) returns String
     {
         if dir.get_length() = 0
             return ""
@@ -5589,7 +5589,7 @@ define symbols
     ; The declared return-type base of a top-level (or namespace-nested)
     ; function/procedure named `fname`, searching THIS source only. "" when not
     ; found / no return type.
-    procedure function_return_type(rp, source: String, fname: String) returns String
+    procedure function_return_type(rp, mutable source: String, fname: String) returns String
     {
         var p parser.Parser(source)
         var result ""
@@ -5681,7 +5681,7 @@ define symbols
 
     ; function_return_type# across the workspace: THIS source, then dir tree,
     ; then package tree. "" when found nowhere.
-    procedure function_return_type_ws(rp, source: String, uri: String, fname: String) returns String
+    procedure function_return_type_ws(rp, mutable source: String, mutable uri: String, fname: String) returns String
     {
         let here symbols.function_return_type(source, fname)
         if here.get_length() > 0
@@ -5698,7 +5698,7 @@ define symbols
         ""
     }
 
-    procedure function_return_type_in_dir(rp, dir: String, self_path: String, fname: String) returns String
+    procedure function_return_type_in_dir(rp, mutable dir: String, self_path: String, fname: String) returns String
     {
         if dir.get_length() = 0
             return ""
@@ -5792,7 +5792,7 @@ define symbols
     ; Resolve the type (base concept name) of a multi-segment receiver chain
     ; `a.b.c`: resolve `a`'s declared type, then follow each subsequent segment
     ; as a field/method of the running type. "" when any step fails to resolve.
-    procedure resolve_chain_type(rp, source: String, uri: String, chain: String) returns String
+    procedure resolve_chain_type(rp, mutable source: String, mutable uri: String, chain: String) returns String
     {
         let n chain.get_length()
         var base ""
@@ -5945,7 +5945,7 @@ define symbols
     ; named `receiver` (found at top level or nested in a namespace), or "" when
     ; no such concept exists. A found concept with no members yields "[]" (a
     ; non-empty string), distinguishing it from the not-found "".
-    procedure member_completions(rp, source: String, receiver: String) returns String
+    procedure member_completions(rp, mutable source: String, receiver: String) returns String
     {
         var p parser.Parser(source)
         var result ""
@@ -6108,7 +6108,7 @@ define symbols
     ; The request frame packs the position as "<line> <character>" (decimal,
     ; space-separated). Parse it, run the walk, and wrap the result in the LSP
     ; hover envelope. An empty walk result yields "" (server -> result:null).
-    procedure hover_packed(rp, source: String, packed: String) returns String
+    procedure hover_packed(rp, mutable source: String, packed: String) returns String
     {
         var line: size_t 0
         var character: size_t 0
@@ -6184,7 +6184,7 @@ define symbols
 
     ; Parse the program and return the hover text for the innermost top-level
     ; declaration containing `offset`, or "" on no match / parse error.
-    procedure hover_at(rp, source: String, line: size_t, character: size_t) returns String
+    procedure hover_at(rp, mutable source: String, line: size_t, character: size_t) returns String
     {
         let offset symbols.position_to_offset(source, line, character)
         var p parser.Parser(source)
@@ -7079,7 +7079,7 @@ define symbols
     ; The request frame packs the position as "<line> <character>" (same as
     ; hover). Parse it, find the identifier at that offset, and resolve it to a
     ; Location, or "" when there is no identifier / no matching declaration.
-    procedure definition_packed(rp, source: String, uri: String, packed: String) returns String
+    procedure definition_packed(rp, mutable source: String, uri: String, packed: String) returns String
     {
         var line: size_t 0
         var character: size_t 0
@@ -7175,7 +7175,7 @@ define symbols
 
     ; Parse the program and return the Location of the first declaration named
     ; `name`, or "" on no match / parse error.
-    procedure find_definition(rp, source: String, uri: String, name: String) returns String
+    procedure find_definition(rp, mutable source: String, uri: String, name: String) returns String
     {
         var p parser.Parser(source)
         var result ""
@@ -7505,7 +7505,7 @@ define symbols
 
     ; The concept that scopes a member reference at `offset`, or "" when the
     ; cursor is not on a `.`-qualified member / the receiver names nothing.
-    procedure scoping_type_at(rp, source: String, offset: size_t) returns String
+    procedure scoping_type_at(rp, mutable source: String, offset: size_t) returns String
     {
         let receiver symbols.receiver_before_cursor(source, offset)
         if receiver.get_length() = 0
@@ -7531,7 +7531,7 @@ define symbols
     }
 
     ; The Location of member `name` of concept `type_name`, or "".
-    procedure definition_scoped_by_type(rp, source: String, uri: String, type_name: String, name: String) returns String
+    procedure definition_scoped_by_type(rp, mutable source: String, mutable uri: String, mutable type_name: String, name: String) returns String
     {
         let direct symbols.definition_in_type(source, uri, type_name, name)
         if direct.get_length() > 0
@@ -7552,7 +7552,7 @@ define symbols
     ; buffer first (member-scoped, exact), else the FILE that declares it, where
     ; the name is matched against that file's cached blob — no parse. "" when the
     ; concept is nowhere, or has no such member.
-    procedure definition_in_type(rp, source: String, uri: String, type_name: String, name: String) returns String
+    procedure definition_in_type(rp, mutable source: String, mutable uri: String, mutable type_name: String, name: String) returns String
     {
         let here symbols.member_definition(source, uri, type_name, name)
         if here.get_length() > 0
@@ -7578,7 +7578,7 @@ define symbols
     ; THIS source (namespaces, unions and nested concepts included), or "".
     ; Reuses the def_* member walkers, so a hit is exactly what a definition jump
     ; answers — only scoped to one concept instead of to the whole file.
-    procedure member_definition(rp, source: String, uri: String, type_name: String, member_name: String) returns String
+    procedure member_definition(rp, mutable source: String, uri: String, type_name: String, member_name: String) returns String
     {
         var p parser.Parser(source)
         var result ""
@@ -7708,7 +7708,7 @@ define symbols
 
     ; Try the current file first; on a miss, search sibling files. `source` is
     ; the in-memory current-file text; `uri` is its file:// uri.
-    procedure definition_workspace_packed(rp, source: String, uri: String, packed: String) returns String
+    procedure definition_workspace_packed(rp, mutable source: String, mutable uri: String, packed: String) returns String
     {
         ; The cursor is unpacked BEFORE any name search, because a `.`-qualified
         ; member is scoped by its receiver's concept and that question has to be
@@ -7783,7 +7783,7 @@ define symbols
     ; dependency tree (stdlib + declared packages under <SCALY_HOME/>packages/),
     ; so symbols defined in packages/scaly etc. resolve cross-package. Returns a
     ; Location pointing at the matching file, or "".
-    procedure find_definition_in_workspace(rp, uri: String, name: String) returns String
+    procedure find_definition_in_workspace(rp, mutable uri: String, mutable name: String) returns String
     {
         let path symbols.uri_to_path uri
         let dir symbols.dir_of path
@@ -7813,7 +7813,7 @@ define symbols
     ; the current-file path (definition_packed#) returns a zero-width range
     ; (jump-without-select). A span is valid LSP and nicer for cross-file (it's
     ; what workspace/symbol already ships) — kept intentionally.
-    procedure find_definition_in_dir(rp, dir: String, self_path: String, name: String) returns String
+    procedure find_definition_in_dir(rp, mutable dir: String, self_path: String, mutable name: String) returns String
     {
         if dir.get_length() = 0
             return ""
@@ -7879,7 +7879,7 @@ define symbols
     ; cached. Eight call sites carried this read+hash+valid+put dance inline;
     ; they all built the identical blob and now route through here, so the
     ; freshness rule holds for every cross-file feature rather than one.
-    procedure blob_for_file(rp, fpath: String) returns String
+    procedure blob_for_file(rp, mutable fpath: String) returns String
     {
         if symindex.fresh(fpath)
         {
@@ -7922,7 +7922,7 @@ define symbols
     ; semantic worker first and fall back to this. Not done here because the
     ; lexical answer is the one already proven over this tree.
     ; ====================================================================
-    procedure type_definition_packed(rp, source: String, uri: String, packed: String) returns String
+    procedure type_definition_packed(rp, mutable source: String, mutable uri: String, packed: String) returns String
     {
         var line: size_t 0
         var character: size_t 0
@@ -8010,7 +8010,7 @@ define symbols
     ; document — the same blob the answer is read out of two steps later, and
     ; the same test — so asking it first costs nothing and saves a walk of every
     ; sibling and every package.
-    procedure buffer_declares(source: String, uri: String, name: String) returns bool
+    procedure buffer_declares(mutable source: String, uri: String, name: String) returns bool
     {
         let blob symbols.workspace_symbols_in_file(source, uri)
         let hit symbols.def_from_ws_blob(blob, name, false)
@@ -8020,7 +8020,7 @@ define symbols
     ; The Location of `name`'s own declaration in the single file `fpath` (a
     ; `module NAME` statement there does NOT count — see def_from_ws_blob#), or
     ; "" when the file is absent or declares no such name.
-    procedure def_in_file(rp, fpath: String, name: String) returns String
+    procedure def_in_file(rp, mutable fpath: String, name: String) returns String
     {
         let blob symbols.blob_for_file fpath
         if blob.get_length() = 0
@@ -8036,7 +8036,7 @@ define symbols
     ; the file, not the enclosing namespace name — which throughout this tree IS
     ; the file's stem (containers.scaly / `define containers`). Two File.exists
     ; probes on a module hit, no directory walk.
-    procedure def_in_module_file(rp, decl_path: String, name: String) returns String
+    procedure def_in_module_file(rp, mutable decl_path: String, mutable name: String) returns String
     {
         let dir symbols.dir_of decl_path
         if dir.get_length() = 0
@@ -8566,7 +8566,7 @@ define symbols
     ; Is there a concept named `name` anywhere in the workspace? Mirrors
     ; find_definition_in_workspace#: the current file's directory tree, then ON A
     ; MISS the package dependency tree. Reads CACHED ws blobs via the symindex.
-    procedure concept_in_workspace(rp, uri: String, name: String) returns bool
+    procedure concept_in_workspace(rp, mutable uri: String, name: String) returns bool
     {
         let path symbols.uri_to_path uri
         let dir symbols.dir_of path
@@ -8583,7 +8583,7 @@ define symbols
     ; `name`, reading each file's CACHED ws blob (symindex.valid → get_blob#,
     ; else workspace_symbols_in_file# + put). Structured exactly like
     ; find_definition_in_dir#.
-    procedure concept_in_dir(rp, dir: String, self_path: String, name: String) returns bool
+    procedure concept_in_dir(rp, mutable dir: String, self_path: String, name: String) returns bool
     {
         if dir.get_length() = 0
             return false
@@ -8619,7 +8619,7 @@ define symbols
     ; (dir tree, then package tree), "" when found nowhere / void. Reads CACHED
     ; ws blobs via the symindex; structured like function_return_type_ws# but
     ; cache-served (no per-file re-parse).
-    procedure return_type_in_workspace(rp, uri: String, name: String) returns String
+    procedure return_type_in_workspace(rp, mutable uri: String, name: String) returns String
     {
         let path symbols.uri_to_path uri
         let dir symbols.dir_of path
@@ -8633,7 +8633,7 @@ define symbols
         ""
     }
 
-    procedure return_type_in_dir(rp, dir: String, self_path: String, name: String) returns String
+    procedure return_type_in_dir(rp, mutable dir: String, self_path: String, name: String) returns String
     {
         if dir.get_length() = 0
             return ""
@@ -8689,7 +8689,7 @@ define symbols
     ; sibling file is the reader's own code, and the union cannot tell them
     ; apart. Together they do exactly the work the union did — the symindex
     ; caches each directory's blob — so asking for both costs nothing extra.
-    procedure local_name_blob(rp, uri: String) returns String
+    procedure local_name_blob(rp, mutable uri: String) returns String
     {
         if uri.get_length() = 0
             return String("")
@@ -8700,7 +8700,7 @@ define symbols
 
     ; "" when the file has no package tree, or when it IS the directory already
     ; covered by local_name_blob# (the same skip workspace_name_blob# makes).
-    procedure package_name_blob(rp, uri: String) returns String
+    procedure package_name_blob(rp, mutable uri: String) returns String
     {
         if uri.get_length() = 0
             return String("")
@@ -8714,7 +8714,7 @@ define symbols
         symbols.tagged_names_in_dir(pkg, path)
     }
 
-    procedure workspace_name_blob(rp, uri: String) returns String
+    procedure workspace_name_blob(rp, mutable uri: String) returns String
     {
         if uri.get_length() > 0
         {
@@ -8760,7 +8760,7 @@ define symbols
     ; already in the intra-file lists). Reuses the symindex (parse-once, content
     ; hashed), so a query reuses the cached ws blob whenever the file is
     ; unchanged. Each file contributes its tagged-name fragment.
-    procedure workspace_names_in_dir(rp, dir: String, self_path: String) returns String
+    procedure workspace_names_in_dir(rp, mutable dir: String, self_path: String) returns String
     {
         if dir.get_length() = 0
             return ""
@@ -9036,7 +9036,7 @@ define symbols
     ; tagged_names_lexical fragment. No full parse and no symindex (the byte scan
     ; is cheap enough to re-run per request); the rich features keep their full-
     ; blob symindex cache, populated by their own queries.
-    procedure tagged_names_in_dir(rp, dir: String, self_path: String) returns String
+    procedure tagged_names_in_dir(rp, mutable dir: String, self_path: String) returns String
     {
         if dir.get_length() = 0
             return ""
@@ -9346,7 +9346,7 @@ define symbols
     ; Each file's UNFILTERED symbol blob is cached by content hash in symindex;
     ; a query reuses the cached parse when the file is unchanged and filters the
     ; blob by name, re-parsing only files whose content moved.
-    procedure workspace_symbols(rp, root: String, query: String) returns String
+    procedure workspace_symbols(rp, mutable root: String, query: String) returns String
     {
         if root.get_length() = 0
             return "[]"
@@ -9394,7 +9394,7 @@ define symbols
     ; `name <0x09> {json} <0x0A>`. Cacheable (query-independent); a query is
     ; applied later by filter_ws_blob#. Records are newline-terminated, so the
     ; builders below concatenate fragments rather than comma-joining.
-    procedure workspace_symbols_in_file(rp, source: String, uri: String) returns String
+    procedure workspace_symbols_in_file(rp, mutable source: String, uri: String) returns String
     {
         var p parser.Parser(source)
         var sb StringBuilder()
@@ -10159,7 +10159,7 @@ define symbols
         packed
     }
 
-    procedure references_packed(rp, source: String, uri: String, packed: String) returns String
+    procedure references_packed(rp, mutable source: String, mutable uri: String, mutable packed: String) returns String
     {
         let root symbols.root_prefix packed
         let pos symbols.strip_root_prefix packed
@@ -11017,7 +11017,7 @@ define symbols
     ; resolves from a CALL SITE too — that is where a reader asks "who calls
     ; this?" — by looking the name up in this buffer's routines first and then,
     ; on a miss, wherever the workspace declares it.
-    procedure prepare_call_hierarchy_packed(rp, source: String, uri: String, packed: String) returns String
+    procedure prepare_call_hierarchy_packed(rp, mutable source: String, mutable uri: String, packed: String) returns String
     {
         var line: size_t 0
         var character: size_t 0
@@ -11157,7 +11157,7 @@ define symbols
     ; under the walk root, each with the ranges of its call sites. The current
     ; buffer is scanned from `source` so unsaved edits count; the other files
     ; are read from disk, exactly as references does.
-    procedure incoming_calls(rp, source: String, uri: String, name: String, root: String) returns String
+    procedure incoming_calls(rp, source: String, uri: String, name: String, mutable root: String) returns String
     {
         var sb StringBuilder()
         sb.append("[" as char)
@@ -11198,7 +11198,7 @@ define symbols
 
     ; One file's contribution: for each routine that calls `name`, a
     ; CallHierarchyIncomingCall {"from":<item>,"fromRanges":[...]}.
-    procedure append_incoming_for(sb: ref[StringBuilder], first: ref[bool], source: String, uri: String, name: String)
+    procedure append_incoming_for(mutable sb: ref[StringBuilder], mutable first: ref[bool], source: String, uri: String, name: String)
     {
         ; Cheap pre-gate: a file that never writes the name cannot call it.
         if symbols.contains_token(source, name) = false
@@ -11269,7 +11269,7 @@ define symbols
     ; A callee is resolved to an item in this file first and only then across
     ; the workspace; one that resolves nowhere is dropped, because an item
     ; needs a location and inventing one would send the reader somewhere false.
-    procedure outgoing_calls(rp, source: String, uri: String, offset: size_t) returns String
+    procedure outgoing_calls(rp, mutable source: String, mutable uri: String, offset: size_t) returns String
     {
         var sb StringBuilder()
         sb.append("[" as char)
@@ -11366,7 +11366,7 @@ define symbols
     ; `.`-qualified (that concept's file may answer, nobody else), else this
     ; file's routine of that name, else the file the workspace declares it in.
     ; "" when it resolves nowhere.
-    procedure outgoing_item(rp, source: String, uri: String, records: String, callee: String, scope: String) returns String
+    procedure outgoing_item(rp, source: String, mutable uri: String, records: String, mutable callee: String, mutable scope: String) returns String
     {
         if scope.get_length() > 0
         {
@@ -11423,7 +11423,7 @@ define symbols
     ; nowhere, when it is declared in THIS file (the caller's own records answer
     ; then, and they carry the buffer rather than the saved bytes), or when that
     ; file declares no such routine.
-    procedure outgoing_item_in_type(rp, source: String, uri: String, callee: String, type_name: String) returns String
+    procedure outgoing_item_in_type(rp, source: String, mutable uri: String, callee: String, mutable type_name: String) returns String
     {
         let tloc symbols.find_definition_in_workspace(uri, type_name)
         if tloc.get_length() = 0
@@ -11779,7 +11779,7 @@ define symbols
     ; When walking an explicit root, the dependency-package and retired/ subtrees
     ; are excluded; the dir-tree fallback is never filtered. Each file's matches
     ; are gathered as a fragment and appended byte at a time (can be large).
-    procedure references_workspace(rp, source: String, uri: String, name: String, root: String) returns String
+    procedure references_workspace(rp, source: String, uri: String, name: String, mutable root: String) returns String
     {
         var sb StringBuilder()
         sb.append("[" as char)
@@ -11867,7 +11867,7 @@ define symbols
     ; legitimately occurs across routines/scopes, so references/rename must scan
     ; the whole file rather than confine to one routine. Locals and parameters
     ; are NOT here, so they get scoped.
-    procedure name_is_module_wide(rp, source: String, comp_items: String, scope_tbl: String, uri: String, name: String) returns bool
+    procedure name_is_module_wide(rp, source: String, mutable comp_items: String, scope_tbl: String, mutable uri: String, name: String) returns bool
     {
         if symbols.name_in_completion(comp_items, name)
             return true
@@ -11883,7 +11883,7 @@ define symbols
     ; True when `name` is a function/type declared anywhere in the workspace name
     ; blob (current file's directory tree + dependency package tree), each line
     ; "<tag><TAB><name><LF>".
-    procedure name_in_workspace(rp, uri: String, name: String) returns bool
+    procedure name_in_workspace(rp, mutable uri: String, name: String) returns bool
     {
         let blob symbols.workspace_name_blob uri
         let nlen name.get_length()
@@ -11920,7 +11920,7 @@ define symbols
     }
 
     ; True when `name` equals the label of any completion item.
-    procedure name_in_completion(rp, comp_items: String, name: String) returns bool
+    procedure name_in_completion(rp, mutable comp_items: String, name: String) returns bool
     {
         let jv json.parse comp_items
         let count json.array_length jv
@@ -11996,7 +11996,7 @@ define symbols
     ; module/file-wide name or a cursor outside any routine, else the enclosing
     ; routine's "<start> <end>" (a local/parameter is confined to its routine,
     ; eliminating cross-routine false matches).
-    procedure scan_scope(rp, source: String, scope_tbl: String, comp_items: String, uri: String, name: String, offset: size_t) returns String
+    procedure scan_scope(rp, source: String, scope_tbl: String, mutable comp_items: String, mutable uri: String, name: String, offset: size_t) returns String
     {
         let routine symbols.enclosing_routine(scope_tbl, offset)
         if routine.get_length() = 0
@@ -12045,7 +12045,7 @@ define symbols
     ; occurrence of the symbol under the cursor. No identifier -> `[]`.
     ; ====================================================================
 
-    procedure highlights_packed(rp, source: String, packed: String) returns String
+    procedure highlights_packed(rp, mutable source: String, packed: String) returns String
     {
         var line: size_t 0
         var character: size_t 0
@@ -12117,7 +12117,7 @@ define symbols
     ; "<line> <char> <newName>" (line/char decimal, newName an identifier with
     ; no spaces). Parse all three, find the old identifier at the cursor, and
     ; build the WorkspaceEdit. "" on no identifier / empty new name.
-    procedure rename_packed(rp, source: String, uri: String, packed: String) returns String
+    procedure rename_packed(rp, mutable source: String, mutable uri: String, mutable packed: String) returns String
     {
         let root symbols.root_prefix packed
         let pos symbols.strip_root_prefix packed
@@ -12292,7 +12292,7 @@ define symbols
     ; and retired/ subtrees are excluded (renaming the prelude from a user edit
     ; would be wrong); the dir-tree fallback is never filtered. Fragments are
     ; appended byte at a time.
-    procedure rename_workspace(rp, source: String, uri: String, old_name: String, new_name: String, root: String) returns String
+    procedure rename_workspace(rp, source: String, uri: String, old_name: String, new_name: String, mutable root: String) returns String
     {
         var sb StringBuilder()
         sb.append("{" as char)
@@ -12500,7 +12500,7 @@ define symbols
     ; not in a recognised call.
     ; ====================================================================
 
-    procedure signature_packed(rp, source: String, uri: String, packed: String) returns String
+    procedure signature_packed(rp, mutable source: String, mutable uri: String, packed: String) returns String
     {
         var line: size_t 0
         var character: size_t 0
@@ -12950,7 +12950,7 @@ define symbols
         sb.to_string()
     }
 
-    procedure binding_map(rp, source: String) returns String
+    procedure binding_map(rp, mutable source: String) returns String
     {
         var sb StringBuilder()
         var p parser.Parser(source)
@@ -13151,7 +13151,7 @@ define symbols
         sb.to_string()
     }
 
-    procedure inlay_hints_packed(rp, source: String, uri: String, packed: String) returns String
+    procedure inlay_hints_packed(rp, mutable source: String, mutable uri: String, packed: String) returns String
     {
         var sl: size_t 0
         var sc: size_t 0
@@ -13324,7 +13324,7 @@ define symbols
     ; each parameter label "name: Type" to just "name" (a nameless bare-type
     ; parameter yields an empty segment). "" when the callee is unresolved or
     ; has no parameters (a zero-arg call has no arguments to label anyway).
-    procedure call_param_names(rp, source: String, uri: String, callee: String, map: String) returns String
+    procedure call_param_names(rp, source: String, mutable uri: String, mutable callee: String, map: String) returns String
     {
         ; Intra-file: the single-parse map carries the routine's labels directly.
         let mlabels symbols.map_labels(map, callee)
@@ -13599,7 +13599,7 @@ define symbols
     ;   call / ctor-call `T(..)`  -> T if T is a concept, else T's return type
     ;   field chain `a.b.c`       -> resolve_chain_type#
     ;   bare variable `other`     -> resolve_variable_type#
-    procedure infer_binding_type(rp, source: String, uri: String, name_end: size_t, map: String) returns String
+    procedure infer_binding_type(rp, mutable source: String, mutable uri: String, name_end: size_t, map: String) returns String
     {
         let len source.get_length()
         let after symbols.skip_ws(source, name_end, len)
@@ -13693,7 +13693,7 @@ define symbols
     ; return-type base) to a displayable type, "" otherwise (incl. a primitive
     ; result). The intra-file map answers with no extra parse; an intra-miss
     ; falls back to the cross-file (re-parsing) workspace path.
-    procedure concept_or_return_type(rp, source: String, uri: String, name: String, map: String) returns String
+    procedure concept_or_return_type(rp, source: String, mutable uri: String, name: String, map: String) returns String
     {
         if name.get_length() = 0
             return ""
@@ -13719,7 +13719,7 @@ define symbols
 
     ; Parse the program and return the SignatureHelp for the first function /
     ; procedure / operator / method named `name`, or "" on no match / parse error.
-    procedure find_signature(rp, source: String, name: String, active: size_t) returns String
+    procedure find_signature(rp, mutable source: String, name: String, active: size_t) returns String
     {
         var p parser.Parser(source)
         var result ""
@@ -14389,7 +14389,7 @@ define symbols
     ; Cross-file signatureHelp: the current file's directory tree first, then —
     ; on a miss — the package dependency tree (so stdlib routines resolve), the
     ; same two-step search as find_definition_in_workspace#. "" if none.
-    procedure find_signature_in_workspace(rp, uri: String, name: String, active: size_t) returns String
+    procedure find_signature_in_workspace(rp, mutable uri: String, name: String, active: size_t) returns String
     {
         let path symbols.uri_to_path uri
         let dir symbols.dir_of path
@@ -14411,7 +14411,7 @@ define symbols
     ; detail field = the routine's 0x1F-joined param labels, so the SignatureHelp
     ; is rebuilt from the cache (sig_from_ws_blob#) — no re-parse, shared with
     ; workspace/symbol + cross-file definition + member completion.
-    procedure find_signature_in_dir(rp, dir: String, self_path: String, name: String, active: size_t) returns String
+    procedure find_signature_in_dir(rp, mutable dir: String, self_path: String, name: String, active: size_t) returns String
     {
         if dir.get_length() = 0
             return ""
@@ -14450,7 +14450,7 @@ define symbols
     ; dazzle's BoundVarList.append). Directory tree first, then the package tree
     ; (matching find_signature_in_workspace#). "" when not found -> the caller
     ; falls back to the unscoped, name-only search.
-    procedure find_signature_in_concept_ws(rp, uri: String, concept: String, name: String, active: size_t) returns String
+    procedure find_signature_in_concept_ws(rp, mutable uri: String, concept: String, name: String, active: size_t) returns String
     {
         let path symbols.uri_to_path uri
         let dir symbols.dir_of path
@@ -14469,7 +14469,7 @@ define symbols
     ; that same blob's signature for routine `name`. Mirrors find_signature_in_dir#
     ; but gates on the concept, so the signature is read from the receiver's own
     ; type's file — not the first file that happens to declare `name`. "" if none.
-    procedure find_signature_in_concept_dir(rp, dir: String, self_path: String, concept: String, name: String, active: size_t) returns String
+    procedure find_signature_in_concept_dir(rp, mutable dir: String, self_path: String, concept: String, name: String, active: size_t) returns String
     {
         if dir.get_length() = 0
             return ""

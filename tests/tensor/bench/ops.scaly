@@ -52,7 +52,7 @@ procedure report(tag: pointer[const_char], work: i64, unit: pointer[const_char],
     Console.println(line.to_c_string())
 }
 
-procedure fill_f32(v: Vector[float], n: size_t, x: float)
+procedure fill_f32(mutable v: Vector[float], n: size_t, x: float)
 {
     var i: size_t 0
     while i < n
@@ -63,7 +63,7 @@ procedure fill_f32(v: Vector[float], n: size_t, x: float)
 }
 
 ; ---- matmul: 4x4 register-tiled, parallel over row tiles ----
-procedure mm_f32(a: Vector[float], b: Vector[float], c: Vector[float], m: int, kk: int, n: int)
+procedure mm_f32(a: Vector[float], b: Vector[float], mutable c: Vector[float], m: int, kk: int, n: int)
 {
     let ap a.data
     let bp b.data
@@ -140,7 +140,7 @@ procedure mm_f32(a: Vector[float], b: Vector[float], c: Vector[float], m: int, k
 }
 
 ; ---- softmax: row-wise, max-subtracted ----
-procedure softmax_f32(x: Vector[float], out: Vector[float], rows: int, n: int)
+procedure softmax_f32(x: Vector[float], mutable out: Vector[float], rows: int, n: int)
 {
     let xp x.data
     let op out.data
@@ -175,7 +175,7 @@ procedure softmax_f32(x: Vector[float], out: Vector[float], rows: int, n: int)
 }
 
 ; ---- layernorm: row-wise, gamma/beta ----
-procedure layernorm_f32(x: Vector[float], gamma: Vector[float], beta: Vector[float], out: Vector[float], rows: int, n: int, eps: float)
+procedure layernorm_f32(x: Vector[float], gamma: Vector[float], beta: Vector[float], mutable out: Vector[float], rows: int, n: int, eps: float)
 {
     let xp x.data
     let gp gamma.data
@@ -218,7 +218,7 @@ function gelu_scalar(v: float) returns float
     0.5 * v * (1.0 + t)
 }
 
-procedure gelu_f32(x: Vector[float], out: Vector[float], rows: int, n: int)
+procedure gelu_f32(x: Vector[float], mutable out: Vector[float], rows: int, n: int)
 {
     let xp x.data
     for r in rows
@@ -234,7 +234,7 @@ procedure gelu_f32(x: Vector[float], out: Vector[float], rows: int, n: int)
 }
 
 ; ---- embedding lookup: gather table rows by token id ----
-procedure embedding_f32(table: Vector[float], ids: Vector[i64], out: Vector[float], tokens: int, dim: int)
+procedure embedding_f32(table: Vector[float], ids: Vector[i64], mutable out: Vector[float], tokens: int, dim: int)
 {
     let tp table.data
     let ip ids.data

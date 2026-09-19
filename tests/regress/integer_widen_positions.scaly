@@ -25,12 +25,12 @@ define N (kind: i32  pos: i32)
 }
 define Box (v: int)
 {
-    procedure put(this, x: int)
+    procedure put(mutable this, x: int)
         set v: x
 }
 define GBox[T] (v: T)
 {
-    procedure put(this, x: T)
+    procedure put(mutable this, x: T)
         set v: x
 }
 function f_arg(x: int) returns int

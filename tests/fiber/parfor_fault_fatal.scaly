@@ -9,7 +9,7 @@
 ; ExpectedExit: 15
 ; ExpectedErr: Vector[]: index out of bounds (index 200000, length 200000)
 
-procedure fill(acc: ref[Vector[int]], src: ref[Vector[int]], n: size_t, skew: size_t)
+procedure fill(mutable acc: ref[Vector[int]], src: ref[Vector[int]], n: size_t, skew: size_t)
 {
     for i in n
     {

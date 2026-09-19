@@ -22,7 +22,7 @@ define Boxy
         k * 2
 }
 
-procedure fill(q: pointer[char])
+procedure fill(mutable q: pointer[char])
 {
     set *(q + 0): "A" as char
     set *(q + 1): "B" as char

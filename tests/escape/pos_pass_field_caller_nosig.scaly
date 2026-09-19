@@ -11,11 +11,11 @@ define Holder
     b: pointer[Box]
 )
 {
-    procedure stash(this, p: pointer[Box])
+    procedure stash(mutable this, p: pointer[Box])
         set this.b: p
 }
 
-procedure fwd(c: Holder, src: pointer[Box])
+procedure fwd(mutable c: Holder, src: pointer[Box])
 {
     let h Holder(src)
     c.stash(h.b)

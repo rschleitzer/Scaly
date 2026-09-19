@@ -11,14 +11,14 @@ define Sink
     fn: IntFn
 )
 {
-    procedure store_fn(this, f: IntFn)
+    procedure store_fn(mutable this, f: IntFn)
         set this.fn: f
 }
 
-procedure forward_fn(s: Sink, f: IntFn)
+procedure forward_fn(mutable s: Sink, f: IntFn)
     s.store_fn(f)
 
-procedure relay(s: Sink, f: IntFn)
+procedure relay(mutable s: Sink, f: IntFn)
     forward_fn(s, f)
 
 function main() returns int

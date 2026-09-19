@@ -20,10 +20,10 @@ function LLVMGetIntTypeWidth(int_type: LLVMTypeRef) returns int extern
 
 define probe
 {
-    function width_param(ty: LLVMTypeRef) returns int
+    procedure width_param(mutable ty: LLVMTypeRef) returns int
         LLVMGetIntTypeWidth(ty)
 
-    function width_var(ty: LLVMTypeRef) returns int
+    procedure width_var(mutable ty: LLVMTypeRef) returns int
     {
         var t ty
         LLVMGetIntTypeWidth(t)

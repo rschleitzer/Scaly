@@ -20,7 +20,7 @@ define Payload union
 )
 
 ; param (raw), NOT listed: this, r
-function walk(this: Holder, raw: pointer[u8], r: ref[Leaf], n: size_t) returns pointer[u8]   ; return
+procedure walk(this: Holder, mutable raw: pointer[u8], r: ref[Leaf], n: size_t) returns pointer[u8]   ; return
 {
     let first *raw                          ; deref
     let third *(raw + 2)                    ; deref-arith
@@ -85,7 +85,7 @@ define GenBox[T] (v: T)
 {
     function take(this, p: pointer[u8], n: size_t) returns int   n as int
 }
-procedure call_shapes(h: pointer[Sized], raw: pointer[u8], s: Slice[u8], leaf: pointer[Leaf]) returns int
+procedure call_shapes(h: pointer[Sized], mutable raw: pointer[u8], s: Slice[u8], leaf: pointer[Leaf]) returns int
 {
     let k h.size()                                  ; receiver: NOT an arg site
     let a takes_ptr(raw, 3)                         ; arg pointer[u8] -> takes_ptr(p)
@@ -124,7 +124,7 @@ procedure build_sources(o: pointer[Origin], raw: pointer[u8]) returns int
 
 ; A VALUE stored into a `pointer[ref[X]]` slot goes THROUGH the slot's pointee; a
 ; reference REBINDS the slot (2026-09-14), as the Option element always did.
-procedure fill_slots(host: ref[Page], lr: ref[Leaf], v: Leaf, buf: pointer[ref[Leaf]], obuf: pointer[ref[Leaf]?], cell: pointer[ref[Leaf]])
+procedure fill_slots(host: ref[Page], lr: ref[Leaf], v: Leaf, mutable buf: pointer[ref[Leaf]], mutable obuf: pointer[ref[Leaf]?], mutable cell: pointer[ref[Leaf]])
 {
     set *(buf + 0): v                               ; h-store-through-ref-slot (arith)
     set *cell: v                                    ; h-store-through-ref-slot (plain)

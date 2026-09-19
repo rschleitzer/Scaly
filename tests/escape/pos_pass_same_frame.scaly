@@ -11,7 +11,7 @@ define Holder
     b: pointer[Box]
 )
 {
-    procedure stash(this, p: pointer[Box])
+    procedure stash(mutable this, p: pointer[Box])
         set this.b: p
 }
 

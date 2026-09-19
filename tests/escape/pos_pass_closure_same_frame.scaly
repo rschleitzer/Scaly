@@ -12,7 +12,7 @@ define Holder
     fn: IntFn
 )
 
-procedure set_fn(h: pointer[Holder], f: IntFn)
+procedure set_fn(mutable h: pointer[Holder], f: IntFn)
 {
     set h.fn: f
 }

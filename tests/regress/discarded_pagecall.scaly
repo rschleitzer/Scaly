@@ -27,7 +27,7 @@ define Reg
     ; Page-requiring (returns a guts-owning String). Side effect: a
     ; page-allocated copy lands in this-state — the this-field putadd
     ; promotion routes it to THIS call's page.
-    function plan_thing(this: Reg, text: String) returns String
+    procedure plan_thing(mutable this: Reg, text: String) returns String
     {
         names.add(String(text))
         String(text)
@@ -35,7 +35,7 @@ define Reg
 
     ; The plan_namespace_module_one shape: explicit rp, page-requiring
     ; sibling call in non-last statement position, result discarded.
-    function drive(rp, this: Reg, text: String)
+    procedure drive(rp, mutable this: Reg, text: String)
     {
         this.plan_thing(text)
         let done 0

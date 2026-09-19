@@ -5808,7 +5808,7 @@ os.makedirs(ws)
 # page, so a dangling buffer shows as the recycled bytes rather than by luck.
 BODY = ("define Holder (name: String)\n"
         "\n"
-        "function fill(%s) returns bool\n"
+        "procedure fill(%s) returns bool\n"
         "{\n"
         "    let s String(\"hello\")\n"
         "    set *out: Holder(s)\n"                      # 6 - the store
@@ -5835,8 +5835,8 @@ BODY = ("define Holder (name: String)\n"
         "    if noise > 0\n"
         "        scaly.io.Console.print(h.name.to_c_string())\n"
         "}\n")
-bad_src  = BODY % "out: pointer[Holder], n: int"        # no page parameter
-good_src = BODY % "rp, out: pointer[Holder], n: int"    # can pin on the caller
+bad_src  = BODY % "mutable out: pointer[Holder], n: int"        # no page parameter
+good_src = BODY % "rp, mutable out: pointer[Holder], n: int"    # can pin on the caller
 open(ws + "/bad.scaly", "w").write(bad_src)
 open(ws + "/good.scaly", "w").write(good_src)
 
@@ -5872,19 +5872,19 @@ check(not good_rows,
 quiet = ("define Holder (name: String)\n"
          "use scaly.memory.Page\n"
          "\n"
-         "function scalar_out(ok: pointer[bool], n: int) returns int\n"
+         "procedure scalar_out(mutable ok: pointer[bool], n: int) returns int\n"
          "{\n"
          "    set *ok: true\n"                                    # 6  no buffer in a bool
          "    n\n"
          "}\n"
          "\n"
-         "function empty_ctor(out: pointer[Holder], n: int) returns int\n"
+         "procedure empty_ctor(mutable out: pointer[Holder], n: int) returns int\n"
          "{\n"
          "    set *out: Holder(String())\n"                       # 12 nothing allocated
          "    n\n"
          "}\n"
          "\n"
-         "function pinned(out: pointer[String], host: pointer[Page], n: int) returns int\n"
+         "procedure pinned(mutable out: pointer[String], host: pointer[Page], n: int) returns int\n"
          "{\n"
          "    set *out: String^host(\"x\")\n"                     # 18 decided on the line
          "    n\n"

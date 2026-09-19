@@ -88,7 +88,7 @@ define server
         }
     }
 
-    procedure handle_message(body: String)
+    procedure handle_message(mutable body: String)
     {
         let msg json.parse body
 
@@ -1148,7 +1148,7 @@ define server
     ; Diagnostics are computed in a crash-isolated worker subprocess (see
     ; scalyls.worker): a SIGSEGV/abort/hang in the compiler pipeline on a
     ; bad document then loses only that one result, not the whole server.
-    procedure publish_for(uri: String, text: String)
+    procedure publish_for(mutable uri: String, mutable text: String)
     {
         let payload worker.analyze(uri, text)
         server.write_notifications payload
@@ -1171,7 +1171,7 @@ define server
     ; one root: an unfinished line in B showed `expected '}'`, and one keystroke
     ; in A cleared it, with the broken line still on screen. An open file loses
     ; nothing by being skipped — it gets its own analysis on its own next edit.
-    procedure write_notifications(payload: String)
+    procedure write_notifications(mutable payload: String)
     {
         let len payload.get_length()
         if len = 0
@@ -1203,7 +1203,7 @@ define server
     ; Write one publishDiagnostics notification, unless it is a sibling (index
     ; > 0) whose document the editor has open — see write_notifications# for why.
     ; Line 0 is the analysed document itself and is always written.
-    procedure write_notification(notification: String, index: size_t)
+    procedure write_notification(mutable notification: String, index: size_t)
     {
         if index > 0
         {

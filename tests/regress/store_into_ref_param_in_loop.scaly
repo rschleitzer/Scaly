@@ -19,7 +19,7 @@ use scaly.containers.String
 use scaly.containers.Array
 use scaly.containers.Vector
 
-function collect(out: pointer[Array[String]], n: size_t) returns bool
+procedure collect(mutable out: pointer[Array[String]], n: size_t) returns bool
 {
     var i: size_t 0
     while i < n

@@ -3,7 +3,7 @@
 
 define Counter(value: int)
 {
-    procedure increment(this)
+    procedure increment(mutable this)
         set value: value + 1
 
     function get_value(this) returns int

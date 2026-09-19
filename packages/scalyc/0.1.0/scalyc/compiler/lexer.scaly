@@ -82,7 +82,7 @@ define lexer
             }
         }
 
-        procedure read_character(this)
+        procedure read_character(mutable this)
         {
             if current = null
                 return
@@ -94,7 +94,7 @@ define lexer
 
         }
 
-        procedure empty(this)
+        procedure empty(mutable this)
         {
             set token: Token.Empty(EmptyToken())
         }
@@ -102,7 +102,7 @@ define lexer
         function is_at_end(this) returns bool
             current = null
 
-        procedure advance(this)
+        procedure advance(mutable this)
         {
             set previous_position: position
 
@@ -219,7 +219,7 @@ define lexer
             skip_whitespace false
         }
 
-        procedure scan_line_feed(this) returns Token
+        procedure scan_line_feed(mutable this) returns Token
         {
             ; We just saw a \n, advance past it
             read_character()
@@ -256,7 +256,7 @@ define lexer
             }
         }
 
-        procedure scan_identifier(this) returns Token
+        procedure scan_identifier(mutable this) returns Token
         {
             let start current
             var length: size_t 0
@@ -282,7 +282,7 @@ define lexer
             }
         }
 
-        procedure scan_attribute(this) returns Token
+        procedure scan_attribute(mutable this) returns Token
         {
             let start current
             var length: size_t 0
@@ -308,7 +308,7 @@ define lexer
             }
         }
 
-        procedure scan_operator(this) returns Token
+        procedure scan_operator(mutable this) returns Token
         {
             let start current
             var length: size_t 0
@@ -339,7 +339,7 @@ define lexer
             }
         }
 
-        procedure scan_string_literal(this) returns Token
+        procedure scan_string_literal(mutable this) returns Token
         {
             let start current + 1
             var length: size_t 0
@@ -398,7 +398,7 @@ define lexer
         }
 
         ; Single-quoted strings are freeform identifiers (like SQL's 'column name')
-        procedure scan_string_identifier(this) returns Token
+        procedure scan_string_identifier(mutable this) returns Token
         {
             let start current + 1
             var length: size_t 0
@@ -455,7 +455,7 @@ define lexer
             }
         }
 
-        procedure scan_fragment_literal(this) returns Token
+        procedure scan_fragment_literal(mutable this) returns Token
         {
             let start current + 1
             var length: size_t 0
@@ -493,7 +493,7 @@ define lexer
             }
         }
 
-        procedure scan_numeric_literal(this) returns Token
+        procedure scan_numeric_literal(mutable this) returns Token
         {
             let start current
             var length: size_t 0
@@ -524,7 +524,7 @@ define lexer
             return Token.Literal(LiteralToken(Literal.Integer(IntegerLiteral(String^this(start, length)))))
         }
 
-        procedure scan_integer_literal(this, start: pointer[char], initial_length: size_t) returns Token
+        procedure scan_integer_literal(mutable this, start: pointer[char], initial_length: size_t) returns Token
         {
             var length initial_length
 
@@ -551,7 +551,7 @@ define lexer
             }
         }
 
-        procedure scan_fraction(this, start: pointer[char], initial_length: size_t) returns Token
+        procedure scan_fraction(mutable this, start: pointer[char], initial_length: size_t) returns Token
         {
             var length initial_length
 
@@ -575,7 +575,7 @@ define lexer
             }
         }
 
-        procedure scan_exponent(this, start: pointer[char], initial_length: size_t) returns Token
+        procedure scan_exponent(mutable this, start: pointer[char], initial_length: size_t) returns Token
         {
             var length initial_length
 
@@ -596,7 +596,7 @@ define lexer
             }
         }
 
-        procedure scan_hex_literal(this, start: pointer[char], initial_length: size_t) returns Token
+        procedure scan_hex_literal(mutable this, start: pointer[char], initial_length: size_t) returns Token
         {
             var length initial_length
 
@@ -617,7 +617,7 @@ define lexer
             }
         }
 
-        procedure scan_boolean_literal(this) returns Token
+        procedure scan_boolean_literal(mutable this) returns Token
         {
             read_character()
 
@@ -633,7 +633,7 @@ define lexer
             return Token.Literal(LiteralToken(Literal.Boolean(BooleanLiteral(c = 49))))
         }
 
-        procedure skip_whitespace(this, skip_line_feed: bool)
+        procedure skip_whitespace(mutable this, skip_line_feed: bool)
         {
             while true
             {
@@ -711,7 +711,7 @@ define lexer
             }
         }
 
-        procedure handle_single_line_comment(this)
+        procedure handle_single_line_comment(mutable this)
         {
             while true
             {
@@ -727,7 +727,7 @@ define lexer
             }
         }
 
-        procedure handle_multi_line_comment(this)
+        procedure handle_multi_line_comment(mutable this)
         {
             while true
             {
@@ -769,7 +769,7 @@ define lexer
         }
 
         ; Parser helper: parse keyword
-        procedure parse_keyword(this, keyword: String) returns bool
+        procedure parse_keyword(mutable this, keyword: String) returns bool
         {
             choose token
                 when e: Empty
@@ -792,7 +792,7 @@ define lexer
 
         ; Parser helper: parse identifier, returns empty string if not found
         ; or if the identifier is a keyword (matches C++ parseName behaviour).
-        procedure parse_identifier(this, keywords: HashSet[String]) returns String
+        procedure parse_identifier(mutable this, keywords: HashSet[String]) returns String
         {
             choose token
                 when e: Empty
@@ -815,7 +815,7 @@ define lexer
         }
 
         ; Parser helper: peek identifier without consuming
-        procedure peek_identifier(this) returns String
+        procedure peek_identifier(mutable this) returns String
         {
             choose token
                 when e: Empty
@@ -831,7 +831,7 @@ define lexer
         }
 
         ; Parser helper: parse attribute
-        procedure parse_attribute(this) returns String
+        procedure parse_attribute(mutable this) returns String
         {
             choose token
                 when e: Empty
@@ -851,7 +851,7 @@ define lexer
         }
 
         ; Parser helper: parse punctuation
-        procedure parse_punctuation(this, c: u8) returns bool
+        procedure parse_punctuation(mutable this, c: u8) returns bool
         {
             choose token
                 when e: Empty
@@ -873,7 +873,7 @@ define lexer
         }
 
         ; Parser helper: parse colon
-        procedure parse_colon(this) returns bool
+        procedure parse_colon(mutable this) returns bool
         {
             choose token
                 when e: Empty
@@ -897,7 +897,7 @@ define lexer
         procedure save_state(this) returns LexerState
             LexerState(current, position, previous_position, token)
 
-        procedure restore_state(this, s: LexerState)
+        procedure restore_state(mutable this, s: LexerState)
         {
             set current: s.current
             set position: s.position

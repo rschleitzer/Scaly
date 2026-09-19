@@ -7,7 +7,7 @@
 
 function expf(x: float) returns float extern
 
-procedure softmax_f32(x: Vector[float], out: Vector[float], rows: int, n: int)
+procedure softmax_f32(x: Vector[float], mutable out: Vector[float], rows: int, n: int)
 {
     let xp x.data
     let op out.data

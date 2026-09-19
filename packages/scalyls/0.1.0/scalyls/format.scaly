@@ -756,7 +756,7 @@ define format
     }
 
     ; Pop the top frame and answer the level it recorded.
-    procedure pop_frame(stack: ref[Array[size_t]]) returns size_t
+    procedure pop_frame(mutable stack: ref[Array[size_t]]) returns size_t
     {
         let n stack.get_length()
         if n = 0
@@ -771,7 +771,7 @@ define format
     ; Drop frames until a bracket frame is popped; answer its level. Braceless
     ; frames inside the bracket die with it — the block they were waiting for a
     ; statement in has ended.
-    procedure unwind_to_bracket(stack: ref[Array[size_t]], level: size_t) returns size_t
+    procedure unwind_to_bracket(mutable stack: ref[Array[size_t]], level: size_t) returns size_t
     {
         while stack.get_length() > 0
         {

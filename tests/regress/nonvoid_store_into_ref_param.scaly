@@ -26,7 +26,7 @@ use scaly.containers.Vector
 ; level, not into a `while` — so a store inside a loop is not seen. That is a
 ; pre-existing limit of action_stores_into_ref_param, not something this
 ; fixture is asserting.
-function collect(out: pointer[Array[String]], n: size_t) returns bool
+procedure collect(mutable out: pointer[Array[String]], n: size_t) returns bool
 {
     out.add(String("payload"))
     out.add(String("payload"))

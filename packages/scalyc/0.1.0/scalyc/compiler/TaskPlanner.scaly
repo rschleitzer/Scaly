@@ -146,7 +146,7 @@ define TaskPlanner
         ; Entry point: walk every planned function body plus the program's
         ; top-level statements and record one verdict per `for` loop.
         ; ================================================================
-        procedure analyze(this: TaskPlanner, plan: Plan, entry_file: String)
+        procedure analyze(mutable this: TaskPlanner, plan: Plan, entry_file: String)
         {
             set plan_functions: plan.functions
             set plan_globals: plan.globals
@@ -178,7 +178,7 @@ define TaskPlanner
         ; own entries in plan.functions.
         ; ================================================================
 
-        procedure find_operands(this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?)
+        procedure find_operands(mutable this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?)
         {
             if ops = null
                 return
@@ -192,7 +192,7 @@ define TaskPlanner
             }
         }
 
-        procedure find_statement_ref(this: TaskPlanner, stmt: ref[PlannedStatement]?)
+        procedure find_statement_ref(mutable this: TaskPlanner, stmt: ref[PlannedStatement]?)
         {
             if stmt <> null
             {
@@ -201,13 +201,13 @@ define TaskPlanner
             }
         }
 
-        procedure find_action(this: TaskPlanner, act: PlannedAction)
+        procedure find_action(mutable this: TaskPlanner, act: PlannedAction)
         {
             this.find_operands(act.source)
             this.find_operands(act.target)
         }
 
-        procedure find_statement(this: TaskPlanner, stmt: PlannedStatement)
+        procedure find_statement(mutable this: TaskPlanner, stmt: PlannedStatement)
         {
             choose stmt
                 when action: Action
@@ -224,7 +224,7 @@ define TaskPlanner
                     0
         }
 
-        procedure find_operand(this: TaskPlanner, op: PlannedOperand)
+        procedure find_operand(mutable this: TaskPlanner, op: PlannedOperand)
         {
             choose op.expr
                 when call: Call
@@ -403,7 +403,7 @@ define TaskPlanner
         ; move checker's move_found discipline).
         ; ================================================================
 
-        procedure classify_for(this: TaskPlanner, fr: PlannedFor)
+        procedure classify_for(mutable this: TaskPlanner, fr: PlannedFor)
         {
             this.classify_body(fr)
             set loops_total: loops_total + 1
@@ -433,7 +433,7 @@ define TaskPlanner
         ; Reset the per-loop scratch and walk one body; cls_blocked /
         ; cls_reason carry the verdict. Shared by the report walk and
         ; the Emitter's per-site promotion query.
-        procedure classify_body(this: TaskPlanner, fr: PlannedFor)
+        procedure classify_body(mutable this: TaskPlanner, fr: PlannedFor)
         {
             set cls_locals.length: 0
             set cls_aliased.length: 0
@@ -452,7 +452,7 @@ define TaskPlanner
         ; the engine, no syntax involved. Same classifier, same
         ; conservatism as the report; the purity memo persists across
         ; sites on one instance.
-        procedure loop_promotable(this: TaskPlanner, plan: Plan, file: String, fr: PlannedFor) returns bool
+        procedure loop_promotable(mutable this: TaskPlanner, plan: Plan, file: String, fr: PlannedFor) returns bool
         {
             set plan_functions: plan.functions
             set plan_globals: plan.globals
@@ -481,7 +481,7 @@ define TaskPlanner
         }
 
         ; Record the first blocker. Later calls are no-ops.
-        procedure block(this: TaskPlanner, reason: String)
+        procedure block(mutable this: TaskPlanner, reason: String)
         {
             if cls_blocked
                 return
@@ -489,7 +489,7 @@ define TaskPlanner
             set cls_reason: String^this(reason)
         }
 
-        procedure block_named(this: TaskPlanner, prefix: String, name: String)
+        procedure block_named(mutable this: TaskPlanner, prefix: String, name: String)
         {
             if cls_blocked
                 return
@@ -537,7 +537,7 @@ define TaskPlanner
         ; loop-external state is an ALIAS, not a local — writes and
         ; mutating calls through it must block exactly like the external
         ; itself (the laundering counterexample: `let r outer` + `r.add i`).
-        procedure add_body_name(this: TaskPlanner, name: String, aliases_external: bool)
+        procedure add_body_name(mutable this: TaskPlanner, name: String, aliases_external: bool)
         {
             let n_copy String^this(name)
             if aliases_external
@@ -735,7 +735,7 @@ define TaskPlanner
             false
         }
 
-        procedure cls_operands(this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?)
+        procedure cls_operands(mutable this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?)
         {
             if cls_blocked
                 return
@@ -753,7 +753,7 @@ define TaskPlanner
             }
         }
 
-        procedure cls_statement_ref(this: TaskPlanner, stmt: ref[PlannedStatement]?)
+        procedure cls_statement_ref(mutable this: TaskPlanner, stmt: ref[PlannedStatement]?)
         {
             if cls_blocked
                 return
@@ -767,7 +767,7 @@ define TaskPlanner
         ; Walk one action: reads first, then the write target. A bare `set
         ; name:` into a body-local binding is fine; anything whose root
         ; lives outside the loop is a cross-iteration conflict.
-        procedure cls_action(this: TaskPlanner, act: PlannedAction)
+        procedure cls_action(mutable this: TaskPlanner, act: PlannedAction)
         {
             if cls_blocked
                 return
@@ -787,7 +787,7 @@ define TaskPlanner
             }
         }
 
-        procedure retaint_write_target(this: TaskPlanner, t: Vector[PlannedOperand], src: ref[Vector[PlannedOperand]]?)
+        procedure retaint_write_target(mutable this: TaskPlanner, t: Vector[PlannedOperand], src: ref[Vector[PlannedOperand]]?)
         {
             if t.length <> 1
                 return
@@ -810,7 +810,7 @@ define TaskPlanner
                     0
         }
 
-        procedure cls_write_target(this: TaskPlanner, t: Vector[PlannedOperand])
+        procedure cls_write_target(mutable this: TaskPlanner, t: Vector[PlannedOperand])
         {
             if cls_blocked
                 return
@@ -835,7 +835,7 @@ define TaskPlanner
                     this.block("indirect write")
         }
 
-        procedure cls_statement(this: TaskPlanner, stmt: PlannedStatement)
+        procedure cls_statement(mutable this: TaskPlanner, stmt: PlannedStatement)
         {
             if cls_blocked
                 return
@@ -873,7 +873,7 @@ define TaskPlanner
                     0
         }
 
-        procedure cls_operand(this: TaskPlanner, op: PlannedOperand)
+        procedure cls_operand(mutable this: TaskPlanner, op: PlannedOperand)
         {
             if cls_blocked
                 return
@@ -1092,7 +1092,7 @@ define TaskPlanner
         ; A frame-local allocation (Local/Unspecified life) stays inside
         ; the iteration; a Call life (caller page) or Reference life
         ; (^this / ^named page) escapes the loop frame.
-        procedure check_life(this: TaskPlanner, life: Lifetime)
+        procedure check_life(mutable this: TaskPlanner, life: Lifetime)
         {
             if cls_blocked
                 return
@@ -1119,7 +1119,7 @@ define TaskPlanner
         ; worker thread reads a different cell than the spawner. The
         ; allocator's own state cells are sanctioned — RBMM allocation is
         ; per-task by design (one region per task).
-        procedure check_global_read(this: TaskPlanner, g: PlannedGlobalRef)
+        procedure check_global_read(mutable this: TaskPlanner, g: PlannedGlobalRef)
         {
             if cls_blocked
                 return
@@ -1255,7 +1255,7 @@ define TaskPlanner
         ; immutable. Memoized per mangled name.
         ; ================================================================
 
-        procedure memo_purity(this: TaskPlanner, mangled: String, is_pure: bool)
+        procedure memo_purity(mutable this: TaskPlanner, mangled: String, is_pure: bool)
         {
             let m_copy String^this(mangled)
             pure_memo_names.add m_copy
@@ -1265,7 +1265,7 @@ define TaskPlanner
             pure_memo_flags.add flag
         }
 
-        procedure effectively_pure(this: TaskPlanner, mangled: String) returns bool
+        procedure effectively_pure(mutable this: TaskPlanner, mangled: String) returns bool
         {
             var i: size_t 0
             while i < pure_memo_names.length
@@ -1344,7 +1344,7 @@ define TaskPlanner
         ; The purity walk: recurse over a callee body looking for effect
         ; violations. Same arm coverage as the finder; only calls and
         ; global touches carry logic.
-        procedure pw_operands(this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?)
+        procedure pw_operands(mutable this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?)
         {
             if pw_impure
                 return
@@ -1362,7 +1362,7 @@ define TaskPlanner
             }
         }
 
-        procedure pw_statement_ref(this: TaskPlanner, stmt: ref[PlannedStatement]?)
+        procedure pw_statement_ref(mutable this: TaskPlanner, stmt: ref[PlannedStatement]?)
         {
             if pw_impure
                 return
@@ -1375,7 +1375,7 @@ define TaskPlanner
 
         ; Writes to LOCAL state are what procedures are for — only a
         ; global store is an observable effect here.
-        procedure pw_action(this: TaskPlanner, act: PlannedAction)
+        procedure pw_action(mutable this: TaskPlanner, act: PlannedAction)
         {
             if pw_impure
                 return
@@ -1406,7 +1406,7 @@ define TaskPlanner
             }
         }
 
-        procedure pw_statement(this: TaskPlanner, stmt: PlannedStatement)
+        procedure pw_statement(mutable this: TaskPlanner, stmt: PlannedStatement)
         {
             if pw_impure
                 return
@@ -1425,7 +1425,7 @@ define TaskPlanner
                     0
         }
 
-        procedure pw_global(this: TaskPlanner, g: PlannedGlobalRef)
+        procedure pw_global(mutable this: TaskPlanner, g: PlannedGlobalRef)
         {
             if pw_impure
                 return
@@ -1443,7 +1443,7 @@ define TaskPlanner
             }
         }
 
-        procedure pw_call(this: TaskPlanner, call: PlannedCall)
+        procedure pw_call(mutable this: TaskPlanner, call: PlannedCall)
         {
             if pw_impure
                 return
@@ -1465,7 +1465,7 @@ define TaskPlanner
                 set pw_impure: true
         }
 
-        procedure pw_operand(this: TaskPlanner, op: PlannedOperand)
+        procedure pw_operand(mutable this: TaskPlanner, op: PlannedOperand)
         {
             if pw_impure
                 return
@@ -1647,7 +1647,7 @@ define TaskPlanner
                     0
         }
 
-        procedure cls_call(this: TaskPlanner, call: PlannedCall)
+        procedure cls_call(mutable this: TaskPlanner, call: PlannedCall)
         {
             if cls_blocked
                 return
@@ -1760,14 +1760,14 @@ define TaskPlanner
             0 - 1
         }
 
-        procedure memo_written(this: TaskPlanner, mangled: String, mask: size_t)
+        procedure memo_written(mutable this: TaskPlanner, mangled: String, mask: size_t)
         {
             let m_copy String^this(mangled)
             wm_memo_names.add m_copy
             wm_memo_vals.add mask
         }
 
-        procedure written_mask(this: TaskPlanner, mangled: String) returns size_t
+        procedure written_mask(mutable this: TaskPlanner, mangled: String) returns size_t
         {
             var i: size_t 0
             while i < wm_memo_names.length
@@ -1952,7 +1952,7 @@ define TaskPlanner
 
         ; ---- the per-callee body walk ----
 
-        procedure wr_add_name(this: TaskPlanner, name: String, mask: size_t)
+        procedure wr_add_name(mutable this: TaskPlanner, name: String, mask: size_t)
         {
             let n_copy String^this(name)
             wr_names.add n_copy
@@ -2039,7 +2039,7 @@ define TaskPlanner
             wm_all()
         }
 
-        procedure wr_operands(this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?)
+        procedure wr_operands(mutable this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?)
         {
             if ops = null
                 return
@@ -2053,7 +2053,7 @@ define TaskPlanner
             }
         }
 
-        procedure wr_statement_ref(this: TaskPlanner, stmt: ref[PlannedStatement]?)
+        procedure wr_statement_ref(mutable this: TaskPlanner, stmt: ref[PlannedStatement]?)
         {
             if stmt <> null
             {
@@ -2062,7 +2062,7 @@ define TaskPlanner
             }
         }
 
-        procedure wr_action(this: TaskPlanner, act: PlannedAction)
+        procedure wr_action(mutable this: TaskPlanner, act: PlannedAction)
         {
             this.wr_operands(act.source)
             if act.target <> null
@@ -2098,7 +2098,7 @@ define TaskPlanner
             }
         }
 
-        procedure wr_statement(this: TaskPlanner, stmt: PlannedStatement)
+        procedure wr_statement(mutable this: TaskPlanner, stmt: PlannedStatement)
         {
             choose stmt
                 when action: Action
@@ -2122,7 +2122,7 @@ define TaskPlanner
                     0
         }
 
-        procedure wr_operand(this: TaskPlanner, op: PlannedOperand)
+        procedure wr_operand(mutable this: TaskPlanner, op: PlannedOperand)
         {
             choose op.expr
                 when call: Call
@@ -2258,7 +2258,7 @@ define TaskPlanner
                     0
         }
 
-        procedure wr_call(this: TaskPlanner, call: PlannedCall)
+        procedure wr_call(mutable this: TaskPlanner, call: PlannedCall)
         {
             this.wr_operands(call.args)
             if call.is_indirect
@@ -2306,7 +2306,7 @@ define TaskPlanner
         ; admits `a.get j` on a shared input vector and
         ; `local_sb.append external_str` while blocking `outer_list.add
         ; x` (List.add writes this — order-dependent).
-        procedure callee_verdict(this: TaskPlanner, call: PlannedCall)
+        procedure callee_verdict(mutable this: TaskPlanner, call: PlannedCall)
         {
             if cls_blocked
                 return

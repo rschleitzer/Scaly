@@ -16,7 +16,7 @@ define F_OK: int 0
 ; requester's care (alive while it parks): opens the file, measures it,
 ; writes FILE* and size back INTO the cell. Null when the file cannot
 ; be opened; a non-null sentinel otherwise — no result page.
-procedure file_open_worker(arg: pointer[void]) returns pointer[void]
+procedure file_open_worker(mutable arg: pointer[void]) returns pointer[void]
 {
     let cell arg as pointer[size_t]
     var file fopen((*cell) as pointer[const_char], "rb")
@@ -78,7 +78,7 @@ define File
 {
     ; Colorless like the rest (milestone 2.5 residual): the access(2)
     ; probe blocks on disk metadata just like a read does.
-    procedure exists(path: String) returns bool
+    procedure exists(mutable path: String) returns bool
     {
         if Io.in_task()
         {

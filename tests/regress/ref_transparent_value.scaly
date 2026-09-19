@@ -32,12 +32,12 @@ function r_argument(r: ref[int]) returns int
     takes_int(r)
 }
 
-procedure w_scalar(r: ref[int], x: int)
+procedure w_scalar(mutable r: ref[int], x: int)
 {
     set r: x
 }
 
-procedure w_struct(r: ref[Cell], c: Cell)
+procedure w_struct(mutable r: ref[Cell], c: Cell)
 {
     set r: c
 }
@@ -87,7 +87,7 @@ function r_condition(r: ref[bool]) returns int
 ; an UNTYPED binding keeps the reference -- it does not load. `let q r` is how
 ; a borrow is aliased, and the store-through rule then reaches the pointee
 ; through it.
-procedure alias_and_store(r: ref[int])
+procedure alias_and_store(mutable r: ref[int])
 {
     let q r
     set q: 7
@@ -97,7 +97,7 @@ procedure alias_and_store(r: ref[int])
 ; ★ A page-hosted CONSTRUCTION assigned to a ref target is ambiguous, and the
 ; target's MUTABILITY settles it: a `var` local can be rebound, a parameter and
 ; a `let` cannot, so there the only reading left is the store.
-procedure stores_construction(out: ref[Cell])
+procedure stores_construction(mutable out: ref[Cell])
 {
     set out: Cell^this(5)
 }
@@ -127,7 +127,7 @@ function r_shift(r: ref[int], n: int) returns int
 ; ★ MUTABILITY gates every rebind. Two ref PARAMETERS of the same type cannot
 ; rebind -- a parameter is not a slot the callee owns -- so the assignment
 ; copies the pointee, which is what `set *a: *b` meant.
-procedure copies_between_refs(a: ref[int], b: ref[int])
+procedure copies_between_refs(mutable a: ref[int], b: ref[int])
 {
     set a: b
 }

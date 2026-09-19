@@ -30,7 +30,7 @@ function qq_zero() returns int
     7
 
 ; A pointer argument and a pointer result — the shape a runtime helper has.
-function qq_bump(cell: pointer[i64], by: i64) returns pointer[i64]
+procedure qq_bump(mutable cell: pointer[i64], by: i64) returns pointer[i64]
 {
     set *cell: (*cell) + by
     cell

@@ -37,7 +37,7 @@ function spike(seed: i64) returns i64
 
 ; 8 iterations. Iteration 1 is expensive only while hot = 1; the slot
 ; keeps that value afterwards, so the sum sees it exactly once.
-procedure wave_spike(r: Vector[i64], hot: int)
+procedure wave_spike(mutable r: Vector[i64], hot: int)
 {
     for i in 8
     {

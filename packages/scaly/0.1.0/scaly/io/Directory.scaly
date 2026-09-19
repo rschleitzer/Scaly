@@ -44,7 +44,7 @@ define Directory
 {
     ; Check if a path exists (file or directory). Colorless (milestone
     ; 2.5): offloads inside a task, blocks otherwise.
-    procedure exists(path: String) returns bool
+    procedure exists(mutable path: String) returns bool
     {
         let path_c_string path.to_c_string()
         if Io.in_task()
@@ -53,7 +53,7 @@ define Directory
     }
 
     ; Check if a path is a directory (not a file)
-    procedure is_directory(path: String) returns bool
+    procedure is_directory(mutable path: String) returns bool
     {
         let path_c_string path.to_c_string()
         if Io.in_task()
@@ -66,7 +66,7 @@ define Directory
         true
     }
 
-    procedure create(path: String) returns bool
+    procedure create(mutable path: String) returns bool
     {
         let path_c_string path.to_c_string()
         if Io.in_task()
@@ -74,7 +74,7 @@ define Directory
         mkdir(path_c_string, 493) = 0 ; 0755 in octal = 493
     }
 
-    procedure remove(path: String) returns bool
+    procedure remove(mutable path: String) returns bool
     {
         let path_c_string path.to_c_string()
         if Io.in_task()

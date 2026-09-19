@@ -21,20 +21,20 @@
 define Box (v: int  w: int)
 
 ; The two forms that crashed.
-procedure store_ref_opt(r: ref[Box]?)
+procedure store_ref_opt(mutable r: ref[Box]?)
     set r.v: 99
 
-procedure store_ptr_opt(r: pointer[Box]?)
+procedure store_ptr_opt(mutable r: pointer[Box]?)
     set r.v: 98
 
-procedure store_w_opt(r: ref[Box]?)
+procedure store_w_opt(mutable r: ref[Box]?)
     set r.w: 42
 
 ; The two that always worked -- controls, so a fix that breaks them is caught.
-procedure store_ref(r: ref[Box])
+procedure store_ref(mutable r: ref[Box])
     set r.v: 97
 
-procedure store_ptr(r: pointer[Box])
+procedure store_ptr(mutable r: pointer[Box])
     set r.v: 96
 
 ; Reading through the hull was never broken; pin it so the fix stays two-sided.

@@ -15,7 +15,7 @@ define Sink
     p: pointer[Box]
 )
 
-procedure fwd(this: Sink, b: pointer[Box])
+procedure fwd(mutable this: Sink, b: pointer[Box])
 {
     let h Holder(b)
     set this.p: h.p

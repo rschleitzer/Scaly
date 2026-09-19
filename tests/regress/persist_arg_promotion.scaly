@@ -30,13 +30,13 @@ define Log
         set entries: Array[String]^this()
     }
 
-    function note(this: Log, message: String)
+    procedure note(mutable this: Log, message: String)
     {
         entries.add message
     }
 }
 
-function note_result(log: Log) returns String
+procedure note_result(mutable log: Log) returns String
 {
     ; returns a page-owning value so rp is injected — mirrors the real
     ; diag-text sites (resolve_function_call etc. are all rp-injected).

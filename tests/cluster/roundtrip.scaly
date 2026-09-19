@@ -35,7 +35,7 @@ procedure chk_word(v: u64)
 }
 
 ; Distinct deterministic name content: the first two chars encode i.
-procedure fill_name(buf: pointer[u8], i: size_t) returns size_t
+procedure fill_name(mutable buf: pointer[u8], i: size_t) returns size_t
 {
     let len (8 as size_t) + (i % (40 as size_t))
     set buf[0]: ((97 as size_t) + (i % (26 as size_t))) as u8

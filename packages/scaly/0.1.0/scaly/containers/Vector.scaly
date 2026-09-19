@@ -21,7 +21,7 @@ define VectorIterator[T]
         set position: 0
     }
 
-    procedure next(this: VectorIterator[T]) returns pointer[T]
+    procedure next(mutable this: VectorIterator[T]) returns pointer[T]
     {
         if vector = null
             return null
@@ -144,7 +144,7 @@ define Vector[T]
     ; Bounds-checked element assign within the existing length. Vector
     ; never grows — an index at or past length is a caller bug, so it
     ; traps instead of returning an ignorable failure code.
-    procedure put(this: Vector[T], i: size_t, item: T)
+    procedure put(mutable this: Vector[T], i: size_t, item: T)
     {
         if i >= length
             scaly_panic_oob("Vector.put", i, length)

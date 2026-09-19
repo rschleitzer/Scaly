@@ -15,7 +15,7 @@ use scaly.memory.Page
 ; Count the run in a caller-owned cell. One task per wave and the
 ; caller waits between waves, so the unsynchronized increment is
 ; ordered by the group's own atomics.
-procedure tick_task(arg: pointer[void]) returns pointer[void]
+procedure tick_task(mutable arg: pointer[void]) returns pointer[void]
 {
     let cp arg as pointer[i64]
     set *cp: *cp + (1 as i64)

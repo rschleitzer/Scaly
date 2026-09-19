@@ -87,7 +87,7 @@ define FunctionIndex
     ; Append `index` to `name`'s insertion-ordered chain. A new name starts a
     ; one-element chain; an existing name links `index` after the current tail.
     ; `next[index]` is set to the sentinel (entry_cap) so the chain terminates.
-    procedure insert(this: FunctionIndex, name: String, index: size_t)
+    procedure insert(mutable this: FunctionIndex, name: String, index: size_t)
     {
         if slots <> null
         {

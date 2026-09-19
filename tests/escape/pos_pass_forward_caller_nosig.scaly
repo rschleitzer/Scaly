@@ -13,14 +13,14 @@ define Holder
     b: pointer[Box]
 )
 {
-    procedure stash(this, p: pointer[Box])
+    procedure stash(mutable this, p: pointer[Box])
         set this.b: p
 }
 
-procedure forward(c: Holder, p: pointer[Box])
+procedure forward(mutable c: Holder, p: pointer[Box])
     c.stash(p)
 
-procedure relay(c: Holder, src: pointer[Box])
+procedure relay(mutable c: Holder, src: pointer[Box])
     forward(c, src)
 
 function main() returns int

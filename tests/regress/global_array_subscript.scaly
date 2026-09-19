@@ -19,7 +19,7 @@ define Box
 {
     init() { set total: 0 }
 
-    procedure add_val(this: pointer[Box], v: int)
+    procedure add_val(mutable this: pointer[Box], v: int)
     {
         set this.total: this.total + v
     }

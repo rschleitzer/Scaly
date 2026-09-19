@@ -7,13 +7,13 @@ define Tracker
     steps: int
 )
 {
-    procedure increment(this)
+    procedure increment(mutable this)
     {
         set value: value + 1
         set steps: steps + 1
     }
 
-    procedure run_sibling(this)
+    procedure run_sibling(mutable this)
         increment()
 
     function get_value(this) returns int

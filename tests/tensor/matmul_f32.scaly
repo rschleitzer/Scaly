@@ -6,7 +6,7 @@
 ; f32) and a constant-fill product.
 ; Expected: PASS
 
-procedure mm_f32(a: Vector[float], b: Vector[float], c: Vector[float], m: int, kk: int, n: int)
+procedure mm_f32(a: Vector[float], b: Vector[float], mutable c: Vector[float], m: int, kk: int, n: int)
 {
     let ap a.data
     let bp b.data

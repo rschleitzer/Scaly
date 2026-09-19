@@ -43,13 +43,13 @@ function spin_big(seed: i64) returns i64
 
 define Item(idx: size_t, val: i64)
 
-procedure wave_tiny(r: Vector[i64])
+procedure wave_tiny(mutable r: Vector[i64])
 {
     for i in 32
         r.put(i, (i * 3) as i64)
 }
 
-procedure wave_hot(r: Vector[i64])
+procedure wave_hot(mutable r: Vector[i64])
 {
     for i in 8
     {
@@ -58,7 +58,7 @@ procedure wave_hot(r: Vector[i64])
     }
 }
 
-procedure wave_range(r: Vector[i64], n: int, bias: i64)
+procedure wave_range(mutable r: Vector[i64], n: int, bias: i64)
 {
     for i in n
     {
@@ -67,7 +67,7 @@ procedure wave_range(r: Vector[i64], n: int, bias: i64)
     }
 }
 
-procedure wave_iter(r: Vector[i64], items: Vector[Item], bias: i64)
+procedure wave_iter(mutable r: Vector[i64], items: Vector[Item], bias: i64)
 {
     for item in items
     {

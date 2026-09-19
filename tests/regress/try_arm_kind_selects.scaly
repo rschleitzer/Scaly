@@ -26,7 +26,7 @@ function oob_trap(n: size_t) returns int
     v[n]
 }
 
-procedure size_trap(arr: ref[Array[int]], buf: pointer[int])
+procedure size_trap(mutable arr: ref[Array[int]], buf: pointer[int])
 {
     ; a Vector that lies about its length: (len, data) allocates nothing
     let huge Vector[int]((0 as size_t) - (1 as size_t), buf)

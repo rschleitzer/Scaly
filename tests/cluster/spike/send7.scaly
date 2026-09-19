@@ -122,7 +122,7 @@ procedure walk_region(p: size_t)
     }
 }
 
-procedure fill_content(buf: pointer[u8], i: size_t) returns size_t
+procedure fill_content(mutable buf: pointer[u8], i: size_t) returns size_t
 {
     let len (5 as size_t) + ((i * (7 as size_t)) % (80 as size_t))
     var j 0 as size_t

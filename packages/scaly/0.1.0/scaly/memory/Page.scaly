@@ -174,14 +174,14 @@ define Page
     ; cooperation (see SCALY_TRACE_HEAP in root_pages.scaly). Use the
     ; SAME site string at the matching alloc and release call; a
     ; mismatched label shows up as a permanent false imbalance.
-    procedure allocate_page_traced(site: pointer[const_char]) returns ref[Page]
+    procedure allocate_page_traced(mutable site: pointer[const_char]) returns ref[Page]
     {
         let page Page.allocate_page()
         scaly_heap_trace_alloc site
         page
     }
 
-    procedure release_page_traced(p: ref[Page], site: pointer[const_char])
+    procedure release_page_traced(p: ref[Page], mutable site: pointer[const_char])
     {
         Page.release_page(p)
         scaly_heap_trace_release site

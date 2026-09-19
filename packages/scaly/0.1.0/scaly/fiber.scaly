@@ -493,7 +493,7 @@ procedure deadlock_event()
 ; dead, freed by their last release_page from any thread). Outside the
 ; user entry this frame must stay allocation-free — after the reclaim
 ; there is no allocator left to allocate from.
-procedure scaly_thread_start(raw: pointer[void]) returns pointer[void]
+procedure scaly_thread_start(mutable raw: pointer[void]) returns pointer[void]
 {
     let cell raw as pointer[size_t]
     let fn_v *cell
@@ -723,7 +723,7 @@ define Fiber
     ; Delivering a fiber's fault to its resumer is a task-boundary policy
     ; (TRAPS.md 3.1) and needs an unwind that can cross stacks -- it is not
     ; this crossing's job.
-    procedure swap_allocator(f: ref[Fiber])
+    procedure swap_allocator(mutable f: ref[Fiber])
     {
         let h stack_head
         let t stack_top
@@ -742,7 +742,7 @@ define Fiber
     ; and allocates into its own region. The first create installs the
     ; guard-page overflow handler (best-effort diagnostic — a failed
     ; install just keeps the plain-crash behavior).
-    procedure create_sized(host: ref[Page], fn: pointer[void], size: size_t) returns ref[Fiber]
+    procedure create_sized(host: ref[Page], mutable fn: pointer[void], size: size_t) returns ref[Fiber]
     {
         let f host.allocate(sizeof Fiber, alignof Fiber) as pointer[Fiber]
         let guard_size getpagesize() as size_t
@@ -779,7 +779,7 @@ define Fiber
         f
     }
 
-    procedure create(host: ref[Page], fn: pointer[void]) returns ref[Fiber]
+    procedure create(host: ref[Page], mutable fn: pointer[void]) returns ref[Fiber]
     {
         let size FIBER_STACK_SIZE
         Fiber.create_sized(host, fn, size)
@@ -787,7 +787,7 @@ define Fiber
 
     ; Run the fiber until it yields or finishes. Returns true when the
     ; fiber can be resumed again, false once it finished (or was done).
-    procedure resume(f: ref[Fiber]) returns bool
+    procedure resume(mutable f: ref[Fiber]) returns bool
     {
         if f.done
             return false
@@ -835,7 +835,7 @@ define Fiber
     ; buckets, then munmap the fiber stack. Returns the number of root
     ; pages torn down. Call after the fiber finished (or to kill it — a
     ; disposed fiber must never be resumed).
-    procedure dispose(f: ref[Fiber]) returns int
+    procedure dispose(mutable f: ref[Fiber]) returns int
     {
         var pages_freed 0
         var bucket f.saved_head
@@ -976,7 +976,7 @@ define Scheduler
     }
 
     ; Append a task to the ready-queue tail (round-robin order).
-    procedure enqueue(t: ref[SchedTask])
+    procedure enqueue(mutable t: ref[SchedTask])
     {
         let s current_scheduler as ref[Scheduler]
         set t.next: null
@@ -1012,7 +1012,7 @@ define Scheduler
     ; Scheduler.task_arg — cast an fd through size_t), and put it at the
     ; ready-queue tail. Callable from the main context and from inside a
     ; running task alike. Non-default stack sizes bypass the stack pool.
-    procedure spawn_sized(fn: pointer[void], arg: pointer[void], size: size_t) returns ref[SchedTask]
+    procedure spawn_sized(mutable fn: pointer[void], mutable arg: pointer[void], size: size_t) returns ref[SchedTask]
     {
         let s current_scheduler as ref[Scheduler]
         let host s.host
@@ -1022,14 +1022,14 @@ define Scheduler
     }
 
     ; spawn_sized with the default stack size.
-    procedure spawn_arg(fn: pointer[void], arg: pointer[void]) returns ref[SchedTask]
+    procedure spawn_arg(mutable fn: pointer[void], mutable arg: pointer[void]) returns ref[SchedTask]
     {
         let size FIBER_STACK_SIZE
         Scheduler.spawn_sized(fn, arg, size)
     }
 
     ; spawn_arg without an argument.
-    procedure spawn(fn: pointer[void]) returns ref[SchedTask]
+    procedure spawn(mutable fn: pointer[void]) returns ref[SchedTask]
         Scheduler.spawn_arg(fn, null)
 
     ; The running task's spawn_arg argument (null on the main context).
@@ -1061,7 +1061,7 @@ define Scheduler
     ; are adjusted by its own drain_inject. The receiver armed the wake
     ; handle before parking, so the racy read of home.eio/home.wake sees
     ; initialized values (published by the channel lock).
-    procedure inject_task(home: ref[Scheduler], t: ref[SchedTask])
+    procedure inject_task(home: ref[Scheduler], mutable t: ref[SchedTask])
     {
         let hp &home.inject
         repeat
@@ -1152,7 +1152,7 @@ define Scheduler
     }
 
     ; Move every task blocked on t back to the ready queue.
-    procedure wake_waiters(t: ref[SchedTask])
+    procedure wake_waiters(mutable t: ref[SchedTask])
     {
         let s current_scheduler as ref[Scheduler]
         var w t.waiter
@@ -1279,7 +1279,7 @@ define Scheduler
     ; returned task leaves 0 live pages anyway — its frames unwound
     ; before finish; watch Fiber.freed_bucket_count for the teardown
     ; proof.)
-    procedure reap(t: ref[SchedTask]) returns int
+    procedure reap(mutable t: ref[SchedTask]) returns int
     {
         if t.disposed
             return 0
@@ -1305,7 +1305,7 @@ define Scheduler
     ; then — it only frees when a caller disposed nothing yet). From
     ; the main context this drives the dispatcher itself; from inside a
     ; task it blocks on t's waiter chain and yields to the dispatcher.
-    procedure join(t: ref[SchedTask]) returns int
+    procedure join(mutable t: ref[SchedTask]) returns int
     {
         let me current_task as ref[SchedTask]?
         if me = null
@@ -1394,7 +1394,7 @@ define IoPool
 ; operation, on this worker's own thread-local allocator; a result
 ; lives on its own heap page, freed cross-thread by the requester
 ; (safe since milestone 2.3). The loop never returns.
-procedure io_worker(arg: pointer[void]) returns pointer[void]
+procedure io_worker(mutable arg: pointer[void]) returns pointer[void]
 {
     let pl arg as ref[IoPool]
     repeat
@@ -1564,7 +1564,7 @@ define Io
 
     ; Read up to count bytes; suspends while the fd has nothing to
     ; offer. Returns the byte count, 0 at EOF, -1 on a hard error.
-    procedure read(fd: i32, buf: pointer[void], count: size_t) returns i64
+    procedure read(fd: i32, mutable buf: pointer[void], count: size_t) returns i64
     {
         var r scaly_eio_read(fd, buf, count)
         while r = ((0 - 2) as i64)
@@ -1578,7 +1578,7 @@ define Io
     ; Write up to count bytes; suspends while the fd cannot take data.
     ; Returns the byte count written (partial writes possible), -1 on a
     ; hard error.
-    procedure write(fd: i32, buf: pointer[void], count: size_t) returns i64
+    procedure write(fd: i32, mutable buf: pointer[void], count: size_t) returns i64
     {
         var r scaly_eio_write(fd, buf, count)
         while r = ((0 - 2) as i64)
@@ -1632,13 +1632,13 @@ define Io
     ; connect — blocking handshake like Io.connect. host must be
     ; NUL-terminated (String.to_c_string). Returns the fd, -1 on
     ; failure (resolution or connection).
-    procedure connect_host(host: pointer[const_char], port: i32) returns i32
+    procedure connect_host(mutable host: pointer[const_char], port: i32) returns i32
         scaly_eio_tcp_connect_host(host, port)
 
     ; SIGPIPE-safe socket write (stage 7): a write racing a peer's death
     ; must return -1/EPIPE, never kill the process. Suspension contract
     ; of Io.write otherwise.
-    procedure tcp_write(fd: i32, buf: pointer[void], count: size_t) returns i64
+    procedure tcp_write(fd: i32, mutable buf: pointer[void], count: size_t) returns i64
     {
         var r scaly_eio_tcp_write(fd, buf, count)
         while r = ((0 - 2) as i64)
@@ -1730,7 +1730,7 @@ define Io
     ; rooted on its own fresh heap page — the caller consumes and frees
     ; it like a channel message. arg may point into the caller's
     ; region: the requesting frame outlives the call.
-    procedure offload(fn: pointer[void], arg: pointer[void]) returns pointer[void]
+    procedure offload(mutable fn: pointer[void], mutable arg: pointer[void]) returns pointer[void]
     {
         let me current_task as ref[SchedTask]?
         if me = null
@@ -1974,7 +1974,7 @@ define Channel
     ; Free the channel record's page. Only the receiver calls this,
     ; after receive returned null (closed and drained) — every sender
     ; retired its handle, nothing can touch the record anymore.
-    procedure dispose(m: ref[Channel])
+    procedure dispose(mutable m: ref[Channel])
     {
         let mp Page.get(m)
         mp.deallocate_extensions()
@@ -1984,7 +1984,7 @@ define Channel
     ; Register one more send handle. Call BEFORE handing the channel to
     ; the new sender (spawn argument, cell, ...) — registering from the
     ; new thread would race the creator's close_sender.
-    procedure add_sender(m: pointer[Channel])
+    procedure add_sender(mutable m: pointer[Channel])
     {
         Channel.acquire(m)
         set m.senders: m.senders + 1
@@ -1994,7 +1994,7 @@ define Channel
     ; Hand a woken receiver back to its dispatcher: same thread →
     ; straight to the ready queue (the counters are ours); other thread
     ; → inject queue + wake (its drain_inject adjusts the counters).
-    procedure route(r: ref[SchedTask])
+    procedure route(mutable r: ref[SchedTask])
     {
         deadlock_event()
         if r.home = current_scheduler
@@ -2008,7 +2008,7 @@ define Channel
         Scheduler.inject_task(r.home as pointer[Scheduler], r)
     }
 
-    procedure pop_receiver(m: ref[Channel]) returns ref[SchedTask]?
+    procedure pop_receiver(mutable m: ref[Channel]) returns ref[SchedTask]?
     {
         let t m.recv_head
         if t <> null
@@ -2022,7 +2022,7 @@ define Channel
     }
 
     ; Pop the oldest sender parked on a full queue (null when none).
-    procedure pop_sender(m: ref[Channel]) returns ref[SchedTask]?
+    procedure pop_sender(mutable m: ref[Channel]) returns ref[SchedTask]?
     {
         let t m.send_head
         if t <> null
@@ -2054,7 +2054,7 @@ define Channel
     ; `ref[Channel]`: the Planner emits a call to this by its Itanium name
     ; (`_ZN7Channel4sendEP7ChannelPv`), so re-signing it is an undefined
     ; symbol at link time. The asymmetry is forced, not an oversight.
-    procedure send(m: pointer[Channel], msg: pointer[void])
+    procedure send(mutable m: pointer[Channel], mutable msg: pointer[void])
     {
         let host Page.get(msg)
         let n &ChannelNode^host(null, msg)
@@ -2157,7 +2157,7 @@ define Channel
     ; a main-context waiter on the receiving thread is poked. Wakes are
     ; routed after the lock drops — inject/wake need no lock, and the
     ; receivers were detached atomically.
-    procedure close_sender(m: pointer[Channel])
+    procedure close_sender(mutable m: pointer[Channel])
     {
         Channel.acquire(m)
         set m.senders: m.senders - 1
@@ -2212,7 +2212,7 @@ define Channel
     ; blocks on the wake handle when nothing is runnable. The receiving
     ; thread needs a scheduler (Scheduler.create) — the wake handle is
     ; armed here BEFORE any park so remote senders always find it.
-    procedure receive(m: ref[Channel]) returns pointer[void]
+    procedure receive(mutable m: ref[Channel]) returns pointer[void]
     {
         Io.ensure_wake()
         let me current_task as ref[SchedTask]?
@@ -2317,7 +2317,7 @@ define Channel
     ; (CHAN_DEADLOCK_MS). A TASK caller cooperatively yields between
     ; checks (v1: the runtime has no timer wheel — sibling tasks run in
     ; between, an otherwise-idle scheduler spins until the deadline).
-    procedure receive_timeout(m: ref[Channel], ms: i32, timed_out: ref[bool]) returns pointer[void]
+    procedure receive_timeout(mutable m: ref[Channel], ms: i32, mutable timed_out: ref[bool]) returns pointer[void]
     {
         set timed_out: false
         Io.ensure_wake()
@@ -2500,7 +2500,7 @@ define TaskGroup
     ; the words. The losers drop their fault -- one fault per wave is what a
     ; caller can act on, and .NET's AggregateException is the shape that
     ; keeps them all (not built).
-    procedure record_fault(g: pointer[TaskGroup])
+    procedure record_fault(mutable g: pointer[TaskGroup])
     {
         let kp &g.fault_kind
         let claim (scaly_panic_last_kind() as u64) + 1
@@ -2540,7 +2540,7 @@ define TaskGroup
     ; the SUBMITTING thread, after all submits (a submit racing a wait
     ; could let a stale zero-crossing byte end the wait early). Blocks
     ; the whole thread — main-context use, not inside a scheduled task.
-    procedure wait(g: pointer[TaskGroup])
+    procedure wait(mutable g: pointer[TaskGroup])
     {
         let pp &g.pending
         while scaly_atomic_load_u64(pp) > 0
@@ -2573,7 +2573,7 @@ define TaskGroup
     ; bracket empty before closing: pending is zero and no submits
     ; follow, hence no NEW finisher can enter — the spin is bounded by
     ; one descheduled write.
-    procedure dispose(g: pointer[TaskGroup])
+    procedure dispose(mutable g: pointer[TaskGroup])
     {
         let ap &g.active
         repeat
@@ -2724,7 +2724,7 @@ define TaskPool
     ; submitting thread per group); the pending increment comes FIRST
     ; (a task may finish before submit returns), the deque push BEFORE
     ; the pipe byte (a woken worker must find an item).
-    procedure submit(pl: pointer[TaskPool], fn: pointer[void], arg: pointer[void], g: pointer[TaskGroup])
+    procedure submit(mutable pl: pointer[TaskPool], fn: pointer[void], arg: pointer[void], mutable g: pointer[TaskGroup])
     {
         let sc &pl.submitted
         scaly_atomic_add_u64(sc, 1 as u64)
@@ -2760,7 +2760,7 @@ define TaskPool
     ; one item exists SOMEWHERE — a scan pass can still race a push in
     ; flight, hence the outer retry loop (bounded by that push's
     ; completion).
-    procedure take(pl: pointer[TaskPool], start: i64) returns ref[TaskItem]
+    procedure take(mutable pl: pointer[TaskPool], start: i64) returns ref[TaskItem]
     {
         repeat
         {
@@ -2802,7 +2802,7 @@ define TaskPool
     ; Only when no group has work in flight that another thread still
     ; waits on; the pool is gone afterwards — create a new one to
     ; continue.
-    procedure shutdown(pl: ref[TaskPool])
+    procedure shutdown(mutable pl: ref[TaskPool])
     {
         close(pl.pipe_write as int)
         var i: i64 0

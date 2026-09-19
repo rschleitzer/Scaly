@@ -6,7 +6,7 @@
 
 function sqrtf(x: float) returns float extern
 
-procedure layernorm_f32(x: Vector[float], gamma: Vector[float], beta: Vector[float], out: Vector[float], rows: int, n: int, eps: float)
+procedure layernorm_f32(x: Vector[float], gamma: Vector[float], beta: Vector[float], mutable out: Vector[float], rows: int, n: int, eps: float)
 {
     let xp x.data
     let gp gamma.data

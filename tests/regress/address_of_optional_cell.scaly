@@ -28,7 +28,7 @@ define Box (v: i64)
 define Holder (k: i64)
 {
     ; writes the reference it is handed back through the out-parameter
-    function fill(this: Holder, out: pointer[pointer[Box]], b: ref[Box]) returns i64
+    procedure fill(this: Holder, mutable out: pointer[pointer[Box]], b: ref[Box]) returns i64
     {
         set *out: &b
         1

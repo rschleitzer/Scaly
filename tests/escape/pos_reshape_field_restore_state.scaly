@@ -26,10 +26,10 @@ define Machine
     function save(this) returns State
         State(this.ptr, this.pos)
 
-    procedure restore(this, s: State)
+    procedure restore(mutable this, s: State)
         set this.ptr: s.ptr
 
-    procedure roundtrip(this)
+    procedure roundtrip(mutable this)
     {
         let snap this.save()
         this.restore(snap)

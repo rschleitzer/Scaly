@@ -4,7 +4,7 @@
 ; by the loop variable. Ids arrive as a Vector[i64].
 ; Expected: PASS
 
-procedure embedding_f32(table: Vector[float], ids: Vector[i64], out: Vector[float], tokens: int, dim: int)
+procedure embedding_f32(table: Vector[float], ids: Vector[i64], mutable out: Vector[float], tokens: int, dim: int)
 {
     let tp table.data
     let ip ids.data

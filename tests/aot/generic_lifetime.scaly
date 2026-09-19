@@ -7,7 +7,7 @@ function free(ptr: pointer[void]) extern
 ; Define a Page type (required for lifetime syntax)
 define Page(buffer: pointer[void], offset: size_t)
 {
-    function allocate(this: Page, size: size_t, align: size_t) returns pointer[void]
+    procedure allocate(this: Page, size: size_t, align: size_t) returns pointer[void]
     {
         let aligned (offset + align - (1 as size_t)) & (~(align - (1 as size_t)))
         set offset: aligned + size
@@ -36,7 +36,7 @@ define Container[T](data: pointer[T], length: size_t)
     function get(this, index: size_t) returns T
         *(data + index)
 
-    procedure set_item(this, index: size_t, value: T)
+    procedure set_item(mutable this, index: size_t, value: T)
         set *(data + index): value
 }
 

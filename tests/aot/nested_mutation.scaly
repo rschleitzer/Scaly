@@ -4,7 +4,7 @@
 
 define Inner(value: int)
 {
-    procedure set_42#(rp, this)
+    procedure set_42#(rp, mutable this)
     {
         set value: 42
     }
@@ -15,7 +15,7 @@ define Inner(value: int)
 
 define Outer(inner: Inner)
 {
-    function do_set(this) returns int
+    procedure do_set(mutable this) returns int
     {
         inner.set_42#()
         inner.get_value()

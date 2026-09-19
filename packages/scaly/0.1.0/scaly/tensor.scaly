@@ -52,7 +52,7 @@ function powf(x: float, y: float) returns float extern
 ; call. ---
 
 ; C = A * B (A m x kk, B kk x n, C m x n). m % 4 = 0, n % 4 = 0.
-procedure mm_tiled(a: Vector[float], b: Vector[float], c: ref[Vector[float]], m: int, kk: int, n: int)
+procedure mm_tiled(a: Vector[float], b: Vector[float], mutable c: ref[Vector[float]], m: int, kk: int, n: int)
 {
     let ap a.data
     let bp b.data
@@ -130,7 +130,7 @@ procedure mm_tiled(a: Vector[float], b: Vector[float], c: ref[Vector[float]], m:
 
 ; dA += dC * B^T : dA[i,x] += sum_j dC[i,j] * B[x,j]. dC m x n,
 ; B kk x n, dA m x kk. m % 4 = 0, kk % 4 = 0.
-procedure mm_tiled_dA(gc: Vector[float], b: Vector[float], ga: ref[Vector[float]], m: int, kk: int, n: int)
+procedure mm_tiled_dA(gc: Vector[float], b: Vector[float], mutable ga: ref[Vector[float]], m: int, kk: int, n: int)
 {
     let gcp gc.data
     let bp b.data
@@ -209,7 +209,7 @@ procedure mm_tiled_dA(gc: Vector[float], b: Vector[float], ga: ref[Vector[float]
 
 ; dB += A^T * dC : dB[x,j] += sum_i A[i,x] * dC[i,j]. A m x kk,
 ; dC m x n, dB kk x n. kk % 4 = 0, n % 4 = 0.
-procedure mm_tiled_dB(a: Vector[float], gc: Vector[float], gb: ref[Vector[float]], m: int, kk: int, n: int)
+procedure mm_tiled_dB(a: Vector[float], gc: Vector[float], mutable gb: ref[Vector[float]], m: int, kk: int, n: int)
 {
     let ap a.data
     let gcp gc.data
@@ -343,7 +343,7 @@ define Tape
         set nodes: Array[TapeNode]()
     }
 
-    procedure add_node(this: Tape, kind: int, in_a: int, in_b: int, in_c: int, r: int, n: int) returns int
+    procedure add_node(mutable this: Tape, kind: int, in_a: int, in_b: int, in_c: int, r: int, n: int) returns int
     {
         let own_page Page.get(this)
         var node TapeNode(kind, in_a, in_b, in_c, r, n)
@@ -356,10 +356,10 @@ define Tape
         id
     }
 
-    procedure leaf(this: Tape, r: int, n: int) returns int
+    procedure leaf(mutable this: Tape, r: int, n: int) returns int
         this.add_node(TAPE_LEAF, 0 - 1, 0 - 1, 0 - 1, r, n)
 
-    procedure set_value(this: Tape, id: int, i: int, v: float)
+    procedure set_value(mutable this: Tape, id: int, i: int, v: float)
     {
         let node nodes.at(id)
         let vv node.value
@@ -369,7 +369,7 @@ define Tape
     ; Overwrite a saved token id in place (embedding ids or crossent
     ; targets) — a training loop mutates the batch data of an existing
     ; tape instead of building a new one, so a step allocates nothing.
-    procedure set_token(this: Tape, id: int, i: int, v: i64)
+    procedure set_token(mutable this: Tape, id: int, i: int, v: i64)
     {
         let node nodes.at(id)
         let tk node.tok
@@ -386,7 +386,7 @@ define Tape
     ; Overwrite a gradient slot in place. The distributed trainer (7.4)
     ; injects an all-reduced (averaged) gradient here before adam_step,
     ; so every rank applies an identical update and stays in lockstep.
-    procedure set_grad(this: Tape, id: int, i: int, v: float)
+    procedure set_grad(mutable this: Tape, id: int, i: int, v: float)
     {
         let node nodes.at(id)
         let g node.grad
@@ -412,7 +412,7 @@ define Tape
         node.cols
     }
 
-    procedure matmul(this: Tape, x: int, y: int) returns int
+    procedure matmul(mutable this: Tape, x: int, y: int) returns int
     {
         let nx nodes.at(x)
         let ny nodes.at(y)
@@ -423,7 +423,7 @@ define Tape
         id
     }
 
-    procedure gelu(this: Tape, x: int) returns int
+    procedure gelu(mutable this: Tape, x: int) returns int
     {
         let nx nodes.at(x)
         let r nx.rows
@@ -433,7 +433,7 @@ define Tape
         id
     }
 
-    procedure softmax(this: Tape, x: int) returns int
+    procedure softmax(mutable this: Tape, x: int) returns int
     {
         let nx nodes.at(x)
         let r nx.rows
@@ -443,7 +443,7 @@ define Tape
         id
     }
 
-    procedure layernorm(this: Tape, x: int, gamma: int, beta: int, e: float) returns int
+    procedure layernorm(mutable this: Tape, x: int, gamma: int, beta: int, e: float) returns int
     {
         let nx nodes.at(x)
         let r nx.rows
@@ -455,7 +455,7 @@ define Tape
         id
     }
 
-    procedure embedding(this: Tape, table: int, ids: Vector[i64], tokens: int) returns int
+    procedure embedding(mutable this: Tape, table: int, ids: Vector[i64], tokens: int) returns int
     {
         let nt nodes.at(table)
         let dim nt.cols
@@ -468,7 +468,7 @@ define Tape
         id
     }
 
-    procedure wsum(this: Tape, x: int, w: Vector[float]) returns int
+    procedure wsum(mutable this: Tape, x: int, w: Vector[float]) returns int
     {
         let id this.add_node(TAPE_WSUM, x, 0 - 1, 0 - 1, 1, 1)
         let own_page Page.get(this)
@@ -482,7 +482,7 @@ define Tape
     ; Fused softmax + negative log-likelihood, averaged over rows:
     ; value = mean_i(logsumexp(x_i) - x_i[target_i]). targets holds one
     ; token id per row of the logits node.
-    procedure crossentropy(this: Tape, logits: int, targets: Vector[i64]) returns int
+    procedure crossentropy(mutable this: Tape, logits: int, targets: Vector[i64]) returns int
     {
         let id this.add_node(TAPE_CROSSENT, logits, 0 - 1, 0 - 1, 1, 1)
         let own_page Page.get(this)
@@ -495,7 +495,7 @@ define Tape
 
     ; Elementwise sum of two same-shape nodes — residual connections
     ; and positional embeddings. x and y may be the same node.
-    procedure add(this: Tape, x: int, y: int) returns int
+    procedure add(mutable this: Tape, x: int, y: int) returns int
     {
         let nx nodes.at(x)
         let r nx.rows
@@ -509,7 +509,7 @@ define Tape
     ; y row (i mod yr). Adds one shared positional-embedding block to
     ; every window of a batched activation. Backward accumulates dy
     ; across the B repeats (shared slots — bwd stays sequential).
-    procedure add_bcast(this: Tape, x: int, y: int) returns int
+    procedure add_bcast(mutable this: Tape, x: int, y: int) returns int
     {
         let nx nodes.at(x)
         let r nx.rows
@@ -525,7 +525,7 @@ define Tape
     ; The node's aux buffer holds the per-head probabilities in
     ; [0, hs*T*win) (forward writes them, backward reads them) and a ds
     ; scratch half in [hs*T*win, 2*hs*T*win) written by backward pass 1.
-    procedure attention(this: Tape, q: int, k: int, v: int, hs: int) returns int
+    procedure attention(mutable this: Tape, q: int, k: int, v: int, hs: int) returns int
     {
         let nq nodes.at(q)
         let t nq.rows
@@ -538,7 +538,7 @@ define Tape
     ; case `attention` uses (probabilities index identically, so that
     ; path stays numerically exact). Column extent per query is win, so
     ; the aux buffer is hs*T*win doubled for the ds scratch.
-    procedure attention_windowed(this: Tape, q: int, k: int, v: int, hs: int, win: int) returns int
+    procedure attention_windowed(mutable this: Tape, q: int, k: int, v: int, hs: int, win: int) returns int
     {
         let nq nodes.at(q)
         let t nq.rows
@@ -594,7 +594,7 @@ define Tape
     }
 
     ; SGD update on a leaf: value -= lr * grad.
-    procedure sgd_step(this: Tape, id: int, lr: float)
+    procedure sgd_step(mutable this: Tape, id: int, lr: float)
     {
         let node nodes.at(id)
         let vp node.value.data
@@ -612,7 +612,7 @@ define Tape
     ; buffer (m at [0,total), v at [total,2*total)), lazily allocated
     ; zeroed on the tape's page at the first step. t is the 1-based
     ; step count for bias correction.
-    procedure adam_step(this: Tape, id: int, lr: float, b1: float, b2: float, e: float, t: int)
+    procedure adam_step(mutable this: Tape, id: int, lr: float, b1: float, b2: float, e: float, t: int)
     {
         let own_page Page.get(this)
         let node nodes.at(id)
@@ -644,7 +644,7 @@ define Tape
     }
 
     ; Re-run every op in id order against the current leaf values.
-    procedure recompute(this: Tape)
+    procedure recompute(mutable this: Tape)
     {
         let count nodes.get_length() as int
         var i 0
@@ -655,7 +655,7 @@ define Tape
         }
     }
 
-    procedure zero_grads(this: Tape)
+    procedure zero_grads(mutable this: Tape)
     {
         let count nodes.get_length() as int
         var i 0
@@ -677,7 +677,7 @@ define Tape
     ; Seed d(out)/d(out) = 1 and accumulate adjoints into every
     ; ancestor's grad buffer (reverse id walk — inputs precede
     ; consumers by construction).
-    procedure backward(this: Tape, id: int)
+    procedure backward(mutable this: Tape, id: int)
     {
         let out nodes.at(id)
         let g out.grad
@@ -696,7 +696,7 @@ define Tape
         }
     }
 
-    procedure run_node(this: Tape, id: int)
+    procedure run_node(mutable this: Tape, id: int)
     {
         let node nodes.at(id)
         let kind node.op
@@ -722,7 +722,7 @@ define Tape
             this.fwd_add_bcast id
     }
 
-    procedure bwd_node(this: Tape, id: int)
+    procedure bwd_node(mutable this: Tape, id: int)
     {
         let node nodes.at(id)
         let kind node.op
@@ -748,7 +748,7 @@ define Tape
             this.bwd_add_bcast id
     }
 
-    procedure fwd_matmul(this: Tape, id: int)
+    procedure fwd_matmul(mutable this: Tape, id: int)
     {
         let buf nodes.get_buffer()
         let node buf + id
@@ -789,7 +789,7 @@ define Tape
         }
     }
 
-    procedure bwd_matmul(this: Tape, id: int)
+    procedure bwd_matmul(mutable this: Tape, id: int)
     {
         let buf nodes.get_buffer()
         let node nodes.at(id)
@@ -871,7 +871,7 @@ define Tape
         }
     }
 
-    procedure fwd_gelu(this: Tape, id: int)
+    procedure fwd_gelu(mutable this: Tape, id: int)
     {
         let node nodes.at(id)
         let na nodes.at(node.a)
@@ -894,7 +894,7 @@ define Tape
         }
     }
 
-    procedure bwd_gelu(this: Tape, id: int)
+    procedure bwd_gelu(mutable this: Tape, id: int)
     {
         let node nodes.at(id)
         let na nodes.at(node.a)
@@ -921,7 +921,7 @@ define Tape
         }
     }
 
-    procedure fwd_softmax(this: Tape, id: int)
+    procedure fwd_softmax(mutable this: Tape, id: int)
     {
         let node nodes.at(id)
         let na nodes.at(node.a)
@@ -961,7 +961,7 @@ define Tape
         }
     }
 
-    procedure bwd_softmax(this: Tape, id: int)
+    procedure bwd_softmax(mutable this: Tape, id: int)
     {
         let node nodes.at(id)
         let na nodes.at(node.a)
@@ -991,7 +991,7 @@ define Tape
         }
     }
 
-    procedure fwd_layernorm(this: Tape, id: int)
+    procedure fwd_layernorm(mutable this: Tape, id: int)
     {
         let node nodes.at(id)
         let na nodes.at(node.a)
@@ -1035,7 +1035,7 @@ define Tape
         }
     }
 
-    procedure bwd_layernorm(this: Tape, id: int)
+    procedure bwd_layernorm(mutable this: Tape, id: int)
     {
         let node nodes.at(id)
         let na nodes.at(node.a)
@@ -1103,7 +1103,7 @@ define Tape
         }
     }
 
-    procedure fwd_embedding(this: Tape, id: int)
+    procedure fwd_embedding(mutable this: Tape, id: int)
     {
         let node nodes.at(id)
         let na nodes.at(node.a)
@@ -1125,7 +1125,7 @@ define Tape
         }
     }
 
-    procedure bwd_embedding(this: Tape, id: int)
+    procedure bwd_embedding(mutable this: Tape, id: int)
     {
         let node nodes.at(id)
         let na nodes.at(node.a)
@@ -1151,7 +1151,7 @@ define Tape
         }
     }
 
-    procedure fwd_wsum(this: Tape, id: int)
+    procedure fwd_wsum(mutable this: Tape, id: int)
     {
         let node nodes.at(id)
         let na nodes.at(node.a)
@@ -1169,7 +1169,7 @@ define Tape
         out.put(0, sum)
     }
 
-    procedure bwd_wsum(this: Tape, id: int)
+    procedure bwd_wsum(mutable this: Tape, id: int)
     {
         let node nodes.at(id)
         let na nodes.at(node.a)
@@ -1186,7 +1186,7 @@ define Tape
         }
     }
 
-    procedure fwd_crossent(this: Tape, id: int)
+    procedure fwd_crossent(mutable this: Tape, id: int)
     {
         let node nodes.at(id)
         let na nodes.at(node.a)
@@ -1224,7 +1224,7 @@ define Tape
         out.put(0, loss / (r as float))
     }
 
-    procedure bwd_crossent(this: Tape, id: int)
+    procedure bwd_crossent(mutable this: Tape, id: int)
     {
         let node nodes.at(id)
         let na nodes.at(node.a)
@@ -1270,7 +1270,7 @@ define Tape
         }
     }
 
-    procedure fwd_add(this: Tape, id: int)
+    procedure fwd_add(mutable this: Tape, id: int)
     {
         let node nodes.at(id)
         let na nodes.at(node.a)
@@ -1291,7 +1291,7 @@ define Tape
         }
     }
 
-    procedure bwd_add(this: Tape, id: int)
+    procedure bwd_add(mutable this: Tape, id: int)
     {
         let node nodes.at(id)
         let na nodes.at(node.a)
@@ -1309,7 +1309,7 @@ define Tape
         }
     }
 
-    procedure fwd_add_bcast(this: Tape, id: int)
+    procedure fwd_add_bcast(mutable this: Tape, id: int)
     {
         let node nodes.at(id)
         let na nodes.at(node.a)
@@ -1332,7 +1332,7 @@ define Tape
         }
     }
 
-    procedure bwd_add_bcast(this: Tape, id: int)
+    procedure bwd_add_bcast(mutable this: Tape, id: int)
     {
         let node nodes.at(id)
         let na nodes.at(node.a)
@@ -1358,7 +1358,7 @@ define Tape
         }
     }
 
-    procedure fwd_attention(this: Tape, id: int)
+    procedure fwd_attention(mutable this: Tape, id: int)
     {
         let node nodes.at(id)
         let nq nodes.at(node.a)
@@ -1443,7 +1443,7 @@ define Tape
         }
     }
 
-    procedure bwd_attention(this: Tape, id: int)
+    procedure bwd_attention(mutable this: Tape, id: int)
     {
         let node nodes.at(id)
         let nq nodes.at(node.a)

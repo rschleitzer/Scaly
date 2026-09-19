@@ -7,7 +7,7 @@ define Lexer
     current: pointer[char]
 )
 {
-    procedure advance#(rp, this)
+    procedure advance#(rp, mutable this)
         set current: null
 
     function is_at_end(this) returns bool
@@ -24,7 +24,7 @@ define Parser
         lexer.is_at_end()
 
     ; Function that calls lexer.advance#() — mirrors parse_literal_token# structure
-    function do_advance#(rp, this) returns bool
+    procedure do_advance#(rp, mutable this) returns bool
     {
         lexer.advance#()
         lexer.is_at_end()

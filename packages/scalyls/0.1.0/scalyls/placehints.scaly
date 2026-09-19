@@ -87,7 +87,7 @@ define placehints
 {
     ; The placement hints for the packed "<sl> <sc> <el> <ec>" range as a
     ; COMMA-JOINED FRAGMENT of InlayHint objects, or "".
-    procedure fragment(rp, uri: String, text: String, packed: String) returns String
+    procedure fragment(rp, mutable uri: String, mutable text: String, packed: String) returns String
     {
         let path diagnostics.strip_uri uri
         if path.get_length() = 0
@@ -127,7 +127,7 @@ define placehints
     ; load-bearing file in this server for a cosmetic gain. The shape it answers
     ; is known exactly — `[]` or `[...]` — so `[]` becomes `[mine]` and anything
     ; else takes `,mine` before its final byte.
-    procedure merged(rp, repaired: String, source: String, uri: String, packed: String) returns String
+    procedure merged(rp, mutable repaired: String, mutable source: String, mutable uri: String, packed: String) returns String
     {
         let base symbols.inlay_hints_packed(repaired, uri, packed)
         let mine placehints.fragment(uri, source, packed)
@@ -161,7 +161,7 @@ define placehints
     ; ends after the callee name and its arguments are outside. The start is the
     ; one end of it that reliably sits on the construction's first token.
     ; ====================================================================
-    procedure build(rp, path: String, text: String) returns String
+    procedure build(rp, mutable path: String, mutable text: String) returns String
     {
         var sb StringBuilder()
 
@@ -221,7 +221,7 @@ define placehints
     ; module-level global's initializer is an operand list of its own. Walking
     ; only `functions` misses every constructor body — which in this tree is where
     ; a large share of the interesting constructions live.
-    procedure collect_plan(sb: ref[StringBuilder], plan: Plan, file: FileSyntax, own_statements: bool)
+    procedure collect_plan(mutable sb: ref[StringBuilder], plan: Plan, file: FileSyntax, own_statements: bool)
     {
         if plan.functions <> null
         {
@@ -297,7 +297,7 @@ define placehints
         }
     }
 
-    procedure collect_structure(sb: ref[StringBuilder], st: PlannedStructure, file: FileSyntax)
+    procedure collect_structure(mutable sb: ref[StringBuilder], st: PlannedStructure, file: FileSyntax)
     {
         if st.methods <> null
         {
@@ -356,7 +356,7 @@ define placehints
         }
     }
 
-    procedure collect_union(sb: ref[StringBuilder], un: PlannedUnion, file: FileSyntax)
+    procedure collect_union(mutable sb: ref[StringBuilder], un: PlannedUnion, file: FileSyntax)
     {
         if un.methods <> null
         {
@@ -392,7 +392,7 @@ define placehints
         }
     }
 
-    procedure collect_impl(sb: ref[StringBuilder], has_page: bool, impl: PlannedImplementation)
+    procedure collect_impl(mutable sb: ref[StringBuilder], has_page: bool, impl: PlannedImplementation)
     {
         choose impl
             when action: Action
@@ -411,13 +411,13 @@ define placehints
     ; operand's children are not inside its span, so there is nothing to prune on.
     ; ====================================================================
 
-    procedure collect_action(sb: ref[StringBuilder], has_page: bool, act: PlannedAction)
+    procedure collect_action(mutable sb: ref[StringBuilder], has_page: bool, act: PlannedAction)
     {
         placehints.collect_operands_opt(sb, has_page, act.source)
         placehints.collect_operands_opt(sb, has_page, act.target)
     }
 
-    procedure collect_statement(sb: ref[StringBuilder], has_page: bool, stmt: PlannedStatement)
+    procedure collect_statement(mutable sb: ref[StringBuilder], has_page: bool, stmt: PlannedStatement)
     {
         choose stmt
             when a: Action
@@ -434,7 +434,7 @@ define placehints
                 0
     }
 
-    procedure collect_statement_opt(sb: ref[StringBuilder], has_page: bool, opt: ref[PlannedStatement]?)
+    procedure collect_statement_opt(mutable sb: ref[StringBuilder], has_page: bool, opt: ref[PlannedStatement]?)
     {
         if opt <> null
         {
@@ -443,7 +443,7 @@ define placehints
         }
     }
 
-    procedure collect_operands_opt(sb: ref[StringBuilder], has_page: bool, opt: ref[Vector[PlannedOperand]]?)
+    procedure collect_operands_opt(mutable sb: ref[StringBuilder], has_page: bool, opt: ref[Vector[PlannedOperand]]?)
     {
         if opt = null
             return
@@ -458,7 +458,7 @@ define placehints
         }
     }
 
-    procedure collect_operand_opt(sb: ref[StringBuilder], has_page: bool, opt: ref[PlannedOperand]?)
+    procedure collect_operand_opt(mutable sb: ref[StringBuilder], has_page: bool, opt: ref[PlannedOperand]?)
     {
         if opt <> null
         {
@@ -467,7 +467,7 @@ define placehints
         }
     }
 
-    procedure collect_operand(sb: ref[StringBuilder], has_page: bool, op: PlannedOperand)
+    procedure collect_operand(mutable sb: ref[StringBuilder], has_page: bool, op: PlannedOperand)
     {
         ; `op.member_access` needs no traversal: a PlannedMemberAccess is a name
         ; plus an index (Plan.scaly) and carries no operands, so a method call in
@@ -477,7 +477,7 @@ define placehints
         placehints.collect_expr(sb, has_page, op.expr, op.loc)
     }
 
-    procedure collect_expr(sb: ref[StringBuilder], has_page: bool, expr: PlannedExpression, loc: Span)
+    procedure collect_expr(mutable sb: ref[StringBuilder], has_page: bool, expr: PlannedExpression, loc: Span)
     {
         choose expr
             when k: Constant
@@ -720,7 +720,7 @@ define placehints
     ; `label`: `label` is a reserved word and cannot be a binding name.)
     ; One blob line: "<offset>\t<label>\n". (The parameter is `note`, not `label`:
     ; `label` is a reserved word and cannot be a binding name.)
-    procedure emit_site(sb: ref[StringBuilder], offset: size_t, note: String)
+    procedure emit_site(mutable sb: ref[StringBuilder], offset: size_t, note: String)
     {
         sb.append(json.format_i64(offset as i64))
         sb.append("\t" as char)

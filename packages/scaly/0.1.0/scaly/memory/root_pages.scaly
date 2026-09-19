@@ -267,7 +267,7 @@ mutable panic_oob_count: i64 0
 function scaly_panic_oob_count() returns i64
     panic_oob_count
 
-procedure scaly_panic_oob(what: pointer[const_char], index: size_t, length: size_t)
+procedure scaly_panic_oob(mutable what: pointer[const_char], index: size_t, length: size_t)
 {
     ; Count BEFORE the jump: scaly_panic_jump does not return when a catch
     ; point is installed, so a bump behind it would count only the traps that
@@ -332,7 +332,7 @@ mutable panic_null_count: i64 0
 function scaly_panic_null_count() returns i64
     panic_null_count
 
-procedure scaly_panic_null(where: pointer[const_char])
+procedure scaly_panic_null(mutable where: pointer[const_char])
 {
     set panic_null_count: panic_null_count + 1
 
@@ -381,7 +381,7 @@ mutable panic_region_count: i64 0
 function scaly_panic_region_count() returns i64
     panic_region_count
 
-procedure scaly_panic_region(what: pointer[const_char], address: size_t)
+procedure scaly_panic_region(mutable what: pointer[const_char], address: size_t)
 {
     set panic_region_count: panic_region_count + 1
 
@@ -424,7 +424,7 @@ mutable panic_size_count: i64 0
 function scaly_panic_size_count() returns i64
     panic_size_count
 
-procedure scaly_panic_size(what: pointer[const_char], added: size_t, length: size_t)
+procedure scaly_panic_size(mutable what: pointer[const_char], added: size_t, length: size_t)
 {
     set panic_size_count: panic_size_count + 1
 
@@ -515,7 +515,7 @@ mutable panic_oom_count: i64 0
 function scaly_panic_oom_count() returns i64
     panic_oom_count
 
-procedure scaly_panic_oom(what: pointer[const_char], bytes: size_t)
+procedure scaly_panic_oom(mutable what: pointer[const_char], bytes: size_t)
 {
     set panic_oom_count: panic_oom_count + 1
 
@@ -564,7 +564,7 @@ mutable panic_resource_count: i64 0
 function scaly_panic_resource_count() returns i64
     panic_resource_count
 
-procedure scaly_panic_resource(what: pointer[const_char], requested: size_t, code: i32)
+procedure scaly_panic_resource(mutable what: pointer[const_char], requested: size_t, code: i32)
 {
     set panic_resource_count: panic_resource_count + 1
 
@@ -596,7 +596,7 @@ mutable panic_deadlock_count: i64 0
 function scaly_panic_deadlock_count() returns i64
     panic_deadlock_count
 
-procedure scaly_panic_deadlock(what: pointer[const_char], code: i32)
+procedure scaly_panic_deadlock(mutable what: pointer[const_char], code: i32)
 {
     set panic_deadlock_count: panic_deadlock_count + 1
 
@@ -692,7 +692,7 @@ procedure bucket_unlock(b: pointer[HeapBucketHeader])
 ; is this module's constant, and module globals resolve in planning
 ; order (Page is planned first — reading the constant from there is a
 ; hard "unknown identifier" diagnostic).
-procedure drain_dead_bucket(b: pointer[HeapBucketHeader]) returns bool
+procedure drain_dead_bucket(mutable b: pointer[HeapBucketHeader]) returns bool
 {
     if b.dead = 0
         return false
@@ -782,7 +782,7 @@ procedure reset_page(p: ref[Page])
 ; Bucket creation
 ; --------------------------------------------------------------------------
 
-procedure create_stack_bucket(prev: pointer[StackBucketHeader]) returns pointer[StackBucketHeader]
+procedure create_stack_bucket(mutable prev: pointer[StackBucketHeader]) returns pointer[StackBucketHeader]
 {
     let mem scaly_aligned_alloc(BUCKET_SIZE as i64, BUCKET_SIZE as i64)
     if mem = null
@@ -1007,7 +1007,7 @@ define Frame
 ; header). The recursion is bounded by the chain depth (measured maximum 49 on
 ; the DSSSL engine, 12 on a 13.7 MB parse) and unwinds to a plain loop under
 ; opt/LTO.
-procedure scaly_force_frame(f: pointer[Frame]) returns pointer[Page]
+procedure scaly_force_frame(mutable f: pointer[Frame]) returns pointer[Page]
 {
     let p f.page
     if p <> null
@@ -1030,7 +1030,7 @@ procedure scaly_force_frame(f: pointer[Frame]) returns pointer[Page]
 ; function whose region nobody demanded pays a load and a compare on the way
 ; out. Clears before releasing for the same reason the slot version does: an
 ; epilogue that runs twice must not release the same root page twice.
-procedure scaly_release_frame(f: pointer[Frame])
+procedure scaly_release_frame(mutable f: pointer[Frame])
 {
     let p f.page
     if p = null
@@ -1183,7 +1183,7 @@ function scaly_trace_find_or_add(name: pointer[const_char]) returns ref[TraceEnt
     new_entry
 }
 
-procedure scaly_trace_push(name: pointer[const_char])
+procedure scaly_trace_push(mutable name: pointer[const_char])
 {
     scaly_rt_register_trace()
     if trace_enabled = 0
@@ -1193,7 +1193,7 @@ procedure scaly_trace_push(name: pointer[const_char])
         set e.push_count: e.push_count + 1
 }
 
-procedure scaly_trace_pop(name: pointer[const_char])
+procedure scaly_trace_pop(mutable name: pointer[const_char])
 {
     scaly_rt_register_trace()
     if trace_enabled = 0
@@ -1313,7 +1313,7 @@ procedure heap_trace_unlock(hdr: pointer[HeapTraceHeader])
 }
 
 ; Caller holds hdr's lock.
-procedure scaly_heap_trace_find_or_add(hdr: ref[HeapTraceHeader], name: pointer[const_char]) returns ref[TraceEntry]?
+procedure scaly_heap_trace_find_or_add(mutable hdr: ref[HeapTraceHeader], name: pointer[const_char]) returns ref[TraceEntry]?
 {
     var i: i64 0
     while i < hdr.count
@@ -1338,7 +1338,7 @@ procedure scaly_heap_trace_find_or_add(hdr: ref[HeapTraceHeader], name: pointer[
     new_entry
 }
 
-procedure scaly_heap_trace_alloc(site: pointer[const_char])
+procedure scaly_heap_trace_alloc(mutable site: pointer[const_char])
 {
     scaly_rt_register_heap_trace()
     if heap_trace_state <> 2
@@ -1351,7 +1351,7 @@ procedure scaly_heap_trace_alloc(site: pointer[const_char])
     heap_trace_unlock hdr
 }
 
-procedure scaly_heap_trace_release(site: pointer[const_char])
+procedure scaly_heap_trace_release(mutable site: pointer[const_char])
 {
     scaly_rt_register_heap_trace()
     if heap_trace_state <> 2

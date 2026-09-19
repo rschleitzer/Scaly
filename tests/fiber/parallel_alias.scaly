@@ -26,7 +26,7 @@ function spin_big(seed: i64) returns i64
     acc
 }
 
-procedure wave_direct(acc: List[i64])
+procedure wave_direct(mutable acc: List[i64])
 {
     for i in 64
     {
@@ -35,7 +35,7 @@ procedure wave_direct(acc: List[i64])
     }
 }
 
-procedure wave_let_alias(acc: List[i64])
+procedure wave_let_alias(mutable acc: List[i64])
 {
     for i in 64
     {
@@ -56,7 +56,7 @@ procedure wave_set_alias(acc: List[i64])
     }
 }
 
-procedure wave_control(r: Vector[i64], n: int)
+procedure wave_control(mutable r: Vector[i64], n: int)
 {
     for i in n
     {
@@ -69,7 +69,7 @@ procedure wave_control(r: Vector[i64], n: int)
 ; (mask 0), so a loop reading a shared input vector and writing
 ; disjoint slots is the canonical data-parallel pattern — it MUST
 ; still promote and fork.
-procedure wave_read(src: Vector[i64], r: Vector[i64], n: int)
+procedure wave_read(src: Vector[i64], mutable r: Vector[i64], n: int)
 {
     for i in n
     {

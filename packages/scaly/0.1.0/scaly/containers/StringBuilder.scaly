@@ -39,13 +39,13 @@ define StringBuilder
         append c_string
     }
 
-    procedure append(this: StringBuilder, character: char)
+    procedure append(mutable this: StringBuilder, character: char)
         buffer.add character
 
-    procedure append(this: StringBuilder, string: String)
+    procedure append(mutable this: StringBuilder, string: String)
         buffer.add(Vector[char](string.get_length(), string.get_buffer()))
 
-    procedure append(this: StringBuilder, c_string: pointer[const_char])
+    procedure append(mutable this: StringBuilder, c_string: pointer[const_char])
     {
         let length strlen c_string
         if length = 0
@@ -54,7 +54,7 @@ define StringBuilder
         buffer.add(Vector[char](length, c_string as pointer[char]))
     }
 
-    procedure append(this: StringBuilder, start: pointer[char], length: size_t)
+    procedure append(mutable this: StringBuilder, start: pointer[char], length: size_t)
     {
         buffer.add(Vector[char](length, start))
     }
@@ -63,7 +63,7 @@ define StringBuilder
     ; embedded expression to a plain `append`, so the numeric conversions
     ; live here. Classic divide-by-10 with digit buffer and reversal
     ; (mirrors the compiler's size_to_string).
-    procedure append(this: StringBuilder, value: size_t)
+    procedure append(mutable this: StringBuilder, value: size_t)
     {
         if value = 0
         {
@@ -90,7 +90,7 @@ define StringBuilder
         }
     }
 
-    procedure append(this: StringBuilder, value: int)
+    procedure append(mutable this: StringBuilder, value: int)
     {
         if value < 0
         {
@@ -101,7 +101,7 @@ define StringBuilder
             append(value as size_t)
     }
 
-    procedure append(this: StringBuilder, value: bool)
+    procedure append(mutable this: StringBuilder, value: bool)
     {
         if value
             append("true")

@@ -18,11 +18,11 @@ define Sink
     slot: pointer[Box]
 )
 {
-    procedure stash(this, pr: pointer[Pair])
+    procedure stash(mutable this, pr: pointer[Pair])
         set this.slot: (*pr).a
 }
 
-procedure trigger(sink: Sink, bx: pointer[Box])
+procedure trigger(mutable sink: Sink, bx: pointer[Box])
 {
     let pp Pair(bx, bx)
     sink.stash(&pp)

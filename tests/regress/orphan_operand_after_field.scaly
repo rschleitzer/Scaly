@@ -21,7 +21,7 @@ define Other (n: int)
 define Sink (total: int)
 {
     init()  set total: 0
-    procedure take(this, v: int)  set total: total + v
+    procedure take(mutable this, v: int)  set total: total + v
 }
 
 define U union

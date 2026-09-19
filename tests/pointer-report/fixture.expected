@@ -4,9 +4,9 @@ pointer-report: tests/pointer-report/fixture.scaly:8:37: extern-param pointer[vo
 pointer-report: tests/pointer-report/fixture.scaly:8:68: extern-return pointer[void] memcpy
 pointer-report: tests/pointer-report/fixture.scaly:12:5: field pointer[u8] Holder.buf
 pointer-report: tests/pointer-report/fixture.scaly:17:1: variant pointer[Leaf] Payload.Raw
-pointer-report: tests/pointer-report/fixture.scaly:23:29: param pointer[u8] walk(raw)
+pointer-report: tests/pointer-report/fixture.scaly:23:30: param pointer[u8] walk(raw)
 pointer-report: tests/pointer-report/fixture.scaly:23:1: h-mixed-params walk
-pointer-report: tests/pointer-report/fixture.scaly:23:72: return pointer[u8] walk
+pointer-report: tests/pointer-report/fixture.scaly:23:81: return pointer[u8] walk
 pointer-report: tests/pointer-report/fixture.scaly:44:16: field pointer[T] Box.p
 pointer-report: tests/pointer-report/fixture.scaly:50:19: param pointer[int] use_boxes(a)
 pointer-report: tests/pointer-report/fixture.scaly:50:37: param pointer[u8] use_boxes(b)
@@ -16,15 +16,15 @@ pointer-report: tests/pointer-report/fixture.scaly:75:1: h-mixed-params mixed
 pointer-report: tests/pointer-report/fixture.scaly:86:25: param pointer[u8] take(p)
 pointer-report: tests/pointer-report/fixture.scaly:88:22: param pointer[Sized] call_shapes(h)
 pointer-report: tests/pointer-report/fixture.scaly:88:42: param pointer[u8] call_shapes(raw)
-pointer-report: tests/pointer-report/fixture.scaly:88:74: param pointer[Leaf] call_shapes(leaf)
+pointer-report: tests/pointer-report/fixture.scaly:88:82: param pointer[Leaf] call_shapes(leaf)
 pointer-report: tests/pointer-report/fixture.scaly:103:38: field pointer[u8] Source.contents
 pointer-report: tests/pointer-report/fixture.scaly:105:32: param pointer[u8] Source(contents)
 pointer-report: tests/pointer-report/fixture.scaly:105:5: h-mixed-params Source
 pointer-report: tests/pointer-report/fixture.scaly:117:24: param pointer[Origin] build_sources(o)
 pointer-report: tests/pointer-report/fixture.scaly:117:45: param pointer[u8] build_sources(raw)
 pointer-report: tests/pointer-report/fixture.scaly:127:63: param pointer[ref[Leaf]] fill_slots(buf)
-pointer-report: tests/pointer-report/fixture.scaly:127:88: param pointer[Option[ref[Leaf]]] fill_slots(obuf)
-pointer-report: tests/pointer-report/fixture.scaly:127:115: param pointer[ref[Leaf]] fill_slots(cell)
+pointer-report: tests/pointer-report/fixture.scaly:127:96: param pointer[Option[ref[Leaf]]] fill_slots(obuf)
+pointer-report: tests/pointer-report/fixture.scaly:127:131: param pointer[ref[Leaf]] fill_slots(cell)
 pointer-report: tests/pointer-report/fixture.scaly:127:1: h-mixed-params fill_slots
 pointer-report: tests/pointer-report/fixture.scaly:138:14: field pointer[int] Grid.cells
 pointer-report: tests/pointer-report/fixture.scaly:143:39: param pointer[u8] provenance(src)
