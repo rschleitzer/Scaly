@@ -33,7 +33,7 @@ procedure size_trap(mutable arr: ref[Array[int]], buf: pointer[int])
     arr.add(huge)
 }
 
-function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int io
 {
     let bad (argc as size_t) + 4
 

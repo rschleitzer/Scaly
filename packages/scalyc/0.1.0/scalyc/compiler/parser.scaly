@@ -72,6 +72,7 @@ define Parser
         keywords_builder.add("init")
         keywords_builder.add("instruction")
         keywords_builder.add("intrinsic")
+        keywords_builder.add("io")
         keywords_builder.add("is")
         keywords_builder.add("label")
         keywords_builder.add("let")
@@ -1386,6 +1387,18 @@ define Parser
         WritableSyntax(start, end)
     }
 
+    procedure parse_io(mutable this: Parser) returns IoSyntax throws ParserError
+    {
+        let start lexer.previous_position
+
+        if ~lexer.parse_keyword("io")
+            throw ParserError.Different(DifferentSyntax())
+
+        let end lexer.position
+
+        IoSyntax(start, end)
+    }
+
     procedure parse_globalwrites(mutable this: Parser) returns GlobalWritesSyntax throws ParserError
     {
         let start lexer.previous_position
@@ -2147,6 +2160,19 @@ define Parser
 
         lexer.parse_colon()
 
+        let io_mark_start lexer.position
+        var io_mark: ref[IoSyntax]? null
+        choose parse_io()
+            when err: Error
+            {
+                choose err
+                    when d: Different {}
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+            }
+            when success: Success
+                set io_mark: IoSyntax(success.start, success.end)
+
         let writes_start lexer.position
         var writes: ref[GlobalWritesSyntax]? null
         choose parse_globalwrites()
@@ -2178,7 +2204,7 @@ define Parser
 
         let end lexer.position
 
-        RoutineSyntax(start, end, generics, lifetime, parameters, attributes, returns_, throws_, writes, implementation)
+        RoutineSyntax(start, end, generics, lifetime, parameters, attributes, returns_, throws_, io_mark, writes, implementation)
     }
 
     procedure parse_implementation(mutable this: Parser) returns ImplementationSyntax throws ParserError

@@ -10,7 +10,7 @@
 ;
 ; Expected: PASS
 
-function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int io
 {
     let before Region.panic_size_count()
 

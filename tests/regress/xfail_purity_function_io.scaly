@@ -1,0 +1,11 @@
+; Regression (R1, 2026-09-19): a function performs no I/O, not even through a
+; procedure it calls.
+; xfail: error: function shout performs I/O; a function performs none - make it a procedure and declare `io` after its signature
+
+function shout(n: int) returns int
+{
+    print "loud\n"
+    n
+}
+
+shout(3)

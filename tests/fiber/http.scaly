@@ -37,7 +37,7 @@ function head_complete(buf: pointer[u8], total: int) returns bool
 }
 
 ; Write all of data[0..len) to fd, suspending on would-block.
-procedure write_all(fd: i32, data: size_t, len: size_t)
+procedure write_all(fd: i32, data: size_t, len: size_t) io
 {
     var off (0 as size_t)
     while off < len
@@ -51,7 +51,7 @@ procedure write_all(fd: i32, data: size_t, len: size_t)
 
 ; One connection, one fiber, one region: parse the request head, send
 ; the response, close. The fd arrives as the spawn argument.
-procedure handle_connection()
+procedure handle_connection() io
 {
     let fd (Scheduler.task_arg() as size_t) as i32
     Io.set_nonblocking(fd)
@@ -90,7 +90,7 @@ procedure handle_connection()
     close(fd)
 }
 
-procedure acceptor()
+procedure acceptor() io
 {
     var i 0
     while i < 4
@@ -106,7 +106,7 @@ procedure acceptor()
 ; One conversation: connect, send the request, read to EOF, check the
 ; status digits (bytes 9..11) and the byte count. Returns true on the
 ; expected response.
-procedure converse(req: String, want_total: int, d1: int, d2: int, d3: int) returns bool
+procedure converse(req: String, want_total: int, d1: int, d2: int, d3: int) returns bool io
 {
     let fd Io.connect(server_port as i32)
     if fd = ((0 - 1) as i32)
@@ -140,7 +140,7 @@ procedure converse(req: String, want_total: int, d1: int, d2: int, d3: int) retu
     true
 }
 
-procedure client()
+procedure client() io
 {
     var i 1
     while i <= 3

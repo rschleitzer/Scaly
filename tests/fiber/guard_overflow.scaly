@@ -17,7 +17,7 @@ procedure burn(depth: int) returns int
     r + (*(pad + 0) as int)
 }
 
-procedure worker()
+procedure worker() io
 {
     let d burn(0)
     Console.print "unreachable "

@@ -151,6 +151,9 @@
 <syntax id = Writable
     <content link = mutable
 
+<syntax id = Io
+    <content link = io
+
 <syntax id = GlobalWrites
     <content link = mutable
     <content identifier                                     property = name
@@ -243,6 +246,7 @@
     <content colon                                 optional
     <content link = Throws                         optional property = throws_
     <content colon                                 optional
+    <content link = Io                             optional property = io_mark
     <content link = GlobalWrites                   optional property = writes
     <content colon                                 optional
     <content link = Implementation                          property = implementation
@@ -646,6 +650,7 @@
 <keyword id = init
 <keyword id = instruction
 <keyword id = intrinsic
+<keyword id = io
 <keyword id = is
 <keyword id = label
 <keyword id = let

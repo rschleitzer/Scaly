@@ -28,7 +28,7 @@ procedure fill(mutable q: pointer[char])
     set *(q + 1): "B" as char
 }
 
-function main() returns int
+procedure main() returns int io
 {
     var b Boxy()
     let pb &b

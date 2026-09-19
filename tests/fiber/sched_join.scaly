@@ -7,7 +7,7 @@
 ; own region dies in the main-context join afterwards.
 ; Expected: p1 c1 c2 c1 c2 cfreed p2 done freed
 
-procedure child_one()
+procedure child_one() io
 {
     var i 0
     while i < 2
@@ -24,7 +24,7 @@ procedure child_one()
     }
 }
 
-procedure child_two()
+procedure child_two() io
 {
     var i 0
     while i < 2
@@ -41,7 +41,7 @@ procedure child_two()
     }
 }
 
-procedure parent()
+procedure parent() io
 {
     var k 0
     while k < 20

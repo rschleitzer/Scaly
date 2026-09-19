@@ -28,7 +28,7 @@ function deep(n: i64) returns i64
     (s.get_length() as i64)
 }
 
-function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int io
 {
     ; (1) Locals, die den Sprung ueberleben muessen
     var vor 100

@@ -15,7 +15,7 @@ function close(fd: i32) returns i32 extern
 mutable server_fd: int 0
 mutable client_fd: int 0
 
-procedure server()
+procedure server() io
 {
     let fd server_fd as i32
     var buf u8[64]
@@ -39,7 +39,7 @@ procedure server()
     close(fd)
 }
 
-procedure client()
+procedure client() io
 {
     let fd client_fd as i32
     var buf u8[8]

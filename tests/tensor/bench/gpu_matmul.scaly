@@ -225,7 +225,7 @@ procedure max_abs_diff(got: Vector[float], want: Vector[float], count: int) retu
     md
 }
 
-procedure report(txt: String, flops: i64, reps: int, ns: i64)
+procedure report(txt: String, flops: i64, reps: int, ns: i64) io
 {
     var sb StringBuilder()
     sb.append "  "
@@ -243,7 +243,7 @@ procedure report(txt: String, flops: i64, reps: int, ns: i64)
     Console.println(line.to_c_string())
 }
 
-procedure report_gpu_only(txt: String, flops: i64, reps: int)
+procedure report_gpu_only(txt: String, flops: i64, reps: int) io
 {
     let gms scaly_mgpu_last_gpu_ms()
     var gfs: float 0.0
@@ -263,7 +263,7 @@ procedure report_gpu_only(txt: String, flops: i64, reps: int)
     Console.println(line.to_c_string())
 }
 
-procedure bench_shape(m: int, kk: int, n: int, seed: int)
+procedure bench_shape(m: int, kk: int, n: int, seed: int) io
 {
     let flops (2 as i64) * (m as i64) * (kk as i64) * (n as i64)
     var sb StringBuilder()

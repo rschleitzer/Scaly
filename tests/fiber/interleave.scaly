@@ -5,7 +5,7 @@
 ; Both regions are disposed wholesale at the end.
 ; Expected: a b a b a b done freed
 
-procedure worker_a(first_ctx: pointer[void])
+procedure worker_a(first_ctx: pointer[void]) io
 {
     Fiber.started first_ctx
     var i 0
@@ -24,7 +24,7 @@ procedure worker_a(first_ctx: pointer[void])
     Fiber.finish()
 }
 
-procedure worker_b(first_ctx: pointer[void])
+procedure worker_b(first_ctx: pointer[void]) io
 {
     Fiber.started first_ctx
     var i 0

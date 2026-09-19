@@ -13,7 +13,7 @@
 function plain(n: int) returns int
     n + 1
 
-function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int io
 {
     try let v plain(argc)
     else

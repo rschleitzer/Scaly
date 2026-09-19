@@ -317,7 +317,7 @@ define Modeler
     ; Object/Tuple handling
     ; ============================================================================
 
-    procedure handle_object(mutable syntax: ObjectSyntax) returns Tuple mutable modeler_error_count
+    procedure handle_object(mutable syntax: ObjectSyntax) returns Tuple io mutable modeler_error_count
     {
         var count: size_t 0
         if syntax.components <> null
@@ -343,7 +343,7 @@ define Modeler
         Tuple(Span(syntax.start, syntax.end), components)
     }
 
-    procedure handle_component(mutable syntax: ComponentSyntax) returns Component mutable modeler_error_count
+    procedure handle_component(mutable syntax: ComponentSyntax) returns Component io mutable modeler_error_count
     {
         var name: ref[String]? null
         var operands handle_operands(syntax.operands)
@@ -416,7 +416,7 @@ define Modeler
         Vector[Operand](cells)
     }
 
-    procedure handle_vector(mutable syntax: VectorSyntax) returns Matrix mutable modeler_error_count
+    procedure handle_vector(mutable syntax: VectorSyntax) returns Matrix io mutable modeler_error_count
     {
         var count: size_t 0
         if syntax.elements <> null
@@ -471,7 +471,7 @@ define Modeler
     ; Block handling
     ; ============================================================================
 
-    procedure handle_block(mutable syntax: BlockSyntax) returns Block mutable modeler_error_count
+    procedure handle_block(mutable syntax: BlockSyntax) returns Block io mutable modeler_error_count
     {
         let statements handle_statements(syntax.statements)
         Block(Span(syntax.start, syntax.end), statements)
@@ -521,7 +521,7 @@ define Modeler
     ; it by accident. On a malformed payload the error is reported through
     ; modeler_error_count (cli fails the compile) and the literal is returned
     ; verbatim so modeling continues.
-    procedure handle_interpolated_string(mutable syntax: LiteralSyntax, raw: String) returns Expression mutable modeler_error_count
+    procedure handle_interpolated_string(mutable syntax: LiteralSyntax, raw: String) returns Expression io mutable modeler_error_count
     {
         let len raw.get_length()
         let buf raw.as_slice()
@@ -704,7 +704,7 @@ define Modeler
     ; Expression handling
     ; ============================================================================
 
-    procedure handle_expression(mutable syntax: ExpressionSyntax) returns Expression mutable modeler_error_count
+    procedure handle_expression(mutable syntax: ExpressionSyntax) returns Expression io mutable modeler_error_count
     {
         choose syntax
             when lit: LiteralSyntax
@@ -841,7 +841,7 @@ define Modeler
 
     ; Lambda: each input operand should be a simple name; we build an Item
     ; per operand with no type annotation (type inferred from context).
-    procedure handle_lambda(mutable syntax: LambdaSyntax) returns Lambda mutable modeler_error_count
+    procedure handle_lambda(mutable syntax: LambdaSyntax) returns Lambda io mutable modeler_error_count
     {
         var input Vector[Item](0)
         if syntax.input <> null
@@ -884,7 +884,7 @@ define Modeler
         )
     }
 
-    procedure handle_repeat(mutable syntax: RepeatSyntax) returns Repeat mutable modeler_error_count
+    procedure handle_repeat(mutable syntax: RepeatSyntax) returns Repeat io mutable modeler_error_count
     {
         let body handle_action(syntax.action)
         var repeat_label: String ""
@@ -901,7 +901,7 @@ define Modeler
     ; Control flow handling
     ; ============================================================================
 
-    procedure handle_if(mutable syntax: IfSyntax) returns If mutable modeler_error_count
+    procedure handle_if(mutable syntax: IfSyntax) returns If io mutable modeler_error_count
     {
         let condition handle_operands(syntax.condition)
         let cons_stmt handle_command(syntax.consequent.statement)
@@ -924,7 +924,7 @@ define Modeler
         )
     }
 
-    procedure handle_match(mutable syntax: MatchSyntax) returns Match mutable modeler_error_count
+    procedure handle_match(mutable syntax: MatchSyntax) returns Match io mutable modeler_error_count
     {
         let scrutinee handle_operands(syntax.scrutinee)
 
@@ -966,7 +966,7 @@ define Modeler
         )
     }
 
-    procedure handle_branch(mutable syntax: BranchSyntax) returns Branch mutable modeler_error_count
+    procedure handle_branch(mutable syntax: BranchSyntax) returns Branch io mutable modeler_error_count
     {
         var case_count: size_t 0
         if syntax.cases <> null
@@ -994,13 +994,13 @@ define Modeler
         Branch(Span(syntax.start, syntax.end), cases, stmt)
     }
 
-    procedure handle_case(mutable syntax: CaseSyntax) returns Case mutable modeler_error_count
+    procedure handle_case(mutable syntax: CaseSyntax) returns Case io mutable modeler_error_count
     {
         let condition handle_operands(syntax.condition)
         Case(Span(syntax.start, syntax.end), condition)
     }
 
-    procedure handle_choose(mutable syntax: ChooseSyntax) returns Choose mutable modeler_error_count
+    procedure handle_choose(mutable syntax: ChooseSyntax) returns Choose io mutable modeler_error_count
     {
         let condition handle_operands(syntax.condition)
 
@@ -1042,7 +1042,7 @@ define Modeler
         )
     }
 
-    procedure handle_when(mutable syntax: WhenSyntax) returns When mutable modeler_error_count
+    procedure handle_when(mutable syntax: WhenSyntax) returns When io mutable modeler_error_count
     {
         ; syntax.variant is a NameSyntax — build the full variant_path
         ; including extensions so dotted paths (`when u: a.b.Union`) keep
@@ -1080,7 +1080,7 @@ define Modeler
         )
     }
 
-    procedure handle_action(mutable syntax: ActionSyntax) returns Action mutable modeler_error_count
+    procedure handle_action(mutable syntax: ActionSyntax) returns Action io mutable modeler_error_count
     {
         choose syntax
             when op: OperationSyntax
@@ -1091,7 +1091,7 @@ define Modeler
                 Action(Vector[Operand](0), Vector[Operand](0))
     }
 
-    procedure handle_for(mutable syntax: ForSyntax) returns For mutable modeler_error_count
+    procedure handle_for(mutable syntax: ForSyntax) returns For io mutable modeler_error_count
     {
         let expr handle_operands(syntax.operation)
         let body handle_action(syntax.action)
@@ -1108,7 +1108,7 @@ define Modeler
         )
     }
 
-    procedure handle_while(mutable syntax: WhileSyntax) returns While mutable modeler_error_count
+    procedure handle_while(mutable syntax: WhileSyntax) returns While io mutable modeler_error_count
     {
         let cond handle_condition(syntax.condition)
         let body handle_action(syntax.action)
@@ -1124,7 +1124,7 @@ define Modeler
         )
     }
 
-    procedure handle_condition(mutable syntax: ConditionSyntax) returns Binding mutable modeler_error_count
+    procedure handle_condition(mutable syntax: ConditionSyntax) returns Binding io mutable modeler_error_count
     {
         choose syntax
             when op: OperationSyntax
@@ -1152,7 +1152,7 @@ define Modeler
                 Binding(Span(0, 0), "const", Item(Span(0, 0), false, null, null, Vector[Attribute](0)), Vector[Operand](0))
     }
 
-    procedure handle_try(mutable syntax: TrySyntax) returns Try mutable modeler_error_count
+    procedure handle_try(mutable syntax: TrySyntax) returns Try io mutable modeler_error_count
     {
         let cond handle_condition(syntax.condition)
 
@@ -1242,7 +1242,7 @@ define Modeler
     ; Operand handling
     ; ============================================================================
 
-    procedure handle_operand(mutable syntax: OperandSyntax) returns Operand mutable modeler_error_count
+    procedure handle_operand(mutable syntax: OperandSyntax) returns Operand io mutable modeler_error_count
     {
         let expr handle_expression(syntax.expression)
 
@@ -1294,7 +1294,7 @@ define Modeler
         Operand(Span(syntax.start, syntax.end), expr, member_access)
     }
 
-    procedure handle_operands(mutable syntax: ref[Vector[OperandSyntax]]?) returns Vector[Operand] mutable modeler_error_count
+    procedure handle_operands(mutable syntax: ref[Vector[OperandSyntax]]?) returns Vector[Operand] io mutable modeler_error_count
     {
         if syntax = null
             return Vector[Operand](0)
@@ -1316,7 +1316,7 @@ define Modeler
         result
     }
 
-    procedure handle_operation(mutable syntax: OperationSyntax) returns Vector[Operand] mutable modeler_error_count
+    procedure handle_operation(mutable syntax: OperationSyntax) returns Vector[Operand] io mutable modeler_error_count
         handle_operands(syntax.operands)
 
     ; ============================================================================
@@ -1343,7 +1343,7 @@ define Modeler
         )
     }
 
-    procedure handle_command(mutable syntax: StatementSyntax) returns Statement mutable modeler_error_count
+    procedure handle_command(mutable syntax: StatementSyntax) returns Statement io mutable modeler_error_count
     {
         choose syntax
             when op: OperationSyntax
@@ -1419,10 +1419,10 @@ define Modeler
                 Statement.Action(Action(Vector[Operand](0), Vector[Operand](0)))
     }
 
-    procedure handle_statement(mutable syntax: StatementSyntax) returns Statement mutable modeler_error_count
+    procedure handle_statement(mutable syntax: StatementSyntax) returns Statement io mutable modeler_error_count
         handle_command(syntax)
 
-    procedure handle_statements(mutable syntax: ref[Vector[StatementSyntax]]?) returns Vector[Statement] mutable modeler_error_count
+    procedure handle_statements(mutable syntax: ref[Vector[StatementSyntax]]?) returns Vector[Statement] io mutable modeler_error_count
     {
         if syntax = null
             return Vector[Statement](0)
@@ -1604,7 +1604,7 @@ define Modeler
         )
     }
 
-    procedure handle_property(is_private: bool, mutable syntax: PropertySyntax) returns Property mutable modeler_error_count
+    procedure handle_property(is_private: bool, mutable syntax: PropertySyntax) returns Property io mutable modeler_error_count
     {
         let prop_type handle_type(syntax.annotation.type)
 
@@ -1632,7 +1632,7 @@ define Modeler
     ; Attribute handling
     ; ============================================================================
 
-    procedure handle_attribute(mutable syntax: AttributeSyntax) returns Attribute mutable modeler_error_count
+    procedure handle_attribute(mutable syntax: AttributeSyntax) returns Attribute io mutable modeler_error_count
     {
         let model_result handle_model(syntax.model)
 
@@ -1643,7 +1643,7 @@ define Modeler
         )
     }
 
-    procedure handle_model(mutable syntax: ModelSyntax) returns Model mutable modeler_error_count
+    procedure handle_model(mutable syntax: ModelSyntax) returns Model io mutable modeler_error_count
     {
         choose syntax
             when lit: LiteralSyntax
@@ -1781,7 +1781,7 @@ define Modeler
     ; Implementation handling
     ; ============================================================================
 
-    procedure handle_implementation(mutable syntax: ImplementationSyntax) returns Implementation mutable modeler_error_count
+    procedure handle_implementation(mutable syntax: ImplementationSyntax) returns Implementation io mutable modeler_error_count
     {
         choose syntax
             when act: ActionSyntax
@@ -1800,7 +1800,7 @@ define Modeler
     ; Function building
     ; ============================================================================
 
-    procedure build_function(start: size_t, end_pos: size_t, mutable syntax: TargetSyntax, is_private: bool, pure: bool) returns Function mutable modeler_error_count
+    procedure build_function(start: size_t, end_pos: size_t, mutable syntax: TargetSyntax, is_private: bool, pure: bool) returns Function io mutable modeler_error_count
     {
         choose syntax
             when named: NamedSyntax
@@ -1975,23 +1975,41 @@ define Modeler
                     }
                 }
 
-                ; `mutable g1, g2` after the signature: the globals it writes
+                ; `mutable g1, g2` after the signature: the globals it writes.
+                ; `io` before it -- the procedure talks to the world outside the
+                ; program -- joins the list as the name `io`, which no global
+                ; can carry because `io` is a keyword: the check treats the
+                ; outside world as one more global
                 var writes Vector[String](0)
+                var n_io: size_t 0
+                if named.routine.io_mark <> null
+                    set n_io: 1
+                var n_named: size_t 0
+                var n_more: size_t 0
                 if named.routine.writes <> null
                 {
-                    let w_syn (*named.routine.writes)
-                    var n_more: size_t 0
-                    if w_syn.more <> null
-                        set n_more: w_syn.more.length
-                    var w_arr Vector[String](n_more + 1)
-                    w_arr.put(0, String(w_syn.name))
-                    var wi: size_t 0
-                    while wi < n_more
+                    set n_named: 1
+                    let w_more (*named.routine.writes).more
+                    if w_more <> null
+                        set n_more: w_more.length
+                }
+                if n_io + n_named > 0
+                {
+                    var w_arr Vector[String](n_io + n_named + n_more)
+                    if n_io > 0
+                        w_arr.put(0, String("io"))
+                    if named.routine.writes <> null
                     {
-                        let wg_ptr w_syn.more.get wi
-                        if wg_ptr <> null
-                            w_arr.put(wi + 1, String((*wg_ptr).name))
-                        set wi: wi + 1
+                        let w_syn (*named.routine.writes)
+                        w_arr.put(n_io, String(w_syn.name))
+                        var wi: size_t 0
+                        while wi < n_more
+                        {
+                            let wg_ptr w_syn.more.get wi
+                            if wg_ptr <> null
+                                w_arr.put(n_io + wi + 1, String((*wg_ptr).name))
+                            set wi: wi + 1
+                        }
                     }
                     set writes: w_arr
                 }
@@ -2032,7 +2050,7 @@ define Modeler
     ; Operator handling
     ; ============================================================================
 
-    procedure handle_operator(mutable syntax: OperatorSyntax, is_private: bool) returns Operator mutable modeler_error_count
+    procedure handle_operator(mutable syntax: OperatorSyntax, is_private: bool) returns Operator io mutable modeler_error_count
     {
         choose syntax.target
             when named: NamedSyntax
@@ -2182,7 +2200,7 @@ define Modeler
         (*last_seg) = "Page"
     }
 
-    procedure handle_initializer(mutable syntax: InitSyntax, is_private: bool) returns Initializer mutable modeler_error_count
+    procedure handle_initializer(mutable syntax: InitSyntax, is_private: bool) returns Initializer io mutable modeler_error_count
     {
         var input Vector[Item](0)
         if syntax.parameters <> null
@@ -2286,7 +2304,7 @@ define Modeler
         )
     }
 
-    procedure handle_deinitializer(mutable syntax: DeInitSyntax) returns ref[DeInitializer]? mutable modeler_error_count
+    procedure handle_deinitializer(mutable syntax: DeInitSyntax) returns ref[DeInitializer]? io mutable modeler_error_count
     {
         let act handle_action(syntax.action)
         let impl Implementation.Action(act)
@@ -2322,7 +2340,7 @@ define Modeler
     ; Class/Structure handling
     ; ============================================================================
 
-    procedure handle_class(name: String, mutable path: String, mutable syntax: ClassSyntax, is_private: bool) returns Structure mutable modeler_error_count
+    procedure handle_class(name: String, mutable path: String, mutable syntax: ClassSyntax, is_private: bool) returns Structure io mutable modeler_error_count
     {
         var symbols_builder HashMapBuilder[String, Nameable]()
 
@@ -2453,7 +2471,7 @@ define Modeler
         )
     }
 
-    procedure handle_constituent(mutable path: String, mutable syntax: MemberSyntax, mutable symbols_builder: ref[HashMapBuilder[String, Nameable]]) returns Member mutable modeler_error_count
+    procedure handle_constituent(mutable path: String, mutable syntax: MemberSyntax, mutable symbols_builder: ref[HashMapBuilder[String, Nameable]]) returns Member io mutable modeler_error_count
     {
         choose syntax
             when def: DefinitionSyntax
@@ -2502,7 +2520,7 @@ define Modeler
     ; Namespace handling
     ; ============================================================================
 
-    procedure handle_namespace(name: String, mutable path: String, mutable syntax: NamespaceSyntax, is_private: bool) returns Namespace mutable modeler_error_count
+    procedure handle_namespace(name: String, mutable path: String, mutable syntax: NamespaceSyntax, is_private: bool) returns Namespace io mutable modeler_error_count
     {
         var symbols_builder HashMapBuilder[String, Nameable]()
         var modules Array[Module]()
@@ -2560,7 +2578,7 @@ define Modeler
         )
     }
 
-    procedure handle_declaration(mutable path: String, mutable syntax: DeclarationSyntax, mutable symbols_builder: ref[HashMapBuilder[String, Nameable]]) returns Member mutable modeler_error_count
+    procedure handle_declaration(mutable path: String, mutable syntax: DeclarationSyntax, mutable symbols_builder: ref[HashMapBuilder[String, Nameable]]) returns Member io mutable modeler_error_count
     {
         choose syntax
             when private_syntax: PrivateSyntax
@@ -2654,7 +2672,7 @@ define Modeler
                 Member.Package(Vector[Module](0))
     }
 
-    procedure handle_export(mutable path: String, mutable syntax: ExportSyntax, is_private: bool, mutable symbols_builder: ref[HashMapBuilder[String, Nameable]]) returns Member mutable modeler_error_count
+    procedure handle_export(mutable path: String, mutable syntax: ExportSyntax, is_private: bool, mutable symbols_builder: ref[HashMapBuilder[String, Nameable]]) returns Member io mutable modeler_error_count
     {
         choose syntax
             when def: DefinitionSyntax
@@ -2695,7 +2713,7 @@ define Modeler
     ; Union handling
     ; ============================================================================
 
-    procedure handle_union(name: String, mutable path: String, mutable syntax: UnionSyntax, is_private: bool) returns Union mutable modeler_error_count
+    procedure handle_union(name: String, mutable path: String, mutable syntax: UnionSyntax, is_private: bool) returns Union io mutable modeler_error_count
     {
         var symbols_builder HashMapBuilder[String, Nameable]()
 
@@ -2762,7 +2780,7 @@ define Modeler
     ; Definition handling
     ; ============================================================================
 
-    procedure handle_definition(mutable path: String, mutable syntax: DefinitionSyntax, is_private: bool) returns Concept mutable modeler_error_count
+    procedure handle_definition(mutable path: String, mutable syntax: DefinitionSyntax, is_private: bool) returns Concept io mutable modeler_error_count
     {
         let name syntax.name
         let loc Span(syntax.start, syntax.end)
@@ -2865,7 +2883,7 @@ define Modeler
     ; helper exists in procedure form so the choose-arm in build_module# is a
     ; single call (works around a stage-0 codegen issue where an in-place
     ; collection .add inside a choose-arm corrupts the caller's frame).
-    procedure handle_module_decl(path: String, mod_syntax: ModuleSyntax, is_private: bool, mutable modules: ref[Array[Module]]) mutable modeler_error_count
+    procedure handle_module_decl(path: String, mod_syntax: ModuleSyntax, is_private: bool, mutable modules: ref[Array[Module]]) io mutable modeler_error_count
     {
         let loaded build_referenced_module(path, mod_syntax.name, is_private)
         modules.add loaded
@@ -2899,7 +2917,7 @@ define Modeler
     ; (the `scalyc` wrapper sets SCALY_HOME); otherwise returns "" so resolution
     ; stays relative to the current directory exactly as before. Keeping the empty
     ; case byte-identical is what makes the seed self-compile reproduce unchanged.
-    function scaly_home_base() returns String
+    procedure scaly_home_base() returns String io
     {
         let home getenv "SCALY_HOME"
         if home = null
@@ -2916,7 +2934,7 @@ define Modeler
     ; Try `<base>/<name>/<version>/<name>.scaly`. Returns true and writes the
     ; loaded module to `out` on success; false otherwise. Out parameter avoids
     ; constructing an "empty" Module that the caller would have to filter.
-    procedure handle_package_decl(pkg_syntax: PackageSyntax, mutable packages: ref[Array[Module]]) mutable modeler_error_count
+    procedure handle_package_decl(pkg_syntax: PackageSyntax, mutable packages: ref[Array[Module]]) io mutable modeler_error_count
     {
         let pkg_name pkg_syntax.name.name
         var version_str "0.1.0"
@@ -2995,7 +3013,7 @@ define Modeler
     ; Report a sub-module load failure at its real file:line:col and bump the
     ; error counter. `offset` is a byte offset into `source` (the sub-module's own
     ; contents); the line/col walk mirrors cli.print_parse_error's numeric-LF scan.
-    procedure report_module_error(file_path: String, source: String, offset: size_t, message: String) mutable modeler_error_count
+    procedure report_module_error(file_path: String, source: String, offset: size_t, message: String) io mutable modeler_error_count
     {
         var line: size_t 1
         var col: size_t 1
@@ -3037,7 +3055,7 @@ define Modeler
     ; surfaced as a misleading "function not found: print" / "unknown identifier".
     ; Resolution has exactly one base (SCALY_HOME when set, else the current
     ; directory), so nothing downstream could still find the file.
-    procedure report_load_error(message: String) mutable modeler_error_count
+    procedure report_load_error(message: String) io mutable modeler_error_count
     {
         Console.println(message.to_c_string())
         set modeler_error_count: modeler_error_count + 1
@@ -3048,7 +3066,7 @@ define Modeler
     ; stub is returned so modeling can continue; cli.run then fails the compile via
     ; had_errors(). A missing/empty file still returns an empty stub silently (an
     ; absent optional module is not itself an error at this layer).
-    procedure build_referenced_module(path: String, name: String, is_private: bool) returns Module mutable modeler_error_count
+    procedure build_referenced_module(path: String, name: String, is_private: bool) returns Module io mutable modeler_error_count
     {
         ; Compute file path: <path>/<name>.scaly
         var sb StringBuilder()
@@ -3111,7 +3129,7 @@ define Modeler
         build_module(sub_path, file_path, name, syntax.file, is_private)
     }
 
-    procedure build_module(mutable path: String, file_name: String, name: String, mutable syntax: FileSyntax, is_private: bool) returns Module mutable modeler_error_count
+    procedure build_module(mutable path: String, file_name: String, name: String, mutable syntax: FileSyntax, is_private: bool) returns Module io mutable modeler_error_count
     {
         var symbols_builder HashMapBuilder[String, Nameable]()
 
@@ -3176,7 +3194,7 @@ define Modeler
     ; Program building
     ; ============================================================================
 
-    procedure build_program(mutable file_name: String, program_name: String, mutable syntax: ProgramSyntax, enable_prelude: bool) returns Program mutable modeler_error_count
+    procedure build_program(mutable file_name: String, program_name: String, mutable syntax: ProgramSyntax, enable_prelude: bool) returns Program io mutable modeler_error_count
     {
         reset_errors()
         var packages Array[Module]()
@@ -3309,7 +3327,7 @@ define Modeler
     ; Test function
     ; ============================================================================
 
-    procedure test() returns int mutable modeler_error_count
+    procedure test() returns int io mutable modeler_error_count
     {
         ; Test 200: Boolean constant - "true" maps to BooleanConstant with value=true
         var parser Parser("true")

@@ -45,7 +45,7 @@ procedure fill_name(mutable buf: pointer[u8], i: size_t) returns size_t
     len
 }
 
-procedure read_exact(fd: i32, buf: pointer[void], count: size_t) returns bool
+procedure read_exact(fd: i32, buf: pointer[void], count: size_t) returns bool io
 {
     var done 0 as size_t
     while done < count

@@ -1,0 +1,14 @@
+; Regression (R1, 2026-09-19): a procedure that reaches I/O -- here through a
+; callee that declares it -- says `io` after its signature.
+; xfail: error: procedure outer performs I/O, which its signature does not declare: add `io` after it
+
+procedure inner(n: int) io
+{
+    if n > 0
+        print "inner\n"
+}
+
+procedure outer(n: int)
+    inner(n)
+
+outer(3)

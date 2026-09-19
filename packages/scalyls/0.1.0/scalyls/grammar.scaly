@@ -54,6 +54,8 @@ define grammar
             return true
         if word = "intrinsic"
             return true
+        if word = "io"
+            return true
         if word = "is"
             return true
         if word = "label"

@@ -17,7 +17,7 @@ define Msg
 
 mutable chan: pointer[void] null
 
-procedure producer() mutable chan
+procedure producer() io mutable chan
 {
     let c chan as pointer[Channel]
     var i 1
@@ -33,7 +33,7 @@ procedure producer() mutable chan
     Channel.close_sender(c)
 }
 
-procedure consumer() mutable chan
+procedure consumer() io mutable chan
 {
     let c chan as pointer[Channel]
     var sum 0

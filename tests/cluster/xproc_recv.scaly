@@ -31,7 +31,7 @@ procedure chk_word(v: u64) mutable chk
     set chk: (chk xor v) * (0x100000001b3 as u64)
 }
 
-procedure read_exact(fd: i32, buf: pointer[void], count: size_t) returns bool
+procedure read_exact(fd: i32, buf: pointer[void], count: size_t) returns bool io
 {
     var done 0 as size_t
     while done < count

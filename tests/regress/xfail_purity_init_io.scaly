@@ -1,0 +1,15 @@
+; Regression (R1, 2026-09-19): an initializer builds its object and has no other
+; effect -- no I/O, so a construction never needs a declaration at its call site.
+; xfail: error: init performs I/O; an initializer has no effect but building its object - move the I/O into a procedure
+
+function getenv(name: pointer[const_char]) returns pointer[const_char] extern
+
+define Config (verbose: bool)
+{
+    init()
+        set verbose: getenv("VERBOSE") <> null
+}
+
+let c Config()
+if c.verbose
+    print "verbose\n"

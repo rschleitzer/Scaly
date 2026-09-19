@@ -22,7 +22,7 @@ define Widget
     }
 }
 
-function main() returns int
+procedure main() returns int io
 {
     let w1 Widget(true, 7)
     let w2 Widget(false, 7)

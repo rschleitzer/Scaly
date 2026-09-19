@@ -8,7 +8,7 @@
 ; whoever jumped to us.
 ; Expected: ping pong ping pong ping pong done
 
-procedure fiber_main(mutable first_ctx: pointer[void])
+procedure fiber_main(mutable first_ctx: pointer[void]) io
 {
     var mctx first_ctx
     repeat

@@ -35,7 +35,7 @@ define fancy
         fancy.is_special#(42)
 }
 
-function main() returns int
+procedure main() returns int io
 {
     if fancy.run#()
         print("PASS")

@@ -10,7 +10,7 @@
 ; point on that fiber's own stack.
 ; Expected: fiber:blind fiber:caught-own main:blind main:sees-own done
 
-procedure worker(first_ctx: pointer[void])
+procedure worker(first_ctx: pointer[void]) io
 {
     Fiber.started first_ctx
 

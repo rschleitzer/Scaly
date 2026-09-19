@@ -38,7 +38,7 @@ define server
 {
     ; Main loop: read a frame, dispatch, repeat. An empty body means EOF
     ; on stdin -> shut the loop down.
-    procedure run() mutable dir_slots, doc_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid, ws_root_data, ws_root_len
+    procedure run() io mutable dir_slots, doc_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid, ws_root_data, ws_root_len
     {
         ; Each message is read + dispatched inside process_one(), a plain
         ; (non-#) helper. The message body — read via read_message() onto
@@ -54,7 +54,7 @@ define server
     ; Read and dispatch a single message. Returns true to continue the
     ; loop, false at EOF (empty body) to shut it down. The body lives on
     ; this function's local page and is freed on return.
-    procedure process_one() returns bool mutable dir_slots, doc_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid, ws_root_data, ws_root_len
+    procedure process_one() returns bool io mutable dir_slots, doc_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid, ws_root_data, ws_root_len
     {
         let body rpc.read_message()
         if body.get_length() = 0
@@ -74,7 +74,7 @@ define server
     ; Run the owed diagnostics analyses, newest buffer first, and stop as soon as
     ; the client speaks again — an answer it is waiting for outranks a diagnostic
     ; it is not.
-    procedure flush_dirty() mutable dir_slots, doc_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure flush_dirty() io mutable dir_slots, doc_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
         var uri docstore.dirty_uri()
         while uri.get_length() > 0
@@ -88,7 +88,7 @@ define server
         }
     }
 
-    procedure handle_message(mutable body: String) mutable dir_slots, doc_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid, ws_root_data, ws_root_len
+    procedure handle_message(mutable body: String) io mutable dir_slots, doc_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid, ws_root_data, ws_root_len
     {
         let msg json.parse body
 
@@ -414,7 +414,7 @@ define server
     ; The request carries only a uri (no text), so the worker re-reads the
     ; file from disk. The result is the DocumentSymbol[] array wrapped in a
     ; Response envelope with the request id.
-    procedure handle_document_symbol(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure handle_document_symbol(msg: JsonValue, id: i64) io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
@@ -440,7 +440,7 @@ define server
     ;
     ; Nothing to fix -> `[]`, which is what the client gets on every ordinary
     ; cursor position (it asks constantly, unprompted).
-    procedure handle_code_action(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure handle_code_action(msg: JsonValue, id: i64) io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
@@ -464,7 +464,7 @@ define server
     ; The client asks again on every document version, so this pays a package-root
     ; plan per edit burst — the same cost class as the diagnostics it already runs
     ; per burst, and the reason the answer is never computed in this process.
-    procedure handle_code_lens(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure handle_code_lens(msg: JsonValue, id: i64) io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
@@ -558,7 +558,7 @@ define server
     ; textDocument/prepareCallHierarchy — the entry point: resolve the cursor to
     ; the routine whose hierarchy is asked for. The two call requests below then
     ; arrive with the ITEM this returned, not with a cursor.
-    procedure handle_prepare_call_hierarchy(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure handle_prepare_call_hierarchy(msg: JsonValue, id: i64) io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
@@ -576,7 +576,7 @@ define server
     ; callHierarchy/incomingCalls — who calls the item. The item's OWN uri is
     ; the document (it may live in a different file than the cursor did), and
     ; the workspace root rides along the same way references passes it.
-    procedure handle_incoming_calls(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure handle_incoming_calls(msg: JsonValue, id: i64) io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
         let params json.get(msg, "params")
         let item json.get(params, "item")
@@ -606,7 +606,7 @@ define server
 
     ; callHierarchy/outgoingCalls — what the item calls. The item's range start
     ; locates the routine in its own file.
-    procedure handle_outgoing_calls(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure handle_outgoing_calls(msg: JsonValue, id: i64) io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
         let params json.get(msg, "params")
         let item json.get(params, "item")
@@ -624,7 +624,7 @@ define server
 
     ; textDocument/typeDefinition. Same request shape as definition; the worker
     ; resolves the TYPE of the thing at the cursor and then looks THAT up.
-    procedure handle_type_definition(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure handle_type_definition(msg: JsonValue, id: i64) io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
@@ -645,7 +645,7 @@ define server
     ; (a multi-cursor selection asks for all of them at once) and the reply must
     ; hold one chain per position, in the same order. They are packed as one
     ; "<line> <char>" per line, the same shape every other position frame uses.
-    procedure handle_selection_range(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure handle_selection_range(msg: JsonValue, id: i64) io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
@@ -668,7 +668,7 @@ define server
         rpc.write_message(server.document_symbol_response(id, result))
     }
 
-    procedure handle_folding_range(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure handle_folding_range(msg: JsonValue, id: i64) io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
@@ -684,7 +684,7 @@ define server
     ; follow the house form, not the editor's preference). The result is a
     ; TextEdit[]; it can be one edit per changed line, so the large-payload
     ; response builder applies.
-    procedure handle_formatting(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure handle_formatting(msg: JsonValue, id: i64) io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
@@ -698,7 +698,7 @@ define server
     ; highlighting. Like documentSymbol the request carries only a uri. The
     ; result is {"data":[...]} (delta-encoded ints) wrapped in a Response; the
     ; data array can be large, so document_symbol_response# (byte-at-a-time).
-    procedure handle_semantic_tokens(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure handle_semantic_tokens(msg: JsonValue, id: i64) io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
@@ -712,7 +712,7 @@ define server
     ; position as "<line> <char>" and hand it to the worker, which re-reads the
     ; file (the server is stateless) and reports the symbol under the cursor.
     ; An empty worker reply -> result:null.
-    procedure handle_hover(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure handle_hover(msg: JsonValue, id: i64) io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
@@ -770,7 +770,7 @@ define server
     ; Pack the position as "<line> <char>" and hand it to the worker, which
     ; re-reads the file and resolves the identifier under the cursor to a
     ; declaration in the same file. An empty worker reply -> result:null.
-    procedure handle_definition(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure handle_definition(msg: JsonValue, id: i64) io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
@@ -793,7 +793,7 @@ define server
     ; signatureHelp: the request carries a uri + {line,character}. Pack the
     ; position as "<line> <char>" and ask the worker for the parameter list of
     ; the call enclosing the cursor. An empty worker reply -> result:null.
-    procedure handle_signature_help(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure handle_signature_help(msg: JsonValue, id: i64) io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
@@ -817,7 +817,7 @@ define server
     ; as "<sl> <sc> <el> <ec>" and hand it to the worker, which resolves each
     ; in-range call site's parameter names. The result is an InlayHint[] array
     ; (can be large -> document_symbol_response# appends it byte-at-a-time).
-    procedure handle_inlay_hint(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure handle_inlay_hint(msg: JsonValue, id: i64) io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
@@ -850,7 +850,7 @@ define server
     ; distinguish the declaration from uses, so all whole-token occurrences
     ; are always returned). Pack the position and hand it to the worker, which
     ; re-reads the file and scans it. The result is a Location[] array.
-    procedure handle_references(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure handle_references(msg: JsonValue, id: i64) io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
@@ -889,7 +889,7 @@ define server
 
     ; documentHighlight: like references but the result ranges carry no uri
     ; (the editor highlights occurrences in the current document only).
-    procedure handle_document_highlight(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure handle_document_highlight(msg: JsonValue, id: i64) io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
@@ -915,7 +915,7 @@ define server
     ; Pack the cursor position "<line> <char>" so the worker can detect the
     ; member-access context. Like the other navigation requests, the in-memory
     ; text is passed so unsaved edits are reflected; empty -> worker reads disk.
-    procedure handle_completion(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure handle_completion(msg: JsonValue, id: i64) io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
@@ -954,7 +954,7 @@ define server
     ; instead of silently dropping it; the injection is a splice before the
     ; object's closing brace, which needs no scan because stringify# produced
     ; the string one line above.
-    procedure handle_completion_resolve(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure handle_completion_resolve(msg: JsonValue, id: i64) io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
         let item json.get(msg, "params")
         ; `label` is a reserved word in Scaly and cannot be a binding name.
@@ -1016,7 +1016,7 @@ define server
     ; position as "<line> <char>" and ask the worker for the range of the
     ; renameable identifier under the cursor. An empty worker reply ->
     ; result:null (the editor then refuses the rename).
-    procedure handle_prepare_rename(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure handle_prepare_rename(msg: JsonValue, id: i64) io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
@@ -1041,7 +1041,7 @@ define server
     ; worker to rewrite every whole-token occurrence of the identifier at the
     ; cursor. The result is an LSP WorkspaceEdit (can be large -> byte-at-a-time
     ; wrap); an empty worker reply -> result:null.
-    procedure handle_rename(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure handle_rename(msg: JsonValue, id: i64) io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
@@ -1093,7 +1093,7 @@ define server
     ; matches params.query. The request carries no document uri, so the search
     ; root comes from the stored workspace root (captured at initialize). The
     ; result SymbolInformation[] can be large -> byte-at-a-time wrap.
-    procedure handle_workspace_symbol(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure handle_workspace_symbol(msg: JsonValue, id: i64) io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
         let params json.get(msg, "params")
         let query json.as_string(json.get(params, "query"))
@@ -1134,7 +1134,7 @@ define server
 
     ; A closed document leaves no buffer to analyze; clear whatever
     ; diagnostics the editor still shows for it (empty diagnostics array).
-    procedure handle_did_close(msg: JsonValue) mutable doc_slots
+    procedure handle_did_close(msg: JsonValue) io mutable doc_slots
     {
         let params json.get(msg, "params")
         let doc json.get(params, "textDocument")
@@ -1148,7 +1148,7 @@ define server
     ; Diagnostics are computed in a crash-isolated worker subprocess (see
     ; scalyls.worker): a SIGSEGV/abort/hang in the compiler pipeline on a
     ; bad document then loses only that one result, not the whole server.
-    procedure publish_for(mutable uri: String, mutable text: String) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure publish_for(mutable uri: String, mutable text: String) io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
         let payload worker.analyze(uri, text)
         server.write_notifications payload
@@ -1171,7 +1171,7 @@ define server
     ; one root: an unfinished line in B showed `expected '}'`, and one keystroke
     ; in A cleared it, with the broken line still on screen. An open file loses
     ; nothing by being skipped — it gets its own analysis on its own next edit.
-    procedure write_notifications(mutable payload: String)
+    procedure write_notifications(mutable payload: String) io
     {
         let len payload.get_length()
         if len = 0
@@ -1203,7 +1203,7 @@ define server
     ; Write one publishDiagnostics notification, unless it is a sibling (index
     ; > 0) whose document the editor has open — see write_notifications# for why.
     ; Line 0 is the analysed document itself and is always written.
-    procedure write_notification(mutable notification: String, index: size_t)
+    procedure write_notification(mutable notification: String, index: size_t) io
     {
         if index > 0
         {

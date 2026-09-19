@@ -164,7 +164,7 @@ define Planner
     ; logic gets a precise, visible failure (not a silent null).
     ; ========================================================================
 
-    function not_implemented(method_name: Slice[char]) returns int
+    procedure not_implemented(method_name: Slice[char]) returns int io
     {
         scaly_eputs "scalyc Planner stub not implemented: "
         write(2, method_name.data as pointer[void], method_name.length)
@@ -177,7 +177,7 @@ define Planner
     ; The exit() in not_implemented terminates the process, so the dummy
     ; PlannedOperand below is never observed — it exists only so Scaly's
     ; type checker accepts the call site.
-    function not_implemented_operand(method_name: Slice[char]) returns PlannedOperand
+    procedure not_implemented_operand(method_name: Slice[char]) returns PlannedOperand io
     {
         Planner.not_implemented method_name
         PlannedOperand(
@@ -1477,7 +1477,7 @@ define Planner
 
         ; The delegate's parameter types as planned types (drives lambda
         ; monomorphization against the declared signature).
-        procedure delegate_param_types(mutable this: Planner, mutable name: String) returns Vector[PlannedType]
+        procedure delegate_param_types(mutable this: Planner, mutable name: String) returns Vector[PlannedType] io
         {
             var result Array[PlannedType]()
             let c this.lookup_concept(name)
@@ -1521,7 +1521,7 @@ define Planner
             Vector[PlannedType](result)
         }
 
-        procedure delegate_return_type(mutable this: Planner, mutable name: String) returns PlannedType
+        procedure delegate_return_type(mutable this: Planner, mutable name: String) returns PlannedType io
         {
             let c this.lookup_concept(name)
             if c <> null
@@ -2423,7 +2423,7 @@ define Planner
         ; calling record_function on every package-defined Function,
         ; which lands in instantiated_functions and is then emitted
         ; by the Emitter as both declaration and definition.
-        procedure plan_loaded_packages(mutable this: Planner)
+        procedure plan_loaded_packages(mutable this: Planner) io
         {
             var pi: size_t 0
             while pi < loaded_packages.length
@@ -2502,7 +2502,7 @@ define Planner
         ;
         ; Byte budget for the planner's recursive descent, derived ONCE.
         ; ====================================================================
-        function stack_budget_bytes() returns size_t
+        procedure stack_budget_bytes() returns size_t io
         {
             let fallback (64 * 1024 * 1024) as size_t
 
@@ -2541,7 +2541,7 @@ define Planner
         ; plan_if -> plan_operand -> plan_operands -> plan_action ->
         ; plan_statement): an `if` is planned as an OPERAND here, so this one
         ; site covers a long else-if chain AND a deeply parenthesized expression.
-        procedure check_nesting_stack(mutable this: Planner, loc: Span)
+        procedure check_nesting_stack(mutable this: Planner, loc: Span) io
         {
             var probe: size_t 0
             let here &probe as size_t
@@ -4681,7 +4681,7 @@ define Planner
             provided: ref[Vector[PlannedComponent]]?,
             ctor_type: PlannedType,
             arg_types: Vector[PlannedType]
-        ) returns ref[Vector[PlannedComponent]]?
+        ) returns ref[Vector[PlannedComponent]]? io
         {
             let concept_ref this.lookup_concept(struct_name)
             if concept_ref = null
@@ -4979,7 +4979,7 @@ define Planner
             mutable ini: Initializer,
             arg_types: Vector[PlannedType],
             exact_only: bool
-        ) returns bool
+        ) returns bool io
         {
             if ini.input.length <> arg_types.length
                 return false
@@ -5477,7 +5477,7 @@ define Planner
             mutable this: Planner,
             mutable struct_name: String,
             arg_types: Vector[PlannedType]
-        ) returns ref[Initializer]?
+        ) returns ref[Initializer]? io
         {
             let concept_ref this.lookup_concept(struct_name)
             if concept_ref = null
@@ -5774,7 +5774,7 @@ define Planner
             mutable this: Planner,
             mutable union_name: String,
             variant_name: String
-        ) returns ref[PlannedType]?
+        ) returns ref[PlannedType]? io
         {
             let concept_ref this.lookup_concept(union_name)
             if concept_ref = null
@@ -5975,7 +5975,7 @@ define Planner
             mutable this: Planner,
             mutable f: Function,
             args: Vector[KeyValuePair[String, PlannedType]]
-        ) returns PlannedFunction
+        ) returns PlannedFunction io
         {
             let saved_len type_substitutions.length
 
@@ -6010,7 +6010,7 @@ define Planner
             mutable concept_name: String,
             mutable args: Vector[PlannedType],
             loc: Span
-        ) returns PlannedType
+        ) returns PlannedType io
         {
             let concept_ref this.lookup_concept(concept_name)
             if concept_ref = null
@@ -6230,7 +6230,7 @@ define Planner
             mutable this: Planner,
             mutable f: Function,
             arg_types: Vector[PlannedType]
-        ) returns bool
+        ) returns bool io
         {
             var param_start: size_t 0
             if f.input.length > 0
@@ -6305,7 +6305,7 @@ define Planner
             mutable f: Function,
             arg_types: Vector[PlannedType],
             exact_only: bool
-        ) returns bool
+        ) returns bool io
         {
             var param_start: size_t 0
             if f.input.length > 0
@@ -6364,7 +6364,7 @@ define Planner
             mutable f: Function,
             arg_types: Vector[PlannedType],
             arg_ops: Vector[PlannedOperand]
-        ) returns bool
+        ) returns bool io
         {
             var param_start: size_t 0
             if f.input.length > 0
@@ -6532,7 +6532,7 @@ define Planner
             exact_only: bool,
             char_fold: bool,
             arg_ops: Vector[PlannedOperand]
-        ) returns ref[MethodMatch]?
+        ) returns ref[MethodMatch]? io
         {
             var param_start: size_t 0
             if f.input.length > 0
@@ -6833,7 +6833,7 @@ define Planner
             mutable suffix: String,
             arg_types: Vector[PlannedType],
             arg_ops: Vector[PlannedOperand]
-        ) returns ref[MethodMatch]?
+        ) returns ref[MethodMatch]? io
         {
             if arg_types.length > 0
             {
@@ -6971,7 +6971,7 @@ define Planner
             mutable suffix: String,
             mutable arg_types: Vector[PlannedType],
             arg_ops: Vector[PlannedOperand]
-        ) returns ref[MethodMatch]?
+        ) returns ref[MethodMatch]? io
         {
             ; A qualified static call on a Structure concept — defer to the s155
             ; concept-static path so the mangled name carries the concept parent
@@ -7008,7 +7008,7 @@ define Planner
             arg_types: Vector[PlannedType],
             arg_ops: Vector[PlannedOperand],
             loc: Span
-        ) returns ref[MethodMatch]?
+        ) returns ref[MethodMatch]? io
         {
             let smc_ref this.lookup_concept(struct_name)
             if smc_ref = null
@@ -7207,7 +7207,7 @@ define Planner
             mutable f: Function,
             generics: Vector[PlannedType],
             arg_types: Vector[PlannedType]
-        ) returns ref[MethodMatch]?
+        ) returns ref[MethodMatch]? io
         {
             var param_start: size_t 0
             if f.input.length > 0
@@ -7277,7 +7277,7 @@ define Planner
             mutable name: String,
             mutable arg_types: Vector[PlannedType],
             arg_ops: Vector[PlannedOperand]
-        ) returns ref[MethodMatch]?
+        ) returns ref[MethodMatch]? io
             this.resolve_function_call_generic(name, arg_types, arg_ops, null)
 
         ; ★★★A generic FREE function whose type parameter appears only in the
@@ -7295,7 +7295,7 @@ define Planner
             mutable arg_types: Vector[PlannedType],
             arg_ops: Vector[PlannedOperand],
             explicit_generics: ref[Vector[PlannedType]]?
-        ) returns ref[MethodMatch]?
+        ) returns ref[MethodMatch]? io
         {
             let candidates this.lookup_functions(name)
             if candidates.length = 0
@@ -7550,7 +7550,7 @@ define Planner
             mutable result_type: PlannedType,
             mutable args: Vector[PlannedOperand],
             requires_page: bool
-        ) returns PlannedCall
+        ) returns PlannedCall io
         {
             ; Ensure by-value cross-package struct/union layouts (sret return +
             ; each by-value arg) so map_type emits the real type, not the s114
@@ -7779,7 +7779,7 @@ define Planner
             mutable struct_name: String,
             comps: ref[Vector[PlannedComponent]]?,
             ctor_type: PlannedType
-        ) returns ref[Vector[PlannedComponent]]?
+        ) returns ref[Vector[PlannedComponent]]? io
         {
             if comps = null
                 return comps
@@ -7883,7 +7883,7 @@ define Planner
             loc: Span,
             mutable comps: ref[Vector[PlannedComponent]]?,
             ctor_type: PlannedType
-        )
+        ) io
         {
             if comps = null
                 return
@@ -7928,7 +7928,7 @@ define Planner
             mutable comps: ref[Vector[PlannedComponent]]?,
             ctor_type: PlannedType,
             loc: Span
-        )
+        ) io
         {
             let cv (*comps)
             if params.length = 0
@@ -7954,7 +7954,7 @@ define Planner
             mutable s: Structure,
             mutable cv: Vector[PlannedComponent],
             loc: Span
-        )
+        ) io
         {
             var ci: size_t 0
             while ci < cv.length
@@ -7975,7 +7975,7 @@ define Planner
             ci: size_t,
             mutable cv: Vector[PlannedComponent],
             loc: Span
-        )
+        ) io
         {
             let cp cv.get ci
             if cp = null
@@ -8328,7 +8328,7 @@ define Planner
         ; argument types and synthesizes a concrete top-level function; the
         ; captures it discovers are looked up at the call site (where they are
         ; in scope) and prepended as leading arguments (capture by value).
-        procedure resolve_lambda_call(mutable this: Planner, head_loc: Span, lc_name: String, mutable lc_lam: Lambda, mutable lc_tp: PlannedTuple) returns PlannedOperand
+        procedure resolve_lambda_call(mutable this: Planner, head_loc: Span, lc_name: String, mutable lc_lam: Lambda, mutable lc_tp: PlannedTuple) returns PlannedOperand io
         {
             var lc_arg_ops Array[PlannedOperand]()
             var lc_arg_types Array[PlannedType]()
@@ -8417,7 +8417,7 @@ define Planner
         procedure collapse_operand_sequence(
             mutable this: Planner,
             mutable ops: Vector[PlannedOperand]
-        ) returns PlannedOperand
+        ) returns PlannedOperand io
         {
             if ops.length = 0
             {
@@ -14600,7 +14600,7 @@ define Planner
             exact_only: bool,
             char_fold: bool,
             arg_ops: Vector[PlannedOperand]
-        ) returns ref[PlannedType]?
+        ) returns ref[PlannedType]? io
         {
             var param_start: size_t 0
             if o.input.length > 0
@@ -14688,7 +14688,7 @@ define Planner
         ; a leading `this`), planned to PlannedType. Used by resolve_operator_
         ; call#'s fold pass to hand the construction site the char/float types it
         ; must fold the literal operands to.
-        procedure operator_planned_param_types(mutable this: Planner, mutable o: Operator) returns Vector[PlannedType]
+        procedure operator_planned_param_types(mutable this: Planner, mutable o: Operator) returns Vector[PlannedType] io
         {
             var param_start: size_t 0
             if o.input.length > 0
@@ -14743,7 +14743,7 @@ define Planner
             mutable this: Planner,
             mutable name: String,
             operand: PlannedType
-        ) returns ref[PlannedType]?
+        ) returns ref[PlannedType]? io
         {
             let candidates this.lookup_operators(name)
             if candidates.length = 0
@@ -14804,7 +14804,7 @@ define Planner
             left: PlannedType,
             right: PlannedType,
             arg_ops: Vector[PlannedOperand]
-        ) returns ref[PlannedType]?
+        ) returns ref[PlannedType]? io
         {
             ; No fold matched yet — the construction site reads this after we
             ; return, so it MUST be reset each call BEFORE any early exit: a
@@ -15063,7 +15063,7 @@ define Planner
             mutable candidates: Vector[Function],
             arg_types: Vector[PlannedType],
             same_signedness: bool
-        ) returns ref[Function]?
+        ) returns ref[Function]? io
         {
             var ci: size_t 0
             while ci < candidates.length
@@ -15084,7 +15084,7 @@ define Planner
             mutable f: Function,
             arg_types: Vector[PlannedType],
             same_signedness: bool
-        ) returns bool
+        ) returns bool io
         {
             var param_start: size_t 0
             if f.input.length > 0
@@ -15138,7 +15138,7 @@ define Planner
             exact_only: bool,
             char_fold: bool,
             arg_ops: Vector[PlannedOperand]
-        ) returns bool
+        ) returns bool io
         {
             var param_start: size_t 0
             if f.input.length > 0
@@ -15259,7 +15259,7 @@ define Planner
         ; check_message_pointee: what a fixed pointer slot's TARGET needs.
         ; Scalars/void/const_char buffers and page headers are fix-only;
         ; aggregates recurse.
-        procedure check_message_pointee(mutable this: Planner, mutable inner: PlannedType, loc: Span, mutable seen: ref[Array[String]]) returns bool
+        procedure check_message_pointee(mutable this: Planner, mutable inner: PlannedType, loc: Span, mutable seen: ref[Array[String]]) returns bool io
         {
             if inner.name = "void"
                 return true
@@ -15277,7 +15277,7 @@ define Planner
         ; Also the instantiation-forcing pass: every reachable generic is
         ; instantiated so plan.structures/unions carry its layout for the
         ; Emitter's generator.
-        procedure check_message_type(mutable this: Planner, mutable t: PlannedType, loc: Span, mutable seen: ref[Array[String]]) returns bool
+        procedure check_message_type(mutable this: Planner, mutable t: PlannedType, loc: Span, mutable seen: ref[Array[String]]) returns bool io
         {
             if t.variable <> null
             {
@@ -15457,7 +15457,7 @@ define Planner
             mutable this: Planner,
             arg_types: Vector[PlannedType],
             arg_ops: Vector[PlannedOperand]
-        ) returns ref[MethodMatch]?
+        ) returns ref[MethodMatch]? io
         {
             var loc Span(0, 0)
             if arg_ops.length > 0
@@ -15540,7 +15540,7 @@ define Planner
             mutable method_name: String,
             arg_types: Vector[PlannedType],
             arg_ops: Vector[PlannedOperand]
-        ) returns ref[MethodMatch]?
+        ) returns ref[MethodMatch]? io
         {
             ; s106: auto-deref pointer[T] / ref[T] before lookup. Mirrors
             ; getInnerTypeIfPointerLike at Planner.cpp:1441. Without this,
@@ -16199,7 +16199,7 @@ define Planner
             arg_types: Vector[PlannedType],
             arg_ops: Vector[PlannedOperand],
             loc: Span
-        ) returns ref[MethodMatch]?
+        ) returns ref[MethodMatch]? io
         {
             ; Auto-deref pointer/ref receivers (s106 pattern).
             var lookup_st: PlannedType container_type
@@ -16575,7 +16575,7 @@ define Planner
         ; `this` must be a local in the current scope; the unreachable
         ; fallback returns a void placeholder so the type checker still
         ; threads a value through.
-        procedure generate_page_get_this(mutable this: Planner, mutable loc: Span) returns PlannedOperand
+        procedure generate_page_get_this(mutable this: Planner, mutable loc: Span) returns PlannedOperand io
         {
             let this_ty_ref this.lookup_local("this")
             if this_ty_ref = null
@@ -16646,7 +16646,7 @@ define Planner
         procedure rebind_trailing_chain(
             mutable this: Planner,
             mutable operand: PlannedOperand
-        ) returns PlannedOperand
+        ) returns PlannedOperand io
         {
             if operand.member_access = null
                 return operand
@@ -16752,7 +16752,7 @@ define Planner
             mutable this: Planner,
             mutable base_type: PlannedType,
             mutable members: Vector[String]
-        ) returns Vector[PlannedMemberAccess]
+        ) returns Vector[PlannedMemberAccess] io
         {
             var result Array[PlannedMemberAccess]()
             var current: PlannedType base_type
@@ -17604,7 +17604,7 @@ define Planner
             Type(t.span, t.name, &out, t.lifetime)
         }
 
-        procedure plan_type(mutable this: Planner, mutable t: Type) returns PlannedType
+        procedure plan_type(mutable this: Planner, mutable t: Type) returns PlannedType io
         {
             this.report_unknown_page_name(t)
             var mt: Type t
@@ -18237,7 +18237,7 @@ define Planner
         ; allocated on this function's rp, so they survive the caller's
         ; use of the returned PlannedItem.
         ; ================================================================
-        procedure plan_item(mutable this: Planner, mutable i: Item) returns PlannedItem
+        procedure plan_item(mutable this: Planner, mutable i: Item) returns PlannedItem io
         {
             var planned_name: ref[String]? null
             if i.name <> null
@@ -18304,7 +18304,7 @@ define Planner
         ; plan_items: batch version of plan_item over a Vector[Item].
         ; Pre-allocates the result Vector at the correct size so we can
         ; use `put(i, ...)` instead of Array.add + copy.
-        procedure plan_items(mutable this: Planner, mutable items: Vector[Item]) returns Vector[PlannedItem]
+        procedure plan_items(mutable this: Planner, mutable items: Vector[Item]) returns Vector[PlannedItem] io
         {
             var result Vector[PlannedItem](items.length)
             var i: size_t 0
@@ -18358,7 +18358,7 @@ define Planner
         ; matching the LLVM struct layout. Without this, Vector(rp,len)
         ; for Vector[Module] allocates len*8 instead of len*80, and
         ; put(i, m) overruns and SEGVs build_program.
-        procedure plan_sizeof(mutable this: Planner, mutable s: SizeOf) returns PlannedSizeOf
+        procedure plan_sizeof(mutable this: Planner, mutable s: SizeOf) returns PlannedSizeOf io
         {
             let sized this.plan_type(s.type)
             ; Delegate to compute_payload_size, which sizes primitives,
@@ -18380,7 +18380,7 @@ define Planner
         ; we resolve the test type and (best-effort) the union_name; the
         ; `variant_tag` and `value` fields get stitched in at the
         ; operand-sequence collapse site, which has the value operand.
-        procedure plan_is(mutable this: Planner, mutable i: Is) returns PlannedIs
+        procedure plan_is(mutable this: Planner, mutable i: Is) returns PlannedIs io
         {
             ; `x is null` — single-segment "null" name. Skip type
             ; resolution; the emitter compares the pointer to zero.
@@ -18424,7 +18424,7 @@ define Planner
         ; plan_as: `x as TargetType` — explicit cast. Resolves the
         ; target type; the value operand is stitched in at the use site
         ; (typically during collapse, like PlannedIs).
-        procedure plan_as(mutable this: Planner, mutable a: scaly.compiler.Model.As) returns PlannedAs
+        procedure plan_as(mutable this: Planner, mutable a: scaly.compiler.Model.As) returns PlannedAs io
         {
             let target this.plan_type(a.target_type)
             PlannedAs(a.span, target, null)
@@ -18438,7 +18438,7 @@ define Planner
         procedure plan_alignof(
             mutable this: Planner,
             mutable a: scaly.compiler.Model.AlignOf
-        ) returns PlannedAlignOf
+        ) returns PlannedAlignOf io
         {
             let planned this.plan_type(a.type)
             let align Planner.get_primitive_alignment(planned.name)
@@ -18557,7 +18557,7 @@ define Planner
         ;     call resolution)
         ;   - an actual type name → PlannedExpression.Type with the
         ;     planned type
-        procedure plan_type_operand(mutable this: Planner, mutable t: Type, loc: Span) returns PlannedOperand
+        procedure plan_type_operand(mutable this: Planner, mutable t: Type, loc: Span) returns PlannedOperand io
         {
             ; Single-name references are candidates for local-variable
             ; resolution. Dotted names always go to plan_type.
@@ -19141,7 +19141,7 @@ define Planner
         ; statement, and optionally the alternative. Emits a bool
         ; constraint on the condition and (when an alternative exists)
         ; unifies the two branches' result types.
-        procedure plan_if(mutable this: Planner, mutable f: If) returns PlannedIf
+        procedure plan_if(mutable this: Planner, mutable f: If) returns PlannedIf io
         {
             let planned_cond_flat this.plan_operands(f.condition)
             ; A `ref[bool]` condition is the VALUE -- deref_ref_into_pointee#.
@@ -19666,7 +19666,7 @@ define Planner
                     0
         }
 
-        procedure plan_lambda(mutable this: Planner, mutable lam: Lambda) returns PlannedLambda
+        procedure plan_lambda(mutable this: Planner, mutable lam: Lambda) returns PlannedLambda io
         {
             this.push_scope()
 
@@ -19802,7 +19802,7 @@ define Planner
         ; intercept in collapse_operand_sequence#). Cached per mangled name
         ; via has_recorded_function so repeated calls with identical arg
         ; types reuse the same function.
-        procedure monomorphize_lambda(mutable this: Planner, base_name: String, mutable lam: Lambda, arg_types: Vector[PlannedType]) returns LambdaMonoResult
+        procedure monomorphize_lambda(mutable this: Planner, base_name: String, mutable lam: Lambda, arg_types: Vector[PlannedType]) returns LambdaMonoResult io
         {
             ; ---- Pass 1: discover captures. Plan the body in a scope with the
             ; lambda's own params defined; the enclosing scope is still on the
@@ -20045,7 +20045,7 @@ define Planner
         ; record; the thunk bridges the uniform `R(ptr self, params)` call
         ; shape to `real(caps..., params)`. `life` is the record's allocation
         ; lifetime (local region, or `#` caller page when the closure escapes).
-        procedure make_closure(mutable this: Planner, base_name: String, mutable lam: Lambda, dparams: Vector[PlannedType], dret: PlannedType, del_pt: PlannedType, life: Lifetime) returns PlannedClosure
+        procedure make_closure(mutable this: Planner, base_name: String, mutable lam: Lambda, dparams: Vector[PlannedType], dret: PlannedType, del_pt: PlannedType, life: Lifetime) returns PlannedClosure io
         {
             let mono this.monomorphize_lambda(base_name, lam, dparams)
             var cap_ops Array[PlannedOperand]()
@@ -20102,7 +20102,7 @@ define Planner
         ; plan_repeat: do-while body runs at least once; the terminating
         ; condition lives inside the body action via `break` or an
         ; embedded if. Nothing else to constrain at this level.
-        procedure plan_repeat(mutable this: Planner, mutable r: Repeat) returns PlannedRepeat
+        procedure plan_repeat(mutable this: Planner, mutable r: Repeat) returns PlannedRepeat io
         {
             this.push_scope()
             let planned_body this.plan_action(r.action)
@@ -20268,7 +20268,7 @@ define Planner
         ; that the planned binding's type is bool (the solver promotes
         ; `while let maybe_x = ...` through Option's None sentinel, so
         ; this is a reasonable approximation today).
-        procedure plan_while(mutable this: Planner, mutable w: While) returns PlannedWhile
+        procedure plan_while(mutable this: Planner, mutable w: While) returns PlannedWhile io
         {
             this.push_scope()
             let planned_cond this.plan_binding(w.condition)
@@ -20387,7 +20387,7 @@ define Planner
         ;      iterator type; the element type is what `next` returns.
         ; Option[T] and ref/pointer wrappers on the collection type are
         ; peeled before the dispatch.
-        procedure plan_for(mutable this: Planner, mutable f: For) returns PlannedFor
+        procedure plan_for(mutable this: Planner, mutable f: For) returns PlannedFor io
         {
             this.push_scope()
             let planned_expr this.plan_operands(f.expression)
@@ -20801,7 +20801,7 @@ define Planner
         }
 
         ; plan_try: try { binding } catch WhenPatterns else alt.
-        procedure plan_try(mutable this: Planner, mutable t: Try) returns PlannedTry
+        procedure plan_try(mutable this: Planner, mutable t: Try) returns PlannedTry io
         {
             ; The try-bound variable (e.g. `try let q ...`) leaks into the
             ; ENCLOSING scope: the success path is the only way execution
@@ -20900,7 +20900,7 @@ define Planner
             mutable union_type: PlannedType,
             is_throws_call: bool,
             throws_ty: ref[PlannedType]?
-        ) returns PlannedWhen
+        ) returns PlannedWhen io
         {
             this.push_scope()
 
@@ -21217,7 +21217,7 @@ define Planner
             this.stmt_flows_payload_to_escaping(w.consequent, w.name)
         }
 
-        procedure plan_choose(mutable this: Planner, mutable c: Choose) returns PlannedChoose
+        procedure plan_choose(mutable this: Planner, mutable c: Choose) returns PlannedChoose io
         {
             let planned_cond this.plan_operands(c.condition)
             ; Fold the choose condition down to a single value to
@@ -21402,14 +21402,14 @@ define Planner
         }
 
         ; plan_case / plan_branch / plan_match: the full match-expression form.
-        procedure plan_case(mutable this: Planner, mutable cs: Case) returns PlannedCase
+        procedure plan_case(mutable this: Planner, mutable cs: Case) returns PlannedCase io
         {
             let planned_cond this.plan_operands(cs.condition)
             var cond_holder Vector[PlannedOperand](planned_cond)
             PlannedCase(cs.span, &cond_holder)
         }
 
-        procedure plan_branch(mutable this: Planner, mutable b: Branch) returns PlannedBranch
+        procedure plan_branch(mutable this: Planner, mutable b: Branch) returns PlannedBranch io
         {
             var cases_arr Array[PlannedCase]()
             var i: size_t 0
@@ -21430,7 +21430,7 @@ define Planner
             PlannedBranch(b.span, &cases_holder, cons_box)
         }
 
-        procedure plan_match(mutable this: Planner, mutable m: Match) returns PlannedMatch
+        procedure plan_match(mutable this: Planner, mutable m: Match) returns PlannedMatch io
         {
             let planned_cond this.plan_operands(m.condition)
             ; Fold the match condition so its result_type is
@@ -21551,7 +21551,7 @@ define Planner
         ; raw operand sequence. emit_tuple's grouping shortcut emits
         ; comp.value[0], so without this collapse `(*p).field` would
         ; emit only the leading `Type("*")` operand and produce null.
-        procedure plan_component(mutable this: Planner, mutable c: Component) returns PlannedComponent
+        procedure plan_component(mutable this: Planner, mutable c: Component) returns PlannedComponent io
         {
             let planned_value this.plan_operands(c.value)
             var name_ref: ref[String]? null
@@ -21747,7 +21747,7 @@ define Planner
             PlannedComponent(c.span, name_ref, &value_holder, null)
         }
 
-        procedure plan_tuple(mutable this: Planner, mutable t: Tuple) returns PlannedTuple
+        procedure plan_tuple(mutable this: Planner, mutable t: Tuple) returns PlannedTuple io
         {
             var comps_arr Array[PlannedComponent]()
             var i: size_t 0
@@ -21803,7 +21803,7 @@ define Planner
             )
         }
 
-        procedure plan_matrix(mutable this: Planner, mutable m: Matrix) returns scalyc.compiler.Plan.PlannedMatrix
+        procedure plan_matrix(mutable this: Planner, mutable m: Matrix) returns scalyc.compiler.Plan.PlannedMatrix io
         {
             var rows_arr Array[Vector[PlannedOperand]]()
             var i: size_t 0
@@ -21833,7 +21833,7 @@ define Planner
         ; table, so we plan the type skeleton and arguments and leave
         ; the call layout for later resolution. For now we model it as
         ; a PlannedTuple carrying the argument list and the planned type.
-        procedure plan_new(mutable this: Planner, mutable n: New) returns PlannedTuple
+        procedure plan_new(mutable this: Planner, mutable n: New) returns PlannedTuple io
         {
             let planned_ty this.plan_type(n.type)
             let planned_args this.plan_tuple(n.arguments)
@@ -21891,7 +21891,7 @@ define Planner
         ; plan_operand: dispatch by Expression variant, then wrap with
         ; any member-access chain declared on the operand.
         ; ================================================================
-        procedure plan_operand(mutable this: Planner, mutable op: scalyc.compiler.Model.Operand) returns PlannedOperand
+        procedure plan_operand(mutable this: Planner, mutable op: scalyc.compiler.Model.Operand) returns PlannedOperand io
         {
             ; Stack guard: one nesting level per plan_operand frame. Emission is
             ; untouched — this only trades a SIGSEGV for a message.
@@ -22183,7 +22183,7 @@ define Planner
         procedure plan_operands(
             mutable this: Planner,
             mutable ops: Vector[scalyc.compiler.Model.Operand]
-        ) returns Vector[PlannedOperand]
+        ) returns Vector[PlannedOperand] io
         {
             var result Vector[PlannedOperand](ops.length)
             var i: size_t 0
@@ -22289,7 +22289,7 @@ define Planner
             ops
         }
 
-        procedure plan_binding(mutable this: Planner, mutable b: Binding) returns PlannedBinding
+        procedure plan_binding(mutable this: Planner, mutable b: Binding) returns PlannedBinding io
         {
             ; Names starting with `_` are reserved for compiler internals —
             ; the emitter resolves the implicit caller-page slot as `_rp`.
@@ -23270,7 +23270,7 @@ define Planner
             mutable s: Structure,
             arg_types: Vector[PlannedType],
             loc: Span
-        )
+        ) io
         {
             var fi: size_t 0
             while fi < arg_types.length
@@ -25079,7 +25079,7 @@ define Planner
             arg_types: Vector[PlannedType],
             arg_ops: Vector[PlannedOperand],
             loc: Span
-        )
+        ) io
         {
             ; (b) a generic receiver instance — see the note above.
             if lookup_st.generics <> null
@@ -25281,7 +25281,7 @@ define Planner
             variant_name: String,
             payload: ref[PlannedOperand]?,
             loc: Span
-        )
+        ) io
         {
             if payload = null
                 return
@@ -25547,7 +25547,7 @@ define Planner
             )
         }
 
-        procedure plan_action(mutable this: Planner, mutable a: Action) returns PlannedAction
+        procedure plan_action(mutable this: Planner, mutable a: Action) returns PlannedAction io
         {
             ; Read-and-clear the tail-return flag: only THIS (outermost body)
             ; action is the function's implicit return. Nested actions planned
@@ -29962,7 +29962,7 @@ define Planner
                     0
         }
 
-        procedure plan_return(mutable this: Planner, mutable r: Return) returns PlannedReturn
+        procedure plan_return(mutable this: Planner, mutable r: Return) returns PlannedReturn io
         {
             ; GAP B: `return \x: …` where the function's return type is a delegate
             ; yields an ESCAPING closure — env on the caller page (`#`) so it
@@ -30224,7 +30224,7 @@ define Planner
             PlannedReturn(r.span, &holder)
         }
 
-        procedure plan_break(mutable this: Planner, mutable b: Break) returns PlannedBreak
+        procedure plan_break(mutable this: Planner, mutable b: Break) returns PlannedBreak io
         {
             ; Collapse the operand sequence so a break value like `break -1`
             ; or `break parse(line)` folds into a single typed operand (same
@@ -30242,7 +30242,7 @@ define Planner
             PlannedBreak(b.span, &holder, b.loop_label)
         }
 
-        procedure plan_throw(mutable this: Planner, mutable t: Throw) returns PlannedThrow
+        procedure plan_throw(mutable this: Planner, mutable t: Throw) returns PlannedThrow io
         {
             ; Collapse the operand sequence the same way plan_return# does.
             ; A thrown value like `MyError.Different(DifferentSyntax())` arrives
@@ -30325,7 +30325,7 @@ define Planner
         ; variant-specific plan_* method. `Continue` is trivial — just
         ; carries the location.
         ; ================================================================
-        procedure plan_statement(mutable this: Planner, mutable s: Statement) returns PlannedStatement
+        procedure plan_statement(mutable this: Planner, mutable s: Statement) returns PlannedStatement io
         {
             choose s
                 when a: Action
@@ -30890,7 +30890,7 @@ define Planner
         procedure plan_statements(
             mutable this: Planner,
             mutable stmts: Vector[Statement]
-        ) returns Vector[PlannedStatement]
+        ) returns Vector[PlannedStatement] io
         {
             var result Vector[PlannedStatement](stmts.length)
             var i: size_t 0
@@ -30934,7 +30934,7 @@ define Planner
         ; ================================================================
         ; plan_block: push a fresh scope, plan every statement, pop.
         ; ================================================================
-        procedure plan_block(mutable this: Planner, mutable b: Block) returns PlannedBlock
+        procedure plan_block(mutable this: Planner, mutable b: Block) returns PlannedBlock io
         {
             this.push_scope()
             let planned_stmts this.plan_statements(b.statements)
@@ -31032,7 +31032,7 @@ define Planner
         ; `offset` is 0 until compute_property_offsets runs as part of
         ; the enclosing struct's layout pass.
         ; ================================================================
-        procedure plan_property(mutable this: Planner, mutable p: Property) returns PlannedProperty
+        procedure plan_property(mutable this: Planner, mutable p: Property) returns PlannedProperty io
         {
             var prop_type: PlannedType this.fresh_type_var("")
             if p.type <> null
@@ -32896,7 +32896,7 @@ define Planner
                     0
         }
 
-        procedure plan_implementation(mutable this: Planner, mutable impl: Implementation) returns PlannedImplementation
+        procedure plan_implementation(mutable this: Planner, mutable impl: Implementation) returns PlannedImplementation io
         {
             choose impl
                 when a: Action
@@ -32926,7 +32926,7 @@ define Planner
             mutable this: Planner,
             mutable f: Function,
             parent: ref[PlannedType]?
-        ) returns PlannedFunction
+        ) returns PlannedFunction io
         {
             this.push_scope()
 
@@ -33682,7 +33682,7 @@ define Planner
             mutable this: Planner,
             mutable ini: Initializer,
             parent: ref[PlannedType]?
-        ) returns PlannedInitializer
+        ) returns PlannedInitializer io
         {
             this.push_scope()
 
@@ -33926,7 +33926,7 @@ define Planner
             mutable this: Planner,
             mutable dei: DeInitializer,
             parent: ref[PlannedType]?
-        ) returns PlannedDeInitializer
+        ) returns PlannedDeInitializer io
         {
             let planned_impl this.plan_implementation(dei.implementation)
             ; Mangle as a method of `parent` named "deinit" (Itanium
@@ -33948,7 +33948,7 @@ define Planner
             mutable this: Planner,
             mutable op: Operator,
             parent: ref[PlannedType]?
-        ) returns PlannedOperator
+        ) returns PlannedOperator io
         {
             this.push_scope()
 
@@ -34147,7 +34147,7 @@ define Planner
         ; within the union; we can't see sibling variants from here).
         ; `mangled_name` is left empty for the same reason as
         ; plan_property.
-        procedure plan_variant(mutable this: Planner, mutable v: Variant, tag: int) returns PlannedVariant
+        procedure plan_variant(mutable this: Planner, mutable v: Variant, tag: int) returns PlannedVariant io
         {
             var var_type: ref[PlannedType]? null
             if v.type <> null
@@ -34177,7 +34177,7 @@ define Planner
         ; deinitializer. mangled_name is built via mangle_structure so
         ; method/operator mangling can reference the parent.
         ; ================================================================
-        procedure plan_structure(mutable this: Planner, mutable s: Structure, name: String) returns PlannedStructure
+        procedure plan_structure(mutable this: Planner, mutable s: Structure, name: String) returns PlannedStructure io
         {
             var planned_props Array[PlannedProperty]()
             var i: size_t 0
@@ -34366,7 +34366,7 @@ define Planner
         ; Skipping methods avoids the planner-side crashes (null this in
         ; check_function_match → String::get_buffer) that would otherwise
         ; happen when walking generic/cross-module method bodies.
-        procedure plan_structure_layout(mutable this: Planner, mutable s: Structure, name: String) returns PlannedStructure
+        procedure plan_structure_layout(mutable this: Planner, mutable s: Structure, name: String) returns PlannedStructure io
             this.plan_structure_layout_opt(s, name, true)
 
         ; plan_structure_layout_opt#: as plan_structure_layout# but with a
@@ -34381,7 +34381,7 @@ define Planner
         ; `ConceptIndex.create#` call to a bare `_Z6createm` and fails to
         ; link). With plan_inits=false the struct stays declare-only here
         ; and the real body is resolved cross-unit at link time.
-        procedure plan_structure_layout_opt(mutable this: Planner, mutable s: Structure, name: String, plan_inits: bool) returns PlannedStructure
+        procedure plan_structure_layout_opt(mutable this: Planner, mutable s: Structure, name: String, plan_inits: bool) returns PlannedStructure io
         {
             var planned_props Array[PlannedProperty]()
             var i: size_t 0
@@ -34496,7 +34496,7 @@ define Planner
         ; definition is a Structure. Skips the Concept if its name is
         ; already in instantiated_structures (avoids duplicate entries
         ; when the same module is also walked by the full planner).
-        procedure register_struct_layouts_in_module(mutable this: Planner, mutable m: Module)
+        procedure register_struct_layouts_in_module(mutable this: Planner, mutable m: Module) io
         {
             var i: size_t 0
             while i < m.members.length
@@ -34533,7 +34533,7 @@ define Planner
         ; register_struct_layouts_in_concept#: if the concept's
         ; definition is a Structure, register its layout. If it's a
         ; Namespace, recurse into namespace members and modules.
-        procedure register_struct_layouts_in_concept(mutable this: Planner, mutable c: Concept)
+        procedure register_struct_layouts_in_concept(mutable this: Planner, mutable c: Concept) io
         {
             ; Only handle parameterless concepts here — generic
             ; structures get planned per-instantiation by the existing
@@ -34609,7 +34609,7 @@ define Planner
         ; ABI-opaque stdlib structs are excluded (is_runtime_opaque_struct) so
         ; the scaly/scalyc/main fixed point stays byte-identical. Generic
         ; concepts are left to instantiate_generic# (parameterless guard).
-        procedure ensure_member_layout(mutable this: Planner, mutable name: String)
+        procedure ensure_member_layout(mutable this: Planner, mutable name: String) io
         {
             if Planner.is_runtime_opaque_struct(name)
                 return
@@ -34692,7 +34692,7 @@ define Planner
         ; Same fixed-point safety as ensure_member_layout#: opaque stdlib
         ; types are excluded, generic concepts are left to instantiate_generic#,
         ; and pinning is to owning_page (persistent plan storage).
-        procedure ensure_union_layout(mutable this: Planner, mutable name: String)
+        procedure ensure_union_layout(mutable this: Planner, mutable name: String) io
         {
             if Planner.is_runtime_opaque_struct(name)
                 return
@@ -34781,7 +34781,7 @@ define Planner
         ; safe for the same reason as the two underlying helpers: scaly/scalyc/
         ; main pass no unplanned cross-package types by value (every in-package
         ; type is already registered → no-op).
-        procedure ensure_type_layout(mutable this: Planner, mutable t: PlannedType)
+        procedure ensure_type_layout(mutable this: Planner, mutable t: PlannedType) io
             this.ensure_layout_by_name(t.name)
 
         ; By-name twin of ensure_type_layout#: lay out whichever kind (struct
@@ -34790,7 +34790,7 @@ define Planner
         ; / generic / unknown (primitives, pointer, ref). Both helpers RECURSE
         ; into the type's by-value constituents (see their bodies), so this also
         ; lays out the whole by-value subgraph reachable from `name`.
-        procedure ensure_layout_by_name(mutable this: Planner, mutable name: String)
+        procedure ensure_layout_by_name(mutable this: Planner, mutable name: String) io
         {
             if name.get_length() = 0
                 return
@@ -34801,7 +34801,7 @@ define Planner
         ; plan_global: Model.Global → Plan.PlannedGlobal.
         ; The `name` comes from the enclosing Concept — Global itself has
         ; no name field.
-        procedure plan_global(mutable this: Planner, mutable g: Global, name: String) returns PlannedGlobal
+        procedure plan_global(mutable this: Planner, mutable g: Global, name: String) returns PlannedGlobal io
         {
             let planned_type this.plan_type(g.type)
             ; Annotation position — see report_unknown_type#. This is the site
@@ -35154,7 +35154,7 @@ define Planner
             }
         }
 
-        procedure plan_namespace(mutable this: Planner, mutable ns: Namespace, name: String) returns PlannedNamespace
+        procedure plan_namespace(mutable this: Planner, mutable ns: Namespace, name: String) returns PlannedNamespace io
         {
             ; Build the parent PlannedType that tags every Function /
             ; Operator inside this namespace for mangling. Name alone
@@ -35260,7 +35260,7 @@ define Planner
         ; A bare `plan_module(sub)` call (no `equals("X") = false`
         ; negation) avoids the stage-0 codegen SEGV that originally
         ; motivated the positive-enumeration allowlist.
-        procedure plan_namespace_module_one(rp, mutable this: Planner, mutable sub: Module)
+        procedure plan_namespace_module_one(rp, mutable this: Planner, mutable sub: Module) io
         {
             ; Walk EVERY sub-module of the namespace being compiled.
             ; Only the COMPILATION ROOT package's namespace modules reach
@@ -35299,7 +35299,7 @@ define Planner
         ; return into plan_namespace#'s own struct construction
         ; corrupts the frame on stage-0 codegen (session-43 pattern);
         ; the helper isolates the call.
-        procedure plan_namespace_modules(rp, mutable this: Planner, mutable ns: Namespace)
+        procedure plan_namespace_modules(rp, mutable this: Planner, mutable ns: Namespace) io
         {
             var mi: size_t 0
             while mi < ns.modules.length
@@ -35590,7 +35590,7 @@ define Planner
         ; module's tree, then plan sub-modules and members. This makes
         ; forward references resolve — `struct A { b: B }` works even
         ; when B is defined later in the same module.
-        procedure plan_module(mutable this: Planner, mutable m: Module) returns PlannedModule
+        procedure plan_module(mutable this: Planner, mutable m: Module) returns PlannedModule io
         {
             ; Track the current source file for diagnostics (mirrors stage-0
             ; planModule: `OldFile = File; if (!Mod.File.empty()) File = Mod.File`).
@@ -35760,7 +35760,7 @@ define Planner
             concept_origin_files.get i
         }
 
-        procedure plan_concept(mutable this: Planner, mutable c: Concept) returns PlannedConcept
+        procedure plan_concept(mutable this: Planner, mutable c: Concept) returns PlannedConcept io
         {
             ; s107: generic data-class concepts (Structure with no
             ; members/initializers) defer body planning to
@@ -35990,7 +35990,7 @@ define Planner
         ; plan_union: Model.Union → Plan.PlannedUnion.
         ; Similar scope to plan_structure: plans variants and computes
         ; size/alignment; skips methods/operators for now.
-        procedure plan_union(mutable this: Planner, mutable u: scalyc.compiler.Model.Union, name: String) returns scalyc.compiler.Plan.PlannedUnion
+        procedure plan_union(mutable this: Planner, mutable u: scalyc.compiler.Model.Union, name: String) returns scalyc.compiler.Plan.PlannedUnion io
             this.plan_union_opt(u, name, true)
 
         ; plan_union_opt#: as plan_union# with a `plan_methods` switch. The
@@ -36000,7 +36000,7 @@ define Planner
         ; right offset), but NOT the union's methods/operators — those
         ; belong to the union's own package's object (same reasoning as
         ; plan_structure_layout_opt#).
-        procedure plan_union_opt(mutable this: Planner, mutable u: scalyc.compiler.Model.Union, name: String, plan_methods: bool) returns scalyc.compiler.Plan.PlannedUnion
+        procedure plan_union_opt(mutable this: Planner, mutable u: scalyc.compiler.Model.Union, name: String, plan_methods: bool) returns scalyc.compiler.Plan.PlannedUnion io
         {
             var planned_vs Array[PlannedVariant]()
             var tag: int 0
@@ -36144,7 +36144,7 @@ define Planner
         ; are left null — the per-kind planned data lives inside the
         ; PlannedModule tree for now. The separate caches come online
         ; once the instantiate-generic pass is ported.
-        procedure plan_program(mutable this: Planner, mutable prog: Program) returns ref[Plan]?
+        procedure plan_program(mutable this: Planner, mutable prog: Program) returns ref[Plan]? io
         {
             ; Stash the program's main-module Use aliases up front
             ; so the dotted-call extern-decl gate can consult them
@@ -36276,7 +36276,7 @@ define Planner
         ; void dispatcher cluster. NEUTRAL on the sigiled source: every function
         ; added is still `#` there (it forwards rp today), so has_page is
         ; unchanged; the set only matters once the explicit `#`/rp is removed.
-        procedure build_transitive_page_set(mutable this: Planner)
+        procedure build_transitive_page_set(mutable this: Planner) io
         {
             var all Array[Function]()
             ; parallel to `all`: the name of the concept a function is a member
@@ -42075,7 +42075,7 @@ define Planner
     ; the whole parameter list here, `this` aside, because a member function's
     ; explicit page sits at index 1 (takes_explicit_page_arg, which keys the
     ; name-based fallback veto, only ever saw index 0).
-    procedure ret_page_func_needs(pl: Planner, mutable f: Function) returns bool
+    procedure ret_page_func_needs(pl: Planner, mutable f: Function) returns bool io
     {
         var i: size_t 0
         while i < f.input.length
@@ -42619,7 +42619,7 @@ define Planner
     ; decide over the functions named `method` among these members:
     ;   1 = needs our page, 0 = does not, -1 = no such member, or the overload set
     ;       disagrees even after the arity filter (then the caller falls back).
-    procedure ret_page_members_decision(pl: Planner, mutable members: Vector[Member], method: String, argc: size_t) returns int
+    procedure ret_page_members_decision(pl: Planner, mutable members: Vector[Member], method: String, argc: size_t) returns int io
     {
         var yes: size_t 0
         var no: size_t 0
@@ -42677,7 +42677,7 @@ define Planner
         0
     }
 
-    procedure ret_page_concept_decision(mutable pl: Planner, mutable concept_name: String, method: String, argc: size_t) returns int
+    procedure ret_page_concept_decision(mutable pl: Planner, mutable concept_name: String, method: String, argc: size_t) returns int io
     {
         let cr pl.lookup_concept_any(concept_name)
         if cr = null
@@ -42696,7 +42696,7 @@ define Planner
     ; the same decision over the FREE functions of that name (a bare `f(x)`).
     ; Walks the registry's hash chain in place — building a Vector of matches here
     ; would allocate on the pre-pass frame once per call site per fixpoint round.
-    procedure ret_page_functions_decision(mutable pl: Planner, name: String, argc: size_t) returns int
+    procedure ret_page_functions_decision(mutable pl: Planner, name: String, argc: size_t) returns int io
     {
         var yes: size_t 0
         var no: size_t 0
@@ -42786,7 +42786,7 @@ define Planner
 
     ; resolve `path(argc args)` to the function it actually calls and answer its
     ; page-need: 1 yes, 0 no, -1 not resolvable here.
-    procedure ret_page_resolve_call(mutable pl: Planner, mutable owner: ref[String]?, mutable func: Function, mutable scope: Vector[Statement], mutable path: Vector[String], argc: size_t) returns int
+    procedure ret_page_resolve_call(mutable pl: Planner, mutable owner: ref[String]?, mutable func: Function, mutable scope: Vector[Statement], mutable path: Vector[String], argc: size_t) returns int io
     {
         let n path.length
         if n = 0
@@ -42827,7 +42827,7 @@ define Planner
     ; name), or the LAST member_access segment when the call rides a hop off a
     ; non-name primary (`(*p).m(...)`). A head carrying a lifetime marker is a
     ; CONSTRUCTION, not a plain call, and is left to body_has_call_lifetime.
-    procedure ret_page_call_head(mutable pl: Planner, mutable owner: ref[String]?, mutable func: Function, mutable scope: Vector[Statement], mutable op: Operand, argc: size_t) returns bool
+    procedure ret_page_call_head(mutable pl: Planner, mutable owner: ref[String]?, mutable func: Function, mutable scope: Vector[Statement], mutable op: Operand, argc: size_t) returns bool io
     {
         if op.member_access <> null
         {
@@ -42885,7 +42885,7 @@ define Planner
     }
 
     ; find `let`/`var name <ops>` in this block and test its initializer.
-    procedure ret_page_binding(mutable pl: Planner, mutable owner: ref[String]?, mutable func: Function, mutable scope: Vector[Statement], name: String, depth: int) returns bool
+    procedure ret_page_binding(mutable pl: Planner, mutable owner: ref[String]?, mutable func: Function, mutable scope: Vector[Statement], name: String, depth: int) returns bool io
     {
         var i: size_t 0
         while i < scope.length
@@ -42950,7 +42950,7 @@ define Planner
         len
     }
 
-    procedure ret_page_ops_tail(mutable pl: Planner, mutable owner: ref[String]?, mutable func: Function, mutable ops: Vector[Operand], mutable scope: Vector[Statement], depth: int) returns bool
+    procedure ret_page_ops_tail(mutable pl: Planner, mutable owner: ref[String]?, mutable func: Function, mutable ops: Vector[Operand], mutable scope: Vector[Statement], depth: int) returns bool io
     {
         if ops.length = 0
             return false
@@ -43046,7 +43046,7 @@ define Planner
         false
     }
 
-    procedure ret_page_stmt_tail(mutable pl: Planner, mutable owner: ref[String]?, mutable func: Function, mutable s: Statement, mutable scope: Vector[Statement], depth: int) returns bool
+    procedure ret_page_stmt_tail(mutable pl: Planner, mutable owner: ref[String]?, mutable func: Function, mutable s: Statement, mutable scope: Vector[Statement], depth: int) returns bool io
     {
         choose s
             when a: Action
@@ -43063,7 +43063,7 @@ define Planner
 
     ; a block's return positions: every explicit `return` anywhere inside it, plus
     ; its LAST statement (the tail).
-    procedure ret_page_stmts_tail(mutable pl: Planner, mutable owner: ref[String]?, mutable func: Function, mutable stmts: Vector[Statement], depth: int) returns bool
+    procedure ret_page_stmts_tail(mutable pl: Planner, mutable owner: ref[String]?, mutable func: Function, mutable stmts: Vector[Statement], depth: int) returns bool io
     {
         if Planner.ret_page_stmts_returns(pl, owner, func, stmts, depth)
             return true
@@ -43079,7 +43079,7 @@ define Planner
     ; the explicit-`return` walk: every Return in the body, however deeply nested.
     ; Non-tail statements are descended into ONLY to find those returns — their own
     ; values are not return positions.
-    procedure ret_page_stmts_returns(mutable pl: Planner, mutable owner: ref[String]?, mutable func: Function, mutable stmts: Vector[Statement], depth: int) returns bool
+    procedure ret_page_stmts_returns(mutable pl: Planner, mutable owner: ref[String]?, mutable func: Function, mutable stmts: Vector[Statement], depth: int) returns bool io
     {
         var i: size_t 0
         while i < stmts.length
@@ -43093,7 +43093,7 @@ define Planner
         false
     }
 
-    procedure ret_page_stmt_returns(mutable pl: Planner, mutable owner: ref[String]?, mutable func: Function, mutable s: Statement, mutable scope: Vector[Statement], depth: int) returns bool
+    procedure ret_page_stmt_returns(mutable pl: Planner, mutable owner: ref[String]?, mutable func: Function, mutable s: Statement, mutable scope: Vector[Statement], depth: int) returns bool io
     {
         choose s
             when r: Return
@@ -43116,7 +43116,7 @@ define Planner
         false
     }
 
-    procedure ret_page_ops_returns(mutable pl: Planner, mutable owner: ref[String]?, mutable func: Function, mutable ops: Vector[Operand], depth: int) returns bool
+    procedure ret_page_ops_returns(mutable pl: Planner, mutable owner: ref[String]?, mutable func: Function, mutable ops: Vector[Operand], depth: int) returns bool io
     {
         var i: size_t 0
         while i < ops.length
@@ -43180,7 +43180,7 @@ define Planner
     ; entry point: does this function return the result of a page-needing call?
     ; `owner` names the concept it is a member of (EMPTY for a free function) —
     ; the anchor for receiver-type resolution.
-    procedure body_returns_page_needing_call(mutable pl: Planner, mutable owner: ref[String]?, mutable func: Function) returns bool
+    procedure body_returns_page_needing_call(mutable pl: Planner, mutable owner: ref[String]?, mutable func: Function) returns bool io
     {
         if Planner.is_extern_impl(func.implementation)
             return false
@@ -43467,7 +43467,7 @@ define Planner
     ; env-gated probe (SCALYC_PAGE_PROBE=1): one line per page-granting
     ; return of function_needs_caller_page, tagged R1..R7 -- the instrument
     ; CLAUDE.md asks to rebuild for every page question, kept this time.
-    function page_probe(func: Function, tag: pointer[const_char])
+    procedure page_probe(func: Function, tag: pointer[const_char]) io
     {
         if getenv("SCALYC_PAGE_PROBE") = null
             return
@@ -43478,7 +43478,7 @@ define Planner
         scaly_eputs "\n"
     }
 
-    procedure function_needs_caller_page(pl: Planner, mutable func: Function) returns bool
+    procedure function_needs_caller_page(pl: Planner, mutable func: Function) returns bool io
     {
         ; ★A TYPE ALIAS in the return position (`define NICRef pointer[NIC]`)
         ; is resolved to its target BEFORE any of the seven rules reads
@@ -43880,7 +43880,7 @@ define Planner
     ; Only touches real helpers — never calls a stub (that would exit 111).
     ; ========================================================================
 
-    function test() returns int
+    procedure test() returns int io
     {
         ; size_to_string - smallest self-contained helper.
         let str0 Planner.size_to_string(0)

@@ -58,7 +58,7 @@ function addr_of(c: ref[ref[Item]]) returns size_t
     v as size_t
 }
 
-function drive(host: pointer[Page]) returns int
+procedure drive(host: pointer[Page]) returns int io
 {
     ; page-hosted, so the escape checker can see the referents outlive the
     ; cells they are stored into

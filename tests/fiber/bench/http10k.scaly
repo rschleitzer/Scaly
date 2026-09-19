@@ -50,7 +50,7 @@ function head_complete(buf: pointer[u8], total: int) returns bool
 }
 
 ; Write all of data[0..len) to fd, suspending on would-block.
-procedure write_all(fd: i32, data: size_t, len: size_t)
+procedure write_all(fd: i32, data: size_t, len: size_t) io
 {
     var off (0 as size_t)
     while off < len
@@ -63,7 +63,7 @@ procedure write_all(fd: i32, data: size_t, len: size_t)
 }
 
 ; One connection, one fiber, one region.
-procedure handle_connection()
+procedure handle_connection() io
 {
     let fd (Scheduler.task_arg() as size_t) as i32
     Io.set_nonblocking(fd)
@@ -87,7 +87,7 @@ procedure handle_connection()
 
 ; Fires all 10,000 requests. Runs after every handler parked, so the
 ; poller multiplexes the full connection count at once.
-procedure driver()
+procedure driver() io
 {
     let req String("GET / HTTP/1.0\r\n\r\n")
     let data req.c_data() as size_t

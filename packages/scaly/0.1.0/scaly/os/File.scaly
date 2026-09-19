@@ -16,7 +16,7 @@ define F_OK: int 0
 ; requester's care (alive while it parks): opens the file, measures it,
 ; writes FILE* and size back INTO the cell. Null when the file cannot
 ; be opened; a non-null sentinel otherwise — no result page.
-procedure file_open_worker(mutable arg: pointer[void]) returns pointer[void]
+procedure file_open_worker(mutable arg: pointer[void]) returns pointer[void] io
 {
     let cell arg as pointer[size_t]
     var file fopen((*cell) as pointer[const_char], "rb")
@@ -35,7 +35,7 @@ procedure file_open_worker(mutable arg: pointer[void]) returns pointer[void]
 ; requester is parked, its region quiescent, so the cross-thread write
 ; is race-free and no copy is paid. A short read is ignored exactly
 ; like the blocking path's single unchecked fread. Always closes.
-procedure file_read_close_worker(arg: pointer[void]) returns pointer[void]
+procedure file_read_close_worker(arg: pointer[void]) returns pointer[void] io
 {
     let cell arg as pointer[size_t]
     let file (*cell) as pointer[OpaqueFile]
@@ -49,7 +49,7 @@ procedure file_read_close_worker(arg: pointer[void]) returns pointer[void]
 
 ; The blocking existence probe (milestone 2.5 residual): access(2) on a
 ; worker; sentinel result, no pages.
-procedure file_access_worker(arg: pointer[void]) returns pointer[void]
+procedure file_access_worker(arg: pointer[void]) returns pointer[void] io
 {
     if access(arg as pointer[const_char], F_OK) = 0
         return 1 as pointer[void]
@@ -60,7 +60,7 @@ procedure file_access_worker(arg: pointer[void]) returns pointer[void]
 ; a {path, buffer, length} request cell in the requester's care; the
 ; result is null on failure, a non-null sentinel on success (nothing to
 ; free — no result page).
-procedure file_write_worker(arg: pointer[void]) returns pointer[void]
+procedure file_write_worker(arg: pointer[void]) returns pointer[void] io
 {
     let cell arg as pointer[size_t]
     let path (*cell) as pointer[const_char]
@@ -78,7 +78,7 @@ define File
 {
     ; Colorless like the rest (milestone 2.5 residual): the access(2)
     ; probe blocks on disk metadata just like a read does.
-    procedure exists(mutable path: String) returns bool
+    procedure exists(mutable path: String) returns bool io
     {
         if Io.in_task()
         {
@@ -94,7 +94,7 @@ define File
     ; on a worker thread while the task parks; on the main context (or
     ; without a scheduler) it blocks right here — same call, same
     ; result.
-    procedure read_to_string(path: String) returns String
+    procedure read_to_string(path: String) returns String io
     {
         if Io.in_task()
             return File.read_to_string_offloaded(path)
@@ -117,7 +117,7 @@ define File
     ; between the two, on the caller's page by the normal inference) +
     ; close. Zero copies and no result pages; the request cell is the
     ; in/out block.
-    procedure read_to_string_offloaded(path: String) returns String
+    procedure read_to_string_offloaded(path: String) returns String io
     {
         let pc path.to_c_string()
         let p Page.allocate_page_traced("File.read_cell")
@@ -142,7 +142,7 @@ define File
 
     ; Colorless like read_to_string: offloads inside a task, blocks
     ; otherwise.
-    procedure write_from_string(path: String, contents: String) returns bool
+    procedure write_from_string(path: String, contents: String) returns bool io
     {
         if Io.in_task()
             return File.write_from_string_offloaded(path, contents)
@@ -158,7 +158,7 @@ define File
     ; The task path of write_from_string: pack a {path, buffer, length}
     ; request cell on its own heap page (path and buffer point into the
     ; requester's region — alive while parked), offload, free the cell.
-    procedure write_from_string_offloaded(path: String, contents: String) returns bool
+    procedure write_from_string_offloaded(path: String, contents: String) returns bool io
     {
         let pc path.to_c_string()
         let buf contents.get_buffer()

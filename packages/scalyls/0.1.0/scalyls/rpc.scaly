@@ -25,7 +25,7 @@ define rpc
 {
     ; Read a single byte from stdin. Returns the byte (0..255), or -1 on
     ; EOF / error.
-    function read_byte() returns int
+    procedure read_byte() returns int io
     {
         var c: u8 0
         let cp &c
@@ -47,7 +47,7 @@ define rpc
     }
 
     ; Fill exactly `n` bytes from stdin into `buf`. Stops early on EOF.
-    procedure read_exact(mutable buf: pointer[void], n: size_t)
+    procedure read_exact(mutable buf: pointer[void], n: size_t) io
     {
         var total: size_t 0
         while total < n
@@ -67,7 +67,7 @@ define rpc
 
     ; Read one framed message. Returns the JSON body as a String on the
     ; caller's page, or an empty String at EOF / on a malformed frame.
-    function read_message(rp) returns String
+    procedure read_message(rp) returns String io
     {
         var content_length: size_t 0
 
@@ -138,7 +138,7 @@ define rpc
     }
 
     ; Write a JSON body as a framed message to stdout.
-    function write_message(body: String)
+    procedure write_message(body: String) io
     {
         let len body.get_length()
 
@@ -158,7 +158,7 @@ define rpc
     }
 
     ; Write every byte of `s` to stdout, retrying short writes.
-    function write_all(s: String)
+    procedure write_all(s: String) io
     {
         let len s.get_length()
         if len = 0
@@ -214,7 +214,7 @@ define rpc
     ; never disturbed.
     ; ====================================================================
 
-    function read_byte_fd(fd: int) returns int
+    procedure read_byte_fd(fd: int) returns int io
     {
         var c: u8 0
         let cp &c
@@ -232,7 +232,7 @@ define rpc
         -1
     }
 
-    procedure read_exact_fd(fd: int, mutable buf: pointer[void], n: size_t)
+    procedure read_exact_fd(fd: int, mutable buf: pointer[void], n: size_t) io
     {
         var total: size_t 0
         while total < n
@@ -250,7 +250,7 @@ define rpc
         }
     }
 
-    function read_message_fd(rp, fd: int) returns String
+    procedure read_message_fd(rp, fd: int) returns String io
     {
         var content_length: size_t 0
 
@@ -295,7 +295,7 @@ define rpc
         body
     }
 
-    function write_all_fd(fd: int, s: String)
+    procedure write_all_fd(fd: int, s: String) io
     {
         let len s.get_length()
         if len = 0
@@ -323,7 +323,7 @@ define rpc
         }
     }
 
-    function write_message_fd(fd: int, body: String)
+    procedure write_message_fd(fd: int, body: String) io
     {
         let len body.get_length()
 

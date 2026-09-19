@@ -32,7 +32,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from relabel import is_generated   # noqa: E402
 
 GW = re.compile(r'^(?P<file>[^:]+):(?P<line>\d+):(?P<col>\d+): gw (?P<name>\S+) (?P<names>.*)$')
-RUNTIME = re.compile(r'packages/scaly/0\.1\.0/scaly/(memory/|fiber|io|cluster)')
+RUNTIME = re.compile(r'packages/scaly/0\.1\.0/scaly/(memory/|fiber|os|cluster)')
 
 
 def ambient_names():
@@ -94,6 +94,10 @@ def signature_end(text, at, name):
                 k += 1
             i = skip_type(text, k)
             continue
+        # an `io` already declared: the clause goes after it
+        if re.match(r'io(\s|$)', text[j:j + 3]):
+            i = j + 2
+            continue
         # an existing clause: extend it
         if text.startswith('mutable ', j):
             return ('extend', j), m.group(1)
@@ -146,15 +150,23 @@ def main():
                 edits.append((at, len('function'), 'procedure'))
                 relabelled += 1
             how, off = where
+            # `io` is the outside world: a keyword before the clause, not a name in it
+            wants_io = 'io' in names
+            names = names - {'io'}
+            sig = text[at:off]
+            has_io = re.search(r'\)\s.*\bio\s*$', sig) is not None or re.search(r'\bio\s*$', sig) is not None
+            io_text = ' io' if wants_io and not has_io else ''
             if how == 'insert':
-                edits.append((off, 0, ' mutable ' + ', '.join(sorted(names))))
+                clause = (' mutable ' + ', '.join(sorted(names))) if names else ''
+                if io_text or clause:
+                    edits.append((off, 0, io_text + clause))
             else:
                 eol = text.find('\n', off)
                 have = re.match(r'mutable\s+([A-Za-z0-9_, ]+?)\s*(;|$)', text[off:eol])
                 old = {n.strip() for n in have.group(1).split(',')} if have else set()
                 new = sorted(old | names)
                 clause = 'mutable ' + ', '.join(new)
-                edits.append((off, len('mutable ') + len(have.group(1)), clause))
+                edits.append((off, len('mutable ') + len(have.group(1)), (io_text.strip() + ' ' if io_text else '') + clause))
             done[path.split('/')[1]] += 1
         for off, n, new in sorted(edits, reverse=True):
             text = text[:off] + new + text[off + n:]

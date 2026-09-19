@@ -108,7 +108,7 @@ function run_test() returns int
     0
 }
 
-function main_test() returns int
+procedure main_test() returns int io
 {
     let rc run_test()
     if rc = 0

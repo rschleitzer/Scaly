@@ -9,7 +9,7 @@ define Msg
 
 mutable chan: pointer[void] null
 
-procedure producer() mutable chan
+procedure producer() io mutable chan
 {
     let c chan as pointer[Channel]
     let mp Page.allocate_page()

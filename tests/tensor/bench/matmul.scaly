@@ -181,7 +181,7 @@ function check(c: Vector[double], m: int, kk: int, n: int) returns bool
     true
 }
 
-procedure report(tag: pointer[const_char], m: int, kk: int, n: int, ns: i64)
+procedure report(tag: pointer[const_char], m: int, kk: int, n: int, ns: i64) io
 {
     var sb StringBuilder()
     sb.append "mm "
@@ -211,7 +211,7 @@ procedure report(tag: pointer[const_char], m: int, kk: int, n: int, ns: i64)
     Console.println(line.to_c_string())
 }
 
-procedure run_size(m: int, kk: int, n: int)
+procedure run_size(m: int, kk: int, n: int) io
 {
     var a Vector[double]((m * kk) as size_t)
     var b Vector[double]((kk * n) as size_t)

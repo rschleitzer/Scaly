@@ -13,7 +13,7 @@ define KMsg
     value: i64
 )
 
-procedure run_victim()
+procedure run_victim() io
 {
     let page Page.allocate_page()
     let sched Scheduler.create(page)
@@ -39,7 +39,7 @@ procedure run_victim()
         poll(null as pointer[pollfd], 0 as u64, 100 as i32)
 }
 
-procedure run_survivor()
+procedure run_survivor() io
 {
     let page Page.allocate_page()
     let sched Scheduler.create(page)

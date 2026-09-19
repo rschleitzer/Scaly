@@ -92,7 +92,7 @@ function struct_slot(host: pointer[Page]) returns int
     i0.v * 10 + i1.v
 }
 
-function drive(host: pointer[Page]) returns int
+procedure drive(host: pointer[Page]) returns int io
 {
     var by_value: ref[Item]? null
     var by_address: ref[Item]? null

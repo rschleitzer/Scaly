@@ -14,7 +14,7 @@
 ; expect-rc: 23
 ; expect-out: Page.allocate_oversized: out of memory asking for 1052672 bytes
 
-function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int io
 {
     let host Page.allocate_page()
     scaly_alloc_fail_after(0)                   ; the next aligned request fails

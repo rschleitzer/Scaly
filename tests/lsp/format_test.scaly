@@ -26,13 +26,13 @@ use scalyls.format
 ; Write a String's bytes to stdout EXACTLY — no terminator, no added newline.
 ; Console.print takes a cstring, and the formatted document has to come out
 ; byte for byte or the corpus comparison means nothing.
-function emit(s: String)
+procedure emit(s: String) io
 {
     if s.get_length() > 0
         Io.write_all(1, s.get_buffer() as pointer[void], s.get_length())
 }
 
-function run()
+procedure run() io
 {
     let raw_path getenv "SCALYLS_FMT_FILE"
     if raw_path = null

@@ -237,7 +237,7 @@ define WriteCensus
         ; ================================================================
         ; Entry point: the pointer census's tables, the fixpoint, the report.
         ; ================================================================
-        procedure analyze(mutable this: WriteCensus, plan: Plan, model: ref[Program], mutable census: ref[PointerCensus])
+        procedure analyze(mutable this: WriteCensus, plan: Plan, model: ref[Program], mutable census: ref[PointerCensus]) io
         {
             set pc: census
             this.load_summaries()
@@ -382,7 +382,7 @@ define WriteCensus
         ; The last walk: sites, and one `fn` line per writing pure function.
         ; The last walk: one `fn`/`proc`/`init` line per body (`clean` or the
         ; parameters it writes), and the sites of every writing function.
-        procedure report_body(mutable this: WriteCensus, func: PlannedFunction, whole_mask: u64)
+        procedure report_body(mutable this: WriteCensus, func: PlannedFunction, whole_mask: u64) io
         {
             var is_body false
             choose func.impl
@@ -816,7 +816,7 @@ define WriteCensus
         }
 
         ; `gw <name> a,b,c` per body that writes globals, after the body lines
-        procedure report_globals(mutable this: WriteCensus)
+        procedure report_globals(mutable this: WriteCensus) io
         {
             let fns plan_functions as ref[Vector[PlannedFunction]]
             var i: size_t 0
@@ -1352,6 +1352,7 @@ define WriteCensus
             }
             if frozen_pass
                 this.pass_frozen_args(call, slot)
+            this.note_call_io(op, call, slot)
             if call.args = null
                 return
             if check_mode
@@ -1503,7 +1504,7 @@ define WriteCensus
             }
         }
 
-        procedure load_frozen(mutable this: WriteCensus)
+        procedure load_frozen(mutable this: WriteCensus) io
         {
             let fz getenv("SCALYC_WRITE_FROZEN")
             let en getenv("SCALYC_WRITE_ENTRY")
@@ -1861,7 +1862,7 @@ define WriteCensus
 
         ; Breadth-first over the call edges from the entries (edge_mode walks),
         ; then the sites of every reachable body.
-        procedure report_frozen(mutable this: WriteCensus)
+        procedure report_frozen(mutable this: WriteCensus) io
         {
             let fns plan_functions as ref[Vector[PlannedFunction]]
             var i: size_t 0
@@ -2238,7 +2239,9 @@ define WriteCensus
                 }
             }
             var sb StringBuilder()
-            if atomic_write
+            if name = "io"
+                sb.append "note: performs I/O"
+            else if atomic_write
             {
                 sb.append "note: writes atomic global "
                 sb.append name
@@ -2280,6 +2283,8 @@ define WriteCensus
                             set bad: false
                         if this.global_allowed(name)
                             set bad: false
+                        if name = "io"
+                            set bad: false
                     }
                     if bad
                     {
@@ -2295,6 +2300,24 @@ define WriteCensus
                 set id: id + 1
             }
             sb.to_string()
+        }
+
+        ; does the body reach I/O its declaration does not name?
+        function bad_io(this: WriteCensus) returns bool
+        {
+            var id: size_t 0
+            while id < gnames.length
+            {
+                if gnames[id] = "io"
+                {
+                    let w id / 64
+                    if (cur_g[w] & ((1 as u64) << ((id - w * 64) as u64))) = (0 as u64)
+                        return false
+                    return this.global_allowed(String("io")) = false
+                }
+                set id: id + 1
+            }
+            false
         }
 
         ; a stub's row: its OWNER's declarations of that name and arity (the
@@ -2654,7 +2677,7 @@ define WriteCensus
 
         ; one walk of every function body; a violation is a write outside the
         ; page parameters
-        procedure run_check(mutable this: WriteCensus, model: ref[Program])
+        procedure run_check(mutable this: WriteCensus, model: ref[Program]) io
         {
             this.collect_ambient_module(model.module_, false)
             var ai: size_t 0
@@ -2686,8 +2709,10 @@ define WriteCensus
                     continue
                 let func f_ptr.unwrap()
                 let marked WriteCensus.planned_writable_mask(func.input)
-                if func.name = "init"
-                    continue
+                ; an initializer builds its object and has no other effect: no
+                ; global, no I/O -- which is why a construction needs no
+                ; declaration at its call sites (check_call trusts `init`)
+                let is_init func.name = "init"
                 var is_body false
                 choose func.impl
                     when action: Action
@@ -2713,6 +2738,11 @@ define WriteCensus
                 {
                     set cur_allowed: marked | WC_GLOBAL
                     set cur_allowed_g: func.writes
+                }
+                if is_init
+                {
+                    set cur_allowed: 0 - (1 as u64)
+                    set cur_allowed_g: null
                 }
                 let before n_sites
                 ; as a gate: judge first, then walk the violating body again to
@@ -2762,7 +2792,13 @@ define WriteCensus
                     var gb StringBuilder()
                     if diagnostics
                     {
-                        if func.pure
+                        if is_init
+                        {
+                            gb.append "error: init writes global "
+                            gb.append bad
+                            gb.append "; an initializer has no effect but building its object - move the write into a procedure"
+                        }
+                        else if func.pure
                         {
                             gb.append "error: function "
                             gb.append func.name
@@ -2799,6 +2835,47 @@ define WriteCensus
                             set reporting: true
                             this.walk_body(func)
                             set reporting: false
+                        }
+                    }
+                }
+                if this.bad_io()
+                {
+                    set n_violations: n_violations + 1
+                    var ib StringBuilder()
+                    if diagnostics
+                    {
+                        if is_init
+                            ib.append "error: init performs I/O; an initializer has no effect but building its object - move the I/O into a procedure"
+                        else if func.pure
+                        {
+                            ib.append "error: function "
+                            ib.append func.name
+                            ib.append " performs I/O; a function performs none - make it a procedure and declare \`io\` after its signature"
+                        }
+                        else
+                        {
+                            ib.append "error: procedure "
+                            ib.append func.name
+                            ib.append " performs I/O, which its signature does not declare: add \`io\` after it"
+                        }
+                    }
+                    else
+                    {
+                        ib.append "violation io "
+                        ib.append func.name
+                    }
+                    let itext ib.to_string()
+                    this.record(func.loc.start, String^this(itext))
+                    if violated = false
+                    {
+                        if bad.get_length() = 0
+                        {
+                            if diagnostics
+                            {
+                                set reporting: true
+                                this.walk_body(func)
+                                set reporting: false
+                            }
                         }
                     }
                 }
@@ -2901,7 +2978,7 @@ define WriteCensus
             sum_slots.put(h, sum_names.length)
         }
 
-        procedure load_summaries(mutable this: WriteCensus)
+        procedure load_summaries(mutable this: WriteCensus) io
         {
             let env getenv("SCALYC_WRITE_SUMMARIES")
             if env = null
@@ -2974,7 +3051,7 @@ define WriteCensus
         }
 
         ; Append this root's bodies and write the whole table back.
-        procedure save_summaries(mutable this: WriteCensus)
+        procedure save_summaries(mutable this: WriteCensus) io
         {
             if summaries_path.get_length() = 0
                 return
@@ -3021,6 +3098,235 @@ define WriteCensus
             }
             let out_text sb.to_string()
             File.write_from_string(summaries_path, out_text)
+        }
+
+        ; ================================================================
+        ; I/O: the world outside the program, as one more global named `io`
+        ; (a keyword, so no real global can carry the name). A procedure
+        ; that reaches it declares `io` after its signature; a function never
+        ; does. Where it comes from: an extern that does more than compute
+        ; (extern_is_io) and every callee that declares it -- the latter
+        ; arrives through the callee's global set like any other global.
+        ; ================================================================
+
+        procedure note_call_io(mutable this: WriteCensus, op: PlannedOperand, call: PlannedCall, slot: size_t)
+        {
+            if call.is_intrinsic
+                return
+            if call.is_operator
+                return
+            ; an indirect call goes through a DELEGATE value, and a delegate
+            ; value is only ever made from a lambda (Planner.make_closure) --
+            ; which is synthesized as a procedure that declares nothing, so the
+            ; check refuses any lambda that performs I/O or writes a global.
+            ; Calling one is therefore free of both.
+            if call.is_indirect
+                return
+            if slot > 0
+            {
+                let f_ptr plan_functions.get(slot - 1)
+                if f_ptr <> null
+                {
+                    var body false
+                    choose f_ptr.unwrap().impl
+                        when action: Action
+                            set body: true
+                        else
+                            0
+                    if body
+                        return
+                }
+            }
+            let census pc as ref[PointerCensus]
+            if census.is_extern_name(call.name)
+                if WriteCensus.extern_is_io(call.name)
+                    this.note_io(op.loc.start, call.name)
+        }
+
+        ; The allocator substrate is ambient here as it is for globals: its
+        ; trace output and the abort path's message (scaly_panic_* live in
+        ; scaly/memory) are not I/O a signature declares.
+        procedure note_io(mutable this: WriteCensus, offset: size_t, how: String)
+        {
+            if cur_substrate
+                return
+            this.note_global_named(String("io"))
+            this.note_global_site(offset, String("io"), how)
+            if check_mode = false
+                if frozen_mode = false
+                    set body_mask: body_mask | WC_GLOBAL
+        }
+
+        ; Does an extern reach the world outside the program? Everything does
+        ; but what only computes (memory, strings, maths, atomics), the
+        ; runtime's coordination (threads, fiber contexts, the poller's wake
+        ; descriptor, the CPU count it sizes its pool by), the catch and abort
+        ; machinery and the stack guard. LLVM-C mutates its handles inside the
+        ; process -- the census counts that as writing its arguments -- and is
+        ; I/O only where it touches a file or asks the host.
+        function extern_is_io(name: String) returns bool
+        {
+            if name.starts_with(String("LLVM"))
+            {
+                if name = "LLVMCreateMemoryBufferWithContentsOfFile"
+                    return true
+                if name = "LLVMGetDefaultTargetTriple"
+                    return true
+                if name = "LLVMPrintModuleToFile"
+                    return true
+                if name = "LLVMTargetMachineEmitToFile"
+                    return true
+                if name = "LLVMWriteBitcodeToFile"
+                    return true
+                return false
+            }
+            if name.starts_with(String("scaly_atomic_"))
+                return false
+            if name.starts_with(String("scaly_catch_"))
+                return false
+            if name.starts_with(String("scaly_panic_"))
+                return false
+            if name.starts_with(String("scaly_eio_wake"))
+                return false
+            if name = "scaly_eio_ncpu"
+                return false
+            if WriteCensus.extern_computes(name)
+                return false
+            true
+        }
+
+        function extern_computes(name: String) returns bool
+        {
+            ; memory
+            if name = "malloc"
+                return true
+            if name = "calloc"
+                return true
+            if name = "realloc"
+                return true
+            if name = "free"
+                return true
+            if name = "memcpy"
+                return true
+            if name = "memmove"
+                return true
+            if name = "memset"
+                return true
+            if name = "memcmp"
+                return true
+            if name = "mmap"
+                return true
+            if name = "munmap"
+                return true
+            if name = "mprotect"
+                return true
+            if name = "getpagesize"
+                return true
+            if name = "aligned_alloc"
+                return true
+            if name = "scaly_aligned_alloc"
+                return true
+            if name = "scaly_aligned_free"
+                return true
+            if name = "scaly_alloc_fail_after"
+                return true
+            ; strings and numbers
+            if name = "strlen"
+                return true
+            if name = "strcmp"
+                return true
+            if name = "strncmp"
+                return true
+            if name = "strdup"
+                return true
+            if name = "strtod"
+                return true
+            if name = "atoll"
+                return true
+            if name = "strerror"
+                return true
+            if name = "basename"
+                return true
+            if name = "dirname"
+                return true
+            ; maths
+            if name = "sin"
+                return true
+            if name = "cos"
+                return true
+            if name = "tan"
+                return true
+            if name = "asin"
+                return true
+            if name = "acos"
+                return true
+            if name = "atan"
+                return true
+            if name = "atan2"
+                return true
+            if name = "exp"
+                return true
+            if name = "expf"
+                return true
+            if name = "log"
+                return true
+            if name = "logf"
+                return true
+            if name = "log10"
+                return true
+            if name = "pow"
+                return true
+            if name = "powf"
+                return true
+            if name = "sqrt"
+                return true
+            if name = "sqrtf"
+                return true
+            if name = "tanh"
+                return true
+            if name = "tanhf"
+                return true
+            if name = "floor"
+                return true
+            if name = "ceil"
+                return true
+            if name = "trunc"
+                return true
+            if name = "fmod"
+                return true
+            if name = "fabs"
+                return true
+            if name = "fabsf"
+                return true
+            ; the runtime's coordination and its guards
+            if name = "pthread_create"
+                return true
+            if name = "pthread_join"
+                return true
+            if name = "sched_yield"
+                return true
+            if name = "scaly_make_context"
+                return true
+            if name = "scaly_jump_context"
+                return true
+            if name = "scaly_stack_guard"
+                return true
+            if name = "scaly_stack_limit"
+                return true
+            if name = "scaly_guard_install"
+                return true
+            if name = "scaly_build_stamp"
+                return true
+            if name = "signal"
+                return true
+            if name = "atexit"
+                return true
+            ; the abort path
+            if name = "exit"
+                return true
+            if name = "abort"
+                return true
+            false
         }
 
         ; The argument positions a C function writes, from its documented

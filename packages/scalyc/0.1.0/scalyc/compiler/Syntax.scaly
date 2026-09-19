@@ -603,6 +603,7 @@ define RoutineSyntax
     attributes: ref[Vector[AttributeSyntax]]?
     returns_: ref[ReturnsSyntax]?
     throws_: ref[ThrowsSyntax]?
+    io_mark: ref[IoSyntax]?
     writes: ref[GlobalWritesSyntax]?
     implementation: ImplementationSyntax
 )
@@ -720,6 +721,12 @@ define GlobalWritesSyntax
     end: size_t
     name: String
     more: ref[Vector[WrittenGlobalSyntax]]?
+)
+
+define IoSyntax
+(
+    start: size_t
+    end: size_t
 )
 
 define WritableSyntax

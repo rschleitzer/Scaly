@@ -32,7 +32,7 @@ function num_to_string(n: i64) returns String
     sb.to_string()
 }
 
-procedure report(tag: pointer[const_char], work: i64, unit: pointer[const_char], ns: i64)
+procedure report(tag: pointer[const_char], work: i64, unit: pointer[const_char], ns: i64) io
 {
     var sb StringBuilder()
     var lbl String(tag)
@@ -252,7 +252,7 @@ procedure embedding_f32(table: Vector[float], ids: Vector[i64], mutable out: Vec
 
 ; ==== benchmark driver ====
 
-procedure bench_matmul(m: int, kk: int, n: int)
+procedure bench_matmul(m: int, kk: int, n: int) io
 {
     var a Vector[float]((m * kk) as size_t)
     var b Vector[float]((kk * n) as size_t)
@@ -284,7 +284,7 @@ procedure bench_matmul(m: int, kk: int, n: int)
     report("mm_f32(2)   ", flops, " mflop/s", t3 - t2)
 }
 
-procedure bench_rowops(rows: int, n: int)
+procedure bench_rowops(rows: int, n: int) io
 {
     let total (rows * n) as size_t
     var x Vector[float](total)
@@ -315,7 +315,7 @@ procedure bench_rowops(rows: int, n: int)
     report("layernorm(2)", elems, " melem/s", t7 - t6)
 }
 
-procedure bench_gelu(rows: int, n: int)
+procedure bench_gelu(rows: int, n: int) io
 {
     let total (rows * n) as size_t
     var x Vector[float](total)
@@ -333,7 +333,7 @@ procedure bench_gelu(rows: int, n: int)
     report("gelu(2)     ", elems, " melem/s", t3 - t2)
 }
 
-procedure bench_embedding(tokens: int, dim: int, vocab: int)
+procedure bench_embedding(tokens: int, dim: int, vocab: int) io
 {
     var table Vector[float]((vocab * dim) as size_t)
     fill_f32(table, (vocab * dim) as size_t, 0.25)

@@ -1,0 +1,31 @@
+; Regression (R1, 2026-09-19): `io` after a signature declares that a procedure
+; talks to the world outside the program, itself or through what it calls. It
+; stands before the `mutable` clause, parses after the parameters, after
+; `returns` and before a braceless body, and changes nothing at run time.
+; Expected: PASS
+
+mutable lines: int 0
+
+procedure say(loud: bool) io mutable lines
+{
+    if loud
+        print "said\n"
+    set lines: lines + 1
+}
+
+procedure twice(loud: bool) returns int io mutable lines
+{
+    say(loud)
+    say(loud)
+    lines
+}
+
+procedure quiet() returns int io
+    0
+
+function sum(a: int, b: int) returns int
+    a + b
+
+if twice(false) = 2
+    if sum(quiet(), 2) = 2
+        print "PASS\n"

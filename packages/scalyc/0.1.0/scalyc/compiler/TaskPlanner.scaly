@@ -6,8 +6,10 @@
 ;   - every call resolves to a pure Scaly function, an intrinsic, an
 ;     operator, or a frame-local construction (Local/Unspecified life);
 ;     purity is PROVED transitively, not just read off the function/
-;     procedure keyword (the prelude's `print` is a `function` whose body
-;     calls the `puts` extern) — see effectively_pure below,
+;     procedure keyword — see effectively_pure below. (The keyword is
+;     CHECKED since 2026-09-19: a `function` writes nothing, names no
+;     global and performs no I/O. What it may still do is READ a mutable
+;     global, which is thread-local, so the walk stays.)
 ;   - every write lands in a binding declared inside the body, or in a
 ;     disjoint Vector slot (`put` whose index reads the loop variable —
 ;     the canonical parallel result target),

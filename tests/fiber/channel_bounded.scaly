@@ -19,7 +19,7 @@ mutable received: int 0
 mutable total: int 0
 mutable over: bool false
 
-procedure producer() mutable chan, over
+procedure producer() io mutable chan, over
 {
     let c chan as pointer[Channel]
     var sent 0
@@ -36,7 +36,7 @@ procedure producer() mutable chan, over
     Channel.close_sender(c)
 }
 
-procedure consumer() mutable chan, received, total
+procedure consumer() io mutable chan, received, total
 {
     let c chan as pointer[Channel]
     var running true

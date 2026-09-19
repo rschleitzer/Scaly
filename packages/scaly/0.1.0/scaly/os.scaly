@@ -8,7 +8,7 @@ define os
     module Directory
     module Path
 
-    function test_direct() returns int
+    procedure test_direct() returns int io
     {
         ; Direct write call to test if external functions work in os module
         let result write(1, "Direct test\n" as pointer[void], 12 as size_t)
@@ -18,14 +18,14 @@ define os
         0
     }
 
-    procedure test_console() returns int
+    procedure test_console() returns int io
     {
         Console.println "Hello from Scaly!"
         Console.println "Console test passed."
         0
     }
 
-    function test_file_raw() returns int
+    procedure test_file_raw() returns int io
     {
         ; Test raw file I/O using C functions directly
         ; This tests the sibling function call pattern without String method issues
@@ -60,7 +60,7 @@ define os
         0
     }
 
-    procedure test_file_string() returns int
+    procedure test_file_string() returns int io
     {
         ; Test File API with String
         var test_path "/tmp/scaly_string_test.txt"
@@ -81,7 +81,7 @@ define os
         0
     }
 
-    procedure test_file_exists() returns int
+    procedure test_file_exists() returns int io
     {
         ; Test File.exists with a file we know exists
         var test_path "/tmp/scaly_string_test.txt"
@@ -96,7 +96,7 @@ define os
         0
     }
 
-    procedure test_directory() returns int
+    procedure test_directory() returns int io
     {
         ; Test Directory.exists with /tmp which should exist
         var tmp_path "/tmp"
@@ -146,7 +146,7 @@ define os
         0
     }
 
-    procedure test() returns int
+    procedure test() returns int io
     {
         var result test_direct()
         if result <> 0

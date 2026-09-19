@@ -17,7 +17,7 @@ define PingMsg
     text: String
 )
 
-procedure run_b()
+procedure run_b() io
 {
     let page Page.allocate_page()
     let sched Scheduler.create(page)
@@ -69,7 +69,7 @@ procedure run_b()
     Cluster.dispose_peer(peer)
 }
 
-procedure run_a()
+procedure run_a() io
 {
     let page Page.allocate_page()
     let sched Scheduler.create(page)

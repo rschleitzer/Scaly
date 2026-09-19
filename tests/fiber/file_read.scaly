@@ -14,7 +14,7 @@
 ; silently fails where no \tmp directory exists. Both writers unlink at the
 ; end; a run that dies early leaves one small file behind.
 
-procedure task_a()
+procedure task_a() io
 {
     let path String("scaly_m25_file.tmp")
     let content String("colorless file i/o via worker threads")
@@ -27,7 +27,7 @@ procedure task_a()
         Console.print "offloads "
 }
 
-procedure task_b()
+procedure task_b() io
 {
     Console.print "b "
 }

@@ -12,7 +12,7 @@ define TMsg
     value: int
 )
 
-procedure worker(arg: pointer[void]) returns pointer[void]
+procedure worker(arg: pointer[void]) returns pointer[void] io
 {
     let cell arg as pointer[size_t]
     let ch_v *cell

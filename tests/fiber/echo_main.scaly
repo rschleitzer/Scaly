@@ -11,7 +11,7 @@ function close(fd: i32) returns i32 extern
 
 mutable task_fd: int 0
 
-procedure writer()
+procedure writer() io
 {
     let fd task_fd as i32
     var buf u8[1]

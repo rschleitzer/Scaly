@@ -60,7 +60,7 @@ define OpaqueThing()
 define ThingRef pointer[OpaqueThing]
 function thing_new() returns ThingRef extern
 function thing_use(t: ThingRef) extern
-function use_handles()
+procedure use_handles() io
 {
     let t thing_new()                       ; local via alias: NOT listed
     if t <> null                            ; null-test via alias: NOT listed

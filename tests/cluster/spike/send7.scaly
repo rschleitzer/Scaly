@@ -44,7 +44,7 @@ function num_to_string(n: i64) returns String
     sb.to_string()
 }
 
-procedure report(tag: pointer[const_char], value: i64, unit: pointer[const_char])
+procedure report(tag: pointer[const_char], value: i64, unit: pointer[const_char]) io
 {
     var sb StringBuilder()
     var lbl String(tag)
@@ -57,7 +57,7 @@ procedure report(tag: pointer[const_char], value: i64, unit: pointer[const_char]
     Console.println(line.to_c_string())
 }
 
-procedure read_exact(fd: i32, buf: pointer[void], count: size_t) returns bool
+procedure read_exact(fd: i32, buf: pointer[void], count: size_t) returns bool io
 {
     var done 0 as size_t
     while done < count
