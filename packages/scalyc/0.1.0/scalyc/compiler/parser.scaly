@@ -1318,9 +1318,26 @@ define Parser
     {
         let start lexer.previous_position
 
+        let writable_start lexer.position
+        var writable: ref[WritableSyntax]? null
+        choose parse_writable()
+            when err: Error
+            {
+                choose err
+                    when d: Different {}
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+            }
+            when success: Success
+                set writable: WritableSyntax(success.start, success.end)
+
         let name lexer.parse_identifier(keywords)
         if name.length() = 0
-            throw ParserError.Different(DifferentSyntax())
+        {
+            if writable = null
+                throw ParserError.Different(DifferentSyntax())
+            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected identifier"))
+        }
 
         let annotation_start lexer.position
         var annotation: ref[TypeAnnotationSyntax]? null
@@ -1353,7 +1370,19 @@ define Parser
 
         let end lexer.position
 
-        ItemSyntax(start, end, name, annotation, attributes)
+        ItemSyntax(start, end, writable, name, annotation, attributes)
+    }
+
+    procedure parse_writable(this: Parser) returns WritableSyntax throws ParserError
+    {
+        let start lexer.previous_position
+
+        if ~lexer.parse_keyword("mutable")
+            throw ParserError.Different(DifferentSyntax())
+
+        let end lexer.position
+
+        WritableSyntax(start, end)
     }
 
     procedure parse_returns(this: Parser) returns ReturnsSyntax throws ParserError

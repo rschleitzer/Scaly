@@ -61,6 +61,24 @@ check "a setter handed a fresh object is not"  '! has ":$(line_of "set_flags_of(
 check "a function no entry reaches is not"     '! has ":$(line_of "set n.flags: 1"):"'
 check "the head line reports the mode"         'printf "%s\n" "$out" | head -1 | grep -q "FROZEN: reachable"'
 
+# --- the purity check (R1): `function` writes nothing, `mutable` marks what a
+# --- procedure may write ------------------------------------------------------
+out=$("$STAGE" --plan --purity-check tests/write-report/purity.scaly 2>&1); rc=$?
+check "purity fixture compiles rc=0 (got $rc)" '[ $rc -eq 0 ]'
+got=$(printf '%s\n' "$out" | grep '^purity-check: tests/write-report/purity.scaly:')
+src=tests/write-report/purity.scaly
+check "a procedure writing an unmarked parameter" 'has ":$(line_of "procedure steal"):5: violation proc steal writes other:ref\[Counter\]$"'
+check "a function bumping its parameter"       'has ":$(line_of "^function sneaky"):1: violation fn sneaky writes c:ref\[Counter\]$"'
+check "a mutable position counts, a read not"  'has ":$(line_of "^function reads_only"):1: violation fn reads_only writes d:ref\[Counter\]$"'
+check "an unannotated procedure writes all"    'has ":$(line_of "^function resets"):1: violation fn resets writes c:ref\[Counter\]$"'
+# negative controls
+check "a procedure writing its mutable this"   '! has " bump writes"'
+check "mutable on the second position"         '! has " give writes"'
+check "a local handed to a mutable position"   '! has " sum_local writes"'
+check "a receiver in a read position"          '! has " gives_to_local writes"'
+check "a reader is never listed"               '! has " read writes"'
+check "exactly four violations"                '[ "$(printf "%s\n" "$got" | grep -c ": violation ")" -eq 4 ]'
+
 echo "write-report: $pass passed, $fail failed"
 for f in "${failures[@]}"; do echo "  FAIL: $f"; done
 [ $fail -eq 0 ]

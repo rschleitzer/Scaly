@@ -18254,6 +18254,18 @@ define Planner
                 this.report_unknown_type((*planned_type))
             }
 
+            ; a parameter's attributes (R1's `mutable`) reach the plan, where the
+            ; write checks read them; none before R1, so nothing changes shape
+            if i.attributes.length > 0
+            {
+                return PlannedItem(
+                    i.span,
+                    i.private_,
+                    planned_name,
+                    planned_type,
+                    this.plan_item_attributes(i.attributes)
+                )
+            }
             PlannedItem(
                 i.span,
                 i.private_,
@@ -18261,6 +18273,23 @@ define Planner
                 planned_type,
                 null
             )
+        }
+
+        procedure plan_item_attributes(this: Planner, attributes: Vector[Attribute]) returns ref[Vector[PlannedAttribute]]
+        {
+            let out &Vector[PlannedAttribute]^this(attributes.length)
+            var k: size_t 0
+            while k < attributes.length
+            {
+                let a_ptr attributes.get k
+                if a_ptr <> null
+                {
+                    let a (*a_ptr)
+                    out.put(k, PlannedAttribute(a.span, a.name, a.model))
+                }
+                set k: k + 1
+            }
+            out
         }
 
         ; plan_items: batch version of plan_item over a Vector[Item].

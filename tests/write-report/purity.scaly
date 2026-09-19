@@ -1,0 +1,77 @@
+; tests/write-report/purity.scaly — the fixture for `scalyc --purity-check`.
+; A `mutable` parameter says what a procedure may write; a function may write
+; nothing its parameters reach. tests/write-report/run.sh pins every verdict.
+
+define Counter (n: int  total: int)
+{
+    ; annotated: writes only its `mutable` receiver
+    procedure bump(mutable this, by: int)
+    {
+        set n: n + by
+        set total: total + by
+    }
+
+    ; annotated, but writes a parameter it did not mark
+    procedure steal(mutable this, other: ref[Counter])
+    {
+        set n: n + other.n
+        set other.n: 0
+    }
+
+    ; annotated on the SECOND position: writes it and nothing else
+    procedure give(this, mutable other: ref[Counter])
+        set other.n: other.n + n
+
+    ; not annotated: every argument counts as written
+    procedure reset(this)
+        set n: 0
+
+    function read(this) returns int
+        n
+}
+
+; bumps a LOCAL counter only
+function sum_local(k: int) returns int
+{
+    var c Counter(0, 0)
+    c.bump(k)
+    c.read()
+}
+
+; bumps its parameter through the annotated procedure
+function sneaky(c: ref[Counter]) returns int
+{
+    c.bump(1)
+    c.read()
+}
+
+; hands c to bump only as the READ argument, but bumps d
+function reads_only(c: ref[Counter], d: ref[Counter]) returns int
+{
+    d.bump(c.read())
+    0
+}
+
+; hands c to give as the receiver, which give only reads
+function gives_to_local(c: ref[Counter]) returns int
+{
+    var e Counter(0, 0)
+    c.give(&e)
+    e.read()
+}
+
+; calls the unannotated procedure
+function resets(c: ref[Counter]) returns int
+{
+    c.reset()
+    0
+}
+
+var a Counter(1, 1)
+var b Counter(2, 2)
+a.steal(&b)
+let x sum_local(3)
+let y sneaky(&a)
+let w gives_to_local(&a)
+let z resets(&b)
+print "`x` `y` `w` `z` `a.n` `b.n`\n"

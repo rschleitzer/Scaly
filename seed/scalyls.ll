@@ -547,7 +547,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z4NodeI13VariantSyntaxE = type { %_Z13VariantSyntax, ptr }
 %_Z12ListIteratorI13VariantSyntaxE = type { ptr }
 %_Z6VectorI10ItemSyntaxE = type { i64, ptr }
-%_Z10ItemSyntax = type { i64, i64, { ptr }, ptr, ptr }
+%_Z10ItemSyntax = type { i64, i64, ptr, { ptr }, ptr, ptr }
 %_Z14VectorIteratorI10ItemSyntaxE = type { ptr, i64 }
 %_Z5SliceI10ItemSyntaxE = type { i64, ptr }
 %_Z13SliceIteratorI10ItemSyntaxE = type { %_Z5SliceI10ItemSyntaxE, i64 }
@@ -77759,7 +77759,7 @@ if.end8:                                          ; preds = %if.end11, %if.then3
 
 if.then10:                                        ; preds = %if.then7
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp12, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z10ItemSyntax, ptr null, i32 1) to i64), i1 false)
-  %field.inplace = getelementptr inbounds nuw %_Z10ItemSyntax, ptr %deref.tmp12, i32 0, i32 2
+  %field.inplace = getelementptr inbounds nuw %_Z10ItemSyntax, ptr %deref.tmp12, i32 0, i32 3
   store { ptr } { ptr @.sconst.498 }, ptr %arg.tmp, align 1
   %call13 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %arg.tmp)
   br i1 %call13, label %if.then14, label %if.end15
@@ -77793,7 +77793,7 @@ while.exit:                                       ; preds = %while.cond
 if.then22:                                        ; preds = %while.body
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp12, ptr align 1 %call20, i64 ptrtoint (ptr getelementptr (%_Z10ItemSyntax, ptr null, i32 1) to i64), i1 false)
   store i64 0, ptr %k, align 1
-  %field.inplace24 = getelementptr inbounds nuw %_Z10ItemSyntax, ptr %deref.tmp12, i32 0, i32 2
+  %field.inplace24 = getelementptr inbounds nuw %_Z10ItemSyntax, ptr %deref.tmp12, i32 0, i32 3
   %call25 = call i64 @_ZN6String10get_lengthEv(ptr %field.inplace24)
   br label %while.cond26
 
@@ -77810,7 +77810,7 @@ while.cond26:                                     ; preds = %while.body27, %if.t
 
 while.body27:                                     ; preds = %while.cond26
   %sb31 = load ptr, ptr %sb, align 8
-  %field.inplace32 = getelementptr inbounds nuw %_Z10ItemSyntax, ptr %deref.tmp12, i32 0, i32 2
+  %field.inplace32 = getelementptr inbounds nuw %_Z10ItemSyntax, ptr %deref.tmp12, i32 0, i32 3
   %k33 = load i64, ptr %k, align 8
   %call34 = call i8 @_ZN6String3getEm(ptr %field.inplace32, i64 %k33)
   call void @_ZN13StringBuilder6appendEc(ptr %sb31, i8 %call34)
@@ -80772,7 +80772,7 @@ if.end9:                                          ; preds = %if.end12, %if.then4
 
 if.then11:                                        ; preds = %if.then8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp13, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z10ItemSyntax, ptr null, i32 1) to i64), i1 false)
-  %field.inplace = getelementptr inbounds nuw %_Z10ItemSyntax, ptr %deref.tmp13, i32 0, i32 2
+  %field.inplace = getelementptr inbounds nuw %_Z10ItemSyntax, ptr %deref.tmp13, i32 0, i32 3
   store { ptr } { ptr @.sconst.510 }, ptr %arg.tmp, align 1
   %call14 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %arg.tmp)
   br i1 %call14, label %if.then15, label %if.end16
@@ -81170,7 +81170,7 @@ entry:
   %sb = alloca ptr, align 8
   store ptr %struct.region, ptr %sb, align 1
   %load.struct = load %_Z10ItemSyntax, ptr %3, align 8
-  %name = extractvalue %_Z10ItemSyntax %load.struct, 2
+  %name = extractvalue %_Z10ItemSyntax %load.struct, 3
   %i = alloca i64, align 8
   store i64 0, ptr %i, align 1
   %arg.tmp = alloca { ptr }, align 8
@@ -81196,13 +81196,13 @@ while.body:                                       ; preds = %while.cond
 
 while.exit:                                       ; preds = %while.cond
   %load.struct7 = load %_Z10ItemSyntax, ptr %3, align 8
-  %annotation = extractvalue %_Z10ItemSyntax %load.struct7, 3
+  %annotation = extractvalue %_Z10ItemSyntax %load.struct7, 4
   %ne = icmp ne ptr %annotation, null
   br i1 %ne, label %if.then, label %if.end
 
 if.then:                                          ; preds = %while.exit
   %load.struct8 = load %_Z10ItemSyntax, ptr %3, align 8
-  %annotation9 = extractvalue %_Z10ItemSyntax %load.struct8, 3
+  %annotation9 = extractvalue %_Z10ItemSyntax %load.struct8, 4
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %annotation9, i64 ptrtoint (ptr getelementptr (%_Z20TypeAnnotationSyntax, ptr null, i32 1) to i64), i1 false)
   %field.inplace = getelementptr inbounds nuw %_Z20TypeAnnotationSyntax, ptr %deref.tmp, i32 0, i32 2
   call void @_ZN7symbols9type_textEPN4scaly6memory4PageE6String10TypeSyntax(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %2, ptr %field.inplace)
@@ -98796,7 +98796,7 @@ if.end11:                                         ; preds = %if.end14, %if.then5
 
 if.then13:                                        ; preds = %if.then10
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp15, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z10ItemSyntax, ptr null, i32 1) to i64), i1 false)
-  %field.inplace = getelementptr inbounds nuw %_Z10ItemSyntax, ptr %deref.tmp15, i32 0, i32 2
+  %field.inplace = getelementptr inbounds nuw %_Z10ItemSyntax, ptr %deref.tmp15, i32 0, i32 3
   store { ptr } { ptr @.sconst.685 }, ptr %arg.tmp, align 1
   %call16 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %arg.tmp)
   br i1 %call16, label %if.then17, label %if.end18
@@ -109716,7 +109716,7 @@ if.end18:                                         ; preds = %if.end22, %if.then1
 
 if.then21:                                        ; preds = %if.then17
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp23, ptr align 1 %call19, i64 ptrtoint (ptr getelementptr (%_Z10ItemSyntax, ptr null, i32 1) to i64), i1 false)
-  %field.inplace = getelementptr inbounds nuw %_Z10ItemSyntax, ptr %deref.tmp23, i32 0, i32 2
+  %field.inplace = getelementptr inbounds nuw %_Z10ItemSyntax, ptr %deref.tmp23, i32 0, i32 3
   store { ptr } { ptr @.sconst.679 }, ptr %arg.tmp, align 1
   %call24 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %arg.tmp)
   br i1 %call24, label %if.then25, label %if.end26

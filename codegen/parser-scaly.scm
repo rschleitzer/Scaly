@@ -318,18 +318,33 @@ define Parser
                             )
                         )
                         (("identifier")
-                            (let ((prop (property content)))
+                            (let ((prop (property content))
+                                  (lead (node-list-first (select-elements (children (parent content)) "content"))))
                             ($
 "
         let " prop " lexer.parse_identifier(keywords)
         if " prop ".length() = 0"
-                                (if (equal? 1 (child-number content))
+                                (cond
+                                    ((equal? 1 (child-number content))
                                     "
             throw ParserError.Different(DifferentSyntax())
-"
+")
+                                    ;; the identifier after ONE leading optional link (`Item`'s
+                                    ;; `mutable`): nothing of this syntax was seen unless the
+                                    ;; link was, so a missing name is DIFFERENT then, as it is
+                                    ;; for a leading identifier
+                                    ((and (equal? 2 (child-number content)) (optional? lead))
+                                    ($ "
+        {
+            if " (property lead) " = null
+                throw ParserError.Different(DifferentSyntax())
+            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, \"expected identifier\"))
+        }
+"))
+                                    (else
                                     "
             throw ParserError.Invalid(InvalidSyntax(start, lexer.position, \"expected identifier\"))
-")
+"))
                             ))
                         )
                         (("attribute")

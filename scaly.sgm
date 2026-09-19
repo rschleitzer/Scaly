@@ -141,11 +141,15 @@
     <content link = right_paren
 
 <syntax id = Item                         multiple
+    <content link = Writable                       optional property = writable
     <content identifier                                     property = name
     <content link = TypeAnnotation                 optional property = annotation
     <content link = comma                          optional
     <content colon                                 optional
     <content link = Attribute             multiple optional property = attributes
+
+<syntax id = Writable
+    <content link = mutable
 
 <syntax id = Returns
     <content link = returns

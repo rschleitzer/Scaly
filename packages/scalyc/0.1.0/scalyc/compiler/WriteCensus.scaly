@@ -123,6 +123,9 @@ define WriteCensus
         ; the check mode (--purity-check)
         check_mode: bool
         cur_page_mask: u64
+        ; what the body walked may write besides: an annotated procedure's
+        ; `mutable` parameters and the globals
+        cur_allowed: u64
         n_violations: size_t
     )
     {
@@ -180,6 +183,7 @@ define WriteCensus
             set n_fz_rounds: 0
             set check_mode: false
             set cur_page_mask: 0
+            set cur_allowed: 0
             set n_violations: 0
         }
 
@@ -304,7 +308,7 @@ define WriteCensus
             set lock_depth: 0
             set cur_page_mask: 0
             if check_mode
-                set cur_page_mask: this.page_param_mask()
+                set cur_page_mask: this.page_param_mask() | cur_allowed
             set loc_names: Array[String]^this()
             set loc_masks: Array[u64]^this()
         }
@@ -1434,7 +1438,7 @@ define WriteCensus
                     let mem (*m_ptr)
                     choose mem
                         when f: Function
-                            this.note_purity(f.name, f.pure)
+                            this.note_purity(f.name, f.pure, WriteCensus.model_writable_mask(f.input))
                         when c: Concept
                         {
                             choose c.definition
@@ -1474,8 +1478,9 @@ define WriteCensus
             }
         }
 
-        ; 1: every declaration of the name is a function; 2: one is a procedure
-        procedure note_purity(this: WriteCensus, name: String, pure: bool)
+        ; 1: every declaration of the name is a function; 2: one is a procedure.
+        ; The `mutable` positions of every declaration of the name are OR-ed.
+        procedure note_purity(this: WriteCensus, name: String, pure: bool, writable: u64)
         {
             var state: u64 1
             if pure = false
@@ -1485,9 +1490,69 @@ define WriteCensus
             {
                 if state > sum_masks[row - 1]
                     sum_masks.put(row - 1, state)
+                sum_inputs.put(row - 1, sum_inputs[row - 1] | (writable as size_t))
                 return
             }
-            this.add_summary(String^this(name), state, 0)
+            this.add_summary(String^this(name), state, writable as size_t)
+        }
+
+        ; the positions of a declaration's `mutable` parameters (R1)
+        function model_writable_mask(items: Vector[Item]) returns u64
+        {
+            var m: u64 0
+            var i: size_t 0
+            while i < items.length
+            {
+                let it_ptr items.get i
+                if it_ptr <> null
+                {
+                    let it (*it_ptr)
+                    var k: size_t 0
+                    while k < it.attributes.length
+                    {
+                        let a_ptr it.attributes.get k
+                        if a_ptr <> null
+                            if (*a_ptr).name = "mutable"
+                                if i < 61
+                                    set m: m | ((1 as u64) << (i as u64))
+                        set k: k + 1
+                    }
+                }
+                set i: i + 1
+            }
+            m
+        }
+
+        function planned_writable_mask(items: ref[Vector[PlannedItem]]?) returns u64
+        {
+            if items = null
+                return 0
+            var m: u64 0
+            var i: size_t 0
+            while i < items.length
+            {
+                let it_ptr items.get i
+                if it_ptr <> null
+                {
+                    let it it_ptr.unwrap()
+                    if it.attributes <> null
+                    {
+                        let attrs it.attributes as ref[Vector[PlannedAttribute]]
+                        var k: size_t 0
+                        while k < attrs.length
+                        {
+                            let a_ptr attrs.get k
+                            if a_ptr <> null
+                                if a_ptr.unwrap().name = "mutable"
+                                    if i < 61
+                                        set m: m | ((1 as u64) << (i as u64))
+                            set k: k + 1
+                        }
+                    }
+                }
+                set i: i + 1
+            }
+            m
         }
 
         ; the parameters of the body walked whose type is a Page
@@ -1530,6 +1595,7 @@ define WriteCensus
                 return
             var known false
             var trusted false
+            var writable: u64 0
             if slot > 0
             {
                 let f_ptr plan_functions.get(slot - 1)
@@ -1541,6 +1607,7 @@ define WriteCensus
                         {
                             set known: true
                             set trusted: f.pure
+                            set writable: WriteCensus.planned_writable_mask(f.input)
                         }
                         else
                             0
@@ -1559,23 +1626,34 @@ define WriteCensus
                 {
                     if sum_masks[row - 1] = (1 as u64)
                         set trusted: true
+                    set writable: sum_inputs[row - 1] as u64
                 }
                 else
                     set n_stub_unknown: n_stub_unknown + 1
             }
             if trusted
                 return
+            ; an ANNOTATED procedure writes only its `mutable` positions; one
+            ; without a mark (not yet annotated) may write every argument
             var m: u64 0
             var i: size_t 0
             while i < call.args.length
             {
                 let a_ptr call.args.get i
+                var counts true
+                if writable <> 0
+                {
+                    set counts: false
+                    if i < 61
+                        set counts: (writable & ((1 as u64) << (i as u64))) <> (0 as u64)
+                }
                 if a_ptr <> null
                 {
                     let a a_ptr.unwrap()
-                    if WriteCensus.is_scalar(a.result_type) = false
-                        if this.is_local_value(a) = false
-                            set m: m | this.mask_of(a)
+                    if counts
+                        if WriteCensus.is_scalar(a.result_type) = false
+                            if this.is_local_value(a) = false
+                                set m: m | this.mask_of(a)
                 }
                 set i: i + 1
             }
@@ -1635,8 +1713,10 @@ define WriteCensus
                 if f_ptr = null
                     continue
                 let func f_ptr.unwrap()
+                let marked WriteCensus.planned_writable_mask(func.input)
                 if func.pure = false
-                    continue
+                    if marked = 0
+                        continue
                 if func.name = "init"
                     continue
                 var is_body false
@@ -1656,13 +1736,19 @@ define WriteCensus
                 }
                 set current_file: String^this(home)
                 set n_pure: n_pure + 1
+                set cur_allowed: 0
+                if func.pure = false
+                    set cur_allowed: marked | WC_GLOBAL
                 let before n_sites
                 let mask this.walk_body(func)
                 if n_sites > before
                 {
                     set n_violations: n_violations + 1
                     var sb StringBuilder()
-                    sb.append "violation fn "
+                    if func.pure
+                        sb.append "violation fn "
+                    else
+                        sb.append "violation proc "
                     sb.append func.name
                     sb.append " writes "
                     sb.append(this.mask_names(mask & (0 - (cur_page_mask + (1 as u64)))))

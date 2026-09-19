@@ -1580,6 +1580,21 @@ define Modeler
 
         var name_holder Vector[String](1)
         name_holder.put(0, String(syntax.name))
+        ; `mutable` before a parameter (R1): the procedure may write what it
+        ; reaches. Carried as an attribute, so no Item consumer changes shape.
+        if syntax.writable <> null
+        {
+            let w (*syntax.writable)
+            var marks Vector[Attribute](1)
+            marks.put(0, Attribute(Span(w.start, w.end), String("mutable"), Model.Constant(Constant.Boolean(BooleanConstant(Span(w.start, w.end), true)))))
+            return Item(
+                Span(syntax.start, syntax.end),
+                is_private,
+                name_holder.get 0,
+                item_type,
+                marks
+            )
+        }
         Item(
             Span(syntax.start, syntax.end),
             is_private,

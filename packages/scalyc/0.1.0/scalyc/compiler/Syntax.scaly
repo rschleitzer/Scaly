@@ -699,10 +699,17 @@ define ReturnsSyntax
     attributes: ref[Vector[AttributeSyntax]]?
 )
 
+define WritableSyntax
+(
+    start: size_t
+    end: size_t
+)
+
 define ItemSyntax
 (
     start: size_t
     end: size_t
+    writable: ref[WritableSyntax]?
     name: String
     annotation: ref[TypeAnnotationSyntax]?
     attributes: ref[Vector[AttributeSyntax]]?
