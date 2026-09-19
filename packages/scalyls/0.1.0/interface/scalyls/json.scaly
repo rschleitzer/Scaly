@@ -1,0 +1,189 @@
+; json.scaly - A minimal JSON value tree, parser and serializer.
+;
+; Scope: enough JSON for LSP / JSON-RPC traffic. Numbers are stored as
+; i64 (LSP positions and ids are integers); a fractional/exponent part is
+; parsed and discarded (the integer part is kept). String escapes are
+; handled on read AND write: " \ / and the control escapes b f n r t,
+; plus \uXXXX decoded to the UTF-8 encoding of its codepoint, surrogate
+; pairs included.
+;
+; LAYOUT NOTE: the array/object children are held in non-generic structs
+; (JsonArray / JsonObject = count + raw pointer) rather than
+; Vector[JsonValue] — a recursive union whose layout pulled in a generic
+; instantiation would need that generic planned in every consuming
+; package. The Array/Object variants embed those structs BY VALUE (16B),
+; so JsonValue's payload is 16 bytes. A consuming package that imports
+; only JsonValue (not JsonArray/JsonObject) sizes the union correctly
+; anyway: the compiler's layout path resolves a cross-package by-value
+; field/variant type from the raw concept registry regardless of `use`
+; visibility (Planner.lookup_concept_for_layout). Before that fix these
+; variants had to be held by pointer (8B) to keep the union the same
+; size in every consumer — that workaround is no longer needed.
+;
+; PAYLOADLESS-VARIANT NOTE: every variant carries a payload (Null wraps an
+; empty JsonNull). A BARE payloadless variant value (`JsonValue.Null`)
+; emits fine intra-package but is read as a TYPE, not a value, when the
+; union comes from another package ("cannot be used as a value"). The
+; compiler's own unions follow the same rule — e.g. Lifetime.Unspecified
+; wraps an Unspecified() struct rather than being bare.
+;
+; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE and has
+; no else (it desugars to an `if` with no alternative). Real branching
+; uses if/else. Every if below is the true-runs-the-body form.
+
+use scaly.memory.runtime
+
+; Empty payload for the Null variant (see PAYLOADLESS-VARIANT NOTE).
+define JsonNull ()
+
+; A contiguous run of JsonValues / JsonMembers as a view (length + buffer);
+; an empty array / object holds the empty view.
+define JsonArray (items: Slice[JsonValue])
+define JsonMember (key: String, value: JsonValue)
+define JsonObject (members: Slice[JsonMember])
+
+define JsonValue union
+(
+    Null: JsonNull
+    Bool: bool
+    Number: i64
+    Str: String
+    Array: JsonArray
+    Object: JsonObject
+)
+
+; Cursor over the source text. `ok` latches false on the first parse
+; error; a malformed document still yields a well-formed (if truncated)
+; JsonValue rather than throwing.
+define JsonParser
+(
+    source: String
+    pos: size_t
+    ok: bool
+)
+
+define json
+{
+    ; ====================================================================
+    ; Construction helpers (value position)
+    ; ====================================================================
+
+    function null_value() @page true @direct true returns JsonValue linked
+
+    function bool_value(b: bool) @page true @direct true returns JsonValue linked
+
+    function number_value(n: i64) @page true @direct true returns JsonValue linked
+
+    function string_value(s: String) @page true @direct true returns JsonValue linked
+
+    ; ====================================================================
+    ; Accessors
+    ; ====================================================================
+
+    function is_null(this: JsonValue) returns bool linked
+
+    function as_i64(this: JsonValue) returns i64 linked
+
+    function as_bool(this: JsonValue) returns bool linked
+
+    ; Returns a copy of the string payload, or an empty String otherwise.
+    function as_string(rp, this: JsonValue) @direct true returns String linked
+
+    function array_length(this: JsonValue) returns size_t linked
+
+    ; Element i of an array, or Null when out of range / not an array.
+    ; The returned value aliases the tree (no deep copy).
+    function array_get(this: JsonValue, i: size_t) @page true @direct true returns JsonValue linked
+
+    ; Look up a member of an object by key. Returns Null when the value is
+    ; not an object or the key is absent.
+    ; A String member key against a `Slice[char]` literal, byte for byte, no allocation.
+    function key_equals(s: String, k: Slice[char]) returns bool linked
+
+    function get(this: JsonValue, key: Slice[char]) @page true @direct true returns JsonValue linked
+
+    ; ====================================================================
+    ; Parsing
+    ; ====================================================================
+
+    procedure parse(rp, mutable source: String) @direct true returns JsonValue linked
+
+    procedure parse_value(rp, mutable p: ref[JsonParser]) @direct true returns JsonValue linked
+
+    procedure parse_object(rp, mutable p: ref[JsonParser]) @direct true returns JsonValue linked
+
+    procedure parse_array(rp, mutable p: ref[JsonParser]) @direct true returns JsonValue linked
+
+    procedure parse_string(rp, mutable p: ref[JsonParser]) @direct true returns String linked
+
+    ; Maps a single-byte escape letter to its byte. `\u` is NOT handled here
+    ; and cannot be: its codepoint encodes to one to four bytes and this
+    ; answers a char — parse_string routes it to read_unicode_escape# +
+    ; append_utf8# instead.
+    function decode_escape(e: u8) returns char linked
+
+    ; Reads the four hex digits of a \uXXXX escape at the cursor (the `u` is
+    ; already consumed) and advances past them.
+    procedure read_hex4(mutable p: ref[JsonParser]) returns i64 linked
+
+    ; Reads a \uXXXX escape and answers its CODEPOINT, joining a
+    ; surrogate PAIR (\uD83D\uDE00) into the one codepoint it denotes.
+    ; A lone surrogate — which no well-formed document can mean — answers
+    ; U+FFFD, so the encoding downstream stays well-formed.
+    procedure read_unicode_escape(mutable p: ref[JsonParser]) returns i64 linked
+
+    ; Appends the UTF-8 encoding of `cp` to `sb`.
+    ;
+    ; ★This is what makes the decoded buffer BYTE-FOR-BYTE the document. The
+    ; old decoder answered one `?` for anything above 0x7F, so a client that
+    ; escapes non-ASCII (JSON allows it; python's json.dumps does it by
+    ; DEFAULT) delivered a buffer SHORTER than the file — measured on
+    ; server.scaly, 60440 against 60526 bytes over 43 `★`/`—` — and from the
+    ; first hit onwards EVERY offset was wrong: diagnostics, hover, all of it.
+    ; A length that merely looks plausible is the failure mode, so the gate in
+    ; tests/lsp/run.sh checks the BYTE COUNT, not only the content.
+    procedure append_utf8(mutable sb: ref[StringBuilder], cp: i64) linked
+
+    procedure parse_number(mutable p: ref[JsonParser]) returns i64 linked
+
+    ; ====================================================================
+    ; Low-level cursor helpers
+    ; ====================================================================
+
+    function peek(p: ref[JsonParser]) returns u8 linked
+
+    procedure advance(mutable p: ref[JsonParser]) linked
+
+    procedure skip_ws(mutable p: ref[JsonParser]) linked
+
+    procedure expect(mutable p: ref[JsonParser], c: u8) linked
+
+    function is_digit(c: u8) returns bool linked
+
+    function hex_value(c: u8) returns i64 linked
+
+    ; Matches `lit` at the cursor; advances past it and returns true on a
+    ; hit, leaves the cursor untouched and returns false on a miss.
+    procedure match_literal(mutable p: ref[JsonParser], lit: Slice[char]) returns bool linked
+
+    ; ====================================================================
+    ; Serialization
+    ;
+    ; Recursive: each level builds its own StringBuilder and the recursion
+    ; returns String pieces (a StringBuilder does not propagate when passed
+    ; across a function boundary). This relies on two stage-0 planner fixes
+    ; (s197): a method call on a call result with a lifetime — e.g.
+    ; sb.append(json.format_i64(n)) is fine, but `expr(x).to_c_string$()`
+    ; was dropped — and a recursive namespace call whose first param is
+    ; named `this` (json.stringify(...) calling itself). Both are now
+    ; handled; see Planner.cpp processChainedMethodCalls + the namespace
+    ; sibling arg-count match.
+    ; ====================================================================
+
+    function stringify(rp, this: JsonValue) @direct true returns String linked
+
+    ; Quote and escape a string into a "..."-wrapped JSON string literal.
+    function quote_string(rp, s: String) @direct true returns String linked
+
+    function format_i64(rp, n: i64) @direct true returns String linked
+}

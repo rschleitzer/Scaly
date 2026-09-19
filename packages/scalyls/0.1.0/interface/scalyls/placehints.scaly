@@ -1,0 +1,236 @@
+; placehints.scaly - textDocument/inlayHint: where each construction is
+; ALLOCATED — the stack, or which region.
+;
+; WHY. Lifetimes are INFERRED. The `$` sigil is gone, `#`/`^` survive only where
+; a page is genuinely pinned, and the planner decides the rest — so the single
+; most consequential property of a construction is invisible in the source. The
+; tree has bled on exactly this: "a by-value CONSTRUCTION in ARGUMENT POSITION
+; takes its memory from the REGION instead of the stack, visible only in one line
+; of disassembler" is a documented RBMM rule, and `let x StringC(lit)` versus
+; `StringC(lit)` passed straight into a call is the difference between working
+; code and a silent SIGSEGV. A hint at the construction says which one it is.
+;
+; WHAT THE LABEL MEANS, and it is the EMITTER's own rule, not an interpretation:
+;   * a data-class construction (PlannedTuple) allocates on a region exactly
+;     when `is_region_alloc` is set — the emitter reads that field verbatim
+;     (Emitter.scaly's emit_tuple), and `life` only chooses WHICH page.
+;   * a constructor call (PlannedCall whose mangled name contains "C1E", the
+;     discriminator Emitter.scaly:9598 uses) allocates on a region for
+;     Lifetime.Local / .Call / .Reference and on the STACK for anything else —
+;     emit_constructor_call_into# spells out those three arms and leaves
+;     `is_region_alloc` false otherwise.
+; So:
+;   stack        the value lives in this frame and dies with it
+;   region       this function's own region (Lifetime.Local)
+;   region #     the CALLER's page — it outlives the call (Lifetime.Call)
+;   region ^name the named page (Lifetime.Reference)
+;
+; ★WHY THE HINTS VANISH WHILE YOU TYPE, and why that is the design rather than a
+; limitation. The placement comes from a PLAN, and for a package member the
+; modeler reads every module from DISK — so the offsets a plan carries are the
+; SAVED text's. The other lens families pair saved offsets with buffer positions
+; by walking a cheap lexical site list (a `for` token, a `function` keyword), but
+; a CONSTRUCTION has no keyword to scan for, so there is nothing to pair on. This
+; family therefore answers only when the buffer IS the saved text, and answers
+; nothing otherwise.
+;
+; ★That same rule is what makes the feature affordable, and affordability is not
+; optional here: inlayHint fires on EVERY visible-range change (worker.scaly has
+; the measurement — an 8 s handler once ran on every scroll and killed the worker,
+; taking the symindex with it), the worker serves requests SEQUENTIALLY, and a
+; plan costs 0.45 s for the scaly root and 2.45 s for dazzle. With the blob cached
+; per (path, content hash), a plan happens once per SAVE instead of once per
+; scroll, and scrolling is a filter over a few hundred bytes.
+;
+; MEMORY MODEL: symindex.scaly's, for its reasons — the cache must outlive a
+; request while a long-lived Scaly root page would leak under the stack-LIFO
+; discipline, so the slot's bytes are libc malloc'd copies. ONE slot: the working
+; pattern is scrolling the file being edited, a second file evicts the first, and
+; a re-plan on switching files is the price of not holding several plans' worth of
+; blobs forever.
+;
+; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no else).
+; One statement per line. Syntax unions are matched by PAYLOAD TYPE, Plan unions
+; by VARIANT TAG NAME (`when c: Call`). Quotes are 0x22 bytes.
+
+use scaly.os.File
+use scaly.memory.runtime
+
+use scalyls.diagnostics
+use scalyls.symbols
+use scalyls.semantic
+use scalyls.json
+
+use scalyc.compiler.parser
+use scalyc.compiler.Modeler
+use scalyc.compiler.Planner
+use scalyc.compiler.Model.*
+use scalyc.compiler.Plan.*
+use scalyc.compiler.parser.*
+use scalyc.compiler.Syntax.*
+
+; libc allocator for the cache slot (symindex.scaly declares malloc the same way
+; and for the same reason: free/memcpy come from scaly.memory.runtime, malloc does
+; not, and declaring it here touches no scaly/scalyc source).
+function malloc(size: size_t) returns pointer[void] extern
+
+; The one cache slot: the path and blob bytes are malloc'd copies, `hash` is the
+; content hash they were built from, `used` says whether they mean anything.
+mutable ph_path_data: pointer[u8] linked
+mutable ph_path_len: size_t linked
+mutable ph_blob_data: pointer[u8] linked
+mutable ph_blob_len: size_t linked
+mutable ph_hash: size_t linked
+mutable ph_used: bool linked
+
+define placehints
+{
+    ; The placement hints for the packed "<sl> <sc> <el> <ec>" range as a
+    ; COMMA-JOINED FRAGMENT of InlayHint objects, or "".
+    procedure fragment(rp, mutable uri: String, mutable text: String, packed: String) @direct true returns String io mutable lc_col, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used reads ph_used linked
+
+    ; The whole InlayHint[] array for one request: the lexical hints
+    ; (parameter names, binding types) with the placement hints appended.
+    ;
+    ; ★The splice is a STRING one, deliberately. symbols.inlay_hints_packed#
+    ; answers a finished array and is what every existing LSP test asserts
+    ; against; changing its contract to a fragment would edit the most
+    ; load-bearing file in this server for a cosmetic gain. The shape it answers
+    ; is known exactly — `[]` or `[...]` — so `[]` becomes `[mine]` and anything
+    ; else takes `,mine` before its final byte.
+    procedure merged(rp, mutable repaired: String, mutable source: String, mutable uri: String, packed: String) @direct true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig reads ph_used linked
+
+    ; ====================================================================
+    ; Building the blob: one line per construction, "<offset>\t<label>".
+    ;
+    ; The offset is the construction's own span START. A planner operand's span
+    ; covers its own tokens only — semantic.scaly's walk_operand# documents that
+    ; children lie BESIDE the parent rather than inside it — so a Call's span
+    ; ends after the callee name and its arguments are outside. The start is the
+    ; one end of it that reliably sits on the construction's first token.
+    ; ====================================================================
+    procedure build(rp, mutable path: String, mutable text: String) @direct true returns String io mutable modeler_error_count reads modeler_error_count linked
+
+    ; Every body the document declares, plus its top-level statements when the
+    ; document IS the planned program.
+    ;
+    ; The set of places a body can hide is semantic.scaly's map, mirrored: the
+    ; flat `functions` vector holds free routines, while a METHOD, an `init`, a
+    ; `deinit` and an OPERATOR hang off `plan.structures` / `plan.unions`, and a
+    ; module-level global's initializer is an operand list of its own. Walking
+    ; only `functions` misses every constructor body — which in this tree is where
+    ; a large share of the interesting constructions live.
+    procedure collect_plan(mutable sb: ref[StringBuilder], plan: Plan, file: FileSyntax, own_statements: bool) linked
+
+    procedure collect_structure(mutable sb: ref[StringBuilder], st: PlannedStructure, file: FileSyntax) linked
+
+    procedure collect_union(mutable sb: ref[StringBuilder], un: PlannedUnion, file: FileSyntax) linked
+
+    procedure collect_impl(mutable sb: ref[StringBuilder], has_page: bool, impl: PlannedImplementation) linked
+
+    ; ====================================================================
+    ; The walk. It mirrors semantic.scaly's resolver arm for arm — same fields,
+    ; same order — but COLLECTS instead of resolving, and never prunes: an
+    ; operand's children are not inside its span, so there is nothing to prune on.
+    ; ====================================================================
+
+    procedure collect_action(mutable sb: ref[StringBuilder], has_page: bool, act: PlannedAction) linked
+
+    procedure collect_statement(mutable sb: ref[StringBuilder], has_page: bool, stmt: PlannedStatement) linked
+
+    procedure collect_statement_opt(mutable sb: ref[StringBuilder], has_page: bool, opt: ref[PlannedStatement]?) linked
+
+    procedure collect_operands_opt(mutable sb: ref[StringBuilder], has_page: bool, opt: ref[Vector[PlannedOperand]]?) linked
+
+    procedure collect_operand_opt(mutable sb: ref[StringBuilder], has_page: bool, opt: ref[PlannedOperand]?) linked
+
+    procedure collect_operand(mutable sb: ref[StringBuilder], has_page: bool, op: PlannedOperand) linked
+
+    procedure collect_expr(mutable sb: ref[StringBuilder], has_page: bool, expr: PlannedExpression, loc: Span) linked
+
+    ; ====================================================================
+    ; The two placement rules, each the emitter's own.
+    ; ====================================================================
+
+    ; A constructor call: "C1E" in the mangled name is the discriminator
+    ; Emitter.scaly:9598 routes on. Region for Local / Call / Reference, stack
+    ; for anything else (emit_constructor_call_into#).
+    function label_for_call(rp, c: PlannedCall, has_page: bool) @direct true returns String linked
+
+    ; A data-class construction: `is_region_alloc` decides, `life` only says
+    ; which page (emit_tuple).
+    ;
+    ; ★A PARENTHESISED EXPRESSION IS ALSO A TUPLE, and it allocates nothing.
+    ; `let bytes (DOC_CAP as size_t) * sizeof DocSlot` was labelled `stack` until
+    ; this filter existed — a hint about an allocation on a line that has none.
+    ; The discriminator is the tuple's own TYPE: a construction builds a concept,
+    ; while a grouping tuple carries whatever its expression yields, which for
+    ; every case seen is a PRIMITIVE (symbols.is_primitive_type_name#, the same
+    ; list the type hints suppress). An unnamed type answers nothing either.
+    function label_for_tuple(rp, t: PlannedTuple, has_page: bool) @direct true returns String linked
+
+    ; The placement itself. `on_region` false answers "stack"; otherwise the page
+    ; the life names — EXCEPT that a region allocation also needs a page the
+    ; emitter can RESOLVE, and when it cannot, the construction falls through to a
+    ; stack alloca at the bottom of emit_tuple / emit_constructor_call_into.
+    ;
+    ; ★That fallthrough is why `has_page` exists, and skipping it made this
+    ; feature LIE on its very first fixture: `let p Point(n, n)` inside
+    ; `function make_local(n: int)` is planned `is_region_alloc` with a caller-page
+    ; life, was labelled `region #`, and the emitted IR is
+    ; `%tuple = alloca %_Z5Point` — because the function has no page parameter, so
+    ; the `_rp` lookup finds nothing and the region path is abandoned. The IR is
+    ; the only place that shows it; the plan looks like a region allocation.
+    ;
+    ; `has_page` is the enclosing body's own answer: a PlannedFunction /
+    ; PlannedInitializer carries `page_parameter`, and an operator, a `deinit`, a
+    ; global initializer and the program's top-level statements have none — so a
+    ; `#` construction there reads as `stack`, which is what the emitter does.
+    function label_for_life(rp, life: Lifetime, on_region: bool, has_page: bool) @direct true returns String linked
+
+    ; One blob line: "<offset>\t<label>\n". (The parameter is `note`, not
+    ; `label`: `label` is a reserved word and cannot be a binding name.)
+    ; One blob line: "<offset>\t<label>\n". (The parameter is `note`, not `label`:
+    ; `label` is a reserved word and cannot be a binding name.)
+    procedure emit_site(mutable sb: ref[StringBuilder], offset: size_t, note: String) linked
+
+    ; ★DEDUPE BY OFFSET, as a SECOND PASS over the finished blob.
+    ;
+    ; A generic body is planned once per instantiation, so one source construction
+    ; is reached many times — measured on containers/Vector.scaly: 89 sites for the
+    ; file's TWO constructions, because Vector's methods have 20 planned copies.
+    ;
+    ; ★It is a second pass and not a set threaded through the walk because the
+    ; set would have to be an `Array` mutated THROUGH A POINTER from a callee, and
+    ; `Array.add` grows its buffer via `Page.get(this)` — on a receiver that is not
+    ; page-hosted that is a garbage page header. Built that way first, and the
+    ; whole inlayHint request came back EMPTY (the worker died and the parent
+    ; answered its silent fallback), for a tiny standalone fixture as much as for
+    ; a package root. The pass below needs no container at all: for each line, it
+    ; scans what has already been kept for the same offset, and what is kept is the
+    ; small deduplicated blob.
+    ;
+    ; Residual, stated because it cannot be tested from here: if two
+    ; instantiations disagreed about a construction's placement, only the first is
+    ; shown. Every site of this tree with more than one copy agrees (checked on
+    ; Vector.scaly, where all 20 copies label both of its sites identically), and
+    ; they should — same source, same escape analysis.
+    function dedupe(rp, blob: String) @direct true returns String linked
+
+    ; Is a line of `kept` introduced by exactly `digits` followed by a tab?
+    function has_offset(kept: String, digits: String) returns bool linked
+
+    ; ====================================================================
+    ; Rendering: filter the blob by the requested range, one InlayHint each.
+    ; ====================================================================
+    procedure render(rp, blob: String, source: String, packed: String) @direct true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+
+    ; ====================================================================
+    ; The one-slot cache (symindex.scaly's memory model — malloc'd copies).
+    ; ====================================================================
+    procedure cache_hit(path: String, hash: size_t) returns bool reads ph_used linked
+
+    procedure cached_blob(rp) @direct true returns String reads ph_used linked
+
+    procedure cache_put(path: String, hash: size_t, blob: String) mutable ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used reads ph_used linked
+}

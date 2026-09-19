@@ -1,0 +1,49 @@
+use scaly.memory.Page
+
+define containers
+{
+    module hashing
+    module Slice
+    module Node
+    module ListIterator
+    module List
+    module Vector
+    module Array
+    module Slot
+    module KeyValuePair
+    module HashSetBuilder
+    module HashSet
+    module HashMapBuilder
+    module HashMap
+    module String
+    module StringIterator
+    module StringBuilder
+    module Result
+    module Option
+
+    function test_vector() returns int linked
+
+    function test_array() returns int linked
+
+    function test_string_simple() returns int linked
+
+    function test_string() returns int linked
+
+    function test_string_builder() returns int linked
+
+    function test_list() returns int linked
+
+    function test_hash_set() returns int linked
+
+    function test_hash_map() returns int linked
+
+    function test_slice() returns int linked
+
+    function test() returns int linked
+
+    function test_string_operations() returns int linked
+
+    function test_option() returns int linked
+
+    function test_result() returns int linked
+}

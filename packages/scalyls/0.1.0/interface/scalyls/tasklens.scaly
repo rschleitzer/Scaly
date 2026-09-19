@@ -1,0 +1,146 @@
+; tasklens.scaly - textDocument/codeLens: the self-scaling verdict of every
+; `for` loop in the document.
+;
+; WHY THIS FEATURE EXISTS. Since milestone 4.4 there is no parallel syntax:
+; every `for` is classified by the TaskPlanner and a passing body is emitted
+; through the adaptive parallel driver, while a blocked one runs sequentially
+; — "never a diagnostic" (TaskPlanner.scaly's own words). So the single most
+; consequential thing the compiler decides about a loop is invisible in the
+; source, and the only surface that ever showed it was the `--task-plan` CLI
+; flag. A CodeLens puts it above the loop it is about.
+;
+; WHAT IT SHOWS, one lens per `for` keyword:
+;   "runs in parallel"                     — the emitter drives the engine here
+;   "runs sequentially: <reason>"          — the FIRST blocking construct
+;   "no verdict: not planned in this root" — see the has_diagnostics note below
+;
+; ASCII ONLY in those titles. Every non-ASCII byte in this tree's .scaly
+; sources sits in a COMMENT (checked: packages/**, no string literal carries
+; one), so a marker glyph would be the first and there is no reason for this
+; feature to be the experiment.
+;
+; The command id is the EMPTY string, which renders the title as plain,
+; non-clickable text. There is nothing to click yet: the reason is the whole
+; message, and a command would need a client-side handler in the VS Code
+; extension for no added information.
+;
+; WHICH PROGRAM IS PLANNED. A package member cannot be planned on its own —
+; diagnostics.scaly documents that at length (every sibling module's name is
+; absent, so calls into them report "function not found"). Here the damage
+; would be worse than a false diagnostic: the classifier PROVES purity
+; transitively, so an unresolved callee turns "parallel" into "blocked", i.e.
+; the verdict would be wrong rather than missing. So a package member is
+; planned through its ROOT (diagnostics.package_root#), exactly like the
+; semantic half of diagnostics; a standalone document is planned on its own.
+;
+; ANCHORING (the saved-state bargain, and how this differs from diagnostics).
+; Planning a root reads every module from DISK, so the report's byte offsets
+; index the SAVED text while the editor draws the BUFFER. Diagnostics live
+; with that (their lines can be stale after an unsaved edit); a lens cannot,
+; because it is drawn ON the line and an off-by-N lens is read as a wrong
+; verdict for the loop it happens to sit above.
+;
+; So the offsets are used for MATCHING (against the saved text they index) and
+; the positions come from the BUFFER, paired IN ORDER: the Nth `for` site of
+; the saved text is the Nth of the buffer. That is exact for every edit that
+; does not change the file's `for` structure, which is nearly all of them.
+; When the two counts DISAGREE, no pairing is honest and this family answers
+; NOTHING — the lenses vanish until the file is saved. That is a visible state (an
+; absent lens) rather than a plausible-looking wrong one, which is the whole
+; reason this route was chosen over normalising the difference away.
+;
+; THE `for`-TOKEN GUARD. A Span is a bare pair of byte offsets and
+; PlannedFunction.file is the REQUESTING file for an instantiated generic
+; (semantic.scaly's FILE IDENTITY section has the measurement) — so a report
+; entry could name this file while its offset indexes another. The guard is
+; that a verdict is only ever attached to an offset this scanner independently
+; found to be a `for` keyword. Measured 2026-08-14 over all five package
+; roots: the scanner's site set and the report's entry set coincide ONE TO
+; ONE (scaly 22/22, scalyc 29/29, scalyls+opensp+dazzle 0/0), and every one of
+; the five lexical "for"s without an entry was inside a comment — which is why
+; the scan skips comments and string literals via symbols.skip_noncode#.
+;
+; DUPLICATE ENTRIES ARE REAL. A `for` inside a generic body is reported once
+; per planning of that body: a two-line fixture with an uninstantiated
+; `define Bag[T]` yields the same file:line TWICE. Verdicts could in
+; principle differ between instantiations (the emitter asks per site), so the
+; BLOCKED one wins — the conservative direction, and the one that cannot
+; promise parallelism the compiler did not deliver.
+;
+; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no else).
+; One statement per line. Quotes are 0x22 bytes.
+
+use scaly.os.File
+use scaly.memory.runtime
+
+use scalyls.diagnostics
+use scalyls.symbols
+use scalyls.json
+
+use scalyc.compiler.parser
+use scalyc.compiler.Modeler
+use scalyc.compiler.Planner
+use scalyc.compiler.TaskPlanner
+
+use scalyc.compiler.Model.*
+use scalyc.compiler.Plan.*
+use scalyc.compiler.parser.*
+use scalyc.compiler.Syntax.*
+
+define tasklens
+{
+    ; The `for`-loop lenses as a COMMA-JOINED FRAGMENT (no enclosing brackets —
+    ; scalyls.codelens joins the families and wraps the array; the fragment
+    ; convention symbols.scaly already uses).
+    ;
+    ; The PLAN IS THE CALLER'S: codelens.scaly parses and plans once and hands
+    ; the same plan to every plan-derived family, because two families each
+    ; planning the same root would double the cost of the most expensive request
+    ; this server answers (measured 0.45 s for the scaly root, 2.45 s for dazzle).
+    ; `entry_file` is what the plan was built for (the root, or the document);
+    ; `plan_text` is the text its offsets index; `anchor_text` is the buffer the
+    ; positions are drawn in.
+    ;
+    ; "" whenever nothing can be said: no `for` loop at all, or a buffer whose
+    ; `for` structure no longer matches the saved text.
+    procedure fragment(rp, plan: Plan, has_diag: bool, entry_file: String, path: String, plan_text: String, anchor_text: String) @direct true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+
+    ; The CodeLens[] array itself: walk the `for` sites of both texts in
+    ; lockstep (the counts were proved equal by code_lenses#), take the
+    ; verdict from the plan text's offset and draw it at the buffer's.
+    procedure lenses_body(rp, tp: ref[TaskPlanner.TaskPlanner], has_diag: bool, path: String, plan_text: String, anchor_text: String) @direct true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+
+    ; The report's verdict for `offset` in `path`, or "" when it holds none.
+    ;
+    ; The answer SHARES the report's buffer (a String struct copy, no
+    ; allocation): every caller consumes it while `tp` is still alive, which
+    ; is what makes that safe.
+    function verdict_at(rp, tp: ref[TaskPlanner.TaskPlanner], path: String, offset: size_t) @direct true returns String linked
+
+    ; The lens title for a report verdict ("" = no entry at all). The
+    ; TaskPlanner spells a blocked verdict "blocked: <reason>"; the reason is
+    ; kept verbatim, since it names the first blocking construct and that is
+    ; the actionable half.
+    function title_for(rp, verdict: String) @direct true returns String linked
+
+    ; ====================================================================
+    ; The `for`-site scanner.
+    ;
+    ; `for` is a keyword with exactly one use in the language, so a `for`
+    ; TOKEN in code always opens a loop — no parse needed, which is what
+    ; keeps this usable on a buffer that does not parse. Comments and string
+    ; literals are skipped wholesale (symbols.skip_noncode#): five of the
+    ; tree's lexical "for"s live in comments and would otherwise be sites
+    ; with no verdict.
+    ; ====================================================================
+
+    ; The offset of the next `for` keyword at or after `from`, or the source
+    ; length when there is none.
+    function next_for_site(source: String, from: size_t) returns size_t linked
+
+    function count_for_sites(source: String) returns size_t linked
+
+    ; Is source[k..] the keyword `for` on both token boundaries? A bare `for`
+    ; at EOF is not a loop (a loop needs its variable), so k+3 must exist.
+    function is_for_token(source: String, k: size_t, len: size_t) returns bool linked
+}

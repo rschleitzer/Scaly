@@ -1,0 +1,58 @@
+use scaly.memory.Page
+use scaly.memory.runtime
+
+define StringBuilder
+@resident true (
+    buffer: Array[char]
+)
+{
+    ; StringBuilder allocates its buffer on the object's own page via `^this`,
+    ; so it must be page-resident — the residency inference (its `^this`-guts
+    ; init + the heap-backed allowlist) makes a no-sigil StringBuilder()
+    ; Page::allocate on the caller's local page. No explicit page param needed.
+
+    init () linked
+
+    init (size: size_t) linked
+
+    init (character: char) linked
+
+    init (string: String) linked
+
+    init (c_string: pointer[const_char]) linked
+
+    procedure append(mutable this: StringBuilder, character: char) @persists true linked
+
+    procedure append(mutable this: StringBuilder, string: String) linked
+
+    procedure append(mutable this: StringBuilder, c_string: pointer[const_char]) @persists true linked
+
+    procedure append(mutable this: StringBuilder, start: pointer[char], length: size_t) @persists true linked
+
+    ; Decimal formatting overloads — string interpolation desugars an
+    ; embedded expression to a plain `append`, so the numeric conversions
+    ; live here. Classic divide-by-10 with digit buffer and reversal
+    ; (mirrors the compiler's size_to_string).
+    procedure append(mutable this: StringBuilder, value: size_t) linked
+
+    procedure append(mutable this: StringBuilder, value: int) linked
+
+    procedure append(mutable this: StringBuilder, value: bool) linked
+
+    function get_length(this: StringBuilder) returns size_t linked
+
+    ; ★DIE LETZTE (Zeiger, Laenge)-PAARSTELLE DES BAUMES, und sie bleibt
+    ; absichtlich stehen.  Die anderen 131 sind kollabiert (`tools/pairslice.py`):
+    ; opensp/dazzle ueber `StringC.as_slice()`, und die sechs im generierten
+    ; `parser.scaly` ueber `String(x)` -- ein Copy-`init`, das es die ganze Zeit
+    ; gab.  Hier ginge das nicht: `buffer` ist ein `Array[char]`, und `String`
+    ; hat kein `init(Slice[char])`.
+    ;
+    ; ★★★EINES ZU BAUEN WAERE API-FLAECHE FUER GENAU EINE AUFRUFSTELLE.  Es
+    ; gehoert dorthin, wo eine POPULATION es braucht -- `String.get_buffer()`
+    ; hat 340 Aufrufstellen, aber die sind Walks und nicht Paare, und fuer die
+    ; ist `as_slice()` (gibt es) plus `tools/sliceview.py` die Form.  Solange
+    ; niemand ausser dieser Zeile danach fragt, ist das Paar hier billiger als
+    ; ein sechstes 1-Argument-`init` auf `String`.
+    function to_string(this: StringBuilder) @page true @direct true returns String linked
+}

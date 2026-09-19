@@ -1,0 +1,190 @@
+; format.scaly - textDocument/formatting support.
+;
+; Re-indents a document and strips trailing whitespace. It NEVER touches the
+; line structure, because in Scaly a line break is not decoration: LFs separate
+; constructs (a colon can substitute for one), so a formatter that re-wraps or
+; joins lines changes the MEANING of the program. Only the leading whitespace of
+; a line is rewritten, and the number of lines is an invariant of the run —
+; format_edits# relies on it to pair source and result line by line.
+;
+; It is token-based, not parse-based, for the same reason the read-only requests
+; carry a repair: the buffer being typed into is the one a formatter is asked
+; about, and a parse-based formatter answers nothing there. Precedence is
+; resolved in the PLANNER, not the grammar, so a formatter could not break
+; expressions by precedence even with a parse in hand — and does not try.
+;
+; ---------------------------------------------------------------------------
+; The indent model. A stack of frames, one per open construct:
+;
+;   FK_BRACKET  { ( [  -- a line STARTING with a closer takes its opener's
+;               level; a line that merely ends in `))` keeps its own level and
+;               only unwinds the stack.
+;   FK_ONE      a BRACELESS block that consumes exactly ONE following statement:
+;               if / else / while / for / repeat / label / when / case, and the
+;               single-expression body of a routine. Scaly drops the braces for
+;               these, so nothing in the text marks the block but the indent.
+;   FK_MULTI    a braceless block holding ARMS (choose / match). It survives its
+;               arms and ends at the first line that is not when / case / else.
+;
+; Rules that were MEASURED against the tree (171 files, 249k lines) rather than
+; assumed — each one is here because a draft without it produced a large diff:
+;
+;   * A line that leaves N brackets open adds ONE level, not N. `f(g(` is a
+;     single continuation step in this tree's form.
+;   * `{` cancels exactly ONE pending FK_ONE (Allman: the brace belongs to its
+;     header and sits at the header's level). Cancelling ALL of them flattens a
+;     chain of braceless `if`s, which this tree writes.
+;   * `(` cancels a pending FK_ONE only when it came from a `define` — that is
+;     the property list. A routine's single-expression BODY may also begin with
+;     `(` (`(oi = OI_OPT) || (oi = OI_REP)`) and must stay indented.
+;   * A line whose first byte is an opener but which leaves NOTHING open is an
+;     ordinary statement, not a structural opener.
+;   * A routine header ending in `extern` / `intrinsic` / `instruction` declares
+;     and has no body, so it opens nothing.
+;   * A closer that ends a braced block also satisfies the braceless chain the
+;     block was the body of.
+;
+; COMMENTS carry no structure, so a comment line takes the level of the next
+; line that does — unless that line CLOSES the block the comment sits in, in
+; which case it keeps the level it was written at. A comment before a `}` belongs
+; to the block: the only content of an empty `when` arm is such a comment, and
+; dedenting it to the brace reads as if the arm were gone. Because the level of a
+; comment depends on a LATER line, comment (and blank) lines are held in
+; `pending` until the next structural line resolves them.
+;
+; The interior of a `;* *;` block comment is emitted verbatim — its lines are
+; prose, and their indentation is the author's.
+;
+; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no else).
+; A StringBuilder mutated through a parameter does not propagate to the caller,
+; so every append is in place on a local.
+
+use scaly.memory.runtime
+use scalyls.json
+
+define format
+{
+    ; ---- frame kinds (packed into a size_t, see frame_make#) --------------
+    define FK_BRACKET: size_t 0
+    define FK_ONE: size_t 1
+    define FK_MULTI: size_t 2
+
+    ; ---- line kinds -------------------------------------------------------
+    define LK_COMMENT: size_t 0
+    define LK_CLOSER: size_t 1
+    define LK_OPENER: size_t 2
+    define LK_ARM: size_t 3
+    define LK_HEADER_ONE: size_t 4
+    define LK_HEADER_MULTI: size_t 5
+    define LK_STMT: size_t 6
+
+    define INDENT_WIDTH: size_t 4
+
+    ; What one scanned line is, structurally. Built ONCE at the end of
+    ; scan_line# — a small struct returned from several branches would
+    ; region-allocate per site and fail the phi (see CLAUDE.md).
+    define LineScan
+    (
+        kind: size_t
+        opened: size_t          ; brackets this line leaves OPEN
+        closes: size_t          ; brackets it closes that an EARLIER line opened
+        had_brace: bool         ; the line carries a `{` (its body starts here)
+        is_define: bool         ; the first word is `define`
+        first_open: u8          ; the leading bracket of an opener line
+        in_block: bool          ; block-comment state AFTER this line
+    )
+
+    ; A stack frame packed into one size_t so the stack is a plain
+    ; Array[size_t] (push = add, pop = set length - 1, the idiom TaskPlanner
+    ; uses). Layout: bits 0..1 kind, bit 2 paren_cancels, bits 8.. level.
+    function frame_make(kind: size_t, level: size_t, paren_cancels: bool) returns size_t linked
+
+    function frame_kind(f: size_t) returns size_t linked
+
+    function frame_level(f: size_t) returns size_t linked
+
+    function frame_paren_cancels(f: size_t) returns bool linked
+
+    ; ---- byte classification ----------------------------------------------
+
+    function is_opener(c: u8) returns bool linked
+
+    function is_closer(c: u8) returns bool linked
+
+    function is_space(c: u8) returns bool linked
+
+    function is_word_byte(c: u8) returns bool linked
+
+    ; A routine header ending in one of these is a DECLARATION: it has no body,
+    ; so it must not open a braceless block (`operator +(...) returns i64
+    ; intrinsic`, one per line, would otherwise stair-step the whole file).
+    function is_bodyless_word(w: String) returns bool linked
+
+    function is_one_word(w: String) returns bool linked
+
+    ; `else` is an ARM as well as an `if`'s alternative: a `choose` may end in
+    ; `else`, and treating it as an ordinary statement there would close the
+    ; choose block before its last arm.
+    function is_arm_word(w: String) returns bool linked
+
+    function is_routine_word(w: String) returns bool linked
+
+    ; ---- scanning ----------------------------------------------------------
+
+    ; Classify the line `source[start, end)`. `in_block` is the block-comment
+    ; state on entry. Bytes inside string literals, char literals, string
+    ; identifiers and comments never count as brackets — that is the whole
+    ; reason this is a scan and not a character count.
+    function scan_line(rp, source: String, start: size_t, end: size_t, in_block: bool) @direct true returns LineScan linked
+
+    ; ---- the formatter ------------------------------------------------------
+
+    ; `source` re-indented. The line count is preserved exactly.
+    function format_source(rp, source: String) @direct true returns String linked
+
+    ; ---- stack helpers -------------------------------------------------------
+    ; The stack is an Array[size_t] of packed frames: push = add, pop = shorten
+    ; (the idiom TaskPlanner.scaly uses; Array has no remove_last).
+
+    function top_kind(stack: ref[Array[size_t]]) returns size_t linked
+
+    function top_paren_cancels(stack: ref[Array[size_t]]) returns bool linked
+
+    ; Pop the top frame and answer the level it recorded.
+    procedure pop_frame(mutable stack: ref[Array[size_t]]) returns size_t linked
+
+    ; Drop frames until a bracket frame is popped; answer its level. Braceless
+    ; frames inside the bracket die with it — the block they were waiting for a
+    ; statement in has ended.
+    procedure unwind_to_bracket(mutable stack: ref[Array[size_t]], level: size_t) returns size_t linked
+
+    ; ---- LSP TextEdit[] ------------------------------------------------------
+
+    ; The formatting result as a TextEdit[] array.
+    ;
+    ; Per-line edits rather than one whole-document replacement: the run only
+    ; ever rewrites a line's leading and trailing whitespace, so the edits are
+    ; small and the client keeps its cursor, folds and selection. format_source#
+    ; preserves the line count, which is what lets the two texts be paired line
+    ; by line at all.
+    ;
+    ; LSP character positions are UTF-16 code units. A line's LEADING whitespace
+    ; is ASCII so it needs no conversion, but the trailing-whitespace edit starts
+    ; after the line's content — which in this tree routinely contains non-ASCII
+    ; (an em dash in a comment) — so that offset goes through utf16_length#. An
+    ; edit at a wrong character offset does not fail, it CORRUPTS the document.
+    function format_edits(rp, source: String) @direct true returns String linked
+
+    ; One TextEdit on `line`, replacing [from, to) (UTF-16 units) with `text`.
+    function edit(rp, line: size_t, from: size_t, to: size_t, text: String) @direct true returns String linked
+
+    function pos(rp, line: size_t, character: size_t) @direct true returns String linked
+
+    function key(rp, k: Slice[char]) @direct true returns String linked
+
+    ; The number of UTF-16 code units in source[start, end). A UTF-8 lead byte
+    ; of 0xF0 or above encodes a character outside the BMP, which is a SURROGATE
+    ; PAIR in UTF-16 and therefore counts twice; continuation bytes count for
+    ; nothing.
+    function utf16_length(source: String, start: size_t, end: size_t) returns size_t linked
+}

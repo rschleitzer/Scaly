@@ -1,0 +1,233 @@
+; cli.scaly - Command-line interface for the Scaly compiler
+;
+; This module handles argument parsing and drives the compilation pipeline.
+
+; Standard library imports
+use scaly.containers.String
+use scaly.containers.StringBuilder
+use scaly.containers.Vector
+use scaly.os.File
+use scaly.os.Console
+use scaly.memory.runtime.system
+use scaly.memory.runtime.unlink
+use scaly.memory.root_pages.getenv
+
+; s175: local extern declarations so stage-1 emits `declare` for these.
+; The `use` lines above only resolve names; stage-1 doesn't walk the
+; scaly package's runtime module into LLVM declarations, so emit_call's
+; LLVMGetNamedFunction lookup failed and the system()/unlink() calls —
+; the entire link step — silently dropped from stage-2's cli.run. Same
+; in-file pattern as Planner.scaly's local `exit` extern (line 143).
+function system(command: pointer[const_char]) returns i32 extern
+function unlink(path: pointer[const_char]) returns i32 extern
+
+; Compiler module imports
+use scalyc.compiler.Modeler
+use scalyc.compiler.Model.Program
+use scalyc.compiler.Planner
+use scalyc.compiler.TaskPlanner
+use scalyc.compiler.PointerCensus
+use scalyc.compiler.WriteCensus
+use scalyc.compiler.Plan.Plan
+use scalyc.compiler.Emitter
+use scalyc.compiler.Emitter.EmitterConfig
+use scalyc.compiler.lexer.*
+use scalyc.compiler.parser.*
+use scalyc.compiler.Syntax.*
+use scalyc.compiler.Model.*
+use scalyc.compiler.Plan.*
+use scalyc.compiler.Planner.*
+
+; ============================================================================
+; Module declarations
+; ============================================================================
+
+; Parser module (which includes lexer)
+module parser
+
+; ============================================================================
+; Command-line options
+; ============================================================================
+
+define Options
+(
+    input_file: String
+    output_file: String
+    verbose: bool
+    emit_ir: bool           ; -S: emit LLVM IR
+    compile_only: bool      ; -c: compile only, no link
+    lex_only: bool          ; --lex: just tokenize
+    parse_only: bool        ; --parse: just parse
+    model_only: bool        ; --model: just build model
+    plan_only: bool         ; --plan: just run planner
+    show_help: bool
+    no_prelude: bool        ; --no-prelude: skip auto-loading prelude
+    no_tests: bool          ; --no-tests: omit test/test_* functions (seed build)
+    use_vis: bool           ; --use-vis: advisory use-visibility measurement
+    no_use_vis: bool        ; --no-use-vis: disable strict use visibility
+    task_plan: bool         ; --task-plan: stage-3 parallelizability report
+    pointer_report: bool    ; --pointer-report: raw-pointer census off the Plan
+    write_report: bool      ; --write-report: writes through parameters, off the Plan
+    purity_check: bool      ; --purity-check: a function may not write what its parameters reach
+    interface_facts: bool   ; --interface-facts: body-derived facts for tools/interface/geninterface.py
+    debug: bool             ; -g: emit DWARF debug info
+    run_mode: bool          ; --run <fn>: JIT-compile and execute <fn> in-process
+    run_function: String    ; the function name to JIT-run
+    jit_program: bool       ; --jit: JIT-compile and run the whole program (top-level main)
+    error_message: String
+    library_paths: Array[String]    ; -L<path> entries (no leading -L)
+    libraries: Array[String]        ; -l<name> entries (no leading -l)
+    extra_objects: Array[String]    ; positional .a / .o paths
+    target_triple: String           ; --target <triple>: cross-emit object (empty = host)
+    opt_level: int                  ; -O0..-O3: LLVM pipeline for object emission (default 0)
+)
+{
+    init() linked
+
+    function has_error(this) returns bool linked
+
+    function has_input(this) returns bool linked
+}
+
+; ============================================================================
+; Argument parsing
+; ============================================================================
+
+define cli
+{
+    ; Parse command-line arguments
+    ; argc: argument count
+    ; argv: argument vector (C-style array of char pointers)
+    function parse_args(argc: int, argv: pointer[pointer[char]]) @page true @direct true returns Options linked
+
+    ; Print usage information
+    procedure print_usage() io linked
+
+    ; The directory for the compiler's own scratch object. POSIX has /tmp;
+    ; Windows has no such directory and a native binary resolves the string
+    ; "/tmp/..." against the CURRENT DRIVE root (C:\tmp\...), which does not
+    ; exist — so the object write fails and the link never happens. The CRT
+    ; always sets TMP, and TEMP is its long-standing twin; the current
+    ; directory is the last resort so the compiler can still work rather than
+    ; refuse. Forward slashes are fine: every Windows API accepts them.
+    ;
+    ; ★POSIX is untouched by construction — the caller only asks when the
+    ; resolved target is COFF, so every existing path stays the literal
+    ; "/tmp/..." string it has always been.
+    procedure windows_scratch_dir() @page true @direct true returns String io linked
+
+    ; Resolve the runtime static archive the linker pulls in. When SCALY_HOME
+    ; is set (the installed `scalyc` wrapper sets it), the archive lives at a
+    ; PERSISTENT path under the install tree, $SCALY_HOME/lib/libscaly.a, so it
+    ; survives reboots — unlike /tmp, which is cleared on boot. With SCALY_HOME
+    ; unset (CI, bootstrap, AOT harness) it stays /tmp/libscaly.a exactly as
+    ; before, so those paths are byte-for-byte unchanged.
+    ;
+    ; ★Stage 7: on a COFF target the archive is `libscaly.lib` and the scratch
+    ; directory is the one above. The suffix is not cosmetic — that is the name
+    ; `llvm-ar` gives it there and the name the MSVC-driver link expects.
+    procedure runtime_archive_path(coff: bool) @page true @direct true returns String io linked
+
+    ; Resolve the C compiler used to link the final executable. Honors
+    ; $SCALY_CC (the installed wrapper bakes in the compiler the installer
+    ; found, e.g. clang-18 on a box that has no plain `clang`), then $CC,
+    ; falling back to `clang`. Unset → `clang`, exactly as before, so CI /
+    ; bootstrap / AOT linking is byte-for-byte unchanged.
+    procedure link_compiler() @page true @direct true returns String io linked
+
+    ; Run the compiler with parsed options
+    ; Returns 0 on success, non-zero on error
+    procedure run(mutable opts: Options) returns int io mutable modeler_error_count reads modeler_error_count linked
+
+    ; Extract program name from file path
+    ; e.g., "/path/to/hello.scaly" -> "hello"
+    ; Pre-register packages from the model into the planner's cache so
+    ; load_package_on_demand# can resolve them. Mirrors stage-0's resolved-
+    ; package wiring. We hand off Module by reference; the helper exists in
+    ; procedure form so each `register` call is at function-statement
+    ; granularity (avoids the same in-place Vector[Module].add codegen
+    ; pitfall worked around in Modeler.scaly).
+    procedure register_packages(mutable planner: ref[Planner.Planner], model: ref[Program]) linked
+
+    ; --jit/--run: AOT-compile every non-scaly dependency package to an object
+    ; and collect the mangled names each defines. jit_run adds these objects to
+    ; the JITDylib so the program module's extern declarations of dependency
+    ; functions resolve to the real bodies (see Emitter.jit_run). The `scaly`
+    ; stdlib is skipped — its symbols are already in the host scalyc image and
+    ; resolve via the ORC process generator. Returns false on any dep failure.
+    procedure compile_jit_dependencies(mutable model: ref[Program], mutable dep_objs: ref[Array[String]], mutable dep_syms: ref[Array[String]]) returns bool io mutable modeler_error_count reads modeler_error_count linked
+
+    ; `<dir>/interface/<p>.scaly` -> `<dir>/<p>.scaly`; any other path as it is
+    function source_root(file: String) @page true @direct true returns String linked
+
+    ; Compile a dependency package (its entry .scaly file) through the same
+    ; ROOT compilation path that builds libopensp.a/libdazzle.a — prelude OFF
+    ; (its scaly-stdlib calls resolve from the host process at JIT link) — into
+    ; an object at out_obj, and append the mangled names it defines to `syms`.
+    ; This ROOT path plans the package's bodies correctly (unlike the retired
+    ; jit_dep_bodies dependency path). Returns false on any failure.
+    procedure compile_dep_package_to_object(mutable entry_file_in: String, mutable out_obj: String, mutable syms: ref[Array[String]]) returns bool io mutable modeler_error_count reads modeler_error_count linked
+
+    ; Print hard planner diagnostics in stage-0's error format:
+    ;     <file>:<line>:<col>: error: <message>
+    ; Line/col are computed by walking the main source text up to the
+    ; recorded byte offset (mirrors stage-0 calculatePosition). NOTE:
+    ; offsets of constructs from other modules of the package are
+    ; attributed to the main input file — single-file accuracy first.
+    ; s194: format a single parse error as `file:line:col: <message>`,
+    ; mirroring print_diagnostics#'s offset→line/col walk (numeric LF
+    ; compare — `"\n" as char` mis-compiles under stage-1).
+    procedure print_parse_error(file_path: String, source: String, offset: size_t, message: String) io linked
+
+    procedure print_diagnostics(planner: ref[Planner.Planner], file_path: String, source: String) io linked
+
+    ; --use-vis report: aggregate counts plus one line per distinct
+    ; (concept, looking-up file) miss. A [lazy] tag marks a first
+    ; sighting during lazy instantiation — those need the visibility-
+    ; context switch (nested-planning trap), not a use line.
+    procedure print_use_vis(planner: ref[Planner.Planner]) io linked
+
+    ; --task-plan report (stage-3 milestone 3.0): aggregate counts plus one
+    ; line per `for` loop, file:line:col like print_diagnostics — the byte
+    ; offset is relative to the loop's own source file, so re-read the file
+    ; when it changes (entries arrive grouped by file, one read per file).
+    procedure print_task_plan(tp: ref[TaskPlanner.TaskPlanner]) io linked
+
+    ; --pointer-report: the head line carries one count per class, then one
+    ; located line per site (PointerCensus.scaly has the class list).
+    procedure print_pointer_report(pc: ref[PointerCensus.PointerCensus]) io linked
+
+    procedure print_write_report(wc: ref[WriteCensus.WriteCensus]) io linked
+
+    procedure print_purity_check(wc: ref[WriteCensus.WriteCensus]) io linked
+
+    ; Shared located-report printer: one `<prefix><file>:<line>:<col>: <text>`
+    ; line per slot of three parallel arrays. The byte offset is relative to
+    ; the slot's own source file, so re-read the file when it changes
+    ; (entries arrive grouped by file, one read per file).
+    procedure print_located(
+        prefix: String,
+        files: ref[Array[String]],
+        offsets: ref[Array[size_t]],
+        texts: ref[Array[String]]
+    ) io linked
+
+    ; Decimal formatting for diagnostics. Local mirror of
+    ; Planner.size_to_string to avoid cross-namespace call resolution
+    ; risk under stage-1.
+    function format_size(n: size_t) @page true @direct true returns String linked
+
+    function extract_program_name(file_path: String) @page true @direct true returns String linked
+
+    ; Main entry point
+    procedure main(argc: int, mutable argv: pointer[pointer[char]]) returns int io mutable modeler_error_count reads modeler_error_count linked
+
+    ; Test function
+    procedure test() returns int io mutable modeler_error_count reads modeler_error_count linked
+
+    ; Test compiling hello.scaly from disk
+    procedure test_hello_scaly() returns int io mutable modeler_error_count reads modeler_error_count linked
+
+    ; Test the compilation pipeline on a minimal program
+    procedure test_pipeline() returns int io mutable modeler_error_count reads modeler_error_count linked
+}

@@ -1,0 +1,346 @@
+use scaly.memory.runtime
+
+; Small-array policy: an Array's first buffers are bump-hosted on the region
+; page (the buffer alone — the handle carries length and capacity) and grow by
+; doubling; only past
+; 0x400 data bytes does a buffer move to its own exclusive page (the
+; historical behavior — an exclusive 4-KB page per non-empty Array made
+; small-array-heavy code pay ~4 KB per element). An abandoned small buffer is
+; region garbage: it was never an exclusive page, so there is nothing to
+; release. The class of a live buffer is DERIVED from its capacity
+; (capacity * sizeof T <= 0x400  ⇔  bump-hosted) — every allocation site
+; below must stay consistent with that predicate. The thresholds appear as
+; LITERALS (0x20 start / 0x400 max) in the generic bodies: module-level
+; defines do not resolve inside bodies monomorphized into other packages.
+
+; ★★★`array` is a POINTER on purpose, and it may not be spelled `ref[...]` in
+; either form. `next` tests it against null, so the non-optional `ref` is a
+; declaration that lies -- report_null_test_on_ref# says so, and it was
+; `pointer[Array[T]]` until 7c4240ad converted it. But the nullable `ref[...]?`
+; is worse than wrong here, it MISCOMPILES: an `X?` field adds exactly one
+; generic level, which pushes `plan_structure -> plan_function -> plan_type ->
+; instantiate_generic` into the s116 cycle guard, and that guard short-circuits
+; WITHOUT binding the concept's generic parameters. Measured 2026-08-26 -- with
+; the `?` spelling every instantiation of `next` emits
+; `load %_Z5ArrayIiE` (Array[int]) regardless of T, reading `length` out of the
+; wrong layout; it survived all 217 regress tests because field 0 lines up.
+; The open defect is written up in the root CLAUDE.md; until it is fixed, a
+; nullable slot inside a GENERIC concept whose type nests generics stays a
+; pointer, which is what `tools/refconv.py` holds back as
+; `generic-substitution-defect`.
+define ArrayIterator[T]
+(
+    array: ref[Array[T]]?
+    position: size_t
+)
+{
+    init (a: ref[Array[T]]?)
+    {
+        set array: a
+        set position: 0
+    }
+
+    procedure next(mutable this: ArrayIterator[T]) returns pointer[T]
+    {
+        if array = null
+            return null
+
+        if position = array.length
+            return null
+
+        set position: position + 1
+        return array.get_buffer() + (position - 1)
+    }
+}
+
+; ★★★THE BUFFER IS EMBEDDED, NOT REACHED THROUGH A `Vector` RECORD (slice 346).
+; `Array` held `{length, vector: ref[Vector[T]]?}` and the elements were one hop
+; further, so a non-empty array cost 16 bytes of handle plus a 16-byte record
+; plus the buffer, and every access loaded twice. It carries `{length, capacity,
+; buffer}` now: eight bytes less per live array and one load per access.
+;
+; ★★★The record was not pure overhead — it was the HANDLE through which a big
+; buffer's page was found (`Page.get(vector)`), and `Page.get` of an address
+; inside an oversized allocation is the exit-19 trap. What makes the embedding
+; sound is that `allocate_exclusive_buffer` gives the buffer a page of its OWN,
+; registered in the host page's exclusive list in both the ordinary and the
+; oversized case, so `Page.get(buffer)` finds it either way.
+define Array[T]
+(
+    length: size_t
+    capacity: size_t
+    buffer: pointer[T]
+)
+{
+    init ()
+    {
+        set length: 0
+        set capacity: 0
+        set buffer: null
+    }
+
+    init (size: size_t)
+    {
+        set length: 0
+        set capacity: 0
+        set buffer: null
+        if size > 0
+        {
+            let own_page Page.get(this)
+            set capacity: size
+            if size * sizeof T <= 0x400
+                set buffer: own_page.allocate(size * sizeof T, alignof T) as pointer[T]
+            else
+                set buffer: own_page.allocate_exclusive_buffer(size * sizeof T, alignof T) as pointer[T]
+        }
+    }
+
+    function get_buffer(this: Array[T]) returns pointer[T]
+        buffer
+
+    function get_length(this: Array[T]) returns size_t
+        length
+
+    function get_capacity(this: Array[T]) returns size_t
+        capacity
+
+    procedure add(mutable this: Array[T], item: T)
+    {
+        if (buffer = null) || (length = capacity)
+            this.reallocate()
+
+        let location buffer + length
+        set *location: item
+
+        set length: length + 1
+    }
+
+    procedure add(mutable this: Array[T], items: Vector[T])
+    {
+        var new_length length + items.length
+        ; Unsigned-wraparound check: items.length > 0 should grow the
+        ; total. If new_length wraps below the existing length we'd
+        ; under-size the allocation below and OOB-write the memcpy.
+        ;
+        ; ★It used to be a bare `exit 14` -- no message, and the same code the
+        ; Emitter uses for its compile-time aborts. Since 2026-09-08 it goes
+        ; through the one panic site (exit 22, catchable as
+        ; `when e: SizeOverflow`); the check itself is unchanged.
+        if new_length < length
+            scaly_panic_size("Array.add", items.length, length)
+
+        let size sizeof T
+        if (buffer = null) || (new_length > capacity)
+            this.reallocate()
+
+        if new_length > capacity
+        {
+            ; Manual grow when one reallocate() doubling wasn't enough:
+            ; a whole new buffer for new_length items under the same
+            ; small/exclusive policy as reallocate (the old buffer's
+            ; class derives from its capacity; a small one is abandoned
+            ; to the region). NB `^page` constructions take LET-bound
+            ; page names — a var binding mis-places the construction.
+            let own_page Page.get(this)
+            let old_data buffer
+            let old_small (capacity * size) <= 0x400
+            if new_length * size <= 0x400
+                set buffer: own_page.allocate(new_length * size, alignof T) as pointer[T]
+            else
+                set buffer: own_page.allocate_exclusive_buffer(new_length * size, alignof T) as pointer[T]
+            set capacity: new_length
+            if length > 0
+                memcpy(buffer, old_data, length * size)
+            if old_small = false
+            {
+                let old_exclusive_page Page.get(old_data)
+                own_page.deallocate_exclusive_page old_exclusive_page
+            }
+        }
+
+        ; ★`buffer` is a `pointer[T]`, so `+` STRIDES BY sizeof T — the
+        ; destination is `buffer + length`, not `buffer + length * size`. The old
+        ; spelling multiplied the stride in a second time and so was correct
+        ; ONLY for a one-byte element; every caller in the tree was a
+        ; `Vector[char]` from StringBuilder, which is why it survived. The
+        ; single-element `add` two functions up has always had it right
+        ; (`let location buffer + length`). Found 2026-08-08 by the first
+        ; caller with a wider element (opensp's follow sets, pointer[CmNode]):
+        ; an instant SIGSEGV, since the write lands sizeof-T times too far out.
+        if items.length > 0
+            memcpy(buffer + length, items.data, items.length * size)
+
+        set length: length + items.length
+    }
+
+    function get(this: Array[T], i: size_t) returns ref[T]?
+    {
+        if i >= length
+            return null
+
+        buffer + i
+    }
+
+    ; The REFERENCE twin of operator[], and the third member of a family whose
+    ; other two were there from the start: `[]` answers the element BY VALUE and
+    ; traps, `put(i, v)` writes it and traps, and `get(i)` hands out a borrowed
+    ; `ref[T]?` for the lookup that may LEGITIMATELY miss. What was missing is
+    ; the borrow for the case where a past-the-end index is a CALLER BUG — the
+    ; very distinction `[]` against `get` already draws for the value half.
+    ;
+    ; ★★★It exists because the ports write `let node a.get_buffer() + id` and
+    ; then use `node` as a record reference (`node.field`, `set node.field: v`).
+    ; Both halves go through a `ref` unchanged, so the conversion touches only
+    ; the binding — 122 sites converted in one pass by `tools/refat.py`
+    ; (`tensor` 80, `gputape` 20, `CharsetDecl` 10, `ParserState` 8, and one
+    ; each in `Parser`, `Rast`, `LangObj`, `binder`), which also deleted the 31
+    ; buffer hoists that had no user left.
+    ;
+    ; ★★★THE PRICE IS +32 832 BYTES IN THE COMPILER BINARY for `at` on `Array`
+    ; and `Slice` together, measured 3 369 816 -> 3 402 648. That is the same
+    ; order as the ~31 KB `as_slice` below records, and for the same reason: an
+    ; ordinary method is emitted for EVERY instantiation, and the runtime
+    ; ARCHIVE promotes `linkonce_odr` to `weak_odr`, which GlobalDCE may not
+    ; drop. ★In a PROGRAM root the dead instances DO go away — measured 8 -> 0
+    ; on the `onsgmls` root under `opt -O2` — so the cost is the archive's, not
+    ; every consumer's. It is the price of the API, not a defect.
+    ;
+    ; ★The route that existed — `a.get(id) as ref[T]` — is NOT the same thing
+    ; and the IR says why: it emits the call (with its own bounds check) PLUS an
+    ; `unwrap.isnull` PLUS `exit 21`, i.e. two branches for one question, and
+    ; the trap then names a mangled symbol where the fault is a bounds
+    ; violation. Here the one check carries the one message.
+    ;
+    ; ★The trap sits INLINE for the reason the operator below records, and the
+    ; arm is COLD and calls scaly_panic_oob (2026-09-07), which LLVM proves
+    ; redundant against a loop condition and deletes, message and all.
+    function at(this: Array[T], i: size_t) returns ref[T]
+    {
+        if i >= length
+            scaly_panic_oob("Array.at", i, length)
+
+        buffer + i
+    }
+
+    ; Drop every element but KEEP the buffer, so refilling costs no allocation
+    ; and the region sees nothing at all. For a queue that is repeatedly filled
+    ; and then wholly consumed this is the difference between a buffer that
+    ; grows with the workload and one that stays at its high-water mark:
+    ; opensp's event queue reached 33 MB of capacity over a 13.7 MB parse,
+    ; where the live window never exceeded one drain chunk.
+    ;
+    ; The elements are NOT destroyed — Array holds values in a region and this
+    ; package frees by region, so "cleared" means unreachable, exactly as it
+    ; does when the whole Array goes out of use.
+    procedure clear(mutable this: Array[T])
+        set length: 0
+
+    ; Bounds-checked element assign within the collected length (not
+    ; the capacity). Growth goes through add only — an index at or past
+    ; length is a caller bug, so it traps.
+    procedure put(mutable this: Array[T], i: size_t, item: T)
+    {
+        if i >= length
+            scaly_panic_oob("Array.put", i, length)
+
+        set *(buffer + i): item
+    }
+
+    function get_iterator(this: Array[T]) returns ArrayIterator[T]
+        ArrayIterator[T](this)
+
+    ; ★The bounds trap sits INLINE rather than in an out_of_bounds# helper, and
+    ; that is a SIZE decision measured on 2026-08-27: an operator is emitted per
+    ; instantiation only where it is USED, while an ordinary method is emitted
+    ; for every instantiation of the concept — the helper spelling added ~200
+    ; dead `linkonce_odr` functions the whole-program `opt -O2` cannot drop (a
+    ; linkonce_odr symbol may be referenced from another module), and the
+    ; compiler binary grew 80 KB for containers nobody subscripts.
+    ; ★The arm is COLD, and the checked access comes out instruction-identical
+    ; to a raw pointer walk — LLVM deletes the guard entirely, message and all.
+    ; ★★★Measured 2026-09-07, because the reason written here until then was
+    ; WRONG: it is not the noreturn attribute. SCEV proves `i >= length`
+    ; against the loop's own `i < length` and drops the block, and it does so
+    ; even for a plain `declare` with no attribute at all. What the attribute
+    ; buys is the OTHER case — an index the loop cannot bound. Without it LLVM
+    ; must assume scaly_panic_oob returns having written memory, so every CSE
+    ; across a check dies: two accesses to one index kept two checks and
+    ; reloaded both `length` and `buffer`. Account in TRAPS.md 1.2.
+
+    ; The ORDINARY element access, and it reads like the reference ports it
+    ; serves: Clark's `v[i]` and tsgo's `x[i]`. An index past the end is a
+    ; CALLER BUG, so it traps rather than answering an Option nobody can act
+    ; on — `get(i)` above is the lookup that may legitimately miss. The empty
+    ; container needs no separate guard: `length` is 0, so `i >= length` fires
+    ; before `buffer` (null then) is ever reached.
+    operator [](this: Array[T], i: size_t) returns T
+    {
+        ; `i >= length` avoids the `i + 1` overflow at SIZE_MAX.
+        if i >= length
+            scaly_panic_oob("Array[]", i, length)
+
+        *(buffer + i)
+    }
+
+    ; A borrowed view of the whole array — the vehicle that replaces a
+    ; `(pointer[T], size_t)` parameter pair in the ports. ★An ordinary method
+    ; is emitted for EVERY instantiation of the concept whether or not anyone
+    ; calls it, so one method on a container this widely instantiated costs
+    ; ~31 KB in the compiler binary alone (measured 2026-08-27). That is the
+    ; price of the API, not a defect — but it is why a convenience does not
+    ; belong on Array unless the ports actually need it.
+    function as_slice(this: Array[T]) returns Slice[T]
+        Slice[T](length, this.get_buffer())
+
+    procedure reallocate(mutable this: Array[T])
+    {
+        let own_page Page.get(this)
+        let size sizeof T
+        if buffer = null
+        {
+            ; first buffer: small and bump-hosted (see the policy note above)
+            var first_cap 0x20 / size
+            if first_cap < 1
+                set first_cap: 1
+            if first_cap * size <= 0x400
+            {
+                set buffer: own_page.allocate(first_cap * size, alignof T) as pointer[T]
+                set capacity: first_cap
+                return
+            }
+            ; one element already exceeds the small bound: a page of its own
+            set buffer: own_page.allocate_exclusive_buffer(first_cap * size, alignof T) as pointer[T]
+            set capacity: first_cap
+            return
+        }
+        let old_small (capacity * size) <= 0x400
+        let old_data buffer
+        let old_capacity capacity
+        var new_capacity capacity * 2
+        if new_capacity * size <= 0x400
+        {
+            ; still small: a fresh bump-hosted buffer; the old one is
+            ; abandoned to the region (never an exclusive page).
+            set buffer: own_page.allocate(new_capacity * size, alignof T) as pointer[T]
+            set capacity: new_capacity
+            memcpy(buffer, old_data, old_capacity * size)
+            return
+        }
+        ; big destination: a buffer with a page of its own — never carrying
+        ; less than a full page's worth (the small→big crossing jumps to page
+        ; capacity), so the doubling does not pay a page per step.
+        let probe_page own_page.allocate_exclusive_page()
+        let page_room probe_page.get_capacity(alignof T)
+        own_page.deallocate_exclusive_page probe_page
+        if new_capacity < page_room / size
+            set new_capacity: page_room / size
+        set buffer: own_page.allocate_exclusive_buffer(new_capacity * size, alignof T) as pointer[T]
+        set capacity: new_capacity
+        memcpy(buffer, old_data, old_capacity * size)
+        if old_small = false
+        {
+            let old_exclusive_page Page.get(old_data)
+            own_page.deallocate_exclusive_page old_exclusive_page
+        }
+    }
+}

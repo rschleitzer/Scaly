@@ -1,0 +1,1448 @@
+; Fibers (self-scaling stage 1): context-switch primitives (milestone 1.1),
+; Fiber regions (milestone 1.2), and the round-robin scheduler
+; (milestone 1.3).
+;
+; Context switch: vendored assembly under fiber/ (fcontext_arm64.S AAPCS64,
+; fcontext_x86_64.S SysV — the two ABIs covering all four LP64 targets),
+; Boost.Context fcontext style: a context is a stack pointer to a frame of
+; callee-saved registers. tools/fcontext.sh assembles the host's file with
+; clang; every libscaly.a build archives the object alongside libscaly.o,
+; and the seed/compiler links carry it too (the Fiber procedures below
+; reference the switcher). API (no transfer_t struct return): the resumed
+; side receives the JUMPER's fresh context in the first argument register —
+; a fresh context's entry function gets it as its argument, a suspended
+; context gets it as scaly_jump_context's return value. An entry function
+; must never return (it traps).
+;
+; Fiber regions (milestone 1.2): a Fiber owns an mmap'd stack (guard page
+; at the bottom, no growing in v1) and is its OWN REGION ROOT — it starts
+; with empty StackBucket allocator state (stack_head/stack_top), so the
+; first function-local page allocated inside the fiber creates a fresh
+; bucket chain belonging to the fiber. resume/yield/finish swap that
+; per-fiber allocator state with the resuming side's at EVERY context
+; crossing (the Fiber record always holds the non-running side's context +
+; allocator state). The HeapBucket allocator (heap_head) is shared by
+; all fibers of one thread (thread_local since milestone 2.2): it is
+; bitmap-managed, not LIFO, so the fibers of a thread can interleave
+; extension/exclusive-page traffic safely. dispose
+; frees the fiber's whole region wholesale: every root page still on its
+; stack (extension + exclusive chains included), the stack buckets
+; themselves, then the mmap'd stack.
+;
+; The API lives as statics on the Fiber concept (Fiber.create / resume /
+; started / yield / finish / dispose): user programs resolve cross-package
+; concept statics reliably, unlike free functions with concept-pointer
+; parameters (planner gap, 2026-07-08).
+;
+; NOTE: SCALY_TRACE_ROOT reports a fiber's entry procedure as unbalanced
+; by design — its root pages are not popped one by one; the region dies
+; wholesale in Fiber.dispose.
+;
+; Entry protocol (milestone 1.2 — the raw Fiber layer):
+;   procedure my_fiber(first_ctx: pointer[void])
+;   {
+;       Fiber.started first_ctx    ; hand the resumer's context to the record
+;       ...work; Fiber.yield() as often as needed...
+;       Fiber.finish()             ; never returns
+;   }
+;   let f Fiber.create(page, &my_fiber)
+;   while Fiber.resume(f) { ... }
+;   let freed Fiber.dispose(f)
+;
+; Scheduler (milestone 1.3): a round-robin dispatcher over a FIFO ready
+; queue that wraps the started/finish entry protocol away — a task is a
+; plain ZERO-ARGUMENT procedure. The trampoline trick: a delegate value
+; is a pointer to a closure record whose slot 0 is the thunk, so a
+; SchedTask record with the task's function pointer as its FIRST field
+; is itself a callable delegate value; scheduler_entry casts the running
+; task to TaskFn and calls the user procedure indirectly. Task records,
+; fibers, and the queue all live on the scheduler's host page (they must
+; survive the spawning fiber's region teardown). Fiber.resume is only
+; ever called from the main context (Scheduler.run / a main-context
+; join); a task that joins blocks on the target's waiter chain and
+; yields back to the dispatcher — no nested resumes. A finished task's
+; whole fiber region is disposed exactly once, eagerly by the
+; dispatcher (see milestone 1.6 below).
+;
+;   procedure my_task()
+;   {
+;       ...work; Scheduler.yield() to give up the slice...
+;       ...Scheduler.spawn(&other) / Scheduler.join(t) as needed...
+;   }
+;   let s Scheduler.create(page)
+;   let t Scheduler.spawn(&my_task)
+;   Scheduler.run()                ; until the ready queue drains
+;   let freed Scheduler.join(t)    ; reap: dispose the fiber's region
+;
+; Channels (milestone 1.4): channels with region-ownership transfer. A
+; message is an opaque pointer to an object graph rooted on its OWN
+; HeapBucket page (Page.allocate_page) — heap pages are process-global,
+; not part of any fiber's region, so a message survives the sending
+; fiber's wholesale teardown by construction. send TRANSFERS ownership:
+; after send the sender must not touch the message again (the escape
+; checker's use-after-send rule enforces this); the receiver frees the
+; message region when done (deallocate_extensions + Page.release_page
+; on Page.get of the message).
+;
+; Milestone 1.4 shipped this as a single-thread RENDEZVOUS type
+; (blocking send over the scheduler's park-and-wake mechanics);
+; milestone 2.4 added the cross-thread async Mailbox beside it. The
+; post-stage-3 unification retired the rendezvous implementation:
+; Channel IS the async ownership channel — sends never block, a
+; sender-handle count closes it, receive returns null when it is
+; closed and drained. See the Channel concept header below for the
+; full contract and usage.
+;
+; Evented I/O (milestone 1.5): suspending read/write over a per-scheduler
+; readiness poller. The backend is a small C shim (fiber/eio.c, kqueue on
+; darwin / epoll on linux, selected by the preprocessor; tools/eio.sh
+; compiles it into eio.o beside fcontext.o) — it cannot live in Scaly
+; code because the committed seed ships ONE scaly.ll for all four
+; targets, and because two calls need C: fcntl is variadic (a
+; fixed-prototype extern silently drops the third argument on arm64),
+; and errno is a thread-local macro (the shim maps EAGAIN/EWOULDBLOCK
+; to -2). Io.read/Io.write try the nonblocking syscall and, on
+; would-block, arm the fd (oneshot) and park the running task; the
+; dispatcher blocks in the poller exactly when the ready queue is empty
+; but I/O waiters exist (Scheduler.step_or_wait), and wakes each task
+; whose readiness arrived. Exit 106 keeps its meaning: ready queue
+; empty, NO I/O waiters, tasks still blocked. From the main context an
+; Io call arms the fd with a null tag and drives the dispatcher until
+; its own event fires. At most one parked task per fd (the epoll
+; backend keeps one entry per fd).
+;
+;   Io.set_nonblocking(fd)           ; fd: i32, once per fd
+;   let n Io.read(fd, buf, count)    ; suspends; 0 = EOF, -1 = hard error
+;   let n Io.write(fd, buf, count)   ; suspends; partial writes possible
+;
+; TCP accept path (milestone 1.5 follow-up): localhost TCP sockets and a
+; suspending accept. Socket setup lives in the shim too — sockaddr_in's
+; layout is OS-specific (darwin leads with sin_len, linux with a 16-bit
+; family), so Scaly code cannot fill one portably — and accept needs the
+; shim's errno mapping (would-block -> -2). Io.accept parks exactly like
+; Io.read: readiness on a listening fd means a connection is pending.
+; connect performs a blocking handshake (instant against a live local
+; listener); the accepted/connected fd stays blocking until
+; Io.set_nonblocking.
+;
+;   let lfd Io.listen(port)          ; 0 = ephemeral; -1 = failure
+;   let port Io.local_port(lfd)      ; the kernel's port assignment
+;   let cfd Io.accept(lfd)           ; suspends; -1 = hard error
+;   let fd Io.connect(port)          ; -1 = failure
+;
+; The 10k demo (milestone 1.6): fiber-per-connection servers need two
+; final pieces. spawn_arg passes one pointer-sized argument to a task
+; (an accepted fd, cast through size_t) — the task reads it back with
+; Scheduler.task_arg. And the dispatcher reaps eagerly: the moment a
+; task finishes, Scheduler.step disposes its whole fiber region (stack,
+; buckets, pages) — a connection handler's region dies WITH the
+; connection, so 10k sequentially-completing handlers keep a flat
+; memory peak instead of 10k live regions awaiting a join. join still
+; blocks until the task finished; reaping stays idempotent (a later
+; join returns 0 pages).
+;
+;   let t Scheduler.spawn_arg(&handler, (fd as size_t) as pointer[void])
+;   ; inside handler:
+;   let fd (Scheduler.task_arg() as size_t) as i32
+;
+; Stage-2 warm-up (milestone 2.0): stack pooling, sized spawns, and
+; overflow diagnostics. Fiber.dispose returns a DEFAULT-SIZED stack to a
+; process-global pool instead of munmapping it; Fiber.create reuses a
+; pooled stack (guard page already in place — no mmap, no guard call), so
+; sequential fiber churn stops paying two syscalls plus VMA bookkeeping
+; per fiber. Custom-sized stacks (Scheduler.spawn_sized for tasks known
+; to run flat or deep) bypass the pool and munmap as before. The pool
+; holds the high-water mark of CONCURRENT fibers; Fiber.drain_stack_pool
+; hands everything back to the OS. And the first Fiber.create installs a
+; SIGSEGV/SIGBUS handler (shim-owned: sigaltstack/sigaction layouts are
+; OS-specific) whose classifier recognizes a fault inside the RUNNING
+; fiber's guard page — a fiber stack overflow dies with a message and
+; exit 108 instead of an anonymous signal; every other fault re-crashes
+; with the default action, exactly as without the handler.
+;
+; Thread primitive (milestone 2.1): pthread_create/pthread_join as
+; DIRECT externs — fixed prototypes, no variadics, no errno, and
+; pthread_t is a pointer-sized value on every LP64 target (a pointer on
+; darwin, unsigned long on linux glibc), carried as size_t. Per the shim
+; containment rule none of this needs C. Thread.spawn runs a Scaly
+; procedure on a second OS thread; Thread.join waits for it. The entry
+; signature is `procedure entry(arg: pointer[void]) returns pointer[void]`
+; (take it with &entry; return null — the result is discarded).
+;
+; Thread-local allocator state (milestone 2.2): every mutable module
+; global — heap_head, stack_head/stack_top, root-page scratch, the
+; fiber globals below — is thread_local (the Emitter marks all mutable
+; globals so), giving each OS thread its own allocator, scheduler slot,
+; and stack pool. The milestone-2.1 no-allocation convention is lifted:
+; a thread entry may allocate freely — pages, Strings, containers,
+; fibers, schedulers, channels — all on its private state
+; (tests/fiber/thread_alloc.scaly is the demonstrator).
+;
+; Freelist safety (milestone 2.3): CROSS-THREAD page hand-off is safe —
+; a per-bucket spinlock (root_pages.scaly bucket_lock, built on the
+; Emitter's atomic primitives) serializes the bitmap and the
+; chain-membership transitions, and a thread that frees into a full
+; (hence orphaned) bucket ADOPTS it into its own chain. A page may be
+; allocated on one thread and released on another
+; (tests/fiber/thread_churn.scaly). Still per-thread: schedulers and
+; fibers; the Channel (milestone 2.4, below) crosses threads.
+;
+;   let t Thread.spawn(&entry, arg)   ; arg: pointer[void], handed to entry
+;   Thread.join(t)                    ; blocks until entry returned
+;
+; Cross-thread channels (milestone 2.4): the ASYNC ownership channel
+; connecting fibers/threads across OS threads — shipped beside the
+; rendezvous type as Mailbox, THE Channel since the unification (see
+; the Channel concept header for the full contract). Unbounded sends
+; never block; a bounded channel (create_bounded) applies backpressure
+; — a full send waits for a receiver to free a slot. A sender-handle
+; count closes the channel when the last sender retires, waking parked
+; receivers with null — deadlock avoidance by acyclic channel topology
+; instead of detection. Infra:
+; SchedTask.home (the spawning scheduler), a per-scheduler MPSC inject
+; queue (CAS Treiber stack, drained at every step) and a wake handle in
+; the eio shim (EVFILT_USER/eventfd) that remote senders poke. exit 106
+; is unchanged for programs without channel parks.
+;
+; Colorless stdlib I/O (milestone 2.5): the same Console/File call
+; blocks on the main context, suspends inside a task, and needs no
+; scheduler at all — suspension is a runtime property, not a type
+; color. Three legs:
+;
+; 1. No-scheduler fallback: an Io call on a thread WITHOUT a scheduler
+;    waits for readiness in poll(2) instead of parking (struct pollfd
+;    and the POLLIN/POLLOUT values are layout-uniform across all four
+;    LP64 targets, so poll is a direct extern per the containment
+;    rule). Io no longer requires a scheduler.
+; 2. Console writes through Io.write_all (loops over partial writes):
+;    plain write on a blocking stdout, suspending inside a task once
+;    the fd is nonblocking.
+; 3. File I/O offloads to worker threads: readiness pollers are useless
+;    for REGULAR FILES (always "ready", reads still block on disk), so
+;    Io.offload ships a blocking operation — a `procedure fn(arg:
+;    pointer[void]) returns pointer[void]` — to a worker thread and
+;    parks the requesting task; the worker wakes it through the
+;    milestone-2.4 inject queue + wake handle. On the main context (or
+;    without a scheduler) the operation simply runs in place. The pool
+;    is per REQUESTING thread (the pool pointer is a thread-local
+;    global; no Scaly mutable global is process-wide since milestone
+;    2.2), grows lazily up to IO_POOL_WORKERS, and its workers block in
+;    a 1-byte pipe read between items (one byte written per queued
+;    item). An offloaded operation runs on ANOTHER THREAD: it must not
+;    read thread-local globals of the requester; results either travel
+;    on their own fresh heap page (channel-message style) or are
+;    written into requester-owned memory named in the request cell —
+;    the requester is parked, its region quiescent, so such writes are
+;    race-free (File's read leg freads straight into the String's
+;    buffer this way, zero copies). At thread exit the trampoline
+;    drains the pool (Io.drain_pool: pipe write end closed -> workers
+;    read 0 and exit -> joined; pool page freed) and closes the
+;    scheduler's poller + wake handle (Io.close_poller); both are also
+;    callable directly — the next use lazily rebuilds.
+;
+;   let res Io.offload(&blocking_op, arg)   ; parks in a task; runs
+;                                           ; in place otherwise
+;
+; Work-stealing task pool (stage-3 milestone 3.2): the task runtime the
+; promoted-for emission (milestone 3.3/4.4) dispatches
+; to, usable directly today. A pool is N OS threads (Thread.spawn),
+; each owning a spinlocked work deque; TaskPool.submit places a task on
+; a deque round-robin and a worker whose own deque runs dry STEALS from
+; the others'. The wake channel is the IoPool pattern: one pipe byte
+; per queued item — a worker blocks in a 1-byte read and, having
+; consumed a byte, is entitled to exactly one item SOMEWHERE (pushes
+; precede byte writes, takes follow byte reads), so its steal scan
+; always terminates. Closing the write end (TaskPool.shutdown) drains
+; the remaining bytes first, then hands every worker a 0 — queued work
+; still runs before the workers exit and are joined.
+;
+; One region per task: the task entry (`procedure fn(arg: pointer[void])
+; returns pointer[void]`, run via scaly_call_ptr) executes on a worker
+; thread — its allocations root on that worker's thread-local allocator
+; and unwind with the entry frame, so each task's region dies with the
+; task. Results land in CALLER-OWNED DISJOINT SLOTS (Vector.put at the
+; task's own index is the canonical target): the submitter is parked in
+; TaskGroup.wait while tasks run, its region is quiescent, so those
+; cross-thread writes are race-free — the milestone-2.5 zero-copy
+; discipline. Anything a task allocates and keeps beyond its return
+; must ride its own heap page, channel-message style.
+;
+; A TaskGroup counts in-flight tasks (atomic) and carries its own pipe:
+; the completion that takes pending to zero writes one byte, and wait
+; re-checks the counter after every byte it reads — stale bytes from
+; intermediate zero-crossings (submit waves reusing one group) are
+; harmless. Work items ride the GROUP'S own heap page (bump-allocated
+; by the submitter, freed wholesale in dispose), so the pool needs no
+; allocator and nothing to track. Contracts: one submitting thread per
+; group, wait only after every submit of the wave, dispose only after
+; wait, shutdown only when no group has work in flight; wait blocks the
+; calling THREAD (call it from the main context, not inside a scheduled
+; task). No shared global is needed anywhere: the pool record travels
+; by pointer (spawn cells, task arguments), channel-style.
+;
+;   let pool TaskPool.create(4 as i64)
+;   let g TaskGroup.create()
+;   ...TaskPool.submit(pool, &task_fn, arg_i, g) per task...
+;   TaskGroup.wait(g)                 ; blocks until every task finished
+;   TaskGroup.dispose(g)
+;   TaskPool.shutdown(pool)           ; drain queued work, join workers
+;
+; Exit codes: 103 mmap, 104 stack guard, 105 munmap, 106 scheduler
+; deadlock (ready queue empty, no I/O waiters, tasks still blocked in
+; a join), 107 poller failure (create/arm/wait or
+; set_nonblocking), 108 fiber stack overflow (guard page hit), 109
+; thread spawn/join failure, 110 send on a closed channel, 111 worker
+; pool failure (pipe creation), 112 task pool/group pipe failure.
+
+use scaly.memory.Page
+use scaly.memory.root_pages.StackBucketHeader
+
+; The third argument is the stack's LOW address, and it exists for Windows
+; alone (stage 7, brocken 1): Win64 keeps the running stack's bounds in TIB
+; fields that the OS itself reads — stack-overflow dispatch, guard-page growth,
+; RtlUnwind's frame validation — so a fiber on its own stack has to swap them
+; with the rest of the context, and they cannot be derived from the stack TOP.
+; Boost's make_fcontext takes a size for the same reason. The SysV and AAPCS64
+; files ignore it, which costs them a register they never read; passing it
+; unconditionally is what keeps ONE declaration serving every target, and one
+; seed with it.
+function scaly_make_context(stack_top: pointer[void], fn: pointer[void], stack_base: pointer[void]) returns pointer[void] extern
+procedure scaly_jump_context(to: pointer[void]) returns pointer[void] extern
+
+; The panic catch-point chain head (scaly/memory/panic.c). Read and written at
+; every context crossing so the chain is per FIBER; see swap_allocator.
+function scaly_catch_top_get() returns pointer[void] extern
+procedure scaly_catch_top_set(top: pointer[void]) extern
+
+; Evented-I/O backend shim (fiber/eio.c — kqueue/epoll behind one C API).
+; Readiness registration is oneshot: an armed fd fires once, then must be
+; re-armed. wait blocks until at least one event and fills tags (the void*
+; handed to arm). read/write return -2 for would-block, -1 for hard errors.
+function scaly_eio_create() returns i32 extern
+function scaly_eio_arm(q: i32, fd: i32, for_write: i32, tag: pointer[void]) returns i32 extern
+function scaly_eio_wait(q: i32, tags: pointer[pointer[void]], max: i32) returns i32 extern
+; Like scaly_eio_wait but returns 0 if ms elapses before any event (the
+; bounded wait behind cross-thread deadlock detection, M2.4 residual).
+function scaly_eio_wait_timeout(q: i32, tags: pointer[pointer[void]], max: i32, ms: i32) returns i32 extern
+function scaly_eio_set_nonblocking(fd: i32) returns i32 extern
+procedure scaly_eio_read(fd: i32, buf: pointer[void], count: size_t) returns i64 extern
+procedure scaly_eio_write(fd: i32, buf: pointer[void], count: size_t) returns i64 extern
+
+; Cross-thread wake channel (milestone 2.4, shim rule (a): EVFILT_USER is
+; kqueue-only, eventfd is linux-only). wake_create registers a persistent
+; edge-style user event on q reporting tag when triggered; returns the
+; wake handle scaly_eio_wake takes (-1 on failure). scaly_eio_wake may be
+; called from ANY thread; triggers before or during a wait complete that
+; wait, multiple triggers coalesce into one report.
+function scaly_eio_wake_create(q: i32, tag: pointer[void]) returns i32 extern
+procedure scaly_eio_wake(q: i32, w: i32) returns i32 extern
+
+; Close the wake channel (milestone 2.5 residual). Shim-owned (rule a):
+; whether the wake handle is a real fd is OS-specific — an eventfd on
+; linux (deregistered + closed), a kqueue ident on darwin (the user
+; event is deregistered; it dies with the queue anyway).
+procedure scaly_eio_wake_close(q: i32, w: i32) returns i32 extern
+
+; Close the poller QUEUE — same argument as the wake close one line up, and
+; it was missing for the queue itself: a kqueue/epoll queue is a real fd,
+; an IOCP completion port is a HANDLE, and POSIX close(2) on the latter is
+; not a leak but a fatal call (the CRT's invalid-parameter handler ends the
+; process). Shim-owned by rule (a).
+procedure scaly_eio_close(q: i32) returns i32 extern
+
+; Online CPU count (milestone 3.3, shim rule (a): the _SC_NPROCESSORS_ONLN
+; constant's value is OS-specific). The ncpu-based worker default for
+; TaskPool.default_pool. Never less than 1.
+function scaly_eio_ncpu() returns i32 extern
+
+; Monotonic nanosecond clock (shim rule a: the clockid value is
+; OS-specific) — deadline arithmetic for Channel.receive_timeout and
+; the Node heartbeat (stage 7, milestone 7.3).
+function scaly_eio_now_ns() returns i64 extern
+
+; POSIX close(2) — pool pipes and pollers at thread exit (milestone 2.5
+; residual). Declared (int)->(int) to MATCH scalyls's existing declare:
+; the whole-program llvm-link sees ONE `close` declaration across the
+; linked roots (a type-mismatched pair would conflict).
+function close(fd: int) returns i32 extern
+
+; Atomic load (milestone 2.4; cas/store are declared in root_pages.scaly).
+; Like all scaly_atomic_* names this is emitter-lowered, never a symbol.
+function scaly_atomic_load_u64(p: pointer[u64]) returns u64 extern
+
+; Atomic fetch-add (milestone 3.2 — the task-group pending counter).
+; Old-value convention like every scaly_atomic_*; decrement by adding
+; (0 - 1) as u64. Emitter-lowered, never a symbol.
+function scaly_atomic_add_u64(p: pointer[u64], v: u64) returns u64 extern
+
+; TCP helpers (shim-owned: sockaddr_in layout is OS-specific, and accept
+; needs the errno mapping). listen returns a nonblocking listening fd on
+; 127.0.0.1:port (0 = ephemeral); accept returns -2 for would-block.
+procedure scaly_eio_tcp_listen(port: i32) returns i32 extern
+function scaly_eio_tcp_port(fd: i32) returns i32 extern
+procedure scaly_eio_tcp_connect(port: i32) returns i32 extern
+procedure scaly_eio_accept(fd: i32) returns i32 extern
+
+; Stage-7 node runtime (milestone 7.3): INADDR_ANY listener, getaddrinfo
+; connect (rule a: addrinfo layout is OS-specific), and the SIGPIPE-safe
+; socket write (rule a: MSG_NOSIGNAL/SO_NOSIGPIPE are OS-specific).
+procedure scaly_eio_tcp_listen_any(port: i32) returns i32 extern
+procedure scaly_eio_tcp_connect_host(host: pointer[const_char], port: i32) returns i32 extern
+procedure scaly_eio_tcp_write(fd: i32, buf: pointer[void], count: size_t) returns i64 extern
+
+; Guard-page overflow diagnostics (shim-owned: struct sigaction and
+; stack_t layouts are OS-specific). Installs a SIGSEGV/SIGBUS handler on
+; an alternate stack; classify (a unary Scaly function, signal context —
+; reads globals only) decides whether the fault address is a fiber guard
+; hit: 1 = report + exit 108, 0 = default action (plain crash).
+procedure scaly_guard_install(classify: pointer[void]) returns i32 extern
+
+; Establish the guard region at the low end of a fiber stack (shim rule (a),
+; and the sharper form of it: the call exports the QUESTION because the two
+; platforms answer it with different MECHANISMS — PROT_NONE on POSIX,
+; PAGE_GUARD on Windows). Returns 0 on success.
+procedure scaly_stack_guard(base: pointer[void], len: size_t) returns i32 extern
+
+; Thread primitive (milestone 2.1). Direct externs per the containment
+; rule: fixed prototypes, POSIX-uniform, no errno. pthread_t is opaque
+; and pointer-sized on all four LP64 targets — carried as size_t.
+procedure pthread_create(thread: pointer[size_t], attr: pointer[void], start: pointer[void], arg: pointer[void]) returns i32 extern
+procedure pthread_join(thread: size_t, retval: pointer[pointer[void]]) returns i32 extern
+
+; Indirect-call primitive (milestone 2.3b): an extern name with no
+; symbol anywhere — the Emitter lowers it to a bare ptr(ptr) indirect
+; call, the C calling shape of a pthread-style entry (the delegate
+; mechanism can't produce this: it prepends the record as a hidden
+; first argument).
+function scaly_call_ptr(fn: pointer[void], arg: pointer[void]) returns pointer[void] extern
+
+function scaly_aligned_alloc(alignment: i64, size: i64) returns pointer[void] extern
+
+; ---- Cross-thread deadlock detection (milestone 2.4 residual) ----
+;
+; A single-thread channel deadlock is caught by exit 106 (Scheduler.run /
+; join see the ready queue drained with tasks still blocked). The cross-
+; thread case used to hang forever: a receiver parked on a channel whose
+; only sender is itself blocked has no local signal that no wake will ever
+; come. This closes the SOUND part of that gap without risking a false
+; trap.
+;
+; State (one process-global record, reached by every thread): `threads`
+; over-approximates the live threads that could still send or wake (every
+; OS thread is counted from spawn to exit — over-counting only ever misses
+; a deadlock, never invents one); `blocked` counts threads currently
+; inside a channel-motivated poller wait; `epoch` is bumped on every event
+; that could wake such a waiter (a queued send, a close, a routed task).
+; A channel wait is BOUNDED (CHAN_DEADLOCK_MS): on timeout, if no channel
+; event occurred while we waited (epoch unchanged) AND every live thread
+; is blocked on a channel (`blocked >= threads`), no send/wake can ever
+; arrive, so it is a genuine deadlock → exit 106. Sound because a thread
+; not blocked here (running, sleep-polling a bounded send, or waiting on
+; real I/O with io_waiting > 0) keeps `blocked < threads`, and any wake in
+; flight bumps the epoch or returns the wait with events. It is NOT
+; complete: an unrelated idle background thread (e.g. a pooled worker
+; parked on its pipe) is counted in `threads` but never in `blocked`, so
+; it masks detection — that case still hangs, exactly as before.
+define DeadlockState
+(
+    threads: u64
+    blocked: u64
+    epoch: u64
+)
+
+; Bounded channel-wait timeout: long enough that the idle re-check cost is
+; nil (a real wake pokes the poller and returns at once; the timeout only
+; bounds detection latency), short enough that a deadlock traps promptly.
+define CHAN_DEADLOCK_MS i32 100
+
+; Process-global — NOT thread_local (`shared` declaration, like the heap
+; tracer). Allocated once, single-threaded, on first touch (the
+; first Thread.spawn or the first channel wait, both on the main thread
+; before any concurrency); `threads` starts at 1 for the main thread.
+shared deadlock_state: pointer[DeadlockState] linked
+
+procedure ensure_deadlock_state() linked
+
+; Note a channel wake event (queued send / close / routed task) so a
+; waiter that observed quiescence just before it does not misread it as a
+; deadlock. Cheap no-op until the state exists (no waiter can exist yet).
+procedure deadlock_event() linked
+
+; The pthread entry of every Thread.spawn (milestone 2.3b): unpacks the
+; spawn cell ({fn, arg} on their own heap page, released BEFORE the
+; entry runs — cross-thread frees are safe since 2.3), runs the user
+; entry through scaly_call_ptr, then reclaims the dying thread's
+; allocator state: pooled fiber stacks, the fully-unwound stack-bucket
+; chain, and the heap buckets (empty → freed now; still-live → marked
+; dead, freed by their last release_page from any thread). Outside the
+; user entry this frame must stay allocation-free — after the reclaim
+; there is no allocator left to allocate from.
+procedure scaly_thread_start(mutable raw: pointer[void]) returns pointer[void] io linked
+
+; POSIX poll(2) — the no-scheduler readiness wait (milestone 2.5).
+; struct pollfd (int fd, short events, short revents) and POLLIN=1 /
+; POLLOUT=4 are identical on darwin and linux, so per the containment
+; rule this is a direct extern, not a shim call. nfds_t is 32-bit on
+; darwin and 64-bit on linux: the constant 1 passed as i32 materializes
+; with the upper register half zeroed on both ABIs.
+; nfds is `nfds_t`: 32 bits on macOS, 64 on glibc. `u64` is portable both ways
+; (the caller writes the whole register; a 32-bit callee reads the low half),
+; and it keeps this declaration type-identical to the one in scalyls/worker.scaly
+; -- both land in the same linked binary. That claim used to be FALSE in the
+; first parameter: this side said `pointer[void]` while scalyls said
+; `pointer[pollfd]`, and check 3 of tests/abi/run.sh cannot see the difference
+; because both lower to a bare `ptr`. `pollfd` is declared HERE, in the
+; prelude, so the tree has ONE declaration of the struct: a second top-level
+; `define pollfd` would mangle to the same LLVM struct name and one of the two
+; would silently win the whole-stack link.
+; struct pollfd { int fd; short events; short revents; } -- 8 bytes, the C
+; layout on LP64 (i32 + i16 + i16).
+define pollfd
+(
+    fd: i32
+    events: i16
+    revents: i16
+)
+procedure poll(fds: pointer[pollfd], nfds: u64, timeout: i32) returns i32 extern
+
+; POSIX pipe(2) — the worker pool's blocking wait channel (milestone
+; 2.5). int[2] on both OSes: direct extern.
+procedure pipe(fds: pointer[i32]) returns i32 extern
+
+; Worker-pool cap per requesting thread (milestone 2.5). Beyond it a
+; queued item waits for the next worker to come free.
+define IO_POOL_WORKERS i64 4
+
+; Stack provisioning. 32-bit C params must be i32, not int (Apple arm64
+; stack-arg ABI); mmap's offset is 64-bit on both OSes.
+function mmap(addr: pointer[void], length: size_t, prot: i32, flags: i32, fd: i32, offset: i64) returns pointer[void] extern
+function munmap(addr: pointer[void], length: size_t) returns i32 extern
+function mprotect(addr: pointer[void], len: size_t, prot: i32) returns i32 extern
+function getpagesize() returns i32 extern
+
+; MAP_PRIVATE (0x2, both OSes) | MAP_ANON (darwin, 0x1000) | MAP_ANONYMOUS
+; (linux, 0x20). The union works on both OSes: 0x1000 on linux is
+; MAP_EXECUTABLE and 0x20 on darwin is MAP_RENAME — both documented as
+; ignored. Verified on arm64-darwin; the linux legs run in CI.
+define MAP_ANON_PRIVATE i32 0x1022
+define PROT_NONE i32 0
+define PROT_READ_WRITE i32 3
+
+; Default fiber stack: 128 KB including the guard page (no growing in v1).
+define FIBER_STACK_SIZE size_t 0x20000
+
+; The running fiber (null = main context). Single-threaded by design in
+; stage 1; becomes per-thread state in stage 2.
+mutable current_fiber: pointer[void] linked
+
+; The active scheduler (pointer[Scheduler]) and the task it is currently
+; running (pointer[SchedTask], null = main context). Single-threaded by
+; design in stage 1, like current_fiber.
+mutable current_scheduler: pointer[void] linked
+mutable current_task: pointer[void] linked
+
+; Wholesale-teardown counters. fiber_regions_freed ticks ONCE PER DISPOSED
+; FIBER and is THE teardown proof (Fiber.freed_region_count) — use it in
+; tests. The finer-grained pair underneath needs care: a cleanly returned
+; fiber POPS its root pages as its frames unwind, so fiber_pages_freed only
+; grows for fibers torn down mid-flight, and fiber_buckets_freed counts
+; allocator caches (nonzero only when the fiber allocated at all).
+mutable fiber_regions_freed: i64 linked
+mutable fiber_pages_freed: i64 linked
+mutable fiber_buckets_freed: i64 linked
+
+; The stack pool (milestone 2.0): a LIFO of freed DEFAULT-SIZED fiber
+; stacks, threaded through the stacks themselves — the entry is two
+; size_t slots [next, size] at stack_base + guard page. Single-threaded
+; like every fiber global (per-thread in stage 2). Custom sizes are not
+; pooled: a mixed pool would let an odd-sized head block reuse.
+mutable stack_pool: pointer[void] linked
+mutable fiber_stacks_pooled: i64 linked
+mutable fiber_stacks_reused: i64 linked
+
+; This thread's blocking-operation worker pool (milestone 2.5,
+; pointer[IoPool]; null until the first Io.offload from a task) and the
+; count of operations shipped to a worker — the suspension proof for
+; tests. Thread-local like every mutable global: each requesting thread
+; grows its own pool.
+mutable io_pool: pointer[void] linked
+mutable io_offloads: i64 linked
+
+; This thread's poller/wake fd MIRRORS (milestone 2.5 residual), stored
+; as fd+1 so the constant initializer 0 means "none". close_poller at
+; thread exit reads THESE, never the Scheduler record — a thread entry
+; may have released the scheduler's host page before returning, and a
+; freed heap page can be re-allocated by another thread at any moment.
+mutable io_poller_fd: int linked
+mutable io_wake_fd: int linked
+
+; This thread's default task pool (milestone 3.3, pointer[TaskPool];
+; null until the first TaskPool.default_pool call — the promoted-for
+; dispatch target). Thread-local like the I/O pool: the pool pointer
+; rides a TLS cell, no process-global mutable state needed. A spawned
+; thread's pool is shut down by the exit trampoline (drain_default);
+; the main thread's lives until process exit.
+mutable task_default_pool: pointer[void] linked
+
+; Guard-page fault classifier state: installed once, reads only globals
+; (it runs in signal context). guard_page_size is cached at create time
+; so the classifier calls nothing at all.
+mutable guard_installed: bool linked
+mutable guard_page_size: size_t linked
+
+define Fiber
+(
+    ctx: pointer[void]           ; the suspended (non-running) side's context
+    stack_base: pointer[void]    ; mmap base; guard page at the bottom
+    stack_size: size_t
+    saved_head: pointer[StackBucketHeader]  ; the non-running side's ...
+    saved_top: pointer[Page]                ; ... StackBucket allocator state
+    saved_catch: pointer[void]              ; ... panic catch-point chain
+    done: bool
+)
+{
+    ; How many fiber regions have been disposed — one tick per fiber,
+    ; whether or not it ever allocated. The teardown proof for tests.
+    function freed_region_count() returns i64 linked
+
+    function freed_page_count() returns i64 linked
+
+    function freed_bucket_count() returns i64 linked
+
+    function pooled_stack_count() returns i64 linked
+
+    function reused_stack_count() returns i64 linked
+
+    ; Pop a pooled stack (base address) when the pool head matches the
+    ; requested size; null otherwise. Only default-sized stacks are ever
+    ; pooled, so a custom-size request simply misses.
+    procedure take_pooled_stack(size: size_t) returns pointer[void] linked
+
+    ; Hand every pooled stack back to the OS.
+    procedure drain_stack_pool() linked
+
+    ; Swap the per-side state between the process globals and the record.
+    ; Called at every context crossing, keeping the invariant that the record
+    ; holds the NON-running side's state.
+    ;
+    ; Two things travel: the StackBucket allocator state (without it,
+    ; interleaved root-page pushes from two fibers violate the shared
+    ; bucket's strict LIFO discipline -- tests/fiber/interleave.scaly), and
+    ; since 2026-09-08 the PANIC CATCH-POINT CHAIN.
+    ;
+    ; ★★★Why the chain belongs here: a catch frame lives on the stack of the
+    ; routine that pushed it, and a fiber has its own stack. Kept per thread,
+    ; the frames of a SUSPENDED fiber stay visible, and a panic raised by
+    ; whoever runs next longjmps into a stack that is not running. Measured
+    ; before the fix (TRAPS.md 3.16): a fiber armed a catch point and yielded,
+    ; main violated a bound, and the FIBER's else arm ran on the suspended
+    ; stack, then died in Fiber.finish with exit 21 because `current_fiber`
+    ; was not it.
+    ;
+    ; ★The consequence is a RULE, not a limitation to work around: a panic
+    ; inside a fiber is caught only by a catch point on THAT fiber's stack.
+    ; Delivering a fiber's fault to its resumer is a task-boundary policy
+    ; (TRAPS.md 3.1) and needs an unwind that can cross stacks -- it is not
+    ; this crossing's job.
+    procedure swap_allocator(mutable f: ref[Fiber]) linked
+
+    ; Create a suspended fiber. The record lives on the given page; the
+    ; entry function fn (take it with &my_fiber) runs on a pooled or
+    ; freshly mmap'd stack with a guard page at the low end,
+    ; and allocates into its own region. The first create installs the
+    ; guard-page overflow handler (best-effort diagnostic — a failed
+    ; install just keeps the plain-crash behavior).
+    procedure create_sized(host: ref[Page], mutable fn: pointer[void], size: size_t) returns ref[Fiber] linked
+
+    procedure create(host: ref[Page], mutable fn: pointer[void]) returns ref[Fiber] linked
+
+    ; Run the fiber until it yields or finishes. Returns true when the
+    ; fiber can be resumed again, false once it finished (or was done).
+    procedure resume(mutable f: ref[Fiber]) returns bool linked
+
+    ; First statement of every fiber entry function: stores the resumer's
+    ; context (the entry argument) into the record, establishing the
+    ; record invariant. The resume that jumped here already swapped the
+    ; allocator state.
+    procedure started(first_ctx: pointer[void]) linked
+
+    ; Suspend the running fiber and return to its resumer. Returns when
+    ; the fiber is resumed again.
+    procedure yield() linked
+
+    ; Finish the running fiber: marks it done and returns to the resumer
+    ; for good. Never returns (resume refuses a done fiber; if the entry
+    ; function itself ever returned, the switcher traps).
+    procedure finish() linked
+
+    ; Free the fiber's whole region and stack: deallocate the extension
+    ; and exclusive chains of every root page still on the fiber's stack
+    ; (they return to the shared heap buckets), free the fiber's stack
+    ; buckets, then munmap the fiber stack. Returns the number of root
+    ; pages torn down. Call after the fiber finished (or to kill it — a
+    ; disposed fiber must never be resumed).
+    procedure dispose(mutable f: ref[Fiber]) returns int linked
+}
+
+; Is addr inside the RUNNING fiber's guard page? The overflow classifier
+; the shim's signal handler calls (signal context: reads globals only,
+; calls nothing). Only running code can overflow its own stack, so the
+; current fiber suffices; on the main context (or a miss) the handler
+; falls through to the default action.
+function fiber_guard_hit(addr: pointer[void]) returns i32 linked
+
+; A scheduled task. The entry function pointer MUST stay the FIRST field:
+; the record doubles as the delegate closure record scheduler_entry calls
+; through (slot 0 = thunk). The next link serves double duty — ready-queue
+; link while the task is queued, waiter-chain link while it is blocked in
+; join (a task is never both).
+define SchedTask
+(
+    entry: pointer[void]         ; the task's zero-argument procedure
+    fiber: ref[Fiber]
+    next: ref[SchedTask]?
+    waiter: ref[SchedTask]?   ; tasks blocked joining this one
+    done: bool
+    disposed: bool
+    arg: pointer[void]           ; spawn_arg's argument (task_arg reads it)
+    ; home: the spawning scheduler (milestone 2.4) — a remote channel
+    ; sender routes wakes through it.
+    home: pointer[void]
+)
+
+; The calling shape of a task record viewed as a delegate value: the
+; thunk in slot 0 receives the record pointer itself as a hidden first
+; argument, which a zero-argument Scaly procedure ignores (safe on both
+; LP64 ABIs — the argument register is simply unread).
+define TaskFn delegate() returns void
+
+; The fiber entry of every scheduled task: wraps the started/finish
+; protocol around an indirect call of the task's own procedure. The
+; dispatcher stores the task into current_task before resuming.
+procedure scheduler_entry(first_ctx: pointer[void]) io linked
+
+define Scheduler
+(
+    host: pointer[Page]          ; task records, fibers, and queue live here
+    head: ref[SchedTask]?     ; FIFO ready queue
+    tail: ref[SchedTask]?
+    blocked: int                 ; tasks waiting in a join, send/receive, or Io
+    eio: i32                     ; readiness poller fd (-1 until first Io use)
+    io_waiting: int              ; tasks parked on fd readiness
+    wake: i32                    ; cross-thread wake handle (-1 until armed)
+    inject: u64                  ; MPSC inject queue: Treiber stack of
+                                 ; SchedTasks pushed by remote threads
+    chan_parked: int             ; tasks parked on a Channel receive
+)
+{
+    ; Create the scheduler on the given page and make it current. All
+    ; spawned task records and fiber stacks are anchored on this page,
+    ; so they survive any spawning fiber's region teardown.
+    procedure create(host: ref[Page]) returns ref[Scheduler] linked
+
+    ; Append a task to the ready-queue tail (round-robin order).
+    procedure enqueue(mutable t: ref[SchedTask]) linked
+
+    ; Pop the ready-queue head (null when the queue is empty).
+    procedure dequeue() returns ref[SchedTask]? linked
+
+    ; Create a task for the given zero-argument procedure (take it with
+    ; &my_task) on a fiber stack of the given size, hand it one
+    ; pointer-sized argument (readable inside the task via
+    ; Scheduler.task_arg — cast an fd through size_t), and put it at the
+    ; ready-queue tail. Callable from the main context and from inside a
+    ; running task alike. Non-default stack sizes bypass the stack pool.
+    procedure spawn_sized(mutable fn: pointer[void], mutable arg: pointer[void], size: size_t) returns ref[SchedTask] linked
+
+    ; spawn_sized with the default stack size.
+    procedure spawn_arg(mutable fn: pointer[void], mutable arg: pointer[void]) returns ref[SchedTask] linked
+
+    ; spawn_arg without an argument.
+    procedure spawn(mutable fn: pointer[void]) returns ref[SchedTask] linked
+
+    ; The running task's spawn_arg argument (null on the main context).
+    procedure task_arg() returns pointer[void] linked
+
+    ; Give up the current time slice: requeue the running task at the
+    ; tail and return to the dispatcher. A no-op on the main context.
+    procedure yield() linked
+
+    ; Push a channel receiver onto its HOME scheduler's inject queue and
+    ; poke that scheduler's wake handle (milestone 2.4). Called from a
+    ; REMOTE thread: the only shared state touched is the atomic Treiber
+    ; head (the task's next field is ours to write until the CAS
+    ; publishes it) and the wake syscall; the home scheduler's counters
+    ; are adjusted by its own drain_inject. The receiver armed the wake
+    ; handle before parking, so the racy read of home.eio/home.wake sees
+    ; initialized values (published by the channel lock).
+    procedure inject_task(home: ref[Scheduler], mutable t: ref[SchedTask]) linked
+
+    ; Poke a scheduler's wake handle so a poll_io blocked on it returns.
+    ; Safe from any thread; a scheduler that never armed a wake (no
+    ; channel receive yet) is simply not waiting — nothing to poke.
+    procedure wake_remote(home: ref[Scheduler]) linked
+
+    ; Move every remotely-injected channel receiver to the ready queue
+    ; (milestone 2.4). Runs only on the scheduler's own thread (start of
+    ; every step), so the counter updates are owner-writes; the detach
+    ; CAS is the only contended access. The Treiber stack is LIFO —
+    ; reversed here so cross-thread wakes keep arrival order.
+    procedure drain_inject() linked
+
+    ; Run one ready task until it yields or finishes. A task that
+    ; finished is reaped ON THE SPOT — its whole fiber region (stack,
+    ; buckets, pages) dies with it, milestone 1.6's "the region dies
+    ; with the connection" — after waking its joiners. Returns false
+    ; when the ready queue is empty. Remotely-injected channel
+    ; receivers are drained into the ready queue first (every dispatch
+    ; loop runs through here, so no loop needs its own drain).
+    procedure step() returns bool linked
+
+    ; Move every task blocked on t back to the ready queue.
+    procedure wake_waiters(mutable t: ref[SchedTask]) linked
+
+    ; Block in the poller until at least one armed fd fires, then wake
+    ; every parked task whose readiness arrived (requeue, unblock).
+    ; Returns true when the main context's own event (null tag) fired.
+    ; Only ever runs on the main context (the dispatcher).
+    procedure poll_io() returns bool io linked
+
+    ; Run one ready task; when the ready queue is empty but tasks await
+    ; fd readiness, block in the poller and wake them. Tasks parked on a
+    ; Channel receive (milestone 2.4) also justify blocking: a remote
+    ; sender's inject + wake (or the last sender's close) gets them
+    ; moving again — that is the cross-thread replacement for exit 106,
+    ; which keeps its exact meaning for programs without channel parks.
+    ; Returns false only when nothing can run again without outside
+    ; help — the caller decides whether remaining blocked tasks make
+    ; that a deadlock.
+    procedure step_or_wait() returns bool io linked
+
+    ; Dispose a finished task's fiber region exactly once. The
+    ; dispatcher already reaps eagerly (step), so this normally finds
+    ; the task disposed and returns 0; it stays as the idempotence
+    ; anchor for join and for callers holding a task record. (A cleanly
+    ; returned task leaves 0 live pages anyway — its frames unwound
+    ; before finish; watch Fiber.freed_bucket_count for the teardown
+    ; proof.)
+    procedure reap(mutable t: ref[SchedTask]) returns int linked
+
+    ; Round-robin over the ready queue until it drains, blocking in the
+    ; poller while I/O waiters remain. Traps (exit 106) if tasks are
+    ; still blocked then — a join/channel deadlock.
+    procedure run() io linked
+
+    ; Wait until t finished. The dispatcher reaps eagerly, so the
+    ; fiber's region is normally gone already (the reap here returns 0
+    ; then — it only frees when a caller disposed nothing yet). From
+    ; the main context this drives the dispatcher itself; from inside a
+    ; task it blocks on t's waiter chain and yields to the dispatcher.
+    procedure join(mutable t: ref[SchedTask]) returns int io linked
+}
+
+; One queued blocking operation (milestone 2.5). The record lives on
+; its own heap page (requester-allocated, requester-freed after the
+; result is consumed); the worker writes result before the inject that
+; wakes the requester publishes it.
+define IoWork
+(
+    next: ref[IoWork]?
+    fn: pointer[void]            ; procedure fn(arg) returns pointer[void]
+    arg: pointer[void]
+    result: pointer[void]
+    task: ref[SchedTask]     ; the parked requester
+)
+
+; A requesting thread's worker pool (milestone 2.5): a spinlocked work
+; FIFO plus a pipe whose bytes count queued items — an idle worker
+; blocks in a 1-byte read, so waiting needs no condvars (their struct
+; layouts are OS-specific and would grow the shim). The record lives on
+; its own heap page: workers reach it through their spawn argument,
+; never through the requester's thread-local globals.
+define IoPool
+(
+    lock: u64                    ; spinlock (bucket_lock pattern)
+    head: ref[IoWork]?        ; queued operations, FIFO
+    tail: ref[IoWork]?
+    pipe_read: i32               ; workers block reading here
+    pipe_write: i32              ; one byte written per queued item
+    workers: i64                 ; spawned workers (grows to the cap
+                                 ; until drain_pool resets the pool)
+    idle: i64                    ; workers blocked in the pipe read
+    ; Worker join handles (IO_POOL_WORKERS slots on the pool page) —
+    ; drain_pool joins each. Requester-written only (one requesting
+    ; thread per pool), so no lock is needed.
+    handles: pointer[size_t]
+)
+{
+    ; The pool spinlock — same CAS pattern as the channel and the
+    ; root_pages bucket_lock: critical sections are a few pointer
+    ; moves, one lock at a time.
+    procedure acquire(pl: pointer[IoPool]) linked
+
+    procedure release(pl: pointer[IoPool]) linked
+}
+
+; A pool worker (milestone 2.5): block in the 1-byte pipe read (one
+; byte = one queued item), pop one operation, run it, publish the
+; result, wake the requesting task through its home scheduler's inject
+; queue — exactly a remote channel sender's wake path. Runs on its own
+; OS thread: everything it touches arrives through the pool pointer
+; (the requester's thread-local globals are invisible here — the
+; milestone-2.4 lesson). Allocation happens only inside the shipped
+; operation, on this worker's own thread-local allocator; a result
+; lives on its own heap page, freed cross-thread by the requester
+; (safe since milestone 2.3). The loop never returns.
+procedure io_worker(mutable arg: pointer[void]) returns pointer[void] io linked
+
+; Suspending I/O over the scheduler's readiness poller (milestone 1.5).
+; A file descriptor must be nonblocking (Io.set_nonblocking, once); read
+; and write try the syscall and park the running task on would-block.
+; The backend (kqueue/epoll) lives in the eio C shim — see the module
+; header. At most one parked task per fd at a time. Since milestone 2.5
+; no scheduler is required: without one, would-block waits in poll(2).
+define Io
+{
+    ; The current scheduler's poller fd, created lazily on first use.
+    ; (i32-to-i64 casts zero-extend, so a sign test must compare against
+    ; -1 as i32 — the shim's failure value — not cast and check < 0.)
+    procedure ensure_poll() returns i32 io linked
+
+    ; Arm the current scheduler's cross-thread wake handle (milestone
+    ; 2.4), creating the poller first if needed. Idempotent; called by
+    ; Channel.receive BEFORE any park so a remote sender's wake_remote
+    ; always finds initialized eio/wake fields. The tag is the sentinel
+    ; 1 — poll_io recognizes it as "drain the inject queue / re-check
+    ; the channel" (0 stays the main context's own-event tag, real
+    ; pointers stay Io-parked tasks).
+    procedure ensure_wake() returns i32 io linked
+
+    ; Put the fd into nonblocking mode (fcntl lives in the shim: it is
+    ; variadic in libc, unreachable through a fixed-prototype extern).
+    procedure set_nonblocking(fd: i32) io linked
+
+    ; Block until fd is ready, scheduler-free (milestone 2.5): a plain
+    ; poll(2) on one fd, infinite timeout. The result is advisory — the
+    ; caller retries its syscall, which reports any hard error itself
+    ; (an EINTR or POLLNVAL just loops through one more retry).
+    procedure wait_ready(fd: i32, for_write: bool) io linked
+
+    ; Park until fd is ready. A task arms the fd (oneshot, tagged with
+    ; its record) and yields to the dispatcher; the main context arms
+    ; with a null tag and drives the dispatcher until its event fires,
+    ; running ready tasks first (mirrors a main-context join). Without
+    ; any scheduler (milestone 2.5) the wait is a plain poll(2).
+    procedure park(fd: i32, for_write: bool) io linked
+
+    ; Read up to count bytes; suspends while the fd has nothing to
+    ; offer. Returns the byte count, 0 at EOF, -1 on a hard error.
+    procedure read(fd: i32, mutable buf: pointer[void], count: size_t) returns i64 io linked
+
+    ; Write up to count bytes; suspends while the fd cannot take data.
+    ; Returns the byte count written (partial writes possible), -1 on a
+    ; hard error.
+    procedure write(fd: i32, mutable buf: pointer[void], count: size_t) returns i64 io linked
+
+    ; A nonblocking TCP socket listening on 127.0.0.1:port (0 asks the
+    ; kernel for an ephemeral port; Io.local_port reads the assignment).
+    ; Returns the fd, -1 on failure. Socket setup lives in the shim:
+    ; sockaddr_in's layout is OS-specific.
+    procedure listen(port: i32) returns i32 io linked
+
+    ; The local port a bound socket ended up on (-1 on failure).
+    procedure local_port(fd: i32) returns i32 io linked
+
+    ; Connect to 127.0.0.1:port — blocking handshake (instant against a
+    ; live local listener); call Io.set_nonblocking on the result before
+    ; suspending I/O. Returns the fd, -1 on failure.
+    procedure connect(port: i32) returns i32 io linked
+
+    ; Accept a connection; suspends while none is pending (readiness on
+    ; a listening fd = pending connection). Returns the new fd (still
+    ; blocking — Io.set_nonblocking it for suspending I/O), -1 on a
+    ; hard error. (Sign tests on i32 must compare against -1 as i32:
+    ; casts zero-extend.)
+    procedure accept(fd: i32) returns i32 io linked
+
+    ; Listen on ALL interfaces (INADDR_ANY) — a cluster node accepting
+    ; real remote peers (stage 7, milestone 7.3). Same contract as
+    ; Io.listen otherwise.
+    procedure listen_any(port: i32) returns i32 io linked
+
+    ; Resolve host by NAME (getaddrinfo in the shim, rule a) and
+    ; connect — blocking handshake like Io.connect. host must be
+    ; NUL-terminated (String.to_c_string). Returns the fd, -1 on
+    ; failure (resolution or connection).
+    procedure connect_host(mutable host: pointer[const_char], port: i32) returns i32 io linked
+
+    ; SIGPIPE-safe socket write (stage 7): a write racing a peer's death
+    ; must return -1/EPIPE, never kill the process. Suspension contract
+    ; of Io.write otherwise.
+    procedure tcp_write(fd: i32, mutable buf: pointer[void], count: size_t) returns i64 io linked
+
+    ; Whole-buffer variant of tcp_write (the Node frame writer). False
+    ; on a hard error — the caller treats that as peer suspicion, not a
+    ; program error.
+    procedure tcp_write_all(fd: i32, buf: pointer[void], count: size_t) returns bool io linked
+
+    ; Write the WHOLE buffer, looping over partial writes (milestone
+    ; 2.5 — Console goes through here). Colorless: suspends inside a
+    ; task on a nonblocking fd, drives the dispatcher from the main
+    ; context, plain-blocks without a scheduler. False on a hard error.
+    procedure write_all(fd: i32, buf: pointer[void], count: size_t) returns bool io linked
+
+    ; Is the caller running inside a scheduled task? File and friends
+    ; branch on this: offload inside a task, plain blocking call
+    ; otherwise — whether an operation suspends is a runtime property.
+    function in_task() returns bool linked
+
+    ; How many blocking operations this thread shipped to a worker —
+    ; the suspension proof for tests.
+    function offload_count() returns i64 linked
+
+    ; This thread's worker pool, created lazily on first offload.
+    procedure ensure_pool() returns ref[IoPool] io linked
+
+    ; Run fn(arg) — a blocking operation, `procedure fn(arg:
+    ; pointer[void]) returns pointer[void]` taken with &fn — without
+    ; stalling the scheduler (milestone 2.5). Inside a task the call is
+    ; shipped to a worker thread and the task parks until the result
+    ; arrives (the worker wakes it through the milestone-2.4 inject
+    ; queue + wake handle); on the main context, or without a
+    ; scheduler, fn runs right here and blocks — the colorless
+    ; fallback. fn runs on ANOTHER THREAD: it must not read this
+    ; thread's thread-local globals, and a non-null result must be
+    ; rooted on its own fresh heap page — the caller consumes and frees
+    ; it like a channel message. arg may point into the caller's
+    ; region: the requesting frame outlives the call.
+    procedure offload(mutable fn: pointer[void], mutable arg: pointer[void]) returns pointer[void] io linked
+
+    ; Live workers of this thread's pool (0 after drain_pool) — the
+    ; reclamation proof for tests.
+    function pool_worker_count() returns i64 linked
+
+    ; Shut down this thread's worker pool (milestone 2.5 residual):
+    ; closing the pipe's write end hands every idle worker's 1-byte
+    ; read a 0 — its loop exits and the thread ends (an in-flight
+    ; operation finishes first; its wake was already routed). Join the
+    ; workers (each reclaims its own allocator state through the spawn
+    ; trampoline), close the read end, free the pool page. Runs
+    ; automatically at thread exit (scaly_thread_start) and is callable
+    ; any time — the next offload builds a fresh pool. Must not run
+    ; while a task is parked on an offloaded operation.
+    procedure drain_pool() io linked
+
+    ; Close this thread's poller and wake handle (milestone 2.5
+    ; residual), read from the TLS fd mirrors — NEVER from the
+    ; Scheduler record, which may sit on a page the thread entry
+    ; already released. The wake close goes through the shim: whether
+    ; the handle is a real fd is OS-specific (an eventfd on linux, a
+    ; kqueue ident on darwin). Runs automatically at thread exit —
+    ; end-of-scheduler-life only: a still-live scheduler would keep
+    ; polling its (now closed) fd and trap. Sequential schedulers on
+    ; one thread overwrite the mirror; the earlier poller's fds are
+    ; the documented leak of that rare pattern.
+    procedure close_poller() io linked
+}
+
+; A channel node: one queued message. Allocated on the MESSAGE'S OWN page
+; (the sender owns the message until the send, so the bump allocation is
+; race-free) and freed with the message region by the receiver — the
+; queue needs no allocator of its own and nothing to track.
+define ChannelNode
+(
+    next: ref[ChannelNode]?
+    msg: pointer[void]
+)
+
+; The channel — an ASYNC ownership channel connecting fibers and
+; threads alike (milestone 2.4; THE channel type since the post-stage-3
+; unification, which retired the single-thread rendezvous Channel of
+; milestone 1.4 in its favor). null is RESERVED as the closed signal,
+; so a message must be non-null — end-of-stream is close_sender, not a
+; sentinel message. Capacity is a choice: an UNBOUNDED channel
+; (create) never blocks a send — the message is an owned region,
+; enqueue and move on; a BOUNDED channel (create_bounded(capacity))
+; applies BACKPRESSURE — a send whose queue is full blocks until a
+; receiver frees a slot. Deadlock avoidance stays topology-based: keep
+; the channel graph acyclic along the spawn tree (discipline for now —
+; a structural topology check is still deferred) and no wait cycle can
+; form; a single-thread cycle is still caught by exit 106, a cross-
+; thread one is not. Sender lifetime is explicit: create hands the
+; creator ONE send handle, add_sender registers another BEFORE it is
+; handed over, close_sender retires one — when the last retires the
+; channel is CLOSED and every parked receiver wakes with null (after
+; the queue drains: close is a termination signal, not a discard).
+; Ownership moves with the send: message = object graph rooted on its
+; own heap page, the receiver frees it.
+;
+; Threading contract (v1): a sender on an UNBOUNDED channel may live on
+; ANY thread and needs no scheduler (its sends never park); a sender on
+; a BOUNDED channel that actually blocks needs a scheduler context to
+; park in (a scheduler-less bounded sender falls back to sleep-polling).
+; All receivers of one channel live on ONE thread, which needs a
+; scheduler; receive parks the running task (or drives the dispatcher
+; from the main context) and a remote sender wakes the receiver through
+; its home scheduler's inject queue + wake handle. exit 106 keeps its
+; meaning unchanged for programs without channel parks.
+;
+;   let m Channel.create()            ; unbounded; on its own heap page; 1 handle
+;   let m Channel.create_bounded(64)  ; bounded; a full send blocks
+;   Channel.add_sender(m)             ; before handing m to another sender
+;   Channel.send(m, msg)              ; msg non-null, page-rooted; may block if bounded
+;   Channel.close_sender(m)           ; last close → receivers wake with null
+;   let msg Channel.receive(m)        ; null = closed and drained
+;   Channel.dispose(m)                ; receiver, after null: free the record
+define Channel
+(
+    lock: u64                        ; spinlock (bucket_lock pattern)
+    senders: i64                     ; live send handles; 0 = closed
+    closed: bool
+    head: ref[ChannelNode]?          ; queued messages, FIFO
+    tail: ref[ChannelNode]?
+    recv_head: ref[SchedTask]?    ; parked receivers, FIFO
+    recv_tail: ref[SchedTask]?
+    ; recv_sched: the receiving thread's scheduler — where a
+    ; queued-node send pokes the wake handle.
+    recv_sched: pointer[void]
+    ; Bounded-capacity backpressure. capacity = 0 means UNBOUNDED (a
+    ; send never blocks — the original v1 behavior); capacity > 0 caps
+    ; the queue at that many undelivered messages. count is the current
+    ; queue depth. send_head/send_tail is the FIFO of senders parked
+    ; because the queue was full — a receiver wakes one per freed slot,
+    ; the woken sender re-checks and enqueues (immutable capacity is
+    ; read without the lock; count and the FIFO are lock-guarded).
+    capacity: i64
+    count: i64
+    send_head: ref[SchedTask]?    ; parked senders (full queue), FIFO
+    send_tail: ref[SchedTask]?
+)
+{
+    ; The channel spinlock — same CAS pattern as root_pages bucket_lock:
+    ; critical sections are a few pointer moves, one lock at a time.
+    procedure acquire(m: pointer[Channel]) linked
+
+    procedure release(m: pointer[Channel]) linked
+
+    ; Create an UNBOUNDED channel on its OWN heap page (like a message:
+    ; the record is shared cross-thread and must not sit in any fiber's
+    ; or scheduler's region). Sends never block. The creator holds the
+    ; first send handle.
+    procedure create() returns ref[Channel] linked
+
+    ; Create a channel with a bounded queue: at most `capacity`
+    ; undelivered messages, after which a send BLOCKS until a receiver
+    ; frees a slot (backpressure). capacity 0 is unbounded (== create).
+    procedure create_bounded(capacity: i64) returns ref[Channel] linked
+
+    ; Free the channel record's page. Only the receiver calls this,
+    ; after receive returned null (closed and drained) — every sender
+    ; retired its handle, nothing can touch the record anymore.
+    procedure dispose(mutable m: ref[Channel]) linked
+
+    ; Register one more send handle. Call BEFORE handing the channel to
+    ; the new sender (spawn argument, cell, ...) — registering from the
+    ; new thread would race the creator's close_sender.
+    procedure add_sender(mutable m: pointer[Channel]) linked
+
+    ; Hand a woken receiver back to its dispatcher: same thread →
+    ; straight to the ready queue (the counters are ours); other thread
+    ; → inject queue + wake (its drain_inject adjusts the counters).
+    procedure route(mutable r: ref[SchedTask]) linked
+
+    procedure pop_receiver(mutable m: ref[Channel]) returns ref[SchedTask]? linked
+
+    ; Pop the oldest sender parked on a full queue (null when none).
+    procedure pop_sender(mutable m: ref[Channel]) returns ref[SchedTask]? linked
+
+    ; Send msg through the channel. OWNERSHIP OF THE MESSAGE REGION MOVES
+    ; TO THE RECEIVER — the sender must not touch msg afterwards. msg
+    ; must be non-null (null is the closed signal) and rooted on its own
+    ; heap page (Page.allocate_page — the node rides on it). Sending on a
+    ; closed channel is a handle-discipline bug and traps (exit 110).
+    ;
+    ; On an UNBOUNDED channel (capacity 0) the node is queued and the
+    ; sender moves on — never blocks, no scheduler needed. On a BOUNDED
+    ; channel a send whose queue is already full BLOCKS until a receiver
+    ; frees a slot: a task parks on the sender FIFO (woken by the next
+    ; receive) and re-checks; the main context / a scheduler-less sender
+    ; drives any ready local work and otherwise sleep-polls. Single-
+    ; thread send cycles stay caught by exit 106 (the parked sender
+    ; counts as blocked); cross-thread cycles remain the acyclic-topology
+    ; discipline's responsibility, exactly as for receives.
+    ; ★`m` stays a POINTER where the sibling receive/receive_timeout take
+    ; `ref[Channel]`: the Planner emits a call to this by its Itanium name
+    ; (`_ZN7Channel4sendEP7ChannelPv`), so re-signing it is an undefined
+    ; symbol at link time. The asymmetry is forced, not an oversight.
+    procedure send(mutable m: pointer[Channel], mutable msg: pointer[void]) io linked
+
+    ; Retire one send handle. The LAST retirement closes the channel:
+    ; every parked receiver is woken (it finds the queue, then null) and
+    ; a main-context waiter on the receiving thread is poked. Wakes are
+    ; routed after the lock drops — inject/wake need no lock, and the
+    ; receivers were detached atomically.
+    procedure close_sender(mutable m: pointer[Channel]) linked
+
+    ; Receive the next message; null means closed AND drained. The
+    ; caller assumes ownership of the message region and frees it when
+    ; done (deallocate_extensions + Page.release_page on Page.get —
+    ; the queue node goes with it). Blocks until a message or the
+    ; close arrives: a task parks on the receiver FIFO (woken it just
+    ; re-checks the queue — the message travels in the queue, not in
+    ; the task's msg slot), the main context drives the dispatcher and
+    ; blocks on the wake handle when nothing is runnable. The receiving
+    ; thread needs a scheduler (Scheduler.create) — the wake handle is
+    ; armed here BEFORE any park so remote senders always find it.
+    procedure receive(mutable m: ref[Channel]) returns pointer[void] io linked
+
+    ; Bounded poller wait for the timed receive: one wake-handle slice,
+    ; io-task tags drained exactly as in poll_io. NO deadlock bracket —
+    ; a timed waiter always has its own way out, so it must not count
+    ; toward exit 106.
+    procedure timed_poll(slice_ms: i32) io linked
+
+    ; Timed receive (stage 7, memo rule 6 — timeouts are explicit and
+    ; local). Exactly receive's contract plus a deadline: a message, or
+    ; null with timed_out=false for CLOSED AND DRAINED, or null with
+    ; timed_out=true when ms milliseconds passed first. The main
+    ; context drives ready work and blocks in the poller in bounded
+    ; slices (a remote send/close pokes the armed wake handle, so a
+    ; slice normally ends early); overshoot is at most one slice
+    ; (CHAN_DEADLOCK_MS). A TASK caller cooperatively yields between
+    ; checks (v1: the runtime has no timer wheel — sibling tasks run in
+    ; between, an otherwise-idle scheduler spins until the deadline).
+    procedure receive_timeout(mutable m: ref[Channel], ms: i32, mutable timed_out: ref[bool]) returns pointer[void] io linked
+}
+
+; An OS thread (milestone 2.1) — the raw primitive under everything in
+; stage 2. The spawned entry MUST NOT ALLOCATE until milestone 2.2 makes
+; the allocator globals thread-local: see the no-allocation convention
+; in the module header.
+define Thread
+{
+    ; Run entry (a `procedure (arg: pointer[void]) returns pointer[void]`,
+    ; taken with &entry) on a new OS thread; arg is handed to it verbatim.
+    ; Returns the thread handle for Thread.join. Traps (exit 109) when
+    ; the OS refuses a thread. The thread runs through
+    ; scaly_thread_start, which reclaims the thread's allocator buckets
+    ; after the entry returns (milestone 2.3b) — the spawn cell rides on
+    ; its own heap page because the spawner may return before the thread
+    ; starts; the trampoline releases it.
+    procedure spawn(fn: pointer[void], arg: pointer[void]) returns size_t linked
+
+    ; Wait until the thread's entry returned (its result is discarded).
+    procedure join(t: size_t) linked
+}
+
+; A completion group (milestone 3.2): counts a wave of submitted tasks
+; and lets the submitter block until every one finished. The record
+; rides its OWN heap page — work items are bump-allocated on it by the
+; submitter (single submitting thread per group; workers only read
+; them) and the whole page dies in dispose. The pipe is the completion
+; wake: the finish that takes pending to zero writes one byte; wait
+; re-checks the counter after every byte, so stale bytes from earlier
+; zero-crossings (waves reusing one group) are harmless. Reusable:
+; submit a wave, wait, submit the next.
+define TaskGroup
+(
+    pending: u64                 ; in-flight tasks (atomic)
+    active: u64                  ; finishers inside finish_one (atomic;
+                                 ; the dispose barrier — see below)
+    pipe_read: i32               ; wait blocks reading here
+    pipe_write: i32              ; last completion writes one byte
+    guarded: u64                 ; did the SUBMITTER stand in a try? (0/1)
+    fault_kind: u64              ; the first fault of the wave: kind + 1,
+                                 ; 0 = none (atomic, first writer wins)
+    fault_what: pointer[const_char]
+    fault_index: size_t
+    fault_length: size_t
+    fault_code: i32
+)
+{
+    ; Create a group on its own heap page. Traps (exit 112) when the
+    ; OS refuses a pipe.
+    ;
+    ; ★★★`guarded` is read HERE and not in the worker, because here is the
+    ; submitting thread: it records whether a catch point stood when the wave
+    ; was created. A worker installs one only if it did -- so a program that
+    ; catches nothing keeps exactly today's behaviour, message and code
+    ; included, and pays nothing (TRAPS.md 3.19).
+    procedure create() returns ref[TaskGroup] io linked
+
+    ; Did the submitter of this wave stand inside a try?
+    function is_guarded(g: pointer[TaskGroup]) returns bool linked
+
+    ; The address of the wave's CANCEL WORD, or null when nothing can be
+    ; cancelled. The emitted chunk loop polls it once per iteration, so this
+    ; answer decides what a promoted loop pays:
+    ;
+    ;   unguarded wave -> null -> the loop compares a register against null,
+    ;     a loop-invariant test LLVM hoists (and unswitches on). A program
+    ;     that catches nothing keeps its loop.
+    ;   guarded wave  -> &fault_kind -> one monotonic load per iteration, and
+    ;     the running siblings stop at the next iteration boundary once one
+    ;     of them recorded a fault.
+    ;
+    ; ★★★It is the FAULT WORD itself and not a separate flag: `record_fault`
+    ; claims it with a CAS, so "a fault was recorded" and "the wave is
+    ; cancelled" are one word and cannot disagree.
+    ;
+    ; ★It hands out an ADDRESS rather than letting the Emitter compute the
+    ; field's offset. A byte offset in the compiler would have to track this
+    ; record's layout -- the mistake panic.c's filler was written to avoid.
+    ; ★Its MANGLED name stands in the Emitter (get_parfor_runtime_fn), which
+    ; freezes this parameter list: grep for
+    ; `_ZN9TaskGroup11cancel_wordEP9TaskGroup` before re-signing.
+    function cancel_word(g: pointer[TaskGroup]) returns pointer[u64] linked
+
+    ; Record the fault a worker just caught. FIRST ONE WINS: the kind field
+    ; is the claim, taken with a compare-and-swap, and only the winner writes
+    ; the words. The losers drop their fault -- one fault per wave is what a
+    ; caller can act on, and .NET's AggregateException is the shape that
+    ; keeps them all (not built).
+    procedure record_fault(mutable g: pointer[TaskGroup]) linked
+
+    ; One task finished: drop the pending count; the drop to zero wakes
+    ; the waiter. Runs on worker threads — the counter is the only
+    ; shared word, the pipe write is atomic for one byte. The active
+    ; enter/leave brackets the decrement AND the wake write: a finisher
+    ; descheduled between them must hold dispose open, or wait (which
+    ; checks the counter BEFORE reading) returns on the bare zero, the
+    ; pipe closes, and the late byte lands in a dead — or, after fd
+    ; reuse, a foreign — descriptor (SIGPIPE killed tiny-wave promoted
+    ; loops, 2026-07-10).
+    procedure finish_one(g: pointer[TaskGroup]) io linked
+
+    ; Block until every submitted task of the wave finished. Call from
+    ; the SUBMITTING thread, after all submits (a submit racing a wait
+    ; could let a stale zero-crossing byte end the wait early). Blocks
+    ; the whole thread — main-context use, not inside a scheduled task.
+    procedure wait(mutable g: pointer[TaskGroup]) io linked
+
+    ; Free the group: close the pipe, release the record page (every
+    ; work item of every wave goes with it). Only after wait returned —
+    ; nothing may touch the record or its items anymore. wait can
+    ; return on the counter while the last finisher still owes its wake
+    ; byte (it checks pending BEFORE reading), so spin the finish_one
+    ; bracket empty before closing: pending is zero and no submits
+    ; follow, hence no NEW finisher can enter — the spin is bounded by
+    ; one descheduled write.
+    procedure dispose(mutable g: pointer[TaskGroup]) io linked
+}
+
+; One submitted task (milestone 3.2). Lives on its group's page (the
+; submitter allocates, workers only read, dispose frees wholesale).
+define TaskItem
+(
+    next: ref[TaskItem]?
+    fn: pointer[void]            ; procedure fn(arg) returns pointer[void]
+    arg: pointer[void]
+    group: ref[TaskGroup]
+)
+
+; One worker's work deque (milestone 3.2): a spinlocked FIFO — the
+; submitter appends round-robin, the owner pops, thieves pop too. The
+; lock is the whole synchronization story (bucket_lock pattern:
+; critical sections are a few pointer moves); the stealing is in the
+; DISTRIBUTION — N deques instead of one shared queue keep submitters
+; and workers off each other's locks until a worker actually runs dry.
+define TaskDeque
+(
+    lock: u64                    ; spinlock (bucket_lock pattern)
+    head: ref[TaskItem]?
+    tail: ref[TaskItem]?
+)
+{
+    procedure acquire(d: pointer[TaskDeque]) linked
+
+    procedure release(d: pointer[TaskDeque]) linked
+}
+
+; The work-stealing pool (milestone 3.2) — see the module header for
+; the design and the contracts. The record, the deques, the worker
+; spawn cells, and the join handles all ride the pool's own heap page;
+; workers reach everything through their spawn cell (a worker thread
+; never sees the creator's thread-local globals — the milestone-2.4
+; lesson).
+define TaskPool
+(
+    deques: ref[TaskDeque]   ; nworkers records, on the pool page
+    nworkers: i64
+    next_deque: i64              ; round-robin submit cursor (a plain
+                                 ; load-balancing hint: racy submitters
+                                 ; only skew the distribution)
+    stolen: u64                  ; items taken from a foreign deque
+                                 ; (atomic; observability for tests)
+    submitted: u64               ; items ever submitted (atomic;
+                                 ; observability — 4.1 chunk collapse)
+    pipe_read: i32               ; workers block reading here
+    pipe_write: i32              ; one byte written per submitted item
+    handles: pointer[size_t]     ; worker join handles (creator-written)
+)
+{
+    ; The idx-th worker's deque.
+    function deque_at(pl: ref[TaskPool], idx: i64) returns ref[TaskDeque] linked
+
+    ; How many items workers stole from a foreign deque — observability
+    ; for tests (the count is timing-dependent, assert nothing strict).
+    function steal_count(pl: pointer[TaskPool]) returns u64 linked
+
+    ; How many items were ever submitted — observability for the 4.1
+    ; chunked emission (a chunked wave submits ~ncpu, not n).
+    function submit_count(pl: pointer[TaskPool]) returns u64 linked
+
+    ; Start a pool of nworkers OS threads (clamped to at least one).
+    ; Traps (exit 112) when the OS refuses the pipe; a refused thread
+    ; traps in Thread.spawn (exit 109).
+    procedure create(nworkers: i64) returns ref[TaskPool] io linked
+
+    ; Submit fn(arg) — a task entry, `procedure fn(arg: pointer[void])
+    ; returns pointer[void]` taken with &fn — into the pool under the
+    ; given group. Never blocks. The item rides the group's page (one
+    ; submitting thread per group); the pending increment comes FIRST
+    ; (a task may finish before submit returns), the deque push BEFORE
+    ; the pipe byte (a woken worker must find an item).
+    procedure submit(mutable pl: pointer[TaskPool], fn: pointer[void], arg: pointer[void], mutable g: pointer[TaskGroup]) io linked
+
+    ; Take one item: own deque first, then steal round-robin from the
+    ; others. Only called after a pipe byte was consumed, so at least
+    ; one item exists SOMEWHERE — a scan pass can still race a push in
+    ; flight, hence the outer retry loop (bounded by that push's
+    ; completion).
+    procedure take(mutable pl: pointer[TaskPool], start: i64) returns ref[TaskItem] linked
+
+    ; Shut the pool down: closing the pipe's write end lets the workers
+    ; drain every remaining byte (queued work still runs), then hands
+    ; each blocked read a 0 — the worker exits and is joined (each
+    ; reclaims its own allocator state through the spawn trampoline).
+    ; Only when no group has work in flight that another thread still
+    ; waits on; the pool is gone afterwards — create a new one to
+    ; continue.
+    procedure shutdown(mutable pl: ref[TaskPool]) io linked
+
+    ; Online CPU count — the worker default for default_pool (3.3).
+    function ncpu() returns i64 linked
+
+    ; This thread's default pool, created on first demand with ncpu
+    ; workers — the dispatch target of the promoted-for emission.
+    ; Reached through the TLS cell task_default_pool (never handed to
+    ; another thread's TLS — workers reach the pool via their spawn
+    ; cells like any pool).
+    procedure default_pool() returns ref[TaskPool] io linked
+
+    ; Shut this thread's default pool down if one was created. Called by
+    ; the thread-exit trampoline BEFORE allocator reclaim (shutdown joins
+    ; the workers and frees the pool page). Safe there: every `parallel
+    ; for` waits on its group before continuing, so nothing is in flight
+    ; when the thread's entry has returned.
+    procedure drain_default() io linked
+}
+
+; A pool worker (milestone 3.2): consume one pipe byte (blocks between
+; items; 0 = shutdown), take the item it vouches for (own deque first,
+; then steal), run it, count it done. The task's allocations root on
+; THIS thread's allocator and unwind with the entry frame — one region
+; per task; results the task keeps go into caller-owned disjoint slots
+; (see the module header). Runs on its own OS thread: everything it
+; touches arrives through the spawn cell.
+procedure task_worker(arg: pointer[void]) returns pointer[void] io linked

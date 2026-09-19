@@ -1,0 +1,171 @@
+use scaly.memory.Page
+use scaly.memory.runtime
+
+define VectorIterator[T]
+(
+    vector: ref[Vector[T]]?
+    ; `position` carries its own default, like SliceIterator's two fields do.
+    ; A positional construction fills a field from its argument or from its
+    ; DEFAULT and leaves it untouched when it has neither — and one site does
+    ; exactly that: the HashMap/HashSet builder's `for` over
+    ; Vector[List[Slot[T]]] builds this iterator through the tuple path
+    ; (its init does not resolve under the nested generic), so `position`
+    ; started on stack garbage and the loop only ever worked because the slot
+    ; happened to hold 0. Found 2026-08-02.
+    position: size_t(0)
+)
+{
+    init (v: ref[Vector[T]]?)
+    {
+        set vector: v
+        set position: 0
+    }
+
+    procedure next(mutable this: VectorIterator[T]) returns pointer[T]
+    {
+        if vector = null
+            return null
+
+        if position = vector.length
+            return null
+
+        set position: position + 1
+        return vector.get_ptr(position - 1)
+    }
+}
+
+; Vector is a fat-pointer HANDLE: a fixed 16-byte {length, data} struct whose
+; element buffer lives on a page. The allocating inits below derive that page
+; from the Vector's own address (Page.get(this)), so every allocating
+; construction must be page-resident — residency inference guarantees this
+; (concept_needs_this_residency sees the Page.get(this) in these bodies and
+; region-allocates the construction on the destination page chosen at the
+; call site). The empty init allocates nothing and stays stack-safe, and so
+; does the BORROW construction `Vector[T](len, data)` -- which since
+; 2026-08-30 has no init of its own: it is the positional tuple path, filling
+; the two fields in declaration order. The explicit `init (d, len)` it
+; replaced existed only to reverse the argument order against the field list,
+; and once Slice was laid out the same way there was nothing left for it to
+; reverse. What made removing it safe rather than silent is that the tuple
+; path now type-checks its components (report_component_type_mismatch#): a
+; pointer in the length slot is a hard rc-4, which is how the two call sites
+; that no grep found were caught.
+define Vector[T]
+(
+    length: size_t
+    data: pointer[T]
+)
+{
+    init ()
+    {
+        set length: 0
+        set data: null
+    }
+
+    ; NOTE: each allocating init derives its page FIRST, at the top of the
+    ; body. The residency scan (concept_needs_this_residency) now descends
+    ; control-flow operands too, so a nested Page.get(this) is visible; the
+    ; hoist stays as belt-and-braces and keeps the signal obvious.
+    init (len: size_t)
+    {
+        let own_page Page.get(this)
+        set length: len
+        if len > 0
+        {
+            set data: own_page.allocate(len * sizeof T, alignof T) as pointer[T]
+            memset(data, 0, len * sizeof T)
+        }
+        else
+            set data: null
+    }
+
+    init (other: Vector[T])
+    {
+        let own_page Page.get(this)
+        set length: other.length
+        if length > 0
+        {
+            set data: own_page.allocate(length * sizeof T, alignof T) as pointer[T]
+            memcpy(data, other.data, length * sizeof T)
+        }
+        else
+            set data: null
+    }
+
+    init (array: Array[T])
+    {
+        let own_page Page.get(this)
+        set length: array.length
+        if length > 0
+        {
+            set data: own_page.allocate(length * sizeof T, alignof T) as pointer[T]
+            memcpy(data, array.get_buffer(), length * sizeof T)
+        }
+        else
+            set data: null
+    }
+
+    init (list: List[T])
+    {
+        let own_page Page.get(this)
+        set length: list.count()
+        if length > 0
+        {
+            set data: own_page.allocate(length * sizeof T, alignof T) as pointer[T]
+            var list_iterator list.get_iterator()
+            var i: size_t 0
+            while let item list_iterator.next()
+            {
+                set *(data + i): *item
+                set i: i + 1
+            }
+        }
+        else
+            set data: null
+    }
+
+    function get(this: Vector[T], i: size_t) returns ref[T]?
+    {
+        if i >= length
+            return null
+
+        data + i
+    }
+
+    ; Internal helper returning raw pointer for container implementations
+    function get_ptr(this: Vector[T], i: size_t) returns pointer[T]
+    {
+        if i >= length
+            return null
+
+        data + i
+    }
+
+    ; Bounds-checked element assign within the existing length. Vector
+    ; never grows — an index at or past length is a caller bug, so it
+    ; traps instead of returning an ignorable failure code.
+    procedure put(mutable this: Vector[T], i: size_t, item: T)
+    {
+        if i >= length
+            scaly_panic_oob("Vector.put", i, length)
+
+        set *(data + i): item
+    }
+
+
+    ; See Array's operator[]: the ordinary access traps on a caller bug,
+    ; `get(i)` is the lookup that may miss.
+    operator [](i: size_t) returns T
+    {
+        if i >= length
+            scaly_panic_oob("Vector[]", i, length)
+
+        *(data + i)
+    }
+
+    function get_iterator(this: Vector[T]) returns VectorIterator[T]
+        VectorIterator[T](this)
+
+    function as_slice(this: Vector[T]) returns Slice[T]
+        Slice[T](length, data)
+}

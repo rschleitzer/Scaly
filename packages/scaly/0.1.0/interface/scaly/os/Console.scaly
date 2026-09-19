@@ -1,0 +1,12 @@
+use scaly.memory.runtime
+use scaly.fiber.Io
+
+; stdout is fd 1. Writes go through the Io layer (milestone 2.5), so
+; the same call blocks normally, suspends inside a task once the fd is
+; nonblocking, and needs no scheduler at all — colorless I/O.
+define Console
+{
+    procedure print(message: pointer[const_char]) io linked
+
+    procedure println(message: pointer[const_char]) io linked
+}

@@ -1,0 +1,395 @@
+; TaskPlanner.scaly - Stage-3/4 Plan analysis pass between Planner and Emitter.
+;
+; The pass walks the finished Plan and classifies every `for` loop body:
+; is it provably parallelizable?
+; A body qualifies when
+;   - every call resolves to a pure Scaly function, an intrinsic, an
+;     operator, or a frame-local construction (Local/Unspecified life);
+;     purity is PROVED transitively, not just read off the function/
+;     procedure keyword — see effectively_pure below. (The keyword is
+;     CHECKED since 2026-09-19: a `function` writes nothing, reads and
+;     writes no global that can change and performs no I/O, so it is
+;     trusted without a walk -- a body and a stub of another package alike,
+;     the stub's keyword carried into the plan by
+;     WriteCensus.mark_stub_purity. Procedure bodies are still walked.)
+;   - every write lands in a binding declared inside the body, or in a
+;     disjoint Vector slot (`put` whose index reads the loop variable —
+;     the canonical parallel result target),
+;   - control never leaves the loop early (no return/throw, no break of
+;     the loop itself), and
+;   - no mutable module global is read or written (mutable globals are
+;     thread-local since M2.2 — a task on another worker thread would see
+;     a DIFFERENT cell).
+; Everything else records the FIRST blocking construct as the reason.
+;
+; The analysis is deliberately conservative. Two consumers (4.4 — plain
+; `for` drives the engine, no syntax involved):
+;   - the Emitter asks loop_promotable per `for` site; a passing body
+;     dispatches through the adaptive parallel driver, a blocked one
+;     runs sequentially (never a diagnostic),
+;   - the `--task-plan` CLI flag prints the per-loop verdicts (the
+;     `--use-vis` measurement-report precedent) — the only surface
+;     where parallelization is observable.
+;
+; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no else).
+
+use scalyc.compiler.Model.*
+use scalyc.compiler.Plan.*
+
+define TaskPlanner
+{
+    ; ========================================================================
+    ; TaskPlanner - the per-compilation-unit analysis state.
+    ;
+    ; Report entries are three parallel Arrays (one slot per `for` loop, in
+    ; walk order): the owning function's source file, the loop's byte offset
+    ; in that file, and the verdict text ("parallel" or "blocked: <reason>").
+    ; The cli formats them file:line:col like print_diagnostics does.
+    ; ========================================================================
+
+    define TaskPlanner
+    @resident true (
+        report_files: Array[String]
+        report_offsets: Array[size_t]
+        report_verdicts: Array[String]
+        loops_total: size_t
+        loops_parallel: size_t
+
+        ; The plan's flat function/global vectors, for purity and
+        ; mutable-global lookups by mangled name during classification.
+        plan_functions: ref[Vector[PlannedFunction]]?
+        plan_globals: ref[Vector[PlannedGlobal]]?
+
+        ; Source file of the function whose body is currently walked
+        ; (PlannedFunction.file; the entry file for top-level statements).
+        current_file: String
+
+        ; Per-classification scratch, reset by classify_body. cls_locals
+        ; holds names bound INSIDE the loop body (flat, never popped —
+        ; a conservative over-approximation is fine for a report; a
+        ; shadowing inner binding can mask a same-named outer write).
+        cls_locals: Array[String]
+        ; Alias soundness (4.4): body-introduced names whose initializer,
+        ; scrutinee, or sequence can hand them a REFERENCE into
+        ; loop-external state. `let r outer` launders `r.add i` past the
+        ; name-based locality checks otherwise — an aliased name is
+        ; treated as loop-external (writes and mutating calls block;
+        ; reads stay fine). Overrides cls_locals in is_local.
+        cls_aliased: Array[String]
+        cls_blocked: bool
+        cls_reason: String
+        cls_loop_var: String
+        ; Nesting depth below the classified loop: a `break` at depth 0
+        ; exits the classified loop itself (blocker); deeper breaks only
+        ; exit an inner loop.
+        cls_depth: size_t
+
+        ; Transitive-purity memo: mangled name -> 1 (effect-free) / 0.
+        ; pure_stack holds the names currently being walked (recursion
+        ; among effect-free functions is effect-free unless a concrete
+        ; violation turns up elsewhere in the cycle).
+        pure_memo_names: Array[String]
+        pure_memo_flags: Array[size_t]
+        pure_stack: Array[String]
+        ; Violation flag of the purity walk currently in flight.
+        pw_impure: bool
+
+        ; Written-params analysis: mangled name -> bitmask over the
+        ; callee's input positions (bit i set = the callee may WRITE
+        ; through what parameter i reaches, transitively). Bit 63 doubles
+        ; as the everything-bit via WM_ALL. This is what lets a loop
+        ; body READ loop-external containers (`a.get j` — mask 0) while
+        ; a mutating method (`outer.add v` — List.add writes this, bit 0)
+        ; still demands a per-iteration receiver. The `function` keyword
+        ; plays no part — masks are computed from bodies.
+        wm_memo_names: Array[String]
+        wm_memo_vals: Array[size_t]
+        wm_stack: Array[String]
+        ; Walk-in-flight state: wr_mask accumulates the written mask;
+        ; wr_names/wr_masks is a STACKED name table (params seeded with
+        ; their own bit, body names with the reach-mask of what their
+        ; initializer/scrutinee can alias); wr_base marks the current
+        ; callee's window — recursion into a sub-callee's walk saves and
+        ; restores mask/base/length around itself.
+        wr_mask: size_t
+        wr_names: Array[String]
+        wr_masks: Array[size_t]
+        wr_base: size_t
+    )
+    {
+        init() linked
+
+        ; ================================================================
+        ; Entry point: walk every planned function body plus the program's
+        ; top-level statements and record one verdict per `for` loop.
+        ; ================================================================
+        procedure analyze(mutable this: TaskPlanner, plan: Plan, entry_file: String) linked
+
+        ; ================================================================
+        ; Finder: recurse over every statement/operand; each `for` met is
+        ; classified, then its body is walked further so nested loops get
+        ; their own entries. Lambda bodies are skipped like the escape and
+        ; move walkers skip them — monomorphized lambdas appear as their
+        ; own entries in plan.functions.
+        ; ================================================================
+
+        procedure find_operands(mutable this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?) linked
+
+        procedure find_statement_ref(mutable this: TaskPlanner, stmt: ref[PlannedStatement]?) linked
+
+        procedure find_action(mutable this: TaskPlanner, act: PlannedAction) linked
+
+        procedure find_statement(mutable this: TaskPlanner, stmt: PlannedStatement) linked
+
+        procedure find_operand(mutable this: TaskPlanner, op: PlannedOperand) linked
+
+        ; ================================================================
+        ; Classifier: walk ONE loop body; the first blocking construct
+        ; records a reason and short-circuits the rest of the walk (the
+        ; move checker's move_found discipline).
+        ; ================================================================
+
+        procedure classify_for(mutable this: TaskPlanner, fr: PlannedFor) linked
+
+        ; Reset the per-loop scratch and walk one body; cls_blocked /
+        ; cls_reason carry the verdict. Shared by the report walk and
+        ; the Emitter's per-site promotion query.
+        procedure classify_body(mutable this: TaskPlanner, fr: PlannedFor) linked
+
+        ; Milestone 4.4 entry point: the Emitter asks per `for` site
+        ; whether the body verifies parallelizable — plain `for` drives
+        ; the engine, no syntax involved. Same classifier, same
+        ; conservatism as the report; the purity memo persists across
+        ; sites on one instance.
+        procedure loop_promotable(mutable this: TaskPlanner, plan: Plan, file: String, fr: PlannedFor) returns bool linked
+
+        ; Milestone 4.4: the adaptive engine never drives loops inside
+        ; its own foundation. A fork allocates TaskGroup pages and may
+        ; lazily create a worker pool — promoting the allocator's own
+        ; teardown loops (Page.deallocate_extensions) or the fiber/task
+        ; runtime's loops would re-enter that machinery mid-operation
+        ; (page-tree teardown, thread-exit reclaim after the pools are
+        ; drained). Keyed on the owning source file: the stdlib's memory
+        ; and fiber modules stay sequential by rule, not by verdict.
+        function file_is_foundation(file: String) returns bool linked
+
+        ; Record the first blocker. Later calls are no-ops.
+        procedure block(mutable this: TaskPlanner, reason: String) linked
+
+        procedure block_named(mutable this: TaskPlanner, prefix: String, name: String) linked
+
+        ; Is name bound inside the classified loop body? The loop variable
+        ; itself counts: it is per-iteration state (each iteration sees a
+        ; different element/index). An ALIASED name (see cls_aliased) is
+        ; loop-external no matter what — aliasing wins over a same-named
+        ; local binding (conservative under the flat never-popped scratch).
+        function is_local(this: TaskPlanner, name: String) returns bool linked
+
+        ; Record a body-introduced name (binding, if-prop, choose-when,
+        ; while/try condition binding, inner-for element): a name whose
+        ; initializer / scrutinee / sequence can hand it a reference into
+        ; loop-external state is an ALIAS, not a local — writes and
+        ; mutating calls through it must block exactly like the external
+        ; itself (the laundering counterexample: `let r outer` + `r.add i`).
+        procedure add_body_name(mutable this: TaskPlanner, name: String, aliases_external: bool) linked
+
+        ; Can the value produced by ops carry a reference into
+        ; loop-external state? Per operand: a SCALAR result never can
+        ; (copies of arithmetic values alias nothing, whatever the
+        ; expression shape — this keeps `set acc: acc + captured` and
+        ; index math untainted). A non-scalar result aliases when the
+        ; expression reaches a loop-external name: a bare external read
+        ; IS the alias; call results can point into their arguments
+        ; (Vector.get returns a ref INTO the vector) and constructions
+        ; can store passed references, so calls taint when any argument
+        ; does; unknown shapes taint conservatively (never a false
+        ; "parallel").
+        function ops_alias_external(this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?) returns bool linked
+
+        function op_aliases_external(this: TaskPlanner, op: PlannedOperand) returns bool linked
+
+        ; A copied SCALAR value cannot carry a reference into its source;
+        ; records, unions, String (shares its buffer until reallocation)
+        ; and pointer/ref (which ARE references) all can. Mirrors
+        ; Planner.is_scalar_value_type_name's list.
+        function value_can_alias(this: TaskPlanner, t: PlannedType) returns bool linked
+
+        ; Does the operand tree read the given name? Used to accept a
+        ; Vector.put whose index is derived from the loop variable
+        ; (disjoint-slot write). Conservative: unknown shapes read nothing,
+        ; so an index that hides the loop variable behind them stays a
+        ; blocker (never a false "parallel").
+        function operands_read_name(this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?, name: String) returns bool linked
+
+        function operand_reads_name(this: TaskPlanner, op: PlannedOperand, name: String) returns bool linked
+
+        procedure cls_operands(mutable this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?) linked
+
+        procedure cls_statement_ref(mutable this: TaskPlanner, stmt: ref[PlannedStatement]?) linked
+
+        ; Walk one action: reads first, then the write target. A bare `set
+        ; name:` into a body-local binding is fine; anything whose root
+        ; lives outside the loop is a cross-iteration conflict.
+        procedure cls_action(mutable this: TaskPlanner, act: PlannedAction) linked
+
+        procedure retaint_write_target(mutable this: TaskPlanner, t: Vector[PlannedOperand], src: ref[Vector[PlannedOperand]]?) linked
+
+        procedure cls_write_target(mutable this: TaskPlanner, t: Vector[PlannedOperand]) linked
+
+        procedure cls_statement(mutable this: TaskPlanner, stmt: PlannedStatement) linked
+
+        procedure cls_operand(mutable this: TaskPlanner, op: PlannedOperand) linked
+
+        ; A frame-local allocation (Local/Unspecified life) stays inside
+        ; the iteration; a Call life (caller page) or Reference life
+        ; (^this / ^named page) escapes the loop frame.
+        procedure check_life(mutable this: TaskPlanner, life: Lifetime) linked
+
+        ; Reading a MUTABLE module global blocks: since M2.2 every mutable
+        ; global (except `shared` declarations) is thread-local, so a task
+        ; running on a
+        ; worker thread reads a different cell than the spawner. The
+        ; allocator's own state cells are sanctioned — RBMM allocation is
+        ; per-task by design (one region per task).
+        procedure check_global_read(mutable this: TaskPlanner, g: PlannedGlobalRef) linked
+
+        ; ================================================================
+        ; Sanctioned effects. A task allocates in its OWN region, so the
+        ; RBMM machinery — allocator externs, allocator/tracer state
+        ; cells, atomic primitives (the allocator's cross-thread free
+        ; discipline), and abort-class trap reporting — does not break
+        ; parallelizability. Everything else observable (I/O, scheduler
+        ; state, process control beyond abort) does.
+        ; ================================================================
+
+        function extern_is_benign(this: TaskPlanner, name: String) returns bool linked
+
+        function global_is_sanctioned(this: TaskPlanner, name: String) returns bool linked
+
+        ; ================================================================
+        ; Transitive purity. `pure` on a PlannedFunction is a DECLARATION
+        ; (function vs procedure keyword), not a proof. effectively_pure
+        ; proves the absence of observable effects: the body — and every
+        ; body reachable through its calls — contains no non-benign
+        ; extern, no indirect call, no unsanctioned mutable-global touch,
+        ; and no lambda/closure value (conservative). Nested callees are
+        ; NOT required to be declared pure: a pure function legitimately
+        ; drives mutating container procedures (Array.add, Vector.put) on
+        ; its frame-local state; the declared-pure contract of the DIRECT
+        ; callee (checked in callee_verdict) keeps loop-visible inputs
+        ; immutable. Memoized per mangled name.
+        ; ================================================================
+
+        procedure memo_purity(mutable this: TaskPlanner, mangled: String, is_pure: bool) linked
+
+        procedure effectively_pure(mutable this: TaskPlanner, mangled: String) returns bool linked
+
+        ; The purity walk: recurse over a callee body looking for effect
+        ; violations. Same arm coverage as the finder; only calls and
+        ; global touches carry logic.
+        procedure pw_operands(mutable this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?) linked
+
+        procedure pw_statement_ref(mutable this: TaskPlanner, stmt: ref[PlannedStatement]?) linked
+
+        ; Writes to LOCAL state are what procedures are for — only a
+        ; global store is an observable effect here.
+        procedure pw_action(mutable this: TaskPlanner, act: PlannedAction) linked
+
+        procedure pw_statement(mutable this: TaskPlanner, stmt: PlannedStatement) linked
+
+        procedure pw_global(mutable this: TaskPlanner, g: PlannedGlobalRef) linked
+
+        procedure pw_call(mutable this: TaskPlanner, call: PlannedCall) linked
+
+        procedure pw_operand(mutable this: TaskPlanner, op: PlannedOperand) linked
+
+        procedure cls_call(mutable this: TaskPlanner, call: PlannedCall) linked
+
+        function is_construction_name(this: TaskPlanner, name: String) returns bool linked
+
+        ; put(receiver, index, element): receiver = args[0], index = args[1].
+        function put_is_disjoint(this: TaskPlanner, call: PlannedCall) returns bool linked
+
+        ; ================================================================
+        ; Written-params analysis (wm_/wr_): which of a callee's input
+        ; positions can it WRITE through, transitively? The result is a
+        ; bitmask over input indices (call args align 1:1 — methods
+        ; declare `this` as input[0] and it rides args[0]; page params
+        ; are peeled by the Modeler and appear in neither). Mask 0 means
+        ; the callee only READS its inputs — a loop body may then pass
+        ; loop-external values freely (`a.get j` on a shared input
+        ; vector); a set bit demands a per-iteration argument at that
+        ; position (`outer.add v` — List.add writes this, bit 0 —
+        ; blocks). WM_ALL (all ones) is the conservative unknown.
+        ; Constructions are treated as read-only on their arguments
+        ; (they write the FRESH object; matches cls_call's construction
+        ; policy). Runs only on effectively_pure callees, so globals,
+        ; I/O, lambdas and indirect calls are already policed.
+        ; ================================================================
+
+        function wm_all() returns size_t linked
+
+        procedure memo_written(mutable this: TaskPlanner, mangled: String, mask: size_t) @persists true linked
+
+        procedure written_mask(mutable this: TaskPlanner, mangled: String) returns size_t linked
+
+        ; Hard-coded masks for the benign-extern whitelist (the writers
+        ; write through arg 0; realloc/free consume arg 0). Anything not
+        ; explicitly listed is WM_ALL — adding a new benign extern FORCES
+        ; a mask decision here.
+        function extern_written_mask(this: TaskPlanner, name: String) returns size_t linked
+
+        ; ---- the per-callee body walk ----
+
+        procedure wr_add_name(mutable this: TaskPlanner, name: String, mask: size_t) @persists true linked
+
+        ; Latest entry wins (backward scan): a re-taint appends a wider
+        ; mask that shadows the original. Unknown names are conservative
+        ; (a global write is policed by the purity walk; anything else
+        ; is a shape this walk does not model).
+        function wr_lookup(this: TaskPlanner, name: String) returns size_t linked
+
+        ; Reach-mask of the value an operand produces: which params can
+        ; it alias? Scalars reach nothing; a call result reaches at most
+        ; what its arguments reach; unknown shapes reach everything.
+        function wr_mask_of_ops(this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?) returns size_t linked
+
+        function wr_mask_of_op(this: TaskPlanner, op: PlannedOperand) returns size_t linked
+
+        procedure wr_operands(mutable this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?) linked
+
+        procedure wr_statement_ref(mutable this: TaskPlanner, stmt: ref[PlannedStatement]?) linked
+
+        procedure wr_action(mutable this: TaskPlanner, act: PlannedAction) linked
+
+        procedure wr_statement(mutable this: TaskPlanner, stmt: PlannedStatement) linked
+
+        procedure wr_operand(mutable this: TaskPlanner, op: PlannedOperand) linked
+
+        procedure wr_call(mutable this: TaskPlanner, call: PlannedCall) linked
+
+        ; A direct callee must be transitively effect-free
+        ; (effectively_pure — the function keyword alone is a claim).
+        ; Its written-params mask then says which argument positions it
+        ; can write through: those must be per-iteration state; purely
+        ; read positions may take loop-external values freely. That
+        ; admits `a.get j` on a shared input vector and
+        ; `local_sb.append external_str` while blocking `outer_list.add
+        ; x` (List.add writes this — order-dependent).
+        procedure callee_verdict(mutable this: TaskPlanner, call: PlannedCall) linked
+
+        ; The positions a callee's declaration may write: its `mutable`
+        ; parameters (none for a function) and every page parameter.
+        function declared_mask(this: TaskPlanner, func: PlannedFunction) returns size_t linked
+
+        function is_page_type(t: PlannedType) returns bool linked
+
+        ; Every argument position the mask marks written must be
+        ; per-iteration state; the rest are free (read-only positions
+        ; take loop-external values). `&x` / deref operator chains
+        ; recurse to the named root inside.
+        function masked_args_local(this: TaskPlanner, call: PlannedCall, mask: size_t) returns bool linked
+
+        function arg_root_local(this: TaskPlanner, op: PlannedOperand) returns bool linked
+    }
+}

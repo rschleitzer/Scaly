@@ -69,6 +69,7 @@ define Options
     pointer_report: bool    ; --pointer-report: raw-pointer census off the Plan
     write_report: bool      ; --write-report: writes through parameters, off the Plan
     purity_check: bool      ; --purity-check: a function may not write what its parameters reach
+    interface_facts: bool   ; --interface-facts: body-derived facts for tools/interface/geninterface.py
     debug: bool             ; -g: emit DWARF debug info
     run_mode: bool          ; --run <fn>: JIT-compile and execute <fn> in-process
     run_function: String    ; the function name to JIT-run
@@ -101,6 +102,7 @@ define Options
         set pointer_report: false
         set write_report: false
         set purity_check: false
+        set interface_facts: false
         set debug: false
         set run_mode: false
         set run_function: String()
@@ -209,6 +211,10 @@ define cli
                 else if arg = "--purity-check"
                 {
                     set opts.purity_check: true
+                }
+                else if arg = "--interface-facts"
+                {
+                    set opts.interface_facts: true
                 }
                 else if arg = "-O0"
                 {
@@ -640,6 +646,14 @@ define cli
                     return 4
                 }
                 purity_gate.mark_stub_purity(plan)
+                if opts.interface_facts
+                {
+                    let facts planner.interface_facts(model.module_)
+                    Console.print(facts.to_c_string())
+                    let rfacts purity_gate.interface_reads()
+                    Console.print(rfacts.to_c_string())
+                    return 0
+                }
             }
         }
 
@@ -1001,14 +1015,32 @@ define cli
         true
     }
 
+    ; `<dir>/interface/<p>.scaly` -> `<dir>/<p>.scaly`; any other path as it is
+    function source_root(file: String) returns String
+    {
+        let slash file.last_index_of("/" as u8)
+        if slash < 0
+            return file
+        let dir file.substring(0, slash as size_t)
+        if dir.ends_with("/interface") = false
+            return file
+        var sb StringBuilder()
+        sb.append(dir.substring(0, dir.get_length() - 10))
+        sb.append(file.substring(slash as size_t, file.get_length() - (slash as size_t)))
+        sb.to_string()
+    }
+
     ; Compile a dependency package (its entry .scaly file) through the same
     ; ROOT compilation path that builds libopensp.a/libdazzle.a — prelude OFF
     ; (its scaly-stdlib calls resolve from the host process at JIT link) — into
     ; an object at out_obj, and append the mangled names it defines to `syms`.
     ; This ROOT path plans the package's bodies correctly (unlike the retired
     ; jit_dep_bodies dependency path). Returns false on any failure.
-    procedure compile_dep_package_to_object(mutable entry_file: String, mutable out_obj: String, mutable syms: ref[Array[String]]) returns bool io mutable modeler_error_count
+    procedure compile_dep_package_to_object(mutable entry_file_in: String, mutable out_obj: String, mutable syms: ref[Array[String]]) returns bool io mutable modeler_error_count
     {
+        ; the program loaded the package through its interface; the object is
+        ; built from its SOURCE root
+        var entry_file cli.source_root(entry_file_in)
         var source File.read_to_string(entry_file)
         if source.get_length() = 0
         {

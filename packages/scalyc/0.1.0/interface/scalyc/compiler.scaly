@@ -1,0 +1,22 @@
+; Scaly Compiler - Self-hosting compiler modules
+; This module contains the compiler components being ported from C++
+
+define compiler
+{
+    module Syntax  ; Generated from scaly.sgm - must come first, used by other modules
+    module lexer   ; Lexer - must come before parser
+    module parser
+    module Model
+    module Modeler
+    module Plan
+    module ConceptIndex  ; O(1) concept-name -> registry-index map (used by Planner)
+    module FunctionIndex ; O(1) name -> ordered registry-index chain (used by Planner)
+    module Planner
+    module TaskPlanner  ; Stage-3 Plan analysis pass (parallelizability), runs after Planner
+    module PointerCensus ; --pointer-report: raw-pointer census off the Plan (reads Planner statics)
+    module WriteCensus ; --write-report: writes through parameters off the Plan (reuses PointerCensus)
+    module LLVM
+    module Emitter
+
+    procedure test() returns int io mutable modeler_error_count reads modeler_error_count linked
+}

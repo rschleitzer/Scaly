@@ -1,0 +1,851 @@
+; LLVM.scaly - FFI bindings to LLVM-C API
+;
+; This module provides Scaly bindings to LLVM's C API for code generation.
+; The LLVM-C API uses opaque pointer handles for all LLVM objects.
+;
+; Reference: https://llvm.org/doxygen/group__LLVMC.html
+
+; ============================================================================
+; LLVM Opaque Handle Types
+; ============================================================================
+
+; These are opaque pointer types representing LLVM objects
+; In the LLVM-C API, these are typedefs to pointers to opaque structs
+
+define LLVMOpaqueContext()
+define LLVMContextRef pointer[LLVMOpaqueContext]
+define LLVMOpaqueModule()
+define LLVMModuleRef pointer[LLVMOpaqueModule]
+define LLVMOpaqueBuilder()
+define LLVMBuilderRef pointer[LLVMOpaqueBuilder]
+define LLVMOpaqueType()
+define LLVMTypeRef pointer[LLVMOpaqueType]
+define LLVMOpaqueValue()
+define LLVMValueRef pointer[LLVMOpaqueValue]
+define LLVMOpaqueBasicBlock()
+define LLVMBasicBlockRef pointer[LLVMOpaqueBasicBlock]
+define LLVMTarget()
+define LLVMTargetRef pointer[LLVMTarget]
+define LLVMOpaqueTargetMachine()
+define LLVMTargetMachineRef pointer[LLVMOpaqueTargetMachine]
+define LLVMOpaqueTargetData()
+define LLVMTargetDataRef pointer[LLVMOpaqueTargetData]
+define LLVMOpaquePassManager()
+define LLVMPassManagerRef pointer[LLVMOpaquePassManager]
+define LLVMOpaqueMemoryBuffer()
+define LLVMMemoryBufferRef pointer[LLVMOpaqueMemoryBuffer]
+define LLVMOpaqueDIBuilder()
+define LLVMDIBuilderRef pointer[LLVMOpaqueDIBuilder]
+define LLVMOpaqueMetadata()
+define LLVMMetadataRef pointer[LLVMOpaqueMetadata]
+define LLVMOpaqueAttributeRef()
+define LLVMAttributeRef pointer[LLVMOpaqueAttributeRef]
+; The debug-record handle of LLVM's "new debug format" (RemoveDIs, LLVM 19).
+; It replaced the LLVMValueRef that the old dbg.declare INTRINSIC was, which is
+; why the insert entry point below both changed its name and its result type.
+define LLVMOpaqueDbgRecord()
+define LLVMDbgRecordRef pointer[LLVMOpaqueDbgRecord]
+define LLVMOpaqueUse()
+define LLVMUseRef pointer[LLVMOpaqueUse]
+define LLVMComdat()
+define LLVMComdatRef pointer[LLVMComdat]
+
+; ============================================================================
+; LLVM Enums
+; ============================================================================
+
+; LLVMIntPredicate - Integer comparison predicates
+define LLVMIntPredicate
+{
+    function EQ() returns int linked
+    function NE() returns int linked
+    function UGT() returns int linked
+    function UGE() returns int linked
+    function ULT() returns int linked
+    function ULE() returns int linked
+    function SGT() returns int linked
+    function SGE() returns int linked
+    function SLT() returns int linked
+    function SLE() returns int linked
+}
+
+; LLVMRealPredicate - Floating point comparison predicates
+define LLVMRealPredicate
+{
+    function OEQ() returns int linked
+    function OGT() returns int linked
+    function OGE() returns int linked
+    function OLT() returns int linked
+    function OLE() returns int linked
+    function ONE() returns int linked
+    function ORD() returns int linked
+    function UNO() returns int linked
+    function UEQ() returns int linked
+    function UGT() returns int linked
+    function UGE() returns int linked
+    function ULT() returns int linked
+    function ULE() returns int linked
+    function UNE() returns int linked
+}
+
+; LLVMTypeKind - Type kind for LLVMGetTypeKind
+define LLVMTypeKind
+{
+    function Void() returns int linked
+    function Half() returns int linked
+    function Float() returns int linked
+    function Double() returns int linked
+    function X86_FP80() returns int linked
+    function FP128() returns int linked
+    function PPC_FP128() returns int linked
+    function Label() returns int linked
+    function Integer() returns int linked
+    ; s179: Function/Array/Vector are named *Kind because the bare
+    ; names collide with the Model.Function / stdlib Array / Vector
+    ; concepts: stage-1's planner resolves `LLVMTypeKind.Array()` as
+    ; a zero-init construction of the colliding concept instead of
+    ; this call, silently dropping the comparison that uses it.
+    function FunctionKind() returns int linked
+    function Struct() returns int linked
+    function ArrayKind() returns int linked
+    function Pointer() returns int linked
+    function VectorKind() returns int linked
+    function Metadata() returns int linked
+}
+
+; LLVMLinkage - Linkage types
+define LLVMLinkage
+{
+    function External() returns int linked
+    function AvailableExternally() returns int linked
+    function LinkOnceAny() returns int linked
+    function LinkOnceODR() returns int linked
+    function WeakAny() returns int linked
+    function WeakODR() returns int linked
+    function Appending() returns int linked
+    function Internal() returns int linked
+    function Private() returns int linked
+    function ExternalWeak() returns int linked
+    function Common() returns int linked
+}
+
+; LLVMCallConv - Calling conventions
+define LLVMCallConv
+{
+    function C() returns int linked
+    function Fast() returns int linked
+    function Cold() returns int linked
+    function X86Stdcall() returns int linked
+    function X86Fastcall() returns int linked
+}
+
+; ============================================================================
+; Context Functions
+; ============================================================================
+
+; Create a new LLVM context
+function LLVMContextCreate() returns LLVMContextRef extern
+
+; Dispose of a context
+procedure LLVMContextDispose(context: LLVMContextRef) extern
+
+; Get the global context (not recommended for multi-threaded use)
+function LLVMGetGlobalContext() returns LLVMContextRef extern
+
+; ============================================================================
+; Module Functions
+; ============================================================================
+
+; Create a new module in a context
+function LLVMModuleCreateWithNameInContext(name: pointer[const_char], context: LLVMContextRef) returns LLVMModuleRef extern
+
+; Dispose of a module
+procedure LLVMDisposeModule(mod: LLVMModuleRef) extern
+
+; Set the target triple for a module
+procedure LLVMSetTarget(mod: LLVMModuleRef, triple: pointer[const_char]) extern
+
+; Set the data layout for a module
+procedure LLVMSetDataLayout(mod: LLVMModuleRef, layout: pointer[const_char]) extern
+
+; Get string representation of module (caller must dispose with LLVMDisposeMessage)
+function LLVMPrintModuleToString(mod: LLVMModuleRef) returns pointer[char] extern
+
+; Write module to file
+function LLVMPrintModuleToFile(mod: LLVMModuleRef, filename: pointer[const_char], error_message: pointer[pointer[char]]) returns i32 extern
+
+; Write bitcode to file
+function LLVMWriteBitcodeToFile(mod: LLVMModuleRef, path: pointer[const_char]) returns i32 extern
+
+; ============================================================================
+; Builder Functions
+; ============================================================================
+
+; Create a new instruction builder in a context
+function LLVMCreateBuilderInContext(context: LLVMContextRef) returns LLVMBuilderRef extern
+
+; Dispose of a builder
+procedure LLVMDisposeBuilder(builder: LLVMBuilderRef) extern
+
+; Position builder at end of a basic block
+procedure LLVMPositionBuilderAtEnd(builder: LLVMBuilderRef, block: LLVMBasicBlockRef) extern
+
+; Position builder before a specific instruction
+procedure LLVMPositionBuilderBefore(builder: LLVMBuilderRef, instr: LLVMValueRef) extern
+
+; Get the current insertion block
+function LLVMGetInsertBlock(builder: LLVMBuilderRef) returns LLVMBasicBlockRef extern
+
+; Get the first instruction in a basic block
+function LLVMGetFirstInstruction(block: LLVMBasicBlockRef) returns LLVMValueRef extern
+; The instruction after `inst` in its block (null at the end). Lazy frames use
+; it to pin an entry-block materialisation AFTER the slot's initialising store.
+function LLVMGetNextInstruction(inst: LLVMValueRef) returns LLVMValueRef extern
+function LLVMGetLastInstruction(block: LLVMBasicBlockRef) returns LLVMValueRef extern
+
+; Cast a value to an instruction (returns null if not an instruction)
+function LLVMIsAInstruction(val: LLVMValueRef) returns LLVMValueRef extern
+
+; Get the basic block that contains an instruction
+function LLVMGetInstructionParent(inst: LLVMValueRef) returns LLVMBasicBlockRef extern
+
+; ============================================================================
+; Type Functions
+; ============================================================================
+
+; Void type
+function LLVMVoidTypeInContext(context: LLVMContextRef) returns LLVMTypeRef extern
+
+; Integer types
+function LLVMInt1TypeInContext(context: LLVMContextRef) returns LLVMTypeRef extern
+function LLVMInt8TypeInContext(context: LLVMContextRef) returns LLVMTypeRef extern
+function LLVMInt16TypeInContext(context: LLVMContextRef) returns LLVMTypeRef extern
+function LLVMInt32TypeInContext(context: LLVMContextRef) returns LLVMTypeRef extern
+function LLVMInt64TypeInContext(context: LLVMContextRef) returns LLVMTypeRef extern
+function LLVMIntTypeInContext(context: LLVMContextRef, num_bits: u32) returns LLVMTypeRef extern
+function LLVMGetIntTypeWidth(int_type: LLVMTypeRef) returns u32 extern
+
+; Floating point types
+function LLVMFloatTypeInContext(context: LLVMContextRef) returns LLVMTypeRef extern
+function LLVMDoubleTypeInContext(context: LLVMContextRef) returns LLVMTypeRef extern
+
+; Pointer type (opaque pointer in LLVM 15+)
+function LLVMPointerTypeInContext(context: LLVMContextRef, address_space: u32) returns LLVMTypeRef extern
+
+; Legacy typed pointer (for older LLVM)
+function LLVMPointerType(element_type: LLVMTypeRef, address_space: u32) returns LLVMTypeRef extern
+
+; Array type
+function LLVMArrayType(element_type: LLVMTypeRef, element_count: u32) returns LLVMTypeRef extern
+function LLVMArrayType2(element_type: LLVMTypeRef, element_count: size_t) returns LLVMTypeRef extern
+
+; Struct types
+function LLVMStructTypeInContext(context: LLVMContextRef, element_types: pointer[LLVMTypeRef], element_count: u32, packed: i32) returns LLVMTypeRef extern
+function LLVMStructCreateNamed(context: LLVMContextRef, name: pointer[const_char]) returns LLVMTypeRef extern
+procedure LLVMStructSetBody(struct_type: LLVMTypeRef, element_types: pointer[LLVMTypeRef], element_count: u32, packed: i32) extern
+
+; Data layout / size queries — s149 Result wrapper sizing
+function LLVMGetModuleDataLayout(mod: LLVMModuleRef) returns LLVMTargetDataRef extern
+function LLVMABISizeOfType(td: LLVMTargetDataRef, ty: LLVMTypeRef) returns u64 extern
+
+; Function type
+function LLVMFunctionType(return_type: LLVMTypeRef, param_types: pointer[LLVMTypeRef], param_count: u32, is_var_arg: i32) returns LLVMTypeRef extern
+
+; Type queries
+function LLVMGetTypeKind(type: LLVMTypeRef) returns i32 extern
+function LLVMTypeIsSized(type: LLVMTypeRef) returns i32 extern
+function LLVMGetElementType(type: LLVMTypeRef) returns LLVMTypeRef extern
+function LLVMGetReturnType(func_type: LLVMTypeRef) returns LLVMTypeRef extern
+function LLVMCountStructElementTypes(struct_type: LLVMTypeRef) returns u32 extern
+function LLVMGetStructElementTypes(struct_type: LLVMTypeRef, dest: pointer[LLVMTypeRef]) extern
+function LLVMStructGetTypeAtIndex(struct_type: LLVMTypeRef, index: u32) returns LLVMTypeRef extern
+function LLVMIsOpaqueStruct(struct_type: LLVMTypeRef) returns i32 extern
+function LLVMGetArrayLength2(array_type: LLVMTypeRef) returns u64 extern
+
+; ============================================================================
+; Function Functions
+; ============================================================================
+
+; Add a function to a module
+function LLVMAddFunction(mod: LLVMModuleRef, name: pointer[const_char], function_type: LLVMTypeRef) returns LLVMValueRef extern
+
+; Get a function from a module by name
+function LLVMGetNamedFunction(mod: LLVMModuleRef, name: pointer[const_char]) returns LLVMValueRef extern
+
+; Get function parameter
+function LLVMGetParam(func: LLVMValueRef, index: u32) returns LLVMValueRef extern
+
+; Get number of parameters
+function LLVMCountParams(func: LLVMValueRef) returns u32 extern
+
+; Set linkage
+procedure LLVMSetLinkage(global: LLVMValueRef, linkage: i32) extern
+function LLVMGetLinkage(global: LLVMValueRef) returns i32 extern
+
+; Comdats (stage 7). A `linkonce_odr` function needs one on COFF and MUST NOT
+; have one on Mach-O — see Emitter.set_linkonce_odr for the whole argument.
+; A freshly inserted comdat has selection kind `Any`, which is what ODR needs,
+; so no LLVMSetComdatSelectionKind call belongs here.
+function LLVMGetOrInsertComdat(mod: LLVMModuleRef, name: pointer[const_char]) returns LLVMComdatRef extern
+procedure LLVMSetComdat(global: LLVMValueRef, comdat: LLVMComdatRef) extern
+
+; Set the alignment (in bytes) of a load, store, or alloca instruction.
+; Used for the s149 Result-wrapper { i8, [N x i8] } whose struct alignment
+; is 1 — payload T at byte offset 1 is misaligned for any natural-aligned
+; type. Mirrors stage-0 emitChoose/emitReturn/emitThrow's
+; CreateAlignedLoad/Store(..., Align 1, ...).
+procedure LLVMSetAlignment(inst: LLVMValueRef, bytes: u32) extern
+
+; Set calling convention
+procedure LLVMSetFunctionCallConv(func: LLVMValueRef, cc: u32) extern
+
+; Attribute API (s89). LLVMAttributeIndex: 0 = return, ~0 (LLVMAttributeFunctionIndex) = function, 1+ = nth param.
+function LLVMGetEnumAttributeKindForName(name: pointer[const_char], len: size_t) returns u32 extern
+function LLVMCreateTypeAttribute(context: LLVMContextRef, kind_id: u32, type_ref: LLVMTypeRef) returns LLVMAttributeRef extern
+function LLVMCreateEnumAttribute(context: LLVMContextRef, kind_id: u32, val: u64) returns LLVMAttributeRef extern
+procedure LLVMAddAttributeAtIndex(func: LLVMValueRef, idx: u32, attr: LLVMAttributeRef) extern
+function LLVMGetEnumAttributeAtIndex(func: LLVMValueRef, idx: u32, kind_id: u32) returns LLVMAttributeRef extern
+function LLVMGetTypeAttributeValue(attr: LLVMAttributeRef) returns LLVMTypeRef extern
+procedure LLVMAddCallSiteAttribute(call: LLVMValueRef, idx: u32, attr: LLVMAttributeRef) extern
+
+; ============================================================================
+; Basic Block Functions
+; ============================================================================
+
+; Append a basic block to a function
+function LLVMAppendBasicBlockInContext(context: LLVMContextRef, func: LLVMValueRef, name: pointer[const_char]) returns LLVMBasicBlockRef extern
+
+; Get the terminator instruction of a basic block
+function LLVMGetBasicBlockTerminator(block: LLVMBasicBlockRef) returns LLVMValueRef extern
+
+; Walk the basic blocks of a function
+function LLVMGetFirstBasicBlock(func: LLVMValueRef) returns LLVMBasicBlockRef extern
+function LLVMGetNextBasicBlock(block: LLVMBasicBlockRef) returns LLVMBasicBlockRef extern
+
+; Value-cast: returns the value if it is a ReturnInst, else null. Used by
+; patch_prior_returns to release the function-local page on early-return
+; paths emitted before the lazy page allocation.
+function LLVMIsAReturnInst(val: LLVMValueRef) returns LLVMValueRef extern
+
+; Walk the functions of a module + check whether a function has a body.
+; Used by emit_template_stubs to provide empty bodies for declared-only
+; deep-generic template references (mirror of stage-0's catch-all
+; emit pass — without this, the linker rejects libscaly_s1.o with
+; "undefined reference" to e.g. _ZN6VectorI6VectorI6VectorI1TEEEC1...
+; because Vector<Vector<T>>::get_iterator's body has a buggy double-
+; substituted call target).
+function LLVMGetFirstFunction(mod: LLVMModuleRef) returns LLVMValueRef extern
+function LLVMGetNextFunction(func: LLVMValueRef) returns LLVMValueRef extern
+function LLVMIsDeclaration(global: LLVMValueRef) returns i32 extern
+
+; ============================================================================
+; Constant Functions
+; ============================================================================
+
+; Integer constants
+function LLVMConstInt(int_type: LLVMTypeRef, value: size_t, sign_extend: i32) returns LLVMValueRef extern
+function LLVMConstIntOfString(int_type: LLVMTypeRef, text: pointer[const_char], radix: u8) returns LLVMValueRef extern
+
+; Sizeof / alignof — return an i64 constant computed from the module's
+; default DataLayout. Used by the s80 ctor emitter to compute Page::allocate
+; size/alignment without binding the full TargetData API.
+function LLVMSizeOf(type: LLVMTypeRef) returns LLVMValueRef extern
+function LLVMAlignOf(type: LLVMTypeRef) returns LLVMValueRef extern
+
+; Floating point constants
+function LLVMConstReal(real_type: LLVMTypeRef, value: double) returns LLVMValueRef extern
+
+; Null pointer constant
+function LLVMConstNull(type: LLVMTypeRef) returns LLVMValueRef extern
+function LLVMConstPointerNull(type: LLVMTypeRef) returns LLVMValueRef extern
+
+; String constant
+function LLVMConstStringInContext(context: LLVMContextRef, str: pointer[const_char], length: u32, dont_null_terminate: i32) returns LLVMValueRef extern
+
+; Struct constant
+function LLVMConstStructInContext(context: LLVMContextRef, constant_vals: pointer[LLVMValueRef], count: u32, packed: i32) returns LLVMValueRef extern
+function LLVMConstNamedStruct(struct_type: LLVMTypeRef, constant_vals: pointer[LLVMValueRef], count: u32) returns LLVMValueRef extern
+
+; Array constant
+function LLVMConstArray(element_type: LLVMTypeRef, constant_vals: pointer[LLVMValueRef], length: u32) returns LLVMValueRef extern
+function LLVMConstArray2(element_type: LLVMTypeRef, constant_vals: pointer[LLVMValueRef], length: size_t) returns LLVMValueRef extern
+
+; Undefined value
+function LLVMGetUndef(type: LLVMTypeRef) returns LLVMValueRef extern
+
+; ============================================================================
+; Global Variable Functions
+; ============================================================================
+
+; Add a global variable
+function LLVMAddGlobal(mod: LLVMModuleRef, type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
+
+; Get a global variable by name
+function LLVMGetNamedGlobal(mod: LLVMModuleRef, name: pointer[const_char]) returns LLVMValueRef extern
+
+; Get the value type of a global variable
+function LLVMGlobalGetValueType(gv: LLVMValueRef) returns LLVMTypeRef extern
+
+; Set initializer for global
+procedure LLVMSetInitializer(global_var: LLVMValueRef, constant_val: LLVMValueRef) extern
+
+; Set global constant
+procedure LLVMSetGlobalConstant(global_var: LLVMValueRef, is_constant: i32) extern
+
+; Mark a global as thread-local (one instance per OS thread)
+procedure LLVMSetThreadLocal(global_var: LLVMValueRef, is_thread_local: i32) extern
+
+; Walk the global variables of a module + query the thread-local bit.
+; Used by the JIT's de-TLS pass (jit_clear_thread_locals): a thread-local
+; the ORC JIT materializes itself has no dyld-registered TLV descriptor, so
+; the first access lands in _tlv_bootstrap_error and aborts.
+function LLVMGetFirstGlobal(mod: LLVMModuleRef) returns LLVMValueRef extern
+function LLVMGetNextGlobal(global_var: LLVMValueRef) returns LLVMValueRef extern
+function LLVMIsThreadLocal(global_var: LLVMValueRef) returns i32 extern
+
+; Atomic instruction builders (M2.3). The enum params are C ints:
+; LLVMAtomicRMWBinOp (Add=1, And=3, Or=5), LLVMAtomicOrdering
+; (SequentiallyConsistent=7).
+function LLVMBuildAtomicRMW(builder: LLVMBuilderRef, op: i32, ptr: LLVMValueRef, val: LLVMValueRef, ordering: i32, single_thread: i32) returns LLVMValueRef extern
+function LLVMBuildAtomicCmpXchg(builder: LLVMBuilderRef, ptr: LLVMValueRef, cmp: LLVMValueRef, new_val: LLVMValueRef, success_ordering: i32, failure_ordering: i32, single_thread: i32) returns LLVMValueRef extern
+
+; Set the atomic ordering of a load or store instruction
+procedure LLVMSetOrdering(inst: LLVMValueRef, ordering: i32) extern
+
+; Query whether a global is marked constant (0 = mutable global)
+function LLVMIsGlobalConstant(global_var: LLVMValueRef) returns i32 extern
+
+; ============================================================================
+; Instruction Builder - Arithmetic
+; ============================================================================
+
+; Integer arithmetic
+function LLVMBuildAdd(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildNSWAdd(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildNUWAdd(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildSub(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildNSWSub(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildMul(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildNSWMul(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildSDiv(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildUDiv(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildSRem(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildURem(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildNeg(builder: LLVMBuilderRef, val: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+
+; Floating point arithmetic
+function LLVMBuildFAdd(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildFSub(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildFMul(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildFDiv(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildFRem(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildFNeg(builder: LLVMBuilderRef, val: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+
+; ============================================================================
+; Instruction Builder - Bitwise
+; ============================================================================
+
+function LLVMBuildShl(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildLShr(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildAShr(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildAnd(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildOr(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildXor(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildNot(builder: LLVMBuilderRef, val: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+
+; ============================================================================
+; Instruction Builder - Comparison
+; ============================================================================
+
+function LLVMBuildICmp(builder: LLVMBuilderRef, op: i32, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildFCmp(builder: LLVMBuilderRef, op: i32, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildIsNotNull(builder: LLVMBuilderRef, val: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+
+; ============================================================================
+; Instruction Builder - Memory
+; ============================================================================
+
+function LLVMBuildAlloca(builder: LLVMBuilderRef, type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildGlobalStringPtr(builder: LLVMBuilderRef, str: pointer[const_char], name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildArrayAlloca(builder: LLVMBuilderRef, type: LLVMTypeRef, val: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildLoad2(builder: LLVMBuilderRef, type: LLVMTypeRef, ptr: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildStore(builder: LLVMBuilderRef, val: LLVMValueRef, ptr: LLVMValueRef) returns LLVMValueRef extern
+function LLVMBuildGEP2(builder: LLVMBuilderRef, type: LLVMTypeRef, ptr: LLVMValueRef, indices: pointer[LLVMValueRef], num_indices: u32, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildStructGEP2(builder: LLVMBuilderRef, type: LLVMTypeRef, ptr: LLVMValueRef, idx: u32, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildInBoundsGEP2(builder: LLVMBuilderRef, type: LLVMTypeRef, ptr: LLVMValueRef, indices: pointer[LLVMValueRef], num_indices: u32, name: pointer[const_char]) returns LLVMValueRef extern
+
+; ============================================================================
+; Instruction Builder - Casts
+; ============================================================================
+
+function LLVMBuildTrunc(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildZExt(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildSExt(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildFPToUI(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildFPToSI(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildUIToFP(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildSIToFP(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildFPTrunc(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildFPExt(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildPtrToInt(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildIntToPtr(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildBitCast(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildPointerCast(builder: LLVMBuilderRef, val: LLVMValueRef, dest_type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
+
+; ============================================================================
+; Instruction Builder - Control Flow
+; ============================================================================
+
+function LLVMBuildRet(builder: LLVMBuilderRef, val: LLVMValueRef) returns LLVMValueRef extern
+function LLVMBuildRetVoid(builder: LLVMBuilderRef) returns LLVMValueRef extern
+function LLVMBuildBr(builder: LLVMBuilderRef, dest: LLVMBasicBlockRef) returns LLVMValueRef extern
+function LLVMBuildCondBr(builder: LLVMBuilderRef, cond: LLVMValueRef, then_block: LLVMBasicBlockRef, else_block: LLVMBasicBlockRef) returns LLVMValueRef extern
+function LLVMBuildSwitch(builder: LLVMBuilderRef, val: LLVMValueRef, else_block: LLVMBasicBlockRef, num_cases: u32) returns LLVMValueRef extern
+procedure LLVMAddCase(switch_val: LLVMValueRef, on_val: LLVMValueRef, dest: LLVMBasicBlockRef) extern
+function LLVMBuildUnreachable(builder: LLVMBuilderRef) returns LLVMValueRef extern
+
+; ============================================================================
+; Instruction Builder - Function Calls
+; ============================================================================
+
+function LLVMBuildCall2(builder: LLVMBuilderRef, func_type: LLVMTypeRef, func: LLVMValueRef, args: pointer[LLVMValueRef], num_args: u32, name: pointer[const_char]) returns LLVMValueRef extern
+
+; ============================================================================
+; Instruction Builder - Misc
+; ============================================================================
+
+function LLVMBuildPhi(builder: LLVMBuilderRef, type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
+procedure LLVMAddIncoming(phi: LLVMValueRef, incoming_values: pointer[LLVMValueRef], incoming_blocks: pointer[LLVMBasicBlockRef], count: u32) extern
+function LLVMBuildSelect(builder: LLVMBuilderRef, cond: LLVMValueRef, then_val: LLVMValueRef, else_val: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildExtractValue(builder: LLVMBuilderRef, agg_val: LLVMValueRef, index: u32, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildInsertValue(builder: LLVMBuilderRef, agg_val: LLVMValueRef, elt_val: LLVMValueRef, index: u32, name: pointer[const_char]) returns LLVMValueRef extern
+
+; ============================================================================
+; Value Functions
+; ============================================================================
+
+; Get/set value name
+function LLVMGetValueName2(val: LLVMValueRef, length: pointer[size_t]) returns pointer[char] extern
+procedure LLVMSetValueName2(val: LLVMValueRef, name: pointer[const_char], name_len: size_t) extern
+
+; Get type of value
+function LLVMTypeOf(val: LLVMValueRef) returns LLVMTypeRef extern
+
+; Check if value is null
+function LLVMIsNull(val: LLVMValueRef) returns i32 extern
+
+; Alloca instruction inspection. LLVMIsAAllocaInst returns the value if it
+; is an alloca instruction, null otherwise. LLVMGetAllocatedType returns
+; the type that the alloca instruction allocates (e.g., for `alloca i32`
+; this returns i32). Required to distinguish ptr-typed alloca slots that
+; hold a heap pointer from struct-typed alloca slots that hold a value.
+function LLVMIsAAllocaInst(val: LLVMValueRef) returns LLVMValueRef extern
+function LLVMGetAllocatedType(alloca: LLVMValueRef) returns LLVMTypeRef extern
+
+; Load instruction inspection — same isa<> pattern as LLVMIsAAllocaInst.
+; Used by emit_call's extern-LLVM arg unwrap (s173) to recognise a
+; loaded ptr-slot value (pointer to a single-ptr wrapper struct) that
+; must be dereferenced to the bare handle.
+function LLVMIsALoadInst(val: LLVMValueRef) returns LLVMValueRef extern
+
+; Function-argument inspection — same isa<> pattern. Used by emit_call's
+; extern-LLVM arg unwrap to recognise a wrapper-struct PARAM (declared as
+; ptr-to-struct by emit_function_decl) passed straight through to an
+; extern LLVM callee, which needs the same load+extract as the s172/s173
+; alloca/load cases.
+function LLVMIsAArgument(val: LLVMValueRef) returns LLVMValueRef extern
+
+; s178: use-list walking + instruction classification for the alloca
+; reuse pool's escape check (Emitter.temp_value_escapes). Same isa<>
+; pattern as LLVMIsAAllocaInst: returns the value when it is an
+; instance of the class, null otherwise. LLVMGetOperand(store, 0) is
+; the stored VALUE; operand 1 is the destination pointer.
+function LLVMGetFirstUse(val: LLVMValueRef) returns LLVMUseRef extern
+function LLVMGetNextUse(u: LLVMUseRef) returns LLVMUseRef extern
+function LLVMGetUser(u: LLVMUseRef) returns LLVMValueRef extern
+function LLVMGetOperand(val: LLVMValueRef, index: u32) returns LLVMValueRef extern
+function LLVMIsAStoreInst(val: LLVMValueRef) returns LLVMValueRef extern
+function LLVMIsACallInst(val: LLVMValueRef) returns LLVMValueRef extern
+function LLVMIsAICmpInst(val: LLVMValueRef) returns LLVMValueRef extern
+function LLVMIsAGetElementPtrInst(val: LLVMValueRef) returns LLVMValueRef extern
+
+; Operand rewriting + instruction removal, for Emitter.elide_unused_pages
+; (the dead-region-frame peephole). A call's operands are its arguments
+; 0..n-1 followed by the callee, so the argument count is
+; LLVMGetNumOperands - 1 and LLVMGetCalledValue names the callee.
+; ★The `index: int` (i64) spelling matches LLVMGetParam/LLVMGetOperand
+; above rather than the i32 extern rule: all four take at most three
+; arguments, so every one is register-passed and the Apple-arm64
+; stack-argument corruption the rule guards against cannot arise.
+; Parameter-attribute count, index 1-based over the params (0 is the return
+; value). elide_unused_pages uses it as a blanket veto: a page parameter is a
+; bare `ptr`, while sret/byval/noalias parameters carry attributes — and an
+; unused SRET parameter (a template stub's `ret null` body never writes it) is
+; exactly the one that must NOT be handed a null, since the attribute promises
+; the callee a dereferenceable slot.
+function LLVMGetAttributeCountAtIndex(f: LLVMValueRef, index: u32) returns u32 extern
+function LLVMGetNumOperands(val: LLVMValueRef) returns i32 extern
+function LLVMSetOperand(user: LLVMValueRef, index: u32, val: LLVMValueRef) extern
+function LLVMGetCalledValue(instr: LLVMValueRef) returns LLVMValueRef extern
+function LLVMInstructionEraseFromParent(inst: LLVMValueRef) extern
+
+; s178: struct copies through memcpy instead of load+store pairs. A
+; big-aggregate load materializes the whole struct as an SSA value and
+; the backend allocates a spill slot for it; memcpy moves the bytes
+; pointer-to-pointer with no SSA value. Bypassed loads are left in
+; place (the backend prunes dead non-volatile loads for free); do NOT
+; erase them — emitter-held handles may still reference the value.
+function LLVMBuildMemCpy(builder: LLVMBuilderRef, dst: LLVMValueRef, dst_align: u32, src: LLVMValueRef, src_align: u32, size: LLVMValueRef) returns LLVMValueRef extern
+
+; Structure type name lookup. Returns a C string (NUL-terminated) when the
+; struct is named (`LLVMStructCreateNamed` + setBody), or null for anonymous
+; struct types. Used in emit_tuple to discriminate source struct kinds
+; (Array vs Vector vs etc.) when planning convert-constructor dispatch.
+function LLVMGetStructName(struct_ty: LLVMTypeRef) returns pointer[const_char] extern
+
+; ============================================================================
+; Target Functions
+; ============================================================================
+
+; Per-target initializers (the real exported symbols).
+; The convenience wrappers LLVMInitializeNativeTarget /
+; LLVMInitializeAllTargets are static-inline in llvm-c/Target.h — not
+; real runtime symbols, so the JIT can't resolve them. Call per-target
+; initializers directly. If libLLVM was built without a given target,
+; linking the extern symbol fails at link time on that host.
+procedure LLVMInitializeAArch64TargetInfo() extern
+procedure LLVMInitializeAArch64Target() extern
+procedure LLVMInitializeAArch64TargetMC() extern
+procedure LLVMInitializeAArch64AsmPrinter() extern
+procedure LLVMInitializeX86TargetInfo() extern
+procedure LLVMInitializeX86Target() extern
+procedure LLVMInitializeX86TargetMC() extern
+procedure LLVMInitializeX86AsmPrinter() extern
+
+; Get default target triple for the host
+function LLVMGetDefaultTargetTriple() returns pointer[char] extern
+
+; Get target from triple
+function LLVMGetTargetFromTriple(triple: pointer[const_char], target: pointer[LLVMTargetRef], error_message: pointer[pointer[char]]) returns i32 extern
+
+; Create target machine
+function LLVMCreateTargetMachine(target: LLVMTargetRef, triple: pointer[const_char], cpu: pointer[const_char], features: pointer[const_char], level: i32, reloc: i32, code_model: i32) returns LLVMTargetMachineRef extern
+
+; Dispose target machine
+procedure LLVMDisposeTargetMachine(machine: LLVMTargetMachineRef) extern
+
+; New-PM pass builder (llvm-c/Transforms/PassBuilder.h): run a textual
+; pass pipeline (e.g. "default<O2>") over a module against a TargetMachine.
+; Used by the -O flag for AOT object emission.
+define LLVMOpaquePassBuilderOptions()
+define LLVMPassBuilderOptionsRef pointer[LLVMOpaquePassBuilderOptions]
+function LLVMCreatePassBuilderOptions() returns LLVMPassBuilderOptionsRef extern
+function LLVMRunPasses(mod: LLVMModuleRef, passes: pointer[const_char], tm: LLVMTargetMachineRef, options: LLVMPassBuilderOptionsRef) returns LLVMErrorRef extern
+procedure LLVMDisposePassBuilderOptions(options: LLVMPassBuilderOptionsRef) extern
+
+; The DataLayout a target machine compiles for (caller owns the result)
+function LLVMCreateTargetDataLayout(machine: LLVMTargetMachineRef) returns LLVMTargetDataRef extern
+
+; String representation of a DataLayout (dispose with LLVMDisposeMessage)
+function LLVMCopyStringRepOfTargetData(td: LLVMTargetDataRef) returns pointer[char] extern
+
+; Dispose target data
+procedure LLVMDisposeTargetData(td: LLVMTargetDataRef) extern
+
+; Emit to file
+function LLVMTargetMachineEmitToFile(machine: LLVMTargetMachineRef, mod: LLVMModuleRef, filename: pointer[const_char], codegen: i32, error_message: pointer[pointer[char]]) returns i32 extern
+
+; ============================================================================
+; Memory Functions
+; ============================================================================
+
+; Free message allocated by LLVM
+procedure LLVMDisposeMessage(message: pointer[char]) extern
+; String representation of a type (dispose with LLVMDisposeMessage); the
+; emitter's loud kind-mismatch abort names both operand types with it.
+function LLVMPrintTypeToString(ty: LLVMTypeRef) returns pointer[char] extern
+
+; ============================================================================
+; Analysis/Verification
+; ============================================================================
+
+; Verify module (0 = success)
+function LLVMVerifyModule(mod: LLVMModuleRef, action: i32, out_message: pointer[pointer[char]]) returns i32 extern
+
+; Verify function (0 = success)
+function LLVMVerifyFunction(func: LLVMValueRef, action: i32) returns i32 extern
+
+; ============================================================================
+; Pass Manager
+; ============================================================================
+
+; Create pass managers
+function LLVMCreatePassManager() returns LLVMPassManagerRef extern
+function LLVMCreateFunctionPassManagerForModule(mod: LLVMModuleRef) returns LLVMPassManagerRef extern
+
+; Dispose pass manager
+procedure LLVMDisposePassManager(pm: LLVMPassManagerRef) extern
+
+; Run passes
+function LLVMRunPassManager(pm: LLVMPassManagerRef, mod: LLVMModuleRef) returns i32 extern
+function LLVMInitializeFunctionPassManager(fpm: LLVMPassManagerRef) returns i32 extern
+function LLVMRunFunctionPassManager(fpm: LLVMPassManagerRef, func: LLVMValueRef) returns i32 extern
+function LLVMFinalizeFunctionPassManager(fpm: LLVMPassManagerRef) returns i32 extern
+
+; ============================================================================
+; Debug Info (DWARF) — DIBuilder
+; ============================================================================
+;
+; Bindings for the LLVM-C DebugInfo API (DebugInfo.h). Used by the Emitter
+; only when EmitterConfig.emit_debug_info is true (the -g flag).
+;
+; C `unsigned`/`LLVMBool`/`LLVMDIFlags`/enum params are 32-bit and MUST be
+; declared `i32`, NOT `int` (= i64). On Apple arm64 the stack packs 32-bit
+; args into 4-byte slots; passing i64 shifts every following stack arg by
+; 4 bytes, corrupting spFlags/CU flags (no DISPFlagDefinition, wrong
+; splitDebugInlining). `size_t` params stay 64-bit; pointers/refs stay ptr.
+; Enum values used below:
+;   LLVMDWARFSourceLanguage: C89 = 1 (closest to Scaly semantics)
+;   LLVMDWARFEmissionKind:   Full = 1
+;   LLVMModuleFlagBehavior:  Warning = 1
+;   LLVMDWARFTypeEncoding:   DW_ATE_signed = 5, DW_ATE_boolean = 2,
+;                            DW_ATE_unsigned = 7
+;   DEBUG_METADATA_VERSION:  3
+
+; Module-flag plumbing (Dwarf Version / Debug Info Version).
+function LLVMValueAsMetadata(val: LLVMValueRef) returns LLVMMetadataRef extern
+procedure LLVMAddModuleFlag(mod: LLVMModuleRef, behavior: i32, key: pointer[const_char], key_len: size_t, val: LLVMMetadataRef) extern
+
+; Builder lifecycle.
+function LLVMCreateDIBuilder(mod: LLVMModuleRef) returns LLVMDIBuilderRef extern
+procedure LLVMDIBuilderFinalize(builder: LLVMDIBuilderRef) extern
+
+; Compile unit + file.
+function LLVMDIBuilderCreateFile(builder: LLVMDIBuilderRef, filename: pointer[const_char], filename_len: size_t, directory: pointer[const_char], directory_len: size_t) returns LLVMMetadataRef extern
+function LLVMDIBuilderCreateCompileUnit(builder: LLVMDIBuilderRef, lang: i32, file_ref: LLVMMetadataRef, producer: pointer[const_char], producer_len: size_t, is_optimized: i32, flags: pointer[const_char], flags_len: size_t, runtime_ver: i32, split_name: pointer[const_char], split_name_len: size_t, kind: i32, dwo_id: i32, split_debug_inlining: i32, debug_info_for_profiling: i32, sysroot: pointer[const_char], sysroot_len: size_t, sdk: pointer[const_char], sdk_len: size_t) returns LLVMMetadataRef extern
+
+; Functions (DISubprogram) + their subroutine type.
+function LLVMDIBuilderCreateSubroutineType(builder: LLVMDIBuilderRef, file: LLVMMetadataRef, parameter_types: pointer[LLVMMetadataRef], num_parameter_types: i32, flags: i32) returns LLVMMetadataRef extern
+function LLVMDIBuilderCreateFunction(builder: LLVMDIBuilderRef, scope: LLVMMetadataRef, name: pointer[const_char], name_len: size_t, linkage_name: pointer[const_char], linkage_name_len: size_t, file: LLVMMetadataRef, line_no: i32, ty: LLVMMetadataRef, is_local_to_unit: i32, is_definition: i32, scope_line: i32, flags: i32, is_optimized: i32) returns LLVMMetadataRef extern
+procedure LLVMSetSubprogram(func: LLVMValueRef, sp: LLVMMetadataRef) extern
+
+; Line locations.
+function LLVMDIBuilderCreateDebugLocation(ctx: LLVMContextRef, line: i32, column: i32, scope: LLVMMetadataRef, inlined_at: LLVMMetadataRef) returns LLVMMetadataRef extern
+procedure LLVMSetCurrentDebugLocation2(builder: LLVMBuilderRef, loc: LLVMMetadataRef) extern
+
+; Local variables (Phase B).
+function LLVMDIBuilderCreateBasicType(builder: LLVMDIBuilderRef, name: pointer[const_char], name_len: size_t, size_in_bits: size_t, encoding: i32, flags: i32) returns LLVMMetadataRef extern
+function LLVMDIBuilderCreateAutoVariable(builder: LLVMDIBuilderRef, scope: LLVMMetadataRef, name: pointer[const_char], name_len: size_t, file: LLVMMetadataRef, line_no: i32, ty: LLVMMetadataRef, always_preserve: i32, flags: i32, align_in_bits: i32) returns LLVMMetadataRef extern
+; Same as CreateAutoVariable but produces a DW_TAG_formal_parameter, so the
+; debugger lists it as an ARGUMENT rather than a local. `arg_no` is 1-based and
+; is the position in the SOURCE signature, not the LLVM argument index — the
+; sret and caller-page slots must not be counted (see the call site).
+function LLVMDIBuilderCreateParameterVariable(builder: LLVMDIBuilderRef, scope: LLVMMetadataRef, name: pointer[const_char], name_len: size_t, arg_no: i32, file: LLVMMetadataRef, line_no: i32, ty: LLVMMetadataRef, always_preserve: i32, flags: i32) returns LLVMMetadataRef extern
+function LLVMDIBuilderCreateExpression(builder: LLVMDIBuilderRef, addr: pointer[size_t], length: size_t) returns LLVMMetadataRef extern
+; ★The one entry point that did NOT survive 18 -> 20, and the reason the move
+; is a hard cut: LLVM 19's RemoveDIs work replaced the dbg.declare intrinsic
+; with a debug RECORD, renaming this function and changing its result type.
+; The two names are DISJOINT — `…InsertDeclareAtEnd` exists only up to 18,
+; `…InsertDeclareRecordAtEnd` only from 19 — and ONE seed carries ONE
+; declaration, so there is no version window in which both work. The parameter
+; list is unchanged. It was 1 of the 253 LLVM-C symbols this compiler uses.
+function LLVMDIBuilderInsertDeclareRecordAtEnd(builder: LLVMDIBuilderRef, storage: LLVMValueRef, var_info: LLVMMetadataRef, expr: LLVMMetadataRef, debug_loc: LLVMMetadataRef, block: LLVMBasicBlockRef) returns LLVMDbgRecordRef extern
+
+; Aggregate types (struct/union/pointer) — for debugging struct/union locals.
+; size_in_bits/offset_in_bits are uint64_t (size_t, 64-bit); line/align/flags/
+; num_elements/run_time_lang/address_space/tag are 32-bit C args → i32 (see the
+; Apple-arm64 packing note above). `elements` is a C array of DITypes.
+function LLVMDIBuilderCreateStructType(builder: LLVMDIBuilderRef, scope: LLVMMetadataRef, name: pointer[const_char], name_len: size_t, file: LLVMMetadataRef, line_number: i32, size_in_bits: size_t, align_in_bits: i32, flags: i32, derived_from: LLVMMetadataRef, elements: pointer[LLVMMetadataRef], num_elements: i32, run_time_lang: i32, vtable_holder: LLVMMetadataRef, unique_id: pointer[const_char], unique_id_len: size_t) returns LLVMMetadataRef extern
+function LLVMDIBuilderCreateUnionType(builder: LLVMDIBuilderRef, scope: LLVMMetadataRef, name: pointer[const_char], name_len: size_t, file: LLVMMetadataRef, line_number: i32, size_in_bits: size_t, align_in_bits: i32, flags: i32, elements: pointer[LLVMMetadataRef], num_elements: i32, run_time_lang: i32, unique_id: pointer[const_char], unique_id_len: size_t) returns LLVMMetadataRef extern
+function LLVMDIBuilderCreateMemberType(builder: LLVMDIBuilderRef, scope: LLVMMetadataRef, name: pointer[const_char], name_len: size_t, file: LLVMMetadataRef, line_no: i32, size_in_bits: size_t, align_in_bits: i32, offset_in_bits: size_t, flags: i32, ty: LLVMMetadataRef) returns LLVMMetadataRef extern
+function LLVMDIBuilderCreatePointerType(builder: LLVMDIBuilderRef, pointee_ty: LLVMMetadataRef, size_in_bits: size_t, align_in_bits: i32, address_space: i32, name: pointer[const_char], name_len: size_t) returns LLVMMetadataRef extern
+; A union's TAG is typed as an enumeration whose enumerators are the variant
+; names, so a debugger prints `tag = Some` instead of `tag = 1` with no
+; formatter involved. `value` is int64_t and `is_unsigned` an LLVMBool.
+function LLVMDIBuilderCreateEnumerator(builder: LLVMDIBuilderRef, name: pointer[const_char], name_len: size_t, value: i64, is_unsigned: i32) returns LLVMMetadataRef extern
+function LLVMDIBuilderCreateEnumerationType(builder: LLVMDIBuilderRef, scope: LLVMMetadataRef, name: pointer[const_char], name_len: size_t, file: LLVMMetadataRef, line_number: i32, size_in_bits: size_t, align_in_bits: i32, elements: pointer[LLVMMetadataRef], num_elements: i32, class_ty: LLVMMetadataRef) returns LLVMMetadataRef extern
+; Forward declaration + RAUW: breaks self-referential cycles (Node →
+; pointer[Node]). Create the replaceable temp, cache it, build members
+; (a back-pointer resolves to the temp), then replace it with the final type.
+function LLVMDIBuilderCreateReplaceableCompositeType(builder: LLVMDIBuilderRef, tag: i32, name: pointer[const_char], name_len: size_t, scope: LLVMMetadataRef, file: LLVMMetadataRef, line: i32, runtime_lang: i32, size_in_bits: size_t, align_in_bits: i32, flags: i32, unique_id: pointer[const_char], unique_id_len: size_t) returns LLVMMetadataRef extern
+procedure LLVMMetadataReplaceAllUsesWith(temp_target: LLVMMetadataRef, replacement: LLVMMetadataRef) extern
+
+; ============================================================================
+; ORC LLJIT (in-process JIT) — used by the self-hosted `--run` mode
+; ============================================================================
+;
+; Mirrors the LLVM-C OrcEE / Orc.h API. Each handle is a single-ptr opaque
+; wrapper (like LLVMContextRef etc.); LLVMOrcExecutorAddress is a bare u64
+; (a runtime code address, NOT a struct). LLVMErrorRef is the LLVM-C error
+; handle: a NULL handle means SUCCESS; a non-null handle is an error whose
+; message is read with LLVMGetErrorMessage and which MUST be consumed with
+; LLVMConsumeError (else leak/abort). See Emitter.jit_execute_int.
+
+define LLVMOrcOpaqueLLJIT()
+define LLVMOrcLLJITRef pointer[LLVMOrcOpaqueLLJIT]
+define LLVMOrcOpaqueLLJITBuilder()
+define LLVMOrcLLJITBuilderRef pointer[LLVMOrcOpaqueLLJITBuilder]
+define LLVMOrcOpaqueJITDylib()
+define LLVMOrcJITDylibRef pointer[LLVMOrcOpaqueJITDylib]
+define LLVMOrcOpaqueThreadSafeContext()
+define LLVMOrcThreadSafeContextRef pointer[LLVMOrcOpaqueThreadSafeContext]
+define LLVMOrcOpaqueThreadSafeModule()
+define LLVMOrcThreadSafeModuleRef pointer[LLVMOrcOpaqueThreadSafeModule]
+define LLVMOrcOpaqueDefinitionGenerator()
+define LLVMOrcDefinitionGeneratorRef pointer[LLVMOrcOpaqueDefinitionGenerator]
+define LLVMOrcOpaqueJITTargetMachineBuilder()
+define LLVMOrcJITTargetMachineBuilderRef pointer[LLVMOrcOpaqueJITTargetMachineBuilder]
+define LLVMOpaqueError()
+define LLVMErrorRef pointer[LLVMOpaqueError]
+
+; ThreadSafeContext: the module being JITted MUST be built in the LLVMContext
+; owned by the ThreadSafeContext, otherwise addIRModule crashes. So we create
+; the TSC first, take its underlying LLVMContextRef as the emitter's context,
+; build the module, then wrap it back into a ThreadSafeModule.
+function LLVMOrcCreateNewThreadSafeContext() returns LLVMOrcThreadSafeContextRef extern
+function LLVMOrcThreadSafeContextGetContext(tsc: LLVMOrcThreadSafeContextRef) returns LLVMContextRef extern
+function LLVMOrcCreateNewThreadSafeModule(m: LLVMModuleRef, tsc: LLVMOrcThreadSafeContextRef) returns LLVMOrcThreadSafeModuleRef extern
+
+; LLJIT lifecycle. Pass a null builder handle to LLVMOrcCreateLLJIT for the
+; default builder (host target machine, -O2 codegen). Returns LLVMErrorRef.
+function LLVMOrcCreateLLJIT(result: pointer[LLVMOrcLLJITRef], builder: LLVMOrcLLJITBuilderRef) returns LLVMErrorRef extern
+
+; -O0 JIT: the default builder (null) uses -O2 codegen. To force a codegen
+; opt level, build an LLJITBuilder around a JITTargetMachineBuilder made from
+; an explicit TargetMachine (LLVMCreateTargetMachine with level = None = 0).
+; CreateFromTargetMachine consumes the TM; SetJITTargetMachineBuilder consumes
+; the JTMB; CreateLLJIT consumes the builder.
+function LLVMOrcCreateLLJITBuilder() returns LLVMOrcLLJITBuilderRef extern
+function LLVMOrcJITTargetMachineBuilderCreateFromTargetMachine(tm: LLVMTargetMachineRef) returns LLVMOrcJITTargetMachineBuilderRef extern
+procedure LLVMOrcLLJITBuilderSetJITTargetMachineBuilder(builder: LLVMOrcLLJITBuilderRef, jtmb: LLVMOrcJITTargetMachineBuilderRef) extern
+function LLVMOrcLLJITGetMainJITDylib(j: LLVMOrcLLJITRef) returns LLVMOrcJITDylibRef extern
+function LLVMOrcLLJITGetGlobalPrefix(j: LLVMOrcLLJITRef) returns char extern
+
+; Process-symbol generator: resolves libc symbols (malloc/free/write/
+; aligned_alloc/exit) referenced by the JITted RBMM runtime against the host
+; process. filter/filter_ctx are null (accept all). Returns LLVMErrorRef.
+function LLVMOrcCreateDynamicLibrarySearchGeneratorForProcess(result: pointer[LLVMOrcDefinitionGeneratorRef], global_prefix: char, filter: pointer[void], filter_ctx: pointer[void]) returns LLVMErrorRef extern
+procedure LLVMOrcJITDylibAddGenerator(jd: LLVMOrcJITDylibRef, g: LLVMOrcDefinitionGeneratorRef) extern
+
+; Add the module (consumes the ThreadSafeModule) + look up a symbol. Lookup
+; writes the resolved address into *result; pass the IR symbol name WITHOUT a
+; leading global prefix (ORC applies the prefix itself). Returns LLVMErrorRef.
+function LLVMOrcLLJITAddLLVMIRModule(j: LLVMOrcLLJITRef, jd: LLVMOrcJITDylibRef, tsm: LLVMOrcThreadSafeModuleRef) returns LLVMErrorRef extern
+; Add a relocatable object file (dependency package, AOT-compiled through the
+; known-good root path) to a JITDylib. CONSUMES the memory buffer. The object's
+; linkonce_odr/weak symbols become resolvable across the dylib, so the program
+; module's extern declarations of dependency-package functions link against the
+; real bodies instead of the null-returning jit stub. Returns LLVMErrorRef.
+function LLVMOrcLLJITAddObjectFile(j: LLVMOrcLLJITRef, jd: LLVMOrcJITDylibRef, objbuf: LLVMMemoryBufferRef) returns LLVMErrorRef extern
+; Load a file into a MemoryBuffer (used to hand a dep-package object to the
+; JIT). Returns an LLVMBool (0 = success); writes the buffer to *out.
+function LLVMCreateMemoryBufferWithContentsOfFile(path: pointer[const_char], out: pointer[LLVMMemoryBufferRef], msg: pointer[pointer[char]]) returns i32 extern
+; LLVMOrcExecutorAddress is a bare u64 (a runtime code address), so the
+; result is pointer[u64], NOT a wrapper-struct pointer.
+function LLVMOrcLLJITLookup(j: LLVMOrcLLJITRef, result: pointer[u64], name: pointer[const_char]) returns LLVMErrorRef extern
+
+; Error handling. A null LLVMErrorRef handle = success.
+function LLVMGetErrorMessage(e: LLVMErrorRef) returns pointer[char] extern
+procedure LLVMConsumeError(e: LLVMErrorRef) extern
+procedure LLVMDisposeErrorMessage(msg: pointer[char]) extern
+

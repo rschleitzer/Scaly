@@ -2817,6 +2817,48 @@ define WriteCensus
             }
         }
 
+        ; --interface-facts: the first changeable global each planned body of the
+        ; root reads (the check's pre-pass), keyed like the planner's facts
+        function interface_reads(this: WriteCensus) returns String
+        {
+            var sb StringBuilder()
+            if plan_functions = null
+                return sb.to_string()
+            let fns plan_functions as ref[Vector[PlannedFunction]]
+            var i: size_t 0
+            while i < fns.length
+            {
+                if i >= body_reads.length
+                    break
+                let r body_reads[i]
+                let f_ptr fns.get i
+                set i: i + 1
+                if f_ptr = null
+                    continue
+                if r.get_length() = 0
+                    continue
+                let f f_ptr.unwrap()
+                if f.origin <> null
+                    continue
+                var body false
+                choose f.impl
+                    when a: Action
+                        set body: true
+                    else
+                        0
+                if body = false
+                    continue
+                sb.append "R "
+                sb.append f.file
+                sb.append " "
+                sb.append f.loc.start
+                sb.append " "
+                sb.append r
+                sb.append "\n"
+            }
+            sb.to_string()
+        }
+
         ; what a stub's declaration says it reads ("" none, or not a stub)
         function declared_reads(this: WriteCensus, f: PlannedFunction) returns String
         {
@@ -3019,11 +3061,20 @@ define WriteCensus
                     var rb StringBuilder()
                     if diagnostics
                     {
-                        rb.append "error: function "
-                        rb.append func.name
-                        rb.append " reads global "
-                        rb.append(cur_reads[0])
-                        rb.append "; a function reads no global that can change - pass the value in, or make it a procedure"
+                        if is_init
+                        {
+                            rb.append "error: init reads global "
+                            rb.append(cur_reads[0])
+                            rb.append "; an initializer has no effect but building its object - read it in a procedure after the construction"
+                        }
+                        else
+                        {
+                            rb.append "error: function "
+                            rb.append func.name
+                            rb.append " reads global "
+                            rb.append(cur_reads[0])
+                            rb.append "; a function reads no global that can change - pass the value in, or make it a procedure"
+                        }
                     }
                     else
                     {
@@ -3380,10 +3431,11 @@ define WriteCensus
                     body_reads.put(read_index, String^this(name))
                 return
             }
+            ; a function reads none, and neither does an initializer: it builds
+            ; its object and has no other effect
             if cur_pure = false
-                return
-            if cur_name = "init"
-                return
+                if cur_name <> "init"
+                    return
             this.note_read_site(offset, name, String(""))
         }
 
@@ -3456,9 +3508,8 @@ define WriteCensus
                 return
             }
             if cur_pure = false
-                return
-            if cur_name = "init"
-                return
+                if cur_name <> "init"
+                    return
             if slot - 1 >= body_reads.length
                 return
             let r body_reads[slot - 1]

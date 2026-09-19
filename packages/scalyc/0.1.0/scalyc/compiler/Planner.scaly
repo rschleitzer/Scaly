@@ -4269,7 +4269,8 @@ define Planner
                 Lifetime.Unspecified(Unspecified()),
                 Implementation.Extern(Extern(Span(0, 0))),
                 Vector[String](0),
-                Vector[String](0)
+                Vector[String](0),
+                Vector[Attribute](0)
             )
             this.register_function(aligned_alloc_fn)
 
@@ -4294,7 +4295,8 @@ define Planner
                 Lifetime.Unspecified(Unspecified()),
                 Implementation.Extern(Extern(Span(0, 0))),
                 Vector[String](0),
-                Vector[String](0)
+                Vector[String](0),
+                Vector[Attribute](0)
             )
             this.register_function(free_fn)
 
@@ -4326,7 +4328,8 @@ define Planner
                 Lifetime.Unspecified(Unspecified()),
                 Implementation.Extern(Extern(Span(0, 0))),
                 Vector[String](0),
-                Vector[String](0)
+                Vector[String](0),
+                Vector[Attribute](0)
             )
             this.register_function(exit_fn)
         }
@@ -5041,6 +5044,237 @@ define Planner
         ; through generic `^this` inits). Consulted on the fall-through
         ; construction paths (Unspecified life) in collapse_operand_sequence;
         ; explicit #/^ constructions never reach it.
+        ; ================================================================
+        ; --interface-facts (tools/interface/geninterface.py): per routine of
+        ; the ROOT package what a bodyless declaration must say that the
+        ; planner derives from its body -- the caller page (R1..R7, part of
+        ; the mangled name) and whether it stores an argument beyond its frame
+        ; -- and per concept whether a construction of it must be page-resident.
+        ; One line per fact, keyed by file and source offset; the generator
+        ; does the text surgery.
+        ; ================================================================
+
+        procedure interface_facts(mutable this: Planner, m: Module) returns String io
+            this.facts_module(m, false)
+
+        procedure facts_module(mutable this: Planner, m: Module, generic: bool) returns String io
+        {
+            var sb StringBuilder()
+            sb.append "M "
+            sb.append m.file
+            sb.append "\n"
+            sb.append(this.facts_members(m.file, m.members, generic))
+            var i: size_t 0
+            while i < m.modules.length
+            {
+                let sub m.modules.get i
+                if sub <> null
+                    sb.append(this.facts_module((*sub), generic))
+                set i: i + 1
+            }
+            sb.to_string()
+        }
+
+        function facts_line(tag: String, file: String, span: Span, kind: String, name: String, generic: bool, page: bool, explicit: bool, persists: bool) returns String
+        {
+            var sb StringBuilder()
+            sb.append tag
+            sb.append " "
+            sb.append file
+            sb.append " "
+            sb.append span.start
+            sb.append " "
+            sb.append span.end
+            sb.append " "
+            sb.append kind
+            sb.append " "
+            sb.append name
+            sb.append " generic="
+            sb.append generic
+            sb.append " page="
+            sb.append page
+            sb.append " explicit="
+            sb.append explicit
+            sb.append " persists="
+            sb.append persists
+            sb.append "\n"
+            sb.to_string()
+        }
+
+        procedure facts_members(mutable this: Planner, file: String, members: Vector[Member], generic: bool) returns String io
+        {
+            var sb StringBuilder()
+            var i: size_t 0
+            while i < members.length
+            {
+                let m_ptr members.get i
+                set i: i + 1
+                if m_ptr = null
+                    continue
+                choose (*m_ptr)
+                    when f: Function
+                        sb.append(this.facts_function(file, f, generic))
+                    when op: Operator
+                    {
+                        var op_body false
+                        choose op.implementation
+                            when a: Action
+                                set op_body: true
+                            else
+                                0
+                        if op_body
+                            sb.append(Planner.facts_line(String("F"), file, op.span, String("op"), op.name, generic, false, false, false))
+                    }
+                    when c: Concept
+                        sb.append(this.facts_concept(file, c, generic))
+                    else
+                        0
+            }
+            sb.to_string()
+        }
+
+        procedure facts_function(mutable this: Planner, file: String, f: Function, generic: bool) returns String io
+        {
+            var body false
+            choose f.implementation
+                when a: Action
+                    set body: true
+                else
+                    0
+            if body = false
+                return String("")
+            var g generic
+            if f.parameters.length > 0
+                set g: true
+            var explicit false
+            if f.page_parameter <> null
+                set explicit: true
+            var page explicit
+            var persists false
+            var direct false
+            var transitive false
+            var returnpage false
+            if g = false
+            {
+                var ff f
+                if page = false
+                    set page: Planner.function_needs_caller_page(this, ff)
+                set persists: Planner.function_persists_param_guts(f)
+                ; the page sets R6/R7 join through bodies: a linked routine
+                ; states the memberships it has here
+                if Planner.needs_implicit_return_page(f)
+                    set direct: true
+                if Planner.proc_needs_caller_page_for_storage(f)
+                    set direct: true
+                if Planner.body_references_rp(f)
+                    set direct: true
+                if f.returns_ <> null
+                    if Planner.is_reference_shaped_return((*f.returns_))
+                        if Planner.body_has_call_lifetime(f)
+                            set direct: true
+                if Planner.body_returns_value_ctor_as_pointer(f)
+                    set direct: true
+                set transitive: this.array_contains_name(transitive_page_names, f.name)
+                set returnpage: Planner.static_func_in_set(return_page_names, return_page_starts, return_page_ends, f)
+            }
+            var sb StringBuilder()
+            sb.append(Planner.facts_line(String("F"), file, f.span, String("fn"), f.name, g, page, explicit, persists))
+            if direct
+                sb.append "D\n"
+            if transitive
+                sb.append "T\n"
+            if returnpage
+                sb.append "P\n"
+            sb.to_string()
+        }
+
+        procedure facts_concept(mutable this: Planner, file: String, c: Concept, generic: bool) returns String io
+        {
+            var sb StringBuilder()
+            var g generic
+            if c.parameters.length > 0
+                set g: true
+            choose c.definition
+                when s: Structure
+                {
+                    ; asked of the structure itself, not by name: at the end of
+                    ; planning a name lookup does not reach into namespaces
+                    var resident false
+                    if g = false
+                    {
+                        set resident: this.structure_init_has_this_alloc(s)
+                        if resident = false
+                            set resident: this.structure_members_have_this_alloc(s)
+                    }
+                    ; a concept line reuses the routine layout: resident rides
+                    ; in the `page` column, the generator reads it as such
+                    sb.append(Planner.facts_line(String("C"), file, c.span, String("concept"), c.name, g, resident, false, false))
+                    sb.append(this.facts_members(file, s.members, g))
+                    var ii: size_t 0
+                    while ii < s.initializers.length
+                    {
+                        let ini_ptr s.initializers.get ii
+                        set ii: ii + 1
+                        if ini_ptr = null
+                            continue
+                        let ini (*ini_ptr)
+                        var ibody false
+                        choose ini.implementation
+                            when a: Action
+                                set ibody: true
+                            else
+                                0
+                        if ibody
+                            sb.append(Planner.facts_line(String("F"), file, ini.span, String("init"), String("init"), g, false, false, false))
+                    }
+                    if s.deinitializer <> null
+                    {
+                        let dei (*s.deinitializer)
+                        var dbody false
+                        choose dei.implementation
+                            when a: Action
+                                set dbody: true
+                            else
+                                0
+                        if dbody
+                            sb.append(Planner.facts_line(String("F"), file, dei.span, String("deinit"), String("deinit"), g, false, false, false))
+                    }
+                    var mi: size_t 0
+                    while mi < s.modules.length
+                    {
+                        let sub s.modules.get mi
+                        if sub <> null
+                            sb.append(this.facts_module((*sub), g))
+                        set mi: mi + 1
+                    }
+                }
+                when ns: Namespace
+                {
+                    sb.append(this.facts_members(file, ns.members, g))
+                    var mi: size_t 0
+                    while mi < ns.modules.length
+                    {
+                        let sub ns.modules.get mi
+                        if sub <> null
+                            sb.append(this.facts_module((*sub), g))
+                        set mi: mi + 1
+                    }
+                }
+                when un: Union
+                {
+                    sb.append(Planner.facts_line(String("C"), file, c.span, String("concept"), c.name, g, false, false, false))
+                    sb.append(this.facts_members(file, un.members, g))
+                }
+                when gl: Global
+                {
+                    if gl.is_mutable
+                        sb.append(Planner.facts_line(String("G"), file, gl.span, String("global"), c.name, g, false, false, false))
+                }
+                else
+                    0
+            sb.to_string()
+        }
+
         procedure concept_needs_this_residency(mutable this: Planner, name: String) returns bool
         {
             let concept_ref this.lookup_concept(name)
@@ -35133,7 +35367,8 @@ define Planner
                     Lifetime.Unspecified(Unspecified()),
                     o.implementation,
                     Vector[String](0),
-                    Vector[String](0)
+                    Vector[String](0),
+                    Vector[Attribute](0)
                 )
                 var op_page_param: ref[String]? null
                 if Planner.needs_implicit_return_page(synth_fn)
@@ -36347,6 +36582,17 @@ define Planner
                         if Planner.body_references_rp(f)
                             if this.array_contains_name(transitive_page_names, f.name) = false
                                 transitive_page_names.add(String^this(f.name))
+                    ; a linked routine has no body to join the sets through:
+                    ; its interface states the memberships it had
+                    if Planner.linked_says(f, "transitive")
+                        if this.array_contains_name(transitive_page_names, f.name) = false
+                            transitive_page_names.add(String^this(f.name))
+                    if Planner.linked_says(f, "returnpage")
+                    {
+                        return_page_names.add(String^this(f.name))
+                        return_page_starts.add(f.span.start)
+                        return_page_ends.add(f.span.end)
+                    }
                 }
                 set si: si + 1
             }
@@ -36413,6 +36659,8 @@ define Planner
                                 set is_direct: true
                     if Planner.body_returns_value_ctor_as_pointer(f2)
                         set is_direct: true
+                    if Planner.is_linked(f2)
+                        set is_direct: Planner.attributes_have(f2.attributes, "direct")
                     if is_direct
                         if this.array_contains_name(prepass_direct_names, f2.name) = false
                             prepass_direct_names.add(String^this(f2.name))
@@ -36450,6 +36698,8 @@ define Planner
                                 set f3_direct: true
                     if Planner.body_returns_value_ctor_as_pointer(f3)
                         set f3_direct: true
+                    if Planner.is_linked(f3)
+                        set f3_direct: Planner.attributes_have(f3.attributes, "direct")
                     if f3_direct = false
                         if this.array_contains_name(prepass_direct_names, f3.name)
                             if this.array_contains_name(prepass_veto_names, f3.name) = false
@@ -39752,6 +40002,25 @@ define Planner
         sb.to_string()
     }
 
+    ; a `linked` routine (a generated interface's declaration) and one of
+    ; its declared facts
+    function is_linked(f: Function) returns bool
+    {
+        choose f.implementation
+            when lk: Linked
+                return true
+            else
+                0
+        false
+    }
+
+    function linked_says(f: Function, name: Slice[char]) returns bool
+    {
+        if Planner.is_linked(f) = false
+            return false
+        Planner.attributes_have(f.attributes, name)
+    }
+
     ; an attribute by name among a declaration's attributes (`@resident`)
     function attributes_have(attrs: Vector[Attribute], name: Slice[char]) returns bool
     {
@@ -41098,11 +41367,8 @@ define Planner
     {
         ; a LINKED routine has no body to scan: its interface says it with
         ; `@persists` on a parameter
-        choose f.implementation
-            when lk: Linked
-                return Planner.items_have_attribute(f.input, "persists")
-            else
-                0
+        if Planner.is_linked(f)
+            return Planner.attributes_have(f.attributes, "persists")
         var pnames Array[String]()
         var pi: size_t 0
         while pi < f.input.length
@@ -43534,6 +43800,11 @@ define Planner
 
     procedure function_needs_caller_page(pl: Planner, mutable func: Function) returns bool io
     {
+        ; a linked routine's interface states the decision R1..R7 reached
+        ; when its own package was compiled (`@page true`); an explicit `rp`
+        ; is its page_parameter and never asks this
+        if Planner.is_linked(func)
+            return Planner.attributes_have(func.attributes, "page")
         ; ★A TYPE ALIAS in the return position (`define NICRef pointer[NIC]`)
         ; is resolved to its target BEFORE any of the seven rules reads
         ; `returns_` (2026-09-06). plan_type# resolves aliases for every
@@ -44607,7 +44878,8 @@ define Planner
             Lifetime.Unspecified(Unspecified()),
             Implementation.Extern(Extern(Span(0, 0))),
             Vector[String](0),
-            Vector[String](0)
+            Vector[String](0),
+            Vector[Attribute](0)
         )
         if Planner.needs_implicit_return_page(extern_func)
             return 96
@@ -44626,7 +44898,8 @@ define Planner
             Lifetime.Unspecified(Unspecified()),
             Implementation.Intrinsic(Intrinsic(Span(0, 0))),
             Vector[String](0),
-            Vector[String](0)
+            Vector[String](0),
+            Vector[Attribute](0)
         )
         if Planner.needs_implicit_return_page(void_func)
             return 97
@@ -44653,7 +44926,8 @@ define Planner
             Lifetime.Unspecified(Unspecified()),
             Implementation.Intrinsic(Intrinsic(Span(0, 0))),
             Vector[String](0),
-            Vector[String](0)
+            Vector[String](0),
+            Vector[Attribute](0)
         )
         if Planner.needs_implicit_return_page(int_ret_func)
             return 98
@@ -44680,7 +44954,8 @@ define Planner
             Lifetime.Unspecified(Unspecified()),
             Implementation.Intrinsic(Intrinsic(Span(0, 0))),
             Vector[String](0),
-            Vector[String](0)
+            Vector[String](0),
+            Vector[Attribute](0)
         )
         if Planner.needs_implicit_return_page(t_ret_func)
             return 99
@@ -44707,7 +44982,8 @@ define Planner
             Lifetime.Unspecified(Unspecified()),
             Implementation.Intrinsic(Intrinsic(Span(0, 0))),
             Vector[String](0),
-            Vector[String](0)
+            Vector[String](0),
+            Vector[Attribute](0)
         )
         if Planner.needs_implicit_return_page(foo_ret_func) = false
             return 100
@@ -45651,7 +45927,8 @@ define Planner
             Lifetime.Unspecified(Unspecified()),
             Implementation.Extern(Extern(Span(0, 0))),
             Vector[String](0),
-            Vector[String](0)
+            Vector[String](0),
+            Vector[Attribute](0)
         )
         let pl_fn p3.plan_function(model_fn, null)
         if pl_fn.name <> "foo"

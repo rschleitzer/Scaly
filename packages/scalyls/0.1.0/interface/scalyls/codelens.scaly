@@ -1,0 +1,291 @@
+; codelens.scaly - textDocument/codeLens: assemble the CodeLens[] array from
+; every lens family.
+;
+; One family lives elsewhere because it is expensive: scalyls.tasklens plans a
+; package root to answer the self-scaling verdict of each `for` loop. The four
+; families HERE need no plan at all — a path table, one parse, and a length
+; check — which is why they answer on a buffer the planner could not touch:
+;
+;   GENERATED FILE   "generated from codegen/parser-scaly.scm - edit the
+;                    generator, then ./mkp" at the top of every file ./mkp
+;                    writes. The rule it states is one this repo breaks often
+;                    enough to document it in CLAUDE.md; a lens states it where
+;                    the mistake is made. The table below MIRRORS ./mkp (its
+;                    GENERATED list plus its msggen loop) and mkp is the
+;                    authority — the two must agree, and a generator that moves
+;                    must move here too.
+;
+;   PACKAGE / MODULE the file a `package NAME VERSION` or `module NAME`
+;                    declaration resolves to, and — the useful half — when it
+;                    resolves to NOTHING. A declared module whose file is
+;                    missing is a compile error waiting for the next build; a
+;                    lens turns it into an answer while typing the line.
+;
+;   MUTABLE / SHARED which THREAD sees a module global's cell, and — the
+;                    half that is not a matter of taste at all — whether the
+;                    declaration produces a global AT ALL. See the section
+;                    above storage_lens# for the three measurements this rests
+;                    on.
+;
+;   RUN              "Run (scalyc --jit)" on a file that HAS top-level
+;                    statements, i.e. a program rather than a library. This one
+;                    is CLICKABLE, so it is the reason the extension gained two
+;                    commands (scaly.runFile / scaly.openPath): a lens command
+;                    id must be a command the CLIENT has registered — the
+;                    built-in `vscode.open` takes a Uri OBJECT and rejects the
+;                    string a JSON-RPC argument can carry.
+;
+; ASCII ONLY in the titles, for the reason tasklens.scaly gives.
+;
+; PATH ARITHMETIC, not search: every family below decides with `ends_with` /
+; `last_index_of` / `substring` on the document path. There is no substring
+; SEARCH primitive on String (index_of takes a byte), and none is needed —
+; which also means these lenses cost nothing measurable next to the plan.
+;
+; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no else).
+; One statement per line. Syntax unions are matched by PAYLOAD TYPE
+; (`when m: ModuleSyntax`), and every arm of a value-returning choose returns
+; explicitly. Quotes are 0x22 bytes.
+
+use scaly.os.File
+use scaly.memory.runtime
+use scaly.memory.root_pages.getenv
+
+use scalyls.diagnostics
+use scalyls.symbols
+use scalyls.json
+use scalyls.tasklens
+use scalyls.instlens
+use scalyls.storelens
+
+use scalyc.compiler.Modeler
+use scalyc.compiler.Planner
+use scalyc.compiler.Plan.*
+use scalyc.compiler.parser
+use scalyc.compiler.parser.*
+use scalyc.compiler.Syntax.*
+
+define codelens
+{
+    ; The whole CodeLens[] array for `uri`. `text` is the source the worker
+    ; resolved (the parent's buffer, or the file from disk when it had none).
+    procedure lenses(rp, mutable uri: String, mutable text: String) @direct true returns String io mutable lc_col, lc_line, lc_off, modeler_error_count reads lc_line linked
+
+    ; ====================================================================
+    ; THE SHARED PLAN.
+    ;
+    ; Every plan-derived family (the `for`-loop verdicts, the instantiation
+    ; counts) needs the SAME plan, and planning is by far the most expensive
+    ; thing this request does — measured 0.45 s for the scaly root and 2.45 s for
+    ; dazzle, the largest in this tree. So the parse and the plan happen ONCE
+    ; here and every family is handed the result; each family planning for itself
+    ; would double the cost of the whole request for nothing.
+    ;
+    ; WHICH program is planned is the same decision tasklens.scaly documents: a
+    ; package member goes through its ROOT (a member planned alone cannot resolve
+    ; its siblings, and for the classifier that turns a "parallel" verdict into a
+    ; wrong "blocked" one rather than a missing answer), a standalone document is
+    ; planned as itself. `plan_text` is the text whose offsets the plan carries —
+    ; the file ON DISK for a member, because the modeler reads from disk.
+    ; ====================================================================
+    procedure planned_fragment(rp, mutable path: String, mutable text: String) @direct true returns String io mutable lc_col, lc_line, lc_off, modeler_error_count reads modeler_error_count linked
+
+    procedure root_planned_fragment(rp, mutable root: String, path: String, text: String) @direct true returns String io mutable lc_col, lc_line, lc_off, modeler_error_count reads modeler_error_count linked
+
+    procedure document_planned_fragment(rp, mutable path: String, mutable text: String) @direct true returns String io mutable lc_col, lc_line, lc_off, modeler_error_count reads modeler_error_count linked
+
+    ; Join every plan-derived family over the one plan.
+    procedure families(rp, plan: Plan, has_diag: bool, entry_file: String, path: String, plan_text: String, anchor_text: String) @direct true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+
+    ; ====================================================================
+    ; The file-level lenses, both at offset 0.
+    ;
+    ; Offset 0 rather than "the first top-level statement": a file-level action
+    ; belongs at the top of the file, the line always exists, and it costs no
+    ; walk over the statement union. Two lenses at one position are what an
+    ; editor shows side by side, which is the conventional look for this.
+    ; ====================================================================
+    procedure head_fragment(rp, path: String, mutable text: String) @direct true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+
+    ; True when the document is a PROGRAM: it parses and carries at least one
+    ; top-level statement. A library root (`define X { module a }`) carries
+    ; none, so it gets no Run lens — which is the whole distinction the CLI
+    ; makes too. A buffer that does not parse gets none either: `--jit` on it
+    ; would print a diagnostic the editor is already showing.
+    procedure has_top_level_statements(mutable text: String) returns bool linked
+
+    ; ====================================================================
+    ; GENERATED FILES — the table, mirroring ./mkp.
+    ;
+    ; Answers the finished banner lens for `path`, or "". Every entry is decided
+    ; on a path SUFFIX, so the checkout root is whatever precedes it and the
+    ; click target is absolute without knowing where the checkout lives.
+    ;
+    ; Each arm hands banner_lens# BOTH halves — the root it just computed and the
+    ; generator's path RELATIVE to it — because the relative path is what the
+    ; title must show and only this table knows it. The first draft answered the
+    ; absolute path alone and rebuilt the relative one from the common prefix of
+    ; the two paths; that is not the same thing and it was wrong wherever the
+    ; generator sits in the same directory branch as its output ("controlflow.sgm"
+    ; for tests/controlflow.sgm, since the document is tests/selfhosted/…).
+    ; ====================================================================
+    procedure generated_banner(rp, text: String, path: String) @direct true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+
+    ; The banner lens itself: the title names the generator RELATIVE to the
+    ; checkout (what a reader can act on), the click opens it absolutely.
+    procedure banner_lens(rp, text: String, root: String, rel: String) @direct true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+
+    ; ====================================================================
+    ; PACKAGE / MODULE declarations.
+    ;
+    ; THE SEARCH DIRECTORY IS NOT ALWAYS THE FILE'S OWN — this is the whole
+    ; subtlety, and getting it wrong makes the lens LIE about the file system.
+    ; The Modeler is the authority (Modeler.build_module# walks a file's
+    ; top-level declarations with the directory the FILE was loaded from, while
+    ; Modeler.handle_namespace# descends into `define NS { … }` with
+    ; <dir>/NS — skipping that append when the directory's last segment is
+    ; already NS). So:
+    ;
+    ;   module lexer   at the top level of compiler/parser.scaly
+    ;                                       -> compiler/lexer.scaly   (SIBLING)
+    ;   define scalyls { module json }  in   scalyls.scaly
+    ;                                       -> scalyls/json.scaly     (CHILD)
+    ;
+    ; The first draft used the child rule everywhere and reported "missing
+    ; module file: parser/lexer.scaly" for a module that resolves perfectly —
+    ; found by pointing the lens at this tree's own sources on the first run.
+    ; `base` below is that search directory, threaded exactly as the Modeler
+    ; threads it; `dir` is the document's own directory, used only for display.
+    ; ====================================================================
+    procedure declaration_fragment(rp, mutable text: String, mutable path: String) @direct true returns String io mutable lc_col, lc_line, lc_off reads lc_line linked
+
+    procedure declarations_fragment(rp, text: String, mutable path: String, mutable base: String, dir: String, decls: ref[Vector[DeclarationSyntax]]?) @direct true returns String io mutable lc_col, lc_line, lc_off reads lc_line linked
+
+    ; One declaration: a lens for `package` / `module`, a recursion for a
+    ; namespace, nothing for the rest.
+    procedure declaration_lens(rp, text: String, mutable path: String, mutable base: String, dir: String, decl: DeclarationSyntax) @direct true returns String io mutable lc_col, lc_line, lc_off reads lc_line linked
+
+    ; ====================================================================
+    ; MUTABLE / SHARED module globals.
+    ;
+    ; TWO THINGS ARE INVISIBLE IN THE SOURCE and both are stated here.
+    ;
+    ; (1) WHICH THREAD SEES THE CELL. `mutable` is THREAD-LOCAL (M2.2: the
+    ; allocator state is a per-thread stack discipline, and a process-shared
+    ; mutable would be a data race under threads); `shared` is the exemption
+    ; that keeps a global PROCESS-wide, and its declarer owns the race
+    ; discipline — initialize while single-threaded, or mutate via
+    ; scaly_atomic_*. The two spellings differ by one keyword and by nothing
+    ; else on the line, so the consequence is invisible exactly where it
+    ; matters. Measured against the emitted IR, which is the second producer
+    ; of this fact and the one the test derives its expectation from:
+    ; `mutable c: int 7` emits `@c = thread_local global i64 7`, while
+    ; `shared t: pointer[void] null` emits `@t = global ptr null`
+    ; (Emitter.scaly's global loop: LLVMSetThreadLocal unless is_shared).
+    ;
+    ; (2) WHETHER THERE IS A GLOBAL AT ALL — the more valuable half, because
+    ; the failure is SILENT. Modeler.handle_declaration# models the
+    ; declaration only when its annotation resolves to a TYPE, and DROPS it
+    ; otherwise ("mirrors stage-0's hard error leniently"). Both of these
+    ; compile with rc 0 and emit NOTHING (measured):
+    ;
+    ;   mutable bad 9            — no annotation at all. An annotation starts
+    ;                              at a COLON (parse_bindingannotation#), so
+    ;                              the `u8[64]` of a local's `var buf u8[64]`
+    ;                              is not one either — same silent case.
+    ;   mutable pair: (x: int) 0 — a colon IS present and the global is still
+    ;                              dropped: a BindingSpec is a union of
+    ;                              Structure / Type / Array and only the Type
+    ;                              arm models to a type.
+    ;
+    ; Nothing is reported at the declaration. The first USE is what fails, as
+    ; `unknown assignment target: bad` at the use's own line — a diagnostic
+    ; that names the wrong place. The second example is why the condition
+    ; below MIRRORS THE MODELER (the spec must be a TypeSyntax) instead of
+    ; testing for a colon, and it is the case the gate uses to prove the
+    ; difference; the Modeler stays the authority, so if it ever accepts
+    ; another spec, declares_a_type# is the one line to follow it in.
+    ;
+    ; WHERE THE LENS FIRES. On a DECLARATION, never on a statement — which is
+    ; the same distinction the compiler makes and the reason this family sits
+    ; in the declaration walk instead of scanning for a keyword. Measured:
+    ; a `mutable` that follows a top-level STATEMENT is parsed as a statement
+    ; (parse_file# takes the declaration list first, then stops), is modeled
+    ; as a local Binding, and emits no global — and a lens claiming
+    ; "thread-local" over it would be describing a cell that does not exist.
+    ;
+    ; NAMESPACE BODIES ARE COVERED, and that is a correction: this repo's
+    ; CLAUDE.md says a `mutable` is "rejected inside a namespace body", which
+    ; is not what the compiler does. Modeler.handle_namespace# routes its
+    ; declarations through the same handle_declaration#, and
+    ; `define ns { mutable inner: int 3 }` emits
+    ; `@inner = thread_local global i64 3` and reads back correctly from a
+    ; function of that namespace (measured 2026-08-14). The declaration walk
+    ; recurses into namespaces for the module lens already, so this family
+    ; inherits the coverage; if the compiler ever does start rejecting it, the
+    ; lens follows for free, because there would then be a diagnostic instead.
+    ;
+    ; Not clickable (the empty command id), for tasklens.scaly's reason: the
+    ; sentence is the whole message. ASCII only in the titles.
+    ; ====================================================================
+    procedure storage_lens(rp, text: String, offset: size_t, keyword: String, annotation: ref[BindingAnnotationSyntax]?, title: String) @direct true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+
+    ; Exactly Modeler.handle_binding_annotation#'s condition: an annotation is
+    ; present AND its spec is a TypeSyntax. Anything else models to null, and a
+    ; null type is what makes the Modeler drop the whole declaration.
+    function declares_a_type(annotation: ref[BindingAnnotationSyntax]?) returns bool linked
+
+    ; `package NAME VERSION` -> packages/NAME/VERSION/NAME.scaly under the ONE
+    ; resolution base the compiler uses: $SCALY_HOME when set, else the current
+    ; directory (Package system, "Resolution has exactly ONE base").
+    ;
+    ; The version text is read from the SOURCE BYTES rather than from the two
+    ; Literals of VersionSyntax: a syntax node's `end` runs to the start of the
+    ; next token, so a span would carry trailing trivia — while "digits and
+    ; dots from version.start" is exactly a version and nothing else.
+    procedure package_lens(rp, text: String, mutable path: String, pkg: PackageSyntax) @direct true returns String io mutable lc_col, lc_line, lc_off reads lc_line linked
+
+    ; `module NAME` -> <base>/NAME.scaly, where `base` is the search directory
+    ; the Modeler would use (see the section comment above). Shown relative to
+    ; the document's own directory, so a sibling reads "lexer.scaly" and a
+    ; namespace child reads "scalyls/json.scaly".
+    procedure module_lens(rp, text: String, mutable base: String, dir: String, m: ModuleSyntax) @direct true returns String io mutable lc_col, lc_line, lc_off reads lc_line linked
+
+    ; The digits-and-dots run starting at `offset` ("0.1.0").
+    function version_text(rp, text: String, offset: size_t) @direct true returns String linked
+
+    ; The base a `package` declaration resolves against, ABSOLUTE, or "".
+    ;
+    ; The compiler has exactly ONE base: $SCALY_HOME when set, else
+    ; cwd-relative. The first half carries over; the second CANNOT — a language
+    ; server's cwd is whatever the editor chose, and a lens that turned that
+    ; into a click would open a file the compiler never reads. So the fallback
+    ; asks the DOCUMENT instead: the nearest ancestor directory that contains a
+    ; `packages` directory is the checkout the compiler would be invoked from,
+    ; which is the same answer for every real in-repo case and no answer at all
+    ; outside one.
+    procedure resolution_base(rp, mutable path: String) @direct true returns String io linked
+
+    ; ====================================================================
+    ; Path arithmetic.
+    ; ====================================================================
+
+    ; <path minus suffix>, or "" when path does not end in suffix (or would be
+    ; left empty — a suffix that IS the whole path answers nothing rather than
+    ; a bare relative name).
+    function strip_suffix(rp, path: String, suffix: String) @direct true returns String linked
+
+    function join(rp, left: String, right: String) @direct true returns String linked
+
+    ; Everything before the last "/" ("." when there is none).
+    function directory_of(rp, path: String) @direct true returns String linked
+
+    ; Everything after the last "/".
+    function file_name(rp, path: String) @direct true returns String linked
+
+    ; `target` with a leading "<dir>/" removed, or `target` unchanged when it
+    ; does not live under `dir`. What the reader wants to see for a resolved
+    ; module: "lexer.scaly" for a sibling, "scalyls/json.scaly" for a child.
+    function relative_to(rp, target: String, dir: String) @direct true returns String linked
+
+}

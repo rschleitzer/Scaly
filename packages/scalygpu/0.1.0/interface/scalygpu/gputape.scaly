@@ -1,0 +1,188 @@
+; gputape - the GpuTape concept: device residency for a scaly.tensor
+; Tape, surfaced as a type (stage-6 milestone 6.2; the proven 6.1
+; demo driver, lifted out of demo/mann_bpe_gpu.scaly and
+; tests/tensor/bench/gpu_ops.scaly).
+;
+; GpuTape.attach(tape, params, loss_id, msl) redirects every node's
+; value/grad/aux/tok buffer into its own storage-mode-shared MTLBuffer
+; (region = device buffer: unified memory, the CPU keeps reading and
+; writing through the same pointers - set_token, value_at and sample
+; cost zero copies; the Vector[T](ptr, len) borrow init re-aims the
+; 16-byte handle). It allocates the scratch slots (layernorm stats,
+; crossentropy row losses) and one Adam moment slot per parameter -
+; moments belong to the GpuTape, never to the node's aux (the CPU
+; adam_step would lazily allocate there mid-training). Slot registry
+; layout (the shim's C-side void** - Scaly has no pointer-array
+; container): node_id*4 + {0 value, 1 grad, 2 aux, 3 tok}, scratch
+; and moment slots appended after.
+;
+; ATTACH ONLY AFTER THE GRAPH IS COMPLETE: tape.nodes.add reallocates
+; the node array; a node added after attach would invalidate nothing
+; visibly but never reach the GPU. Op-node values and ALL grads start
+; zeroed (a no-op kernel cannot fake a pass); leaf values and token
+; ids are copied across. Attaching a SECOND GpuTape via attach resets
+; the slot registry and releases the first one's buffers - one live
+; PRIMARY GpuTape per process. attach_gen adds a forward-only SECOND
+; graph beside the primary (its slots come from a reserved block, the
+; registry is never reset): the shared leaves - the weights, same
+; order in both id vectors - ALIAS the primary's value MTLBuffers, so
+; the second graph always reads the LIVE weights with zero copies
+; (the single-window generation graph). It allocates no grad or Adam
+; moment slots; step/backward on it is a loud fatal error.
+;
+; There is NO silent CPU fallback: attach without a Metal device is a
+; loud, fatal error. Programs that want a portable SKIP check
+; GpuTape.available() first, like the runner scripts do.
+;
+; step(lr, b1, b2, eps, n) encodes forward + grad zeroing + loss seed
+; + backward + Adam as ONE command buffer with a single commit+wait.
+; fwd() encodes the forward walk only (autoregressive generation).
+; begin()/encode_fwd(id)/encode_bwd(id)/commit_wait() expose the
+; per-node encoders for the per-op-sync honesty measurement.
+; save/load checkpoint the parameter values (config-header-validated,
+; weights only - Adam moments are not saved, a resumed training
+; re-warms them).
+;
+; The kind codes tested here mirror the tape's TAPE_* constants - the
+; values are the tape ABI.
+
+function exit(code: i32) extern
+function powf(x: float, y: float) returns float extern
+function fopen(filename: pointer[const_char], mode: pointer[const_char]) returns pointer[OpaqueFile] extern
+function fclose(stream: pointer[OpaqueFile]) returns i32 extern
+function fread(ptr: pointer[void], size: size_t, count: size_t, stream: pointer[OpaqueFile]) returns size_t extern
+function fwrite(ptr: pointer[void], size: size_t, count: size_t, stream: pointer[OpaqueFile]) returns size_t extern
+
+function scaly_mgpu_available() returns i32 extern
+function scaly_mgpu_init() returns i32 extern
+function scaly_mgpu_ops_init() returns i32 extern
+function scaly_mgpu_slots_init(n: i32) returns i32 extern
+function scaly_mgpu_slot_alloc(slot: i32, bytes: size_t) returns i32 extern
+function scaly_mgpu_slot_contents(slot: i32) returns pointer[void] extern
+procedure scaly_mgpu_slot_write(slot: i32, src: pointer[void], bytes: size_t) extern
+function scaly_mgpu_slots_reserve(n: i32) returns i32 extern
+procedure scaly_mgpu_slot_alias(dst: i32, src: i32) extern
+function scaly_mgpu_begin() returns i32 extern
+function scaly_mgpu_commit_wait() returns i32 extern
+procedure scaly_mgpu_ms_reset() extern
+function scaly_mgpu_ms_sum() returns double extern
+procedure scaly_mgpu_enc_gemm(a: i32, b: i32, c: i32, arows: i32, acols: i32, brows: i32, bcols: i32, ta: i32, tb: i32, alpha: float, beta: float) extern
+procedure scaly_mgpu_enc_mm_nn(a: i32, b: i32, c: i32, m: i32, k: i32, n: i32) extern
+procedure scaly_mgpu_enc_mm_nt_acc(dc: i32, b: i32, da: i32, m: i32, k: i32, n: i32) extern
+procedure scaly_mgpu_enc_mm_tn_acc(a: i32, dc: i32, db: i32, m: i32, k: i32, n: i32) extern
+procedure scaly_mgpu_enc_fill(buf: i32, count: i32, v: float) extern
+procedure scaly_mgpu_enc_acc(dst: i32, src: i32, count: i32) extern
+procedure scaly_mgpu_enc_add(x: i32, y: i32, out: i32, count: i32) extern
+procedure scaly_mgpu_enc_gelu_fwd(x: i32, out: i32, count: i32) extern
+procedure scaly_mgpu_enc_gelu_bwd(x: i32, dout: i32, dx: i32, count: i32) extern
+procedure scaly_mgpu_enc_add_bcast_fwd(x: i32, y: i32, out: i32, r: i32, n: i32, yr: i32) extern
+procedure scaly_mgpu_enc_add_bcast_bwd_dy(dout: i32, dy: i32, r: i32, n: i32, yr: i32) extern
+procedure scaly_mgpu_enc_ln_fwd(x: i32, gamma: i32, beta: i32, out: i32, stats: i32, r: i32, n: i32, eps: float) extern
+procedure scaly_mgpu_enc_ln_bwd_dx(x: i32, gamma: i32, dout: i32, dx: i32, stats: i32, r: i32, n: i32) extern
+procedure scaly_mgpu_enc_ln_bwd_dgb(x: i32, dout: i32, dgamma: i32, dbeta: i32, stats: i32, r: i32, n: i32) extern
+procedure scaly_mgpu_enc_embed_fwd(tbl: i32, tok: i32, out: i32, tokens: i32, dim: i32) extern
+procedure scaly_mgpu_enc_embed_bwd(dout: i32, tok: i32, dtable: i32, tokens: i32, dim: i32) extern
+procedure scaly_mgpu_enc_ce_fwd(x: i32, tok: i32, rowloss: i32, out: i32, r: i32, n: i32) extern
+procedure scaly_mgpu_enc_ce_bwd(x: i32, tok: i32, dout: i32, dx: i32, r: i32, n: i32) extern
+procedure scaly_mgpu_enc_attn_fwd(q: i32, k: i32, v: i32, out: i32, aux: i32, t: i32, d: i32, hs: i32, win: i32) extern
+procedure scaly_mgpu_enc_attn_bwd(q: i32, k: i32, v: i32, dout: i32, aux: i32, dq: i32, dk: i32, dv: i32, t: i32, d: i32, hs: i32, win: i32) extern
+procedure scaly_mgpu_enc_adam(p: i32, g: i32, mv: i32, total: i32, lr: float, b1: float, b2: float, eps: float, bc1: float, bc2: float) extern
+
+define GpuTape
+(
+    tape: Tape
+    loss: int
+    use_msl: int
+    nnodes: int
+    nparam: int
+    base: int
+    fwd_only: int
+    xslot: Vector[int]
+    mvslot: Vector[int]
+    pids: Vector[int]
+)
+{
+    ; The whole attach: loud device gate, slot registry, per-node
+    ; buffer redirect, scratch slots, Adam moment slots. The record
+    ; and its slot-map vectors live on their own heap page
+    ; (Channel.create precedent - a by-value concept return from a
+    ; static lands in recyclable temp storage and dies under the
+    ; caller; a page-hosted record behind a pointer does not). The
+    ; page lives as long as the process, like the MTLBuffers it maps.
+    procedure attach(mutable t: Tape, params: Vector[int], loss_id: int, msl: int) returns ref[GpuTape] io linked
+
+    ; Forward-only alias attach: a SECOND graph beside the primary
+    ; GpuTape (the single-window generation graph). Slots come from a
+    ; reserved block appended to the registry - the primary is never
+    ; reset. leaves[i] (a node id in t) aliases primary_leaves[i] (a
+    ; node id in the primary's tape): same MTLBuffer, zero copies, the
+    ; second graph reads the LIVE weights. Non-shared leaves allocate
+    ; and copy like attach; no grad or Adam moment slots exist - step,
+    ; step_adam and encode_bwd on the result are loud fatal errors.
+    procedure attach_gen(mutable t: Tape, leaves: Vector[int], primary: ref[GpuTape], primary_leaves: Vector[int], msl: int) returns ref[GpuTape] io linked
+
+    ; 1 when a Metal device exists - the portable SKIP check.
+    procedure available() returns i32 io linked
+
+    ; GPU-busy accounting (sums command-buffer GPU time).
+    procedure ms_reset() io linked
+
+    procedure ms_sum() returns double io linked
+
+    ; Switch the matmul lowering: 0 = MPS GEMM (the hybrid default),
+    ; 1 = the package's own MSL 4x4 kernels (single-encoder variant).
+    procedure set_msl(mutable this: GpuTape, v: int) linked
+
+    ; Open a command buffer for manual encoding (per-op-sync mode).
+    procedure begin(this: GpuTape) io linked
+
+    ; Commit + wait; 0 on completion.
+    procedure commit_wait(this: GpuTape) returns int io linked
+
+    ; Encode one node's forward op (kind codes are the tape ABI).
+    ; Slot ids are base-relative: the primary's base is 0, an
+    ; attach_gen graph lives in its reserved block.
+    procedure encode_fwd(this: GpuTape, id: int) io linked
+
+    ; Encode one node's backward op. The CPU-blocked backwards each
+    ; have an explicit race-free GPU form (column-disjoint embedding
+    ; scatter and layernorm dgamma/dbeta, ordered attention passes) -
+    ; never silent racing.
+    procedure encode_bwd(this: GpuTape, id: int) io linked
+
+    ; Encode forward + grad-zero + loss seed + backward over the whole
+    ; tape (no begin/commit - the parity test brackets it itself).
+    procedure encode_step(this: GpuTape) io linked
+
+    ; Encode the forward walk only (autoregressive generation).
+    procedure encode_fwd_all(this: GpuTape) io linked
+
+    ; Encode one Adam update per parameter (bias corrections are
+    ; CPU-precomputed floats - powf per step, not per element).
+    procedure encode_adam(this: GpuTape, lr: float, b1: float, b2: float, eps: float, bc1: float, bc2: float) io linked
+
+    ; ONE training step = ONE command buffer: forward, grad zeroing,
+    ; loss seed, backward, Adam - one commit, one wait. A failed
+    ; command buffer is fatal (no silent partial step).
+    procedure step(this: GpuTape, lr: float, b1: float, b2: float, eps: float, stepn: int) io linked
+
+    ; Adam only, as its own command buffer (parity testing against the
+    ; CPU tape op; grads must already be in the redirected buffers).
+    procedure step_adam(this: GpuTape, lr: float, b1: float, b2: float, eps: float, stepn: int) io linked
+
+    ; Forward pass as one command buffer (generation; sampling stays
+    ; on the CPU through unified memory).
+    procedure fwd(this: GpuTape) io linked
+
+    ; Save the parameter values (cfg ints as the header, then raw f32
+    ; per parameter in params order). 1 when written, 0 when the file
+    ; could not be opened.
+    procedure save(this: GpuTape, path: pointer[const_char], cfg: Vector[i32]) returns int io linked
+
+    ; Load a checkpoint written by save. 0 when the file does not
+    ; exist (train instead); a config-header mismatch is FATAL - a
+    ; silently misloaded model would be the hidden magic this package
+    ; exists to rule out. Writes go through the redirected pointers
+    ; straight into the MTLBuffers.
+    procedure load(mutable this: GpuTape, path: pointer[const_char], cfg: Vector[i32]) returns int io linked
+}

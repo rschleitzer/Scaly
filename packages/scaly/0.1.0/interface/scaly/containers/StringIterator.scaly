@@ -1,0 +1,12 @@
+define StringIterator
+(
+    current: pointer[char]
+    last: pointer[char]
+)
+{
+
+init(string: String) linked
+
+procedure next(mutable this: StringIterator) returns pointer[char] linked
+
+}

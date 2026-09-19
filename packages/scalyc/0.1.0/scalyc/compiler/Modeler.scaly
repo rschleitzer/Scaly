@@ -2016,6 +2016,26 @@ define Modeler
                     set writes: w_arr
                 }
 
+                ; `@page true` and friends after the parameter list: the facts a
+                ; generated interface declares for a `linked` routine
+                var routine_attrs Vector[Attribute](0)
+                if named.routine.attributes <> null
+                {
+                    let ra_vec (*named.routine.attributes)
+                    set routine_attrs: Vector[Attribute](ra_vec.length)
+                    var rai: size_t 0
+                    while rai < ra_vec.length
+                    {
+                        let ra_ptr ra_vec.get rai
+                        if ra_ptr <> null
+                        {
+                            let ra_syntax (*ra_ptr)
+                            routine_attrs.put(rai, handle_attribute(ra_syntax))
+                        }
+                        set rai: rai + 1
+                    }
+                }
+
                 ; `reads g1, g2`: the changeable globals it reads (an
                 ; interface declares it for a `linked` procedure)
                 var read_list Vector[String](0)
@@ -2051,7 +2071,8 @@ define Modeler
                     life,
                     impl,
                     writes,
-                    read_list
+                    read_list,
+                    routine_attrs
                 )
             }
             else
@@ -2068,7 +2089,8 @@ define Modeler
                     Lifetime.Unspecified(Unspecified()),
                     Implementation.Action(Action(Vector[Operand](0), Vector[Operand](0))),
                     Vector[String](0),
-                    Vector[String](0)
+                    Vector[String](0),
+                    Vector[Attribute](0)
                 )
     }
 
@@ -2958,6 +2980,27 @@ define Modeler
     ; Try `<base>/<name>/<version>/<name>.scaly`. Returns true and writes the
     ; loaded module to `out` on success; false otherwise. Out parameter avoids
     ; constructing an "empty" Module that the caller would have to filter.
+    ; A package with a generated interface (`<dir>/interface/<name>.scaly`,
+    ; tools/interfaces.sh) is loaded through it: every declaration a caller
+    ; needs, generic bodies included, while the other bodies are in the
+    ; package's archive -- what AOT compilation used from the sources anyway.
+    procedure interface_or_source(pkg_path: String, pkg_name: String) returns String io
+    {
+        var sb StringBuilder()
+        sb.append pkg_path
+        sb.append "/interface"
+        let iface_dir sb.to_string()
+        var root StringBuilder()
+        root.append iface_dir
+        root.append("/" as char)
+        root.append pkg_name
+        root.append ".scaly"
+        var root_path root.to_string()
+        if File.exists(root_path)
+            return iface_dir
+        pkg_path
+    }
+
     procedure handle_package_decl(pkg_syntax: PackageSyntax, mutable packages: ref[Array[Module]]) io mutable modeler_error_count
     {
         let pkg_name pkg_syntax.name.name
@@ -2974,7 +3017,7 @@ define Modeler
         sb.append version_str
         let pkg_path sb.to_string()
 
-        let loaded build_referenced_module(pkg_path, pkg_name, false)
+        let loaded build_referenced_module(interface_or_source(pkg_path, pkg_name), pkg_name, false)
         ; A declared package whose root loaded to a fully empty stub was not
         ; found (a PARSE failure inside an existing root reports its own
         ; file:line:col error and lands here too — the extra line is harmless).
@@ -3330,7 +3373,7 @@ define Modeler
                 std_sb.append(scaly_home_base())
                 std_sb.append "packages/scaly/0.1.0"
                 let std_path std_sb.to_string()
-                let std_module build_referenced_module(std_path, "scaly", false)
+                let std_module build_referenced_module(interface_or_source(std_path, String("scaly")), "scaly", false)
                 if std_module.members.length > 0
                     packages.add std_module
             }

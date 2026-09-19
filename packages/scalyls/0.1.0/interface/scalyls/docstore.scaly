@@ -1,0 +1,117 @@
+; docstore.scaly - in-memory document store (parent side).
+;
+; The server is otherwise stateless: documentSymbol / hover / definition /
+; references / documentHighlight all carry only a uri, so the worker used to
+; re-read the file from disk — stale for unsaved editor buffers. This store
+; keeps the latest text the editor sent (didOpen / didChange) per uri so the
+; navigation features see UNSAVED edits. didClose drops the entry.
+;
+; MEMORY MODEL: the store must outlive a single request, so it cannot live on
+; a per-request local page (those are reclaimed every iteration) and cannot
+; live on a long-lived root page (the stack-LIFO discipline forbids freeing or
+; replacing a page once per-request pages stack above it -> an unbounded leak
+; on every keystroke). It therefore uses libc malloc/free directly, completely
+; orthogonal to the Scaly page allocator: each slot's uri/text bytes are
+; malloc'd copies, FREED on replace (didChange) and on didClose. Memory stays
+; bounded (one live copy per open document). A scalar `pointer` module-global
+; with a `null` initializer is allowed (mutable-global support, s189); the
+; slot array is lazily malloc'd on first use.
+;
+; The store lives ONLY in the parent. The worker (a forked child) receives the
+; text over its request pipe, so it never touches this module.
+;
+; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no else).
+; One statement per line (`;` starts a comment, not a separator).
+
+use scaly.memory.runtime
+
+; libc allocator. free + memcpy come from scaly.memory.runtime; malloc is not
+; declared there, so declare it here (fixpoint-safe — no scaly/scalyc source
+; is touched).
+function malloc(size: size_t) returns pointer[void] extern
+
+; Max number of simultaneously-open documents tracked. An editor rarely keeps
+; more than a handful open; a full table just falls back to reading disk.
+define DOC_CAP int 256
+
+; One tracked document: malloc'd uri + text byte copies (NOT page-owned).
+; `used` marks a live slot; `dirty` marks a buffer whose diagnostics run is
+; still owed (see server.flush_dirty#).
+define DocSlot
+(
+    uri_data:  pointer[u8]
+    uri_len:   size_t
+    text_data: pointer[u8]
+    text_len:  size_t
+    used:      bool
+    dirty:     bool
+)
+
+; The slot array, lazily malloc'd. null until the first store access.
+mutable doc_slots: pointer[DocSlot] linked
+
+; The workspace root path (from initialize's rootUri/rootPath/workspaceFolders),
+; as a malloc'd byte copy. Used by workspace/symbol, which carries no document
+; uri. null until initialize captures it.
+mutable ws_root_data: pointer[u8] linked
+mutable ws_root_len:  size_t linked
+
+define docstore
+{
+    ; Borrowed view over the malloc'd table: a slot is reached through `at(i)`
+    ; (bounds-checked, answers ref[DocSlot]) instead of pointer arithmetic.
+    procedure doc_view() @page true @direct true returns Slice[DocSlot] reads doc_slots linked
+
+    ; Record the workspace root (a filesystem path) as a fresh malloc'd copy,
+    ; freeing any previous one. Empty path leaves it null.
+    procedure set_workspace_root(path: String) mutable ws_root_data, ws_root_len reads ws_root_data linked
+
+    ; The workspace root path (a fresh copy on the caller's page), or "" when
+    ; initialize provided none.
+    procedure workspace_root(rp) @direct true returns String reads ws_root_data linked
+    ; Lazily allocate + zero the slot array on first use. A malloc failure
+    ; leaves doc_slots null; callers then no-op and navigation falls back to
+    ; reading the file from disk.
+    procedure ensure() mutable doc_slots reads doc_slots linked
+
+    ; Index of the live slot whose uri matches, or -1. Builds a String view
+    ; over each stored uri (on this function's local page) for the compare.
+    procedure find(uri: String) returns int reads doc_slots linked
+
+    ; Replace slot `s`'s text with a fresh malloc'd copy of `text`'s content
+    ; bytes, freeing the previous copy. An empty text leaves text_data null.
+    procedure set_text(mutable s: ref[DocSlot], text: String) linked
+
+    ; Set slot `s`'s uri to a fresh malloc'd copy of `uri`'s content bytes,
+    ; freeing any previous copy (slots are reused after didClose).
+    procedure set_uri(mutable s: ref[DocSlot], uri: String) linked
+
+    ; Record (or replace) the latest text for `uri`. Called on didOpen and
+    ; every didChange. Replacing frees the old text copy first (bounded).
+    procedure put(uri: String, text: String) mutable doc_slots reads doc_slots linked
+
+    ; Drop the entry for `uri` (didClose), freeing its malloc'd copies.
+    procedure remove(uri: String) mutable doc_slots reads doc_slots linked
+
+    ; Mark `uri`'s buffer as owing a diagnostics run. Set on didOpen/didChange
+    ; instead of analysing there: an analysis is a whole modeler+planner pass
+    ; over the package root (measured ~1-2 s on opensp/ContentState.scaly), the
+    ; server is single-threaded, and the editor sends ONE didChange PER
+    ; KEYSTROKE — so analysing on the spot put a second of work in front of every
+    ; request that followed. Typing `set this.` (17 keystrokes) queued 19 analysis
+    ; runs and the completion answer arrived 10.83 s later, long after the editor
+    ; had given up on it. server.flush_dirty# runs it when the input queue is
+    ; empty instead, i.e. once per typing burst.
+    procedure mark_dirty(uri: String) mutable doc_slots reads doc_slots linked
+
+    ; Clear `uri`'s owed-analysis mark.
+    procedure clear_dirty(uri: String) mutable doc_slots reads doc_slots linked
+
+    ; The uri of a live slot that still owes a diagnostics run (a fresh copy on
+    ; the caller's page), or "" when none does.
+    procedure dirty_uri(rp) @direct true returns String reads doc_slots linked
+
+    ; The stored text for `uri` (a fresh copy on the caller's page), or an
+    ; empty String on a miss. The worker treats empty as "read from disk".
+    procedure get(rp, uri: String) @direct true returns String reads doc_slots linked
+}

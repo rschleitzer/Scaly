@@ -1,0 +1,755 @@
+; Plan.scaly - Resolved/monomorphized model for code generation
+; The Plan is the "execution plan" - concrete types with generics resolved,
+; mangled names ready for LLVM emission, and provenance tracking for debug info.
+;
+; Ported from C++ Plan.h
+
+use scalyc.compiler.Model.*
+
+; ============================================================================
+; Type Inference Support
+; ============================================================================
+
+; Type variable - represents an unknown type during inference
+define TypeVariable
+(
+    id: size_t
+    debug_name: String      ; Optional: "T", "?1", etc. for error messages
+)
+
+; ============================================================================
+; Provenance Tracking (for debug info)
+; ============================================================================
+
+; Tracks where a generic instantiation came from
+define InstantiationInfo
+(
+    definition_loc: Span            ; Where the generic was defined
+    instantiation_loc: Span         ; Where it was instantiated
+    type_args: ref[Vector[String]]?  ; The concrete type arguments (readable)
+)
+
+; ============================================================================
+; Planned Types (resolved, concrete)
+; ============================================================================
+
+; A fully resolved type
+define PlannedType
+(
+    loc: Span
+    name: String                     ; Readable: "List.int"
+    mangled_name: String             ; Itanium: "_Z4ListIiE"
+    generics: ref[Vector[PlannedType]]?   ; Resolved generic args (if any)
+    life: Lifetime
+    origin: ref[InstantiationInfo]?  ; null if not from generic
+    ; For fixed-size array types: stores the size reference
+    array_size: String
+    ; For inference: may contain unresolved type variables
+    variable: ref[TypeVariable]?  ; non-null if this is a type variable
+)
+
+; ============================================================================
+; Type Inference Constraints
+; ============================================================================
+
+define EqualityConstraint
+(
+    left: PlannedType
+    right: PlannedType
+    loc: Span
+    file: String
+)
+
+define InstanceConstraint
+(
+    type_var: TypeVariable
+    trait_name: String
+    loc: Span
+)
+
+define TypeConstraint union
+(
+    Equality: EqualityConstraint
+    Instance: InstanceConstraint
+)
+
+; Type scheme for let-polymorphism
+define TypeScheme
+(
+    quantified: ref[Vector[TypeVariable]]?
+    scheme_type: ref[PlannedType]?
+)
+
+; ============================================================================
+; Planned Attributes and Items
+; ============================================================================
+
+define PlannedConstant
+(
+    value: Constant
+)
+
+define PlannedAttribute
+(
+    loc: Span
+    name: String
+    value: scaly.compiler.Model.Model
+)
+
+define PlannedItem
+(
+    loc: Span
+    is_private: bool
+    name: ref[String]?
+    item_type: ref[PlannedType]?
+    attributes: ref[Vector[PlannedAttribute]]?
+)
+
+; ============================================================================
+; Planned Properties and Variants
+; ============================================================================
+
+define PlannedProperty
+(
+    loc: Span
+    is_private: bool
+    name: String
+    mangled_name: String
+    prop_type: PlannedType
+    initializer: ref[Vector[PlannedOperand]]?
+    attributes: ref[Vector[PlannedAttribute]]?
+    offset: size_t      ; Byte offset in struct layout
+)
+
+define PlannedVariant
+(
+    loc: Span
+    name: String
+    mangled_name: String
+    var_type: ref[PlannedType]?
+    attributes: ref[Vector[PlannedAttribute]]?
+    tag: int            ; Discriminator value
+)
+
+; ============================================================================
+; Planned Statements
+; ============================================================================
+
+define PlannedAction
+(
+    loc: Span
+    source: ref[Vector[PlannedOperand]]?
+    target: ref[Vector[PlannedOperand]]?
+    result_type: PlannedType
+)
+
+define PlannedBinding
+(
+    loc: Span
+    binding_type: String    ; "const", "var", "mutable"
+    binding_item: PlannedItem
+    operation: ref[Vector[PlannedOperand]]?
+)
+
+define PlannedBreak
+(
+    loc: Span
+    result: ref[Vector[PlannedOperand]]?
+    loop_label: String
+)
+
+define PlannedContinue
+(
+    loc: Span
+    loop_label: String
+)
+
+define PlannedReturn
+(
+    loc: Span
+    result: ref[Vector[PlannedOperand]]?
+)
+
+define PlannedThrow
+(
+    loc: Span
+    result: ref[Vector[PlannedOperand]]?
+)
+
+define PlannedStatement union
+(
+    Action: PlannedAction
+    Binding: PlannedBinding
+    Break: PlannedBreak
+    Continue: PlannedContinue
+    Return: PlannedReturn
+    Throw: PlannedThrow
+)
+
+; ============================================================================
+; Planned Control Flow
+; ============================================================================
+
+define PlannedBlock
+(
+    loc: Span
+    statements: ref[Vector[PlannedStatement]]?
+)
+
+define PlannedIf
+(
+    loc: Span
+    condition: ref[Vector[PlannedOperand]]?
+    prop: ref[PlannedProperty]?
+    consequent: ref[PlannedStatement]?
+    alternative: ref[PlannedStatement]?
+)
+
+define PlannedCase
+(
+    loc: Span
+    condition: ref[Vector[PlannedOperand]]?
+)
+
+define PlannedBranch
+(
+    loc: Span
+    cases: ref[Vector[PlannedCase]]?
+    consequent: ref[PlannedStatement]?
+)
+
+define PlannedMatch
+(
+    loc: Span
+    condition: ref[Vector[PlannedOperand]]?
+    branches: ref[Vector[PlannedBranch]]?
+    alternative: ref[PlannedStatement]?
+)
+
+define PlannedWhen
+(
+    loc: Span
+    name: String
+    variant_type: PlannedType
+    variant_index: size_t   ; Index in the union
+    consequent: ref[PlannedStatement]?
+)
+
+define PlannedChoose
+(
+    loc: Span
+    condition: ref[Vector[PlannedOperand]]?
+    cases: ref[Vector[PlannedWhen]]?
+    alternative: ref[PlannedStatement]?
+)
+
+define PlannedFor
+(
+    loc: Span
+    identifier: String
+    expr: ref[Vector[PlannedOperand]]?
+    body: PlannedAction
+    ; Iterator support fields
+    is_iterator_loop: bool          ; true if iterator-based, false if integer range
+    collection_type: PlannedType
+    iterator_type: PlannedType
+    element_type: PlannedType
+    get_iterator_method: String     ; Mangled name of get_iterator
+    next_method: String             ; Mangled name of next
+    loop_label: String              ; Loop label for labeled break/continue
+    ; Iterator loops bind the loop var to next()'s `pointer[T]`. When the
+    ; element T is a scalar primitive, the loop var must be the LOADED value,
+    ; not the pointer (a record's member access already derefs the pointer).
+    element_is_scalar: bool
+)
+
+define PlannedWhile
+(
+    loc: Span
+    cond: PlannedBinding
+    body: PlannedAction
+    loop_label: String
+)
+
+; Infinite loop — exits only via `break` (or return/throw). `value_type` is
+; the type of the `break <value>` payload (void when the repeat yields no value).
+define PlannedRepeat
+(
+    loc: Span
+    body: PlannedAction
+    loop_label: String
+    value_type: PlannedType
+)
+
+; Lambda: anonymous function with a mangled synthetic name.
+; Closure capture is deferred — captures is an empty vector for now.
+; Result of monomorphizing a lambda at a call site: the synthesized
+; function's mangled name plus the captured variable names (in parameter
+; order, before the lambda's own parameters). The call site prepends the
+; captured values as leading arguments.
+define LambdaMonoResult
+(
+    mangled: String
+    captures: ref[Vector[String]]?
+)
+
+define PlannedLambda
+(
+    loc: Span
+    mangled_name: String
+    input: ref[Vector[PlannedItem]]?
+    body: PlannedAction
+    return_type: PlannedType
+    captures: ref[Vector[String]]?
+)
+
+define PlannedTry
+(
+    loc: Span
+    cond: PlannedBinding
+    catches: ref[Vector[PlannedWhen]]?
+    alternative: ref[PlannedStatement]?
+    ; catches_panic: the condition throws NOTHING and the arms name variants
+    ; of the prelude's RuntimeFault, so this try installs a catch point for a
+    ; runtime PANIC instead of unpacking a Result wrapper (TRAPS.md 5.1).
+    ; The two are exclusive: is_throwing_cond decides the wrapper shape.
+    catches_panic: bool
+    ; When the try condition is a throwing call, throws_type is the error
+    ; union (the function's `throws T`). The wrapper status tag is 0 on
+    ; success, non-zero on error; the thrown error union is stored INLINE in
+    ; the wrapper data field, and its own variant tag selects the catch arm.
+    throws_type: PlannedType
+    is_throwing_cond: bool
+)
+
+define PlannedSizeOf
+(
+    loc: Span
+    sized_type: PlannedType
+    size: size_t            ; Computed size in bytes
+)
+
+define PlannedAlignOf
+(
+    loc: Span
+    aligned_type: PlannedType
+    alignment: size_t       ; Computed alignment in bytes
+)
+
+define PlannedIs
+(
+    loc: Span
+    test_type: PlannedType
+    variant_tag: size_t             ; Tag value to compare against
+    union_name: String              ; Name of the union type being tested
+    value: ref[PlannedOperand]?  ; The union value being tested
+    is_null_check: bool             ; true for "is null" checks
+)
+
+define PlannedAs
+(
+    loc: Span
+    target_type: PlannedType
+    value: ref[PlannedOperand]?
+)
+
+; A reference to a (non-capturing) function as a value — the address of the
+; named symbol, typed as the delegate type it satisfies (lowers to an LLVM
+; ptr). Produced when a lambda or function is assigned to a delegate-typed
+; binding/parameter (GAP B). `mangled_name` is the symbol to take the address
+; of (a monomorphized lambda or an ordinary function).
+define PlannedFunctionRef
+(
+    loc: Span
+    mangled_name: String
+    fn_type: PlannedType
+)
+
+; A closure value (GAP B substep 2): the runtime representation of a lambda
+; assigned to a delegate type. Lowers to a pointer to a heap-allocated closure
+; record `{ ptr thunk, capture0, capture1, ... }`. `thunk_name` is a generated
+; bridge `R thunk(ptr self, params...)` that loads the captures from `self` and
+; tail-calls the real monomorphized lambda `real_name(captures..., params...)`.
+; Captures (in order) are the values stored into the record at creation; `life`
+; is the record's allocation lifetime (local region, or caller page `#` when
+; the closure escapes). For a non-capturing lambda `captures` is empty.
+define PlannedClosure
+(
+    loc: Span
+    thunk_name: String
+    real_name: String
+    closure_type_name: String
+    captures: ref[Vector[PlannedOperand]]?
+    capture_types: ref[Vector[PlannedType]]?
+    param_types: ref[Vector[PlannedType]]?
+    return_type: PlannedType
+    fn_type: PlannedType
+    life: Lifetime
+)
+
+define PlannedVariantConstruction
+(
+    loc: Span
+    union_type: PlannedType
+    variant_name: String
+    variant_tag: size_t
+    value: ref[PlannedOperand]?
+)
+
+define PlannedCall
+(
+    loc: Span
+    name: String                ; Operator symbol or function name
+    mangled_name: String
+    is_intrinsic: bool
+    is_operator: bool
+    can_throw: bool
+    requires_page_param: bool   ; True if init# needs page parameter
+    args: ref[Vector[PlannedOperand]]?
+    result_type: PlannedType
+    life: Lifetime              ; For constructors: allocation lifetime
+    throws_type: ref[PlannedType]?  ; s149: throws error type for Result-wrapper sret
+    is_indirect: bool           ; Indirect call through a function pointer value
+                                ; (Phase-1 JIT: zero-arg, returns i64). args[0]
+                                ; is the callee pointer; no other args.
+)
+
+; ============================================================================
+; Planned Tuples and Matrices
+; ============================================================================
+
+define PlannedComponent
+(
+    loc: Span
+    name: ref[String]?
+    value: ref[Vector[PlannedOperand]]?
+    attributes: ref[Vector[PlannedAttribute]]?
+)
+
+define PlannedTuple
+(
+    loc: Span
+    components: ref[Vector[PlannedComponent]]?
+    tuple_type: PlannedType
+    is_region_alloc: bool
+    life: Lifetime
+    region_arg: ref[PlannedOperand]?     ; For ^name: the region pointer
+)
+
+define PlannedMatrix
+(
+    loc: Span
+    operations: ref[Vector[Vector[PlannedOperand]]]?
+    element_type: PlannedType
+    life: Lifetime
+)
+
+; ============================================================================
+; Planned Expressions and Operands
+; ============================================================================
+
+define PlannedVariable
+(
+    loc: Span
+    name: String
+    variable_type: PlannedType
+    is_mutable: bool
+)
+
+define PlannedGlobalRef
+(
+    loc: Span
+    name: String
+    mangled_name: String
+    global_type: PlannedType
+)
+
+; `&^obj v` — box a by-value value onto a page (Page.get(target_page)),
+; copy the whole value, yield ref[X]. Replaces the hand-rolled
+; `var H Vector[X]^rp(1); H.put(0, v); H.get(0)` holder idiom.
+define PlannedBox
+(
+    loc: Span
+    value: ref[PlannedOperand]?      ; the value to copy onto the page
+    target_page: String              ; Reference location: "this", "rp", ...
+    box_type: PlannedType            ; ref[X] (a borrowed reference to the page copy)
+)
+
+define PlannedExpression union
+(
+    Constant: PlannedConstant
+    Type: PlannedType
+    Variable: PlannedVariable
+    GlobalRef: PlannedGlobalRef
+    Call: PlannedCall
+    Tuple: PlannedTuple
+    Matrix: PlannedMatrix
+    Block: PlannedBlock
+    If: PlannedIf
+    Match: PlannedMatch
+    Choose: PlannedChoose
+    For: PlannedFor
+    While: PlannedWhile
+    Repeat: PlannedRepeat
+    Lambda: PlannedLambda
+    Try: PlannedTry
+    SizeOf: PlannedSizeOf
+    AlignOf: PlannedAlignOf
+    Is: PlannedIs
+    As: PlannedAs
+    VariantConstruction: PlannedVariantConstruction
+    FunctionRef: PlannedFunctionRef
+    Closure: PlannedClosure
+    Box: PlannedBox
+)
+
+define PlannedMemberAccess
+(
+    name: String
+    field_index: size_t
+    is_method: bool
+    is_union_value: bool
+    parent_type: PlannedType
+    result_type: PlannedType
+)
+
+define PlannedOperand
+(
+    loc: Span
+    expr: PlannedExpression
+    member_access: ref[Vector[PlannedMemberAccess]]?
+    result_type: PlannedType
+)
+
+; ============================================================================
+; Planned Functions and Operators
+; ============================================================================
+
+define PlannedExternImpl
+(
+    loc: Span
+)
+
+define PlannedInstructionImpl
+(
+    loc: Span
+)
+
+define PlannedIntrinsicImpl
+(
+    loc: Span
+)
+
+define PlannedImplementation union
+(
+    Action: PlannedAction
+    Extern: PlannedExternImpl
+    Instruction: PlannedInstructionImpl
+    Intrinsic: PlannedIntrinsicImpl
+)
+
+define PlannedFunction
+(
+    loc: Span
+    is_private: bool
+    pure: bool
+    name: String
+    mangled_name: String
+    page_parameter: ref[String]?
+    input: ref[Vector[PlannedItem]]?
+    return_type: ref[PlannedType]?
+    throws_type: ref[PlannedType]?
+    life: Lifetime
+    impl: PlannedImplementation
+    origin: ref[InstantiationInfo]?
+    needs_local_page: bool
+    can_throw: bool
+    scheme: ref[TypeScheme]?
+    ; Source file of this function's module. The interprocedural escape
+    ; check (check_interprocedural_escapes) runs as a post-pass after
+    ; plan_module# has restored this.file, so a Vector-3 "escapes via call"
+    ; diagnostic must use the function's OWN file, not the stale entry file.
+    file: String
+    ; the globals the declaration says it writes (`mutable g1, g2`); null on
+    ; a stub or a synthesized function
+    writes: ref[Vector[String]]?
+)
+
+define PlannedInitializer
+(
+    loc: Span
+    is_private: bool
+    page_parameter: ref[String]?
+    mangled_name: String
+    input: ref[Vector[PlannedItem]]?
+    impl: PlannedImplementation
+)
+
+define PlannedDeInitializer
+(
+    loc: Span
+    mangled_name: String
+    impl: PlannedImplementation
+)
+
+define PlannedOperator
+(
+    loc: Span
+    is_private: bool
+    name: String
+    mangled_name: String
+    input: ref[Vector[PlannedItem]]?
+    return_type: ref[PlannedType]?
+    throws_type: ref[PlannedType]?
+    impl: PlannedImplementation
+    origin: ref[InstantiationInfo]?
+    scheme: ref[TypeScheme]?
+)
+
+; ============================================================================
+; Planned Globals and Definitions
+; ============================================================================
+
+define PlannedGlobal
+(
+    loc: Span
+    name: String
+    mangled_name: String
+    global_type: PlannedType
+    value: ref[Vector[PlannedOperand]]?
+    is_mutable: bool
+    is_shared: bool
+)
+
+define PlannedStructure
+(
+    loc: Span
+    is_private: bool
+    is_generic_placeholder: bool
+    name: String
+    mangled_name: String
+    properties: ref[Vector[PlannedProperty]]?
+    initializers: ref[Vector[PlannedInitializer]]?
+    deinitializer: ref[PlannedDeInitializer]?
+    methods: ref[Vector[PlannedFunction]]?
+    operators: ref[Vector[PlannedOperator]]?
+    size: size_t
+    alignment: size_t
+    origin: ref[InstantiationInfo]?
+)
+
+define PlannedUnion
+(
+    loc: Span
+    is_private: bool
+    name: String
+    mangled_name: String
+    variants: ref[Vector[PlannedVariant]]?
+    methods: ref[Vector[PlannedFunction]]?
+    operators: ref[Vector[PlannedOperator]]?
+    size: size_t
+    alignment: size_t
+    origin: ref[InstantiationInfo]?
+)
+
+define PlannedNamespace
+(
+    loc: Span
+    name: String
+    mangled_name: String
+    modules: ref[Vector[PlannedModule]]?
+    functions: ref[Vector[PlannedFunction]]?
+    operators: ref[Vector[PlannedOperator]]?
+    concepts: ref[Vector[PlannedConcept]]?
+)
+
+define PlannedDefinition union
+(
+    Structure: PlannedStructure
+    Union: PlannedUnion
+    Namespace: PlannedNamespace
+    Global: PlannedGlobal
+    Type: PlannedType       ; Type alias
+)
+
+define PlannedConcept
+(
+    loc: Span
+    name: String
+    mangled_name: String
+    attributes: ref[Vector[PlannedAttribute]]?
+    definition: PlannedDefinition
+    origin: ref[InstantiationInfo]?
+)
+
+; ============================================================================
+; Planned Module and Program
+; ============================================================================
+
+define PlannedModule
+(
+    file: String
+    name: String
+    modules: ref[Vector[PlannedModule]]?
+    concepts: ref[Vector[PlannedConcept]]?
+    functions: ref[Vector[PlannedFunction]]?
+    operators: ref[Vector[PlannedOperator]]?
+)
+
+; ============================================================================
+; Method/Operator Resolution Results (for call resolution)
+; ============================================================================
+
+; Result of method lookup
+define MethodMatch
+(
+    method: ref[PlannedFunction]?
+    mangled_name: String
+    return_type: PlannedType
+    parameter_types: ref[Vector[PlannedType]]?
+    requires_page_param: bool
+    can_throw: bool
+    throws_type: ref[PlannedType]?
+    is_intrinsic: bool
+    takes_this: bool
+    ; Phase-5 class 1 (value-guts persist): true when THIS call passes an
+    ; argument whose guts live on the caller frame's local page (Local life)
+    ; to a callee whose body stores a parameter's value into state that
+    ; outlives its frame (this-field putadd, e.g. add_error's
+    ; `errors.add message`). collapse_operand_sequence# promotes such
+    ; arguments to the caller page — the auto-promoted form of the old
+    ; handwritten `#` at every diag-text call site.
+    persists_args: bool
+)
+
+; Result of operator lookup
+define OperatorMatch
+(
+    op: ref[PlannedOperator]?
+    mangled_name: String
+    result_type: PlannedType
+    is_intrinsic: bool
+)
+
+; ============================================================================
+; The Complete Plan
+; ============================================================================
+
+define Plan
+(
+    main_module: PlannedModule
+    statements: ref[Vector[PlannedStatement]]?
+    ; All instantiated types/functions (for quick lookup during emission)
+    ; Note: In Scaly we'll use Vector pairs instead of maps for now
+    structures: ref[Vector[PlannedStructure]]?
+    unions: ref[Vector[PlannedUnion]]?
+    functions: ref[Vector[PlannedFunction]]?
+    globals: ref[Vector[PlannedGlobal]]?
+    ; Names of `delegate` (function-pointer) types — the emitter's map_type
+    ; lowers a value of one of these names to an LLVM ptr (GAP B).
+    delegates: ref[Vector[String]]?
+    ; Type inference state
+    next_type_var_id: size_t
+    constraints: ref[Vector[TypeConstraint]]?
+)
+

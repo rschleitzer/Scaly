@@ -1,0 +1,734 @@
+; Bucket machinery for the StackBucket (strict LIFO) and HeapBucket
+; (bitmap-managed) page allocators, plus the StackBucket release paths and
+; the SCALY_TRACE_ROOT diagnostics. The allocate/release entry points live
+; in Page.scaly (Page.allocate_root_page / Page.allocate_page /
+; Page.release_page), together with the mutable allocator state.
+;
+; StackBucket: root pages — function-local and try-scope pages the Emitter
+;   allocates at entry and releases on exit. Push is a pointer bump; pop is
+;   a pointer decrement. Strict LIFO — a release that doesn't match the top
+;   of stack is a bug (e.g. a missed cleanup path) and is fatal.
+;
+; HeapBucket: extension pages (when a root page overflows) and exclusive
+;   pages (HashMap rehash etc.). Each bucket has a 64-bit bitmap tracking
+;   which of its 63 usable pages are free.
+;
+; Each bucket is a BUCKET_SIZE-aligned region of BUCKET_PAGES pages. Page 0
+; holds the bucket header; pages 1..BUCKET_PAGES-1 are usable.
+;
+; The trace counters are Scaly-owned mutable module globals. Diagnostics go
+; to stderr via write(2, ...) below. SCALY_TRACE_HEAP (near the bottom of
+; this file) is the HeapBucket-page counterpart: per-site alloc/release
+; counters, sites hand-labeled at the call site (Page.allocate_page_traced
+; / release_page_traced in Page.scaly) rather than named automatically.
+;
+; Guard semantics: `if X ACTION` runs ACTION when X is true, then falls
+; through. It's an early-exit when the condition holds.
+;
+; These functions must never trigger the Emitter's getOrCreateLocalPage
+; (i.e. they must not have `$` allocations, `for-in` loops, or calls that
+; take a caller-page parameter) — otherwise we'd recurse back into
+; Page.allocate_root_page during its own emission and deadlock at runtime.
+
+define BUCKET_PAGES  size_t 64
+define BUCKET_SIZE   size_t 0x40000        ; PAGE_SIZE * BUCKET_PAGES
+define BUCKET_MASK   size_t 0x3FFFF         ; BUCKET_SIZE - 1
+define BITMAP_ALL_FREE u64 0x7FFFFFFFFFFFFFFF  ; bits 0..62 set (page 0 is header)
+
+; Bucket headers sit at offset 0 of each bucket.
+define StackBucketHeader
+(
+    prev: pointer[StackBucketHeader]
+    next: pointer[StackBucketHeader]
+)
+
+define HeapBucketHeader
+(
+    prev: ref[HeapBucketHeader]?
+    next: ref[HeapBucketHeader]?
+    bitmap: u64
+    lock: u64
+    dead: u64                      ; owner thread exited; free on last drain
+)
+
+; The per-thread allocator state (stack_head, stack_top, heap_head —
+; thread_local like every mutable global since milestone 2.2)
+; lives in Page.scaly: its consumers Page.allocate_root_page,
+; Page.allocate_page and Page.release_page are planned before this module,
+; and lookup_global is populated in planning order. The root-page release
+; below is planned later and resolves stack_top fine.
+
+; Trace-diagnostic state — off by default, armed by SCALY_TRACE_ROOT on
+; the first root-page push or pop. All state is Scaly-owned; the shim
+; only provides stderr primitives and two push/pop trampolines that
+; forward to the Scaly-mangled implementations below.
+mutable trace_enabled:           i64 linked
+mutable trace_atexit_registered: i64 linked
+mutable trace_count:             i64 linked
+mutable trace_entries:           pointer[TraceEntry] linked
+
+define TRACE_MAX size_t 8192
+
+define TraceEntry
+(
+    name: pointer[const_char]
+    push_count: i64
+    pop_count: i64
+)
+
+; Header of the PROCESS-global heap-trace table (SCALY_TRACE_HEAP below).
+; Reached through the `heap_trace` global — `shared` declarations are
+; exempt from the M2.2 blanket thread_local, so every thread
+; sees the same table and a cross-thread alloc/release pair balances.
+; `lock` is a bucket_lock-style spinlock guarding find-or-add + counter
+; bumps; the atexit dump reads without it (single-threaded by then).
+define HeapTraceHeader
+(
+    lock: u64
+    count: i64
+    entries: pointer[TraceEntry]
+)
+
+function getenv(name: pointer[const_char]) returns pointer[const_char] extern
+procedure atexit(cb: pointer[void]) returns i32 extern
+function strdup(s: pointer[const_char]) returns pointer[char] extern
+
+; Scratch buffer for integer/pointer formatting. 32 bytes is enough for
+; any i64 decimal (max 20 chars) or pointer hex (18 chars). Lazily
+; allocated on the first formatted write; reused from then on. Safe
+; because the diagnostic dump runs single-threaded at atexit.
+mutable fmt_scratch: pointer[char] linked
+
+function scaly_fmt_scratch_ptr() returns pointer[char] linked
+
+; Byte-level stderr output via libc write(2, ...). No format strings:
+; Scaly composes every diagnostic message by writing bytes.
+
+procedure scaly_eputs(s: pointer[const_char]) linked
+
+procedure scaly_eputnl() linked
+
+; Unsigned decimal. It exists because scaly_eputi takes an i64, and a SIZE
+; printed through it lies in the one case a size diagnostic is about: the
+; wraparound guard in Array.add reported "adding -1 to 2" for a length of
+; SIZE_MAX. A trap's whole job is to name what it saw.
+procedure scaly_eputu(n: u64) linked
+
+procedure scaly_eputi(n: i64) linked
+
+; The catch-point shim (scaly/memory/panic.c). scaly_panic_jump answers 0 when
+; NO catch point is installed and does not return at all when one is: it
+; longjmps, which is why the helper below stays noreturn either way.
+procedure scaly_panic_jump(what: pointer[const_char], index: size_t, length: size_t, code: i32) returns i32 extern
+procedure scaly_panic_null_jump(where: pointer[const_char], code: i32) returns i32 extern
+procedure scaly_panic_region_jump(what: pointer[const_char], address: size_t, code: i32) returns i32 extern
+procedure scaly_panic_size_jump(what: pointer[const_char], added: size_t, length: size_t, code: i32) returns i32 extern
+procedure scaly_panic_oom_jump(what: pointer[const_char], bytes: size_t, code: i32) returns i32 extern
+procedure scaly_panic_resource_jump(what: pointer[const_char], requested: size_t, code: i32) returns i32 extern
+procedure scaly_panic_deadlock_jump(what: pointer[const_char], code: i32) returns i32 extern
+function scaly_panic_last_code() returns i32 extern
+
+; Raise a fault again on THIS thread, with the kind and words a worker
+; recorded. It is how a fault from a self-scaled `for` reaches the catch point
+; the submitter armed -- a jump may never cross stacks, so the worker catches
+; and the submitting thread raises again (TRAPS.md 3.19). Never returns.
+procedure scaly_panic_reraise(kind: i32, what: pointer[const_char], index: size_t, length: size_t, code: i32) extern
+function scaly_catch_run(body: pointer[void], arg: pointer[void], mark: pointer[void], unwind: pointer[void], caught: pointer[i32]) returns i64 extern
+function scaly_catch_active() returns i32 extern
+function scaly_panic_last_kind() returns i32 extern
+function scaly_panic_last_what() returns pointer[const_char] extern
+function scaly_panic_last_index() returns i64 extern
+function scaly_panic_last_length() returns i64 extern
+
+; The ONE place a bounds violation ends the program -- unless somebody asked
+; to catch it.
+;
+; Every `if i >= length` in Slice, Array and Vector routes here (eight sites,
+; TRAPS.md 2.1) instead of writing its own message and calling `exit` inline.
+; Three reasons, in the order they matter:
+;
+; 1. It is where a FANGPUNKT goes. The requirement in TRAPS.md 0 is that the
+;    programmer can handle an OoB where it happens, and a jump to a registered
+;    catch point has to be installed at ONE site, not at eight -- and never at
+;    the 929 call sites, which is what makes this the cheap preparation rather
+;    than the change itself. Nothing about the language moves yet.
+; 2. The trap can finally say WHAT it saw. `index 4, length 4` was unavailable
+;    before because the message was assembled inline at each site.
+; 3. `what` names the routine, so the eight messages stay distinguishable and
+;    the gates in tests/regress/trap_*.scaly keep pinning them one by one.
+;
+; ★★★It stays FREE OF COST at the access site, and that is measured, not
+; assumed: LLVM's function-attrs infers `noreturn` here (the body ends in
+; `exit`, which the Emitter marks) and then proves the cold arm redundant
+; against a loop condition and deletes it, message and all -- byte for byte the
+; emission of the inline form (TRAPS.md 1.2/1.6). ★The inference needs the BODY
+; in view: it holds while a program compiles the stdlib along with it, and a
+; separately compiled archive at a lower opt level does not get it. Should that
+; ever change, the fix is one name in `Emitter.mark_noreturn_callee`, whose list
+; is deliberately closed.
+;
+; `what` is a `pointer[const_char]` and not a `Slice[char]`: it goes straight
+; into scaly_eputs, which is the documented exception for the C boundary.
+
+; Bounds traps this THREAD raised, caught and fatal alike (TRAPS.md 4, the
+; first of the three things that inventory did not know: nobody had a number
+; for how often a trap fires in operation, because a fatal one printed and
+; left and a caught one said nothing at all).
+;
+; ★It counts the RAISE and not the death, so a guarded process that survives
+; 200 of them reports 200 -- that is the number the FHIR-server case needs,
+; where every trap is caught and none is visible in an exit code.
+;
+; ★★It is THREAD-LOCAL, like `panic_pages_unwound` below and like every
+; `mutable` global in this language: a trap raised by a worker of a
+; self-scaled `for` is counted on THAT thread and cannot be read from here. A
+; process-wide total would need a `shared` cell, and a `shared` SCALAR cannot
+; be bumped atomically today (`&global` on a scalar mis-emits, CLAUDE.md) --
+; so it would move into the C shim, and the cross-thread panic is an open
+; corner anyway (TRAPS.md 5.5). Stated rather than half-answered.
+;
+; ★It costs the cold path one load, one add and one store, and the access
+; site nothing: the arm is still deleted whole where LLVM proves it
+; unreachable, and `scaly_panic_oob` still ends in `exit`, so the noreturn
+; inference that 1.2/1.6 hang on is unchanged.
+mutable panic_oob_count: i64 linked
+
+function scaly_panic_oob_count() returns i64 linked
+
+procedure scaly_panic_oob(mutable what: pointer[const_char], index: size_t, length: size_t) linked
+
+; The ONE place a null unwrap ends the program -- `x as ref[T]`, this
+; language's `!`, meeting a null (exit 21).
+;
+; Until 2026-09-07 the Emitter BUILT this message at every unwrap site: two
+; scaly_eputs calls, a scaly_eputnl, an `exit`, and its own copy of the head
+; string. That is the shape the eight bounds traps had before Etappe B, and
+; the population is not small -- 5281 sites in `tscaly`, 709 in `dazzle`, 269
+; in `opensp`, 27 in the stdlib itself, each with two string globals. One call
+; per site instead of four, and the head string exists ONCE.
+;
+; Three reasons in the order they matter, the same order as scaly_panic_oob's:
+;
+; 1. It is where the FANGPUNKT jumps from, and since 2026-09-08 it does:
+;    `try let x … when e: NullReference` catches this trap the way an arm
+;    catches a bounds violation (TRAPS.md 3.12). One site to jump from is what
+;    made that possible -- it could not be done while the sequence was rebuilt
+;    in the Emitter at ~6300 sites.
+; 2. The trap can say more than it does. Today it names the enclosing mangled
+;    symbol and nothing else, because everything the Emitter had at the site
+;    was a name; a helper can be given whatever a caller can compute.
+; 3. It is countable. `panic_null_count` below is the null twin of
+;    `panic_oob_count`, and a trap family with one counted member and one
+;    uncounted member is the inconsistency somebody trips over later.
+;    ★It became exercisable when the trap became catchable: after a caught
+;    null unwrap somebody is alive to read it, and
+;    tests/regress/try_arm_catches_null.scaly does.
+;
+; ★★★It stays noreturn for the same reason and by the same means: the body
+; ends in `exit`, and `Emitter.mark_noreturn_callee` carries this routine's
+; MANGLED name so a program's module -- which sees only a `declare`, the body
+; being in libscaly.a -- gets the attribute anyway. A mangled name written out
+; as a literal FREEZES the parameter types (CLAUDE.md); grep for
+; `_Z16scaly_panic_nullP10const_char` before re-signing this.
+;
+; ★`where` is the enclosing symbol's mangled name, not a source location:
+; there is no source position at run time. It is a `pointer[const_char]` for
+; the same reason `what` above is -- it goes straight into scaly_eputs.
+mutable panic_null_count: i64 linked
+
+function scaly_panic_null_count() returns i64 linked
+
+procedure scaly_panic_null(mutable where: pointer[const_char]) linked
+
+; The ONE place an invalid RECEIVED REGION ends the program (exit 18).
+;
+; Four sites in `scaly/memory/Region.scaly` raise it: the two pointer
+; swizzlers (`ReceivedRegion.fix`, `fix_value`) when an address inside the
+; received data maps to nothing, the sender's page walk when it disagrees with
+; its own count, and `deserialize` when the ROOT maps to nothing.
+;
+; ★★★It is the one fault in this family that is not a programmer error in the
+; caller's own code. The other two say "this program has a bug"; this one says
+; "the data I was handed does not hold together" -- a sender that shipped a
+; region which was not closed, a compiler-generated walker using the wrong
+; field map (the s7.2 symbol-collision class, whose symptom is exactly this
+; message at a site where nothing is wrong), or a truncated frame off the
+; wire. A long-running process must be able to lose the message instead of
+; itself, which is why this one is catchable and `exit 19` is not.
+;
+; ★★★It is exit 18 and NOT 17, and that is a correction: 17 was BOTH this and
+; the Planner's stack guard (`Planner.scaly:2593`), a compile-time abort that
+; must never be catchable. One code cannot mean both -- `expect-rc: 17` in a
+; gate could not tell them apart. The guard keeps 17; the runtime fault moved.
+;
+; ★`address` is the pointer the walk choked on, 0 where there is none (the
+; sender-side walk disagreement). It is what separates a wrong field map from
+; a truncated frame, so it travels in the payload rather than only in the
+; message.
+;
+; ★The MANGLED name is pinned in `Emitter.mark_noreturn_callee` like its two
+; siblings, which freezes these parameter types: grep for
+; `_Z18scaly_panic_regionP10const_charm` before re-signing.
+mutable panic_region_count: i64 linked
+
+function scaly_panic_region_count() returns i64 linked
+
+procedure scaly_panic_region(mutable what: pointer[const_char], address: size_t) linked
+
+; The ONE place a wrapped SIZE computation ends the program (exit 22).
+;
+; `Array[T].add(items)` computes `length + items.length` in `size_t`; if that
+; wraps it would under-size the allocation and the following memcpy would
+; write past it. The guard was a bare `exit 14` with NO message at all -- the
+; only trap in this family that said nothing, and it shared its code with the
+; Emitter's compile-time aborts (unknown operator, the index invariants). Both
+; halves are fixed here: it names itself, and it is exit 22.
+;
+; ★★★It is the same class as a bounds violation and therefore catchable: the
+; check fires BEFORE any corruption, and what it reports is a size the caller
+; asked for. `added` and `length` are the two words worth having -- the
+; wrapped sum says nothing.
+;
+; ★It is called from inside a GENERIC concept method, which is allowed: a
+; generic body may call a free procedure of another module (CLAUDE.md, the
+; measured-closed rule), and `scaly_panic_oob` in the container subscripts is
+; the precedent.
+;
+; ★The MANGLED name is pinned in `Emitter.mark_noreturn_callee`: grep for
+; `_Z16scaly_panic_sizeP10const_charmm` before re-signing.
+mutable panic_size_count: i64 linked
+
+function scaly_panic_size_count() returns i64 linked
+
+procedure scaly_panic_size(mutable what: pointer[const_char], added: size_t, length: size_t) linked
+
+; The ONE place a malformed String ends the program (exit 11).
+;
+; A String is a pointer at a varint length prefix followed by that many
+; bytes. Nine readers decode that prefix -- `get_buffer`, `to_c_string`,
+; `get_length`, the three `equals` overloads, `hash`, `as_slice` and
+; `init(other: String)` -- and each one carried its own copy of the same
+; guard: if the varint runs past PACKED_SIZE * 7 bits, the bytes at `data`
+; are not a String.
+;
+; ★★★What it MEANS is worth writing down, because the message could not say
+; it before: the object this String points at is not a String. That is the
+; dangling-String class CLAUDE.md describes twice -- a record built with
+; `allocate` + `set *p: T()` whose `Page.get(this)` answered a header in
+; arbitrary memory, or a `StringC(literal)` stack temporary stored into a
+; field. The check fires BEFORE the bogus length is used, so nothing has been
+; read past yet.
+;
+; ★★★The nine sites carried THREE different exit codes -- 11 at seven of
+; them, 12 in `init(other: String)`, 13 in `equals(pointer[const_char])` --
+; for one condition, and none of them said a word. One condition, one code
+; (11, what most of them already used), and a message that names the reader
+; and the address.
+;
+; ★NOT catchable yet, and that is the open decision rather than an oversight:
+; unlike an index one past the end, this fault says the program's own memory
+; is already wrong. Making it catchable is a variant in
+; scaly/memory/runtime.scaly plus a case in the shim, exactly as the other
+; four went (TRAPS.md 2.4 carries the argument).
+;
+; ★★Which is also why the counter below cannot be read yet: the only way to
+; reach it is a FATAL trap, so nobody is alive to ask. Same situation the null
+; counter was in before its kind became catchable.
+;
+; ★The MANGLED name is pinned in `Emitter.mark_noreturn_callee`: grep for
+; `_Z18scaly_panic_stringP10const_charm` before re-signing.
+mutable panic_string_count: i64 linked
+
+function scaly_panic_string_count() returns i64 linked
+
+procedure scaly_panic_string(what: pointer[const_char], address: size_t) linked
+
+; The ONE place an out-of-memory ends the program (exit 23).
+;
+; Four requests can fail: an oversized page (`Page.allocate_oversized`), the
+; two bucket creations below, and a received oversized page in
+; `Region.deserialize`. Each of them was a bare `exit` -- 1, 101, 102 -- with
+; no message: three codes for one condition, and the two 1s shared the code a
+; shell reads as "generic failure".
+;
+; ★★★It is the one kind where catching does more than CONTAIN the damage:
+; dropping a region GIVES THE MEMORY BACK, so a catcher can recover and carry
+; on. That is why this kind is catchable while `exit 19` is not, and why the
+; shim keeps a small reserve of catch frames -- a `try` that cannot allocate
+; its own frame would make this kind uncatchable at the one moment it fires.
+;
+; ★`bytes` is what the failed request asked for, which separates "this
+; machine is out" from "this one request was absurd".
+;
+; ★The MANGLED name is pinned in `Emitter.mark_noreturn_callee`: grep for
+; `_Z15scaly_panic_oomP10const_charm` before re-signing.
+mutable panic_oom_count: i64 linked
+
+function scaly_panic_oom_count() returns i64 linked
+
+procedure scaly_panic_oom(mutable what: pointer[const_char], bytes: size_t) linked
+
+; The ONE place a refused OS RESOURCE ends the program -- and the one helper
+; of this family that keeps its caller's EXIT CODE.
+;
+; Nine sites in `scaly/fiber.scaly` and `scaly/cluster.scaly`: a fiber stack
+; (mmap, 103), its guard page (104), a thread (109, twice), a pipe (111, 112),
+; and the node's two fixed tables (113, twice).
+;
+; ★★★Why `code` is a PARAMETER here while the four earlier kinds each got one
+; code: the earlier consolidations collapsed several codes that meant ONE
+; condition, and there the single code was the improvement. These conditions
+; are DIFFERENT, and the code is the only thing that says which one -- plus
+; `tests/fiber/channel_deadlock.scaly` reads one of them (`ExpectedExit: 106`).
+; A code that carries information is not noise.
+;
+; ★A refused resource is the OOM argument again: a server that cannot spawn a
+; worker or open a pipe should shed the request, not die. What stays fatal is
+; the substrate saying its own bookkeeping is broken -- a failed `munmap`
+; (105), a poll syscall (107), a short read on the wake pipe -- because there
+; is nothing a catcher could do about those.
+;
+; ★`requested` is a number where there is one (stack bytes, the table limit),
+; 0 for a pipe or a thread.
+;
+; ★MANGLED names pinned in `Emitter.mark_noreturn_callee`: grep for
+; `_Z20scaly_panic_resourceP10const_charm3i32` and
+; `_Z20scaly_panic_deadlockP10const_char3i32` before re-signing either.
+; ★★An `i32` parameter mangles as `3i32` -- the Scaly type NAME, not Itanium's
+; `i`. Guessing that cost a round here: the pin silently did not match, so the
+; attribute was not applied and nothing said a word. Read the name out of the
+; emitted `.ll` instead of counting characters.
+mutable panic_resource_count: i64 linked
+
+function scaly_panic_resource_count() returns i64 linked
+
+procedure scaly_panic_resource(mutable what: pointer[const_char], requested: size_t, code: i32) linked
+
+; The ONE place a deadlock ends the program (exit 106 at every site).
+;
+; Three sites in the scheduler: `poll_io` with nothing left to wait for,
+; `run` with every fiber blocked, and a `join` whose step cannot happen.
+;
+; ★It is a PROGRAM error, not a substrate failure, and that is the whole
+; reason it is catchable: a deadlock says THIS unit of work is stuck --
+; exactly the boundary a server wants to lose -- while a broken syscall says
+; the runtime cannot function at all.
+mutable panic_deadlock_count: i64 linked
+
+function scaly_panic_deadlock_count() returns i64 linked
+
+procedure scaly_panic_deadlock(mutable what: pointer[const_char], code: i32) linked
+
+; Hex digit for a nibble (0..15), computed arithmetically. A fixed-array
+; `char[]` lookup table would be a module-level array constant, which
+; stage-1's planner emits as an external declaration (no body) — the
+; unported Planner.cpp:6193 array-global gap. Computing the digit keeps
+; the runtime self-hostable (s189, same avoidance as s188's hashing).
+function hex_digit(nibble: i64) returns char linked
+
+procedure scaly_eputp(p: pointer[void]) linked
+
+; --------------------------------------------------------------------------
+; Address helpers
+; --------------------------------------------------------------------------
+
+function stack_bucket_of(p: ref[Page]) returns pointer[StackBucketHeader] linked
+
+function heap_bucket_of(p: ref[Page]) returns ref[HeapBucketHeader] linked
+
+; Atomic primitives (milestone 2.3). These extern names never exist as
+; symbols — the Emitter lowers the calls to atomicrmw/cmpxchg/atomic
+; load+store instructions (emit_atomic_call, all seq_cst). They may not
+; live in the C shim: atomics are neither OS-specific, variadic, nor
+; errno-bound (containment rule), and the libatomic ABI symbols are not
+; uniformly linkable across the four targets.
+function scaly_atomic_cas_u64(p: pointer[u64], expected: u64, desired: u64) returns u64 extern
+procedure scaly_atomic_store_u64(p: pointer[u64], v: u64) extern
+
+; Per-bucket spinlock (milestone 2.3, freelist safety). With thread_local
+; allocator state (milestone 2.2) each thread owns a heap-bucket CHAIN,
+; but a page may be FREED by a different thread than the one whose chain
+; its bucket sits in — release_page reaches the bucket by address mask.
+; The lock serializes everything that touches one bucket's shared state:
+; the bitmap, and the chain-membership transitions (unlink-on-full in
+; allocate_page, adopt-on-free in release_page). Chain next/prev fields
+; are only ever written by the chain's OWNER thread (a bucket in a chain
+; is never full, so no remote freer takes the adoption branch on it) —
+; one bucket lock at a time, no ordering, no deadlock. Critical sections
+; are a handful of instructions and contention needs a cross-thread free
+; hitting the same bucket, so a bare spin (no backoff) is fine.
+procedure bucket_lock(b: pointer[HeapBucketHeader]) linked
+
+procedure bucket_unlock(b: pointer[HeapBucketHeader]) linked
+
+; Called by Page.release_page UNDER THE BUCKET LOCK after setting the
+; freed bit (was_full false): when the bucket is DEAD (owner thread
+; exited, scaly_thread_release_buckets below) and this free drained the
+; last live page, unlock and free the bucket, report true — the caller
+; must not touch it again. Lives HERE, not in Page.scaly: BITMAP_ALL_FREE
+; is this module's constant, and module globals resolve in planning
+; order (Page is planned first — reading the constant from there is a
+; hard "unknown identifier" diagnostic).
+procedure drain_dead_bucket(mutable b: pointer[HeapBucketHeader]) returns bool linked
+
+; Reclaim a dying thread's allocator buckets (milestone 2.3b). Called by
+; the thread trampoline (fiber.scaly scaly_thread_start) AFTER the user
+; entry returned, i.e. every frame is unwound: all root pages are popped,
+; so the stack-bucket chain is idle and simply freed. Heap buckets:
+; empty ones are freed here; ones with live pages (handed to other
+; threads or stored long-lived) are marked DEAD and orphaned — the
+; release_page that drains the last page frees them, from whichever
+; thread it runs on (Page.scaly). A full bucket of the dying thread is
+; already orphaned (unlinked at allocation time) and needs no marking:
+; the freer that observes its full→free transition adopts it as usual.
+; Races with concurrent remote frees are serialized by the bucket lock;
+; an empty bucket cannot receive frees (no live pages), so freeing it
+; after unlock is safe. This function must stay allocation-free: it
+; tears down the very allocator it would allocate from.
+procedure scaly_thread_release_buckets() linked
+
+function first_usable_page(bucket: pointer[void]) returns pointer[Page] linked
+
+function last_usable_page(bucket: pointer[void]) returns pointer[Page] linked
+
+; --------------------------------------------------------------------------
+; reset_page — fresh-page initialization: bump pointer sits just past the
+; Page header, all chain/list pointers are null.
+; --------------------------------------------------------------------------
+
+procedure reset_page(p: ref[Page]) linked
+
+; --------------------------------------------------------------------------
+; Bucket creation
+; --------------------------------------------------------------------------
+
+procedure create_stack_bucket(mutable prev: pointer[StackBucketHeader]) returns pointer[StackBucketHeader] linked
+
+function create_heap_bucket() returns ref[HeapBucketHeader] linked
+
+; --------------------------------------------------------------------------
+; Count trailing zeros in a u64 (for the HeapBucket bitmap scan). Caller
+; must ensure x != 0. A branchless BINARY SEARCH for the lowest set bit:
+; 6 halving steps instead of up to 63 shift iterations. Table-free (no
+; De Bruijn i32[] module-global array, which stage-1's planner emits as a
+; bodiless external declaration — the unported Planner.cpp:6193 array-global
+; gap — so the seed would fail to link). Behaviour-identical to the old
+; shift-loop: returns the index of the lowest set bit.
+;
+; This matters: Page.allocate_page clears the lowest free bit each allocation,
+; so a sequentially-filling bucket drove the old shift-loop toward ~31
+; iterations average (O(n^2) per bucket fill). The binary search is a fixed
+; 6 steps regardless of slot — the hot path under default-to-local transient
+; page churn.
+; --------------------------------------------------------------------------
+
+function ctz_u64(x: u64) returns i32 linked
+
+; --------------------------------------------------------------------------
+; StackBucket: root pages
+; --------------------------------------------------------------------------
+
+procedure scaly_release_root_page(p: pointer[Page]) linked
+
+; Full teardown of a function-local root page at scope exit (the blocker-C
+; "always free local regions" invariant). Frees the page's owned extension
+; chain + exclusive pages when it was actually used, then returns the
+; StackBucket root slot via scaly_release_root_page.
+;
+; The gate is load-bearing for TERMINATION, not just efficiency: the emitter
+; calls this from EVERY non-# function's epilogue, including
+; deallocate_extensions' own (its for-loop acquires a fresh local page). A
+; fresh page — bump pointer still at the header, no chain, no exclusive pages
+; — skips deallocate_extensions, so the cycle deallocate_extensions ->
+; epilogue -> release_full -> deallocate_extensions bottoms out immediately.
+; This function is allocation-free (no $/#/for-in) so it never acquires its
+; own local page (see the header note on allocator-path functions).
+;
+; The escape checker (return/store/call vectors) guarantees no escaping
+; reference lives on a local page, so the unconditional release is not a
+; use-after-free. Mirrors stage-0's emitReturn CleanupLocalPage
+; (emitPageNeedsCleanup gate + deallocate_extensions + release).
+procedure scaly_release_root_page_full(p: pointer[Page]) linked
+
+; --------------------------------------------------------------------------
+; Parent-linked frame chain
+; --------------------------------------------------------------------------
+;
+; The emitter does not open a function's local region in the prologue. Its
+; first shape (2026-08-01) was a bare null slot in the frame, materialised at
+; each demand site — which reached only the materialisations a function makes
+; for ITSELF. It cannot reach the larger half: a caller that materialises its page
+; ONLY to hand it to a callee which then allocates nothing (String.append that
+; does not have to grow, and its kind). Measured on the dazzle DSSSL engine
+; after the slot change: 13.79 of the remaining 28.59 million frames per
+; 977 KB document were still empty, 13.57 million of them with no allocation
+; anywhere in their dynamic subtree (tests/dazzle/PERFORMANCE.md).
+;
+; So the caller-page argument stops being a materialised page and becomes a
+; pointer to this two-word record, which every function with a region holds as
+; an alloca in its entry block, initialised to {null, <incoming frame>}. The
+; callee materialises the caller's page only when it really allocates into it.
+define Frame
+(
+    page: pointer[Page]           ; null until forced
+    parent: ref[Frame]?       ; the frame this function received, or null
+)
+
+; Materialise this frame's page, PARENTS FIRST, and return it.
+;
+; ★The parent recursion is the correctness of the whole scheme, not a
+; refinement. Root pages come off the StackBucket, which demands strict LIFO —
+; scaly_release_root_page aborts on a mismatch. Without it, the very first
+; interleaving breaks: callee G materialises its own page, then allocates on
+; its caller F's page, so F's region is pushed ON TOP of G's but has to be
+; released after it.
+;
+; THE ORDERING ARGUMENT. Two properties give strict LIFO back:
+;
+;   (1) A frame is materialised only after all its chain ancestors are —
+;       immediately, because that is what this function does before pushing.
+;       A frame is pushed at most once (the field stays set until release).
+;
+;   (2) While an activation X is live, the only frames anyone below X can
+;       force are X's own and the ones X was HANDED. A frame pointer is only
+;       ever passed as the caller-page argument; it is never stored, returned
+;       or captured. So a frame X never received is unreachable from below X.
+;
+; Now take a frame B at its release. Suppose some page P sat above B's. P's
+; frame C was pushed after B and is still live, so C's activation began after
+; B's push — hence C is a descendant of B's activation (on one thread the live
+; activations form a chain, and the later ones are the deeper ones). By (1)
+; C's whole chain was materialised before C. If B is on C's chain we have a
+; contradiction, since B was pushed BEFORE C. If it is not, then the chain was
+; cut at some activation that received no frame — and by (2) nothing below
+; that cut can reach B either, so C's subtree could not have forced B at all,
+; contradicting that B is materialised and live. Hence B is on top. ∎
+;
+; ★The cut in that last step is real and deliberate: elide_unused_pages passes
+; null instead of a frame to callees that never use theirs. That stays sound
+; exactly because "use" counts PASSING IT ON — a function that cannot force
+; its caller's frame cannot hand it to anyone who could.
+;
+; Allocation-free (no $/#/for-in), like every function on the allocator path:
+; the emitter would otherwise recurse into it while emitting it (module
+; header). The recursion is bounded by the chain depth (measured maximum 49 on
+; the DSSSL engine, 12 on a 13.7 MB parse) and unwinds to a plain loop under
+; opt/LTO.
+procedure scaly_force_frame(mutable f: pointer[Frame]) returns pointer[Page] linked
+
+; Release this frame's page if it was ever forced. A no-op otherwise — a
+; function whose region nobody demanded pays a load and a compare on the way
+; out. Clears before releasing for the same reason the slot version does: an
+; epilogue that runs twice must not release the same root page twice.
+procedure scaly_release_frame(mutable f: pointer[Frame]) linked
+
+; --------------------------------------------------------------------------
+; Panic unwinding: giving the region stack back when control LEAVES by a jump
+; (TRAPS.md 0 and 5). Nothing calls this yet -- the catch point that will is
+; still to be built -- but the two halves it needs exist, and they are here
+; rather than in the eventual catch machinery because this file owns the
+; release side of the region stack.
+;
+; ★★★Why a WATERMARK and not a walk of the frame chain: a `Frame` lives on the
+; C stack of the function that owns it and is reached only child->parent
+; (scaly_force_frame above), so from a catch point there is no way DOWN to its
+; descendants. But every forced frame's page comes from the thread's
+; StackBucket via Page.allocate_root_page, and that is a STACK with one top
+; (`stack_top`). So the catch point records the top, and the unwind pops back
+; to it. This is the same shape as dazzle's frame mark.
+;
+; ★★★And it must POP rather than assign: scaly_release_root_page enforces
+; strict LIFO and abort()s on a mismatch, so overwriting `stack_top` would
+; skip the extension chains and the exclusive pages that
+; scaly_release_root_page_full frees -- the leak the LIFO check exists to
+; catch. Cost is one full release per frame that was actually FORCED, which is
+; what a normal return would have paid anyway; the jump only moves WHEN.
+;
+; ★A `longjmp` skips every epilogue between the trap and the catch point, so
+; the scaly_release_frame calls of the skipped frames never run. That is
+; exactly what this replaces -- and it is safe because those frames are gone
+; with the stack they lived on, so nothing can release the same page twice.
+
+; The watermark a catch point records before it runs guarded code.
+function scaly_panic_mark() returns pointer[Page] linked
+
+; Root pages this thread gave back through a panic unwind — the proof that
+; they came back at all, in the shape cmscratch and framemark use.
+mutable panic_pages_unwound: i64 linked
+
+function scaly_panic_pages_unwound() returns i64 linked
+
+; Pop the region stack back to `mark`, releasing each root page in full.
+; A mark of null unwinds the whole stack; a mark that is already the top is a
+; no-op, so a catch point in the same frame as the trap costs nothing.
+procedure scaly_panic_unwind_to(mark: pointer[Page]) linked
+
+; --------------------------------------------------------------------------
+; SCALY_TRACE_ROOT diagnostic: per-function push/pop counters. Off by
+; default; armed on the first push/pop if $SCALY_TRACE_ROOT is set at
+; that moment. The atexit dump reports any function whose push/pop
+; counts don't balance (indicating a missed release path).
+; --------------------------------------------------------------------------
+
+procedure scaly_trace_dump() linked
+
+procedure scaly_rt_register_trace() linked
+
+function scaly_trace_find_or_add(name: pointer[const_char]) @page true @direct true returns ref[TraceEntry]? linked
+
+procedure scaly_trace_push(mutable name: pointer[const_char]) linked
+
+procedure scaly_trace_pop(mutable name: pointer[const_char]) linked
+
+; --------------------------------------------------------------------------
+; SCALY_TRACE_HEAP diagnostic: per-site alloc/release counters for
+; HeapBucket pages. SCALY_TRACE_ROOT above never actually fires — it would
+; need the Emitter to synthesize a push/pop call at every function's
+; prologue/epilogue with that function's own name, and that instrumentation
+; was never carried over from the retired C++ stage-0 into the self-hosted
+; Emitter, so trace_push/trace_pop are presently uncalled dead code. Heap
+; pages have no such automatic naming opportunity anyway — they're pulled
+; from ordinary function bodies (Page.allocate_page_traced /
+; release_page_traced, Page.scaly), so each call site hand-labels itself
+; with a `site` string instead. Off by default; armed on the first
+; alloc/release if $SCALY_TRACE_HEAP is set at that moment. Shares
+; TraceEntry/TRACE_MAX with the root-page table above but keeps its own
+; state — heap-page churn rate has nothing to do with root-page churn, and
+; mixing the two tables would make an "all balanced" report ambiguous
+; about which kind of page it covers.
+;
+; The table is PROCESS-global (`shared` globals, HeapTraceHeader above) so
+; a cross-thread alloc/release pair balances — the spawn-cell pattern
+; (alloc in Thread.spawn on the spawner, release in scaly_thread_start on
+; the child) is the NORM for traced pages, and per-thread tables reported
+; every such pair as a phantom leak. Arming is race-free WITHOUT atomics:
+; a thread only exists because some earlier Thread.spawn ran, and spawn's
+; first act is a traced alloc — so by induction the process's first traced
+; call (which decides armed/disabled) runs while the process is still
+; single-threaded, and pthread_create publishes the decided state to every
+; later thread. Post-arming mutations go under the header's spinlock;
+; atexit is registered exactly once, during arming.
+; --------------------------------------------------------------------------
+
+; 0 = unarmed, 1 = armed-disabled (env var absent), 2 = armed-enabled.
+shared heap_trace_state: u64 linked
+shared heap_trace: pointer[HeapTraceHeader] linked
+
+procedure scaly_heap_trace_dump() linked
+
+procedure scaly_rt_register_heap_trace() linked
+
+; bucket_lock-style spinlock over the trace table (find-or-add + counter
+; bumps are a few instructions; contention needs two threads tracing at
+; the same instant, so a bare spin is fine).
+procedure heap_trace_lock(hdr: pointer[HeapTraceHeader]) linked
+
+procedure heap_trace_unlock(hdr: pointer[HeapTraceHeader]) linked
+
+; Caller holds hdr's lock.
+procedure scaly_heap_trace_find_or_add(mutable hdr: ref[HeapTraceHeader], name: pointer[const_char]) @page true @direct true returns ref[TraceEntry]? linked
+
+procedure scaly_heap_trace_alloc(mutable site: pointer[const_char]) linked
+
+procedure scaly_heap_trace_release(mutable site: pointer[const_char]) linked
+

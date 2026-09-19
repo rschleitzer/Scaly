@@ -1,0 +1,311 @@
+; storelens.scaly - textDocument/codeLens: a `set` that writes a value CARRYING
+; A REGION BUFFER through a pointer parameter, in a routine that has no page to
+; pin it on.
+;
+; ★★★THE HAZARD, reproduced end to end on 2026-08-14. Two programs, one keyword
+; apart:
+;
+;     function fill(out: pointer[Holder], n: int) returns bool
+;     {
+;         let s String("hello")
+;         set *out: Holder(s)
+;         true
+;     }
+;
+; The caller reads back `XXXXXXXXXXXXXXXX` — whatever the released page was
+; handed to next. Write `function fill(rp, out: ...)` and the same program
+; prints `hello`. Both compile with rc 0 and neither says a word.
+;
+; ★★★WHY, and this is the fact the whole family is built on. The planner DID
+; notice: it gave the String a CALLER-PAGE lifetime, which is the right answer.
+; But `fill` has no page parameter, so at emission there is no caller page to
+; allocate from, and the request falls back to this function's OWN frame —
+;
+;     %forced_page  = call @scaly_force_frame(ptr %frame)      <- own frame
+;     %struct.region = call @Page.allocate(%forced_page, ...)
+;     store { ptr } %field.load, ptr %name                     <- written upwards
+;     call @scaly_release_frame(ptr %frame)                    <- and freed
+;
+; — while the `rp` version allocates from `%0`, the caller's page. The escape
+; checker does not object because it is FIELD-INSENSITIVE: what escapes is the
+; inner buffer of a by-value String field of a by-value struct, written through
+; a pointer. CLAUDE.md's out-param entry says such a function "must be checked
+; by hand"; this family is what tells the hand where to look.
+;
+; ★★★THE RETURN HALF OF THAT DOCTRINE IS REFUTED, which is why no lens here says
+; anything about a return, and why "return-page warning" would be the wrong name
+; for this. Measured the same day, three ways:
+;   * `function f(...) returns StringC   StringC(a, b)` emits
+;     `scaly_force_frame(%1)` — the CALLER's page — constructs into it and
+;     memcpys to the sret slot. The sret slot is never the init's `this`, so the
+;     `Page.get(<sret slot>)` story does not happen.
+;   * the real `StringC.substr`, named in CLAUDE.md as THE instance of that bug,
+;     does exactly that in today's tree.
+;   * a String returned through TWO frames is not copied at all: the middle
+;     function passes its own `_rp` straight down, so the value is built on the
+;     outermost caller's page.
+; And across the whole opensp package, of 314 constructors that allocate through
+; `Page.get(this)` — the ordinary container idiom, not an exception — ZERO call
+; sites hand one a stack alloca. A RETURN is safe; the STORE is the live class.
+;
+; ★A MARKER, NOT A VERDICT. A marked store is one whose buffer CANNOT be pinned
+; in this routine, not one that is proven to dangle: a value that arrived as an
+; argument is on the caller's page already and is perfectly safe to store.
+; Deciding which is which means tracing the stored value back to its
+; construction, exact only for the simplest shape and guesswork for a nested
+; construction, a call result or an alias — and a plausible-looking wrong
+; verdict is worse than none (tasklens.scaly's rule, for its reason). So the
+; title states the MECHANISM and names the parameter.
+;
+; ★THREE NARROWINGS. The first draft put 133 lenses on ONE file
+; (packages/dazzle/0.1.0/dazzle/Style.scaly); with all three it puts 15 there
+; and 11 on opensp's Parser.scaly. ★★Each was then removed ON ITS OWN and
+; re-measured, because the first version of this comment credited the cut to the
+; wrong one — the page-parameter guard reads like the decisive filter and turns
+; out to remove NOTHING from either file:
+;
+;   DECLARED HERE — the big cut (Style 123 -> 15, Parser 23 -> 11).
+;   `plan.functions` is ONE FLAT VECTOR for the whole root and a Span is a bare
+;   pair of byte offsets, so walking all of it collects offsets from every file
+;   of the package and draws them into THIS one. That was the first version, and
+;   it put "writes StringC" on `set done: true`. A function is only walked when
+;   its `loc.start` is a `function`/`procedure` keyword in this text AND the name
+;   there is its own (instlens.scaly's join, same collision residual: two files
+;   with a routine of the same name at the same offset).
+;
+;   THE SOURCE MUST NOT SETTLE IT (Style 20 -> 15, Parser 26 -> 11).
+;   source_settled# has the three cases.
+;
+;   NO PAGE PARAMETER — cuts NOTHING on either file, and is load-bearing anyway.
+;   A routine that HAS one can pin (`String^host(...)`, `T#(...)`), so the same
+;   store there is an ordinary, answerable decision; without one there is nothing
+;   to pin onto, which is exactly what makes the fixture above dangle. That it
+;   removes no site here is a fact ABOUT THIS TREE — every one of the 26 marked
+;   stores is already in a page-less routine — not a reason to drop the guard:
+;   drop it and the `rp` twin of the fixture is marked too, which is the gate's
+;   counter-control for it.
+;
+; ★And the SWEEP in that gate had the same disease as this comment, found the
+; same way: its first version asked only whether a marked line holds a `set` and
+; sits in a page-less routine, and it stayed GREEN with `declared_here` removed
+; and 41 foreign offsets drawn in. It could not fail — the anchoring maps every
+; offset to the nearest PRECEDING `set` site, so "is a `set` line" is true by
+; construction. It asks about ATTRIBUTION now (the parameter the title names must
+; be a parameter of the enclosing routine and must appear in the store's target),
+; which is what actually separates a correct mark from a foreign one.
+;
+; SCOPE, stated because it is narrower than "everything that can dangle":
+;   * The buffer types are `String` and `StringC` BY NAME — the two CLAUDE.md's
+;     rule names — reached through by-value struct fields, transitively (an
+;     `ExternalId` carrying two Strings counts, and says so).
+;   * A property that is itself a `pointer[T]`/`ref[T]` is NOT followed: a
+;     frame-allocated object reached through a plain pointer field is the same
+;     class and is not covered. Following pointers would mark nearly every store
+;     in the tree.
+;   * Unions are not walked (only `plan.structures`), so a variant payload
+;     carrying a String is missed.
+;   * Only `plan.functions` — every `function` and `procedure` of the root,
+;     methods included. An operator or an initializer is missed.
+;   * A truncated plan (a root with hard diagnostics) yields FEWER sites, never
+;     wrong ones. Absence is not a claim of safety, which is the one thing a
+;     reader must not read into it.
+;
+; ANCHORING is tasklens.scaly's rule: the plan's offsets index the text the plan
+; was built from (disk, for a package member) while the lens is drawn in the
+; BUFFER, so the two `set`-keyword site sets are paired IN ORDER and a count
+; mismatch answers NOTHING. `set` is a keyword with exactly one use, like `for`,
+; so a `set` token in code always opens an assignment. A PlannedAction carries
+; the span of its SOURCE's first operand (Planner.scaly's `action_loc`, chosen
+; there for -g line info) and never of the keyword, so each flagged offset is
+; mapped to the `set` site that PRECEDES it.
+;
+; ASCII ONLY in the titles, and no command id — there is nothing to click.
+;
+; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no else).
+; One statement per line. Quotes are 0x22 bytes.
+
+use scaly.memory.runtime
+
+use scalyls.symbols
+use scalyls.instlens
+use scalyls.json
+
+; Model.* is not optional: `Span` lives in Model.scaly, and without it visible
+; the emitter cannot lay `loc` out — `act.loc.start` then fails with
+; `member not found: Span.start` (the dangling-member trap, exit 16).
+use scalyc.compiler.Model.*
+use scalyc.compiler.Plan.*
+
+define storelens
+{
+    ; The store lenses as a COMMA-JOINED FRAGMENT, or "". The plan is the
+    ; caller's — codelens.scaly plans once for every plan-derived family.
+    procedure fragment(rp, plan: Plan, plan_text: String, anchor_text: String) @direct true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+
+    ; ====================================================================
+    ; The walk. One blob line per flagged store:
+    ;     <offset>\t<parameter>\t<stored type>\t<carrier>\n
+    ; It mirrors placehints.scaly's walk arm for arm — same fields, same order,
+    ; and it never prunes, because an operand's children are not inside its own
+    ; span (plan-spans-are-not-a-tree).
+    ;
+    ; The two guards are the first two narrowings from the header, and they sit
+    ; HERE rather than at the store because both are properties of the routine:
+    ; a `page_parameter` means the author has a page to pin onto, and
+    ; `declared_here` is the file filter without which the flat function vector
+    ; draws other files' offsets into this one.
+    ; ====================================================================
+    function collect(rp, plan: Plan, plan_text: String) @direct true returns String linked
+
+    function declared_here(plan_text: String, fn: PlannedFunction) returns bool linked
+
+    ; The routine's pointer/ref parameters as "\n<name>\n" runs, so membership is
+    ; one `contains` and no container has to be threaded through the walk. (An
+    ; Array grown through a pointer from a callee is the documented worker-killer:
+    ; `Array.add` reallocates via `Page.get(this)` on a receiver that is not
+    ; page-hosted — placehints.dedupe# has the account.)
+    ;
+    ; `PlannedType.name` for a pointer is the bare word "pointer" with the
+    ; pointee in `generics[0]` (Planner.get_readable_name#), so this is an exact
+    ; test and not a prefix match on a rendered name.
+    function pointer_params(rp, fn: PlannedFunction) @direct true returns String linked
+
+    procedure collect_impl(mutable sb: ref[StringBuilder], plan: Plan, params: String, impl: PlannedImplementation) linked
+
+    ; The one place that decides. A function BODY is also a PlannedAction, and
+    ; so is a for/while/repeat body — all of them target-less, which is what
+    ; keeps them out of here without a special case.
+    procedure collect_action(mutable sb: ref[StringBuilder], plan: Plan, params: String, act: PlannedAction) linked
+
+    ; True when the store needs no marking because the SOURCE settles the
+    ; question on the line itself. Three cases, all exact and all measured:
+    ;
+    ;   `set *out: StringC^host(...)`     the author pinned it HERE. Whether
+    ;                                     `host` outlives the caller is not
+    ;                                     something this family can judge, but
+    ;                                     the decision has visibly been made and
+    ;                                     re-asking is noise. Detected as
+    ;                                     Lifetime.Reference, the `^name` life.
+    ;   `set *out_id: ExternalId()`       a construction with NO arguments builds
+    ;                                     an empty value: String/StringC's
+    ;                                     zero-arg init sets `data: null` and
+    ;                                     allocates nothing.
+    ;   `set *out: Holder(String())`      and therefore, RECURSIVELY, so does a
+    ;                                     construction all of whose arguments are
+    ;                                     themselves settled. This third case is
+    ;                                     not a refinement of the second, it is
+    ;                                     the second one level up, and leaving it
+    ;                                     out marked a store of an empty Holder
+    ;                                     (found by the gate's quiet fixture).
+    ;
+    ; A CONSTANT settles too — a number or a literal carries no region buffer of
+    ; its own. Anything else — a bare name, a call result, a construction with a
+    ; non-settled argument — is not settled here and gets its lens.
+    ;
+    ; The depth cap is a loop guard, for dedupe#'s reason: a plan must not be
+    ; able to spin the worker.
+    function source_settled(source: ref[Vector[PlannedOperand]]?) returns bool linked
+
+    function operand_settled(op: PlannedOperand, depth: int) returns bool linked
+
+    ; The pointer parameter this store writes THROUGH, or "".
+    ;
+    ; A `set` target is an lvalue chain — `*p`, `p.f`, `(*p).f`, `p[i].f` — so
+    ; ANY Variable in it that names a pointer parameter means the store lands in
+    ; that parameter's pointee. Deliberately an over-approximation of the chain
+    ; ROOT (which would mean modelling the deref operator's call shape); the only
+    ; way it could differ is a pointer parameter used as a SUBSCRIPT, which is
+    ; not a thing an index can be.
+    function target_param(rp, target: ref[Vector[PlannedOperand]]?, params: String) @direct true returns String linked
+
+    function param_in_operand(rp, op: PlannedOperand, params: String) @direct true returns String linked
+
+    ; Only the arms an lvalue chain can be built from are walked: a Variable is
+    ; the answer, a Call is the deref/subscript operator (its receiver sits in
+    ; the arguments), and an As is a cast. Everything else answers "".
+    function param_in_expr(rp, expr: PlannedExpression, params: String) @direct true returns String linked
+
+    ; ====================================================================
+    ; Does this type carry a region buffer BY VALUE?
+    ;
+    ; Answers the buffer type's name ("String" / "StringC") or "". A property
+    ; that is itself a pointer/ref is not followed — see the SCOPE note at the
+    ; top; the depth cap is a loop guard (a struct cannot contain itself by
+    ; value, but a truncated plan must not be able to spin the worker), and it
+    ; also bounds the cost, since each level rescans plan.structures.
+    ; ====================================================================
+    function carrier_of(rp, plan: Plan, ty: PlannedType, depth: int) @direct true returns String linked
+
+    ; The mangled name is the precise key (it distinguishes two instantiations of
+    ; one generic); the readable name is the fallback for a type planned without
+    ; one.
+    function structure_matches(st: PlannedStructure, ty: PlannedType) returns bool linked
+
+    function carrier_in_properties(rp, plan: Plan, st: PlannedStructure, depth: int) @direct true returns String linked
+
+    ; ====================================================================
+    ; The rest of the walk — the arms that only recurse.
+    ; ====================================================================
+
+    procedure collect_statement(mutable sb: ref[StringBuilder], plan: Plan, params: String, stmt: PlannedStatement) linked
+
+    procedure collect_statement_opt(mutable sb: ref[StringBuilder], plan: Plan, params: String, opt: ref[PlannedStatement]?) linked
+
+    procedure collect_operands_opt(mutable sb: ref[StringBuilder], plan: Plan, params: String, opt: ref[Vector[PlannedOperand]]?) linked
+
+    procedure collect_operand_opt(mutable sb: ref[StringBuilder], plan: Plan, params: String, opt: ref[PlannedOperand]?) linked
+
+    procedure collect_expr(mutable sb: ref[StringBuilder], plan: Plan, params: String, expr: PlannedExpression) linked
+
+    ; ====================================================================
+    ; The blob.
+    ; ====================================================================
+
+    procedure emit_site(mutable sb: ref[StringBuilder], offset: size_t, param: String, stored: String, carrier: String) linked
+
+    ; DEDUPE BY OFFSET, as a second pass over the finished blob — a generic body
+    ; is planned once per instantiation, so one source store is reached many
+    ; times. Same shape and same reason as placehints.dedupe#, including why it
+    ; is a second pass over a String rather than a set threaded through the walk.
+    function dedupe(rp, blob: String) @direct true returns String linked
+
+    ; Is a line with the same leading OFFSET field already kept?
+    function has_line(kept: String, line: String) returns bool linked
+
+    ; ====================================================================
+    ; Rendering: one lens per blob line, drawn at the BUFFER's `set` site of the
+    ; same index as the plan text's.
+    ; ====================================================================
+    procedure render(rp, blob: String, plan_text: String, anchor_text: String) @direct true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+
+    procedure lens_for(rp, line: String, plan_text: String, anchor_text: String) @direct true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+
+    ; The n-th TAB-separated field of `line`, or "".
+    function field_at(rp, line: String, n: size_t) @direct true returns String linked
+
+    function parse_size(digits: String) returns size_t linked
+
+    ; ====================================================================
+    ; The `set`-site scanner. `set` is a keyword with exactly one use in the
+    ; language, so a `set` TOKEN in code always opens an assignment — no parse
+    ; needed, which is what keeps the pairing usable on a buffer that does not
+    ; parse. Comments and string literals are skipped wholesale
+    ; (symbols.skip_noncode#), exactly as tasklens.scaly's `for` scan does, and
+    ; for the same reason: a "set" inside a comment would shift every later
+    ; index by one.
+    ; ====================================================================
+
+    function next_set_site(source: String, from: size_t) returns size_t linked
+
+    function count_set_sites(source: String) returns size_t linked
+
+    ; The index of the `set` site at or before `offset`, or -1 when the offset
+    ; precedes every one of them.
+    function set_index_at(source: String, offset: size_t) returns int linked
+
+    function set_site_at_index(source: String, idx: int) returns size_t linked
+
+    ; Is source[k..] the keyword `set` on both token boundaries? A bare `set` at
+    ; EOF is not an assignment (it needs a target), so k+3 must exist.
+    function is_set_token(source: String, k: size_t, len: size_t) returns bool linked
+}

@@ -1,0 +1,381 @@
+; Modeler.scaly - Syntax to semantic model transformation
+; Ported from retired proto-Scaly Modeler.scaly
+
+package scaly 0.1.0
+
+use scaly.memory.root_pages.getenv
+; scaly.io imports are load-bearing beyond visibility: the use alias
+; feeds the dotted-call extern-decl gate (typed declarations for
+; cross-package File./Path. calls instead of varargs fallbacks).
+use scaly.os.File
+use scaly.os.Path
+use scaly.os.Console
+
+use scalyc.compiler.lexer.*
+use scalyc.compiler.parser.*
+use scalyc.compiler.Syntax.*
+use scalyc.compiler.Model.*
+
+; Count of sub-module load failures (a `module foo` / package / prelude whose
+; file failed to PARSE). build_referenced_module used to swallow such a parse
+; error and return an empty stub module, so the real syntax error vanished and
+; re-surfaced downstream as a misleading planner "not found" in the wrong file.
+; It now reports the real error against the sub-module's own file:line:col and
+; bumps this counter; cli.run checks Modeler.had_errors() after build_program
+; and fails the compile (rc 2) before the planner runs. Module scope (mutable
+; globals are rejected inside a namespace body).
+mutable modeler_error_count: size_t linked
+
+
+define Modeler
+{
+    ; ============================================================================
+    ; Literal/Constant handling
+    ; ============================================================================
+
+    ; libc float parsing for FloatingPointLiteral (exact, correctly rounded;
+    ; a hand-rolled digit walk would accumulate error).
+    ; `endptr` is `char **` in C, not `void *`. dazzle/Interpreter.scaly declares
+    ; the same symbol `pointer[pointer[u8]]`; two declarations of one C symbol
+    ; must not disagree (tests/abi/run.sh check 3 cannot see it -- both lower to
+    ; a bare `ptr`).
+    function strtod(nptr: pointer[const_char], endptr: pointer[pointer[u8]]) returns double extern
+
+    ; Decode the escape sequences the lexer validated in a string literal's
+    ; raw payload: \" \\ \' \n \r \t \0 and \uXXXX (UTF-8 encoded). A literal
+    ; without a backslash returns the payload unchanged.
+    function decode_escapes(raw: String) @page true @direct true returns String linked
+
+    procedure handle_literal(mutable syntax: LiteralSyntax) @page true @direct true returns Constant linked
+
+    ; ============================================================================
+    ; Lifetime handling
+    ; ============================================================================
+
+    function handle_lifetime(syntax: ref[LifetimeSyntax]?) @page true @direct true returns Lifetime linked
+
+    ; ============================================================================
+    ; Type handling
+    ; ============================================================================
+
+    function handle_type(syntax: TypeSyntax) @page true @direct true returns ref[Type]? linked
+
+    function handle_binding_annotation(annotation: BindingAnnotationSyntax) @page true @direct true returns ref[Type]? linked
+
+    ; ============================================================================
+    ; Object/Tuple handling
+    ; ============================================================================
+
+    procedure handle_object(mutable syntax: ObjectSyntax) @page true @direct true returns Tuple io mutable modeler_error_count reads modeler_error_count linked
+
+    procedure handle_component(mutable syntax: ComponentSyntax) @page true @direct true returns Component io mutable modeler_error_count reads modeler_error_count linked
+
+    ; ============================================================================
+    ; Vector/Matrix handling
+    ; ============================================================================
+
+    ; wrap_row_in_option: `[<row>?]` -> the operand row for `Option[<row>]`.
+    ; Two cells, which is the shape a nested generic argument already has:
+    ; a bare Type naming Option, then a Matrix holding the original row as its
+    ; single row. Static because it builds only from its arguments.
+    function wrap_row_in_option(row: Vector[Operand], span: Span) @page true @direct true returns Vector[Operand] linked
+
+    procedure handle_vector(mutable syntax: VectorSyntax) @page true @direct true returns Matrix io mutable modeler_error_count reads modeler_error_count linked
+
+    ; ============================================================================
+    ; Block handling
+    ; ============================================================================
+
+    procedure handle_block(mutable syntax: BlockSyntax) @page true @direct true returns Block io mutable modeler_error_count reads modeler_error_count linked
+
+    ; ============================================================================
+    ; String interpolation
+    ; ============================================================================
+
+    ; True iff a string literal's raw payload contains an unescaped backtick —
+    ; the marker that embeds an expression ("The answer is `n`!"). Escape-aware:
+    ; a backslash consumes the following byte, so an escaped backtick never
+    ; triggers interpolation.
+    function string_has_interpolation(raw: String) returns bool linked
+
+    ; Desugar an interpolated string literal into the block callers write by
+    ; hand today:
+    ;     {
+    ;         let 'isb$' StringBuilder()
+    ;         'isb$'.append("The answer is ")
+    ;         'isb$'.append((my_answer))
+    ;         'isb$'.append("!")
+    ;         'isb$'.to_string()
+    ;     }
+    ; The synthesized source re-parses and models like user code, so embedded
+    ; expressions get full planner treatment and StringBuilder.append overloads
+    ; pick the conversion by type (String, char, pointer[const_char], int,
+    ; size_t, bool). Literal segments embed VERBATIM — their escapes decode
+    ; later when the sub-parsed literal runs through handle_literal. The builder
+    ; name is a string identifier so an embedded expression can never resolve to
+    ; it by accident. On a malformed payload the error is reported through
+    ; modeler_error_count (cli fails the compile) and the literal is returned
+    ; verbatim so modeling continues.
+    procedure handle_interpolated_string(mutable syntax: LiteralSyntax, raw: String) @page true @direct true returns Expression io mutable modeler_error_count reads modeler_error_count linked
+
+    ; ============================================================================
+    ; Expression handling
+    ; ============================================================================
+
+    procedure handle_expression(mutable syntax: ExpressionSyntax) @page true @direct true returns Expression io mutable modeler_error_count reads modeler_error_count linked
+
+    function handle_as(syntax: AsSyntax) @page true @direct true returns scaly.compiler.Model.As linked
+
+    ; Lambda: each input operand should be a simple name; we build an Item
+    ; per operand with no type annotation (type inferred from context).
+    procedure handle_lambda(mutable syntax: LambdaSyntax) @page true @direct true returns Lambda io mutable modeler_error_count reads modeler_error_count linked
+
+    procedure handle_repeat(mutable syntax: RepeatSyntax) @page true @direct true returns Repeat io mutable modeler_error_count reads modeler_error_count linked
+
+    ; ============================================================================
+    ; Control flow handling
+    ; ============================================================================
+
+    procedure handle_if(mutable syntax: IfSyntax) @page true @direct true returns If io mutable modeler_error_count reads modeler_error_count linked
+
+    procedure handle_match(mutable syntax: MatchSyntax) @page true @direct true returns Match io mutable modeler_error_count reads modeler_error_count linked
+
+    procedure handle_branch(mutable syntax: BranchSyntax) @page true @direct true returns Branch io mutable modeler_error_count reads modeler_error_count linked
+
+    procedure handle_case(mutable syntax: CaseSyntax) @page true @direct true returns Case io mutable modeler_error_count reads modeler_error_count linked
+
+    procedure handle_choose(mutable syntax: ChooseSyntax) @page true @direct true returns Choose io mutable modeler_error_count reads modeler_error_count linked
+
+    procedure handle_when(mutable syntax: WhenSyntax) @page true @direct true returns When io mutable modeler_error_count reads modeler_error_count linked
+
+    procedure handle_action(mutable syntax: ActionSyntax) @page true @direct true returns Action io mutable modeler_error_count reads modeler_error_count linked
+
+    procedure handle_for(mutable syntax: ForSyntax) @page true @direct true returns For io mutable modeler_error_count reads modeler_error_count linked
+
+    procedure handle_while(mutable syntax: WhileSyntax) @page true @direct true returns While io mutable modeler_error_count reads modeler_error_count linked
+
+    procedure handle_condition(mutable syntax: ConditionSyntax) @page true @direct true returns Binding io mutable modeler_error_count reads modeler_error_count linked
+
+    procedure handle_try(mutable syntax: TrySyntax) @page true @direct true returns Try io mutable modeler_error_count reads modeler_error_count linked
+
+    ; ============================================================================
+    ; Type operation handling
+    ; ============================================================================
+
+    function handle_sizeof(syntax: SizeOfSyntax) @page true @direct true returns SizeOf linked
+
+    function handle_alignof(syntax: AlignOfSyntax) @page true @direct true returns scaly.compiler.Model.AlignOf linked
+
+    function handle_is(syntax: IsSyntax) @page true @direct true returns Is linked
+
+    ; ============================================================================
+    ; Operand handling
+    ; ============================================================================
+
+    procedure handle_operand(mutable syntax: OperandSyntax) @page true @direct true returns Operand io mutable modeler_error_count reads modeler_error_count linked
+
+    procedure handle_operands(mutable syntax: ref[Vector[OperandSyntax]]?) @page true @direct true returns Vector[Operand] io mutable modeler_error_count reads modeler_error_count linked
+
+    procedure handle_operation(mutable syntax: OperationSyntax) @page true @direct true returns Vector[Operand] io mutable modeler_error_count reads modeler_error_count linked
+
+    ; ============================================================================
+    ; Statement handling
+    ; ============================================================================
+
+    function handle_binding_item(syntax: BindingSyntax) @page true @direct true returns Item linked
+
+    procedure handle_command(mutable syntax: StatementSyntax) @page true @direct true returns Statement io mutable modeler_error_count reads modeler_error_count linked
+
+    procedure handle_statement(mutable syntax: StatementSyntax) @page true @direct true returns Statement io mutable modeler_error_count reads modeler_error_count linked
+
+    procedure handle_statements(mutable syntax: ref[Vector[StatementSyntax]]?) @page true @direct true returns Vector[Statement] io mutable modeler_error_count reads modeler_error_count linked
+
+    function is_statement_like_expression(expr: ExpressionSyntax) returns bool linked
+
+    ; ============================================================================
+    ; Item and Property handling
+    ; ============================================================================
+
+    function handle_item(is_private: bool, syntax: ItemSyntax) @page true @direct true returns Item linked
+
+    procedure handle_property(is_private: bool, mutable syntax: PropertySyntax) @page true @direct true returns Property io mutable modeler_error_count reads modeler_error_count linked
+
+    ; ============================================================================
+    ; Attribute handling
+    ; ============================================================================
+
+    procedure handle_attribute(mutable syntax: AttributeSyntax) @page true @direct true returns Attribute io mutable modeler_error_count reads modeler_error_count linked
+
+    procedure handle_model(mutable syntax: ModelSyntax) @page true @direct true returns Model io mutable modeler_error_count reads modeler_error_count linked
+
+    ; ============================================================================
+    ; Use handling
+    ; ============================================================================
+
+    function handle_use(syntax: UseSyntax) @page true @direct true returns Use linked
+
+    ; ============================================================================
+    ; Generic parameter handling
+    ; ============================================================================
+
+    function handle_generic_parameter(syntax: GenericParameterSyntax) @page true @direct true returns GenericParameter linked
+
+    ; ============================================================================
+    ; Parameter handling
+    ; ============================================================================
+
+    ; Model a `define NAME delegate(params) returns T throws E` concept (GAP B).
+    ; The delegate names a function (closure) type; the parameter Items and the
+    ; return type drive both lambda monomorphization against this signature and the
+    ; LLVM function type used at indirect call sites.
+    function handle_delegate(name: String, syntax: DelegateSyntax) @page true @direct true returns Delegate linked
+
+    function handle_parameter_set(syntax: ParameterSetSyntax) @page true @direct true returns Vector[Item] linked
+
+    ; ============================================================================
+    ; Implementation handling
+    ; ============================================================================
+
+    procedure handle_implementation(mutable syntax: ImplementationSyntax) @page true @direct true returns Implementation io mutable modeler_error_count reads modeler_error_count linked
+
+    ; ============================================================================
+    ; Function building
+    ; ============================================================================
+
+    procedure build_function(start: size_t, end_pos: size_t, mutable syntax: TargetSyntax, is_private: bool, pure: bool) @page true @direct true returns Function io mutable modeler_error_count reads modeler_error_count linked
+
+    ; ============================================================================
+    ; Operator handling
+    ; ============================================================================
+
+    procedure handle_operator(mutable syntax: OperatorSyntax, is_private: bool) @page true @direct true returns Operator io mutable modeler_error_count reads modeler_error_count linked
+
+    ; ============================================================================
+    ; Initializer handling
+    ; ============================================================================
+
+    ; True when `t` is exactly `pointer[Page]` (or `pointer[scaly.memory.Page]`),
+    ; the typed form of the implicit init page parameter. Used to peel a
+    ; de-sigiled `init(page: pointer[Page], ...)` exactly like `init#(page, ...)`.
+    function type_is_pointer_page(t: Type) returns bool linked
+
+    procedure handle_initializer(mutable syntax: InitSyntax, is_private: bool) @page true @direct true returns Initializer io mutable modeler_error_count reads modeler_error_count linked
+
+    procedure handle_deinitializer(mutable syntax: DeInitSyntax) @page true @direct true returns ref[DeInitializer]? io mutable modeler_error_count reads modeler_error_count linked
+
+    ; ============================================================================
+    ; Variant handling (for unions)
+    ; ============================================================================
+
+    function handle_variant(syntax: VariantSyntax) @page true @direct true returns Variant linked
+
+    ; ============================================================================
+    ; Class/Structure handling
+    ; ============================================================================
+
+    procedure handle_class(name: String, mutable path: String, mutable syntax: ClassSyntax, is_private: bool) @page true @direct true returns Structure io mutable modeler_error_count reads modeler_error_count linked
+
+    procedure handle_constituent(mutable path: String, mutable syntax: MemberSyntax, mutable symbols_builder: ref[HashMapBuilder[String, Nameable]]) @page true @direct true returns Member io mutable modeler_error_count reads modeler_error_count linked
+
+    ; ============================================================================
+    ; Namespace handling
+    ; ============================================================================
+
+    procedure handle_namespace(name: String, mutable path: String, mutable syntax: NamespaceSyntax, is_private: bool) @page true @direct true returns Namespace io mutable modeler_error_count reads modeler_error_count linked
+
+    procedure handle_declaration(mutable path: String, mutable syntax: DeclarationSyntax, mutable symbols_builder: ref[HashMapBuilder[String, Nameable]]) @page true @direct true returns Member io mutable modeler_error_count reads modeler_error_count linked
+
+    procedure handle_export(mutable path: String, mutable syntax: ExportSyntax, is_private: bool, mutable symbols_builder: ref[HashMapBuilder[String, Nameable]]) @page true @direct true returns Member io mutable modeler_error_count reads modeler_error_count linked
+
+    ; ============================================================================
+    ; Union handling
+    ; ============================================================================
+
+    procedure handle_union(name: String, mutable path: String, mutable syntax: UnionSyntax, is_private: bool) @page true @direct true returns Union io mutable modeler_error_count reads modeler_error_count linked
+
+    ; ============================================================================
+    ; Definition handling
+    ; ============================================================================
+
+    procedure handle_definition(mutable path: String, mutable syntax: DefinitionSyntax, is_private: bool) @page true @direct true returns Concept io mutable modeler_error_count reads modeler_error_count linked
+
+    ; ============================================================================
+    ; Module building
+    ; ============================================================================
+
+    ; Append a child module loaded from <path>/<name>.scaly to `modules`. The
+    ; helper exists in procedure form so the choose-arm in build_module# is a
+    ; single call (works around a stage-0 codegen issue where an in-place
+    ; collection .add inside a choose-arm corrupts the caller's frame).
+    procedure handle_module_decl(path: String, mod_syntax: ModuleSyntax, is_private: bool, mutable modules: ref[Array[Module]]) @page true @direct true io mutable modeler_error_count reads modeler_error_count linked
+
+    ; Format a VersionSyntax payload as "<majorMinor>.<patch>". The lexer
+    ; already formatted majorMinor as "0.1" (FloatingPoint) or "0" (Integer).
+    function format_version(version_ref: ref[VersionSyntax]) @page true @direct true returns String linked
+
+    ; Resolve the base directory that the `packages/` tree lives under. When the
+    ; SCALY_HOME environment variable is set and non-empty, returns "<home>/" so
+    ; the prelude and package modules are found relative to an installed location
+    ; (the `scalyc` wrapper sets SCALY_HOME); otherwise returns "" so resolution
+    ; stays relative to the current directory exactly as before. Keeping the empty
+    ; case byte-identical is what makes the seed self-compile reproduce unchanged.
+    procedure scaly_home_base() @page true @direct true returns String io linked
+
+    ; Try `<base>/<name>/<version>/<name>.scaly`. Returns true and writes the
+    ; loaded module to `out` on success; false otherwise. Out parameter avoids
+    ; constructing an "empty" Module that the caller would have to filter.
+    ; A package with a generated interface (`<dir>/interface/<name>.scaly`,
+    ; tools/interfaces.sh) is loaded through it: every declaration a caller
+    ; needs, generic bodies included, while the other bodies are in the
+    ; package's archive -- what AOT compilation used from the sources anyway.
+    procedure interface_or_source(pkg_path: String, pkg_name: String) @page true @direct true returns String io linked
+
+    procedure handle_package_decl(pkg_syntax: PackageSyntax, mutable packages: ref[Array[Module]]) @page true @direct true io mutable modeler_error_count reads modeler_error_count linked
+
+    ; True when any sub-module failed to load. cli.run gates on this after
+    ; build_program and fails the compile before the planner emits misleading
+    ; downstream diagnostics.
+    procedure had_errors() returns bool reads modeler_error_count linked
+
+    ; Reset at the start of each program build (harmless in a fresh process; keeps
+    ; the counter honest if build_program is ever called more than once).
+    procedure reset_errors() mutable modeler_error_count reads modeler_error_count linked
+
+    ; size_t -> decimal String (self-contained; the Planner has its own copy but
+    ; the Modeler must not depend on the Planner).
+    function num_to_string(n: size_t) @page true @direct true returns String linked
+
+    ; Report a sub-module load failure at its real file:line:col and bump the
+    ; error counter. `offset` is a byte offset into `source` (the sub-module's own
+    ; contents); the line/col walk mirrors cli.print_parse_error's numeric-LF scan.
+    procedure report_module_error(file_path: String, source: String, offset: size_t, message: String) io mutable modeler_error_count reads modeler_error_count linked
+
+    ; A required module file (the prelude, or a declared package's root) could not
+    ; be loaded. Print the message and fail the compile via had_errors() — the
+    ; silent path compiled WITHOUT the standard library and every later use
+    ; surfaced as a misleading "function not found: print" / "unknown identifier".
+    ; Resolution has exactly one base (SCALY_HOME when set, else the current
+    ; directory), so nothing downstream could still find the file.
+    procedure report_load_error(message: String) io mutable modeler_error_count reads modeler_error_count linked
+
+    ; Load and model a sibling module file at <path>/<name>.scaly. On a genuine
+    ; PARSE error the real syntax error is reported (file:line:col) and an empty
+    ; stub is returned so modeling can continue; cli.run then fails the compile via
+    ; had_errors(). A missing/empty file still returns an empty stub silently (an
+    ; absent optional module is not itself an error at this layer).
+    procedure build_referenced_module(path: String, name: String, is_private: bool) @page true @direct true returns Module io mutable modeler_error_count reads modeler_error_count linked
+
+    procedure build_module(mutable path: String, file_name: String, name: String, mutable syntax: FileSyntax, is_private: bool) @page true @direct true returns Module io mutable modeler_error_count reads modeler_error_count linked
+
+    ; ============================================================================
+    ; Program building
+    ; ============================================================================
+
+    procedure build_program(mutable file_name: String, program_name: String, mutable syntax: ProgramSyntax, enable_prelude: bool) @page true @direct true returns Program io mutable modeler_error_count reads modeler_error_count linked
+
+    ; ============================================================================
+    ; Test function
+    ; ============================================================================
+
+    procedure test() returns int io mutable modeler_error_count reads modeler_error_count linked
+}

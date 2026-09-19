@@ -1,0 +1,262 @@
+; diagnostics.scaly - Run a document's text through the Scaly compiler
+; pipeline (parse -> model -> plan; no emitter) and turn the collected
+; errors into an LSP textDocument/publishDiagnostics notification.
+;
+; Sources of diagnostics (mirrors cli.run#'s --plan path):
+;   * parser ParserError.Invalid  -> one diagnostic at its byte offset
+;   * planner.diagnostics         -> the hard, would-be-dropped resolutions
+; The advisory planner.errors array is intentionally ignored (it fires
+; thousands of times benignly during a normal compile).
+;
+; A parse error no longer ENDS the report: the semantic half still runs, from
+; disk for a package member and over a repaired buffer for a standalone
+; document. broken_buffer_report# has both routes and the one thing that
+; was deliberately left out.
+;
+; Envelope:
+;   {"jsonrpc":"2.0","method":"textDocument/publishDiagnostics",
+;    "params":{"uri":<uri>,"diagnostics":[ <diag>... ]}}
+; Each <diag>:
+;   {"range":{"start":{"line":L,"character":C},
+;             "end":{"line":L,"character":C}},
+;    "severity":1,"message":<msg>}
+; LSP line/character are 0-based (one less than cli's 1-based report).
+;
+; ★THE REPLY IS A LIST, one notification per LINE. A package member is planned
+; through its ROOT (package_report#), so the planner answers for EVERY module of
+; that root in one pass — and the answer for every module but the open one used
+; to be computed and thrown away by a `dp.file = path` filter. A file that is not
+; open in the editor then reported nothing, although its diagnostics were already
+; in hand. So the reply now carries the open document's notification FIRST and
+; one notification per sibling module after it, and server.write_notifications#
+; writes each as its own frame.
+;
+; LF is a safe separator because json.quote_string# escapes 0x0A to `\n`: no
+; notification we build can contain a raw one. Paths cannot either.
+;
+; ★CLEAN SIBLINGS ARE REPORTED TOO, with an EMPTY diagnostics array, and that is
+; the whole reason no state is needed anywhere: LSP diagnostics are owned by the
+; server until it says otherwise, so a fixed error must be cleared explicitly. The
+; alternative — remembering which files were last reported and diffing — puts a
+; second, mutable copy of that answer in the parent, where a worker respawn or a
+; server restart makes it wrong. The price is one small notification per module of
+; the root per typing burst; the largest root in this tree has 58 files (~9 KB),
+; against an analysis that costs 0.45-2.45 s, so the message volume is not the
+; term that matters.
+;
+; ★WHAT THIS DOES NOT REACH: the planner is DEMAND-DRIVEN. A routine nothing calls
+; is never planned, so it yields no diagnostics — in a sibling exactly as in the
+; open document. This is not a limit of the fan-out; it is the same limit the
+; single-file report always had, seen across more files.
+;
+; STRING/JSON NOTE: outgoing JSON uses a local StringBuilder appended in
+; place; nested pieces come from String-returning helpers (a StringBuilder
+; passed to a callee to mutate does not propagate). Quotes are 0x22 bytes.
+;
+; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no
+; else). One statement per line. `choose *ptr` does not parse — bind the
+; deref to a local first.
+
+use scaly.memory.runtime
+use scaly.os.File
+use scaly.os.Path
+use scalyls.json
+use scalyls.symbols
+
+; Compiler pipeline (scalyc package).
+use scalyc.compiler.parser
+use scalyc.compiler.Modeler
+use scalyc.compiler.Planner
+use scalyc.compiler.Model.*
+use scalyc.compiler.Plan.*
+use scalyc.compiler.parser.*
+use scalyc.compiler.Syntax.*
+use scalyc.compiler.Planner.*
+use scalyc.compiler.FunctionIndex.*
+use scalyc.compiler.ConceptIndex.*
+
+define diagnostics
+{
+    ; Build a publishDiagnostics notification for `uri` from `text`.
+    procedure publish_diagnostics(rp, mutable uri: String, mutable text: String) @direct true returns String io mutable modeler_error_count reads modeler_error_count linked
+
+    ; Build a publishDiagnostics notification with an EMPTY diagnostics
+    ; array for `uri` — used on textDocument/didClose to clear any
+    ; diagnostics the editor is still showing for a now-closed document.
+    ; Same envelope as publish_diagnostics#, minus the compiler pipeline.
+    function clear_diagnostics(rp, uri: String) @direct true returns String linked
+
+    ; The package root file that owns `path` as a (possibly nested) module,
+    ; or "" when `path` is not a package member.
+    ;
+    ; A module file at <dir>/<name>.scaly is owned by <dir>.scaly — the module
+    ; declarations of X.scaly resolve against the sibling directory X/ (see
+    ; Modeler.build_program's ns_path join). So walking up means: take the
+    ; directory, append ".scaly", and keep going while that file exists.
+    ; packages/opensp/0.1.0/opensp/Dtd.scaly -> packages/opensp/0.1.0/opensp.scaly
+    ; and no further, since packages/opensp/0.1.0.scaly does not exist.
+    ;
+    ; The depth bound is a loop guard, not a semantic limit: nesting in this
+    ; tree is 2 (scalyc/compiler/Planner.scaly), and a symlink cycle in the
+    ; path must not be able to spin the worker.
+    procedure package_root(rp, mutable path: String) @direct true returns String io linked
+
+    ; The program name the compiler would use for `root`: its file name minus
+    ; the .scaly extension (mirrors cli.extract_program_name#).
+    ;
+    ; It NAMES THE ROOT MODULE, so it is part of every module path the strict
+    ; use-visibility check compares against. Passing a placeholder is not
+    ; cosmetic: the sibling modules load and their names resolve, but every one
+    ; of them reports as `defined in <placeholder>.opensp.StringC but not
+    ; visible here` because the file's own `use opensp.StringC.StringC` cannot
+    ; match a path with a foreign root segment. The false positives change
+    ; wording and stay.
+    procedure root_program_name(rp, mutable root: String) @direct true returns String linked
+
+    ; Planner diagnostics for the whole package root `root`, obtained by planning
+    ; it once so that sibling modules resolve.
+    ;
+    ; Returns a REPORT: the comma-separated diagnostic objects for `path` (no
+    ; enclosing brackets), then — separated by LF — one complete
+    ; publishDiagnostics notification per OTHER module file of the root, clean
+    ; ones included (empty array). report_head#/report_tail# split it; the header
+    ; has the reasoning for both halves.
+    ;
+    ; SAVED-STATE NOTE: the modeler reads every module from DISK, so the byte
+    ; offsets these diagnostics carry are relative to the SAVED text of `path`
+    ; — they are mapped to line/character with that same text, never with the
+    ; editor buffer, or an unsaved edit would shift every reported line. The
+    ; consequence is that semantic diagnostics for a package member reflect the
+    ; file as last saved. That is the same bargain symindex.scaly already
+    ; documents for workspace/symbol ("unsaved editor edits, which never touch
+    ; disk, are not reflected"). Parse errors are unaffected: publish_
+    ; diagnostics# still takes those from the live buffer.
+    procedure package_report(rp, mutable root: String, path: String) @direct true returns String io mutable modeler_error_count reads modeler_error_count linked
+
+    ; One LF-terminated publishDiagnostics notification per module file of `m`'s
+    ; tree EXCEPT `path` — the answer the plan already holds for every file but
+    ; the one that was asked about.
+    ;
+    ; The file list is the MODELER's (Module.file, filled by
+    ; build_referenced_module#), not a directory walk: only a file this analysis
+    ; actually read may be claimed to be clean.
+    ;
+    ; ★`entry` is the file the plan STARTED from (the package root, or the
+    ; document itself for a program root), and it is what bounds the fan-out to
+    ; the subtree that entry owns. The bound is not cosmetic: build_program#
+    ; attaches the PRELUDE as a sub-module of the main module, so an unbounded
+    ; walk publishes into packages/scaly/0.1.0/scaly/prelude.scaly — a file of
+    ; another root, whose diagnostics this analysis has no business clearing.
+    ; Measured on a two-module probe, where prelude.scaly was the only sibling
+    ; the first version reported.
+    procedure sibling_notifications(rp, m: ref[Module], entry: String, path: String, planner: ref[Planner.Planner]) @direct true returns String io linked
+
+    ; The publishDiagnostics notification for one sibling module `file`, followed
+    ; by its LF, read out of the planner that has already run.
+    ;
+    ; A file the analysis found NOTHING in is reported with an empty array —
+    ; that is what clears a diagnostic the user has just fixed, and the header
+    ; explains why it is done statelessly. A file that carries diagnostics but
+    ; cannot be READ yields nothing at all: its offsets index a text we do not
+    ; have, the same bargain the head half makes.
+    procedure sibling_notification(rp, file: String, planner: ref[Planner.Planner]) @direct true returns String io linked
+
+    ; The publishDiagnostics envelope for `uri` around an already-assembled,
+    ; comma-separated `body` of diagnostic objects ("" = none).
+    function notification(rp, uri: String, body: String) @direct true returns String linked
+
+    ; The directory an entry file owns its modules under: "<dir>/<name>/". The
+    ; convention is the modeler's own — build_referenced_module# resolves
+    ; `module foo` of <dir>/<name>.scaly to <dir>/<name>/foo.scaly, and
+    ; handle_namespace# appends the namespace segment the same way — and it is
+    ; the same one package_root# walks UP.
+    function subtree_prefix(rp, entry: String) @direct true returns String linked
+
+    ; True when `file` belongs to the tree rooted at `entry`: the entry itself,
+    ; or anything under the directory it owns.
+    function owns_file(entry: String, prefix: String, file: String) returns bool linked
+
+    ; Every module FILE reachable from `m`, one per line (a path cannot contain
+    ; an LF). Depth-first, `m` itself first.
+    ;
+    ; ★MODULES DECLARED IN A NAMESPACE need the member walk below, and they are
+    ; the normal case, not an exotic one: every package root in this tree writes
+    ; `define <pkg> { module a  module b }`, and handle_namespace# puts those in
+    ; Namespace.modules — NOT in Module.modules, which only carries the ones
+    ; declared at file level. A walk over Module.modules alone therefore finds no
+    ; sibling at all in any real package; measured on a two-module probe, where
+    ; it found only the prelude.
+    ;
+    ; model.packages — every `package NAME VERSION` dependency — is not walked at
+    ; all: a diagnostic there belongs to that package's own root.
+    function module_files(rp, m: ref[Module]) @direct true returns String linked
+
+    ; The module files nested inside one member — i.e. inside a namespace, the
+    ; only member kind that can declare modules.
+    function member_module_files(rp, mem: ref[Member]) @direct true returns String linked
+
+    ; The module files of a namespace definition, recursing through nested
+    ; namespaces (`define a { define b { module c } }`).
+    function definition_module_files(rp, d: ref[Definition]) @direct true returns String linked
+
+    ; The head of a report (everything before the first LF) — the diagnostic
+    ; objects belonging to the document that was asked about.
+    function report_head(rp, report: String) @direct true returns String linked
+
+    ; The tail of a report (everything after the first LF) — the sibling
+    ; notifications, or "" when there are none.
+    function report_tail(rp, report: String) @direct true returns String linked
+
+    ; Offset of the first LF in `s`, or its length when there is none.
+    function first_lf(s: String) returns size_t linked
+
+    ; The SEMANTIC diagnostics of a document whose buffer does NOT parse — the
+    ; body publish_diagnostics# appends after the parse error itself.
+    ;
+    ; The point: a broken line must not hide the rest of the file. There are two
+    ; routes, and only one of them involves a guess.
+    ;
+    ; A PACKAGE MEMBER is planned through its ROOT, and the modeler reads every
+    ; module from DISK (package_report#) — so the broken BUFFER never enters
+    ; that analysis at all. The diagnostics are exactly the ones the file gets
+    ; while it parses, with no repair and nothing to filter; their offsets are
+    ; the saved text's, which package_report# already documents. Every file
+    ; of this tree, and of any real project, takes this route.
+    ;
+    ; A STANDALONE document has no source but the buffer, so it goes through
+    ; symbols.repaired_source# — the same length-preserving line blanking the
+    ; read-only requests use. THAT is a guess, so every diagnostic it yields is
+    ; checked with symbols.trust_repaired_diagnostic# before it is reported.
+    ;
+    ; DELIBERATELY NOT DONE: reporting the parse errors of the LATER repair
+    ; rounds, to get more than one syntax message. Only the FIRST parse error is
+    ; a fact about the buffer; a later one is a fact about a text one of whose
+    ; lines we erased, and it can be pure fiction. Blank the line carrying a
+    ; wrong closer and the parser next stops at the line that was fine, which
+    ; would put a red squiggle under correct code. There is no filter for that
+    ; the way there is for a name the repair deleted — the evidence the parser
+    ; would need is the very line that is gone — so the honest count of
+    ; certain syntax errors in a broken buffer stays one.
+    procedure broken_buffer_report(rp, mutable path: String, mutable text: String) @direct true returns String io mutable modeler_error_count reads modeler_error_count linked
+
+    ; Register every loaded package's concepts with the planner
+    ; (inlined mirror of cli.register_packages).
+    procedure register_packages(mutable planner: ref[Planner.Planner], model: ref[Program]) linked
+
+    ; One LSP diagnostic object at the given byte offset.
+    function diag_object(rp, source: String, offset: size_t, message: String) @direct true returns String linked
+
+    ; {"line":L,"character":C}
+    function pos(rp, line: size_t, character: size_t) @direct true returns String linked
+
+    ; Strip a `file://` scheme prefix from a document URI, leaving a
+    ; filesystem path the modeler can resolve sibling modules against.
+    ; Non-file URIs are returned unchanged.
+    function strip_uri(rp, uri: String) @direct true returns String linked
+
+    ; `"key":`
+    function key(rp, k: Slice[char]) @direct true returns String linked
+
+    ; `"s"`
+    function quoted(rp, s: Slice[char]) @direct true returns String linked
+}

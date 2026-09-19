@@ -1,0 +1,26 @@
+use scaly.memory.runtime
+use scaly.containers.String
+
+define os
+{
+    module Console
+    module File
+    module Directory
+    module Path
+
+    procedure test_direct() returns int io linked
+
+    procedure test_console() returns int io linked
+
+    procedure test_file_raw() returns int io linked
+
+    procedure test_file_string() returns int io linked
+
+    procedure test_file_exists() returns int io linked
+
+    procedure test_directory() returns int io linked
+
+    function test_path() returns int linked
+
+    procedure test() returns int io linked
+}

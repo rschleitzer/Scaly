@@ -1,0 +1,2280 @@
+; Emitter.scaly - LLVM IR generation from Plan
+;
+; Generates LLVM IR using the LLVM-C API for both JIT execution (tests)
+; and AOT compilation.
+;
+; Ported from C++ Emitter.cpp
+
+; scaly.os.Console is load-bearing beyond visibility: the use alias
+; feeds the dotted-call extern-decl gate (typed declaration for the
+; cross-package Console.println call instead of a varargs fallback).
+use scaly.os.Console
+use scaly.os.File
+use scalyc.compiler.Modeler
+use scalyc.compiler.ConceptIndex.ConceptIndex
+use scalyc.compiler.TaskPlanner.TaskPlanner
+use scalyc.compiler.Model.*
+use scalyc.compiler.Plan.*
+use scalyc.compiler.LLVM.*
+use scalyc.compiler.lexer.*
+use scalyc.compiler.parser.*
+use scalyc.compiler.Syntax.*
+use scalyc.compiler.Planner.*
+
+; dlopen/dlsym: used by the JIT stub pass to tell a genuinely-unresolvable
+; declared-only symbol (an uninstantiated generic never reached at runtime,
+; which must be stubbed) apart from one the host process already exports
+; (the whole RBMM runtime + stdlib — scalyc links libscaly.a). Stubbing the
+; latter shadows the real definition with a null-returning body, so every
+; JIT program that region-allocates gets a null page and either crashes
+; (deref) or silently produces empty results. dlopen(null, RTLD_NOW=2)
+; yields the main-program handle on both macOS and Linux (portable, no
+; OS-conditional constant), and dlsym takes the un-prefixed C name — the
+; same name that appears on the LLVM declaration.
+function dlopen(filename: pointer[const_char], flag: i32) returns pointer[void] extern
+function dlsym(handle: pointer[void], symbol: pointer[const_char]) returns pointer[void] extern
+
+define Emitter
+{
+    ; ============================================================================
+    ; Intrinsic Type Info
+    ; ============================================================================
+
+    ; Information about an intrinsic type
+    define IntrinsicTypeInfo
+    (
+        llvm_type: LLVMTypeRef
+        size: size_t
+        alignment: size_t
+        is_signed: bool
+    )
+
+    ; A 1-based source line/column, computed from a byte offset for DWARF.
+    ; i32 fields: the LLVM-C DI APIs take 32-bit line/column (see LLVM.scaly).
+    define DebugPos
+    (
+        line: i32
+        col: i32
+    )
+
+    ; ============================================================================
+    ; Emitter Configuration
+    ; ============================================================================
+
+    define EmitterConfig
+    (
+        emit_debug_info: bool       ; Generate DWARF
+        optimize_for_size: bool
+        opt_level: int              ; 0 = none, 1-3 = increasing
+        target_triple: String       ; Empty = host
+        data_layout: String         ; Empty = default for target
+        skip_tests: bool            ; --no-tests: omit test/test_* functions
+    )
+    {
+        init() linked
+    }
+
+    ; ============================================================================
+    ; Loop Context - for break/continue handling
+    ; ============================================================================
+
+    define LoopContext
+    (
+        exit_block: LLVMBasicBlockRef       ; Target for 'break'
+        continue_block: LLVMBasicBlockRef   ; Target for 'continue'
+        loop_label: String                  ; Loop label ("" = unlabeled)
+        result_slot: LLVMValueRef           ; break-value alloca (null = no value)
+    )
+
+    ; ============================================================================
+    ; Region Info - for lifetime/region management
+    ; ============================================================================
+
+    define RegionInfo
+    @resident true (
+        local_page: LLVMValueRef        ; Local ($) allocations
+        return_page: LLVMValueRef       ; Call (#) - passed by caller
+        exception_page: LLVMValueRef    ; Thrown (!) - passed by caller
+        ; Named regions (^name) would use a map, simplified for now
+        named_region_names: ref[Array[String]]?
+        named_region_values: ref[Array[LLVMValueRef]]?
+    )
+    {
+        init() linked
+
+        function lookup_named_region(this, name: String) @direct true returns LLVMValueRef linked
+
+        procedure add_named_region(mutable this, name: String, value: LLVMValueRef) @persists true linked
+    }
+
+    ; ============================================================================
+    ; Emitter
+    ; ============================================================================
+
+    define Emitter
+    @resident true (
+        config: EmitterConfig
+        ; LLVM handles
+        context: LLVMContextRef
+        ; JIT mode: when has_external_context is true, initialize() adopts
+        ; external_context (the LLVMContext owned by an ORC ThreadSafeContext)
+        ; instead of creating its own, so the emitted module can be wrapped into a
+        ; ThreadSafeModule without crashing addIRModule. Off for the normal
+        ; -S/-c/-o path (byte-identical emission preserved).
+        external_context: LLVMContextRef
+        has_external_context: bool
+        ; Stage 7: does the emission triple use COFF? Decided once in
+        ; apply_target_layout, read by set_linkonce_odr. It is a property of the
+        ; OBJECT FORMAT, not of the host — a cross-emit for Windows from a Mac
+        ; must set it and a native Mac build must not.
+        target_is_coff: bool
+        llvm_module: LLVMModuleRef
+        builder: LLVMBuilderRef
+        ; Debug info (DWARF) — populated only when config.emit_debug_info.
+        ; source_text/source_file feed byte-offset -> (line,col) conversion;
+        ; di_builder/di_file/di_cu are the compile-unit handles; current_di_scope
+        ; is the DISubprogram of the function currently being emitted.
+        di_builder: LLVMDIBuilderRef
+        di_file: LLVMMetadataRef
+        di_cu: LLVMMetadataRef
+        current_di_scope: LLVMMetadataRef
+        source_text: String
+        source_file: String
+        ; Current plan being emitted
+        current_plan: ref[Plan]?
+        ; Type cache: name -> LLVM type (using parallel vectors)
+        type_cache_names: ref[Array[String]]?
+        type_cache_types: ref[Array[LLVMTypeRef]]?
+        ; Struct cache: name -> LLVM struct type
+        struct_cache_names: ref[Array[String]]?
+        struct_cache_types: ref[Array[LLVMTypeRef]]?
+        ; -g: DIType cache: mangled name -> DWARF composite type. Keyed like
+        ; struct_cache; the entry is a forward decl while members are built,
+        ; then replaced with the final type (RAUW) so back-pointers resolve.
+        di_type_cache_names: ref[Array[String]]?
+        di_type_cache_types: ref[Array[LLVMMetadataRef]]?
+        ; Function cache: mangled name -> LLVM function
+        function_cache_names: ref[Array[String]]?
+        function_cache_funcs: ref[Array[LLVMValueRef]]?
+        ; Parallel to function_cache_funcs: the LLVM-argument index of the
+        ; function's caller-page parameter, or -1 when it takes none. Written by
+        ; emit_function_decl (the ONE place that decides the layout) and read only
+        ; by elide_unused_pages, which must never guess the position — see the
+        ; note there on why a call site's argument j is not generally the callee's
+        ; parameter j.
+        function_cache_page_param: ref[Array[int]]?
+        ; O(1) name -> cache-array-index maps shadowing the three hot caches
+        ; above. The caches' linear scans were ~87% of self-compile time (the
+        ; time analog of the Planner's lookup_concept, fixed by ConceptIndex).
+        ; FIRST-write-wins (insert_if_absent) + only registered for NON-NULL
+        ; entries, so the mapped index always names the FIRST non-null entry —
+        ; reproducing the linear scan's "first non-null match" exactly. Stores
+        ; indices, not pointers (the arrays reallocate). Fixed generous caps
+        ; (measured scalyc self-compile: func <=32K, type 8-32K, struct <=8K);
+        ; exit(14) on overflow is a loud backstop for larger programs.
+        type_index: ConceptIndex
+        struct_index: ConceptIndex
+        function_index: ConceptIndex
+        ; -g only: same O(1) index over di_type_cache. The cache adds a NON-NULL
+        ; forward decl at `idx`, then RAUW-overwrites that slot via put(idx,final);
+        ; the name->idx mapping is stable across the put, so get(idx) returns the
+        ; current slot value (fwd during member build, final after). Each mangled
+        ; name is added exactly once (lookup_di_cache early-return + forward-decl
+        ; if against recursive re-add), so insert_if_absent == first-non-null.
+        di_index: ConceptIndex
+        ; s180: throws Result-wrapper cache: callee mangled name -> wrapper
+        ; type. Keyed per callee so emit_function_decl and emit_call always
+        ; build the IDENTICAL wrapper even when their value_ty provenance
+        ; differs (resolved struct vs cross-package placeholder).
+        throws_result_names: ref[Array[String]]?
+        throws_result_types: ref[Array[LLVMTypeRef]]?
+        ; Intrinsic types
+        intrinsic_type_names: ref[Array[String]]?
+        intrinsic_types: ref[Array[IntrinsicTypeInfo]]?
+        ; Current function state
+        current_function: LLVMValueRef
+        current_block: LLVMBasicBlockRef
+        current_function_can_throw: bool
+        ; s196: the current function's local root page for transient #/$/for
+        ; allocations in a non-rp function. Mirrors stage-0's
+        ; CurrentRegion.LocalPage but kept SEPARATE from current_region.local_page
+        ; (which stays a never-set null read only by emit_action's rp fallback).
+        ;
+        ; PARENT-LINKED FRAME CHAIN (2026-08-02, after the lazy slots of
+        ; 2026-08-01): what the entry block holds is a two-word {page, parent}
+        ; RECORD. The page is materialised by scaly_force_frame — parents first —
+        ; only where something really allocates, and released through
+        ; scaly_release_frame on every exit path (a no-op when nothing forced it).
+        ; A caller-page argument is the record's ADDRESS and costs no call at all,
+        ; which is what lets a callee that allocates nothing leave the caller's
+        ; region unopened. See get_local_frame here and the ordering proof at
+        ; scaly_force_frame (root_pages.scaly).
+        ;
+        ; function_local_frame: the record's alloca, created on first demand.
+        ; function_local_page / _block: the FORCED page cached for ONE basic
+        ;   block, so several allocations in one block share a single call.
+        function_local_frame: LLVMValueRef
+        function_local_page: LLVMValueRef
+        function_local_page_block: LLVMBasicBlockRef
+        ; The `store null` that initialises the page word.
+        function_local_page_init: LLVMValueRef
+        ; The `store <incoming frame>` into the parent word. elide_unused_pages
+        ; must not count it as a use of the caller-page parameter — see
+        ; page_param_is_unused.
+        function_local_frame_parent_store: LLVMValueRef
+        ; The incoming caller frame this function chains its own onto, bound where
+        ; the page parameter is bound. Deliberately NOT a lookup_variable("_rp")
+        ; at frame-creation time: the outlined parfor task function still sees the
+        ; enclosing function's variable table, and chaining a worker thread's frame
+        ; onto a frame owned by another thread's StackBucket would both reference a
+        ; value from another function and cross an allocator boundary. It stays
+        ; null there, which roots the task's chain — exactly what a fresh thread
+        ; needs (the same reason Fiber.create takes an explicit host page).
+        current_frame_parent: LLVMValueRef
+        ; TCO (2026-08-04): self-tail-call → loop. Set per function by
+        ; emit_function_body when the body contains at least one `return f(…)`
+        ; inside f whose shape the transform accepts (tail_loop_eligible), and
+        ; null for every other function — those emit exactly as before.
+        ;
+        ; tail_loop_block is the loop header the back edges branch to. It carries
+        ; one PHI per user parameter, and the parameter NAMES are bound to those
+        ; PHIs instead of to LLVMGetParam, which is the whole reason this is a
+        ; phi-loop and not a slot-loop: lookup_variable keeps answering a plain
+        ; SSA value, so not one of its ~40 consumers changes (parameters are
+        ; immutable, so an alloca would have to be loaded at every read site, and
+        ; emit_variable only loads when the PLAN says is_mutable).
+        ;
+        ; The iteration reuses this function's ONE local frame — allocations
+        ; accumulate in the same region across iterations instead of being
+        ; released per recursive frame. That is the documented cost (a tail loop
+        ; is a `while` loop, and a `while` loop allocates into its enclosing
+        ; region today); it buys a bounded STACK, which is what the recursion
+        ; needed.
+        tail_loop_block: LLVMBasicBlockRef
+        tail_loop_phis: ref[Array[LLVMValueRef]]?
+        ; Per by-value-struct parameter (null handle for the others): a DEDICATED
+        ; entry alloca the back edge copies the next iteration's value into, plus a
+        ; staging slot used only when one back edge copies MORE than one parameter
+        ; (then a source may be another parameter's shadow, so all reads must
+        ; happen before any shadow is written). Never handed to the temp pool —
+        ; that is the point: the pool must never be able to reuse this storage.
+        tail_loop_shadows: ref[Array[LLVMValueRef]]?
+        tail_loop_stages: ref[Array[LLVMValueRef]]?
+        tail_loop_slot_types: ref[Array[LLVMTypeRef]]?
+        ; The mangled name a `return`ed call must carry to be a self call, and
+        ; how many user arguments it must have. Kept beside the phis so
+        ; emit_return can test a candidate without reaching for the Plan.
+        tail_loop_mangled: String
+        ; Local variables: name -> LLVM value. Flat tables; per-scope
+        ; visibility maintained by scope_marks below.
+        local_var_names: ref[Array[String]]?
+        local_var_values: ref[Array[LLVMValueRef]]?
+        ; s128: scope stack. Each entry is a snapshot of
+        ; local_var_names.length at scope entry. enter_scope pushes;
+        ; exit_scope pops and truncates names+values back to the snapshot,
+        ; dropping any defines that happened inside the scope. Sibling
+        ; choose/if arms must each enter/exit a fresh scope, otherwise the
+        ; first arm's `var X` leaks into subsequent arms' lookups (s123
+        ; comment block lists this as the root cause of 106 dom errors and
+        ; the buggy stdlib Vector emissions that surfaced in s126 testing).
+        scope_marks: ref[Array[size_t]]?
+        ; Region/lifetime management
+        current_region: RegionInfo
+        ; Loop context stack for break/continue
+        loop_stack: ref[Array[LoopContext]]?
+        ; s178: alloca-reuse pool. Entry-block temp slots (arg.tmp,
+        ; sret.result, deref.tmp, tuple, choose.union, variant.ptr) are
+        ; registered here and recycled across statements of the same
+        ; function when provably dead at statement end. Parallel vectors:
+        ; type, alloca, free flag (1 = available). temp_pool_start marks
+        ; the first entry belonging to current_function so earlier
+        ; functions' slots are never matched. temp_stmt_log records pool
+        ; indices acquired during the currently-emitting statement;
+        ; temp_stmt_log_start is the current statement's window start
+        ; (saved/restored across nested emit_statement calls).
+        temp_pool_types: ref[Array[LLVMTypeRef]]?
+        temp_pool_slots: ref[Array[LLVMValueRef]]?
+        temp_pool_free: ref[Array[size_t]]?
+        temp_pool_start: size_t
+        temp_stmt_log: ref[Array[size_t]]?
+        temp_stmt_log_start: size_t
+        ; s178: base allocas of values the emitter holds across scope
+        ; exits (choose/if arm results before their merge PHI exists,
+        ; the choose scrutinee + union slot while arms are emitted).
+        ; The scope-exit release pass skips pinned slots; pins expire
+        ; with their enclosing statement window.
+        temp_pinned: ref[Array[LLVMValueRef]]?
+        ; Milestone 3.3: parallel-for capture-scan scratch. parfor_locals
+        ; holds the names bound inside the scanned body (scoped — callers
+        ; save/restore the length around nested scopes); parfor_captures
+        ; collects every free name that resolves in the enclosing scope.
+        ; Scratch for ONE scan at a time: emit_parallel_for copies the
+        ; result out before it emits the body (a nested promoted for
+        ; would rescan into the same arrays).
+        parfor_locals: ref[Array[String]]?
+        parfor_captures: ref[Array[String]]?
+        ; Milestone 4.2: static body-weight memo (mangled name -> saturated
+        ; weight) plus the stack of names currently being weighed (recursion
+        ; falls back to the flat call cost instead of diverging).
+        weight_memo_names: ref[Array[String]]?
+        weight_memo_vals: ref[Array[size_t]]?
+        weight_stack: ref[Array[String]]?
+        ; Milestone 4.4: plain `for` drives the engine. One TaskPlanner per
+        ; Emitter answers "does this body verify parallelizable?" per loop
+        ; site (its purity memo persists across sites). parfor_file is the
+        ; source file of the function currently being emitted — the
+        ; classifier's foundation-containment rule keys on it.
+        parfor_checker: TaskPlanner
+        parfor_file: String
+        ; Stage 7.2: symbols of region swizzle walkers already generated in
+        ; this module. The registry (not a body-count query) also breaks
+        ; type-level recursion: a walker's shell registers BEFORE its body
+        ; is built, so a self-referential type finds its own symbol.
+        region_walkers: ref[Array[String]]?
+        ; Name of the concept whose method body is currently being emitted (the
+        ; `this` receiver's type, pointer/ref peeled). Empty for free functions.
+        ; Lets resolve_reference_page lower `^field` (a `^host` sigil naming a
+        ; pointer[Page] FIELD of the receiver, as in opensp's Parser) by loading
+        ; this.<field>. scaly/scalyc never use `^field`, so this stays neutral.
+        current_receiver_concept: String
+    )
+    {
+        init(cfg: EmitterConfig) linked
+
+        ; ========================================================================
+        ; Initialization
+        ; ========================================================================
+
+        ; Initialize the emitter (create LLVM context, builder, etc.)
+        procedure initialize(mutable this, mutable module_name: String) io linked
+
+        ; Resolve the emission triple (host default, or --target override) to a
+        ; TargetMachine and copy its DataLayout string onto the module. Best
+        ; effort: on any failure the module keeps no layout — the llc path
+        ; still works exactly as before.
+        procedure apply_target_layout(mutable this) io linked
+
+        ; Does this triple emit COFF? The OS component is the whole answer: every
+        ; Windows triple carries `windows` (x86_64-pc-windows-msvc,
+        ; aarch64-pc-windows-gnu, …) and no ELF or Mach-O triple does. Asked of
+        ; the TRIPLE rather than of the host, because `--target` cross-emits.
+        procedure triple_is_coff(mutable this, t: pointer[const_char]) returns bool linked
+
+        ; Give a body-carrying, non-private function its LinkOnceODR linkage —
+        ; and, on COFF only, the comdat that linkage REQUIRES there.
+        ;
+        ; ★Stage 7. Mach-O and ELF lower `linkonce_odr` on their own (weak
+        ; symbols), so four targets have never needed this. COFF has no weak
+        ; definition in the ELF sense: the assembler answers a bare `.weak` by
+        ; INVENTING a default symbol named after that object's anchor
+        ; (`.weak.<sym>.default.<anchor>`), so two objects carrying the same
+        ; inline body disagree about the default and `link.exe` gives up with
+        ; LNK1227. With a comdat the body lands in
+        ; `.section .text,"xr",discard,<sym>` — real ODR selection, and the
+        ; linker discards the duplicates silently.
+        ;
+        ; ★It must NOT be unconditional: `llc` refuses a comdat on Mach-O
+        ; outright ("MachO doesn't support COMDATs"), so an unguarded version
+        ; breaks both Apple targets. Guarding on the object format keeps the
+        ; emission SEMANTICS of the four existing targets exactly as they were.
+        ;
+        ; The comdat's name is read back off the VALUE rather than taken from
+        ; `func.mangled_name`, because a non-extern name collision is
+        ; auto-renamed by LLVM (`name.1` — see the s187 note in
+        ; emit_function_decl) and on COFF the comdat name must be the leader
+        ; SYMBOL's name. A freshly inserted comdat selects `Any`, which is what
+        ; ODR wants, so nothing sets a selection kind.
+        ; The resolved target's object format, answered for a caller OUTSIDE the
+        ; emitter — `cli.run`'s link step, which has to know whether it is building
+        ; a POSIX or a Windows command line (no `-lm` there, `-lws2_32` instead, a
+        ; `.lib` archive and a temp directory that exists).
+        ;
+        ; ★It is a getter rather than a second `LLVMGetDefaultTargetTriple()` in
+        ; cli.scaly on purpose: `apply_target_layout` is the ONE place the emission
+        ; triple is resolved (`--target` override included), and a second copy of
+        ; the "is this Windows" test is a second thing to keep in agreement. Same
+        ; reasoning as the comdat below — the OBJECT FORMAT decides, asked once.
+        ; ★For the six targets this compiler emits for, COFF and Windows are the
+        ; same set, which is why one predicate can serve a linkage question and a
+        ; link-command question at the same time.
+        function target_is_coff_format(this) returns bool linked
+
+        procedure set_linkonce_odr(mutable this, mutable fn: LLVMValueRef) linked
+
+        ; Record the source file path + contents for -g. Must be called
+        ; before emit() so initialize()'s init_debug_info() sees them.
+        procedure set_debug_source(mutable this, file: String, src: String) linked
+
+        ; Create the DIBuilder, compile unit and file, and set the DWARF
+        ; module flags. Gated on emit_debug_info (if runs the return when
+        ; the flag is FALSE — Scaly hard rule #6).
+        procedure init_debug_info(mutable this) linked
+
+        ; Convert a byte offset into the source into a 1-based (line, column).
+        ; Mirrors cli.print_diagnostics#'s scan; numeric LF compare (10) per s185.
+        function compute_debug_pos(this, offset: size_t) @page true @direct true returns DebugPos linked
+
+        ; Attach a DILocation to the builder for subsequent instructions.
+        ; No-op unless emit_debug_info and a function scope is active.
+        procedure set_debug_location(mutable this, span: Span) linked
+
+        ; Create the DISubprogram for a function being emitted, attach it to
+        ; llvm_func, store it as current_di_scope, and set an initial line
+        ; location so prologue instructions carry a !dbg. -g only.
+        ; Uses the current_function field (NOT a passed LLVMValueRef param):
+        ; a single-ptr-field struct param arrives as a stack-alloca alias under
+        ; the stage-0/1 ABI (s34/s36), so LLVMSetSubprogram would get a garbage
+        ; handle. The field read is unaffected.
+        procedure set_function_debug_scope(mutable this, mutable func: PlannedFunction) linked
+
+        ; ------------------------------------------------------------------------
+        ; -g: DWARF type construction for aggregate (struct/union) and pointer
+        ; locals. All callers if on emit_debug_info. di_type_for is the
+        ; dispatcher; di_struct_type/di_union_type build composites with a
+        ; forward-decl-then-RAUW cycle break.
+        ; ------------------------------------------------------------------------
+
+        function lookup_di_cache(this, name: String) @direct true returns LLVMMetadataRef linked
+
+        ; Map a primitive type name to a DWARF basic type; null if not primitive.
+        ; Encodings: signed=5, unsigned=7, boolean=2, float=4, signed_char=6,
+        ; unsigned_char=8.
+        procedure di_basic_type(mutable this, mutable name: String) @direct true returns LLVMMetadataRef linked
+
+        ; Synthesize an opaque unsigned basic type of the given width — used
+        ; for a struct member whose own DIType couldn't be resolved, so the
+        ; member stays typed (valid DWARF) and the layout offset is preserved.
+        procedure di_placeholder_type(mutable this, bits: size_t) @direct true returns LLVMMetadataRef linked
+
+        ; -g only: DIType for a non-generic stdlib struct that the compilation ROOT
+        ; never lays out, so it is absent from BOTH current_plan.structures and
+        ; current_plan.unions and di_type_for's two scans answer null. That null is
+        ; not a cosmetic loss: the `if dty <> null` guards at the declare sites drop
+        ; the variable from the DWARF ENTIRELY, which is why every String local and
+        ; parameter used to be invisible in the debugger (measured: `var name
+        ; String("x")` emitted alloca + store and no #dbg_declare at all).
+        ;
+        ; Deliberately NOT folded into synthesize_literal_struct#: that function
+        ; steers member-access GEP/extract emission, so a new name there would
+        ; change NON-`-g` emission. This table is read only under -g.
+        ; The generic containers need no entry — their instantiations DO reach
+        ; plan.structures (`%_Z6VectorIcE` and friends appear in the IR).
+        ; -g only: the DW_AT_name for a struct or union. A generic INSTANTIATION must
+        ; not reuse the bare concept name.
+        ;
+        ; ★lldb uniques types BY NAME across a module, so `Vector[char]` and
+        ; `Vector[int]` both emitted as "Vector" collapse into ONE type and one
+        ; survivor's member types win for both. Measured 2026-08-11: a `Vector[int]`
+        ; whose own DIE says `data: int *` resolved in lldb to `char *`
+        ; (`target.FindTypes("Vector")` returned a single type), so every element was
+        ; read one byte at a time and a vector of 7, 8, 9 printed as '\a', 0, 0.
+        ; Silently WRONG VALUES, not a cosmetic complaint — and it hits every generic
+        ; (Vector, Array, List, Node, Slice, the iterators).
+        ;
+        ; The READABLE form comes from the PlannedType the caller already holds:
+        ; Planner.get_readable_name renders `Vector[int]`, and plain `Point` when
+        ; there are no arguments. That is both unique and what the source says.
+        ;
+        ; ★The fallback is the safety property, not a nicety. When the PlannedType
+        ; arrives WITHOUT its generics the readable form is the bare `Vector`, which
+        ; is exactly the name collapse this function exists to prevent — so in that
+        ; case the mangled name wins over prettiness. Detected on the mangled side:
+        ; `_Z6VectorIiE` has an `I` and ends in `E`, a plain `_Z5Point` has neither.
+        ; A concept literally spelled like `TRIE` trips the test and gets its mangled
+        ; name; that is cosmetic noise, never a wrong type.
+        ;
+        ; (`InstantiationInfo.type_args` in Plan.scaly is the field that LOOKS like
+        ; the right source here and is not: nothing in the tree ever constructs an
+        ; InstantiationInfo, so `origin` is null on every structure and union. Filling
+        ; it would mean a new page-hosted allocation inside plan_structure, where the
+        ; surrounding idiom takes `&` of stack locals — a dangling-pointer risk paid
+        ; for a cosmetic gain. The PlannedType already has the answer.)
+        function di_display_name(this, readable: String, mangled: String) @page true @direct true returns String linked
+
+        procedure di_stdlib_struct_type(mutable this, mutable name: String) @persists true @direct true returns LLVMMetadataRef linked
+
+        ; Does this planned type denote an object that a POINTER-typed value points
+        ; AT, rather than a pointer the debugger should show as a pointer? Decides
+        ; direct-vs-shadow at the declare sites below: for a composite, a `ptr`
+        ; value IS the object's address, so #dbg_declare goes straight on it; for
+        ; anything else the value must be spilled to a shadow slot first. Getting
+        ; this backwards is silently wrong by one indirection.
+        procedure di_planned_type_is_composite(mutable this, mutable pt: PlannedType) returns bool linked
+
+        ; -g only: attach a DWARF variable to STORAGE at the current insertion
+        ; point. arg_no = 0 yields a local (DW_TAG_variable); arg_no > 0 yields a
+        ; DW_TAG_formal_parameter at that 1-based SOURCE position.
+        procedure debug_declare_at(mutable this, mutable name: String, mutable storage: LLVMValueRef, mutable dty: LLVMMetadataRef, dpos: DebugPos, arg_no: size_t, indirect: bool) linked
+
+        ; -g only: give an SSA VALUE a DWARF variable. A `let` binding and a
+        ; function parameter are plain SSA values — define_variable binds the VALUE,
+        ; not a slot — so there was no storage for #dbg_declare to point at and both
+        ; were absent from the DWARF entirely (measured: 0 DW_TAG_formal_parameter
+        ; across 49 subprograms, and a program's whole top level invisible because
+        ; every top-level statement binds with `let`).
+        ;
+        ; The value is ALWAYS spilled to a dedicated shadow slot, because
+        ; #dbg_declare's address operand must be an alloca (or an argument) — hand
+        ; it any other SSA value and the DWARF emitter drops the variable SILENTLY
+        ; while the IR metadata still looks perfect. Measured: declaring
+        ; `let s String("x")` straight on the region-allocate call result produced a
+        ; well-formed !DILocalVariable with a well-formed !DICompositeType and NO
+        ; DW_TAG_variable in the .dSYM at all.
+        ;
+        ; So the only question the planned type decides is the EXPRESSION: when the
+        ; value is a `ptr` to a composite (the region-allocated case, and a
+        ; by-pointer by-value struct parameter) the slot holds the object's ADDRESS,
+        ; so the declare carries DW_OP_deref. Getting that backwards is silently
+        ; wrong by one indirection.
+        ;
+        ; The shadow is an entry_alloca, NOT acquire_temp: a pooled slot may be
+        ; handed to another binding while the debugger still believes it holds this
+        ; one. Nothing ever READS the shadow, so define_variable keeps binding the
+        ; SSA value and not one of lookup_variable's ~40 consumers changes.
+        procedure debug_declare_value(mutable this, mutable name: String, mutable value: LLVMValueRef, mutable pt: PlannedType, dpos: DebugPos, arg_no: size_t) linked
+
+        procedure di_type_for(mutable this, mutable pt: PlannedType) @direct true returns LLVMMetadataRef linked
+
+        ; Build a DICompositeType (DW_TAG_structure_type = 19) for a struct.
+        ; Member sizes/offsets come from the planner's already-computed
+        ; PlannedProperty.offset (size = next field's offset - this offset, or
+        ; struct size for the last field), so no type-size re-derivation needed.
+        procedure di_struct_type(mutable this, mutable s: PlannedStructure, mutable readable: String) @direct true returns LLVMMetadataRef linked
+
+        ; A tagged union: outer struct { tag @ 0, payload @ tag_size }, where the
+        ; payload is a DWARF union of the variant payload types (each at offset 0).
+        procedure di_union_type(mutable this, mutable u: PlannedUnion, mutable readable: String) @direct true returns LLVMMetadataRef linked
+
+        ; Like set_function_debug_scope but for a synthetic function that has
+        ; no PlannedFunction (the top-level `main` wrapping the program's
+        ; top-level statements). -g only; caller guards on emit_debug_info.
+        ; Attaches to current_function (set by the caller before this).
+        procedure set_synthetic_debug_scope(mutable this, mutable name: String, line: i32) linked
+
+        ; Clear the builder's current debug location and the active scope.
+        ; Called at function-body exit so later stub/forwarder emission (which
+        ; has no DISubprogram) does not inherit a stale scope.
+        procedure clear_debug_location(mutable this) linked
+
+        ; Set the line location for a statement before emitting it. -g only.
+        procedure set_statement_debug_location(mutable this, stmt: PlannedStatement) linked
+
+        ; Initialize intrinsic type mappings
+        procedure init_intrinsic_types(mutable this) linked
+
+        procedure register_intrinsic_type(mutable this, name: String, llvm_type: LLVMTypeRef, size: size_t, alignment: size_t, is_signed: bool) @persists true linked
+
+        ; Dispose of LLVM resources
+        procedure dispose(mutable this) linked
+
+        ; ========================================================================
+        ; Type Cache
+        ; ========================================================================
+
+        function lookup_type_cache(this, name: String) @direct true returns LLVMTypeRef linked
+
+        procedure cache_type(mutable this, name: String, llvm_type: LLVMTypeRef) @persists true linked
+
+        ; ========================================================================
+        ; Struct Cache
+        ; ========================================================================
+
+        function lookup_struct_cache(this, name: String) @direct true returns LLVMTypeRef linked
+
+        procedure cache_struct(mutable this, name: String, llvm_type: LLVMTypeRef) @persists true linked
+
+        ; s138: Hoist alloca into the current function's entry block, mirroring
+        ; stage-0's `createEntryBlockAlloca` (Emitter.cpp:6640). Without
+        ; hoisting, an alloca inserted from within a loop body grows the stack
+        ; on every iteration (LLVM doesn't merge non-entry allocas), and the
+        ; static frame for big functions like Planner.collapse_operand_sequence#
+        ; ends up huge enough that a few levels of recursion blow past the 8MB
+        ; main-thread stack on macOS (rc=139 when stage-1 compiles
+        ; packages/scaly/0.1.0/scaly.scaly). Saves the current insertion point
+        ; via LLVMGetInsertBlock, repositions to before the entry block's first
+        ; instruction (or at-end if empty), emits the alloca, then restores
+        ; the insertion point.
+        procedure entry_alloca(mutable this, mutable ty: LLVMTypeRef, mutable name: pointer[const_char]) @direct true returns LLVMValueRef linked
+
+        ; ========================================================================
+        ; s196: function-local root-page lifecycle (the root-page leak fix).
+        ;
+        ; A non-rp function that does a #/$/for allocation has no caller page to
+        ; allocate on, so the three rp-fallback sites (emit_constructor_call,
+        ; emit_call, emit_for) used to call Page.allocate_root_page WITHOUT ever
+        ; releasing it — one leaked StackBucket page per fallback occurrence per
+        ; call. Compiling the large scalyc.scaly leaked ~177k root pages / ~49GB
+        ; and OOM-killed the self-hosted compiler. Stage-0 (Emitter.cpp) caches
+        ; ONE page per function (getOrCreateLocalPage) and releases it on every
+        ; exit; this ports that lifecycle on a dedicated field
+        ; function_local_page (NOT current_region.local_page).
+        ; ========================================================================
+
+        ; Look up or declare Page.allocate_root_page() -> ptr.
+        procedure get_alloc_root_page_fn(mutable this) @direct true returns LLVMValueRef linked
+
+        ; Look up or declare scaly_release_root_page(ptr) -> void.
+        procedure get_release_root_page_fn(mutable this) @direct true returns LLVMValueRef linked
+
+        ; Look up or declare scaly_force_frame(ptr frame) -> ptr — materialise a
+        ; frame's page, PARENTS FIRST (root_pages.scaly, where the LIFO ordering
+        ; argument lives). Called wherever a REAL page is needed: the Page.allocate
+        ; sites, and nowhere else. Handing a frame to a callee needs no call at all.
+        procedure get_force_frame_fn(mutable this) @direct true returns LLVMValueRef linked
+
+        ; Look up or declare scaly_release_frame(ptr frame) -> void — the epilogue
+        ; counterpart, a no-op on a frame nothing ever forced.
+        procedure get_release_frame_fn(mutable this) @direct true returns LLVMValueRef linked
+
+        ; The two-word frame record {page, parent} the caller-page argument points
+        ; at. Built as a named struct so the GEPs below read as field accesses.
+        procedure frame_struct_type(mutable this) @direct true returns LLVMTypeRef linked
+
+        ; Emit `scaly_force_frame(frame)` at the current position.
+        procedure force_frame(mutable this, frame_val: LLVMValueRef) @direct true returns LLVMValueRef linked
+
+        ; Wrap an ALREADY REAL page in a throw-away frame so it can travel as a
+        ; caller-page argument: {page, null}. scaly_force_frame returns it without
+        ; touching the StackBucket, and nobody releases it — the page is not this
+        ; frame's to own. Needed wherever a genuine page reaches a call site: the
+        ; `^this` / `^name` / `^field` sigils, and the region a fiber is handed.
+        ;
+        ; ★One alloca PER SITE, never a reusable scratch frame. A call whose
+        ; argument list contains another such call would otherwise overwrite the
+        ; outer frame before the outer call reads it (store outer, store inner,
+        ; call inner, call outer) and the outer callee would allocate on the inner
+        ; page. The alloca costs stack space only.
+        procedure wrap_page_in_frame(mutable this, mutable page_val: LLVMValueRef) @direct true returns LLVMValueRef linked
+
+        ; Resolve the page for a `^name` reference lifetime: the named local
+        ; variable's value, wrapped in Page.get(...) when the name is `this`
+        ; (the receiver is an object pointer, not a pointer[Page]). Returns null
+        ; if the named variable is not in scope. Shared by emit_constructor_call
+        ; and emit_call so that `x.method^own_page(...)` allocates on own_page —
+        ; NOT on the function-local page, which is released on exit (s196: an
+        ; escaping allocation on the local page is a use-after-free).
+        ; Peel pointer[T]/ref[T] down to the underlying concept name (else t.name).
+        function peel_concept_name(this, t: PlannedType) @page true @direct true returns String linked
+
+        function first_generic_name(this, t: PlannedType) @page true @direct true returns String linked
+
+        ; The first generic argument of `t`, or `t` itself when it has none --
+        ; the type-level sibling of first_generic_name#. Used to peel one
+        ; reference wrapper at a time: Option[ref[T]] -> ref[T] -> T. A single
+        ; exit through one local keeps it clear of the multi-branch by-value
+        ; return hazard (a struct returned from several branches region-
+        ; allocates per site and the merging phi fails llc verification).
+        function first_generic_of(this, t: PlannedType) @page true @direct true returns PlannedType linked
+
+        ; Index of the receiver concept's property named `field_name` (-1 if none).
+        ; Used to lower a `^field` page sigil (host is a member, not a local).
+        function receiver_field_index(this, field_name: String) returns int linked
+
+        procedure resolve_reference_page(mutable this, mutable ref_name: String) @direct true returns LLVMValueRef linked
+
+        ; The same `^name` resolution, but yielding a FRAME for use as a
+        ; caller-page argument: a genuine page gets wrapped, the caller-page slot
+        ; travels as it is. Keeps the two currencies apart at every call site —
+        ; passing a raw page where a callee expects a frame is the one mistake this
+        ; ABI cannot diagnose (both are a bare `ptr`).
+        procedure resolve_reference_frame(mutable this, mutable ref_name: String) @direct true returns LLVMValueRef linked
+
+        ; Return this function's own FRAME — the {page, parent} record that IS the
+        ; caller-page currency. Creating it emits no call: the entry block gets a
+        ; two-word alloca initialised to {null, <incoming frame>}, and handing it
+        ; to a callee is just passing its address.
+        ;
+        ; PARENT-LINKED FRAME CHAIN (2026-08-02). Lazy slots (2026-08-01) took the
+        ; region out of the prologue but could only reach materialisations a
+        ; function made for ITSELF: a caller that opened its page ONLY to pass it
+        ; to a callee which then allocated nothing still paid the full push/pop.
+        ; Measured on the dazzle DSSSL engine (tests/dazzle/PERFORMANCE.md), that
+        ; was 13.79 of the remaining 28.59 million frames per 977 KB document.
+        ; Passing the RECORD instead of a materialised page lets the callee decide,
+        ; and 13.57 million of those frames stop existing.
+        ;
+        ; ★The ordering rule that makes it sound — every materialisation forces the
+        ; parent chain first — lives in scaly_force_frame (root_pages.scaly),
+        ; together with the proof that strict LIFO survives it. Read that before
+        ; touching either side.
+        ;
+        ; ★The frame is created on FIRST DEMAND, not at entry: a function that
+        ; never needs a region at all should not pay two stores for one.
+        procedure get_local_frame(mutable this) @direct true returns LLVMValueRef linked
+
+        ; Materialise an arbitrary frame's page. Routed through the block cache
+        ; when the frame is this function's own, so several allocations in one
+        ; block still share a single call.
+        procedure materialise_frame(mutable this, frame_val: LLVMValueRef) @direct true returns LLVMValueRef linked
+
+        ; Return this function's local root PAGE at the current builder position,
+        ; materialising it through scaly_force_frame. Only the sites that really
+        ; allocate need this; a caller-page argument takes get_local_frame instead.
+        ;
+        ; ★The materialisation is a plain CALL, not an inline null-check, on
+        ; purpose: this runs in the middle of expression emission (emit_call,
+        ; emit_constructor_call, emit_for), where splitting the current block
+        ; would invalidate every insert block those walkers captured before
+        ; asking for a page. The runtime helper is small enough that opt/LTO
+        ; inlines its fast path; an -O0 build keeps one call per demand.
+        procedure get_or_create_local_page(mutable this) @direct true returns LLVMValueRef linked
+
+        ; Give the returns already emitted into the current function (before the
+        ; frame existed) their release call.
+        ;
+        ; ★These paths are NOT necessarily page-free at runtime, which is why the
+        ; call is the frame-releasing, null-tolerant one rather than the bare
+        ; scaly_release_root_page the eager version could use here: a return
+        ; inside a LOOP body is emitted before a demand site further down, yet the
+        ; second iteration reaches it with the page long since materialised.
+        procedure patch_prior_returns(mutable this, slot: LLVMValueRef) linked
+
+        ; Look up or declare scaly_release_root_page_full(ptr) -> void — the
+        ; runtime full-teardown entry point (root_pages.scaly). It gates
+        ; deallocate_extensions internally on the page-used predicate, then
+        ; releases the StackBucket root slot.
+        procedure get_release_root_page_full_fn(mutable this) @direct true returns LLVMValueRef linked
+
+        ; Release function_local_page at the current builder position (just
+        ; before the caller emits a terminating return/throw). Full teardown
+        ; (the blocker-C invariant 1, "always free local regions at scope
+        ; exit"): a local ($) region is ALWAYS freed — the emitted call to
+        ; scaly_release_root_page_full frees the owned extension chain +
+        ; exclusive pages (gated on the page-used predicate, see root_pages.scaly)
+        ; then returns the StackBucket root slot. The escape checker (return /
+        ; store / call vectors) guarantees no escaping reference lives on this
+        ; page, so the unconditional free is not a use-after-free.
+        ;
+        ; The gate + teardown live in the RUNTIME helper, not inline here:
+        ; building the gate IR in the emitter (GEP into the Page struct) tripped
+        ; a stage-0 backend miscompile of the huge Emitter whole-struct load
+        ; feeding the GEP type (the page_needs_cleanup version SIGSEGV'd in
+        ; GetElementPtrInst::Create with a null PointeeType). Emitting a single
+        ; call sidesteps it; stage-0's own emitter keeps its inline gate
+        ; (Emitter.cpp CleanupLocalPage) — same runtime behaviour either way.
+        procedure emit_release_local_page(mutable this) linked
+
+        ; ========================================================================
+        ; Dead-region-frame elision
+        ; ========================================================================
+        ;
+        ; get_or_create_local_page above hands a function a local page as soon as
+        ; ANYTHING in its body might need one — and a struct-returning callee
+        ; always "might", because the planner gives every such function a
+        ; caller-page parameter (function_needs_caller_page → needs_implicit_
+        ; return_page). A plain field getter is the extreme case:
+        ;
+        ;     function get_gi(this: GroveNode) returns StringC { gi }
+        ;
+        ; emits as @get_gi(ptr sret, ptr page, ptr this) and never touches `page`
+        ; — but every caller must build a region frame to pass it. Measured on
+        ; the dazzle DSSSL engine (tests/dazzle/PERFORMANCE.md): 133.7 M region
+        ; frames for one 977 KB document, 118.9 M of them (89 %) opened and
+        ; released without a single object ever allocated on them.
+        ;
+        ; This pass removes the ones that are provably pointless, as a peephole
+        ; over the finished module (it CANNOT run while emitting: at the point
+        ; gi_matches is emitted, get_gi may not exist yet).
+        ;
+        ; Two steps, the first iterated to a fixed point:
+        ;
+        ;   1. When a DEFINED function never uses its pointer parameter j, every
+        ;      direct call to it may pass null instead. This is what makes the
+        ;      analysis transitive without a call graph: a function that only
+        ;      FORWARDS its own frame to such a callee loses that use, so on the
+        ;      next round its own parameter is unused and its callers stop
+        ;      passing a frame in turn.
+        ;   2. A frame whose only remaining uses are its own initialising stores
+        ;      and its release calls is dead: erase them and the record. Removing
+        ;      a matched push/pop pair keeps the StackBucket's strict-LIFO
+        ;      invariant (scaly_release_root_page asserts it) — nothing was
+        ;      allocated on the page, so there is also nothing to tear down.
+        ;
+        ; ★Soundness against linkonce_odr interposition: step 1 reads the callee's
+        ; parameter uses out of a DEFINITION in this module, while the linker may
+        ; pick a different module's copy of the same linkonce_odr symbol. That is
+        ; safe because both copies are generated from the same source by the same
+        ; compiler — mangled names carry the instantiated types and the package
+        ; version, so two definitions of one symbol cannot disagree about which
+        ; parameters they read. Declarations are skipped outright (a cross-package
+        ; callee's body is not visible here, so it stays conservative).
+        ;
+        ; ★Restricted to POINTER parameters. Not required for soundness (an
+        ; unused parameter of any type could be nulled) — it keeps the rewrite in
+        ; the region-plumbing shape this exists for, and every page parameter is
+        ; a pointer.
+        ;
+        ; Measured on `dazzledoc -t fot`: 26.86 G → 22.84 G instructions,
+        ; 1.34 s → 1.15 s CPU, output byte-identical.
+        procedure elide_unused_pages(mutable this) linked
+
+        ; elide_unused_pages step 1a: does `f` have a body that never uses its
+        ; caller-frame parameter (LLVM-argument index `page_index`, as recorded by
+        ; emit_function_decl)? Read before any rewriting — see the ODR note there.
+        ;
+        ; ★"Uses" deliberately counts PASSING IT ON, not just forcing it. That is
+        ; what makes nulling the argument safe for the chain: a function that
+        ; cannot force its caller's frame also cannot hand it to anyone who could,
+        ; so cutting the chain there leaves nobody below able to materialise an
+        ; outer region out of order (the ordering argument at scaly_force_frame).
+        ;
+        ; ★The ONE use that does not count is the store of the incoming frame into
+        ; this function's own frame record — the parent link. Without this
+        ; exception the predicate would be false for every function that opens a
+        ; region at all, and the pass would go inert: a cut chain is exactly what
+        ; a nulled argument produces, and it is sound for the same reason.
+        procedure page_param_is_unused(this, mutable f: LLVMValueRef, page_index: int) returns bool linked
+
+        ; Is `usr` the store that links THIS function's frame onto the incoming
+        ; one — `store %page_param, ptr getelementptr(%frame, 0, 1)`? Recognised
+        ; structurally rather than through a recorded handle, because the pass runs
+        ; over the finished module long after the per-function emitter state was
+        ; reset. The shape is unambiguous: the value stored is the caller-frame
+        ; parameter itself, and the destination is the second word of an alloca.
+        procedure parent_link_store(this, mutable usr: LLVMValueRef, p: LLVMValueRef) returns bool linked
+
+        ; elide_unused_pages step 1b: pass null for f's caller page at every
+        ; DIRECT call to f.
+        ;
+        ; ★Only the caller-page argument is ever rewritten, never an arbitrary
+        ; unused parameter. Nulling any unused parameter would be sound in plain
+        ; LLVM semantics, but not here: emit_call builds its OWN func_type per
+        ; call site rather than reusing the declaration's, so "argument j at the
+        ; call" is not generally "parameter j of the callee". The page position is
+        ; the one both sides derive from the same sret/page layout, so it is the
+        ; one that can be matched up safely.
+        ;
+        ; ★Every intermediate is bound to a `let` before use. A parenless chained
+        ; call as an argument (`LLVMGetTypeKind(LLVMTypeOf p)`) and `` read
+        ; straight off a call result are both silent-mis-parse shapes in this
+        ; compiler — the first version of this function had them and the pass came
+        ; out INERT under the seed compiler.
+        procedure null_page_arguments(this, mutable f: LLVMValueRef, page_index: int) linked
+
+        ; parse_array_size: numeric String → size_t, or 0 for empty / any
+        ; non-digit (the s192 fixed-array stack alloca only fires on a numeric
+        ; array_size; named-constant sizes return 0 and fall back to a plain
+        ; pointer slot, matching stage-0's std::stoull if at Emitter.cpp:2393).
+        function parse_array_size(s: String) returns size_t linked
+
+        ; s178: start a fresh pool window when a new function begins.
+        ; Slots registered by earlier functions live in dead frames'
+        ; entry blocks and must never be matched again.
+        procedure reset_temp_pool(mutable this) linked
+
+        ; s178: acquire a temp slot of LLVM type `ty`. Reuses a free
+        ; pooled slot of the identical type (LLVM uniques types, so
+        ; handle equality is type equality) created earlier in the same
+        ; function; otherwise creates a fresh entry-block alloca and
+        ; registers it. Every handed-out slot is logged to the current
+        ; statement window for release_statement_temps. Without reuse,
+        ; big functions like Planner.collapse_operand_sequence# get one
+        ; ~600-byte slot per spill site (~450 of them) and the static
+        ; frame reaches ~460KB — deep recursion then needs ulimit -s
+        ; 65520 to self-compile.
+        procedure acquire_temp(mutable this, mutable ty: LLVMTypeRef, mutable name: pointer[const_char]) @direct true returns LLVMValueRef linked
+
+        ; s178: classify one IR user of a pooled slot pointer. Safe users
+        ; read through the pointer or borrow it: loads, stores INTO the
+        ; slot, call arguments (Scaly callees borrow struct args), and
+        ; null-check compares. A GEP derives a new pointer — recurse into
+        ; its uses. Storing the pointer AS A VALUE escapes; anything
+        ; unrecognized (phi of arm results, select, ret) escapes too.
+        procedure temp_user_is_safe(this, mutable user_v: LLVMValueRef, ptr_v: LLVMValueRef, depth: size_t) returns bool linked
+
+        ; s178: conservative escape check over the slot's emitted uses.
+        ; Depth-capped; unknown means escaped (slot is kept, never
+        ; reused). Future uses can only be created through handles the
+        ; emitter retains — local bindings are checked separately in
+        ; release_statement_temps, and values cannot cross statement
+        ; windows because emit_statement returns only bool.
+        procedure temp_value_escapes(this, mutable v: LLVMValueRef, depth: size_t) returns bool linked
+
+        ; s178: strip a GEP chain to its base and return the base when it
+        ; is an alloca; null otherwise. Used to map binding values and
+        ; pinned arm results back to the pool slot they live in (a when-
+        ; payload binding holds a GEP into the choose.union slot, not the
+        ; slot itself).
+        procedure temp_base_alloca(this, mutable v: LLVMValueRef) @direct true returns LLVMValueRef linked
+
+        ; s178: pin a value the emitter holds across scope exits. The pin
+        ; expires with the enclosing statement window (emit_statement
+        ; restores temp_pinned.length), by which point the merge PHI
+        ; exists and the escape walk sees it.
+        procedure pin_temp_value(mutable this, mutable v: LLVMValueRef) linked
+
+        ; s178: free pool slot `idx` unless it is pinned (a pending arm
+        ; result or the in-flight choose scrutinee), still referenced by
+        ; a live local binding — a let-bound sret/deref result has NO IR
+        ; store, the handle only lives in local_var_values — or its IR
+        ; uses show the pointer escaping. Conservative on all three:
+        ; kept slots are simply never reused.
+        procedure release_slot_if_dead(mutable this, idx: size_t) linked
+
+        ; s178: copy a struct value into `dst` without materializing the
+        ; whole struct as an SSA value. Big-aggregate load+store pairs
+        ; make the backend allocate a spill slot per loaded value —
+        ; ~350KB of collapse_operand_sequence#'s 430KB frame was spill
+        ; slots against only 84KB of real allocas (a 50-copy synthetic
+        ; shows 0x22000 vs 0x7000 frames). When the value is a load,
+        ; memcpy straight from the load's source pointer and erase the
+        ; load if nothing else uses it; non-struct or non-load values
+        ; fall back to a plain store.
+        ; Returns the emitted store or memcpy instruction — both void-
+        ; typed and non-null, so call sites where the original store was
+        ; in value position (the `when variable:` assignment arm tail in
+        ; emit_action) keep their exact observable behavior at null
+        ; checks and PHI void-gates.
+        procedure copy_struct_value(mutable this, mutable dst: LLVMValueRef, mutable src_value: LLVMValueRef, mutable ty: LLVMTypeRef) @direct true returns LLVMValueRef linked
+
+        ; `&^obj v` — box a COPY of value v onto obj's page, yield ref[X].
+        ; Mirrors the struct-construction region-alloc path (resolve page →
+        ; Page::allocate(sizeof, alignof) → copy the value in → return ptr) but
+        ; for a single pre-existing value rather than field-by-field init.
+        ; Replaces the hand-rolled `var H Vector[X]^rp(1); H.put(0, v); H.get(0)`.
+        procedure emit_box(mutable this, mutable bx: PlannedBox) @direct true returns LLVMValueRef linked
+
+        ; s178: return the current statement window's pooled temps to the
+        ; free pool when provably dead (see release_slot_if_dead).
+        procedure release_statement_temps(mutable this) linked
+
+        ; ========================================================================
+        ; Function Cache
+        ; ========================================================================
+
+        function lookup_function_cache(this, mangled_name: String) @direct true returns LLVMValueRef linked
+
+        procedure cache_function(mutable this, mangled_name: String, llvm_func: LLVMValueRef) @persists true linked
+
+        ; Record where emit_function_decl put the caller-page parameter of the
+        ; function it has just cached (the most recent entry).
+        procedure note_page_param_index(mutable this, index: size_t) @persists true linked
+
+        ; ========================================================================
+        ; Local Variable Management
+        ; ========================================================================
+
+        function lookup_variable(this, name: String) @direct true returns LLVMValueRef linked
+
+        procedure define_variable(mutable this, name: String, value: LLVMValueRef) @persists true linked
+
+        procedure clear_local_variables(mutable this) linked
+
+        ; s128: push a marker recording the current local_var_names.length.
+        ; Sites that introduce a fresh Scaly scope (choose case body, if
+        ; branch, while/for body, try arms, statement block) call enter_scope
+        ; on entry and exit_scope right before their terminator. Mirrors
+        ; stage-0's Emitter::enterScope / exitScope (which use a SmallVector
+        ; of similar snapshots).
+        procedure enter_scope(mutable this) linked
+
+        ; s128: pop the most recent scope marker, truncate local_var_names
+        ; and local_var_values back to that snapshot so any define_variable
+        ; calls made inside the scope are forgotten. Sibling arms calling
+        ; enter_scope/exit_scope around their bodies stop leaking names into
+        ; each other; lookup_variable's forward-iteration first-match rule
+        ; now picks the most recently defined version visible at the current
+        ; point.
+        procedure exit_scope(mutable this) linked
+
+        ; ========================================================================
+        ; Type Mapping
+        ; ========================================================================
+
+        ; Map a PlannedType to an LLVM type
+        ; True when `name` is a delegate (function-pointer) concept declared in the
+        ; current plan. Linear scan over current_plan.delegates, which is empty for
+        ; delegate-free programs (the scaly package) — so the common path is a
+        ; single null/length check (GAP B).
+        function is_delegate_type_name(this, name: String) returns bool linked
+
+        procedure map_type(mutable this, planned_type: PlannedType) @direct true returns LLVMTypeRef linked
+
+        ; Is this planned type pointer-SHAPED, i.e. does map_type's `ptr` answer
+        ; describe the value itself rather than fall out of the last-resort
+        ; fallback at the bottom of map_type?
+        ;
+        ; map_type ends in an opaque `ptr` for any name it cannot resolve — most
+        ; often a BY-VALUE struct from another package that this root never plans
+        ; (the is_runtime_opaque_struct set: Page, PageList, StackBucketHeader,
+        ; ...; ensure_member_layout# deliberately skips exactly those). The IR
+        ; stays valid, but a caller that reads the type KIND back cannot tell the
+        ; placeholder from a real pointer, and every such caller then does the
+        ; pointer thing to a struct: emit_sizeof answers 8 for a 40-byte Page, and
+        ; emit_member_address LOADS the field and stores THROUGH it — a wild store
+        ; that lands wherever the struct's first 8 bytes happen to point.
+        ; Deciding on the NAME instead is exact: only pointer/ref, an NPO Option
+        ; (pointer-payload), a delegate (function pointer) and the intrinsics
+        ; (which map_type resolves before ever reaching the fallback) are really
+        ; pointers.
+        procedure type_is_pointer_shaped(mutable this, t: PlannedType) returns bool linked
+
+        ; deref_slot_holds_a_reference#: does `*p` name a slot that holds a
+        ; REFERENCE rather than the struct itself? The s136 struct-load in the
+        ; deref-store arm is correct only for a slot holding the struct; when
+        ; the slot holds a reference, loading sizeof(struct) bytes and storing
+        ; them into the 8-byte slot writes the VALUE where the caller expects
+        ; an ADDRESS.
+        ;
+        ; ★ Both halves of the old inline test asked the NAME and both were too
+        ; narrow -- the ninth sighting of the ask-the-SHAPE-not-the-NAME seam:
+        ;   * the OUTER name accepted only `pointer`, so an out-cell in its
+        ;     converted spelling (`ref[ref[X]?]`, 2026-08-28) was never seen;
+        ;   * the INNER name accepted only `pointer`/`ref`, so `ref[X]?` -- which
+        ;     IS `Option[ref[X]]` -- failed a test meant to accept everything
+        ;     reference-shaped, and `pointer[ref[X]?]` was wrong too.
+        ; Measured before the fix: `set c: it` on a `ref[ref[Item]?]` emitted
+        ; `load %Item` + `store %Item` into the 8-byte cell, at rc 0. The one
+        ; opensp site wrote `&prosyn` and carried the workaround in a comment.
+        ;
+        ; ★ NOT type_is_pointer_shaped#: that helper answers a different
+        ; question (is map_type's opaque `ptr` a real pointer) and says true for
+        ; the INTRINSICS, so it would call a `pointer[int]` slot a reference.
+        function deref_slot_holds_a_reference(this, deref_rt: PlannedType) returns bool linked
+
+        ; The element type a GEP should step by for `pointer[T] + n`. map_type is
+        ; the answer except when it hands back its unresolved-name placeholder
+        ; (see type_is_pointer_shaped#) — then the stride would be 8 for a struct
+        ; of any size: `p + 1` on a pointer[Page] stepped 8 bytes instead of 40,
+        ; so walking an array of a cross-package struct read every element from
+        ; inside the first one. The literal layouts synthesize_literal_struct#
+        ; keeps for exactly the never-laid-out stdlib types give the real stride;
+        ; if even that has no entry, keep map_type's answer rather than emit a
+        ; GEP over a type this module has no definition for.
+        procedure stride_type(mutable this, mutable elem: PlannedType) @direct true returns LLVMTypeRef linked
+
+        ; s89: Create a placeholder named struct with `{ ptr }` body for
+        ; cross-package types not in plan.structures. Used by emit_function_decl
+        ; and emit_call to give the sret type attribute a sized type. Single-
+        ; pointer-struct layout matches `String` (the only cross-package struct
+        ; return exercised by the stretch metric); other multi-field structs
+        ; (e.g. Vector) would over-estimate the slot size, which is incorrect
+        ; for stack layout but the failure mode is that data after the struct
+        ; gets clobbered, not that the function corrupts memory beyond bounds.
+        procedure get_or_create_struct_placeholder(mutable this, name: String, mangled_name: String) @direct true returns LLVMTypeRef linked
+
+        ; s99: Synthesize a literal LLVM struct type from a generic
+        ; PlannedStructure's properties. Used by emit_member_assignment
+        ; load-through when the inner concrete type (e.g. Vector[String])
+        ; isn't materialized in struct_cache. Walks current_plan.structures
+        ; for an entry matching `name`, maps each property type, and builds
+        ; a literal struct via LLVMStructTypeInContext.
+        ;
+        ; Type variables in the generic (e.g. `pointer[T]`) map to ptr,
+        ; concrete primitives map normally. Returns null if no Structure
+        ; matches or it has no properties.
+        procedure synthesize_literal_struct(mutable this, name: String) @direct true returns LLVMTypeRef linked
+
+        ; s89: Cached sret kind id (lazily looked up). 0 = uninitialized.
+        function sret_kind_id(this) returns u32 linked
+
+        function noalias_kind_id(this) returns u32 linked
+
+        ; A callee that never returns must SAY so, or the block after the call
+        ; stays live: LLVM then assumes the call may fall through and may
+        ; clobber memory, so nothing may be hoisted out of a loop whose body
+        ; contains a trap. That is what a bounds check costs without this.
+        ; Measured 2026-08-27 over 200M container reads, built the way the
+        ; ports are built (whole-program `opt -O2` + `llc -O2`): the guarded
+        ; read cost three extra loads per element and 0.11 s against 0.07 s
+        ; for the same loop over a raw pointer; with the attribute LLVM proves
+        ; the guard redundant against the loop condition, deletes the cold
+        ; block INCLUDING its message, and the loop comes out instruction-
+        ; identical to the pointer walk (`ldr x13, [x11], #8` + subs + add +
+        ; b.ne). The attribute carries on a VARARGS declaration too, which is
+        ; the shape the s186 on-the-fly path emits — measured, not assumed.
+        ;
+        ; The name list is closed and holds only entry points that cannot
+        ; return by their own C contract. `exit` is the one this tree traps
+        ; with (exit 14/15/17/19/20); `abort` and `_exit` are here because a
+        ; port may reach for them and a missing attribute is silent.
+        procedure mark_noreturn_callee(mutable this, mutable fn: LLVMValueRef, name: String) linked
+
+        procedure add_function_attribute(mutable this, mutable fn: LLVMValueRef, mutable name: String) linked
+
+        ; setjmp is the one callee in this compiler that RETURNS TWICE, and
+        ; the attribute is not cosmetic: without it LLVM may promote a local
+        ; of the catching function into a register across the call, and after
+        ; the jump that register holds whatever it held before — the classic
+        ; setjmp trap, which C answers with `volatile`. With the attribute the
+        ; backend keeps what it must in memory, so a `try` can use its own
+        ; locals in the else arm (measured against clang's own output for the
+        ; same shape, TRAPS.md 5.6).
+        procedure mark_returns_twice_callee(mutable this, mutable fn: LLVMValueRef) linked
+
+        ; libc setjmp. The buffer comes from scaly_catch_push (the shim owns
+        ; the jmp_buf layout, which is OS- and arch-specific and must not reach
+        ; the ONE committed seed), so this declaration only needs the pointer.
+        procedure get_setjmp_fn(mutable this) @direct true returns LLVMValueRef linked
+
+        ; The catch-point shim (scaly/memory/panic.c). push takes the two
+        ; function POINTERS that reach the region watermark and the unwind, so
+        ; that neither this file nor the C shim writes the other's mangled
+        ; names; it answers a pointer to the frame's jmp_buf.
+        procedure get_catch_fn(mutable this, mutable name: String, nargs: int, returns_ptr: bool) @direct true returns LLVMValueRef linked
+
+        ; The kind of the panic that was caught, as the variant tag of the
+        ; prelude's RuntimeFault, and the filler that writes a variant's
+        ; payload record in place. The FILLER exists so the record's field
+        ; layout stays in the shim instead of being rebuilt with GEPs here.
+        procedure get_panic_kind_fn(mutable this) @direct true returns LLVMValueRef linked
+
+        ; ★ONE filler for every kind, dispatching in the shim on the kind it
+        ; just recorded -- not one function per variant. That is what keeps
+        ; this emitter kind-agnostic: the switch below sends every arm to the
+        ; same callee, and the arm that runs is by construction the one whose
+        ; tag equals that kind. A third trap kind appends a variant in the
+        ; prelude and a case in the shim, and touches nothing here.
+        procedure get_panic_fill_fn(mutable this) @direct true returns LLVMValueRef linked
+
+        ; ★★★The two Scaly routines the shim calls back into, referenced BY
+        ; THEIR ITANIUM NAMES -- which freezes their parameter types, the cost
+        ; CLAUDE.md names for the eight symbols that already pay it. Grep for
+        ; these strings before re-signing scaly_panic_mark or
+        ; scaly_panic_unwind_to; the RETURN is free (Itanium does not encode
+        ; one). They are looked up rather than declared where possible, so a
+        ; rename shows up as an undefined symbol at link time and not as a
+        ; silently wrong call.
+        procedure get_panic_mark_fn(mutable this) @direct true returns LLVMValueRef linked
+
+        procedure get_panic_unwind_fn(mutable this) @direct true returns LLVMValueRef linked
+
+        ; The two runtime prints the emitted traps use. Both live in
+        ; libscaly.a, which EVERY `-o` link pulls in (SCALY_HOME's lib or the
+        ; cwd fallback), so a generated call resolves in exactly the programs
+        ; the s186 on-the-fly path already emits runtime calls into.
+        procedure get_eputs_fn(mutable this) @direct true returns LLVMValueRef linked
+
+        procedure get_eputnl_fn(mutable this) @direct true returns LLVMValueRef linked
+
+        ; The stdlib's null-unwrap panic (scaly/memory/root_pages.scaly). Same
+        ; shape as get_eputs_fn: the body lives in libscaly.a, so a program's
+        ; module carries a `declare` and the noreturn attribute has to be put
+        ; on by hand -- mark_noreturn_callee knows this mangled name.
+        ;
+        ; ★★★The literal FREEZES scaly_panic_null's parameter types, the ninth
+        ; such case in this tree (CLAUDE.md's rule): grep for the string before
+        ; re-signing it. The RETURN is free -- Itanium does not encode one.
+        procedure get_panic_null_fn(mutable this) @direct true returns LLVMValueRef linked
+
+        ; libc `exit`. Declared with the C prototype (i32, not Scaly's 64-bit
+        ; `int`) and marked noreturn through the same helper every other trap
+        ; callee goes through — without the attribute the block after the call
+        ; stays live and nothing may be hoisted out of a loop containing a trap.
+        procedure get_exit_fn(mutable this) @direct true returns LLVMValueRef linked
+
+        ; `x as ref[T]` is this language's `!`: the author asserts that a
+        ; nullable value is present. Until now NOTHING checked the assertion --
+        ; the three `ref` gates make a null unrepresentable in a DECLARATION
+        ; (null into a ref, testing a ref, an Option into a ref are each a hard
+        ; rc 4), so the unwrap is the one door left, and a lie walked through it
+        ; silently: the first member access on the result was a SIGSEGV, rc 139,
+        ; with no message -- and stdout is buffered, so the signal took the
+        ; program's last words with it too. 750 such unwraps stand in the tree.
+        ;
+        ; The check belongs HERE and not in the accessors: this is the single
+        ; site where the claim is made. In an accessor it would test what the
+        ; declaration already guarantees, and it would still leave the ten
+        ; thousand ordinary `.field` hops unguarded.
+        ;
+        ; Cost is a compare and a branch into a cold block that ends in
+        ; `unreachable`; with the noreturn attribute above LLVM hoists across it
+        ; and, where the value is provably non-null, deletes the whole thing.
+        ; Nullable in the sense the unwrap asserts away: the NPO Option
+        ; wrapper (`ref[T]?` / `pointer[T]?`) or a bare pointer.
+        function type_may_be_null(this, t: PlannedType) returns bool linked
+
+        ; The enclosing symbol's name, for the trap message. There is no source
+        ; location at run time; a mangled name is what a reader can grep for.
+        procedure current_function_label(mutable this) returns pointer[char] linked
+
+        procedure emit_null_unwrap_trap(mutable this, mutable value: LLVMValueRef, mutable site: pointer[char]) linked
+
+        ; s89: Predicate — does a Scaly function with this return type need
+        ; the sret IR pattern (`define void @fn(ptr sret(%T) %retval, ...)`)?
+        ;
+        ; Mirrors stage-0 Emitter.cpp:1241-1245. Only Itanium-mangled (`_ZN...`)
+        ; functions get sret; extern C functions (LLVMContextCreate, fopen, ...)
+        ; keep the C ABI scalar return regardless of struct shape.
+        ;
+        ; Within the Itanium-mangled set, sret applies when the return type
+        ; isn't a primitive, pointer, ref, or array. Unknown types (cross-
+        ; package without plan.structures entry) are assumed to be Scaly
+        ; structs and sret-ified — they otherwise mis-link against stage-0's
+        ; libscaly.a (which always sret-ifies the same return).
+        procedure needs_sret_for_return(mutable this, mangled_name: String, return_type_ref: ref[PlannedType]?) returns bool linked
+
+        ; True iff `t` is `Option[ref[X]]` or `Option[pointer[X]]` — the
+        ; True when `name` is a genuine tagged union declared in the current
+        ; plan. Used by the choose emitter to reject the NPO (null-pointer)
+        ; dispatch for a real multi-variant union reached through a pointer
+        ; scrutinee (`choose this` where this: pointer[CodingSystem]) — NPO is
+        ; the Option[ref/pointer] collapse only. Without this, a union whose
+        ; first variant is nullary (variant_index 0, so the has_some heuristic
+        ; misfires) dispatches on `this == null` and always takes variant 0.
+        function type_name_is_plan_union(this, name: String) returns bool linked
+
+        ; NPO (null-pointer optimization) Option layout that's represented
+        ; as a single nullable pointer rather than a tagged union.
+        function is_npo_option(this, t: PlannedType) returns bool linked
+
+        ; The LLVM type of the loop-var VALUE for a scalar iterator element.
+        ; `element_type` is `pointer[T]`; return the LLVM type of T so the
+        ; caller can load the scalar through next()'s element pointer.
+        procedure scalar_element_value_type(mutable this, element_type: PlannedType) @direct true returns LLVMTypeRef linked
+
+        ; s89: Equivalent predicate for a callee at a call site. Reads
+        ; the planned result_type (the Plan-side return type the call
+        ; site expects to receive). Same heuristic as needs_sret_for_return.
+        procedure call_needs_sret(mutable this, mangled_name: String, result_type: PlannedType) returns bool linked
+
+        ; Map intrinsic type name to LLVM type
+        function map_intrinsic_type(this, name: String) @direct true returns LLVMTypeRef linked
+
+        ; Direct intrinsic-name → LLVM type lookup that doesn't touch the
+        ; intrinsic_type_names Vector. Used at sites where the Vector-based
+        ; lookup is unreliable (it stores `String(...)` values from
+        ; init_intrinsic_types whose `data` dangles once init returns).
+        ; Returns null when the name isn't a known intrinsic — callers
+        ; should fall back to map_type for struct/pointer/ref handling.
+        procedure map_intrinsic_type_by_name(mutable this, name: String) @direct true returns LLVMTypeRef linked
+
+        ; Check if a type name is an intrinsic type
+        function is_intrinsic_type(this, name: String) returns bool linked
+
+        ; ========================================================================
+        ; Structure Type Emission
+        ; ========================================================================
+
+        ; Emit LLVM struct type for a PlannedStructure
+        procedure emit_struct_type(mutable this, mutable struct: PlannedStructure) @direct true returns LLVMTypeRef linked
+
+        ; ========================================================================
+        ; Union Type Emission
+        ; ========================================================================
+
+        ; s179: round offset up to a multiple of align (a power of two).
+        ; Local to Emitter — small let-steps instead of one mixed
+        ; +/-//* expression (no fixed operator precedence).
+        function abi_align_to(this, offset: size_t, align: size_t) returns size_t linked
+
+        ; s179: true when every type reachable from ty has a knowable ABI
+        ; size. Opaque structs (fresh type vars, s114 placeholders), void,
+        ; vectors, and function types are unsizeable — callers must fall
+        ; back to a conservative estimate rather than risk under-sizing.
+        procedure llvm_type_sizable(this, mutable ty: LLVMTypeRef) returns bool linked
+
+        ; s179: ABI alignment of an LLVM type, walked structurally.
+        ; Matches DataLayout::getABITypeAlign for everything stage-1
+        ; emits (ints, floats, pointers, non-packed structs, arrays).
+        ; Never calls into DataLayout: LLVMABISizeOfType corrupts
+        ; stage-1 process state (s149) and getTypeSizeInBits SIGTRAPs
+        ; on opaque structs (s97). Check llvm_type_sizable first.
+        procedure llvm_type_abi_align(this, mutable ty: LLVMTypeRef) returns size_t linked
+
+        ; s179: ABI alloc size of an LLVM type, walked structurally.
+        ; Mirrors stage-0's getTypeSize (DataLayout::getTypeAllocSize,
+        ; Emitter.cpp:6637) without touching DataLayout — see the s149/
+        ; s97 cautions on llvm_type_abi_align. Check llvm_type_sizable
+        ; first; unsizeable kinds return 0 here.
+        procedure llvm_type_abi_size(this, mutable ty: LLVMTypeRef) returns size_t linked
+
+        ; Emit LLVM type for a PlannedUnion (tagged union)
+        procedure emit_union_type(mutable this, mutable union_type: PlannedUnion) @direct true returns LLVMTypeRef linked
+
+        ; ========================================================================
+        ; Function Declaration
+        ; ========================================================================
+
+        ; s149: Build the Result-wrapper LLVM type for a throws function.
+        ; Shape: { i8 status, [N x i8] data } where N = max(sizeof T, 8).
+        ; The status byte (0 = Success, 1 = Throw) is independent from the
+        ; inner variant tag of T, fixing the stage-0/stage-1 collision when T
+        ; is a union and the Success variant has tag != 0.
+        ; Errors are passed by pointer (allocated on the exception page by
+        ; the thrower), so 8 bytes is sufficient for the error case. Mirrors
+        ; stage-0 Emitter.cpp:1204-1221.
+        ; s194: payload-size contribution of one type to the throws Result
+        ; wrapper's data field. Returns the s179-walked ABI size, or 256 (the
+        ; conservative over-allocation) when the type is null/opaque/unsizeable
+        ; or the `{ptr}` cross-package placeholder (unknown true size — under-
+        ; sizing would let a store overflow the caller's slot).
+        procedure throws_wrapper_payload_size(this, mutable ty: LLVMTypeRef) returns size_t linked
+
+        procedure build_throws_result_type(mutable this, mutable value_ty: LLVMTypeRef, mutable throws_ty: LLVMTypeRef, mangled_name: String) @persists true @direct true returns LLVMTypeRef linked
+
+        ; Emit function declaration (signature only)
+        procedure emit_function_decl(mutable this, mutable func: PlannedFunction) @direct true returns LLVMValueRef linked
+
+        ; s186: detect an uninstantiated generic template by its mangled name.
+        ; A literal 1-char type parameter named T/K/V is Itanium-encoded as the
+        ; byte sequence `1T` / `1K` / `1V` (length-1 name + the letter). Stage-1's
+        ; planner spuriously plans these templates with unresolved field/param
+        ; types, so emit_function_body would produce garbage instructions (null
+        ; branch conditions, store-into-integer). They are provably dead — the
+        ; C++ stage-0 omits them entirely yet links a fully working compiler.
+        ; The byte BEFORE the `1` must not be a digit, else `1T` would match the
+        ; tail of a multi-digit length prefix on a real type name (e.g. an
+        ; 11-char name `11Txxxxxxxxx`). Concrete instantiations spell out their
+        ; types (`6String`, `i`, `IiE`) and never carry a length-1 T/K/V token.
+        function is_uninstantiated_template(this, mangled: String) returns bool linked
+
+        ; ========================================================================
+        ; TCO — self tail call to loop (2026-08-04)
+        ; ========================================================================
+        ;
+        ; `return f(args)` written INSIDE f becomes `br %tail.loop` with the
+        ; arguments handed to the header's PHIs. Every other shape keeps its
+        ; `call`, and a function without such a return is emitted exactly as
+        ; before — the transform is opt-in per function, decided by the walk
+        ; below before a single instruction of the body exists.
+        ;
+        ; Why in the emitter, when LLVM's tailcallelim does the same under -O2:
+        ; emission defaults to NO opt pipeline, and so do --jit/--run and every
+        ; bootstrap stage. Measured 2026-08-04 on `sum_to(3000000, 0)`: SIGSEGV
+        ; at the default, fine at -O2. A language promise about recursive style
+        ; cannot be a function of -O — and tailcallelim declines exactly the
+        ; cases this compiler produces most (a frame-carrying callee whose
+        ; region calls it cannot prove side-effect-free).
+        ;
+        ; ★What the loop does NOT do: open a fresh region per iteration. The
+        ; jump keeps this function's one local frame, so iteration allocations
+        ; accumulate until the real return, precisely as a `while` loop's do
+        ; today. It trades unbounded STACK for a longer-lived region — which is
+        ; the trade the recursion needed. A tail loop whose body allocates per
+        ; iteration is therefore not automatically an improvement; a bounded
+        ; stack is.
+
+        ; The `return` operand shape that qualifies: exactly one operand, no
+        ; member access on it, and its expression a DIRECT call to `mangled` with
+        ; `arity` user arguments. `return f(x).length`, an operator, an intrinsic
+        ; and an indirect call all fail here.
+        ;
+        ; ★A call carrying a Local or Reference lifetime (`f^page(…)`) is
+        ; rejected: the jump keeps THIS frame, so it cannot honour a request to
+        ; place the next iteration's allocations on another page. Unspecified and
+        ; Call are both fine — Call means "the caller's page", and after the jump
+        ; the caller's page is still ours.
+        function return_is_self_call(this, result: ref[Vector[PlannedOperand]]?, mangled: String, arity: size_t) returns bool linked
+
+        ; Walkers: is there any qualifying `return` anywhere in this body? A
+        ; return inside an `if`, a `choose` arm or even a `while` body is a tail
+        ; call all the same — the jump leaves those blocks the way a `ret` does.
+        ; Lambda bodies are deliberately NOT walked: they are separate functions.
+        function operands_have_self_tail_call(this, ops: ref[Vector[PlannedOperand]]?, mangled: String, arity: size_t) returns bool linked
+
+        function action_has_self_tail_call(this, action: PlannedAction, mangled: String, arity: size_t) returns bool linked
+
+        function statement_has_self_tail_call(this, st: PlannedStatement, mangled: String, arity: size_t) returns bool linked
+
+        function statements_have_self_tail_call(this, sts: ref[Vector[PlannedStatement]]?, mangled: String, arity: size_t) returns bool linked
+
+        ; Does this function qualify, and can its parameters carry the loop?
+        procedure tail_loop_eligible(mutable this, mutable func: PlannedFunction, mutable llvm_func: LLVMValueRef, user_count: size_t, arg_offset: size_t) returns bool linked
+
+        ; Open the header: entry branches into it and every user parameter gets a
+        ; PHI seeded with the incoming argument. Must run AFTER the page
+        ; parameter is bound (its force_frame belongs in entry) and BEFORE the
+        ; user parameters are bound — they bind to these PHIs.
+        procedure open_tail_loop(mutable this, func: PlannedFunction, mutable llvm_func: LLVMValueRef, entry_block: LLVMBasicBlockRef, mangled: String, user_count: size_t, arg_offset: size_t) linked
+
+        ; Bring one back-edge argument to its PHI's type. Under the scalar/pointer
+        ; restriction above the types already agree in every shape we accept; the
+        ; two shims mirror emit_call's (a struct value handed to a pointer slot
+        ; goes through a temp, a pointer handed to a struct slot is loaded) so a
+        ; member-access argument cannot become a type crash. Anything left is an
+        ; emitter inconsistency, and it dies LOUDLY rather than emitting IR that
+        ; llc would reject with a message pointing nowhere near here.
+        procedure coerce_tail_arg(mutable this, mutable val: LLVMValueRef, mutable want: LLVMTypeRef) @direct true returns LLVMValueRef linked
+
+        ; Is this argument parameter `index` itself, handed on unchanged? Then
+        ; nothing may be copied: the bytes already live where the PHI points, and
+        ; the copy would be a slot memcpy'd onto itself.
+        ;
+        ; ★Only the SAME position counts, and that restriction is the fix for a
+        ; bug this rule had in its first form ("is it ANY of our PHIs"). Consider
+        ; `return f(y, built, …)`: parameter x inherits y's PHI while y's shadow is
+        ; rewritten at the same site, so from the third iteration on x pointed at
+        ; y's NEW value. Same position is safe because the only site that writes
+        ; shadow[i] is one that also sets PHI[i] to it, and every read of the
+        ; parameter happens before the commit phase. A cross-position exchange
+        ; (`return f(y, x, …)`) therefore goes through the copy machinery, where
+        ; staging orders the reads correctly — a little more work than swapping two
+        ; pointers, and correct for every mix of sites.
+        function value_is_phi_at(this, v: LLVMValueRef, index: size_t) returns bool linked
+
+        ; Can this pointer be trusted to address the same bytes on the NEXT
+        ; iteration? Only when it does not point into THIS frame's storage: a
+        ; parameter (`this`), a loaded pointer (a region-allocated binding's slot
+        ; holds the heap address) and a call result all point at a page, at the
+        ; caller or at the receiver, and a GEP inherits its base's answer.
+        ;
+        ; ★An ALLOCA is this frame — and so is everything this cannot classify (a
+        ; PHI or select mixing frame storage with a page), which is why the
+        ; fallthrough is `false`: guessing "outside" would keep a pointer whose
+        ; bytes the next iteration overwrites, and that failure is silent. Guessing
+        ; "inside" costs a copy, and a copy is only ever OBSERVABLE for storage
+        ; that lives in this frame — where a caller can neither see a mutation
+        ; through the parameter (its own copy is dead after the tail call) nor
+        ; derive a page from the address (Page.get of frame storage is meaningless
+        ; already). That asymmetry is what makes this direction the safe one.
+        procedure pointer_outside_frame(this, mutable v: LLVMValueRef) returns bool linked
+
+        ; memcpy(dst, src, sizeof(ty)) between two pointers. The C entry point
+        ; rather than a load+store: map_type-produced struct types are not always
+        ; loadable (the s55 cross-package note), and every destination here is a
+        ; slot of exactly this type. Callers guarantee dst and src are disjoint —
+        ; the two ways they could coincide are ruled out before this is reached
+        ; (value_is_own_phi for the pass-through, and a same-type sub-field being
+        ; impossible for a strict part of a struct).
+        procedure copy_struct_bytes(mutable this, dst: LLVMValueRef, src: LLVMValueRef, mutable ty: LLVMTypeRef) linked
+
+        ; Lower `return f(args)` inside f as a jump to the header. Returns false
+        ; when this return is not that shape — and then NOTHING has been emitted,
+        ; so emit_return proceeds normally. Everything past the shape test is
+        ; committed: the arguments are already emitted, so a giving-up path there
+        ; would evaluate them twice (a call argument would run twice). Hence the
+        ; loud exits rather than a late `return false`.
+        procedure emit_self_tail_jump(mutable this, mutable ret: PlannedReturn) returns bool linked
+
+        ; Emit function body (implementation)
+        procedure emit_function_body(mutable this, mutable func: PlannedFunction) returns bool linked
+
+        ; ========================================================================
+        ; Constant Emission
+        ; ========================================================================
+
+        ; Emit a String literal as a compile-time CONSTANT: a private global
+        ; [varint(len)][content][NUL] in .rodata, returning a String { ptr }
+        ; value pointing at the varint start. No page, no allocation, immortal.
+        ; The trailing NUL (uncounted, the s186 over-allocation contract) keeps
+        ; c_data() zero-copy for C/extern interop; the empty string is just
+        ; { null } (get_length treats null as 0). Mirrors String.init#'s LEB128
+        ; varint exactly so get_length/get_buffer decode it.
+        procedure emit_string_constant(mutable this, value: String) @direct true returns LLVMValueRef linked
+
+        ; Emit a constant value
+        procedure emit_constant(mutable this, mutable const: PlannedConstant, mutable result_type: PlannedType) @direct true returns LLVMValueRef linked
+
+        ; ========================================================================
+        ; Basic Block Creation
+        ; ========================================================================
+
+        ; Create a new basic block in the current function
+        procedure create_block(mutable this, mutable name: String) @direct true returns LLVMBasicBlockRef linked
+
+        ; ========================================================================
+        ; Main Emission Entry Point
+        ; ========================================================================
+
+        ; Emit a complete plan
+        ; Reachability-free test exclusion for the .ll seed build (--no-tests).
+        ; The scaly/scalyc package test orchestrators (`test`, `test_*`) are the
+        ; only callers of uninstantiated generics (Option[int], Result[int,bool],
+        ; Slice[int].subslice, HashMap[String,int]); cli.main never reaches them.
+        ; Default off, so normal -c/-o/AOT/selfhosted emission is unchanged; the
+        ; seed build passes --no-tests so these dead symbols drop and the seed
+        ; links with zero undefined. NOT a compiler-wide name skip (that regresses
+        ; AOT sibling_call's legit `function test()`) — gated on the flag.
+        function is_test_function(this, func: PlannedFunction) returns bool linked
+
+        procedure emit(mutable this, mutable plan: Plan, mutable module_name: String) returns bool io linked
+
+        ; s187: define the free-form page-get intrinsic `_Z3getPv`. The s181
+        ; `^this` region-alloc emission (and the planner's page-get sites)
+        ; reference `get(void*)` mangled as the free `_Z3getPv`, but the Scaly
+        ; source defines `Page.get` under the namespace mangling
+        ; `_ZN4Page3getEPv`. Stage-0's generatePageGetThis plans Page.get under
+        ; the free name so its body is emitted; stage-1 only ever DECLARED
+        ; `_Z3getPv` (on-the-fly in emit_call), leaving it undefined in the
+        ; seed (.ll round-trip with no stage-0-built libscaly.a). Tie the free
+        ; form to the namespace definition: when `_ZN4Page3getEPv` has a body
+        ; in this module (only true for scaly.ll, where Page is defined) and
+        ; `_Z3getPv` is referenced but bodyless, emit `_Z3getPv` as a
+        ; LinkOnceODR forwarder. Emitting it ONLY where Page.get is defined
+        ; keeps scalyc.ll declaring-not-defining (no duplicate at link).
+        procedure ensure_free_page_get(mutable this) linked
+
+        ; Rule-10 build stamp (stage 7, milestone 7.3): every PROGRAM module
+        ; (top-level statements — the same gate as the main wrapper) defines
+        ; `u64 scaly_build_stamp()` returning the FNV-1a-64 of the module's
+        ; PRE-STAMP IR text. The hash skips the `; ModuleID` comment, the
+        ; `source_filename` line and the `target datalayout` line, so a
+        ; byte-identical source build reproduces the stamp regardless of the
+        ; checkout path or the --target choice (the LP64-LE wire format keeps
+        ; arm64<->x86_64 interop, memo rule 8 — the stamp must not break it).
+        ; External linkage like main: whole-program opt must never drop it.
+        ; The stdlib Node handshake reads the stamp through an extern
+        ; declaration and exchanges it as the FIRST bytes on the wire — two
+        ; binaries from different builds refuse each other loudly (rule 10).
+        function stamp_line_skipped(this, text: pointer[char], i: size_t) returns bool linked
+
+        procedure emit_build_stamp(mutable this) linked
+
+        ; Append empty stub bodies for any function declarations whose
+        ; mangled name embeds a literal-T template parameter. Walks the
+        ; module's function list via LLVMGetFirstFunction / LLVMGetNextFunction.
+        ; For void-return functions, emits `ret void`; for non-void, emits
+        ; `ret zeroinitializer` of the return type. Skips functions that
+        ; already have at least one basic block (definitions). Skips
+        ; non-template extern declarations (libc / LLVM-C API) by
+        ; requiring the literal-T marker in the symbol name.
+        procedure emit_template_stubs(mutable this) linked
+
+        ; ========================================================================
+        ; ORC LLJIT (in-process JIT) — self-hosted `--run` mode
+        ; ========================================================================
+
+        ; JIT-only: stub every declared-only Scaly-mangled (_Z...) function with a
+        ; trivial return. Functions from loaded modules reference stdlib symbols
+        ; the JIT module doesn't fully define; these stubs prevent JIT link
+        ; failures for functions declared but never reached at runtime. C functions
+        ; (libc / LLVM-C) keep their declarations — the process symbol generator
+        ; resolves them from the host. Mirrors stage-0 jitExecuteIntFunction's stub
+        ; pass (Emitter.cpp). Only _Z names (s17 lesson: never stub LLVM*/libc).
+        ;
+        ; A blanket stub, though, ALSO null-stubs the RBMM runtime + stdlib
+        ; (Page.allocate, StringBuilder.*, ...) — declared-only here but real
+        ; functions the host process exports — so region allocation returned a
+        ; null page and every JIT program that heap-allocates crashed or produced
+        ; empty output. We now skip stubbing any symbol dlsym finds in the host,
+        ; letting the process generator resolve the real one.
+        ; This only works when the host binary EXPORTS those symbols. Both builds
+        ; now do: the multi-object bootstrap link (/tmp/scalyc_stage2) keeps them
+        ; global on its own, and the whole-program `opt -O2` build (scalyc/build/
+        ; scalyc) is made to as well — build-from-seed.sh promotes the runtime
+        ; bodies to weak_odr before opt (else opt DCE's the fully-inlined ones,
+        ; e.g. StringBuilder's ctor) and strips unnamed_addr after opt (else macOS
+        ; ld auto-hides the weak_def_can_be_hidden symbols to local). See the
+        ; comment block around the whole-program opt path in that script.
+        ; True when the cstring [name_ptr, name_len) equals one of the mangled
+        ; names in `set` (a dependency-package's provided symbols). Linear scan —
+        ; the set is small (one entry per dep-package top-level function) and this
+        ; runs once per module declaration at JIT setup.
+        function jit_symbol_in_set(this, sym_set: ref[Array[String]]?, name_ptr: Slice[char]) returns bool linked
+
+        ; dep_symbols: mangled names DEFINED by dependency-package objects that
+        ; jit_run adds to the JITDylib (null when there are none). A declared-only
+        ; symbol in that set must NOT be stubbed — the ORC object linker resolves
+        ; it to the real dependency body; a null-returning stub here would shadow
+        ; it (the old jit_dep_bodies false-pass). Everything else is unchanged.
+        procedure emit_jit_stubs(mutable this, dep_symbols: ref[Array[String]]) io linked
+
+        ; Drop the thread-local bit from every global the JIT module DEFINES.
+        ;
+        ; M2.2 marks every non-`shared` mutable module global thread-local. That
+        ; is right for AOT — the static linker hands the definition to dyld/ld.so,
+        ; which registers a TLV descriptor. The ORC JIT materializes the module
+        ; itself, so a thread-local it defines never gets one: the first access
+        ; lands in _tlv_bootstrap_error and abort()s the process with SIGABRT and
+        ; no message at all. That killed EVERY --run/--jit program owning a
+        ; mutable global — including the compiler's own `--run test`, which dies
+        ; in Modeler.test's first build_program on `modeler_error_count`.
+        ;
+        ; --run/--jit execute the entry point on the calling thread, so a
+        ; process-global cell is observationally identical unless the JIT'd
+        ; program spawns threads (then the per-thread globals — including the
+        ; parfor HotSpot counters — become shared; the fiber/thread suites are
+        ; AOT and unaffected). DECLARATIONS keep the bit: those resolve to the
+        ; host process's real, dyld-registered TLV via the ORC process generator,
+        ; and clearing the bit there would read the descriptor as the value.
+        ; AOT emission is untouched — this runs inside jit_run, after emit.
+        procedure jit_clear_thread_locals(mutable this) linked
+
+        ; Print an ORC/LLVM error (a non-null LLVMErrorRef) and consume it.
+        ; LLVMGetErrorMessage itself consumes the error and yields a C string the
+        ; caller must dispose; do NOT also call LLVMConsumeError.
+        procedure report_jit_error(this, mutable err: LLVMErrorRef, ctx: Slice[char]) io linked
+
+        ; Build the module in the ORC ThreadSafeContext's context, then JIT-execute
+        ; the named function and return its i64 result. The whole pipeline (TSC →
+        ; emit → LLJIT → lookup → indirect call) lives here so cli just hands off
+        ; the plan + target. Returns 127 on any JIT setup failure.
+        ;
+        ; tsc is created and used entirely within this one function: a
+        ; ThreadSafeContext handle passed across a function boundary would hit
+        ; the s34 single-ptr-struct param ABI bug (the callee binds the param to
+        ; the caller's stack slot, not the handle), giving the ThreadSafeModule a
+        ; garbage context whose recursive_mutex traps EINVAL in addIRModule.
+        ; dep_object_files: temp object paths for non-host dependency packages,
+        ; each AOT-compiled through the known-good root path (see cli.run). They
+        ; are added to the JIT's main JITDylib so the program module's extern
+        ; declarations of dependency functions link against the real bodies —
+        ; replacing the fragile jit_dep_bodies planner path (which mis-planned
+        ; large dependency bodies into corrupt plans; both the escape walker and
+        ; the emitter crashed on them). dep_object_symbols: the mangled names those
+        ; objects define, so emit_jit_stubs leaves them as declarations. Both null
+        ; when the program has no non-scaly dependencies (behavior unchanged).
+        procedure jit_run(mutable this, mutable plan: Plan, mutable module_name: String, mutable fn_mangled: String, mutable dep_object_files: ref[Array[String]]?, dep_object_symbols: ref[Array[String]]) returns i64 io linked
+
+        ; ========================================================================
+        ; Module Output
+        ; ========================================================================
+
+        ; Print module IR to string (for debugging)
+        procedure print_module_to_string(mutable this) returns pointer[char] linked
+
+        ; Write module IR to file
+        ; ★★★The IR is written through OUR file API, not LLVM's, and the reason is
+        ; ONE BYTE PER LINE. `LLVMPrintModuleToFile` opens its output in the HOST's
+        ; text mode, so on Windows every `\n` leaves as `\r\n`: the same compiler,
+        ; from the same sources, wrote a 38-line `main.ll` as 734 bytes on POSIX and
+        ; 772 there. **The seed is an artifact this project compares BYTE for byte,
+        ; so its line endings may not be a property of the machine that emitted
+        ; it.** `File.write_from_string` opens `"wb"` on every target.
+        ;
+        ; ★Found only because a SECOND host emitted the seed (stage 7, rung 11) —
+        ; one host can never see this, and reading our own File API said the
+        ; opposite, because `-S` never went through it. A claim about bytes needs a
+        ; second producer, not a closer read.
+        ;
+        ; The extra copy (print-to-string, then write) is what it costs: ~18 MB for
+        ; the compiler's own module, against a build that already works in
+        ; hundreds. `-c` is untouched — an object file has no line endings.
+        procedure write_module_to_file(mutable this, filename: String) returns bool io linked
+
+        ; Write bitcode to file
+        procedure write_bitcode_to_file(mutable this, mutable filename: String) returns bool io linked
+
+        ; Write native object file via host target machine.
+        ; LLVMObjectFile codegen type = 1. Reloc=PIC(2), OptLevel=None(0).
+        procedure write_object_to_file(mutable this, mutable filename: String) returns bool io linked
+
+        ; Verify module
+        procedure verify_module(mutable this) returns bool linked
+
+        ; ========================================================================
+        ; Expression Emission
+        ; ========================================================================
+
+        ; Emit a sequence of operands (typically collapsed to single operand)
+        procedure emit_operands(mutable this, mutable ops: ref[Vector[PlannedOperand]]?) @direct true returns LLVMValueRef linked
+
+        ; Emit a single operand
+        procedure emit_operand(mutable this, mutable op: PlannedOperand) @direct true returns LLVMValueRef linked
+
+        ; Emit member access chain (e.g., person.address.city)
+        procedure emit_member_access_chain(mutable this, mutable base_value: LLVMValueRef, mutable chain: Vector[PlannedMemberAccess], result_type: PlannedType) @direct true returns LLVMValueRef linked
+
+        ; Emit an expression
+        procedure emit_expression(mutable this, mutable expr: PlannedExpression) @direct true returns LLVMValueRef linked
+
+        ; Emit a function-reference value (GAP B): the address of the named symbol,
+        ; usable as an LLVM ptr (a delegate value). The symbol is a monomorphized
+        ; lambda (or an ordinary function) already emitted into the module; declare
+        ; it as an external if it is not yet present.
+        procedure emit_function_ref(mutable this, mutable fref: PlannedFunctionRef) @direct true returns LLVMValueRef linked
+
+        ; GAP B substep 2: lower a closure value to a heap record
+        ; `{ ptr thunk, capture0, capture1, ... }` and return the record pointer.
+        ; The record's field 0 is the bridge thunk; the indirect call loads it and
+        ; calls `thunk(record, args...)`. Captures are stored at fields 1.. in order.
+        procedure emit_closure(mutable this, mutable clo: PlannedClosure) @direct true returns LLVMValueRef linked
+
+        ; Resolve the page a closure record is allocated on from its lifetime:
+        ; Local → this function's local region; Call (`#`) → caller's `rp`.
+        procedure resolve_closure_page(mutable this, life: scaly.compiler.Model.Lifetime) @direct true returns LLVMValueRef linked
+
+        ; Generate the closure bridge thunk `R thunk(ptr self, params...)`: load the
+        ; captures from `self` (fields 1..) and call the real monomorphized lambda
+        ; `real(captures..., params...)`. Mirrors a hand-written trampoline; emitted
+        ; as direct IR (no body planning) with the builder saved/restored.
+        procedure emit_closure_thunk(mutable this, mutable clo: PlannedClosure, mutable clo_ty_param: LLVMTypeRef) @direct true returns LLVMValueRef linked
+
+        ; ========================================================================
+        ; Variable and Global Reference Emission
+        ; ========================================================================
+
+        ; Emit a variable reference
+        procedure emit_variable(mutable this, mutable variable: PlannedVariable) @direct true returns LLVMValueRef linked
+
+        ; Emit a const ARRAY global: `define X: T[] [a, b, ...]`.
+        ; plan_global decays the global's type to pointer[T] with
+        ; array_size = element count; here it becomes
+        ; @X = constant [N x T] [a, b, ...] (emit_global_ref GEPs to the
+        ; first element on reads). Returns false when the global is not an
+        ; array (array_size empty) or any element is not an integer/hex
+        ; constant — the caller falls through to the scalar path. Mirrors
+        ; stage-0 Emitter.cpp:1115-1204.
+        procedure emit_array_global(mutable this, mutable global: PlannedGlobal) returns bool linked
+
+        ; A module-level `define NAME: T VALUE` is not part of a package's ABI:
+        ; the name is unreachable from any other compilation root — even a program
+        ; that declares the package and spells out `use pkg.mod.NAME` gets a hard
+        ; `unknown identifier` (measured 2026-08-04, and the same holds for the
+        ; prelude's own PAGE_SIZE). Every reference is resolved by
+        ; LLVMGetNamedGlobal inside the SAME llvm_module, and no seed module
+        ; references another's constant. So the definition has no business being a
+        ; strong global symbol — and being one made two packages that happen to
+        ; spell a constant the same way unlinkable: `duplicate symbol
+        ; '_10SHARED_TAG'`, which is why dazzle carries hand-renamed mirrors of
+        ; opensp's constants (GADV_IDREF, GDT_SGML).
+        ;
+        ; Only CONSTANTS. A `mutable` global stays external — the runtime's
+        ; allocator state is reached by name from emitted prologue code — and a
+        ; `shared` one is a deliberate process-global cell.
+        procedure set_module_constant_linkage(this, mutable gv: LLVMValueRef) linked
+
+        ; Emit a global reference
+        procedure emit_global_ref(mutable this, mutable global: PlannedGlobalRef) @direct true returns LLVMValueRef linked
+
+        ; ========================================================================
+        ; Call Emission
+        ; ========================================================================
+
+        ; s80: Emit an Itanium C1 constructor call. The PlannedCall's
+        ; mangled_name carries "C1E" (set by Planner.mangle_function# when
+        ; name=="init" and parent != null). Emits the stage-0 reference
+        ; sequence (Emitter.cpp:3618+):
+        ;   %t = call ptr @_ZN4Page8allocateEmm(<page>, sizeof, alignof)
+        ;   call void @<mangled>(<t>, <page>, ...args)
+        ;   ; result is %t
+        ; For Lifetime.Unspecified the alloc is a stack alloca instead of a
+        ; Page::allocate call. The page is read from the function's `rp`
+        ; local var (function# callers); non-# callers get a lazy root-page
+        ; alloc — same fallback as emit_call's existing requires_page_param
+        ; path.
+        procedure emit_constructor_call(mutable this, mutable call: PlannedCall) @direct true returns LLVMValueRef linked
+
+        ; Like emit_constructor_call, but when `dest` is non-null the struct is
+        ; constructed IN PLACE on that address (a field GEP from
+        ; emit_in_place_field_ctor): no page resolution, no scratch allocation.
+        ; The caller guarantees dest is big enough (its LLVM type equals the
+        ; ctor's struct type) and that no ctor arg aliases the destination.
+        procedure emit_constructor_call_into(mutable this, mutable call: PlannedCall, dest: LLVMValueRef) @direct true returns LLVMValueRef linked
+
+        ; True when t is pointer[const_char] / pointer[i8] / pointer[char] /
+        ; pointer[u8] — i.e. a C-string position. The planner wraps a String
+        ; argument bound to such a parameter in a PlannedAs(target = t); emit_as
+        ; uses this to lower the String to its c_data content pointer.
+        function target_is_cstr_pointer(this, t: PlannedType) returns bool linked
+
+        ; Like target_is_cstr_pointer but WITHOUT pointer[void] — the ptr-kind
+        ; String coercion in emit_as keys off this, and a String cast to
+        ; pointer[void] (Page.get(this as pointer[void]) in String methods)
+        ; must keep the record address, not the content buffer.
+        function target_is_char_pointer(this, t: PlannedType) returns bool linked
+
+        ; A private module-level `[1 x i8] c"\00"` global, the canonical valid
+        ; empty C string. An empty Scaly String is `{ null }` (the s186 design),
+        ; so its get_buffer()/c_data() yields null — but a C callee that
+        ; dereferences the pointer (LLVMBuildCall2 reads name[0]) needs a valid
+        ; "\0". Built once and reused (keyed by name in the module).
+        procedure get_or_build_empty_cstr(mutable this) @direct true returns LLVMValueRef linked
+
+        ; Coerce a runtime String VALUE to its NUL-terminated content pointer
+        ; (c_data) for a pointer[const_char] parameter, by calling get_buffer
+        ; (which skips the varint prefix). Used when a String VARIABLE — not a
+        ; constant — flows into a const_char position (e.g. `var name "x";
+        ; LLVMBuildCall2(.., name)`). A String constant takes the cheaper cstr-
+        ; global fast path in emit_as instead.
+        procedure coerce_string_value_to_cstr(mutable this, mutable sval: LLVMValueRef) @direct true returns LLVMValueRef linked
+
+        ; Emit a function/operator call
+        ; M2.3: atomic primitives. The scaly_atomic_* names are declared as
+        ; plain externs in the stdlib but NO such symbols exist anywhere —
+        ; the emitter lowers the calls to atomic INSTRUCTIONS instead
+        ; (atomicrmw / cmpxchg / atomic load+store, all seq_cst, align 8).
+        ; Atomics are neither OS-specific, variadic, nor errno-bound, so per
+        ; the shim containment rule they may not live in C; the libatomic
+        ; ABI symbols are not uniformly linkable across the four targets.
+        ; Returns a null handle when the callee is not an atomic name.
+        ;   scaly_atomic_load_u64(p) / scaly_atomic_store_u64(p, v)
+        ;   scaly_atomic_or_u64 / and_u64 / add_u64 (p, v) returns OLD value
+        ;   scaly_atomic_cas_u64(p, expected, desired) returns OLD value
+        procedure emit_atomic_call(mutable this, mutable call: PlannedCall) @direct true returns LLVMValueRef linked
+
+        ; M2.3b: scaly_call_ptr(fn, arg) returns pointer[void] — an indirect
+        ; ptr(ptr) call through a bare function-pointer value. Same
+        ; extern-name-with-no-symbol pattern as the atomics above. The
+        ; delegate-record calling convention prepends the record as a hidden
+        ; first argument, so a plain C-shaped fn(arg) invocation (a
+        ; pthread-entry signature) needs this emitter-lowered form.
+        procedure emit_ptr_call(mutable this, mutable call: PlannedCall) @direct true returns LLVMValueRef linked
+
+        ; ========================================================================
+        ; Stage 7.2: compiler-generated region swizzle walkers.
+        ;
+        ; The planner resolves `rr.fix_graph(root)` to `_scaly_walk_<T>` and
+        ; validates the message type's closure (delegates rejected there); the
+        ; walker bodies are generated HERE, on first call, one linkonce_odr
+        ; `void _scaly_walk_X(ptr rr, ptr obj)` per reachable type. A walker
+        ; fixes every pointer slot of its type through
+        ; ReceivedRegion.fix_value (VALUE semantics — union payloads sit at
+        ; byte offset 1, so every slot load/store is align 1) and descends
+        ; through the freshly patched pointers. Layout truth is the same LLVM
+        ; struct map_type gives member accesses; the planner's simplified
+        ; byte offsets are never used. Programs that never call fix_graph
+        ; emit byte-identical IR (the registry stays empty).
+        ; ========================================================================
+
+        ; ★★★The name must DISTINGUISH the instantiation, and the bare-name
+        ; fallback below does not: a generic reached one level deeper than usual
+        ; (`Option[ref[Vector[X]]]` where `pointer[Vector[X]]` works) arrives with an
+        ; empty `mangled_name`, the symbol collapses to `_scaly_walk_Vector`, and
+        ; EVERY Vector instantiation then shares one walker -- the first one emitted
+        ; wins and every other value is walked with the wrong field map, so its
+        ; pointers are never fixed. Symptom: `ReceivedRegion.fix_value: pointer
+        ; outside the received region` from `tests/cluster`, with nothing wrong at
+        ; the site that reported it.
+        ; `remangle_generic#` re-mints the name from the type's own ARGUMENTS and is
+        ; the identity for a non-generic type, so the fallback still serves the case
+        ; it was written for.
+        function region_walker_symbol(this, t: PlannedType) @page true @direct true returns String linked
+
+        ; Page headers are swizzled by Region.deserialize itself — the typed
+        ; walk fixes pointers TO them but never descends INTO them.
+        function region_walker_header_name(this, name: String) returns bool linked
+
+        ; A slot the walker fixes in place: pointer, ref, or an NPO Option
+        ; (a bare nullable pointer at the LLVM level).
+        function region_is_ptr_slot(this, ft: PlannedType) returns bool linked
+
+        ; The type a fixed slot of type ft points AT ("void" = opaque target,
+        ; fix-only): pointer[X]/ref[X] → X, Option[pointer[X]]/Option[ref[X]] → X.
+        function region_slot_pointee(this, ft: PlannedType) @page true @direct true returns PlannedType linked
+
+        function find_planned_structure(this, mangled: String, name: String) returns ref[PlannedStructure]? linked
+
+        function find_planned_union(this, mangled: String, name: String) returns ref[PlannedUnion]? linked
+
+        ; Does `t` transitively contain slots to fix? Terminates without a
+        ; seen-set: recursion only follows BY-VALUE embedding (pointer-like
+        ; types answer true immediately), and value-embedding cannot cycle.
+        function region_type_needs_walk(this, t: PlannedType) returns bool linked
+
+        ; Should a fixed slot's target be walked? Mirrors the planner's
+        ; check_message_pointee: scalars, raw buffers, and page headers are
+        ; fix-only.
+        function region_walker_descends(this, target: PlannedType) returns bool linked
+
+        ; Anything to do for a value of type ft lying at some address?
+        function region_field_acts(this, ft: PlannedType) returns bool linked
+
+        ; The stdlib slot mapper: `_ZN14ReceivedRegion9fix_valueEm` —
+        ; i64 fix_value(ptr this, i64 old). Declared on demand; the body
+        ; lives in scaly.memory.Region (libscaly.a / in-process for --run).
+        procedure region_fix_value_fn(mutable this) @direct true returns LLVMValueRef linked
+
+        procedure region_fix_value_type(mutable this) @direct true returns LLVMTypeRef linked
+
+        procedure region_walker_fn_type(mutable this) @direct true returns LLVMTypeRef linked
+
+        ; Fix one slot in place: load old (align 1), map through fix_value,
+        ; store back (align 1). Returns the NEW value as i64.
+        procedure emit_region_fix_slot(mutable this, rr: LLVMValueRef, mutable slot: LLVMValueRef) @direct true returns LLVMValueRef linked
+
+        procedure emit_region_walker_call(mutable this, rr: LLVMValueRef, objp: LLVMValueRef, mutable t: PlannedType) linked
+
+        ; Handle one value of planned type ft lying at `addr`: fix pointer
+        ; slots (and descend through them), fix a String's data slot, walk an
+        ; embedded aggregate in place. Scalars are untouched.
+        procedure emit_region_value_at(mutable this, mutable fn: LLVMValueRef, mutable rr: LLVMValueRef, mutable addr: LLVMValueRef, mutable ft: PlannedType) linked
+
+        ; Elements data[0..count): one value_at per element. `data_i64` is the
+        ; freshly mapped data pointer as i64 (0 = empty), `count` an i64.
+        procedure emit_region_elem_loop(mutable this, mutable fn: LLVMValueRef, mutable rr: LLVMValueRef, mutable data_i64: LLVMValueRef, mutable count: LLVMValueRef, mutable elem: PlannedType) linked
+
+        ; Vector[T] = { length @0, data @1 }: fix data, then walk the elements
+        ; when T carries pointers. All loads align 1 — an embedded Vector in a
+        ; union payload sits at byte offset 1.
+        procedure emit_region_vector_body(mutable this, mutable fn: LLVMValueRef, mutable rr: LLVMValueRef, mutable obj: LLVMValueRef, mutable t: PlannedType) linked
+
+        ; Array[T] = { length @0, vector: pointer[Vector[T]] @1 }: fix the
+        ; vector pointer, fix the backing vector's data slot, walk the VALID
+        ; prefix (array.length — the backing capacity tail is zeroed).
+        procedure emit_region_array_body(mutable this, mutable fn: LLVMValueRef, mutable rr: LLVMValueRef, mutable obj: LLVMValueRef, mutable t: PlannedType) linked
+
+        ; Node[T] = { element @0, next @1 }: walk the CHAIN iteratively — a
+        ; per-node recursive walker would recurse list-length deep.
+        procedure emit_region_node_body(mutable this, mutable fn: LLVMValueRef, mutable rr: LLVMValueRef, mutable obj: LLVMValueRef, mutable t: PlannedType) linked
+
+        ; Tagged union { tag @0 (i8; i32 past 256 variants), payload @tag_size }:
+        ; switch on the tag, handle the live variant's payload in place. An
+        ; unknown tag falls through silently, matching choose semantics.
+        procedure emit_region_union_body(mutable this, mutable fn: LLVMValueRef, mutable rr: LLVMValueRef, mutable obj: LLVMValueRef, mutable u: PlannedUnion) linked
+
+        procedure emit_region_walk_body(mutable this, mutable fn: LLVMValueRef, mutable rr: LLVMValueRef, mutable obj: LLVMValueRef, mutable t: PlannedType) linked
+
+        procedure ensure_region_walker(mutable this, mutable t: PlannedType) @direct true returns LLVMValueRef linked
+
+        ; Entry from emit_call: derive the root type from the call's last
+        ; argument (pointer[T] — the planner validated the shape) and make
+        ; sure the walker set exists before the call is emitted.
+        procedure ensure_region_walker_for_call(mutable this, mutable call: PlannedCall) linked
+
+        procedure emit_call(mutable this, mutable call: PlannedCall) @direct true returns LLVMValueRef linked
+
+        ; ========================================================================
+        ; Intrinsic Operator Emission
+        ; ========================================================================
+
+        ; Emit an intrinsic operator call
+        procedure emit_intrinsic_operator(mutable this, mutable call: PlannedCall) @direct true returns LLVMValueRef linked
+
+        ; Emit an intrinsic unary operator
+        procedure emit_intrinsic_unary_op(mutable this, op_name: String, mutable operand: LLVMValueRef, mutable result_type: PlannedType) @direct true returns LLVMValueRef linked
+
+        ; Emit an intrinsic binary operator
+        procedure emit_intrinsic_binary_op(mutable this, op_name: String, mutable left: LLVMValueRef, mutable right: LLVMValueRef, mutable result_type: PlannedType, left_operand_type: PlannedType, right_operand_type: PlannedType) @direct true returns LLVMValueRef linked
+
+        ; Emit an intrinsic function call
+        procedure emit_intrinsic_function(mutable this, mutable call: PlannedCall) @direct true returns LLVMValueRef linked
+
+        ; ========================================================================
+        ; Type Helpers
+        ; ========================================================================
+
+        ; Check if type is floating point
+        function is_floating_point_type(this, t: PlannedType) returns bool linked
+
+        ; Check if type is signed
+        function is_signed_type(this, t: PlannedType) returns bool linked
+
+        ; ========================================================================
+        ; Tuple and Matrix Emission
+        ; ========================================================================
+
+        ; The page allocation behind a region-allocated tuple, lifted out of
+        ; emit_tuple so BOTH of its construction paths can reach it.
+        ;
+        ; ★ It was inline in the per-field path only, and the zero-component
+        ; path above it allocated an `alloca` and returned THAT pointer even
+        ; when `is_region_alloc` was set -- so `T^page()` on a concept with no
+        ; matching `init` (the positional-tuple path, whose zero-argument
+        ; data-class case is a deliberate exemption in fill_default_components)
+        ; answered an address in the DEAD FRAME, rc 0 and nothing said.
+        ; Measured on opensp's `EventAux` as rc 139 in `Lpd.get_name`, with the
+        ; SGML corpus at 380/380 -- two further sites (`HuState`) were live on
+        ; the parser path and the corpus never touched them.
+        ;
+        ; Answers a null handle when the tuple is not region-allocated or the
+        ; page name resolves to nothing; the caller then falls back to
+        ; acquire_temp, exactly as the inline version did.
+        ; The page resolution behind a region construction, taken by LIFETIME
+        ; rather than by tuple, so the VARIANT path can reach it too: a
+        ; `Thing.Alpha^host(...)` carries its sigil on `union_type.life` and
+        ; used to land on a stack `alloca` with the sigil dropped in silence —
+        ; the same class as the 2026-08-29 tuple-path fix, one bahn over.
+        procedure region_alloc_tuple(mutable this, tuple: PlannedTuple, mutable struct_type: LLVMTypeRef) @direct true returns LLVMValueRef linked
+
+        procedure region_alloc_life(mutable this, is_region: bool, life: Lifetime, mutable struct_type: LLVMTypeRef) @direct true returns LLVMValueRef linked
+
+        ; Emit a tuple construction
+        procedure emit_tuple(mutable this, mutable tuple: PlannedTuple) @direct true returns LLVMValueRef linked
+
+        ; Emit a matrix (array literal)
+        procedure emit_matrix(mutable this, mutable matrix: PlannedMatrix) @direct true returns LLVMValueRef linked
+
+        ; ========================================================================
+        ; Control Flow Emission
+        ; ========================================================================
+
+        ; Emit a block
+        procedure emit_block(mutable this, mutable block: PlannedBlock) @direct true returns LLVMValueRef linked
+
+        ; Emit an if expression
+        procedure emit_if(mutable this, mutable if_expr: PlannedIf) @direct true returns LLVMValueRef linked
+
+        ; Emit a match expression
+        procedure emit_match(mutable this, mutable match_expr: PlannedMatch) @direct true returns LLVMValueRef linked
+
+        ; Emit a choose expression (pattern match on union)
+        procedure emit_choose(mutable this, mutable choose_expr: PlannedChoose) @direct true returns LLVMValueRef linked
+
+        ; Emit a for loop
+        procedure emit_for(mutable this, mutable for_expr: PlannedFor) @direct true returns LLVMValueRef linked
+
+        ; Milestone 4.4: should this loop site dispatch through the engine?
+        ; Delegates to the TaskPlanner classifier (conservative, transitive
+        ; purity, disjoint writes, no early exit, foundation containment).
+        procedure promote_for(mutable this, for_expr: PlannedFor) returns bool linked
+
+        ; Emit integer range for loop: for i in N (iterates 0 to N-1)
+        procedure emit_for_integer_range(mutable this, mutable for_expr: PlannedFor) @direct true returns LLVMValueRef linked
+
+        ; Emit iterator-based for loop
+        procedure emit_for_iterator(mutable this, mutable for_expr: PlannedFor) @direct true returns LLVMValueRef linked
+
+        ; ========================================================================
+        ; Milestone 3.3: parallel-for outlining emission.
+        ; Milestone 4.1: chunked sub-range dispatch.
+        ; Milestone 4.2: deferred adaptive driver.
+        ; Milestone 4.4: plain `for` drives the engine — promote_for gates
+        ; entry on the TaskPlanner classifier, never on syntax.
+        ;
+        ; The body (proved parallelizable by the classifier — a blocked body
+        ; never reaches this function; it runs sequentially)
+        ; is outlined into a private `ptr(ptr)` task function that runs a
+        ; SUB-RANGE [lo,hi) of iterations. The loop site (4.2) no longer
+        ; submits eagerly: iterations run INLINE with backoff-spaced clock
+        ; checkpoints, and only once the measured work clears the fork gate
+        ; is the REMAINING range chunked into cells {lo, hi, captures...}
+        ; (iterator loops: {buf, lo, hi, captures...} over a flat element-
+        ; pointer array drained at fork time) — bump-allocated on the task
+        ; group's own page (the 3.2 work-item discipline: the submitter
+        ; writes, workers only read, TaskGroup.dispose frees the wave
+        ; wholesale) and dispatched to this thread's ncpu-sized default pool
+        ; (TaskPool.default_pool); TaskGroup.wait then parks the submitter
+        ; until the wave finished — which is exactly what makes the captured
+        ; frame reads and the disjoint-slot result writes race-free.
+        ; Disjointness is range-agnostic (proven for [0,n) ⇒ proven for
+        ; every sub-range), so forking a RUNNING loop at an arbitrary
+        ; boundary needs no re-proof. Short loops finish inline before the
+        ; gate can clear and provably never touch pool or group.
+        ;
+        ; Captures are the body's free names that resolve in the enclosing
+        ; scope. A name bound to an ALLOCA slot travels as the slot CONTENT
+        ; and is rebuilt as a same-typed alloca inside the task function, so
+        ; emit_variable's alloca/pointer distinctions behave identically on
+        ; both sides; a plain SSA value travels by value. The body cannot
+        ; write any of them (verification blocks loop-external writes), so
+        ; copy semantics are unobservable.
+        ;
+        ; The task function allocates on the WORKER's thread-local allocator:
+        ; get_or_create_local_page inside it opens the task's own region,
+        ; released in the epilogue — one region per CHUNK (entry-hoisted by
+        ; get_or_create_local_page; per-iteration recycling would rework the
+        ; local-page machinery — still open, revisit if churn bodies need it).
+        ; ========================================================================
+
+        ; Record a body-bound name (scoped: scanners save/restore the
+        ; length of parfor_locals around nested scopes).
+        procedure parfor_add_local(mutable this, name: String) @persists true linked
+
+        function parfor_is_local(this, name: String) returns bool linked
+
+        ; A free name becomes a capture when it is not body-bound, not
+        ; already recorded, and actually resolves to a local of the
+        ; enclosing function (names that resolve to nothing here are
+        ; globals, functions, or namespaces — not frame state).
+        procedure parfor_add_capture(mutable this, name: String) @persists true linked
+
+        procedure parfor_scan_operands(mutable this, ops: ref[Vector[PlannedOperand]]?) linked
+
+        procedure parfor_scan_statement_ref(mutable this, stmt: ref[PlannedStatement]?) linked
+
+        procedure parfor_scan_action(mutable this, act: PlannedAction) linked
+
+        procedure parfor_scan_statement(mutable this, stmt: PlannedStatement) linked
+
+        procedure parfor_scan_operand(mutable this, op: PlannedOperand) linked
+
+        ; Look up or declare a runtime symbol with the given type — the 3.3
+        ; dispatch calls (TaskPool/TaskGroup/Page.get/Page.allocate), keyed
+        ; by mangled name like every emitter runtime declare.
+        procedure get_parfor_runtime_fn(mutable this, mutable mangled: String, mutable fn_ty: LLVMTypeRef) @direct true returns LLVMValueRef linked
+
+        ; ------------------------------------------------------------------
+        ; Milestone 4.2: static body weight. A relative, saturating estimate
+        ; of one iteration's work, used ONLY to place the deferred driver's
+        ; first calibration checkpoint: known-tiny bodies skip early clock
+        ; reads entirely, bodies containing calls or inner loops check almost
+        ; immediately. The fork decision itself runs on MEASURED time —
+        ; static weight cannot see runtime trip counts or data-dependent
+        ; cost. Model: leaf = 1, construction = 16, intrinsic/operator = 1,
+        ; extern/unresolved/indirect/recursive call = 64, direct call with a
+        ; body = the callee's memoized weight, inner loop = body x 64;
+        ; branches are summed (overshoot only moves the first check earlier).
+        ; ------------------------------------------------------------------
+
+        function parfor_wadd(this, a: size_t, b: size_t) returns size_t linked
+
+        function parfor_wmul(this, a: size_t, b: size_t) returns size_t linked
+
+        function parfor_weight_is_construction(this, name: String) returns bool linked
+
+        ; Weight of a callee body by mangled name, memoized. A name being
+        ; weighed further up the walk (recursion) and an unresolved or
+        ; extern name all fall back to the flat call cost. Declaration
+        ; duplicates: a body entry wins over an extern declare for the same
+        ; mangled name (the TaskPlanner's effectively_pure discipline).
+        procedure parfor_weight_fn(mutable this, mangled: String) @persists true returns size_t linked
+
+        procedure parfor_weight_operands(mutable this, ops: ref[Vector[PlannedOperand]]?) returns size_t linked
+
+        procedure parfor_weight_statement_ref(mutable this, stmt: ref[PlannedStatement]?) returns size_t linked
+
+        procedure parfor_weight_action(mutable this, act: PlannedAction) returns size_t linked
+
+        procedure parfor_weight_statement(mutable this, stmt: PlannedStatement) returns size_t linked
+
+        procedure parfor_weight_call(mutable this, call: PlannedCall) returns size_t linked
+
+        procedure parfor_weight_operand(mutable this, op: PlannedOperand) returns size_t linked
+
+        procedure emit_parallel_for(mutable this, mutable for_expr: PlannedFor) @direct true returns LLVMValueRef linked
+
+        ; Emit a while loop
+        procedure emit_while(mutable this, mutable while_expr: PlannedWhile) @direct true returns LLVMValueRef linked
+
+        ; Emit a repeat loop — an infinite loop that exits only via `break`.
+        ; When the repeat yields a value (`let x repeat { ... break v }`), a
+        ; result slot is allocated; emit_break stores into it and the exit
+        ; block loads it as the repeat expression's value.
+        procedure emit_repeat(mutable this, mutable repeat_expr: PlannedRepeat) @direct true returns LLVMValueRef linked
+
+        ; Emit a try expression
+        ; emit_try_panic_catch: a `try ... else` whose condition throws
+        ; NOTHING, which since 2026-09-07 catches a runtime PANIC instead of
+        ; being the silent no-op it was (TRAPS.md 5.1). The shape:
+        ;
+        ;     %buf = call ptr @scaly_catch_push(@mark, @unwind)
+        ;     %sj  = call i32 @setjmp(ptr %buf)     ; returns_twice
+        ;     br i1 (%sj == 0), %try.body, %try.catch
+        ;   try.body:   <condition> ; @scaly_catch_pop()   ; br %try.end
+        ;   try.catch:  @scaly_catch_caught()  ; <else>    ; br %try.end
+        ;
+        ; ★★★The push and the setjmp must come BEFORE the condition is
+        ; emitted, which is why this is a separate function hooked in at the
+        ; TOP of emit_try: that one emits its operands first, and a catch point
+        ; installed after the work it guards would catch nothing.
+        ;
+        ; ★Both forms land here: the `else` arm and the `when` arms, the
+        ; latter switching on the panic's KIND below. No union VALUE is ever
+        ; materialised -- see the note at the switch.
+        ;
+        ; ★No value is bound on the catch path: the binding leaks into the
+        ; enclosing scope (see plan_try) and the else arm of every shape in the
+        ; tree ends in a return or a throw, so nothing downstream reads it.
+        procedure emit_try_panic_catch(mutable this, mutable try_expr: PlannedTry) @direct true returns LLVMValueRef linked
+
+        procedure emit_try(mutable this, mutable try_expr: PlannedTry) @direct true returns LLVMValueRef linked
+
+        ; ========================================================================
+        ; Type Operation Emission
+        ; ========================================================================
+
+        ; Emit sizeof
+        procedure emit_sizeof(mutable this, mutable sizeof_expr: PlannedSizeOf) @direct true returns LLVMValueRef linked
+
+        ; Emit alignof
+        procedure emit_alignof(mutable this, alignof_expr: PlannedAlignOf) @direct true returns LLVMValueRef linked
+
+        ; Emit is expression (type test)
+        procedure emit_is(mutable this, mutable is_expr: PlannedIs) @direct true returns LLVMValueRef linked
+
+        ; Emit as expression (type cast)
+        procedure emit_as(mutable this, mutable as_expr: PlannedAs) @direct true returns LLVMValueRef linked
+
+        ; Emit variant construction (e.g., Result.Ok value, Option.Some value)
+        procedure emit_variant_construction(mutable this, mutable vc: PlannedVariantConstruction) @direct true returns LLVMValueRef linked
+
+        ; ========================================================================
+        ; Statement Emission
+        ; ========================================================================
+
+        ; Emit a statement
+        ; s178: window wrapper around emit_statement_inner. Each statement
+        ; opens its own temp-pool window; pooled slots acquired while
+        ; emitting it are released at its end unless captured (see
+        ; release_statement_temps). Saving/restoring the window start
+        ; keeps nested statements (loop bodies, choose/if arms) from
+        ; releasing the enclosing statement's temps, while statements
+        ; INSIDE a loop body or arm still recycle each other's slots —
+        ; that's where collapse_operand_sequence#'s ~450 spill slots live.
+        ; Values cannot leak across windows: emit_statement returns only
+        ; bool, so expression values always flow through emit_action /
+        ; emit_operand inside one window.
+        procedure emit_statement(mutable this, mutable stmt: PlannedStatement) returns bool linked
+
+        procedure emit_statement_inner(mutable this, mutable stmt: PlannedStatement) returns bool linked
+
+        ; Emit an action (expression statement or assignment)
+        ; True when the operand tree mentions `name` — as a bare variable, a
+        ; member-access hop, or inside nested call/tuple/as operands. Used by the
+        ; in-place field-construction aliasing guard; CONSERVATIVE: any expression
+        ; shape the walker doesn't enumerate counts as a mention (keep the
+        ; scratch when in doubt).
+        function operand_mentions_name(this, op: PlannedOperand, name: String) returns bool linked
+
+        ; Aliasing guard for in-place field construction: true when any ctor arg
+        ; references the target variable or any hop of the target member chain.
+        ; `set f: String(f)` must KEEP the scratch — the ctor reads the old value
+        ; while in-place construction would clobber it first.
+        function ctor_args_mention_chain(this, call: PlannedCall, variable: PlannedVariable, chain: Vector[PlannedMemberAccess]) returns bool linked
+
+        ; In-place field construction: `set X.field...: Ctor(args)` with a single
+        ; construction source constructs directly on the final field address
+        ; instead of a discarded scratch. The scratch LEAKED sizeof(struct) on the
+        ; owner page per field init (a region-alloc'd ctor result was loaded and
+        ; stored by value into the field, orphaning the allocation) and the
+        ; whole-aggregate load+store is the s178 spill class. IR-verified: the
+        ; scratch page always equals the destination page (Page.get(this) inside
+        ; the ctor = Page.get(&field) = owner page), so interior buffer placement
+        ; is unchanged. Gates (all checked BEFORE any IR is emitted):
+        ;   - target is a Variable with a member-access chain;
+        ;   - source is exactly one C1E constructor Call with no trailing chain,
+        ;     no page param, and life Unspecified (stack scratch) or ^this
+        ;     (owner page) — Local/Call/^other scratches keep the legacy copy;
+        ;   - the final field's LLVM type IS the ctor's struct type (by-value
+        ;     field; pointer-storing fields keep the legacy path);
+        ;   - no ctor arg mentions the target chain (aliasing guard).
+        ; Returns null (nothing emitted) when not applicable — emit_action then
+        ; falls through to the legacy scratch path.
+        procedure emit_in_place_field_ctor(mutable this, mutable action: PlannedAction) @direct true returns LLVMValueRef linked
+
+        procedure emit_action(mutable this, mutable action: PlannedAction) @direct true returns LLVMValueRef linked
+
+        ; s86: when emit_action is storing a stack-alloca'd ctor result into a
+        ; member of `this` (a heap-allocated parent), copy the struct value onto
+        ; the parent's page so the field stores a stable heap pointer rather
+        ; than a stack-frame address that goes invalid after init returns.
+        ;
+        ; Triggers only for: variable name "this" + single-operand source whose
+        ; expr is a Call with Lifetime.Unspecified and a C1 (Itanium ctor)
+        ; mangled name. Other shapes pass through unchanged.
+        procedure maybe_heap_copy_ctor_value(mutable this, value: LLVMValueRef, var_ptr: LLVMValueRef, variable: PlannedVariable, source: ref[Vector[PlannedOperand]]?) @direct true returns LLVMValueRef linked
+
+        ; Compute the ADDRESS of a member-access chain's final field (base setup
+        ; + GEP-chain walk). Factored out of emit_member_assignment so the
+        ; in-place field construction path (emit_in_place_field_ctor) can compute
+        ; the destination without emitting a store.
+        procedure emit_member_address(mutable this, mutable var_ptr: LLVMValueRef, planned_var: PlannedVariable, mutable members: ref[Vector[PlannedMemberAccess]]?) @direct true returns LLVMValueRef linked
+
+        ; Helper for member field assignment
+        procedure emit_member_assignment(mutable this, mutable var_ptr: LLVMValueRef, mutable planned_var: PlannedVariable, mutable members: ref[Vector[PlannedMemberAccess]]?, mutable value: LLVMValueRef) @direct true returns LLVMValueRef linked
+
+        ; Emit a binding (let/var declaration)
+        ; The signedness of a binding's initializer, read off its planned type
+        ; (the first collapsed operand); signed when nothing says otherwise, as
+        ; is_signed_type# decides.
+        function binding_initializer_is_signed(this, binding: PlannedBinding) returns bool linked
+
+        procedure emit_binding(mutable this, mutable binding: PlannedBinding) returns bool linked
+
+        ; Emit a return statement
+        procedure emit_return(mutable this, mutable ret: PlannedReturn) returns bool linked
+
+        ; Emit a throw statement
+        procedure emit_throw(mutable this, mutable throw_stmt: PlannedThrow) returns bool linked
+
+        ; Emit a break statement
+        procedure emit_break(mutable this, mutable brk: PlannedBreak) returns bool linked
+
+        ; Emit a continue statement
+        procedure emit_continue(mutable this, mutable cont: PlannedContinue) returns bool linked
+
+        ; ========================================================================
+        ; Loop Stack Management
+        ; ========================================================================
+
+        ; Push a loop context onto the stack
+        procedure push_loop(mutable this, exit_block: LLVMBasicBlockRef, continue_block: LLVMBasicBlockRef, loop_label: String, result_slot: LLVMValueRef) linked
+
+        ; Resolve the loop a break/continue targets. An empty loop_label means the
+        ; innermost loop (top of stack); a non-empty loop_label scans from innermost
+        ; outward for the matching loop. Returns null when no match is found.
+        function find_loop_context(this, loop_label: String) returns ref[LoopContext]? linked
+
+        ; Pop a loop context from the stack
+        procedure pop_loop(mutable this) linked
+    }
+
+    ; ============================================================================
+    ; Test function
+    ; ============================================================================
+
+    procedure test() returns int io mutable modeler_error_count reads modeler_error_count linked
+}
+

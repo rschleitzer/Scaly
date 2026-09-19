@@ -1,0 +1,394 @@
+; worker.scaly - crash-isolated analysis worker.
+;
+; The diagnostics pipeline (parser -> modeler -> planner) runs the real
+; Scaly compiler, which still SIGSEGVs / aborts / hangs on some inputs.
+; Running it in-process would take the whole server down on a single bad
+; document. So the parent (server.run) does ONLY transport + dispatch, and
+; the dangerous pipeline runs in a persistent child process:
+;
+;     editor <-stdio-> [parent: transport + dispatch]
+;                            |  request  (pipe: parent -> worker)
+;                            v  response (pipe: worker -> parent)
+;                      [worker: diagnostics pipeline]
+;
+; Per analysis the parent sends two raw frames (uri, then document text)
+; to the worker, then waits for the framed publishDiagnostics payload with
+; a TIMEOUT (raw framing avoids JSON-escaping arbitrary document text). If
+; the worker crashes (EOF on its output pipe) or hangs (poll timeout), the
+; parent kills + reaps it, returns an empty-diagnostics clear for the uri,
+; and re-spawns a fresh worker on the next request. The parent thus never
+; dies from a compiler bug.
+;
+; The worker is persistent (one fork, many requests) rather than fork-per-
+; request: the pipeline is stateless per document, and the page leak that
+; would have made a long-lived worker grow without bound is fixed.
+;
+; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no
+; else). One statement per line. CR/LF are numeric bytes (rpc handles the
+; framing); quotes are 0x22 bytes.
+
+use scaly.os.File
+use scaly.memory.runtime
+use scaly.memory.root_pages.getenv
+use scalyls.rpc
+use scalyls.diagnostics
+use scalyls.format
+use scalyls.symbols
+use scalyls.semantic
+use scalyls.tasklens
+use scalyls.codelens
+use scalyls.placehints
+
+; POSIX process / pipe primitives (libc). Declared here rather than in the
+; scaly package so no scaly/scalyc source is touched (fixpoint-safe).
+function fork() returns i32 extern
+; pipe fills two C `int` (32-bit) fds. Scaly `int` is 64-bit, so the fd
+; pair MUST be an i32[2] (an int[2] would be 2x8 bytes and splice both fds
+; into one garbage i64). The fd values themselves are small and widen
+; cleanly into `int` when handed to read/write/close.
+function pipe(fds: pointer[i32]) returns i32 extern
+function close(fd: int) returns i32 extern
+function waitpid(pid: int, status: pointer[i32], options: int) returns i32 extern
+function kill(pid: int, sig: int) returns i32 extern
+; poll: the C prototype is `int poll(struct pollfd *, nfds_t, int)`, and
+; nfds_t is 32 bits on macOS (unsigned int) but 64 on glibc (unsigned long).
+; ONE seed serves every target, so the width cannot be per-OS: `u64` is the
+; portable choice, because the caller then writes the WHOLE register and a
+; 32-bit callee reads the correct low half. `timeout` and the RESULT are
+; plain C `int`, i.e. 32 bits on both.
+; This declaration must stay type-identical to the one in scaly/fiber.scaly:
+; both modules are linked into this binary, and they used to disagree --
+; `declare i32 @poll(ptr, i32, i32)` against `declare i64 @poll(ptr, i64,
+; i64)` -- so this call read a 64-bit result from a function that returns 32,
+; with the upper half undefined.
+function poll(fds: pointer[pollfd], nfds: u64, timeout: i32) returns i32 extern
+function signal(sig: int, handler: pointer[void]) returns pointer[void] extern
+
+; `pollfd` itself is declared in the PRELUDE (scaly/fiber.scaly), which also
+; declares poll: a top-level `define` mangles without its module, so a second
+; one here would collide with it silently in the whole-stack link.
+
+define POLLIN i16 1
+define SIGKILL int 9
+define SIGPIPE int 13
+
+; Wait at most this long for the worker to answer one PER-DOCUMENT request
+; before declaring it hung and killing it (milliseconds). Which kinds land
+; here is decided by worker.budget_for_kind; SCALYLS_BUDGET_MS overrides it.
+;
+; ★★★8000 -> 30000 on 2026-08-14, and the old comment shows why: it read
+; "well under a second even on the largest file in this tree", which was an
+; ASSUMPTION about the single-document pipeline and is false on both machines
+; this has now been measured on. Measured here, x86_64 Linux, on a build with
+; the same whole-program `opt -O2` the shipped server gets:
+;
+;   file                        documentSymbol   definition COLD   WARM
+;   opensp/Parser.scaly 881 KB       7.17 s          8.72 s       0.14 s
+;   dazzle/Primitive.scaly 391 KB    2.39 s         19.81 s       0.06 s
+;   scalyls/symbols.scaly  401 KB    2.94 s          3.16 s       0.05 s
+;
+; A cold `definition` costs 2.5x the old budget on an ordinary file, and
+; `documentSymbol` on the largest one sat at 90 % of it with no margin at all.
+; ★`definition` itself no longer answers to THIS number — the kind table below
+; puts every workspace-walking kind on WORKSPACE_TIMEOUT_MS — but its column
+; measures the same cold pipeline, and `documentSymbol` is squarely here.
+; ★The warm column is the reason this matters far beyond one slow request: the
+; SECOND definition costs 0.06 s, so the budget's job is to protect the very
+; state that makes everything after it instant. Overrunning kills the worker
+; (worker.shutdown#), the symindex dies with it (symindex.scaly), and the next
+; request pays the cold price again — while the client sees a successful
+; result, because the parent answers with its fallback. A budget that fires on
+; legitimate work is therefore not "a slow path", it is a permanent cold cache.
+;
+; 30 s covers the measured worst case with ~50 % margin and stays well under
+; the whole-tree budget, so the ordering of the three is finally the one the
+; work justifies: per-document < completion < whole-tree. It stays finite —
+; reaping a genuinely hung pipeline is the whole point of the isolation.
+define ANALYZE_TIMEOUT_MS i32 30000
+
+; The whole-tree searches ("w" = workspace/symbol, and the cross-package
+; definition / signatureHelp scans that share its index) get their own, far
+; larger budget: on a COLD worker they parse every .scaly file under the root
+; to build the symindex — measured 6.4-7.4s over this tree's 747 files / 11.6
+; MB, i.e. INSIDE the 8s per-document budget but with no margin, so ordinary
+; machine jitter pushed them over it.
+;
+; Sharing one budget was a correctness bug, not just a slow path. Exceeding it
+; kills the worker (worker.shutdown#), and the symindex lives ONLY in the
+; worker (symindex.scaly), so the kill threw away the very index the request
+; was building: the next query started cold, timed out again, and the search
+; never completed while every OTHER request paid a fresh worker's respawn. The
+; empty `[]` fallback made it silent — the editor sees a valid, successful
+; empty result, not an error.
+;
+; Kept finite so a genuinely hung pipeline is still reaped (that is the whole
+; point of the isolation); it only has to exceed a legitimate cold scan by
+; enough that jitter cannot reach it.
+define WORKSPACE_TIMEOUT_MS i32 60000
+
+; Completion ("c") gets a budget of its own for the same reason, one step down:
+; a single request can reach BOTH expensive paths — the session's first
+; modeler+planner run for a receiver only the planner can type (measured
+; 2026-08-12: 6.0-7.1s once per worker process, 0.05s from the second on) and,
+; when the receiver's type lives elsewhere, the cross-package member scan this
+; index exists for. On opensp/ContentState.scaly that landed at 8.01s against
+; the 8000 ms per-document budget, i.e. the worker was killed and the editor got
+; a successful, empty `[]` — and since the kill takes the symindex with it, every
+; later keystroke repeated it. 20s leaves margin over the measured cold path
+; while staying far below the whole-tree budget: a completion is typed AT, so a
+; hang here is felt directly and must still be reaped quickly.
+define COMPLETION_TIMEOUT_MS i32 20000
+
+; Worker process state, owned by the PARENT. worker_pid <= 0 means "no
+; live worker"; the fds are the parent's ends of the two pipes.
+mutable worker_pid: int linked
+mutable worker_in:  int linked
+mutable worker_out: int linked
+
+define worker
+{
+    ; True when the CLIENT has already sent more input: a poll of stdin with a
+    ; ZERO timeout, so it never blocks. server.process_one# asks before running
+    ; the diagnostics it owes, which is what turns one analysis per keystroke
+    ; into one per typing burst (docstore.mark_dirty# has the measurement).
+    ;
+    ; It lives HERE because `poll` / `pollfd` / `POLLIN` are declared in this
+    ; module for the worker pipes, and a C symbol gets ONE declaration per tree —
+    ; two that disagree is precisely what tests/abi/run.sh check 3 exists to
+    ; catch. The answer is exact rather than approximate because rpc.read_byte#
+    ; reads stdin with a raw one-byte `read`, unbuffered: nothing can be sitting
+    ; in a userspace buffer where a poll of the fd would not see it.
+    procedure stdin_has_input() returns bool io linked
+
+    ; ====================================================================
+    ; Child side: read framed {uri,text} requests, emit framed payloads.
+    ; ====================================================================
+    ; Protocol (over the pipe, NOT JSON): each request is FOUR framed
+    ; messages — a kind tag ("d" diagnostics / "s" documentSymbol / "c"
+    ; completion / "h" hover / "g" definition / "r" references / "l"
+    ; documentHighlight / "n" rename / "p" prepareRename / "f" signatureHelp /
+    ; "w" workspace/symbol / "o" foldingRange / "t" semanticTokens), the uri, the raw
+    ; document text (the parent's in-memory copy; empty = unknown), then a
+    ; packed cursor position ("<line> <char>", or "<line> <char> <newName>"
+    ; for rename; empty for d/s) — and the reply is one framed payload. Raw framing avoids round-tripping arbitrary
+    ; document text through JSON string-escaping (which would corrupt
+    ; newlines/quotes/braces). When the document text frame is empty (the
+    ; parent has no buffer for this uri) the worker re-reads the file from
+    ; disk, preserving the old stateless behavior as a fallback.
+    procedure serve(in_fd: int, out_fd: int) returns int io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig reads prof_list linked
+
+    ; Handle one request. Returns true to keep serving, false at EOF (the
+    ; parent closed its end). A plain (non-#) helper so its local page —
+    ; holding the request frames AND the whole diagnostics-pipeline working
+    ; set — is reclaimed on return, every iteration.
+    ; One request: read it, answer it, and — when SCALYLS_PROF is set — report
+    ; what answering it cost. The counters are dumped HERE rather than in the
+    ; per-kind branches so the instrument covers every request kind instead of
+    ; the one it was built for; an instrument whose scope is narrower than its
+    ; name is the trap it exists to prevent.
+    procedure serve_one(in_fd: int, out_fd: int) returns bool io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig reads prof_list linked
+
+    procedure serve_request(in_fd: int, out_fd: int) returns bool io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig reads idx_epoch linked
+
+    ; ====================================================================
+    ; Parent side: spawn / kill / analyze.
+    ; ====================================================================
+
+    ; Fork a fresh worker and record its pid + pipe fds. On any failure
+    ; worker_pid stays 0 (analyze then falls back to a clear payload).
+    procedure spawn() io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+
+    procedure ensure() io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+
+    ; Kill + reap the current worker and close its pipes. Leaves state in
+    ; the "no worker" condition so the next analyze re-spawns.
+    procedure shutdown() io mutable worker_in, worker_out, worker_pid reads worker_pid linked
+
+    ; Analyze (uri,text) in the worker. Returns the publishDiagnostics
+    ; payload, or an empty-diagnostics clear payload if the worker is
+    ; unavailable / crashed / hung (and respawns it next time). The text is
+    ; the editor's latest buffer (the position frame is unused for diagnostics).
+    procedure analyze(rp, uri: String, text: String) @direct true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+
+    ; Build the documentSymbol result for `uri` in the worker. `text` is the
+    ; in-memory document copy (empty -> worker reads disk). Returns the JSON
+    ; array; an empty array `[]` if the worker is unavailable/crashed/hung.
+    procedure symbols(rp, uri: String, text: String) @direct true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+
+    ; Hover for `uri` at the packed "<line> <char>" position. `text` is the
+    ; in-memory document copy (empty -> worker reads disk). Returns the LSP
+    ; hover object, or "" (empty) if unavailable / no symbol at the cursor.
+    procedure hover(rp, uri: String, text: String, packed: String) @direct true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+
+    ; Go-to-definition for `uri` at the packed "<line> <char>" position.
+    ; `text` is the in-memory copy (empty -> worker reads disk). Returns the
+    ; LSP Location object, or "" if unavailable / no matching declaration.
+    procedure definition(rp, uri: String, text: String, packed: String) @direct true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+
+    ; Find-all-references for `uri` at the packed "<line> <char>" position.
+    ; `text` is the in-memory copy (empty -> worker reads disk). Returns the
+    ; LSP Location[] array; `[]` if unavailable / crashed / hung / no identifier.
+    procedure references(rp, uri: String, text: String, packed: String) @direct true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+
+    ; documentHighlight for `uri` at the packed "<line> <char>" position.
+    ; `text` is the in-memory copy (empty -> worker reads disk). Returns the
+    ; LSP DocumentHighlight[] array (ranges only); `[]` if unavailable / none.
+    procedure highlights(rp, uri: String, text: String, packed: String) @direct true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+
+    ; Completion for `uri` at the packed "<line> <char>" position. `text` is
+    ; the in-memory copy (empty -> worker reads disk). Returns the members of
+    ; the `.`-qualified receiver under the cursor when it names a declared
+    ; concept, else a CompletionItem[] of every declared name; `[]` if
+    ; unavailable.
+    procedure completion(rp, uri: String, text: String, packed: String) @direct true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+
+    ; completionItem/resolve: the doc block of ONE entry. `uri` is the entry's
+    ; `data` (the file it was read from), `text` the parent's buffer for that
+    ; file when it has one — an entry from a file the editor has not opened
+    ; resolves from disk, which is the same rule every other request follows.
+    ; `packed` is the entry's label. Returns the MarkupContent object, or ""
+    ; when the declaration carries no doc block / the worker is unavailable.
+    procedure completion_resolve(rp, uri: String, text: String, packed: String) @direct true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+
+    ; Rename for `uri`. `packed` is "<line> <char> <newName>". `text` is the
+    ; in-memory copy (empty -> worker reads disk). Returns the LSP
+    ; WorkspaceEdit, or "" if unavailable / no identifier at the cursor.
+    procedure rename(rp, uri: String, text: String, packed: String) @direct true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+
+    ; prepareRename for `uri` at the packed "<line> <char>" position. `text`
+    ; is the in-memory copy (empty -> worker reads disk). Returns the LSP Range
+    ; of the renameable identifier, or "" if unavailable / not renameable.
+    procedure prepare_rename(rp, uri: String, text: String, packed: String) @direct true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+
+    ; signatureHelp for `uri` at the packed "<line> <char>" position. `text`
+    ; is the in-memory copy (empty -> worker reads disk). Returns the LSP
+    ; SignatureHelp, or "" if unavailable / cursor not inside a known call.
+    procedure signature_help(rp, uri: String, text: String, packed: String) @direct true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+
+    ; inlayHint for `uri` over the packed "<sl> <sc> <el> <ec>" range. `text` is
+    ; the in-memory copy (empty -> worker reads disk). Returns the LSP
+    ; InlayHint[] array; `[]` if unavailable / crashed / hung.
+    procedure inlay_hints(rp, uri: String, text: String, packed: String) @direct true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+
+    ; foldingRange for `uri` (uri-only, no position). `text` is the in-memory
+    ; copy (empty -> worker reads disk). Returns the LSP FoldingRange[] array;
+    ; `[]` if unavailable / crashed / hung.
+    procedure folding(rp, uri: String, text: String) @direct true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+
+    ; formatting: the TextEdit[] that re-indents the open document.
+    procedure formatting(rp, uri: String, text: String) @direct true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+
+    ; codeLens for `uri` (uri-only, no position). `text` is the in-memory copy
+    ; (empty -> worker reads disk). Returns the LSP CodeLens[] array; `[]` if
+    ; unavailable / crashed / hung.
+    ;
+    ; It plans a whole package root, which is the same work "d" diagnostics
+    ; already do per document, so it belongs on the per-document budget and
+    ; reaches it through budget_for_kind#'s fallthrough — measured 0.45 s for
+    ; the scaly root and 2.45 s for dazzle, the largest in this tree, against
+    ; a 30 s budget.
+    procedure code_lenses(rp, uri: String, text: String) @direct true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+
+    ; typeDefinition at the packed "<line> <char>" position.
+    procedure type_definition(rp, uri: String, text: String, packed: String) @direct true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+
+    ; prepareCallHierarchy at the packed "<line> <char>" position.
+    procedure prepare_call_hierarchy(rp, uri: String, text: String, packed: String) @direct true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+
+    ; incomingCalls for "<root>\n<name>".
+    procedure incoming_calls(rp, uri: String, text: String, packed: String) @direct true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+
+    ; outgoingCalls for the item declared at the packed "<line> <char>".
+    procedure outgoing_calls(rp, uri: String, text: String, packed: String) @direct true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+
+    ; selectionRange for the packed cursor positions (one per line).
+    procedure selection_ranges(rp, uri: String, text: String, packed: String) @direct true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+
+    ; codeAction for `uri`. `packed` is the newline-separated list of `use`
+    ; paths the parent read out of the request's diagnostics. Returns the LSP
+    ; CodeAction[] array.
+    procedure code_actions(rp, uri: String, text: String, packed: String) @direct true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+
+    ; Semantic type at the packed "<line> <char>" position. `text` is the
+    ; in-memory copy (empty -> worker reads disk). Returns the framed reply
+    ; "1<name>" on a hit, "0" on a miss, or "" if unavailable / crashed / hung
+    ; (the server decodes the tag and falls back to the lexical hover).
+    procedure semantic_type(rp, uri: String, text: String, packed: String) @direct true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+
+    ; semanticTokens for `uri` (uri-only, no position). `text` is the in-memory
+    ; copy (empty -> worker reads disk). Returns the LSP {"data":[...]} object;
+    ; an empty-data object if unavailable / crashed / hung. The fallback is
+    ; built with quote BYTES (string-literal escapes are not decoded).
+    procedure semantic_tokens(rp, uri: String, text: String) @direct true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+
+    ; workspace/symbol: search every .scaly file under `root` for declarations
+    ; matching `query`. `root` rides in the uri frame, `query` in the position
+    ; frame; the text frame is unused. Returns SymbolInformation[]; `[]` if
+    ; unavailable / no root / no match.
+    procedure workspace_symbols(rp, root: String, query: String) @direct true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+
+    ; Send one (kind,uri,text,position) request to the worker and return its
+    ; framed reply, or `fallback` if the worker is unavailable / crashed /
+    ; hung. Up to two attempts: a worker that crashed mid-request is reaped
+    ; and the request retried once on a fresh worker, so a transient crash is
+    ; invisible to the editor. A deterministically-crashing input falls
+    ; through to the fallback after the retry (bounded — no respawn storm).
+    ; The response budget for ONE request kind, in milliseconds.
+    ;
+    ; The question is not how interactive a request feels but whether its
+    ; handler can WALK THE WORKSPACE — because that walk is what builds the
+    ; symindex, and exceeding the budget kills the worker (worker.shutdown#),
+    ; which throws the index away. A budget too small for an index-building
+    ; request is therefore not "a slower answer": it is an answer that can
+    ; never arrive, since every retry starts cold and dies at the same point.
+    ;
+    ; ★Measured 2026-08-12 on packages/opensp/ContentState.scaly, three
+    ; consecutive inlayHint requests in ONE session: 8.01 s, 9.01 s, 8.00 s,
+    ; each returning an empty array with the worker dying in between. 8.01 s
+    ; against an 8000 ms budget is not a coincidence — it IS the budget, and
+    ; inlayHint fires on every visible-range change, so this ran on every
+    ; scroll and took the index for every OTHER request with it. The two
+    ; raised budgets that existed named `w` and `c` only, while the comment on
+    ; WORKSPACE_TIMEOUT_MS already claimed definition and signatureHelp were
+    ; covered; they were not. Hence a table with every letter in it, so the
+    ; next kind added has to answer the question rather than inherit it.
+    ;
+    ; WORKSPACE — walks the tree / builds the index:
+    ;   w workspace/symbol   the whole tree by definition
+    ;   g definition         current file, then siblings, then the package tree
+    ;   r references         every file under the root
+    ;   n rename             the same scan as references
+    ;   f signatureHelp      find_signature_in_workspace#
+    ;   u typeDefinition     resolves a type name, then searches for it
+    ;   k prepareCallHierarchy  may locate a routine declared elsewhere
+    ;   i incomingCalls      reads every file under the root, like references
+    ;   j outgoingCalls      resolves each callee, which may leave the file
+    ;   y inlayHint          resolves each call site through f's machinery
+    ;   t semanticTokens     cross-package name harvest (nameset.scaly)
+    ; COMPLETION — runs the modeler+planner, whose FIRST run in a worker
+    ; process costs seconds and every later one 0.05 s:
+    ;   c completion         plus the cross-package member scan
+    ;   x semantic type      the planner-resolved type behind hover
+    ; ANALYZE — parse or lex of the OPEN DOCUMENT only, no other file read:
+    ;   d diagnostics   s documentSymbol   h hover (lexical fallback)
+    ;   l documentHighlight   p prepareRename   o foldingRange
+    ;   a codeAction (a line scan; the planner already did the thinking)
+    ;   e selectionRange (a bracket walk over the open document)
+    ;   v completionItem/resolve — it parses the ONE file the entry's `data`
+    ;     names and reads the comment block above one declaration. It is here
+    ;     rather than with the workspace kinds BY CONSTRUCTION, not by luck:
+    ;     the file is carried in the entry, so there is nothing to search for.
+    ; `SCALYLS_BUDGET_MS=<n>` overrides EVERY budget below with n milliseconds.
+    ; It exists for the same reason `SCALYC_STACK_BUDGET` does in the planner:
+    ; the guard it tunes trips on a threshold no test can reach reliably on an
+    ; arbitrary machine, so without a knob the give-up path is untestable and
+    ; stays untested. Set it small to prove the path fires; set it large when a
+    ; genuinely huge workspace needs more than the table allows. 0 or unset =
+    ; the table. A value that does not parse as a positive number is IGNORED
+    ; rather than treated as 0 — a typo must not disable the hang detector.
+    procedure budget_override() returns i32 io linked
+
+    procedure budget_for_kind(kind: String) returns i32 io linked
+
+    procedure exchange(rp, kind: Slice[char], uri: String, text: String, position: String, fallback: String) @direct true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+}

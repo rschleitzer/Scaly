@@ -1,0 +1,238 @@
+; Tensor tape (self-scaling stage 5.2/5.3/5.4): reverse-mode autodiff
+; over the 5.1 op set — matmul, GELU, softmax, layernorm, embedding
+; lookup — plus a weighted-sum reduction, (5.3) a fused
+; softmax-crossentropy objective, in-place token mutation (set_token:
+; one tape serves a whole training run, a step allocates nothing),
+; SGD/Adam leaf updates (Adam moments live in the node's aux buffer on
+; the tape's page), and (5.4) fused causal multi-head self-attention
+; (softmax(QK^T/sqrt(dh)) masked to j <= i, per head), elementwise add
+; (residual connections, positional embeddings) and a sampling helper
+; for inference (temperature softmax + CDF walk over one row).
+;
+; One region per tape: a Tape is page-hosted, and every node record,
+; value buffer, gradient buffer and saved auxiliary lives on the tape's
+; page (the allocating tape methods derive it via Page.get(this) and
+; construct with ^own_page). Dropping the tape's page frees a whole
+; training step's activations and gradients wholesale — no per-buffer
+; bookkeeping.
+;
+; Usage:
+;   var tape Tape()
+;   let x tape.leaf(2, 3)            ; fill via tape.set_value(x, i, v)
+;   let w tape.leaf(3, 2)
+;   let y tape.matmul(x, w)          ; forward runs at creation
+;   let s tape.wsum(y, weights)      ; scalar objective
+;   tape.backward s                  ; adjoints accumulate into node grads
+;   let g tape.grad_at(x, 0)
+;
+; Node ids are ints in creation order; inputs always precede consumers,
+; so backward is a reverse id walk. Gradient buffers are allocated
+; zeroed at node creation and ACCUMULATE (+=) — call zero_grads before
+; reusing a tape for another backward pass. recompute() re-runs every
+; op in id order against the current leaf values (numeric gradcheck
+; perturbs a leaf and recomputes).
+
+use scaly.memory.Page
+use scaly.containers.Vector
+use scaly.containers.Array
+
+function expf(x: float) returns float extern
+function tanhf(x: float) returns float extern
+function sqrtf(x: float) returns float extern
+function logf(x: float) returns float extern
+function powf(x: float, y: float) returns float extern
+
+; --- register-tiled 4x4 f32 matmul kernels (the 5.1 kernel shape:
+; call-free inner loop over pointer subscripts, disjoint c.put writes,
+; parallel over 4-row tiles). Each requires its tiled dimensions % 4 =
+; 0; the tape methods call them only when the shapes qualify and fall
+; back to the naive triple loop otherwise. Backward variants ACCUMULATE
+; (read-add through put) — a node's grad receives contributions from
+; every consumer, and disjoint tiles keep each slot single-writer per
+; call. ---
+
+; C = A * B (A m x kk, B kk x n, C m x n). m % 4 = 0, n % 4 = 0.
+procedure mm_tiled(a: Vector[float], b: Vector[float], mutable c: ref[Vector[float]], m: int, kk: int, n: int) linked
+
+; dA += dC * B^T : dA[i,x] += sum_j dC[i,j] * B[x,j]. dC m x n,
+; B kk x n, dA m x kk. m % 4 = 0, kk % 4 = 0.
+procedure mm_tiled_dA(gc: Vector[float], b: Vector[float], mutable ga: ref[Vector[float]], m: int, kk: int, n: int) linked
+
+; dB += A^T * dC : dB[x,j] += sum_i A[i,x] * dC[i,j]. A m x kk,
+; dC m x n, dB kk x n. kk % 4 = 0, n % 4 = 0.
+procedure mm_tiled_dB(a: Vector[float], gc: Vector[float], mutable gb: ref[Vector[float]], m: int, kk: int, n: int) linked
+
+define TAPE_LEAF int 0
+define TAPE_MATMUL int 1
+define TAPE_GELU int 2
+define TAPE_SOFTMAX int 3
+define TAPE_LAYERNORM int 4
+define TAPE_EMBEDDING int 5
+define TAPE_WSUM int 6
+define TAPE_CROSSENT int 7
+define TAPE_ATTENTION int 8
+define TAPE_ADD int 9
+define TAPE_ADD_BCAST int 10
+
+define TapeNode
+(
+    op: int
+    a: int
+    b: int
+    c: int
+    rows: int
+    cols: int
+    heads: int
+    win: int
+    eps: float
+    value: Vector[float]
+    grad: Vector[float]
+    aux: Vector[float]
+    tok: Vector[i64]
+)
+{
+    init (kind: int, in_a: int, in_b: int, in_c: int, r: int, n: int) linked
+}
+
+define Tape
+@resident true (
+    nodes: Array[TapeNode]
+)
+{
+    init () linked
+
+    procedure add_node(mutable this: Tape, kind: int, in_a: int, in_b: int, in_c: int, r: int, n: int) returns int linked
+
+    procedure leaf(mutable this: Tape, r: int, n: int) returns int linked
+
+    procedure set_value(mutable this: Tape, id: int, i: int, v: float) linked
+
+    ; Overwrite a saved token id in place (embedding ids or crossent
+    ; targets) — a training loop mutates the batch data of an existing
+    ; tape instead of building a new one, so a step allocates nothing.
+    procedure set_token(mutable this: Tape, id: int, i: int, v: i64) linked
+
+    function value_at(this: Tape, id: int, i: int) returns float linked
+
+    ; Overwrite a gradient slot in place. The distributed trainer (7.4)
+    ; injects an all-reduced (averaged) gradient here before adam_step,
+    ; so every rank applies an identical update and stays in lockstep.
+    procedure set_grad(mutable this: Tape, id: int, i: int, v: float) linked
+
+    function grad_at(this: Tape, id: int, i: int) returns float linked
+
+    function node_rows(this: Tape, id: int) returns int linked
+
+    function node_cols(this: Tape, id: int) returns int linked
+
+    procedure matmul(mutable this: Tape, x: int, y: int) returns int linked
+
+    procedure gelu(mutable this: Tape, x: int) returns int linked
+
+    procedure softmax(mutable this: Tape, x: int) returns int linked
+
+    procedure layernorm(mutable this: Tape, x: int, gamma: int, beta: int, e: float) returns int linked
+
+    procedure embedding(mutable this: Tape, table: int, ids: Vector[i64], tokens: int) returns int linked
+
+    procedure wsum(mutable this: Tape, x: int, w: Vector[float]) returns int linked
+
+    ; Fused softmax + negative log-likelihood, averaged over rows:
+    ; value = mean_i(logsumexp(x_i) - x_i[target_i]). targets holds one
+    ; token id per row of the logits node.
+    procedure crossentropy(mutable this: Tape, logits: int, targets: Vector[i64]) returns int linked
+
+    ; Elementwise sum of two same-shape nodes — residual connections
+    ; and positional embeddings. x and y may be the same node.
+    procedure add(mutable this: Tape, x: int, y: int) returns int linked
+
+    ; Broadcast sum: x is (B*yr) x n, y is yr x n; out row i adds
+    ; y row (i mod yr). Adds one shared positional-embedding block to
+    ; every window of a batched activation. Backward accumulates dy
+    ; across the B repeats (shared slots — bwd stays sequential).
+    procedure add_bcast(mutable this: Tape, x: int, y: int) returns int linked
+
+    ; Fused causal multi-head self-attention: q/k/v are T x D nodes
+    ; (D = hs * dh, D divisible by hs); per head, out row i is
+    ; softmax(q_i . k_j / sqrt(dh) for j <= i)-weighted sum of v rows.
+    ; The node's aux buffer holds the per-head probabilities in
+    ; [0, hs*T*win) (forward writes them, backward reads them) and a ds
+    ; scratch half in [hs*T*win, 2*hs*T*win) written by backward pass 1.
+    procedure attention(mutable this: Tape, q: int, k: int, v: int, hs: int) returns int linked
+
+    ; Batched causal attention: the T rows are nwin = T/win consecutive
+    ; windows of `win` rows each; a query attends only to keys in its
+    ; OWN window (j in [window_start, i]). win = T is the single-window
+    ; case `attention` uses (probabilities index identically, so that
+    ; path stays numerically exact). Column extent per query is win, so
+    ; the aux buffer is hs*T*win doubled for the ds scratch.
+    procedure attention_windowed(mutable this: Tape, q: int, k: int, v: int, hs: int, win: int) returns int linked
+
+    ; Sample a token from one row of a node's values (logits): softmax
+    ; at temperature temp (must be > 0), then walk the CDF with the
+    ; caller-supplied uniform draw u in [0, 1). The caller owns the RNG.
+    function sample(this: Tape, id: int, row: int, temp: float, u: float) returns int linked
+
+    ; SGD update on a leaf: value -= lr * grad.
+    procedure sgd_step(mutable this: Tape, id: int, lr: float) linked
+
+    ; Adam update on a leaf. Moment state lives in the node's aux
+    ; buffer (m at [0,total), v at [total,2*total)), lazily allocated
+    ; zeroed on the tape's page at the first step. t is the 1-based
+    ; step count for bias correction.
+    procedure adam_step(mutable this: Tape, id: int, lr: float, b1: float, b2: float, e: float, t: int) linked
+
+    ; Re-run every op in id order against the current leaf values.
+    procedure recompute(mutable this: Tape) linked
+
+    procedure zero_grads(mutable this: Tape) linked
+
+    ; Seed d(out)/d(out) = 1 and accumulate adjoints into every
+    ; ancestor's grad buffer (reverse id walk — inputs precede
+    ; consumers by construction).
+    procedure backward(mutable this: Tape, id: int) linked
+
+    procedure run_node(mutable this: Tape, id: int) linked
+
+    procedure bwd_node(mutable this: Tape, id: int) linked
+
+    procedure fwd_matmul(mutable this: Tape, id: int) linked
+
+    procedure bwd_matmul(mutable this: Tape, id: int) linked
+
+    procedure fwd_gelu(mutable this: Tape, id: int) linked
+
+    procedure bwd_gelu(mutable this: Tape, id: int) linked
+
+    procedure fwd_softmax(mutable this: Tape, id: int) linked
+
+    procedure bwd_softmax(mutable this: Tape, id: int) linked
+
+    procedure fwd_layernorm(mutable this: Tape, id: int) linked
+
+    procedure bwd_layernorm(mutable this: Tape, id: int) linked
+
+    procedure fwd_embedding(mutable this: Tape, id: int) linked
+
+    procedure bwd_embedding(mutable this: Tape, id: int) linked
+
+    procedure fwd_wsum(mutable this: Tape, id: int) linked
+
+    procedure bwd_wsum(mutable this: Tape, id: int) linked
+
+    procedure fwd_crossent(mutable this: Tape, id: int) linked
+
+    procedure bwd_crossent(mutable this: Tape, id: int) linked
+
+    procedure fwd_add(mutable this: Tape, id: int) linked
+
+    procedure bwd_add(mutable this: Tape, id: int) linked
+
+    procedure fwd_add_bcast(mutable this: Tape, id: int) linked
+
+    procedure bwd_add_bcast(mutable this: Tape, id: int) linked
+
+    procedure fwd_attention(mutable this: Tape, id: int) linked
+
+    procedure bwd_attention(mutable this: Tape, id: int) linked
+}

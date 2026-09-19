@@ -1,0 +1,180 @@
+; symindex.scaly - persistent workspace symbol index (worker side).
+;
+; workspace/symbol (and the cross-package definition / signatureHelp searches)
+; parse every .scaly file under the search root on EACH request. Parsing is the
+; dominant cost (~100ms over the scalyc package's 17k-line files); reading and
+; hashing a file is O(bytes) and cheap by comparison. This cache stores, per
+; file path, the file's content hash plus the pre-built UNFILTERED symbol blob
+; (a tagged record list, see below), so a query reuses the parse whenever the
+; file is unchanged and re-parses only the files whose content actually moved.
+;
+; INVALIDATION is by content hash, not mtime or editor notifications: on every
+; query the worker reads each file (cheap) and hashes it; a matching hash means
+; the cached blob is still valid, any change (save, git checkout, external edit)
+; flips the hash and forces a re-parse. This keeps the index correct for ANY
+; disk change with no protocol additions, and matches workspace/symbol's
+; existing disk-based semantics (unsaved editor edits, which never touch disk,
+; are not reflected — same as before the index).
+;
+; BLOB FORMAT: each symbol is one record `name <0x09> json <0x0A>`. A complete
+; SymbolInformation JSON object never contains a raw tab or newline (json.
+; quote_string# escapes 0x09/0x0A/0x0D to \t/\n/\r and the location object is
+; single-line), so the tab/newline delimiters are unambiguous. A query filters
+; the blob by walking records, matching `name`, and emitting the `json` parts.
+;
+; MEMORY MODEL: identical to docstore — the index must outlive a single request
+; but a long-lived Scaly root page would leak under the stack-LIFO discipline,
+; so each slot's path/blob bytes are libc malloc'd copies (freed on replace),
+; orthogonal to the page allocator. A scalar `pointer` module-global with a
+; `null` initializer is allowed (s189); the slot array is lazily malloc'd.
+;
+; This index lives ONLY in the worker (a forked child), which is where parsing
+; happens and which is persistent across requests. A worker crash + respawn
+; simply starts with an empty index that refills lazily.
+;
+; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no else).
+; One statement per line (`;` starts a comment, not a separator).
+
+use scaly.memory.runtime
+
+; libc allocator. free + memcpy come from scaly.memory.runtime; malloc is not
+; declared there, so declare it here (fixpoint-safe — no scaly/scalyc source
+; is touched).
+function malloc(size: size_t) returns pointer[void] extern
+
+; Max number of files tracked. The scaly + scalyc packages total ~30 files; a
+; large monorepo workspace could have more, so allow generous headroom. A full
+; table just falls back to re-parsing the overflow files every query.
+define IDX_CAP int 4096
+
+; One cached file: malloc'd path + symbol-blob byte copies (NOT page-owned),
+; the content hash they were built from, and a `used` flag.
+define IdxSlot
+(
+    path_data: pointer[u8]
+    path_len:  size_t
+    chash:     size_t
+    blob_data: pointer[u8]
+    blob_len:  size_t
+    used:      bool
+    epoch:     size_t
+)
+
+; One cached directory listing: malloc'd path + listing byte copies, and the
+; request epoch it was taken in.
+define DirSlot
+(
+    path_data: pointer[u8]
+    path_len:  size_t
+    list_data: pointer[u8]
+    list_len:  size_t
+    used:      bool
+    epoch:     size_t
+)
+
+; How many directories one request may have listed at once. A cross-file scan
+; asks about the file's own directory and its package root, so two is the live
+; number; the headroom costs nothing.
+define DIR_CAP int 16
+
+; The slot arrays, lazily malloc'd. null until the first access.
+mutable idx_slots: pointer[IdxSlot] linked
+mutable dir_slots: pointer[DirSlot] linked
+
+; The current REQUEST epoch. The header above says reading and hashing a file
+; is cheap next to parsing it — true for one query, and false the moment one
+; request asks the same question per call site. Measured 2026-08-12: an
+; inlayHint over packages/opensp/ContentState.scaly resolves ~40 callees
+; cross-file, and each resolution re-read and re-hashed all 56 files (2.54 MB)
+; of that directory — ~100 MB per request, which is the 4.7 s it took even with
+; every blob already cached.
+;
+; So validation is now per REQUEST rather than per lookup: a slot stamped with
+; the current epoch is taken as fresh without touching the disk again. Across
+; requests nothing changes — the next epoch re-reads and re-hashes, so a save,
+; a git checkout or an external edit still invalidates exactly as before. What
+; is given up is noticing a change made DURING one request, which is not a loss
+; worth having: one request should see one consistent snapshot of the tree.
+mutable idx_epoch: size_t linked
+
+define symindex
+{
+    ; Borrowed views over the two malloc'd tables: a slot is reached through
+    ; `at(i)` (bounds-checked, answers ref[IdxSlot]) instead of pointer
+    ; arithmetic. Inside the namespace, so `symindex.idx_view()` and the
+    ; definition mangle alike.
+    procedure idx_view() @page true @direct true returns Slice[IdxSlot] reads idx_slots linked
+    procedure dir_view() @page true @direct true returns Slice[DirSlot] reads dir_slots linked
+
+    ; Lazily allocate + zero the slot array on first use. A malloc failure
+    ; leaves idx_slots null; callers then treat every file as a cache miss.
+    procedure ensure() mutable idx_slots reads idx_slots linked
+
+    ; Start a new request epoch. Called once per worker request, which is what
+    ; makes `fresh` mean "already validated in THIS request" — see idx_epoch.
+    procedure begin_request() mutable idx_epoch reads idx_epoch linked
+
+    ; True when `path`'s cached blob was already validated during this request,
+    ; so the caller may use it WITHOUT reading and hashing the file again.
+    procedure fresh(path: String) returns bool reads idx_epoch linked
+
+    ; Record that `path`'s cached blob is valid as of this request. Called
+    ; after a read+hash confirmed (or refreshed) the slot.
+    procedure touch(path: String) mutable idx_slots reads idx_slots linked
+
+    ; Index of the live slot whose path matches, or -1.
+    procedure find(path: String) returns int reads idx_slots linked
+
+    ; True when `path` is cached AND was built from content hashing to `chash`
+    ; — i.e. the cached blob is still valid for the file's current content.
+    procedure valid(path: String, chash: size_t) returns bool reads idx_slots linked
+
+    ; The cached blob for `path` (a fresh copy on the caller's page), or "" on a
+    ; miss. Callers should gate on valid() first; an empty blob is a legitimate
+    ; cached value (a file with no symbols).
+    procedure get_blob(rp, path: String) @direct true returns String reads idx_slots linked
+
+    ; Replace slot `s`'s blob with a fresh malloc'd copy of `blob`'s bytes,
+    ; freeing the previous copy. An empty blob leaves blob_data null.
+    procedure set_blob(mutable s: ref[IdxSlot], blob: String) linked
+
+    ; Set slot `s`'s path to a fresh malloc'd copy of `path`'s bytes, freeing
+    ; any previous copy (slots are reused after overflow eviction).
+    procedure set_path(mutable s: ref[IdxSlot], path: String) linked
+
+    ; Record (or replace) the symbol blob + content hash for `path`. Replacing
+    ; frees the old blob first (bounded: one live copy per indexed file).
+    procedure put(path: String, chash: size_t, blob: String) mutable idx_slots reads idx_slots linked
+
+    ; ----- directory listing cache (per request) -----
+    ; symbols.list_scaly_files# answers by running `find` through popen — a
+    ; SHELL PROCESS per call. The cross-file scans call it per CALL SITE and for
+    ; two directories each, so one inlayHint over a file in packages/opensp
+    ; spawned ~80 of them, and that — not the file reading — was the bulk of the
+    ; 4.7 s. A directory's contents cannot change meaningfully inside one
+    ; request, and one request already means one snapshot (see idx_epoch), so
+    ; the listing is taken once per directory per request.
+    ;
+    ; Small and separate from the file table on purpose: a request touches one
+    ; or two directories, while the file table holds thousands of entries and is
+    ; searched linearly.
+    procedure ensure_dirs() mutable dir_slots reads dir_slots linked
+
+    ; Index of the live dir slot for `dir` that was filled in THIS request, or -1.
+    procedure find_dir(dir: String) returns int reads dir_slots linked
+
+    ; True when this request already listed `dir`.
+    procedure has_listing(dir: String) returns bool reads idx_epoch linked
+
+    ; The listing cached for `dir` in this request ("" when there is none).
+    procedure get_listing(rp, dir: String) @direct true returns String reads dir_slots linked
+
+    ; Cache `listing` for `dir` for the rest of this request. Slots are reused
+    ; round-robin: an entry from an earlier epoch is dead by definition, so the
+    ; first stale slot is always free to take.
+    procedure put_listing(dir: String, listing: String) mutable dir_slots reads dir_slots linked
+
+    procedure set_dir_path(mutable s: ref[DirSlot], dir: String) linked
+
+    procedure set_dir_list(mutable s: ref[DirSlot], listing: String) linked
+}
