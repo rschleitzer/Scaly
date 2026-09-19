@@ -5833,7 +5833,7 @@ BODY = ("define Holder (name: String)\n"
         "{\n"
         "    let noise churn(64)\n"
         "    if noise > 0\n"
-        "        scaly.io.Console.print(h.name.to_c_string())\n"
+        "        scaly.os.Console.print(h.name.to_c_string())\n"
         "}\n")
 bad_src  = BODY % "mutable out: pointer[Holder], n: int"        # no page parameter
 good_src = BODY % "rp, mutable out: pointer[Holder], n: int"    # can pin on the caller
@@ -5900,7 +5900,7 @@ quiet = ("define Holder (name: String)\n"
          "var q Holder(String(\"\"))\n"
          "var flag false\n"
          "if scalar_out(&flag, 1) > 0\n"
-         "    scaly.io.Console.print \"q\"\n")
+         "    scaly.os.Console.print \"q\"\n")
 open(ws + "/quiet.scaly", "w").write(quiet)
 qrc = subprocess.run([scalyc, "-S", "--no-tests", "-o", ws + "/quiet.ll", ws + "/quiet.scaly"],
                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode

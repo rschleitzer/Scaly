@@ -6,7 +6,7 @@ Usage: tools/purify/mark_globals.py <gw.txt> [--apply] [--generated-too]
 The input is the `gw` lines `tools/write-report.sh` writes into its per-root
 reports (`<file>:<line>:<col>: gw <name> a,b,c`, located at the declaration):
 the globals a body writes, itself or through what it calls. The runtime's own
-state (globals declared in scaly/memory, scaly/fiber*, scaly/io*,
+state (globals declared in scaly/memory, scaly/fiber*, scaly/os*,
 scaly/cluster*) is ambient and dropped, and so is every `shared atomic` cell. What is left is written as a clause
 after the signature, sorted: `procedure f(mutable this) returns int mutable a, b`
 - at the end of the line that closes the parameter list, before a trailing

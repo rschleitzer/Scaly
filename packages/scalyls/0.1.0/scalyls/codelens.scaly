@@ -47,7 +47,7 @@
 ; (`when m: ModuleSyntax`), and every arm of a value-returning choose returns
 ; explicitly. Quotes are 0x22 bytes.
 
-use scaly.io.File
+use scaly.os.File
 use scaly.memory.runtime
 use scaly.memory.root_pages.getenv
 

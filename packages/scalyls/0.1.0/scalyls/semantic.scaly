@@ -45,7 +45,7 @@
 ; EVERY arm uses an explicit return.
 
 use scaly.memory.runtime
-use scaly.io.File
+use scaly.os.File
 
 use scalyls.diagnostics
 

@@ -217,7 +217,7 @@ int pthread_join(size_t thread, void* retval)
 /* ---- Directories ------------------------------------------------------
  *
  * opendir/closedir are used for exactly ONE thing in this tree
- * (scaly/io/Directory.scaly, dir_isdir_worker): open it, and if that worked,
+ * (scaly/os/Directory.scaly, dir_isdir_worker): open it, and if that worked,
  * close it — an is-this-a-directory test. There is no readdir anywhere, which
  * `tools/win-undef.sh` confirms by its absence from the undefined set. So the
  * whole dirent machinery reduces to one attribute query, and the handle is a
@@ -300,7 +300,7 @@ void* dlsym(void* handle, const char* symbol)
  *
  * POSIX semantics, faithfully: dirname MODIFIES its argument in place and
  * returns it; basename returns a pointer INTO it. The one caller
- * (scaly/io/Path.scaly) passes a fresh `to_c_string()` copy, so in-place
+ * (scaly/os/Path.scaly) passes a fresh `to_c_string()` copy, so in-place
  * modification is safe, and it compares the result against "." — which is what
  * POSIX dirname answers for a path with no separator, so that answer is a
  * contract, not a detail.

@@ -10,7 +10,7 @@ package scalyls 0.1.0
 
 use scaly.containers.String
 use scaly.containers.StringBuilder
-use scaly.io.Console
+use scaly.os.Console
 use scalyls.json
 use scalyls.json.JsonValue
 use scalyls.rpc

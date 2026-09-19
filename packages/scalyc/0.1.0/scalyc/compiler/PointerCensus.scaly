@@ -108,7 +108,7 @@
 use scalyc.compiler.Model.*
 use scalyc.compiler.Plan.*
 use scalyc.compiler.Planner.*
-use scaly.io.File
+use scaly.os.File
 
 ; Dedupe table size: a power of two (the probe mask is DD_CAP - 1). The table
 ; stops admitting new keys at half load and every later site is recorded

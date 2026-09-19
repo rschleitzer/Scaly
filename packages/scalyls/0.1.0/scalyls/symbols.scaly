@@ -36,7 +36,7 @@
 ; deref to a local first. In a choose returning a value, EVERY arm uses an
 ; explicit `return` (mixing return + bare arms drops the bare ones).
 
-use scaly.io.File
+use scaly.os.File
 use scaly.memory.runtime
 use scaly.memory.root_pages.getenv
 use scalyls.json

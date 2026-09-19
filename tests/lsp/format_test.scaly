@@ -18,8 +18,8 @@ package scalyls 0.1.0
 
 use scaly.containers.String
 use scaly.fiber.Io
-use scaly.io.Console
-use scaly.io.File
+use scaly.os.Console
+use scaly.os.File
 use scaly.memory.root_pages.getenv
 use scalyls.format
 

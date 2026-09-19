@@ -1,7 +1,7 @@
 use scaly.memory.runtime
 use scaly.containers.String
 
-define io
+define os
 {
     module Console
     module File
@@ -10,7 +10,7 @@ define io
 
     function test_direct() returns int
     {
-        ; Direct write call to test if external functions work in io module
+        ; Direct write call to test if external functions work in os module
         let result write(1, "Direct test\n" as pointer[void], 12 as size_t)
         if result <> 12
             return -1

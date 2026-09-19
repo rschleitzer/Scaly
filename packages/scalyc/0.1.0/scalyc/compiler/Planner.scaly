@@ -17,8 +17,8 @@
 ; scaly.io imports are load-bearing beyond visibility: the use alias
 ; feeds the dotted-call extern-decl gate (typed declarations for
 ; cross-package File./Path. calls instead of varargs fallbacks).
-use scaly.io.File
-use scaly.io.Path
+use scaly.os.File
+use scaly.os.Path
 
 use scalyc.compiler.ConceptIndex.ConceptIndex
 use scalyc.compiler.FunctionIndex.FunctionIndex
@@ -35603,7 +35603,7 @@ define Planner
 
             ; Propagate this module's Use clauses into program_use_aliases
             ; so the dotted-call extern-decl gate fires for prefixes
-            ; imported from sub-modules (e.g. cli.scaly's `use scaly.io.Console`
+            ; imported from sub-modules (e.g. cli.scaly's `use scaly.os.Console`
             ; → "Console") in addition to the main program's own uses.
             ; Without this, calls like `Console.println(...)` inside cli.run
             ; resolve at planning time but never reach the gate, so no

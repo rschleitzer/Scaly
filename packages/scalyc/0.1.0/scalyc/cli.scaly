@@ -6,8 +6,8 @@
 use scaly.containers.String
 use scaly.containers.StringBuilder
 use scaly.containers.Vector
-use scaly.io.File
-use scaly.io.Console
+use scaly.os.File
+use scaly.os.Console
 use scaly.memory.runtime.system
 use scaly.memory.runtime.unlink
 use scaly.memory.root_pages.getenv

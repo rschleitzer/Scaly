@@ -621,7 +621,7 @@ long long scaly_eio_blksize_fd(int fd)
  * C's fseek/ftell carry `long` offsets, i.e. 64-bit on LP64 and 32-bit on
  * LLP64 (Win64), so ONE Scaly declaration cannot describe both (check 4 of
  * tests/abi/run.sh). And the consequence is worse than a width: `ftell` is how
- * scaly/io/File.scaly measures a FILE's SIZE, so a 32-bit result would cap
+ * scaly/os/File.scaly measures a FILE's SIZE, so a 32-bit result would cap
  * every source file at 2 GB and turn the `< 0` error test into a coin flip —
  * the sign-flip class check 1 of that suite exists for.
  *

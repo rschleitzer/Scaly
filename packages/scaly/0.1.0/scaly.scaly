@@ -1,12 +1,12 @@
 define scaly
 {
-    ; fiber before io: the io module routes Console/File through the
+    ; fiber before os: the os module routes Console/File through the
     ; fiber module's Io layer (milestone 2.5), and a module must be
     ; declared before the modules that depend on it.
     module memory
     module containers
     module fiber
-    module io
+    module os
     module cluster
     module tensor
 
@@ -21,7 +21,7 @@ define scaly
         if result <> 0
             return result - 200
 
-        set result: io.test()
+        set result: os.test()
         if result <> 0
             return result - 300
 

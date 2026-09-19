@@ -5,11 +5,11 @@
 ;
 ; Ported from C++ Emitter.cpp
 
-; scaly.io.Console is load-bearing beyond visibility: the use alias
+; scaly.os.Console is load-bearing beyond visibility: the use alias
 ; feeds the dotted-call extern-decl gate (typed declaration for the
 ; cross-package Console.println call instead of a varargs fallback).
-use scaly.io.Console
-use scaly.io.File
+use scaly.os.Console
+use scaly.os.File
 use scalyc.compiler.Modeler
 use scalyc.compiler.ConceptIndex.ConceptIndex
 use scalyc.compiler.TaskPlanner.TaskPlanner

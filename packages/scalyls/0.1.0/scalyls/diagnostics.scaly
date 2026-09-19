@@ -58,8 +58,8 @@
 ; deref to a local first.
 
 use scaly.memory.runtime
-use scaly.io.File
-use scaly.io.Path
+use scaly.os.File
+use scaly.os.Path
 use scalyls.json
 use scalyls.symbols
 

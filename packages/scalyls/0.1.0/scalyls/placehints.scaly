@@ -53,7 +53,7 @@
 ; One statement per line. Syntax unions are matched by PAYLOAD TYPE, Plan unions
 ; by VARIANT TAG NAME (`when c: Call`). Quotes are 0x22 bytes.
 
-use scaly.io.File
+use scaly.os.File
 use scaly.memory.runtime
 
 use scalyls.diagnostics

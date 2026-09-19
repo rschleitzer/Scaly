@@ -1487,6 +1487,152 @@ if.end:                                           ; preds = %if.then, %entry
   ret void
 }
 
+define linkonce_odr i1 @_ZN4Page6rewindEP4PagePvP8PageNodeP8PageNode(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4) {
+entry:
+  %q = alloca ptr, align 8
+  %pages = alloca i64, align 8
+  %p = alloca ptr, align 8
+  %load.struct = load %_Z4Page, ptr %1, align 8
+  %next_object = extractvalue %_Z4Page %load.struct, 0
+  %eq = icmp eq ptr %next_object, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i1 false
+
+if.end:                                           ; preds = %entry
+  %as.ptrtoint = ptrtoint ptr %2 to i64
+  %as.ptrtoint1 = ptrtoint ptr %1 to i64
+  %lt = icmp ult i64 %as.ptrtoint, %as.ptrtoint1
+  br i1 %lt, label %if.then2, label %if.end3
+
+if.then2:                                         ; preds = %if.end
+  ret i1 false
+
+if.end3:                                          ; preds = %if.end
+  %as.ptrtoint4 = ptrtoint ptr %2 to i64
+  %as.ptrtoint5 = ptrtoint ptr %next_object to i64
+  %gt = icmp ugt i64 %as.ptrtoint4, %as.ptrtoint5
+  br i1 %gt, label %if.then6, label %if.end7
+
+if.then6:                                         ; preds = %if.end3
+  ret i1 false
+
+if.end7:                                          ; preds = %if.end3
+  %load.struct8 = load %_Z4Page, ptr %1, align 8
+  %exclusive_pages = extractvalue %_Z4Page %load.struct8, 3
+  %head = extractvalue %_Z8PageList %exclusive_pages, 0
+  %ne = icmp ne ptr %head, %3
+  br i1 %ne, label %if.then9, label %if.end10
+
+if.then9:                                         ; preds = %if.end7
+  ret i1 false
+
+if.end10:                                         ; preds = %if.end7
+  %load.struct11 = load %_Z4Page, ptr %0, align 8
+  %exclusive_pages12 = extractvalue %_Z4Page %load.struct11, 3
+  %head13 = extractvalue %_Z8PageList %exclusive_pages12, 0
+  %ne14 = icmp ne ptr %head13, %4
+  br i1 %ne14, label %if.then15, label %if.end16
+
+if.then15:                                        ; preds = %if.end10
+  ret i1 false
+
+if.end16:                                         ; preds = %if.end10
+  %load.struct17 = load %_Z4Page, ptr %1, align 8
+  %next_page = extractvalue %_Z4Page %load.struct17, 2
+  store ptr %next_page, ptr %p, align 1
+  store i64 0, ptr %pages, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %if.end26, %if.end16
+  %p18 = load ptr, ptr %p, align 8
+  %ne19 = icmp ne ptr %p18, null
+  br i1 %ne19, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %p20 = load ptr, ptr %p, align 8
+  %load.struct21 = load %_Z4Page, ptr %p20, align 8
+  %exclusive_pages22 = extractvalue %_Z4Page %load.struct21, 3
+  %head23 = extractvalue %_Z8PageList %exclusive_pages22, 0
+  %ne24 = icmp ne ptr %head23, null
+  br i1 %ne24, label %if.then25, label %if.end26
+
+while.exit:                                       ; preds = %while.cond
+  %as.ptrtoint31 = ptrtoint ptr %next_object to i64
+  %as.ptrtoint32 = ptrtoint ptr %2 to i64
+  %eq33 = icmp eq i64 %as.ptrtoint31, %as.ptrtoint32
+  br i1 %eq33, label %if.then34, label %if.end35
+
+if.then25:                                        ; preds = %while.body
+  ret i1 false
+
+if.end26:                                         ; preds = %while.body
+  %pages27 = load i64, ptr %pages, align 8
+  %add = add i64 %pages27, 1
+  store i64 %add, ptr %pages, align 1
+  %p28 = load ptr, ptr %p, align 8
+  %load.struct29 = load %_Z4Page, ptr %p28, align 8
+  %next_page30 = extractvalue %_Z4Page %load.struct29, 2
+  store ptr %next_page30, ptr %p, align 1
+  br label %while.cond
+
+if.then34:                                        ; preds = %while.exit
+  %pages36 = load i64, ptr %pages, align 8
+  %eq37 = icmp eq i64 %pages36, 0
+  br i1 %eq37, label %if.then38, label %if.end39
+
+if.end35:                                         ; preds = %if.end39, %while.exit
+  %load.struct40 = load %_Z4Page, ptr %1, align 8
+  %next_page41 = extractvalue %_Z4Page %load.struct40, 2
+  store ptr %next_page41, ptr %q, align 1
+  br label %while.cond42
+
+if.then38:                                        ; preds = %if.then34
+  ret i1 true
+
+if.end39:                                         ; preds = %if.then34
+  br label %if.end35
+
+while.cond42:                                     ; preds = %while.body43, %if.end35
+  %q45 = load ptr, ptr %q, align 8
+  %ne46 = icmp ne ptr %q45, null
+  br i1 %ne46, label %while.body43, label %while.exit44
+
+while.body43:                                     ; preds = %while.cond42
+  %q47 = load ptr, ptr %q, align 8
+  %load.struct48 = load %_Z4Page, ptr %q47, align 8
+  %next_page49 = extractvalue %_Z4Page %load.struct48, 2
+  %q50 = load ptr, ptr %q, align 8
+  call void @_ZN4Page12release_pageER4Page(ptr %q50)
+  store ptr %next_page49, ptr %q, align 1
+  br label %while.cond42
+
+while.exit44:                                     ; preds = %while.cond42
+  %next_page51 = getelementptr inbounds nuw %_Z4Page, ptr %1, i32 0, i32 2
+  store ptr null, ptr %next_page51, align 8
+  %as.ptrtoint52 = ptrtoint ptr %1 to i64
+  %as.ptrtoint53 = ptrtoint ptr %0 to i64
+  %eq54 = icmp eq i64 %as.ptrtoint52, %as.ptrtoint53
+  br i1 %eq54, label %if.then55, label %if.else
+
+if.then55:                                        ; preds = %while.exit44
+  %current_page = getelementptr inbounds nuw %_Z4Page, ptr %0, i32 0, i32 1
+  store ptr null, ptr %current_page, align 8
+  br label %if.end56
+
+if.else:                                          ; preds = %while.exit44
+  %current_page57 = getelementptr inbounds nuw %_Z4Page, ptr %0, i32 0, i32 1
+  store ptr %1, ptr %current_page57, align 8
+  br label %if.end56
+
+if.end56:                                         ; preds = %if.else, %if.then55
+  %if.value = phi ptr [ null, %if.then55 ], [ %1, %if.else ]
+  %next_object58 = getelementptr inbounds nuw %_Z4Page, ptr %1, i32 0, i32 0
+  store ptr %2, ptr %next_object58, align 8
+  ret i1 true
+}
+
 declare ptr @getenv(ptr)
 
 declare i32 @atexit(ptr)

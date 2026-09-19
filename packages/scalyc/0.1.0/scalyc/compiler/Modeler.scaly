@@ -7,9 +7,9 @@ use scaly.memory.root_pages.getenv
 ; scaly.io imports are load-bearing beyond visibility: the use alias
 ; feeds the dotted-call extern-decl gate (typed declarations for
 ; cross-package File./Path. calls instead of varargs fallbacks).
-use scaly.io.File
-use scaly.io.Path
-use scaly.io.Console
+use scaly.os.File
+use scaly.os.Path
+use scaly.os.Console
 
 use scalyc.compiler.lexer.*
 use scalyc.compiler.parser.*

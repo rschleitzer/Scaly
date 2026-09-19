@@ -70,7 +70,7 @@
 ; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no else).
 ; One statement per line. Quotes are 0x22 bytes.
 
-use scaly.io.File
+use scaly.os.File
 use scaly.memory.runtime
 
 use scalyls.diagnostics

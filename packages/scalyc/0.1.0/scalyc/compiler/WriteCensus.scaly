@@ -45,7 +45,7 @@ use scalyc.compiler.Model.*
 use scalyc.compiler.Plan.*
 use scalyc.compiler.Planner.*
 use scalyc.compiler.PointerCensus.PointerCensus
-use scaly.io.File
+use scaly.os.File
 
 define WC_GLOBAL u64 0x8000000000000000
 ; words of the per-body global set (1024 names; the last id is "unnamed")
@@ -147,7 +147,7 @@ define WriteCensus
         loc_globals: Array[String]
         ; the global the next hit writes through, named by its caller
         pending_global: String
-        ; the runtime's own state (scaly/memory, fiber, io, cluster): ambient
+        ; the runtime's own state (scaly/memory, fiber, os, cluster): ambient
         ambient_names: Array[String]
         ; check mode: the globals the walked body declares (`mutable g, h`)
         cur_allowed_g: ref[Vector[String]]?
@@ -2079,7 +2079,7 @@ define WriteCensus
         }
 
         ; the runtime's globals, from the Model: declared in scaly/memory,
-        ; scaly/fiber, scaly/io or scaly/cluster
+        ; scaly/fiber, scaly/os or scaly/cluster
         procedure collect_ambient_module(mutable this: WriteCensus, m: Module, inside: bool)
         {
             var here inside
@@ -2087,7 +2087,7 @@ define WriteCensus
                 set here: true
             if m.file.contains(String("/scaly/fiber"))
                 set here: true
-            if m.file.contains(String("/scaly/io"))
+            if m.file.contains(String("/scaly/os"))
                 set here: true
             if m.file.contains(String("/scaly/cluster"))
                 set here: true
