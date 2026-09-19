@@ -432,7 +432,7 @@ define cli
 
     ; Run the compiler with parsed options
     ; Returns 0 on success, non-zero on error
-    procedure run(opts: Options) returns int
+    procedure run(mutable opts: Options) returns int
     {
         if opts.show_help
         {
@@ -618,6 +618,28 @@ define cli
         {
             cli.print_diagnostics(&planner, opts.input_file, source)
             return 4
+        }
+
+        ; R1: a function writes nothing its parameters reach, a procedure only
+        ; the parameters it declares `mutable` (WriteCensus' check mode, the
+        ; `--purity-check` report as a gate). After the planner's own gate: a
+        ; plan with hard diagnostics is not judged. The two census reports
+        ; measure trees that may not obey the rule yet, so they skip it.
+        if opts.write_report = false
+        {
+            if opts.purity_check = false
+            {
+                var gate_census PointerCensus.PointerCensus()
+                var purity_gate WriteCensus.WriteCensus()
+                set purity_gate.check_mode: true
+                set purity_gate.diagnostics: true
+                purity_gate.analyze(plan, &model, &gate_census)
+                if purity_gate.n_violations > 0
+                {
+                    cli.print_located("", &purity_gate.report_files, &purity_gate.report_offsets, &purity_gate.report_texts)
+                    return 4
+                }
+            }
         }
 
         ; --task-plan: TaskPlanner parallelizability report (advisory —
@@ -915,7 +937,7 @@ define cli
     ; procedure form so each `register` call is at function-statement
     ; granularity (avoids the same in-place Vector[Module].add codegen
     ; pitfall worked around in Modeler.scaly).
-    procedure register_packages(planner: ref[Planner.Planner], model: ref[Program])
+    procedure register_packages(mutable planner: ref[Planner.Planner], model: ref[Program])
     {
         var i: size_t 0
         while i < model.packages.length
@@ -936,7 +958,7 @@ define cli
     ; functions resolve to the real bodies (see Emitter.jit_run). The `scaly`
     ; stdlib is skipped — its symbols are already in the host scalyc image and
     ; resolve via the ORC process generator. Returns false on any dep failure.
-    procedure compile_jit_dependencies(model: ref[Program], dep_objs: ref[Array[String]], dep_syms: ref[Array[String]]) returns bool
+    procedure compile_jit_dependencies(mutable model: ref[Program], mutable dep_objs: ref[Array[String]], mutable dep_syms: ref[Array[String]]) returns bool
     {
         var i: size_t 0
         while i < model.packages.length
@@ -984,7 +1006,7 @@ define cli
     ; an object at out_obj, and append the mangled names it defines to `syms`.
     ; This ROOT path plans the package's bodies correctly (unlike the retired
     ; jit_dep_bodies dependency path). Returns false on any failure.
-    procedure compile_dep_package_to_object(entry_file: String, out_obj: String, syms: ref[Array[String]]) returns bool
+    procedure compile_dep_package_to_object(mutable entry_file: String, mutable out_obj: String, mutable syms: ref[Array[String]]) returns bool
     {
         var source File.read_to_string(entry_file)
         if source.get_length() = 0
@@ -1477,7 +1499,7 @@ define cli
     }
 
     ; Main entry point
-    procedure main(argc: int, argv: pointer[pointer[char]]) returns int
+    procedure main(argc: int, mutable argv: pointer[pointer[char]]) returns int
     {
         var opts cli.parse_args(argc, argv)
         return cli.run(opts)

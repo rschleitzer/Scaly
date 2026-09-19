@@ -126,6 +126,9 @@ define WriteCensus
         ; what the body walked may write besides: an annotated procedure's
         ; `mutable` parameters and the globals
         cur_allowed: u64
+        ; the check as the compiler's own gate: an `error:` per violating
+        ; body and a `note:` per write it did not declare (cli.scaly)
+        diagnostics: bool
         n_violations: size_t
     )
     {
@@ -184,13 +187,14 @@ define WriteCensus
             set check_mode: false
             set cur_page_mask: 0
             set cur_allowed: 0
+            set diagnostics: false
             set n_violations: 0
         }
 
         ; ================================================================
         ; Entry point: the pointer census's tables, the fixpoint, the report.
         ; ================================================================
-        procedure analyze(this: WriteCensus, plan: Plan, model: ref[Program], census: ref[PointerCensus])
+        procedure analyze(mutable this: WriteCensus, plan: Plan, model: ref[Program], mutable census: ref[PointerCensus])
         {
             set pc: census
             this.load_summaries()
@@ -278,7 +282,7 @@ define WriteCensus
         }
 
         ; The summary of one body under the callee summaries known so far.
-        procedure walk_body(this: WriteCensus, func: PlannedFunction) returns u64
+        procedure walk_body(mutable this: WriteCensus, func: PlannedFunction) returns u64
         {
             choose func.impl
                 when action: Action
@@ -294,7 +298,7 @@ define WriteCensus
                     return 0
         }
 
-        procedure enter_body(this: WriteCensus, func: PlannedFunction)
+        procedure enter_body(mutable this: WriteCensus, func: PlannedFunction)
         {
             set cur_input: func.input
             set cur_page: String^this("_rp")
@@ -316,7 +320,7 @@ define WriteCensus
         ; The last walk: sites, and one `fn` line per writing pure function.
         ; The last walk: one `fn`/`proc`/`init` line per body (`clean` or the
         ; parameters it writes), and the sites of every writing function.
-        procedure report_body(this: WriteCensus, func: PlannedFunction, whole_mask: u64)
+        procedure report_body(mutable this: WriteCensus, func: PlannedFunction, whole_mask: u64)
         {
             var is_body false
             choose func.impl
@@ -390,7 +394,7 @@ define WriteCensus
             this.record(func.loc.start, String^this(text))
         }
 
-        procedure record(this: WriteCensus, offset: size_t, text: String)
+        procedure record(mutable this: WriteCensus, offset: size_t, text: String)
         {
             report_files.add(String^this(current_file))
             report_offsets.add offset
@@ -555,7 +559,7 @@ define WriteCensus
             (param_frozen[cur_fn] & ((1 as u64) << (i as u64))) <> (0 as u64)
         }
 
-        procedure remember_local(this: WriteCensus, name: String, mask: u64)
+        procedure remember_local(mutable this: WriteCensus, name: String, mask: u64)
         {
             loc_names.add(String^this(name))
             loc_masks.add mask
@@ -709,7 +713,7 @@ define WriteCensus
         ; Sites.
         ; ================================================================
 
-        procedure hit(this: WriteCensus, offset: size_t, cls: String, whole_mask: u64, detail: String)
+        procedure hit(mutable this: WriteCensus, offset: size_t, cls: String, whole_mask: u64, detail: String)
         {
             ; an initializer's own `this` is the object it builds
             var mask whole_mask
@@ -740,15 +744,28 @@ define WriteCensus
                     set n_locked_sites: n_locked_sites + 1
             }
             var sb StringBuilder()
-            sb.append cls
-            sb.append " "
-            sb.append cur_name
-            sb.append " writes "
-            sb.append(this.mask_names(mask))
-            if detail.get_length() > 0
+            if diagnostics
             {
+                sb.append "note: writes "
+                sb.append(this.mask_names(mask))
+                if detail.get_length() > 0
+                {
+                    sb.append " "
+                    sb.append detail
+                }
+            }
+            else
+            {
+                sb.append cls
                 sb.append " "
-                sb.append detail
+                sb.append cur_name
+                sb.append " writes "
+                sb.append(this.mask_names(mask))
+                if detail.get_length() > 0
+                {
+                    sb.append " "
+                    sb.append detail
+                }
             }
             if frozen_mode
                 if lock_depth > 0
@@ -759,7 +776,7 @@ define WriteCensus
         }
 
         ; The page a Reference lifetime names, as a mask.
-        procedure note_life(this: WriteCensus, offset: size_t, life: Lifetime, cls: String)
+        procedure note_life(mutable this: WriteCensus, offset: size_t, life: Lifetime, cls: String)
         {
             choose life
                 when r: Reference
@@ -800,7 +817,7 @@ define WriteCensus
 
         ; A call: the callee's body in this root, else a summary another
         ; root wrote (SCALYC_WRITE_SUMMARIES), else a real C extern.
-        procedure note_call(this: WriteCensus, op: PlannedOperand, call: PlannedCall)
+        procedure note_call(mutable this: WriteCensus, op: PlannedOperand, call: PlannedCall)
         {
             if call.name = "enter_shared"
                 set lock_depth: lock_depth + 1
@@ -882,7 +899,7 @@ define WriteCensus
         }
 
         ; The written parameters of a callee, mapped onto this call's arguments.
-        procedure apply_callee(this: WriteCensus, op: PlannedOperand, call: PlannedCall, callee_mask: u64, callee_name: String, n_in: size_t)
+        procedure apply_callee(mutable this: WriteCensus, op: PlannedOperand, call: PlannedCall, callee_mask: u64, callee_name: String, n_in: size_t)
         {
             if callee_mask = 0
                 return
@@ -932,7 +949,7 @@ define WriteCensus
         ; ================================================================
 
         ; `a,b,*Data` -> patterns; exact, `*Suffix` or `Prefix*`.
-        procedure split_list(this: WriteCensus, text: String, into: ref[Array[String]])
+        procedure split_list(mutable this: WriteCensus, text: String, mutable into: ref[Array[String]])
         {
             let n text.get_length()
             var start: size_t 0
@@ -957,7 +974,7 @@ define WriteCensus
             }
         }
 
-        procedure load_frozen(this: WriteCensus)
+        procedure load_frozen(mutable this: WriteCensus)
         {
             let fz getenv("SCALYC_WRITE_FROZEN")
             let en getenv("SCALYC_WRITE_ENTRY")
@@ -1180,7 +1197,7 @@ define WriteCensus
             false
         }
 
-        procedure mark_returns_frozen(this: WriteCensus)
+        procedure mark_returns_frozen(mutable this: WriteCensus)
         {
             if cur_fn >= returns_fresh.length
                 return
@@ -1239,7 +1256,7 @@ define WriteCensus
         }
 
         ; A call hands frozen data to the callee's parameters it fills.
-        procedure pass_frozen_args(this: WriteCensus, call: PlannedCall, slot: size_t)
+        procedure pass_frozen_args(mutable this: WriteCensus, call: PlannedCall, slot: size_t)
         {
             if slot = 0
                 return
@@ -1315,7 +1332,7 @@ define WriteCensus
 
         ; Breadth-first over the call edges from the entries (edge_mode walks),
         ; then the sites of every reachable body.
-        procedure report_frozen(this: WriteCensus)
+        procedure report_frozen(mutable this: WriteCensus)
         {
             let fns plan_functions as ref[Vector[PlannedFunction]]
             var i: size_t 0
@@ -1414,7 +1431,7 @@ define WriteCensus
         ; parameters are the result region and exempt, as the caller page is.
         ; ================================================================
 
-        procedure collect_purity_module(this: WriteCensus, m: Module)
+        procedure collect_purity_module(mutable this: WriteCensus, m: Module)
         {
             this.collect_purity_members(m.members)
             var i: size_t 0
@@ -1427,7 +1444,7 @@ define WriteCensus
             }
         }
 
-        procedure collect_purity_members(this: WriteCensus, members: Vector[Member])
+        procedure collect_purity_members(mutable this: WriteCensus, members: Vector[Member])
         {
             var i: size_t 0
             while i < members.length
@@ -1480,7 +1497,7 @@ define WriteCensus
 
         ; 1: every declaration of the name is a function; 2: one is a procedure.
         ; The `mutable` positions of every declaration of the name are OR-ed.
-        procedure note_purity(this: WriteCensus, name: String, pure: bool, writable: u64)
+        procedure note_purity(mutable this: WriteCensus, name: String, pure: bool, writable: u64)
         {
             var state: u64 1
             if pure = false
@@ -1582,7 +1599,7 @@ define WriteCensus
         }
 
         ; A call in a function body under the check: a trusted callee writes nothing.
-        procedure check_call(this: WriteCensus, op: PlannedOperand, call: PlannedCall, slot: size_t)
+        procedure check_call(mutable this: WriteCensus, op: PlannedOperand, call: PlannedCall, slot: size_t)
         {
             if call.is_intrinsic
                 return
@@ -1593,6 +1610,7 @@ define WriteCensus
                 return
             if call.mangled_name.contains(String("4initE"))
                 return
+            let census pc as ref[PointerCensus]
             var known false
             var trusted false
             var writable: u64 0
@@ -1602,20 +1620,28 @@ define WriteCensus
                 if f_ptr <> null
                 {
                     let f f_ptr.unwrap()
+                    ; a body of this root, or the stub a call into another
+                    ; package's body leaves (an Extern impl under a name no
+                    ; extern declares): both carry the declaration's keyword
+                    ; and its `mutable` marks
+                    var declared true
                     choose f.impl
                         when action: Action
-                        {
-                            set known: true
-                            set trusted: f.pure
-                            set writable: WriteCensus.planned_writable_mask(f.input)
-                        }
+                            set declared: true
+                        when ext: Extern
+                            set declared: census.is_extern_name(call.name) = false
                         else
-                            0
+                            set declared: false
+                    if declared
+                    {
+                        set known: true
+                        set trusted: f.pure
+                        set writable: WriteCensus.planned_writable_mask(f.input)
+                    }
                 }
             }
             if known = false
             {
-                let census pc as ref[PointerCensus]
                 if census.is_extern_name(call.name)
                 {
                     this.note_extern_call(op, call)
@@ -1633,20 +1659,25 @@ define WriteCensus
             }
             if trusted
                 return
-            ; an ANNOTATED procedure writes only its `mutable` positions; one
-            ; without a mark (not yet annotated) may write every argument
+            ; a procedure writes exactly its `mutable` positions; a callee this
+            ; root cannot name (an indirect call) may write every argument
+            var conservative false
+            if known = false
+                if this.summary_index(call.name) = 0
+                    set conservative: true
             var m: u64 0
             var i: size_t 0
+            ; an indirect call's args[0] is the callee pointer: calling it
+            ; writes nothing through it
+            if call.is_indirect
+                set i: 1
             while i < call.args.length
             {
                 let a_ptr call.args.get i
-                var counts true
-                if writable <> 0
-                {
-                    set counts: false
+                var counts conservative
+                if conservative = false
                     if i < 61
                         set counts: (writable & ((1 as u64) << (i as u64))) <> (0 as u64)
-                }
                 if a_ptr <> null
                 {
                     let a a_ptr.unwrap()
@@ -1692,7 +1723,7 @@ define WriteCensus
 
         ; one walk of every function body; a violation is a write outside the
         ; page parameters
-        procedure run_check(this: WriteCensus, model: ref[Program])
+        procedure run_check(mutable this: WriteCensus, model: ref[Program])
         {
             this.collect_purity_module(model.module_)
             var pi: size_t 0
@@ -1714,9 +1745,6 @@ define WriteCensus
                     continue
                 let func f_ptr.unwrap()
                 let marked WriteCensus.planned_writable_mask(func.input)
-                if func.pure = false
-                    if marked = 0
-                        continue
                 if func.name = "init"
                     continue
                 var is_body false
@@ -1740,20 +1768,62 @@ define WriteCensus
                 if func.pure = false
                     set cur_allowed: marked | WC_GLOBAL
                 let before n_sites
+                ; as a gate: judge first, then walk the violating body again to
+                ; place a note at every write, after its error
+                if diagnostics
+                    set reporting: false
                 let mask this.walk_body(func)
-                if n_sites > before
+                var violated n_sites > before
+                if diagnostics
+                    set violated: mask <> 0
+                if violated
                 {
                     set n_violations: n_violations + 1
+                    let names this.mask_names(mask & (0 - (cur_page_mask + (1 as u64))))
                     var sb StringBuilder()
-                    if func.pure
-                        sb.append "violation fn "
+                    if diagnostics
+                    {
+                        let only_global (mask & (0 - (cur_page_mask + (1 as u64)))) = WC_GLOBAL
+                        if func.pure
+                        {
+                            sb.append "error: function "
+                            sb.append func.name
+                            if only_global
+                                sb.append " writes a global; a function writes nothing - make it a procedure"
+                            else
+                            {
+                                sb.append " writes what its parameters reach ("
+                                sb.append names
+                                sb.append "); a function writes nothing - make it a procedure and declare the parameter \`mutable\`"
+                            }
+                        }
+                        else
+                        {
+                            sb.append "error: procedure "
+                            sb.append func.name
+                            sb.append " writes "
+                            sb.append names
+                            sb.append ", which its signature does not declare \`mutable\`"
+                        }
+                    }
                     else
-                        sb.append "violation proc "
-                    sb.append func.name
-                    sb.append " writes "
-                    sb.append(this.mask_names(mask & (0 - (cur_page_mask + (1 as u64)))))
+                    {
+                        if func.pure
+                            sb.append "violation fn "
+                        else
+                            sb.append "violation proc "
+                        sb.append func.name
+                        sb.append " writes "
+                        sb.append names
+                    }
                     let text sb.to_string()
                     this.record(func.loc.start, String^this(text))
+                    if diagnostics
+                    {
+                        set reporting: true
+                        this.walk_body(func)
+                        set reporting: false
+                    }
                 }
             }
         }
@@ -1788,7 +1858,7 @@ define WriteCensus
         ; `mangled` must already live on this pass's page (String^this at the
         ; call): the escape checker reads a callee that stores its argument
         ; as storing the caller's local, as in PointerCensus.record.
-        procedure add_summary(this: WriteCensus, mangled: String, m: u64, n_in: size_t)
+        procedure add_summary(mutable this: WriteCensus, mangled: String, m: u64, n_in: size_t)
         {
             if sum_names.length * 2 >= (262144 as size_t)
                 return
@@ -1804,7 +1874,7 @@ define WriteCensus
             sum_slots.put(h, sum_names.length)
         }
 
-        procedure load_summaries(this: WriteCensus)
+        procedure load_summaries(mutable this: WriteCensus)
         {
             let env getenv("SCALYC_WRITE_SUMMARIES")
             if env = null
@@ -1859,7 +1929,7 @@ define WriteCensus
         }
 
         ; Append this root's bodies and write the whole table back.
-        procedure save_summaries(this: WriteCensus)
+        procedure save_summaries(mutable this: WriteCensus)
         {
             if summaries_path.get_length() = 0
                 return
@@ -1954,7 +2024,7 @@ define WriteCensus
         }
 
         ; The written arguments of an extern call, non-scalar ones only.
-        procedure note_extern_call(this: WriteCensus, op: PlannedOperand, call: PlannedCall)
+        procedure note_extern_call(mutable this: WriteCensus, op: PlannedOperand, call: PlannedCall)
         {
             if call.args = null
                 return
@@ -1983,7 +2053,7 @@ define WriteCensus
         ; Bodies: the TaskPlanner's closed arm list, as the pointer census.
         ; ================================================================
 
-        procedure find_operands(this: WriteCensus, ops: ref[Vector[PlannedOperand]]?)
+        procedure find_operands(mutable this: WriteCensus, ops: ref[Vector[PlannedOperand]]?)
         {
             if ops = null
                 return
@@ -1997,7 +2067,7 @@ define WriteCensus
             }
         }
 
-        procedure find_statement_ref(this: WriteCensus, stmt: ref[PlannedStatement]?)
+        procedure find_statement_ref(mutable this: WriteCensus, stmt: ref[PlannedStatement]?)
         {
             if stmt <> null
             {
@@ -2007,7 +2077,7 @@ define WriteCensus
         }
 
         ; The store side of a `set`: the target head decides the class.
-        procedure find_action(this: WriteCensus, act: PlannedAction)
+        procedure find_action(mutable this: WriteCensus, act: PlannedAction)
         {
             this.find_operands(act.source)
             if act.target = null
@@ -2055,7 +2125,7 @@ define WriteCensus
             this.find_operands(act.target)
         }
 
-        procedure find_statement(this: WriteCensus, stmt: PlannedStatement)
+        procedure find_statement(mutable this: WriteCensus, stmt: PlannedStatement)
         {
             choose stmt
                 when action: Action
@@ -2078,7 +2148,7 @@ define WriteCensus
         }
 
         ; A local inherits what its initializer reaches, unless it is a scalar.
-        procedure note_binding(this: WriteCensus, binding: PlannedBinding)
+        procedure note_binding(mutable this: WriteCensus, binding: PlannedBinding)
         {
             this.find_operands(binding.operation)
             if binding.binding_item.name = null
@@ -2113,7 +2183,7 @@ define WriteCensus
             this.remember_local(name, m)
         }
 
-        procedure find_operand(this: WriteCensus, op: PlannedOperand)
+        procedure find_operand(mutable this: WriteCensus, op: PlannedOperand)
         {
             choose op.expr
                 when call: Call

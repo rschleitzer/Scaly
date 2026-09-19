@@ -22,7 +22,8 @@ define Counter (n: int  total: int)
     procedure give(this, mutable other: ref[Counter])
         set other.n: other.n + n
 
-    ; not annotated: every argument counts as written
+    ; writes its receiver without declaring it: the violation is HERE, and a
+    ; call into it reads what it is handed
     procedure reset(this)
         set n: 0
 
@@ -60,7 +61,7 @@ function gives_to_local(c: ref[Counter]) returns int
     e.read()
 }
 
-; calls the unannotated procedure
+; calls the procedure whose signature marks nothing
 function resets(c: ref[Counter]) returns int
 {
     c.reset()

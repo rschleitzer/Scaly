@@ -1,0 +1,18 @@
+; Regression (R1, 2026-09-19): a procedure writes exactly the parameters it
+; declares `mutable`. `steal` marks its receiver and writes `other` as well —
+; the compile fails at the declaration, with a note at the store.
+; xfail: error: procedure steal writes other:ref[Counter], which its signature does not declare `mutable`
+
+define Counter (n: int)
+{
+    procedure steal(mutable this, other: ref[Counter])
+    {
+        set n: n + other.n
+        set other.n: 0
+    }
+}
+
+var a Counter(1)
+var b Counter(2)
+a.steal(&b)
+print "`a.n` `b.n`\n"

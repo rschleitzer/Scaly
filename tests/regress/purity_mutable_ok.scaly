@@ -1,0 +1,44 @@
+; Regression (R1, 2026-09-19): what the purity gate must ACCEPT, and that the
+; marks change nothing at run time. A procedure writes its `mutable`
+; parameters — on any position; a function may hand a LOCAL to a mutable
+; position, and its parameter to a read-only one.
+; Expected: PASS
+
+define Counter (n: int  total: int)
+{
+    procedure bump(mutable this, by: int)
+    {
+        set n: n + by
+        set total: total + by
+    }
+
+    procedure give(this, mutable other: ref[Counter])
+        set other.n: other.n + n
+
+    function read(this) returns int
+        n
+}
+
+function sum_local(k: int) returns int
+{
+    var c Counter(0, 0)
+    c.bump(k)
+    c.read()
+}
+
+function gives_to_local(c: ref[Counter]) returns int
+{
+    var e Counter(0, 0)
+    c.give(&e)
+    e.read()
+}
+
+var a Counter(4, 0)
+let x sum_local(3)
+let w gives_to_local(&a)
+a.bump(2)
+if x = 3
+    if w = 4
+        if a.n = 6
+            if a.total = 2
+                print "PASS\n"

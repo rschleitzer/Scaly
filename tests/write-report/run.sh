@@ -70,7 +70,8 @@ src=tests/write-report/purity.scaly
 check "a procedure writing an unmarked parameter" 'has ":$(line_of "procedure steal"):5: violation proc steal writes other:ref\[Counter\]$"'
 check "a function bumping its parameter"       'has ":$(line_of "^function sneaky"):1: violation fn sneaky writes c:ref\[Counter\]$"'
 check "a mutable position counts, a read not"  'has ":$(line_of "^function reads_only"):1: violation fn reads_only writes d:ref\[Counter\]$"'
-check "an unannotated procedure writes all"    'has ":$(line_of "^function resets"):1: violation fn resets writes c:ref\[Counter\]$"'
+check "an unmarked procedure that writes"      'has ":$(line_of "procedure reset(this)"):5: violation proc reset writes this:Counter$"'
+check "a call into it only reads"              '! has " resets writes"'
 # negative controls
 check "a procedure writing its mutable this"   '! has " bump writes"'
 check "mutable on the second position"         '! has " give writes"'

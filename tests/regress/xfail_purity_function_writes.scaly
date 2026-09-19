@@ -1,0 +1,24 @@
+; Regression (R1, 2026-09-19): a `function` writes nothing its parameters
+; reach. Here it hands its parameter to a procedure at a `mutable` position,
+; which is a write — the compile fails at the function's declaration, with a
+; note at the call.
+; xfail: error: function sneaky writes what its parameters reach (c:ref[Counter])
+
+define Counter (n: int)
+{
+    procedure bump(mutable this, by: int)
+        set n: n + by
+
+    function read(this) returns int
+        n
+}
+
+function sneaky(c: ref[Counter]) returns int
+{
+    c.bump(1)
+    c.read()
+}
+
+var a Counter(1)
+let y sneaky(&a)
+print "`y`\n"
