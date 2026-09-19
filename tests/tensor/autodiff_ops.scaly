@@ -43,7 +43,7 @@ function close_enough(a: float, b: float, atol: float, rtol: float) returns bool
     false
 }
 
-procedure num_grad(tape: Tape, out: int, id: int, i: int, h: float) returns float
+procedure num_grad(mutable tape: Tape, out: int, id: int, i: int, h: float) returns float
 {
     let orig tape.value_at(id, i)
     tape.set_value(id, i, orig + h)
@@ -57,7 +57,7 @@ procedure num_grad(tape: Tape, out: int, id: int, i: int, h: float) returns floa
     (fp - fm) / (2.0 * h)
 }
 
-procedure check_leaf(tape: Tape, out: int, id: int, count: int, h: float, atol: float, rtol: float) returns bool
+procedure check_leaf(mutable tape: Tape, out: int, id: int, count: int, h: float, atol: float, rtol: float) returns bool
 {
     var good true
     var maxabs: float 0.0

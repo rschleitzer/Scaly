@@ -1385,6 +1385,80 @@ define Parser
         WritableSyntax(start, end)
     }
 
+    procedure parse_globalwrites(mutable this: Parser) returns GlobalWritesSyntax throws ParserError
+    {
+        let start lexer.previous_position
+
+        if ~lexer.parse_keyword("mutable")
+            throw ParserError.Different(DifferentSyntax())
+
+        let name lexer.parse_identifier(keywords)
+        if name.length() = 0
+            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected identifier"))
+
+        let more_start lexer.position
+        var more: ref[Vector[WrittenGlobalSyntax]]? null
+        choose parse_writtenglobal_list()
+            when err: Error
+            {
+                choose err
+                    when d: Different {}
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+            }
+            when success: Success
+                set more: success
+
+        let end lexer.position
+
+        GlobalWritesSyntax(start, end, name, more)
+    }
+
+    procedure parse_writtenglobal_list(mutable this: Parser) returns ref[Vector[WrittenGlobalSyntax]]? throws ParserError
+    {
+        var acc List[WrittenGlobalSyntax]()
+        var parsing: bool true
+        while parsing
+        {
+            choose parse_writtenglobal()
+                when err: Error
+                {
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            if acc.head = null
+                                throw err
+                            set parsing: false
+                        }
+                }
+                when node: Success
+                    acc.add(node)
+        }
+        Vector[WrittenGlobalSyntax](acc)
+    }
+
+    procedure parse_writtenglobal(mutable this: Parser) returns WrittenGlobalSyntax throws ParserError
+    {
+        let start lexer.previous_position
+
+        if ~lexer.parse_punctuation(",")
+            throw ParserError.Different(DifferentSyntax())
+
+        let name lexer.parse_identifier(keywords)
+        if name.length() = 0
+            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected identifier"))
+
+        let end lexer.position
+
+        WrittenGlobalSyntax(start, end, name)
+    }
+
     procedure parse_returns(mutable this: Parser) returns ReturnsSyntax throws ParserError
     {
         let start lexer.previous_position
@@ -2072,6 +2146,21 @@ define Parser
 
         lexer.parse_colon()
 
+        let writes_start lexer.position
+        var writes: ref[GlobalWritesSyntax]? null
+        choose parse_globalwrites()
+            when err: Error
+            {
+                choose err
+                    when d: Different {}
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+            }
+            when success: Success
+                set writes: GlobalWritesSyntax(success.start, success.end, success.name, success.more)
+
+        lexer.parse_colon()
+
         let implementation_start lexer.position
         var implementation: ImplementationSyntax
         choose parse_implementation()
@@ -2088,7 +2177,7 @@ define Parser
 
         let end lexer.position
 
-        RoutineSyntax(start, end, generics, lifetime, parameters, attributes, returns_, throws_, implementation)
+        RoutineSyntax(start, end, generics, lifetime, parameters, attributes, returns_, throws_, writes, implementation)
     }
 
     procedure parse_implementation(mutable this: Parser) returns ImplementationSyntax throws ParserError

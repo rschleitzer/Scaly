@@ -40,7 +40,7 @@ function num_to_string(n: i64) returns String
     sb.to_string()
 }
 
-procedure run_steps(tape: Tape, emb: int, loss: int, table: int, w1: int, w2: int, count: int, base: int) returns int
+procedure run_steps(mutable tape: Tape, emb: int, loss: int, table: int, w1: int, w2: int, count: int, base: int) returns int
 {
     var s 777
     var step 1

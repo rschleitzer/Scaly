@@ -570,6 +570,9 @@ define PlannedFunction
     ; plan_module# has restored this.file, so a Vector-3 "escapes via call"
     ; diagnostic must use the function's OWN file, not the stale entry file.
     file: String
+    ; the globals the declaration says it writes (`mutable g1, g2`); null on
+    ; a stub or a synthesized function
+    writes: ref[Vector[String]]?
 )
 
 define PlannedInitializer

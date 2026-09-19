@@ -4267,7 +4267,8 @@ define Planner
                 aa_ptr_void_ref,
                 null,
                 Lifetime.Unspecified(Unspecified()),
-                Implementation.Extern(Extern(Span(0, 0)))
+                Implementation.Extern(Extern(Span(0, 0))),
+                Vector[String](0)
             )
             this.register_function(aligned_alloc_fn)
 
@@ -4290,7 +4291,8 @@ define Planner
                 null,
                 null,
                 Lifetime.Unspecified(Unspecified()),
-                Implementation.Extern(Extern(Span(0, 0)))
+                Implementation.Extern(Extern(Span(0, 0))),
+                Vector[String](0)
             )
             this.register_function(free_fn)
 
@@ -4320,7 +4322,8 @@ define Planner
                 null,
                 null,
                 Lifetime.Unspecified(Unspecified()),
-                Implementation.Extern(Extern(Span(0, 0)))
+                Implementation.Extern(Extern(Span(0, 0))),
+                Vector[String](0)
             )
             this.register_function(exit_fn)
         }
@@ -7167,7 +7170,8 @@ define Planner
                     false,
                     s_can_throw,
                     null,
-                    this.file
+                    this.file,
+                    null
                 ))
             }
             MethodMatch^this(
@@ -11519,7 +11523,8 @@ define Planner
                                                 false,
                                                 mm.can_throw,
                                                 null,
-                                                this.file
+                                                this.file,
+                                                null
                                             ))
                                         }
                                         set match_ref: mm_ref
@@ -11718,7 +11723,8 @@ define Planner
                                                         false,
                                                         mm3.can_throw,
                                                         null,
-                                                        this.file
+                                                        this.file,
+                                                        null
                                                     ))
                                                 }
 
@@ -12207,7 +12213,8 @@ define Planner
                                                     false,
                                                     mm.can_throw,
                                                     null,
-                                                    this.file
+                                                    this.file,
+                                                    null
                                                 ))
                                             }
                                         }
@@ -12474,7 +12481,8 @@ define Planner
                                                     false,
                                                     s_can_throw,
                                                     null,
-                                                    this.file
+                                                    this.file,
+                                                    null
                                                 ))
                                             }
                                         }
@@ -16529,7 +16537,8 @@ define Planner
                     false,
                     false,
                     null,
-                    this.file
+                    this.file,
+                    null
                 )
                 this.record_function(op_fn)
             }
@@ -20019,7 +20028,8 @@ define Planner
                 false,
                 false,
                 null,
-                this.file
+                this.file,
+                null
             )
             this.record_function(synth_fn)
             LambdaMonoResult(mangled, caps_ref)
@@ -33365,7 +33375,8 @@ define Planner
                 needs_local_page,
                 can_throw,
                 null,
-                this.file
+                this.file,
+                &^this f.writes
             )
             this.record_function(result)
             result
@@ -33896,7 +33907,8 @@ define Planner
                             false,
                             false,
                             null,
-                            this.file
+                            this.file,
+                            null
                         )
                         this.record_function(synth_fn)
                     }
@@ -35107,7 +35119,8 @@ define Planner
                     o.returns_,
                     o.throws_,
                     Lifetime.Unspecified(Unspecified()),
-                    o.implementation
+                    o.implementation,
+                    Vector[String](0)
                 )
                 var op_page_param: ref[String]? null
                 if Planner.needs_implicit_return_page(synth_fn)
@@ -35135,7 +35148,8 @@ define Planner
                     false,
                     op_can_throw,
                     null,
-                    this.file
+                    this.file,
+                    null
                 ))
             }
         }
@@ -44537,7 +44551,8 @@ define Planner
             null,
             null,
             Lifetime.Unspecified(Unspecified()),
-            Implementation.Extern(Extern(Span(0, 0)))
+            Implementation.Extern(Extern(Span(0, 0))),
+            Vector[String](0)
         )
         if Planner.needs_implicit_return_page(extern_func)
             return 96
@@ -44554,7 +44569,8 @@ define Planner
             null,
             null,
             Lifetime.Unspecified(Unspecified()),
-            Implementation.Intrinsic(Intrinsic(Span(0, 0)))
+            Implementation.Intrinsic(Intrinsic(Span(0, 0))),
+            Vector[String](0)
         )
         if Planner.needs_implicit_return_page(void_func)
             return 97
@@ -44579,7 +44595,8 @@ define Planner
             &int_return_ty,
             null,
             Lifetime.Unspecified(Unspecified()),
-            Implementation.Intrinsic(Intrinsic(Span(0, 0)))
+            Implementation.Intrinsic(Intrinsic(Span(0, 0))),
+            Vector[String](0)
         )
         if Planner.needs_implicit_return_page(int_ret_func)
             return 98
@@ -44604,7 +44621,8 @@ define Planner
             &t_return_ty,
             null,
             Lifetime.Unspecified(Unspecified()),
-            Implementation.Intrinsic(Intrinsic(Span(0, 0)))
+            Implementation.Intrinsic(Intrinsic(Span(0, 0))),
+            Vector[String](0)
         )
         if Planner.needs_implicit_return_page(t_ret_func)
             return 99
@@ -44629,7 +44647,8 @@ define Planner
             &foo_return_ty,
             null,
             Lifetime.Unspecified(Unspecified()),
-            Implementation.Intrinsic(Intrinsic(Span(0, 0)))
+            Implementation.Intrinsic(Intrinsic(Span(0, 0))),
+            Vector[String](0)
         )
         if Planner.needs_implicit_return_page(foo_ret_func) = false
             return 100
@@ -45571,7 +45590,8 @@ define Planner
             &int_type,
             null,
             Lifetime.Unspecified(Unspecified()),
-            Implementation.Extern(Extern(Span(0, 0)))
+            Implementation.Extern(Extern(Span(0, 0))),
+            Vector[String](0)
         )
         let pl_fn p3.plan_function(model_fn, null)
         if pl_fn.name <> "foo"

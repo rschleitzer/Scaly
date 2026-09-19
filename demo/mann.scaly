@@ -85,7 +85,7 @@ function secs_to_string(ns: i64) returns String
     sb.to_string()
 }
 
-procedure fill(tape: Tape, id: int, count: int, s0: int) returns int
+procedure fill(mutable tape: Tape, id: int, count: int, s0: int) returns int
 {
     var s s0
     var i 0
@@ -100,7 +100,7 @@ procedure fill(tape: Tape, id: int, count: int, s0: int) returns int
     s
 }
 
-procedure fill_const(tape: Tape, id: int, count: int, v: float)
+procedure fill_const(mutable tape: Tape, id: int, count: int, v: float)
 {
     var i 0
     while i < count

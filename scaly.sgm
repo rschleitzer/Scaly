@@ -151,6 +151,15 @@
 <syntax id = Writable
     <content link = mutable
 
+<syntax id = GlobalWrites
+    <content link = mutable
+    <content identifier                                     property = name
+    <content link = WrittenGlobal         multiple optional property = more
+
+<syntax id = WrittenGlobal                 multiple
+    <content link = comma
+    <content identifier                                     property = name
+
 <syntax id = Returns
     <content link = returns
     <content link = Type                                    property = type
@@ -233,6 +242,8 @@
     <content link = Returns                        optional property = returns_
     <content colon                                 optional
     <content link = Throws                         optional property = throws_
+    <content colon                                 optional
+    <content link = GlobalWrites                   optional property = writes
     <content colon                                 optional
     <content link = Implementation                          property = implementation
 

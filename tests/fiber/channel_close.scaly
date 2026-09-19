@@ -41,7 +41,7 @@ procedure receiver()
     }
 }
 
-procedure sender(arg: pointer[void]) returns pointer[void]
+procedure sender(mutable arg: pointer[void]) returns pointer[void]
 {
     let m arg as pointer[Channel]
     var i 1

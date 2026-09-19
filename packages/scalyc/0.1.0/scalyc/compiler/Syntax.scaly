@@ -596,6 +596,7 @@ define RoutineSyntax
     attributes: ref[Vector[AttributeSyntax]]?
     returns_: ref[ReturnsSyntax]?
     throws_: ref[ThrowsSyntax]?
+    writes: ref[GlobalWritesSyntax]?
     implementation: ImplementationSyntax
 )
 
@@ -697,6 +698,21 @@ define ReturnsSyntax
     end: size_t
     type: TypeSyntax
     attributes: ref[Vector[AttributeSyntax]]?
+)
+
+define WrittenGlobalSyntax
+(
+    start: size_t
+    end: size_t
+    name: String
+)
+
+define GlobalWritesSyntax
+(
+    start: size_t
+    end: size_t
+    name: String
+    more: ref[Vector[WrittenGlobalSyntax]]?
 )
 
 define WritableSyntax

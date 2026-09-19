@@ -1975,6 +1975,27 @@ define Modeler
                     }
                 }
 
+                ; `mutable g1, g2` after the signature: the globals it writes
+                var writes Vector[String](0)
+                if named.routine.writes <> null
+                {
+                    let w_syn (*named.routine.writes)
+                    var n_more: size_t 0
+                    if w_syn.more <> null
+                        set n_more: w_syn.more.length
+                    var w_arr Vector[String](n_more + 1)
+                    w_arr.put(0, String(w_syn.name))
+                    var wi: size_t 0
+                    while wi < n_more
+                    {
+                        let wg_ptr w_syn.more.get wi
+                        if wg_ptr <> null
+                            w_arr.put(wi + 1, String((*wg_ptr).name))
+                        set wi: wi + 1
+                    }
+                    set writes: w_arr
+                }
+
                 Function(
                     Span(start, end_pos),
                     is_private,
@@ -1986,7 +2007,8 @@ define Modeler
                     return_type,
                     throws_type,
                     life,
-                    impl
+                    impl,
+                    writes
                 )
             }
             else
@@ -2001,7 +2023,8 @@ define Modeler
                     null,
                     null,
                     Lifetime.Unspecified(Unspecified()),
-                    Implementation.Action(Action(Vector[Operand](0), Vector[Operand](0)))
+                    Implementation.Action(Action(Vector[Operand](0), Vector[Operand](0))),
+                    Vector[String](0)
                 )
     }
 

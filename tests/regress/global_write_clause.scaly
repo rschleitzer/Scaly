@@ -1,0 +1,31 @@
+; Regression (R1, 2026-09-19): the `mutable` clause after a signature names the
+; globals a procedure writes, itself or through what it calls. It parses in
+; every position a signature allows (after the parameters, after `returns`,
+; before a braceless body), carries one name or a comma list, and changes
+; nothing at run time.
+; Expected: PASS
+
+mutable counter: int 0
+mutable total: int 0
+
+procedure bump() mutable counter
+    set counter: counter + 1
+
+procedure add(n: int) returns int mutable counter, total
+{
+    bump()
+    set total: total + n
+    total
+}
+
+procedure twice(n: int) returns int
+    mutable counter, total
+{
+    add(n)
+    add(n)
+}
+
+let r twice(5)
+if r = 10
+    if counter = 2
+        print "PASS\n"

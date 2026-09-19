@@ -1,0 +1,16 @@
+; Regression (R1, 2026-09-19): a call into ANOTHER PACKAGE's non-generic body
+; reaches the planner as a stub, which carries no `mutable` marks and is always
+; a procedure. The gate read that as "writes nothing", so a function could
+; write its parameter through StringBuilder.append without a word. A stub is
+; judged by the Model's declarations of its owner, name and arity now.
+; xfail: error: function sneaky_append writes what its parameters reach (sb:ref[StringBuilder])
+
+function sneaky_append(sb: ref[StringBuilder]) returns int
+{
+    sb.append "x"
+    0
+}
+
+var b StringBuilder()
+let r sneaky_append(&b)
+print "`r`\n"
