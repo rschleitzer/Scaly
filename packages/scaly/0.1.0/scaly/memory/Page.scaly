@@ -535,4 +535,72 @@ define Page
 
     }
 
+    ; Give back everything allocated in this REGION since a MARK was taken on
+    ; it. `this` is the region's HEAD; the mark is what the region's end looked
+    ; like at that moment — its tail page `mark_page` and that page's bump
+    ; pointer `mark` — plus the exclusive-page lists of the mark page and of the
+    ; head as they stood then (`exclusive`, `head_exclusive`).
+    ;
+    ; Answers false and changes NOTHING when the mark cannot be honoured:
+    ;   * the mark page is oversized (no bump pointer) or the mark lies outside
+    ;     the part of it that was handed out;
+    ;   * an exclusive list moved: an oversized allocation since the mark put
+    ;     its PageNode inside the span, so the surviving list head would
+    ;     dangle. Checked on the mark page AND on the head, a different list as
+    ;     soon as the mark sits on an extension page — `allocate` forwards an
+    ;     oversized request to the page it was CALLED on;
+    ;   * a page appended after the mark owns exclusive pages.
+    ; Otherwise the appended pages go back, the chain is cut and the mark page
+    ; is the region's end again, bumped back to `mark`. The whole chain is
+    ; validated BEFORE anything is released, so a refusal never leaves the
+    ; region in pieces.
+    ;
+    ; ★What this cannot know is whether anything above the mark is still
+    ; reachable: proving that is the caller's job (dazzle's FrameMark and its
+    ; six conditions). A wrong rewind is a dangling pointer, not a diagnostic.
+    procedure rewind(this: Page, mark_page: pointer[Page], mark: pointer[void], exclusive: pointer[PageNode], head_exclusive: pointer[PageNode]) returns bool
+    {
+        let now mark_page.next_object
+        if now = null
+            return false
+        if (mark as size_t) < (mark_page as size_t)
+            return false
+        if (mark as size_t) > (now as size_t)
+            return false
+        if mark_page.exclusive_pages.head <> exclusive
+            return false
+        if exclusive_pages.head <> head_exclusive
+            return false
+        var p mark_page.next_page
+        var pages 0
+        while p <> null
+        {
+            if p.exclusive_pages.head <> null
+                return false
+            set pages: pages + 1
+            set p: p.next_page
+        }
+        if (now as size_t) = (mark as size_t)
+        {
+            if pages = 0
+                return true
+        }
+        var q mark_page.next_page
+        while q <> null
+        {
+            let following q.next_page
+            release_page(q)
+            set q: following
+        }
+        ; the head records the end, and null means "the head IS the end" —
+        ; the state `allocate` expects, it appends on demand
+        set mark_page.next_page: null
+        if (mark_page as size_t) = (this as size_t)
+            set current_page: null
+        else
+            set current_page: mark_page
+        set mark_page.next_object: mark
+        true
+    }
+
 }
