@@ -4,6 +4,8 @@
 ; goes LIFO through scaly_release_root_page, its heap extensions and exclusive
 ; buffers through release_page), and an object that stays must stay in it. The
 ; array grows past a page on purpose, so its buffer takes the oversized route too.
+; The counts are OFF until Page.enable_statistics() (2026-09-19): off, the fast path
+; pays one load and a branch.
 
 function churn(n: int) returns int
 {
@@ -17,6 +19,10 @@ function churn(n: int) returns int
     a.get_length() as int
 }
 
+; off until asked for: nothing is counted before enable_statistics
+if Page.allocation_count() <> 0
+    exit 5
+Page.enable_statistics()
 let live0 Page.live_bytes()
 let allocs0 Page.allocation_count()
 let got churn(3000)

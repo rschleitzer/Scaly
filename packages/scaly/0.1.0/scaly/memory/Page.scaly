@@ -18,24 +18,26 @@ mutable stack_top:  pointer[Page] null
 ; teardown-proof counter, read via Page.reclaimed_dead_buckets().
 mutable dead_buckets_reclaimed: i64 0
 ; tsc's `--diagnostics` memory rows (its `Memory used` and `Memory allocs`, read
-; from Go's runtime.MemStats there): the bytes the regions hold in pages right now,
-; and every allocation made from a page. ★PROCESS-GLOBAL AND NOT ATOMIC, on purpose:
-; `page_allocations` is bumped on the allocation FAST PATH, and as a thread-local it
-; cost +0.15 s user on the whole of VS Code (197 M bumps, +1.3 %, three rounds) —
-; on Darwin every thread-local access goes through the TLV thunk. A plain global
-; is exact for a single-threaded program; allocating on several threads at once
-; can lose increments, which a statistics row can afford and a fast path cannot.
-; Read via Page.bytes_held() and Page.allocation_count().
-shared pages_bytes_held: i64 0
-shared page_allocations: i64 0
-; the bytes of LIVE objects — Go's `Alloc`, which tsc prints as `Memory used`: every
+; from Go's runtime.MemStats there): the bytes the regions hold in pages, every
+; allocation made from a page, and the bytes of LIVE objects — Go's `Alloc`: every
 ; bump's advance (alignment included) is added, and a page's used part is taken out
 ; when the page goes back, on both routes (a heap page through release_page, a frame
 ; page LIFO through scaly_release_root_page). A dead frame's objects therefore leave
 ; the count and main's own frame stays in it, as Go's live heap does after its GC.
 ; ★A page rewound IN PLACE is not seen (dazzle's frame mark does that); nothing on
 ; tsc's path does.
-shared live_object_bytes: i64 0
+; ★★★OFF UNTIL ASKED FOR (2026-09-19). Counted unconditionally, the two bumps on
+; the allocation FAST PATH cost 4 % of the user time on the whole of VS Code with
+; one checker and with four (11.5 -> 11.0 s, 18.4 -> 17.6 s, output identical), and
+; as plain process globals they lost increments on several threads. So the counts
+; live in ONE record that Page.enable_statistics() allocates, and are added
+; ATOMICALLY there: exact on every thread when on, one load and a branch when off.
+; They count from the moment they are enabled — a page allocated before and
+; released after takes its whole used part out — which is why a driver enables
+; them before its compile starts (tscaly: `--diagnostics`, `--extendedDiagnostics`).
+; Read via Page.bytes_held(), Page.allocation_count() and Page.live_bytes().
+define PageStatistics (bytes_held: u64  allocations: u64  live: u64)
+shared page_statistics: pointer[PageStatistics] null
 
 ; A region is a HEAD page plus the extension chain hanging off its
 ; next_page. Every page carries a pointer to its head — its own address on
@@ -93,7 +95,9 @@ define Page
         let page_addr (b as size_t) + ((slot + 1) as size_t) * PAGE_SIZE
         let page page_addr as pointer[Page]
         reset_page page
-        set pages_bytes_held: pages_bytes_held + (PAGE_SIZE as i64)
+        let st page_statistics
+        if st <> null
+            scaly_atomic_add_u64(&st.bytes_held, PAGE_SIZE as u64)
 
         page
     }
@@ -102,15 +106,22 @@ define Page
     {
         ; Oversized pages (allocated directly via aligned_alloc in
         ; allocate_oversized) carry next_object == null. They go back via free.
+        let st page_statistics
         if p.next_object = null
         {
-            set pages_bytes_held: pages_bytes_held - (Page.oversized_size(p) as i64)
-            set live_object_bytes: live_object_bytes - ((Page.oversized_size(p) - sizeof Page) as i64)
+            if st <> null
+            {
+                scaly_atomic_add_u64(&st.bytes_held, (0 as u64) - (Page.oversized_size(p) as u64))
+                scaly_atomic_add_u64(&st.live, (0 as u64) - ((Page.oversized_size(p) - sizeof Page) as u64))
+            }
             scaly_aligned_free(p as pointer[void])
             return
         }
-        set pages_bytes_held: pages_bytes_held - (PAGE_SIZE as i64)
-        set live_object_bytes: live_object_bytes - (((p.next_object as size_t) - ((p as size_t) + sizeof Page)) as i64)
+        if st <> null
+        {
+            scaly_atomic_add_u64(&st.bytes_held, (0 as u64) - (PAGE_SIZE as u64))
+            scaly_atomic_add_u64(&st.live, (0 as u64) - (((p.next_object as size_t) - ((p as size_t) + sizeof Page)) as u64))
+        }
 
         let b heap_bucket_of p
         let slot (((p as size_t) - (b as size_t)) / PAGE_SIZE) - 1
@@ -181,15 +192,45 @@ define Page
     function reclaimed_dead_buckets() returns i64
         dead_buckets_reclaimed
 
-    ; tsc's `Memory used` and `Memory allocs` (see pages_bytes_held above)
+    ; tsc's `Memory used` and `Memory allocs` (see PageStatistics above): 0 until
+    ; enable_statistics()
     function bytes_held() returns i64
-        pages_bytes_held
+    {
+        let st page_statistics
+        if st = null
+            return 0
+        scaly_atomic_load_u64(&st.bytes_held) as i64
+    }
 
     function allocation_count() returns i64
-        page_allocations
+    {
+        let st page_statistics
+        if st = null
+            return 0
+        scaly_atomic_load_u64(&st.allocations) as i64
+    }
 
     function live_bytes() returns i64
-        live_object_bytes
+    {
+        let st page_statistics
+        if st = null
+            return 0
+        scaly_atomic_load_u64(&st.live) as i64
+    }
+
+    ; Turns the three counts on (once; later calls do nothing). Call it while the
+    ; process is single-threaded, before the work to be measured.
+    procedure enable_statistics()
+    {
+        if page_statistics <> null
+            return
+        let pg Page.allocate_page()
+        let st pg.allocate(sizeof PageStatistics, alignof PageStatistics) as pointer[PageStatistics]
+        set st.bytes_held: 0
+        set st.allocations: 0
+        set st.live: 0
+        set page_statistics: st
+    }
 
     function allocate_root_page() returns pointer[Page]
     {
@@ -250,7 +291,9 @@ define Page
 
     function allocate(this: Page, size: size_t, align: size_t) returns pointer[void]
     {
-        set page_allocations: page_allocations + 1
+        let st page_statistics
+        if st <> null
+            scaly_atomic_add_u64(&st.allocations, 1 as u64)
         let location next_object as size_t
 
         ; next_object == null tags an OVERSIZED page (see
@@ -339,14 +382,16 @@ define Page
                 set serve_aligned: (serve_location + align - 1) & (~(align - 1))
             }
 
-            set live_object_bytes: live_object_bytes + (((serve_aligned + size) - serve_location) as i64)
+            if st <> null
+                scaly_atomic_add_u64(&st.live, ((serve_aligned + size) - serve_location) as u64)
             set tail.next_object: (serve_aligned + size) as pointer[void]
             return serve_aligned as pointer[void]
         }
 
         ; Allocate from ourselves
         let next_location aligned_location + size
-        set live_object_bytes: live_object_bytes + ((next_location - location) as i64)
+        if st <> null
+            scaly_atomic_add_u64(&st.live, (next_location - location) as u64)
         set next_object: next_location as pointer[void]
         return aligned_location as pointer[void]
     }
@@ -358,8 +403,12 @@ define Page
         let address scaly_aligned_alloc(PAGE_SIZE, rounded)
         if address = null
             scaly_panic_oom("Page.allocate_oversized", rounded)
-        set pages_bytes_held: pages_bytes_held + (rounded as i64)
-        set live_object_bytes: live_object_bytes + ((rounded - sizeof Page) as i64)
+        let st page_statistics
+        if st <> null
+        {
+            scaly_atomic_add_u64(&st.bytes_held, rounded as u64)
+            scaly_atomic_add_u64(&st.live, (rounded - sizeof Page) as u64)
+        }
 
         var page address as pointer[Page]
 
