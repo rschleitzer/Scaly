@@ -333,7 +333,8 @@ jobs:
           rc=0
           for f in packages/scaly/0.1.0/scaly/win32/posixcompat.c \
                    packages/scaly/0.1.0/scaly/fiber/eio_win.c \
-                   packages/scaly/0.1.0/scaly/time/ctime.c; do
+                   packages/scaly/0.1.0/scaly/time/ctime.c \
+                   packages/scaly/0.1.0/scaly/memory/panic.c; do
             o=$(basename "$f" .c).o
             echo "--- $f ---"
             clang --target=x86_64-pc-windows-msvc -O2 -Wall -Wextra -Werror \
@@ -423,8 +424,13 @@ jobs:
           set -e
           clang --target=x86_64-pc-windows-msvc -O2 -Wall -Wextra -Werror \
                 -c packages/scaly/0.1.0/scaly/time/ctime.c -o ctime.o
+          # The panic catch-point shim (tools/panic.sh on the other targets):
+          # the stdlib's containers call scaly_panic_* and Region.run_guarded
+          # calls scaly_catch_run, so an archive without it cannot link at all.
+          clang --target=x86_64-pc-windows-msvc -O2 -Wall -Wextra -Werror \
+                -c packages/scaly/0.1.0/scaly/memory/panic.c -o panic.o
           # eio_win.o, pc.o and fcontext_win.o come from the rungs above.
-          llvm-ar rcs libscaly.lib libscaly_win.o eio_win.o ctime.o pc.o fcontext_win.o
+          llvm-ar rcs libscaly.lib libscaly_win.o eio_win.o ctime.o panic.o pc.o fcontext_win.o
           echo "--- archive members ---"
           llvm-ar t libscaly.lib | sed 's/^/  /'
           # No -lm: the math the tensor kernels need is in the MSVC CRT, so the
@@ -1130,7 +1136,7 @@ jobs:
           # difference no byte comparison in this rung could see.
           clang --target=x86_64-pc-windows-msvc -O2 -fuse-ld=lld -flto=full \
                 seed_main.obj seed_scalyc.obj seed_scaly.obj \
-                pc.o eio_win.o ctime.o fcontext_win.o \
+                pc.o eio_win.o ctime.o panic.o fcontext_win.o \
                 -lws2_32 -Lllvm20/lib -lLLVM-C \
                 -Xlinker -stack:67108864,1048576 \
                 -Xlinker -errorlimit:0 \
