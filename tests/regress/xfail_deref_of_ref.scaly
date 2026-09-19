@@ -14,7 +14,7 @@
 ;
 ; xfail: dereferencing a reference
 
-function reads(r: ref[int]) returns int
+function read_int(r: ref[int]) returns int
     *r
 
 var a: int 7

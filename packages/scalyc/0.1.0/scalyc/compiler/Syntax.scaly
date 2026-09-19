@@ -291,6 +291,7 @@ define SharedSyntax
     end: size_t
     atomic_mark: ref[AtomicSyntax]?
     binding: BindingSyntax
+    linked_mark: ref[LinkedSyntax]?
 )
 
 define MutableSyntax
@@ -298,6 +299,7 @@ define MutableSyntax
     start: size_t
     end: size_t
     binding: BindingSyntax
+    linked_mark: ref[LinkedSyntax]?
 )
 
 define VarSyntax
@@ -568,6 +570,12 @@ define ExtendsSyntax
     extensions: ref[Vector[ExtendSyntax]]?
 )
 
+define LinkedSyntax
+(
+    start: size_t
+    end: size_t
+)
+
 define IntrinsicSyntax
 (
     start: size_t
@@ -591,6 +599,7 @@ define ImplementationSyntax union (
     Extern: ExternSyntax
     Instruction: InstructionSyntax
     Intrinsic: IntrinsicSyntax
+    Linked: LinkedSyntax
 )
 
 define RoutineSyntax
@@ -605,6 +614,7 @@ define RoutineSyntax
     throws_: ref[ThrowsSyntax]?
     io_mark: ref[IoSyntax]?
     writes: ref[GlobalWritesSyntax]?
+    reads_clause: ref[GlobalReadsSyntax]?
     implementation: ImplementationSyntax
 )
 
@@ -646,7 +656,7 @@ define DeInitSyntax
 (
     start: size_t
     end: size_t
-    action: ActionSyntax
+    implementation: ImplementationSyntax
 )
 
 define InitSyntax
@@ -655,7 +665,7 @@ define InitSyntax
     end: size_t
     lifetime: ref[LifetimeSyntax]?
     parameters: ref[ParameterSetSyntax]?
-    action: ActionSyntax
+    implementation: ImplementationSyntax
 )
 
 define MethodSyntax union (
@@ -706,6 +716,21 @@ define ReturnsSyntax
     end: size_t
     type: TypeSyntax
     attributes: ref[Vector[AttributeSyntax]]?
+)
+
+define ReadGlobalSyntax
+(
+    start: size_t
+    end: size_t
+    name: String
+)
+
+define GlobalReadsSyntax
+(
+    start: size_t
+    end: size_t
+    name: String
+    more: ref[Vector[ReadGlobalSyntax]]?
 )
 
 define WrittenGlobalSyntax

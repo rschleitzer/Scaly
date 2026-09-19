@@ -4268,6 +4268,7 @@ define Planner
                 null,
                 Lifetime.Unspecified(Unspecified()),
                 Implementation.Extern(Extern(Span(0, 0))),
+                Vector[String](0),
                 Vector[String](0)
             )
             this.register_function(aligned_alloc_fn)
@@ -4292,6 +4293,7 @@ define Planner
                 null,
                 Lifetime.Unspecified(Unspecified()),
                 Implementation.Extern(Extern(Span(0, 0))),
+                Vector[String](0),
                 Vector[String](0)
             )
             this.register_function(free_fn)
@@ -4323,6 +4325,7 @@ define Planner
                 null,
                 Lifetime.Unspecified(Unspecified()),
                 Implementation.Extern(Extern(Span(0, 0))),
+                Vector[String](0),
                 Vector[String](0)
             )
             this.register_function(exit_fn)
@@ -5044,6 +5047,10 @@ define Planner
             if concept_ref = null
                 return false
             let c (*concept_ref)
+            ; a concept from a generated interface has linked bodies: it
+            ; says `@resident` instead
+            if Planner.attributes_have(c.attributes, "resident")
+                return true
             var found: bool false
             choose c.definition
                 when s: Structure
@@ -32907,6 +32914,11 @@ define Planner
                     PlannedImplementation.Instruction(PlannedInstructionImpl i.span)
                 when n: Intrinsic
                     PlannedImplementation.Intrinsic(PlannedIntrinsicImpl n.span)
+                when l: Linked
+                    ; the body is in the package's archive: a declaration under
+                    ; the MANGLED name, exactly what a stub of another
+                    ; package's body is
+                    PlannedImplementation.Extern(PlannedExternImpl l.span)
         }
 
         ; ================================================================
@@ -35120,6 +35132,7 @@ define Planner
                     o.throws_,
                     Lifetime.Unspecified(Unspecified()),
                     o.implementation,
+                    Vector[String](0),
                     Vector[String](0)
                 )
                 var op_page_param: ref[String]? null
@@ -39739,6 +39752,36 @@ define Planner
         sb.to_string()
     }
 
+    ; an attribute by name among a declaration's attributes (`@resident`)
+    function attributes_have(attrs: Vector[Attribute], name: Slice[char]) returns bool
+    {
+        var i: size_t 0
+        while i < attrs.length
+        {
+            let a_ptr attrs.get i
+            if a_ptr <> null
+                if (*a_ptr).name.equals(String(name.data, name.length))
+                    return true
+            set i: i + 1
+        }
+        false
+    }
+
+    ; an attribute by name on any of a routine's parameters (`@persists`)
+    function items_have_attribute(items: Vector[Item], name: Slice[char]) returns bool
+    {
+        var i: size_t 0
+        while i < items.length
+        {
+            let it_ptr items.get i
+            if it_ptr <> null
+                if Planner.attributes_have((*it_ptr).attributes, name)
+                    return true
+            set i: i + 1
+        }
+        false
+    }
+
     ; is_extern_impl: detect the Extern variant of Implementation without
     ; leaking a bare choose into the caller's control flow.
     function is_extern_impl(impl: Implementation) returns bool
@@ -41053,6 +41096,13 @@ define Planner
     ; construction excluded) and for putadds into body-local containers.
     function function_persists_param_guts(f: Function) returns bool
     {
+        ; a LINKED routine has no body to scan: its interface says it with
+        ; `@persists` on a parameter
+        choose f.implementation
+            when lk: Linked
+                return Planner.items_have_attribute(f.input, "persists")
+            else
+                0
         var pnames Array[String]()
         var pi: size_t 0
         while pi < f.input.length
@@ -41428,6 +41478,10 @@ define Planner
         choose func.implementation
             when a: Action
                 return Planner.action_may_allocate(a)
+            when l: Linked
+                ; a linked routine DECLARES its page (the interface writes
+                ; the caller page out as `rp`), so no body rule applies
+                return false
             else
                 0
         true
@@ -44552,6 +44606,7 @@ define Planner
             null,
             Lifetime.Unspecified(Unspecified()),
             Implementation.Extern(Extern(Span(0, 0))),
+            Vector[String](0),
             Vector[String](0)
         )
         if Planner.needs_implicit_return_page(extern_func)
@@ -44570,6 +44625,7 @@ define Planner
             null,
             Lifetime.Unspecified(Unspecified()),
             Implementation.Intrinsic(Intrinsic(Span(0, 0))),
+            Vector[String](0),
             Vector[String](0)
         )
         if Planner.needs_implicit_return_page(void_func)
@@ -44596,6 +44652,7 @@ define Planner
             null,
             Lifetime.Unspecified(Unspecified()),
             Implementation.Intrinsic(Intrinsic(Span(0, 0))),
+            Vector[String](0),
             Vector[String](0)
         )
         if Planner.needs_implicit_return_page(int_ret_func)
@@ -44622,6 +44679,7 @@ define Planner
             null,
             Lifetime.Unspecified(Unspecified()),
             Implementation.Intrinsic(Intrinsic(Span(0, 0))),
+            Vector[String](0),
             Vector[String](0)
         )
         if Planner.needs_implicit_return_page(t_ret_func)
@@ -44648,6 +44706,7 @@ define Planner
             null,
             Lifetime.Unspecified(Unspecified()),
             Implementation.Intrinsic(Intrinsic(Span(0, 0))),
+            Vector[String](0),
             Vector[String](0)
         )
         if Planner.needs_implicit_return_page(foo_ret_func) = false
@@ -45591,6 +45650,7 @@ define Planner
             null,
             Lifetime.Unspecified(Unspecified()),
             Implementation.Extern(Extern(Span(0, 0))),
+            Vector[String](0),
             Vector[String](0)
         )
         let pl_fn p3.plan_function(model_fn, null)

@@ -6522,7 +6522,7 @@ define symbols
             return ""
         if offset >= dei.end
             return ""
-        let body_start symbols.action_start(dei.action)
+        let body_start symbols.implementation_start(dei.implementation, dei.end)
         if offset >= body_start
             return "in deinit"
         var sb StringBuilder()
@@ -6821,7 +6821,7 @@ define symbols
             return ""
         if offset >= ini.end
             return ""
-        let body_start symbols.action_start(ini.action)
+        let body_start symbols.implementation_start(ini.implementation, ini.end)
         if offset >= body_start
             return "in init"
         let param symbols.hover_parameter_at(source, offset, ini.parameters)
@@ -7050,6 +7050,18 @@ define symbols
     }
 
     ; The offset of an action's first token.
+    ; where the body of an init/deinit begins; a `linked` one has none, so
+    ; everything up to its end is the declaration
+    function implementation_start(rp, impl: ImplementationSyntax, end: size_t) returns size_t
+    {
+        choose impl
+            when act: ActionSyntax
+                return symbols.action_start(act)
+            else
+                return end
+        end
+    }
+
     function action_start(rp, action: ActionSyntax) returns size_t
     {
         choose action

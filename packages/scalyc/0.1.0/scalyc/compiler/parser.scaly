@@ -76,6 +76,7 @@ define Parser
         keywords_builder.add("is")
         keywords_builder.add("label")
         keywords_builder.add("let")
+        keywords_builder.add("linked")
         keywords_builder.add("loop")
         keywords_builder.add("macro")
         keywords_builder.add("match")
@@ -84,6 +85,7 @@ define Parser
         keywords_builder.add("operator")
         keywords_builder.add("private")
         keywords_builder.add("procedure")
+        keywords_builder.add("reads")
         keywords_builder.add("repeat")
         keywords_builder.add("return")
         keywords_builder.add("returns")
@@ -1473,6 +1475,80 @@ define Parser
         WrittenGlobalSyntax(start, end, name)
     }
 
+    procedure parse_globalreads(mutable this: Parser) returns GlobalReadsSyntax throws ParserError
+    {
+        let start lexer.previous_position
+
+        if ~lexer.parse_keyword("reads")
+            throw ParserError.Different(DifferentSyntax())
+
+        let name lexer.parse_identifier(keywords)
+        if name.length() = 0
+            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected identifier"))
+
+        let more_start lexer.position
+        var more: ref[Vector[ReadGlobalSyntax]]? null
+        choose parse_readglobal_list()
+            when err: Error
+            {
+                choose err
+                    when d: Different {}
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+            }
+            when success: Success
+                set more: success
+
+        let end lexer.position
+
+        GlobalReadsSyntax(start, end, name, more)
+    }
+
+    procedure parse_readglobal_list(mutable this: Parser) returns ref[Vector[ReadGlobalSyntax]]? throws ParserError
+    {
+        var acc List[ReadGlobalSyntax]()
+        var parsing: bool true
+        while parsing
+        {
+            choose parse_readglobal()
+                when err: Error
+                {
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            if acc.head = null
+                                throw err
+                            set parsing: false
+                        }
+                }
+                when node: Success
+                    acc.add(node)
+        }
+        Vector[ReadGlobalSyntax](acc)
+    }
+
+    procedure parse_readglobal(mutable this: Parser) returns ReadGlobalSyntax throws ParserError
+    {
+        let start lexer.previous_position
+
+        if ~lexer.parse_punctuation(",")
+            throw ParserError.Different(DifferentSyntax())
+
+        let name lexer.parse_identifier(keywords)
+        if name.length() = 0
+            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected identifier"))
+
+        let end lexer.position
+
+        ReadGlobalSyntax(start, end, name)
+    }
+
     procedure parse_returns(mutable this: Parser) returns ReturnsSyntax throws ParserError
     {
         let start lexer.previous_position
@@ -1893,25 +1969,25 @@ define Parser
 
         lexer.parse_colon()
 
-        let action_start lexer.position
-        var action: ActionSyntax
-        choose parse_action()
+        let implementation_start lexer.position
+        var implementation: ImplementationSyntax
+        choose parse_implementation()
             when err: Error
             {
                 choose err
                     when d: Different
-                        throw ParserError.Invalid(InvalidSyntax(action_start, lexer.position, "expected Action"))
+                        throw ParserError.Invalid(InvalidSyntax(implementation_start, lexer.position, "expected Implementation"))
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set action: success
+                set implementation: success
 
         lexer.parse_colon()
 
         let end lexer.position
 
-        InitSyntax(start, end, lifetime, parameters, action)
+        InitSyntax(start, end, lifetime, parameters, implementation)
     }
 
     procedure parse_deinit(mutable this: Parser) returns DeInitSyntax throws ParserError
@@ -1923,25 +1999,25 @@ define Parser
 
         lexer.parse_colon()
 
-        let action_start lexer.position
-        var action: ActionSyntax
-        choose parse_action()
+        let implementation_start lexer.position
+        var implementation: ImplementationSyntax
+        choose parse_implementation()
             when err: Error
             {
                 choose err
                     when d: Different
-                        throw ParserError.Invalid(InvalidSyntax(action_start, lexer.position, "expected Action"))
+                        throw ParserError.Invalid(InvalidSyntax(implementation_start, lexer.position, "expected Implementation"))
                     when i: Invalid
                         throw ParserError.Invalid(i)
             }
             when success: Success
-                set action: success
+                set implementation: success
 
         lexer.parse_colon()
 
         let end lexer.position
 
-        DeInitSyntax(start, end, action)
+        DeInitSyntax(start, end, implementation)
     }
 
     procedure parse_function(mutable this: Parser) returns FunctionSyntax throws ParserError
@@ -2188,6 +2264,21 @@ define Parser
 
         lexer.parse_colon()
 
+        let reads_clause_start lexer.position
+        var reads_clause: ref[GlobalReadsSyntax]? null
+        choose parse_globalreads()
+            when err: Error
+            {
+                choose err
+                    when d: Different {}
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+            }
+            when success: Success
+                set reads_clause: GlobalReadsSyntax(success.start, success.end, success.name, success.more)
+
+        lexer.parse_colon()
+
         let implementation_start lexer.position
         var implementation: ImplementationSyntax
         choose parse_implementation()
@@ -2204,7 +2295,7 @@ define Parser
 
         let end lexer.position
 
-        RoutineSyntax(start, end, generics, lifetime, parameters, attributes, returns_, throws_, io_mark, writes, implementation)
+        RoutineSyntax(start, end, generics, lifetime, parameters, attributes, returns_, throws_, io_mark, writes, reads_clause, implementation)
     }
 
     procedure parse_implementation(mutable this: Parser) returns ImplementationSyntax throws ParserError
@@ -2249,6 +2340,16 @@ define Parser
             }
             when node: Success
                 return ImplementationSyntax.Intrinsic(node)
+        choose parse_linked()
+            when err: Error
+            {
+                choose err
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+                    when d: Different {}
+            }
+            when node: Success
+                return ImplementationSyntax.Linked(node)
         throw ParserError.Different(DifferentSyntax())
     }
 
@@ -2286,6 +2387,18 @@ define Parser
         let end lexer.position
 
         IntrinsicSyntax(start, end)
+    }
+
+    procedure parse_linked(mutable this: Parser) returns LinkedSyntax throws ParserError
+    {
+        let start lexer.previous_position
+
+        if ~lexer.parse_keyword("linked")
+            throw ParserError.Different(DifferentSyntax())
+
+        let end lexer.position
+
+        LinkedSyntax(start, end)
     }
 
     procedure parse_extends(mutable this: Parser) returns ExtendsSyntax throws ParserError
@@ -3993,9 +4106,22 @@ define Parser
             when success: Success
                 set binding: success
 
+        let linked_mark_start lexer.position
+        var linked_mark: ref[LinkedSyntax]? null
+        choose parse_linked()
+            when err: Error
+            {
+                choose err
+                    when d: Different {}
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+            }
+            when success: Success
+                set linked_mark: LinkedSyntax(success.start, success.end)
+
         let end lexer.position
 
-        MutableSyntax(start, end, binding)
+        MutableSyntax(start, end, binding, linked_mark)
     }
 
     procedure parse_shared(mutable this: Parser) returns SharedSyntax throws ParserError
@@ -4032,9 +4158,22 @@ define Parser
             when success: Success
                 set binding: success
 
+        let linked_mark_start lexer.position
+        var linked_mark: ref[LinkedSyntax]? null
+        choose parse_linked()
+            when err: Error
+            {
+                choose err
+                    when d: Different {}
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+            }
+            when success: Success
+                set linked_mark: LinkedSyntax(success.start, success.end)
+
         let end lexer.position
 
-        SharedSyntax(start, end, atomic_mark, binding)
+        SharedSyntax(start, end, atomic_mark, binding, linked_mark)
     }
 
     procedure parse_atomic(mutable this: Parser) returns AtomicSyntax throws ParserError

@@ -167,6 +167,10 @@ define WriteCensus
         body_reads: Array[String]
         edge_from: Array[size_t]
         edge_to: Array[size_t]
+        ; the `reads g` a declaration names (a linked procedure of another
+        ; package's interface), keyed like the purity table
+        decl_read_keys: Array[String]
+        decl_read_vals: Array[String]
         ; per plan.functions index: the global a body RETURNS ("" none), so a
         ; getter's result is an alias of that global
         ret_globals: Array[String]
@@ -249,6 +253,8 @@ define WriteCensus
             set body_reads: Array[String]^this()
             set edge_from: Array[size_t]^this()
             set edge_to: Array[size_t]^this()
+            set decl_read_keys: Array[String]^this()
+            set decl_read_vals: Array[String]^this()
             set ret_globals: Array[String]^this()
             set cur_ret_global: String^this("")
         }
@@ -2016,6 +2022,14 @@ define WriteCensus
                             let gl WriteCensus.join_names(f.writes)
                             this.note_purity(WriteCensus.purity_key(f.name, f.input.length), f.pure, marks, gl)
                             this.note_purity(WriteCensus.owned_key(owner, f.name, f.input.length), f.pure, marks, gl)
+                            if f.read_globals.length > 0
+                            {
+                                let first f.read_globals[0]
+                                decl_read_keys.add(String^this(WriteCensus.owned_key(owner, f.name, f.input.length)))
+                                decl_read_vals.add(String^this(first))
+                                decl_read_keys.add(String^this(WriteCensus.purity_key(f.name, f.input.length)))
+                                decl_read_vals.add(String^this(first))
+                            }
                         }
                         when c: Concept
                         {
@@ -2758,7 +2772,12 @@ define WriteCensus
             var i: size_t 0
             while i < fns.length
             {
-                body_reads.add(String^this(""))
+                ; a stub starts from what its declaration says it reads
+                var declared String("")
+                let f_ptr0 fns.get i
+                if f_ptr0 <> null
+                    set declared: this.declared_reads(f_ptr0.unwrap())
+                body_reads.add(String^this(declared))
                 set i: i + 1
             }
             set read_pass: true
@@ -2796,6 +2815,38 @@ define WriteCensus
                     set e: e + 1
                 }
             }
+        }
+
+        ; what a stub's declaration says it reads ("" none, or not a stub)
+        function declared_reads(this: WriteCensus, f: PlannedFunction) returns String
+        {
+            var stub false
+            choose f.impl
+                when e: Extern
+                    set stub: true
+                else
+                    0
+            if stub = false
+                return String("")
+            if f.mangled_name.starts_with(String("_Z")) = false
+                return String("")
+            var n_in: size_t 0
+            if f.input <> null
+                set n_in: f.input.length
+            let owner WriteCensus.mangled_owner(f.mangled_name)
+            let k1 WriteCensus.owned_key(owner, f.name, n_in)
+            let k2 WriteCensus.purity_key(f.name, n_in)
+            var i: size_t 0
+            while i < decl_read_keys.length
+            {
+                let k decl_read_keys[i]
+                if k = k1
+                    return decl_read_vals[i]
+                if k = k2
+                    return decl_read_vals[i]
+                set i: i + 1
+            }
+            String("")
         }
 
         ; one walk of every function body; a violation is a write outside the

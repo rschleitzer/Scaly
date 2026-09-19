@@ -163,6 +163,15 @@
     <content link = comma
     <content identifier                                     property = name
 
+<syntax id = GlobalReads
+    <content link = reads
+    <content identifier                                     property = name
+    <content link = ReadGlobal            multiple optional property = more
+
+<syntax id = ReadGlobal                    multiple
+    <content link = comma
+    <content identifier                                     property = name
+
 <syntax id = Returns
     <content link = returns
     <content link = Type                                    property = type
@@ -208,13 +217,13 @@
     <content link = Lifetime                       optional property = lifetime
     <content link = ParameterSet                   optional property = parameters
     <content colon                                 optional
-    <content link = Action                                  property = action
+    <content link = Implementation                          property = implementation
     <content colon                                 optional
 
 <syntax id = DeInit
     <content link = deinit
     <content colon                                 optional
-    <content link = Action                                  property = action
+    <content link = Implementation                          property = implementation
     <content colon                                 optional
 
 <syntax id = Function
@@ -249,6 +258,8 @@
     <content link = Io                             optional property = io_mark
     <content link = GlobalWrites                   optional property = writes
     <content colon                                 optional
+    <content link = GlobalReads                    optional property = reads_clause
+    <content colon                                 optional
     <content link = Implementation                          property = implementation
 
 <syntax id = Implementation                        abstract
@@ -256,6 +267,7 @@
     <content link = Extern
     <content link = Instruction
     <content link = Intrinsic
+    <content link = Linked
 
 <syntax id = Extern
     <content link = extern
@@ -265,6 +277,9 @@
 
 <syntax id = Intrinsic
     <content link = intrinsic
+
+<syntax id = Linked
+    <content link = linked
 
 <syntax id = Extends
     <content link = extends
@@ -460,11 +475,13 @@
 <syntax id = Mutable
     <content link = mutable
     <content link = Binding                                 property = binding
+    <content link = Linked                         optional property = linked_mark
 
 <syntax id = Shared
     <content link = shared
     <content link = Atomic                         optional property = atomic_mark
     <content link = Binding                                 property = binding
+    <content link = Linked                         optional property = linked_mark
 
 <syntax id = Atomic
     <content link = atomic
@@ -654,6 +671,7 @@
 <keyword id = is
 <keyword id = label
 <keyword id = let
+<keyword id = linked
 <keyword id = loop
 <keyword id = macro
 <keyword id = match
@@ -662,6 +680,7 @@
 <keyword id = operator
 <keyword id = private
 <keyword id = procedure
+<keyword id = reads
 <keyword id = repeat
 <keyword id = return
 <keyword id = returns

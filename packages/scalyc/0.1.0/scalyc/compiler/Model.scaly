@@ -253,12 +253,16 @@ define Operand
 define Extern(span: Span)
 define Instruction(span: Span)
 define Intrinsic(span: Span)
+; `linked`: a Scaly routine whose body lives in the package's archive (the
+; generated interface declares it; `extern` stays the C ABI, unmangled)
+define Linked(span: Span)
 
 define Implementation union (
     Action: Action
     Extern: Extern
     Instruction: Instruction
     Intrinsic: Intrinsic
+    Linked: Linked
 )
 
 ; Function definition
@@ -278,6 +282,10 @@ define Function
     ; the globals a procedure declares it writes (`mutable g1, g2` after its
     ; signature), itself or through what it calls
     writes: Vector[String]
+    ; the changeable globals a procedure declares it reads (`reads g1, g2`),
+    ; itself or through what it calls -- written by the interface generator
+    ; for a `linked` procedure, whose body the check cannot follow
+    read_globals: Vector[String]
 )
 
 ; Model for attribute values
@@ -377,6 +385,8 @@ define Global
     ; `shared atomic`: a cell written only through scaly_atomic_* (ID
     ; counters, locks); coordinated by itself, so no signature names it
     is_atomic: bool
+    ; `linked`: declared by a generated interface, defined in the archive
+    is_linked: bool
 )
 
 ; Delegate — a named function (closure) type. `define Cb delegate(int) returns int`

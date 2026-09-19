@@ -30,7 +30,7 @@
       "patterns": [ { "name": "constant.numeric.scaly", "match": "\\b[0-9][0-9a-fA-FxX._]*\\b" } ]
     },
     "keywords": {
-      "patterns": [ { "name": "keyword.control.scaly", "match": "\\b(alignof|as|atomic|break|case|choose|continue|define|deinit|delegate|else|extends|extern|for|function|if|implement|in|init|instruction|intrinsic|io|is|label|let|loop|macro|match|module|mutable|operator|private|procedure|repeat|return|returns|set|sizeof|throw|throws|trait|try|union|use|var|when|while|package|shared)\\b" } ]
+      "patterns": [ { "name": "keyword.control.scaly", "match": "\\b(alignof|as|atomic|break|case|choose|continue|define|deinit|delegate|else|extends|extern|for|function|if|implement|in|init|instruction|intrinsic|io|is|label|let|linked|loop|macro|match|module|mutable|operator|private|procedure|reads|repeat|return|returns|set|sizeof|throw|throws|trait|try|union|use|var|when|while|package|shared)\\b" } ]
     },
     "wordoperators": {
       "patterns": [ { "name": "keyword.operator.word.scaly", "match": "\\b(and|not|or|xor)\\b" } ]

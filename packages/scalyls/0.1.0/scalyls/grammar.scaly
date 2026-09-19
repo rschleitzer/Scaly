@@ -62,6 +62,8 @@ define grammar
             return true
         if word = "let"
             return true
+        if word = "linked"
+            return true
         if word = "loop"
             return true
         if word = "macro"
@@ -77,6 +79,8 @@ define grammar
         if word = "private"
             return true
         if word = "procedure"
+            return true
+        if word = "reads"
             return true
         if word = "repeat"
             return true

@@ -1792,6 +1792,8 @@ define Modeler
                 Implementation.Instruction(Instruction(Span(inst.start, inst.end)))
             when intr: IntrinsicSyntax
                 Implementation.Intrinsic(Intrinsic(Span(intr.start, intr.end)))
+            when lk: LinkedSyntax
+                Implementation.Linked(Linked(Span(lk.start, lk.end)))
             else
                 Implementation.Action(Action(Vector[Operand](0), Vector[Operand](0)))
     }
@@ -2014,6 +2016,28 @@ define Modeler
                     set writes: w_arr
                 }
 
+                ; `reads g1, g2`: the changeable globals it reads (an
+                ; interface declares it for a `linked` procedure)
+                var read_list Vector[String](0)
+                if named.routine.reads_clause <> null
+                {
+                    let r_syn (*named.routine.reads_clause)
+                    var r_more: size_t 0
+                    if r_syn.more <> null
+                        set r_more: r_syn.more.length
+                    var r_arr Vector[String](r_more + 1)
+                    r_arr.put(0, String(r_syn.name))
+                    var ri: size_t 0
+                    while ri < r_more
+                    {
+                        let rg_ptr r_syn.more.get ri
+                        if rg_ptr <> null
+                            r_arr.put(ri + 1, String((*rg_ptr).name))
+                        set ri: ri + 1
+                    }
+                    set read_list: r_arr
+                }
+
                 Function(
                     Span(start, end_pos),
                     is_private,
@@ -2026,7 +2050,8 @@ define Modeler
                     throws_type,
                     life,
                     impl,
-                    writes
+                    writes,
+                    read_list
                 )
             }
             else
@@ -2042,6 +2067,7 @@ define Modeler
                     null,
                     Lifetime.Unspecified(Unspecified()),
                     Implementation.Action(Action(Vector[Operand](0), Vector[Operand](0))),
+                    Vector[String](0),
                     Vector[String](0)
                 )
     }
@@ -2292,8 +2318,7 @@ define Modeler
             }
         }
 
-        let act handle_action(syntax.action)
-        let impl Implementation.Action(act)
+        let impl handle_implementation(syntax.implementation)
 
         Initializer(
             Span(syntax.start, syntax.end),
@@ -2306,8 +2331,7 @@ define Modeler
 
     procedure handle_deinitializer(mutable syntax: DeInitSyntax) returns ref[DeInitializer]? io mutable modeler_error_count
     {
-        let act handle_action(syntax.action)
-        let impl Implementation.Action(act)
+        let impl handle_implementation(syntax.implementation)
 
         DeInitializer(
             Span(syntax.start, syntax.end),
@@ -2624,7 +2648,7 @@ define Modeler
                 if mg_type_ref <> null
                 {
                     let mg_value handle_operands(mut.binding.operation)
-                    let mg_global Global(Span(mut.start, mut.end), *mg_type_ref, mg_value, true, false, false)
+                    let mg_global Global(Span(mut.start, mut.end), *mg_type_ref, mg_value, true, false, false, mut.linked_mark <> null)
                     let mg_concept Concept(
                         Span(mut.start, mut.end),
                         String(mut.binding.name),
@@ -2653,7 +2677,7 @@ define Modeler
                     var sg_atomic false
                     if sh.atomic_mark <> null
                         set sg_atomic: true
-                    let sg_global Global(Span(sh.start, sh.end), *sg_type_ref, sg_value, true, true, sg_atomic)
+                    let sg_global Global(Span(sh.start, sh.end), *sg_type_ref, sg_value, true, true, sg_atomic, sh.linked_mark <> null)
                     let sg_concept Concept(
                         Span(sh.start, sh.end),
                         String(sh.binding.name),
@@ -2859,7 +2883,7 @@ define Modeler
                 ; Global constant
                 let operation handle_operands(constant_syntax.operation)
                 let const_type handle_type(constant_syntax.type)
-                Definition.Global(Global(loc, *const_type, operation, false, false, false))
+                Definition.Global(Global(loc, *const_type, operation, false, false, false, false))
             }
         }
         when intrinsic_syntax: IntrinsicSyntax
