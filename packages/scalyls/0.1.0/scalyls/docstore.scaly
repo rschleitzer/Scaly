@@ -60,7 +60,7 @@ define docstore
 {
     ; Borrowed view over the malloc'd table: a slot is reached through `at(i)`
     ; (bounds-checked, answers ref[DocSlot]) instead of pointer arithmetic.
-    function doc_view() returns Slice[DocSlot]
+    procedure doc_view() returns Slice[DocSlot]
         Slice[DocSlot](DOC_CAP as size_t, doc_slots)
 
     ; Record the workspace root (a filesystem path) as a fresh malloc'd copy,
@@ -87,7 +87,7 @@ define docstore
 
     ; The workspace root path (a fresh copy on the caller's page), or "" when
     ; initialize provided none.
-    function workspace_root(rp) returns String
+    procedure workspace_root(rp) returns String
     {
         if ws_root_data <> null
             return String(ws_root_data as pointer[const_char], ws_root_len)
@@ -122,7 +122,7 @@ define docstore
 
     ; Index of the live slot whose uri matches, or -1. Builds a String view
     ; over each stored uri (on this function's local page) for the compare.
-    function find(uri: String) returns int
+    procedure find(uri: String) returns int
     {
         if doc_slots <> null
         {
@@ -272,7 +272,7 @@ define docstore
 
     ; The uri of a live slot that still owes a diagnostics run (a fresh copy on
     ; the caller's page), or "" when none does.
-    function dirty_uri(rp) returns String
+    procedure dirty_uri(rp) returns String
     {
         if doc_slots <> null
         {
@@ -292,7 +292,7 @@ define docstore
 
     ; The stored text for `uri` (a fresh copy on the caller's page), or an
     ; empty String on a miss. The worker treats empty as "read from disk".
-    function get(rp, uri: String) returns String
+    procedure get(rp, uri: String) returns String
     {
         let idx docstore.find uri
         if idx >= 0

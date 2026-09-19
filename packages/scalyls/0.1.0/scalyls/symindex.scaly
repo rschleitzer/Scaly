@@ -103,9 +103,9 @@ define symindex
     ; `at(i)` (bounds-checked, answers ref[IdxSlot]) instead of pointer
     ; arithmetic. Inside the namespace, so `symindex.idx_view()` and the
     ; definition mangle alike.
-    function idx_view() returns Slice[IdxSlot]
+    procedure idx_view() returns Slice[IdxSlot]
         Slice[IdxSlot](IDX_CAP as size_t, idx_slots)
-    function dir_view() returns Slice[DirSlot]
+    procedure dir_view() returns Slice[DirSlot]
         Slice[DirSlot](DIR_CAP as size_t, dir_slots)
 
     ; Lazily allocate + zero the slot array on first use. A malloc failure
@@ -144,7 +144,7 @@ define symindex
 
     ; True when `path`'s cached blob was already validated during this request,
     ; so the caller may use it WITHOUT reading and hashing the file again.
-    function fresh(path: String) returns bool
+    procedure fresh(path: String) returns bool
     {
         if idx_epoch = 0
             return false
@@ -169,7 +169,7 @@ define symindex
     }
 
     ; Index of the live slot whose path matches, or -1.
-    function find(path: String) returns int
+    procedure find(path: String) returns int
     {
         if idx_slots <> null
         {
@@ -191,7 +191,7 @@ define symindex
 
     ; True when `path` is cached AND was built from content hashing to `chash`
     ; — i.e. the cached blob is still valid for the file's current content.
-    function valid(path: String, chash: size_t) returns bool
+    procedure valid(path: String, chash: size_t) returns bool
     {
         let idx symindex.find path
         if idx >= 0
@@ -206,7 +206,7 @@ define symindex
     ; The cached blob for `path` (a fresh copy on the caller's page), or "" on a
     ; miss. Callers should gate on valid() first; an empty blob is a legitimate
     ; cached value (a file with no symbols).
-    function get_blob(rp, path: String) returns String
+    procedure get_blob(rp, path: String) returns String
     {
         let idx symindex.find path
         if idx >= 0
@@ -333,7 +333,7 @@ define symindex
     }
 
     ; Index of the live dir slot for `dir` that was filled in THIS request, or -1.
-    function find_dir(dir: String) returns int
+    procedure find_dir(dir: String) returns int
     {
         if dir_slots = null
             return 0 - 1
@@ -354,7 +354,7 @@ define symindex
     }
 
     ; True when this request already listed `dir`.
-    function has_listing(dir: String) returns bool
+    procedure has_listing(dir: String) returns bool
     {
         if idx_epoch = 0
             return false
@@ -362,7 +362,7 @@ define symindex
     }
 
     ; The listing cached for `dir` in this request ("" when there is none).
-    function get_listing(rp, dir: String) returns String
+    procedure get_listing(rp, dir: String) returns String
     {
         let idx symindex.find_dir dir
         if idx < 0

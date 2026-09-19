@@ -1,0 +1,14 @@
+; Regression (R1, 2026-09-19): nor through a procedure it calls -- the read
+; travels up the call graph like a write does.
+; xfail: error: function scaled reads global factor; a function reads no global that can change - pass the value in, or make it a procedure
+
+mutable factor: int 3
+
+procedure current_factor() returns int
+    factor
+
+function scaled(n: int) returns int
+    n * current_factor()
+
+if scaled(2) = 6
+    print "PASS\n"

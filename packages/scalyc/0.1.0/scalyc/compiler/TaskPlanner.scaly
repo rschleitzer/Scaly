@@ -7,9 +7,10 @@
 ;     operator, or a frame-local construction (Local/Unspecified life);
 ;     purity is PROVED transitively, not just read off the function/
 ;     procedure keyword — see effectively_pure below. (The keyword is
-;     CHECKED since 2026-09-19: a `function` writes nothing, names no
-;     global and performs no I/O. What it may still do is READ a mutable
-;     global, which is thread-local, so the walk stays.)
+;     CHECKED since 2026-09-19: a `function` writes nothing, reads and
+;     writes no global that can change and performs no I/O -- but a call
+;     into another package's body is followed only by its declaration, so
+;     the walk stays until the generated interfaces carry the effects.)
 ;   - every write lands in a binding declared inside the body, or in a
 ;     disjoint Vector slot (`put` whose index reads the loop variable —
 ;     the canonical parallel result target),

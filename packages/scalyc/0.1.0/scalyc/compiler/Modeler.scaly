@@ -2976,7 +2976,7 @@ define Modeler
     ; True when any sub-module failed to load. cli.run gates on this after
     ; build_program and fails the compile before the planner emits misleading
     ; downstream diagnostics.
-    function had_errors() returns bool
+    procedure had_errors() returns bool
         modeler_error_count > 0
 
     ; Reset at the start of each program build (harmless in a fresh process; keeps

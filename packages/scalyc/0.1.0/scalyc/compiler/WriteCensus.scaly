@@ -155,6 +155,18 @@ define WriteCensus
         atomic_names: Array[String]
         in_atomic_op: bool
         cur_atomic_bad: Array[String]
+        ; every global that can change (`mutable`, `shared`, `shared atomic`),
+        ; and the ones the walked FUNCTION reads: a function reads none
+        mutable_names: Array[String]
+        cur_reads: Array[String]
+        ; the read pre-pass of the check: per plan.functions index the first
+        ; changeable global a body reads, itself or through a body it calls
+        ; ("" none), and the call edges between bodies that carry it
+        read_pass: bool
+        read_index: size_t
+        body_reads: Array[String]
+        edge_from: Array[size_t]
+        edge_to: Array[size_t]
         ; per plan.functions index: the global a body RETURNS ("" none), so a
         ; getter's result is an alias of that global
         ret_globals: Array[String]
@@ -230,6 +242,13 @@ define WriteCensus
             set atomic_names: Array[String]^this()
             set in_atomic_op: false
             set cur_atomic_bad: Array[String]^this()
+            set mutable_names: Array[String]^this()
+            set cur_reads: Array[String]^this()
+            set read_pass: false
+            set read_index: 0
+            set body_reads: Array[String]^this()
+            set edge_from: Array[size_t]^this()
+            set edge_to: Array[size_t]^this()
             set ret_globals: Array[String]^this()
             set cur_ret_global: String^this("")
         }
@@ -376,6 +395,7 @@ define WriteCensus
             set loc_masks: Array[u64]^this()
             set loc_globals: Array[String]^this()
             set cur_atomic_bad: Array[String]^this()
+            set cur_reads: Array[String]^this()
             set cur_ret_global: String^this("")
         }
 
@@ -1353,6 +1373,7 @@ define WriteCensus
             if frozen_pass
                 this.pass_frozen_args(call, slot)
             this.note_call_io(op, call, slot)
+            this.note_call_reads(op, call, slot)
             if call.args = null
                 return
             if check_mode
@@ -2119,6 +2140,10 @@ define WriteCensus
                             choose c.definition
                                 when g: Global
                                 {
+                                    if g.is_mutable
+                                        mutable_names.add(String^this(c.name))
+                                    else if g.is_atomic
+                                        mutable_names.add(String^this(c.name))
                                     if g.is_atomic
                                         atomic_names.add(String^this(c.name))
                                     else if here
@@ -2675,6 +2700,55 @@ define WriteCensus
                     return false
         }
 
+        ; The read pre-pass: every body's first changeable global, direct or
+        ; through the bodies it calls (a fixpoint over the call edges). A stub
+        ; of another package is not followed -- the generated interface files
+        ; will carry what it reads.
+        procedure learn_reads(mutable this: WriteCensus, fns: ref[Vector[PlannedFunction]])
+        {
+            var i: size_t 0
+            while i < fns.length
+            {
+                body_reads.add(String^this(""))
+                set i: i + 1
+            }
+            set read_pass: true
+            set i: 0
+            while i < fns.length
+            {
+                let f_ptr fns.get i
+                if f_ptr <> null
+                {
+                    set read_index: i
+                    this.walk_body(f_ptr.unwrap())
+                }
+                set i: i + 1
+            }
+            set read_pass: false
+            var changed true
+            while changed
+            {
+                set changed: false
+                var e: size_t 0
+                while e < edge_from.length
+                {
+                    let a edge_from[e]
+                    let b edge_to[e]
+                    let ra body_reads[a]
+                    let rb body_reads[b]
+                    if ra.get_length() = 0
+                    {
+                        if rb.get_length() > 0
+                        {
+                            body_reads.put(a, String^this(rb))
+                            set changed: true
+                        }
+                    }
+                    set e: e + 1
+                }
+            }
+        }
+
         ; one walk of every function body; a violation is a write outside the
         ; page parameters
         procedure run_check(mutable this: WriteCensus, model: ref[Program]) io
@@ -2699,6 +2773,7 @@ define WriteCensus
             }
             this.learn_returned_globals()
             let fns plan_functions as ref[Vector[PlannedFunction]]
+            this.learn_reads(fns)
             set reporting: true
             var i: size_t 0
             while i < fns.length
@@ -2836,6 +2911,34 @@ define WriteCensus
                             this.walk_body(func)
                             set reporting: false
                         }
+                    }
+                }
+                if cur_reads.length > 0
+                {
+                    set n_violations: n_violations + 1
+                    var rb StringBuilder()
+                    if diagnostics
+                    {
+                        rb.append "error: function "
+                        rb.append func.name
+                        rb.append " reads global "
+                        rb.append(cur_reads[0])
+                        rb.append "; a function reads no global that can change - pass the value in, or make it a procedure"
+                    }
+                    else
+                    {
+                        rb.append "violation reads "
+                        rb.append func.name
+                        rb.append " "
+                        rb.append(cur_reads[0])
+                    }
+                    let rtext rb.to_string()
+                    this.record(func.loc.start, String^this(rtext))
+                    if diagnostics
+                    {
+                        set reporting: true
+                        this.walk_body(func)
+                        set reporting: false
                     }
                 }
                 if this.bad_io()
@@ -3155,6 +3258,112 @@ define WriteCensus
             if check_mode = false
                 if frozen_mode = false
                     set body_mask: body_mask | WC_GLOBAL
+        }
+
+        ; check mode: a FUNCTION reads no global that can change -- it is an
+        ; input the signature does not name, and a `mutable` one is
+        ; thread-local, so a task on another worker would read a different
+        ; cell. The runtime's own state is ambient (the allocator, the
+        ; scheduler); a constant `define` is not a global that can change.
+        procedure note_global_read(mutable this: WriteCensus, offset: size_t, name: String)
+        {
+            if check_mode = false
+                return
+            if cur_substrate
+                return
+            if this.is_changeable(name) = false
+                return
+            if read_pass
+            {
+                let have body_reads[read_index]
+                if have.get_length() = 0
+                    body_reads.put(read_index, String^this(name))
+                return
+            }
+            if cur_pure = false
+                return
+            if cur_name = "init"
+                return
+            this.note_read_site(offset, name, String(""))
+        }
+
+        ; a global that can change and is not the runtime's own state
+        function is_changeable(this: WriteCensus, name: String) returns bool
+        {
+            var changeable false
+            var i: size_t 0
+            while i < mutable_names.length
+            {
+                if mutable_names[i] = name
+                    set changeable: true
+                set i: i + 1
+            }
+            if changeable = false
+                return false
+            var j: size_t 0
+            while j < ambient_names.length
+            {
+                if ambient_names[j] = name
+                    return false
+                set j: j + 1
+            }
+            true
+        }
+
+        ; the walked function reads `name`, itself or through `callee`
+        procedure note_read_site(mutable this: WriteCensus, offset: size_t, name: String, callee: String)
+        {
+            var known false
+            var k: size_t 0
+            while k < cur_reads.length
+            {
+                if cur_reads[k] = name
+                    set known: true
+                set k: k + 1
+            }
+            if known = false
+                cur_reads.add(String^this(name))
+            if diagnostics
+            {
+                if reporting
+                {
+                    var sb StringBuilder()
+                    sb.append "note: reads global "
+                    sb.append name
+                    if callee.get_length() > 0
+                    {
+                        sb.append " -> "
+                        sb.append callee
+                    }
+                    let text sb.to_string()
+                    this.record(offset, String^this(text))
+                }
+            }
+        }
+
+        ; a call to a body: the pre-pass records the edge, the check asks
+        ; whether a FUNCTION reaches a read through it
+        procedure note_call_reads(mutable this: WriteCensus, op: PlannedOperand, call: PlannedCall, slot: size_t)
+        {
+            if check_mode = false
+                return
+            if slot = 0
+                return
+            if read_pass
+            {
+                edge_from.add(read_index)
+                edge_to.add(slot - 1)
+                return
+            }
+            if cur_pure = false
+                return
+            if cur_name = "init"
+                return
+            if slot - 1 >= body_reads.length
+                return
+            let r body_reads[slot - 1]
+            if r.get_length() > 0
+                this.note_read_site(op.loc.start, r, call.name)
         }
 
         ; Does an extern reach the world outside the program? Everything does
@@ -3719,6 +3928,8 @@ define WriteCensus
                         this.find_operand((*r))
                     }
                 }
+                when g: GlobalRef
+                    this.note_global_read(op.loc.start, String(g.name))
                 when mx: Matrix
                 {
                     this.note_life(op.loc.start, mx.life, String("a-construct"))

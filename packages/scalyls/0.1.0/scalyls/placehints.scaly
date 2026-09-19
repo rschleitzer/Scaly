@@ -929,7 +929,7 @@ define placehints
     ; ====================================================================
     ; The one-slot cache (symindex.scaly's memory model — malloc'd copies).
     ; ====================================================================
-    function cache_hit(path: String, hash: size_t) returns bool
+    procedure cache_hit(path: String, hash: size_t) returns bool
     {
         if ph_used = false
             return false
@@ -948,7 +948,7 @@ define placehints
         true
     }
 
-    function cached_blob(rp) returns String
+    procedure cached_blob(rp) returns String
     {
         if ph_used = false
             return ""

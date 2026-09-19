@@ -1,0 +1,12 @@
+; Regression (R1, 2026-09-19): a function reads no global that can change -- it
+; is an input the signature does not name, and a `mutable` global is
+; thread-local, so a task on another worker would read a different cell.
+; xfail: error: function scaled reads global factor; a function reads no global that can change - pass the value in, or make it a procedure
+
+mutable factor: int 3
+
+function scaled(n: int) returns int
+    n * factor
+
+if scaled(2) = 6
+    print "PASS\n"

@@ -74,7 +74,7 @@ procedure chk_byte(b: u8) mutable chk
 ; Range-based on purpose: an interior pointer into an oversized page
 ; can sit more than 4K past its base, so 4K masking cannot find the
 ; owner — the map must know each page's LENGTH (the 7.1 gap again).
-function map_addr(a: size_t) returns size_t
+procedure map_addr(a: size_t) returns size_t
 {
     if a = (0 as size_t)
         return 0 as size_t

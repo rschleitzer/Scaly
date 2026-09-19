@@ -28,7 +28,7 @@ mutable listen_fd: int 0
 mutable cfds: pointer[void] null
 mutable conn_count: int 0
 
-function cfd_at(i: int) returns i32
+procedure cfd_at(i: int) returns i32
     *(((cfds as size_t) + ((i * 4) as size_t)) as pointer[i32])
 
 ; True when the last four bytes received so far are CRLF CRLF (the
