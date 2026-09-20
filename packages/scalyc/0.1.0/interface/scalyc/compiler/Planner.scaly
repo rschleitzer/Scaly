@@ -15253,6 +15253,12 @@ define Planner
 
 
 
+
+
+
+
+
+
         ; check_operator_match: test a single Operator candidate against
         ; argument types. Same shape as check_function_match.
         procedure check_operator_match(
@@ -23699,6 +23705,40 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; ====================================================================
+        ; ★★★`&fn` ON A FUNCTION THAT TAKES AN IMPLICIT CALLER PAGE (2026-09-20).
+        ; The address-of path mangles with the page the source DECLARES; the
+        ; definition's name comes from function_needs_caller_page#, which also
+        ; asks the BODY. Widen one Option deep in the call graph and the
+        ; definition silently becomes `_Z9jit_applyPN4scaly6memory4PageEPvPv`
+        ; while `&jit_apply` still emits `_Z9jit_applyPvPv` -- and the ONLY
+        ; evidence is `ld: symbol(s) not found`, with no line and no relation to
+        ; the change that caused it.
+        ;
+        ; ★★★Why a DIAGNOSTIC and not a corrected mangling, which is the obvious
+        ; fix and is WORSE: the helpers this bites are pinned to a `(void*,
+        ; void*)` C ABI by the code that calls them through the pointer, so a
+        ; page-taking definition is an ABI break whatever it is called. The
+        ; undefined symbol is the guard; this turns it into a sentence.
+        ;
+        ; ★The exit for a real case is to keep the body ALLOCATION-FREE: an NPO
+        ; return falls through to body_may_allocate#, so splitting a cold
+        ; reporting half into its own function is usually all it takes.
+        ; ====================================================================
+        procedure report_address_of_page_function(mutable this: Planner, mutable f: Function, loc: Span) io linked
 
 
 

@@ -1,0 +1,31 @@
+; Regression (2026-09-20): taking the ADDRESS of a function that takes an
+; implicit caller page. The address-of path mangles with the page the source
+; DECLARES; the definition's name comes from function_needs_caller_page#, which
+; also reads the BODY. Where the two disagree the reference names a symbol
+; nothing defines — measured on this very file with the previous compiler:
+;
+;   define linkonce_odr { ptr } @_Z14makes_a_stringPN4scaly6memory4PageE(ptr %0)
+;   declare ptr @_Z14makes_a_stringv(...)
+;
+; and the only evidence was `ld: symbol(s) not found`, with no line and no
+; relation to the change that caused it (widening one Option deep in the call
+; graph is enough to move a definition's name).
+;
+; ★The address is handed to an EXTERN here, and that is not decoration: with
+; `let p &f` followed by `if p = null` the planner folds the test to false, the
+; reference never reaches the IR and the link succeeds — so a fixture that only
+; BINDS the address proves nothing about the class.
+;
+; ★It is a DIAGNOSTIC and not a corrected mangling on purpose: the helpers this
+; bites are pinned to a (void*, void*) C ABI by the code that calls them
+; through the pointer, so a page-taking definition is an ABI break whatever it
+; is called. `fn_ref_atexit.scaly` is the control — `&fn` on an
+; allocation-free function stays legal.
+; xfail: error: cannot take the address of makes_a_string
+
+procedure atexit(cb: pointer[void]) returns int extern
+
+function makes_a_string() returns String
+    String("this allocates, so the function takes a caller page")
+
+atexit(&makes_a_string)

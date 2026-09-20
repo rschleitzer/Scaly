@@ -10986,6 +10986,12 @@ define Planner
                                                 var fref_has_page: bool false
                                                 if (*fc_ptr).page_parameter <> null
                                                     set fref_has_page: true
+                                                ; ★★★The name built here asks whether a page was DECLARED; the
+                                                ; DEFINITION's name asks function_needs_caller_page#, which also
+                                                ; reads the BODY. Where the two disagree the reference names a
+                                                ; symbol nothing defines -- report it HERE, with a line number
+                                                ; (report_address_of_page_function#; s178: one statement).
+                                                this.report_address_of_page_function((*fc_ptr), result.loc)
                                                 set fref_mangled: Planner.mangle_free_function_from_types(fref_name, fparam_vec, fref_has_page)
                                             }
                                             let fref_ty Planner.make_pointer_type(Planner.make_void_type())
@@ -23710,6 +23716,40 @@ define Planner
             if this.lookup_local_binding(name) <> null
                 return true
             false
+        }
+
+        ; ====================================================================
+        ; ★★★`&fn` ON A FUNCTION THAT TAKES AN IMPLICIT CALLER PAGE (2026-09-20).
+        ; The address-of path mangles with the page the source DECLARES; the
+        ; definition's name comes from function_needs_caller_page#, which also
+        ; asks the BODY. Widen one Option deep in the call graph and the
+        ; definition silently becomes `_Z9jit_applyPN4scaly6memory4PageEPvPv`
+        ; while `&jit_apply` still emits `_Z9jit_applyPvPv` -- and the ONLY
+        ; evidence is `ld: symbol(s) not found`, with no line and no relation to
+        ; the change that caused it.
+        ;
+        ; ★★★Why a DIAGNOSTIC and not a corrected mangling, which is the obvious
+        ; fix and is WORSE: the helpers this bites are pinned to a `(void*,
+        ; void*)` C ABI by the code that calls them through the pointer, so a
+        ; page-taking definition is an ABI break whatever it is called. The
+        ; undefined symbol is the guard; this turns it into a sentence.
+        ;
+        ; ★The exit for a real case is to keep the body ALLOCATION-FREE: an NPO
+        ; return falls through to body_may_allocate#, so splitting a cold
+        ; reporting half into its own function is usually all it takes.
+        ; ====================================================================
+        procedure report_address_of_page_function(mutable this: Planner, mutable f: Function, loc: Span)
+        {
+            if f.page_parameter <> null
+                return
+            if Planner.function_needs_caller_page(this, f) = false
+                return
+            var sb StringBuilder()
+            sb.append "cannot take the address of "
+            sb.append f.name
+            sb.append ": it takes an implicit caller page, so its definition carries one in its mangled name and this reference does not - the link fails with an undefined symbol. Keep its body allocation-free, or call it instead of taking its address"
+            let msg_local sb.to_string()
+            this.add_diagnostic(loc, String^this(msg_local))
         }
 
         ; report_unknown_identifier: the same message the four inline
