@@ -10,8 +10,8 @@ check exists: it was declared `(ptr, i32, i32) -> i32` in one package and
 `(ptr, i64, i64) -> i64` in another, both linked into the same binary.
 """
 import collections
+import glob
 import re
-import subprocess
 import sys
 
 DECL = re.compile(
@@ -55,8 +55,11 @@ def split_params(sig):
 
 
 def main():
-    files = subprocess.run(["find", "packages", "-name", "*.scaly"],
-                           capture_output=True, text=True).stdout.split()
+    # Walked in Python, not through `find`: on the Windows box a subprocess
+    # named `find` is DOS's find.exe from System32, which answers nothing and
+    # made this check report 0 of 0 symbols (tests/win32/WINDOWS-BOX.md §4a).
+    # The same set of files on every host; order does not reach the verdict.
+    files = sorted(glob.glob("packages/**/*.scaly", recursive=True))
     handles = set()
     for f in files:
         for line in open(f):
