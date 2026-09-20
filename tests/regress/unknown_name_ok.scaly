@@ -1,0 +1,34 @@
+; The control for the two unknown-identifier gates (2026-09-20): the dotted
+; forms whose first segment resolves, which must keep compiling.
+;   (1) a namespace function, called qualified;
+;   (2) a package-qualified concept from the stdlib;
+;   (3) a static of a concept;
+;   (4) a member access on a local.
+; Expected: PASS
+
+define helpers ()
+{
+    function twice(x: int) returns int
+        x * 2
+}
+
+define Point (x: int, y: int)
+{
+    function origin() returns Point
+        Point(0, 0)
+
+    function sum(this) returns int
+        x + y
+}
+
+let a helpers.twice(21)
+let o Point.origin()
+let p Point(3, 4)
+let s p.sum()
+let m p.x
+let page scaly.memory.Page.get(&p)
+if a = 42
+    if s = 7
+        if m = 3
+            if o.x = 0
+                print "PASS"

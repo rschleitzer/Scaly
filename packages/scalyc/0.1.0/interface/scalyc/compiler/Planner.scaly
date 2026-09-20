@@ -23656,6 +23656,62 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; The exemption battery of unknown_identifier_name#, as its own
+        ; question so the bare name and the head of a dotted one are judged by
+        ; ONE rule. (A name declared two ways is exempt either way: this
+        ; answers "something in scope carries this name", not "which".)
+        ; (a procedure, not a function: the lookups memoize through `this`)
+        procedure name_resolves_to_something(mutable this: Planner, name: String) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         ; report_unknown_identifier: the same message the four inline
         ; unknown-name checks build (binary operand, `set` target, `set` source,
         ; binding initializer) — name, use-visibility hint, report. A helper
@@ -26210,6 +26266,17 @@ define Planner
 
 
         procedure plan_action(mutable this: Planner, mutable a: Action) @page true @direct true returns PlannedAction io linked
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -30625,6 +30692,18 @@ define Planner
 
 
         procedure plan_return(mutable this: Planner, mutable r: Return) @page true @direct true returns PlannedReturn io linked
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

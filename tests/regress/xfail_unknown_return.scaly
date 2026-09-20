@@ -1,0 +1,22 @@
+; Regression (2026-09-20): an unknown identifier that is the WHOLE of a return.
+; The unknown-name rule covered the OPERAND position only — as a call argument
+; `NoSuchConstant` is a clean `unknown identifier` plus `function not found`,
+; and as the entire value of an implicit OR explicit return it was neither
+; resolved nor diagnosed: rc 0, answering the zero value of the return type for
+; every input, with the CALLER silent as well, so nothing anywhere named the
+; identifier. Found in packages/tscaly by writing three `AssignmentKind*`
+; constants that no `define` in the package declared; every gate stayed green.
+; xfail: error: unknown identifier: NoSuchConstant
+
+function implicit_tail() returns int
+    NoSuchConstant
+
+function explicit_return(x: int) returns int
+{
+    if x > 0
+        return NoSuchConstant
+    7
+}
+
+let a implicit_tail()
+let b explicit_return(1)

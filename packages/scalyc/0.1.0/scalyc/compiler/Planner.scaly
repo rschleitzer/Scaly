@@ -23600,20 +23600,44 @@ define Planner
         ; lenient path (namespace machinery owns them).
         procedure unknown_identifier_name(mutable this: Planner, op: PlannedOperand) returns String
         {
-            if op.member_access <> null
-            {
-                let ma (*op.member_access)
-                if ma.length > 0
-                    return ""
-            }
+            ; ★★★A MEMBER CHAIN used to exempt itself here, and that was the
+            ; second half of the silent class (2026-09-20): `t.field` where
+            ; nothing in scope declares `t` was neither resolved nor reported,
+            ; so the access was emitted against whatever the slot held -- a
+            ; `let`-bound result SIGSEGV'd, an unbound call was DROPPED at rc 0,
+            ; and the recognition rule was that the code had NO EFFECT
+            ; WHATSOEVER. It cost packages/tscaly a whole elision branch that
+            ; ran every gate green and fired zero times. The BASE of a chain is
+            ; judged exactly like a bare name; every legitimate base --- a
+            ; local, a global, a concept, a namespace, a function, a primitive,
+            ; a generic parameter --- is exempted by the tests below, and a
+            ; DOTTED name still keeps the lenient path.
             choose op.expr
                 when uty: PlannedType
                 {
                     let name uty.name
                     if name.get_length() = 0
                         return ""
-                    if name.contains(".")
-                        return ""
+                    ; ★★★A DOTTED name is where the RECEIVER half of this class
+                    ; hides (2026-09-20). `t.field` arrives here as ONE name
+                    ; `t.field`, not as a base with a chain, and the blanket
+                    ; exemption below -- the namespace machinery owns dotted
+                    ; names -- made `t` unreportable however it was spelled.
+                    ; Judge the FIRST SEGMENT instead: a package or module path
+                    ; (`scalyc.compiler.Plan.PlannedUnion`), a namespace, a
+                    ; concept and a union (`Option.None`) all answer one of the
+                    ; tests below, and what is left is a receiver nothing
+                    ; declares -- which the emitter then reads a field off.
+                    let dot name.index_of(46)
+                    if dot >= 0
+                    {
+                        let head name.substring(0, dot as size_t)
+                        if this.name_resolves_to_something(head)
+                            return ""
+                        if this.module_path_known(head)
+                            return ""
+                        return head
+                    }
                     if Planner.is_operator_name(name)
                         return ""
                     if this.is_operator(name)
@@ -23654,6 +23678,38 @@ define Planner
                 else
                     return ""
             ""
+        }
+
+        ; The exemption battery of unknown_identifier_name#, as its own
+        ; question so the bare name and the head of a dotted one are judged by
+        ; ONE rule. (A name declared two ways is exempt either way: this
+        ; answers "something in scope carries this name", not "which".)
+        ; (a procedure, not a function: the lookups memoize through `this`)
+        procedure name_resolves_to_something(mutable this: Planner, name: String) returns bool
+        {
+            if Planner.is_operator_name(name)
+                return true
+            if this.is_operator(name)
+                return true
+            if Planner.get_operator_precedence(name) > 0
+                return true
+            if Planner.is_primitive_type_name(name)
+                return true
+            if Planner.is_generic_type_param_name(name)
+                return true
+            if this.is_concept_parameter_name(name)
+                return true
+            if this.is_delegate_type(name)
+                return true
+            if this.is_function(name)
+                return true
+            if this.lookup_concept(name) <> null
+                return true
+            if this.lookup_global(name) <> null
+                return true
+            if this.lookup_local_binding(name) <> null
+                return true
+            false
         }
 
         ; report_unknown_identifier: the same message the four inline
@@ -26376,6 +26432,17 @@ define Planner
                 if a.target.length = 0
                     if this.current_return_type <> null
                         this.report_null_into_ref((*this.current_return_type), planned_source_collapsed, planned_source_collapsed.loc)
+
+            ; ★★★And the same name as the IMPLICIT return: `function f()
+            ; returns int` whose whole body is `NoSuchConstant` compiled at
+            ; rc 0 and answered 0, with the CALLER silent as well, so nothing
+            ; anywhere named the identifier. ★It judges the operand that
+            ; reaches `ret`, so a leaf inside a BLOCK or an arm is out of its
+            ; reach -- the same limit convert_tail_literal# documents one
+            ; paragraph down, and the explicit `return` covers that shape.
+            if do_tail_check
+                if a.target.length = 0
+                    this.report_unknown_identifier(planned_source_collapsed)
 
             var tail_leaves_converted: bool false
             if do_tail_check
@@ -30698,6 +30765,18 @@ define Planner
 
             let planned_flat this.plan_operands(r.result)
             var planned_collapsed this.collapse_operand_sequence(planned_flat)
+
+            ; ★★★An UNKNOWN IDENTIFIER that is the WHOLE of a return compiled at
+            ; rc 0 and answered 0 (2026-09-20). The unknown-name rule covered
+            ; the OPERAND position only -- as a call argument `NoSuchConstant`
+            ; is a clean `unknown identifier` plus `function not found`, and as
+            ; the entire value of a return it was neither resolved nor
+            ; diagnosed, so the tell was a function answering the zero value of
+            ; its return type for every input and a CALLER that says nothing
+            ; either. It was found in packages/tscaly by writing three
+            ; `AssignmentKind*` constants that no `define` in the package
+            ; declared: every gate stayed green.
+            this.report_unknown_identifier(planned_collapsed)
 
             ; Double-quoted char literal in return position (`return "]"` in
             ; a char/u8-returning function): fold the string constant into a
