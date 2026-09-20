@@ -95,7 +95,16 @@ run)
   rm -f "$OUT/.linkerrs"
   # Detail is printed for the first few run failures only. A corpus of 90 can
   # fail wide, and an unbounded dump buries the aggregate below it.
-  verbose_left=6
+  #
+  # ★★★It was 6 — the number of failures known at the time — and that is the
+  # trap: a budget set to TODAY'S failure count says nothing about exactly the
+  # cases that are NEW. When the corpus went to eight, `parfor_fault_fatal` and
+  # `resource_caught` were listed in the summary with no block above them, and
+  # nothing said so (TRAPS.md 3.22). The budget stays, because an unbounded
+  # dump really does bury the aggregate — but it sits well above the stand and
+  # SAYS when it ran out.
+  verbose_left=12
+  suppressed=0
   for o in "$OUT"/*.o; do
     [ -f "$o" ] || continue
     base=$(basename "$o" .o)
@@ -139,7 +148,16 @@ run)
     why=""
     [ "$rc" = "$want_rc" ] || why="$why,exit(want $want_rc got $rc)"
     [ "$got" = "$want" ] || why="$why,stdout"
-    if [ -n "$want_err" ] && ! grep -q "$want_err" "$OUT/$base.err"; then
+    # ★★★`-F`, and it is not a refinement: an expected message is a TEXT.
+    # Without it grep reads the fixture's own words as a BRE, and
+    # parfor_fault_fatal's `Vector[]: index out of bounds (...)` opens a
+    # bracket class that never closes — grep answers `Unmatched [` and **rc 2**,
+    # which `! grep -q` reads as an honest miss. That case therefore reported
+    # `stderr` on every run of this script no matter what the program wrote,
+    # and was counted among the Windows catch failures for a day (TRAPS.md
+    # 3.22). ★A grep that fails with rc 2 instead of rc 1 is indistinguishable
+    # from a non-match inside a `!`, which is what made it survive review.
+    if [ -n "$want_err" ] && ! grep -qF "$want_err" "$OUT/$base.err"; then
       why="$why,stderr"
     fi
     if [ -z "$why" ]; then
@@ -148,6 +166,9 @@ run)
       fail=$((fail+1))
       [ "$rc" = 124 ] && why=",TIMEOUT"
       failures="$failures $base(${why#,})"
+      if [ "${why#,}" != "TIMEOUT" ] && [ "$verbose_left" -le 0 ]; then
+        suppressed=$((suppressed+1))
+      fi
       if [ "${why#,}" != "TIMEOUT" ] && [ "$verbose_left" -gt 0 ]; then
         verbose_left=$((verbose_left-1))
         echo "  --- $base ---"
@@ -220,6 +241,12 @@ run)
     echo "  --- distinct link errors (count x message) ---"
     sed 's/^.*: error/error/' "$OUT/.linkerrs" | sort | uniq -c \
       | sort -rn | head -12 | sed 's/^/      /'
+  fi
+
+  # ★A withheld diagnosis has to announce itself, or the next reader takes the
+  # printed blocks for the whole list.
+  if [ "$suppressed" -gt 0 ]; then
+    echo "  --- detail withheld for $suppressed further failure(s): the budget above is exhausted ---"
   fi
 
   echo "corpus run: $pass PASS, $fail FAIL$failures"
