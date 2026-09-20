@@ -15,7 +15,6 @@ define Node
 
 mutable head: pointer[Node] null
 
-function aligned_alloc(alignment: i64, size: i64) returns pointer[void] extern
 
 procedure hang(n: pointer[Node]) mutable head
 {
@@ -23,10 +22,10 @@ procedure hang(n: pointer[Node]) mutable head
         set head.prev: n
 }
 
-let a aligned_alloc(16 as i64, 16 as i64) as pointer[Node]
+let a scaly_aligned_alloc(16 as i64, 16 as i64) as pointer[Node]
 set a.prev: null
 set a.next: null
-let b aligned_alloc(16 as i64, 16 as i64) as pointer[Node]
+let b scaly_aligned_alloc(16 as i64, 16 as i64) as pointer[Node]
 set b.prev: null
 set b.next: null
 
