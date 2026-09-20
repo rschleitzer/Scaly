@@ -1,0 +1,59 @@
+; The control for xfail_escape_via_construction (2026-09-20): the SAME callee,
+; but the argument lives on the page the object is built on — no frame-local
+; reference is retained, and the checker must stay quiet. Two more shapes
+; that must stay legal: a callback record built on the FRAME and handed down
+; (tscaly's ApplyCallback), and a value construction on the caller page that
+; merely borrows a frame-local buffer (Vector(len, data)).
+; Expected: PASS
+
+define Leaf (n: int)
+define Keeper (items: ref[Array[ref[Leaf]?]])
+
+procedure box_it(host: ref[Page], items: ref[Array[ref[Leaf]?]]) returns ref[Keeper]
+    &Keeper^host(items)
+
+procedure build(host: ref[Page]) returns ref[Keeper]
+{
+    let list &Array[ref[Leaf]?]^host()
+    list.add(&Leaf^host(7))
+    box_it(host, list)
+}
+
+define Callback (state: ref[Array[int]]?)
+
+procedure consume(cb: ref[Callback]) returns int
+{
+    if cb.state = null
+        return 0
+    let s cb.state as ref[Array[int]]
+    s.length as int
+}
+
+procedure with_frame_callback() returns int
+{
+    var acc Array[int]()
+    acc.add(1)
+    acc.add(2)
+    var cb Callback(&acc)
+    consume(&cb)
+}
+
+procedure borrow(mutable arr: ref[Array[int]], buf: pointer[int])
+{
+    let view Vector[int](2, buf)
+    arr.add(view)
+}
+
+let host Page.allocate_page()
+let k build(host)
+if k.items.length = 1
+    if with_frame_callback() = 2
+    {
+        var arr Array[int]()
+        var sbuf int[2]
+        set sbuf[0]: 5
+        set sbuf[1]: 6
+        borrow(&arr, &sbuf[0])
+        if arr.length = 2
+            print "PASS"
+    }

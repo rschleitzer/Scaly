@@ -28462,6 +28462,122 @@ define Planner
 
         ; Pass 1: a call may match several summary entries (e.g. two escaping
         ; params); check each.
+        ; ====================================================================
+        ; ★★★A REFERENCE PARAMETER PUT INTO A PAGE-HOSTED CONSTRUCTION ESCAPES
+        ; WITH THAT OBJECT (2026-09-20). The checker refuses a frame-local
+        ; reference that is RETURNED or stored by a plain `set` -- both
+        ; measured loud -- and said NOTHING when the reference travelled into a
+        ; callee that puts it inside a NEW HEAP OBJECT. In packages/tscaly 174
+        ; frame-local lists reached `box_node_data[T](host, T(... list ...))`
+        ; and compiled clean; the program died of an UNBOUNDED RECURSION (a
+        ; dangling list feeds a memo, the memo answers nonsense, the cycle
+        ; guard never matches) that the whole gate chain missed -- only a run
+        ; over a 4 000-file corpus reached it.
+        ;
+        ; ★★★It is RECORDED in the summary, not diagnosed here, and that is the
+        ; design: with the callee marked, the call-site machinery that already
+        ; refuses "a frame-local reference passed to a storing callee" fires by
+        ; itself, with its own message and its own line -- and it fires ONLY
+        ; where the argument really is frame-local, which is why marking every
+        ; factory that boxes a reference costs nothing.
+        ;
+        ; ★A PAGE-HOSTED construction is the condition (`is_region_alloc`:
+        ; `T^name(...)`, `T#(...)`), because such an object outlives the
+        ; callee's frame by construction. A plain value construction is not:
+        ; `Slice[T](n, p)` borrows for the caller's own frame, and flagging it
+        ; would refuse every `s.subslice(a, b)` over a local buffer.
+        ;
+        ; ★It records during the SUMMARY passes only (`escape_checking` false),
+        ; like every other recorder here, and shares their dedup.
+        procedure escape_record_construction_param(mutable this: Planner, tp: PlannedTuple)
+        {
+            if escape_checking
+                return
+            if tp.is_region_alloc = false
+                return
+            ; ★★★`is_region_alloc` is TRUE for a LOCAL-page construction as
+            ; well, and that page dies with the frame -- measured: without this
+            ; line the plain `Vector[int](len, buf)` of
+            ; `tests/regress/try_arm_kind_selects.scaly` marked its `buf`
+            ; parameter, and the fixture's `size_trap(&arr, &sbuf[0])` became a
+            ; false escape. What outlives the frame is a CALL (`#`) or a named
+            ; REFERENCE (`^name`) lifetime.
+            if Planner.lifetime_is_local(tp.life)
+                return
+            ; ★★★And the CALLER page is not enough either -- measured on the same
+            ; fixture: `let huge Vector[int](len, buf)` is promoted onto the
+            ; caller's page, which is the caller's OWN frame region and dies
+            ; with the frame that also owns `buf`. What outlives the caller's
+            ; frame is a NAMED region: `T^host(...)` on a page the caller
+            ; handed in, or `T^this(...)` on the receiver's page.
+            if Planner.lifetime_is_reference(tp.life) = false
+                return
+            if tp.components = null
+                return
+            let comps (*tp.components)
+            var i: size_t 0
+            while i < comps.length
+            {
+                let cp comps.get i
+                if cp <> null
+                {
+                    let comp (*cp)
+                    if comp.value <> null
+                    {
+                        let vals (*comp.value)
+                        var j: size_t 0
+                        while j < vals.length
+                        {
+                            let vp vals.get j
+                            if vp <> null
+                            {
+                                let v (*vp)
+                                if Planner.is_reference_like(v.result_type)
+                                    this.escape_record_param_into_region(v)
+                            }
+                            set j: j + 1
+                        }
+                    }
+                }
+                set i: i + 1
+            }
+        }
+
+        ; The record itself: destination kind 1 is "frame-external" (what a
+        ; global or a deref store uses), which is exactly what a page-hosted
+        ; object is from the callee's point of view.
+        procedure escape_record_param_into_region(mutable this: Planner, v: PlannedOperand)
+        {
+            let root this.escape_value_param_root(v)
+            if root < 0
+                return
+            let cpc this.escape_current_param_count()
+            if this.escape_record_exists(escape_fn_index, (root as size_t), 1, 0, 0, 0, 0)
+                return
+            if getenv("SCALYC_ESCAPE_PROBE") <> null
+            {
+                let fp instantiated_functions.get escape_fn_index
+                if fp <> null
+                {
+                    scaly_eputs "escape-probe: construction record in "
+                    scaly_eputs(fp.mangled_name.to_c_string())
+                    scaly_eputs " param "
+                    scaly_eputi(root as i64)
+                    scaly_eputs "\n"
+                }
+            }
+            escape_records.add(EscapeRecord(
+                escape_fn_index,
+                cpc,
+                (root as size_t),
+                1,
+                0,
+                0,
+                0,
+                0
+            ))
+        }
+
         procedure escape_handle_call(mutable this: Planner, call: PlannedCall)
         {
             if escape_found
@@ -28776,6 +28892,7 @@ define Planner
                 }
                 when tp: Tuple
                 {
+                    this.escape_record_construction_param(tp)
                     if tp.components <> null
                     {
                         var i: size_t 0
@@ -41712,6 +41829,17 @@ define Planner
     {
         choose lt
             when c: Call
+                return true
+            else
+                return false
+        false
+    }
+    ; `T^name(...)`: the construction names a page in scope, so what it builds
+    ; outlives the frame that builds it -- and the frame of that frame's caller.
+    function lifetime_is_reference(lt: Lifetime) returns bool
+    {
+        choose lt
+            when r: scalyc.compiler.Model.Reference
                 return true
             else
                 return false

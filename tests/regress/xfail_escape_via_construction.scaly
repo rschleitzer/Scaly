@@ -1,0 +1,25 @@
+; Regression (2026-09-20): a frame-local reference that leaves through a
+; CALLEE'S CONSTRUCTION. The escape checker refused a frame-local reference
+; that is returned or stored by a plain `set`, and said nothing when it
+; travelled into a callee that puts it inside a new object on a NAMED region —
+; in packages/tscaly 174 frame-local lists reached
+; `box_node_data[T](host, T(... list ...))` and compiled clean; the program
+; died of an unbounded recursion that the whole gate chain missed.
+;
+; The callee is marked in the escape summary now (a reference parameter that
+; is a component of a `T^name(...)` construction), and the existing call-site
+; check does the rest. `escape_via_construction_ok.scaly` is the control: the
+; same callee with a page-hosted argument stays legal.
+; xfail: error: reference into a local page escapes via call
+
+define Leaf (n: int)
+define Keeper (items: ref[Array[ref[Leaf]?]])
+
+procedure box_it(host: ref[Page], items: ref[Array[ref[Leaf]?]]) returns ref[Keeper]
+    &Keeper^host(items)
+
+procedure build(host: ref[Page]) returns ref[Keeper]
+{
+    let list &Array[ref[Leaf]?]()
+    box_it(host, list)
+}
