@@ -1815,7 +1815,152 @@ define Planner
         ; Instantiation-cache recording helpers. Called as each planned
         ; aggregate is produced so the final Plan lists everything the
         ; emitter needs to lower.
+        ; ★★★TWO RECORDS THAT MANGLE TO ONE STRUCT AND DISAGREE ABOUT THEIR
+        ; LAYOUT (2026-09-20). A top-level define mangles without its module
+        ; and without its package -- mangle_structure# reads the name and the
+        ; generic arguments, nothing else -- so two same-named records that
+        ; both reach one compilation collapse into ONE LLVM struct and every
+        ; field access in the loser reads the other's layout. In
+        ; packages/tscaly a bool on a ptr slot made `store i1 true` write into
+        ; a pointer's low byte and the reader's `return tp.is_this_type` was
+        ; DROPPED, false for the whole tree for four slices; planner and linker
+        ; said nothing, and a second pair with the same LLVM shape was harmless
+        ; by luck.
+        ;
+        ; ★★★Asked HERE, where a LAYOUT is recorded, and not at registration --
+        ; which was tried first and is WRONG: two same-named records in two
+        ; modules are a language feature (`use ns.Name` steers type resolution,
+        ; gates glob_ambig_disambig / glob_disambig_field, whose two `Widget`s
+        ; have different field lists ON PURPOSE). What is legal is declaring
+        ; them; what cannot work is LAYING OUT both. So the condition is the
+        ; one that actually breaks: the same mangled name with a different
+        ; field list.
         procedure record_structure(mutable this: Planner, s: PlannedStructure) @persists true linked
+
+
+
+
+
+        procedure check_layout_collision(mutable this: Planner, s: PlannedStructure) linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; Does any recorded `use` clause name this concept explicitly?
+        function name_is_explicitly_used(this: Planner, name: String) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function layout_field_count(a: PlannedStructure) returns size_t linked
+
+
+
+
+
+
+
+        ; The name of the first field the two disagree about -- the detail a
+        ; reader needs to tell "two records" from "one record planned twice".
+        function first_layout_difference(a: PlannedStructure, b: PlannedStructure) @page true @direct true returns String linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; Two layouts differ when their field lists do: the count, a name or a
+        ; field's mangled type. The OFFSETS are derived from those, so they add
+        ; nothing.
+        function planned_layouts_differ(a: PlannedStructure, b: PlannedStructure) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

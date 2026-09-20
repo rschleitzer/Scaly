@@ -1815,9 +1815,154 @@ define Planner
         ; Instantiation-cache recording helpers. Called as each planned
         ; aggregate is produced so the final Plan lists everything the
         ; emitter needs to lower.
+        ; ★★★TWO RECORDS THAT MANGLE TO ONE STRUCT AND DISAGREE ABOUT THEIR
+        ; LAYOUT (2026-09-20). A top-level define mangles without its module
+        ; and without its package -- mangle_structure# reads the name and the
+        ; generic arguments, nothing else -- so two same-named records that
+        ; both reach one compilation collapse into ONE LLVM struct and every
+        ; field access in the loser reads the other's layout. In
+        ; packages/tscaly a bool on a ptr slot made `store i1 true` write into
+        ; a pointer's low byte and the reader's `return tp.is_this_type` was
+        ; DROPPED, false for the whole tree for four slices; planner and linker
+        ; said nothing, and a second pair with the same LLVM shape was harmless
+        ; by luck.
+        ;
+        ; ★★★Asked HERE, where a LAYOUT is recorded, and not at registration --
+        ; which was tried first and is WRONG: two same-named records in two
+        ; modules are a language feature (`use ns.Name` steers type resolution,
+        ; gates glob_ambig_disambig / glob_disambig_field, whose two `Widget`s
+        ; have different field lists ON PURPOSE). What is legal is declaring
+        ; them; what cannot work is LAYING OUT both. So the condition is the
+        ; one that actually breaks: the same mangled name with a different
+        ; field list.
         procedure record_structure(mutable this: Planner, s: PlannedStructure)
         {
+            this.check_layout_collision(s)
             instantiated_structures.add s
+        }
+
+        procedure check_layout_collision(mutable this: Planner, s: PlannedStructure)
+        {
+            ; ★Two same-named records in two modules are LEGAL and the answer
+            ; is an explicit `use ns.Name`, which steers type resolution (gates
+            ; glob_ambig_disambig / glob_disambig_field, whose two `Widget`s
+            ; carry different field lists on purpose). A name somebody
+            ; disambiguated is therefore not judged here; an unintended
+            ; collision is one nobody wrote a `use` for.
+            if this.name_is_explicitly_used(s.name)
+                return
+            var i: size_t 0
+            while i < instantiated_structures.length
+            {
+                let p instantiated_structures.get i
+                if p <> null
+                    if p.mangled_name = s.mangled_name
+                        if Planner.planned_layouts_differ(p, s)
+                        {
+                            var sb StringBuilder()
+                            sb.append "record "
+                            sb.append s.name
+                            sb.append " is laid out twice with different fields ("
+                            sb.append(Planner.layout_field_count p)
+                            sb.append " against "
+                            sb.append(Planner.layout_field_count s)
+                            sb.append ", first difference at "
+                            sb.append(Planner.first_layout_difference(p, s))
+                            sb.append "); a top-level record mangles without its module and without its package, so both collapse into one LLVM struct and one of them reads the other's layout"
+                            let msg_local sb.to_string()
+                            let msg String^this(msg_local)
+                            let dfile String^this(this.file)
+                            diagnostics.add(PlannerDiagnostic(s.loc.start, msg, dfile))
+                            return
+                        }
+                set i: i + 1
+            }
+        }
+
+        ; Does any recorded `use` clause name this concept explicitly?
+        function name_is_explicitly_used(this: Planner, name: String) returns bool
+        {
+            var i: size_t 0
+            while i < use_vis_names.length
+            {
+                let un use_vis_names.get i
+                if un <> null
+                    if (*un) = name
+                        return true
+                set i: i + 1
+            }
+            false
+        }
+
+        function layout_field_count(a: PlannedStructure) returns size_t
+        {
+            if a.properties = null
+                return 0
+            let pa a.properties
+            pa.length
+        }
+
+        ; The name of the first field the two disagree about -- the detail a
+        ; reader needs to tell "two records" from "one record planned twice".
+        function first_layout_difference(a: PlannedStructure, b: PlannedStructure) returns String
+        {
+            if a.properties = null
+                return String("<no fields on the first>")
+            if b.properties = null
+                return String("<no fields on the second>")
+            let pa a.properties
+            let pb b.properties
+            var i: size_t 0
+            while i < pa.length
+            {
+                if i >= pb.length
+                    return String("<the second is shorter>")
+                let x pa.get i
+                let y pb.get i
+                if x = null
+                    return String("<null field>")
+                if y = null
+                    return String("<null field>")
+                if x.name <> y.name
+                {
+                    var sb StringBuilder()
+                    sb.append x.name
+                    sb.append " against "
+                    sb.append y.name
+                    return sb.to_string()
+                }
+                set i: i + 1
+            }
+            String("<the first is shorter>")
+        }
+
+        ; Two layouts differ when their field lists do: the count, a name or a
+        ; field's mangled type. The OFFSETS are derived from those, so they add
+        ; nothing.
+        function planned_layouts_differ(a: PlannedStructure, b: PlannedStructure) returns bool
+        {
+            if a.properties = null
+                return b.properties <> null
+            if b.properties = null
+                return true
+            let pa a.properties
+            let pb b.properties
+            if pa.length <> pb.length
+                return true
+            var i: size_t 0
+            while i < pa.length
+            {
+                let x pa.get i
+                let y pb.get i
+                if x = null
+                    return true
+                if y = null
+                    return true
+                if x.name <> y.name
+                    return true
+                set i: i + 1
+            }
+            false
         }
 
         procedure record_union(mutable this: Planner, u: scalyc.compiler.Plan.PlannedUnion)

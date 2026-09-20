@@ -1,0 +1,14 @@
+; Sidecar for xfail_record_layout_collision.scaly: a Thing with TWO fields,
+; used INSIDE this file — which is how the shape occurs in real code: nobody
+; globs anything, each module simply uses its own record.
+; Expected: PASS
+
+define Thing(tag: int, x: int)
+
+function probe_a() returns int
+{
+    let t Thing(10, 7)
+    t.x
+}
+
+print("PASS")

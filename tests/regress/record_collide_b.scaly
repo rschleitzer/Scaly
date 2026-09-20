@@ -1,0 +1,14 @@
+; Sidecar for xfail_record_layout_collision.scaly: a SECOND Thing, one field,
+; used inside this file. The two mangle to one struct and disagree about their
+; layout.
+; Expected: PASS
+
+define Thing(x: int)
+
+function probe_b() returns int
+{
+    let t Thing(3)
+    t.x
+}
+
+print("PASS")
