@@ -21,8 +21,10 @@
 #   out-dir               default dist/seed (gitignored; per-target artifact)
 #
 # TURNKEY per platform: on a fresh checkout with the deps below installed, run
-# `tools/seed.sh` (no args) -> bootstraps stage-2 -> emits + verifies the seed
-# for THIS host's target triple (the compiler is host-only; one seed per box).
+# `tools/seed.sh` (no args) -> bootstraps stage-2 -> emits + verifies the seed.
+# ★The emission target is NAMED (`SEED_TARGET`, default `arm64-apple-darwin`),
+# not the host's — see the block above it for why, and do not make it the host
+# again. The BOOTSTRAP is still host-only; only the emitted .ll is portable.
 #   The "fabulous four" LP64 targets and how to install deps:
 #     (cmake went with the retired C++ stage-0; openjade became optional with
 #      stage 8 — ./mkp uses our own DSSSL engine and skips when none exists.)
@@ -67,12 +69,31 @@ if [ ! -x "$CC" ]; then
   [ -x "$CC" ] || fail "bootstrap produced no $CC"
 fi
 
-echo "seed: emitting .ll with $CC --no-tests"
+# ★★★THE SEED'S TARGET IS NAMED, NOT INHERITED FROM THE HOST (2026-09-20).
+# Every emission below and the fixed-point re-emission further down must pass
+# the SAME --target, or they compare different things.
+#
+# Why it cannot be the host: `Emitter.set_linkonce_odr` gives a body-carrying
+# `linkonce_odr` function a COMDAT on COFF, and `llc` REFUSES a comdat on
+# Mach-O ("MachO doesn't support COMDATs"). One text serves every target, so a
+# seed emitted on a Windows box would carry 6787 of them and be unusable on
+# both Apple targets — silently, because the emitting host's own build works.
+# Until development moved to a Windows box this could not happen and the flag
+# was not needed; the `-m:o … -n32:64-S128-Fn32` datalayout of the committed
+# seed is what says the previous box was an arm64 Mac.
+#
+# ★Naming it also makes the seed REPRODUCIBLE: measured 2026-09-20 on Windows
+# with a stage-2 built there, `main.ll`, `scaly.ll`, `scalyls.ll` and
+# `scalyls_main.ll` came out BYTE-IDENTICAL to the committed files, and
+# `scalyc.ll` differed only in the functions that had changed. The emission is
+# a property of the TARGET and the LLVM version, not of who ran it.
+SEED_TARGET=${SEED_TARGET:-arm64-apple-darwin}
+echo "seed: emitting .ll with $CC --no-tests --target $SEED_TARGET"
 ( ulimit -s 65520
   for f in main scalyc; do
-    "$CC" -S --no-tests -o "$OUT/$f.ll" packages/scalyc/0.1.0/$f.scaly || exit 1
+    "$CC" -S --no-tests --target "$SEED_TARGET" -o "$OUT/$f.ll" packages/scalyc/0.1.0/$f.scaly || exit 1
   done
-  "$CC" -S --no-tests -o "$OUT/scaly.ll" packages/scaly/0.1.0/scaly.scaly || exit 1
+  "$CC" -S --no-tests --target "$SEED_TARGET" -o "$OUT/scaly.ll" packages/scaly/0.1.0/scaly.scaly || exit 1
 ) || fail "emission"
 
 echo "seed: llc -> obj (LLVM 20) + link ($CLANG, no dynamic_lookup)"
@@ -115,9 +136,9 @@ tools/aot_corpus.sh "$OUT/scalyc_seed" seed | tail -1
 echo "seed: fixed-point self-reproduction"
 ( ulimit -s 65520
   for f in main scalyc; do
-    "$OUT/scalyc_seed" -S --no-tests -o "$OUT/r_$f.ll" packages/scalyc/0.1.0/$f.scaly || exit 1
+    "$OUT/scalyc_seed" -S --no-tests --target "$SEED_TARGET" -o "$OUT/r_$f.ll" packages/scalyc/0.1.0/$f.scaly || exit 1
   done
-  "$OUT/scalyc_seed" -S --no-tests -o "$OUT/r_scaly.ll" packages/scaly/0.1.0/scaly.scaly || exit 1
+  "$OUT/scalyc_seed" -S --no-tests --target "$SEED_TARGET" -o "$OUT/r_scaly.ll" packages/scaly/0.1.0/scaly.scaly || exit 1
 ) || fail "re-emission"
 for f in main scalyc scaly; do
   cmp -s "$OUT/r_$f.ll" "$OUT/$f.ll" || fail "fixed point: $f.ll differs"
@@ -157,8 +178,8 @@ done
 # (zero undefined) and smoke-test documentSymbol against a known input.
 echo "seed: emitting scalyls roots with $OUT/scalyc_seed (self-hosted)"
 ( ulimit -s 65520
-  "$OUT/scalyc_seed" -S --no-tests -o "$OUT/scalyls_main.ll" packages/scalyls/0.1.0/main.scaly || exit 1
-  "$OUT/scalyc_seed" -S --no-tests -o "$OUT/scalyls.ll"      packages/scalyls/0.1.0/scalyls.scaly || exit 1
+  "$OUT/scalyc_seed" -S --no-tests --target "$SEED_TARGET" -o "$OUT/scalyls_main.ll" packages/scalyls/0.1.0/main.scaly || exit 1
+  "$OUT/scalyc_seed" -S --no-tests --target "$SEED_TARGET" -o "$OUT/scalyls.ll"      packages/scalyls/0.1.0/scalyls.scaly || exit 1
 ) || fail "scalyls emission"
 for f in scalyls_main scalyls; do
   "$LLC" -relocation-model=pic -filetype=obj "$OUT/$f.ll" -o "$OUT/$f.o" || fail "llc $f.ll"
