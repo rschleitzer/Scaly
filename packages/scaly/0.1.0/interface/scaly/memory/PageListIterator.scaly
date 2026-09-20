@@ -1,4 +1,4 @@
-define PageListIterator(current: pointer[PageNode])
+define PageListIterator(var current: pointer[PageNode])
 {
     procedure next(mutable this: PageListIterator) returns pointer[pointer[Page]] linked
 

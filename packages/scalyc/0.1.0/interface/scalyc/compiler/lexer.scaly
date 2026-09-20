@@ -54,11 +54,11 @@ define lexer
     define Lexer
     @resident true (
         source: String
-        current: pointer[char]
+        var current: pointer[char]
         end: pointer[char]
-        position: size_t
-        previous_position: size_t
-        token: Token
+        var position: size_t
+        var previous_position: size_t
+        var token: Token
     )
     {
         init (src: String) linked

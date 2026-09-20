@@ -100,17 +100,17 @@ define NodePeer
 (
     lock: u64
     fd: i32
-    alive: bool
+    var alive: bool
     peer_stamp: u64
     chan_ids: pointer[u64]
     chans: pointer[pointer[Channel]]
-    chan_count: size_t
+    var chan_count: size_t
     monitors: pointer[pointer[Channel]]
-    monitor_count: size_t
+    var monitor_count: size_t
     wlock: u64
-    last_rx: i64
+    var last_rx: i64
     reader: size_t
-    down_reason: i64
+    var down_reason: i64
 )
 
 ; The reader thread's entry (free procedure: taken with &).

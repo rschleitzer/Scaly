@@ -86,7 +86,7 @@ define LocalBinding
     ; Set only on the shadow a null test pushes -- see define_narrowed#.
     ; The binding's DECLARED type is still the Option, so the author's `*x`
     ; remains an honest deref and report_deref_of_ref# must let it through.
-    is_narrowed: bool
+    var is_narrowed: bool
 )
 
 ; One HARD diagnostic: a construct the planner could not resolve and that
@@ -210,7 +210,7 @@ define Planner
 
     define Planner
     (
-        file: String
+        var file: String
 
         ; Scope stack — stored as one flat Array of bindings with a
         ; parallel Array of scope boundaries (indices where each scope
@@ -232,7 +232,7 @@ define Planner
 
         ; Fresh type-variable id counter for the Hindley-Milner
         ; constraint solver; see fresh_type_var below.
-        next_type_var_id: size_t
+        var next_type_var_id: size_t
 
         ; Pending constraints (grow as the planner encounters equalities
         ; it can't resolve yet) and the accumulated solution from the
@@ -272,16 +272,16 @@ define Planner
         ; plan_type# runs on every written type in the program, and an
         ; unconditional concept lookup there would be paid by every compile.
         ; False for a tree with no aliases => plan_type# is byte-identical.
-        has_type_aliases: bool
+        var has_type_aliases: bool
         ; Recursion bound for an alias CHAIN (`define A B` / `define B A`),
         ; threaded as a field rather than a parameter only because plan_type#
         ; has ~500 call sites; 16 is far past any honest chain.
-        alias_depth: int
+        var alias_depth: int
         ; The enclosing function's planned return type during body planning
         ; (GAP B): a lambda returned where this is a delegate type becomes an
         ; ESCAPING closure (env on the caller page `#`). Null outside a function
         ; body or when the function has no declared return type.
-        current_return_type: ref[PlannedType]?
+        var current_return_type: ref[PlannedType]?
         ; Names bound to a stack (non-escaping, Lifetime.Local) closure in the
         ; current function (GAP B escape checking). Returning one is an escape
         ; (the record lives on this frame) — flagged as a hard diagnostic.
@@ -357,8 +357,8 @@ define Planner
         ; getref promotion) keep their whole-array scans — promotion is
         ; placement-only, and narrowing them would change emission.
         local_frame_holder_names: Array[String]
-        local_frame_holder_base: size_t
-        getref_arg_base: size_t
+        var local_frame_holder_base: size_t
+        var getref_arg_base: size_t
         ; Set true while planning the IMPLICIT-RETURN (tail) action of a
         ; function whose return value owns page guts (needs_implicit_return_
         ; page). plan_action# reads-and-clears it so only the OUTERMOST body
@@ -366,7 +366,7 @@ define Planner
         ; expression (and recurses into choose/if/match arms + variant
         ; payloads) to the caller page. Closes the implicit-return-of-a-
         ; construction/call gap that R2 (explicit `return` only) misses.
-        promote_tail_return: bool
+        var promote_tail_return: bool
         ; Set true while planning the IMPLICIT-RETURN (tail) action of ANY
         ; function with a return type (independent of promote_tail_return,
         ; which fires only for page-owning-value returns). plan_action# reads-
@@ -375,7 +375,7 @@ define Planner
         ; (2026-07-02f): `return &local` was hard-errored but the same
         ; expression as a body tail (`{ ...; &result }`, unify) compiled
         ; clean and dangled.
-        check_tail_escape: bool
+        var check_tail_escape: bool
         instantiated_functions: Array[PlannedFunction]
         ; O(1) membership index over instantiated_functions' mangled names,
         ; maintained in lockstep at the single record_function add site.
@@ -436,7 +436,7 @@ define Planner
         ; so a user-defined (Action-bodied) operator emits a real call to its
         ; mangled function instead of being routed to emit_intrinsic_*_op.
         ; Mirrors stage-0's OperatorMatch.IsIntrinsic (Planner.cpp:3118/4470).
-        resolved_op_is_intrinsic: bool
+        var resolved_op_is_intrinsic: bool
 
         ; Set by resolve_operator_call# to the matched operator's planned
         ; parameter types (excluding `this`) ONLY when the match succeeded via
@@ -445,7 +445,7 @@ define Planner
         ; the bare String/f64 literal operands to the char/float parameter types
         ; (fold_string_args_to_char) and mangle the callee under those types. A
         ; non-fold match leaves it empty, keeping the construction byte-identical.
-        resolved_op_fold_params: Vector[PlannedType]
+        var resolved_op_fold_params: Vector[PlannedType]
 
         ; Loaded-package cache — name → root Module. Populated lazily
         ; once a package is found and parsed.
@@ -488,8 +488,8 @@ define Planner
         ; (Itanium `_ZN3cli4mainE…` shape) and by
         ; is_namespace_sibling_function to detect unqualified
         ; calls to peer functions of the enclosing namespace.
-        current_namespace: ref[Namespace]?
-        current_namespace_name: ref[String]?
+        var current_namespace: ref[Namespace]?
+        var current_namespace_name: ref[String]?
 
         ; Currently-active STRUCTURE context. Pushed when plan_structure
         ; enters a `define Foo ( props ) { … }`-style concept and popped on
@@ -505,7 +505,7 @@ define Planner
         ; only functions and no properties are modeled as a Namespace, which
         ; already resolves their siblings; this covers the property-bearing
         ; ones. Null outside a Structure body.
-        current_structure_name: ref[String]?
+        var current_structure_name: ref[String]?
 
         ; Last-segment names of every `use a.b.c` clause in the
         ; program's main module. Consulted by the dotted-call
@@ -526,7 +526,7 @@ define Planner
         program_use_namespaces: Array[String]
 
         ; Monotonic counter for synthesizing unique lambda names.
-        next_lambda_id: size_t
+        var next_lambda_id: size_t
 
         ; Escape checker (RBMM blocker C), Vector 3 — interprocedural
         ; pass-to-storing-callee. Built by check_interprocedural_escapes#
@@ -538,9 +538,9 @@ define Planner
         ; which corrupt — s34); escape_found short-circuits once a violation
         ; has been reported.
         escape_records: Array[EscapeRecord]
-        escape_checking: bool
-        escape_found: bool
-        escape_fn_index: size_t
+        var escape_checking: bool
+        var escape_found: bool
+        var escape_fn_index: size_t
 
         ; Transitive Vector-3 (interprocedural pass-to-storing-callee closure).
         ; The direct pass records only functions that STORE a parameter frame-
@@ -551,14 +551,14 @@ define Planner
         ; that, at each call passing a bare reference-like/delegate PARAMETER
         ; into a callee's persisting slot, records that the current function
         ; persists that parameter too — repeated until no new fact appears.
-        escape_forwarding: bool
+        var escape_forwarding: bool
 
         ; True once the collect walk has seen any INDIRECT call. Indirect calls
         ; carry no summary record (no mangled callee), so the "records empty ->
         ; nothing to check" fast path would wrongly skip the indirect-call check;
         ; this flag keeps the fast path only for code with neither records nor
         ; indirect calls (the common, delegate-free case incl. the compiler).
-        escape_saw_indirect: bool
+        var escape_saw_indirect: bool
 
         ; CLOSURE Vector-3 support: names bound to a stack (Lifetime.Local)
         ; closure in the function CURRENTLY being walked by the escape
@@ -607,7 +607,7 @@ define Planner
         move_moved_names: Array[String]
         move_alias_names: Array[String]
         move_alias_roots: Array[String]
-        move_found: bool
+        var move_found: bool
 
         ; Transitive page-need set (interprocedural escape forwarding). Names
         ; of functions that need the caller's page ONLY because their body
@@ -643,7 +643,7 @@ define Planner
         ; pre-pass.
         prepass_direct_names: Array[String]
         prepass_veto_names: Array[String]
-        transitive_page_built: bool
+        var transitive_page_built: bool
 
         ; Phase-5 class 1 (value-guts persist summary memo): mangled name ->
         ; does the function's body store a parameter's VALUE into state that
@@ -682,8 +682,8 @@ define Planner
         ; Declared LAST (field-index stability, persist_summary lesson).
         concept_origin_files: Array[String]
         concept_origin_paths: Array[String]
-        registering_file: String
-        registering_path: String
+        var registering_file: String
+        var registering_path: String
         use_vis_files: Array[String]
         use_vis_names: Array[String]
         use_vis_paths: Array[String]
@@ -698,9 +698,9 @@ define Planner
         ; during lazy instantiation (instantiating_structures/methods
         ; non-empty) — those point at the visibility-context switch
         ; (nested-planning trap), not at a missing use line.
-        use_vis_measure: bool
-        use_vis_hits: size_t
-        use_vis_misses: size_t
+        var use_vis_measure: bool
+        var use_vis_hits: size_t
+        var use_vis_misses: size_t
         use_vis_miss_idx: Array[size_t]
         use_vis_miss_files: Array[String]
         use_vis_miss_lazy: Array[size_t]
@@ -723,7 +723,7 @@ define Planner
         ; The verdict is memoized per (concept index, current file) in
         ; the two lockstep-with-`concepts` arrays below (verdict_file
         ; empty = uncomputed; ok 1 = visible).
-        use_vis_enforce: bool
+        var use_vis_enforce: bool
         use_vis_verdict_file: Array[String]
         use_vis_verdict_ok: Array[size_t]
 
@@ -766,7 +766,7 @@ define Planner
         ; compiler's own source (its cross-origin names — Model/Plan/Syntax
         ; Call/Type/… — are never explicitly used), so the self-compile hot
         ; path is unchanged.
-        disambiguation_active: bool
+        var disambiguation_active: bool
 
         ; s200: scope-isolation floor for nested lazy instantiation.
         ; lookup_local_binding's reverse scan stops HERE instead of 0.
@@ -783,7 +783,7 @@ define Planner
         ; Lambdas are unaffected (planned in-function, not through
         ; instantiate_generic — capture discovery still sees the
         ; enclosing scope). Declared LAST (field-index stability).
-        scope_isolation_base: size_t
+        var scope_isolation_base: size_t
 
         ; Byte offset of each recorded use clause, in lockstep with
         ; use_vis_files/names/paths — the anchor check_use_paths# reports at.
@@ -808,8 +808,8 @@ define Planner
         ; (a promoted `for` worker). stack_budget is the byte budget derived
         ; ONCE from scaly_stack_limit; 0 in both means "not yet established".
         ; Declared LAST (field-index stability).
-        stack_base: size_t
-        stack_budget: size_t
+        var stack_base: size_t
+        var stack_budget: size_t
     )
     {
         init(filename: String)
@@ -31952,6 +31952,12 @@ define Planner
 
             let mangled Planner.encode_name(p.name)
 
+            ; a property's attributes (R2's `var`) reach the plan the way a
+            ; parameter's `mutable` does, so the write census can read them
+            var attrs_ref: ref[Vector[PlannedAttribute]]? null
+            if p.attributes.length > 0
+                set attrs_ref: this.plan_item_attributes(p.attributes)
+
             PlannedProperty(
                 p.span,
                 p.private_,
@@ -31959,7 +31965,7 @@ define Planner
                 mangled,
                 prop_type,
                 initializer_ref,
-                null,
+                attrs_ref,
                 0
             )
         }

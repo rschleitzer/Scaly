@@ -214,6 +214,23 @@ define ContinueSyntax
     name: ref[LoopSyntax]?
 )
 
+define VariableSyntax
+(
+    start: size_t
+    end: size_t
+)
+
+define ImmutableSyntax
+(
+    start: size_t
+    end: size_t
+)
+
+define MutabilitySyntax union (
+    Immutable: ImmutableSyntax
+    Variable: VariableSyntax
+)
+
 define TypeAnnotationSyntax
 (
     start: size_t
@@ -225,6 +242,7 @@ define PropertySyntax
 (
     start: size_t
     end: size_t
+    mutability: ref[MutabilitySyntax]?
     name: String
     annotation: TypeAnnotationSyntax
     initializer: ref[InitializerSyntax]?

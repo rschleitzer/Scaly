@@ -127,25 +127,25 @@ define PointerCensus
         report_texts: Array[String]
 
         ; Per-class counters for the head line.
-        n_extern: size_t
-        n_param: size_t
-        n_return: size_t
-        n_field: size_t
-        n_variant: size_t
-        n_local: size_t
-        n_deref: size_t
-        n_deref_arith: size_t
-        n_arith: size_t
-        n_cast: size_t
-        n_null_cast: size_t
-        n_null_test: size_t
-        n_store: size_t
-        n_arg: size_t
+        var n_extern: size_t
+        var n_param: size_t
+        var n_return: size_t
+        var n_field: size_t
+        var n_variant: size_t
+        var n_local: size_t
+        var n_deref: size_t
+        var n_deref_arith: size_t
+        var n_arith: size_t
+        var n_cast: size_t
+        var n_null_cast: size_t
+        var n_null_test: size_t
+        var n_store: size_t
+        var n_arg: size_t
         ; `*opt` on a `ref[T]?` -- counted for calibration, never listed.
-        n_optref_deref: size_t
+        var n_optref_deref: size_t
         ; Bodies whose `file` could not be verified nor re-derived (below);
         ; their sites are NOT reported, and the head line says how many.
-        n_unfiled: size_t
+        var n_unfiled: size_t
 
         ; Every module file of this root (collected on the Model walk) and
         ; its text, read on first use. `PlannedFunction.file` is the
@@ -166,39 +166,39 @@ define PointerCensus
         ; kind), so such a site is COUNTED under `handle` and never listed.
         ; Measured before this: 7081 of scalyc's 9289 sites were LLVM handles.
         handle_pointees: Array[String]
-        n_handle: size_t
+        var n_handle: size_t
 
         ; Step 3: callee resolution. Open addressing over DD_CAP slots holding
         ; index + 1 into plan.functions, keyed by the mangled name's hash.
-        plan_functions: ref[Vector[PlannedFunction]]?
+        var plan_functions: ref[Vector[PlannedFunction]]?
         fn_slots: Vector[size_t]
         ; Initializers live under plan.structures, not in plan.functions: a
         ; second table keyed the same way, holding (structure index << 16 |
         ; initializer index) + 1.
-        plan_structures: ref[Vector[PlannedStructure]]?
+        var plan_structures: ref[Vector[PlannedStructure]]?
         init_slots: Vector[size_t]
         ; Every `extern` name of this root AND of its dependency packages
         ; (`Program.packages`): a dependency's extern has no entry in this
         ; root's plan.functions, so `memcpy` from the stdlib would otherwise
         ; read as unresolved.
         extern_names: Array[String]
-        n_arg_extern: size_t
-        n_arg_unresolved: size_t
-        n_h_ptr_ref: size_t
-        n_h_slice_ptr: size_t
-        n_h_mixed: size_t
-        n_h_store_slot: size_t
+        var n_arg_extern: size_t
+        var n_arg_unresolved: size_t
+        var n_h_ptr_ref: size_t
+        var n_h_slice_ptr: size_t
+        var n_h_mixed: size_t
+        var n_h_store_slot: size_t
 
         ; Per-body context for the buffer-walk provenance (`base=`/`len=`):
         ; the parameters of the body being walked (null for the program's
         ; top-level statements), and every pointer-typed local recorded so
         ; far in this body with the KIND of its initializer (parallel arrays).
-        cur_params: ref[Vector[PlannedItem]]?
-        loc_names: Array[String]
-        loc_kinds: Array[String]
+        var cur_params: ref[Vector[PlannedItem]]?
+        var loc_names: Array[String]
+        var loc_kinds: Array[String]
 
         ; Source file of the declaration or body currently walked.
-        current_file: String
+        var current_file: String
 
         ; Dedupe over (file, offset, class). A generic concept's methods sit
         ; in plan.functions ONCE PER INSTANTIATION, all with the same file

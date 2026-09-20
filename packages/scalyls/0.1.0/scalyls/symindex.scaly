@@ -51,25 +51,25 @@ define IDX_CAP int 4096
 ; the content hash they were built from, and a `used` flag.
 define IdxSlot
 (
-    path_data: pointer[u8]
-    path_len:  size_t
-    chash:     size_t
-    blob_data: pointer[u8]
-    blob_len:  size_t
-    used:      bool
-    epoch:     size_t
+    var path_data: pointer[u8]
+    var path_len:  size_t
+    var chash:     size_t
+    var blob_data: pointer[u8]
+    var blob_len:  size_t
+    var used:      bool
+    var epoch:     size_t
 )
 
 ; One cached directory listing: malloc'd path + listing byte copies, and the
 ; request epoch it was taken in.
 define DirSlot
 (
-    path_data: pointer[u8]
-    path_len:  size_t
-    list_data: pointer[u8]
-    list_len:  size_t
-    used:      bool
-    epoch:     size_t
+    var path_data: pointer[u8]
+    var path_len:  size_t
+    var list_data: pointer[u8]
+    var list_len:  size_t
+    var used:      bool
+    var epoch:     size_t
 )
 
 ; How many directories one request may have listed at once. A cross-file scan

@@ -31,7 +31,7 @@ use scaly.memory.runtime
 define ArrayIterator[T]
 (
     array: ref[Array[T]]?
-    position: size_t
+    var position: size_t
 )
 {
     init (a: ref[Array[T]]?)
@@ -67,9 +67,9 @@ define ArrayIterator[T]
 ; oversized case, so `Page.get(buffer)` finds it either way.
 define Array[T]
 (
-    length: size_t
-    capacity: size_t
-    buffer: pointer[T]
+    var length: size_t
+    var capacity: size_t
+    var buffer: pointer[T]
 )
 {
     init ()

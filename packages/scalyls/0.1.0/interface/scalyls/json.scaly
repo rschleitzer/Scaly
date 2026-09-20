@@ -58,8 +58,8 @@ define JsonValue union
 define JsonParser
 (
     source: String
-    pos: size_t
-    ok: bool
+    var pos: size_t
+    var ok: bool
 )
 
 define json

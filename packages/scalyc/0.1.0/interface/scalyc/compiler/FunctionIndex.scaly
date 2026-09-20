@@ -40,10 +40,10 @@ define FUNCTION_ENTRY_CAP int 262144
 ; `used` flag.
 define FnSlot
 (
-    name: String
-    head: size_t
-    tail: size_t
-    used: bool
+    var name: String
+    var head: size_t
+    var tail: size_t
+    var used: bool
 )
 
 define FunctionIndex

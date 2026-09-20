@@ -2,8 +2,8 @@ use scaly.memory.Page
 
 define HashMapBuilder[K, V]
 (
-    length: size_t (0)
-    slots: ref[Vector[List[Slot[KeyValuePair[K, V]]]]]? (null)
+    var length: size_t (0)
+    var slots: ref[Vector[List[Slot[KeyValuePair[K, V]]]]]? (null)
 )
 {
     init (vec: Vector[KeyValuePair[K, V]])

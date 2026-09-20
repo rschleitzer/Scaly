@@ -39,16 +39,16 @@ define BITMAP_ALL_FREE u64 0x7FFFFFFFFFFFFFFF  ; bits 0..62 set (page 0 is heade
 define StackBucketHeader
 (
     prev: pointer[StackBucketHeader]
-    next: pointer[StackBucketHeader]
+    var next: pointer[StackBucketHeader]
 )
 
 define HeapBucketHeader
 (
-    prev: ref[HeapBucketHeader]?
-    next: ref[HeapBucketHeader]?
-    bitmap: u64
+    var prev: ref[HeapBucketHeader]?
+    var next: ref[HeapBucketHeader]?
+    var bitmap: u64
     lock: u64
-    dead: u64                      ; owner thread exited; free on last drain
+    var dead: u64                      ; owner thread exited; free on last drain
 )
 
 ; The per-thread allocator state (stack_head, stack_top, heap_head —
@@ -71,9 +71,9 @@ define TRACE_MAX size_t 8192
 
 define TraceEntry
 (
-    name: pointer[const_char]
-    push_count: i64
-    pop_count: i64
+    var name: pointer[const_char]
+    var push_count: i64
+    var pop_count: i64
 )
 
 ; Header of the PROCESS-global heap-trace table (SCALY_TRACE_HEAP below).
@@ -85,7 +85,7 @@ define TraceEntry
 define HeapTraceHeader
 (
     lock: u64
-    count: i64
+    var count: i64
     entries: pointer[TraceEntry]
 )
 
@@ -963,7 +963,7 @@ procedure scaly_release_root_page_full(p: pointer[Page])
 ; callee materialises the caller's page only when it really allocates into it.
 define Frame
 (
-    page: pointer[Page]           ; null until forced
+    var page: pointer[Page]           ; null until forced
     parent: ref[Frame]?       ; the frame this function received, or null
 )
 

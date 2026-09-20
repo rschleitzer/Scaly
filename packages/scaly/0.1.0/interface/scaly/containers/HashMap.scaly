@@ -1,7 +1,7 @@
 define HashMapIterator[K, V]
 (
     slot_iterator: VectorIterator[Vector[KeyValuePair[K, V]]]
-    element_iterator: VectorIterator[KeyValuePair[K, V]]
+    var element_iterator: VectorIterator[KeyValuePair[K, V]]
 )
 {
     init (hash_map: HashMap[K, V])

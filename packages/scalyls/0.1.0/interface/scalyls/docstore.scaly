@@ -39,12 +39,12 @@ define DOC_CAP int 256
 ; still owed (see server.flush_dirty#).
 define DocSlot
 (
-    uri_data:  pointer[u8]
-    uri_len:   size_t
-    text_data: pointer[u8]
-    text_len:  size_t
-    used:      bool
-    dirty:     bool
+    var uri_data:  pointer[u8]
+    var uri_len:   size_t
+    var text_data: pointer[u8]
+    var text_len:  size_t
+    var used:      bool
+    var dirty:     bool
 )
 
 ; The slot array, lazily malloc'd. null until the first store access.

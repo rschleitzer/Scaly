@@ -1,0 +1,42 @@
+; R2 (2026-09-20): a property is `let` unless it says `var`. A `let` field may
+; be written in its record's `init` and while the object is still the
+; constructing frame's own — not yet published — and a `var` field anywhere.
+; Every shape here is legal and must keep compiling and running:
+;   (1) init writes let and var fields alike;
+;   (2) a fresh local (a construction of this frame) has its let fields
+;       finished after construction — the finish_node shape;
+;   (3) a var field is written through `this` and through a parameter;
+;   (4) an explicit `let` is the default spelled out.
+; Expected: PASS
+
+define Box (let fixed: int  var count: int  tag: int)
+{
+    init(f: int)
+    {
+        set fixed: f
+        set count: 0
+        set tag: 1
+    }
+
+    procedure bump(mutable this)
+        set count: count + 1
+}
+
+procedure bump_twice(mutable b: ref[Box])
+{
+    set b.count: b.count + 1
+    set b.count: b.count + 1
+}
+
+procedure build() returns int
+{
+    var b Box(1)
+    set b.fixed: 2
+    set b.tag: 3
+    b.bump()
+    bump_twice(&b)
+    b.fixed + b.count + b.tag
+}
+
+if build() = 8
+    print "PASS"

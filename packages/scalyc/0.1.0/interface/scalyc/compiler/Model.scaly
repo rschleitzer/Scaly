@@ -275,7 +275,7 @@ define Function
     parameters: Vector[GenericParameter]
     page_parameter: ref[String]?
     input: Vector[Item]
-    returns_: ref[Type]?
+    var returns_: ref[Type]?
     throws_: ref[Type]?
     lifetime: Lifetime
     implementation: Implementation

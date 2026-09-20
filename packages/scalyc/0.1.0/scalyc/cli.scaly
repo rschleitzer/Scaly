@@ -1368,6 +1368,9 @@ define cli
             head.append "), provenance rounds "
             head.append(cli.format_size(wc.n_fz_rounds))
         }
+        ; R2: stores into a `let` field of a published object (measurement)
+        head.append "; LET: sites "
+        head.append(cli.format_size(wc.n_let_sites))
         let head_str head.to_string()
         Console.println(head_str.to_c_string())
         cli.print_located("write-report: ", &wc.report_files, &wc.report_offsets, &wc.report_texts)

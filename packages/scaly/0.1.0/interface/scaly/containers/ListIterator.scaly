@@ -1,4 +1,4 @@
-define ListIterator[T] (current: pointer[Node[T]])
+define ListIterator[T] (var current: pointer[Node[T]])
 {
     procedure next(mutable this: ListIterator[T]) returns pointer[T]
     {

@@ -1618,6 +1618,31 @@ define Modeler
             set initializer: holder.get(0)
         }
 
+        ; `var` before a property (R2, 2026-09-20): the field may be written
+        ; after its object is published. Without it a property is `let`: set
+        ; in `init`, and while the object is still the constructing frame's
+        ; own. Carried as an attribute named "var", so no Property consumer
+        ; changes shape; an explicit `let` is the default spelled out.
+        if syntax.mutability <> null
+        {
+            let mu (*syntax.mutability)
+            choose mu
+                when v: VariableSyntax
+                {
+                    var marks Vector[Attribute](1)
+                    marks.put(0, Attribute(Span(v.start, v.end), String("var"), Model.Constant(Constant.Boolean(BooleanConstant(Span(v.start, v.end), true)))))
+                    return Property(
+                        Span(syntax.start, syntax.end),
+                        is_private,
+                        syntax.name,
+                        prop_type,
+                        initializer,
+                        marks
+                    )
+                }
+                else
+                    0
+        }
         Property(
             Span(syntax.start, syntax.end),
             is_private,

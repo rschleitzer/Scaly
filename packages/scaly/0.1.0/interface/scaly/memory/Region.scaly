@@ -26,12 +26,12 @@ define REGION_WIRE_MAGIC u64 0x3153434c59
 
 define ReceivedRegion
 (
-    region: pointer[Page]
-    root: pointer[void]
-    page_count: size_t
-    old_bases: pointer[size_t]
-    new_bases: pointer[size_t]
-    lengths: pointer[size_t]
+    var region: pointer[Page]
+    var root: pointer[void]
+    var page_count: size_t
+    var old_bases: pointer[size_t]
+    var new_bases: pointer[size_t]
+    var lengths: pointer[size_t]
 )
 {
     ; Map an address from the sender's region into the received copies;

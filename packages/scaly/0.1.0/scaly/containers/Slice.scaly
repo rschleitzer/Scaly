@@ -26,7 +26,7 @@
 ; type-checks its components since the same day, so the flip was 2839
 ; diagnostics -- every site, both directions -- and not one silent reversal.
 
-define Slice[T](length: size_t, data: pointer[T])
+define Slice[T](var length: size_t, var data: pointer[T])
 {
 
     ; Empty slice
@@ -197,7 +197,7 @@ define Slice[T](length: size_t, data: pointer[T])
         SliceIterator[T](this)
 }
 
-define SliceIterator[T](slice: Slice[T], position: size_t(0))
+define SliceIterator[T](slice: Slice[T], var position: size_t(0))
 {
     init (s: Slice[T])
     {

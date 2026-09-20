@@ -42,9 +42,9 @@ define CONCEPT_INDEX_CAP int 65536
 ; the registry index, and a `used` flag.
 define ConceptSlot
 (
-    name:  String
-    index: size_t
-    used:  bool
+    var name:  String
+    var index: size_t
+    var used:  bool
 )
 
 define ConceptIndex (slots: pointer[ConceptSlot](null), cap: size_t(0))

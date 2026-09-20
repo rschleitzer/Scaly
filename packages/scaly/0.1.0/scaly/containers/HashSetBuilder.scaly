@@ -1,7 +1,7 @@
 define HashSetBuilder[T]
 (
-    length: size_t (0)
-    slots: ref[Vector[List[Slot[T]]]]? (null)
+    var length: size_t (0)
+    var slots: ref[Vector[List[Slot[T]]]]? (null)
 )
 {
     init (vec: Vector[T])

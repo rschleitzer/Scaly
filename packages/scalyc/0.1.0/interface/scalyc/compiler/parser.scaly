@@ -4538,6 +4538,23 @@ define Parser
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     procedure parse_typeannotation(mutable this: Parser) @page true @direct true returns TypeAnnotationSyntax throws ParserError linked
 
 
@@ -4553,6 +4570,55 @@ define Parser
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+    procedure parse_mutability(mutable this: Parser) @page true @direct true returns MutabilitySyntax throws ParserError linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    procedure parse_immutable(mutable this: Parser) @page true @direct true returns ImmutableSyntax throws ParserError linked
+
+
+
+
+
+
+
+
+
+
+
+    procedure parse_variable(mutable this: Parser) @page true @direct true returns VariableSyntax throws ParserError linked
 
 
 

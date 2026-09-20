@@ -12,7 +12,7 @@ define VectorIterator[T]
     ; (its init does not resolve under the nested generic), so `position`
     ; started on stack garbage and the loop only ever worked because the slot
     ; happened to hold 0. Found 2026-08-02.
-    position: size_t(0)
+    var position: size_t(0)
 )
 {
     init (v: ref[Vector[T]]?)

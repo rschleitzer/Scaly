@@ -1,6 +1,6 @@
 define StringIterator
 (
-    current: pointer[char]
+    var current: pointer[char]
     last: pointer[char]
 )
 {

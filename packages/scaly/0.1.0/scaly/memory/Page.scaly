@@ -53,11 +53,11 @@ shared page_statistics: pointer[PageStatistics] null
 ; literal Page layout (synthesize_literal_struct) name by number.
 define Page
 (
-    next_object: pointer[void]
-    current_page: pointer[Page]
-    next_page: pointer[Page]
+    var next_object: pointer[void]
+    var current_page: pointer[Page]
+    var next_page: pointer[Page]
     exclusive_pages: PageList
-    region: pointer[Page]
+    var region: pointer[Page]
 )
 {
     ; Answers a borrowed reference, never null: a bucket is created when none

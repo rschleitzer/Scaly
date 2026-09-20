@@ -637,13 +637,13 @@ mutable guard_page_size: size_t 0
 
 define Fiber
 (
-    ctx: pointer[void]           ; the suspended (non-running) side's context
-    stack_base: pointer[void]    ; mmap base; guard page at the bottom
-    stack_size: size_t
-    saved_head: pointer[StackBucketHeader]  ; the non-running side's ...
-    saved_top: pointer[Page]                ; ... StackBucket allocator state
-    saved_catch: pointer[void]              ; ... panic catch-point chain
-    done: bool
+    var ctx: pointer[void]           ; the suspended (non-running) side's context
+    var stack_base: pointer[void]    ; mmap base; guard page at the bottom
+    var stack_size: size_t
+    var saved_head: pointer[StackBucketHeader]  ; the non-running side's ...
+    var saved_top: pointer[Page]                ; ... StackBucket allocator state
+    var saved_catch: pointer[void]              ; ... panic catch-point chain
+    var done: bool
 )
 {
     ; How many fiber regions have been disposed — one tick per fiber,
@@ -924,10 +924,10 @@ define SchedTask
 (
     entry: pointer[void]         ; the task's zero-argument procedure
     fiber: ref[Fiber]
-    next: ref[SchedTask]?
-    waiter: ref[SchedTask]?   ; tasks blocked joining this one
-    done: bool
-    disposed: bool
+    var next: ref[SchedTask]?
+    var waiter: ref[SchedTask]?   ; tasks blocked joining this one
+    var done: bool
+    var disposed: bool
     arg: pointer[void]           ; spawn_arg's argument (task_arg reads it)
     ; home: the spawning scheduler (milestone 2.4) — a remote channel
     ; sender routes wakes through it.
@@ -954,15 +954,15 @@ procedure scheduler_entry(first_ctx: pointer[void])
 define Scheduler
 (
     host: pointer[Page]          ; task records, fibers, and queue live here
-    head: ref[SchedTask]?     ; FIFO ready queue
-    tail: ref[SchedTask]?
-    blocked: int                 ; tasks waiting in a join, send/receive, or Io
-    eio: i32                     ; readiness poller fd (-1 until first Io use)
-    io_waiting: int              ; tasks parked on fd readiness
-    wake: i32                    ; cross-thread wake handle (-1 until armed)
+    var head: ref[SchedTask]?     ; FIFO ready queue
+    var tail: ref[SchedTask]?
+    var blocked: int                 ; tasks waiting in a join, send/receive, or Io
+    var eio: i32                     ; readiness poller fd (-1 until first Io use)
+    var io_waiting: int              ; tasks parked on fd readiness
+    var wake: i32                    ; cross-thread wake handle (-1 until armed)
     inject: u64                  ; MPSC inject queue: Treiber stack of
                                  ; SchedTasks pushed by remote threads
-    chan_parked: int             ; tasks parked on a Channel receive
+    var chan_parked: int             ; tasks parked on a Channel receive
 )
 {
     ; Create the scheduler on the given page and make it current. All
@@ -1335,10 +1335,10 @@ define Scheduler
 ; wakes the requester publishes it.
 define IoWork
 (
-    next: ref[IoWork]?
+    var next: ref[IoWork]?
     fn: pointer[void]            ; procedure fn(arg) returns pointer[void]
     arg: pointer[void]
-    result: pointer[void]
+    var result: pointer[void]
     task: ref[SchedTask]     ; the parked requester
 )
 
@@ -1350,18 +1350,18 @@ define IoWork
 ; never through the requester's thread-local globals.
 define IoPool
 (
-    lock: u64                    ; spinlock (bucket_lock pattern)
-    head: ref[IoWork]?        ; queued operations, FIFO
-    tail: ref[IoWork]?
-    pipe_read: i32               ; workers block reading here
-    pipe_write: i32              ; one byte written per queued item
-    workers: i64                 ; spawned workers (grows to the cap
+    var lock: u64                    ; spinlock (bucket_lock pattern)
+    var head: ref[IoWork]?        ; queued operations, FIFO
+    var tail: ref[IoWork]?
+    var pipe_read: i32               ; workers block reading here
+    var pipe_write: i32              ; one byte written per queued item
+    var workers: i64                 ; spawned workers (grows to the cap
                                  ; until drain_pool resets the pool)
-    idle: i64                    ; workers blocked in the pipe read
+    var idle: i64                    ; workers blocked in the pipe read
     ; Worker join handles (IO_POOL_WORKERS slots on the pool page) —
     ; drain_pool joins each. Requester-written only (one requesting
     ; thread per pool), so no lock is needed.
-    handles: pointer[size_t]
+    var handles: pointer[size_t]
 )
 {
     ; The pool spinlock — same CAS pattern as the channel and the
@@ -1867,7 +1867,7 @@ define Io
 ; queue needs no allocator of its own and nothing to track.
 define ChannelNode
 (
-    next: ref[ChannelNode]?
+    var next: ref[ChannelNode]?
     msg: pointer[void]
 )
 
@@ -1912,13 +1912,13 @@ define ChannelNode
 define Channel
 (
     lock: u64                        ; spinlock (bucket_lock pattern)
-    senders: i64                     ; live send handles; 0 = closed
-    closed: bool
-    head: ref[ChannelNode]?          ; queued messages, FIFO
-    tail: ref[ChannelNode]?
-    recv_head: ref[SchedTask]?    ; parked receivers, FIFO
-    recv_tail: ref[SchedTask]?
-    ; recv_sched: the receiving thread's scheduler — where a
+    var senders: i64                     ; live send handles; 0 = closed
+    var closed: bool
+    var head: ref[ChannelNode]?          ; queued messages, FIFO
+    var tail: ref[ChannelNode]?
+    var recv_head: ref[SchedTask]?    ; parked receivers, FIFO
+    var recv_tail: ref[SchedTask]?
+    ; var recv_sched: the receiving thread's scheduler — where a
     ; queued-node send pokes the wake handle.
     recv_sched: pointer[void]
     ; Bounded-capacity backpressure. capacity = 0 means UNBOUNDED (a
@@ -1929,9 +1929,9 @@ define Channel
     ; the woken sender re-checks and enqueues (immutable capacity is
     ; read without the lock; count and the FIFO are lock-guarded).
     capacity: i64
-    count: i64
-    send_head: ref[SchedTask]?    ; parked senders (full queue), FIFO
-    send_tail: ref[SchedTask]?
+    var count: i64
+    var send_head: ref[SchedTask]?    ; parked senders (full queue), FIFO
+    var send_tail: ref[SchedTask]?
 )
 {
     ; The channel spinlock — same CAS pattern as root_pages bucket_lock:
@@ -2435,10 +2435,10 @@ define TaskGroup
     guarded: u64                 ; did the SUBMITTER stand in a try? (0/1)
     fault_kind: u64              ; the first fault of the wave: kind + 1,
                                  ; 0 = none (atomic, first writer wins)
-    fault_what: pointer[const_char]
-    fault_index: size_t
-    fault_length: size_t
-    fault_code: i32
+    var fault_what: pointer[const_char]
+    var fault_index: size_t
+    var fault_length: size_t
+    var fault_code: i32
 )
 {
     ; Create a group on its own heap page. Traps (exit 112) when the
@@ -2593,7 +2593,7 @@ define TaskGroup
 ; submitter allocates, workers only read, dispose frees wholesale).
 define TaskItem
 (
-    next: ref[TaskItem]?
+    var next: ref[TaskItem]?
     fn: pointer[void]            ; procedure fn(arg) returns pointer[void]
     arg: pointer[void]
     group: ref[TaskGroup]
@@ -2608,8 +2608,8 @@ define TaskItem
 define TaskDeque
 (
     lock: u64                    ; spinlock (bucket_lock pattern)
-    head: ref[TaskItem]?
-    tail: ref[TaskItem]?
+    var head: ref[TaskItem]?
+    var tail: ref[TaskItem]?
 )
 {
     procedure acquire(d: pointer[TaskDeque])
@@ -2639,7 +2639,7 @@ define TaskPool
 (
     deques: ref[TaskDeque]   ; nworkers records, on the pool page
     nworkers: i64
-    next_deque: i64              ; round-robin submit cursor (a plain
+    var next_deque: i64              ; round-robin submit cursor (a plain
                                  ; load-balancing hint: racy submitters
                                  ; only skew the distribution)
     stolen: u64                  ; items taken from a foreign deque

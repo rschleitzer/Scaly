@@ -6,7 +6,7 @@
 ; and auditable.
 define PageList
 @resident true (
-    head: pointer[PageNode] (null)
+    var head: pointer[PageNode] (null)
 )
 {
     procedure add(mutable this: PageList, element: ref[Page]) linked

@@ -11,9 +11,9 @@ use scaly.memory.Page
 ; own index beside the list and points into the cells.
 define List[T]
 (
-    head: pointer[Node[T]] (null)
+    var head: pointer[Node[T]] (null)
     ; the last cell, so an append is O(1)
-    tail: pointer[Node[T]] (null)
+    var tail: pointer[Node[T]] (null)
 )
 {
     function get_head(this: List[T]) returns ref[T]?

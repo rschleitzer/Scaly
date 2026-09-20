@@ -64,78 +64,88 @@ define WriteCensus
         report_offsets: Array[size_t]
         report_texts: Array[String]
 
-        pc: ref[PointerCensus]?
-        plan_functions: ref[Vector[PlannedFunction]]?
+        var pc: ref[PointerCensus]?
+        var plan_functions: ref[Vector[PlannedFunction]]?
+        ; the plan's records, for a written FIELD's declaration (R2: `var`)
+        var plan_structures: ref[Vector[PlannedStructure]]?
+        ; R2: stores into a `let` field of an object that is already published
+        var n_let_sites: size_t
+        let_offsets: Array[size_t]
+        let_texts: Array[String]
+        let_fns: Array[size_t]
+        ; the file of the body being walked, for a let-site's line (a body's
+        ; file is resolved for the report only; the walk knows func.file)
+        var cur_file_hint: String
         ; per plan.functions index: the parameters the body writes through
         masks: Array[u64]
 
         ; the body walked: its input, its caller-page name, its summary so far
-        cur_input: ref[Vector[PlannedItem]]?
-        cur_page: String
-        cur_name: String
-        cur_pure: bool
+        var cur_input: ref[Vector[PlannedItem]]?
+        var cur_page: String
+        var cur_name: String
+        var cur_pure: bool
         ; the RBMM substrate (scaly/memory/): its globals are the allocator's
         ; own state and are not propagated to every function that allocates
-        cur_substrate: bool
-        body_mask: u64
-        body_direct: bool
-        reporting: bool
-        current_file: String
-        loc_names: Array[String]
-        loc_masks: Array[u64]
+        var cur_substrate: bool
+        var body_mask: u64
+        var body_direct: bool
+        var reporting: bool
+        var current_file: String
+        var loc_names: Array[String]
+        var loc_masks: Array[u64]
 
-        n_bodies: size_t
-        n_pure: size_t
-        n_pure_writing: size_t
-        n_pure_direct: size_t
-        n_proc: size_t
-        n_proc_writing: size_t
-        n_unfiled: size_t
-        n_misaligned: size_t
-        n_rounds: size_t
-        n_sites: size_t
+        var n_bodies: size_t
+        var n_pure: size_t
+        var n_pure_writing: size_t
+        var n_pure_direct: size_t
+        var n_proc: size_t
+        var n_proc_writing: size_t
+        var n_unfiled: size_t
+        var n_misaligned: size_t
+        var n_rounds: size_t
+        var n_sites: size_t
 
         ; summaries of other roots' bodies, by mangled name (open addressing)
-        summaries_path: String
+        var summaries_path: String
         sum_names: Array[String]
         sum_masks: Array[u64]
         sum_inputs: Array[size_t]
         ; the globals each summarised body writes, `a,b,?alias`
         sum_globals: Array[String]
         sum_slots: Vector[size_t]
-        n_stub_known: size_t
-        n_stub_unknown: size_t
+        var n_stub_known: size_t
+        var n_stub_unknown: size_t
 
         ; the frozen mode
-        frozen_mode: bool
+        var frozen_mode: bool
         frozen_names: Array[String]
         entry_names: Array[String]
         reach: Array[u64]
         queue: Array[size_t]
-        edge_mode: bool
-        lock_depth: int
-        n_reachable: size_t
-        n_frozen_sites: size_t
-        n_locked_sites: size_t
+        var edge_mode: bool
+        var lock_depth: int
+        var n_reachable: size_t
+        var n_frozen_sites: size_t
+        var n_locked_sites: size_t
         ; PROVENANCE: a parameter is frozen when some reachable call passes a
         ; frozen value into it (the entries: by type); a function's result is
         ; fresh until one of its returns is frozen -- one fixpoint over both
         param_frozen: Array[u64]
         returns_fresh: Array[u64]
-        frozen_pass: bool
-        fz_changed: bool
-        cur_fn: size_t
-        n_fz_rounds: size_t
+        var frozen_pass: bool
+        var fz_changed: bool
+        var cur_fn: size_t
+        var n_fz_rounds: size_t
         ; the check mode (--purity-check)
         check_mode: bool
-        cur_page_mask: u64
+        var cur_page_mask: u64
         ; what the body walked may write besides: an annotated procedure's
         ; `mutable` parameters and the globals
-        cur_allowed: u64
+        var cur_allowed: u64
         ; the check as the compiler's own gate: an `error:` per violating
         ; body and a `note:` per write it did not declare (cli.scaly)
         diagnostics: bool
-        n_violations: size_t
+        var n_violations: size_t
         ; WHICH globals a body writes, transitively: a name table per root
         ; and WC_GW words per plan.functions index (id WC_GW * 64 - 1 is the
         ; global this pass cannot name: an alias, another root's body)
@@ -144,26 +154,26 @@ define WriteCensus
         cur_g: Array[u64]
         g_changed: bool
         ; the global a local aliases ("" none), beside loc_names
-        loc_globals: Array[String]
+        var loc_globals: Array[String]
         ; the global the next hit writes through, named by its caller
-        pending_global: String
+        var pending_global: String
         ; the runtime's own state (scaly/memory, fiber, os, cluster): ambient
         ambient_names: Array[String]
         ; check mode: the globals the walked body declares (`mutable g, h`)
-        cur_allowed_g: ref[Vector[String]]?
+        var cur_allowed_g: ref[Vector[String]]?
         ; `shared atomic` cells: written only through scaly_atomic_*
         atomic_names: Array[String]
-        in_atomic_op: bool
-        cur_atomic_bad: Array[String]
+        var in_atomic_op: bool
+        var cur_atomic_bad: Array[String]
         ; every global that can change (`mutable`, `shared`, `shared atomic`),
         ; and the ones the walked FUNCTION reads: a function reads none
         mutable_names: Array[String]
-        cur_reads: Array[String]
+        var cur_reads: Array[String]
         ; the read pre-pass of the check: per plan.functions index the first
         ; changeable global a body reads, itself or through a body it calls
         ; ("" none), and the call edges between bodies that carry it
-        read_pass: bool
-        read_index: size_t
+        var read_pass: bool
+        var read_index: size_t
         body_reads: Array[String]
         ; and how it reaches I/O ("" not at all): a procedure does not declare
         ; it, the check computes it like the reads
@@ -182,7 +192,7 @@ define WriteCensus
         ; per plan.functions index: the global a body RETURNS ("" none), so a
         ; getter's result is an alias of that global
         ret_globals: Array[String]
-        cur_ret_global: String
+        var cur_ret_global: String
     )
     {
         init()
@@ -192,6 +202,12 @@ define WriteCensus
             set report_texts: Array[String]^this()
             set pc: null
             set plan_functions: null
+            set plan_structures: null
+            set n_let_sites: 0
+            set let_offsets: Array[size_t]^this()
+            set let_texts: Array[String]^this()
+            set let_fns: Array[size_t]^this()
+            set cur_file_hint: String^this("")
             set masks: Array[u64]^this()
             set cur_input: null
             set cur_page: String^this("")
@@ -290,6 +306,7 @@ define WriteCensus
             set census.plan_structures: plan.structures
             census.index_functions()
             set plan_functions: plan.functions
+            set plan_structures: plan.structures
             if plan.functions = null
                 return
             if check_mode
@@ -326,6 +343,7 @@ define WriteCensus
                         let before masks[i]
                         ; a body without an Action never enters: no globals
                         this.clear_globals()
+                        set cur_fn: i
                         let after before | (this.walk_body((*f_ptr)) & (0 - (WC_FROZEN + (1 as u64))))
                         if after <> before
                         {
@@ -352,7 +370,10 @@ define WriteCensus
             {
                 let f_ptr fns.get i
                 if f_ptr <> null
+                {
+                    set cur_fn: i
                     this.report_body((*f_ptr), masks[i])
+                }
                 set i: i + 1
             }
             this.report_globals()
@@ -398,6 +419,7 @@ define WriteCensus
             if func.page_parameter <> null
                 set cur_page: String^this((*func.page_parameter))
             set cur_name: String^this(func.name)
+            set cur_file_hint: String^this(func.file)
             set cur_pure: func.pure
             set cur_substrate: WriteCensus.in_substrate(func.file)
             set body_mask: 0
@@ -2829,6 +2851,7 @@ define WriteCensus
                 if f_ptr <> null
                 {
                     set read_index: i
+                    set cur_fn: i
                     this.walk_body(f_ptr.unwrap())
                 }
                 set i: i + 1
@@ -3971,6 +3994,183 @@ define WriteCensus
         }
 
         ; The store side of a `set`: the target head decides the class.
+        ; ====================================================================
+        ; R2 (2026-09-20, measured first, armed later): a PROPERTY IS `let`
+        ; UNLESS IT SAYS `var`. A `let` field may be written in its record's
+        ; `init` and while the object is still the constructing frame's own --
+        ; not yet published to anyone else -- and nowhere else. The three
+        ; things a member store can be written through, and the verdict:
+        ;   * `this` inside `init`               building the object: allowed
+        ;   * a local whose mask is EMPTY        a construction of this frame,
+        ;                                        reaching no parameter, global
+        ;                                        or frozen value: allowed
+        ;   * a parameter, a global, a value     published: a `w-let` site
+        ;     loaded through a reference hop
+        ; The hop test is the same reference-shape test the frozen mode uses:
+        ; an intermediate hop of reference shape LOADS another object, one of
+        ; value shape stays inside the base object (a payload by value).
+        ;
+        ; ★This is the measurement half. It records `w-let` lines and a count
+        ; in the head line; the gate (a hard diagnostic in check mode) comes
+        ; only once the tree carries its `var` marks, derived from this report
+        ; by tools/purify/mark_var.py -- the two-phase discipline every rule
+        ; here has followed.
+        ; ====================================================================
+        procedure note_let_store(mutable this: WriteCensus, head: PlannedOperand, base_mask: u64)
+        {
+            ; phase 1 is a MEASUREMENT: the report lists the sites, the check
+            ; mode (the gate every compile runs) says nothing yet -- its output
+            ; is also what tests/write-report asserts the absence of lines in
+            if check_mode
+                return
+            ; and the frozen report answers a different question (writes into
+            ; data shared after a phase, from the entries): its lines are
+            ; asserted by name in tests/write-report, a let-site there is noise
+            if frozen_mode
+                return
+            if head.member_access = null
+                return
+            let hops (*head.member_access)
+            if hops.length = 0
+                return
+            let last_ptr hops.get(hops.length - 1)
+            if last_ptr = null
+                return
+            let last (*last_ptr)
+            if last.is_method
+                return
+            if this.field_is_var(last)
+                return
+            ; building the object in its own init
+            if cur_name = "init"
+                if (base_mask & (1 as u64)) <> (0 as u64)
+                    return
+            var published false
+            if (base_mask & (WC_GLOBAL | WC_FROZEN | WC_OVERFLOW)) <> (0 as u64)
+                set published: true
+            if (base_mask & (WC_GLOBAL - (1 as u64)) & (0 - (WC_FROZEN + (1 as u64))) & (0 - (WC_OVERFLOW + (1 as u64)))) <> (0 as u64)
+                set published: true
+            ; an intermediate hop of reference shape loads another object
+            var i: size_t 0
+            while i + 1 < hops.length
+            {
+                let hp hops.get i
+                if hp <> null
+                    if WriteCensus.is_reference_name((*hp).result_type.name)
+                        set published: true
+                set i: i + 1
+            }
+            if published = false
+                return
+            ; the census walks a body once per ROUND: one site, one line
+            if this.let_site_seen(head.loc.start)
+                return
+            let_offsets.add(head.loc.start)
+            set n_let_sites: n_let_sites + 1
+            var sb StringBuilder()
+            sb.append "w-let "
+            sb.append cur_name
+            sb.append " writes "
+            sb.append last.parent_type.name
+            sb.append "."
+            sb.append last.name
+            sb.append " through "
+            sb.append(this.mask_names(base_mask))
+            if getenv("SCALYC_LET_PROBE") <> null
+            {
+                sb.append " [fn "
+                sb.append(cur_fn as int)
+                sb.append "]"
+            }
+            let text sb.to_string()
+            ; recorded at once, under the body's own file: the report's file
+            ; resolution runs only for the summary lines, and a walk that
+            ; fires first would otherwise file the site under the wrong body
+            let saved_file String^this(current_file)
+            set current_file: String^this(cur_file_hint)
+            this.record(head.loc.start, String^this(text))
+            set current_file: saved_file
+        }
+
+        ; The let-sites of one body, emitted where its file is known.
+        procedure flush_let_sites(mutable this: WriteCensus, fn: size_t)
+        {
+            var i: size_t 0
+            while i < let_fns.length
+            {
+                if let_fns[i] = fn
+                {
+                    let t let_texts.get i
+                    if t <> null
+                        this.record(let_offsets[i], (*t))
+                }
+                set i: i + 1
+            }
+        }
+
+        ; Does the written field carry `var`? Its declaration is the property
+        ; of the hop's parent record in the plan, found by mangled name and
+        ; field index (by name where the index does not line up).
+        function field_is_var(this: WriteCensus, hop: PlannedMemberAccess) returns bool
+        {
+            if plan_structures = null
+                return false
+            let structs plan_structures
+            var i: size_t 0
+            while i < structs.length
+            {
+                let sp structs.get i
+                if sp <> null
+                    if sp.mangled_name = hop.parent_type.mangled_name
+                    {
+                        if sp.properties = null
+                            return false
+                        let props sp.properties
+                        var j: size_t 0
+                        while j < props.length
+                        {
+                            let pp props.get j
+                            if pp <> null
+                                if pp.name = hop.name
+                                    return WriteCensus.attributes_have_var(pp.attributes)
+                            set j: j + 1
+                        }
+                        return false
+                    }
+                set i: i + 1
+            }
+            false
+        }
+
+        function let_site_seen(this: WriteCensus, offset: size_t) returns bool
+        {
+            var i: size_t 0
+            while i < let_offsets.length
+            {
+                if let_offsets[i] = offset
+                    return true
+                set i: i + 1
+            }
+            false
+        }
+
+        function attributes_have_var(attrs: ref[Vector[PlannedAttribute]]?) returns bool
+        {
+            if attrs = null
+                return false
+            let a attrs
+            var i: size_t 0
+            while i < a.length
+            {
+                let ap a.get i
+                if ap <> null
+                    if ap.name = "var"
+                        return true
+                set i: i + 1
+            }
+            false
+        }
+
         procedure find_action(mutable this: WriteCensus, act: PlannedAction)
         {
             this.find_operands(act.source)
@@ -3994,6 +4194,7 @@ define WriteCensus
                                 ; the call's own result is the record written;
                                 ; its arguments only lend their parameters
                                 let base_mask this.mask_of_operands(c.args) & (0 - (WC_FROZEN + (1 as u64)))
+                                this.note_let_store(head, base_mask)
                                 this.hit(head.loc.start, String("w-field"), base_mask | this.hops_frozen(head), String(""))
                             }
                             else
@@ -4010,6 +4211,7 @@ define WriteCensus
                             if has_members
                             {
                                 set pending_global: this.global_root_m(head)
+                                this.note_let_store(head, this.name_mask(v.name))
                                 this.hit(head.loc.start, String("w-field"), this.name_mask(v.name) | this.hops_frozen(head), String(""))
                             }
                         }
@@ -4023,7 +4225,10 @@ define WriteCensus
                         else
                         {
                             if has_members
+                            {
+                                this.note_let_store(head, this.mask_of(head))
                                 this.hit(head.loc.start, String("w-field"), this.mask_of(head) | this.hops_frozen(head), String(""))
+                            }
                         }
                 }
             }

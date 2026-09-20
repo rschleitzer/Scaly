@@ -44,9 +44,9 @@ define NS_CAP int 32768
 ; token type to colour the name (1 type / 2 function), and a `used` flag.
 define NameSlot
 (
-    name:     Slice[u8]
-    kind:     i64
-    used:     bool
+    var name:     Slice[u8]
+    var kind:     i64
+    var used:     bool
 )
 
 define nameset

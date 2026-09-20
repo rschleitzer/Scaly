@@ -92,7 +92,7 @@ define GpuTape
 (
     tape: Tape
     loss: int
-    use_msl: int
+    var use_msl: int
     nnodes: int
     nparam: int
     base: int

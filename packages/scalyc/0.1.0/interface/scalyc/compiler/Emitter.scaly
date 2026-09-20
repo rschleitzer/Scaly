@@ -149,33 +149,33 @@ define Emitter
     @resident true (
         config: EmitterConfig
         ; LLVM handles
-        context: LLVMContextRef
+        var context: LLVMContextRef
         ; JIT mode: when has_external_context is true, initialize() adopts
         ; external_context (the LLVMContext owned by an ORC ThreadSafeContext)
         ; instead of creating its own, so the emitted module can be wrapped into a
         ; ThreadSafeModule without crashing addIRModule. Off for the normal
         ; -S/-c/-o path (byte-identical emission preserved).
-        external_context: LLVMContextRef
-        has_external_context: bool
+        var external_context: LLVMContextRef
+        var has_external_context: bool
         ; Stage 7: does the emission triple use COFF? Decided once in
         ; apply_target_layout, read by set_linkonce_odr. It is a property of the
         ; OBJECT FORMAT, not of the host — a cross-emit for Windows from a Mac
         ; must set it and a native Mac build must not.
-        target_is_coff: bool
-        llvm_module: LLVMModuleRef
-        builder: LLVMBuilderRef
+        var target_is_coff: bool
+        var llvm_module: LLVMModuleRef
+        var builder: LLVMBuilderRef
         ; Debug info (DWARF) — populated only when config.emit_debug_info.
         ; source_text/source_file feed byte-offset -> (line,col) conversion;
         ; di_builder/di_file/di_cu are the compile-unit handles; current_di_scope
         ; is the DISubprogram of the function currently being emitted.
-        di_builder: LLVMDIBuilderRef
-        di_file: LLVMMetadataRef
-        di_cu: LLVMMetadataRef
-        current_di_scope: LLVMMetadataRef
-        source_text: String
-        source_file: String
+        var di_builder: LLVMDIBuilderRef
+        var di_file: LLVMMetadataRef
+        var di_cu: LLVMMetadataRef
+        var current_di_scope: LLVMMetadataRef
+        var source_text: String
+        var source_file: String
         ; Current plan being emitted
-        current_plan: ref[Plan]?
+        var current_plan: ref[Plan]?
         ; Type cache: name -> LLVM type (using parallel vectors)
         type_cache_names: ref[Array[String]]?
         type_cache_types: ref[Array[LLVMTypeRef]]?
@@ -226,9 +226,9 @@ define Emitter
         intrinsic_type_names: ref[Array[String]]?
         intrinsic_types: ref[Array[IntrinsicTypeInfo]]?
         ; Current function state
-        current_function: LLVMValueRef
+        var current_function: LLVMValueRef
         current_block: LLVMBasicBlockRef
-        current_function_can_throw: bool
+        var current_function_can_throw: bool
         ; s196: the current function's local root page for transient #/$/for
         ; allocations in a non-rp function. Mirrors stage-0's
         ; CurrentRegion.LocalPage but kept SEPARATE from current_region.local_page
@@ -244,18 +244,18 @@ define Emitter
         ; region unopened. See get_local_frame here and the ordering proof at
         ; scaly_force_frame (root_pages.scaly).
         ;
-        ; function_local_frame: the record's alloca, created on first demand.
+        ; var function_local_frame: the record's alloca, created on first demand.
         ; function_local_page / _block: the FORCED page cached for ONE basic
         ;   block, so several allocations in one block share a single call.
         function_local_frame: LLVMValueRef
-        function_local_page: LLVMValueRef
-        function_local_page_block: LLVMBasicBlockRef
+        var function_local_page: LLVMValueRef
+        var function_local_page_block: LLVMBasicBlockRef
         ; The `store null` that initialises the page word.
-        function_local_page_init: LLVMValueRef
+        var function_local_page_init: LLVMValueRef
         ; The `store <incoming frame>` into the parent word. elide_unused_pages
         ; must not count it as a use of the caller-page parameter — see
         ; page_param_is_unused.
-        function_local_frame_parent_store: LLVMValueRef
+        var function_local_frame_parent_store: LLVMValueRef
         ; The incoming caller frame this function chains its own onto, bound where
         ; the page parameter is bound. Deliberately NOT a lookup_variable("_rp")
         ; at frame-creation time: the outlined parfor task function still sees the
@@ -264,7 +264,7 @@ define Emitter
         ; value from another function and cross an allocator boundary. It stays
         ; null there, which roots the task's chain — exactly what a fresh thread
         ; needs (the same reason Fiber.create takes an explicit host page).
-        current_frame_parent: LLVMValueRef
+        var current_frame_parent: LLVMValueRef
         ; TCO (2026-08-04): self-tail-call → loop. Set per function by
         ; emit_function_body when the body contains at least one `return f(…)`
         ; inside f whose shape the transform accepts (tail_loop_eligible), and
@@ -284,7 +284,7 @@ define Emitter
         ; is a `while` loop, and a `while` loop allocates into its enclosing
         ; region today); it buys a bounded STACK, which is what the recursion
         ; needed.
-        tail_loop_block: LLVMBasicBlockRef
+        var tail_loop_block: LLVMBasicBlockRef
         tail_loop_phis: ref[Array[LLVMValueRef]]?
         ; Per by-value-struct parameter (null handle for the others): a DEDICATED
         ; entry alloca the back edge copies the next iteration's value into, plus a
@@ -298,7 +298,7 @@ define Emitter
         ; The mangled name a `return`ed call must carry to be a self call, and
         ; how many user arguments it must have. Kept beside the phis so
         ; emit_return can test a candidate without reaching for the Plan.
-        tail_loop_mangled: String
+        var tail_loop_mangled: String
         ; Local variables: name -> LLVM value. Flat tables; per-scope
         ; visibility maintained by scope_marks below.
         local_var_names: ref[Array[String]]?
@@ -329,9 +329,9 @@ define Emitter
         temp_pool_types: ref[Array[LLVMTypeRef]]?
         temp_pool_slots: ref[Array[LLVMValueRef]]?
         temp_pool_free: ref[Array[size_t]]?
-        temp_pool_start: size_t
+        var temp_pool_start: size_t
         temp_stmt_log: ref[Array[size_t]]?
-        temp_stmt_log_start: size_t
+        var temp_stmt_log_start: size_t
         ; s178: base allocas of values the emitter holds across scope
         ; exits (choose/if arm results before their merge PHI exists,
         ; the choose scrutinee + union slot while arms are emitted).
@@ -359,7 +359,7 @@ define Emitter
         ; source file of the function currently being emitted — the
         ; classifier's foundation-containment rule keys on it.
         parfor_checker: TaskPlanner
-        parfor_file: String
+        var parfor_file: String
         ; Stage 7.2: symbols of region swizzle walkers already generated in
         ; this module. The registry (not a body-count query) also breaks
         ; type-level recursion: a walker's shell registers BEFORE its body
@@ -370,7 +370,7 @@ define Emitter
         ; Lets resolve_reference_page lower `^field` (a `^host` sigil naming a
         ; pointer[Page] FIELD of the receiver, as in opensp's Parser) by loading
         ; this.<field>. scaly/scalyc never use `^field`, so this stays neutral.
-        current_receiver_concept: String
+        var current_receiver_concept: String
     )
     {
         init(cfg: EmitterConfig) linked

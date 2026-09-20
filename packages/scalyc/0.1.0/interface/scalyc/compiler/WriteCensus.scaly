@@ -64,78 +64,88 @@ define WriteCensus
         report_offsets: Array[size_t]
         report_texts: Array[String]
 
-        pc: ref[PointerCensus]?
-        plan_functions: ref[Vector[PlannedFunction]]?
+        var pc: ref[PointerCensus]?
+        var plan_functions: ref[Vector[PlannedFunction]]?
+        ; the plan's records, for a written FIELD's declaration (R2: `var`)
+        var plan_structures: ref[Vector[PlannedStructure]]?
+        ; R2: stores into a `let` field of an object that is already published
+        var n_let_sites: size_t
+        let_offsets: Array[size_t]
+        let_texts: Array[String]
+        let_fns: Array[size_t]
+        ; the file of the body being walked, for a let-site's line (a body's
+        ; file is resolved for the report only; the walk knows func.file)
+        var cur_file_hint: String
         ; per plan.functions index: the parameters the body writes through
         masks: Array[u64]
 
         ; the body walked: its input, its caller-page name, its summary so far
-        cur_input: ref[Vector[PlannedItem]]?
-        cur_page: String
-        cur_name: String
-        cur_pure: bool
+        var cur_input: ref[Vector[PlannedItem]]?
+        var cur_page: String
+        var cur_name: String
+        var cur_pure: bool
         ; the RBMM substrate (scaly/memory/): its globals are the allocator's
         ; own state and are not propagated to every function that allocates
-        cur_substrate: bool
-        body_mask: u64
-        body_direct: bool
-        reporting: bool
-        current_file: String
-        loc_names: Array[String]
-        loc_masks: Array[u64]
+        var cur_substrate: bool
+        var body_mask: u64
+        var body_direct: bool
+        var reporting: bool
+        var current_file: String
+        var loc_names: Array[String]
+        var loc_masks: Array[u64]
 
-        n_bodies: size_t
-        n_pure: size_t
-        n_pure_writing: size_t
-        n_pure_direct: size_t
-        n_proc: size_t
-        n_proc_writing: size_t
-        n_unfiled: size_t
-        n_misaligned: size_t
-        n_rounds: size_t
-        n_sites: size_t
+        var n_bodies: size_t
+        var n_pure: size_t
+        var n_pure_writing: size_t
+        var n_pure_direct: size_t
+        var n_proc: size_t
+        var n_proc_writing: size_t
+        var n_unfiled: size_t
+        var n_misaligned: size_t
+        var n_rounds: size_t
+        var n_sites: size_t
 
         ; summaries of other roots' bodies, by mangled name (open addressing)
-        summaries_path: String
+        var summaries_path: String
         sum_names: Array[String]
         sum_masks: Array[u64]
         sum_inputs: Array[size_t]
         ; the globals each summarised body writes, `a,b,?alias`
         sum_globals: Array[String]
         sum_slots: Vector[size_t]
-        n_stub_known: size_t
-        n_stub_unknown: size_t
+        var n_stub_known: size_t
+        var n_stub_unknown: size_t
 
         ; the frozen mode
-        frozen_mode: bool
+        var frozen_mode: bool
         frozen_names: Array[String]
         entry_names: Array[String]
         reach: Array[u64]
         queue: Array[size_t]
-        edge_mode: bool
-        lock_depth: int
-        n_reachable: size_t
-        n_frozen_sites: size_t
-        n_locked_sites: size_t
+        var edge_mode: bool
+        var lock_depth: int
+        var n_reachable: size_t
+        var n_frozen_sites: size_t
+        var n_locked_sites: size_t
         ; PROVENANCE: a parameter is frozen when some reachable call passes a
         ; frozen value into it (the entries: by type); a function's result is
         ; fresh until one of its returns is frozen -- one fixpoint over both
         param_frozen: Array[u64]
         returns_fresh: Array[u64]
-        frozen_pass: bool
-        fz_changed: bool
-        cur_fn: size_t
-        n_fz_rounds: size_t
+        var frozen_pass: bool
+        var fz_changed: bool
+        var cur_fn: size_t
+        var n_fz_rounds: size_t
         ; the check mode (--purity-check)
         check_mode: bool
-        cur_page_mask: u64
+        var cur_page_mask: u64
         ; what the body walked may write besides: an annotated procedure's
         ; `mutable` parameters and the globals
-        cur_allowed: u64
+        var cur_allowed: u64
         ; the check as the compiler's own gate: an `error:` per violating
         ; body and a `note:` per write it did not declare (cli.scaly)
         diagnostics: bool
-        n_violations: size_t
+        var n_violations: size_t
         ; WHICH globals a body writes, transitively: a name table per root
         ; and WC_GW words per plan.functions index (id WC_GW * 64 - 1 is the
         ; global this pass cannot name: an alias, another root's body)
@@ -144,26 +154,26 @@ define WriteCensus
         cur_g: Array[u64]
         g_changed: bool
         ; the global a local aliases ("" none), beside loc_names
-        loc_globals: Array[String]
+        var loc_globals: Array[String]
         ; the global the next hit writes through, named by its caller
-        pending_global: String
+        var pending_global: String
         ; the runtime's own state (scaly/memory, fiber, os, cluster): ambient
         ambient_names: Array[String]
         ; check mode: the globals the walked body declares (`mutable g, h`)
-        cur_allowed_g: ref[Vector[String]]?
+        var cur_allowed_g: ref[Vector[String]]?
         ; `shared atomic` cells: written only through scaly_atomic_*
         atomic_names: Array[String]
-        in_atomic_op: bool
-        cur_atomic_bad: Array[String]
+        var in_atomic_op: bool
+        var cur_atomic_bad: Array[String]
         ; every global that can change (`mutable`, `shared`, `shared atomic`),
         ; and the ones the walked FUNCTION reads: a function reads none
         mutable_names: Array[String]
-        cur_reads: Array[String]
+        var cur_reads: Array[String]
         ; the read pre-pass of the check: per plan.functions index the first
         ; changeable global a body reads, itself or through a body it calls
         ; ("" none), and the call edges between bodies that carry it
-        read_pass: bool
-        read_index: size_t
+        var read_pass: bool
+        var read_index: size_t
         body_reads: Array[String]
         ; and how it reaches I/O ("" not at all): a procedure does not declare
         ; it, the check computes it like the reads
@@ -182,10 +192,16 @@ define WriteCensus
         ; per plan.functions index: the global a body RETURNS ("" none), so a
         ; getter's result is an alias of that global
         ret_globals: Array[String]
-        cur_ret_global: String
+        var cur_ret_global: String
     )
     {
         init() linked
+
+
+
+
+
+
 
 
 
@@ -358,6 +374,11 @@ define WriteCensus
 
 
 
+
+
+
+
+
         function total(this: WriteCensus) returns size_t linked
 
 
@@ -373,7 +394,7 @@ define WriteCensus
 
 
         ; The summary of one body under the callee summaries known so far.
-        procedure walk_body(mutable this: WriteCensus, func: PlannedFunction) returns u64 linked
+        procedure walk_body(mutable this: WriteCensus, func: PlannedFunction) returns u64 io linked
 
 
 
@@ -392,6 +413,7 @@ define WriteCensus
 
 
         procedure enter_body(mutable this: WriteCensus, func: PlannedFunction) linked
+
 
 
 
@@ -630,7 +652,7 @@ define WriteCensus
 
 
         ; one walk of every body to learn which bodies return a global
-        procedure learn_returned_globals(mutable this: WriteCensus) linked
+        procedure learn_returned_globals(mutable this: WriteCensus) io linked
 
 
 
@@ -2802,7 +2824,8 @@ define WriteCensus
         ; through the bodies it calls (a fixpoint over the call edges). A stub
         ; of another package is not followed -- the generated interface files
         ; will carry what it reads.
-        procedure learn_reads(mutable this: WriteCensus, fns: ref[Vector[PlannedFunction]]) linked
+        procedure learn_reads(mutable this: WriteCensus, fns: ref[Vector[PlannedFunction]]) io linked
+
 
 
 
@@ -3947,7 +3970,7 @@ define WriteCensus
         ; Bodies: the TaskPlanner's closed arm list, as the pointer census.
         ; ================================================================
 
-        procedure find_operands(mutable this: WriteCensus, ops: ref[Vector[PlannedOperand]]?) linked
+        procedure find_operands(mutable this: WriteCensus, ops: ref[Vector[PlannedOperand]]?) io linked
 
 
 
@@ -3961,7 +3984,7 @@ define WriteCensus
 
 
 
-        procedure find_statement_ref(mutable this: WriteCensus, stmt: ref[PlannedStatement]?) linked
+        procedure find_statement_ref(mutable this: WriteCensus, stmt: ref[PlannedStatement]?) io linked
 
 
 
@@ -3971,7 +3994,29 @@ define WriteCensus
 
 
         ; The store side of a `set`: the target head decides the class.
-        procedure find_action(mutable this: WriteCensus, act: PlannedAction) linked
+        ; ====================================================================
+        ; R2 (2026-09-20, measured first, armed later): a PROPERTY IS `let`
+        ; UNLESS IT SAYS `var`. A `let` field may be written in its record's
+        ; `init` and while the object is still the constructing frame's own --
+        ; not yet published to anyone else -- and nowhere else. The three
+        ; things a member store can be written through, and the verdict:
+        ;   * `this` inside `init`               building the object: allowed
+        ;   * a local whose mask is EMPTY        a construction of this frame,
+        ;                                        reaching no parameter, global
+        ;                                        or frozen value: allowed
+        ;   * a parameter, a global, a value     published: a `w-let` site
+        ;     loaded through a reference hop
+        ; The hop test is the same reference-shape test the frozen mode uses:
+        ; an intermediate hop of reference shape LOADS another object, one of
+        ; value shape stays inside the base object (a payload by value).
+        ;
+        ; ★This is the measurement half. It records `w-let` lines and a count
+        ; in the head line; the gate (a hard diagnostic in check mode) comes
+        ; only once the tree carries its `var` marks, derived from this report
+        ; by tools/purify/mark_var.py -- the two-phase discipline every rule
+        ; here has followed.
+        ; ====================================================================
+        procedure note_let_store(mutable this: WriteCensus, head: PlannedOperand, base_mask: u64) io linked
 
 
 
@@ -4030,7 +4075,167 @@ define WriteCensus
 
 
 
-        procedure find_statement(mutable this: WriteCensus, stmt: PlannedStatement) linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; The let-sites of one body, emitted where its file is known.
+        procedure flush_let_sites(mutable this: WriteCensus, fn: size_t) linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; Does the written field carry `var`? Its declaration is the property
+        ; of the hop's parent record in the plan, found by mangled name and
+        ; field index (by name where the index does not line up).
+        function field_is_var(this: WriteCensus, hop: PlannedMemberAccess) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function let_site_seen(this: WriteCensus, offset: size_t) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+        function attributes_have_var(attrs: ref[Vector[PlannedAttribute]]?) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure find_action(mutable this: WriteCensus, act: PlannedAction) io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure find_statement(mutable this: WriteCensus, stmt: PlannedStatement) io linked
 
 
 
@@ -4054,7 +4259,7 @@ define WriteCensus
 
 
         ; A local inherits what its initializer reaches, unless it is a scalar.
-        procedure note_binding(mutable this: WriteCensus, binding: PlannedBinding) linked
+        procedure note_binding(mutable this: WriteCensus, binding: PlannedBinding) io linked
 
 
 
@@ -4099,7 +4304,7 @@ define WriteCensus
 
 
 
-        procedure find_operand(mutable this: WriteCensus, op: PlannedOperand) linked
+        procedure find_operand(mutable this: WriteCensus, op: PlannedOperand) io linked
 
 
 

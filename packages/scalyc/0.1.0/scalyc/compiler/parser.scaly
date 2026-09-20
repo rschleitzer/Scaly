@@ -4485,9 +4485,26 @@ define Parser
     {
         let start lexer.previous_position
 
+        let mutability_start lexer.position
+        var mutability: ref[MutabilitySyntax]? null
+        choose parse_mutability()
+            when err: Error
+            {
+                choose err
+                    when d: Different {}
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+            }
+            when success: Success
+                set mutability: MutabilitySyntax(success)
+
         let name lexer.parse_identifier(keywords)
         if name.length() = 0
-            throw ParserError.Different(DifferentSyntax())
+        {
+            if mutability = null
+                throw ParserError.Different(DifferentSyntax())
+            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected identifier"))
+        }
 
         let annotation_start lexer.position
         var annotation: TypeAnnotationSyntax
@@ -4535,7 +4552,7 @@ define Parser
 
         let end lexer.position
 
-        PropertySyntax(start, end, name, annotation, initializer, attributes)
+        PropertySyntax(start, end, mutability, name, annotation, initializer, attributes)
     }
 
     procedure parse_typeannotation(mutable this: Parser) returns TypeAnnotationSyntax throws ParserError
@@ -4562,6 +4579,55 @@ define Parser
         let end lexer.position
 
         TypeAnnotationSyntax(start, end, type)
+    }
+
+    procedure parse_mutability(mutable this: Parser) returns MutabilitySyntax throws ParserError
+    {
+        choose parse_immutable()
+            when err: Error
+            {
+                choose err
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+                    when d: Different {}
+            }
+            when node: Success
+                return MutabilitySyntax.Immutable(node)
+        choose parse_variable()
+            when err: Error
+            {
+                choose err
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+                    when d: Different {}
+            }
+            when node: Success
+                return MutabilitySyntax.Variable(node)
+        throw ParserError.Different(DifferentSyntax())
+    }
+
+    procedure parse_immutable(mutable this: Parser) returns ImmutableSyntax throws ParserError
+    {
+        let start lexer.previous_position
+
+        if ~lexer.parse_keyword("let")
+            throw ParserError.Different(DifferentSyntax())
+
+        let end lexer.position
+
+        ImmutableSyntax(start, end)
+    }
+
+    procedure parse_variable(mutable this: Parser) returns VariableSyntax throws ParserError
+    {
+        let start lexer.previous_position
+
+        if ~lexer.parse_keyword("var")
+            throw ParserError.Different(DifferentSyntax())
+
+        let end lexer.position
+
+        VariableSyntax(start, end)
     }
 
     procedure parse_continue(mutable this: Parser) returns ContinueSyntax throws ParserError

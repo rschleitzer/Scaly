@@ -306,13 +306,13 @@ define TapeNode
     c: int
     rows: int
     cols: int
-    heads: int
-    win: int
-    eps: float
-    value: Vector[float]
-    grad: Vector[float]
-    aux: Vector[float]
-    tok: Vector[i64]
+    var heads: int
+    var win: int
+    var eps: float
+    var value: Vector[float]
+    var grad: Vector[float]
+    var aux: Vector[float]
+    var tok: Vector[i64]
 )
 {
     init (kind: int, in_a: int, in_b: int, in_c: int, r: int, n: int) linked

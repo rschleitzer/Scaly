@@ -52,17 +52,17 @@ define TaskPlanner
         report_files: Array[String]
         report_offsets: Array[size_t]
         report_verdicts: Array[String]
-        loops_total: size_t
-        loops_parallel: size_t
+        var loops_total: size_t
+        var loops_parallel: size_t
 
         ; The plan's flat function/global vectors, for purity and
         ; mutable-global lookups by mangled name during classification.
-        plan_functions: ref[Vector[PlannedFunction]]?
-        plan_globals: ref[Vector[PlannedGlobal]]?
+        var plan_functions: ref[Vector[PlannedFunction]]?
+        var plan_globals: ref[Vector[PlannedGlobal]]?
 
         ; Source file of the function whose body is currently walked
         ; (PlannedFunction.file; the entry file for top-level statements).
-        current_file: String
+        var current_file: String
 
         ; Per-classification scratch, reset by classify_body. cls_locals
         ; holds names bound INSIDE the loop body (flat, never popped —
@@ -76,13 +76,13 @@ define TaskPlanner
         ; treated as loop-external (writes and mutating calls block;
         ; reads stay fine). Overrides cls_locals in is_local.
         cls_aliased: Array[String]
-        cls_blocked: bool
-        cls_reason: String
-        cls_loop_var: String
+        var cls_blocked: bool
+        var cls_reason: String
+        var cls_loop_var: String
         ; Nesting depth below the classified loop: a `break` at depth 0
         ; exits the classified loop itself (blocker); deeper breaks only
         ; exit an inner loop.
-        cls_depth: size_t
+        var cls_depth: size_t
 
         ; Transitive-purity memo: mangled name -> 1 (effect-free) / 0.
         ; pure_stack holds the names currently being walked (recursion
@@ -92,7 +92,7 @@ define TaskPlanner
         pure_memo_flags: Array[size_t]
         pure_stack: Array[String]
         ; Violation flag of the purity walk currently in flight.
-        pw_impure: bool
+        var pw_impure: bool
 
         ; Written-params analysis: mangled name -> bitmask over the
         ; callee's input positions (bit i set = the callee may WRITE
@@ -111,10 +111,10 @@ define TaskPlanner
         ; initializer/scrutinee can alias); wr_base marks the current
         ; callee's window — recursion into a sub-callee's walk saves and
         ; restores mask/base/length around itself.
-        wr_mask: size_t
+        var wr_mask: size_t
         wr_names: Array[String]
         wr_masks: Array[size_t]
-        wr_base: size_t
+        var wr_base: size_t
     )
     {
         init()

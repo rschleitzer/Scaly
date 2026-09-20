@@ -519,6 +519,7 @@
     <content link = Property                                property = property
 
 <syntax id = Property                     multiple
+    <content link = Mutability                     optional property = mutability
     <content identifier                                     property = name
     <content link = TypeAnnotation                          property = annotation
     <content link = Initializer                    optional property = initializer
@@ -529,6 +530,16 @@
 <syntax id = TypeAnnotation
     <content colon
     <content link = Type                                    property = type
+
+<syntax id = Mutability                            abstract
+    <content link = Immutable
+    <content link = Variable
+
+<syntax id = Immutable
+    <content link = let
+
+<syntax id = Variable
+    <content link = var
 
 <syntax id = Continue
     <content link = continue

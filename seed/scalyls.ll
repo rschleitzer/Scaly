@@ -557,9 +557,9 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z12ListIteratorI10ItemSyntaxE = type { ptr }
 %_Z18ParameterSetSyntax = type { i8, [72 x i8] }
 %_Z16ParametersSyntax = type { i64, i64, ptr }
-%_Z10PartSyntax = type { i8, [144 x i8] }
+%_Z10PartSyntax = type { i8, [152 x i8] }
 %_Z11FieldSyntax = type { i64, i64, %_Z14PropertySyntax }
-%_Z14PropertySyntax = type { i64, i64, { ptr }, %_Z20TypeAnnotationSyntax, ptr, ptr }
+%_Z14PropertySyntax = type { i64, i64, ptr, { ptr }, %_Z20TypeAnnotationSyntax, ptr, ptr }
 %_Z20TypeAnnotationSyntax = type { i64, i64, %_Z10TypeSyntax }
 %_Z6VectorI10PartSyntaxE = type { i64, ptr }
 %_Z14VectorIteratorI10PartSyntaxE = type { ptr, i64 }
@@ -78137,7 +78137,7 @@ choose.when:                                      ; preds = %entry
   %property = extractvalue %_Z11FieldSyntax %variant.val, 2
   %start = extractvalue %_Z14PropertySyntax %property, 0
   %call = call i64 @_ZN7symbols14name_offset_atE6Stringm(ptr %2, i64 %start)
-  %name = extractvalue %_Z14PropertySyntax %property, 2
+  %name = extractvalue %_Z14PropertySyntax %property, 3
   store { ptr } %name, ptr %arg.tmp, align 1
   %call1 = call i64 @_ZN6String10get_lengthEv(ptr %arg.tmp)
   %add = add i64 %call, %call1
@@ -78146,7 +78146,7 @@ choose.when:                                      ; preds = %entry
   br i1 %le, label %if.then, label %if.end
 
 if.then:                                          ; preds = %choose.when
-  %name3 = extractvalue %_Z14PropertySyntax %property, 2
+  %name3 = extractvalue %_Z14PropertySyntax %property, 3
   store { ptr } %name3, ptr %arg.tmp, align 1
   %call4 = call i1 @_ZN7symbols12range_equalsE6Stringm6Stringmm(ptr %2, i64 %call, ptr %arg.tmp, i64 0, i64 %call1)
   br i1 %call4, label %if.then5, label %if.end6
@@ -78169,7 +78169,7 @@ choose.when7:                                     ; preds = %entry
   %variant.val9 = load %_Z14PropertySyntax, ptr %"variant.c_data().ptr8", align 8
   %start10 = extractvalue %_Z14PropertySyntax %variant.val9, 0
   %call11 = call i64 @_ZN7symbols14name_offset_atE6Stringm(ptr %2, i64 %start10)
-  %name12 = extractvalue %_Z14PropertySyntax %variant.val9, 2
+  %name12 = extractvalue %_Z14PropertySyntax %variant.val9, 3
   store { ptr } %name12, ptr %sret.result, align 1
   %call13 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
   %add14 = add i64 %call11, %call13
@@ -78178,7 +78178,7 @@ choose.when7:                                     ; preds = %entry
   br i1 %le16, label %if.then17, label %if.end18
 
 if.then17:                                        ; preds = %choose.when7
-  %name19 = extractvalue %_Z14PropertySyntax %variant.val9, 2
+  %name19 = extractvalue %_Z14PropertySyntax %variant.val9, 3
   store { ptr } %name19, ptr %sret.result, align 1
   %call20 = call i1 @_ZN7symbols12range_equalsE6Stringm6Stringmm(ptr %2, i64 %call11, ptr %sret.result, i64 0, i64 %call13)
   br i1 %call20, label %if.then21, label %if.end22
@@ -82405,7 +82405,7 @@ choose.when:                                      ; preds = %entry
   %forced_page1 = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %property = extractvalue %_Z11FieldSyntax %variant.val, 2
-  %name = extractvalue %_Z14PropertySyntax %property, 2
+  %name = extractvalue %_Z14PropertySyntax %property, 3
   store { ptr } %name, ptr %arg.tmp, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region, ptr %arg.tmp)
   %sret.body = load { ptr }, ptr %struct.region, align 8
@@ -82417,7 +82417,7 @@ choose.when2:                                     ; preds = %entry
   %variant.val4 = load %_Z14PropertySyntax, ptr %"variant.c_data().ptr3", align 8
   %forced_page5 = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
   %struct.region6 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page5, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %name7 = extractvalue %_Z14PropertySyntax %variant.val4, 2
+  %name7 = extractvalue %_Z14PropertySyntax %variant.val4, 3
   store { ptr } %name7, ptr %arg.tmp, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region6, ptr %arg.tmp)
   %sret.body8 = load { ptr }, ptr %struct.region6, align 8
@@ -82447,7 +82447,7 @@ choose.when:                                      ; preds = %entry
   %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z10PartSyntax, ptr %3, i32 0, i32 1
   %variant.val = load %_Z11FieldSyntax, ptr %"variant.c_data().ptr", align 8
   %property = extractvalue %_Z11FieldSyntax %variant.val, 2
-  %annotation = extractvalue %_Z14PropertySyntax %property, 3
+  %annotation = extractvalue %_Z14PropertySyntax %property, 4
   %type = extractvalue %_Z20TypeAnnotationSyntax %annotation, 2
   store %_Z10TypeSyntax %type, ptr %arg.tmp, align 1
   call void @_ZN7symbols9type_textEPN4scaly6memory4PageE6String10TypeSyntax(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %arg.tmp)
@@ -82458,7 +82458,7 @@ choose.when:                                      ; preds = %entry
 choose.when1:                                     ; preds = %entry
   %"variant.c_data().ptr2" = getelementptr inbounds nuw %_Z10PartSyntax, ptr %3, i32 0, i32 1
   %variant.val3 = load %_Z14PropertySyntax, ptr %"variant.c_data().ptr2", align 8
-  %annotation4 = extractvalue %_Z14PropertySyntax %variant.val3, 3
+  %annotation4 = extractvalue %_Z14PropertySyntax %variant.val3, 4
   %type5 = extractvalue %_Z20TypeAnnotationSyntax %annotation4, 2
   store %_Z10TypeSyntax %type5, ptr %arg.tmp, align 1
   call void @_ZN7symbols9type_textEPN4scaly6memory4PageE6String10TypeSyntax(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %arg.tmp)
@@ -86522,14 +86522,14 @@ choose.when:                                      ; preds = %entry
   %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z10PartSyntax, ptr %3, i32 0, i32 1
   %variant.val = load %_Z11FieldSyntax, ptr %"variant.c_data().ptr", align 8
   %property = extractvalue %_Z11FieldSyntax %variant.val, 2
-  %name = extractvalue %_Z14PropertySyntax %property, 2
+  %name = extractvalue %_Z14PropertySyntax %property, 3
   store { ptr } %name, ptr %arg.tmp, align 1
   %call = call i1 @_ZN6String6equalsE6String(ptr %arg.tmp, ptr %4)
   br i1 %call, label %if.then, label %if.end
 
 if.then:                                          ; preds = %choose.when
   %property1 = extractvalue %_Z11FieldSyntax %variant.val, 2
-  %annotation = extractvalue %_Z14PropertySyntax %property1, 3
+  %annotation = extractvalue %_Z14PropertySyntax %property1, 4
   %type = extractvalue %_Z20TypeAnnotationSyntax %annotation, 2
   store %_Z10TypeSyntax %type, ptr %arg.tmp2, align 1
   call void @_ZN7symbols14type_base_nameEPN4scaly6memory4PageE10TypeSyntax(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %arg.tmp2)
@@ -86544,13 +86544,13 @@ if.end:                                           ; preds = %choose.when
 choose.when3:                                     ; preds = %entry
   %"variant.c_data().ptr4" = getelementptr inbounds nuw %_Z10PartSyntax, ptr %3, i32 0, i32 1
   %variant.val5 = load %_Z14PropertySyntax, ptr %"variant.c_data().ptr4", align 8
-  %name6 = extractvalue %_Z14PropertySyntax %variant.val5, 2
+  %name6 = extractvalue %_Z14PropertySyntax %variant.val5, 3
   store { ptr } %name6, ptr %sret.result, align 1
   %call7 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %4)
   br i1 %call7, label %if.then8, label %if.end9
 
 if.then8:                                         ; preds = %choose.when3
-  %annotation11 = extractvalue %_Z14PropertySyntax %variant.val5, 3
+  %annotation11 = extractvalue %_Z14PropertySyntax %variant.val5, 4
   %type12 = extractvalue %_Z20TypeAnnotationSyntax %annotation11, 2
   store %_Z10TypeSyntax %type12, ptr %arg.tmp2, align 1
   call void @_ZN7symbols14type_base_nameEPN4scaly6memory4PageE10TypeSyntax(ptr noalias sret({ ptr }) %sret.result10, ptr %1, ptr %arg.tmp2)
@@ -99074,11 +99074,11 @@ choose.when:                                      ; preds = %entry
   %forced_page1 = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   %property = extractvalue %_Z11FieldSyntax %variant.val, 2
-  %name = extractvalue %_Z14PropertySyntax %property, 2
+  %name = extractvalue %_Z14PropertySyntax %property, 3
   store { ptr } %name, ptr %arg.tmp, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region, ptr %arg.tmp)
   %property3 = extractvalue %_Z11FieldSyntax %variant.val, 2
-  %annotation = extractvalue %_Z14PropertySyntax %property3, 3
+  %annotation = extractvalue %_Z14PropertySyntax %property3, 4
   %type = extractvalue %_Z20TypeAnnotationSyntax %annotation, 2
   store %_Z10TypeSyntax %type, ptr %arg.tmp4, align 1
   call void @_ZN7symbols14type_base_nameEPN4scaly6memory4PageE10TypeSyntax(ptr noalias sret({ ptr }) %sret.result2, ptr %1, ptr %arg.tmp4)
@@ -99092,10 +99092,10 @@ choose.when5:                                     ; preds = %entry
   %variant.val7 = load %_Z14PropertySyntax, ptr %"variant.c_data().ptr6", align 8
   %forced_page8 = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
   %struct.region9 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page8, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %name10 = extractvalue %_Z14PropertySyntax %variant.val7, 2
+  %name10 = extractvalue %_Z14PropertySyntax %variant.val7, 3
   store { ptr } %name10, ptr %arg.tmp, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region9, ptr %arg.tmp)
-  %annotation11 = extractvalue %_Z14PropertySyntax %variant.val7, 3
+  %annotation11 = extractvalue %_Z14PropertySyntax %variant.val7, 4
   %type12 = extractvalue %_Z20TypeAnnotationSyntax %annotation11, 2
   store %_Z10TypeSyntax %type12, ptr %arg.tmp4, align 1
   call void @_ZN7symbols14type_base_nameEPN4scaly6memory4PageE10TypeSyntax(ptr noalias sret({ ptr }) %sret.result2, ptr %1, ptr %arg.tmp4)

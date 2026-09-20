@@ -101,7 +101,7 @@ define PlannedItem
     loc: Span
     is_private: bool
     name: ref[String]?
-    item_type: ref[PlannedType]?
+    var item_type: ref[PlannedType]?
     attributes: ref[Vector[PlannedAttribute]]?
 )
 
@@ -552,7 +552,7 @@ define PlannedFunction
 (
     loc: Span
     is_private: bool
-    pure: bool
+    var pure: bool
     name: String
     mangled_name: String
     page_parameter: ref[String]?
