@@ -1,49 +1,44 @@
-; A fault in one parallel chunk STOPS the running siblings (TRAPS.md 3.21).
+; A fault in one parallel chunk STOPS the running siblings (TRAPS.md 3.21),
+; and the chunks taken after it run no iteration at all.
 ;
-; The index comes from a TABLE, not from arithmetic, and that is the whole
-; design: `tab[k] = k` everywhere except `tab[TRIP] = n`, which is one past
-; the end. So the fault is raised by iteration TRIP — a fixed, tiny distance
-; into the FIRST chunk — while every other iteration of every other chunk is
-; in range and has millions of iterations to go. Those siblings must stop
-; where they stand: the wave's fault word is the cancel word, and the emitted
-; chunk loop polls it once per iteration (a MONOTONIC load; a plain one would
-; be hoisted out of the loop and read once).
+; The index comes from a TABLE, not from arithmetic: `tab[k] = k` everywhere
+; except `tab[TRIP] = n`, one past the end, so iteration TRIP raises the
+; fault a fixed, short distance into the FIRST chunk while every other
+; iteration is in range and has millions to go. The wave's fault word is the
+; cancel word; the emitted chunk loop polls it once per iteration (a
+; MONOTONIC load -- a plain one would be hoisted out and read once).
 ;
 ; The observable is the work itself: `acc` is prefilled with a sentinel, so
 ; the slots that differ are exactly the iterations that ran.
-; MEASURED, 24 runs on a four-core box (2026-09-20), `written` out of 4000000:
-;   545k, 790k, 879k … 1009k, 1017k, 1342k   -- 23 runs, clustered at ~950k
-;   3904594                                  -- 1 run, i.e. EVERYTHING
-; So the cancelled runs land near a QUARTER of the range and the gate sits at
-; a HALF: the worst honest run measured is at two thirds of the threshold.
-; ★`written` is a constant FRACTION of n, not a constant count — raising n to
-; 16M moved it to 3.58M of 16M (0.22 against 0.24). Scaling the fixture does
-; not widen the margin; it only makes it slower.
 ;
-; ★★★THE OUTLIER IS NOT NOISE AND MUST NOT BE TUNED AWAY. 3904594 of 4000000
-; is every chunk running whole: in that run the wave was not cancelled AT ALL.
-; No threshold can separate that from a pass without also accepting a broken
-; build, which is the whole point of the gate. ~1 run in 24 here; the rate on
-; other machines is unmeasured. TRAPS.md 3.22 carries it.
+; ★★★WHAT THE FIRST VERSION GOT WRONG, AND WHY THIS ONE REPEATS ITSELF
+; (2026-09-20, TRAPS.md 3.22). It assumed the fault chunk RUNS FIRST. It
+; need not: TaskPool.submit deals the chunks round-robin over the workers'
+; deques, a worker drains its OWN deque before it steals, and a worker the
+; OS does not schedule during the wave (four workers plus anything else on
+; four cores) leaves its deque for LAST. The fault chunk is the head of
+; deque 0 -- of the LAST deque to be drained when worker 0 is the starved
+; one. Measured with timestamps in the runtime: chunk 0 submitted at t=0,
+; taken by a THIEF at 27.6 ms after twelve chunks had run whole; the two
+; siblings still running stopped 20 us after record_fault, the chunk taken
+; afterwards wrote nothing. The cancel was perfect; the fixture had measured
+; the scheduler (~3 % of runs on an idle four-core box, far more under
+; load). No threshold can turn such a round into a verdict, so the fixture
+; does not try: it asks whether the round was INFORMATIVE and repeats the
+; wave when it was not.
 ;
-; ★★★WHY THE INDEX COMES FROM A TABLE (2026-09-20). With `src[i + n/2]` the
-; out-of-bounds half is the TAIL, so the survivors are the chunks a driver
-; hands out FIRST. Where there are fewer workers than chunks those survivors
-; hold every worker, the faulting chunks do not start until one frees up, and
-; by then the first half has run whole — the fixture read `FULL-HALF-RAN` in
-; 7 of 12 runs on a four-core box and fell in CI as well, while passing on
-; wider machines. **It was measuring the core count.** Moving the fault to
-; i == 0 fixes the order but breaks the test the other way: the wave never
-; gets to SUBMIT, the loop runs sequentially, and the gate passes vacuously
-; (measured: `caught cancelled` with no `submitted`, 8 of 8). TRIP is what
-; separates the two — far enough in that the wave is submitted and the
-; siblings are running, near enough that it is reached before any of them can
-; finish.
+; The verdict rule is algebraic, not statistical. A BROKEN cancel loses at
+; most the fault chunk's own tail, which is less than one chunk (< n/16 here,
+; less on wider machines); a cancelled wave that is informative lost at
+; least a few siblings. So `written <= n - n/8` -- two chunks' worth missing
+; -- is a state a broken build cannot reach, and the ONLY state that passes.
+; A round in which every sibling had already finished (the fault chunk ran
+; last) or in which the fork came after TRIP (the fault fired INLINE, nothing
+; was submitted) is inconclusive and is simply run again, up to ten times; a
+; round that catches nothing fails outright. The rounds taken go to stderr.
 ;
-; ★The vacuity guard is the POOL's submit counter, not the work count: a
-; promoted wave submits, a sequential loop does not (the same proof
-; parfor_fault_caught uses). Without it the head-fault version above looked
-; like a pass.
+; The vacuity guard is per round and is the POOL's submit counter, not the
+; work count: a promoted wave submits, an inline fault does not.
 ; Expected: caught submitted partial
 ; ExpectedExit: 0
 
@@ -68,37 +63,61 @@ var k 0 as size_t
 while k < n
 {
     src.put(k, (k as int))
-    acc.put(k, 0 - 1)
     tab.put(k, k)
     set k: k + 1
 }
 tab.put(trip, n)
 
-var caught false
-try fill(&acc, &src, &tab, n)
-else
-    set caught: true
-if caught
-    Console.print "caught "
-
 let pl TaskPool.default_pool()
-if TaskPool.submit_count(pl) > (0 as u64)
-    Console.print "submitted "
-
-var written: size_t 0
-var j 0 as size_t
-while j < n
+let bar n - n / (8 as size_t)       ; at most this many slots may have run
+var rounds 0
+var verdict 0                       ; 0 inconclusive, 1 proven, 2 not caught
+repeat
 {
-    if acc[j] <> (0 - 1)
-        set written: written + 1
-    set j: j + 1
-}
-if written = 0
-    Console.println "NOTHING-RAN"
-else
-{
-    if written < n / (2 as size_t)
-        Console.println "partial"
+    var j 0 as size_t
+    while j < n
+    {
+        acc.put(j, 0 - 1)
+        set j: j + 1
+    }
+    let subs_before TaskPool.submit_count(pl)
+    var caught false
+    try fill(&acc, &src, &tab, n)
     else
-        Console.println "FULL-RUN"
+        set caught: true
+    let subs_after TaskPool.submit_count(pl)
+    let submitted subs_after > subs_before
+    var written: size_t 0
+    set j: 0
+    while j < n
+    {
+        if acc[j] <> (0 - 1)
+            set written: written + 1
+        set j: j + 1
+    }
+    set rounds: rounds + 1
+    if not caught
+    {
+        set verdict: 2
+        break
+    }
+    if submitted
+    {
+        if written <= bar
+        {
+            set verdict: 1
+            break
+        }
+    }
+    if rounds >= 10
+        break
 }
+scaly_eputs("rounds=")
+scaly_eputi(rounds)
+scaly_eputnl()
+if verdict = 1
+    Console.println "caught submitted partial"
+if verdict = 0
+    Console.println "INCONCLUSIVE"
+if verdict = 2
+    Console.println "NOT-CAUGHT"
