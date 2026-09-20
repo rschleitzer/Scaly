@@ -73,6 +73,11 @@ define WriteCensus
         let_offsets: Array[size_t]
         let_texts: Array[String]
         let_fns: Array[size_t]
+        ; check mode (phase 2): this body's stores into a `let` field of a
+        ; published object -- reported after the walk, one error per body and
+        ; a note per site, the way the parameter and global rules report
+        var cur_let_bad: Array[String]
+        var cur_let_offsets: Array[size_t]
         ; the file of the body being walked, for a let-site's line (a body's
         ; file is resolved for the report only; the walk knows func.file)
         var cur_file_hint: String
@@ -196,6 +201,8 @@ define WriteCensus
     )
     {
         init() linked
+
+
 
 
 
@@ -3362,6 +3369,51 @@ define WriteCensus
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         ; ================================================================
         ; Summaries across roots: `<mangled>\t<mask>\t<inputs>` per line.
         ; A root reads what the roots before it wrote and appends its own
@@ -4092,6 +4144,18 @@ define WriteCensus
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
         ; The let-sites of one body, emitted where its file is known.
         procedure flush_let_sites(mutable this: WriteCensus, fn: size_t) linked
 
@@ -4111,7 +4175,8 @@ define WriteCensus
         ; Does the written field carry `var`? Its declaration is the property
         ; of the hop's parent record in the plan, found by mangled name and
         ; field index (by name where the index does not line up).
-        function field_is_var(this: WriteCensus, hop: PlannedMemberAccess) returns bool linked
+        ; (a procedure while it carries the SCALYC_LET_PROBE print: a function performs no I/O)
+        procedure field_is_var(this: WriteCensus, hop: PlannedMemberAccess) returns bool io linked
 
 
 
@@ -4131,6 +4196,106 @@ define WriteCensus
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function let_bad_seen(this: WriteCensus, offset: size_t) returns bool linked
 
 
 

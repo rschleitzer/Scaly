@@ -1,7 +1,7 @@
 ; tests/write-report/frozen.scaly — the FROZEN mode of `scalyc --write-report`
 ; (SCALYC_WRITE_FROZEN=TreeNode,Sym SCALYC_WRITE_ENTRY=Checker.check,Checker.check_fresh):
 ; writes that reach frozen data from the entries, by provenance, not by type.
-define TreeNode (flags: int  kids: Array[int])
+define TreeNode (var flags: int  kids: Array[int])
 {
     init()
     {
@@ -10,7 +10,7 @@ define TreeNode (flags: int  kids: Array[int])
     }
 }
 
-define Sym (id: int  decls: Array[int])
+define Sym (var id: int  decls: Array[int])
 {
     init()
     {
@@ -33,7 +33,7 @@ procedure set_flags_of(t: ref[TreeNode], f: int)
     set t.flags: f
 }
 
-define Checker (count: int  seen: Array[int]  root: ref[TreeNode]?)
+define Checker (var count: int  seen: Array[int]  root: ref[TreeNode]?)
 {
     init()
     {

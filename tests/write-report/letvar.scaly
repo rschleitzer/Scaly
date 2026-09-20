@@ -1,0 +1,36 @@
+; R2 fixture for tests/write-report: a property is `let` unless it says `var`.
+; The check mode's verdicts, one per shape:
+define Box (let fixed: int  var count: int  tag: int)
+{
+    init(f: int)
+    {
+        set fixed: f
+        set count: 0
+        set tag: 1
+    }
+
+    ; a var field through this: legal
+    procedure bump(mutable this)
+        set count: count + 1
+
+    ; a let field through this, outside init: a violation
+    procedure retag(mutable this, t: int)
+        set tag: t
+}
+
+; a let field through a parameter: a violation
+procedure refix(mutable b: ref[Box], f: int)
+    set b.fixed: f
+
+; a let field on a fresh local, before it is published: legal
+procedure build() returns int
+{
+    var b Box(1)
+    set b.fixed: 2
+    set b.tag: 3
+    b.bump()
+    refix(&b, 4)
+    b.fixed + b.count + b.tag
+}
+
+let n build()

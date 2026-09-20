@@ -18,7 +18,7 @@ define Other (n: int)
     function twice(this, k: int) returns int  k * 2
 }
 
-define Sink (total: int)
+define Sink (var total: int)
 {
     init()  set total: 0
     procedure take(mutable this, v: int)  set total: total + v

@@ -14,7 +14,7 @@ use scaly.containers.String
 
 define Holder
 (
-    name: String
+    var name: String
 )
 {
     procedure set_name(mutable this: Holder, text: pointer[const_char])

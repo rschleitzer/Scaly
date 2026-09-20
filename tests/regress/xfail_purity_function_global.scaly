@@ -3,7 +3,7 @@
 ; global, so writing its field writes the global.
 ; xfail: error: function touch writes global box_g; a function writes nothing - make it a procedure and name it after the signature: `mutable box_g`
 
-define Box (v: int)
+define Box (var v: int)
 shared box_g: ref[Box]? null
 
 function current() returns ref[Box]

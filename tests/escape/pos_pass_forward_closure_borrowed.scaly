@@ -8,7 +8,7 @@ define IntFn delegate(int) returns int
 
 define Sink
 (
-    fn: IntFn
+    var fn: IntFn
 )
 {
     procedure store_fn(mutable this, f: IntFn)

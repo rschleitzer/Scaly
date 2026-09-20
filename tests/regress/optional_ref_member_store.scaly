@@ -18,7 +18,7 @@
 ;
 ; Expected: PASS
 
-define Box (v: int  w: int)
+define Box (var v: int  var w: int)
 
 ; The two forms that crashed.
 procedure store_ref_opt(mutable r: ref[Box]?)

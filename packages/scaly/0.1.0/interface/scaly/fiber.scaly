@@ -1918,9 +1918,9 @@ define Channel
     var tail: ref[ChannelNode]?
     var recv_head: ref[SchedTask]?    ; parked receivers, FIFO
     var recv_tail: ref[SchedTask]?
-    ; var recv_sched: the receiving thread's scheduler — where a
+    ; recv_sched: the receiving thread's scheduler — where a
     ; queued-node send pokes the wake handle.
-    recv_sched: pointer[void]
+    var recv_sched: pointer[void]
     ; Bounded-capacity backpressure. capacity = 0 means UNBOUNDED (a
     ; send never blocks — the original v1 behavior); capacity > 0 caps
     ; the queue at that many undelivered messages. count is the current

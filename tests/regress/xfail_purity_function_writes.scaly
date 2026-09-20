@@ -4,7 +4,7 @@
 ; note at the call.
 ; xfail: error: function sneaky writes what its parameters reach (c:ref[Counter])
 
-define Counter (n: int)
+define Counter (var n: int)
 {
     procedure bump(mutable this, by: int)
         set n: n + by

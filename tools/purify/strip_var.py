@@ -38,7 +38,14 @@ for path in sys.argv[1:]:
                     break
             i += 1
         body = text[start:i]
-        new_body, k = re.subn(r'(^|[ \t(])(?:let|var)[ \t]+(?=[a-z_][a-z_0-9]*[ \t]*:)', r'\1', body, flags=re.M)
+        # a `;` comment inside the list may spell a field name: never touched
+        masked = re.sub(r';[^\n]*', lambda c: ' ' * len(c.group(0)), body)
+        cuts = [(mm.start(1) + len(mm.group(1)), mm.end()) for mm in
+                re.finditer(r'(^|[ \t(,])(?:let|var)[ \t]+(?=[a-z_][a-z_0-9]*[ \t]*:)', masked, re.M)]
+        new_body = body
+        for a_, b_ in sorted(cuts, reverse=True):
+            new_body = new_body[:a_] + new_body[b_:]
+        k = len(cuts)
         if k:
             out.append(text[pos:start])
             out.append(new_body)

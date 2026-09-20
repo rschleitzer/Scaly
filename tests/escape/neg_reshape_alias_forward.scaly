@@ -3,7 +3,7 @@
 ; fixpoint must see through the alias to record that `forward_it` persists `p`,
 ; so `use_it(&bx)` (a Local ref) MUST be REJECTED. Self-hosted-only.
 define Box ( v: int )
-define Holder ( b: pointer[Box] )
+define Holder ( var b: pointer[Box] )
 {
     procedure stash(this, p: pointer[Box])
         set this.b: p

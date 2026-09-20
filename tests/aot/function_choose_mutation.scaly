@@ -4,8 +4,8 @@
 
 define Lexer
 (
-    current: pointer[char]
-    token_kind: int
+    var current: pointer[char]
+    var token_kind: int
 )
 {
     procedure advance#(rp, mutable this)

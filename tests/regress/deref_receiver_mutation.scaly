@@ -10,7 +10,7 @@
 
 define Counter
 (
-    count: int
+    var count: int
 )
 {
     procedure bump(mutable this: Counter)

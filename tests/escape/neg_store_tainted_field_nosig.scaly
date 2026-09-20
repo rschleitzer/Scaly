@@ -13,7 +13,7 @@ define Holder
 )
 define Sink
 (
-    p: pointer[Box]
+    var p: pointer[Box]
 )
 
 procedure stash(this: Sink)

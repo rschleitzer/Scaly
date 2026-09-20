@@ -14,7 +14,7 @@ define TBL: int[] [3, 5, 11, 23]
 
 define Box
 (
-    total: int
+    var total: int
 )
 {
     init() { set total: 0 }

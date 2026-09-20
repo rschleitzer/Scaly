@@ -2,7 +2,7 @@
 ; Tests calling a procedure with # on a field of a passed-by-pointer struct
 ; Expected: 42
 
-define Inner(value: int)
+define Inner(var value: int)
 {
     procedure set_42#(rp, mutable this)
     {

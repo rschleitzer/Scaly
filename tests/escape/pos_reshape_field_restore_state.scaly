@@ -19,7 +19,7 @@ define State
 )
 define Machine
 (
-    ptr: pointer[Box]
+    var ptr: pointer[Box]
     pos: int
 )
 {

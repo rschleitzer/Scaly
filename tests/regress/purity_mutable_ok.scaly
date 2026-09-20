@@ -4,7 +4,7 @@
 ; position, and its parameter to a read-only one.
 ; Expected: PASS
 
-define Counter (n: int  total: int)
+define Counter (var n: int  var total: int)
 {
     procedure bump(mutable this, by: int)
     {

@@ -73,6 +73,11 @@ define WriteCensus
         let_offsets: Array[size_t]
         let_texts: Array[String]
         let_fns: Array[size_t]
+        ; check mode (phase 2): this body's stores into a `let` field of a
+        ; published object -- reported after the walk, one error per body and
+        ; a note per site, the way the parameter and global rules report
+        var cur_let_bad: Array[String]
+        var cur_let_offsets: Array[size_t]
         ; the file of the body being walked, for a let-site's line (a body's
         ; file is resolved for the report only; the walk knows func.file)
         var cur_file_hint: String
@@ -207,6 +212,8 @@ define WriteCensus
             set let_offsets: Array[size_t]^this()
             set let_texts: Array[String]^this()
             set let_fns: Array[size_t]^this()
+            set cur_let_bad: Array[String]^this()
+            set cur_let_offsets: Array[size_t]^this()
             set cur_file_hint: String^this("")
             set masks: Array[u64]^this()
             set cur_input: null
@@ -3139,6 +3146,8 @@ define WriteCensus
                     set cur_allowed_g: null
                 }
                 let before n_sites
+                set cur_let_bad: Array[String]^this()
+                set cur_let_offsets: Array[size_t]^this()
                 ; as a gate: judge first, then walk the violating body again to
                 ; place a note at every write, after its error
                 if diagnostics
@@ -3229,6 +3238,49 @@ define WriteCensus
                             set reporting: true
                             this.walk_body(func)
                             set reporting: false
+                        }
+                    }
+                }
+                ; R2: a `let` field of a published object was written
+                if cur_let_bad.length > 0
+                {
+                    set n_violations: n_violations + 1
+                    var lb StringBuilder()
+                    if diagnostics
+                    {
+                        lb.append "error: "
+                        if is_init
+                            lb.append "init"
+                        else if func.pure
+                            lb.append "function "
+                        else
+                            lb.append "procedure "
+                        if is_init = false
+                            lb.append func.name
+                        lb.append " writes let field "
+                        lb.append(cur_let_bad[0])
+                        lb.append "; a let field is set in init or before its object is published - write var before the field, or build the object here"
+                    }
+                    else
+                    {
+                        lb.append "violation let "
+                        lb.append func.name
+                        lb.append " "
+                        lb.append(cur_let_bad[0])
+                    }
+                    let ltext lb.to_string()
+                    this.record(cur_let_offsets[0], String^this(ltext))
+                    if diagnostics
+                    {
+                        var li: size_t 1
+                        while li < cur_let_bad.length
+                        {
+                            var nb StringBuilder()
+                            nb.append "note: and "
+                            nb.append(cur_let_bad[li])
+                            let ntext nb.to_string()
+                            this.record(cur_let_offsets[li], String^this(ntext))
+                            set li: li + 1
                         }
                     }
                 }
@@ -4018,12 +4070,7 @@ define WriteCensus
         ; ====================================================================
         procedure note_let_store(mutable this: WriteCensus, head: PlannedOperand, base_mask: u64)
         {
-            ; phase 1 is a MEASUREMENT: the report lists the sites, the check
-            ; mode (the gate every compile runs) says nothing yet -- its output
-            ; is also what tests/write-report asserts the absence of lines in
-            if check_mode
-                return
-            ; and the frozen report answers a different question (writes into
+            ; the frozen report answers a different question (writes into
             ; data shared after a phase, from the entries): its lines are
             ; asserted by name in tests/write-report, a let-site there is noise
             if frozen_mode
@@ -4062,6 +4109,23 @@ define WriteCensus
             }
             if published = false
                 return
+            ; check mode (phase 2, the gate): collect for this body's verdict
+            if check_mode
+            {
+                var cb StringBuilder()
+                cb.append last.parent_type.name
+                cb.append "."
+                cb.append last.name
+                cb.append " through "
+                cb.append(this.mask_names(base_mask))
+                let ctext cb.to_string()
+                if this.let_bad_seen(head.loc.start) = false
+                {
+                    cur_let_bad.add(String^this(ctext))
+                    cur_let_offsets.add(head.loc.start)
+                }
+                return
+            }
             ; the census walks a body once per ROUND: one site, one line
             if this.let_site_seen(head.loc.start)
                 return
@@ -4111,17 +4175,75 @@ define WriteCensus
         ; Does the written field carry `var`? Its declaration is the property
         ; of the hop's parent record in the plan, found by mangled name and
         ; field index (by name where the index does not line up).
-        function field_is_var(this: WriteCensus, hop: PlannedMemberAccess) returns bool
+        ; (a procedure while it carries the SCALYC_LET_PROBE print: a function performs no I/O)
+        procedure field_is_var(this: WriteCensus, hop: PlannedMemberAccess) returns bool
         {
             if plan_structures = null
                 return false
+            ; ★The hop's parent type keeps its REFERENCE HULL where the base is
+            ; a pointer walk (`*(tab + i)` into the trace table, the scheduler's
+            ; `pointer[SchedTask]` chain): `pointer[TraceEntry]` matched no
+            ; structure and five `var` fields of the substrate read as `let`
+            ; (measured 2026-09-20, the first armed bootstrap). Peel it first.
+            var record: PlannedType hop.parent_type
+            var peeled true
+            while peeled
+            {
+                set peeled: false
+                if WriteCensus.is_reference_name(record.name)
+                    if record.generics <> null
+                    {
+                        let gens (*record.generics)
+                        if gens.length > 0
+                        {
+                            let g0 gens.get 0
+                            if g0 <> null
+                            {
+                                set record: (*g0)
+                                set peeled: true
+                            }
+                        }
+                    }
+            }
             let structs plan_structures
+            if getenv("SCALYC_LET_PROBE") <> null
+            {
+                scaly_eputs "let-probe: field "
+                scaly_eputs(hop.name.to_c_string())
+                scaly_eputs " parent "
+                scaly_eputs(hop.parent_type.name.to_c_string())
+                scaly_eputs " / "
+                scaly_eputs(hop.parent_type.mangled_name.to_c_string())
+                scaly_eputs " peeled "
+                scaly_eputs(record.name.to_c_string())
+                scaly_eputs " / "
+                scaly_eputs(record.mangled_name.to_c_string())
+                scaly_eputs " structures "
+                scaly_eputi(structs.length as i64)
+                scaly_eputs "\n"
+            }
+            ; ★A NON-GENERIC record's type on a hop carries NO mangled name
+            ; (`SchedTask /` in the probe; a generic instantiation carries
+            ; `_Z5ArrayIiE`), so the mangled comparison alone found only the
+            ; generics -- the name decides where the mangled name is empty.
             var i: size_t 0
             while i < structs.length
             {
                 let sp structs.get i
                 if sp <> null
-                    if sp.mangled_name = hop.parent_type.mangled_name
+                {
+                    var same false
+                    if record.mangled_name.get_length() > 0
+                    {
+                        if sp.mangled_name = record.mangled_name
+                            set same: true
+                    }
+                    else
+                    {
+                        if sp.name = record.name
+                            set same: true
+                    }
+                    if same
                     {
                         if sp.properties = null
                             return false
@@ -4132,11 +4254,54 @@ define WriteCensus
                             let pp props.get j
                             if pp <> null
                                 if pp.name = hop.name
+                                {
+                                    if getenv("SCALYC_LET_PROBE") <> null
+                                    {
+                                        scaly_eputs "let-probe:   matched "
+                                        scaly_eputs(sp.name.to_c_string())
+                                        scaly_eputs " props "
+                                        scaly_eputi(props.length as i64)
+                                        scaly_eputs " field "
+                                        scaly_eputs(pp.name.to_c_string())
+                                        scaly_eputs " attrs "
+                                        if pp.attributes = null
+                                            scaly_eputs "null"
+                                        else
+                                        {
+                                            let al pp.attributes as ref[Vector[PlannedAttribute]]
+                                            var q: size_t 0
+                                            while q < al.length
+                                            {
+                                                let aq al.get q
+                                                if aq <> null
+                                                {
+                                                    scaly_eputs(aq.name.to_c_string())
+                                                    scaly_eputs ","
+                                                }
+                                                set q: q + 1
+                                            }
+                                        }
+                                        scaly_eputs "\n"
+                                    }
                                     return WriteCensus.attributes_have_var(pp.attributes)
+                                }
                             set j: j + 1
                         }
                         return false
                     }
+                }
+                set i: i + 1
+            }
+            false
+        }
+
+        function let_bad_seen(this: WriteCensus, offset: size_t) returns bool
+        {
+            var i: size_t 0
+            while i < cur_let_offsets.length
+            {
+                if cur_let_offsets[i] = offset
+                    return true
                 set i: i + 1
             }
             false

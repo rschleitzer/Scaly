@@ -76,10 +76,24 @@ check "a call into it only reads"              '! has " resets writes"'
 # negative controls
 check "a procedure writing its mutable this"   '! has " bump writes"'
 check "mutable on the second position"         '! has " give writes"'
+
 check "a local handed to a mutable position"   '! has " sum_local writes"'
 check "a receiver in a read position"          '! has " gives_to_local writes"'
 check "a reader is never listed"               '! has " read writes"'
 check "exactly four violations"                '[ "$(printf "%s\n" "$got" | grep -c ": violation ")" -eq 4 ]'
+
+# --- R2: a property is let unless it says var --------------------------------
+out=$("$STAGE" --plan --purity-check tests/write-report/letvar.scaly 2>&1); rc=$?
+check "letvar fixture compiles rc=0 (got $rc)" '[ $rc -eq 0 ]'
+got=$(printf '%s\n' "$out" | grep '^purity-check: tests/write-report/letvar.scaly:')
+src=tests/write-report/letvar.scaly
+check "a let field written through this outside init" 'has ":$(line_of "set tag: t"):9: violation let retag Box.tag through this:Box$"'
+check "a let field written through a parameter"       'has ":$(line_of "set b.fixed: f"):5: violation let refix Box.fixed through b:ref\[Box\]$"'
+# negative controls
+check "a var field through this is not listed"         '! has " bump "'
+check "init writing its own let fields is not listed"  '! has " init "'
+check "a fresh local finished before publication is not listed" '! has " build "'
+check "exactly two let violations"             '[ "$(printf "%s\n" "$got" | grep -c ": violation ")" -eq 2 ]'
 
 echo "write-report: $pass passed, $fail failed"
 for f in "${failures[@]}"; do echo "  FAIL: $f"; done

@@ -3,8 +3,8 @@
 
 define Tracker
 (
-    value: int
-    steps: int
+    var value: int
+    var steps: int
 )
 {
     procedure increment(mutable this)

@@ -1,7 +1,7 @@
 ; AOT Test: Simple procedure mutation
 ; Expected: 1
 
-define Box(value: int)
+define Box(var value: int)
 {
     procedure set_value(mutable this, new_value: int)
         set value: new_value

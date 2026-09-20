@@ -1,0 +1,23 @@
+; R2 (2026-09-20, phase 2): a property is `let` unless it says `var`, and a
+; `let` field may be written only in its record's `init` or while the object
+; is still the constructing frame's own. Here it is written through a
+; PARAMETER — an object somebody else handed in, published — which is the
+; shape that makes a shared object change behind a phase's back.
+; `let_var_property_ok.scaly` is the control: init, a fresh local and a `var`
+; field stay legal.
+; xfail: error: procedure refix writes let field Box.fixed
+
+define Box (fixed: int  var count: int)
+{
+    init(f: int)
+    {
+        set fixed: f
+        set count: 0
+    }
+}
+
+procedure refix(mutable b: ref[Box], f: int)
+    set b.fixed: f
+
+var b Box(1)
+refix(&b, 2)

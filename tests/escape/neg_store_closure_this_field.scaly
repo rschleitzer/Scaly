@@ -9,7 +9,7 @@ define IntFn delegate(int) returns int
 
 define Holder
 (
-    fn: IntFn
+    var fn: IntFn
 )
 
 procedure stash(this: Holder)

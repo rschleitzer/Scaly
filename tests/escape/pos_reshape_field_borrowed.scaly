@@ -15,7 +15,7 @@ define Pair
 )
 define Sink
 (
-    slot: pointer[Box]
+    var slot: pointer[Box]
 )
 {
     procedure stash(mutable this, pr: pointer[Pair])

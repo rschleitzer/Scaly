@@ -3,7 +3,7 @@
 ; the compile fails at the declaration, with a note at the store.
 ; xfail: error: procedure steal writes other:ref[Counter], which its signature does not declare `mutable`
 
-define Counter (n: int)
+define Counter (var n: int)
 {
     procedure steal(mutable this, other: ref[Counter])
     {

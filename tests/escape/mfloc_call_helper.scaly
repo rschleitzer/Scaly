@@ -10,7 +10,7 @@ define Box
 )
 define Holder
 (
-    b: pointer[Box]
+    var b: pointer[Box]
 )
 {
     procedure stash(this, p: pointer[Box])

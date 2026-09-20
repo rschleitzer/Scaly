@@ -4,7 +4,7 @@
 ; outlives the frame, so nothing escapes. Must COMPILE — the reshape walk must
 ; not over-flag a borrowed forward. Self-hosted-only.
 define Box ( v: int )
-define Holder ( b: pointer[Box] )
+define Holder ( var b: pointer[Box] )
 {
     procedure stash(mutable this, p: pointer[Box])
     {

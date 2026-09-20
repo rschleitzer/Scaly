@@ -5,7 +5,7 @@
 ; (escape_value_param_root via the alias map) now attributes `q` to param `p`,
 ; so passing a Local ref MUST be REJECTED. Self-hosted-only.
 define Box ( v: int )
-define Holder ( b: pointer[Box] )
+define Holder ( var b: pointer[Box] )
 {
     procedure stash(this, p: pointer[Box])
     {

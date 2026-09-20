@@ -7,7 +7,7 @@ mutable counter: int 0
 
 define Cell (v: int)
 
-define Box (v: int  items: Array[int])
+define Box (var v: int  items: Array[int])
 {
     init()
     {

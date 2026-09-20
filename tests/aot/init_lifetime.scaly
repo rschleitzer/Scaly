@@ -5,7 +5,7 @@ function malloc(size: size_t) returns pointer[void] extern
 function free(ptr: pointer[void]) extern
 
 ; Define a Page type (required for ^page syntax)
-define Page(buffer: pointer[void], offset: size_t)
+define Page(buffer: pointer[void], var offset: size_t)
 {
     function allocate(this: Page, size: size_t, align: size_t) returns pointer[void]
     {

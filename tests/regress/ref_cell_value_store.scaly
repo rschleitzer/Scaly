@@ -33,7 +33,7 @@
 ; Expected: PASS
 
 define Item (v: int)
-define Holder (slot: ref[Item]?)
+define Holder (var slot: ref[Item]?)
 
 ; The two spellings, into two cells, for ONE object: `set c: it` must mean
 ; exactly what `set c: &it` means.

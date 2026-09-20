@@ -19,7 +19,7 @@
 ;
 ; Expected: PASS
 
-define Rec (a: int, b: int)
+define Rec (var a: int, b: int)
 
 procedure bump(mutable rows: ref[Array[Rec]], i: size_t)
 {

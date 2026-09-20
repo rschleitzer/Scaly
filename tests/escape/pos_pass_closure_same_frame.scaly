@@ -9,7 +9,7 @@ define IntFn delegate(int) returns int
 
 define Holder
 (
-    fn: IntFn
+    var fn: IntFn
 )
 
 procedure set_fn(mutable h: pointer[Holder], f: IntFn)

@@ -3,7 +3,7 @@
 
 define Inner
 (
-    value: int
+    var value: int
 )
 {
     procedure set_value(mutable this, v: int)

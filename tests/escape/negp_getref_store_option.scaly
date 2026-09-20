@@ -10,7 +10,7 @@ use scaly.containers.Vector
 
 define Keeper
 (
-    r: ref[int]?
+    var r: ref[int]?
 )
 
 procedure fill(c: Keeper)

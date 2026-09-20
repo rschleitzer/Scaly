@@ -2,7 +2,7 @@
 ; A `mutable` parameter says what a procedure may write; a function may write
 ; nothing its parameters reach. tests/write-report/run.sh pins every verdict.
 
-define Counter (n: int  total: int)
+define Counter (var n: int  var total: int)
 {
     ; annotated: writes only its `mutable` receiver
     procedure bump(mutable this, by: int)

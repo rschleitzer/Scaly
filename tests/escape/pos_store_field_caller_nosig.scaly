@@ -12,7 +12,7 @@ define Holder
 )
 define Sink
 (
-    p: pointer[Box]
+    var p: pointer[Box]
 )
 
 procedure fwd(mutable this: Sink, b: pointer[Box])

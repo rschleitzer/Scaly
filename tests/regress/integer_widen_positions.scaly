@@ -23,12 +23,12 @@ define N (kind: i32  pos: i32)
         pos
     }
 }
-define Box (v: int)
+define Box (var v: int)
 {
     procedure put(mutable this, x: int)
         set v: x
 }
-define GBox[T] (v: T)
+define GBox[T] (var v: T)
 {
     procedure put(mutable this, x: T)
         set v: x

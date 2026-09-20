@@ -41,7 +41,16 @@ def package_of(path):
     # spelling once made a second key for one file, and the file was written
     # twice, the second time against text the first had already moved
     m = re.search(r'(packages/[^/]+/[^/]+)/', path)
-    return m.group(1) if m else os.path.dirname(path)
+    # a test or demo program declares its own records: twenty fixtures of one
+    # directory each declare a `Holder`, so the key is the FILE, not the dir
+    return m.group(1) if m else path
+
+
+def find_declaration_in(f, record):
+    """(file, open_paren) of the one `define <record>` in this file, or None."""
+    text = open(f, encoding='utf-8', errors='surrogateescape').read()
+    hits = [m.end() - 1 for m in re.finditer(r'^[ \t]*define %s(?:\[[^\]]*\])?[ \t]*\n?[ \t]*\(' % re.escape(record), text, re.M)]
+    return (f, hits[0]) if len(hits) == 1 else None
 
 
 def find_declaration(pkg, record):
@@ -73,10 +82,18 @@ def main():
     apply = '--apply' in sys.argv
     generated_too = '--generated-too' in sys.argv
     wanted = defaultdict(set)          # (pkg, record) -> fields
+    site_files = defaultdict(set)      # (pkg, record) -> the files the sites are in
     for line in open(args[0], encoding='utf-8', errors='surrogateescape'):
         m = SITE.match(line.rstrip('\n'))
         if m:
-            wanted[(package_of(m.group('file')), m.group('record'))].add(m.group('field'))
+            # one spelling per file: a dependency file remembered on first sight
+            # is reported ABSOLUTE, the same file elsewhere relative, and two
+            # spellings made two declarations of one record -- the second batch
+            # of marks was refused against text the first had moved
+            site = re.sub(r'^.*?(?=(?:packages|tests|demo)/)', '', m.group('file'))
+            key = (package_of(site), m.group('record'))
+            wanted[key].add(m.group('field'))
+            site_files[key].add(site)
     marked = refused = 0
     reasons = defaultdict(list)
     edits = defaultdict(list)          # file -> [(offset, insert)]
@@ -86,7 +103,17 @@ def main():
     # and third sets against a text the first had already moved.
     by_decl = defaultdict(set)
     for (pkg, record), fields in sorted(wanted.items()):
-        decl = find_declaration(pkg, record)
+        # a test fixture declares its records itself, and `Counter` is declared
+        # by twenty fixtures of one directory: the site's OWN file wins
+        decl = None
+        for sf in sorted(site_files[(pkg, record)]):
+            if os.path.exists(sf):
+                own = find_declaration_in(sf, record)
+                if own is not None:
+                    decl = own
+                    break
+        if decl is None:
+            decl = find_declaration(pkg, record)
         if isinstance(decl, str):
             refused += len(fields)
             reasons[decl].append(f'{pkg} {record}')
@@ -118,8 +145,12 @@ def main():
                     break
             i += 1
         body = text[open_paren:i]
+        # the field list with its `;` comments MASKED to spaces (same offsets):
+        # the first run marked `; recv_sched: ...` one line above the field and
+        # left the field itself `let`; a comment may spell a field name
+        masked = re.sub(r';[^\n]*', lambda c: ' ' * len(c.group(0)), body)
         for field in sorted(fields):
-            m = re.search(r'(^|[ \t(])((?:let|var)[ \t]+)?%s[ \t]*:' % re.escape(field), body, re.M)
+            m = re.search(r'(^|[ \t(,])((?:let|var)[ \t]+)?%s[ \t]*:' % re.escape(field), masked, re.M)
             if not m:
                 refused += 1
                 reasons['missing'].append(f'{f} {record}.{field}')

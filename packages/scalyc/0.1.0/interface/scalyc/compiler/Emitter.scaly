@@ -244,10 +244,10 @@ define Emitter
         ; region unopened. See get_local_frame here and the ordering proof at
         ; scaly_force_frame (root_pages.scaly).
         ;
-        ; var function_local_frame: the record's alloca, created on first demand.
+        ; function_local_frame: the record's alloca, created on first demand.
         ; function_local_page / _block: the FORCED page cached for ONE basic
         ;   block, so several allocations in one block share a single call.
-        function_local_frame: LLVMValueRef
+        var function_local_frame: LLVMValueRef
         var function_local_page: LLVMValueRef
         var function_local_page_block: LLVMBasicBlockRef
         ; The `store null` that initialises the page word.
