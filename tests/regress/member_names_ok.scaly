@@ -1,0 +1,39 @@
+; The negative controls for the three member-name gates (2026-09-20). Every
+; shape here is legal and MUST keep compiling:
+;   (1) a STATIC named like a field — measured NOT shadowed (`Box.v(7)` answers
+;       70), and the tree has such a pair in Scanner;
+;   (2) a method and a static of one name with DIFFERENT parameter lists, which
+;       mangle to different symbols;
+;   (3) two concepts that each carry a field of the same name.
+; Expected: PASS
+
+define Holder (v: int)
+{
+    init()
+        set v: 3
+
+    ; (1) a static of the field's name
+    function v(x: int) returns int
+        x * 10
+
+    ; (2) same name as the method below, different parameter list
+    function pick(this) returns int
+        v
+
+    function pick(a: int, b: int) returns int
+        a + b
+}
+
+; (3) another concept with a field of the same name
+define Other (v: int)
+
+let h Holder()
+let a Holder.v(7)
+let b h.pick()
+let c Holder.pick(2, 3)
+let o Other(9)
+if a = 70
+    if b = 3
+        if c = 5
+            if o.v = 9
+                print "PASS"

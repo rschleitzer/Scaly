@@ -1,0 +1,12 @@
+; Regression (2026-09-20): a field declared TWICE in one concept. The second
+; slot is real layout nobody can reach — every read resolves to the first — and
+; nothing looks wrong anywhere: the two declarations may be four hundred lines
+; apart and both readers agree, because they read the same slot. It cost
+; packages/tscaly a shared memo, and its own Transformer carried a literal
+; duplicate line until this gate found it.
+; xfail: error: field v of Box is declared twice
+
+define Box (v: int  w: int  v: int)
+
+let b Box(1, 2, 3)
+let read b.v

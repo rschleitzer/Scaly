@@ -1232,6 +1232,276 @@ define Planner
         ; Concept registry.
         ; ================================================================
 
+        ; ====================================================================
+        ; Two silent collisions inside ONE concept, each measured in a port
+        ; before it was diagnosed (CLAUDE.md, "Calls & operands"):
+        ;
+        ;   (a) a FIELD DECLARED TWICE. `define Box (v: int  w: int  v: int)`
+        ;       lays out three slots at rc 0; the second `v` is real layout
+        ;       nobody can reach and every read resolves to the first. Nothing
+        ;       looks wrong anywhere -- the two declarations may be four
+        ;       hundred lines apart and both readers agree, because they read
+        ;       the same slot. It cost `packages/tscaly` a shared memo: two
+        ;       resolvers of one name answering out of one cell.
+        ;
+        ;   (b) a METHOD NAMED LIKE A FIELD. The field shadows it at every call
+        ;       site: the argument is dropped and the call answers the FIELD's
+        ;       value, rc 0, no diagnostic. For a `bool` field that reads as a
+        ;       broken predicate -- a `skip_trivia` field beside a
+        ;       `skip_trivia` method meant every diagnostic that had to move
+        ;       past leading trivia was reported at offset 0.
+        ;
+        ; ★Reported at the SECOND declaration, which is the one to delete or
+        ; rename, and with the concept named: the shape gives a reader nothing
+        ; to search for otherwise.
+        ;
+        ; ★It runs at REGISTRATION and only on a concept's FIRST one, because a
+        ; module tree is walked more than once (register_packages, then
+        ; plan_module, then its submodules again) -- plan_structure would have
+        ; been the obvious place and reports once per generic INSTANTIATION.
+        ; A file whose origin is unknown is left alone, as every other
+        ; registration-time judgement here is.
+        ; ====================================================================
+        procedure check_concept_member_names(mutable this: Planner, c: Concept, file: String)
+        {
+            choose c.definition
+                when s: Structure
+                {
+                    var i: size_t 0
+                    while i < s.properties.length
+                    {
+                        let pi s.properties.get i
+                        if pi <> null
+                        {
+                            var j: size_t 0
+                            while j < i
+                            {
+                                let pj s.properties.get j
+                                if pj <> null
+                                    if pi.name = pj.name
+                                    {
+                                        this.report_member_collision(pi.span, file,
+                                            "field ", pi.name, c.name,
+                                            " is declared twice; the second slot is unreachable and every read answers the first")
+                                        set j: i
+                                    }
+                                set j: j + 1
+                            }
+                        }
+                        set i: i + 1
+                    }
+                    this.check_method_static_collisions(s, c.name, file)
+                    var mi: size_t 0
+                    while mi < s.members.length
+                    {
+                        let mp s.members.get mi
+                        if mp <> null
+                        {
+                            let m (*mp)
+                            choose m
+                                when f: Function
+                                {
+                                    ; ★Only a RECEIVER method, measured: a
+                                    ; STATIC of the same name is NOT shadowed
+                                    ; (probe 2026-09-20: `Box.v(7)` beside a
+                                    ; field `v: bool` answers 70), and the
+                                    ; tree has such a pair -- Scanner's
+                                    ; `skip_trivia` field beside the static
+                                    ; `Scanner.skip_trivia(text, pos)`. A gate
+                                    ; that reports a shape the compiler gets
+                                    ; right is a gate nobody keeps.
+                                    if Planner.function_declares_this(f)
+                                        if this.structure_has_property_named(s, f.name)
+                                            this.report_member_collision(f.span, file,
+                                                "method ", f.name, c.name,
+                                                " has the name of a field; the field shadows it, so every call drops its arguments and answers the field")
+                                }
+                                else
+                                    0
+                        }
+                        set mi: mi + 1
+                    }
+                }
+                else
+                    0
+        }
+
+        ; ====================================================================
+        ; (c) A `this` METHOD AND A STATIC of one concept with the same name
+        ; and the same parameter list mangle to ONE Itanium symbol, and the
+        ; emitter keeps ONE body (CLAUDE.md; CLAUDE-history.md 2026-09-08).
+        ; Neither the receiver nor the implicit caller page is in the name, so
+        ; `f(this, x: T)` and `f(x: T)` are `_ZN3Box4pickER3Box` twice over --
+        ; the linker has nothing to object to, because only one definition
+        ; exists, and the other call form then passes its first argument into
+        ; the wrong slot. Twenty lines compile with no diagnostic and exit 139.
+        ;
+        ; ★It stays LATENT while either call form is unreachable: in
+        ; packages/tscaly the static's one caller sat behind a stop, and 28
+        ; stage-2 units began crashing the moment that arm was ported.
+        ;
+        ; Reported at the STATIC, which is the form to keep where the function
+        ; reads only its arguments -- so the fix is usually to drop the method.
+        ; ====================================================================
+        procedure check_method_static_collisions(mutable this: Planner, s: Structure, owner: String, file: String)
+        {
+            var i: size_t 0
+            while i < s.members.length
+            {
+                let mi_ptr s.members.get i
+                if mi_ptr <> null
+                {
+                    let mi (*mi_ptr)
+                    choose mi
+                        when fi: Function
+                        {
+                            if Planner.function_declares_this(fi)
+                            {
+                                var j: size_t 0
+                                while j < s.members.length
+                                {
+                                    let mj_ptr s.members.get j
+                                    if mj_ptr <> null
+                                    {
+                                        let mj (*mj_ptr)
+                                        choose mj
+                                            when fj: Function
+                                            {
+                                                if fj.name = fi.name
+                                                    if Planner.function_declares_this(fj) = false
+                                                        if Planner.methods_share_parameter_types(fi, fj)
+                                                            this.report_member_collision(fj.span, file,
+                                                                "static ", fj.name, owner,
+                                                                " has the name and the parameter list of a method of the same concept; both mangle to one symbol and only one body survives")
+                                            }
+                                            else
+                                                0
+                                    }
+                                    set j: j + 1
+                                }
+                            }
+                        }
+                        else
+                            0
+                }
+                set i: i + 1
+            }
+        }
+
+        ; The method's parameters WITHOUT its leading `this`, against the
+        ; static's: that pair is exactly what the mangled name encodes.
+        function methods_share_parameter_types(m: Function, st: Function) returns bool
+        {
+            if m.input.length <> st.input.length + 1
+                return false
+            var i: size_t 0
+            while i < st.input.length
+            {
+                let a m.input.get (i + 1)
+                let b st.input.get i
+                if a = null
+                    return false
+                if b = null
+                    return false
+                if Planner.model_types_equal(a.type, b.type) = false
+                    return false
+                set i: i + 1
+            }
+            true
+        }
+
+        ; Structural equality of two WRITTEN types: the name segments and the
+        ; generic arguments. A lifetime says nothing about a mangled name.
+        function model_types_equal(a: ref[Type]?, b: ref[Type]?) returns bool
+        {
+            if a = null
+                return b = null
+            if b = null
+                return false
+            if a.name.length <> b.name.length
+                return false
+            var i: size_t 0
+            while i < a.name.length
+            {
+                let sa a.name.get i
+                let sb b.name.get i
+                if sa = null
+                    return false
+                if sb = null
+                    return false
+                if (*sa) <> (*sb)
+                    return false
+                set i: i + 1
+            }
+            if a.generics = null
+                return b.generics = null
+            if b.generics = null
+                return false
+            let ga a.generics
+            let gb b.generics
+            if ga.length <> gb.length
+                return false
+            var k: size_t 0
+            while k < ga.length
+            {
+                let ta ga.get k
+                let tb gb.get k
+                if ta = null
+                    return false
+                if tb = null
+                    return false
+                if Planner.model_types_equal(ta, tb) = false
+                    return false
+                set k: k + 1
+            }
+            true
+        }
+
+        function function_declares_this(f: Function) returns bool
+        {
+            if f.input.length = 0
+                return false
+            let first f.input.get 0
+            if first = null
+                return false
+            if first.name = null
+                return false
+            let fname (*first.name)
+            fname = "this"
+        }
+
+        function structure_has_property_named(this: Planner, s: Structure, name: String) returns bool
+        {
+            var i: size_t 0
+            while i < s.properties.length
+            {
+                let p s.properties.get i
+                if p <> null
+                    if p.name = name
+                        return true
+                set i: i + 1
+            }
+            false
+        }
+
+        ; The message and the file outlive this frame in this.diagnostics, so
+        ; both live on this's region (check_use_paths' lesson).
+        procedure report_member_collision(mutable this: Planner, loc: Span, file: String, kind: String, name: String, owner: String, tail: String)
+        {
+            var sb StringBuilder()
+            sb.append kind
+            sb.append name
+            sb.append " of "
+            sb.append owner
+            sb.append tail
+            let msg_local sb.to_string()
+            let msg String^this(msg_local)
+            var dfile String^this(file)
+            if file.get_length() = 0
+                set dfile: String^this(this.file)
+            diagnostics.add(PlannerDiagnostic(loc.start, msg, dfile))
+        }
+
         procedure register_concept(mutable this: Planner, c: Concept)
         {
             ; Track delegate (function-pointer type) names for the emitter's
@@ -1291,6 +1561,12 @@ define Planner
                     }
                 }
             }
+            ; The two silent collisions inside ONE concept, checked here and
+            ; only on the FIRST registration of a name (a module tree is walked
+            ; more than once; see check_concept_member_names# above).
+            if prev_idx < 0
+                this.check_concept_member_names(c, registering_file)
+
             concepts.add(KeyValuePair[String, Concept](c.name, c))
             let origin_file String^this(registering_file)
             concept_origin_files.add origin_file

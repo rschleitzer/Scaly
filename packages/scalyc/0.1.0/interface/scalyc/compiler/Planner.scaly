@@ -1232,7 +1232,283 @@ define Planner
         ; Concept registry.
         ; ================================================================
 
+        ; ====================================================================
+        ; Two silent collisions inside ONE concept, each measured in a port
+        ; before it was diagnosed (CLAUDE.md, "Calls & operands"):
+        ;
+        ;   (a) a FIELD DECLARED TWICE. `define Box (v: int  w: int  v: int)`
+        ;       lays out three slots at rc 0; the second `v` is real layout
+        ;       nobody can reach and every read resolves to the first. Nothing
+        ;       looks wrong anywhere -- the two declarations may be four
+        ;       hundred lines apart and both readers agree, because they read
+        ;       the same slot. It cost `packages/tscaly` a shared memo: two
+        ;       resolvers of one name answering out of one cell.
+        ;
+        ;   (b) a METHOD NAMED LIKE A FIELD. The field shadows it at every call
+        ;       site: the argument is dropped and the call answers the FIELD's
+        ;       value, rc 0, no diagnostic. For a `bool` field that reads as a
+        ;       broken predicate -- a `skip_trivia` field beside a
+        ;       `skip_trivia` method meant every diagnostic that had to move
+        ;       past leading trivia was reported at offset 0.
+        ;
+        ; ★Reported at the SECOND declaration, which is the one to delete or
+        ; rename, and with the concept named: the shape gives a reader nothing
+        ; to search for otherwise.
+        ;
+        ; ★It runs at REGISTRATION and only on a concept's FIRST one, because a
+        ; module tree is walked more than once (register_packages, then
+        ; plan_module, then its submodules again) -- plan_structure would have
+        ; been the obvious place and reports once per generic INSTANTIATION.
+        ; A file whose origin is unknown is left alone, as every other
+        ; registration-time judgement here is.
+        ; ====================================================================
+        procedure check_concept_member_names(mutable this: Planner, c: Concept, file: String) linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; ====================================================================
+        ; (c) A `this` METHOD AND A STATIC of one concept with the same name
+        ; and the same parameter list mangle to ONE Itanium symbol, and the
+        ; emitter keeps ONE body (CLAUDE.md; CLAUDE-history.md 2026-09-08).
+        ; Neither the receiver nor the implicit caller page is in the name, so
+        ; `f(this, x: T)` and `f(x: T)` are `_ZN3Box4pickER3Box` twice over --
+        ; the linker has nothing to object to, because only one definition
+        ; exists, and the other call form then passes its first argument into
+        ; the wrong slot. Twenty lines compile with no diagnostic and exit 139.
+        ;
+        ; ★It stays LATENT while either call form is unreachable: in
+        ; packages/tscaly the static's one caller sat behind a stop, and 28
+        ; stage-2 units began crashing the moment that arm was ported.
+        ;
+        ; Reported at the STATIC, which is the form to keep where the function
+        ; reads only its arguments -- so the fix is usually to drop the method.
+        ; ====================================================================
+        procedure check_method_static_collisions(mutable this: Planner, s: Structure, owner: String, file: String) linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; The method's parameters WITHOUT its leading `this`, against the
+        ; static's: that pair is exactly what the mangled name encodes.
+        function methods_share_parameter_types(m: Function, st: Function) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; Structural equality of two WRITTEN types: the name segments and the
+        ; generic arguments. A lifetime says nothing about a mangled name.
+        function model_types_equal(a: ref[Type]?, b: ref[Type]?) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function function_declares_this(f: Function) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+        function structure_has_property_named(this: Planner, s: Structure, name: String) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; The message and the file outlive this frame in this.diagnostics, so
+        ; both live on this's region (check_use_paths' lesson).
+        procedure report_member_collision(mutable this: Planner, loc: Span, file: String, kind: String, name: String, owner: String, tail: String) linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         procedure register_concept(mutable this: Planner, c: Concept) @persists true linked
+
+
+
+
+
+
 
 
 

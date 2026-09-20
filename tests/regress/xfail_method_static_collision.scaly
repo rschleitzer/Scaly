@@ -1,0 +1,23 @@
+; Regression (2026-09-20): a `this` method and a STATIC of one concept with the
+; same name and the same parameter list mangle to ONE Itanium symbol — neither
+; the receiver nor the implicit caller page is in the name — and the emitter
+; keeps ONE body. The linker has nothing to object to, because only one
+; definition exists; the other call form passes its first argument into the
+; wrong slot and the crash lands frames away (measured: exit 139).
+; xfail: error: static pick of Box3 has the name and the parameter list of a method
+
+define Box3 (v: int)
+{
+    init()
+        set v: 5
+
+    function pick(this, other: ref[Box3]) returns int
+        v
+
+    function pick(other: ref[Box3]) returns int
+        other.v
+}
+
+var b Box3()
+let n Box3.pick(&b)
+let read n
