@@ -29,9 +29,10 @@
 #
 # Usage: tests/debuginfo/run.sh [stage-binary]   (default /tmp/scalyc_stage2)
 cd "$(dirname "$0")/../.." || exit 1
-STAGE=${1:-/tmp/scalyc_stage2}
+. tests/platform.sh || exit 1
+STAGE=${1:-$SCALY_STAGE_DEFAULT}
 SRC=tests/debuginfo/probe.scaly
-OUT=/tmp/debuginfo_probe
+OUT=/tmp/debuginfo_probe$SCALY_EXE
 pass=0; fail=0; failures=()
 
 ok()   { pass=$((pass+1)); }

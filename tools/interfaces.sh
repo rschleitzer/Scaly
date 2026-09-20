@@ -19,6 +19,9 @@
 # interfaces.
 set -u
 cd "$(dirname "$0")/.."
+# The Windows box: a real python3 ahead of the Store stub, PYTHONUTF8; silent
+# elsewhere (tools/win-env.sh returns 0 without touching anything on POSIX).
+. tools/win-env.sh || exit 1
 CHECK=0
 if [ "${1:-}" = "--check" ]; then CHECK=1; shift; fi
 BIN="${1:-scalyc/build/scalyc}"

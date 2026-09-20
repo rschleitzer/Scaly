@@ -35,13 +35,27 @@ case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) SCALY_COFF=1 ;; esac
 SCALY_EXE=
 SCALY_STAGE_DEFAULT=/tmp/scalyc_stage2
 if [ "$SCALY_COFF" = 1 ]; then
-  . tools/win-env.sh || { return 1 2>/dev/null || exit 1; }
+  # By this file's own location, not the cwd: tests/sgml/coding/run.sh works
+  # from `tests/`, not from the repository root.
+  . "$(dirname "${BASH_SOURCE[0]}")/../tools/win-env.sh" || { return 1 2>/dev/null || exit 1; }
   SCALY_EXE=.exe
-  SCALY_STAGE_DEFAULT=scalyc/build/scalyc.exe
+  # The POSIX default with the suffix: tools/bootstrap.sh produces it here too
+  # since 2026-09-20 (it was scalyc/build/scalyc.exe while the bootstrap
+  # scripts did not start on this box).
+  SCALY_STAGE_DEFAULT=/tmp/scalyc_stage2.exe
   if [ -z "${LLVM_LIBDIR:-}" ] && [ -d "/c/Program Files/LLVM/lib" ]; then
     LLVM_LIBDIR=$(cygpath -u "$(cygpath -d '/c/Program Files/LLVM/lib')")
     LLVM_LIBNAME=LLVM-C
   fi
+  # ★`TMP` is not a free name here (tests/win32/WINDOWS-BOX.md): Windows
+  # EXPORTS it, and a dozen runners write `TMP="$(mktemp -d)"` for their own
+  # scratch — an assignment to an exported name stays exported, so every
+  # compiler they then start read ITS scratch dir off the runner's, and the
+  # link died on `<runner scratch>/libscaly.lib` (measured 2026-09-20, every
+  # suite that links). Dropping the export attribute once, here, keeps those
+  # assignments shell-local; the compiler and clang fall back to `TEMP`, the
+  # same directory, which nothing in the tree assigns.
+  export -n TMP
 fi
 
 scaly_need_archive() {

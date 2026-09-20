@@ -50,6 +50,8 @@
 # Checks 1 and 2 need C headers; without them they SKIP and say so rather than
 # passing quietly. Checks 3 and 4 need nothing and always run.
 cd "$(dirname "$0")/../.." || exit 1
+# shellcheck disable=SC1091
+. tests/platform.sh || exit 1
 
 # The parameter findings this tree is known to carry. Raise or lower ONLY
 # together with a note in CLAUDE.md saying which declaration changed and why.
@@ -104,7 +106,13 @@ done
 for cand in /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include /usr/include; do
   [ -d "$cand" ] && { hdrs+=(--headers "$cand"); break; }
 done
-if [ ${#hdrs[@]} -eq 0 ]; then
+if [ "$SCALY_COFF" = 1 ]; then
+  # The Windows box has no POSIX libc to scrape: the MSVC CRT is the UCRT under
+  # Windows Kits, whose prototypes tools/abi-audit.py does not read, and a pin
+  # taken against it would be a third host's number for the SAME benign
+  # positions. Said by name; checks 3 and 4 below judge the tree on every host.
+  echo "    SKIP (Windows box: keine POSIX-Header — Breitenprüfung übersprungen, tests/win32/WINDOWS-BOX.md §4a)"
+elif [ ${#hdrs[@]} -eq 0 ]; then
   echo "    SKIP (keine C-Header gefunden — Breitenprüfung übersprungen)"
 else
   out=$(python3 tools/abi-audit.py --quiet "${hdrs[@]}" $(find packages -name '*.scaly'))
