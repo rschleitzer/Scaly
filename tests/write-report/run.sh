@@ -11,7 +11,8 @@
 #
 # Usage: tests/write-report/run.sh [stage-binary]   (default /tmp/scalyc_stage2)
 cd "$(dirname "$0")/../.." || exit 1
-STAGE=${1:-/tmp/scalyc_stage2}
+. tests/platform.sh || exit 1
+STAGE=${1:-$SCALY_STAGE_DEFAULT}
 pass=0; fail=0; failures=()
 check() { if eval "$2"; then pass=$((pass+1)); else fail=$((fail+1)); failures+=("$1"); fi; }
 has() { printf '%s\n' "$got" | grep -q -- "$1"; }

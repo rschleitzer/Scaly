@@ -8,18 +8,20 @@
 #
 # Usage: tests/cluster/run.sh [stage-binary]   (default /tmp/scalyc_stage2)
 cd "$(dirname "$0")/../.." || exit 1
-STAGE=${1:-/tmp/scalyc_stage2}
+. tests/platform.sh || exit 1
+STAGE=${1:-$SCALY_STAGE_DEFAULT}
+scaly_need_archive cluster "$STAGE" || exit 1
 OUT=${TMPDIR:-/tmp}
 
 # Top up an older archive that predates the fiber/eio objects (both are
 # self-contained; a missing archive fails the compile loudly anyway).
-if [ -f /tmp/libscaly.a ] && ! ar t /tmp/libscaly.a 2>/dev/null | grep -q '^fcontext\.o$'; then
+if [ "$SCALY_COFF" = 0 ] && [ -f /tmp/libscaly.a ] && ! ar t /tmp/libscaly.a 2>/dev/null | grep -q '^fcontext\.o$'; then
   tools/fcontext.sh /tmp/fcontext.o && ar rcs /tmp/libscaly.a /tmp/fcontext.o
 fi
-if [ -f /tmp/libscaly.a ] && ! ar t /tmp/libscaly.a 2>/dev/null | grep -q '^eio\.o$'; then
+if [ "$SCALY_COFF" = 0 ] && [ -f /tmp/libscaly.a ] && ! ar t /tmp/libscaly.a 2>/dev/null | grep -q '^eio\.o$'; then
   tools/eio.sh /tmp/eio.o && ar rcs /tmp/libscaly.a /tmp/eio.o
 fi
-if [ -f /tmp/libscaly.a ] && ! ar t /tmp/libscaly.a 2>/dev/null | grep -q '^ctime\.o$'; then
+if [ "$SCALY_COFF" = 0 ] && [ -f /tmp/libscaly.a ] && ! ar t /tmp/libscaly.a 2>/dev/null | grep -q '^ctime\.o$'; then
   tools/ctime.sh /tmp/ctime.o && ar rcs /tmp/libscaly.a /tmp/ctime.o
   tools/panic.sh /tmp/panic.o && ar rcs /tmp/libscaly.a /tmp/panic.o
 fi
@@ -29,11 +31,12 @@ pass=0; fail=0; failures=()
 # ---- in-process round-trip: compare stdout to the "; Expected:" lines ----
 t=roundtrip
 expected=$(sed -n 's/^; Expected: //p' tests/cluster/$t.scaly)
-bin="$OUT/cluster_$t"; rm -f "$bin"
+bin="$OUT/cluster_$t$SCALY_EXE"; rm -f "$bin"
 if ! "$STAGE" -o "$bin" tests/cluster/$t.scaly >/dev/null 2>&1; then
   fail=$((fail+1)); failures+=("$t(compile)")
 else
-  out=$("$bin" 2>/dev/null); rc=$?
+  "$bin" > "$OUT/cluster_$t.out" 2>/dev/null; rc=$?
+  out=$(scaly_lf < "$OUT/cluster_$t.out")
   if [ "$rc" = "0" ] && [ "$out" = "$expected" ]; then
     pass=$((pass+1))
   else
@@ -44,15 +47,15 @@ fi
 # ---- cross-process round-trip: receiver first, sender retries connect ----
 ok=1
 for t in xproc_recv xproc_send; do
-  rm -f "$OUT/cluster_$t"
-  if ! "$STAGE" -o "$OUT/cluster_$t" tests/cluster/$t.scaly >/dev/null 2>&1; then
+  rm -f "$OUT/cluster_$t$SCALY_EXE"
+  if ! "$STAGE" -o "$OUT/cluster_$t$SCALY_EXE" tests/cluster/$t.scaly >/dev/null 2>&1; then
     fail=$((fail+1)); failures+=("$t(compile)"); ok=0
   fi
 done
 if [ "$ok" = "1" ]; then
-  "$OUT/cluster_xproc_recv" > "$OUT/cluster_xproc_recv.log" 2>&1 &
+  "$OUT/cluster_xproc_recv$SCALY_EXE" > "$OUT/cluster_xproc_recv.log" 2>&1 &
   RPID=$!
-  "$OUT/cluster_xproc_send" > "$OUT/cluster_xproc_send.log" 2>&1
+  "$OUT/cluster_xproc_send$SCALY_EXE" > "$OUT/cluster_xproc_send.log" 2>&1
   SRC=$?
   wait $RPID
   RRC=$?
@@ -80,14 +83,14 @@ wait_marker() {
 # ---- 7.3 remote-channel ping-pong: ONE binary, two roles (rule 10:
 # one cluster one build — different programs would refuse each other) ----
 t=pingpong
-rm -f "$OUT/cluster_$t"
-if ! "$STAGE" -o "$OUT/cluster_$t" tests/cluster/$t.scaly >/dev/null 2>&1; then
+rm -f "$OUT/cluster_$t$SCALY_EXE"
+if ! "$STAGE" -o "$OUT/cluster_$t$SCALY_EXE" tests/cluster/$t.scaly >/dev/null 2>&1; then
   fail=$((fail+1)); failures+=("$t(compile)")
 else
-  PINGPONG_ROLE=b "$OUT/cluster_$t" > "$OUT/cluster_${t}_b.log" 2>&1 &
+  PINGPONG_ROLE=b "$OUT/cluster_$t$SCALY_EXE" > "$OUT/cluster_${t}_b.log" 2>&1 &
   BPID=$!
   wait_marker "$OUT/cluster_${t}_b.log" "^B: ready$"
-  PINGPONG_ROLE=a "$OUT/cluster_$t" > "$OUT/cluster_${t}_a.log" 2>&1
+  PINGPONG_ROLE=a "$OUT/cluster_$t$SCALY_EXE" > "$OUT/cluster_${t}_a.log" 2>&1
   ARC=$?
   wait $BPID
   BRC=$?
@@ -103,14 +106,14 @@ fi
 
 # ---- 7.3 kill -9 mid-run: survivor's receive nulls + monitor fires ----
 t=kill9
-rm -f "$OUT/cluster_$t"
-if ! "$STAGE" -o "$OUT/cluster_$t" tests/cluster/$t.scaly >/dev/null 2>&1; then
+rm -f "$OUT/cluster_$t$SCALY_EXE"
+if ! "$STAGE" -o "$OUT/cluster_$t$SCALY_EXE" tests/cluster/$t.scaly >/dev/null 2>&1; then
   fail=$((fail+1)); failures+=("$t(compile)")
 else
-  KILL9_ROLE=s "$OUT/cluster_$t" > "$OUT/cluster_${t}_s.log" 2>&1 &
+  KILL9_ROLE=s "$OUT/cluster_$t$SCALY_EXE" > "$OUT/cluster_${t}_s.log" 2>&1 &
   SPID=$!
   wait_marker "$OUT/cluster_${t}_s.log" "^S: ready$"
-  KILL9_ROLE=v "$OUT/cluster_$t" > "$OUT/cluster_${t}_v.log" 2>&1 &
+  KILL9_ROLE=v "$OUT/cluster_$t$SCALY_EXE" > "$OUT/cluster_${t}_v.log" 2>&1 &
   VPID=$!
   if wait_marker "$OUT/cluster_${t}_s.log" "^S: linked$"; then
     kill -9 $VPID 2>/dev/null
@@ -130,16 +133,16 @@ fi
 # ---- 7.3 rule-10 stamp mismatch: two builds refuse, both stamps shown ----
 ok=1
 for t in stamp_a stamp_b; do
-  rm -f "$OUT/cluster_$t"
-  if ! "$STAGE" -o "$OUT/cluster_$t" tests/cluster/$t.scaly >/dev/null 2>&1; then
+  rm -f "$OUT/cluster_$t$SCALY_EXE"
+  if ! "$STAGE" -o "$OUT/cluster_$t$SCALY_EXE" tests/cluster/$t.scaly >/dev/null 2>&1; then
     fail=$((fail+1)); failures+=("$t(compile)"); ok=0
   fi
 done
 if [ "$ok" = "1" ]; then
-  "$OUT/cluster_stamp_a" > "$OUT/cluster_stamp_a.log" 2> "$OUT/cluster_stamp_a.err" &
+  "$OUT/cluster_stamp_a$SCALY_EXE" > "$OUT/cluster_stamp_a.log" 2> "$OUT/cluster_stamp_a.err" &
   APID=$!
   wait_marker "$OUT/cluster_stamp_a.log" "^A: ready$"
-  "$OUT/cluster_stamp_b" > "$OUT/cluster_stamp_b.log" 2> "$OUT/cluster_stamp_b.err"
+  "$OUT/cluster_stamp_b$SCALY_EXE" > "$OUT/cluster_stamp_b.log" 2> "$OUT/cluster_stamp_b.err"
   BRC=$?
   wait $APID
   ARC=$?
@@ -160,11 +163,11 @@ fi
 # distributed run splits it one-window-per-rank and all-reduces the
 # gradients in rank order — identical arithmetic, so identical loss lines.
 t=train
-rm -f "$OUT/cluster_$t"
-if ! "$STAGE" -o "$OUT/cluster_$t" tests/cluster/$t.scaly >/dev/null 2>&1; then
+rm -f "$OUT/cluster_$t$SCALY_EXE"
+if ! "$STAGE" -o "$OUT/cluster_$t$SCALY_EXE" tests/cluster/$t.scaly >/dev/null 2>&1; then
   fail=$((fail+1)); failures+=("$t(compile)")
 else
-  BIN="$OUT/cluster_$t"
+  BIN="$OUT/cluster_$t$SCALY_EXE"
   ok=1
   for NR in 2 4; do
     TRAIN_N=$NR "$BIN" 2>/dev/null | grep '^L ' > "$OUT/train_solo$NR.L"
@@ -191,8 +194,8 @@ fi
 
 # ---- 7.4 fault tolerance: kill a worker mid-run, run completes on the
 # survivors (reducer detects the dead rank's channel wake null) ----
-if [ -x "$OUT/cluster_train" ]; then
-  BIN="$OUT/cluster_train"
+if [ -x "$OUT/cluster_train$SCALY_EXE" ]; then
+  BIN="$OUT/cluster_train$SCALY_EXE"
   P=47730
   TRAIN_N=3 TRAIN_STEPS=1200 TRAIN_RANK=0 TRAIN_PORT=$P "$BIN" > "$OUT/train_faultR.log" 2>&1 &
   RPID=$!

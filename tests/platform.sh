@@ -1,0 +1,67 @@
+#!/bin/bash
+# tests/platform.sh — sourced by the suite runners; the ONE place that tells the
+# Windows box (Git Bash, COFF, MSVC link) from the POSIX hosts. Everything a
+# runner does differently there comes from here, so a runner reads the same on
+# both and the difference is auditable in one file.
+#
+#   SCALY_COFF           1 on the Windows box, 0 elsewhere
+#   SCALY_EXE            ".exe" there, empty elsewhere — appended to every
+#                        binary a runner builds and executes
+#   SCALY_STAGE_DEFAULT  the compiler a runner uses when none is passed:
+#                        /tmp/scalyc_stage2 on POSIX (tools/bootstrap.sh), the
+#                        tree's scalyc/build/scalyc.exe on Windows, where the
+#                        bootstrap scripts do not start (CLAUDE-tooling.md)
+#   LLVM_LIBDIR/LLVM_LIBNAME  preset on Windows for the `; link: llvm` fixtures
+#                        (tools/llvm-env.sh finds no LLVM there); the 8.3
+#                        spelling because cli.scaly's link driver hands -L through
+#                        system() UNQUOTED, and `Program Files` has a space
+#   scaly_need_archive <suite> [compiler]
+#                        a suite that LINKS calls this first: on Windows nothing
+#                        tops the archive up, so a missing /tmp/libscaly.lib is
+#                        refused with the command that builds it
+#   scaly_jit_available  false on Windows: the in-process JIT resolves the runtime
+#                        through GetProcAddress, and an .exe exports nothing
+#                        (tests/win32/WINDOWS-BOX.md §1; measured 2026-09-20,
+#                        `--jit` dies with SIGSEGV). A suite that needs it says
+#                        SKIP by name instead of failing or passing vacuously.
+#
+# The POSIX values are byte-for-byte what every runner hard-coded before
+# 2026-09-20; sourcing this on a POSIX host changes nothing. tools/win-env.sh
+# supplies the developer-prompt environment (clang, LIB, INCLUDE) on Windows.
+# Git Bash mounts $TMP as /tmp, so the /tmp paths below are one string on both.
+
+SCALY_COFF=0
+case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) SCALY_COFF=1 ;; esac
+SCALY_EXE=
+SCALY_STAGE_DEFAULT=/tmp/scalyc_stage2
+if [ "$SCALY_COFF" = 1 ]; then
+  . tools/win-env.sh || { return 1 2>/dev/null || exit 1; }
+  SCALY_EXE=.exe
+  SCALY_STAGE_DEFAULT=scalyc/build/scalyc.exe
+  if [ -z "${LLVM_LIBDIR:-}" ] && [ -d "/c/Program Files/LLVM/lib" ]; then
+    LLVM_LIBDIR=$(cygpath -u "$(cygpath -d '/c/Program Files/LLVM/lib')")
+    LLVM_LIBNAME=LLVM-C
+  fi
+fi
+
+scaly_need_archive() {
+  if [ "$SCALY_COFF" = 1 ] && [ ! -f /tmp/libscaly.lib ]; then
+    echo "$1: no /tmp/libscaly.lib — build it: tools/win-archive.sh ${2:-$SCALY_STAGE_DEFAULT}" >&2
+    return 1
+  fi
+  return 0
+}
+
+scaly_jit_available() { [ "$SCALY_COFF" = 0 ]; }
+
+# stdout of a program on the Windows box arrives with CRLF: the CRT's fd 1 starts
+# in TEXT mode and turns every `\n` our runtime writes into `\r\n`. Every Windows
+# rung of CI strips those at the COMPARISON (tests/win32/lf-wrapper.sh has the
+# account, and the product question it leaves open); this is the same filter,
+# in the C locale so that it is a byte filter. Never in a pipeline with the
+# program itself — `prog | scaly_lf` reports the FILTER's exit code — always on
+# a captured file. Identity on POSIX. ★The single-line comparisons pass without
+# it only because the msys bash strips a trailing CR with the trailing newline
+# in `$(...)`; a second line keeps its CR, which is how cluster's roundtrip
+# ('R1 PASS' / 'R2 PASS') fell while forty-five single-line fiber fixtures did not.
+scaly_lf() { if [ "$SCALY_COFF" = 1 ]; then LC_ALL=C tr -d '\r'; else cat; fi; }

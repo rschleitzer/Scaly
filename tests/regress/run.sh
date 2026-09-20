@@ -10,11 +10,13 @@
 #
 # Usage: tests/regress/run.sh [stage-binary]   (default /tmp/scalyc_stage2)
 cd "$(dirname "$0")/../.." || exit 1
-STAGE=${1:-/tmp/scalyc_stage2}
+. tests/platform.sh || exit 1
+STAGE=${1:-$SCALY_STAGE_DEFAULT}
+scaly_need_archive regress "$STAGE" || exit 1
 pass=0; fail=0; failures=()
 for f in tests/regress/*.scaly; do
   t=$(basename "$f" .scaly)
-  bin=/tmp/rt_$t; rm -f "$bin"
+  bin=/tmp/rt_$t$SCALY_EXE; rm -f "$bin"
   case "$t" in
     xfail_*)
       # Expected-failure test: the compile must FAIL loudly. PASS when the

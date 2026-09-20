@@ -19,11 +19,12 @@
 #   tests/selfhosted/run.sh                       # /tmp/scalyc_stage2
 #   tests/selfhosted/run.sh /tmp/scalyc_stage2 choose
 cd "$(dirname "$0")/../.." || exit 1
-STAGE=${1:-/tmp/scalyc_stage2}
+. tests/platform.sh || exit 1
+STAGE=${1:-$SCALY_STAGE_DEFAULT}
 FILTER=$2
 TIMEOUT_SECS=${TIMEOUT_SECS:-30}
 
-pass=0; fail=0
+pass=0; fail=0; skip=0
 failures=()
 
 run_with_stack() {
@@ -46,6 +47,9 @@ for f in tests/selfhosted/*.scaly; do
     continue
   fi
 
+  # The value tests need the in-process JIT, which the Windows box does not
+  # have (tests/platform.sh): they are counted, by name, as SKIP there.
+  if ! scaly_jit_available; then skip=$((skip+1)); continue; fi
   out=$(run_with_stack "$STAGE" --jit "$f" 2>/dev/null)
   rc=$?
   if [ $rc -eq 0 ] && [ "$out" = "PASS" ]; then
@@ -55,6 +59,7 @@ for f in tests/selfhosted/*.scaly; do
   fi
 done
 
-echo "selfhosted: $pass PASS, $fail FAIL ($STAGE)"
+skipnote=""; [ "$skip" -gt 0 ] && skipnote=", $skip SKIP (JIT unavailable on Windows)"
+echo "selfhosted: $pass PASS, $fail FAIL$skipnote ($STAGE)"
 for line in "${failures[@]}"; do echo "  FAIL: $line"; done
 [ $fail -eq 0 ]

@@ -7,20 +7,27 @@
 #
 # Usage: tests/fiber/run.sh [stage-binary]   (default /tmp/scalyc_stage2)
 cd "$(dirname "$0")/../.." || exit 1
-STAGE=${1:-/tmp/scalyc_stage2}
+
+# ---- platform (tests/platform.sh): on the Windows box the compiler links through
+# clang + link.exe and resolves its OWN archive, $TMP/libscaly.lib, which Git Bash
+# mounts as /tmp; binaries carry .exe; there is no /tmp/scalyc_stage2 and no `ar`
+# top-up (tools/win-archive.sh builds the archive). POSIX is unchanged.
+. tests/platform.sh || exit 1
+STAGE=${1:-$SCALY_STAGE_DEFAULT}
+scaly_need_archive fiber "$STAGE" || exit 1
 
 # The archive normally gains fcontext.o + eio.o + ctime.o when it is built
 # (bootstrap.sh / build-from-seed.sh / install.sh). Top it up when an older
 # archive predates the fiber/eio modules — both objects are self-contained,
 # so adding them is always safe; a missing archive is left alone (the
 # compile fails loudly anyway).
-if [ -f /tmp/libscaly.a ] && ! ar t /tmp/libscaly.a 2>/dev/null | grep -q '^fcontext\.o$'; then
+if [ "$SCALY_COFF" = 0 ] && [ -f /tmp/libscaly.a ] && ! ar t /tmp/libscaly.a 2>/dev/null | grep -q '^fcontext\.o$'; then
   tools/fcontext.sh /tmp/fcontext.o && ar rcs /tmp/libscaly.a /tmp/fcontext.o
 fi
-if [ -f /tmp/libscaly.a ] && ! ar t /tmp/libscaly.a 2>/dev/null | grep -q '^eio\.o$'; then
+if [ "$SCALY_COFF" = 0 ] && [ -f /tmp/libscaly.a ] && ! ar t /tmp/libscaly.a 2>/dev/null | grep -q '^eio\.o$'; then
   tools/eio.sh /tmp/eio.o && ar rcs /tmp/libscaly.a /tmp/eio.o
 fi
-if [ -f /tmp/libscaly.a ] && ! ar t /tmp/libscaly.a 2>/dev/null | grep -q '^ctime\.o$'; then
+if [ "$SCALY_COFF" = 0 ] && [ -f /tmp/libscaly.a ] && ! ar t /tmp/libscaly.a 2>/dev/null | grep -q '^ctime\.o$'; then
   tools/ctime.sh /tmp/ctime.o && ar rcs /tmp/libscaly.a /tmp/ctime.o
   tools/panic.sh /tmp/panic.o && ar rcs /tmp/libscaly.a /tmp/panic.o
 fi
@@ -34,7 +41,7 @@ for f in tests/fiber/*.scaly; do
   expected=$(sed -n 's/^; Expected: //p' "$f")
   want_rc=$(sed -n 's/^; ExpectedExit: //p' "$f"); want_rc=${want_rc:-0}
   want_err=$(sed -n 's/^; ExpectedErr: //p' "$f")
-  bin=/tmp/fiber_$t; rm -f "$bin"
+  bin=/tmp/fiber_$t$SCALY_EXE; rm -f "$bin"
   if ! "$STAGE" -o "$bin" "$f" >/dev/null 2>&1; then
     fail=$((fail+1)); failures+=("$t(compile)"); continue
   fi

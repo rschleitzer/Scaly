@@ -22,7 +22,8 @@
 #
 # Usage: tests/target/run.sh [stage-binary]   (default /tmp/scalyc_stage2)
 cd "$(dirname "$0")/../.." || exit 1
-STAGE=${1:-/tmp/scalyc_stage2}
+. tests/platform.sh || exit 1
+STAGE=${1:-$SCALY_STAGE_DEFAULT}
 SRC=tests/aot/hello.scaly
 pass=0; fail=0; failures=()
 

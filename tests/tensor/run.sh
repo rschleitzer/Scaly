@@ -12,11 +12,13 @@
 #
 # Usage: tests/tensor/run.sh [stage-binary]   (default /tmp/scalyc_stage2)
 cd "$(dirname "$0")/../.." || exit 1
-STAGE=${1:-/tmp/scalyc_stage2}
+. tests/platform.sh || exit 1
+STAGE=${1:-$SCALY_STAGE_DEFAULT}
+scaly_need_archive tensor "$STAGE" || exit 1
 pass=0; fail=0; failures=()
 for f in tests/tensor/*.scaly; do
   t=$(basename "$f" .scaly)
-  bin=/tmp/tt_$t; rm -f "$bin"
+  bin=/tmp/tt_$t$SCALY_EXE; rm -f "$bin"
   plan=$("$STAGE" --task-plan -O2 -o "$bin" "$f" 2>&1)
   case "$t" in autodiff_*|train_*|sample_*) ;; *)
   if ! printf '%s' "$plan" | grep -q ": parallel$"; then

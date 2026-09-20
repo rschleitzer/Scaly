@@ -10,7 +10,8 @@
 #
 # Usage: tests/escape/run.sh [compiler]   (default /tmp/scalyc_stage2)
 cd "$(dirname "$0")/../.." || exit 1
-CC=${1:-/tmp/scalyc_stage2}
+. tests/platform.sh || exit 1
+CC=${1:-$SCALY_STAGE_DEFAULT}
 pass=0; fail=0; failures=()
 
 for f in tests/escape/neg_*.scaly; do
