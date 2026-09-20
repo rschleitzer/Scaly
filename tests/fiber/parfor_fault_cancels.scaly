@@ -1,48 +1,89 @@
 ; A fault in one parallel chunk STOPS the running siblings (TRAPS.md 3.21).
 ;
-; The read is out of bounds for every i >= n/2, so the chunks of the second
-; half fault at their first iteration while the chunks of the first half still
-; have millions of iterations to go. Those survivors must stop where they
-; stand: the wave's fault word is the cancel word, and the emitted chunk loop
-; polls it once per iteration (a MONOTONIC load -- a plain one would be
-; hoisted out of the loop and read once).
+; The index comes from a TABLE, not from arithmetic, and that is the whole
+; design: `tab[k] = k` everywhere except `tab[TRIP] = n`, which is one past
+; the end. So the fault is raised by iteration TRIP — a fixed, tiny distance
+; into the FIRST chunk — while every other iteration of every other chunk is
+; in range and has millions of iterations to go. Those siblings must stop
+; where they stand: the wave's fault word is the cancel word, and the emitted
+; chunk loop polls it once per iteration (a MONOTONIC load; a plain one would
+; be hoisted out of the loop and read once).
 ;
 ; The observable is the work itself: `acc` is prefilled with a sentinel, so
 ; the slots that differ are exactly the iterations that ran.
-;   without cancellation: 2000000 -- the whole first half runs to completion
-;   with it: 0.8M-1.3M depending on how fast the flag arrives
-; The gate therefore asserts STRICTLY BELOW the half, and above zero -- a
-; build that ran nothing at all would otherwise pass.
-; Expected: caught partial
+; MEASURED, 24 runs on a four-core box (2026-09-20), `written` out of 4000000:
+;   545k, 790k, 879k … 1009k, 1017k, 1342k   -- 23 runs, clustered at ~950k
+;   3904594                                  -- 1 run, i.e. EVERYTHING
+; So the cancelled runs land near a QUARTER of the range and the gate sits at
+; a HALF: the worst honest run measured is at two thirds of the threshold.
+; ★`written` is a constant FRACTION of n, not a constant count — raising n to
+; 16M moved it to 3.58M of 16M (0.22 against 0.24). Scaling the fixture does
+; not widen the margin; it only makes it slower.
+;
+; ★★★THE OUTLIER IS NOT NOISE AND MUST NOT BE TUNED AWAY. 3904594 of 4000000
+; is every chunk running whole: in that run the wave was not cancelled AT ALL.
+; No threshold can separate that from a pass without also accepting a broken
+; build, which is the whole point of the gate. ~1 run in 24 here; the rate on
+; other machines is unmeasured. TRAPS.md 3.22 carries it.
+;
+; ★★★WHY THE INDEX COMES FROM A TABLE (2026-09-20). With `src[i + n/2]` the
+; out-of-bounds half is the TAIL, so the survivors are the chunks a driver
+; hands out FIRST. Where there are fewer workers than chunks those survivors
+; hold every worker, the faulting chunks do not start until one frees up, and
+; by then the first half has run whole — the fixture read `FULL-HALF-RAN` in
+; 7 of 12 runs on a four-core box and fell in CI as well, while passing on
+; wider machines. **It was measuring the core count.** Moving the fault to
+; i == 0 fixes the order but breaks the test the other way: the wave never
+; gets to SUBMIT, the loop runs sequentially, and the gate passes vacuously
+; (measured: `caught cancelled` with no `submitted`, 8 of 8). TRIP is what
+; separates the two — far enough in that the wave is submitted and the
+; siblings are running, near enough that it is reached before any of them can
+; finish.
+;
+; ★The vacuity guard is the POOL's submit counter, not the work count: a
+; promoted wave submits, a sequential loop does not (the same proof
+; parfor_fault_caught uses). Without it the head-fault version above looked
+; like a pass.
+; Expected: caught submitted partial
 ; ExpectedExit: 0
 
-procedure fill(mutable acc: ref[Vector[int]], src: ref[Vector[int]], n: size_t, skew: size_t)
+procedure fill(mutable acc: ref[Vector[int]], src: ref[Vector[int]],
+               tab: ref[Vector[size_t]], n: size_t)
 {
     for i in n
     {
-        let x src[i + skew]
+        let idx tab[i]
+        let x src[idx]
         acc.put(i, x * 3)
     }
 }
 
 let host Page.allocate_page()
 let n 4000000 as size_t
+let trip n / (16 as size_t)         ; 6.25% of the range -- see the comment above
 var acc Vector[int]^host(n)
 var src Vector[int]^host(n)
+var tab Vector[size_t]^host(n)
 var k 0 as size_t
 while k < n
 {
     src.put(k, (k as int))
     acc.put(k, 0 - 1)
+    tab.put(k, k)
     set k: k + 1
 }
+tab.put(trip, n)
 
 var caught false
-try fill(&acc, &src, n, n / (2 as size_t))
+try fill(&acc, &src, &tab, n)
 else
     set caught: true
 if caught
     Console.print "caught "
+
+let pl TaskPool.default_pool()
+if TaskPool.submit_count(pl) > (0 as u64)
+    Console.print "submitted "
 
 var written: size_t 0
 var j 0 as size_t
@@ -59,5 +100,5 @@ else
     if written < n / (2 as size_t)
         Console.println "partial"
     else
-        Console.println "FULL-HALF-RAN"
+        Console.println "FULL-RUN"
 }
