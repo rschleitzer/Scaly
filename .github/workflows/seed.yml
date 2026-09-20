@@ -427,6 +427,13 @@ jobs:
       - name: Probe the catch point across a switched stack (rung 4b, measuring only)
         shell: bash
         run: |
+          # ★`set +e` EXPLICITLY, and it is the whole reason this step exists
+          # twice (2026-09-20): GitHub runs a bash step as `bash -e -o pipefail`,
+          # so a probe that is EXPECTED to kill its own process ends the step at
+          # that moment — probe B died, the step went red, and probe C, the
+          # candidate fix, never ran. `set -u` does not undo `-e`. A measuring
+          # step has to say so itself.
+          set +e
           set -u
           if clang --target=x86_64-pc-windows-msvc -O2 -Wall -Wextra \
                    -DSJ_PROBE_C=1 -c tests/win32/setjmp_smoke.c -o sj.o \
