@@ -407,6 +407,58 @@ jobs:
                 eio_win.o pc.o -o fcontext_smoke.exe -lws2_32
           ./fcontext_smoke.exe
 
+      # Rung 4b — the catch point, measured rather than guessed (2026-09-19,
+      # TRAPS.md 3.22). Six corpus programs fail on this target and all six
+      # CATCH; the corpus holds no catcher that stays on the original stack, so
+      # "longjmp is broken here" and "longjmp is broken across a switched
+      # stack" fit the same evidence. tests/win32/setjmp_smoke.c separates them
+      # in C, and asks the candidate fix (the non-unwinding `_setjmp(buf,
+      # NULL)`) in the same run.
+      #
+      # ★It NEVER fails the job. Its product is the log: a probe that is
+      # expected to kill its own process cannot also be a gate, and turning it
+      # into one would only hide the next question behind a red step. The
+      # verdict on Windows catching stays with the corpus in rung 5.
+      #
+      # ★Compiled WITH probe C first and again WITHOUT it if that fails,
+      # because the spelling of `_setjmp` on this target is part of what is
+      # being asked. A compile error there is a finding; taking probes A and B
+      # down with it would waste the round.
+      - name: Probe the catch point across a switched stack (rung 4b, measuring only)
+        shell: bash
+        run: |
+          set -u
+          if clang --target=x86_64-pc-windows-msvc -O2 -Wall -Wextra \
+                   -DSJ_PROBE_C=1 -c tests/win32/setjmp_smoke.c -o sj.o \
+                   2> sj.compile; then
+            echo "probe C compiles (_setjmp takes the frame argument here)"
+          else
+            echo "--- probe C does not compile; the message is the finding ---"
+            head -20 sj.compile
+            clang --target=x86_64-pc-windows-msvc -O2 -Wall -Wextra \
+                  -c tests/win32/setjmp_smoke.c -o sj.o || {
+              echo "setjmp_smoke does not compile at all"; exit 0; }
+          fi
+          clang --target=x86_64-pc-windows-msvc \
+                sj.o fcontext_win.o eio_win.o pc.o -o sj.exe -lws2_32 \
+                2> sj.link || { echo "--- it does not LINK ---"; head -20 sj.link; exit 0; }
+          # ★Under a TIMEOUT, both runs: a probe whose whole point is that the
+          # process may die must not be able to hang the job instead (Windows
+          # Error Reporting can hold a dying process open, and this step's
+          # sibling rungs have no guard because nothing in them is expected to
+          # crash).
+          TO=""
+          command -v timeout > /dev/null 2>&1 && TO="timeout 60"
+          $TO ./sj.exe; rc=$?
+          echo "setjmp_smoke exit: $rc (bash's view)"
+          if command -v powershell > /dev/null 2>&1 && command -v cygpath > /dev/null 2>&1; then
+            raw=$($TO powershell -NoProfile -NonInteractive -Command \
+                    "\$p = Start-Process -FilePath '$(cygpath -w "$PWD")\\sj.exe' -NoNewWindow -PassThru -Wait; '{0:X8}' -f \$p.ExitCode" \
+                  2>/dev/null | tr -d '\r' | tail -1)
+            echo "setjmp_smoke raw exit code: 0x$raw"
+          fi
+          exit 0
+
       # Rung 3 — brocken 4, and the one that finally links the RUNTIME. Every
       # rung so far tested a piece in isolation; this one puts all five brocken
       # in one binary, because the archive is a single object with a single

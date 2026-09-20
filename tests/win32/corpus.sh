@@ -162,6 +162,25 @@ run)
         # with different fixes. A flake that leaves no evidence behind costs a
         # CI round every time it fires. The wanted substring rides along for
         # the same reason: a mismatch is unreadable without both halves.
+        # ★The RAW Windows exit code, asked for rather than inferred
+        # (2026-09-19). What bash reports here is a POSIX wait status, eight
+        # bits wide, and MSYS maps an abnormal termination onto it: the six
+        # catching programs all read `127`, which is also bash's own "command
+        # not found" and was already the reported code once before, for a CRT
+        # invalid-parameter kill (CLAUDE-tooling.md). Three very different
+        # deaths therefore look alike. The NTSTATUS separates them —
+        # 0xC0000005 access violation, 0xC0000409 fast fail (which is what the
+        # CRT's invalid-parameter handler raises), 0xC0000028 bad stack — and
+        # only the launcher that started the process can still report it, so
+        # the program is run a SECOND time, under PowerShell, for its code
+        # alone. Diagnosis only: the verdict above stands on the first run.
+        if command -v powershell > /dev/null 2>&1 && command -v cygpath > /dev/null 2>&1; then
+          winexe=$(cygpath -w "$exe")
+          raw=$($TO powershell -NoProfile -NonInteractive -Command \
+                  "\$p = Start-Process -FilePath '$winexe' -NoNewWindow -PassThru -Wait; '{0:X8}' -f \$p.ExitCode" \
+                2>/dev/null | tr -d '\r' | tail -1)
+          [ -n "$raw" ] && echo "      raw exit code: 0x$raw (bash saw $rc)"
+        fi
         if [ -n "$want_err" ]; then echo "      want stderr: $want_err"; fi
         if [ -s "$OUT/$base.err" ]; then
           echo "      got  stderr: $(head -c 300 "$OUT/$base.err" | tr -d '\r' | tr '\n' ' ')"

@@ -1,0 +1,70 @@
+; AOT Test: a runtime panic is caught on the MAIN stack, with no fiber anywhere
+; Expected: PASS
+;
+; This fixture is a CONTROL, and it exists because the Windows corpus had none
+; (2026-09-19, TRAPS.md 3.22). Every catching program the corpus ran was a
+; fiber or parfor case, so when all six of them failed on Windows and nothing
+; else did, two very different diagnoses fitted the same evidence: "catching is
+; broken on this target" and "catching is broken on a stack the program
+; switched itself". A control that catches on the thread's ORIGINAL stack tells
+; those apart — and whether it LINKS answers a second question for free, since
+; the emitter calls `setjmp` by name for a `try` arm and MSVC's CRT knows that
+; name only as a macro over `_setjmp`.
+;
+; It stays cheap on the three targets where catching works: one out-of-bounds
+; read, one arm, no I/O but the verdict.
+
+function element(n: i64) returns i64
+{
+    var buf int[2]
+    set buf[0]: 7
+    set buf[1]: 9
+    let v Slice[int](2, &buf[0])
+    v[n as size_t]
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    ; a local of the CATCHER, to prove it survives the jump (returns_twice)
+    var before 100
+    set before: before + argc
+
+    ; the success path first: index 1 is in range
+    try let ok element(1)
+        when e0: OutOfBounds
+        {
+            print "FAIL caught a read that is in range\n"
+            return 1
+        }
+    if ok <> 9
+    {
+        print "FAIL wrong element\n"
+        return 2
+    }
+
+    ; and the panic: index 5 of a two-element view
+    try let bad element(5)
+        when e: OutOfBounds
+        {
+            if e.index <> (5 as size_t)
+            {
+                print "FAIL wrong index\n"
+                return 3
+            }
+            if e.length <> (2 as size_t)
+            {
+                print "FAIL wrong length\n"
+                return 4
+            }
+            if before <> 101
+            {
+                print "FAIL the catcher's local did not survive\n"
+                return 5
+            }
+            print "PASS"
+            return 0
+        }
+
+    print "FAIL not caught\n"
+    6
+}
