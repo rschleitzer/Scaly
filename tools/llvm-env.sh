@@ -5,6 +5,39 @@
 # Safe under `set -u`: tools/link-lto.sh sources it with nounset on, and every
 # variable below may legitimately be unset on entry.
 
+# 0. The Windows box (Git Bash, the standalone LLVM installer). None of the
+#    probes below can find anything there — no brew, no /usr/lib/llvm-20, no
+#    llvm-config — and until 2026-09-20 the whole seed pipeline therefore did
+#    not START here, which looks like nothing at all (CLAUDE-tooling.md, "THE
+#    BAR'S SCRIPTS ARE POSIX-BOUND"). tools/win-env.sh derives the developer
+#    environment; this block answers the four names the scripts ask for:
+#      LLVM_PREFIX   the install clang came from (/c/Program Files/LLVM)
+#      LLC / OPT     tools/win/llc and tools/win/opt — `clang -c` and
+#                    `clang -emit-llvm` under the spelling the scripts use;
+#                    the installer ships neither tool (nor llvm-link, which
+#                    stays EMPTY: tools/link-lto.sh then falls back to its
+#                    archive link, and the seed builds go through
+#                    tools/win-lto.sh, i.e. clang -flto=full + lld-link)
+#      LLVM_LIBDIR   in the 8.3 spelling: cli.scaly hands -L through system()
+#                    UNQUOTED and `Program Files` has a space
+#      LLVM_LIBNAME  LLVM-C — the C API is what the compiler links there
+#    POSIX hosts never enter this block; every value below it is theirs.
+SCALY_COFF=${SCALY_COFF:-0}
+case "$(uname -s)" in
+  MINGW*|MSYS*|CYGWIN*)
+    . "$(dirname "${BASH_SOURCE[0]}")/win-env.sh" || { llvm_env_ok=0; return 1 2>/dev/null || exit 1; }
+    if [ -z "${LLVM_PREFIX:-}" ]; then
+      LLVM_PREFIX="$(cd "$(dirname "$(command -v clang)")/.." && pwd)"
+    fi
+    LLC=${LLC:-$SCALY_WIN_TOOLS/llc}
+    OPT=${OPT:-$SCALY_WIN_TOOLS/opt}
+    if [ -z "${LLVM_LIBDIR:-}" ]; then
+      LLVM_LIBDIR=$(cygpath -u "$(cygpath -d "$LLVM_PREFIX/lib")")
+    fi
+    LLVM_LIBNAME=${LLVM_LIBNAME:-LLVM-C}
+    ;;
+esac
+
 # 1. LLVM prefix
 if [ -z "${LLVM_PREFIX:-}" ]; then
   if [ -n "${LLVM20:-}" ]; then
@@ -75,4 +108,4 @@ llvm_env_ok=1
 if [ "$llvm_env_ok" = "1" ]; then
   echo "llvm-env: prefix=$LLVM_PREFIX  llc=$LLC  lib=$LLVM_LIBDIR (-l$LLVM_LIBNAME)"
 fi
-export LLVM_PREFIX LLC LLVM_LIBDIR LLVM_LIBNAME OPT LLVM_LINK
+export LLVM_PREFIX LLC LLVM_LIBDIR LLVM_LIBNAME OPT LLVM_LINK SCALY_COFF

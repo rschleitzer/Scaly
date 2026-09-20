@@ -1,0 +1,23 @@
+#!/bin/bash
+# `opt` for the Windows box — the standalone LLVM installer ships no opt, and
+# `opt -O2 in -o out.bc` is `clang -O2 -c -emit-llvm` over the same IR (the
+# pass pipeline is the one clang runs at that level; the codegen half is
+# skipped by -emit-llvm). The bar's scripts call
+#     "$OPT" -O2 [-S] <in.ll> -o <out.bc|out.ll>
+# and tools/llvm-env.sh points OPT here on this box. Only that spelling is
+# accepted (the PGO flags tools/link-lto.sh can forward are refused, not
+# ignored): what is not translated must not look translated.
+set -u
+IN=""; OUT=""; OPTL=""; EMIT="-c"
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -O[0-3]) OPTL=$1 ;;
+    -S) EMIT="-S" ;;
+    -o) OUT=${2:?opt(win): -o needs a file}; shift ;;
+    -*) echo "opt(win): flag not supported here: $1" >&2; exit 2 ;;
+    *) IN=$1 ;;
+  esac
+  shift
+done
+[ -n "$IN" ] && [ -n "$OUT" ] || { echo "opt(win): usage: opt -O2 [-S] <in> -o <out>" >&2; exit 2; }
+exec clang --target=x86_64-pc-windows-msvc $OPTL $EMIT -emit-llvm -Wno-override-module "$IN" -o "$OUT"

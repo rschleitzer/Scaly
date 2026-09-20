@@ -14,6 +14,17 @@
 #            symptom is `LNK1181: cannot open input file 'ws2_32.lib'`.
 #   INCLUDE  the matching header directories, which clang's MSVC driver honours;
 #            without them a shim's `#include <winsock2.h>` is `file not found`.
+#   PATH     (again) tools/win at the END: `ar`, `llc` and `opt` stand-ins for
+#            the three names the bar's scripts call and this toolchain does not
+#            ship (llvm-ar, `clang -c`, `clang -emit-llvm`; each file says what
+#            it accepts). At the end, so a real one anywhere on PATH still wins.
+#   PATH     (again) a real python3 when the one that resolves is the Microsoft
+#            Store stub, which prints an advertisement and exits 49: winget's
+#            Python.Python.3.13 lands under %LOCALAPPDATA%\Programs\Python and
+#            is not on PATH at all (CLAUDE-tooling.md).
+#   SCALY_COFF=1, SCALY_EXE=.exe, SCALY_WIN_TOOLS — the facts the scripts ask
+#            (tests/platform.sh sets the POSIX values; tools/llvm-env.sh reads
+#            these on the Windows box and points LLC/OPT at the stand-ins).
 #
 # ★tests/win32/corpus.sh warns against ASSIGNING to LIB, and it is right: on a
 # runner that has a developer environment, replacing LIB with one archive
@@ -67,3 +78,32 @@ case ";${LIB:-};${INCLUDE:-};" in
     export LIB INCLUDE
     ;;
 esac
+
+SCALY_WIN_TOOLS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/win"
+case ":$PATH:" in
+  *":$SCALY_WIN_TOOLS:"*) ;;
+  *) PATH="$PATH:$SCALY_WIN_TOOLS" ;;
+esac
+# The tools the installer does not ship (llvm-dwarfdump for tests/debuginfo),
+# UNPACKED from the release tarball into %LOCALAPPDATA%\Programs\llvm-20.1.8
+# — never a second installer run (tests/win32/WINDOWS-BOX.md §1) — and at the
+# END of PATH: the installed clang stays the one that answers, and the LLC/OPT
+# stand-ins are named explicitly by tools/llvm-env.sh, so the real llc/opt in
+# there change nothing the bar measures.
+xtools="$(cygpath -u "${LOCALAPPDATA:-$HOME/AppData/Local}")/Programs/llvm-20.1.8/bin"
+if [ -d "$xtools" ]; then
+  case ":$PATH:" in *":$xtools:"*) ;; *) PATH="$PATH:$xtools" ;; esac
+fi
+if ! python3 -c 'import sys' >/dev/null 2>&1; then
+  py=$(ls -d "$(cygpath -u "${LOCALAPPDATA:-$HOME/AppData/Local}")"/Programs/Python/Python3*/ 2>/dev/null | sort -V | tail -1)
+  if [ -n "$py" ] && [ -x "$py/python3.exe" ]; then PATH="${py%/}:$PATH"; fi
+fi
+export PATH
+# Python on Windows reads and writes in the ANSI code page unless told: the
+# tree's tools print `ü` and read UTF-8 sources, and tests/abi's grep for its
+# own verdict line missed on a cp1252 byte (measured 2026-09-20). One switch,
+# the one the interpreter documents for exactly this.
+export PYTHONUTF8=1
+SCALY_COFF=1
+SCALY_EXE=.exe
+export SCALY_COFF SCALY_EXE SCALY_WIN_TOOLS

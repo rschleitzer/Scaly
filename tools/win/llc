@@ -1,0 +1,33 @@
+#!/bin/bash
+# `llc` for the Windows box — the standalone LLVM installer ships no llc, and
+# `llc -filetype=obj` IS `clang -c` (CLAUDE-tooling.md, "what the LLVM
+# installer does NOT ship"). The bar's scripts call
+#     "$LLC" -relocation-model=pic [-O2] -filetype=obj <in.ll|in.bc> -o <out.o>
+# and tools/llvm-env.sh points LLC here on this box, so every script keeps
+# its POSIX line. Only that spelling is accepted; anything else is refused
+# loudly rather than half-honoured.
+#
+# ★-relocation-model is dropped, not translated: a COFF image is relocated by
+# the loader through .reloc, PIC is not a question the target asks.
+# ★An -O level is passed through as clang's, which runs the IR pipeline as
+# well as the codegen one — the scripts already promote `linkonce_odr` to
+# `weak_odr` before optimising a library (the GlobalDCE rule), so the stronger
+# pass is safe; and the object is what an archive holds, not a fixed point.
+# ★--target is named, not inherited from clang's default: the same rule as
+# the seed's SEED_TARGET — a bare clang answers with whatever it was built
+# with, and this box has one clang today and may have two tomorrow.
+set -u
+IN=""; OUT=""; OPTL=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -relocation-model=*) ;;
+    -filetype=obj) ;;
+    -O[0-3]) OPTL=$1 ;;
+    -o) OUT=${2:?llc(win): -o needs a file}; shift ;;
+    -*) echo "llc(win): flag not supported here: $1" >&2; exit 2 ;;
+    *) IN=$1 ;;
+  esac
+  shift
+done
+[ -n "$IN" ] && [ -n "$OUT" ] || { echo "llc(win): usage: llc [-O2] -filetype=obj <in> -o <out>" >&2; exit 2; }
+exec clang --target=x86_64-pc-windows-msvc -c $OPTL -Wno-override-module "$IN" -o "$OUT"

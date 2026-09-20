@@ -1,0 +1,7 @@
+#!/bin/bash
+# `ar` for the Windows box. Git Bash ships no binutils, and the bar's scripts
+# call `ar rcs` by name; the LLVM installer ships llvm-ar, which reads and
+# writes the same archives (tools/win-archive.sh already builds the runtime
+# archive with it). tools/win-env.sh puts this directory at the END of PATH,
+# so a real `ar` anywhere on the box still wins.
+exec llvm-ar "$@"
