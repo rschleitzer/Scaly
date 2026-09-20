@@ -31,10 +31,17 @@
  * work under --jit, and every panic would end the process as if nobody had
  * asked to catch it.
  *
- * ★★★UNPROVEN ON WINDOWS. Every other target is exercised by the suites, but
- * MSVC's setjmp/longjmp interacts with SEH unwinding, and tools/win-undef.sh
- * reads symbols with grep rather than linking. Rung 3 of the Windows roadmap
- * is what would prove it; until then treat a Windows panic catch as untested.
+ * ★★★BROKEN ON WINDOWS, MEASURED (2026-09-19, CI run 35465806161; TRAPS.md
+ * 3.22). This said "unproven" until the Windows job compiled this file for the
+ * first time: of the 98 corpus programs of rung 5, 92 pass and the SIX that
+ * fail are exactly the ones that CATCH. They link, start and print the line
+ * before the catch point, then end with exit 127 and an empty stderr. The
+ * likely cause, untested: MSVC's longjmp unwinds through SEH, which needs
+ * valid unwind data for every frame in between, and a fiber stack that
+ * fcontext_win switched itself has none -- the non-unwinding jump (a NULL
+ * frame in x64's two-argument `_setjmp`) is the usual exit, and it would have
+ * to reach the emitter's own setjmp call for a `try` arm as well. Until then
+ * treat a Windows panic catch as absent, not merely untested.
  */
 #include <setjmp.h>
 #include <stddef.h>
