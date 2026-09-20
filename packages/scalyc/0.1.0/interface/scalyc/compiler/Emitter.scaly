@@ -3908,7 +3908,92 @@ define Emitter
         ; libc setjmp. The buffer comes from scaly_catch_push (the shim owns
         ; the jmp_buf layout, which is OS- and arch-specific and must not reach
         ; the ONE committed seed), so this declaration only needs the pointer.
+        ;
+        ; ★★★COFF IS DIFFERENT, AND IT IS NOT A SPELLING QUESTION (2026-09-20,
+        ; TRAPS.md 3.22). On Win64 the CRT's catch point is `_setjmp` and it
+        ; takes the FRAME as a SECOND argument, in RDX. The C header declares
+        ; one parameter because the COMPILER supplies the second — which is why
+        ; the two-argument form cannot be written in C and can be written here,
+        ; and why the measurement that said "this spelling does not exist on
+        ; this target" was about the header, not about the ABI.
+        ;
+        ; Called with one argument the frame slot keeps whatever RDX happened
+        ; to hold (measured: 0x2002), and `Frame` is the FIRST field of the
+        ; jmp_buf — the field `longjmp` reads to choose between restoring
+        ; registers and unwinding through SEH. A garbage value there sends
+        ; RtlUnwindEx to a phantom frame and the process dies with no message
+        ; and no stderr; the raw NTSTATUS varies with the Windows build and is
+        ; NOT a fingerprint (0xC00000FF, 0xC0000005 and 0xC0000028 were all one
+        ; bug). Every catching program on Windows died this way.
         procedure get_setjmp_fn(mutable this) @direct true returns LLVMValueRef linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; The COFF half of get_setjmp_fn: `i32 @_setjmp(ptr buf, ptr frame)`.
+        ; Exactly what clang emits for a C `setjmp` on this target, read off
+        ; its own output rather than guessed.
+        procedure get_setjmp_fn_coff(mutable this) @direct true returns LLVMValueRef linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; `declare ptr @llvm.frameaddress.p0(i32 immarg)` — the frame `_setjmp`
+        ; wants. Declared by NAME and TYPE: LLVM recognises an intrinsic by its
+        ; mangled name, and `p0` is the address space of the pointer it
+        ; answers. It is the only `llvm.*` this emitter declares.
+        procedure get_frameaddress_fn(mutable this) @direct true returns LLVMValueRef linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; Build the catch point's `setjmp` call — two arguments on COFF, one
+        ; everywhere else. It is its own procedure so the `try` emission stays
+        ; one statement at the call site.
+        procedure emit_catch_setjmp(mutable this, mutable sj_fn: LLVMValueRef, mutable buf: LLVMValueRef) @direct true returns LLVMValueRef linked
+
+
+
+
+
 
 
 
@@ -16684,9 +16769,6 @@ define Emitter
         ; enclosing scope (see plan_try) and the else arm of every shape in the
         ; tree ends in a return or a throw, so nothing downstream reads it.
         procedure emit_try_panic_catch(mutable this, mutable try_expr: PlannedTry) @direct true returns LLVMValueRef linked
-
-
-
 
 
 
