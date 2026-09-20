@@ -96,6 +96,18 @@ echo "seed: emitting .ll with $CC --no-tests --target $SEED_TARGET"
   "$CC" -S --no-tests --target "$SEED_TARGET" -o "$OUT/scaly.ll" packages/scaly/0.1.0/scaly.scaly || exit 1
 ) || fail "emission"
 
+if [ "$SCALY_COFF" = 1 ]; then
+# ★The Windows box: the seed text is Mach-O-targeted and carries no COMDATs,
+# so it cannot be compiled per object for COFF; CI's rung 12 route instead —
+# clang -flto=full per root, lld-link with -O2 on the link, dead declares
+# stripped first (tools/win-lto.sh has every reason). The same link proves
+# zero undefined symbols: lld-link has no dynamic_lookup to forget.
+echo "seed: clang -flto=full + lld-link (tools/win-lto.sh, no dynamic_lookup)"
+if ! tools/win-lto.sh --llvm "$OUT/scalyc_seed$SCALY_EXE" "$OUT/main.ll" "$OUT/scalyc.ll" "$OUT/scaly.ll" > "$OUT/link.log" 2>&1; then
+  tail -40 "$OUT/link.log"
+  fail "link (undefined symbols)"
+fi
+else
 echo "seed: llc -> obj (LLVM 20) + link ($CLANG, no dynamic_lookup)"
 for f in main scalyc scaly; do
   # -relocation-model=pic: x86-64 Linux PIE rejects llc's default R_X86_64_32
@@ -119,6 +131,7 @@ if ! "$CLANG" "${LINKARGS[@]}" "$OUT/main.o" "$OUT/scalyc.o" "$OUT/scaly.o" "$OU
      -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -lm -o "$OUT/scalyc_seed" 2> "$OUT/link.log"; then
   grep -v 'reexported library' "$OUT/link.log" || true
   fail "link (undefined symbols)"
+fi
 fi
 echo "seed: linked clean -> $OUT/scalyc_seed"
 
@@ -181,6 +194,17 @@ echo "seed: emitting scalyls roots with $OUT/scalyc_seed (self-hosted)"
   "$OUT/scalyc_seed" -S --no-tests --target "$SEED_TARGET" -o "$OUT/scalyls_main.ll" packages/scalyls/0.1.0/main.scaly || exit 1
   "$OUT/scalyc_seed" -S --no-tests --target "$SEED_TARGET" -o "$OUT/scalyls.ll"      packages/scalyls/0.1.0/scalyls.scaly || exit 1
 ) || fail "scalyls emission"
+if [ "$SCALY_COFF" = 1 ]; then
+# ★The Windows box: the scalyls ROOTS are emitted above (for the seed's own
+# target — they are seed files and reproduce here like the other three), but
+# the server is neither linked nor smoke-tested, and it is said by name: the
+# LTO route over these four roots stops at popen, pclose, fork, waitpid and
+# kill — scalyls' worker process model, which the Windows substrate has no
+# counterpart for (measured 2026-09-20, tools/build-from-seed.sh has the same
+# note). Porting the worker is a scalyls port, tests/win32/WINDOWS-BOX.md §4a.
+echo "seed: SKIP scalyls link + LSP smoke on the Windows box (worker.scaly: fork/popen/waitpid/kill)"
+SCALYLS_VERDICT="scalyls roots emitted, link + smoke SKIPPED (Windows box)"
+else
 for f in scalyls_main scalyls; do
   "$LLC" -relocation-model=pic -filetype=obj "$OUT/$f.ll" -o "$OUT/$f.o" || fail "llc $f.ll"
 done
@@ -225,6 +249,8 @@ while True:
 if not got_init: sys.exit("bad initialize response")
 if not got_sym:  sys.exit("documentSymbol did not return the expected outline")
 PY
+SCALYLS_VERDICT="scalyls language server links + serves"
+fi
 
 echo "SEED: OK — compiler links clean, runs hello + AOT, reproduces itself"
-echo "          byte-identical; scalyls language server links + serves"
+echo "          byte-identical; $SCALYLS_VERDICT"

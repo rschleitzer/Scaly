@@ -47,6 +47,36 @@ if [ -f "$SEED/SHA256SUMS" ]; then
         || { echo "build-from-seed: FAIL — seed checksum mismatch"; exit 1; }
 fi
 
+# ★The Windows box (SCALY_COFF=1 from tools/llvm-env.sh). Everything below
+# this block is the POSIX pipeline, untouched: llvm-link + opt + llc do not
+# exist on this toolchain and the committed seed cannot be compiled per object
+# for COFF anyway (no COMDATs — LNK1227 on 257 duplicate weak symbols), so the
+# route is CI's rung 12, clang -flto=full + lld-link, in tools/win-lto.sh. The
+# runtime archive is libscaly.lib, built the way CI's rung 3 builds it
+# (tools/win-archive.sh); the language server takes the same LTO route with
+# its own two roots over the compiler's package IR. The in-process JIT does
+# not work on Windows, so the weak_odr promotion the POSIX build makes for it
+# is deliberately not made here (CLAUDE-tooling.md, "The Windows port").
+if [ "$SCALY_COFF" = 1 ]; then
+    OUT="${OUT%.exe}.exe"
+    tools/win-lto.sh --llvm "$OUT" "$SEED/main.ll" "$SEED/scalyc.ll" "$SEED/scaly.ll"
+    echo "build-from-seed: OK — $OUT (from seed/, clang -flto=full + lld-link)"
+    tools/win-archive.sh "$OUT" > /dev/null
+    echo "build-from-seed: runtime archive /tmp/libscaly.lib ready"
+    # ★The language server is NOT built here, by name rather than by a failed
+    # link (measured 2026-09-20: the same LTO route over scalyls_main.ll +
+    # scalyls.ll + the two package roots stops at five undefined symbols —
+    # popen, pclose, fork, waitpid, kill — scalyls' worker process model, for
+    # which the Windows substrate has no counterpart). Porting the worker is a
+    # scalyls port, not a build-pipeline question; tests/win32/WINDOWS-BOX.md
+    # §4a carries it. The seed's scalyls roots stay valid — they are emitted
+    # for the seed's own target, not this box's.
+    if [ "${SCALYC_SEED_NO_SCALYLS:-0}" != "1" ]; then
+        echo "build-from-seed: SKIP scalyls on the Windows box (worker.scaly: fork/popen/waitpid/kill are not in the substrate)"
+    fi
+    exit 0
+fi
+
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 

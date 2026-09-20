@@ -16,6 +16,7 @@
 #
 # Usage: tools/aot_corpus.sh <stage-binary> [label]
 cd "$(dirname "$0")/.."
+. tests/platform.sh || exit 1
 STAGE=$1; NAME=${2:-$1}
 pass=0; fail=0; failed=""
 for f in tests/aot/*.scaly; do
@@ -23,10 +24,14 @@ for f in tests/aot/*.scaly; do
   expected=$(sed -n 's/^; Expected: //p' "$f")
   if [ -n "$expected" ]; then
     # Ground-truth path: build + run the stage binary only, compare stdout.
-    rm -f /tmp/aot_new_$t
-    $STAGE -o /tmp/aot_new_$t $f >/dev/null 2>&1
+    # The run is CAPTURED, then filtered (scaly_lf: the Windows box's CRLF
+    # stdout, identity elsewhere) — never `prog | filter`, whose status is
+    # the filter's, and a multi-line Expected keeps its inner CRs otherwise.
+    rm -f /tmp/aot_new_$t$SCALY_EXE
+    $STAGE -o /tmp/aot_new_$t$SCALY_EXE $f >/dev/null 2>&1
     if [ $? -ne 0 ]; then fail=$((fail+1)); failed="$failed $t(compile)"; continue; fi
-    newout=$(/tmp/aot_new_$t 2>/dev/null); newrc=$?
+    /tmp/aot_new_$t$SCALY_EXE > /tmp/aot_out_$t 2>/dev/null; newrc=$?
+    newout=$(scaly_lf < /tmp/aot_out_$t)
     if [ "$newrc" = "0" ] && [ "$newout" = "$expected" ]; then
       pass=$((pass+1))
     else

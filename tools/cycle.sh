@@ -9,6 +9,20 @@ cd "$(dirname "$0")/.."
 source tools/llvm-env.sh >/dev/null
 LINK="-L$LLVM_LIBDIR -l$LLVM_LIBNAME"
 
+# Link a stage: link_stage <compiler> <out> <package-archive> — the same
+# helper as tools/bootstrap.sh's, for the same reason: on the Windows box the
+# driver's own link has no stack reserve, so the main object is emitted with
+# -c and linked through tools/win-link.sh (CI's rung 9 line). POSIX is the
+# line that always stood here.
+link_stage() {
+  if [ "$SCALY_COFF" = 1 ]; then
+    "$1" -c -o "$2_main.o" packages/scalyc/0.1.0/main.scaly
+    tools/win-link.sh --llvm --runtime "$2$SCALY_EXE" "$2_main.o" "$3"
+  else
+    "$1" -o "$2" packages/scalyc/0.1.0/main.scaly "$3" $LINK
+  fi
+}
+
 # ROOT: build from the committed seed. The C++ stage-0 fallback is retired
 # (sources frozen under retired/scalyc0/) — no seed means no bootstrap.
 # Cached at /tmp/scalyc_seed_root — rebuilt only when older than the seed.
@@ -34,6 +48,11 @@ fi
 # build-from-seed.sh: the ROOT is mtime-cached above, so on a cache hit that
 # script never runs and /tmp/libscaly.a keeps whatever the last build left.
 rebuild_runtime() {
+  if [ "$SCALY_COFF" = 1 ]; then
+    # The Windows archive, libscaly.lib, as CI's rung 3 builds it.
+    tools/win-archive.sh "$1" > /dev/null
+    return
+  fi
   bash -c "ulimit -s 65520; '$1' -c --no-prelude --no-tests -o /tmp/libscaly.o packages/scaly/0.1.0/scaly.scaly"
   tools/fcontext.sh /tmp/fcontext.o
   tools/eio.sh /tmp/eio.o
@@ -47,11 +66,11 @@ rebuild_runtime() {
 rebuild_runtime "$ROOT"
 bash -c "ulimit -s 65520; '$ROOT' -c -o /tmp/sc0n.o packages/scalyc/0.1.0/scalyc.scaly"
 rm -f /tmp/libscalyc0n.a; ar rcs /tmp/libscalyc0n.a /tmp/sc0n.o
-bash -c "ulimit -s 65520; '$ROOT' -o /tmp/scalyc_stage1_new packages/scalyc/0.1.0/main.scaly /tmp/libscalyc0n.a $LINK" 2>&1 | grep -v "ld: warning" || true
+( ulimit -s 65520; link_stage "$ROOT" /tmp/scalyc_stage1_new /tmp/libscalyc0n.a ) 2>&1 | grep -v "ld: warning" || true
 rebuild_runtime /tmp/scalyc_stage1_new
 bash -c 'ulimit -s 65520; /tmp/scalyc_stage1_new -c -o /tmp/sc1n.o packages/scalyc/0.1.0/scalyc.scaly'
 rm -f /tmp/libscalyc1n.a; ar rcs /tmp/libscalyc1n.a /tmp/sc1n.o
-bash -c "ulimit -s 65520; /tmp/scalyc_stage1_new -o /tmp/scalyc_stage2_new packages/scalyc/0.1.0/main.scaly /tmp/libscalyc1n.a $LINK" 2>&1 | grep -v "ld: warning" || true
+( ulimit -s 65520; link_stage /tmp/scalyc_stage1_new /tmp/scalyc_stage2_new /tmp/libscalyc1n.a ) 2>&1 | grep -v "ld: warning" || true
 /tmp/scalyc_stage1_new -S --no-prelude -o /tmp/sl_s1.ll packages/scaly/0.1.0/scaly.scaly 2>/dev/null
 /tmp/scalyc_stage2_new -S --no-prelude -o /tmp/sl_s2.ll packages/scaly/0.1.0/scaly.scaly 2>/dev/null
 cmp -s /tmp/sl_s1.ll /tmp/sl_s2.ll && echo "RESULT: IDENTICAL" || echo "RESULT: DIVERGES"
