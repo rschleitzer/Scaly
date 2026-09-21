@@ -22,7 +22,7 @@ define HASH_PRIMES: size_t[] [
 ; planner walk the hashing namespace so get_prime/hash get real bodies
 ; for the .ll seed (HashSetBuilder::reallocate calls get_prime;
 ; String::hash calls hash) instead of declare-only → undefined at link.
-function is_prime(candidate: size_t) returns bool linked
+function is_prime(candidate: size_t) @ret_nonlocal true returns bool linked
 
 
 
@@ -74,7 +74,7 @@ function get_prime(size: size_t) returns size_t linked
 
 
 ; FNV-1a hash
-function hash(data: Slice[char]) returns size_t linked
+function hash(data: Slice[char]) @ret_caller true returns size_t linked
 
 
 

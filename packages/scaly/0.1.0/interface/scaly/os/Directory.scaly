@@ -10,14 +10,14 @@ define F_OK: int 0
 ; takes the NUL-terminated path (in the requester's region, alive while
 ; it parks) and returns a non-null sentinel for true/success — no
 ; result pages.
-procedure dir_access_worker(arg: pointer[void]) returns pointer[void] io linked
+procedure dir_access_worker(arg: pointer[void]) @ret_nonlocal true returns pointer[void] io linked
 
 
 
 
 
 
-procedure dir_isdir_worker(arg: pointer[void]) returns pointer[void] io linked
+procedure dir_isdir_worker(arg: pointer[void]) @ret_nonlocal true returns pointer[void] io linked
 
 
 
@@ -26,14 +26,14 @@ procedure dir_isdir_worker(arg: pointer[void]) returns pointer[void] io linked
 
 
 
-procedure dir_create_worker(arg: pointer[void]) returns pointer[void] io linked
+procedure dir_create_worker(arg: pointer[void]) @ret_nonlocal true returns pointer[void] io linked
 
 
 
 
 
 
-procedure dir_remove_worker(arg: pointer[void]) returns pointer[void] io linked
+procedure dir_remove_worker(arg: pointer[void]) @ret_nonlocal true returns pointer[void] io linked
 
 
 

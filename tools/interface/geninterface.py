@@ -181,6 +181,12 @@ def transform(text, facts):
                 for key in ('persists', 'direct', 'transitive', 'returnpage'):
                     if a.get(key) == '1':
                         facts_attrs += ' @' + key + ' true'
+                if a.get('ret'):
+                    cls, arg = a['ret']
+                    rname = {'1': 'ret_caller', '2': 'ret_explicit_' + arg,
+                             '3': 'ret_param_' + arg, '4': 'ret_nonlocal'}.get(cls)
+                    if rname:
+                        facts_attrs += ' @' + rname + ' true'
                 rel = close + 1 - s
                 head = head[:rel] + facts_attrs + head[rel:]
             if s in io_starts and not re.search(r'\)[^;]*\bio\b', head):
@@ -239,6 +245,10 @@ def parse_facts(path):
         # D/T/P continue the F line before them: direct, transitive, returnpage
         if p[0] in ('D', 'T', 'P') and last is not None:
             last[6][{'D': 'direct', 'T': 'transitive', 'P': 'returnpage'}[p[0]]] = '1'
+            continue
+        # V continues the F line before it: the return residence, class + arg
+        if p[0] == 'V' and last is not None:
+            last[6]['ret'] = (p[1], p[2])
             continue
         if not p or p[0] not in ('F', 'C', 'G', 'R', 'I', 'M'):
             continue

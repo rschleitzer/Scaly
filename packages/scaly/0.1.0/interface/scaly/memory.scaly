@@ -8,7 +8,7 @@ define memory
     module root_pages
     module Region
 
-    function test_page_allocate() returns int linked
+    function test_page_allocate() @ret_nonlocal true returns int linked
 
 
 
@@ -19,7 +19,7 @@ define memory
 
 
 
-    function test_page_allocate_int() returns int linked
+    function test_page_allocate_int() @ret_nonlocal true returns int linked
 
 
 
@@ -38,7 +38,7 @@ define memory
 
 
 
-    function test_page_multiple_allocs() returns int linked
+    function test_page_multiple_allocs() @ret_nonlocal true returns int linked
 
 
 
@@ -64,7 +64,7 @@ define memory
 
 
 
-    function test_page_get() returns int linked
+    function test_page_get() @ret_nonlocal true returns int linked
 
 
 
@@ -80,7 +80,7 @@ define memory
 
 
 
-    function test() returns int linked
+    function test() @ret_nonlocal true returns int linked
 
 
 

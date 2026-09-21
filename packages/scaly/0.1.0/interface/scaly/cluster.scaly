@@ -114,7 +114,7 @@ define NodePeer
 )
 
 ; The reader thread's entry (free procedure: taken with &).
-procedure node_reader_entry(mutable arg: pointer[void]) returns pointer[void] io linked
+procedure node_reader_entry(mutable arg: pointer[void]) @ret_nonlocal true returns pointer[void] io linked
 
 
 
@@ -135,7 +135,7 @@ define Cluster
 
 
 
-    procedure release(p: pointer[NodePeer]) linked
+    procedure release(p: pointer[NodePeer]) @ret_nonlocal true linked
 
 
 
@@ -151,13 +151,13 @@ define Cluster
 
 
 
-    function try_wacquire(p: pointer[NodePeer]) returns bool linked
+    function try_wacquire(p: pointer[NodePeer]) @ret_nonlocal true returns bool linked
 
 
 
 
 
-    procedure wrelease(p: pointer[NodePeer]) linked
+    procedure wrelease(p: pointer[NodePeer]) @ret_nonlocal true linked
 
 
 
@@ -167,16 +167,16 @@ define Cluster
 
     ; Listen on ALL interfaces (a cluster node accepts real remote
     ; peers). 0 asks for an ephemeral port; Cluster.local_port reads it.
-    procedure listen(port: i32) returns i32 io linked
+    procedure listen(port: i32) @ret_nonlocal true returns i32 io linked
 
 
-    procedure local_port(fd: i32) returns i32 io linked
+    procedure local_port(fd: i32) @ret_nonlocal true returns i32 io linked
 
 
     ; Accept one peer: TCP accept, then the frozen-preamble handshake.
     ; Returns null when the connect was refused (mismatch — already
     ; reported loudly) or the transport failed.
-    procedure accept(lfd: i32) @page true @returnpage true returns ref[NodePeer]? io linked
+    procedure accept(lfd: i32) @page true @returnpage true @ret_caller true returns ref[NodePeer]? io linked
 
 
 
@@ -187,7 +187,7 @@ define Cluster
     ; Connect to host:port (getaddrinfo — real hosts), then the frozen-
     ; preamble handshake. host must be NUL-terminated (a string
     ; literal, or String.to_c_string). Returns null when refused.
-    procedure connect(mutable host: pointer[const_char], port: i32) @page true @returnpage true returns ref[NodePeer]? io linked
+    procedure connect(mutable host: pointer[const_char], port: i32) @page true @returnpage true @ret_caller true returns ref[NodePeer]? io linked
 
 
 
@@ -198,7 +198,7 @@ define Cluster
     ; Both directions run the same handshake: send our preamble
     ; immediately, read theirs, compare BEFORE any other byte is
     ; parsed. Mismatch = loud refuse with both stamps (rule 10).
-    procedure setup(fd: i32) @page true @direct true returns ref[NodePeer]? io linked
+    procedure setup(fd: i32) @page true @direct true @ret_caller true returns ref[NodePeer]? io linked
 
 
 
@@ -311,7 +311,7 @@ define Cluster
     ; A down-notice channel (memo rule 5): receives ONE NodeDown when
     ; the peer is suspected dead or said goodbye, then closes. On a
     ; peer already down the notice is delivered immediately.
-    procedure monitor(mutable p: pointer[NodePeer]) returns ref[Channel] io linked
+    procedure monitor(mutable p: pointer[NodePeer]) @ret_caller true returns ref[Channel] io linked
 
 
 
@@ -334,7 +334,7 @@ define Cluster
 
 
 
-    procedure deliver_down(mutable c: pointer[Channel], reason: i64) io linked
+    procedure deliver_down(mutable c: pointer[Channel], reason: i64) @ret_nonlocal true io linked
 
 
 
@@ -353,7 +353,7 @@ define Cluster
     ; region (the 7.2 walker rules; the receiver runs fix_graph). A
     ; send to a suspected-dead peer is silently dropped — death
     ; surfaces as channel close + monitor notice, never a send error.
-    procedure send(p: pointer[NodePeer], id: u64, mutable msg: pointer[void]) io linked
+    procedure send(p: pointer[NodePeer], id: u64, mutable msg: pointer[void]) @ret_nonlocal true io linked
 
 
 
@@ -436,7 +436,7 @@ define Cluster
     ; Graceful goodbye: BYE frame, then the local teardown (our receive
     ; channels close, monitors fire NODE_DOWN_CLOSED). The reader
     ; notices alive=false within a heartbeat slice and closes the fd.
-    procedure close(mutable p: pointer[NodePeer]) io linked
+    procedure close(mutable p: pointer[NodePeer]) @ret_nonlocal true io linked
 
 
 
@@ -446,7 +446,7 @@ define Cluster
     ; (it owns the fd close), then releases the record page. Channels
     ; and monitors from this peer are disposed by their receivers
     ; (Channel.dispose after the null), independently.
-    procedure dispose_peer(mutable p: ref[NodePeer]) linked
+    procedure dispose_peer(mutable p: ref[NodePeer]) @ret_nonlocal true linked
 
 
 
@@ -457,7 +457,7 @@ define Cluster
     ; Free a received message: the region's pages and the host page
     ; carrying the ReceivedRegion record + map (the channel node rode
     ; on it too).
-    procedure dispose_message(mutable rr: ref[ReceivedRegion]) linked
+    procedure dispose_message(mutable rr: ref[ReceivedRegion]) @ret_nonlocal true linked
 
 
 
@@ -467,7 +467,7 @@ define Cluster
 
     ; --- the reader thread ---
 
-    procedure poll_in(fd: i32, ms: i32) io linked
+    procedure poll_in(fd: i32, ms: i32) @ret_nonlocal true io linked
 
 
 
@@ -479,7 +479,7 @@ define Cluster
     ; Read exactly count bytes; bounded polls keep the suspicion clock
     ; live during a mid-frame stall. False = transport over (EOF,
     ; error, silence past the deadline, or a local close).
-    procedure read_exact(mutable p: ref[NodePeer], buf: pointer[void], count: size_t) returns bool io linked
+    procedure read_exact(mutable p: ref[NodePeer], buf: pointer[void], count: size_t) @ret_nonlocal true returns bool io linked
 
 
 
@@ -507,7 +507,7 @@ define Cluster
 
 
     ; One frame past the header: false stops the reader.
-    procedure dispatch(mutable p: ref[NodePeer], h: pointer[u64]) returns bool io linked
+    procedure dispatch(mutable p: ref[NodePeer], h: pointer[u64]) @ret_nonlocal true returns bool io linked
 
 
 
@@ -560,7 +560,7 @@ define Cluster
 
 
 
-    procedure reader_loop(mutable p: pointer[NodePeer]) io linked
+    procedure reader_loop(mutable p: pointer[NodePeer]) @ret_nonlocal true io linked
 
 
 

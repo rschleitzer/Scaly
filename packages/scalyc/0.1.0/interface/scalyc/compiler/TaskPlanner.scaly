@@ -196,7 +196,7 @@ define TaskPlanner
 
 
 
-        procedure find_statement_ref(mutable this: TaskPlanner, stmt: ref[PlannedStatement]?) linked
+        procedure find_statement_ref(mutable this: TaskPlanner, stmt: ref[PlannedStatement]?) @ret_nonlocal true linked
 
 
 
@@ -205,13 +205,13 @@ define TaskPlanner
 
 
 
-        procedure find_action(mutable this: TaskPlanner, act: PlannedAction) linked
+        procedure find_action(mutable this: TaskPlanner, act: PlannedAction) @ret_nonlocal true linked
 
 
 
 
 
-        procedure find_statement(mutable this: TaskPlanner, stmt: PlannedStatement) linked
+        procedure find_statement(mutable this: TaskPlanner, stmt: PlannedStatement) @ret_nonlocal true linked
 
 
 
@@ -407,7 +407,7 @@ define TaskPlanner
         ; move checker's move_found discipline).
         ; ================================================================
 
-        procedure classify_for(mutable this: TaskPlanner, fr: PlannedFor) linked
+        procedure classify_for(mutable this: TaskPlanner, fr: PlannedFor) @ret_param_0 true linked
 
 
 
@@ -437,7 +437,7 @@ define TaskPlanner
         ; Reset the per-loop scratch and walk one body; cls_blocked /
         ; cls_reason carry the verdict. Shared by the report walk and
         ; the Emitter's per-site promotion query.
-        procedure classify_body(mutable this: TaskPlanner, fr: PlannedFor) linked
+        procedure classify_body(mutable this: TaskPlanner, fr: PlannedFor) @ret_nonlocal true linked
 
 
 
@@ -456,7 +456,7 @@ define TaskPlanner
         ; the engine, no syntax involved. Same classifier, same
         ; conservatism as the report; the purity memo persists across
         ; sites on one instance.
-        procedure loop_promotable(mutable this: TaskPlanner, plan: Plan, file: String, fr: PlannedFor) returns bool linked
+        procedure loop_promotable(mutable this: TaskPlanner, plan: Plan, file: String, fr: PlannedFor) @ret_nonlocal true returns bool linked
 
 
 
@@ -475,7 +475,7 @@ define TaskPlanner
         ; (page-tree teardown, thread-exit reclaim after the pools are
         ; drained). Keyed on the owning source file: the stdlib's memory
         ; and fiber modules stay sequential by rule, not by verdict.
-        function file_is_foundation(file: String) returns bool linked
+        function file_is_foundation(file: String) @ret_nonlocal true returns bool linked
 
 
 
@@ -510,7 +510,7 @@ define TaskPlanner
         ; different element/index). An ALIASED name (see cls_aliased) is
         ; loop-external no matter what — aliasing wins over a same-named
         ; local binding (conservative under the flat never-popped scratch).
-        function is_local(this: TaskPlanner, name: String) returns bool linked
+        function is_local(this: TaskPlanner, name: String) @ret_nonlocal true returns bool linked
 
 
 
@@ -563,7 +563,7 @@ define TaskPlanner
         ; can store passed references, so calls taint when any argument
         ; does; unknown shapes taint conservatively (never a false
         ; "parallel").
-        function ops_alias_external(this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?) returns bool linked
+        function ops_alias_external(this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?) @ret_nonlocal true returns bool linked
 
 
 
@@ -579,7 +579,7 @@ define TaskPlanner
 
 
 
-        function op_aliases_external(this: TaskPlanner, op: PlannedOperand) returns bool linked
+        function op_aliases_external(this: TaskPlanner, op: PlannedOperand) @ret_nonlocal true returns bool linked
 
 
 
@@ -622,7 +622,7 @@ define TaskPlanner
         ; records, unions, String (shares its buffer until reallocation)
         ; and pointer/ref (which ARE references) all can. Mirrors
         ; Planner.is_scalar_value_type_name's list.
-        function value_can_alias(this: TaskPlanner, t: PlannedType) returns bool linked
+        function value_can_alias(this: TaskPlanner, t: PlannedType) @ret_nonlocal true returns bool linked
 
 
 
@@ -668,7 +668,7 @@ define TaskPlanner
         ; (disjoint-slot write). Conservative: unknown shapes read nothing,
         ; so an index that hides the loop variable behind them stays a
         ; blocker (never a false "parallel").
-        function operands_read_name(this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?, name: String) returns bool linked
+        function operands_read_name(this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?, name: String) @ret_nonlocal true returns bool linked
 
 
 
@@ -684,7 +684,7 @@ define TaskPlanner
 
 
 
-        function operand_reads_name(this: TaskPlanner, op: PlannedOperand, name: String) returns bool linked
+        function operand_reads_name(this: TaskPlanner, op: PlannedOperand, name: String) @ret_nonlocal true returns bool linked
 
 
 
@@ -1150,7 +1150,7 @@ define TaskPlanner
         ; state, process control beyond abort) does.
         ; ================================================================
 
-        function extern_is_benign(this: TaskPlanner, name: String) returns bool linked
+        function extern_is_benign(this: TaskPlanner, name: String) @ret_nonlocal true returns bool linked
 
 
 
@@ -1218,7 +1218,7 @@ define TaskPlanner
 
 
 
-        function global_is_sanctioned(this: TaskPlanner, name: String) returns bool linked
+        function global_is_sanctioned(this: TaskPlanner, name: String) @ret_nonlocal true returns bool linked
 
 
 
@@ -1259,7 +1259,7 @@ define TaskPlanner
         ; immutable. Memoized per mangled name.
         ; ================================================================
 
-        procedure memo_purity(mutable this: TaskPlanner, mangled: String, is_pure: bool) linked
+        procedure memo_purity(mutable this: TaskPlanner, mangled: String, is_pure: bool) @ret_param_0 true linked
 
 
 
@@ -1269,7 +1269,7 @@ define TaskPlanner
 
 
 
-        procedure effectively_pure(mutable this: TaskPlanner, mangled: String) returns bool linked
+        procedure effectively_pure(mutable this: TaskPlanner, mangled: String) @ret_param_0 true returns bool linked
 
 
 
@@ -1702,7 +1702,7 @@ define TaskPlanner
 
 
 
-        function is_construction_name(this: TaskPlanner, name: String) returns bool linked
+        function is_construction_name(this: TaskPlanner, name: String) @ret_nonlocal true returns bool linked
 
 
 
@@ -1716,7 +1716,7 @@ define TaskPlanner
 
 
         ; put(receiver, index, element): receiver = args[0], index = args[1].
-        function put_is_disjoint(this: TaskPlanner, call: PlannedCall) returns bool linked
+        function put_is_disjoint(this: TaskPlanner, call: PlannedCall) @ret_nonlocal true returns bool linked
 
 
 
@@ -1767,19 +1767,19 @@ define TaskPlanner
         ; I/O, lambdas and indirect calls are already policed.
         ; ================================================================
 
-        function wm_all() returns size_t linked
+        function wm_all() @ret_nonlocal true returns size_t linked
 
 
 
 
-        procedure memo_written(mutable this: TaskPlanner, mangled: String, mask: size_t) @persists true linked
+        procedure memo_written(mutable this: TaskPlanner, mangled: String, mask: size_t) @persists true @ret_param_0 true linked
 
 
 
 
 
 
-        procedure written_mask(mutable this: TaskPlanner, mangled: String) returns size_t linked
+        procedure written_mask(mutable this: TaskPlanner, mangled: String) @ret_param_0 true returns size_t linked
 
 
 
@@ -1896,7 +1896,7 @@ define TaskPlanner
         ; write through arg 0; realloc/free consume arg 0). Anything not
         ; explicitly listed is WM_ALL — adding a new benign extern FORCES
         ; a mask decision here.
-        function extern_written_mask(this: TaskPlanner, name: String) returns size_t linked
+        function extern_written_mask(this: TaskPlanner, name: String) @ret_nonlocal true returns size_t linked
 
 
 
@@ -1964,7 +1964,7 @@ define TaskPlanner
 
         ; ---- the per-callee body walk ----
 
-        procedure wr_add_name(mutable this: TaskPlanner, name: String, mask: size_t) @persists true linked
+        procedure wr_add_name(mutable this: TaskPlanner, name: String, mask: size_t) @persists true @ret_param_0 true linked
 
 
 
@@ -1975,7 +1975,7 @@ define TaskPlanner
         ; mask that shadows the original. Unknown names are conservative
         ; (a global write is policed by the purity walk; anything else
         ; is a shape this walk does not model).
-        function wr_lookup(this: TaskPlanner, name: String) returns size_t linked
+        function wr_lookup(this: TaskPlanner, name: String) @ret_param_0 true returns size_t linked
 
 
 
@@ -1999,7 +1999,7 @@ define TaskPlanner
         ; Reach-mask of the value an operand produces: which params can
         ; it alias? Scalars reach nothing; a call result reaches at most
         ; what its arguments reach; unknown shapes reach everything.
-        function wr_mask_of_ops(this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?) returns size_t linked
+        function wr_mask_of_ops(this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?) @ret_nonlocal true returns size_t linked
 
 
 
@@ -2015,7 +2015,7 @@ define TaskPlanner
 
 
 
-        function wr_mask_of_op(this: TaskPlanner, op: PlannedOperand) returns size_t linked
+        function wr_mask_of_op(this: TaskPlanner, op: PlannedOperand) @ret_param_0 true returns size_t linked
 
 
 
@@ -2065,7 +2065,7 @@ define TaskPlanner
 
 
 
-        procedure wr_statement_ref(mutable this: TaskPlanner, stmt: ref[PlannedStatement]?) linked
+        procedure wr_statement_ref(mutable this: TaskPlanner, stmt: ref[PlannedStatement]?) @ret_nonlocal true linked
 
 
 
@@ -2110,7 +2110,7 @@ define TaskPlanner
 
 
 
-        procedure wr_statement(mutable this: TaskPlanner, stmt: PlannedStatement) linked
+        procedure wr_statement(mutable this: TaskPlanner, stmt: PlannedStatement) @ret_param_0 true linked
 
 
 
@@ -2419,7 +2419,7 @@ define TaskPlanner
 
         ; The positions a callee's declaration may write: its `mutable`
         ; parameters (none for a function) and every page parameter.
-        function declared_mask(this: TaskPlanner, func: PlannedFunction) returns size_t linked
+        function declared_mask(this: TaskPlanner, func: PlannedFunction) @ret_nonlocal true returns size_t linked
 
 
 
@@ -2460,7 +2460,7 @@ define TaskPlanner
 
 
 
-        function is_page_type(t: PlannedType) returns bool linked
+        function is_page_type(t: PlannedType) @ret_nonlocal true returns bool linked
 
 
 
@@ -2486,7 +2486,7 @@ define TaskPlanner
         ; per-iteration state; the rest are free (read-only positions
         ; take loop-external values). `&x` / deref operator chains
         ; recurse to the named root inside.
-        function masked_args_local(this: TaskPlanner, call: PlannedCall, mask: size_t) returns bool linked
+        function masked_args_local(this: TaskPlanner, call: PlannedCall, mask: size_t) @ret_nonlocal true returns bool linked
 
 
 
@@ -2513,7 +2513,7 @@ define TaskPlanner
 
 
 
-        function arg_root_local(this: TaskPlanner, op: PlannedOperand) returns bool linked
+        function arg_root_local(this: TaskPlanner, op: PlannedOperand) @ret_nonlocal true returns bool linked
 
 
 

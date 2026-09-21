@@ -343,7 +343,7 @@ define Tape
 
 
 
-    procedure add_node(mutable this: Tape, kind: int, in_a: int, in_b: int, in_c: int, r: int, n: int) returns int linked
+    procedure add_node(mutable this: Tape, kind: int, in_a: int, in_b: int, in_c: int, r: int, n: int) @ret_param_0 true returns int linked
 
 
 
@@ -356,10 +356,10 @@ define Tape
 
 
 
-    procedure leaf(mutable this: Tape, r: int, n: int) returns int linked
+    procedure leaf(mutable this: Tape, r: int, n: int) @ret_param_0 true returns int linked
 
 
-    procedure set_value(mutable this: Tape, id: int, i: int, v: float) linked
+    procedure set_value(mutable this: Tape, id: int, i: int, v: float) @ret_nonlocal true linked
 
 
 
@@ -369,14 +369,14 @@ define Tape
     ; Overwrite a saved token id in place (embedding ids or crossent
     ; targets) — a training loop mutates the batch data of an existing
     ; tape instead of building a new one, so a step allocates nothing.
-    procedure set_token(mutable this: Tape, id: int, i: int, v: i64) linked
+    procedure set_token(mutable this: Tape, id: int, i: int, v: i64) @ret_nonlocal true linked
 
 
 
 
 
 
-    function value_at(this: Tape, id: int, i: int) returns float linked
+    function value_at(this: Tape, id: int, i: int) @ret_param_0 true returns float linked
 
 
 
@@ -386,33 +386,33 @@ define Tape
     ; Overwrite a gradient slot in place. The distributed trainer (7.4)
     ; injects an all-reduced (averaged) gradient here before adam_step,
     ; so every rank applies an identical update and stays in lockstep.
-    procedure set_grad(mutable this: Tape, id: int, i: int, v: float) linked
+    procedure set_grad(mutable this: Tape, id: int, i: int, v: float) @ret_nonlocal true linked
 
 
 
 
 
 
-    function grad_at(this: Tape, id: int, i: int) returns float linked
+    function grad_at(this: Tape, id: int, i: int) @ret_param_0 true returns float linked
 
 
 
 
 
 
-    function node_rows(this: Tape, id: int) returns int linked
+    function node_rows(this: Tape, id: int) @ret_param_0 true returns int linked
 
 
 
 
 
-    function node_cols(this: Tape, id: int) returns int linked
+    function node_cols(this: Tape, id: int) @ret_param_0 true returns int linked
 
 
 
 
 
-    procedure matmul(mutable this: Tape, x: int, y: int) returns int linked
+    procedure matmul(mutable this: Tape, x: int, y: int) @ret_param_0 true returns int linked
 
 
 
@@ -423,7 +423,7 @@ define Tape
 
 
 
-    procedure gelu(mutable this: Tape, x: int) returns int linked
+    procedure gelu(mutable this: Tape, x: int) @ret_param_0 true returns int linked
 
 
 
@@ -433,7 +433,7 @@ define Tape
 
 
 
-    procedure softmax(mutable this: Tape, x: int) returns int linked
+    procedure softmax(mutable this: Tape, x: int) @ret_param_0 true returns int linked
 
 
 
@@ -443,7 +443,7 @@ define Tape
 
 
 
-    procedure layernorm(mutable this: Tape, x: int, gamma: int, beta: int, e: float) returns int linked
+    procedure layernorm(mutable this: Tape, x: int, gamma: int, beta: int, e: float) @ret_param_0 true returns int linked
 
 
 
@@ -455,7 +455,7 @@ define Tape
 
 
 
-    procedure embedding(mutable this: Tape, table: int, ids: Vector[i64], tokens: int) returns int linked
+    procedure embedding(mutable this: Tape, table: int, ids: Vector[i64], tokens: int) @ret_param_0 true returns int linked
 
 
 
@@ -468,7 +468,7 @@ define Tape
 
 
 
-    procedure wsum(mutable this: Tape, x: int, w: Vector[float]) returns int linked
+    procedure wsum(mutable this: Tape, x: int, w: Vector[float]) @ret_param_0 true returns int linked
 
 
 
@@ -482,7 +482,7 @@ define Tape
     ; Fused softmax + negative log-likelihood, averaged over rows:
     ; value = mean_i(logsumexp(x_i) - x_i[target_i]). targets holds one
     ; token id per row of the logits node.
-    procedure crossentropy(mutable this: Tape, logits: int, targets: Vector[i64]) returns int linked
+    procedure crossentropy(mutable this: Tape, logits: int, targets: Vector[i64]) @ret_param_0 true returns int linked
 
 
 
@@ -495,7 +495,7 @@ define Tape
 
     ; Elementwise sum of two same-shape nodes — residual connections
     ; and positional embeddings. x and y may be the same node.
-    procedure add(mutable this: Tape, x: int, y: int) returns int linked
+    procedure add(mutable this: Tape, x: int, y: int) @ret_param_0 true returns int linked
 
 
 
@@ -509,7 +509,7 @@ define Tape
     ; y row (i mod yr). Adds one shared positional-embedding block to
     ; every window of a batched activation. Backward accumulates dy
     ; across the B repeats (shared slots — bwd stays sequential).
-    procedure add_bcast(mutable this: Tape, x: int, y: int) returns int linked
+    procedure add_bcast(mutable this: Tape, x: int, y: int) @ret_param_0 true returns int linked
 
 
 
@@ -525,7 +525,7 @@ define Tape
     ; The node's aux buffer holds the per-head probabilities in
     ; [0, hs*T*win) (forward writes them, backward reads them) and a ds
     ; scratch half in [hs*T*win, 2*hs*T*win) written by backward pass 1.
-    procedure attention(mutable this: Tape, q: int, k: int, v: int, hs: int) returns int linked
+    procedure attention(mutable this: Tape, q: int, k: int, v: int, hs: int) @ret_nonlocal true returns int linked
 
 
 
@@ -538,7 +538,7 @@ define Tape
     ; case `attention` uses (probabilities index identically, so that
     ; path stays numerically exact). Column extent per query is win, so
     ; the aux buffer is hs*T*win doubled for the ds scratch.
-    procedure attention_windowed(mutable this: Tape, q: int, k: int, v: int, hs: int, win: int) returns int linked
+    procedure attention_windowed(mutable this: Tape, q: int, k: int, v: int, hs: int, win: int) @ret_param_0 true returns int linked
 
 
 
@@ -557,7 +557,7 @@ define Tape
     ; Sample a token from one row of a node's values (logits): softmax
     ; at temperature temp (must be > 0), then walk the CDF with the
     ; caller-supplied uniform draw u in [0, 1). The caller owns the RNG.
-    function sample(this: Tape, id: int, row: int, temp: float, u: float) returns int linked
+    function sample(this: Tape, id: int, row: int, temp: float, u: float) @ret_param_0 true returns int linked
 
 
 
@@ -696,7 +696,7 @@ define Tape
 
 
 
-    procedure run_node(mutable this: Tape, id: int) linked
+    procedure run_node(mutable this: Tape, id: int) @ret_param_0 true linked
 
 
 
@@ -722,7 +722,7 @@ define Tape
 
 
 
-    procedure bwd_node(mutable this: Tape, id: int) linked
+    procedure bwd_node(mutable this: Tape, id: int) @ret_param_0 true linked
 
 
 
@@ -1151,7 +1151,7 @@ define Tape
 
 
 
-    procedure fwd_wsum(mutable this: Tape, id: int) linked
+    procedure fwd_wsum(mutable this: Tape, id: int) @ret_nonlocal true linked
 
 
 
@@ -1186,7 +1186,7 @@ define Tape
 
 
 
-    procedure fwd_crossent(mutable this: Tape, id: int) linked
+    procedure fwd_crossent(mutable this: Tape, id: int) @ret_nonlocal true linked
 
 
 

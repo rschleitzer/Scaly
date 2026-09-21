@@ -48,7 +48,7 @@ define Parser
 
 
 
-    function initialize_keywords_index(this: Parser) @page true @direct true returns Vector[String] linked
+    function initialize_keywords_index(this: Parser) @page true @direct true @ret_caller true returns Vector[String] linked
 
 
 
@@ -105,13 +105,13 @@ define Parser
 
 
 
-    procedure initialize_keywords(mutable this: Parser) @page true @direct true returns HashSet[String] linked
+    procedure initialize_keywords(mutable this: Parser) @page true @direct true @ret_caller true returns HashSet[String] linked
 
 
 
 
 
-    procedure parse_literal_token(mutable this: Parser) @page true @direct true returns Literal throws ParserError linked
+    procedure parse_literal_token(mutable this: Parser) @page true @direct true @ret_caller true returns Literal throws ParserError linked
 
 
 
@@ -149,7 +149,7 @@ define Parser
 
 
 
-    procedure parse_program(mutable this: Parser) @page true @direct true returns ProgramSyntax throws ParserError linked
+    procedure parse_program(mutable this: Parser) @page true @direct true @ret_caller true returns ProgramSyntax throws ParserError linked
 
 
 
@@ -190,7 +190,7 @@ define Parser
 
 
 
-    procedure parse_file(mutable this: Parser) @page true @direct true returns FileSyntax throws ParserError linked
+    procedure parse_file(mutable this: Parser) @page true @direct true @ret_caller true returns FileSyntax throws ParserError linked
 
 
 
@@ -212,7 +212,7 @@ define Parser
 
 
 
-    procedure parse_declaration_list(mutable this: Parser) @page true @direct true returns ref[Vector[DeclarationSyntax]]? throws ParserError linked
+    procedure parse_declaration_list(mutable this: Parser) @page true @direct true @ret_caller true returns ref[Vector[DeclarationSyntax]]? throws ParserError linked
 
 
 
@@ -241,7 +241,7 @@ define Parser
 
 
 
-    procedure parse_declaration(mutable this: Parser) @page true @direct true returns DeclarationSyntax throws ParserError linked
+    procedure parse_declaration(mutable this: Parser) @page true @direct true @ret_caller true returns DeclarationSyntax throws ParserError linked
 
 
 
@@ -376,7 +376,7 @@ define Parser
 
 
 
-    procedure parse_private(mutable this: Parser) @page true @direct true returns PrivateSyntax throws ParserError linked
+    procedure parse_private(mutable this: Parser) @page true @direct true @ret_caller true returns PrivateSyntax throws ParserError linked
 
 
 
@@ -402,7 +402,7 @@ define Parser
 
 
 
-    procedure parse_export(mutable this: Parser) @page true @direct true returns ExportSyntax throws ParserError linked
+    procedure parse_export(mutable this: Parser) @page true @direct true @ret_caller true returns ExportSyntax throws ParserError linked
 
 
 
@@ -467,7 +467,7 @@ define Parser
 
 
 
-    procedure parse_member_list(mutable this: Parser) @page true @direct true returns ref[Vector[MemberSyntax]]? throws ParserError linked
+    procedure parse_member_list(mutable this: Parser) @page true @direct true @ret_caller true returns ref[Vector[MemberSyntax]]? throws ParserError linked
 
 
 
@@ -496,7 +496,7 @@ define Parser
 
 
 
-    procedure parse_member(mutable this: Parser) @page true @direct true returns MemberSyntax throws ParserError linked
+    procedure parse_member(mutable this: Parser) @page true @direct true @ret_caller true returns MemberSyntax throws ParserError linked
 
 
 
@@ -611,7 +611,7 @@ define Parser
 
 
 
-    procedure parse_definition(mutable this: Parser) @page true @direct true returns DefinitionSyntax throws ParserError linked
+    procedure parse_definition(mutable this: Parser) @page true @direct true @ret_caller true returns DefinitionSyntax throws ParserError linked
 
 
 
@@ -669,7 +669,7 @@ define Parser
 
 
 
-    procedure parse_genericparameters(mutable this: Parser) @page true @direct true returns GenericParametersSyntax throws ParserError linked
+    procedure parse_genericparameters(mutable this: Parser) @page true @direct true @ret_caller true returns GenericParametersSyntax throws ParserError linked
 
 
 
@@ -698,7 +698,7 @@ define Parser
 
 
 
-    procedure parse_genericparameter_list(mutable this: Parser) @page true @direct true returns ref[Vector[GenericParameterSyntax]]? throws ParserError linked
+    procedure parse_genericparameter_list(mutable this: Parser) @page true @direct true @ret_caller true returns ref[Vector[GenericParameterSyntax]]? throws ParserError linked
 
 
 
@@ -727,7 +727,7 @@ define Parser
 
 
 
-    procedure parse_genericparameter(mutable this: Parser) @page true @direct true returns GenericParameterSyntax throws ParserError linked
+    procedure parse_genericparameter(mutable this: Parser) @page true @direct true @ret_caller true returns GenericParameterSyntax throws ParserError linked
 
 
 
@@ -755,7 +755,7 @@ define Parser
 
 
 
-    procedure parse_concept(mutable this: Parser) @page true @direct true returns ConceptSyntax throws ParserError linked
+    procedure parse_concept(mutable this: Parser) @page true @direct true @ret_caller true returns ConceptSyntax throws ParserError linked
 
 
 
@@ -820,7 +820,7 @@ define Parser
 
 
 
-    procedure parse_class(mutable this: Parser) @page true @direct true returns ClassSyntax throws ParserError linked
+    procedure parse_class(mutable this: Parser) @page true @direct true @ret_caller true returns ClassSyntax throws ParserError linked
 
 
 
@@ -852,7 +852,7 @@ define Parser
 
 
 
-    procedure parse_body(mutable this: Parser) @page true @direct true returns BodySyntax throws ParserError linked
+    procedure parse_body(mutable this: Parser) @page true @direct true @ret_caller true returns BodySyntax throws ParserError linked
 
 
 
@@ -893,7 +893,7 @@ define Parser
 
 
 
-    procedure parse_namespace(mutable this: Parser) @page true @direct true returns NamespaceSyntax throws ParserError linked
+    procedure parse_namespace(mutable this: Parser) @page true @direct true @ret_caller true returns NamespaceSyntax throws ParserError linked
 
 
 
@@ -934,7 +934,7 @@ define Parser
 
 
 
-    procedure parse_union(mutable this: Parser) @page true @direct true returns UnionSyntax throws ParserError linked
+    procedure parse_union(mutable this: Parser) @page true @direct true @ret_caller true returns UnionSyntax throws ParserError linked
 
 
 
@@ -983,7 +983,7 @@ define Parser
 
 
 
-    procedure parse_variant_list(mutable this: Parser) @page true @direct true returns ref[Vector[VariantSyntax]]? throws ParserError linked
+    procedure parse_variant_list(mutable this: Parser) @page true @direct true @ret_caller true returns ref[Vector[VariantSyntax]]? throws ParserError linked
 
 
 
@@ -1012,7 +1012,7 @@ define Parser
 
 
 
-    procedure parse_variant(mutable this: Parser) @page true @direct true returns VariantSyntax throws ParserError linked
+    procedure parse_variant(mutable this: Parser) @page true @direct true @ret_caller true returns VariantSyntax throws ParserError linked
 
 
 
@@ -1054,7 +1054,7 @@ define Parser
 
 
 
-    procedure parse_constant(mutable this: Parser) @page true @direct true returns ConstantSyntax throws ParserError linked
+    procedure parse_constant(mutable this: Parser) @page true @direct true @ret_caller true returns ConstantSyntax throws ParserError linked
 
 
 
@@ -1084,7 +1084,7 @@ define Parser
 
 
 
-    procedure parse_delegate(mutable this: Parser) @page true @direct true returns DelegateSyntax throws ParserError linked
+    procedure parse_delegate(mutable this: Parser) @page true @direct true @ret_caller true returns DelegateSyntax throws ParserError linked
 
 
 
@@ -1148,7 +1148,7 @@ define Parser
 
 
 
-    procedure parse_genericarguments(mutable this: Parser) @page true @direct true returns GenericArgumentsSyntax throws ParserError linked
+    procedure parse_genericarguments(mutable this: Parser) @page true @direct true @ret_caller true returns GenericArgumentsSyntax throws ParserError linked
 
 
 
@@ -1176,7 +1176,7 @@ define Parser
 
 
 
-    procedure parse_genericargument_list(mutable this: Parser) @page true @direct true returns ref[Vector[GenericArgumentSyntax]]? throws ParserError linked
+    procedure parse_genericargument_list(mutable this: Parser) @page true @direct true @ret_caller true returns ref[Vector[GenericArgumentSyntax]]? throws ParserError linked
 
 
 
@@ -1205,7 +1205,7 @@ define Parser
 
 
 
-    procedure parse_genericargument(mutable this: Parser) @page true @direct true returns GenericArgumentSyntax throws ParserError linked
+    procedure parse_genericargument(mutable this: Parser) @page true @direct true @ret_caller true returns GenericArgumentSyntax throws ParserError linked
 
 
 
@@ -1224,7 +1224,7 @@ define Parser
 
 
 
-    procedure parse_optional(mutable this: Parser) @page true @direct true returns OptionalSyntax throws ParserError linked
+    procedure parse_optional(mutable this: Parser) @page true @direct true @ret_param_0 true returns OptionalSyntax throws ParserError linked
 
 
 
@@ -1236,7 +1236,7 @@ define Parser
 
 
 
-    procedure parse_parameterset(mutable this: Parser) @page true @direct true returns ParameterSetSyntax throws ParserError linked
+    procedure parse_parameterset(mutable this: Parser) @page true @direct true @ret_caller true returns ParameterSetSyntax throws ParserError linked
 
 
 
@@ -1261,7 +1261,7 @@ define Parser
 
 
 
-    procedure parse_parameters(mutable this: Parser) @page true @direct true returns ParametersSyntax throws ParserError linked
+    procedure parse_parameters(mutable this: Parser) @page true @direct true @ret_caller true returns ParametersSyntax throws ParserError linked
 
 
 
@@ -1289,7 +1289,7 @@ define Parser
 
 
 
-    procedure parse_item_list(mutable this: Parser) @page true @direct true returns ref[Vector[ItemSyntax]]? throws ParserError linked
+    procedure parse_item_list(mutable this: Parser) @page true @direct true @ret_caller true returns ref[Vector[ItemSyntax]]? throws ParserError linked
 
 
 
@@ -1318,7 +1318,7 @@ define Parser
 
 
 
-    procedure parse_item(mutable this: Parser) @page true @direct true returns ItemSyntax throws ParserError linked
+    procedure parse_item(mutable this: Parser) @page true @direct true @ret_caller true returns ItemSyntax throws ParserError linked
 
 
 
@@ -1377,7 +1377,7 @@ define Parser
 
 
 
-    procedure parse_writable(mutable this: Parser) @page true @direct true returns WritableSyntax throws ParserError linked
+    procedure parse_writable(mutable this: Parser) @page true @direct true @ret_param_0 true returns WritableSyntax throws ParserError linked
 
 
 
@@ -1389,7 +1389,7 @@ define Parser
 
 
 
-    procedure parse_io(mutable this: Parser) @page true @direct true returns IoSyntax throws ParserError linked
+    procedure parse_io(mutable this: Parser) @page true @direct true @ret_param_0 true returns IoSyntax throws ParserError linked
 
 
 
@@ -1401,7 +1401,7 @@ define Parser
 
 
 
-    procedure parse_globalwrites(mutable this: Parser) @page true @direct true returns GlobalWritesSyntax throws ParserError linked
+    procedure parse_globalwrites(mutable this: Parser) @page true @direct true @ret_caller true returns GlobalWritesSyntax throws ParserError linked
 
 
 
@@ -1430,7 +1430,7 @@ define Parser
 
 
 
-    procedure parse_writtenglobal_list(mutable this: Parser) @page true @direct true returns ref[Vector[WrittenGlobalSyntax]]? throws ParserError linked
+    procedure parse_writtenglobal_list(mutable this: Parser) @page true @direct true @ret_caller true returns ref[Vector[WrittenGlobalSyntax]]? throws ParserError linked
 
 
 
@@ -1459,7 +1459,7 @@ define Parser
 
 
 
-    procedure parse_writtenglobal(mutable this: Parser) @page true @direct true returns WrittenGlobalSyntax throws ParserError linked
+    procedure parse_writtenglobal(mutable this: Parser) @page true @direct true @ret_caller true returns WrittenGlobalSyntax throws ParserError linked
 
 
 
@@ -1475,7 +1475,7 @@ define Parser
 
 
 
-    procedure parse_globalreads(mutable this: Parser) @page true @direct true returns GlobalReadsSyntax throws ParserError linked
+    procedure parse_globalreads(mutable this: Parser) @page true @direct true @ret_caller true returns GlobalReadsSyntax throws ParserError linked
 
 
 
@@ -1504,7 +1504,7 @@ define Parser
 
 
 
-    procedure parse_readglobal_list(mutable this: Parser) @page true @direct true returns ref[Vector[ReadGlobalSyntax]]? throws ParserError linked
+    procedure parse_readglobal_list(mutable this: Parser) @page true @direct true @ret_caller true returns ref[Vector[ReadGlobalSyntax]]? throws ParserError linked
 
 
 
@@ -1533,7 +1533,7 @@ define Parser
 
 
 
-    procedure parse_readglobal(mutable this: Parser) @page true @direct true returns ReadGlobalSyntax throws ParserError linked
+    procedure parse_readglobal(mutable this: Parser) @page true @direct true @ret_caller true returns ReadGlobalSyntax throws ParserError linked
 
 
 
@@ -1549,7 +1549,7 @@ define Parser
 
 
 
-    procedure parse_returns(mutable this: Parser) @page true @direct true returns ReturnsSyntax throws ParserError linked
+    procedure parse_returns(mutable this: Parser) @page true @direct true @ret_caller true returns ReturnsSyntax throws ParserError linked
 
 
 
@@ -1588,7 +1588,7 @@ define Parser
 
 
 
-    procedure parse_throws(mutable this: Parser) @page true @direct true returns ThrowsSyntax throws ParserError linked
+    procedure parse_throws(mutable this: Parser) @page true @direct true @ret_caller true returns ThrowsSyntax throws ParserError linked
 
 
 
@@ -1627,7 +1627,7 @@ define Parser
 
 
 
-    procedure parse_use_list(mutable this: Parser) @page true @direct true returns ref[Vector[UseSyntax]]? throws ParserError linked
+    procedure parse_use_list(mutable this: Parser) @page true @direct true @ret_caller true returns ref[Vector[UseSyntax]]? throws ParserError linked
 
 
 
@@ -1656,7 +1656,7 @@ define Parser
 
 
 
-    procedure parse_use(mutable this: Parser) @page true @direct true returns UseSyntax throws ParserError linked
+    procedure parse_use(mutable this: Parser) @page true @direct true @ret_caller true returns UseSyntax throws ParserError linked
 
 
 
@@ -1684,7 +1684,7 @@ define Parser
 
 
 
-    procedure parse_implement(mutable this: Parser) @page true @direct true returns ImplementSyntax throws ParserError linked
+    procedure parse_implement(mutable this: Parser) @page true @direct true @ret_caller true returns ImplementSyntax throws ParserError linked
 
 
 
@@ -1757,7 +1757,7 @@ define Parser
 
 
 
-    procedure parse_trait(mutable this: Parser) @page true @direct true returns TraitSyntax throws ParserError linked
+    procedure parse_trait(mutable this: Parser) @page true @direct true @ret_caller true returns TraitSyntax throws ParserError linked
 
 
 
@@ -1841,7 +1841,7 @@ define Parser
 
 
 
-    procedure parse_method_list(mutable this: Parser) @page true @direct true returns ref[Vector[MethodSyntax]]? throws ParserError linked
+    procedure parse_method_list(mutable this: Parser) @page true @direct true @ret_caller true returns ref[Vector[MethodSyntax]]? throws ParserError linked
 
 
 
@@ -1870,7 +1870,7 @@ define Parser
 
 
 
-    procedure parse_method(mutable this: Parser) @page true @direct true returns MethodSyntax throws ParserError linked
+    procedure parse_method(mutable this: Parser) @page true @direct true @ret_caller true returns MethodSyntax throws ParserError linked
 
 
 
@@ -1905,7 +1905,7 @@ define Parser
 
 
 
-    procedure parse_init_list(mutable this: Parser) @page true @direct true returns ref[Vector[InitSyntax]]? throws ParserError linked
+    procedure parse_init_list(mutable this: Parser) @page true @direct true @ret_caller true returns ref[Vector[InitSyntax]]? throws ParserError linked
 
 
 
@@ -1934,7 +1934,7 @@ define Parser
 
 
 
-    procedure parse_init(mutable this: Parser) @page true @direct true returns InitSyntax throws ParserError linked
+    procedure parse_init(mutable this: Parser) @page true @direct true @ret_caller true returns InitSyntax throws ParserError linked
 
 
 
@@ -1990,7 +1990,7 @@ define Parser
 
 
 
-    procedure parse_deinit(mutable this: Parser) @page true @direct true returns DeInitSyntax throws ParserError linked
+    procedure parse_deinit(mutable this: Parser) @page true @direct true @ret_caller true returns DeInitSyntax throws ParserError linked
 
 
 
@@ -2020,7 +2020,7 @@ define Parser
 
 
 
-    procedure parse_function(mutable this: Parser) @page true @direct true returns FunctionSyntax throws ParserError linked
+    procedure parse_function(mutable this: Parser) @page true @direct true @ret_caller true returns FunctionSyntax throws ParserError linked
 
 
 
@@ -2046,7 +2046,7 @@ define Parser
 
 
 
-    procedure parse_procedure(mutable this: Parser) @page true @direct true returns ProcedureSyntax throws ParserError linked
+    procedure parse_procedure(mutable this: Parser) @page true @direct true @ret_caller true returns ProcedureSyntax throws ParserError linked
 
 
 
@@ -2072,7 +2072,7 @@ define Parser
 
 
 
-    procedure parse_operator(mutable this: Parser) @page true @direct true returns OperatorSyntax throws ParserError linked
+    procedure parse_operator(mutable this: Parser) @page true @direct true @ret_caller true returns OperatorSyntax throws ParserError linked
 
 
 
@@ -2098,7 +2098,7 @@ define Parser
 
 
 
-    procedure parse_target(mutable this: Parser) @page true @direct true returns TargetSyntax throws ParserError linked
+    procedure parse_target(mutable this: Parser) @page true @direct true @ret_caller true returns TargetSyntax throws ParserError linked
 
 
 
@@ -2123,7 +2123,7 @@ define Parser
 
 
 
-    procedure parse_named(mutable this: Parser) @page true @direct true returns NamedSyntax throws ParserError linked
+    procedure parse_named(mutable this: Parser) @page true @direct true @ret_caller true returns NamedSyntax throws ParserError linked
 
 
 
@@ -2150,7 +2150,7 @@ define Parser
 
 
 
-    procedure parse_routine(mutable this: Parser) @page true @direct true returns RoutineSyntax throws ParserError linked
+    procedure parse_routine(mutable this: Parser) @page true @direct true @ret_caller true returns RoutineSyntax throws ParserError linked
 
 
 
@@ -2298,7 +2298,7 @@ define Parser
 
 
 
-    procedure parse_implementation(mutable this: Parser) @page true @direct true returns ImplementationSyntax throws ParserError linked
+    procedure parse_implementation(mutable this: Parser) @page true @direct true @ret_caller true returns ImplementationSyntax throws ParserError linked
 
 
 
@@ -2353,7 +2353,7 @@ define Parser
 
 
 
-    procedure parse_extern(mutable this: Parser) @page true @direct true returns ExternSyntax throws ParserError linked
+    procedure parse_extern(mutable this: Parser) @page true @direct true @ret_param_0 true returns ExternSyntax throws ParserError linked
 
 
 
@@ -2365,7 +2365,7 @@ define Parser
 
 
 
-    procedure parse_instruction(mutable this: Parser) @page true @direct true returns InstructionSyntax throws ParserError linked
+    procedure parse_instruction(mutable this: Parser) @page true @direct true @ret_param_0 true returns InstructionSyntax throws ParserError linked
 
 
 
@@ -2377,7 +2377,7 @@ define Parser
 
 
 
-    procedure parse_intrinsic(mutable this: Parser) @page true @direct true returns IntrinsicSyntax throws ParserError linked
+    procedure parse_intrinsic(mutable this: Parser) @page true @direct true @ret_param_0 true returns IntrinsicSyntax throws ParserError linked
 
 
 
@@ -2389,7 +2389,7 @@ define Parser
 
 
 
-    procedure parse_linked(mutable this: Parser) @page true @direct true returns LinkedSyntax throws ParserError linked
+    procedure parse_linked(mutable this: Parser) @page true @direct true @ret_param_0 true returns LinkedSyntax throws ParserError linked
 
 
 
@@ -2401,7 +2401,7 @@ define Parser
 
 
 
-    procedure parse_extends(mutable this: Parser) @page true @direct true returns ExtendsSyntax throws ParserError linked
+    procedure parse_extends(mutable this: Parser) @page true @direct true @ret_caller true returns ExtendsSyntax throws ParserError linked
 
 
 
@@ -2426,7 +2426,7 @@ define Parser
 
 
 
-    procedure parse_extend_list(mutable this: Parser) @page true @direct true returns ref[Vector[ExtendSyntax]]? throws ParserError linked
+    procedure parse_extend_list(mutable this: Parser) @page true @direct true @ret_caller true returns ref[Vector[ExtendSyntax]]? throws ParserError linked
 
 
 
@@ -2455,7 +2455,7 @@ define Parser
 
 
 
-    procedure parse_extend(mutable this: Parser) @page true @direct true returns ExtendSyntax throws ParserError linked
+    procedure parse_extend(mutable this: Parser) @page true @direct true @ret_caller true returns ExtendSyntax throws ParserError linked
 
 
 
@@ -2474,7 +2474,7 @@ define Parser
 
 
 
-    procedure parse_macro(mutable this: Parser) @page true @direct true returns MacroSyntax throws ParserError linked
+    procedure parse_macro(mutable this: Parser) @page true @direct true @ret_caller true returns MacroSyntax throws ParserError linked
 
 
 
@@ -2518,7 +2518,7 @@ define Parser
 
 
 
-    procedure parse_attribute_list(mutable this: Parser) @page true @direct true returns ref[Vector[AttributeSyntax]]? throws ParserError linked
+    procedure parse_attribute_list(mutable this: Parser) @page true @direct true @ret_caller true returns ref[Vector[AttributeSyntax]]? throws ParserError linked
 
 
 
@@ -2547,7 +2547,7 @@ define Parser
 
 
 
-    procedure parse_attribute(mutable this: Parser) @page true @direct true returns AttributeSyntax throws ParserError linked
+    procedure parse_attribute(mutable this: Parser) @page true @direct true @ret_caller true returns AttributeSyntax throws ParserError linked
 
 
 
@@ -2574,7 +2574,7 @@ define Parser
 
 
 
-    procedure parse_model(mutable this: Parser) @page true @direct true returns ModelSyntax throws ParserError linked
+    procedure parse_model(mutable this: Parser) @page true @direct true @ret_caller true returns ModelSyntax throws ParserError linked
 
 
 
@@ -2619,7 +2619,7 @@ define Parser
 
 
 
-    procedure parse_module(mutable this: Parser) @page true @direct true returns ModuleSyntax throws ParserError linked
+    procedure parse_module(mutable this: Parser) @page true @direct true @ret_caller true returns ModuleSyntax throws ParserError linked
 
 
 
@@ -2635,7 +2635,7 @@ define Parser
 
 
 
-    procedure parse_package_list(mutable this: Parser) @page true @direct true returns ref[Vector[PackageSyntax]]? throws ParserError linked
+    procedure parse_package_list(mutable this: Parser) @page true @direct true @ret_caller true returns ref[Vector[PackageSyntax]]? throws ParserError linked
 
 
 
@@ -2664,7 +2664,7 @@ define Parser
 
 
 
-    procedure parse_package(mutable this: Parser) @page true @direct true returns PackageSyntax throws ParserError linked
+    procedure parse_package(mutable this: Parser) @page true @direct true @ret_caller true returns PackageSyntax throws ParserError linked
 
 
 
@@ -2705,7 +2705,7 @@ define Parser
 
 
 
-    procedure parse_version(mutable this: Parser) @page true @direct true returns VersionSyntax throws ParserError linked
+    procedure parse_version(mutable this: Parser) @page true @direct true @ret_caller true returns VersionSyntax throws ParserError linked
 
 
 
@@ -2731,7 +2731,7 @@ define Parser
 
 
 
-    procedure parse_initializer(mutable this: Parser) @page true @direct true returns InitializerSyntax throws ParserError linked
+    procedure parse_initializer(mutable this: Parser) @page true @direct true @ret_caller true returns InitializerSyntax throws ParserError linked
 
 
 
@@ -2760,7 +2760,7 @@ define Parser
 
 
 
-    procedure parse_operand_list(mutable this: Parser) @page true @direct true returns ref[Vector[OperandSyntax]]? throws ParserError linked
+    procedure parse_operand_list(mutable this: Parser) @page true @direct true @ret_caller true returns ref[Vector[OperandSyntax]]? throws ParserError linked
 
 
 
@@ -2789,7 +2789,7 @@ define Parser
 
 
 
-    procedure parse_operand(mutable this: Parser) @page true @direct true returns OperandSyntax throws ParserError linked
+    procedure parse_operand(mutable this: Parser) @page true @direct true @ret_caller true returns OperandSyntax throws ParserError linked
 
 
 
@@ -2819,7 +2819,7 @@ define Parser
 
 
 
-    procedure parse_memberaccess_list(mutable this: Parser) @page true @direct true returns ref[Vector[MemberAccessSyntax]]? throws ParserError linked
+    procedure parse_memberaccess_list(mutable this: Parser) @page true @direct true @ret_caller true returns ref[Vector[MemberAccessSyntax]]? throws ParserError linked
 
 
 
@@ -2848,7 +2848,7 @@ define Parser
 
 
 
-    procedure parse_memberaccess(mutable this: Parser) @page true @direct true returns MemberAccessSyntax throws ParserError linked
+    procedure parse_memberaccess(mutable this: Parser) @page true @direct true @ret_caller true returns MemberAccessSyntax throws ParserError linked
 
 
 
@@ -2874,7 +2874,7 @@ define Parser
 
 
 
-    procedure parse_expression(mutable this: Parser) @page true @direct true returns ExpressionSyntax throws ParserError linked
+    procedure parse_expression(mutable this: Parser) @page true @direct true @ret_caller true returns ExpressionSyntax throws ParserError linked
 
 
 
@@ -3059,7 +3059,7 @@ define Parser
 
 
 
-    procedure parse_literal(mutable this: Parser) @page true @direct true returns LiteralSyntax throws ParserError linked
+    procedure parse_literal(mutable this: Parser) @page true @direct true @ret_caller true returns LiteralSyntax throws ParserError linked
 
 
 
@@ -3075,7 +3075,7 @@ define Parser
 
 
 
-    procedure parse_object(mutable this: Parser) @page true @direct true returns ObjectSyntax throws ParserError linked
+    procedure parse_object(mutable this: Parser) @page true @direct true @ret_caller true returns ObjectSyntax throws ParserError linked
 
 
 
@@ -3103,7 +3103,7 @@ define Parser
 
 
 
-    procedure parse_component_list(mutable this: Parser) @page true @direct true returns ref[Vector[ComponentSyntax]]? throws ParserError linked
+    procedure parse_component_list(mutable this: Parser) @page true @direct true @ret_caller true returns ref[Vector[ComponentSyntax]]? throws ParserError linked
 
 
 
@@ -3132,7 +3132,7 @@ define Parser
 
 
 
-    procedure parse_component(mutable this: Parser) @page true @direct true returns ComponentSyntax throws ParserError linked
+    procedure parse_component(mutable this: Parser) @page true @direct true @ret_caller true returns ComponentSyntax throws ParserError linked
 
 
 
@@ -3176,7 +3176,7 @@ define Parser
 
 
 
-    procedure parse_value(mutable this: Parser) @page true @direct true returns ValueSyntax throws ParserError linked
+    procedure parse_value(mutable this: Parser) @page true @direct true @ret_caller true returns ValueSyntax throws ParserError linked
 
 
 
@@ -3215,7 +3215,7 @@ define Parser
 
 
 
-    procedure parse_vector(mutable this: Parser) @page true @direct true returns VectorSyntax throws ParserError linked
+    procedure parse_vector(mutable this: Parser) @page true @direct true @ret_caller true returns VectorSyntax throws ParserError linked
 
 
 
@@ -3257,7 +3257,7 @@ define Parser
 
 
 
-    procedure parse_element_list(mutable this: Parser) @page true @direct true returns ref[Vector[ElementSyntax]]? throws ParserError linked
+    procedure parse_element_list(mutable this: Parser) @page true @direct true @ret_caller true returns ref[Vector[ElementSyntax]]? throws ParserError linked
 
 
 
@@ -3286,7 +3286,7 @@ define Parser
 
 
 
-    procedure parse_element(mutable this: Parser) @page true @direct true returns ElementSyntax throws ParserError linked
+    procedure parse_element(mutable this: Parser) @page true @direct true @ret_caller true returns ElementSyntax throws ParserError linked
 
 
 
@@ -3331,7 +3331,7 @@ define Parser
 
 
 
-    procedure parse_if(mutable this: Parser) @page true @direct true returns IfSyntax throws ParserError linked
+    procedure parse_if(mutable this: Parser) @page true @direct true @ret_caller true returns IfSyntax throws ParserError linked
 
 
 
@@ -3387,7 +3387,7 @@ define Parser
 
 
 
-    procedure parse_then(mutable this: Parser) @page true @direct true returns ThenSyntax throws ParserError linked
+    procedure parse_then(mutable this: Parser) @page true @direct true @ret_caller true returns ThenSyntax throws ParserError linked
 
 
 
@@ -3404,7 +3404,7 @@ define Parser
 
 
 
-    procedure parse_else(mutable this: Parser) @page true @direct true returns ElseSyntax throws ParserError linked
+    procedure parse_else(mutable this: Parser) @page true @direct true @ret_caller true returns ElseSyntax throws ParserError linked
 
 
 
@@ -3437,7 +3437,7 @@ define Parser
 
 
 
-    procedure parse_match(mutable this: Parser) @page true @direct true returns MatchSyntax throws ParserError linked
+    procedure parse_match(mutable this: Parser) @page true @direct true @ret_caller true returns MatchSyntax throws ParserError linked
 
 
 
@@ -3493,7 +3493,7 @@ define Parser
 
 
 
-    procedure parse_branch_list(mutable this: Parser) @page true @direct true returns ref[Vector[BranchSyntax]]? throws ParserError linked
+    procedure parse_branch_list(mutable this: Parser) @page true @direct true @ret_caller true returns ref[Vector[BranchSyntax]]? throws ParserError linked
 
 
 
@@ -3522,7 +3522,7 @@ define Parser
 
 
 
-    procedure parse_branch(mutable this: Parser) @page true @direct true returns BranchSyntax throws ParserError linked
+    procedure parse_branch(mutable this: Parser) @page true @direct true @ret_caller true returns BranchSyntax throws ParserError linked
 
 
 
@@ -3558,7 +3558,7 @@ define Parser
 
 
 
-    procedure parse_case_list(mutable this: Parser) @page true @direct true returns ref[Vector[CaseSyntax]]? throws ParserError linked
+    procedure parse_case_list(mutable this: Parser) @page true @direct true @ret_caller true returns ref[Vector[CaseSyntax]]? throws ParserError linked
 
 
 
@@ -3587,7 +3587,7 @@ define Parser
 
 
 
-    procedure parse_case(mutable this: Parser) @page true @direct true returns CaseSyntax throws ParserError linked
+    procedure parse_case(mutable this: Parser) @page true @direct true @ret_caller true returns CaseSyntax throws ParserError linked
 
 
 
@@ -3613,7 +3613,7 @@ define Parser
 
 
 
-    procedure parse_while(mutable this: Parser) @page true @direct true returns WhileSyntax throws ParserError linked
+    procedure parse_while(mutable this: Parser) @page true @direct true @ret_caller true returns WhileSyntax throws ParserError linked
 
 
 
@@ -3671,7 +3671,7 @@ define Parser
 
 
 
-    procedure parse_choose(mutable this: Parser) @page true @direct true returns ChooseSyntax throws ParserError linked
+    procedure parse_choose(mutable this: Parser) @page true @direct true @ret_caller true returns ChooseSyntax throws ParserError linked
 
 
 
@@ -3726,7 +3726,7 @@ define Parser
 
 
 
-    procedure parse_try(mutable this: Parser) @page true @direct true returns TrySyntax throws ParserError linked
+    procedure parse_try(mutable this: Parser) @page true @direct true @ret_caller true returns TrySyntax throws ParserError linked
 
 
 
@@ -3794,7 +3794,7 @@ define Parser
 
 
 
-    procedure parse_condition(mutable this: Parser) @page true @direct true returns ConditionSyntax throws ParserError linked
+    procedure parse_condition(mutable this: Parser) @page true @direct true @ret_caller true returns ConditionSyntax throws ParserError linked
 
 
 
@@ -3819,7 +3819,7 @@ define Parser
 
 
 
-    procedure parse_when_list(mutable this: Parser) @page true @direct true returns ref[Vector[WhenSyntax]]? throws ParserError linked
+    procedure parse_when_list(mutable this: Parser) @page true @direct true @ret_caller true returns ref[Vector[WhenSyntax]]? throws ParserError linked
 
 
 
@@ -3848,7 +3848,7 @@ define Parser
 
 
 
-    procedure parse_when(mutable this: Parser) @page true @direct true returns WhenSyntax throws ParserError linked
+    procedure parse_when(mutable this: Parser) @page true @direct true @ret_caller true returns WhenSyntax throws ParserError linked
 
 
 
@@ -3899,7 +3899,7 @@ define Parser
 
 
 
-    procedure parse_statement_list(mutable this: Parser) @page true @direct true returns ref[Vector[StatementSyntax]]? throws ParserError linked
+    procedure parse_statement_list(mutable this: Parser) @page true @direct true @ret_caller true returns ref[Vector[StatementSyntax]]? throws ParserError linked
 
 
 
@@ -3928,7 +3928,7 @@ define Parser
 
 
 
-    procedure parse_statement(mutable this: Parser) @page true @direct true returns StatementSyntax throws ParserError linked
+    procedure parse_statement(mutable this: Parser) @page true @direct true @ret_caller true returns StatementSyntax throws ParserError linked
 
 
 
@@ -4033,7 +4033,7 @@ define Parser
 
 
 
-    procedure parse_let(mutable this: Parser) @page true @direct true returns LetSyntax throws ParserError linked
+    procedure parse_let(mutable this: Parser) @page true @direct true @ret_caller true returns LetSyntax throws ParserError linked
 
 
 
@@ -4059,7 +4059,7 @@ define Parser
 
 
 
-    procedure parse_var(mutable this: Parser) @page true @direct true returns VarSyntax throws ParserError linked
+    procedure parse_var(mutable this: Parser) @page true @direct true @ret_caller true returns VarSyntax throws ParserError linked
 
 
 
@@ -4085,7 +4085,7 @@ define Parser
 
 
 
-    procedure parse_mutable(mutable this: Parser) @page true @direct true returns MutableSyntax throws ParserError linked
+    procedure parse_mutable(mutable this: Parser) @page true @direct true @ret_caller true returns MutableSyntax throws ParserError linked
 
 
 
@@ -4124,7 +4124,7 @@ define Parser
 
 
 
-    procedure parse_shared(mutable this: Parser) @page true @direct true returns SharedSyntax throws ParserError linked
+    procedure parse_shared(mutable this: Parser) @page true @direct true @ret_caller true returns SharedSyntax throws ParserError linked
 
 
 
@@ -4176,7 +4176,7 @@ define Parser
 
 
 
-    procedure parse_atomic(mutable this: Parser) @page true @direct true returns AtomicSyntax throws ParserError linked
+    procedure parse_atomic(mutable this: Parser) @page true @direct true @ret_param_0 true returns AtomicSyntax throws ParserError linked
 
 
 
@@ -4188,7 +4188,7 @@ define Parser
 
 
 
-    procedure parse_binding(mutable this: Parser) @page true @direct true returns BindingSyntax throws ParserError linked
+    procedure parse_binding(mutable this: Parser) @page true @direct true @ret_caller true returns BindingSyntax throws ParserError linked
 
 
 
@@ -4226,7 +4226,7 @@ define Parser
 
 
 
-    procedure parse_bindingannotation(mutable this: Parser) @page true @direct true returns BindingAnnotationSyntax throws ParserError linked
+    procedure parse_bindingannotation(mutable this: Parser) @page true @direct true @ret_caller true returns BindingAnnotationSyntax throws ParserError linked
 
 
 
@@ -4252,7 +4252,7 @@ define Parser
 
 
 
-    procedure parse_bindingspec_list(mutable this: Parser) @page true @direct true returns ref[Vector[BindingSpecSyntax]]? throws ParserError linked
+    procedure parse_bindingspec_list(mutable this: Parser) @page true @direct true @ret_caller true returns ref[Vector[BindingSpecSyntax]]? throws ParserError linked
 
 
 
@@ -4281,7 +4281,7 @@ define Parser
 
 
 
-    procedure parse_bindingspec(mutable this: Parser) @page true @direct true returns BindingSpecSyntax throws ParserError linked
+    procedure parse_bindingspec(mutable this: Parser) @page true @direct true @ret_caller true returns BindingSpecSyntax throws ParserError linked
 
 
 
@@ -4316,7 +4316,7 @@ define Parser
 
 
 
-    procedure parse_array(mutable this: Parser) @page true @direct true returns ArraySyntax throws ParserError linked
+    procedure parse_array(mutable this: Parser) @page true @direct true @ret_caller true returns ArraySyntax throws ParserError linked
 
 
 
@@ -4344,7 +4344,7 @@ define Parser
 
 
 
-    procedure parse_structure(mutable this: Parser) @page true @direct true returns StructureSyntax throws ParserError linked
+    procedure parse_structure(mutable this: Parser) @page true @direct true @ret_caller true returns StructureSyntax throws ParserError linked
 
 
 
@@ -4372,7 +4372,7 @@ define Parser
 
 
 
-    procedure parse_part_list(mutable this: Parser) @page true @direct true returns ref[Vector[PartSyntax]]? throws ParserError linked
+    procedure parse_part_list(mutable this: Parser) @page true @direct true @ret_caller true returns ref[Vector[PartSyntax]]? throws ParserError linked
 
 
 
@@ -4401,7 +4401,7 @@ define Parser
 
 
 
-    procedure parse_part(mutable this: Parser) @page true @direct true returns PartSyntax throws ParserError linked
+    procedure parse_part(mutable this: Parser) @page true @direct true @ret_caller true returns PartSyntax throws ParserError linked
 
 
 
@@ -4426,7 +4426,7 @@ define Parser
 
 
 
-    procedure parse_field(mutable this: Parser) @page true @direct true returns FieldSyntax throws ParserError linked
+    procedure parse_field(mutable this: Parser) @page true @direct true @ret_caller true returns FieldSyntax throws ParserError linked
 
 
 
@@ -4452,7 +4452,7 @@ define Parser
 
 
 
-    procedure parse_property_list(mutable this: Parser) @page true @direct true returns ref[Vector[PropertySyntax]]? throws ParserError linked
+    procedure parse_property_list(mutable this: Parser) @page true @direct true @ret_caller true returns ref[Vector[PropertySyntax]]? throws ParserError linked
 
 
 
@@ -4481,7 +4481,7 @@ define Parser
 
 
 
-    procedure parse_property(mutable this: Parser) @page true @direct true returns PropertySyntax throws ParserError linked
+    procedure parse_property(mutable this: Parser) @page true @direct true @ret_caller true returns PropertySyntax throws ParserError linked
 
 
 
@@ -4555,7 +4555,7 @@ define Parser
 
 
 
-    procedure parse_typeannotation(mutable this: Parser) @page true @direct true returns TypeAnnotationSyntax throws ParserError linked
+    procedure parse_typeannotation(mutable this: Parser) @page true @direct true @ret_caller true returns TypeAnnotationSyntax throws ParserError linked
 
 
 
@@ -4581,7 +4581,7 @@ define Parser
 
 
 
-    procedure parse_mutability(mutable this: Parser) @page true @direct true returns MutabilitySyntax throws ParserError linked
+    procedure parse_mutability(mutable this: Parser) @page true @direct true @ret_caller true returns MutabilitySyntax throws ParserError linked
 
 
 
@@ -4606,7 +4606,7 @@ define Parser
 
 
 
-    procedure parse_immutable(mutable this: Parser) @page true @direct true returns ImmutableSyntax throws ParserError linked
+    procedure parse_immutable(mutable this: Parser) @page true @direct true @ret_param_0 true returns ImmutableSyntax throws ParserError linked
 
 
 
@@ -4618,7 +4618,7 @@ define Parser
 
 
 
-    procedure parse_variable(mutable this: Parser) @page true @direct true returns VariableSyntax throws ParserError linked
+    procedure parse_variable(mutable this: Parser) @page true @direct true @ret_param_0 true returns VariableSyntax throws ParserError linked
 
 
 
@@ -4630,7 +4630,7 @@ define Parser
 
 
 
-    procedure parse_continue(mutable this: Parser) @page true @direct true returns ContinueSyntax throws ParserError linked
+    procedure parse_continue(mutable this: Parser) @page true @direct true @ret_caller true returns ContinueSyntax throws ParserError linked
 
 
 
@@ -4655,7 +4655,7 @@ define Parser
 
 
 
-    procedure parse_break(mutable this: Parser) @page true @direct true returns BreakSyntax throws ParserError linked
+    procedure parse_break(mutable this: Parser) @page true @direct true @ret_caller true returns BreakSyntax throws ParserError linked
 
 
 
@@ -4693,7 +4693,7 @@ define Parser
 
 
 
-    procedure parse_loop(mutable this: Parser) @page true @direct true returns LoopSyntax throws ParserError linked
+    procedure parse_loop(mutable this: Parser) @page true @direct true @ret_caller true returns LoopSyntax throws ParserError linked
 
 
 
@@ -4709,7 +4709,7 @@ define Parser
 
 
 
-    procedure parse_return(mutable this: Parser) @page true @direct true returns ReturnSyntax throws ParserError linked
+    procedure parse_return(mutable this: Parser) @page true @direct true @ret_caller true returns ReturnSyntax throws ParserError linked
 
 
 
@@ -4734,7 +4734,7 @@ define Parser
 
 
 
-    procedure parse_throw(mutable this: Parser) @page true @direct true returns ThrowSyntax throws ParserError linked
+    procedure parse_throw(mutable this: Parser) @page true @direct true @ret_caller true returns ThrowSyntax throws ParserError linked
 
 
 
@@ -4759,7 +4759,7 @@ define Parser
 
 
 
-    procedure parse_lambda(mutable this: Parser) @page true @direct true returns LambdaSyntax throws ParserError linked
+    procedure parse_lambda(mutable this: Parser) @page true @direct true @ret_caller true returns LambdaSyntax throws ParserError linked
 
 
 
@@ -4802,7 +4802,7 @@ define Parser
 
 
 
-    procedure parse_for(mutable this: Parser) @page true @direct true returns ForSyntax throws ParserError linked
+    procedure parse_for(mutable this: Parser) @page true @direct true @ret_caller true returns ForSyntax throws ParserError linked
 
 
 
@@ -4879,7 +4879,7 @@ define Parser
 
 
 
-    procedure parse_label(mutable this: Parser) @page true @direct true returns LabelSyntax throws ParserError linked
+    procedure parse_label(mutable this: Parser) @page true @direct true @ret_caller true returns LabelSyntax throws ParserError linked
 
 
 
@@ -4895,7 +4895,7 @@ define Parser
 
 
 
-    procedure parse_repeat(mutable this: Parser) @page true @direct true returns RepeatSyntax throws ParserError linked
+    procedure parse_repeat(mutable this: Parser) @page true @direct true @ret_caller true returns RepeatSyntax throws ParserError linked
 
 
 
@@ -4936,7 +4936,7 @@ define Parser
 
 
 
-    procedure parse_action_list(mutable this: Parser) @page true @direct true returns ref[Vector[ActionSyntax]]? throws ParserError linked
+    procedure parse_action_list(mutable this: Parser) @page true @direct true @ret_caller true returns ref[Vector[ActionSyntax]]? throws ParserError linked
 
 
 
@@ -4965,7 +4965,7 @@ define Parser
 
 
 
-    procedure parse_action(mutable this: Parser) @page true @direct true returns ActionSyntax throws ParserError linked
+    procedure parse_action(mutable this: Parser) @page true @direct true @ret_caller true returns ActionSyntax throws ParserError linked
 
 
 
@@ -5000,7 +5000,7 @@ define Parser
 
 
 
-    procedure parse_operation(mutable this: Parser) @page true @direct true returns OperationSyntax throws ParserError linked
+    procedure parse_operation(mutable this: Parser) @page true @direct true @ret_caller true returns OperationSyntax throws ParserError linked
 
 
 
@@ -5017,7 +5017,7 @@ define Parser
 
 
 
-    procedure parse_set(mutable this: Parser) @page true @direct true returns SetSyntax throws ParserError linked
+    procedure parse_set(mutable this: Parser) @page true @direct true @ret_caller true returns SetSyntax throws ParserError linked
 
 
 
@@ -5060,7 +5060,7 @@ define Parser
 
 
 
-    procedure parse_block(mutable this: Parser) @page true @direct true returns BlockSyntax throws ParserError linked
+    procedure parse_block(mutable this: Parser) @page true @direct true @ret_caller true returns BlockSyntax throws ParserError linked
 
 
 
@@ -5101,7 +5101,7 @@ define Parser
 
 
 
-    procedure parse_sizeof(mutable this: Parser) @page true @direct true returns SizeOfSyntax throws ParserError linked
+    procedure parse_sizeof(mutable this: Parser) @page true @direct true @ret_caller true returns SizeOfSyntax throws ParserError linked
 
 
 
@@ -5127,7 +5127,7 @@ define Parser
 
 
 
-    procedure parse_alignof(mutable this: Parser) @page true @direct true returns AlignOfSyntax throws ParserError linked
+    procedure parse_alignof(mutable this: Parser) @page true @direct true @ret_caller true returns AlignOfSyntax throws ParserError linked
 
 
 
@@ -5153,7 +5153,7 @@ define Parser
 
 
 
-    procedure parse_is(mutable this: Parser) @page true @direct true returns IsSyntax throws ParserError linked
+    procedure parse_is(mutable this: Parser) @page true @direct true @ret_caller true returns IsSyntax throws ParserError linked
 
 
 
@@ -5179,7 +5179,7 @@ define Parser
 
 
 
-    procedure parse_as(mutable this: Parser) @page true @direct true returns AsSyntax throws ParserError linked
+    procedure parse_as(mutable this: Parser) @page true @direct true @ret_caller true returns AsSyntax throws ParserError linked
 
 
 
@@ -5205,7 +5205,7 @@ define Parser
 
 
 
-    procedure parse_type_list(mutable this: Parser) @page true @direct true returns ref[Vector[TypeSyntax]]? throws ParserError linked
+    procedure parse_type_list(mutable this: Parser) @page true @direct true @ret_caller true returns ref[Vector[TypeSyntax]]? throws ParserError linked
 
 
 
@@ -5234,7 +5234,7 @@ define Parser
 
 
 
-    procedure parse_type(mutable this: Parser) @page true @direct true returns TypeSyntax throws ParserError linked
+    procedure parse_type(mutable this: Parser) @page true @direct true @ret_caller true returns TypeSyntax throws ParserError linked
 
 
 
@@ -5290,7 +5290,7 @@ define Parser
 
 
 
-    procedure parse_name(mutable this: Parser) @page true @direct true returns NameSyntax throws ParserError linked
+    procedure parse_name(mutable this: Parser) @page true @direct true @ret_caller true returns NameSyntax throws ParserError linked
 
 
 
@@ -5316,7 +5316,7 @@ define Parser
 
 
 
-    procedure parse_extension_list(mutable this: Parser) @page true @direct true returns ref[Vector[ExtensionSyntax]]? throws ParserError linked
+    procedure parse_extension_list(mutable this: Parser) @page true @direct true @ret_caller true returns ref[Vector[ExtensionSyntax]]? throws ParserError linked
 
 
 
@@ -5345,7 +5345,7 @@ define Parser
 
 
 
-    procedure parse_extension(mutable this: Parser) @page true @direct true returns ExtensionSyntax throws ParserError linked
+    procedure parse_extension(mutable this: Parser) @page true @direct true @ret_caller true returns ExtensionSyntax throws ParserError linked
 
 
 
@@ -5361,7 +5361,7 @@ define Parser
 
 
 
-    procedure parse_lifetime(mutable this: Parser) @page true @direct true returns LifetimeSyntax throws ParserError linked
+    procedure parse_lifetime(mutable this: Parser) @page true @direct true @ret_caller true returns LifetimeSyntax throws ParserError linked
 
 
 
@@ -5396,7 +5396,7 @@ define Parser
 
 
 
-    procedure parse_call(mutable this: Parser) @page true @direct true returns CallSyntax throws ParserError linked
+    procedure parse_call(mutable this: Parser) @page true @direct true @ret_param_0 true returns CallSyntax throws ParserError linked
 
 
 
@@ -5408,7 +5408,7 @@ define Parser
 
 
 
-    procedure parse_reference(mutable this: Parser) @page true @direct true returns ReferenceSyntax throws ParserError linked
+    procedure parse_reference(mutable this: Parser) @page true @direct true @ret_caller true returns ReferenceSyntax throws ParserError linked
 
 
 
@@ -5424,7 +5424,7 @@ define Parser
 
 
 
-    procedure parse_thrown(mutable this: Parser) @page true @direct true returns ThrownSyntax throws ParserError linked
+    procedure parse_thrown(mutable this: Parser) @page true @direct true @ret_param_0 true returns ThrownSyntax throws ParserError linked
 
 
 
@@ -5436,7 +5436,7 @@ define Parser
 
 
 
-    procedure parse_empty(mutable this: Parser) @page true @direct true returns EmptySyntax throws ParserError linked
+    procedure parse_empty(mutable this: Parser) @page true @direct true @ret_param_0 true returns EmptySyntax throws ParserError linked
 
 
 
@@ -5448,11 +5448,11 @@ define Parser
 
 
 
-    function is_at_end(this: Parser) returns bool linked
+    function is_at_end(this: Parser) @ret_param_0 true returns bool linked
 
 }
 
-function test() returns int linked
+function test() @ret_nonlocal true returns int linked
 
 
 

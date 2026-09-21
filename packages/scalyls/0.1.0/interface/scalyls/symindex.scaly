@@ -144,7 +144,7 @@ define symindex
 
     ; True when `path`'s cached blob was already validated during this request,
     ; so the caller may use it WITHOUT reading and hashing the file again.
-    procedure fresh(path: String) returns bool reads idx_epoch linked
+    procedure fresh(path: String) @ret_nonlocal true returns bool reads idx_epoch linked
 
 
 
@@ -169,7 +169,7 @@ define symindex
 
 
     ; Index of the live slot whose path matches, or -1.
-    procedure find(path: String) returns int reads idx_slots linked
+    procedure find(path: String) @ret_nonlocal true returns int reads idx_slots linked
 
 
 
@@ -191,7 +191,7 @@ define symindex
 
     ; True when `path` is cached AND was built from content hashing to `chash`
     ; — i.e. the cached blob is still valid for the file's current content.
-    procedure valid(path: String, chash: size_t) returns bool reads idx_slots linked
+    procedure valid(path: String, chash: size_t) @ret_nonlocal true returns bool reads idx_slots linked
 
 
 
@@ -206,7 +206,7 @@ define symindex
     ; The cached blob for `path` (a fresh copy on the caller's page), or "" on a
     ; miss. Callers should gate on valid() first; an empty blob is a legitimate
     ; cached value (a file with no symbols).
-    procedure get_blob(rp, path: String) @direct true returns String reads idx_slots linked
+    procedure get_blob(rp, path: String) @direct true @ret_caller true returns String reads idx_slots linked
 
 
 
@@ -333,7 +333,7 @@ define symindex
 
 
     ; Index of the live dir slot for `dir` that was filled in THIS request, or -1.
-    procedure find_dir(dir: String) returns int reads dir_slots linked
+    procedure find_dir(dir: String) @ret_nonlocal true returns int reads dir_slots linked
 
 
 
@@ -354,7 +354,7 @@ define symindex
 
 
     ; True when this request already listed `dir`.
-    procedure has_listing(dir: String) returns bool reads idx_epoch linked
+    procedure has_listing(dir: String) @ret_nonlocal true returns bool reads idx_epoch linked
 
 
 
@@ -362,7 +362,7 @@ define symindex
 
 
     ; The listing cached for `dir` in this request ("" when there is none).
-    procedure get_listing(rp, dir: String) @direct true returns String reads dir_slots linked
+    procedure get_listing(rp, dir: String) @direct true @ret_caller true returns String reads dir_slots linked
 
 
 

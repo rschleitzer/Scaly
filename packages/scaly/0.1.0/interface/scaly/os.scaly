@@ -8,7 +8,7 @@ define os
     module Directory
     module Path
 
-    procedure test_direct() returns int io linked
+    procedure test_direct() @ret_nonlocal true returns int io linked
 
 
 
@@ -18,14 +18,14 @@ define os
 
 
 
-    procedure test_console() returns int io linked
+    procedure test_console() @ret_nonlocal true returns int io linked
 
 
 
 
 
 
-    procedure test_file_raw() returns int io linked
+    procedure test_file_raw() @ret_nonlocal true returns int io linked
 
 
 
@@ -60,7 +60,7 @@ define os
 
 
 
-    procedure test_file_string() returns int io linked
+    procedure test_file_string() @ret_nonlocal true returns int io linked
 
 
 
@@ -81,7 +81,7 @@ define os
 
 
 
-    procedure test_file_exists() returns int io linked
+    procedure test_file_exists() @ret_nonlocal true returns int io linked
 
 
 
@@ -96,7 +96,7 @@ define os
 
 
 
-    procedure test_directory() returns int io linked
+    procedure test_directory() @ret_nonlocal true returns int io linked
 
 
 
@@ -120,7 +120,7 @@ define os
 
 
 
-    function test_path() returns int linked
+    function test_path() @ret_nonlocal true returns int linked
 
 
 
@@ -146,7 +146,7 @@ define os
 
 
 
-    procedure test() returns int io linked
+    procedure test() @ret_nonlocal true returns int io linked
 
 
 

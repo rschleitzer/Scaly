@@ -87,7 +87,7 @@ define docstore
 
     ; The workspace root path (a fresh copy on the caller's page), or "" when
     ; initialize provided none.
-    procedure workspace_root(rp) @direct true returns String reads ws_root_data linked
+    procedure workspace_root(rp) @direct true @ret_caller true returns String reads ws_root_data linked
 
 
 
@@ -122,7 +122,7 @@ define docstore
 
     ; Index of the live slot whose uri matches, or -1. Builds a String view
     ; over each stored uri (on this function's local page) for the compare.
-    procedure find(uri: String) returns int reads doc_slots linked
+    procedure find(uri: String) @ret_nonlocal true returns int reads doc_slots linked
 
 
 
@@ -272,7 +272,7 @@ define docstore
 
     ; The uri of a live slot that still owes a diagnostics run (a fresh copy on
     ; the caller's page), or "" when none does.
-    procedure dirty_uri(rp) @direct true returns String reads doc_slots linked
+    procedure dirty_uri(rp) @direct true @ret_caller true returns String reads doc_slots linked
 
 
 
@@ -292,7 +292,7 @@ define docstore
 
     ; The stored text for `uri` (a fresh copy on the caller's page), or an
     ; empty String on a miss. The worker treats empty as "read from disk".
-    procedure get(rp, uri: String) @direct true returns String reads doc_slots linked
+    procedure get(rp, uri: String) @direct true @ret_caller true returns String reads doc_slots linked
 
 
 

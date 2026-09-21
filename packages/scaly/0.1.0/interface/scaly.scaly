@@ -11,7 +11,7 @@ define scaly
     module tensor
 
     ; Test entry point that calls all module tests
-    procedure test() returns int io linked
+    procedure test() @ret_nonlocal true returns int io linked
 
 
 

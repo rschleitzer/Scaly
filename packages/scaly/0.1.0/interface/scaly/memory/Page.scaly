@@ -71,7 +71,7 @@ define Page
     ; Answers a borrowed reference, never null: a bucket is created when none
     ; is free, and the page address is computed from it. Return types are not
     ; part of the Itanium name, so no caller's symbol moves.
-    function allocate_page() returns ref[Page] linked
+    function allocate_page() @ret_nonlocal true returns ref[Page] linked
 
 
 
@@ -189,14 +189,14 @@ define Page
     ; cooperation (see SCALY_TRACE_HEAP in root_pages.scaly). Use the
     ; SAME site string at the matching alloc and release call; a
     ; mismatched label shows up as a permanent false imbalance.
-    procedure allocate_page_traced(mutable site: pointer[const_char]) returns ref[Page] linked
+    procedure allocate_page_traced(mutable site: pointer[const_char]) @ret_nonlocal true returns ref[Page] linked
 
 
 
 
 
 
-    procedure release_page_traced(p: ref[Page], mutable site: pointer[const_char]) linked
+    procedure release_page_traced(p: ref[Page], mutable site: pointer[const_char]) @ret_nonlocal true linked
 
 
 
@@ -204,12 +204,12 @@ define Page
 
     ; How many dead buckets THIS thread has drained and freed
     ; (teardown proof for tests; the counter is thread-local).
-    function reclaimed_dead_buckets() returns i64 linked
+    function reclaimed_dead_buckets() @ret_nonlocal true returns i64 linked
 
 
     ; tsc's `Memory used` and `Memory allocs` (see PageStatistics above): 0 until
     ; enable_statistics()
-    function bytes_held() returns i64 linked
+    function bytes_held() @ret_nonlocal true returns i64 linked
 
 
 
@@ -217,7 +217,7 @@ define Page
 
 
 
-    function allocation_count() returns i64 linked
+    function allocation_count() @ret_nonlocal true returns i64 linked
 
 
 
@@ -225,7 +225,7 @@ define Page
 
 
 
-    function live_bytes() returns i64 linked
+    function live_bytes() @ret_nonlocal true returns i64 linked
 
 
 
@@ -254,7 +254,7 @@ define Page
 
 
 
-    function allocate_root_page() returns pointer[Page] linked
+    function allocate_root_page() @ret_nonlocal true returns pointer[Page] linked
 
 
 
@@ -311,7 +311,7 @@ define Page
 
 
 
-    procedure allocate(this: Page, size: size_t, align: size_t) returns pointer[void] linked
+    procedure allocate(this: Page, size: size_t, align: size_t) @ret_param_0 true returns pointer[void] linked
 
 
 
@@ -418,7 +418,7 @@ define Page
 
 
 
-    procedure allocate_oversized(this: Page, size: size_t) returns pointer[void] linked
+    procedure allocate_oversized(this: Page, size: size_t) @ret_caller true returns pointer[void] linked
 
 
 
@@ -467,7 +467,7 @@ define Page
     ; The aligned_alloc block length recorded by allocate_oversized (gross
     ; size rounded up to a PAGE_SIZE multiple). Meaningful only for
     ; oversized pages (next_object == null).
-    function oversized_size(p: ref[Page]) returns size_t linked
+    function oversized_size(p: ref[Page]) @ret_explicit_0 true returns size_t linked
 
 
 
@@ -478,14 +478,14 @@ define Page
     ; not part of the Itanium name, so `_Z3getPv` — which the Emitter looks
     ; up by that literal — stays put. Measured 2026-09-05: `let host
     ; Page.get(...)` was the origin of 551 pointer-into-ref sites in the ports.
-    function get(address: pointer[void]) returns ref[Page] linked
+    function get(address: pointer[void]) @ret_caller true returns ref[Page] linked
 
 
 
 
 
 
-    function get_capacity(this: Page, align: size_t) returns size_t linked
+    function get_capacity(this: Page, align: size_t) @ret_param_0 true returns size_t linked
 
 
 
@@ -494,7 +494,7 @@ define Page
 
 
 
-    procedure allocate_exclusive_page(this: Page) returns ref[Page] linked
+    procedure allocate_exclusive_page(this: Page) @ret_nonlocal true returns ref[Page] linked
 
 
 
@@ -509,7 +509,7 @@ define Page
     ; header. The decision belongs here rather than in the caller because the
     ; caller cannot see PAGE_SIZE: a module-level define does not resolve inside
     ; a generic body monomorphized into another package.
-    procedure allocate_exclusive_buffer(this: Page, size: size_t, align: size_t) returns pointer[void] linked
+    procedure allocate_exclusive_buffer(this: Page, size: size_t, align: size_t) @ret_param_0 true returns pointer[void] linked
 
 
 
@@ -548,7 +548,7 @@ define Page
 
 
 
-    procedure deallocate_exclusive_page(this: Page, page: ref[Page]) linked
+    procedure deallocate_exclusive_page(this: Page, page: ref[Page]) @ret_param_0 true linked
 
 
 
@@ -580,7 +580,7 @@ define Page
     ; ★What this cannot know is whether anything above the mark is still
     ; reachable: proving that is the caller's job (dazzle's FrameMark and its
     ; six conditions). A wrong rewind is a dangling pointer, not a diagnostic.
-    procedure rewind(this: Page, mark_page: pointer[Page], mark: pointer[void], exclusive: pointer[PageNode], head_exclusive: pointer[PageNode]) returns bool linked
+    procedure rewind(this: Page, mark_page: pointer[Page], mark: pointer[void], exclusive: pointer[PageNode], head_exclusive: pointer[PageNode]) @ret_nonlocal true returns bool linked
 
 
 

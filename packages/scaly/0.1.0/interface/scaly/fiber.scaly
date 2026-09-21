@@ -499,7 +499,7 @@ procedure deadlock_event() linked
 ; dead, freed by their last release_page from any thread). Outside the
 ; user entry this frame must stay allocation-free — after the reclaim
 ; there is no allocator left to allocate from.
-procedure scaly_thread_start(mutable raw: pointer[void]) returns pointer[void] io linked
+procedure scaly_thread_start(mutable raw: pointer[void]) @ret_nonlocal true returns pointer[void] io linked
 
 
 
@@ -654,25 +654,25 @@ define Fiber
 {
     ; How many fiber regions have been disposed — one tick per fiber,
     ; whether or not it ever allocated. The teardown proof for tests.
-    function freed_region_count() returns i64 linked
+    function freed_region_count() @ret_nonlocal true returns i64 linked
 
 
-    function freed_page_count() returns i64 linked
+    function freed_page_count() @ret_nonlocal true returns i64 linked
 
 
-    function freed_bucket_count() returns i64 linked
+    function freed_bucket_count() @ret_nonlocal true returns i64 linked
 
 
-    function pooled_stack_count() returns i64 linked
+    function pooled_stack_count() @ret_nonlocal true returns i64 linked
 
 
-    function reused_stack_count() returns i64 linked
+    function reused_stack_count() @ret_nonlocal true returns i64 linked
 
 
     ; Pop a pooled stack (base address) when the pool head matches the
     ; requested size; null otherwise. Only default-sized stacks are ever
     ; pooled, so a custom-size request simply misses.
-    procedure take_pooled_stack(size: size_t) returns pointer[void] linked
+    procedure take_pooled_stack(size: size_t) @ret_nonlocal true returns pointer[void] linked
 
 
 
@@ -748,7 +748,7 @@ define Fiber
     ; and allocates into its own region. The first create installs the
     ; guard-page overflow handler (best-effort diagnostic — a failed
     ; install just keeps the plain-crash behavior).
-    procedure create_sized(host: ref[Page], mutable fn: pointer[void], size: size_t) returns ref[Fiber] linked
+    procedure create_sized(host: ref[Page], mutable fn: pointer[void], size: size_t) @ret_explicit_0 true returns ref[Fiber] linked
 
 
 
@@ -785,7 +785,7 @@ define Fiber
 
 
 
-    procedure create(host: ref[Page], mutable fn: pointer[void]) returns ref[Fiber] linked
+    procedure create(host: ref[Page], mutable fn: pointer[void]) @ret_explicit_0 true returns ref[Fiber] linked
 
 
 
@@ -793,7 +793,7 @@ define Fiber
 
     ; Run the fiber until it yields or finishes. Returns true when the
     ; fiber can be resumed again, false once it finished (or was done).
-    procedure resume(mutable f: ref[Fiber]) returns bool linked
+    procedure resume(mutable f: ref[Fiber]) @ret_nonlocal true returns bool linked
 
 
 
@@ -841,7 +841,7 @@ define Fiber
     ; buckets, then munmap the fiber stack. Returns the number of root
     ; pages torn down. Call after the fiber finished (or to kill it — a
     ; disposed fiber must never be resumed).
-    procedure dispose(mutable f: ref[Fiber]) returns int linked
+    procedure dispose(mutable f: ref[Fiber]) @ret_nonlocal true returns int linked
 
 
 
@@ -905,7 +905,7 @@ define Fiber
 ; calls nothing). Only running code can overflow its own stack, so the
 ; current fiber suffices; on the main context (or a miss) the handler
 ; falls through to the default action.
-function fiber_guard_hit(addr: pointer[void]) returns i32 linked
+function fiber_guard_hit(addr: pointer[void]) @ret_nonlocal true returns i32 linked
 
 
 
@@ -949,7 +949,7 @@ define TaskFn delegate() returns void
 ; The fiber entry of every scheduled task: wraps the started/finish
 ; protocol around an indirect call of the task's own procedure. The
 ; dispatcher stores the task into current_task before resuming.
-procedure scheduler_entry(first_ctx: pointer[void]) linked
+procedure scheduler_entry(first_ctx: pointer[void]) @ret_nonlocal true linked
 
 
 
@@ -974,7 +974,7 @@ define Scheduler
     ; Create the scheduler on the given page and make it current. All
     ; spawned task records and fiber stacks are anchored on this page,
     ; so they survive any spawning fiber's region teardown.
-    procedure create(host: ref[Page]) returns ref[Scheduler] linked
+    procedure create(host: ref[Page]) @ret_explicit_0 true returns ref[Scheduler] linked
 
 
 
@@ -998,7 +998,7 @@ define Scheduler
 
 
     ; Pop the ready-queue head (null when the queue is empty).
-    procedure dequeue() returns ref[SchedTask]? linked
+    procedure dequeue() @ret_nonlocal true returns ref[SchedTask]? linked
 
 
 
@@ -1018,7 +1018,7 @@ define Scheduler
     ; Scheduler.task_arg — cast an fd through size_t), and put it at the
     ; ready-queue tail. Callable from the main context and from inside a
     ; running task alike. Non-default stack sizes bypass the stack pool.
-    procedure spawn_sized(mutable fn: pointer[void], mutable arg: pointer[void], size: size_t) returns ref[SchedTask] linked
+    procedure spawn_sized(mutable fn: pointer[void], mutable arg: pointer[void], size: size_t) @ret_caller true returns ref[SchedTask] linked
 
 
 
@@ -1028,18 +1028,18 @@ define Scheduler
 
 
     ; spawn_sized with the default stack size.
-    procedure spawn_arg(mutable fn: pointer[void], mutable arg: pointer[void]) returns ref[SchedTask] linked
+    procedure spawn_arg(mutable fn: pointer[void], mutable arg: pointer[void]) @ret_caller true returns ref[SchedTask] linked
 
 
 
 
 
     ; spawn_arg without an argument.
-    procedure spawn(mutable fn: pointer[void]) returns ref[SchedTask] linked
+    procedure spawn(mutable fn: pointer[void]) @ret_caller true returns ref[SchedTask] linked
 
 
     ; The running task's spawn_arg argument (null on the main context).
-    procedure task_arg() returns pointer[void] linked
+    procedure task_arg() @ret_nonlocal true returns pointer[void] linked
 
 
 
@@ -1049,7 +1049,7 @@ define Scheduler
 
     ; Give up the current time slice: requeue the running task at the
     ; tail and return to the dispatcher. A no-op on the main context.
-    procedure yield() linked
+    procedure yield() @ret_nonlocal true linked
 
 
 
@@ -1067,7 +1067,7 @@ define Scheduler
     ; are adjusted by its own drain_inject. The receiver armed the wake
     ; handle before parking, so the racy read of home.eio/home.wake sees
     ; initialized values (published by the channel lock).
-    procedure inject_task(home: ref[Scheduler], mutable t: ref[SchedTask]) linked
+    procedure inject_task(home: ref[Scheduler], mutable t: ref[SchedTask]) @ret_nonlocal true linked
 
 
 
@@ -1139,7 +1139,7 @@ define Scheduler
     ; when the ready queue is empty. Remotely-injected channel
     ; receivers are drained into the ready queue first (every dispatch
     ; loop runs through here, so no loop needs its own drain).
-    procedure step() returns bool linked
+    procedure step() @ret_nonlocal true returns bool linked
 
 
 
@@ -1176,7 +1176,7 @@ define Scheduler
     ; every parked task whose readiness arrived (requeue, unblock).
     ; Returns true when the main context's own event (null tag) fired.
     ; Only ever runs on the main context (the dispatcher).
-    procedure poll_io() returns bool io linked
+    procedure poll_io() @ret_nonlocal true returns bool io linked
 
 
 
@@ -1260,7 +1260,7 @@ define Scheduler
     ; Returns false only when nothing can run again without outside
     ; help — the caller decides whether remaining blocked tasks make
     ; that a deadlock.
-    procedure step_or_wait() returns bool io linked
+    procedure step_or_wait() @ret_nonlocal true returns bool io linked
 
 
 
@@ -1285,7 +1285,7 @@ define Scheduler
     ; returned task leaves 0 live pages anyway — its frames unwound
     ; before finish; watch Fiber.freed_bucket_count for the teardown
     ; proof.)
-    procedure reap(mutable t: ref[SchedTask]) returns int linked
+    procedure reap(mutable t: ref[SchedTask]) @ret_nonlocal true returns int linked
 
 
 
@@ -1296,7 +1296,7 @@ define Scheduler
     ; Round-robin over the ready queue until it drains, blocking in the
     ; poller while I/O waiters remain. Traps (exit 106) if tasks are
     ; still blocked then — a join/channel deadlock.
-    procedure run() io linked
+    procedure run() @ret_nonlocal true io linked
 
 
 
@@ -1311,7 +1311,7 @@ define Scheduler
     ; then — it only frees when a caller disposed nothing yet). From
     ; the main context this drives the dispatcher itself; from inside a
     ; task it blocks on t's waiter chain and yields to the dispatcher.
-    procedure join(mutable t: ref[SchedTask]) returns int io linked
+    procedure join(mutable t: ref[SchedTask]) @ret_nonlocal true returns int io linked
 
 
 
@@ -1383,7 +1383,7 @@ define IoPool
 
 
 
-    procedure release(pl: pointer[IoPool]) linked
+    procedure release(pl: pointer[IoPool]) @ret_nonlocal true linked
 
 
 
@@ -1443,7 +1443,7 @@ define Io
     ; The current scheduler's poller fd, created lazily on first use.
     ; (i32-to-i64 casts zero-extend, so a sign test must compare against
     ; -1 as i32 — the shim's failure value — not cast and check < 0.)
-    procedure ensure_poll() returns i32 io linked
+    procedure ensure_poll() @ret_nonlocal true returns i32 io linked
 
 
 
@@ -1471,7 +1471,7 @@ define Io
     ; 1 — poll_io recognizes it as "drain the inject queue / re-check
     ; the channel" (0 stays the main context's own-event tag, real
     ; pointers stay Io-parked tasks).
-    procedure ensure_wake() returns i32 io linked
+    procedure ensure_wake() @ret_nonlocal true returns i32 io linked
 
 
 
@@ -1490,7 +1490,7 @@ define Io
 
     ; Put the fd into nonblocking mode (fcntl lives in the shim: it is
     ; variadic in libc, unreachable through a fixed-prototype extern).
-    procedure set_nonblocking(fd: i32) io linked
+    procedure set_nonblocking(fd: i32) @ret_nonlocal true io linked
 
 
 
@@ -1501,7 +1501,7 @@ define Io
     ; poll(2) on one fd, infinite timeout. The result is advisory — the
     ; caller retries its syscall, which reports any hard error itself
     ; (an EINTR or POLLNVAL just loops through one more retry).
-    procedure wait_ready(fd: i32, for_write: bool) io linked
+    procedure wait_ready(fd: i32, for_write: bool) @ret_nonlocal true io linked
 
 
 
@@ -1570,7 +1570,7 @@ define Io
 
     ; Read up to count bytes; suspends while the fd has nothing to
     ; offer. Returns the byte count, 0 at EOF, -1 on a hard error.
-    procedure read(fd: i32, mutable buf: pointer[void], count: size_t) returns i64 io linked
+    procedure read(fd: i32, mutable buf: pointer[void], count: size_t) @ret_nonlocal true returns i64 io linked
 
 
 
@@ -1584,7 +1584,7 @@ define Io
     ; Write up to count bytes; suspends while the fd cannot take data.
     ; Returns the byte count written (partial writes possible), -1 on a
     ; hard error.
-    procedure write(fd: i32, mutable buf: pointer[void], count: size_t) returns i64 io linked
+    procedure write(fd: i32, mutable buf: pointer[void], count: size_t) @ret_nonlocal true returns i64 io linked
 
 
 
@@ -1599,17 +1599,17 @@ define Io
     ; kernel for an ephemeral port; Io.local_port reads the assignment).
     ; Returns the fd, -1 on failure. Socket setup lives in the shim:
     ; sockaddr_in's layout is OS-specific.
-    procedure listen(port: i32) returns i32 io linked
+    procedure listen(port: i32) @ret_nonlocal true returns i32 io linked
 
 
     ; The local port a bound socket ended up on (-1 on failure).
-    procedure local_port(fd: i32) returns i32 io linked
+    procedure local_port(fd: i32) @ret_nonlocal true returns i32 io linked
 
 
     ; Connect to 127.0.0.1:port — blocking handshake (instant against a
     ; live local listener); call Io.set_nonblocking on the result before
     ; suspending I/O. Returns the fd, -1 on failure.
-    procedure connect(port: i32) returns i32 io linked
+    procedure connect(port: i32) @ret_nonlocal true returns i32 io linked
 
 
     ; Accept a connection; suspends while none is pending (readiness on
@@ -1617,7 +1617,7 @@ define Io
     ; blocking — Io.set_nonblocking it for suspending I/O), -1 on a
     ; hard error. (Sign tests on i32 must compare against -1 as i32:
     ; casts zero-extend.)
-    procedure accept(fd: i32) returns i32 io linked
+    procedure accept(fd: i32) @ret_nonlocal true returns i32 io linked
 
 
 
@@ -1631,20 +1631,20 @@ define Io
     ; Listen on ALL interfaces (INADDR_ANY) — a cluster node accepting
     ; real remote peers (stage 7, milestone 7.3). Same contract as
     ; Io.listen otherwise.
-    procedure listen_any(port: i32) returns i32 io linked
+    procedure listen_any(port: i32) @ret_nonlocal true returns i32 io linked
 
 
     ; Resolve host by NAME (getaddrinfo in the shim, rule a) and
     ; connect — blocking handshake like Io.connect. host must be
     ; NUL-terminated (String.to_c_string). Returns the fd, -1 on
     ; failure (resolution or connection).
-    procedure connect_host(mutable host: pointer[const_char], port: i32) returns i32 io linked
+    procedure connect_host(mutable host: pointer[const_char], port: i32) @ret_nonlocal true returns i32 io linked
 
 
     ; SIGPIPE-safe socket write (stage 7): a write racing a peer's death
     ; must return -1/EPIPE, never kill the process. Suspension contract
     ; of Io.write otherwise.
-    procedure tcp_write(fd: i32, mutable buf: pointer[void], count: size_t) returns i64 io linked
+    procedure tcp_write(fd: i32, mutable buf: pointer[void], count: size_t) @ret_nonlocal true returns i64 io linked
 
 
 
@@ -1658,7 +1658,7 @@ define Io
     ; Whole-buffer variant of tcp_write (the Node frame writer). False
     ; on a hard error — the caller treats that as peer suspicion, not a
     ; program error.
-    procedure tcp_write_all(fd: i32, buf: pointer[void], count: size_t) returns bool io linked
+    procedure tcp_write_all(fd: i32, buf: pointer[void], count: size_t) @ret_nonlocal true returns bool io linked
 
 
 
@@ -1675,7 +1675,7 @@ define Io
     ; 2.5 — Console goes through here). Colorless: suspends inside a
     ; task on a nonblocking fd, drives the dispatcher from the main
     ; context, plain-blocks without a scheduler. False on a hard error.
-    procedure write_all(fd: i32, buf: pointer[void], count: size_t) returns bool io linked
+    procedure write_all(fd: i32, buf: pointer[void], count: size_t) @ret_nonlocal true returns bool io linked
 
 
 
@@ -1691,16 +1691,16 @@ define Io
     ; Is the caller running inside a scheduled task? File and friends
     ; branch on this: offload inside a task, plain blocking call
     ; otherwise — whether an operation suspends is a runtime property.
-    function in_task() returns bool linked
+    function in_task() @ret_nonlocal true returns bool linked
 
 
     ; How many blocking operations this thread shipped to a worker —
     ; the suspension proof for tests.
-    function offload_count() returns i64 linked
+    function offload_count() @ret_nonlocal true returns i64 linked
 
 
     ; This thread's worker pool, created lazily on first offload.
-    procedure ensure_pool() returns ref[IoPool] io linked
+    procedure ensure_pool() @ret_nonlocal true returns ref[IoPool] io linked
 
 
 
@@ -1800,7 +1800,7 @@ define Io
 
     ; Live workers of this thread's pool (0 after drain_pool) — the
     ; reclamation proof for tests.
-    function pool_worker_count() returns i64 linked
+    function pool_worker_count() @ret_nonlocal true returns i64 linked
 
 
 
@@ -1952,7 +1952,7 @@ define Channel
 
 
 
-    procedure release(m: pointer[Channel]) linked
+    procedure release(m: pointer[Channel]) @ret_nonlocal true linked
 
 
 
@@ -1962,7 +1962,7 @@ define Channel
     ; the record is shared cross-thread and must not sit in any fiber's
     ; or scheduler's region). Sends never block. The creator holds the
     ; first send handle.
-    procedure create() returns ref[Channel] linked
+    procedure create() @ret_caller true returns ref[Channel] linked
 
 
 
@@ -1970,7 +1970,7 @@ define Channel
     ; Create a channel with a bounded queue: at most `capacity`
     ; undelivered messages, after which a send BLOCKS until a receiver
     ; frees a slot (backpressure). capacity 0 is unbounded (== create).
-    procedure create_bounded(capacity: i64) returns ref[Channel] linked
+    procedure create_bounded(capacity: i64) @ret_caller true returns ref[Channel] linked
 
 
 
@@ -1980,7 +1980,7 @@ define Channel
     ; Free the channel record's page. Only the receiver calls this,
     ; after receive returned null (closed and drained) — every sender
     ; retired its handle, nothing can touch the record anymore.
-    procedure dispose(mutable m: ref[Channel]) linked
+    procedure dispose(mutable m: ref[Channel]) @ret_nonlocal true linked
 
 
 
@@ -1990,7 +1990,7 @@ define Channel
     ; Register one more send handle. Call BEFORE handing the channel to
     ; the new sender (spawn argument, cell, ...) — registering from the
     ; new thread would race the creator's close_sender.
-    procedure add_sender(mutable m: pointer[Channel]) linked
+    procedure add_sender(mutable m: pointer[Channel]) @ret_nonlocal true linked
 
 
 
@@ -2014,7 +2014,7 @@ define Channel
 
 
 
-    procedure pop_receiver(mutable m: ref[Channel]) returns ref[SchedTask]? linked
+    procedure pop_receiver(mutable m: ref[Channel]) @ret_param_0 true returns ref[SchedTask]? linked
 
 
 
@@ -2028,7 +2028,7 @@ define Channel
 
 
     ; Pop the oldest sender parked on a full queue (null when none).
-    procedure pop_sender(mutable m: ref[Channel]) returns ref[SchedTask]? linked
+    procedure pop_sender(mutable m: ref[Channel]) @ret_param_0 true returns ref[SchedTask]? linked
 
 
 
@@ -2405,7 +2405,7 @@ define Thread
 
 
     ; spawn with an explicit stack size (0 = the platform default)
-    procedure spawn_sized(fn: pointer[void], arg: pointer[void], stack_size: size_t) returns size_t linked
+    procedure spawn_sized(fn: pointer[void], arg: pointer[void], stack_size: size_t) @ret_nonlocal true returns size_t linked
 
 
 
@@ -2429,7 +2429,7 @@ define Thread
 
 
     ; Wait until the thread's entry returned (its result is discarded).
-    procedure join(t: size_t) linked
+    procedure join(t: size_t) @ret_nonlocal true linked
 
 
 
@@ -2470,7 +2470,7 @@ define TaskGroup
     ; was created. A worker installs one only if it did -- so a program that
     ; catches nothing keeps exactly today's behaviour, message and code
     ; included, and pays nothing (TRAPS.md 3.19).
-    procedure create() returns ref[TaskGroup] io linked
+    procedure create() @ret_caller true returns ref[TaskGroup] io linked
 
 
 
@@ -2485,7 +2485,7 @@ define TaskGroup
 
 
     ; Did the submitter of this wave stand inside a try?
-    function is_guarded(g: pointer[TaskGroup]) returns bool linked
+    function is_guarded(g: pointer[TaskGroup]) @ret_param_0 true returns bool linked
 
 
     ; The address of the wave's CANCEL WORD, or null when nothing can be
@@ -2509,7 +2509,7 @@ define TaskGroup
     ; ★Its MANGLED name stands in the Emitter (get_parfor_runtime_fn), which
     ; freezes this parameter list: grep for
     ; `_ZN9TaskGroup11cancel_wordEP9TaskGroup` before re-signing.
-    function cancel_word(g: pointer[TaskGroup]) returns pointer[u64] linked
+    function cancel_word(g: pointer[TaskGroup]) @ret_param_0 true returns pointer[u64] linked
 
 
 
@@ -2561,7 +2561,7 @@ define TaskGroup
     ; the SUBMITTING thread, after all submits (a submit racing a wait
     ; could let a stale zero-crossing byte end the wait early). Blocks
     ; the whole thread — main-context use, not inside a scheduled task.
-    procedure wait(mutable g: pointer[TaskGroup]) io linked
+    procedure wait(mutable g: pointer[TaskGroup]) @ret_nonlocal true io linked
 
 
 
@@ -2594,7 +2594,7 @@ define TaskGroup
     ; bracket empty before closing: pending is zero and no submits
     ; follow, hence no NEW finisher can enter — the spin is bounded by
     ; one descheduled write.
-    procedure dispose(mutable g: pointer[TaskGroup]) io linked
+    procedure dispose(mutable g: pointer[TaskGroup]) @ret_nonlocal true io linked
 
 
 
@@ -2643,7 +2643,7 @@ define TaskDeque
 
 
 
-    procedure release(d: pointer[TaskDeque]) linked
+    procedure release(d: pointer[TaskDeque]) @ret_nonlocal true linked
 
 
 
@@ -2673,12 +2673,12 @@ define TaskPool
 )
 {
     ; The idx-th worker's deque.
-    function deque_at(pl: ref[TaskPool], idx: i64) returns ref[TaskDeque] linked
+    function deque_at(pl: ref[TaskPool], idx: i64) @ret_param_0 true returns ref[TaskDeque] linked
 
 
     ; How many items workers stole from a foreign deque — observability
     ; for tests (the count is timing-dependent, assert nothing strict).
-    function steal_count(pl: pointer[TaskPool]) returns u64 linked
+    function steal_count(pl: pointer[TaskPool]) @ret_nonlocal true returns u64 linked
 
 
 
@@ -2686,7 +2686,7 @@ define TaskPool
 
     ; How many items were ever submitted — observability for the 4.1
     ; chunked emission (a chunked wave submits ~ncpu, not n).
-    function submit_count(pl: pointer[TaskPool]) returns u64 linked
+    function submit_count(pl: pointer[TaskPool]) @ret_nonlocal true returns u64 linked
 
 
 
@@ -2695,7 +2695,7 @@ define TaskPool
     ; Start a pool of nworkers OS threads (clamped to at least one).
     ; Traps (exit 112) when the OS refuses the pipe; a refused thread
     ; traps in Thread.spawn (exit 109).
-    procedure create(nworkers: i64) returns ref[TaskPool] io linked
+    procedure create(nworkers: i64) @ret_caller true returns ref[TaskPool] io linked
 
 
 
@@ -2745,7 +2745,7 @@ define TaskPool
     ; submitting thread per group); the pending increment comes FIRST
     ; (a task may finish before submit returns), the deque push BEFORE
     ; the pipe byte (a woken worker must find an item).
-    procedure submit(mutable pl: pointer[TaskPool], fn: pointer[void], arg: pointer[void], mutable g: pointer[TaskGroup]) io linked
+    procedure submit(mutable pl: pointer[TaskPool], fn: pointer[void], arg: pointer[void], mutable g: pointer[TaskGroup]) @ret_nonlocal true io linked
 
 
 
@@ -2823,7 +2823,7 @@ define TaskPool
     ; Only when no group has work in flight that another thread still
     ; waits on; the pool is gone afterwards — create a new one to
     ; continue.
-    procedure shutdown(mutable pl: ref[TaskPool]) io linked
+    procedure shutdown(mutable pl: ref[TaskPool]) @ret_nonlocal true io linked
 
 
 
@@ -2840,7 +2840,7 @@ define TaskPool
 
 
     ; Online CPU count — the worker default for default_pool (3.3).
-    function ncpu() returns i64 linked
+    function ncpu() @ret_nonlocal true returns i64 linked
 
 
     ; This thread's default pool, created on first demand with ncpu
@@ -2848,7 +2848,7 @@ define TaskPool
     ; Reached through the TLS cell task_default_pool (never handed to
     ; another thread's TLS — workers reach the pool via their spawn
     ; cells like any pool).
-    procedure default_pool() returns ref[TaskPool] io linked
+    procedure default_pool() @ret_caller true returns ref[TaskPool] io linked
 
 
 
@@ -2862,7 +2862,7 @@ define TaskPool
     ; the workers and frees the pool page). Safe there: every `parallel
     ; for` waits on its group before continuing, so nothing is in flight
     ; when the thread's entry has returned.
-    procedure drain_default() io linked
+    procedure drain_default() @ret_nonlocal true io linked
 
 
 

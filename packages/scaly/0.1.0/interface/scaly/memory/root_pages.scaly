@@ -99,7 +99,7 @@ function strdup(s: pointer[const_char]) returns pointer[char] extern
 ; because the diagnostic dump runs single-threaded at atexit.
 mutable fmt_scratch: pointer[char] linked
 
-function scaly_fmt_scratch_ptr() returns pointer[char] linked
+function scaly_fmt_scratch_ptr() @ret_nonlocal true returns pointer[char] linked
 
 
 
@@ -112,12 +112,12 @@ function scaly_fmt_scratch_ptr() returns pointer[char] linked
 ; Byte-level stderr output via libc write(2, ...). No format strings:
 ; Scaly composes every diagnostic message by writing bytes.
 
-procedure scaly_eputs(s: pointer[const_char]) linked
+procedure scaly_eputs(s: pointer[const_char]) @ret_nonlocal true linked
 
 
 
 
-procedure scaly_eputnl() linked
+procedure scaly_eputnl() @ret_nonlocal true linked
 
 
 
@@ -131,7 +131,7 @@ procedure scaly_eputnl() linked
 ; printed through it lies in the one case a size diagnostic is about: the
 ; wraparound guard in Array.add reported "adding -1 to 2" for a length of
 ; SIZE_MAX. A trap's whole job is to name what it saw.
-procedure scaly_eputu(n: u64) linked
+procedure scaly_eputu(n: u64) @ret_nonlocal true linked
 
 
 
@@ -152,7 +152,7 @@ procedure scaly_eputu(n: u64) linked
 
 
 
-procedure scaly_eputi(n: i64) linked
+procedure scaly_eputi(n: i64) @ret_nonlocal true linked
 
 
 
@@ -264,10 +264,10 @@ function scaly_panic_last_length() returns i64 extern
 ; inference that 1.2/1.6 hang on is unchanged.
 mutable panic_oob_count: i64 linked
 
-function scaly_panic_oob_count() returns i64 linked
+function scaly_panic_oob_count() @ret_nonlocal true returns i64 linked
 
 
-procedure scaly_panic_oob(mutable what: pointer[const_char], index: size_t, length: size_t) linked
+procedure scaly_panic_oob(mutable what: pointer[const_char], index: size_t, length: size_t) @ret_nonlocal true linked
 
 
 
@@ -329,10 +329,10 @@ procedure scaly_panic_oob(mutable what: pointer[const_char], index: size_t, leng
 ; the same reason `what` above is -- it goes straight into scaly_eputs.
 mutable panic_null_count: i64 linked
 
-function scaly_panic_null_count() returns i64 linked
+function scaly_panic_null_count() @ret_nonlocal true returns i64 linked
 
 
-procedure scaly_panic_null(mutable where: pointer[const_char]) linked
+procedure scaly_panic_null(mutable where: pointer[const_char]) @ret_nonlocal true linked
 
 
 
@@ -378,10 +378,10 @@ procedure scaly_panic_null(mutable where: pointer[const_char]) linked
 ; `_Z18scaly_panic_regionP10const_charm` before re-signing.
 mutable panic_region_count: i64 linked
 
-function scaly_panic_region_count() returns i64 linked
+function scaly_panic_region_count() @ret_nonlocal true returns i64 linked
 
 
-procedure scaly_panic_region(mutable what: pointer[const_char], address: size_t) linked
+procedure scaly_panic_region(mutable what: pointer[const_char], address: size_t) @ret_nonlocal true linked
 
 
 
@@ -421,10 +421,10 @@ procedure scaly_panic_region(mutable what: pointer[const_char], address: size_t)
 ; `_Z16scaly_panic_sizeP10const_charmm` before re-signing.
 mutable panic_size_count: i64 linked
 
-function scaly_panic_size_count() returns i64 linked
+function scaly_panic_size_count() @ret_nonlocal true returns i64 linked
 
 
-procedure scaly_panic_size(mutable what: pointer[const_char], added: size_t, length: size_t) linked
+procedure scaly_panic_size(mutable what: pointer[const_char], added: size_t, length: size_t) @ret_nonlocal true linked
 
 
 
@@ -477,10 +477,10 @@ procedure scaly_panic_size(mutable what: pointer[const_char], added: size_t, len
 ; `_Z18scaly_panic_stringP10const_charm` before re-signing.
 mutable panic_string_count: i64 linked
 
-function scaly_panic_string_count() returns i64 linked
+function scaly_panic_string_count() @ret_nonlocal true returns i64 linked
 
 
-procedure scaly_panic_string(what: pointer[const_char], address: size_t) linked
+procedure scaly_panic_string(what: pointer[const_char], address: size_t) @ret_nonlocal true linked
 
 
 
@@ -512,10 +512,10 @@ procedure scaly_panic_string(what: pointer[const_char], address: size_t) linked
 ; `_Z15scaly_panic_oomP10const_charm` before re-signing.
 mutable panic_oom_count: i64 linked
 
-function scaly_panic_oom_count() returns i64 linked
+function scaly_panic_oom_count() @ret_nonlocal true returns i64 linked
 
 
-procedure scaly_panic_oom(mutable what: pointer[const_char], bytes: size_t) linked
+procedure scaly_panic_oom(mutable what: pointer[const_char], bytes: size_t) @ret_nonlocal true linked
 
 
 
@@ -561,10 +561,10 @@ procedure scaly_panic_oom(mutable what: pointer[const_char], bytes: size_t) link
 ; emitted `.ll` instead of counting characters.
 mutable panic_resource_count: i64 linked
 
-function scaly_panic_resource_count() returns i64 linked
+function scaly_panic_resource_count() @ret_nonlocal true returns i64 linked
 
 
-procedure scaly_panic_resource(mutable what: pointer[const_char], requested: size_t, code: i32) linked
+procedure scaly_panic_resource(mutable what: pointer[const_char], requested: size_t, code: i32) @ret_nonlocal true linked
 
 
 
@@ -593,10 +593,10 @@ procedure scaly_panic_resource(mutable what: pointer[const_char], requested: siz
 ; the runtime cannot function at all.
 mutable panic_deadlock_count: i64 linked
 
-function scaly_panic_deadlock_count() returns i64 linked
+function scaly_panic_deadlock_count() @ret_nonlocal true returns i64 linked
 
 
-procedure scaly_panic_deadlock(mutable what: pointer[const_char], code: i32) linked
+procedure scaly_panic_deadlock(mutable what: pointer[const_char], code: i32) @ret_nonlocal true linked
 
 
 
@@ -613,14 +613,14 @@ procedure scaly_panic_deadlock(mutable what: pointer[const_char], code: i32) lin
 ; stage-1's planner emits as an external declaration (no body) — the
 ; unported Planner.cpp:6193 array-global gap. Computing the digit keeps
 ; the runtime self-hostable (s189, same avoidance as s188's hashing).
-function hex_digit(nibble: i64) returns char linked
+function hex_digit(nibble: i64) @ret_nonlocal true returns char linked
 
 
 
 
 
 
-procedure scaly_eputp(p: pointer[void]) linked
+procedure scaly_eputp(p: pointer[void]) @ret_nonlocal true linked
 
 
 
@@ -641,10 +641,10 @@ procedure scaly_eputp(p: pointer[void]) linked
 ; Address helpers
 ; --------------------------------------------------------------------------
 
-function stack_bucket_of(p: ref[Page]) returns pointer[StackBucketHeader] linked
+function stack_bucket_of(p: ref[Page]) @ret_explicit_0 true returns pointer[StackBucketHeader] linked
 
 
-function heap_bucket_of(p: ref[Page]) returns ref[HeapBucketHeader] linked
+function heap_bucket_of(p: ref[Page]) @ret_explicit_0 true returns ref[HeapBucketHeader] linked
 
 
 ; Atomic primitives (milestone 2.3). These extern names never exist as
@@ -678,7 +678,7 @@ procedure bucket_lock(b: pointer[HeapBucketHeader]) linked
 
 
 
-procedure bucket_unlock(b: pointer[HeapBucketHeader]) linked
+procedure bucket_unlock(b: pointer[HeapBucketHeader]) @ret_nonlocal true linked
 
 
 
@@ -692,7 +692,7 @@ procedure bucket_unlock(b: pointer[HeapBucketHeader]) linked
 ; is this module's constant, and module globals resolve in planning
 ; order (Page is planned first — reading the constant from there is a
 ; hard "unknown identifier" diagnostic).
-procedure drain_dead_bucket(mutable b: pointer[HeapBucketHeader]) returns bool linked
+procedure drain_dead_bucket(mutable b: pointer[HeapBucketHeader]) @ret_nonlocal true returns bool linked
 
 
 
@@ -750,10 +750,10 @@ procedure scaly_thread_release_buckets() linked
 
 
 
-function first_usable_page(bucket: pointer[void]) returns pointer[Page] linked
+function first_usable_page(bucket: pointer[void]) @ret_param_0 true returns pointer[Page] linked
 
 
-function last_usable_page(bucket: pointer[void]) returns pointer[Page] linked
+function last_usable_page(bucket: pointer[void]) @ret_param_0 true returns pointer[Page] linked
 
 
 ; --------------------------------------------------------------------------
@@ -782,7 +782,7 @@ procedure reset_page(p: ref[Page]) linked
 ; Bucket creation
 ; --------------------------------------------------------------------------
 
-procedure create_stack_bucket(mutable prev: pointer[StackBucketHeader]) returns pointer[StackBucketHeader] linked
+procedure create_stack_bucket(mutable prev: pointer[StackBucketHeader]) @ret_caller true returns pointer[StackBucketHeader] linked
 
 
 
@@ -797,7 +797,7 @@ procedure create_stack_bucket(mutable prev: pointer[StackBucketHeader]) returns 
 
 
 
-function create_heap_bucket() returns ref[HeapBucketHeader] linked
+function create_heap_bucket() @ret_caller true returns ref[HeapBucketHeader] linked
 
 
 
@@ -828,7 +828,7 @@ function create_heap_bucket() returns ref[HeapBucketHeader] linked
 ; page churn.
 ; --------------------------------------------------------------------------
 
-function ctz_u64(x: u64) returns i32 linked
+function ctz_u64(x: u64) @ret_nonlocal true returns i32 linked
 
 
 
@@ -1007,7 +1007,7 @@ define Frame
 ; header). The recursion is bounded by the chain depth (measured maximum 49 on
 ; the DSSSL engine, 12 on a 13.7 MB parse) and unwinds to a plain loop under
 ; opt/LTO.
-procedure scaly_force_frame(mutable f: pointer[Frame]) returns pointer[Page] linked
+procedure scaly_force_frame(mutable f: pointer[Frame]) @ret_param_0 true returns pointer[Page] linked
 
 
 
@@ -1067,14 +1067,14 @@ procedure scaly_release_frame(mutable f: pointer[Frame]) linked
 ; with the stack they lived on, so nothing can release the same page twice.
 
 ; The watermark a catch point records before it runs guarded code.
-function scaly_panic_mark() returns pointer[Page] linked
+function scaly_panic_mark() @ret_nonlocal true returns pointer[Page] linked
 
 
 ; Root pages this thread gave back through a panic unwind — the proof that
 ; they came back at all, in the shape cmscratch and framemark use.
 mutable panic_pages_unwound: i64 linked
 
-function scaly_panic_pages_unwound() returns i64 linked
+function scaly_panic_pages_unwound() @ret_nonlocal true returns i64 linked
 
 
 ; Pop the region stack back to `mark`, releasing each root page in full.
@@ -1146,7 +1146,7 @@ procedure scaly_rt_register_trace() linked
 
 
 
-function scaly_trace_find_or_add(name: pointer[const_char]) @page true @direct true returns ref[TraceEntry]? linked
+function scaly_trace_find_or_add(name: pointer[const_char]) @page true @direct true @ret_nonlocal true returns ref[TraceEntry]? linked
 
 
 
@@ -1306,14 +1306,14 @@ procedure heap_trace_lock(hdr: pointer[HeapTraceHeader]) linked
 
 
 
-procedure heap_trace_unlock(hdr: pointer[HeapTraceHeader]) linked
+procedure heap_trace_unlock(hdr: pointer[HeapTraceHeader]) @ret_nonlocal true linked
 
 
 
 
 
 ; Caller holds hdr's lock.
-procedure scaly_heap_trace_find_or_add(mutable hdr: ref[HeapTraceHeader], name: pointer[const_char]) @page true @direct true returns ref[TraceEntry]? linked
+procedure scaly_heap_trace_find_or_add(mutable hdr: ref[HeapTraceHeader], name: pointer[const_char]) @page true @direct true @ret_param_0 true returns ref[TraceEntry]? linked
 
 
 

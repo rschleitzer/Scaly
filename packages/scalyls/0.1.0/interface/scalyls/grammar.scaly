@@ -10,7 +10,7 @@
 define grammar
 {
     ; True when `word` is a reserved keyword (scaly.sgm <keyword> list).
-    function is_keyword(word: String) returns bool linked
+    function is_keyword(word: String) @ret_nonlocal true returns bool linked
 
 
 
@@ -121,7 +121,7 @@ define grammar
     ; exclusively of these, so this predicate is the whole definition and no
     ; operator list exists. Must agree with lexer.scaly:131 and :335 -- note
     ; that '^' (94) is deliberately absent (it is the lifetime sigil).
-    function is_op_char(c: u8) returns bool linked
+    function is_op_char(c: u8) @ret_nonlocal true returns bool linked
 
 
 
@@ -151,7 +151,7 @@ define grammar
     ; True for a WORD operator -- the only identifiers that are operators
     ; without being spelled in operator characters. Authoritative list:
     ; Planner.mangled_operator_name.
-    function is_word_operator(word: String) returns bool linked
+    function is_word_operator(word: String) @ret_nonlocal true returns bool linked
 
 
 
@@ -166,7 +166,7 @@ define grammar
 
     ; True for a lone identifier that resolves to a VALUE, not to a binding:
     ; true/false (Modeler), null (Planner), this (the receiver parameter).
-    function is_value_word(word: String) returns bool linked
+    function is_value_word(word: String) @ret_nonlocal true returns bool linked
 
 
 

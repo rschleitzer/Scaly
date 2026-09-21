@@ -68,7 +68,7 @@ define json
     ; Construction helpers (value position)
     ; ====================================================================
 
-    function null_value() @page true @direct true returns JsonValue linked
+    function null_value() @page true @direct true @ret_caller true returns JsonValue linked
 
 
     function bool_value(b: bool) @page true @direct true returns JsonValue linked
@@ -84,7 +84,7 @@ define json
     ; Accessors
     ; ====================================================================
 
-    function is_null(this: JsonValue) returns bool linked
+    function is_null(this: JsonValue) @ret_nonlocal true returns bool linked
 
 
 
@@ -93,7 +93,7 @@ define json
 
 
 
-    function as_i64(this: JsonValue) returns i64 linked
+    function as_i64(this: JsonValue) @ret_param_0 true returns i64 linked
 
 
 
@@ -102,7 +102,7 @@ define json
 
 
 
-    function as_bool(this: JsonValue) returns bool linked
+    function as_bool(this: JsonValue) @ret_param_0 true returns bool linked
 
 
 
@@ -112,7 +112,7 @@ define json
 
 
     ; Returns a copy of the string payload, or an empty String otherwise.
-    function as_string(rp, this: JsonValue) @direct true returns String linked
+    function as_string(rp, this: JsonValue) @direct true @ret_caller true returns String linked
 
 
 
@@ -121,7 +121,7 @@ define json
 
 
 
-    function array_length(this: JsonValue) returns size_t linked
+    function array_length(this: JsonValue) @ret_param_0 true returns size_t linked
 
 
 
@@ -149,7 +149,7 @@ define json
     ; Look up a member of an object by key. Returns Null when the value is
     ; not an object or the key is absent.
     ; A String member key against a `Slice[char]` literal, byte for byte, no allocation.
-    function key_equals(s: String, k: Slice[char]) returns bool linked
+    function key_equals(s: String, k: Slice[char]) @ret_nonlocal true returns bool linked
 
 
 
@@ -228,7 +228,7 @@ define json
 
 
 
-    procedure parse_object(rp, mutable p: ref[JsonParser]) @direct true returns JsonValue linked
+    procedure parse_object(rp, mutable p: ref[JsonParser]) @direct true @ret_caller true returns JsonValue linked
 
 
 
@@ -276,7 +276,7 @@ define json
 
 
 
-    procedure parse_array(rp, mutable p: ref[JsonParser]) @direct true returns JsonValue linked
+    procedure parse_array(rp, mutable p: ref[JsonParser]) @direct true @ret_caller true returns JsonValue linked
 
 
 
@@ -319,7 +319,7 @@ define json
 
 
 
-    procedure parse_string(rp, mutable p: ref[JsonParser]) @direct true returns String linked
+    procedure parse_string(rp, mutable p: ref[JsonParser]) @direct true @ret_caller true returns String linked
 
 
 
@@ -369,7 +369,7 @@ define json
     ; and cannot be: its codepoint encodes to one to four bytes and this
     ; answers a char — parse_string routes it to read_unicode_escape# +
     ; append_utf8# instead.
-    function decode_escape(e: u8) returns char linked
+    function decode_escape(e: u8) @ret_nonlocal true returns char linked
 
 
 
@@ -392,7 +392,7 @@ define json
 
     ; Reads the four hex digits of a \uXXXX escape at the cursor (the `u` is
     ; already consumed) and advances past them.
-    procedure read_hex4(mutable p: ref[JsonParser]) returns i64 linked
+    procedure read_hex4(mutable p: ref[JsonParser]) @ret_nonlocal true returns i64 linked
 
 
 
@@ -410,7 +410,7 @@ define json
     ; surrogate PAIR (\uD83D\uDE00) into the one codepoint it denotes.
     ; A lone surrogate — which no well-formed document can mean — answers
     ; U+FFFD, so the encoding downstream stays well-formed.
-    procedure read_unicode_escape(mutable p: ref[JsonParser]) returns i64 linked
+    procedure read_unicode_escape(mutable p: ref[JsonParser]) @ret_nonlocal true returns i64 linked
 
 
 
@@ -483,7 +483,7 @@ define json
 
 
 
-    procedure parse_number(mutable p: ref[JsonParser]) returns i64 linked
+    procedure parse_number(mutable p: ref[JsonParser]) @ret_nonlocal true returns i64 linked
 
 
 
@@ -517,7 +517,7 @@ define json
     ; Low-level cursor helpers
     ; ====================================================================
 
-    function peek(p: ref[JsonParser]) returns u8 linked
+    function peek(p: ref[JsonParser]) @ret_param_0 true returns u8 linked
 
 
 
@@ -549,10 +549,10 @@ define json
 
 
 
-    function is_digit(c: u8) returns bool linked
+    function is_digit(c: u8) @ret_nonlocal true returns bool linked
 
 
-    function hex_value(c: u8) returns i64 linked
+    function hex_value(c: u8) @ret_nonlocal true returns i64 linked
 
 
 
@@ -568,7 +568,7 @@ define json
 
     ; Matches `lit` at the cursor; advances past it and returns true on a
     ; hit, leaves the cursor untouched and returns false on a miss.
-    procedure match_literal(mutable p: ref[JsonParser], lit: Slice[char]) returns bool linked
+    procedure match_literal(mutable p: ref[JsonParser], lit: Slice[char]) @ret_nonlocal true returns bool linked
 
 
 
@@ -658,7 +658,7 @@ define json
 
 
     ; Quote and escape a string into a "..."-wrapped JSON string literal.
-    function quote_string(rp, s: String) @direct true returns String linked
+    function quote_string(rp, s: String) @direct true @ret_caller true returns String linked
 
 
 
@@ -712,7 +712,7 @@ define json
 
 
 
-    function format_i64(rp, n: i64) @direct true returns String linked
+    function format_i64(rp, n: i64) @direct true @ret_caller true returns String linked
 
 
 

@@ -16,7 +16,7 @@ define PageList
 
 
 
-    procedure remove(mutable this: PageList, element: ref[Page]) returns bool linked
+    procedure remove(mutable this: PageList, element: ref[Page]) @ret_nonlocal true returns bool linked
 
 
 

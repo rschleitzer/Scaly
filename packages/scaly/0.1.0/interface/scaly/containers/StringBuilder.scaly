@@ -39,10 +39,10 @@ define StringBuilder
 
 
 
-    procedure append(mutable this: StringBuilder, character: char) @persists true linked
+    procedure append(mutable this: StringBuilder, character: char) @persists true @ret_param_0 true linked
 
 
-    procedure append(mutable this: StringBuilder, string: String) linked
+    procedure append(mutable this: StringBuilder, string: String) @ret_nonlocal true linked
 
 
     procedure append(mutable this: StringBuilder, c_string: pointer[const_char]) @persists true linked
@@ -54,7 +54,7 @@ define StringBuilder
 
 
 
-    procedure append(mutable this: StringBuilder, start: pointer[char], length: size_t) @persists true linked
+    procedure append(mutable this: StringBuilder, start: pointer[char], length: size_t) @persists true @ret_nonlocal true linked
 
 
 
@@ -90,7 +90,7 @@ define StringBuilder
 
 
 
-    procedure append(mutable this: StringBuilder, value: int) linked
+    procedure append(mutable this: StringBuilder, value: int) @ret_nonlocal true linked
 
 
 
@@ -101,7 +101,7 @@ define StringBuilder
 
 
 
-    procedure append(mutable this: StringBuilder, value: bool) linked
+    procedure append(mutable this: StringBuilder, value: bool) @ret_nonlocal true linked
 
 
 
@@ -109,7 +109,7 @@ define StringBuilder
 
 
 
-    function get_length(this: StringBuilder) returns size_t linked
+    function get_length(this: StringBuilder) @ret_param_0 true returns size_t linked
 
 
     ; ★DIE LETZTE (Zeiger, Laenge)-PAARSTELLE DES BAUMES, und sie bleibt
@@ -125,6 +125,6 @@ define StringBuilder
     ; ist `as_slice()` (gibt es) plus `tools/sliceview.py` die Form.  Solange
     ; niemand ausser dieser Zeile danach fragt, ist das Paar hier billiger als
     ; ein sechstes 1-Argument-`init` auf `String`.
-    function to_string(this: StringBuilder) @page true @direct true returns String linked
+    function to_string(this: StringBuilder) @page true @direct true @ret_caller true returns String linked
 
 }

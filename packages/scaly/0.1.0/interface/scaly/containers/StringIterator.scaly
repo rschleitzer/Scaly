@@ -12,7 +12,7 @@ init(string: String) linked
 
 
 
-procedure next(mutable this: StringIterator) returns pointer[char] linked
+procedure next(mutable this: StringIterator) @ret_param_0 true returns pointer[char] linked
 
 
 

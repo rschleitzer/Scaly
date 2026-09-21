@@ -18,7 +18,7 @@ define compiler
     module LLVM
     module Emitter
 
-    procedure test() returns int io mutable modeler_error_count reads modeler_error_count linked
+    procedure test() @ret_nonlocal true returns int io mutable modeler_error_count reads modeler_error_count linked
 
 
 

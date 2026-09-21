@@ -186,7 +186,7 @@ define String @resident true (data: pointer[u8](null))
 
 
 
-    function get_buffer(this: String) returns pointer[u8] linked
+    function get_buffer(this: String) @ret_param_0 true returns pointer[u8] linked
 
 
 
@@ -212,13 +212,10 @@ define String @resident true (data: pointer[u8](null))
 
 
     ; Returns raw buffer pointer for C interop (cast of get_buffer)
-    function c_data(this: String) returns pointer[const_char] linked
+    function c_data(this: String) @ret_param_0 true returns pointer[const_char] linked
 
 
-    function to_c_string(page, this: String) returns pointer[const_char] linked
-
-
-
+    function to_c_string(page, this: String) @ret_caller true returns pointer[const_char] linked
 
 
 
@@ -249,7 +246,10 @@ define String @resident true (data: pointer[u8](null))
 
 
 
-    function get_length(this: String) returns size_t linked
+
+
+
+    function get_length(this: String) @ret_nonlocal true returns size_t linked
 
 
 
@@ -285,13 +285,13 @@ define String @resident true (data: pointer[u8](null))
 
 
 
-    function length(this: String) returns size_t linked
+    function length(this: String) @ret_nonlocal true returns size_t linked
 
 
-    function substring(this: String, start: size_t, len: size_t) @page true @direct true returns String linked
+    function substring(this: String, start: size_t, len: size_t) @page true @direct true @ret_caller true returns String linked
 
 
-    function equals(this: String, other: String) returns bool linked
+    function equals(this: String, other: String) @ret_nonlocal true returns bool linked
 
 
 
@@ -322,7 +322,7 @@ define String @resident true (data: pointer[u8](null))
 
 
 
-    function equals(this: String, other: pointer[const_char]) returns bool linked
+    function equals(this: String, other: pointer[const_char]) @ret_nonlocal true returns bool linked
 
 
 
@@ -353,7 +353,7 @@ define String @resident true (data: pointer[u8](null))
 
 
 
-    function equals (this: String, other: Vector[char]) returns bool linked
+    function equals (this: String, other: Vector[char]) @ret_nonlocal true returns bool linked
 
 
 
@@ -378,7 +378,7 @@ define String @resident true (data: pointer[u8](null))
 
 
 
-    function hash(this: String) returns size_t linked
+    function hash(this: String) @ret_nonlocal true returns size_t linked
 
 
 
@@ -410,7 +410,7 @@ define String @resident true (data: pointer[u8](null))
 
 
     ; Get a non-owning slice view of the string data
-    function as_slice(this: String) @page true @direct true returns Slice[u8] linked
+    function as_slice(this: String) @page true @direct true @ret_param_0 true returns Slice[u8] linked
 
 
 
@@ -437,7 +437,7 @@ define String @resident true (data: pointer[u8](null))
 
 
     ; Check if string contains a character
-    function contains(this: String, c: u8) returns bool linked
+    function contains(this: String, c: u8) @ret_nonlocal true returns bool linked
 
 
 
@@ -456,7 +456,7 @@ define String @resident true (data: pointer[u8](null))
 
 
     ; Check if string contains a substring
-    function contains(this: String, other: String) returns bool linked
+    function contains(this: String, other: String) @ret_nonlocal true returns bool linked
 
 
 
@@ -480,7 +480,7 @@ define String @resident true (data: pointer[u8](null))
 
 
     ; Check if string starts with prefix
-    function starts_with(this: String, prefix: String) returns bool linked
+    function starts_with(this: String, prefix: String) @ret_nonlocal true returns bool linked
 
 
 
@@ -496,7 +496,7 @@ define String @resident true (data: pointer[u8](null))
 
 
     ; Check if string starts with C string prefix
-    function starts_with(this: String, prefix: pointer[const_char]) returns bool linked
+    function starts_with(this: String, prefix: pointer[const_char]) @ret_nonlocal true returns bool linked
 
 
 
@@ -511,7 +511,7 @@ define String @resident true (data: pointer[u8](null))
 
 
     ; Check if string ends with suffix
-    function ends_with(this: String, suffix: String) returns bool linked
+    function ends_with(this: String, suffix: String) @ret_nonlocal true returns bool linked
 
 
 
@@ -527,7 +527,7 @@ define String @resident true (data: pointer[u8](null))
 
 
     ; Check if string ends with C string suffix
-    function ends_with(this: String, suffix: pointer[const_char]) returns bool linked
+    function ends_with(this: String, suffix: pointer[const_char]) @ret_nonlocal true returns bool linked
 
 
 
@@ -542,7 +542,7 @@ define String @resident true (data: pointer[u8](null))
 
 
     ; Find first occurrence of character, returns -1 if not found
-    function index_of(this: String, c: u8) returns int linked
+    function index_of(this: String, c: u8) @ret_param_0 true returns int linked
 
 
 
@@ -561,7 +561,7 @@ define String @resident true (data: pointer[u8](null))
 
 
     ; Find first occurrence of character starting at offset, returns -1 if not found
-    function index_of(this: String, c: u8, start: size_t) returns int linked
+    function index_of(this: String, c: u8, start: size_t) @ret_param_0 true returns int linked
 
 
 
@@ -583,7 +583,7 @@ define String @resident true (data: pointer[u8](null))
 
 
     ; Find last occurrence of character, returns -1 if not found
-    function last_index_of(this: String, c: u8) returns int linked
+    function last_index_of(this: String, c: u8) @ret_param_0 true returns int linked
 
 
 

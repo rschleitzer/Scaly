@@ -109,7 +109,7 @@ define GpuTape
     ; static lands in recyclable temp storage and dies under the
     ; caller; a page-hosted record behind a pointer does not). The
     ; page lives as long as the process, like the MTLBuffers it maps.
-    procedure attach(mutable t: Tape, params: Vector[int], loss_id: int, msl: int) returns ref[GpuTape] io linked
+    procedure attach(mutable t: Tape, params: Vector[int], loss_id: int, msl: int) @ret_caller true returns ref[GpuTape] io linked
 
 
 
@@ -223,7 +223,7 @@ define GpuTape
     ; second graph reads the LIVE weights. Non-shared leaves allocate
     ; and copy like attach; no grad or Adam moment slots exist - step,
     ; step_adam and encode_bwd on the result are loud fatal errors.
-    procedure attach_gen(mutable t: Tape, leaves: Vector[int], primary: ref[GpuTape], primary_leaves: Vector[int], msl: int) returns ref[GpuTape] io linked
+    procedure attach_gen(mutable t: Tape, leaves: Vector[int], primary: ref[GpuTape], primary_leaves: Vector[int], msl: int) @ret_caller true returns ref[GpuTape] io linked
 
 
 
@@ -337,14 +337,14 @@ define GpuTape
 
 
     ; 1 when a Metal device exists - the portable SKIP check.
-    procedure available() returns i32 io linked
+    procedure available() @ret_nonlocal true returns i32 io linked
 
 
     ; GPU-busy accounting (sums command-buffer GPU time).
-    procedure ms_reset() io linked
+    procedure ms_reset() @ret_nonlocal true io linked
 
 
-    procedure ms_sum() returns double io linked
+    procedure ms_sum() @ret_nonlocal true returns double io linked
 
 
     ; Switch the matmul lowering: 0 = MPS GEMM (the hybrid default),
@@ -355,13 +355,13 @@ define GpuTape
 
 
     ; Open a command buffer for manual encoding (per-op-sync mode).
-    procedure begin(this: GpuTape) io linked
+    procedure begin(this: GpuTape) @ret_nonlocal true io linked
 
 
 
 
     ; Commit + wait; 0 on completion.
-    procedure commit_wait(this: GpuTape) returns int io linked
+    procedure commit_wait(this: GpuTape) @ret_nonlocal true returns int io linked
 
 
     ; Encode one node's forward op (kind codes are the tape ABI).
@@ -558,7 +558,7 @@ define GpuTape
     ; ONE training step = ONE command buffer: forward, grad zeroing,
     ; loss seed, backward, Adam - one commit, one wait. A failed
     ; command buffer is fatal (no silent partial step).
-    procedure step(this: GpuTape, lr: float, b1: float, b2: float, eps: float, stepn: int) io linked
+    procedure step(this: GpuTape, lr: float, b1: float, b2: float, eps: float, stepn: int) @ret_nonlocal true io linked
 
 
 
@@ -575,7 +575,7 @@ define GpuTape
 
     ; Adam only, as its own command buffer (parity testing against the
     ; CPU tape op; grads must already be in the redirected buffers).
-    procedure step_adam(this: GpuTape, lr: float, b1: float, b2: float, eps: float, stepn: int) io linked
+    procedure step_adam(this: GpuTape, lr: float, b1: float, b2: float, eps: float, stepn: int) @ret_nonlocal true io linked
 
 
 
@@ -596,7 +596,7 @@ define GpuTape
 
     ; Forward pass as one command buffer (generation; sampling stays
     ; on the CPU through unified memory).
-    procedure fwd(this: GpuTape) io linked
+    procedure fwd(this: GpuTape) @ret_nonlocal true io linked
 
 
 
@@ -611,7 +611,7 @@ define GpuTape
     ; Save the parameter values (cfg ints as the header, then raw f32
     ; per parameter in params order). 1 when written, 0 when the file
     ; could not be opened.
-    procedure save(this: GpuTape, path: pointer[const_char], cfg: Vector[i32]) returns int io linked
+    procedure save(this: GpuTape, path: pointer[const_char], cfg: Vector[i32]) @ret_nonlocal true returns int io linked
 
 
 
@@ -635,7 +635,7 @@ define GpuTape
     ; silently misloaded model would be the hidden magic this package
     ; exists to rule out. Writes go through the redirected pointers
     ; straight into the MTLBuffers.
-    procedure load(mutable this: GpuTape, path: pointer[const_char], cfg: Vector[i32]) returns int io linked
+    procedure load(mutable this: GpuTape, path: pointer[const_char], cfg: Vector[i32]) @ret_nonlocal true returns int io linked
 
 
 

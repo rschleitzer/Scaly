@@ -51,7 +51,7 @@ define ConceptIndex (slots: pointer[ConceptSlot](null), cap: size_t(0))
 {
     ; Allocate + initialise a table of `cap` slots. Exits loudly on malloc
     ; failure (the Planner cannot proceed without its concept index).
-    function create(cap: size_t) @page true @direct true returns ConceptIndex linked
+    function create(cap: size_t) @page true @direct true @ret_caller true returns ConceptIndex linked
 
 
 
@@ -138,7 +138,7 @@ define ConceptIndex (slots: pointer[ConceptSlot](null), cap: size_t(0))
 
 
     ; The registry index for `name`, or -1 if absent.
-    function lookup(this: ConceptIndex, name: String) returns i64 linked
+    function lookup(this: ConceptIndex, name: String) @ret_param_0 true returns i64 linked
 
 
 

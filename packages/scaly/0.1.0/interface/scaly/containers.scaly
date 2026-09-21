@@ -21,7 +21,7 @@ define containers
     module Result
     module Option
 
-    function test_vector() returns int linked
+    function test_vector() @ret_nonlocal true returns int linked
 
 
 
@@ -35,7 +35,7 @@ define containers
 
 
 
-    function test_array() returns int linked
+    function test_array() @ret_nonlocal true returns int linked
 
 
 
@@ -64,7 +64,7 @@ define containers
 
 
 
-    function test_string_simple() returns int linked
+    function test_string_simple() @ret_nonlocal true returns int linked
 
 
 
@@ -74,7 +74,7 @@ define containers
 
 
 
-    function test_string() returns int linked
+    function test_string() @ret_nonlocal true returns int linked
 
 
 
@@ -97,7 +97,7 @@ define containers
 
 
 
-    function test_string_builder() returns int linked
+    function test_string_builder() @ret_nonlocal true returns int linked
 
 
 
@@ -131,7 +131,7 @@ define containers
 
 
 
-    function test_list() returns int linked
+    function test_list() @ret_nonlocal true returns int linked
 
 
 
@@ -163,7 +163,7 @@ define containers
 
 
 
-    function test_hash_set() returns int linked
+    function test_hash_set() @ret_nonlocal true returns int linked
 
 
 
@@ -199,7 +199,7 @@ define containers
 
 
 
-    function test_hash_map() returns int linked
+    function test_hash_map() @ret_nonlocal true returns int linked
 
 
 
@@ -354,7 +354,7 @@ define containers
 
 
 
-    function test_slice() returns int linked
+    function test_slice() @ret_nonlocal true returns int linked
 
 
 
@@ -417,7 +417,7 @@ define containers
 
 
 
-    function test() returns int linked
+    function test() @ret_nonlocal true returns int linked
 
 
 
@@ -473,7 +473,7 @@ define containers
 
 
 
-    function test_string_operations() returns int linked
+    function test_string_operations() @ret_nonlocal true returns int linked
 
 
 
@@ -551,7 +551,7 @@ define containers
 
 
 
-    function test_option() returns int linked
+    function test_option() @ret_nonlocal true returns int linked
 
 
 
@@ -584,7 +584,7 @@ define containers
 
 
 
-    function test_result() returns int linked
+    function test_result() @ret_nonlocal true returns int linked
 
 
 

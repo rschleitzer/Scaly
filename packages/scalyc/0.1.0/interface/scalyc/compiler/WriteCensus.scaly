@@ -426,13 +426,13 @@ define WriteCensus
 
 
 
-        function total(this: WriteCensus) returns size_t linked
+        function total(this: WriteCensus) @ret_param_0 true returns size_t linked
 
 
-        function in_substrate(path: String) returns bool linked
+        function in_substrate(path: String) @ret_nonlocal true returns bool linked
 
 
-        function join(a: String, b: String) @page true @direct true returns String linked
+        function join(a: String, b: String) @page true @direct true @ret_caller true returns String linked
 
 
 
@@ -441,7 +441,7 @@ define WriteCensus
 
 
         ; The summary of one body under the callee summaries known so far.
-        procedure walk_body(mutable this: WriteCensus, func: PlannedFunction) returns u64 io linked
+        procedure walk_body(mutable this: WriteCensus, func: PlannedFunction) @ret_param_0 true returns u64 io linked
 
 
 
@@ -592,7 +592,7 @@ define WriteCensus
 
 
 
-        procedure note_global_id(mutable this: WriteCensus, id: size_t) linked
+        procedure note_global_id(mutable this: WriteCensus, id: size_t) @ret_nonlocal true linked
 
 
 
@@ -648,7 +648,7 @@ define WriteCensus
 
 
         ; OR the body's set into its row; true when the row grew
-        procedure merge_globals_into(mutable this: WriteCensus, row: size_t) returns bool linked
+        procedure merge_globals_into(mutable this: WriteCensus, row: size_t) @ret_nonlocal true returns bool linked
 
 
 
@@ -712,7 +712,7 @@ define WriteCensus
         ; does not (an if, a choose, a match, a block inside an arm ...) -- the
         ; conservative side, since a missed alias would let a write through the
         ; result go unrecorded.
-        function ret_alias_of_operands(this: WriteCensus, ops: ref[Vector[PlannedOperand]]?, narrow: bool) returns u64 linked
+        function ret_alias_of_operands(this: WriteCensus, ops: ref[Vector[PlannedOperand]]?, narrow: bool) @ret_nonlocal true returns u64 linked
 
 
 
@@ -825,7 +825,7 @@ define WriteCensus
         ; The value a statement leaves as an arm's or a block's tail: an action
         ; without a target. A `return` inside is recorded where the walk meets
         ; it (find_statement), a set, a binding, a break or a throw leaves none.
-        function ret_alias_of_statement(this: WriteCensus, stmt: ref[PlannedStatement]?, narrow: bool) returns u64 linked
+        function ret_alias_of_statement(this: WriteCensus, stmt: ref[PlannedStatement]?, narrow: bool) @ret_nonlocal true returns u64 linked
 
 
 
@@ -847,7 +847,7 @@ define WriteCensus
         ; WC_PARAMS for it), an init (its result is the new object built from
         ; every argument), the deref and address operators, and a call whose
         ; arguments do not line up with the callee's input keep every argument.
-        function call_alias_mask(this: WriteCensus, c: PlannedCall, narrow: bool) returns u64 linked
+        function call_alias_mask(this: WriteCensus, c: PlannedCall, narrow: bool) @ret_nonlocal true returns u64 linked
 
 
 
@@ -1016,7 +1016,7 @@ define WriteCensus
 
 
         ; the global a local aliases ("" none)
-        function local_global(this: WriteCensus, name: String) @page true @direct true returns String linked
+        function local_global(this: WriteCensus, name: String) @page true @direct true @ret_caller true returns String linked
 
 
 
@@ -1130,7 +1130,7 @@ define WriteCensus
 
 
         ; row's global set as `a,b,?alias` (the summary's fourth field)
-        function globals_text(this: WriteCensus, row: size_t) @page true @direct true returns String linked
+        function globals_text(this: WriteCensus, row: size_t) @page true @direct true @ret_caller true returns String linked
 
 
 
@@ -1268,7 +1268,7 @@ define WriteCensus
 
 
 
-        procedure record(mutable this: WriteCensus, offset: size_t, text: String) @persists true linked
+        procedure record(mutable this: WriteCensus, offset: size_t, text: String) @persists true @ret_param_0 true linked
 
 
 
@@ -1279,7 +1279,7 @@ define WriteCensus
         ; Parameters, locals and the mask of an operand.
         ; ================================================================
 
-        function param_name(this: WriteCensus, i: size_t) @page true @direct true returns String linked
+        function param_name(this: WriteCensus, i: size_t) @page true @direct true @ret_caller true returns String linked
 
 
 
@@ -1292,7 +1292,7 @@ define WriteCensus
 
 
 
-        function param_type_name(this: WriteCensus, i: size_t) @page true @direct true returns String linked
+        function param_type_name(this: WriteCensus, i: size_t) @page true @direct true @ret_caller true returns String linked
 
 
 
@@ -1306,7 +1306,7 @@ define WriteCensus
 
 
         ; `this:Box host:ref.Page global` for the bits of a mask.
-        function mask_names(this: WriteCensus, mask: u64) @page true @direct true returns String linked
+        function mask_names(this: WriteCensus, mask: u64) @page true @direct true @ret_caller true returns String linked
 
 
 
@@ -1347,7 +1347,7 @@ define WriteCensus
 
 
 
-        function is_scalar(t: PlannedType) returns bool linked
+        function is_scalar(t: PlannedType) @ret_nonlocal true returns bool linked
 
 
 
@@ -1422,7 +1422,7 @@ define WriteCensus
 
 
 
-        function param_is_frozen(this: WriteCensus, i: size_t) returns bool linked
+        function param_is_frozen(this: WriteCensus, i: size_t) @ret_param_0 true returns bool linked
 
 
 
@@ -1433,10 +1433,10 @@ define WriteCensus
 
 
 
-        procedure remember_local(mutable this: WriteCensus, name: String, mask: u64) linked
+        procedure remember_local(mutable this: WriteCensus, name: String, mask: u64) @ret_nonlocal true linked
 
 
-        procedure remember_local_of(mutable this: WriteCensus, name: String, mask: u64, is_mask: u64, global: String) @persists true linked
+        procedure remember_local_of(mutable this: WriteCensus, name: String, mask: u64, is_mask: u64, global: String) @persists true @ret_nonlocal true linked
 
 
 
@@ -1445,7 +1445,7 @@ define WriteCensus
 
 
         ; name_mask's IS half: a local answers loc_is, a parameter its bit
-        function name_is(this: WriteCensus, name: String) returns u64 linked
+        function name_is(this: WriteCensus, name: String) @ret_param_0 true returns u64 linked
 
 
 
@@ -1471,7 +1471,7 @@ define WriteCensus
         ; reaches (mask_of). Frozen and global marks stay as mask_of gives
         ; them -- conservative where the two halves are not told apart.
         ; ================================================================
-        function is_of(this: WriteCensus, op: PlannedOperand) returns u64 linked
+        function is_of(this: WriteCensus, op: PlannedOperand) @ret_nonlocal true returns u64 linked
 
 
 
@@ -1481,7 +1481,7 @@ define WriteCensus
 
         ; is_of ignoring the operand's own member chain (the w-field site judges
         ; the chain itself: an intermediate reference hop loads another object)
-        function is_of_base(this: WriteCensus, op: PlannedOperand) returns u64 linked
+        function is_of_base(this: WriteCensus, op: PlannedOperand) @ret_param_0 true returns u64 linked
 
 
 
@@ -1524,7 +1524,7 @@ define WriteCensus
 
 
 
-        function is_of_operands(this: WriteCensus, ops: ref[Vector[PlannedOperand]]?) returns u64 linked
+        function is_of_operands(this: WriteCensus, ops: ref[Vector[PlannedOperand]]?) @ret_nonlocal true returns u64 linked
 
 
 
@@ -1538,7 +1538,7 @@ define WriteCensus
 
 
         ; Does a member chain load another object before its last hop?
-        function loads_before_last(op: PlannedOperand) returns bool linked
+        function loads_before_last(op: PlannedOperand) @ret_nonlocal true returns bool linked
 
 
 
@@ -1555,7 +1555,7 @@ define WriteCensus
 
 
 
-        function mask_of_operands(this: WriteCensus, ops: ref[Vector[PlannedOperand]]?) returns u64 linked
+        function mask_of_operands(this: WriteCensus, ops: ref[Vector[PlannedOperand]]?) @ret_nonlocal true returns u64 linked
 
 
 
@@ -1572,7 +1572,7 @@ define WriteCensus
 
 
         ; What an operand's value may alias: the parameters it reaches.
-        function mask_of(this: WriteCensus, op: PlannedOperand) returns u64 linked
+        function mask_of(this: WriteCensus, op: PlannedOperand) @ret_nonlocal true returns u64 linked
 
 
 
@@ -1793,7 +1793,7 @@ define WriteCensus
 
 
         ; The page a Reference lifetime names, as a mask.
-        procedure note_life(mutable this: WriteCensus, offset: size_t, life: Lifetime, cls: String) linked
+        procedure note_life(mutable this: WriteCensus, offset: size_t, life: Lifetime, cls: String) @ret_nonlocal true linked
 
 
 
@@ -1807,7 +1807,7 @@ define WriteCensus
 
         ; The index + 1 of a callee in plan.functions (0: none), read off the
         ; pointer census's table, which prefers a body over a stub.
-        function callee_index(this: WriteCensus, mangled: String) returns size_t linked
+        function callee_index(this: WriteCensus, mangled: String) @ret_param_0 true returns size_t linked
 
 
 
@@ -2035,7 +2035,7 @@ define WriteCensus
 
         ; The concept a (possibly Option/ref/pointer-wrapped) type names,
         ; last dotted segment only.
-        function core_name(t: PlannedType) @page true @direct true returns String linked
+        function core_name(t: PlannedType) @page true @direct true @ret_caller true returns String linked
 
 
 
@@ -2072,7 +2072,7 @@ define WriteCensus
         ; optional or not) to a frozen record -- exactly one indirection. A
         ; slot (`pointer[ref[AstNode]]`) is the holder's memory, and a record
         ; held BY VALUE is a copy.
-        function is_frozen_type(this: WriteCensus, t: PlannedType) returns bool linked
+        function is_frozen_type(this: WriteCensus, t: PlannedType) @ret_nonlocal true returns bool linked
 
 
 
@@ -2101,7 +2101,7 @@ define WriteCensus
 
         ; The record itself is frozen (a hop's parent: the memory a member
         ; access reads or writes in place).
-        function is_frozen_record(this: WriteCensus, t: PlannedType) returns bool linked
+        function is_frozen_record(this: WriteCensus, t: PlannedType) @ret_nonlocal true returns bool linked
 
 
 
@@ -2173,7 +2173,7 @@ define WriteCensus
 
 
 
-        function is_reference_name(n: String) returns bool linked
+        function is_reference_name(n: String) @ret_param_0 true returns bool linked
 
 
 
@@ -2182,7 +2182,7 @@ define WriteCensus
 
 
 
-        function is_by_value_local(this: WriteCensus, v: PlannedVariable) returns bool linked
+        function is_by_value_local(this: WriteCensus, v: PlannedVariable) @ret_nonlocal true returns bool linked
 
 
 
@@ -2200,7 +2200,7 @@ define WriteCensus
 
 
         ; `Checker.get_diagnostics` for a method, the bare name otherwise.
-        function entry_key(this: WriteCensus, func: PlannedFunction) @page true @direct true returns String linked
+        function entry_key(this: WriteCensus, func: PlannedFunction) @page true @direct true @ret_caller true returns String linked
 
 
 
@@ -2230,7 +2230,7 @@ define WriteCensus
 
 
 
-        function is_entry(this: WriteCensus, func: PlannedFunction) returns bool linked
+        function is_entry(this: WriteCensus, func: PlannedFunction) @ret_nonlocal true returns bool linked
 
 
 
@@ -2255,7 +2255,7 @@ define WriteCensus
 
         ; Is the value a body ends with (its tail expression) frozen? Follows a
         ; block to its last statement and both arms of an `if`.
-        function tail_frozen(this: WriteCensus, act: PlannedAction) returns bool linked
+        function tail_frozen(this: WriteCensus, act: PlannedAction) @ret_nonlocal true returns bool linked
 
 
 
@@ -2289,7 +2289,7 @@ define WriteCensus
 
 
 
-        function statement_tail_frozen(this: WriteCensus, stmt: ref[PlannedStatement]?) returns bool linked
+        function statement_tail_frozen(this: WriteCensus, stmt: ref[PlannedStatement]?) @ret_nonlocal true returns bool linked
 
 
 
@@ -2348,7 +2348,7 @@ define WriteCensus
 
 
         ; The entries' parameters are frozen by their TYPE.
-        function entry_param_bits(this: WriteCensus, func: PlannedFunction) returns u64 linked
+        function entry_param_bits(this: WriteCensus, func: PlannedFunction) @ret_nonlocal true returns u64 linked
 
 
 
@@ -2477,7 +2477,7 @@ define WriteCensus
         ; parameters are the result region and exempt, as the caller page is.
         ; ================================================================
 
-        procedure collect_purity_module(mutable this: WriteCensus, m: Module) linked
+        procedure collect_purity_module(mutable this: WriteCensus, m: Module) @ret_nonlocal true linked
 
 
         procedure collect_purity_module_in(mutable this: WriteCensus, m: Module, owner: String) linked
@@ -2609,7 +2609,7 @@ define WriteCensus
 
 
 
-        function join_names(names: Vector[String]) @page true @direct true returns String linked
+        function join_names(names: Vector[String]) @page true @direct true @ret_caller true returns String linked
 
 
 
@@ -2718,7 +2718,7 @@ define WriteCensus
 
 
 
-        function is_atomic_name(this: WriteCensus, name: String) returns bool linked
+        function is_atomic_name(this: WriteCensus, name: String) @ret_nonlocal true returns bool linked
 
 
 
@@ -2730,7 +2730,7 @@ define WriteCensus
 
 
 
-        function is_ambient(this: WriteCensus, name: String) returns bool linked
+        function is_ambient(this: WriteCensus, name: String) @ret_nonlocal true returns bool linked
 
 
 
@@ -2744,7 +2744,7 @@ define WriteCensus
 
 
 
-        function global_allowed(this: WriteCensus, name: String) returns bool linked
+        function global_allowed(this: WriteCensus, name: String) @ret_nonlocal true returns bool linked
 
 
 
@@ -2812,7 +2812,7 @@ define WriteCensus
 
 
         ; the names in cur_g a body may not write ("?alias" for the unnamed)
-        function bad_globals(this: WriteCensus) @page true @direct true returns String linked
+        function bad_globals(this: WriteCensus) @page true @direct true @ret_caller true returns String linked
 
 
 
@@ -2851,7 +2851,7 @@ define WriteCensus
 
 
         ; does the body reach I/O its declaration does not name?
-        function bad_io(this: WriteCensus) returns bool linked
+        function bad_io(this: WriteCensus) @ret_nonlocal true returns bool linked
 
 
 
@@ -2875,7 +2875,7 @@ define WriteCensus
 
         ; a stub's row: its OWNER's declarations of that name and arity (the
         ; owner read off the mangled name), else every owner's
-        function stub_row(this: WriteCensus, call: PlannedCall) returns size_t linked
+        function stub_row(this: WriteCensus, call: PlannedCall) @ret_nonlocal true returns size_t linked
 
 
 
@@ -2937,7 +2937,7 @@ define WriteCensus
 
 
 
-        function owned_key(owner: String, name: String, arity: size_t) @page true @direct true returns String linked
+        function owned_key(owner: String, name: String, arity: size_t) @page true @direct true @ret_caller true returns String linked
 
 
 
@@ -2950,7 +2950,7 @@ define WriteCensus
 
         ; `_ZN13StringBuilder6appendEc` -> StringBuilder: the component before
         ; the last of an Itanium nested name ("" for a name that is not nested)
-        function mangled_owner(m: String) @page true @direct true returns String linked
+        function mangled_owner(m: String) @page true @direct true @ret_caller true returns String linked
 
 
 
@@ -3033,7 +3033,7 @@ define WriteCensus
 
         ; the name table's key: overloads of one name and arity share a row,
         ; their marks OR-ed (a stub carries no signature to tell them apart)
-        function purity_key(name: String, arity: size_t) @page true @direct true returns String linked
+        function purity_key(name: String, arity: size_t) @page true @direct true @ret_caller true returns String linked
 
 
 
@@ -3043,7 +3043,7 @@ define WriteCensus
 
 
         ; the positions of a declaration's `mutable` parameters (R1)
-        function model_writable_mask(items: Vector[Item]) returns u64 linked
+        function model_writable_mask(items: Vector[Item]) @ret_nonlocal true returns u64 linked
 
 
 
@@ -3069,7 +3069,7 @@ define WriteCensus
 
 
 
-        function planned_writable_mask(items: ref[Vector[PlannedItem]]?) returns u64 linked
+        function planned_writable_mask(items: ref[Vector[PlannedItem]]?) @ret_nonlocal true returns u64 linked
 
 
 
@@ -3102,7 +3102,7 @@ define WriteCensus
 
 
         ; the parameters of the body walked whose type is a Page
-        function page_param_mask(this) returns u64 linked
+        function page_param_mask(this) @ret_nonlocal true returns u64 linked
 
 
 
@@ -3120,7 +3120,7 @@ define WriteCensus
 
 
 
-        function core_name_is_page(readable: String) returns bool linked
+        function core_name_is_page(readable: String) @ret_nonlocal true returns bool linked
 
 
 
@@ -3251,7 +3251,7 @@ define WriteCensus
         ; procedure handed it, `it.next()` on an iterator, writes the copy. The
         ; ASSUMPTION, stated: such a procedure does not write through the
         ; pointers the copy carries (an iterator's cursor into its container).
-        function is_local_value(this: WriteCensus, a: PlannedOperand) returns bool linked
+        function is_local_value(this: WriteCensus, a: PlannedOperand) @ret_nonlocal true returns bool linked
 
 
 
@@ -3352,7 +3352,7 @@ define WriteCensus
 
         ; --interface-facts: the first changeable global each planned body of the
         ; root reads (the check's pre-pass), keyed like the planner's facts
-        function interface_reads(this: WriteCensus) @page true @direct true returns String linked
+        function interface_reads(this: WriteCensus) @page true @direct true @ret_caller true returns String linked
 
 
 
@@ -3423,7 +3423,7 @@ define WriteCensus
 
 
         ; does a stub's declaration (its package's interface) say `io`?
-        function stub_declares_io(this: WriteCensus, f: PlannedFunction) returns bool linked
+        function stub_declares_io(this: WriteCensus, f: PlannedFunction) @ret_nonlocal true returns bool linked
 
 
 
@@ -3449,7 +3449,7 @@ define WriteCensus
 
         ; the key a stub's declaration is filed under: its owner as the
         ; mangled name spells it, else its bare name
-        function stub_key(this: WriteCensus, f: PlannedFunction) @page true @direct true returns String linked
+        function stub_key(this: WriteCensus, f: PlannedFunction) @page true @direct true @ret_caller true returns String linked
 
 
 
@@ -3461,7 +3461,7 @@ define WriteCensus
 
 
         ; is `name` an element of a comma-separated list?
-        function list_has(list: String, name: Slice[char]) returns bool linked
+        function list_has(list: String, name: Slice[char]) @ret_nonlocal true returns bool linked
 
 
 
@@ -3872,7 +3872,7 @@ define WriteCensus
         ; it (tools/write-report.sh runs the roots in dependency order).
         ; ================================================================
 
-        function summary_index(this: WriteCensus, mangled: String) returns size_t linked
+        function summary_index(this: WriteCensus, mangled: String) @ret_param_0 true returns size_t linked
 
 
 
@@ -4139,7 +4139,7 @@ define WriteCensus
 
 
         ; a global that can change and is not the runtime's own state
-        function is_changeable(this: WriteCensus, name: String) returns bool linked
+        function is_changeable(this: WriteCensus, name: String) @ret_nonlocal true returns bool linked
 
 
 
@@ -4162,7 +4162,7 @@ define WriteCensus
 
 
         ; the walked function reads `name`, itself or through `callee`
-        procedure note_read_site(mutable this: WriteCensus, offset: size_t, name: String, callee: String) linked
+        procedure note_read_site(mutable this: WriteCensus, offset: size_t, name: String, callee: String) @ret_param_0 true linked
 
 
 
@@ -4223,7 +4223,7 @@ define WriteCensus
         ; machinery and the stack guard. LLVM-C mutates its handles inside the
         ; process -- the census counts that as writing its arguments -- and is
         ; I/O only where it touches a file or asks the host.
-        function extern_is_io(name: String) returns bool linked
+        function extern_is_io(name: String) @ret_nonlocal true returns bool linked
 
 
 
@@ -4254,7 +4254,7 @@ define WriteCensus
 
 
 
-        function extern_computes(name: String) returns bool linked
+        function extern_computes(name: String) @ret_nonlocal true returns bool linked
 
 
 
@@ -4395,7 +4395,7 @@ define WriteCensus
         ; The argument positions a C function writes, from its documented
         ; contract; every extern NOT named here writes all of them (the LLVM-C
         ; API mutates through every handle it is given).
-        function extern_writes(name: String) returns u64 linked
+        function extern_writes(name: String) @ret_nonlocal true returns u64 linked
 
 
 
@@ -4491,7 +4491,7 @@ define WriteCensus
 
 
 
-        procedure find_statement_ref(mutable this: WriteCensus, stmt: ref[PlannedStatement]?) io linked
+        procedure find_statement_ref(mutable this: WriteCensus, stmt: ref[PlannedStatement]?) @ret_nonlocal true io linked
 
 
 
@@ -4631,7 +4631,7 @@ define WriteCensus
         ; of the hop's parent record in the plan, found by mangled name and
         ; field index (by name where the index does not line up).
         ; (a procedure while it carries the SCALYC_LET_PROBE print: a function performs no I/O)
-        procedure field_is_var(this: WriteCensus, hop: PlannedMemberAccess) returns bool io linked
+        procedure field_is_var(this: WriteCensus, hop: PlannedMemberAccess) @ret_nonlocal true returns bool io linked
 
 
 
@@ -4750,7 +4750,7 @@ define WriteCensus
 
 
 
-        function let_bad_seen(this: WriteCensus, offset: size_t) returns bool linked
+        function let_bad_seen(this: WriteCensus, offset: size_t) @ret_nonlocal true returns bool linked
 
 
 
@@ -4762,7 +4762,7 @@ define WriteCensus
 
 
 
-        function let_site_seen(this: WriteCensus, offset: size_t) returns bool linked
+        function let_site_seen(this: WriteCensus, offset: size_t) @ret_nonlocal true returns bool linked
 
 
 
@@ -4774,7 +4774,7 @@ define WriteCensus
 
 
 
-        function attributes_have_var(attrs: ref[Vector[PlannedAttribute]]?) returns bool linked
+        function attributes_have_var(attrs: ref[Vector[PlannedAttribute]]?) @ret_nonlocal true returns bool linked
 
 
 
@@ -4865,7 +4865,7 @@ define WriteCensus
 
 
 
-        procedure find_statement(mutable this: WriteCensus, stmt: PlannedStatement) io linked
+        procedure find_statement(mutable this: WriteCensus, stmt: PlannedStatement) @ret_nonlocal true io linked
 
 
 

@@ -69,7 +69,7 @@ define codelens
 {
     ; The whole CodeLens[] array for `uri`. `text` is the source the worker
     ; resolved (the parent's buffer, or the file from disk when it had none).
-    procedure lenses(rp, mutable uri: String, mutable text: String) @direct true returns String io mutable lc_col, lc_line, lc_off, modeler_error_count reads lc_line linked
+    procedure lenses(rp, mutable uri: String, mutable text: String) @direct true @ret_caller true returns String io mutable lc_col, lc_line, lc_off, modeler_error_count reads lc_line linked
 
 
 
@@ -127,7 +127,7 @@ define codelens
     ; planned as itself. `plan_text` is the text whose offsets the plan carries —
     ; the file ON DISK for a member, because the modeler reads from disk.
     ; ====================================================================
-    procedure planned_fragment(rp, mutable path: String, mutable text: String) @direct true returns String io mutable lc_col, lc_line, lc_off, modeler_error_count reads modeler_error_count linked
+    procedure planned_fragment(rp, mutable path: String, mutable text: String) @direct true @ret_caller true returns String io mutable lc_col, lc_line, lc_off, modeler_error_count reads modeler_error_count linked
 
 
 
@@ -135,15 +135,7 @@ define codelens
 
 
 
-    procedure root_planned_fragment(rp, mutable root: String, path: String, text: String) @direct true returns String io mutable lc_col, lc_line, lc_off, modeler_error_count reads modeler_error_count linked
-
-
-
-
-
-
-
-
+    procedure root_planned_fragment(rp, mutable root: String, path: String, text: String) @direct true @ret_caller true returns String io mutable lc_col, lc_line, lc_off, modeler_error_count reads modeler_error_count linked
 
 
 
@@ -169,7 +161,15 @@ define codelens
 
 
 
-    procedure document_planned_fragment(rp, mutable path: String, mutable text: String) @direct true returns String io mutable lc_col, lc_line, lc_off, modeler_error_count reads modeler_error_count linked
+
+
+
+
+
+
+
+
+    procedure document_planned_fragment(rp, mutable path: String, mutable text: String) @direct true @ret_caller true returns String io mutable lc_col, lc_line, lc_off, modeler_error_count reads modeler_error_count linked
 
 
 
@@ -198,7 +198,7 @@ define codelens
 
 
     ; Join every plan-derived family over the one plan.
-    procedure families(rp, plan: Plan, has_diag: bool, entry_file: String, path: String, plan_text: String, anchor_text: String) @direct true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure families(rp, plan: Plan, has_diag: bool, entry_file: String, path: String, plan_text: String, anchor_text: String) @direct true @ret_caller true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -242,7 +242,7 @@ define codelens
     ; walk over the statement union. Two lenses at one position are what an
     ; editor shows side by side, which is the conventional look for this.
     ; ====================================================================
-    procedure head_fragment(rp, path: String, mutable text: String) @direct true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure head_fragment(rp, path: String, mutable text: String) @direct true @ret_caller true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -270,7 +270,7 @@ define codelens
     ; none, so it gets no Run lens — which is the whole distinction the CLI
     ; makes too. A buffer that does not parse gets none either: `--jit` on it
     ; would print a diagnostic the editor is already showing.
-    procedure has_top_level_statements(mutable text: String) returns bool linked
+    procedure has_top_level_statements(mutable text: String) @ret_nonlocal true returns bool linked
 
 
 
@@ -302,7 +302,7 @@ define codelens
     ; generator sits in the same directory branch as its output ("controlflow.sgm"
     ; for tests/controlflow.sgm, since the document is tests/selfhosted/…).
     ; ====================================================================
-    procedure generated_banner(rp, text: String, path: String) @direct true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure generated_banner(rp, text: String, path: String) @direct true @ret_caller true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -362,7 +362,7 @@ define codelens
 
     ; The banner lens itself: the title names the generator RELATIVE to the
     ; checkout (what a reader can act on), the click opens it absolutely.
-    procedure banner_lens(rp, text: String, root: String, rel: String) @direct true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure banner_lens(rp, text: String, root: String, rel: String) @direct true @ret_caller true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -395,7 +395,7 @@ define codelens
     ; `base` below is that search directory, threaded exactly as the Modeler
     ; threads it; `dir` is the document's own directory, used only for display.
     ; ====================================================================
-    procedure declaration_fragment(rp, mutable text: String, mutable path: String) @direct true returns String io mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure declaration_fragment(rp, mutable text: String, mutable path: String) @direct true @ret_caller true returns String io mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -411,7 +411,7 @@ define codelens
 
 
 
-    procedure declarations_fragment(rp, text: String, mutable path: String, mutable base: String, dir: String, decls: ref[Vector[DeclarationSyntax]]?) @direct true returns String io mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure declarations_fragment(rp, text: String, mutable path: String, mutable base: String, dir: String, decls: ref[Vector[DeclarationSyntax]]?) @direct true @ret_caller true returns String io mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -441,7 +441,7 @@ define codelens
 
     ; One declaration: a lens for `package` / `module`, a recursion for a
     ; namespace, nothing for the rest.
-    procedure declaration_lens(rp, text: String, mutable path: String, mutable base: String, dir: String, decl: DeclarationSyntax) @direct true returns String io mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure declaration_lens(rp, text: String, mutable path: String, mutable base: String, dir: String, decl: DeclarationSyntax) @direct true @ret_caller true returns String io mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -557,7 +557,7 @@ define codelens
     ; Not clickable (the empty command id), for tasklens.scaly's reason: the
     ; sentence is the whole message. ASCII only in the titles.
     ; ====================================================================
-    procedure storage_lens(rp, text: String, offset: size_t, keyword: String, annotation: ref[BindingAnnotationSyntax]?, title: String) @direct true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure storage_lens(rp, text: String, offset: size_t, keyword: String, annotation: ref[BindingAnnotationSyntax]?, title: String) @direct true @ret_caller true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -574,7 +574,7 @@ define codelens
     ; Exactly Modeler.handle_binding_annotation#'s condition: an annotation is
     ; present AND its spec is a TypeSyntax. Anything else models to null, and a
     ; null type is what makes the Modeler drop the whole declaration.
-    function declares_a_type(annotation: ref[BindingAnnotationSyntax]?) returns bool linked
+    function declares_a_type(annotation: ref[BindingAnnotationSyntax]?) @ret_nonlocal true returns bool linked
 
 
 
@@ -596,7 +596,7 @@ define codelens
     ; Literals of VersionSyntax: a syntax node's `end` runs to the start of the
     ; next token, so a span would carry trailing trivia — while "digits and
     ; dots from version.start" is exactly a version and nothing else.
-    procedure package_lens(rp, text: String, mutable path: String, pkg: PackageSyntax) @direct true returns String io mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure package_lens(rp, text: String, mutable path: String, pkg: PackageSyntax) @direct true @ret_caller true returns String io mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -648,7 +648,7 @@ define codelens
     ; the Modeler would use (see the section comment above). Shown relative to
     ; the document's own directory, so a sibling reads "lexer.scaly" and a
     ; namespace child reads "scalyls/json.scaly".
-    procedure module_lens(rp, text: String, mutable base: String, dir: String, m: ModuleSyntax) @direct true returns String io mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure module_lens(rp, text: String, mutable base: String, dir: String, m: ModuleSyntax) @direct true @ret_caller true returns String io mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -673,7 +673,7 @@ define codelens
 
 
     ; The digits-and-dots run starting at `offset` ("0.1.0").
-    function version_text(rp, text: String, offset: size_t) @direct true returns String linked
+    function version_text(rp, text: String, offset: size_t) @direct true @ret_caller true returns String linked
 
 
 
@@ -705,7 +705,7 @@ define codelens
     ; `packages` directory is the checkout the compiler would be invoked from,
     ; which is the same answer for every real in-repo case and no answer at all
     ; outside one.
-    procedure resolution_base(rp, mutable path: String) @direct true returns String io linked
+    procedure resolution_base(rp, mutable path: String) @direct true @ret_caller true returns String io linked
 
 
 
@@ -742,7 +742,7 @@ define codelens
     ; <path minus suffix>, or "" when path does not end in suffix (or would be
     ; left empty — a suffix that IS the whole path answers nothing rather than
     ; a bare relative name).
-    function strip_suffix(rp, path: String, suffix: String) @direct true returns String linked
+    function strip_suffix(rp, path: String, suffix: String) @direct true @ret_caller true returns String linked
 
 
 
@@ -753,7 +753,7 @@ define codelens
 
 
 
-    function join(rp, left: String, right: String) @direct true returns String linked
+    function join(rp, left: String, right: String) @direct true @ret_caller true returns String linked
 
 
 
@@ -763,7 +763,7 @@ define codelens
 
 
     ; Everything before the last "/" ("." when there is none).
-    function directory_of(rp, path: String) @direct true returns String linked
+    function directory_of(rp, path: String) @direct true @ret_caller true returns String linked
 
 
 

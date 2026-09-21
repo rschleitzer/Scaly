@@ -720,6 +720,12 @@ define MethodMatch
     ; arguments to the caller page — the auto-promoted form of the old
     ; handwritten `#` at every diag-text call site.
     persists_args: bool
+    ; Return residence (Planner.build_return_residence_set#): where the
+    ; callee's RESULT lives — 0 unknown, 1 the caller page, 2 the page named
+    ; by argument return_arg, 3 wherever argument return_arg lives (the
+    ; receiver included), 4 nowhere local (a global, a constant)
+    return_class: size_t
+    return_arg: size_t
 )
 
 ; Result of operator lookup

@@ -136,7 +136,7 @@ define Modeler
 
 
 
-    procedure handle_literal(mutable syntax: LiteralSyntax) @page true @direct true returns Constant linked
+    procedure handle_literal(mutable syntax: LiteralSyntax) @page true @direct true @ret_caller true returns Constant linked
 
 
 
@@ -202,7 +202,7 @@ define Modeler
     ; Lifetime handling
     ; ============================================================================
 
-    function handle_lifetime(syntax: ref[LifetimeSyntax]?) @page true @direct true returns Lifetime linked
+    function handle_lifetime(syntax: ref[LifetimeSyntax]?) @page true @direct true @ret_nonlocal true returns Lifetime linked
 
 
 
@@ -223,7 +223,7 @@ define Modeler
     ; Type handling
     ; ============================================================================
 
-    function handle_type(syntax: TypeSyntax) @page true @direct true returns ref[Type]? linked
+    function handle_type(syntax: TypeSyntax) @page true @direct true @ret_caller true returns ref[Type]? linked
 
 
 
@@ -304,7 +304,7 @@ define Modeler
 
 
 
-    function handle_binding_annotation(annotation: BindingAnnotationSyntax) @page true @direct true returns ref[Type]? linked
+    function handle_binding_annotation(annotation: BindingAnnotationSyntax) @page true @direct true @ret_caller true returns ref[Type]? linked
 
 
 
@@ -317,7 +317,7 @@ define Modeler
     ; Object/Tuple handling
     ; ============================================================================
 
-    procedure handle_object(mutable syntax: ObjectSyntax) @page true @direct true returns Tuple io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_object(mutable syntax: ObjectSyntax) @page true @direct true @ret_caller true returns Tuple io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -343,7 +343,7 @@ define Modeler
 
 
 
-    procedure handle_component(mutable syntax: ComponentSyntax) @page true @direct true returns Component io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_component(mutable syntax: ComponentSyntax) @page true @direct true @ret_caller true returns Component io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -396,7 +396,7 @@ define Modeler
     ; Two cells, which is the shape a nested generic argument already has:
     ; a bare Type naming Option, then a Matrix holding the original row as its
     ; single row. Static because it builds only from its arguments.
-    function wrap_row_in_option(row: Vector[Operand], span: Span) @page true @direct true returns Vector[Operand] linked
+    function wrap_row_in_option(row: Vector[Operand], span: Span) @page true @direct true @ret_caller true returns Vector[Operand] linked
 
 
 
@@ -416,7 +416,7 @@ define Modeler
 
 
 
-    procedure handle_vector(mutable syntax: VectorSyntax) @page true @direct true returns Matrix io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_vector(mutable syntax: VectorSyntax) @page true @direct true @ret_caller true returns Matrix io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -471,7 +471,7 @@ define Modeler
     ; Block handling
     ; ============================================================================
 
-    procedure handle_block(mutable syntax: BlockSyntax) @page true @direct true returns Block io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_block(mutable syntax: BlockSyntax) @page true @direct true @ret_caller true returns Block io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -485,7 +485,7 @@ define Modeler
     ; the marker that embeds an expression ("The answer is `n`!"). Escape-aware:
     ; a backslash consumes the following byte, so an escaped backtick never
     ; triggers interpolation.
-    function string_has_interpolation(raw: String) returns bool linked
+    function string_has_interpolation(raw: String) @ret_nonlocal true returns bool linked
 
 
 
@@ -821,7 +821,7 @@ define Modeler
 
 
 
-    function handle_as(syntax: AsSyntax) @page true @direct true returns scaly.compiler.Model.As linked
+    function handle_as(syntax: AsSyntax) @page true @direct true @ret_caller true returns scaly.compiler.Model.As linked
 
 
 
@@ -841,7 +841,7 @@ define Modeler
 
     ; Lambda: each input operand should be a simple name; we build an Item
     ; per operand with no type annotation (type inferred from context).
-    procedure handle_lambda(mutable syntax: LambdaSyntax) @page true @direct true returns Lambda io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_lambda(mutable syntax: LambdaSyntax) @page true @direct true @ret_caller true returns Lambda io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -884,7 +884,7 @@ define Modeler
 
 
 
-    procedure handle_repeat(mutable syntax: RepeatSyntax) @page true @direct true returns Repeat io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_repeat(mutable syntax: RepeatSyntax) @page true @direct true @ret_caller true returns Repeat io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -901,7 +901,7 @@ define Modeler
     ; Control flow handling
     ; ============================================================================
 
-    procedure handle_if(mutable syntax: IfSyntax) @page true @direct true returns If io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_if(mutable syntax: IfSyntax) @page true @direct true @ret_caller true returns If io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -924,7 +924,7 @@ define Modeler
 
 
 
-    procedure handle_match(mutable syntax: MatchSyntax) @page true @direct true returns Match io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_match(mutable syntax: MatchSyntax) @page true @direct true @ret_caller true returns Match io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -966,7 +966,7 @@ define Modeler
 
 
 
-    procedure handle_branch(mutable syntax: BranchSyntax) @page true @direct true returns Branch io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_branch(mutable syntax: BranchSyntax) @page true @direct true @ret_caller true returns Branch io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -994,13 +994,13 @@ define Modeler
 
 
 
-    procedure handle_case(mutable syntax: CaseSyntax) @page true @direct true returns Case io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_case(mutable syntax: CaseSyntax) @page true @direct true @ret_caller true returns Case io mutable modeler_error_count reads modeler_error_count linked
 
 
 
 
 
-    procedure handle_choose(mutable syntax: ChooseSyntax) @page true @direct true returns Choose io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_choose(mutable syntax: ChooseSyntax) @page true @direct true @ret_caller true returns Choose io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -1042,7 +1042,7 @@ define Modeler
 
 
 
-    procedure handle_when(mutable syntax: WhenSyntax) @page true @direct true returns When io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_when(mutable syntax: WhenSyntax) @page true @direct true @ret_caller true returns When io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -1080,7 +1080,7 @@ define Modeler
 
 
 
-    procedure handle_action(mutable syntax: ActionSyntax) @page true @direct true returns Action io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_action(mutable syntax: ActionSyntax) @page true @direct true @ret_caller true returns Action io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -1091,7 +1091,7 @@ define Modeler
 
 
 
-    procedure handle_for(mutable syntax: ForSyntax) @page true @direct true returns For io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_for(mutable syntax: ForSyntax) @page true @direct true @ret_caller true returns For io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -1108,7 +1108,7 @@ define Modeler
 
 
 
-    procedure handle_while(mutable syntax: WhileSyntax) @page true @direct true returns While io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_while(mutable syntax: WhileSyntax) @page true @direct true @ret_caller true returns While io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -1124,7 +1124,7 @@ define Modeler
 
 
 
-    procedure handle_condition(mutable syntax: ConditionSyntax) @page true @direct true returns Binding io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_condition(mutable syntax: ConditionSyntax) @page true @direct true @ret_caller true returns Binding io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -1152,7 +1152,7 @@ define Modeler
 
 
 
-    procedure handle_try(mutable syntax: TrySyntax) @page true @direct true returns Try io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_try(mutable syntax: TrySyntax) @page true @direct true @ret_caller true returns Try io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -1198,19 +1198,19 @@ define Modeler
     ; Type operation handling
     ; ============================================================================
 
-    function handle_sizeof(syntax: SizeOfSyntax) @page true @direct true returns SizeOf linked
+    function handle_sizeof(syntax: SizeOfSyntax) @page true @direct true @ret_caller true returns SizeOf linked
 
 
 
 
 
-    function handle_alignof(syntax: AlignOfSyntax) @page true @direct true returns scaly.compiler.Model.AlignOf linked
+    function handle_alignof(syntax: AlignOfSyntax) @page true @direct true @ret_caller true returns scaly.compiler.Model.AlignOf linked
 
 
 
 
 
-    function handle_is(syntax: IsSyntax) @page true @direct true returns Is linked
+    function handle_is(syntax: IsSyntax) @page true @direct true @ret_caller true returns Is linked
 
 
 
@@ -1242,7 +1242,7 @@ define Modeler
     ; Operand handling
     ; ============================================================================
 
-    procedure handle_operand(mutable syntax: OperandSyntax) @page true @direct true returns Operand io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_operand(mutable syntax: OperandSyntax) @page true @direct true @ret_caller true returns Operand io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -1294,7 +1294,7 @@ define Modeler
 
 
 
-    procedure handle_operands(mutable syntax: ref[Vector[OperandSyntax]]?) @page true @direct true returns Vector[Operand] io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_operands(mutable syntax: ref[Vector[OperandSyntax]]?) @page true @direct true @ret_caller true returns Vector[Operand] io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -1316,14 +1316,14 @@ define Modeler
 
 
 
-    procedure handle_operation(mutable syntax: OperationSyntax) @page true @direct true returns Vector[Operand] io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_operation(mutable syntax: OperationSyntax) @page true @direct true @ret_caller true returns Vector[Operand] io mutable modeler_error_count reads modeler_error_count linked
 
 
     ; ============================================================================
     ; Statement handling
     ; ============================================================================
 
-    function handle_binding_item(syntax: BindingSyntax) @page true @direct true returns Item linked
+    function handle_binding_item(syntax: BindingSyntax) @page true @direct true @ret_caller true returns Item linked
 
 
 
@@ -1422,7 +1422,7 @@ define Modeler
     procedure handle_statement(mutable syntax: StatementSyntax) @page true @direct true returns Statement io mutable modeler_error_count reads modeler_error_count linked
 
 
-    procedure handle_statements(mutable syntax: ref[Vector[StatementSyntax]]?) @page true @direct true returns Vector[Statement] io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_statements(mutable syntax: ref[Vector[StatementSyntax]]?) @page true @direct true @ret_caller true returns Vector[Statement] io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -1551,7 +1551,7 @@ define Modeler
 
 
 
-    function is_statement_like_expression(expr: ExpressionSyntax) returns bool linked
+    function is_statement_like_expression(expr: ExpressionSyntax) @ret_nonlocal true returns bool linked
 
 
 
@@ -1569,7 +1569,7 @@ define Modeler
     ; Item and Property handling
     ; ============================================================================
 
-    function handle_item(is_private: bool, syntax: ItemSyntax) @page true @direct true returns Item linked
+    function handle_item(is_private: bool, syntax: ItemSyntax) @page true @direct true @ret_caller true returns Item linked
 
 
 
@@ -1604,7 +1604,7 @@ define Modeler
 
 
 
-    procedure handle_property(is_private: bool, mutable syntax: PropertySyntax) @page true @direct true returns Property io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_property(is_private: bool, mutable syntax: PropertySyntax) @page true @direct true @ret_caller true returns Property io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -1657,7 +1657,7 @@ define Modeler
     ; Attribute handling
     ; ============================================================================
 
-    procedure handle_attribute(mutable syntax: AttributeSyntax) @page true @direct true returns Attribute io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_attribute(mutable syntax: AttributeSyntax) @page true @direct true @ret_caller true returns Attribute io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -1687,7 +1687,7 @@ define Modeler
     ; Use handling
     ; ============================================================================
 
-    function handle_use(syntax: UseSyntax) @page true @direct true returns Use linked
+    function handle_use(syntax: UseSyntax) @page true @direct true @ret_caller true returns Use linked
 
 
 
@@ -1720,7 +1720,7 @@ define Modeler
     ; Generic parameter handling
     ; ============================================================================
 
-    function handle_generic_parameter(syntax: GenericParameterSyntax) @page true @direct true returns GenericParameter linked
+    function handle_generic_parameter(syntax: GenericParameterSyntax) @page true @direct true @ret_caller true returns GenericParameter linked
 
 
 
@@ -1737,7 +1737,7 @@ define Modeler
     ; The delegate names a function (closure) type; the parameter Items and the
     ; return type drive both lambda monomorphization against this signature and the
     ; LLVM function type used at indirect call sites.
-    function handle_delegate(name: String, syntax: DelegateSyntax) @page true @direct true returns Delegate linked
+    function handle_delegate(name: String, syntax: DelegateSyntax) @page true @direct true @ret_caller true returns Delegate linked
 
 
 
@@ -1761,7 +1761,7 @@ define Modeler
 
 
 
-    function handle_parameter_set(syntax: ParameterSetSyntax) @page true @direct true returns Vector[Item] linked
+    function handle_parameter_set(syntax: ParameterSetSyntax) @page true @direct true @ret_caller true returns Vector[Item] linked
 
 
 
@@ -1827,7 +1827,7 @@ define Modeler
     ; Function building
     ; ============================================================================
 
-    procedure build_function(start: size_t, end_pos: size_t, mutable syntax: TargetSyntax, is_private: bool, pure: bool) @page true @direct true returns Function io mutable modeler_error_count reads modeler_error_count linked
+    procedure build_function(start: size_t, end_pos: size_t, mutable syntax: TargetSyntax, is_private: bool, pure: bool) @page true @direct true @ret_caller true returns Function io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -2123,7 +2123,7 @@ define Modeler
     ; Operator handling
     ; ============================================================================
 
-    procedure handle_operator(mutable syntax: OperatorSyntax, is_private: bool) @page true @direct true returns Operator io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_operator(mutable syntax: OperatorSyntax, is_private: bool) @page true @direct true @ret_caller true returns Operator io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -2247,7 +2247,7 @@ define Modeler
     ; True when `t` is exactly `pointer[Page]` (or `pointer[scaly.memory.Page]`),
     ; the typed form of the implicit init page parameter. Used to peel a
     ; de-sigiled `init(page: pointer[Page], ...)` exactly like `init#(page, ...)`.
-    function type_is_pointer_page(t: Type) returns bool linked
+    function type_is_pointer_page(t: Type) @ret_caller true returns bool linked
 
 
 
@@ -2273,7 +2273,7 @@ define Modeler
 
 
 
-    procedure handle_initializer(mutable syntax: InitSyntax, is_private: bool) @page true @direct true returns Initializer io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_initializer(mutable syntax: InitSyntax, is_private: bool) @page true @direct true @ret_caller true returns Initializer io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -2376,7 +2376,7 @@ define Modeler
 
 
 
-    procedure handle_deinitializer(mutable syntax: DeInitSyntax) @page true @direct true returns ref[DeInitializer]? io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_deinitializer(mutable syntax: DeInitSyntax) @page true @direct true @ret_caller true returns ref[DeInitializer]? io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -2390,7 +2390,7 @@ define Modeler
     ; Variant handling (for unions)
     ; ============================================================================
 
-    function handle_variant(syntax: VariantSyntax) @page true @direct true returns Variant linked
+    function handle_variant(syntax: VariantSyntax) @page true @direct true @ret_caller true returns Variant linked
 
 
 
@@ -2411,7 +2411,7 @@ define Modeler
     ; Class/Structure handling
     ; ============================================================================
 
-    procedure handle_class(name: String, mutable path: String, mutable syntax: ClassSyntax, is_private: bool) @page true @direct true returns Structure io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_class(name: String, mutable path: String, mutable syntax: ClassSyntax, is_private: bool) @page true @direct true @ret_caller true returns Structure io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -2542,7 +2542,7 @@ define Modeler
 
 
 
-    procedure handle_constituent(mutable path: String, mutable syntax: MemberSyntax, mutable symbols_builder: ref[HashMapBuilder[String, Nameable]]) @page true @direct true returns Member io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_constituent(mutable path: String, mutable syntax: MemberSyntax, mutable symbols_builder: ref[HashMapBuilder[String, Nameable]]) @page true @direct true @ret_caller true returns Member io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -2591,7 +2591,7 @@ define Modeler
     ; Namespace handling
     ; ============================================================================
 
-    procedure handle_namespace(name: String, mutable path: String, mutable syntax: NamespaceSyntax, is_private: bool) @page true @direct true returns Namespace io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_namespace(name: String, mutable path: String, mutable syntax: NamespaceSyntax, is_private: bool) @page true @direct true @ret_caller true returns Namespace io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -2649,7 +2649,7 @@ define Modeler
 
 
 
-    procedure handle_declaration(mutable path: String, mutable syntax: DeclarationSyntax, mutable symbols_builder: ref[HashMapBuilder[String, Nameable]]) @page true @direct true returns Member io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_declaration(mutable path: String, mutable syntax: DeclarationSyntax, mutable symbols_builder: ref[HashMapBuilder[String, Nameable]]) @page true @direct true @ret_caller true returns Member io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -2743,7 +2743,7 @@ define Modeler
 
 
 
-    procedure handle_export(mutable path: String, mutable syntax: ExportSyntax, is_private: bool, mutable symbols_builder: ref[HashMapBuilder[String, Nameable]]) @page true @direct true returns Member io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_export(mutable path: String, mutable syntax: ExportSyntax, is_private: bool, mutable symbols_builder: ref[HashMapBuilder[String, Nameable]]) @page true @direct true @ret_caller true returns Member io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -2784,7 +2784,7 @@ define Modeler
     ; Union handling
     ; ============================================================================
 
-    procedure handle_union(name: String, mutable path: String, mutable syntax: UnionSyntax, is_private: bool) @page true @direct true returns Union io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_union(name: String, mutable path: String, mutable syntax: UnionSyntax, is_private: bool) @page true @direct true @ret_caller true returns Union io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -2851,7 +2851,7 @@ define Modeler
     ; Definition handling
     ; ============================================================================
 
-    procedure handle_definition(mutable path: String, mutable syntax: DefinitionSyntax, is_private: bool) @page true @direct true returns Concept io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_definition(mutable path: String, mutable syntax: DefinitionSyntax, is_private: bool) @page true @direct true @ret_caller true returns Concept io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -2954,7 +2954,7 @@ define Modeler
     ; helper exists in procedure form so the choose-arm in build_module# is a
     ; single call (works around a stage-0 codegen issue where an in-place
     ; collection .add inside a choose-arm corrupts the caller's frame).
-    procedure handle_module_decl(path: String, mod_syntax: ModuleSyntax, is_private: bool, mutable modules: ref[Array[Module]]) @page true @direct true io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_module_decl(path: String, mod_syntax: ModuleSyntax, is_private: bool, mutable modules: ref[Array[Module]]) @page true @direct true @ret_caller true io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -2962,7 +2962,7 @@ define Modeler
 
     ; Format a VersionSyntax payload as "<majorMinor>.<patch>". The lexer
     ; already formatted majorMinor as "0.1" (FloatingPoint) or "0" (Integer).
-    function format_version(version_ref: ref[VersionSyntax]) @page true @direct true returns String linked
+    function format_version(version_ref: ref[VersionSyntax]) @page true @direct true @ret_caller true returns String linked
 
 
 
@@ -2988,7 +2988,7 @@ define Modeler
     ; (the `scalyc` wrapper sets SCALY_HOME); otherwise returns "" so resolution
     ; stays relative to the current directory exactly as before. Keeping the empty
     ; case byte-identical is what makes the seed self-compile reproduce unchanged.
-    procedure scaly_home_base() @page true @direct true returns String io linked
+    procedure scaly_home_base() @page true @direct true @ret_caller true returns String io linked
 
 
 
@@ -3026,7 +3026,7 @@ define Modeler
 
 
 
-    procedure handle_package_decl(pkg_syntax: PackageSyntax, mutable packages: ref[Array[Module]]) @page true @direct true io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_package_decl(pkg_syntax: PackageSyntax, mutable packages: ref[Array[Module]]) @page true @direct true @ret_caller true io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -3068,7 +3068,7 @@ define Modeler
     ; True when any sub-module failed to load. cli.run gates on this after
     ; build_program and fails the compile before the planner emits misleading
     ; downstream diagnostics.
-    procedure had_errors() returns bool reads modeler_error_count linked
+    procedure had_errors() @ret_nonlocal true returns bool reads modeler_error_count linked
 
 
     ; Reset at the start of each program build (harmless in a fresh process; keeps
@@ -3078,7 +3078,7 @@ define Modeler
 
     ; size_t -> decimal String (self-contained; the Planner has its own copy but
     ; the Modeler must not depend on the Planner).
-    function num_to_string(n: size_t) @page true @direct true returns String linked
+    function num_to_string(n: size_t) @page true @direct true @ret_caller true returns String linked
 
 
 
@@ -3158,7 +3158,7 @@ define Modeler
     ; stub is returned so modeling can continue; cli.run then fails the compile via
     ; had_errors(). A missing/empty file still returns an empty stub silently (an
     ; absent optional module is not itself an error at this layer).
-    procedure build_referenced_module(path: String, name: String, is_private: bool) @page true @direct true returns Module io mutable modeler_error_count reads modeler_error_count linked
+    procedure build_referenced_module(path: String, name: String, is_private: bool) @page true @direct true @ret_caller true returns Module io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -3221,7 +3221,7 @@ define Modeler
 
 
 
-    procedure build_module(mutable path: String, file_name: String, name: String, mutable syntax: FileSyntax, is_private: bool) @page true @direct true returns Module io mutable modeler_error_count reads modeler_error_count linked
+    procedure build_module(mutable path: String, file_name: String, name: String, mutable syntax: FileSyntax, is_private: bool) @page true @direct true @ret_caller true returns Module io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -3286,7 +3286,7 @@ define Modeler
     ; Program building
     ; ============================================================================
 
-    procedure build_program(mutable file_name: String, program_name: String, mutable syntax: ProgramSyntax, enable_prelude: bool) @page true @direct true returns Program io mutable modeler_error_count reads modeler_error_count linked
+    procedure build_program(mutable file_name: String, program_name: String, mutable syntax: ProgramSyntax, enable_prelude: bool) @page true @direct true @ret_caller true returns Program io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -3419,7 +3419,7 @@ define Modeler
     ; Test function
     ; ============================================================================
 
-    procedure test() returns int io mutable modeler_error_count reads modeler_error_count linked
+    procedure test() @ret_nonlocal true returns int io mutable modeler_error_count reads modeler_error_count linked
 
 
 
