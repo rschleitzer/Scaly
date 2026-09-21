@@ -1357,6 +1357,8 @@ define cli
         head.append ")"
         head.append ", rounds "
         head.append(cli.format_size(wc.n_rounds))
+        head.append ", alias rounds "
+        head.append(cli.format_size(wc.n_rp_rounds))
         if wc.frozen_mode
         {
             head.append "; FROZEN: reachable "

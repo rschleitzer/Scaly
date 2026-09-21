@@ -55,6 +55,8 @@ define WC_NOTED: size_t 0xFFFFFFFF
 define WC_OVERFLOW u64 0x4000000000000000
 ; the FROZEN mode's mark: the value reaches data of a frozen type
 define WC_FROZEN u64 0x2000000000000000
+; every parameter position: the 61 bits and WC_OVERFLOW, neither mark
+define WC_PARAMS u64 0x5FFFFFFFFFFFFFFF
 
 define WriteCensus
 {
@@ -98,6 +100,9 @@ define WriteCensus
         var current_file: String
         var loc_names: Array[String]
         var loc_masks: Array[u64]
+        ; beside loc_masks: what the local IS (the object it names), without
+        ; what a fresh object it names merely HOLDS (see is_of)
+        var loc_is: Array[u64]
 
         var n_bodies: size_t
         var n_pure: size_t
@@ -198,6 +203,27 @@ define WriteCensus
         ; getter's result is an alias of that global
         ret_globals: Array[String]
         var cur_ret_global: String
+        ; per plan.functions index: the PARAMETERS a body's result may alias
+        ; (bit i = parameter i, WC_OVERFLOW past 61; WC_PARAMS = every one),
+        ; so a call's result aliases only the arguments at those positions
+        ; instead of all of them. A body this pass cannot walk (a stub, an
+        ; extern) aliases every argument; so does a returned shape the walk
+        ; does not follow. A least fixpoint from "nothing" over the bodies.
+        ret_params: Array[u64]
+        var cur_ret_params: u64
+        var rp_changed: bool
+        var n_rp_rounds: size_t
+        ; the first round records the call edges (caller, callee); a later
+        ; round re-walks only a caller of a body whose ret_params grew
+        var rp_pass: bool
+        rp_from: Array[size_t]
+        rp_to: Array[size_t]
+        rp_grew: Array[u64]
+        rp_dirty: Array[u64]
+        ; the IS half of ret_params: the parameters a body's result may BE,
+        ; against the ones a fresh object it returns merely holds
+        ret_is: Array[u64]
+        var cur_ret_is: u64
     )
     {
         init()
@@ -227,6 +253,7 @@ define WriteCensus
             set current_file: String^this("")
             set loc_names: Array[String]^this()
             set loc_masks: Array[u64]^this()
+            set loc_is: Array[u64]^this()
             set n_bodies: 0
             set n_pure: 0
             set n_pure_writing: 0
@@ -290,6 +317,17 @@ define WriteCensus
             set decl_io_keys: Array[String]^this()
             set ret_globals: Array[String]^this()
             set cur_ret_global: String^this("")
+            set ret_params: Array[u64]^this()
+            set cur_ret_params: 0
+            set rp_changed: false
+            set n_rp_rounds: 0
+            set rp_pass: false
+            set rp_from: Array[size_t]^this()
+            set rp_to: Array[size_t]^this()
+            set rp_grew: Array[u64]^this()
+            set rp_dirty: Array[u64]^this()
+            set ret_is: Array[u64]^this()
+            set cur_ret_is: 0
         }
 
         ; ================================================================
@@ -334,6 +372,8 @@ define WriteCensus
                 }
                 set i: i + 1
             }
+            ; a call's result aliases the arguments its callee's returns reach
+            this.learn_returned_params()
             ; a getter's result aliases the global it returns
             this.learn_returned_globals()
             var changed true
@@ -438,10 +478,13 @@ define WriteCensus
                 set cur_page_mask: this.page_param_mask() | cur_allowed
             set loc_names: Array[String]^this()
             set loc_masks: Array[u64]^this()
+            set loc_is: Array[u64]^this()
             set loc_globals: Array[String]^this()
             set cur_atomic_bad: Array[String]^this()
             set cur_reads: Array[String]^this()
             set cur_ret_global: String^this("")
+            set cur_ret_params: 0
+            set cur_ret_is: 0
         }
 
         ; The last walk: sites, and one `fn` line per writing pure function.
@@ -504,6 +547,10 @@ define WriteCensus
                 set n_proc_writing: n_proc_writing + 1
                 let proc_text sb.to_string()
                 this.record(func.loc.start, String^this(proc_text))
+                ; SCALYC_WRITE_PROC_SITES=1: the sites of the procedures too,
+                ; which tells a DIRECT write from one inherited through a callee
+                if getenv("SCALYC_WRITE_PROC_SITES") <> null
+                    this.walk_body(func)
                 return
             }
             this.walk_body(func)
@@ -655,7 +702,291 @@ define WriteCensus
                     let r this.global_root_m(last)
                     if r.get_length() > 0
                         set cur_ret_global: String^this(r)
+                    set cur_ret_params: cur_ret_params | this.ret_alias_of_operands(ops, false)
+                    set cur_ret_is: cur_ret_is | this.ret_alias_of_operands(ops, true)
                 }
+        }
+
+        ; The parameters a returned operand sequence may alias: what mask_of
+        ; answers for the shapes it follows, and EVERY parameter for a shape it
+        ; does not (an if, a choose, a match, a block inside an arm ...) -- the
+        ; conservative side, since a missed alias would let a write through the
+        ; result go unrecorded.
+        function ret_alias_of_operands(this: WriteCensus, ops: ref[Vector[PlannedOperand]]?, narrow: bool) returns u64
+        {
+            if ops = null
+                return 0
+            var m: u64 0
+            var i: size_t 0
+            while i < ops.length
+            {
+                let op_ptr ops.get i
+                if op_ptr <> null
+                    set m: m | this.ret_alias_of(op_ptr.unwrap(), narrow)
+                set i: i + 1
+            }
+            m
+        }
+
+        ; narrow: the IS half (ret_is) -- a construction is a new object, a
+        ; variable and a call answer is_of
+        function ret_alias_of(this: WriteCensus, op: PlannedOperand, narrow: bool) returns u64
+        {
+            if WriteCensus.is_scalar(op.result_type)
+                return 0
+            choose op.expr
+                when k: Constant
+                    return 0
+                when v: Variable
+                {
+                    if narrow
+                        return this.is_of(op) & WC_PARAMS
+                    return this.mask_of(op) & WC_PARAMS
+                }
+                when g: GlobalRef
+                    return 0
+                when a: As
+                {
+                    if a.value = null
+                        return 0
+                    let r a.value
+                    return this.ret_alias_of((*r), narrow)
+                }
+                when c: Call
+                {
+                    if narrow
+                        return this.is_of(op) & WC_PARAMS
+                    return this.mask_of(op) & WC_PARAMS
+                }
+                when tp: Tuple
+                {
+                    if narrow
+                        return 0
+                    var m: u64 0
+                    if tp.components <> null
+                    {
+                        var i: size_t 0
+                        while i < tp.components.length
+                        {
+                            let c_ptr tp.components.get i
+                            if c_ptr <> null
+                                set m: m | this.ret_alias_of_operands(c_ptr.value, narrow)
+                            set i: i + 1
+                        }
+                    }
+                    return m
+                }
+                when blk: Block
+                {
+                    if blk.statements = null
+                        return 0
+                    if blk.statements.length = 0
+                        return 0
+                    return this.ret_alias_of_statement(blk.statements.get(blk.statements.length - 1), narrow)
+                }
+                when iff: If
+                    return this.ret_alias_of_statement(iff.consequent, narrow) | this.ret_alias_of_statement(iff.alternative, narrow)
+                when ch: Choose
+                {
+                    var m this.ret_alias_of_statement(ch.alternative, narrow)
+                    if ch.cases <> null
+                    {
+                        var i: size_t 0
+                        while i < ch.cases.length
+                        {
+                            let w_ptr ch.cases.get i
+                            if w_ptr <> null
+                                set m: m | this.ret_alias_of_statement(w_ptr.consequent, narrow)
+                            set i: i + 1
+                        }
+                    }
+                    return m
+                }
+                when mt: Match
+                {
+                    var m this.ret_alias_of_statement(mt.alternative, narrow)
+                    if mt.branches <> null
+                    {
+                        var i: size_t 0
+                        while i < mt.branches.length
+                        {
+                            let b_ptr mt.branches.get i
+                            if b_ptr <> null
+                                set m: m | this.ret_alias_of_statement(b_ptr.consequent, narrow)
+                            set i: i + 1
+                        }
+                    }
+                    return m
+                }
+                else
+                    return WC_PARAMS
+        }
+
+        ; The value a statement leaves as an arm's or a block's tail: an action
+        ; without a target. A `return` inside is recorded where the walk meets
+        ; it (find_statement), a set, a binding, a break or a throw leaves none.
+        function ret_alias_of_statement(this: WriteCensus, stmt: ref[PlannedStatement]?, narrow: bool) returns u64
+        {
+            if stmt = null
+                return 0
+            let st stmt as ref[PlannedStatement]
+            choose st
+                when a: Action
+                {
+                    if a.target <> null
+                        return 0
+                    return this.ret_alias_of_operands(a.source, narrow)
+                }
+                else
+                    return 0
+        }
+
+        ; The arguments a call's result may alias, by the callee's ret_params:
+        ; only the arguments at the positions the callee's returns reach. A
+        ; callee this root cannot follow (no slot, a stub -- ret_params holds
+        ; WC_PARAMS for it), an init (its result is the new object built from
+        ; every argument), the deref and address operators, and a call whose
+        ; arguments do not line up with the callee's input keep every argument.
+        function call_alias_mask(this: WriteCensus, c: PlannedCall, narrow: bool) returns u64
+        {
+            if c.args = null
+                return 0
+            var rp: u64 WC_PARAMS
+            if c.name <> "init"
+                if c.name <> "*"
+                    if c.name <> "&"
+                    {
+                        let slot this.callee_index(c.mangled_name)
+                        if slot > 0
+                            if (slot - 1) < ret_params.length
+                            {
+                                let callee_ptr plan_functions.get(slot - 1)
+                                if callee_ptr <> null
+                                {
+                                    let callee callee_ptr.unwrap()
+                                    var n_in: size_t 0
+                                    if callee.input <> null
+                                        set n_in: callee.input.length
+                                    if callee.name <> "init"
+                                        if n_in = c.args.length
+                                        {
+                                            if narrow
+                                                set rp: ret_is[slot - 1]
+                                            else
+                                                set rp: ret_params[slot - 1]
+                                        }
+                                }
+                            }
+                    }
+            if rp = WC_PARAMS
+                return this.mask_of_operands(c.args)
+            var m: u64 0
+            var i: size_t 0
+            while i < c.args.length
+            {
+                var bit: u64 WC_OVERFLOW
+                if i < 61
+                    set bit: (1 as u64) << (i as u64)
+                if (rp & bit) <> (0 as u64)
+                {
+                    let a_ptr c.args.get i
+                    if a_ptr <> null
+                    {
+                        if narrow
+                            set m: m | this.is_of(a_ptr.unwrap())
+                        else
+                            set m: m | this.mask_of(a_ptr.unwrap())
+                    }
+                }
+                set i: i + 1
+            }
+            m
+        }
+
+        ; The least fixpoint of ret_params over every body of the root: a body
+        ; starts at "aliases nothing", a stub or extern at every parameter, and
+        ; each round re-walks the bodies that can still grow. mask_of reads the
+        ; table as it stands, so a round sees the previous round's callees.
+        procedure learn_returned_params(mutable this: WriteCensus)
+        {
+            let fns plan_functions as ref[Vector[PlannedFunction]]
+            var i: size_t 0
+            while i < fns.length
+            {
+                var start: u64 WC_PARAMS
+                let f_ptr fns.get i
+                if f_ptr <> null
+                {
+                    choose f_ptr.unwrap().impl
+                        when action: Action
+                            set start: 0
+                        else
+                            0
+                }
+                ret_params.add start
+                ret_is.add start
+                set i: i + 1
+            }
+            set i: 0
+            while i < fns.length
+            {
+                rp_grew.add 0
+                rp_dirty.add 1
+                set i: i + 1
+            }
+            set rp_pass: true
+            set rp_changed: true
+            while rp_changed
+            {
+                set rp_changed: false
+                set n_rp_rounds: n_rp_rounds + 1
+                set i: 0
+                while i < fns.length
+                {
+                    rp_grew.put(i, 0)
+                    let f_ptr fns.get i
+                    if f_ptr <> null
+                        if rp_dirty[i] <> 0
+                            if ret_params[i] <> WC_PARAMS
+                            {
+                                set cur_fn: i
+                                this.clear_globals()
+                                this.walk_body(f_ptr.unwrap())
+                                let grown ret_params[i] | cur_ret_params
+                                if grown <> ret_params[i]
+                                {
+                                    ret_params.put(i, grown)
+                                    rp_grew.put(i, 1)
+                                    set rp_changed: true
+                                }
+                                let grown_is ret_is[i] | cur_ret_is
+                                if grown_is <> ret_is[i]
+                                {
+                                    ret_is.put(i, grown_is)
+                                    rp_grew.put(i, 1)
+                                    set rp_changed: true
+                                }
+                            }
+                    set i: i + 1
+                }
+                set rp_pass: false
+                ; the next round re-walks the callers of what grew
+                set i: 0
+                while i < fns.length
+                {
+                    rp_dirty.put(i, 0)
+                    set i: i + 1
+                }
+                var e: size_t 0
+                while e < rp_from.length
+                {
+                    if rp_grew[rp_to[e]] <> 0
+                        rp_dirty.put(rp_from[e], 1)
+                    set e: e + 1
+                }
+                if n_rp_rounds >= 60
+                    set rp_changed: false
+            }
         }
 
         ; one walk of every body to learn which bodies return a global
@@ -1103,13 +1434,125 @@ define WriteCensus
         }
 
         procedure remember_local(mutable this: WriteCensus, name: String, mask: u64)
-            this.remember_local_of(name, mask, String(""))
+            this.remember_local_of(name, mask, mask, String(""))
 
-        procedure remember_local_of(mutable this: WriteCensus, name: String, mask: u64, global: String)
+        procedure remember_local_of(mutable this: WriteCensus, name: String, mask: u64, is_mask: u64, global: String)
         {
             loc_names.add(String^this(name))
             loc_masks.add mask
+            loc_is.add is_mask
             loc_globals.add(String^this(global))
+        }
+
+        ; name_mask's IS half: a local answers loc_is, a parameter its bit
+        function name_is(this: WriteCensus, name: String) returns u64
+        {
+            var li loc_names.length
+            while li > 0
+            {
+                set li: li - 1
+                let n loc_names.get li
+                if n <> null
+                    if (*n) = name
+                        return loc_is[li]
+            }
+            this.name_mask(name)
+        }
+
+        ; ================================================================
+        ; IS against HOLDS. mask_of answers every parameter a value may REACH:
+        ; the object it is, and the objects a fresh record it names holds a
+        ; reference to (`let w Wrapper(node)` reaches node). A store into such a
+        ; record's OWN field writes the record, not what it holds, so the
+        ; w-field site asks is_of for its base: the parameters the value may
+        ; BE. A construction is a new object (0), a local answers what its
+        ; initializer is, a call result what the callee's returns ARE
+        ; (ret_is), a loaded member or a deref may be anything the base
+        ; reaches (mask_of). Frozen and global marks stay as mask_of gives
+        ; them -- conservative where the two halves are not told apart.
+        ; ================================================================
+        function is_of(this: WriteCensus, op: PlannedOperand) returns u64
+        {
+            if op.member_access <> null
+                if op.member_access.length > 0
+                    return this.mask_of(op)
+            this.is_of_base(op)
+        }
+
+        ; is_of ignoring the operand's own member chain (the w-field site judges
+        ; the chain itself: an intermediate reference hop loads another object)
+        function is_of_base(this: WriteCensus, op: PlannedOperand) returns u64
+        {
+            if WriteCensus.is_scalar(op.result_type)
+                return 0
+            let marks this.mask_of(op) & (WC_FROZEN | WC_GLOBAL)
+            choose op.expr
+                when v: Variable
+                    return this.name_is(v.name) | marks
+                when a: As
+                {
+                    if a.value = null
+                        return marks
+                    let r a.value
+                    return this.is_of((*r)) | marks
+                }
+                when tp: Tuple
+                    return marks
+                when c: Call
+                {
+                    if c.name = "init"
+                        return marks
+                    if c.name = "*"
+                        return this.mask_of(op)
+                    if c.name = "&"
+                    {
+                        if c.args = null
+                            return marks
+                        if c.args.length <> 1
+                            return this.mask_of(op)
+                        let a_ptr c.args.get 0
+                        if a_ptr = null
+                            return marks
+                        return this.is_of(a_ptr.unwrap()) | marks
+                    }
+                    let census pc as ref[PointerCensus]
+                    if census.is_extern_name(c.name)
+                        return marks
+                    return (this.call_alias_mask(c, true) & (0 - (WC_FROZEN + (1 as u64)))) | marks
+                }
+                else
+                    return this.mask_of(op)
+        }
+
+        function is_of_operands(this: WriteCensus, ops: ref[Vector[PlannedOperand]]?) returns u64
+        {
+            if ops = null
+                return 0
+            if ops.length = 1
+            {
+                let o_ptr ops.get 0
+                if o_ptr <> null
+                    return this.is_of(o_ptr.unwrap())
+            }
+            this.mask_of_operands(ops)
+        }
+
+        ; Does a member chain load another object before its last hop?
+        function loads_before_last(op: PlannedOperand) returns bool
+        {
+            if op.member_access = null
+                return false
+            let hops (*op.member_access)
+            var i: size_t 0
+            while i + 1 < hops.length
+            {
+                let hp hops.get i
+                if hp <> null
+                    if WriteCensus.is_reference_name((*hp).result_type.name)
+                        return true
+                set i: i + 1
+            }
+            false
         }
 
         function mask_of_operands(this: WriteCensus, ops: ref[Vector[PlannedOperand]]?) returns u64
@@ -1244,10 +1687,11 @@ define WriteCensus
                     if WriteCensus.is_scalar(op.result_type)
                         if op.member_access = null
                             return 0
-                    ; a call result may alias its arguments' PARAMETERS, but
-                    ; whether it is frozen is decided by its OWN type (mask_of):
-                    ; `node_link_of(node)` answers the checker's row, not the node
-                    return (this.mask_of_operands(c.args) & (0 - (WC_FROZEN + (1 as u64)))) | getter
+                    ; a call result may alias the arguments its callee's
+                    ; returns reach (call_result_mask), but whether it is frozen
+                    ; is decided by its OWN type (mask_of): `node_link_of(node)`
+                    ; answers the checker's row, not the node
+                    return (this.call_alias_mask(c, false) & (0 - (WC_FROZEN + (1 as u64)))) | getter
                 }
                 when tp: Tuple
                 {
@@ -1401,6 +1845,12 @@ define WriteCensus
                 set lock_depth: lock_depth - 1
             this.note_life(op.loc.start, call.life, String("a-construct"))
             let slot this.callee_index(call.mangled_name)
+            if rp_pass
+                if slot > 0
+                {
+                    rp_from.add(cur_fn)
+                    rp_to.add(slot - 1)
+                }
             if edge_mode
             {
                 if slot > 0
@@ -3097,6 +3547,7 @@ define WriteCensus
                     this.collect_purity_module((*pkg))
                 set pi: pi + 1
             }
+            this.learn_returned_params()
             this.learn_returned_globals()
             let fns plan_functions as ref[Vector[PlannedFunction]]
             this.learn_reads(fns)
@@ -4357,8 +4808,12 @@ define WriteCensus
                             if has_members
                             {
                                 ; the call's own result is the record written;
-                                ; its arguments only lend their parameters
-                                let base_mask this.mask_of_operands(c.args) & (0 - (WC_FROZEN + (1 as u64)))
+                                ; its arguments only lend their parameters --
+                                ; and only the ones the result IS, unless a
+                                ; hop before the last loads a held object
+                                var base_mask this.mask_of_operands(c.args) & (0 - (WC_FROZEN + (1 as u64)))
+                                if WriteCensus.loads_before_last(head) = false
+                                    set base_mask: this.is_of_base(head) & (0 - (WC_FROZEN + (1 as u64)))
                                 this.note_let_store(head, base_mask)
                                 this.hit(head.loc.start, String("w-field"), base_mask | this.hops_frozen(head), String(""))
                             }
@@ -4376,8 +4831,11 @@ define WriteCensus
                             if has_members
                             {
                                 set pending_global: this.global_root_m(head)
-                                this.note_let_store(head, this.name_mask(v.name))
-                                this.hit(head.loc.start, String("w-field"), this.name_mask(v.name) | this.hops_frozen(head), String(""))
+                                var base_mask this.name_mask(v.name)
+                                if WriteCensus.loads_before_last(head) = false
+                                    set base_mask: this.name_is(v.name)
+                                this.note_let_store(head, base_mask)
+                                this.hit(head.loc.start, String("w-field"), base_mask | this.hops_frozen(head), String(""))
                             }
                         }
                         when g: GlobalRef
@@ -4391,8 +4849,11 @@ define WriteCensus
                         {
                             if has_members
                             {
-                                this.note_let_store(head, this.mask_of(head))
-                                this.hit(head.loc.start, String("w-field"), this.mask_of(head) | this.hops_frozen(head), String(""))
+                                var base_mask this.mask_of(head)
+                                if WriteCensus.loads_before_last(head) = false
+                                    set base_mask: this.is_of_base(head)
+                                this.note_let_store(head, base_mask)
+                                this.hit(head.loc.start, String("w-field"), base_mask | this.hops_frozen(head), String(""))
                             }
                         }
                 }
@@ -4446,15 +4907,22 @@ define WriteCensus
                 }
             }
             var m: u64 0
+            var mi: u64 0
             if scalar = false
+            {
                 set m: this.mask_of_operands(binding.operation)
+                set mi: this.is_of_operands(binding.operation)
+            }
             ; a frozen RECORD bound by value is a copy
             if binding.binding_item.item_type <> null
             {
                 let bt (*binding.binding_item.item_type)
                 if WriteCensus.is_reference_name(bt.name) = false
                     if this.is_frozen_record(bt)
+                    {
                         set m: m & (0 - (WC_FROZEN + (1 as u64)))
+                        set mi: mi & (0 - (WC_FROZEN + (1 as u64)))
+                    }
             }
             ; a local bound to (a part of) a global writes that global
             var g String("")
@@ -4466,7 +4934,7 @@ define WriteCensus
                         if g_ptr <> null
                             set g: this.global_root_m(g_ptr.unwrap())
                     }
-            this.remember_local_of(name, m, g)
+            this.remember_local_of(name, m, mi, g)
         }
 
         procedure find_operand(mutable this: WriteCensus, op: PlannedOperand)

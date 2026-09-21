@@ -1376,6 +1376,8 @@ define cli
 
 
 
+
+
     procedure print_purity_check(wc: ref[WriteCensus.WriteCensus]) io linked
 
 

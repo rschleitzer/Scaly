@@ -55,6 +55,8 @@ define WC_NOTED: size_t 0xFFFFFFFF
 define WC_OVERFLOW u64 0x4000000000000000
 ; the FROZEN mode's mark: the value reaches data of a frozen type
 define WC_FROZEN u64 0x2000000000000000
+; every parameter position: the 61 bits and WC_OVERFLOW, neither mark
+define WC_PARAMS u64 0x5FFFFFFFFFFFFFFF
 
 define WriteCensus
 {
@@ -98,6 +100,9 @@ define WriteCensus
         var current_file: String
         var loc_names: Array[String]
         var loc_masks: Array[u64]
+        ; beside loc_masks: what the local IS (the object it names), without
+        ; what a fresh object it names merely HOLDS (see is_of)
+        var loc_is: Array[u64]
 
         var n_bodies: size_t
         var n_pure: size_t
@@ -198,9 +203,42 @@ define WriteCensus
         ; getter's result is an alias of that global
         ret_globals: Array[String]
         var cur_ret_global: String
+        ; per plan.functions index: the PARAMETERS a body's result may alias
+        ; (bit i = parameter i, WC_OVERFLOW past 61; WC_PARAMS = every one),
+        ; so a call's result aliases only the arguments at those positions
+        ; instead of all of them. A body this pass cannot walk (a stub, an
+        ; extern) aliases every argument; so does a returned shape the walk
+        ; does not follow. A least fixpoint from "nothing" over the bodies.
+        ret_params: Array[u64]
+        var cur_ret_params: u64
+        var rp_changed: bool
+        var n_rp_rounds: size_t
+        ; the first round records the call edges (caller, callee); a later
+        ; round re-walks only a caller of a body whose ret_params grew
+        var rp_pass: bool
+        rp_from: Array[size_t]
+        rp_to: Array[size_t]
+        rp_grew: Array[u64]
+        rp_dirty: Array[u64]
+        ; the IS half of ret_params: the parameters a body's result may BE,
+        ; against the ones a fresh object it returns merely holds
+        ret_is: Array[u64]
+        var cur_ret_is: u64
     )
     {
         init() linked
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -386,6 +424,8 @@ define WriteCensus
 
 
 
+
+
         function total(this: WriteCensus) returns size_t linked
 
 
@@ -444,10 +484,17 @@ define WriteCensus
 
 
 
+
+
+
         ; The last walk: sites, and one `fn` line per writing pure function.
         ; The last walk: one `fn`/`proc`/`init` line per body (`clean` or the
         ; parameters it writes), and the sites of every writing function.
         procedure report_body(mutable this: WriteCensus, func: PlannedFunction, whole_mask: u64) io linked
+
+
+
+
 
 
 
@@ -624,6 +671,290 @@ define WriteCensus
         ; the value a body hands back: the last operand of a return or of the
         ; tail (a block's last statement, both arms of an `if` via the walk)
         procedure note_returned(mutable this: WriteCensus, ops: ref[Vector[PlannedOperand]]?) linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; The parameters a returned operand sequence may alias: what mask_of
+        ; answers for the shapes it follows, and EVERY parameter for a shape it
+        ; does not (an if, a choose, a match, a block inside an arm ...) -- the
+        ; conservative side, since a missed alias would let a write through the
+        ; result go unrecorded.
+        function ret_alias_of_operands(this: WriteCensus, ops: ref[Vector[PlannedOperand]]?, narrow: bool) returns u64 linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; narrow: the IS half (ret_is) -- a construction is a new object, a
+        ; variable and a call answer is_of
+        function ret_alias_of(this: WriteCensus, op: PlannedOperand, narrow: bool) returns u64 linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; The value a statement leaves as an arm's or a block's tail: an action
+        ; without a target. A `return` inside is recorded where the walk meets
+        ; it (find_statement), a set, a binding, a break or a throw leaves none.
+        function ret_alias_of_statement(this: WriteCensus, stmt: ref[PlannedStatement]?, narrow: bool) returns u64 linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; The arguments a call's result may alias, by the callee's ret_params:
+        ; only the arguments at the positions the callee's returns reach. A
+        ; callee this root cannot follow (no slot, a stub -- ret_params holds
+        ; WC_PARAMS for it), an init (its result is the new object built from
+        ; every argument), the deref and address operators, and a call whose
+        ; arguments do not line up with the callee's input keep every argument.
+        function call_alias_mask(this: WriteCensus, c: PlannedCall, narrow: bool) returns u64 linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; The least fixpoint of ret_params over every body of the root: a body
+        ; starts at "aliases nothing", a stub or extern at every parameter, and
+        ; each round re-walks the bodies that can still grow. mask_of reads the
+        ; table as it stands, so a round sees the previous round's callees.
+        procedure learn_returned_params(mutable this: WriteCensus) io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1105,7 +1436,119 @@ define WriteCensus
         procedure remember_local(mutable this: WriteCensus, name: String, mask: u64) linked
 
 
-        procedure remember_local_of(mutable this: WriteCensus, name: String, mask: u64, global: String) @persists true linked
+        procedure remember_local_of(mutable this: WriteCensus, name: String, mask: u64, is_mask: u64, global: String) @persists true linked
+
+
+
+
+
+
+
+        ; name_mask's IS half: a local answers loc_is, a parameter its bit
+        function name_is(this: WriteCensus, name: String) returns u64 linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; ================================================================
+        ; IS against HOLDS. mask_of answers every parameter a value may REACH:
+        ; the object it is, and the objects a fresh record it names holds a
+        ; reference to (`let w Wrapper(node)` reaches node). A store into such a
+        ; record's OWN field writes the record, not what it holds, so the
+        ; w-field site asks is_of for its base: the parameters the value may
+        ; BE. A construction is a new object (0), a local answers what its
+        ; initializer is, a call result what the callee's returns ARE
+        ; (ret_is), a loaded member or a deref may be anything the base
+        ; reaches (mask_of). Frozen and global marks stay as mask_of gives
+        ; them -- conservative where the two halves are not told apart.
+        ; ================================================================
+        function is_of(this: WriteCensus, op: PlannedOperand) returns u64 linked
+
+
+
+
+
+
+
+        ; is_of ignoring the operand's own member chain (the w-field site judges
+        ; the chain itself: an intermediate reference hop loads another object)
+        function is_of_base(this: WriteCensus, op: PlannedOperand) returns u64 linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function is_of_operands(this: WriteCensus, ops: ref[Vector[PlannedOperand]]?) returns u64 linked
+
+
+
+
+
+
+
+
+
+
+
+
+        ; Does a member chain load another object before its last hop?
+        function loads_before_last(op: PlannedOperand) returns bool linked
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1205,6 +1648,7 @@ define WriteCensus
 
 
         function mask_of_base(this: WriteCensus, op: PlannedOperand) returns u64 linked
+
 
 
 
@@ -1394,6 +1838,12 @@ define WriteCensus
         ; A call: the callee's body in this root, else a summary another
         ; root wrote (SCALYC_WRITE_SUMMARIES), else a real C extern.
         procedure note_call(mutable this: WriteCensus, op: PlannedOperand, call: PlannedCall) linked
+
+
+
+
+
+
 
 
 
@@ -3414,6 +3864,7 @@ define WriteCensus
 
 
 
+
         ; ================================================================
         ; Summaries across roots: `<mangled>\t<mask>\t<inputs>` per line.
         ; A root reads what the roots before it wrote and appends its own
@@ -4400,6 +4851,16 @@ define WriteCensus
 
 
 
+
+
+
+
+
+
+
+
+
+
         procedure find_statement(mutable this: WriteCensus, stmt: PlannedStatement) io linked
 
 
@@ -4425,6 +4886,13 @@ define WriteCensus
 
         ; A local inherits what its initializer reaches, unless it is a scalar.
         procedure note_binding(mutable this: WriteCensus, binding: PlannedBinding) io linked
+
+
+
+
+
+
+
 
 
 
