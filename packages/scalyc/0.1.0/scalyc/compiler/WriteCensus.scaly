@@ -4358,6 +4358,10 @@ define WriteCensus
             if name = "fabsf"
                 return true
             ; the runtime's coordination and its guards
+            if name = "scaly_thread_spawn_sized"
+                return true
+            if name = "scaly_stack_limit"
+                return true
             if name = "pthread_create"
                 return true
             if name = "pthread_join"

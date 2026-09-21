@@ -1,0 +1,46 @@
+; A spawned thread has the stack its spawner has (2026-09-21). Before, Thread.spawn
+; handed pthread_create a null attribute block, which on macOS means a 512 KB
+; secondary-thread stack while the main thread runs with `ulimit -s`; tscaly's
+; checker pool then overflowed a worker on the TypeScript compiler's own sources
+; at every N >= 2, with nothing said but rc 138. The worker below recurses 12 000
+; frames deep, each pinning a 128-byte buffer: at least 1.5 MB of stack, well
+; past that default and well under the 8 MB a shell hands a process by default.
+; On Linux glibc already sizes a thread's stack from RLIMIT_STACK, so this is
+; the Darwin and Win64 control; it passes there either way. The result travels
+; through the job record, not a global: a mutable global is thread-local.
+; Expected: deep 12000 ok
+
+define Job
+(
+    depth: int
+    var frames: int
+)
+
+procedure descend(depth: int, mutable acc: pointer[int]) returns int
+{
+    var pin u8[128]
+    set pin[0]: (depth & 0xFF) as u8
+    set pin[127]: 1 as u8
+    if depth = 0
+        return pin[0] as int
+    let below descend(depth - 1, acc)
+    set *acc: *acc + 1
+    below + (pin[127] as int)
+}
+
+procedure worker(mutable arg: pointer[void]) returns pointer[void]
+{
+    let job arg as pointer[Job]
+    var count 0
+    descend(job.depth, &count)
+    set job.frames: count
+    null
+}
+
+var job Job(12000, 0)
+let th Thread.spawn(&worker, &job as pointer[void])
+Thread.join(th)
+if job.frames = 12000
+    print "deep 12000 ok"
+else
+    print "deep failed"

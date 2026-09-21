@@ -687,6 +687,36 @@ long long scaly_stack_limit(void)
     return (long long)rl.rlim_cur;
 }
 
+/* THE SIZED THREAD SPAWN, shim category (a): pthread_attr_t is an opaque,
+ * OS-specific block, so the stack size cannot be set from the Scaly side of
+ * a direct pthread_create extern. A thread a Scaly program spawns runs what
+ * its spawner runs -- tscaly's checker pool ran the checker on workers with
+ * macOS's 512 KB secondary-thread default while the main thread had 64 MB,
+ * and the TypeScript compiler's own sources overflowed it on the first file
+ * (2026-09-21). stack_size 0 keeps the platform default; the handle comes
+ * back as the size_t the Scaly side carries pthread_t in.
+ */
+#include <pthread.h>
+
+int scaly_thread_spawn_sized(size_t* thread, void* start, void* arg, size_t stack_size)
+{
+    pthread_t t;
+    pthread_attr_t attr;
+    int rc;
+    if (pthread_attr_init(&attr) != 0)
+        return -1;
+    if (stack_size > 0 && pthread_attr_setstacksize(&attr, stack_size) != 0) {
+        pthread_attr_destroy(&attr);
+        return -1;
+    }
+    rc = pthread_create(&t, &attr, (void* (*)(void*))start, arg);
+    pthread_attr_destroy(&attr);
+    if (rc != 0)
+        return rc;
+    *thread = (size_t)t;
+    return 0;
+}
+
 /* --- fault injection for the out-of-memory gates -------------------------
  *
  * ★★★It exists for the same reason SCALYC_STACK_BUDGET exists in the

@@ -23633,6 +23633,10 @@ declare i32 @pthread_create(ptr, ptr, ptr, ptr)
 
 declare i32 @pthread_join(i64, ptr)
 
+declare i32 @scaly_thread_spawn_sized(ptr, ptr, ptr, i64)
+
+declare i64 @scaly_stack_limit()
+
 declare ptr @scaly_call_ptr(ptr, ptr)
 
 define linkonce_odr void @_Z21ensure_deadlock_statev() {
@@ -25658,35 +25662,9 @@ unwrap.ok:                                        ; preds = %if.end
 
 define linkonce_odr i64 @_ZN6Thread5spawnEPvPv(ptr %0, ptr %1) {
 entry:
-  %call = call ptr @_ZN4Page20allocate_page_tracedEP10const_char(ptr @.str.156)
-  %call1 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 16, i64 8)
-  %as.ptrtoint = ptrtoint ptr %0 to i64
-  store i64 %as.ptrtoint, ptr %call1, align 8
-  %as.ptrtoint2 = ptrtoint ptr %call1 to i64
-  %add = add i64 %as.ptrtoint2, 8
-  %as.inttoptr = inttoptr i64 %add to ptr
-  %as.ptrtoint3 = ptrtoint ptr %1 to i64
-  store i64 %as.ptrtoint3, ptr %as.inttoptr, align 8
-  call void @_Z21ensure_deadlock_statev()
-  %global.load = load ptr, ptr @deadlock_state, align 8
-  %addr.gep = getelementptr inbounds nuw %_Z13DeadlockState, ptr %global.load, i32 0, i32 0
-  %2 = atomicrmw add ptr %addr.gep, i64 1 seq_cst, align 8
-  %handle = alloca [8 x i8], align 1
-  %arr.ptr = getelementptr inbounds [8 x i8], ptr %handle, i64 0, i64 0
-  %handle4 = alloca ptr, align 8
-  store ptr %arr.ptr, ptr %handle4, align 8
-  %handle5 = load ptr, ptr %handle4, align 8
-  %call6 = call i32 @pthread_create(ptr %handle5, ptr null, ptr @_Z18scaly_thread_startPv, ptr %call1)
-  %ne = icmp ne i32 %call6, 0
-  br i1 %ne, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  call void @_Z20scaly_panic_resourceP10const_charm3i32(ptr @.str.157, i64 0, i32 109)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %entry
-  %deref = load i64, ptr %handle5, align 8
-  ret i64 %deref
+  %call = call i64 @scaly_stack_limit()
+  %call1 = call i64 @_ZN6Thread11spawn_sizedEPvPvm(ptr %0, ptr %1, i64 %call)
+  ret i64 %call1
 }
 
 define linkonce_odr ptr @_ZN2Io7offloadEPvPv(ptr %0, ptr %1) {
@@ -26684,6 +26662,39 @@ if.end35:                                         ; preds = %if.then34, %if.end3
   %as.trunc = trunc i64 %slice36 to i32
   call void @_ZN7Channel10timed_pollE3i32(i32 %as.trunc)
   br label %if.end28
+}
+
+define linkonce_odr i64 @_ZN6Thread11spawn_sizedEPvPvm(ptr %0, ptr %1, i64 %2) {
+entry:
+  %call = call ptr @_ZN4Page20allocate_page_tracedEP10const_char(ptr @.str.156)
+  %call1 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 16, i64 8)
+  %as.ptrtoint = ptrtoint ptr %0 to i64
+  store i64 %as.ptrtoint, ptr %call1, align 8
+  %as.ptrtoint2 = ptrtoint ptr %call1 to i64
+  %add = add i64 %as.ptrtoint2, 8
+  %as.inttoptr = inttoptr i64 %add to ptr
+  %as.ptrtoint3 = ptrtoint ptr %1 to i64
+  store i64 %as.ptrtoint3, ptr %as.inttoptr, align 8
+  call void @_Z21ensure_deadlock_statev()
+  %global.load = load ptr, ptr @deadlock_state, align 8
+  %addr.gep = getelementptr inbounds nuw %_Z13DeadlockState, ptr %global.load, i32 0, i32 0
+  %3 = atomicrmw add ptr %addr.gep, i64 1 seq_cst, align 8
+  %handle = alloca [8 x i8], align 1
+  %arr.ptr = getelementptr inbounds [8 x i8], ptr %handle, i64 0, i64 0
+  %handle4 = alloca ptr, align 8
+  store ptr %arr.ptr, ptr %handle4, align 8
+  %handle5 = load ptr, ptr %handle4, align 8
+  %call6 = call i32 @scaly_thread_spawn_sized(ptr %handle5, ptr @_Z18scaly_thread_startPv, ptr %call1, i64 %2)
+  %ne = icmp ne i32 %call6, 0
+  br i1 %ne, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  call void @_Z20scaly_panic_resourceP10const_charm3i32(ptr @.str.157, i64 0, i32 109)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  %deref = load i64, ptr %handle5, align 8
+  ret i64 %deref
 }
 
 define linkonce_odr ptr @_ZN9TaskGroup6createEv() {

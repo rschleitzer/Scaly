@@ -802,6 +802,26 @@ long long scaly_stack_limit(void)
     return (long long)(high - low);
 }
 
+/* The sized thread spawn, the Windows half of eio.c's (see the account
+ * there). CreateThread's size argument is the initial COMMIT unless
+ * STACK_SIZE_PARAM_IS_A_RESERVATION says otherwise -- without the flag a
+ * 64 MB request commits 64 MB up front and reserves no more than the PE
+ * header's default, which is the opposite of what a deep recursion needs.
+ * The entry-signature cast is the one posixcompat.c's pthread_create
+ * documents: safe because nobody reads the thread's result. */
+int scaly_thread_spawn_sized(size_t* thread, void* start, void* arg, size_t stack_size)
+{
+    HANDLE h;
+    DWORD flags = 0;
+    if (stack_size > 0)
+        flags = STACK_SIZE_PARAM_IS_A_RESERVATION;
+    h = CreateThread(NULL, stack_size, (LPTHREAD_START_ROUTINE)start, arg, flags, NULL);
+    if (h == NULL)
+        return -1;
+    *thread = (size_t)h;
+    return 0;
+}
+
 /* The fault injector, same contract as eio.c's (see the account there): it
  * has to exist on BOTH sides or the out-of-memory gates would be a
  * POSIX-only measurement, and win-undef.sh would report the symbol missing. */

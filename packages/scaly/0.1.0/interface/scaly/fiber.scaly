@@ -408,6 +408,12 @@ procedure scaly_stack_guard(base: pointer[void], len: size_t) returns i32 extern
 ; and pointer-sized on all four LP64 targets — carried as size_t.
 procedure pthread_create(thread: pointer[size_t], attr: pointer[void], start: pointer[void], arg: pointer[void]) returns i32 extern
 procedure pthread_join(thread: size_t, retval: pointer[pointer[void]]) returns i32 extern
+; The sized spawn is a shim (scaly/fiber/eio.c, eio_win.c): pthread_attr_t is
+; OS-specific, and a Win64 thread's reservation needs a flag pthread has no
+; word for. stack_size 0 = the platform default. The stack limit is the same
+; shim the planner's nesting guard asks (declared identically there).
+procedure scaly_thread_spawn_sized(thread: pointer[size_t], start: pointer[void], arg: pointer[void], stack_size: size_t) returns i32 extern
+function scaly_stack_limit() returns size_t extern
 
 ; Indirect-call primitive (milestone 2.3b): an extern name with no
 ; symbol anywhere — the Emitter lowers it to a bare ptr(ptr) indirect
@@ -2384,7 +2390,22 @@ define Thread
     ; after the entry returns (milestone 2.3b) — the spawn cell rides on
     ; its own heap page because the spawner may return before the thread
     ; starts; the trampoline releases it.
+    ;
+    ; ★★★ THE THREAD'S STACK IS AS BIG AS ITS SPAWNER'S (2026-09-21). A
+    ; thread runs what the spawner runs, so it needs the stack the spawner
+    ; was given (`ulimit -s`, the PE header): tscaly's checker pool put the
+    ; checker on workers with macOS's 512 KB secondary-thread default while
+    ; the main thread had 64 MB, and the TypeScript compiler's own sources
+    ; overflowed a worker on the first file, deterministically, at every
+    ; N >= 2 — with nothing said but rc 138. scaly_stack_limit answers the
+    ; process limit on POSIX and the current thread's bounds on Windows;
+    ; 0 ("cannot tell") keeps the platform default. The reservation is
+    ; virtual: a 64 MB stack costs the pages it touches.
     procedure spawn(fn: pointer[void], arg: pointer[void]) returns size_t linked
+
+
+    ; spawn with an explicit stack size (0 = the platform default)
+    procedure spawn_sized(fn: pointer[void], arg: pointer[void], stack_size: size_t) returns size_t linked
 
 
 
