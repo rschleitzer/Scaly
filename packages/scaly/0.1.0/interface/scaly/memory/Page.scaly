@@ -39,6 +39,14 @@ mutable dead_buckets_reclaimed: i64 linked
 define PageStatistics (bytes_held: u64  allocations: u64  live: u64)
 shared page_statistics: pointer[PageStatistics] linked
 
+; Poison mode (Page.enable_poison(), SCALY_POISON in the drivers): every page
+; going back to its bucket, and every oversized block going to free, is
+; overwritten with 0xDD first. A read through a dangling reference then
+; faults at its FIRST use with the reader in the backtrace, instead of
+; surviving until the page happens to be reused — the deterministic witness
+; a release-after-use needs. Off by default: one global load per release.
+shared page_poison: bool linked
+
 ; A region is a HEAD page plus the extension chain hanging off its
 ; next_page. Every page carries a pointer to its head — its own address on
 ; a head page, the head's on an extension page — and the END of the chain
@@ -163,6 +171,13 @@ define Page
 
 
 
+
+
+
+
+
+
+
     ; Attributed variants of allocate_page/release_page for the
     ; standalone, hand-matched alloc/release pairs in fiber.scaly and
     ; File.scaly (worker-pool records, channel records, offload cells)
@@ -220,6 +235,13 @@ define Page
 
     ; Turns the three counts on (once; later calls do nothing). Call it while the
     ; process is single-threaded, before the work to be measured.
+    ; Poison mode (see page_poison). Call it while the process is
+    ; single-threaded.
+    procedure enable_poison() linked
+
+
+
+
     procedure enable_statistics() linked
 
 

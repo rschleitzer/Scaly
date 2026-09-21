@@ -229,6 +229,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 @stack_top = thread_local global ptr null
 @dead_buckets_reclaimed = thread_local global i64 0
 @page_statistics = global ptr null
+@page_poison = global i1 false
 @"12BUCKET_PAGES" = internal constant i64 64
 @"11BUCKET_SIZE" = internal constant i64 262144
 @"11BUCKET_MASK" = internal constant i64 262143
@@ -756,8 +757,8 @@ if.then:                                          ; preds = %entry
   br i1 %ne, label %if.then1, label %if.end2
 
 if.end:                                           ; preds = %entry
-  %ne7 = icmp ne ptr %global.load, null
-  br i1 %ne7, label %if.then8, label %if.end9
+  %ne12 = icmp ne ptr %global.load, null
+  br i1 %ne12, label %if.then13, label %if.end14
 
 if.then1:                                         ; preds = %if.then
   %addr.gep = getelementptr inbounds nuw %_Z14PageStatistics, ptr %global.load, i32 0, i32 0
@@ -772,79 +773,96 @@ if.then1:                                         ; preds = %if.then
   br label %if.end2
 
 if.end2:                                          ; preds = %if.then1, %if.then
+  %global.load7 = load i1, ptr @page_poison, align 1
+  br i1 %global.load7, label %if.then8, label %if.end9
+
+if.then8:                                         ; preds = %if.end2
+  %call10 = call i64 @_ZN4Page14oversized_sizeER4Page(ptr %0)
+  %call11 = call ptr @memset(ptr %0, i32 221, i64 %call10)
+  br label %if.end9
+
+if.end9:                                          ; preds = %if.then8, %if.end2
   call void @scaly_aligned_free(ptr %0)
   ret void
 
-if.then8:                                         ; preds = %if.end
-  %addr.gep10 = getelementptr inbounds nuw %_Z14PageStatistics, ptr %global.load, i32 0, i32 0
-  %3 = atomicrmw add ptr %addr.gep10, i64 -4096 seq_cst, align 8
-  %addr.gep11 = getelementptr inbounds nuw %_Z14PageStatistics, ptr %global.load, i32 0, i32 2
-  %load.struct12 = load %_Z4Page, ptr %0, align 8
-  %next_object13 = extractvalue %_Z4Page %load.struct12, 0
-  %as.ptrtoint = ptrtoint ptr %next_object13 to i64
-  %as.ptrtoint14 = ptrtoint ptr %0 to i64
-  %add = add i64 %as.ptrtoint14, ptrtoint (ptr getelementptr (%_Z4Page, ptr null, i32 1) to i64)
-  %sub15 = sub i64 %as.ptrtoint, %add
-  %sub16 = sub i64 0, %sub15
-  %4 = atomicrmw add ptr %addr.gep11, i64 %sub16 seq_cst, align 8
-  br label %if.end9
+if.then13:                                        ; preds = %if.end
+  %addr.gep15 = getelementptr inbounds nuw %_Z14PageStatistics, ptr %global.load, i32 0, i32 0
+  %3 = atomicrmw add ptr %addr.gep15, i64 -4096 seq_cst, align 8
+  %addr.gep16 = getelementptr inbounds nuw %_Z14PageStatistics, ptr %global.load, i32 0, i32 2
+  %load.struct17 = load %_Z4Page, ptr %0, align 8
+  %next_object18 = extractvalue %_Z4Page %load.struct17, 0
+  %as.ptrtoint = ptrtoint ptr %next_object18 to i64
+  %as.ptrtoint19 = ptrtoint ptr %0 to i64
+  %add = add i64 %as.ptrtoint19, ptrtoint (ptr getelementptr (%_Z4Page, ptr null, i32 1) to i64)
+  %sub20 = sub i64 %as.ptrtoint, %add
+  %sub21 = sub i64 0, %sub20
+  %4 = atomicrmw add ptr %addr.gep16, i64 %sub21 seq_cst, align 8
+  br label %if.end14
 
-if.end9:                                          ; preds = %if.then8, %if.end
-  %call17 = call ptr @_Z14heap_bucket_ofR4Page(ptr %0)
-  %as.ptrtoint18 = ptrtoint ptr %0 to i64
-  %as.ptrtoint19 = ptrtoint ptr %call17 to i64
-  %sub20 = sub i64 %as.ptrtoint18, %as.ptrtoint19
-  %udiv = udiv i64 %sub20, 4096
-  %sub21 = sub i64 %udiv, 1
-  call void @_Z11bucket_lockP16HeapBucketHeader(ptr %call17)
-  %load.struct22 = load %_Z16HeapBucketHeader, ptr %call17, align 8
-  %bitmap = extractvalue %_Z16HeapBucketHeader %load.struct22, 2
-  %eq23 = icmp eq i64 %bitmap, 0
-  %load.struct24 = load %_Z16HeapBucketHeader, ptr %call17, align 8
-  %bitmap25 = extractvalue %_Z16HeapBucketHeader %load.struct24, 2
-  %shl = shl i64 1, %sub21
-  %or = or i64 %bitmap25, %shl
-  %bitmap26 = getelementptr inbounds nuw %_Z16HeapBucketHeader, ptr %call17, i32 0, i32 2
-  store i64 %or, ptr %bitmap26, align 8
-  br i1 %eq23, label %if.then27, label %if.end28
+if.end14:                                         ; preds = %if.then13, %if.end
+  %call22 = call ptr @_Z14heap_bucket_ofR4Page(ptr %0)
+  %as.ptrtoint23 = ptrtoint ptr %0 to i64
+  %as.ptrtoint24 = ptrtoint ptr %call22 to i64
+  %sub25 = sub i64 %as.ptrtoint23, %as.ptrtoint24
+  %udiv = udiv i64 %sub25, 4096
+  %sub26 = sub i64 %udiv, 1
+  %global.load27 = load i1, ptr @page_poison, align 1
+  br i1 %global.load27, label %if.then28, label %if.end29
 
-if.then27:                                        ; preds = %if.end9
-  %global.load29 = load ptr, ptr @heap_head, align 8
-  %next = getelementptr inbounds nuw %_Z16HeapBucketHeader, ptr %call17, i32 0, i32 1
-  store ptr %global.load29, ptr %next, align 8
-  %prev = getelementptr inbounds nuw %_Z16HeapBucketHeader, ptr %call17, i32 0, i32 0
+if.then28:                                        ; preds = %if.end14
+  %call30 = call ptr @memset(ptr %0, i32 221, i64 4096)
+  br label %if.end29
+
+if.end29:                                         ; preds = %if.then28, %if.end14
+  call void @_Z11bucket_lockP16HeapBucketHeader(ptr %call22)
+  %load.struct31 = load %_Z16HeapBucketHeader, ptr %call22, align 8
+  %bitmap = extractvalue %_Z16HeapBucketHeader %load.struct31, 2
+  %eq32 = icmp eq i64 %bitmap, 0
+  %load.struct33 = load %_Z16HeapBucketHeader, ptr %call22, align 8
+  %bitmap34 = extractvalue %_Z16HeapBucketHeader %load.struct33, 2
+  %shl = shl i64 1, %sub26
+  %or = or i64 %bitmap34, %shl
+  %bitmap35 = getelementptr inbounds nuw %_Z16HeapBucketHeader, ptr %call22, i32 0, i32 2
+  store i64 %or, ptr %bitmap35, align 8
+  br i1 %eq32, label %if.then36, label %if.end37
+
+if.then36:                                        ; preds = %if.end29
+  %global.load38 = load ptr, ptr @heap_head, align 8
+  %next = getelementptr inbounds nuw %_Z16HeapBucketHeader, ptr %call22, i32 0, i32 1
+  store ptr %global.load38, ptr %next, align 8
+  %prev = getelementptr inbounds nuw %_Z16HeapBucketHeader, ptr %call22, i32 0, i32 0
   store ptr null, ptr %prev, align 8
-  %global.load30 = load ptr, ptr @heap_head, align 8
-  %ne31 = icmp ne ptr %global.load30, null
-  br i1 %ne31, label %if.then32, label %if.end33
+  %global.load39 = load ptr, ptr @heap_head, align 8
+  %ne40 = icmp ne ptr %global.load39, null
+  br i1 %ne40, label %if.then41, label %if.end42
 
-if.end28:                                         ; preds = %if.end33, %if.end9
-  %eq35 = icmp eq i1 %eq23, false
-  br i1 %eq35, label %if.then36, label %if.end37
+if.end37:                                         ; preds = %if.end42, %if.end29
+  %eq44 = icmp eq i1 %eq32, false
+  br i1 %eq44, label %if.then45, label %if.end46
 
-if.then32:                                        ; preds = %if.then27
+if.then41:                                        ; preds = %if.then36
   %gv.load = load ptr, ptr @heap_head, align 8
-  %prev34 = getelementptr inbounds nuw %_Z16HeapBucketHeader, ptr %gv.load, i32 0, i32 0
-  store ptr %call17, ptr %prev34, align 8
-  br label %if.end33
+  %prev43 = getelementptr inbounds nuw %_Z16HeapBucketHeader, ptr %gv.load, i32 0, i32 0
+  store ptr %call22, ptr %prev43, align 8
+  br label %if.end42
 
-if.end33:                                         ; preds = %if.then32, %if.then27
-  store ptr %call17, ptr @heap_head, align 8
-  br label %if.end28
-
-if.then36:                                        ; preds = %if.end28
-  %call38 = call i1 @_Z17drain_dead_bucketP16HeapBucketHeader(ptr %call17)
-  br i1 %call38, label %if.then39, label %if.end40
-
-if.end37:                                         ; preds = %if.end40, %if.end28
-  call void @_Z13bucket_unlockP16HeapBucketHeader(ptr %call17)
-  ret void
-
-if.then39:                                        ; preds = %if.then36
-  ret void
-
-if.end40:                                         ; preds = %if.then36
+if.end42:                                         ; preds = %if.then41, %if.then36
+  store ptr %call22, ptr @heap_head, align 8
   br label %if.end37
+
+if.then45:                                        ; preds = %if.end37
+  %call47 = call i1 @_Z17drain_dead_bucketP16HeapBucketHeader(ptr %call22)
+  br i1 %call47, label %if.then48, label %if.end49
+
+if.end46:                                         ; preds = %if.end49, %if.end37
+  call void @_Z13bucket_unlockP16HeapBucketHeader(ptr %call22)
+  ret void
+
+if.then48:                                        ; preds = %if.then45
+  ret void
+
+if.end49:                                         ; preds = %if.then45
+  br label %if.end46
 }
 
 define linkonce_odr ptr @_ZN4Page8allocateEmm(ptr %0, i64 %1, i64 %2) {
@@ -1264,6 +1282,12 @@ if.end:                                           ; preds = %entry
   %addr.gep = getelementptr inbounds nuw %_Z14PageStatistics, ptr %global.load, i32 0, i32 2
   %atomic.load = load atomic i64, ptr %addr.gep seq_cst, align 8
   ret i64 %atomic.load
+}
+
+define linkonce_odr void @_ZN4Page13enable_poisonEv() {
+entry:
+  store i1 true, ptr @page_poison, align 1
+  ret void
 }
 
 define linkonce_odr void @_ZN4Page17enable_statisticsEv() {
