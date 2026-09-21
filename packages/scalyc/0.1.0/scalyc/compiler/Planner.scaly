@@ -560,6 +560,24 @@ define Planner
         ; indirect calls (the common, delegate-free case incl. the compiler).
         var escape_saw_indirect: bool
 
+        ; --host-report census (host_census#): the named-page constructions
+        ; (`T^host(...)`, `T^this(...)`, any `^name`) whose value never leaves
+        ; the routine that builds them. escape_census switches the checker's
+        ; walk into census mode: region_of_operand answers LOCAL for the
+        ; candidate (census_box_start pins an unbound one by its span) and its
+        ; aliases (census_names), the diagnostics stay silent and escape_found
+        ; is read as the verdict. census_escaped is the inline half's verdict.
+        ; The report is three parallel arrays for cli.print_located.
+        var escape_census: bool
+        census_names: Array[String]
+        var census_box_start: size_t
+        var census_escaped: bool
+        census_files: Array[String]
+        census_offsets: Array[size_t]
+        census_texts: Array[String]
+        var census_total: size_t
+        var census_local: size_t
+
         ; CLOSURE Vector-3 support: names bound to a stack (Lifetime.Local)
         ; closure in the function CURRENTLY being walked by the escape
         ; post-pass. Rebuilt from the Plan tree (each function's PlannedBinding
@@ -876,6 +894,15 @@ define Planner
             set escape_fn_index: 0
             set escape_forwarding: false
             set escape_saw_indirect: false
+            set escape_census: false
+            set census_names: Array[String]^this()
+            set census_box_start: 0
+            set census_escaped: false
+            set census_files: Array[String]^this()
+            set census_offsets: Array[size_t]^this()
+            set census_texts: Array[String]^this()
+            set census_total: 0
+            set census_local: 0
             set current_fn_closure_names: Array[String]^this()
             set current_fn_alias_names: Array[String]^this()
             set current_fn_alias_params: Array[size_t]^this()
@@ -27303,6 +27330,9 @@ define Planner
 
         function region_of_operand(this: Planner, op: PlannedOperand) returns size_t
         {
+            if escape_census
+                if this.census_is_candidate(op)
+                    return Planner.region_rank_local()
             ; A box (`&^obj v`) places a COPY of the value on obj's page. For the
             ; ^this / ^rp targets the page is the borrowed receiver / the caller's
             ; region — both outlive this frame — so the resulting pointer is at
@@ -27332,6 +27362,9 @@ define Planner
                 }
                 when b: Box
                 {
+                    if escape_census
+                        if b.loc.start = census_box_start
+                            return Planner.region_rank_local()
                     if b.target_page = "this"
                         return Planner.region_rank_caller()
                     if b.target_page = "rp"
@@ -27356,12 +27389,18 @@ define Planner
                     ; stale Local inner. Rank it Caller so `let r &^this <call>;
                     ; <intervening statements>; return r` is accepted. Only a bare
                     ; Variable read (no member-access hop) qualifies.
+                    if escape_census
+                        if this.array_contains_name(census_names, v.name)
+                            return Planner.region_rank_local()
                     if op.member_access = null
                         if this.array_contains_name(local_box_names, v.name)
                             return Planner.region_rank_caller()
                 }
                 when c: PlannedCall
                 {
+                    if escape_census
+                        if this.census_call_yields_alias(op)
+                            return Planner.region_rank_local()
                     ; Borrow-return holder (2026-07-03): `&NAME` where NAME's
                     ; binding was promoted to the caller page by the addr-taken/
                     ; getref rule (promoted_binding_names) points at rp-lived
@@ -27758,6 +27797,9 @@ define Planner
             choose op.expr
                 when v: Variable
                 {
+                    if escape_census
+                        if this.array_contains_name(census_names, v.name)
+                            return false
                     if this.escape_name_is_current_param(v.name)
                         return true
                     choose op.result_type.life
@@ -28279,6 +28321,9 @@ define Planner
         function region_of_arg_path(this: Planner, arg: PlannedOperand, rec: EscapeRecord) returns size_t
         {
             var result Planner.region_rank_caller()
+            if escape_census
+                if this.census_carry(arg)
+                    return Planner.region_rank_local()
             if rec.src_path_len = 1
             {
                 var arg_has_member false
@@ -28399,13 +28444,16 @@ define Planner
                     let cur_fn instantiated_functions.get escape_fn_index
                     if cur_fn <> null
                         set this.file: String^this(cur_fn.file)
-                    if arg_is_closure
-                        this.add_diagnostic(call.loc, "a closure bound to a local lives on the stack frame and escapes via call - the callee stores it into memory that outlives this frame; return the lambda directly (return \\x: ...) instead of binding it to a local first")
-                    else
-                        if rec.src_path_len > 0
-                            this.add_diagnostic(call.loc, "a field of the passed value points into a local page and escapes via call - the callee stores that field into memory that outlives this frame; allocate the pointed-to value with '#' (caller page) or '^name' (region)")
+                    if escape_census = false
+                    {
+                        if arg_is_closure
+                            this.add_diagnostic(call.loc, "a closure bound to a local lives on the stack frame and escapes via call - the callee stores it into memory that outlives this frame; return the lambda directly (return \\x: ...) instead of binding it to a local first")
                         else
-                            this.add_diagnostic(call.loc, "reference into a local page escapes via call - the callee stores it into memory that outlives this frame; allocate with '#' (caller page) or '^name' (region)")
+                            if rec.src_path_len > 0
+                                this.add_diagnostic(call.loc, "a field of the passed value points into a local page and escapes via call - the callee stores that field into memory that outlives this frame; allocate the pointed-to value with '#' (caller page) or '^name' (region)")
+                            else
+                                this.add_diagnostic(call.loc, "reference into a local page escapes via call - the callee stores it into memory that outlives this frame; allocate with '#' (caller page) or '^name' (region)")
+                    }
                     set escape_found: true
                 }
             }
@@ -28449,10 +28497,13 @@ define Planner
                         let cur_fn instantiated_functions.get escape_fn_index
                         if cur_fn <> null
                             set this.file: String^this(cur_fn.file)
-                        if arg_is_closure
-                            this.add_diagnostic(call.loc, "a closure bound to a local lives on the stack frame and escapes via indirect call - the callee is an unknown function value that may store it beyond this frame; return the lambda directly (return \\x: ...) or allocate with '#'/'^name'")
-                        else
-                            this.add_diagnostic(call.loc, "reference into a local page escapes via indirect call - the callee is an unknown function value that may store it beyond this frame; allocate with '#' (caller page) or '^name' (region)")
+                        if escape_census = false
+                        {
+                            if arg_is_closure
+                                this.add_diagnostic(call.loc, "a closure bound to a local lives on the stack frame and escapes via indirect call - the callee is an unknown function value that may store it beyond this frame; return the lambda directly (return \\x: ...) or allocate with '#'/'^name'")
+                            else
+                                this.add_diagnostic(call.loc, "reference into a local page escapes via indirect call - the callee is an unknown function value that may store it beyond this frame; allocate with '#' (caller page) or '^name' (region)")
+                        }
                         set escape_found: true
                     }
                 }
@@ -29128,6 +29179,961 @@ define Planner
 
         ; Walk one function body. Mirrors emit_function_body: choose func.impl
         ; and feed the whole Action by value to escape_walk_action.
+        ; ====================================================================
+        ; --host-report: a census of the named-page constructions
+        ; (`T^host(...)`, `T^this(...)`, any `^name`) whose value never leaves
+        ; the routine that builds them. Such a value could be built on the
+        ; routine's own local page and die with the frame; on the named page
+        ; it lives until that region dies, which is what the sigil buys and
+        ; what it costs. The verdict per candidate is the escape checker's
+        ; own, asked as if the candidate were a local-page value:
+        ;   (1) census_walk_* applies the inline rules: a return, throw or
+        ;       break carrying the value, a `set` whose target is not a bare
+        ;       local, a construction over the value, a closure capturing it.
+        ;       A `let` whose initializer is the value, a non-primitive field
+        ;       of it, a reference-like call RESULT on it or a construction
+        ;       over it becomes an ALIAS (census_names); so does a `for`
+        ;       variable over it and a bare local the value is `set` into.
+        ;   (2) escape_walk_function_body applies the call-site rules with
+        ;       the recorded summaries: region_of_operand answers LOCAL for
+        ;       the candidate and its aliases (escape_census), the diagnostics
+        ;       stay silent, escape_found is the verdict.
+        ; Conservative where it is unsure (a verdict `local` is the claim; an
+        ; `escapes` may be an over-approximation). Runs after
+        ; check_interprocedural_escapes, so the summaries are in hand.
+        procedure host_census(mutable this: Planner)
+        {
+            if this.jit_dep_bodies
+                return
+            set escape_checking: true
+            var fi: size_t 0
+            for func in instantiated_functions
+            {
+                set escape_fn_index: fi
+                choose func.impl
+                    when action: Action
+                        this.census_collect_action(action)
+                    else
+                        0
+                set fi: fi + 1
+            }
+            set escape_found: false
+        }
+
+        procedure census_judge(mutable this: Planner, bound: ref[String]?, start: size_t, page: String, tname: String)
+        {
+            let fn_ptr instantiated_functions.get escape_fn_index
+            if fn_ptr = null
+                return
+            set census_names.length: 0
+            if bound <> null
+                census_names.add(String((*bound)))
+            set census_box_start: start
+            set census_escaped: false
+            choose fn_ptr.impl
+                when action: Action
+                    this.census_walk_action(action)
+                else
+                    0
+            if census_escaped = false
+            {
+                set escape_census: true
+                set escape_found: false
+                this.escape_walk_function_body((*fn_ptr))
+                if escape_found
+                    set census_escaped: true
+                set escape_found: false
+                set escape_census: false
+            }
+            var seen: size_t 0
+            var seen_at: size_t 0
+            var si: size_t 0
+            while si < census_offsets.length
+            {
+                let o_ptr census_offsets.get si
+                if o_ptr <> null
+                    if (*o_ptr) = start
+                    {
+                        let f_ptr census_files.get si
+                        if f_ptr <> null
+                            if (*f_ptr) = fn_ptr.file
+                            {
+                                set seen: 1
+                                set seen_at: si
+                            }
+                    }
+                set si: si + 1
+            }
+            if seen = 1
+            {
+                if census_escaped = false
+                    return
+                let old_ptr census_texts.get seen_at
+                if old_ptr <> null
+                    if (*old_ptr).starts_with("escapes")
+                        return
+                set census_local: census_local - 1
+            }
+            else
+                set census_total: census_total + 1
+            var text StringBuilder()
+            if census_escaped
+                text.append "escapes ^"
+            else
+            {
+                set census_local: census_local + 1
+                text.append "local ^"
+            }
+            text.append(page)
+            text.append " "
+            text.append(tname)
+            if bound <> null
+            {
+                text.append " as "
+                text.append((*bound))
+            }
+            text.append " in "
+            text.append(fn_ptr.name)
+            let t_tmp text.to_string()
+            let t_copy String^this(t_tmp)
+            if seen = 1
+            {
+                census_texts.put(seen_at, t_copy)
+                return
+            }
+            let f_copy String^this(fn_ptr.file)
+            census_files.add f_copy
+            census_offsets.add(start)
+            census_texts.add t_copy
+        }
+
+        ; Collect: every Box in the body is a candidate; a Box that is the
+        ; whole initializer of a binding is judged under the binding's name.
+        procedure census_collect_action(mutable this: Planner, act: PlannedAction)
+        {
+            this.census_collect_operands(act.source)
+            this.census_collect_operands(act.target)
+        }
+
+        procedure census_collect_operands(mutable this: Planner, ops: ref[Vector[PlannedOperand]]?)
+        {
+            if ops = null
+                return
+            var i: size_t 0
+            while i < ops.length
+            {
+                let op_ptr ops.get i
+                if op_ptr <> null
+                    this.census_collect_operand(op_ptr.unwrap(), null)
+                set i: i + 1
+            }
+        }
+
+        procedure census_collect_statement_ref(mutable this: Planner, stmt: ref[PlannedStatement]?)
+        {
+            if stmt <> null
+            {
+                let s stmt
+                this.census_collect_statement((*s))
+            }
+        }
+
+        procedure census_collect_statement(mutable this: Planner, stmt: PlannedStatement)
+        {
+            choose stmt
+                when action: Action
+                    this.census_collect_action(action)
+                when binding: Binding
+                {
+                    if binding.operation <> null
+                    {
+                        let bops (*binding.operation)
+                        var i: size_t 0
+                        while i < bops.length
+                        {
+                            let op_ptr bops.get i
+                            if op_ptr <> null
+                            {
+                                if bops.length = 1
+                                    this.census_collect_operand(op_ptr.unwrap(), binding.binding_item.name)
+                                else
+                                    this.census_collect_operand(op_ptr.unwrap(), null)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                }
+                when ret: Return
+                    this.census_collect_operands(ret.result)
+                when throw_stmt: Throw
+                    this.census_collect_operands(throw_stmt.result)
+                when brk: Break
+                    this.census_collect_operands(brk.result)
+                when cont: Continue
+                    0
+        }
+
+        procedure census_collect_operand(mutable this: Planner, op: PlannedOperand, bound: ref[String]?)
+        {
+            choose op.expr
+                when b: Box
+                {
+                    this.census_judge(bound, b.loc.start, b.target_page, b.box_type.name)
+                    if b.value <> null
+                    {
+                        let r b.value
+                        this.census_collect_operand((*r), null)
+                    }
+                }
+                when call: Call
+                {
+                    choose call.life
+                        when rf: Reference
+                            this.census_judge(bound, call.loc.start, rf.location, call.result_type.name)
+                        else
+                            0
+                    this.census_collect_operands(call.args)
+                }
+                when tp: Tuple
+                {
+                    choose tp.life
+                        when rf: Reference
+                            this.census_judge(bound, tp.loc.start, rf.location, tp.tuple_type.name)
+                        else
+                            0
+                    if tp.components <> null
+                    {
+                        var i: size_t 0
+                        while i < tp.components.length
+                        {
+                            let c_ptr tp.components.get i
+                            if c_ptr <> null
+                                this.census_collect_operands(c_ptr.value)
+                            set i: i + 1
+                        }
+                    }
+                }
+                when blk: Block
+                {
+                    if blk.statements <> null
+                    {
+                        var i: size_t 0
+                        while i < blk.statements.length
+                        {
+                            let s_ptr blk.statements.get i
+                            if s_ptr <> null
+                                this.census_collect_statement(s_ptr.unwrap())
+                            set i: i + 1
+                        }
+                    }
+                }
+                when iff: If
+                {
+                    this.census_collect_operands(iff.condition)
+                    this.census_collect_statement_ref(iff.consequent)
+                    this.census_collect_statement_ref(iff.alternative)
+                }
+                when mt: Match
+                {
+                    this.census_collect_operands(mt.condition)
+                    if mt.branches <> null
+                    {
+                        var i: size_t 0
+                        while i < mt.branches.length
+                        {
+                            let br_ptr mt.branches.get i
+                            if br_ptr <> null
+                            {
+                                let br (*br_ptr)
+                                if br.cases <> null
+                                {
+                                    var ci: size_t 0
+                                    while ci < br.cases.length
+                                    {
+                                        let cs_ptr br.cases.get ci
+                                        if cs_ptr <> null
+                                        {
+                                            let cs (*cs_ptr)
+                                            this.census_collect_operands(cs.condition)
+                                        }
+                                        set ci: ci + 1
+                                    }
+                                }
+                                this.census_collect_statement_ref(br.consequent)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.census_collect_statement_ref(mt.alternative)
+                }
+                when ch: Choose
+                {
+                    this.census_collect_operands(ch.condition)
+                    if ch.cases <> null
+                    {
+                        var i: size_t 0
+                        while i < ch.cases.length
+                        {
+                            let w_ptr ch.cases.get i
+                            if w_ptr <> null
+                            {
+                                let w (*w_ptr)
+                                this.census_collect_statement_ref(w.consequent)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.census_collect_statement_ref(ch.alternative)
+                }
+                when fr: For
+                {
+                    this.census_collect_operands(fr.expr)
+                    this.census_collect_action(fr.body)
+                }
+                when wh: While
+                {
+                    this.census_collect_operands(wh.cond.operation)
+                    this.census_collect_action(wh.body)
+                }
+                when rp: Repeat
+                    this.census_collect_action(rp.body)
+                when tr: Try
+                {
+                    this.census_collect_operands(tr.cond.operation)
+                    if tr.catches <> null
+                    {
+                        var i: size_t 0
+                        while i < tr.catches.length
+                        {
+                            let w_ptr tr.catches.get i
+                            if w_ptr <> null
+                            {
+                                let w (*w_ptr)
+                                this.census_collect_statement_ref(w.consequent)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.census_collect_statement_ref(tr.alternative)
+                }
+                when lam: Lambda
+                    this.census_collect_action(lam.body)
+                when is_expr: Is
+                {
+                    if is_expr.value <> null
+                    {
+                        let r is_expr.value
+                        this.census_collect_operand((*r), null)
+                    }
+                }
+                when as_expr: As
+                {
+                    if as_expr.value <> null
+                    {
+                        let r as_expr.value
+                        this.census_collect_operand((*r), null)
+                    }
+                }
+                when vc: VariantConstruction
+                {
+                    if vc.value <> null
+                    {
+                        let r vc.value
+                        this.census_collect_operand((*r), null)
+                    }
+                }
+                when mx: Matrix
+                {
+                    if mx.operations <> null
+                    {
+                        var i: size_t 0
+                        while i < mx.operations.length
+                        {
+                            let row_ptr mx.operations.get i
+                            if row_ptr <> null
+                                this.census_collect_operands(row_ptr)
+                            set i: i + 1
+                        }
+                    }
+                }
+                else
+                    0
+        }
+
+        ; Does this operand CARRY the candidate: the candidate box itself, an
+        ; alias name (bare, or through fields to a non-primitive), a
+        ; reference-like call result on an alias, `&x` / `x as T` of one.
+        function census_carry(this: Planner, op: PlannedOperand) returns bool
+        {
+            choose op.expr
+                when v: Variable
+                {
+                    if this.array_contains_name(census_names, v.name) = false
+                        return false
+                    if op.member_access = null
+                        return true
+                    let ma (*op.member_access)
+                    var i: size_t 0
+                    while i < ma.length
+                    {
+                        let m_ptr ma.get i
+                        if m_ptr <> null
+                            if (*m_ptr).is_method
+                                return false
+                        set i: i + 1
+                    }
+                    if Planner.is_primitive_type_name(op.result_type.name)
+                        return false
+                    return true
+                }
+                when b: Box
+                {
+                    if b.loc.start = census_box_start
+                        return true
+                    return false
+                }
+                when a: As
+                {
+                    if a.value <> null
+                    {
+                        let r a.value
+                        return this.census_carry((*r))
+                    }
+                    return false
+                }
+                when tp: Tuple
+                {
+                    if tp.loc.start = census_box_start
+                        return true
+                    return false
+                }
+                when c: Call
+                {
+                    if c.loc.start = census_box_start
+                        return true
+                    if c.is_operator
+                        if c.args <> null
+                            if c.args.length = 1
+                            {
+                                let a0 c.args.get 0
+                                if a0 <> null
+                                    return this.census_carry(a0.unwrap())
+                            }
+                    return this.census_call_yields_alias(op)
+                }
+                else
+                    return false
+            false
+        }
+
+        ; Is this operand the candidate construction itself?
+        function census_is_candidate(this: Planner, op: PlannedOperand) returns bool
+        {
+            choose op.expr
+                when tp: Tuple
+                    return tp.loc.start = census_box_start
+                when c: Call
+                    return c.loc.start = census_box_start
+                when b: Box
+                    return b.loc.start = census_box_start
+                else
+                    return false
+            false
+        }
+
+        ; A call on a carrying receiver whose result is a reference or a
+        ; view (`get`, `get_ptr`, `at`, `slice_from`, ...) hands out a
+        ; pointer into the candidate.
+        function census_call_yields_alias(this: Planner, op: PlannedOperand) returns bool
+        {
+            choose op.expr
+                when c: Call
+                {
+                    if c.is_operator
+                        return false
+                    if c.args = null
+                        return false
+                    if c.args.length = 0
+                        return false
+                    if this.census_type_is_ref_like(op.result_type) = false
+                        return false
+                    let a0 c.args.get 0
+                    if a0 = null
+                        return false
+                    return this.census_carry(a0.unwrap())
+                }
+                else
+                    return false
+            false
+        }
+
+        ; A reference, a pointer, the NPO option of one, or a view.
+        function census_type_is_ref_like(this: Planner, t: PlannedType) returns bool
+        {
+            if Planner.is_reference_like(t)
+                return true
+            if t.name = "Slice"
+                return true
+            if t.name = "Option"
+                if t.generics <> null
+                    if t.generics.length = 1
+                    {
+                        let g0 t.generics.get 0
+                        if g0 <> null
+                            return Planner.is_reference_like((*g0))
+                    }
+            false
+        }
+
+        function census_operands_carry(this: Planner, ops: ref[Vector[PlannedOperand]]?) returns bool
+        {
+            if ops = null
+                return false
+            var i: size_t 0
+            while i < ops.length
+            {
+                let op_ptr ops.get i
+                if op_ptr <> null
+                    if this.census_carry(op_ptr.unwrap())
+                        return true
+                set i: i + 1
+            }
+            false
+        }
+
+        ; A construction (tuple, variant, another box) with a carrying
+        ; component holds a pointer into the candidate.
+        function census_construction_carries(this: Planner, op: PlannedOperand) returns bool
+        {
+            choose op.expr
+                when c: Call
+                {
+                    if c.loc.start = census_box_start
+                        return false
+                    if c.is_operator
+                        return false
+                    choose c.life
+                        when u: Unspecified
+                            return false
+                        else
+                            0
+                    return this.census_operands_carry_deep(c.args)
+                }
+                when tp: Tuple
+                {
+                    if tp.loc.start = census_box_start
+                        return false
+                    if tp.components = null
+                        return false
+                    var i: size_t 0
+                    while i < tp.components.length
+                    {
+                        let c_ptr tp.components.get i
+                        if c_ptr <> null
+                            if this.census_operands_carry_deep(c_ptr.value)
+                                return true
+                        set i: i + 1
+                    }
+                    return false
+                }
+                when vc: VariantConstruction
+                {
+                    if vc.value <> null
+                    {
+                        let r vc.value
+                        if this.census_carry((*r))
+                            return true
+                        return this.census_construction_carries((*r))
+                    }
+                    return false
+                }
+                when b: Box
+                {
+                    if b.loc.start = census_box_start
+                        return false
+                    if b.value <> null
+                    {
+                        let r b.value
+                        if this.census_carry((*r))
+                            return true
+                        return this.census_construction_carries((*r))
+                    }
+                    return false
+                }
+                else
+                    return false
+            false
+        }
+
+        function census_operands_carry_deep(this: Planner, ops: ref[Vector[PlannedOperand]]?) returns bool
+        {
+            if ops = null
+                return false
+            var i: size_t 0
+            while i < ops.length
+            {
+                let op_ptr ops.get i
+                if op_ptr <> null
+                {
+                    if this.census_carry(op_ptr.unwrap())
+                        return true
+                    if this.census_construction_carries(op_ptr.unwrap())
+                        return true
+                }
+                set i: i + 1
+            }
+            false
+        }
+
+        ; A `set` target that is a bare local becomes an alias; anything else
+        ; (a field, a deref, a global) is a store the candidate escapes through.
+        procedure census_target_aliases(mutable this: Planner, ops: ref[Vector[PlannedOperand]]?) returns bool
+        {
+            if ops = null
+                return false
+            if ops.length <> 1
+                return false
+            let t0 ops.get 0
+            if t0 = null
+                return false
+            let t t0.unwrap()
+            if t.member_access <> null
+                return false
+            choose t.expr
+                when tv: Variable
+                {
+                    if this.array_contains_name(census_names, tv.name) = false
+                        census_names.add(String(tv.name))
+                    return true
+                }
+                else
+                    return false
+            false
+        }
+
+        procedure census_add_alias(mutable this: Planner, name: ref[String]?)
+        {
+            if name = null
+                return
+            if this.array_contains_name(census_names, (*name)) = false
+                census_names.add(String((*name)))
+        }
+
+        ; Walk (1): the inline rules over one body for the current candidate.
+        procedure census_walk_action(mutable this: Planner, act: PlannedAction)
+        {
+            if census_escaped
+                return
+            var has_target false
+            if act.target <> null
+                if act.target.length > 0
+                    set has_target: true
+            if this.census_operands_carry(act.source)
+            {
+                if has_target
+                {
+                    if this.census_target_aliases(act.target) = false
+                        set census_escaped: true
+                }
+                else
+                    set census_escaped: true
+            }
+            this.census_walk_operands(act.source)
+            this.census_walk_operands(act.target)
+        }
+
+        procedure census_walk_operands(mutable this: Planner, ops: ref[Vector[PlannedOperand]]?)
+        {
+            if census_escaped
+                return
+            if ops = null
+                return
+            var i: size_t 0
+            while i < ops.length
+            {
+                if census_escaped
+                    return
+                let op_ptr ops.get i
+                if op_ptr <> null
+                    this.census_walk_operand(op_ptr.unwrap())
+                set i: i + 1
+            }
+        }
+
+        procedure census_walk_statement_ref(mutable this: Planner, stmt: ref[PlannedStatement]?)
+        {
+            if census_escaped
+                return
+            if stmt <> null
+            {
+                let s stmt
+                this.census_walk_statement((*s))
+            }
+        }
+
+        procedure census_walk_statement(mutable this: Planner, stmt: PlannedStatement)
+        {
+            if census_escaped
+                return
+            choose stmt
+                when action: Action
+                    this.census_walk_action(action)
+                when binding: Binding
+                {
+                    if binding.operation <> null
+                    {
+                        let bops (*binding.operation)
+                        var aliased false
+                        if bops.length = 1
+                        {
+                            let op0 bops.get 0
+                            if op0 <> null
+                            {
+                                let o op0.unwrap()
+                                if this.census_carry(o)
+                                    set aliased: true
+                                if aliased = false
+                                    if this.census_construction_carries(o)
+                                        set aliased: true
+                            }
+                        }
+                        if aliased
+                            this.census_add_alias(binding.binding_item.name)
+                        else
+                            this.census_walk_operands(binding.operation)
+                    }
+                }
+                when ret: Return
+                {
+                    if this.census_operands_carry(ret.result)
+                        set census_escaped: true
+                    this.census_walk_operands(ret.result)
+                }
+                when throw_stmt: Throw
+                {
+                    if this.census_operands_carry(throw_stmt.result)
+                        set census_escaped: true
+                    this.census_walk_operands(throw_stmt.result)
+                }
+                when brk: Break
+                {
+                    if this.census_operands_carry(brk.result)
+                        set census_escaped: true
+                    this.census_walk_operands(brk.result)
+                }
+                when cont: Continue
+                    0
+        }
+
+        procedure census_walk_operand(mutable this: Planner, op: PlannedOperand)
+        {
+            if census_escaped
+                return
+            choose op.expr
+                when call: Call
+                {
+                    if this.census_construction_carries(op)
+                    {
+                        set census_escaped: true
+                        return
+                    }
+                    this.census_walk_operands(call.args)
+                }
+                when tp: Tuple
+                {
+                    if this.census_construction_carries(op)
+                    {
+                        set census_escaped: true
+                        return
+                    }
+                    if tp.components <> null
+                    {
+                        var i: size_t 0
+                        while i < tp.components.length
+                        {
+                            let c_ptr tp.components.get i
+                            if c_ptr <> null
+                                this.census_walk_operands(c_ptr.value)
+                            set i: i + 1
+                        }
+                    }
+                }
+                when vc: VariantConstruction
+                {
+                    if this.census_construction_carries(op)
+                    {
+                        set census_escaped: true
+                        return
+                    }
+                    if vc.value <> null
+                    {
+                        let r vc.value
+                        this.census_walk_operand((*r))
+                    }
+                }
+                when b: Box
+                {
+                    if this.census_construction_carries(op)
+                    {
+                        set census_escaped: true
+                        return
+                    }
+                    if b.value <> null
+                    {
+                        let r b.value
+                        this.census_walk_operand((*r))
+                    }
+                }
+                when cl: Closure
+                {
+                    if this.census_operands_carry(cl.captures)
+                        set census_escaped: true
+                }
+                when lam: Lambda
+                    this.census_walk_action(lam.body)
+                when blk: Block
+                {
+                    if blk.statements <> null
+                    {
+                        var i: size_t 0
+                        while i < blk.statements.length
+                        {
+                            let s_ptr blk.statements.get i
+                            if s_ptr <> null
+                                this.census_walk_statement(s_ptr.unwrap())
+                            set i: i + 1
+                        }
+                    }
+                }
+                when iff: If
+                {
+                    this.census_walk_operands(iff.condition)
+                    this.census_walk_statement_ref(iff.consequent)
+                    this.census_walk_statement_ref(iff.alternative)
+                }
+                when mt: Match
+                {
+                    this.census_walk_operands(mt.condition)
+                    if mt.branches <> null
+                    {
+                        var i: size_t 0
+                        while i < mt.branches.length
+                        {
+                            let br_ptr mt.branches.get i
+                            if br_ptr <> null
+                            {
+                                let br (*br_ptr)
+                                if br.cases <> null
+                                {
+                                    var ci: size_t 0
+                                    while ci < br.cases.length
+                                    {
+                                        let cs_ptr br.cases.get ci
+                                        if cs_ptr <> null
+                                        {
+                                            let cs (*cs_ptr)
+                                            this.census_walk_operands(cs.condition)
+                                        }
+                                        set ci: ci + 1
+                                    }
+                                }
+                                this.census_walk_statement_ref(br.consequent)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.census_walk_statement_ref(mt.alternative)
+                }
+                when ch: Choose
+                {
+                    this.census_walk_operands(ch.condition)
+                    if ch.cases <> null
+                    {
+                        var i: size_t 0
+                        while i < ch.cases.length
+                        {
+                            let w_ptr ch.cases.get i
+                            if w_ptr <> null
+                            {
+                                let w (*w_ptr)
+                                this.census_walk_statement_ref(w.consequent)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.census_walk_statement_ref(ch.alternative)
+                }
+                when fr: For
+                {
+                    if this.census_operands_carry(fr.expr)
+                    {
+                        let ident String(fr.identifier)
+                        if this.array_contains_name(census_names, ident) = false
+                            census_names.add(ident)
+                    }
+                    this.census_walk_operands(fr.expr)
+                    this.census_walk_action(fr.body)
+                }
+                when wh: While
+                {
+                    this.census_walk_operands(wh.cond.operation)
+                    this.census_walk_action(wh.body)
+                }
+                when rp: Repeat
+                    this.census_walk_action(rp.body)
+                when tr: Try
+                {
+                    this.census_walk_operands(tr.cond.operation)
+                    if tr.catches <> null
+                    {
+                        var i: size_t 0
+                        while i < tr.catches.length
+                        {
+                            let w_ptr tr.catches.get i
+                            if w_ptr <> null
+                            {
+                                let w (*w_ptr)
+                                this.census_walk_statement_ref(w.consequent)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    this.census_walk_statement_ref(tr.alternative)
+                }
+                when is_expr: Is
+                {
+                    if is_expr.value <> null
+                    {
+                        let r is_expr.value
+                        this.census_walk_operand((*r))
+                    }
+                }
+                when as_expr: As
+                {
+                    if as_expr.value <> null
+                    {
+                        let r as_expr.value
+                        this.census_walk_operand((*r))
+                    }
+                }
+                when mx: Matrix
+                {
+                    if mx.operations <> null
+                    {
+                        var i: size_t 0
+                        while i < mx.operations.length
+                        {
+                            let row_ptr mx.operations.get i
+                            if row_ptr <> null
+                                this.census_walk_operands(row_ptr)
+                            set i: i + 1
+                        }
+                    }
+                }
+                else
+                    0
+        }
+
         procedure escape_walk_function_body(mutable this: Planner, func: PlannedFunction)
         {
             ; Reset the per-function stack-closure name set; it is repopulated

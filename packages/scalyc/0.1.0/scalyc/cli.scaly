@@ -68,6 +68,7 @@ define Options
     task_plan: bool         ; --task-plan: stage-3 parallelizability report
     pointer_report: bool    ; --pointer-report: raw-pointer census off the Plan
     write_report: bool      ; --write-report: writes through parameters, off the Plan
+    host_report: bool       ; --host-report: named-page constructions that never leave their routine
     purity_check: bool      ; --purity-check: a function may not write what its parameters reach
     interface_facts: bool   ; --interface-facts: body-derived facts for tools/interface/geninterface.py
     debug: bool             ; -g: emit DWARF debug info
@@ -101,6 +102,7 @@ define Options
         set task_plan: false
         set pointer_report: false
         set write_report: false
+        set host_report: false
         set purity_check: false
         set interface_facts: false
         set debug: false
@@ -207,6 +209,10 @@ define cli
                 else if arg = "--write-report"
                 {
                     set opts.write_report: true
+                }
+                else if arg = "--host-report"
+                {
+                    set opts.host_report: true
                 }
                 else if arg = "--purity-check"
                 {
@@ -604,6 +610,14 @@ define cli
             var writes WriteCensus.WriteCensus()
             writes.analyze(plan, &model, &wcensus)
             cli.print_write_report(&writes)
+        }
+
+        ; --host-report: the named-page constructions whose value never
+        ; leaves its routine (Planner.host_census#), advisory, same slot.
+        if opts.host_report
+        {
+            planner.host_census()
+            cli.print_host_report(&planner)
         }
 
         ; --purity-check: R1 step 2 as a report (WriteCensus' check mode)
@@ -1267,6 +1281,21 @@ define cli
         let head_str head.to_string()
         Console.println(head_str.to_c_string())
         cli.print_located("task-plan: ", &tp.report_files, &tp.report_offsets, &tp.report_verdicts)
+    }
+
+    ; --host-report: the head line counts the candidates and the LOCAL
+    ; verdicts, then one located line per candidate (Planner.host_census#).
+    procedure print_host_report(planner: ref[Planner.Planner])
+    {
+        var head StringBuilder()
+        head.append "host-report: "
+        head.append(cli.format_size(planner.census_total))
+        head.append " candidates, "
+        head.append(cli.format_size(planner.census_local))
+        head.append " local"
+        let head_str head.to_string()
+        Console.println(head_str.to_c_string())
+        cli.print_located("host-report: ", &planner.census_files, &planner.census_offsets, &planner.census_texts)
     }
 
     ; --pointer-report: the head line carries one count per class, then one

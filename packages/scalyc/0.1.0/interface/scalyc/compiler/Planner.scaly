@@ -560,6 +560,24 @@ define Planner
         ; indirect calls (the common, delegate-free case incl. the compiler).
         var escape_saw_indirect: bool
 
+        ; --host-report census (host_census#): the named-page constructions
+        ; (`T^host(...)`, `T^this(...)`, any `^name`) whose value never leaves
+        ; the routine that builds them. escape_census switches the checker's
+        ; walk into census mode: region_of_operand answers LOCAL for the
+        ; candidate (census_box_start pins an unbound one by its span) and its
+        ; aliases (census_names), the diagnostics stay silent and escape_found
+        ; is read as the verdict. census_escaped is the inline half's verdict.
+        ; The report is three parallel arrays for cli.print_located.
+        var escape_census: bool
+        census_names: Array[String]
+        var census_box_start: size_t
+        var census_escaped: bool
+        census_files: Array[String]
+        census_offsets: Array[size_t]
+        census_texts: Array[String]
+        var census_total: size_t
+        var census_local: size_t
+
         ; CLOSURE Vector-3 support: names bound to a stack (Lifetime.Local)
         ; closure in the function CURRENTLY being walked by the escape
         ; post-pass. Rebuilt from the Plan tree (each function's PlannedBinding
@@ -813,6 +831,15 @@ define Planner
     )
     {
         init(filename: String) linked
+
+
+
+
+
+
+
+
+
 
 
 
@@ -27399,6 +27426,18 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
         ; required_region_for_escape#: the minimum pointee rank an escape sink
         ; (return / store into Caller-lived memory / pass to a storing callee)
         ; demands. TODAY constant Caller — anything Local-ranked escapes. Stage D
@@ -27754,6 +27793,9 @@ define Planner
         ; global. A same-frame $/stack local dies WITH the arg -> safe.
         ; Mirrors Planner.cpp::escapeDestArgOutlives.
         function escape_dest_arg_outlives(this: Planner, op: PlannedOperand) returns bool linked
+
+
+
 
 
 
@@ -28328,8 +28370,14 @@ define Planner
 
 
 
+
+
+
         ; Pass 1: check one call against one summary entry.
         procedure escape_check_call_record(mutable this: Planner, call: PlannedCall, rec: EscapeRecord) linked
+
+
+
 
 
 
@@ -28422,6 +28470,9 @@ define Planner
         ; unresolved (function-pointer) call — the direct-call summary path
         ; keys on mangled_name, which an indirect call does not have.
         procedure escape_check_indirect_call(mutable this: Planner, call: PlannedCall) linked
+
+
+
 
 
 
@@ -29128,6 +29179,961 @@ define Planner
 
         ; Walk one function body. Mirrors emit_function_body: choose func.impl
         ; and feed the whole Action by value to escape_walk_action.
+        ; ====================================================================
+        ; --host-report: a census of the named-page constructions
+        ; (`T^host(...)`, `T^this(...)`, any `^name`) whose value never leaves
+        ; the routine that builds them. Such a value could be built on the
+        ; routine's own local page and die with the frame; on the named page
+        ; it lives until that region dies, which is what the sigil buys and
+        ; what it costs. The verdict per candidate is the escape checker's
+        ; own, asked as if the candidate were a local-page value:
+        ;   (1) census_walk_* applies the inline rules: a return, throw or
+        ;       break carrying the value, a `set` whose target is not a bare
+        ;       local, a construction over the value, a closure capturing it.
+        ;       A `let` whose initializer is the value, a non-primitive field
+        ;       of it, a reference-like call RESULT on it or a construction
+        ;       over it becomes an ALIAS (census_names); so does a `for`
+        ;       variable over it and a bare local the value is `set` into.
+        ;   (2) escape_walk_function_body applies the call-site rules with
+        ;       the recorded summaries: region_of_operand answers LOCAL for
+        ;       the candidate and its aliases (escape_census), the diagnostics
+        ;       stay silent, escape_found is the verdict.
+        ; Conservative where it is unsure (a verdict `local` is the claim; an
+        ; `escapes` may be an over-approximation). Runs after
+        ; check_interprocedural_escapes, so the summaries are in hand.
+        procedure host_census(mutable this: Planner) io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure census_judge(mutable this: Planner, bound: ref[String]?, start: size_t, page: String, tname: String) @persists true io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; Collect: every Box in the body is a candidate; a Box that is the
+        ; whole initializer of a binding is judged under the binding's name.
+        procedure census_collect_action(mutable this: Planner, act: PlannedAction) io linked
+
+
+
+
+
+        procedure census_collect_operands(mutable this: Planner, ops: ref[Vector[PlannedOperand]]?) io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure census_collect_statement_ref(mutable this: Planner, stmt: ref[PlannedStatement]?) io linked
+
+
+
+
+
+
+
+
+        procedure census_collect_statement(mutable this: Planner, stmt: PlannedStatement) io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure census_collect_operand(mutable this: Planner, op: PlannedOperand, bound: ref[String]?) io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; Does this operand CARRY the candidate: the candidate box itself, an
+        ; alias name (bare, or through fields to a non-primitive), a
+        ; reference-like call result on an alias, `&x` / `x as T` of one.
+        function census_carry(this: Planner, op: PlannedOperand) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; Is this operand the candidate construction itself?
+        function census_is_candidate(this: Planner, op: PlannedOperand) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; A call on a carrying receiver whose result is a reference or a
+        ; view (`get`, `get_ptr`, `at`, `slice_from`, ...) hands out a
+        ; pointer into the candidate.
+        function census_call_yields_alias(this: Planner, op: PlannedOperand) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; A reference, a pointer, the NPO option of one, or a view.
+        function census_type_is_ref_like(this: Planner, t: PlannedType) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function census_operands_carry(this: Planner, ops: ref[Vector[PlannedOperand]]?) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; A construction (tuple, variant, another box) with a carrying
+        ; component holds a pointer into the candidate.
+        function census_construction_carries(this: Planner, op: PlannedOperand) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function census_operands_carry_deep(this: Planner, ops: ref[Vector[PlannedOperand]]?) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; A `set` target that is a bare local becomes an alias; anything else
+        ; (a field, a deref, a global) is a store the candidate escapes through.
+        procedure census_target_aliases(mutable this: Planner, ops: ref[Vector[PlannedOperand]]?) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure census_add_alias(mutable this: Planner, name: ref[String]?) linked
+
+
+
+
+
+
+
+        ; Walk (1): the inline rules over one body for the current candidate.
+        procedure census_walk_action(mutable this: Planner, act: PlannedAction) linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure census_walk_operands(mutable this: Planner, ops: ref[Vector[PlannedOperand]]?) linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure census_walk_statement_ref(mutable this: Planner, stmt: ref[PlannedStatement]?) linked
+
+
+
+
+
+
+
+
+
+
+        procedure census_walk_statement(mutable this: Planner, stmt: PlannedStatement) linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure census_walk_operand(mutable this: Planner, op: PlannedOperand) linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         procedure escape_walk_function_body(mutable this: Planner, func: PlannedFunction) io linked
 
 

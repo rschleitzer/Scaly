@@ -68,6 +68,7 @@ define Options
     task_plan: bool         ; --task-plan: stage-3 parallelizability report
     pointer_report: bool    ; --pointer-report: raw-pointer census off the Plan
     write_report: bool      ; --write-report: writes through parameters, off the Plan
+    host_report: bool       ; --host-report: named-page constructions that never leave their routine
     purity_check: bool      ; --purity-check: a function may not write what its parameters reach
     interface_facts: bool   ; --interface-facts: body-derived facts for tools/interface/geninterface.py
     debug: bool             ; -g: emit DWARF debug info
@@ -83,6 +84,7 @@ define Options
 )
 {
     init() linked
+
 
 
 
@@ -132,6 +134,10 @@ define cli
     ; argc: argument count
     ; argv: argument vector (C-style array of char pointers)
     function parse_args(argc: int, argv: pointer[pointer[char]]) @page true @direct true returns Options linked
+
+
+
+
 
 
 
@@ -439,6 +445,14 @@ define cli
     ; Run the compiler with parsed options
     ; Returns 0 on success, non-zero on error
     procedure run(mutable opts: Options) returns int io mutable modeler_error_count reads modeler_error_count linked
+
+
+
+
+
+
+
+
 
 
 
@@ -1257,6 +1271,21 @@ define cli
     ; offset is relative to the loop's own source file, so re-read the file
     ; when it changes (entries arrive grouped by file, one read per file).
     procedure print_task_plan(tp: ref[TaskPlanner.TaskPlanner]) io linked
+
+
+
+
+
+
+
+
+
+
+
+
+    ; --host-report: the head line counts the candidates and the LOCAL
+    ; verdicts, then one located line per candidate (Planner.host_census#).
+    procedure print_host_report(planner: ref[Planner.Planner]) io linked
 
 
 
