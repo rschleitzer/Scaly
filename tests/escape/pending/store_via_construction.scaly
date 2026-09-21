@@ -1,0 +1,21 @@
+; ACCEPTED at rc 0 today, unsound: a parameter stored into another parameter's
+; field THROUGH a plain construction (no `^name`) — the 2026-09-20 construction
+; route covers only constructions that name a region.
+define Inner (var list: ref[Array[int]]?  var n: int)
+define Other (var m: int)
+define Data union (Inner: Inner  Other: Other)
+define Ty (var data: Data)
+
+procedure fill(mutable t: ref[Ty], insts: ref[Array[int]])
+    set t.data: Data.Inner(Inner(insts, 0))
+
+procedure make(mutable t: ref[Ty])
+{
+    let insts &Array[int]()
+    insts.add(1)
+    fill(t, insts)
+}
+
+var ty Ty(Data.Inner(Inner(null, 0)))
+make(&ty)
+print "done\n"

@@ -564,6 +564,8 @@ define cli
         ; ================================================================
 
         var planner Planner.Planner(opts.input_file)
+        if opts.host_report
+            set planner.host_report: true
         if opts.use_vis
             set planner.use_vis_measure: true
         if opts.no_use_vis

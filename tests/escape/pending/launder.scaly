@@ -1,0 +1,30 @@
+; ACCEPTED at rc 0 today, unsound: `insts` lives on make's local page, fill
+; launders it through a local copy of the union arm into t.data.
+define Inner (var list: ref[Array[int]]?  var n: int)
+define Other (var m: int)
+define Data union (Inner: Inner  Other: Other)
+define Ty (var data: Data)
+
+procedure fill(mutable t: ref[Ty], insts: ref[Array[int]])
+{
+    choose t.data
+        when i: Inner
+        {
+            var d i
+            set d.list: insts
+            set t.data: Data.Inner(d)
+        }
+        else
+            0
+}
+
+procedure make(mutable t: ref[Ty])
+{
+    let insts &Array[int]()
+    insts.add(1)
+    fill(t, insts)
+}
+
+var ty Ty(Data.Inner(Inner(null, 0)))
+make(&ty)
+print "done\n"

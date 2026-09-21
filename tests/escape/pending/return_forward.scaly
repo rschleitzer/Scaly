@@ -1,0 +1,34 @@
+; ACCEPTED at rc 0 today, unsound: mk returns a host record holding its
+; parameter, and the caller stores the result (`set links.resolved: this.mk(p)`).
+; As FREE functions the checker rejects the same shape; the METHOD slips past.
+define Sig (var params: ref[Array[int]]?  var n: int)
+define Link (var resolved: ref[Sig]?)
+define Box (var host: ref[Page]  var count: int)
+{
+    procedure mk(mutable this, params: ref[Array[int]]) returns ref[Sig]?
+    {
+        set count: count + 1
+        let s &Sig^host(params, count)
+        s
+    }
+    procedure fill(mutable this, mutable links: ref[Link])
+    {
+        let p &Array[int]^host()
+        p.add(1)
+        set links.resolved: this.mk(p)
+    }
+    procedure fill2(mutable this, mutable links: ref[Link])
+    {
+        let q &Array[int]^host()
+        q.add(2)
+        let made this.mk(q)
+        set links.resolved: made
+    }
+}
+let root_anchor String("probe")
+let host Page.get(root_anchor.get_buffer() as pointer[void])
+var b Box(host, 0)
+var lk Link(null)
+b.fill(&lk)
+b.fill2(&lk)
+print "done\n"

@@ -568,7 +568,40 @@ define Planner
         ; aliases (census_names), the diagnostics stay silent and escape_found
         ; is read as the verdict. census_escaped is the inline half's verdict.
         ; The report is three parallel arrays for cli.print_located.
+        ; Persist scan (function_persists_param_guts#): the names a
+        ; parameter's guts may travel under inside one body (the parameters
+        ; and every local that received one), and the body's locals — both
+        ; on the Planner's page, because the walk grows them from nested
+        ; blocks and a frame-hosted Array's growth would die with the frame.
+        persist_tainted: Array[String]
+        persist_locals: Array[String]
+        ; the deep verdicts (host_census#): every planned body is recorded
+        ; under --host-report (deep_fns/deep_mangled) and judged to a
+        ; fixpoint, because the question is TRANSITIVE — a body that hands a
+        ; parameter to a persisting callee persists it too. deep_by_name is
+        ; the persisting callees by plain name, what a Model-level call can
+        ; be matched against; persist_deep_names/vals is the census's lookup
+        ; by mangled name.
+        deep_fns: Array[Function]
+        deep_mangled: Array[String]
+        deep_state: Array[size_t]
+        deep_by_name: Array[String]
+        ; the second verdict: a body whose RETURN carries a parameter (or a
+        ; call result that does) hands the caller a value holding it —
+        ; deep_ret_state per body, deep_returns_by_name for the Model-level
+        ; match; persist_ret_hit is the scan's own flag
+        deep_ret_state: Array[size_t]
+        deep_returns_by_name: Array[String]
+        deep_returns_mangled: Array[String]
+        var persist_ret_hit: bool
+        persist_deep_names: Array[String]
+        persist_deep_vals: Array[size_t]
+
         var escape_census: bool
+        ; set by cli BEFORE planning under --host-report: the persist summary
+        ; is then computed for EVERY resolved callee, not only for one that
+        ; met a local-life argument, so the census can ask it for any call.
+        var host_report: bool
         census_names: Array[String]
         var census_box_start: size_t
         var census_escaped: bool
@@ -831,6 +864,19 @@ define Planner
     )
     {
         init(filename: String) linked
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2353,6 +2399,7 @@ define Planner
         ; recursive — register_module_concepts' own recursion reaches
         ; every sub-module (including namespace-hosted ones).
         procedure record_module_uses(mutable this: Planner, m: Module) linked
+
 
 
 
@@ -29220,6 +29267,7 @@ define Planner
 
 
 
+
         procedure census_judge(mutable this: Planner, bound: ref[String]?, start: size_t, page: String, tname: String) @persists true io linked
 
 
@@ -29560,10 +29608,31 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         ; Does this operand CARRY the candidate: the candidate box itself, an
         ; alias name (bare, or through fields to a non-primitive), a
         ; reference-like call result on an alias, `&x` / `x as T` of one.
         function census_carry(this: Planner, op: PlannedOperand) returns bool linked
+
+
+
+
+
 
 
 
@@ -29641,6 +29710,15 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
         ; A call on a carrying receiver whose result is a reference or a
         ; view (`get`, `get_ptr`, `at`, `slice_from`, ...) hands out a
         ; pointer into the candidate.
@@ -29667,8 +29745,98 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
         ; A reference, a pointer, the NPO option of one, or a view.
         function census_type_is_ref_like(this: Planner, t: PlannedType) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; The inline `persists_args` rule (plan_call), and the put/add rule
+        ; beside it: a callee that keeps its arguments' guts, or a container's
+        ; `put`/`add`, stores a local-page argument beyond the frame unless
+        ; the RECEIVER is frame-local itself. The verdict is the DEEP one
+        ; (persists_deep_for#, every resolved callee under --host-report);
+        ; a callee not in it is unknown and passes.
+        procedure census_persisting_call_carries(this: Planner, call: PlannedCall) returns bool io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -29820,7 +29988,7 @@ define Planner
 
 
         ; Walk (1): the inline rules over one body for the current candidate.
-        procedure census_walk_action(mutable this: Planner, act: PlannedAction) linked
+        procedure census_walk_action(mutable this: Planner, act: PlannedAction) io linked
 
 
 
@@ -29842,7 +30010,7 @@ define Planner
 
 
 
-        procedure census_walk_operands(mutable this: Planner, ops: ref[Vector[PlannedOperand]]?) linked
+        procedure census_walk_operands(mutable this: Planner, ops: ref[Vector[PlannedOperand]]?) io linked
 
 
 
@@ -29860,7 +30028,7 @@ define Planner
 
 
 
-        procedure census_walk_statement_ref(mutable this: Planner, stmt: ref[PlannedStatement]?) linked
+        procedure census_walk_statement_ref(mutable this: Planner, stmt: ref[PlannedStatement]?) io linked
 
 
 
@@ -29871,7 +30039,7 @@ define Planner
 
 
 
-        procedure census_walk_statement(mutable this: Planner, stmt: PlannedStatement) linked
+        procedure census_walk_statement(mutable this: Planner, stmt: PlannedStatement) io linked
 
 
 
@@ -29925,7 +30093,7 @@ define Planner
 
 
 
-        procedure census_walk_operand(mutable this: Planner, op: PlannedOperand) linked
+        procedure census_walk_operand(mutable this: Planner, op: PlannedOperand) io linked
 
 
 
@@ -30037,6 +30205,772 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; ====================================================================
+        ; The CENSUS's persist question (host_census#), deeper than the gate's
+        ; function_persists_param_guts: that one counts only a `put`/`add` on a
+        ; non-local receiver, and making it count stores as well turned
+        ; ~600 `arr.add(<call result>)` sites of the ports into hard errors
+        ; (a call result carries a Local-life stamp even when its callee
+        ; built it on an explicit page). Advisory here, so it may over-
+        ; approximate. Does a body keep a parameter's guts beyond the call?
+        ; True for a `put`/`add` on a receiver that is not a local, and for a STORE whose
+        ; source carries a parameter and whose target head is not a local
+        ; (`this`, another parameter, a global, a deref). A parameter travels:
+        ; a local bound from it or storing it (`var d i; set d.f: p`), a local
+        ; container it is `add`ed to, are TAINTED, so the later
+        ; `set t.data: X(d)` into a parameter counts — the union
+        ; copy/mutate/write-back idiom laundered the parameter through a
+        ; local and the checker did not see it (2026-09-21: tscaly's
+        ; `fill_interface_data`, a list freed under a live type). Nested
+        ; blocks are walked; flow-insensitive within one body. The interface
+        ; fact `@persists` is derived here too (facts_function#).
+        procedure function_persists_param_guts_deep(mutable this: Planner, f: Function) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure persist_tail_carries(mutable this: Planner, ops: Vector[Operand]) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; The deep verdicts to a fixpoint: a round marks every not-yet-marked
+        ; body that persists under the current deep_by_name; a body marked
+        ; this round can make its callers persist in the next.
+        procedure deep_persist_fixpoint(mutable this: Planner) io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure persist_add_local(mutable this: Planner, name: String) linked
+
+
+
+
+
+        procedure persist_add_tainted(mutable this: Planner, name: String) linked
+
+
+
+
+
+        procedure persist_locals_stmts(mutable this: Planner, stmts: Vector[Statement]) linked
+
+
+
+
+
+
+
+
+
+
+
+        procedure persist_locals_stmt(mutable this: Planner, s: Statement) linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure persist_locals_action(mutable this: Planner, a: scalyc.compiler.Model.Action) linked
+
+
+
+
+
+        procedure persist_locals_binding(mutable this: Planner, b: scalyc.compiler.Model.Binding) linked
+
+
+
+
+
+
+        procedure persist_locals_whens(mutable this: Planner, whens: Vector[When]) linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure persist_locals_ops(mutable this: Planner, ops: Vector[Operand]) linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; The scan proper: true as soon as a tainted value persists.
+        procedure persist_scan_stmts(mutable this: Planner, stmts: Vector[Statement]) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure persist_scan_stmt(mutable this: Planner, s: Statement) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; Does the value carry a tainted name: bare, or inside a CONSTRUCTION
+        ; (a capitalized head, no explicit page) over it? A lowercase call's
+        ; result is not followed — the checker's own blind spot, kept here so
+        ; a fresh value computed FROM a parameter does not mark the callee.
+        function persist_mentions_carried(this: Planner, ops: Vector[Operand], names: Array[String]) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; A recorded body's name may be qualified (`Box.mk`); a call names the
+        ; last segment.
+        function persist_callee_named(this: Planner, stored: Array[String], seg: String) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure persist_scan_binding(mutable this: Planner, b: scalyc.compiler.Model.Binding) returns bool linked
+
+
+
+
+
+
+
+        procedure persist_scan_action(mutable this: Planner, a: scalyc.compiler.Model.Action) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; A store's target: a local head is tainted (and the store is the
+        ; local's business), anything else keeps the value beyond the call.
+        procedure persist_store_persists(mutable this: Planner, target: Vector[Operand]) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; `d.add(p)` / `d.put(i, p)` on a LOCAL receiver taints the local.
+        procedure persist_note_putadd_local(mutable this: Planner, ops: Vector[Operand]) linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure persist_scan_whens(mutable this: Planner, whens: Vector[When]) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure persist_scan_ops(mutable this: Planner, ops: Vector[Operand]) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; ops[i] names a callee (last segment in deep_by_name) and ops[i+1]
+        ; is its argument tuple carrying a tainted value: the callee keeps
+        ; it, so this body persists it too.
+        procedure persist_call_forwards(mutable this: Planner, ops: Vector[Operand], i: size_t) returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure persist_scan_op(mutable this: Planner, op: Operand) returns bool linked
 
 
 
@@ -35297,6 +36231,13 @@ define Planner
 
 
 
+
+
+
+
+
+
+
         ; ================================================================
         ; WP8 — constructor completeness.
         ;
@@ -36504,6 +37445,7 @@ define Planner
 
 
 
+
         ; ensure_member_layout#: on-demand layout for a CROSS-PACKAGE struct
         ; reached as a member-access base while planning a root that does NOT
         ; walk the defining package. register_struct_layouts_in_module# only
@@ -36594,6 +37536,7 @@ define Planner
 
 
 
+
         ; ensure_union_layout#: on-demand layout for a CROSS-PACKAGE union
         ; that is the scrutinee of a `choose` while planning a root that does
         ; not walk the union's defining package (e.g. scalyc's
@@ -36608,6 +37551,7 @@ define Planner
         ; types are excluded, generic concepts are left to instantiate_generic#,
         ; and pinning is to owning_page (persistent plan storage).
         procedure ensure_union_layout(mutable this: Planner, mutable name: String) io linked
+
 
 
 

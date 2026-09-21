@@ -568,7 +568,40 @@ define Planner
         ; aliases (census_names), the diagnostics stay silent and escape_found
         ; is read as the verdict. census_escaped is the inline half's verdict.
         ; The report is three parallel arrays for cli.print_located.
+        ; Persist scan (function_persists_param_guts#): the names a
+        ; parameter's guts may travel under inside one body (the parameters
+        ; and every local that received one), and the body's locals — both
+        ; on the Planner's page, because the walk grows them from nested
+        ; blocks and a frame-hosted Array's growth would die with the frame.
+        persist_tainted: Array[String]
+        persist_locals: Array[String]
+        ; the deep verdicts (host_census#): every planned body is recorded
+        ; under --host-report (deep_fns/deep_mangled) and judged to a
+        ; fixpoint, because the question is TRANSITIVE — a body that hands a
+        ; parameter to a persisting callee persists it too. deep_by_name is
+        ; the persisting callees by plain name, what a Model-level call can
+        ; be matched against; persist_deep_names/vals is the census's lookup
+        ; by mangled name.
+        deep_fns: Array[Function]
+        deep_mangled: Array[String]
+        deep_state: Array[size_t]
+        deep_by_name: Array[String]
+        ; the second verdict: a body whose RETURN carries a parameter (or a
+        ; call result that does) hands the caller a value holding it —
+        ; deep_ret_state per body, deep_returns_by_name for the Model-level
+        ; match; persist_ret_hit is the scan's own flag
+        deep_ret_state: Array[size_t]
+        deep_returns_by_name: Array[String]
+        deep_returns_mangled: Array[String]
+        var persist_ret_hit: bool
+        persist_deep_names: Array[String]
+        persist_deep_vals: Array[size_t]
+
         var escape_census: bool
+        ; set by cli BEFORE planning under --host-report: the persist summary
+        ; is then computed for EVERY resolved callee, not only for one that
+        ; met a local-life argument, so the census can ask it for any call.
+        var host_report: bool
         census_names: Array[String]
         var census_box_start: size_t
         var census_escaped: bool
@@ -894,7 +927,20 @@ define Planner
             set escape_fn_index: 0
             set escape_forwarding: false
             set escape_saw_indirect: false
+            set persist_tainted: Array[String]^this()
+            set persist_locals: Array[String]^this()
+            set deep_fns: Array[Function]^this()
+            set deep_mangled: Array[String]^this()
+            set deep_state: Array[size_t]^this()
+            set deep_by_name: Array[String]^this()
+            set deep_ret_state: Array[size_t]^this()
+            set deep_returns_by_name: Array[String]^this()
+            set deep_returns_mangled: Array[String]^this()
+            set persist_ret_hit: false
+            set persist_deep_names: Array[String]^this()
+            set persist_deep_vals: Array[size_t]^this()
             set escape_census: false
+            set host_report: false
             set census_names: Array[String]^this()
             set census_box_start: 0
             set census_escaped: false
@@ -2381,7 +2427,8 @@ define Planner
                             use_vis_files.add vis_file
                             let vis_name String^this((*last_ptr))
                             use_vis_names.add vis_name
-                            let vis_path this.dotted_use_prefix(path)
+                            let vis_path_v this.dotted_use_prefix(path)
+                            let vis_path String^this(vis_path_v)
                             use_vis_paths.add vis_path
                             use_vis_starts.add(u_ptr.span.start)
                             ; Feed lookup_concept's fast explicit-use cache:
@@ -29205,6 +29252,7 @@ define Planner
         {
             if this.jit_dep_bodies
                 return
+            this.deep_persist_fixpoint()
             set escape_checking: true
             var fi: size_t 0
             for func in instantiated_functions
@@ -29392,7 +29440,23 @@ define Planner
                             this.census_judge(bound, call.loc.start, rf.location, call.result_type.name)
                         else
                             0
-                    this.census_collect_operands(call.args)
+                    ; `let r &T^host(...)`: the address-of forwards the
+                    ; binding's name to the construction it wraps, else the
+                    ; candidate is judged without its alias
+                    var amp false
+                    if call.is_operator
+                        if call.name = "&"
+                            if call.args <> null
+                                if call.args.length = 1
+                                    set amp: true
+                    if amp
+                    {
+                        let a0 call.args.get 0
+                        if a0 <> null
+                            this.census_collect_operand(a0.unwrap(), bound)
+                    }
+                    else
+                        this.census_collect_operands(call.args)
                 }
                 when tp: Tuple
                 {
@@ -29590,6 +29654,11 @@ define Planner
                 {
                     if b.loc.start = census_box_start
                         return true
+                    if b.value <> null
+                    {
+                        let r b.value
+                        return this.census_carry((*r))
+                    }
                     return false
                 }
                 when a: As
@@ -29635,7 +29704,16 @@ define Planner
                 when c: Call
                     return c.loc.start = census_box_start
                 when b: Box
-                    return b.loc.start = census_box_start
+                {
+                    if b.loc.start = census_box_start
+                        return true
+                    if b.value <> null
+                    {
+                        let r b.value
+                        return this.census_is_candidate((*r))
+                    }
+                    return false
+                }
                 else
                     return false
             false
@@ -29657,6 +29735,18 @@ define Planner
                         return false
                     if this.census_type_is_ref_like(op.result_type) = false
                         return false
+                    if Planner.persist_names_contain(deep_returns_mangled, c.mangled_name)
+                    {
+                        var ai: size_t 0
+                        while ai < c.args.length
+                        {
+                            let ap c.args.get ai
+                            if ap <> null
+                                if this.census_carry(ap.unwrap())
+                                    return true
+                            set ai: ai + 1
+                        }
+                    }
                     let a0 c.args.get 0
                     if a0 = null
                         return false
@@ -29682,6 +29772,84 @@ define Planner
                         if g0 <> null
                             return Planner.is_reference_like((*g0))
                     }
+            false
+        }
+
+        ; The inline `persists_args` rule (plan_call), and the put/add rule
+        ; beside it: a callee that keeps its arguments' guts, or a container's
+        ; `put`/`add`, stores a local-page argument beyond the frame unless
+        ; the RECEIVER is frame-local itself. The verdict is the DEEP one
+        ; (persists_deep_for#, every resolved callee under --host-report);
+        ; a callee not in it is unknown and passes.
+        procedure census_persisting_call_carries(this: Planner, call: PlannedCall) returns bool
+        {
+            if call.args = null
+                return false
+            if call.args.length < 2
+                return false
+            if call.is_operator
+                return false
+            var persists false
+            if call.name = "put"
+                set persists: true
+            if call.name = "add"
+                set persists: true
+            var idx: size_t 0
+            while idx < persist_deep_names.length
+            {
+                let np persist_deep_names.get idx
+                if np <> null
+                    if (*np) = call.mangled_name
+                    {
+                        let vp persist_deep_vals.get idx
+                        if vp <> null
+                            if (*vp) = 1
+                                set persists: true
+                        set idx: persist_deep_names.length
+                    }
+                set idx: idx + 1
+            }
+            if getenv("SCALYC_DEEP_PROBE") <> null
+            {
+                scaly_eputs "ask "
+                scaly_eputs(call.mangled_name.to_c_string())
+                if persists
+                    scaly_eputs " 1\n"
+                else
+                    scaly_eputs " 0\n"
+            }
+            if persists = false
+                return false
+            let a0 call.args.get 0
+            if a0 = null
+                return false
+            let receiver a0.unwrap()
+            if this.census_carry(receiver)
+                return false
+            if Planner.lifetime_is_local(receiver.result_type.life)
+                return false
+            choose receiver.expr
+                when rv: Variable
+                {
+                    if Planner.lifetime_is_local(rv.variable_type.life)
+                        return false
+                }
+                else
+                    0
+            var ai: size_t 0
+            while ai < call.args.length
+            {
+                let ap call.args.get ai
+                if ap <> null
+                {
+                    let a ap.unwrap()
+                    if this.census_carry(a)
+                        return true
+                    if this.census_construction_carries(a)
+                        return true
+                }
+                set ai: ai + 1
+            }
             false
         }
 
@@ -29937,6 +30105,11 @@ define Planner
                         set census_escaped: true
                         return
                     }
+                    if this.census_persisting_call_carries(call)
+                    {
+                        set census_escaped: true
+                        return
+                    }
                     this.census_walk_operands(call.args)
                 }
                 when tp: Tuple
@@ -30132,6 +30305,767 @@ define Planner
                 }
                 else
                     0
+        }
+
+        ; ====================================================================
+        ; The CENSUS's persist question (host_census#), deeper than the gate's
+        ; function_persists_param_guts: that one counts only a `put`/`add` on a
+        ; non-local receiver, and making it count stores as well turned
+        ; ~600 `arr.add(<call result>)` sites of the ports into hard errors
+        ; (a call result carries a Local-life stamp even when its callee
+        ; built it on an explicit page). Advisory here, so it may over-
+        ; approximate. Does a body keep a parameter's guts beyond the call?
+        ; True for a `put`/`add` on a receiver that is not a local, and for a STORE whose
+        ; source carries a parameter and whose target head is not a local
+        ; (`this`, another parameter, a global, a deref). A parameter travels:
+        ; a local bound from it or storing it (`var d i; set d.f: p`), a local
+        ; container it is `add`ed to, are TAINTED, so the later
+        ; `set t.data: X(d)` into a parameter counts — the union
+        ; copy/mutate/write-back idiom laundered the parameter through a
+        ; local and the checker did not see it (2026-09-21: tscaly's
+        ; `fill_interface_data`, a list freed under a live type). Nested
+        ; blocks are walked; flow-insensitive within one body. The interface
+        ; fact `@persists` is derived here too (facts_function#).
+        procedure function_persists_param_guts_deep(mutable this: Planner, f: Function) returns bool
+        {
+            if Planner.is_linked(f)
+                return Planner.attributes_have(f.attributes, "persists")
+            set persist_tainted.length: 0
+            set persist_locals.length: 0
+            var pi: size_t 0
+            while pi < f.input.length
+            {
+                let ip f.input.get pi
+                if ip <> null
+                    if (*ip).name <> null
+                    {
+                        let pn (*(*ip).name)
+                        var scalar false
+                        if (*ip).type <> null
+                        {
+                            let it (*ip).type
+                            ; `ref`/`pointer` pass is_primitive_type_name; a
+                            ; scalar is a primitive WITHOUT generic arguments
+                            if (*it).name.length = 1
+                                if (*it).generics = null
+                                {
+                                    let tn (*it).name.get 0
+                                    if tn <> null
+                                        if Planner.is_primitive_type_name((*tn))
+                                            set scalar: true
+                                }
+                        }
+                        if pn <> "this"
+                            if scalar = false
+                                persist_tainted.add pn
+                    }
+                set pi: pi + 1
+            }
+            set persist_ret_hit: false
+            if persist_tainted.length = 0
+                return false
+            choose f.implementation
+                when a: scalyc.compiler.Model.Action
+                {
+                    this.persist_locals_ops(a.source)
+                    this.persist_locals_ops(a.target)
+                    let persists this.persist_scan_action(a)
+                    ; the implicit tail: the body's last statement, or the
+                    ; bare body, carrying a tainted value is a return of it
+                    if a.target.length = 0
+                        if this.persist_tail_carries(a.source)
+                            set persist_ret_hit: true
+                    if persists
+                        return true
+                }
+                else
+                    0
+            false
+        }
+
+        procedure persist_tail_carries(mutable this: Planner, ops: Vector[Operand]) returns bool
+        {
+            if ops.length = 1
+            {
+                let op0 ops.get 0
+                if op0 <> null
+                    choose (*op0).expression
+                        when bk: Block
+                        {
+                            if bk.statements.length = 0
+                                return false
+                            let lastp bk.statements.get(bk.statements.length - 1)
+                            if lastp = null
+                                return false
+                            choose (*lastp)
+                                when a: scalyc.compiler.Model.Action
+                                {
+                                    if a.target.length > 0
+                                        return false
+                                    return this.persist_tail_carries(a.source)
+                                }
+                                else
+                                    return false
+                        }
+                        else
+                            0
+            }
+            this.persist_mentions_carried(ops, persist_tainted)
+        }
+
+        ; The deep verdicts to a fixpoint: a round marks every not-yet-marked
+        ; body that persists under the current deep_by_name; a body marked
+        ; this round can make its callers persist in the next.
+        procedure deep_persist_fixpoint(mutable this: Planner)
+        {
+            var changed true
+            while changed
+            {
+                set changed: false
+                var i: size_t 0
+                while i < deep_fns.length
+                {
+                    let st deep_state.get i
+                    let rs deep_ret_state.get i
+                    var open false
+                    if st <> null
+                        if (*st) = 0
+                            set open: true
+                    if rs <> null
+                        if (*rs) = 0
+                            set open: true
+                    if open
+                    {
+                        let fp deep_fns.get i
+                        if fp <> null
+                        {
+                            let persists this.function_persists_param_guts_deep((*fp))
+                            if persists
+                                if (*st) = 0
+                                {
+                                    deep_state.put(i, 1)
+                                    if Planner.persist_names_contain(deep_by_name, (*fp).name) = false
+                                        deep_by_name.add((*fp).name)
+                                    set changed: true
+                                }
+                            if persist_ret_hit
+                                if (*rs) = 0
+                                {
+                                    deep_ret_state.put(i, 1)
+                                    if Planner.persist_names_contain(deep_returns_by_name, (*fp).name) = false
+                                        deep_returns_by_name.add((*fp).name)
+                                    let mp deep_mangled.get i
+                                    if mp <> null
+                                    {
+                                        deep_returns_mangled.add((*mp))
+                                        if getenv("SCALYC_DEEP_PROBE") <> null
+                                        {
+                                            scaly_eputs "ret "
+                                            scaly_eputs((*mp).to_c_string())
+                                            scaly_eputs "\n"
+                                        }
+                                    }
+                                    set changed: true
+                                }
+                        }
+                    }
+                    set i: i + 1
+                }
+            }
+            var k: size_t 0
+            while k < deep_fns.length
+            {
+                let st deep_state.get k
+                if st <> null
+                    if (*st) = 1
+                    {
+                        let mp deep_mangled.get k
+                        if mp <> null
+                        {
+                            persist_deep_names.add((*mp))
+                            persist_deep_vals.add 1
+                            if getenv("SCALYC_DEEP_PROBE") <> null
+                            {
+                                scaly_eputs "deep "
+                                scaly_eputs((*mp).to_c_string())
+                                scaly_eputs " 1\n"
+                            }
+                        }
+                    }
+                set k: k + 1
+            }
+        }
+
+        procedure persist_add_local(mutable this: Planner, name: String)
+        {
+            if Planner.persist_names_contain(persist_locals, name) = false
+                persist_locals.add name
+        }
+
+        procedure persist_add_tainted(mutable this: Planner, name: String)
+        {
+            if Planner.persist_names_contain(persist_tainted, name) = false
+                persist_tainted.add name
+        }
+
+        procedure persist_locals_stmts(mutable this: Planner, stmts: Vector[Statement])
+        {
+            var i: size_t 0
+            while i < stmts.length
+            {
+                let sp stmts.get i
+                if sp <> null
+                    this.persist_locals_stmt((*sp))
+                set i: i + 1
+            }
+        }
+
+        procedure persist_locals_stmt(mutable this: Planner, s: Statement)
+        {
+            choose s
+                when a: scalyc.compiler.Model.Action
+                    this.persist_locals_action(a)
+                when b: scalyc.compiler.Model.Binding
+                    this.persist_locals_binding(b)
+                when r: scalyc.compiler.Model.Return
+                    this.persist_locals_ops(r.result)
+                when th: scalyc.compiler.Model.Throw
+                    this.persist_locals_ops(th.result)
+                when br: scalyc.compiler.Model.Break
+                    this.persist_locals_ops(br.result)
+                else
+                    0
+        }
+
+        procedure persist_locals_action(mutable this: Planner, a: scalyc.compiler.Model.Action)
+        {
+            this.persist_locals_ops(a.source)
+            this.persist_locals_ops(a.target)
+        }
+
+        procedure persist_locals_binding(mutable this: Planner, b: scalyc.compiler.Model.Binding)
+        {
+            if b.item.name <> null
+                this.persist_add_local((*b.item.name))
+            this.persist_locals_ops(b.operation)
+        }
+
+        procedure persist_locals_whens(mutable this: Planner, whens: Vector[When])
+        {
+            var i: size_t 0
+            while i < whens.length
+            {
+                let wp whens.get i
+                if wp <> null
+                {
+                    this.persist_add_local((*wp).name)
+                    this.persist_locals_stmt((*wp).consequent)
+                }
+                set i: i + 1
+            }
+        }
+
+        procedure persist_locals_ops(mutable this: Planner, ops: Vector[Operand])
+        {
+            var i: size_t 0
+            while i < ops.length
+            {
+                let op_ptr ops.get i
+                if op_ptr <> null
+                    choose (*op_ptr).expression
+                        when bk: Block
+                            this.persist_locals_stmts(bk.statements)
+                        when tup: Tuple
+                        {
+                            var ci: size_t 0
+                            while ci < tup.components.length
+                            {
+                                let cp tup.components.get ci
+                                if cp <> null
+                                    this.persist_locals_ops((*cp).value)
+                                set ci: ci + 1
+                            }
+                        }
+                        when iff: scalyc.compiler.Model.If
+                        {
+                            this.persist_locals_ops(iff.condition)
+                            this.persist_locals_stmt(iff.consequent)
+                            if iff.alternative <> null
+                            {
+                                let alt iff.alternative
+                                this.persist_locals_stmt((*alt))
+                            }
+                        }
+                        when wh: scalyc.compiler.Model.While
+                        {
+                            this.persist_locals_binding(wh.condition)
+                            this.persist_locals_action(wh.action)
+                        }
+                        when fr: scalyc.compiler.Model.For
+                        {
+                            this.persist_add_local(fr.identifier)
+                            this.persist_locals_ops(fr.expression)
+                            this.persist_locals_action(fr.action)
+                        }
+                        when ch: scalyc.compiler.Model.Choose
+                        {
+                            this.persist_locals_ops(ch.condition)
+                            this.persist_locals_whens(ch.cases)
+                            if ch.alternative <> null
+                            {
+                                let alt ch.alternative
+                                this.persist_locals_stmt((*alt))
+                            }
+                        }
+                        when mt: scalyc.compiler.Model.Match
+                        {
+                            this.persist_locals_ops(mt.condition)
+                            var bi: size_t 0
+                            while bi < mt.branches.length
+                            {
+                                let bp mt.branches.get bi
+                                if bp <> null
+                                    this.persist_locals_stmt((*bp).consequent)
+                                set bi: bi + 1
+                            }
+                            if mt.alternative <> null
+                            {
+                                let alt mt.alternative
+                                this.persist_locals_stmt((*alt))
+                            }
+                        }
+                        when tr: scalyc.compiler.Model.Try
+                        {
+                            this.persist_locals_binding(tr.binding)
+                            this.persist_locals_whens(tr.catches)
+                            if tr.alternative <> null
+                            {
+                                let alt tr.alternative
+                                this.persist_locals_stmt((*alt))
+                            }
+                        }
+                        when rp: scalyc.compiler.Model.Repeat
+                            this.persist_locals_action(rp.action)
+                        else
+                            0
+                set i: i + 1
+            }
+        }
+
+        ; The scan proper: true as soon as a tainted value persists.
+        procedure persist_scan_stmts(mutable this: Planner, stmts: Vector[Statement]) returns bool
+        {
+            var i: size_t 0
+            while i < stmts.length
+            {
+                let sp stmts.get i
+                if sp <> null
+                    if this.persist_scan_stmt((*sp))
+                        return true
+                set i: i + 1
+            }
+            false
+        }
+
+        procedure persist_scan_stmt(mutable this: Planner, s: Statement) returns bool
+        {
+            choose s
+                when a: scalyc.compiler.Model.Action
+                    return this.persist_scan_action(a)
+                when b: scalyc.compiler.Model.Binding
+                    return this.persist_scan_binding(b)
+                when r: scalyc.compiler.Model.Return
+                {
+                    if this.persist_mentions_carried(r.result, persist_tainted)
+                        set persist_ret_hit: true
+                    return this.persist_scan_ops(r.result)
+                }
+                when th: scalyc.compiler.Model.Throw
+                    return this.persist_scan_ops(th.result)
+                when br: scalyc.compiler.Model.Break
+                    return this.persist_scan_ops(br.result)
+                else
+                    return false
+            false
+        }
+
+        ; Does the value carry a tainted name: bare, or inside a CONSTRUCTION
+        ; (a capitalized head, no explicit page) over it? A lowercase call's
+        ; result is not followed — the checker's own blind spot, kept here so
+        ; a fresh value computed FROM a parameter does not mark the callee.
+        function persist_mentions_carried(this: Planner, ops: Vector[Operand], names: Array[String]) returns bool
+        {
+            var prev_ctor false
+            var prev_returns false
+            var i: size_t 0
+            while i < ops.length
+            {
+                let op_ptr ops.get i
+                if op_ptr <> null
+                {
+                    var cur_ctor false
+                    var cur_returns false
+                    choose (*op_ptr).expression
+                        when ty: scalyc.compiler.Model.Type
+                        {
+                            if ty.name.length > 0
+                            {
+                                let rl ty.name.get(ty.name.length - 1)
+                                if rl <> null
+                                    if this.persist_callee_named(deep_returns_by_name, (*rl))
+                                        set cur_returns: true
+                            }
+                            ; a `^page` sigil is its own operand: a nameless
+                            ; Type carrying the lifetime, between the
+                            ; constructed type and its tuple — it keeps the
+                            ; flags of the type before it
+                            if ty.name.length = 0
+                            {
+                                set cur_ctor: prev_ctor
+                                set cur_returns: prev_returns
+                            }
+                            ; a bare tainted name, or a field path off one
+                            ; (`d.list` carries what `d` carries)
+                            if ty.name.length >= 1
+                            {
+                                let s0 ty.name.get 0
+                                if s0 <> null
+                                    if Planner.persist_names_contain(names, (*s0))
+                                        return true
+                            }
+                            ; a construction, ON A NAMED PAGE TOO: a record
+                            ; built on `host` keeps a reference it is handed
+                            ; (`Signature^host(…, params, …)`); only the
+                            ; String deep copies take nothing along
+                            if ty.name.length > 0
+                            {
+                                let lastp ty.name.get(ty.name.length - 1)
+                                if lastp <> null
+                                {
+                                    if this.name_is_capitalized((*lastp))
+                                        set cur_ctor: true
+                                    if (*lastp) = "String"
+                                        set cur_ctor: false
+                                    if (*lastp) = "StringC"
+                                        set cur_ctor: false
+                                }
+                            }
+                        }
+                        when tup: Tuple
+                        {
+                            var bare_tuple false
+                            if i = 0
+                                set bare_tuple: true
+                            if prev_returns
+                                set bare_tuple: true
+                            if prev_ctor or bare_tuple
+                            {
+                                var ci: size_t 0
+                                while ci < tup.components.length
+                                {
+                                    let cp tup.components.get ci
+                                    if cp <> null
+                                        if this.persist_mentions_carried((*cp).value, names)
+                                            return true
+                                    set ci: ci + 1
+                                }
+                            }
+                        }
+                        else
+                            0
+                    set prev_ctor: cur_ctor
+                    set prev_returns: cur_returns
+                }
+                set i: i + 1
+            }
+            false
+        }
+
+        ; A recorded body's name may be qualified (`Box.mk`); a call names the
+        ; last segment.
+        function persist_callee_named(this: Planner, stored: Array[String], seg: String) returns bool
+        {
+            var i: size_t 0
+            while i < stored.length
+            {
+                let p stored.get i
+                if p <> null
+                {
+                    if (*p) = seg
+                        return true
+                    if (*p).get_length() > seg.get_length()
+                        if (*p).ends_with(seg)
+                            return true
+                }
+                set i: i + 1
+            }
+            false
+        }
+
+        procedure persist_scan_binding(mutable this: Planner, b: scalyc.compiler.Model.Binding) returns bool
+        {
+            if b.item.name <> null
+                if this.persist_mentions_carried(b.operation, persist_tainted)
+                    this.persist_add_tainted((*b.item.name))
+            this.persist_scan_ops(b.operation)
+        }
+
+        procedure persist_scan_action(mutable this: Planner, a: scalyc.compiler.Model.Action) returns bool
+        {
+            if a.target.length = 0
+            {
+                if Planner.persist_ops_putadd_param(a.source, persist_tainted, persist_locals)
+                    return true
+                this.persist_note_putadd_local(a.source)
+                return this.persist_scan_ops(a.source)
+            }
+            if this.persist_mentions_carried(a.source, persist_tainted)
+                if this.persist_store_persists(a.target)
+                    return true
+            if this.persist_scan_ops(a.source)
+                return true
+            false
+        }
+
+        ; A store's target: a local head is tainted (and the store is the
+        ; local's business), anything else keeps the value beyond the call.
+        procedure persist_store_persists(mutable this: Planner, target: Vector[Operand]) returns bool
+        {
+            let t0 target.get 0
+            if t0 = null
+                return true
+            choose (*t0).expression
+                when ty: scalyc.compiler.Model.Type
+                {
+                    if ty.name.length = 0
+                        return true
+                    let s0p ty.name.get 0
+                    if s0p = null
+                        return true
+                    let s0 (*s0p)
+                    if Planner.persist_names_contain(persist_locals, s0)
+                    {
+                        this.persist_add_tainted(s0)
+                        return false
+                    }
+                    return true
+                }
+                else
+                    return true
+            true
+        }
+
+        ; `d.add(p)` / `d.put(i, p)` on a LOCAL receiver taints the local.
+        procedure persist_note_putadd_local(mutable this: Planner, ops: Vector[Operand])
+        {
+            if ops.length < 2
+                return
+            let op0p ops.get 0
+            if op0p = null
+                return
+            if (*op0p).member_access <> null
+                return
+            choose (*op0p).expression
+                when ty: scalyc.compiler.Model.Type
+                {
+                    if ty.name.length <> 2
+                        return
+                    let lastp ty.name.get 1
+                    if lastp = null
+                        return
+                    var is_putadd false
+                    if (*lastp) = "add"
+                        set is_putadd: true
+                    if (*lastp) = "put"
+                        set is_putadd: true
+                    if is_putadd = false
+                        return
+                    let s0p ty.name.get 0
+                    if s0p = null
+                        return
+                    if Planner.persist_names_contain(persist_locals, (*s0p)) = false
+                        return
+                    if Planner.persist_value_mentions_param(ops, 1, persist_tainted)
+                        this.persist_add_tainted((*s0p))
+                }
+                else
+                    0
+        }
+
+        procedure persist_scan_whens(mutable this: Planner, whens: Vector[When]) returns bool
+        {
+            var i: size_t 0
+            while i < whens.length
+            {
+                let wp whens.get i
+                if wp <> null
+                    if this.persist_scan_stmt((*wp).consequent)
+                        return true
+                set i: i + 1
+            }
+            false
+        }
+
+        procedure persist_scan_ops(mutable this: Planner, ops: Vector[Operand]) returns bool
+        {
+            var i: size_t 0
+            while i < ops.length
+            {
+                let op_ptr ops.get i
+                if op_ptr <> null
+                {
+                    if this.persist_scan_op((*op_ptr))
+                        return true
+                    if this.persist_call_forwards(ops, i)
+                        return true
+                }
+                set i: i + 1
+            }
+            false
+        }
+
+        ; ops[i] names a callee (last segment in deep_by_name) and ops[i+1]
+        ; is its argument tuple carrying a tainted value: the callee keeps
+        ; it, so this body persists it too.
+        procedure persist_call_forwards(mutable this: Planner, ops: Vector[Operand], i: size_t) returns bool
+        {
+            if i + 1 >= ops.length
+                return false
+            let op_ptr ops.get i
+            if op_ptr = null
+                return false
+            var callee_persists false
+            choose (*op_ptr).expression
+                when ty: scalyc.compiler.Model.Type
+                {
+                    if ty.name.length = 0
+                        return false
+                    let lastp ty.name.get(ty.name.length - 1)
+                    if lastp <> null
+                        if Planner.persist_names_contain(deep_by_name, (*lastp))
+                            set callee_persists: true
+                }
+                else
+                    return false
+            if callee_persists = false
+                return false
+            let next_ptr ops.get(i + 1)
+            if next_ptr = null
+                return false
+            choose (*next_ptr).expression
+                when tup: Tuple
+                {
+                    var ci: size_t 0
+                    while ci < tup.components.length
+                    {
+                        let cp tup.components.get ci
+                        if cp <> null
+                            if this.persist_mentions_carried((*cp).value, persist_tainted)
+                                return true
+                        set ci: ci + 1
+                    }
+                }
+                else
+                    return false
+            false
+        }
+
+        procedure persist_scan_op(mutable this: Planner, op: Operand) returns bool
+        {
+            choose op.expression
+                when bk: Block
+                    return this.persist_scan_stmts(bk.statements)
+                when tup: Tuple
+                {
+                    var ci: size_t 0
+                    while ci < tup.components.length
+                    {
+                        let cp tup.components.get ci
+                        if cp <> null
+                            if this.persist_scan_ops((*cp).value)
+                                return true
+                        set ci: ci + 1
+                    }
+                    return false
+                }
+                when iff: scalyc.compiler.Model.If
+                {
+                    if this.persist_scan_ops(iff.condition)
+                        return true
+                    if this.persist_scan_stmt(iff.consequent)
+                        return true
+                    if iff.alternative <> null
+                    {
+                        let alt iff.alternative
+                        return this.persist_scan_stmt((*alt))
+                    }
+                    return false
+                }
+                when wh: scalyc.compiler.Model.While
+                {
+                    if this.persist_scan_binding(wh.condition)
+                        return true
+                    return this.persist_scan_action(wh.action)
+                }
+                when fr: scalyc.compiler.Model.For
+                {
+                    if this.persist_mentions_carried(fr.expression, persist_tainted)
+                        this.persist_add_tainted(fr.identifier)
+                    if this.persist_scan_ops(fr.expression)
+                        return true
+                    return this.persist_scan_action(fr.action)
+                }
+                when ch: scalyc.compiler.Model.Choose
+                {
+                    if this.persist_scan_ops(ch.condition)
+                        return true
+                    if this.persist_scan_whens(ch.cases)
+                        return true
+                    if ch.alternative <> null
+                    {
+                        let alt ch.alternative
+                        return this.persist_scan_stmt((*alt))
+                    }
+                    return false
+                }
+                when mt: scalyc.compiler.Model.Match
+                {
+                    if this.persist_scan_ops(mt.condition)
+                        return true
+                    var bi: size_t 0
+                    while bi < mt.branches.length
+                    {
+                        let bp mt.branches.get bi
+                        if bp <> null
+                            if this.persist_scan_stmt((*bp).consequent)
+                                return true
+                        set bi: bi + 1
+                    }
+                    if mt.alternative <> null
+                    {
+                        let alt mt.alternative
+                        return this.persist_scan_stmt((*alt))
+                    }
+                    return false
+                }
+                when tr: scalyc.compiler.Model.Try
+                {
+                    if this.persist_scan_binding(tr.binding)
+                        return true
+                    if this.persist_scan_whens(tr.catches)
+                        return true
+                    if tr.alternative <> null
+                    {
+                        let alt tr.alternative
+                        return this.persist_scan_stmt((*alt))
+                    }
+                    return false
+                }
+                when rp: scalyc.compiler.Model.Repeat
+                    return this.persist_scan_action(rp.action)
+                else
+                    return false
+            false
         }
 
         procedure escape_walk_function_body(mutable this: Planner, func: PlannedFunction)
@@ -35294,6 +36228,13 @@ define Planner
                 &^this f.writes
             )
             this.record_function(result)
+            if host_report
+            {
+                deep_fns.add f
+                deep_mangled.add(String^this(result.mangled_name))
+                deep_state.add 0
+                deep_ret_state.add 0
+            }
             result
         }
 
@@ -36457,7 +37398,8 @@ define Planner
                 return
 
             ; Skip if already recorded.
-            let m_check Planner.mangle_structure(c.name, null)
+            let m_check_v Planner.mangle_structure(c.name, null)
+            let m_check String^this(m_check_v)
             if this.has_instantiated_structure(m_check)
                 return
 
@@ -36528,7 +37470,8 @@ define Planner
         {
             if Planner.is_runtime_opaque_struct(name)
                 return
-            let m_check Planner.mangle_structure(name, null)
+            let m_check_v Planner.mangle_structure(name, null)
+            let m_check String^this(m_check_v)
             if this.has_instantiated_structure(m_check)
                 return
             ; Re-entrancy guard (same discipline as instantiate_generic#):
@@ -36611,7 +37554,8 @@ define Planner
         {
             if Planner.is_runtime_opaque_struct(name)
                 return
-            let m_check Planner.mangle_structure(name, null)
+            let m_check_v Planner.mangle_structure(name, null)
+            let m_check String^this(m_check_v)
             if this.has_instantiated_union(m_check)
                 return
             var gi: size_t 0

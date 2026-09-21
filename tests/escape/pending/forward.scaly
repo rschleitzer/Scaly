@@ -1,0 +1,21 @@
+; ACCEPTED at rc 0 today, unsound: store persists its argument, forward only
+; hands it on. With `a: ref[Array[int]]` (no `?`) the checker REJECTS this —
+; the Option-typed parameter is what slips past it (the NPO name-test class).
+define Holder (var kept: ref[Array[int]]?)
+
+procedure store(mutable h: ref[Holder], a: ref[Array[int]]?)
+    set h.kept: a
+
+procedure forward(mutable h: ref[Holder], a: ref[Array[int]]?)
+    store(h, a)
+
+procedure make(mutable h: ref[Holder])
+{
+    let a &Array[int]()
+    a.add(1)
+    forward(h, a)
+}
+
+var h Holder(null)
+make(&h)
+print "done\n"
