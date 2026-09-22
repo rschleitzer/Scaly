@@ -597,6 +597,11 @@ define Planner
         persist_alias_dest: Array[int]
         var deep_this_mask: u64
         var deep_whole_mask: u64
+        ; positions whose PAGE the body takes (`Page.get(p)`, `^p` on a
+        ; page parameter) to allocate on: the argument must be page-hosted
+        var deep_pageof_mask: u64
+        deep_state_pageof: Array[size_t]
+        deep_gate_pageof: Array[u64]
         ; INTO WHICH parameter: slot k (1..15) holds the positions kept in
         ; parameter k's guts (slot 0 is deep_this_mask); a position 16 or
         ; beyond counts as beyond. Per body, per name entry and per gate
@@ -608,6 +613,7 @@ define Planner
         deep_by_name_this: Array[u64]
         deep_by_name_beyond: Array[u64]
         deep_by_name_whole: Array[u64]
+        deep_by_name_pageof: Array[u64]
         deep_qualified_all: Array[String]
         deep_state_this: Array[size_t]
         deep_state_beyond: Array[size_t]
@@ -979,6 +985,10 @@ define Planner
     )
     {
         init(filename: String) linked
+
+
+
+
 
 
 
@@ -29877,6 +29887,42 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         function escape_record_exists(this: Planner, fn_index: size_t, param_index: size_t, dest_kind: size_t, dest_index: size_t, path_len: size_t, field0: size_t, field1: size_t) @ret_nonlocal true returns bool linked
 
 
@@ -31302,6 +31348,23 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         procedure census_walk_operands(mutable this: Planner, ops: ref[Vector[PlannedOperand]]?) io linked
 
 
@@ -31765,6 +31828,7 @@ define Planner
 
 
 
+
         procedure persist_tail_carries(mutable this: Planner, ops: Vector[Operand]) @ret_nonlocal true returns bool linked
 
 
@@ -31799,6 +31863,7 @@ define Planner
         ; body that persists under the current deep_by_name; a body marked
         ; this round can make its callers persist in the next.
         procedure deep_persist_fixpoint(mutable this: Planner) io linked
+
 
 
 
@@ -32759,6 +32824,20 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         ; the parameter whose guts an initializer ALIASES: a reference-typed
         ; field path off a parameter (`this.aux`, `p.entry`, not a scalar
         ; one), or a call on a parameter whose result IS its receiver
@@ -32816,6 +32895,68 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; `Page.get(<param>)` as a whole initializer (the scanner's copy of
+        ; rr_page_get_of_param#, over its own parameter table)
+        function persist_page_get_of_param(this: Planner, ops: Vector[Operand]) @ret_nonlocal true returns int linked
 
 
 
@@ -33481,6 +33622,21 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         ; the callee keeps position `bit` in parameter kd's guts (kd 1..15):
         ; OUR argument at kd is the destination — `this` or a field of it,
         ; a parameter (kept in that parameter), a local (tainted with the
@@ -33577,7 +33733,30 @@ define Planner
 
 
 
+
+
+
+
         function deep_name_into_of(this: Planner, name: String, k: size_t) @ret_param_0 true returns u64 linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function deep_name_pageof_of(this: Planner, name: String) @ret_param_0 true returns u64 linked
 
 
 
@@ -33758,6 +33937,8 @@ define Planner
 
 
         procedure build_return_residence_set(mutable this: Planner) io linked
+
+
 
 
 
@@ -40217,6 +40398,12 @@ define Planner
             mutable f: Function,
             parent: ref[PlannedType]?
         ) @page true @direct true @ret_caller true returns PlannedFunction io linked
+
+
+
+
+
+
 
 
 

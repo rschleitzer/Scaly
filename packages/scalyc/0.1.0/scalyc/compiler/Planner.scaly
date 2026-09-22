@@ -597,6 +597,11 @@ define Planner
         persist_alias_dest: Array[int]
         var deep_this_mask: u64
         var deep_whole_mask: u64
+        ; positions whose PAGE the body takes (`Page.get(p)`, `^p` on a
+        ; page parameter) to allocate on: the argument must be page-hosted
+        var deep_pageof_mask: u64
+        deep_state_pageof: Array[size_t]
+        deep_gate_pageof: Array[u64]
         ; INTO WHICH parameter: slot k (1..15) holds the positions kept in
         ; parameter k's guts (slot 0 is deep_this_mask); a position 16 or
         ; beyond counts as beyond. Per body, per name entry and per gate
@@ -608,6 +613,7 @@ define Planner
         deep_by_name_this: Array[u64]
         deep_by_name_beyond: Array[u64]
         deep_by_name_whole: Array[u64]
+        deep_by_name_pageof: Array[u64]
         deep_qualified_all: Array[String]
         deep_state_this: Array[size_t]
         deep_state_beyond: Array[size_t]
@@ -1052,6 +1058,9 @@ define Planner
             set persist_alias_dest: Array[int]^this()
             set deep_this_mask: 0
             set deep_whole_mask: 0
+            set deep_pageof_mask: 0
+            set deep_state_pageof: Array[size_t]^this()
+            set deep_gate_pageof: Array[u64]^this()
             set deep_into_masks: Array[u64]^this()
             var dik: size_t 0
             while dik < 16
@@ -1065,6 +1074,7 @@ define Planner
             set deep_by_name_this: Array[u64]^this()
             set deep_by_name_beyond: Array[u64]^this()
             set deep_by_name_whole: Array[u64]^this()
+            set deep_by_name_pageof: Array[u64]^this()
             set deep_qualified_all: Array[String]^this()
             set deep_state_this: Array[size_t]^this()
             set deep_state_beyond: Array[size_t]^this()
@@ -29718,6 +29728,42 @@ define Planner
                 if (tmask & bit) <> (0 as u64)
                     if recv_outlives
                         set judged: true
+                ; the callee takes this argument's PAGE and allocates on it:
+                ; a frame-local argument (a stack struct, `&T(…)`, a local-page
+                ; value) has no page to give — Page.get of it is garbage
+                ; (parse_literal's `Page.get(out_text)`, opensp acid test)
+                var pgmask: u64 0
+                let pgp deep_gate_pageof.get gi
+                if pgp <> null
+                    set pgmask: (*pgp)
+                if (pgmask & bit) <> (0 as u64)
+                {
+                    let pap call.args.get(off + k)
+                    if pap <> null
+                    {
+                        let parg pap.unwrap()
+                        var page_local false
+                        if this.region_of_operand(parg) < Planner.required_region_for_escape()
+                            set page_local: true
+                        if escape_census
+                        {
+                            if this.census_carry(parg)
+                                set page_local: true
+                            if this.census_is_candidate(parg)
+                                set page_local: true
+                        }
+                        if page_local
+                        {
+                            let cur_fn instantiated_functions.get escape_fn_index
+                            if cur_fn <> null
+                                set this.file: String^this(cur_fn.file)
+                            if escape_census = false
+                                this.add_diagnostic(call.loc, "the callee takes this argument's page (Page.get) and allocates on it, but the argument is frame-local; construct it on a page ('^name' or '#')")
+                            set escape_found: true
+                            return
+                        }
+                    }
+                }
                 ; kept in parameter kd's guts: an escape only where THAT
                 ; argument outlives this frame
                 var kd: size_t 1
@@ -31288,6 +31334,23 @@ define Planner
             if act.target <> null
                 if act.target.length > 0
                     set has_target: true
+            ; `set r: name` with `r` a REFERENCE-typed variable REBINDS r while
+            ; `name` is a page-hosted reference and COPIES THROUGH r once the
+            ; sigil is gone and `name` is a value: the drop would change the
+            ; statement's meaning, so the candidate is not droppable
+            ; (sd_parse_naming's `set target: name_char`, opensp acid test)
+            if has_target
+                if act.source <> null
+                    if act.source.length = 1
+                    {
+                        let sp0 act.source.get 0
+                        let tp0 act.target.get 0
+                        if sp0 <> null
+                            if tp0 <> null
+                                if this.census_carry(sp0.unwrap())
+                                    if this.census_type_is_ref_like(tp0.result_type)
+                                        set census_escaped: true
+                    }
             if this.census_operands_carry(act.source)
             {
                 if has_target
@@ -31621,6 +31684,7 @@ define Planner
         procedure function_persists_param_guts_deep(mutable this: Planner, f: Function) returns bool
         {
             this.deep_into_reset()
+            set deep_pageof_mask: 0
             if Planner.is_linked(f)
             {
                 set deep_persist_mask: 0
@@ -31757,7 +31821,7 @@ define Planner
                     if a.target.length = 0
                         if this.persist_tail_carries(a.source)
                             set persist_ret_hit: true
-                    if (deep_persist_mask | deep_this_mask) <> (0 as u64)
+                    if (deep_persist_mask | deep_this_mask | deep_pageof_mask) <> (0 as u64)
                         return true
                 }
                 else
@@ -31829,9 +31893,10 @@ define Planner
                             if persists
                                 if (*st) = 0
                                 {
-                                    let union_mask deep_persist_mask | deep_this_mask
+                                    let union_mask deep_persist_mask | deep_this_mask | deep_pageof_mask
                                     deep_state.put(i, union_mask as size_t)
                                     deep_state_this.put(i, deep_this_mask as size_t)
+                                    deep_state_pageof.put(i, deep_pageof_mask as size_t)
                                     deep_state_beyond.put(i, deep_persist_mask as size_t)
                                     deep_state_whole.put(i, deep_whole_mask as size_t)
                                     var sk: size_t 0
@@ -32741,6 +32806,20 @@ define Planner
                 let m this.persist_carried_mask(b.operation, persist_tainted)
                 if m <> (0 as u64)
                     this.persist_add_tainted_mw((*b.item.name), m, persist_last_whole)
+                let pgp this.persist_page_get_of_param(b.operation)
+                if pgp >= 0
+                {
+                    var pgbit: u64 (1 as u64) << 63
+                    if pgp < 63
+                        set pgbit: (1 as u64) << (pgp as size_t)
+                    set deep_pageof_mask: deep_pageof_mask | pgbit
+                    if deep_trace
+                    {
+                        scaly_eputs "  dtrace page-of param "
+                        scaly_eputi pgp
+                        scaly_eputs "\n"
+                    }
+                }
                 let ad this.persist_alias_dest_of(b.operation)
                 if ad >= 0
                 {
@@ -32866,9 +32945,71 @@ define Planner
                         scaly_eputs "\n"
                     }
                     if cls = 3 or cls = 2
-                        if arg = (pidx as size_t)
+                        if arg = 0
                             return pidx
                     return 0 - 1
+                }
+                else
+                    return 0 - 1
+            0 - 1
+        }
+
+        ; `Page.get(<param>)` as a whole initializer (the scanner's copy of
+        ; rr_page_get_of_param#, over its own parameter table)
+        function persist_page_get_of_param(this: Planner, ops: Vector[Operand]) returns int
+        {
+            if ops.length <> 2
+                return 0 - 1
+            let op0 ops.get 0
+            let op1 ops.get 1
+            if op0 = null
+                return 0 - 1
+            if op1 = null
+                return 0 - 1
+            var is_page_get false
+            choose (*op0).expression
+                when ty: scalyc.compiler.Model.Type
+                {
+                    if ty.name.length = 2
+                    {
+                        let h ty.name.get 0
+                        let g ty.name.get 1
+                        if h <> null
+                            if g <> null
+                                if (*h) = "Page"
+                                    if (*g) = "get"
+                                        set is_page_get: true
+                    }
+                }
+                else
+                    0
+            if is_page_get = false
+                return 0 - 1
+            choose (*op1).expression
+                when tup: Tuple
+                {
+                    if tup.components.length <> 1
+                        return 0 - 1
+                    let cp tup.components.get 0
+                    if cp = null
+                        return 0 - 1
+                    if (*cp).value.length <> 1
+                        return 0 - 1
+                    let vp (*cp).value.get 0
+                    if vp = null
+                        return 0 - 1
+                    choose (*vp).expression
+                        when vty: scalyc.compiler.Model.Type
+                        {
+                            if vty.name.length <> 1
+                                return 0 - 1
+                            let vn vty.name.get 0
+                            if vn = null
+                                return 0 - 1
+                            return this.persist_param_index((*vn))
+                        }
+                        else
+                            return 0 - 1
                 }
                 else
                     return 0 - 1
@@ -33394,6 +33535,21 @@ define Planner
                                 this.deep_forward_into(callee_key, next_ptr, has_receiver, bit, cm, persist_last_whole)
                             }
                         }
+                        ; the callee takes the PAGE of this position: ours too,
+                        ; when the argument is a bare parameter
+                        if (this.deep_name_pageof_of(callee_key) & bit) <> (0 as u64)
+                        {
+                            let pcp tup.components.get ci
+                            if pcp <> null
+                            {
+                                let pdk this.persist_dest_kind((*pcp).value)
+                                if pdk > 0
+                                    if pdk < 63
+                                        set deep_pageof_mask: deep_pageof_mask | ((1 as u64) << (pdk as size_t))
+                                if pdk = 0
+                                    set deep_pageof_mask: deep_pageof_mask | (1 as u64)
+                            }
+                        }
                         set ci: ci + 1
                     }
                 }
@@ -33537,6 +33693,9 @@ define Planner
                         let mp deep_by_name_mask.get i
                         if mp <> null
                             deep_by_name_mask.put(i, (*mp) | mask)
+                        let pgp deep_by_name_pageof.get i
+                        if pgp <> null
+                            deep_by_name_pageof.put(i, (*pgp) | deep_pageof_mask)
                         let tp deep_by_name_this.get i
                         if tp <> null
                             deep_by_name_this.put(i, (*tp) | tmask)
@@ -33565,6 +33724,7 @@ define Planner
             deep_by_name_this.add tmask
             deep_by_name_beyond.add bmask
             deep_by_name_whole.add wmask
+            deep_by_name_pageof.add deep_pageof_mask
             var nk: size_t 0
             while nk < 16
             {
@@ -33587,6 +33747,25 @@ define Planner
                     if (*np) = name
                     {
                         let mp deep_by_name_into.get(i * 16 + k)
+                        if mp <> null
+                            return (*mp)
+                        return 0
+                    }
+                set i: i + 1
+            }
+            0
+        }
+
+        function deep_name_pageof_of(this: Planner, name: String) returns u64
+        {
+            var i: size_t 0
+            while i < deep_by_name.length
+            {
+                let np deep_by_name.get i
+                if np <> null
+                    if (*np) = name
+                    {
+                        let mp deep_by_name_pageof.get i
                         if mp <> null
                             return (*mp)
                         return 0
@@ -33875,6 +34054,7 @@ define Planner
                 set deep_state_beyond.length: 0
                 set deep_state_whole.length: 0
                 set deep_state_into.length: 0
+                set deep_state_pageof.length: 0
                 set deep_ret_state.length: 0
                 var gi: size_t 0
                 while gi < rr_fns.length
@@ -33888,6 +34068,7 @@ define Planner
                         deep_state_this.add 0
                         deep_state_beyond.add 0
                         deep_state_whole.add 0
+                        deep_state_pageof.add 0
                         var fk: size_t 0
                         while fk < 16
                         {
@@ -40677,6 +40858,7 @@ define Planner
                 deep_state_this.add 0
                 deep_state_beyond.add 0
                 deep_state_whole.add 0
+                deep_state_pageof.add 0
                 var hk: size_t 0
                 while hk < 16
                 {
@@ -40740,6 +40922,11 @@ define Planner
                             deep_gate_this.add gthis
                             deep_gate_beyond.add gbeyond
                             deep_gate_whole.add gwhole
+                            var gpageof: u64 0
+                            let gps deep_state_pageof.get(gdi as size_t)
+                            if gps <> null
+                                set gpageof: (*gps) as u64
+                            deep_gate_pageof.add gpageof
                             var gk: size_t 0
                             while gk < 16
                             {
