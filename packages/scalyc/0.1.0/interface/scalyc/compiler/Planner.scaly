@@ -593,6 +593,14 @@ define Planner
         persist_pelem_scalar: Array[bool]
         var deep_this_mask: u64
         var deep_whole_mask: u64
+        ; INTO WHICH parameter: slot k (1..15) holds the positions kept in
+        ; parameter k's guts (slot 0 is deep_this_mask); a position 16 or
+        ; beyond counts as beyond. Per body, per name entry and per gate
+        ; entry, sixteen slots each, flattened
+        deep_into_masks: Array[u64]
+        deep_by_name_into: Array[u64]
+        deep_state_into: Array[size_t]
+        deep_gate_into: Array[u64]
         deep_by_name_this: Array[u64]
         deep_by_name_beyond: Array[u64]
         deep_by_name_whole: Array[u64]
@@ -733,6 +741,10 @@ define Planner
         current_fn_fpt_names: Array[String]
         current_fn_fpt_fields: Array[size_t]
         current_fn_fpt_regions: Array[size_t]
+        ; locals bound from a VISIBLE positional construction (a stack
+        ; record whose fields decide where its guts live), seeded beside
+        ; the field map
+        current_fn_ctor_locals: Array[String]
 
         ; Channel use-after-send move checker (milestone 1.4): per-function
         ; state, rebuilt per walked function like the alias/closure sets.
@@ -950,6 +962,17 @@ define Planner
     )
     {
         init(filename: String) linked
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -28454,6 +28477,7 @@ define Planner
 
 
 
+
         ; escape_value_param_root: the reference-like/delegate PARAMETER index
         ; this operand's value IS — a bare parameter, or a bare local ALIAS of a
         ; parameter (`let q p`). -1 otherwise. Deliberately BARE only (no member
@@ -28584,6 +28608,92 @@ define Planner
         ; (safe) when not recorded. Only LOCAL-region fields are ever recorded
         ; (escape_record_field_points_to#), so an unrecorded field is treated as
         ; Caller — the UNKNOWN -> SAFE default that keeps the self-host green.
+        ; a record handed BY VALUE is copied into the callee's keep. Bound
+        ; from a VISIBLE positional construction, its fields are what may
+        ; point into this frame's local page; otherwise (a String from a
+        ; call, an init) its Local stamp IS its guts — region_of_operand
+        ; answers for references only. The addr-taken rule's promotion
+        ; moved the binding onto the caller page.
+        function deep_by_value_local(this: Planner, arg: PlannedOperand) @ret_nonlocal true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function lifetime_kind_name(lt: Lifetime) @page true @direct true @ret_caller true returns String linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; exactly the shapes restamp_putadd_constructions# moves onto the
+        ; caller page: a construction, an init, a page-taking call, a tuple
+        function operand_is_restampable(this: Planner, arg: PlannedOperand) @ret_param_1 true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         ; does the field-points-to map hold a LOCAL field for the record the
         ; operand denotes (a bare `X` or `&X`)?
         function fpt_any_local(this: Planner, arg: PlannedOperand) @ret_nonlocal true returns bool linked
@@ -28996,7 +29106,7 @@ define Planner
 
 
 
-        procedure escape_handle_call(mutable this: Planner, call: PlannedCall) linked
+        procedure escape_handle_call(mutable this: Planner, call: PlannedCall) io linked
 
 
 
@@ -29041,7 +29151,91 @@ define Planner
         ; its frame; a local-page argument there is an escape. The inline
         ; half sees only arguments with a Local-life TYPE; this one asks
         ; region_of_operand, which knows a `&local` box and an alias.
-        procedure escape_check_deep(mutable this: Planner, call: PlannedCall) linked
+        procedure escape_check_deep(mutable this: Planner, call: PlannedCall) io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -30923,6 +31117,11 @@ define Planner
 
 
 
+
+
+
+
+
         procedure persist_tail_carries(mutable this: Planner, ops: Vector[Operand]) @ret_nonlocal true returns bool linked
 
 
@@ -30957,6 +31156,14 @@ define Planner
         ; body that persists under the current deep_by_name; a body marked
         ; this round can make its callers persist in the next.
         procedure deep_persist_fixpoint(mutable this: Planner) io linked
+
+
+
+
+
+
+
+
 
 
 
@@ -31182,6 +31389,50 @@ define Planner
 
 
 
+        ; the concept of a property of the receiver's concept, "" if none
+        function persist_this_field_concept(this: Planner, name: String) @page true @direct true returns String linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         ; a bare name that is neither a parameter nor a local and that the
         ; receiver's concept declares as a property: a field of `this`
         function persist_name_is_this_field(this: Planner, name: String) @ret_nonlocal true returns bool linked
@@ -31229,6 +31480,124 @@ define Planner
 
         ; the value of `... as int` carries no reference
         function persist_ops_end_scalar_cast(ops: Vector[Operand]) @ret_nonlocal true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure deep_into_reset(mutable this: Planner) linked
+
+
+
+
+
+
+
+
+
+        ; the input index of a parameter name, -1 if none
+        function persist_param_index(this: Planner, name: String) @ret_nonlocal true returns int linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; WHERE a store target lies: 0 in the receiver's guts, k in
+        ; parameter k's guts (`p.f`, `*p`, `*(p.f)`), -1 beyond the frame
+        procedure persist_target_param_index(mutable this: Planner, target: Vector[Operand]) @ret_nonlocal true returns int linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; an ARGUMENT expression as a destination: 0 `this` (or a field of
+        ; it), k a bare parameter, -2 a bare local, -1 anything else
+        function persist_dest_kind(this: Planner, ops: Vector[Operand]) @ret_nonlocal true returns int linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; record `mask` as kept in destination `dest` (see persist_dest_kind)
+        procedure deep_note_into(mutable this: Planner, dest: int, mask: u64) linked
+
+
+
+
 
 
 
@@ -31821,12 +32190,6 @@ define Planner
 
 
 
-
-
-
-
-
-
         procedure persist_store_persists(mutable this: Planner, target: Vector[Operand], mask: u64) @ret_nonlocal true returns bool linked
 
 
@@ -32202,6 +32565,103 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; the callee keeps position `bit` in parameter kd's guts (kd 1..15):
+        ; OUR argument at kd is the destination — `this` or a field of it,
+        ; a parameter (kept in that parameter), a local (tainted with the
+        ; carried mask), anything else beyond
+        procedure deep_forward_into(mutable this: Planner, callee_key: String, next_ptr: ref[Operand], has_receiver: bool, bit: u64, cm: u64, cw: u64) linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         procedure deep_by_name_merge(mutable this: Planner, name: String, mask: u64, tmask: u64, bmask: u64, wmask: u64) @persists true linked
 
 
@@ -32216,6 +32676,45 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function deep_name_into_of(this: Planner, name: String, k: size_t) @ret_param_0 true returns u64 linked
 
 
 
@@ -32396,6 +32895,13 @@ define Planner
 
 
         procedure build_return_residence_set(mutable this: Planner) io linked
+
+
+
+
+
+
+
 
 
 
@@ -34007,8 +34513,10 @@ define Planner
 
 
 
+
         ; Post-pass entry: two passes over instantiated_functions.
         procedure check_interprocedural_escapes(mutable this: Planner) io linked
+
 
 
 
@@ -38696,6 +39204,22 @@ define Planner
             mutable f: Function,
             parent: ref[PlannedType]?
         ) @page true @direct true @ret_caller true returns PlannedFunction io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

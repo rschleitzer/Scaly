@@ -1,0 +1,49 @@
+; ACCEPTED at rc 0 today, unsound: a call RESULT bound to a local (`let s
+; sb.to_string()`) and then handed to a callee that keeps it. Passed INLINE
+; (`this.add_diag(sb.to_string())`) the persist promotion moves the value onto
+; the caller page; bound first, nothing moves — the String's buffer stays on
+; work's local page and diags[0].msg reads garbage after the frame is gone
+; (measured 2026-09-22, no SCALY_POISON needed). Found while probing the deep
+; gate; rejected under SCALYC_DEEP_GATE=1.
+define Diag (var msg: String)
+define Box (var host: ref[Page]  var diags: ref[Array[Diag]])
+{
+    procedure add_diag(mutable this, msg: String)
+        diags.add(Diag(msg))
+    ; reuse the released frame page so the dangling read is visible even
+    ; without SCALY_POISON
+    procedure churn(mutable this)
+    {
+        var junk Array[String]()
+        var i 0
+        while i < 2000
+        {
+            junk.add(String("yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"))
+            set i: i + 1
+        }
+    }
+    procedure work(rp: pointer[Page], mutable this)
+    {
+        var sb StringBuilder()
+        sb.append "hello-from-work"
+        let s sb.to_string()
+        this.add_diag(s)
+        var junk Array[String]()
+        var i 0
+        while i < 200
+        {
+            junk.add(String("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"))
+            set i: i + 1
+        }
+    }
+}
+if getenv("SCALY_POISON") <> null
+    Page.enable_poison()
+let root_anchor String("probe")
+let host Page.get(root_anchor.get_buffer() as pointer[void])
+var b Box(host, &Array[Diag]^host())
+b.work()
+b.churn()
+let d b.diags[0]
+print d.msg
+print "\n"

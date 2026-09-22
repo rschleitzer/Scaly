@@ -1,0 +1,45 @@
+; ACCEPTED at rc 0 today, unsound: a BY-VALUE String parameter stored into a
+; field of `this` (`set kept: msg`). The records see a reference stored; a
+; String is a value whose buffer lives on the caller's local page, and the
+; copy in the field points there after the frame is gone. Same runtime shape
+; as bound_result.scaly; rejected under SCALYC_DEEP_GATE=1.
+define Box (var host: ref[Page]  var kept: String)
+{
+    procedure keep(mutable this, msg: String)
+        set kept: msg
+    ; reuse the released frame page so the dangling read is visible even
+    ; without SCALY_POISON
+    procedure churn(mutable this)
+    {
+        var junk Array[String]()
+        var i 0
+        while i < 2000
+        {
+            junk.add(String("yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"))
+            set i: i + 1
+        }
+    }
+    procedure work(rp: pointer[Page], mutable this)
+    {
+        var sb StringBuilder()
+        sb.append "hello-from-work"
+        let s sb.to_string()
+        this.keep(s)
+        var junk Array[String]()
+        var i 0
+        while i < 200
+        {
+            junk.add(String("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"))
+            set i: i + 1
+        }
+    }
+}
+if getenv("SCALY_POISON") <> null
+    Page.enable_poison()
+let root_anchor String("probe")
+let host Page.get(root_anchor.get_buffer() as pointer[void])
+var b Box(host, String(""))
+b.work()
+b.churn()
+print b.kept
+print "\n"

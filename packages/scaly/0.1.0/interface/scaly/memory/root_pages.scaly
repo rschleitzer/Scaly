@@ -908,6 +908,13 @@ procedure scaly_release_root_page(p: pointer[Page]) linked
 
 
 
+
+
+
+
+
+
+
 ; Full teardown of a function-local root page at scope exit (the blocker-C
 ; "always free local regions" invariant). Frees the page's owned extension
 ; chain + exclusive pages when it was actually used, then returns the

@@ -888,6 +888,13 @@ procedure scaly_release_root_page(p: pointer[Page])
         abort()
     }
 
+    ; Poison mode (Page.page_poison): a frame's root page is returned to the
+    ; stack bucket, never to release_page, so it must be overwritten HERE —
+    ; without this a dangling read of a frame-local value survived unpoisoned
+    ; (measured 2026-09-22, tests/escape/pending/bound_result.scaly).
+    if page_poison
+        memset(p as pointer[void], 0xDD, PAGE_SIZE)
+
     let bucket stack_bucket_of p
     let first first_usable_page bucket
 

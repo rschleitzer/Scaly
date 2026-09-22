@@ -2484,33 +2484,41 @@ if.then5:                                         ; preds = %if.end
   br label %if.end6
 
 if.end6:                                          ; preds = %if.then5, %if.end
-  %call = call ptr @_Z15stack_bucket_ofR4Page(ptr %0)
-  %call8 = call ptr @_Z17first_usable_pagePv(ptr %call)
-  %ne9 = icmp ne ptr %0, %call8
-  br i1 %ne9, label %if.then10, label %if.end11
+  %global.load8 = load i1, ptr @page_poison, align 1
+  br i1 %global.load8, label %if.then9, label %if.end10
 
-if.then10:                                        ; preds = %if.end6
-  %as.ptrtoint12 = ptrtoint ptr %0 to i64
-  %sub13 = sub i64 %as.ptrtoint12, 4096
-  %as.inttoptr = inttoptr i64 %sub13 to ptr
+if.then9:                                         ; preds = %if.end6
+  %call = call ptr @memset(ptr %0, i32 221, i64 4096)
+  br label %if.end10
+
+if.end10:                                         ; preds = %if.then9, %if.end6
+  %call11 = call ptr @_Z15stack_bucket_ofR4Page(ptr %0)
+  %call12 = call ptr @_Z17first_usable_pagePv(ptr %call11)
+  %ne13 = icmp ne ptr %0, %call12
+  br i1 %ne13, label %if.then14, label %if.end15
+
+if.then14:                                        ; preds = %if.end10
+  %as.ptrtoint16 = ptrtoint ptr %0 to i64
+  %sub17 = sub i64 %as.ptrtoint16, 4096
+  %as.inttoptr = inttoptr i64 %sub17 to ptr
   store ptr %as.inttoptr, ptr @stack_top, align 8
   ret void
 
-if.end11:                                         ; preds = %if.end6
-  %load.struct14 = load %_Z17StackBucketHeader, ptr %call, align 8
-  %prev = extractvalue %_Z17StackBucketHeader %load.struct14, 0
+if.end15:                                         ; preds = %if.end10
+  %load.struct18 = load %_Z17StackBucketHeader, ptr %call11, align 8
+  %prev = extractvalue %_Z17StackBucketHeader %load.struct18, 0
   %eq = icmp eq ptr %prev, null
-  br i1 %eq, label %if.then15, label %if.end16
+  br i1 %eq, label %if.then19, label %if.end20
 
-if.then15:                                        ; preds = %if.end11
+if.then19:                                        ; preds = %if.end15
   store ptr null, ptr @stack_top, align 8
   ret void
 
-if.end16:                                         ; preds = %if.end11
-  %field.inplace = getelementptr inbounds nuw %_Z17StackBucketHeader, ptr %call, i32 0, i32 0
+if.end20:                                         ; preds = %if.end15
+  %field.inplace = getelementptr inbounds nuw %_Z17StackBucketHeader, ptr %call11, i32 0, i32 0
   %deref.recv = load ptr, ptr %field.inplace, align 8
-  %call17 = call ptr @_Z16last_usable_pagePv(ptr %deref.recv)
-  store ptr %call17, ptr @stack_top, align 8
+  %call21 = call ptr @_Z16last_usable_pagePv(ptr %deref.recv)
+  store ptr %call21, ptr @stack_top, align 8
   ret void
 }
 
