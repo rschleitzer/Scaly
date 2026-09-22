@@ -591,6 +591,10 @@ define Planner
         ; `Slice[char]`, `Vector[u8]`) — what is stored through or into it
         ; carries no reference
         persist_pelem_scalar: Array[bool]
+        ; locals that ALIAS a parameter's guts (`let a this.need_aux()`,
+        ; `let e p.entry`): a store into them lands in that parameter
+        persist_alias_names: Array[String]
+        persist_alias_dest: Array[int]
         var deep_this_mask: u64
         var deep_whole_mask: u64
         ; INTO WHICH parameter: slot k (1..15) holds the positions kept in
@@ -691,6 +695,8 @@ define Planner
         deep_gate_whole: Array[u64]
         deep_gate_plen: Array[size_t]
         deep_gate_takes_this: Array[bool]
+        rr_local_page_names: Array[String]
+        rr_local_page_of: Array[int]
         ; every planned body's return class and argument, by mangled name,
         ; for the post-pass by-value judge (rr_class_of_call#)
         var rr_class_index: ConceptIndex
@@ -973,6 +979,10 @@ define Planner
     )
     {
         init(filename: String) linked
+
+
+
+
 
 
 
@@ -28813,6 +28823,34 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         function type_init_allocates_buffer(t: PlannedType) @ret_nonlocal true returns bool linked
 
 
@@ -31725,6 +31763,8 @@ define Planner
 
 
 
+
+
         procedure persist_tail_carries(mutable this: Planner, ops: Vector[Operand]) @ret_nonlocal true returns bool linked
 
 
@@ -32134,6 +32174,12 @@ define Planner
         ; WHERE a store target lies: 0 in the receiver's guts, k in
         ; parameter k's guts (`p.f`, `*p`, `*(p.f)`), -1 beyond the frame
         procedure persist_target_param_index(mutable this: Planner, target: Vector[Operand]) @ret_nonlocal true returns int linked
+
+
+
+
+
+
 
 
 
@@ -32699,6 +32745,155 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; the parameter whose guts an initializer ALIASES: a reference-typed
+        ; field path off a parameter (`this.aux`, `p.entry`, not a scalar
+        ; one), or a call on a parameter whose result IS its receiver
+        ; (residence class 3 with the receiver as argument: `this.need_aux()`)
+        procedure persist_alias_dest_of(mutable this: Planner, ops: Vector[Operand]) @ret_nonlocal true returns int linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function persist_alias_index(this: Planner, name: String) @ret_param_0 true returns int linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         procedure persist_scan_action(mutable this: Planner, a: scalyc.compiler.Model.Action) @ret_nonlocal true returns bool linked
 
 
@@ -32797,7 +32992,68 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         procedure persist_store_persists(mutable this: Planner, target: Vector[Operand], mask: u64) @ret_nonlocal true returns bool linked
+
+
+
+
+
 
 
 
@@ -34292,7 +34548,24 @@ define Planner
 
 
 
+
+
         procedure rr_merge(mutable this: Planner, cls: size_t, arg: size_t) linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -34387,6 +34660,15 @@ define Planner
 
 
         procedure rr_walk_stmt(mutable this: Planner, s: Statement, tail: bool) @ret_nonlocal true linked
+
+
+
+
+
+
+
+
+
 
 
 
@@ -34584,6 +34866,29 @@ define Planner
 
         ; The class of a value expression; sets rr_class_arg.
         procedure rr_class_of_ops(mutable this: Planner, ops: Vector[Operand]) @ret_nonlocal true returns size_t linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -35074,7 +35379,95 @@ define Planner
 
 
 
-        function rr_page_param_index(this: Planner, name: String) @ret_nonlocal true returns int linked
+        function rr_page_param_index(this: Planner, name: String) @ret_param_0 true returns int linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; `Page.get(<param>)` as a whole initializer: the index of that
+        ; parameter, -1 otherwise
+        function rr_page_get_of_param(this: Planner, ops: Vector[Operand]) @ret_nonlocal true returns int linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

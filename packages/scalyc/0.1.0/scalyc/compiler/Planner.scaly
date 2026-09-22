@@ -591,6 +591,10 @@ define Planner
         ; `Slice[char]`, `Vector[u8]`) — what is stored through or into it
         ; carries no reference
         persist_pelem_scalar: Array[bool]
+        ; locals that ALIAS a parameter's guts (`let a this.need_aux()`,
+        ; `let e p.entry`): a store into them lands in that parameter
+        persist_alias_names: Array[String]
+        persist_alias_dest: Array[int]
         var deep_this_mask: u64
         var deep_whole_mask: u64
         ; INTO WHICH parameter: slot k (1..15) holds the positions kept in
@@ -691,6 +695,8 @@ define Planner
         deep_gate_whole: Array[u64]
         deep_gate_plen: Array[size_t]
         deep_gate_takes_this: Array[bool]
+        rr_local_page_names: Array[String]
+        rr_local_page_of: Array[int]
         ; every planned body's return class and argument, by mangled name,
         ; for the post-pass by-value judge (rr_class_of_call#)
         var rr_class_index: ConceptIndex
@@ -1042,6 +1048,8 @@ define Planner
             set persist_twhole: Array[u64]^this()
             set persist_last_whole: 0
             set persist_pelem_scalar: Array[bool]^this()
+            set persist_alias_names: Array[String]^this()
+            set persist_alias_dest: Array[int]^this()
             set deep_this_mask: 0
             set deep_whole_mask: 0
             set deep_into_masks: Array[u64]^this()
@@ -1121,6 +1129,8 @@ define Planner
             set deep_gate_whole: Array[u64]^this()
             set deep_gate_plen: Array[size_t]^this()
             set deep_gate_takes_this: Array[bool]^this()
+            set rr_local_page_names: Array[String]^this()
+            set rr_local_page_of: Array[int]^this()
             set rr_class_index: ConceptIndex.create(16)
             set rr_class_vals: Array[size_t]^this()
             set rr_class_args: Array[size_t]^this()
@@ -28719,10 +28729,25 @@ define Planner
             choose arg.expr
                 when bv: Variable
                 {
+                    ; under the census the candidate and its aliases are
+                    ; local by claim — by NAME: census_carry asks the type
+                    ; shape too, and a by-value String alias has none
+                    if escape_census
+                    {
+                        if this.census_carry(arg)
+                            return true
+                        if has_member = false
+                            if this.array_contains_name(census_names, bv.name)
+                                return true
+                    }
                     if bv_trace
                     {
                         scaly_eputs "bvtrace judge "
                         scaly_eputs(bv.name.to_c_string())
+                        if escape_census
+                            scaly_eputs " census"
+                        scaly_eputs " names="
+                        scaly_eputi census_names.length
                         if has_member
                             scaly_eputs " member"
                         if this.escape_name_is_current_param(bv.name)
@@ -28762,7 +28787,18 @@ define Planner
                     if has_member
                         return false
                     if c.is_operator
+                    {
+                        ; `*x`: the value read through a local cell
+                        if c.name = "*"
+                            if c.args <> null
+                                if c.args.length = 1
+                                {
+                                    let da c.args.get 0
+                                    if da <> null
+                                        return this.deep_by_value_local(da.unwrap())
+                                }
                         return false
+                    }
                     ; an inline construction on this frame: its components
                     if this.name_is_capitalized(c.name)
                         return this.call_components_local(c)
@@ -28785,9 +28821,10 @@ define Planner
                                 if cp.value <> null
                                 {
                                     let vals (*cp.value)
-                                    if vals.length = 1
+                                    var vi: size_t 0
+                                    while vi < vals.length
                                     {
-                                        let vp vals.get 0
+                                        let vp vals.get vi
                                         if vp <> null
                                         {
                                             let v vp.unwrap()
@@ -28801,6 +28838,7 @@ define Planner
                                                     if this.deep_by_value_local(v)
                                                         return true
                                         }
+                                        set vi: vi + 1
                                     }
                                 }
                             set i: i + 1
@@ -30453,7 +30491,7 @@ define Planner
                 return
             set census_names.length: 0
             if bound <> null
-                census_names.add(String((*bound)))
+                census_names.add(String^this((*bound)))
             set census_box_start: start
             set census_escaped: false
             set census_trace: false
@@ -31225,7 +31263,7 @@ define Planner
                 when tv: Variable
                 {
                     if this.array_contains_name(census_names, tv.name) = false
-                        census_names.add(String(tv.name))
+                        census_names.add(String^this(tv.name))
                     return true
                 }
                 else
@@ -31238,7 +31276,7 @@ define Planner
             if name = null
                 return
             if this.array_contains_name(census_names, (*name)) = false
-                census_names.add(String((*name)))
+                census_names.add(String^this((*name)))
         }
 
         ; Walk (1): the inline rules over one body for the current candidate.
@@ -31494,7 +31532,7 @@ define Planner
                 {
                     if this.census_operands_carry(fr.expr)
                     {
-                        let ident String(fr.identifier)
+                        let ident String^this(fr.identifier)
                         if this.array_contains_name(census_names, ident) = false
                             census_names.add(ident)
                     }
@@ -31607,6 +31645,8 @@ define Planner
             set persist_pnames.length: 0
             set persist_pconcepts.length: 0
             set persist_pelem_scalar.length: 0
+            set persist_alias_names.length: 0
+            set persist_alias_dest.length: 0
             var pi: size_t 0
             while pi < f.input.length
             {
@@ -32151,9 +32191,15 @@ define Planner
                     if (*s0p) = "*"
                     {
                         let base this.rr_deref_base_name(target)
-                        return this.persist_param_index(base)
+                        let bpi this.persist_param_index(base)
+                        if bpi >= 0
+                            return bpi
+                        return this.persist_alias_index(base)
                     }
-                    return this.persist_param_index((*s0p))
+                    let spi this.persist_param_index((*s0p))
+                    if spi >= 0
+                        return spi
+                    return this.persist_alias_index((*s0p))
                 }
                 else
                     return 0 - 1
@@ -32695,8 +32741,157 @@ define Planner
                 let m this.persist_carried_mask(b.operation, persist_tainted)
                 if m <> (0 as u64)
                     this.persist_add_tainted_mw((*b.item.name), m, persist_last_whole)
+                let ad this.persist_alias_dest_of(b.operation)
+                if ad >= 0
+                {
+                    persist_alias_names.add(String^this((*b.item.name)))
+                    persist_alias_dest.add ad
+                    if deep_trace
+                    {
+                        scaly_eputs "  dtrace alias "
+                        scaly_eputs((*b.item.name).to_c_string())
+                        scaly_eputs " -> param "
+                        scaly_eputi ad
+                        scaly_eputs "\n"
+                    }
+                }
             }
             this.persist_scan_ops(b.operation)
+        }
+
+        ; the parameter whose guts an initializer ALIASES: a reference-typed
+        ; field path off a parameter (`this.aux`, `p.entry`, not a scalar
+        ; one), or a call on a parameter whose result IS its receiver
+        ; (residence class 3 with the receiver as argument: `this.need_aux()`)
+        procedure persist_alias_dest_of(mutable this: Planner, ops: Vector[Operand]) returns int
+        {
+            if ops.length = 0
+                return 0 - 1
+            let op0 ops.get 0
+            if op0 = null
+                return 0 - 1
+            choose (*op0).expression
+                when ty: scalyc.compiler.Model.Type
+                {
+                    if ty.name.length < 1
+                        return 0 - 1
+                    let hp ty.name.get 0
+                    if hp = null
+                        return 0 - 1
+                    var pidx this.persist_param_index((*hp))
+                    ; a bare field of this (`buffer`), or a path off one
+                    var bare_this_field false
+                    if pidx < 0
+                        if this.persist_name_is_this_field((*hp))
+                        {
+                            set pidx: 0
+                            set bare_this_field: true
+                        }
+                    if pidx < 0
+                        return 0 - 1
+                    if ty.name.length < 2
+                        if bare_this_field = false
+                            return 0 - 1
+                    var is_call false
+                    if ops.length > 1
+                    {
+                        let nx ops.get 1
+                        if nx <> null
+                            choose (*nx).expression
+                                when ntup: Tuple
+                                    set is_call: true
+                                else
+                                    0
+                    }
+                    if is_call = false
+                    {
+                        ; the path itself, or arithmetic over it
+                        ; (`buffer + length`): still inside that parameter
+                        if ops.length > 1
+                        {
+                            var oi: size_t 1
+                            while oi < ops.length
+                            {
+                                let oo ops.get oi
+                                if oo <> null
+                                    choose (*oo).expression
+                                        when otup: Tuple
+                                            return 0 - 1
+                                        else
+                                            0
+                                set oi: oi + 1
+                            }
+                        }
+                        if ty.name.length >= 2
+                            if this.rr_path_is_scalar(ty.name)
+                                return 0 - 1
+                        if bare_this_field
+                            if ty.name.length = 1
+                                if this.persist_param_elem_scalar((*hp))
+                                    return 0 - 1
+                        return pidx
+                    }
+                    if ops.length <> 2
+                        return 0 - 1
+                    let lp ty.name.get(ty.name.length - 1)
+                    if lp = null
+                        return 0 - 1
+                    let cn this.persist_concept_of_param((*hp))
+                    var cls: size_t 0
+                    var arg: size_t 0
+                    if cn.get_length() > 0
+                    {
+                        set cls: this.return_residence_static(cn, (*lp))
+                        set arg: rr_static_arg
+                    }
+                    if cls = 0
+                    {
+                        set cls: this.rr_lookup_name((*lp))
+                        set arg: rr_lookup_arg
+                    }
+                    if deep_trace
+                    {
+                        scaly_eputs "  dtrace alias? "
+                        scaly_eputs((*hp).to_c_string())
+                        scaly_eputs "."
+                        scaly_eputs((*lp).to_c_string())
+                        scaly_eputs " concept="
+                        scaly_eputs(cn.to_c_string())
+                        scaly_eputs " cls="
+                        scaly_eputi cls
+                        scaly_eputs " arg="
+                        scaly_eputi arg
+                        scaly_eputs " pidx="
+                        scaly_eputi pidx
+                        scaly_eputs "\n"
+                    }
+                    if cls = 3 or cls = 2
+                        if arg = (pidx as size_t)
+                            return pidx
+                    return 0 - 1
+                }
+                else
+                    return 0 - 1
+            0 - 1
+        }
+
+        function persist_alias_index(this: Planner, name: String) returns int
+        {
+            var i: size_t 0
+            while i < persist_alias_names.length
+            {
+                let np persist_alias_names.get i
+                if np <> null
+                    if (*np) = name
+                    {
+                        let dp persist_alias_dest.get i
+                        if dp <> null
+                            return (*dp)
+                        return 0 - 1
+                    }
+                set i: i + 1
+            }
+            0 - 1
         }
 
         procedure persist_scan_action(mutable this: Planner, a: scalyc.compiler.Model.Action) returns bool
@@ -32752,6 +32947,62 @@ define Planner
                         this.deep_note_into(this.persist_target_param_index(a.source), pm)
                         set deep_whole_mask: deep_whole_mask | persist_last_whole
                     }
+                }
+                ; `a.add(x)` on a local that ALIASES a parameter's guts
+                let ah Planner.persist_ops_head_name(a.source)
+                if ah.get_length() > 0
+                {
+                    let aidx this.persist_alias_index(ah)
+                    if aidx >= 0
+                        if Planner.persist_ops_putadd_param(a.source, persist_tainted, persist_locals) = false
+                        {
+                            let sh0a a.source.get 0
+                            var is_putadd_a false
+                            if sh0a <> null
+                                choose (*sh0a).expression
+                                    when aty: scalyc.compiler.Model.Type
+                                    {
+                                        if aty.name.length >= 2
+                                        {
+                                            let alp aty.name.get(aty.name.length - 1)
+                                            if alp <> null
+                                            {
+                                                if (*alp) = "add"
+                                                    set is_putadd_a: true
+                                                if (*alp) = "put"
+                                                    set is_putadd_a: true
+                                            }
+                                        }
+                                    }
+                                    else
+                                        0
+                            if is_putadd_a
+                            {
+                                var am: u64 0
+                                var aw: u64 0
+                                let atp a.source.get 1
+                                if atp <> null
+                                    choose (*atp).expression
+                                        when atup: Tuple
+                                        {
+                                            var aci: size_t 0
+                                            while aci < atup.components.length
+                                            {
+                                                let acp atup.components.get aci
+                                                if acp <> null
+                                                {
+                                                    set am: am | this.persist_carried_mask((*acp).value, persist_tainted)
+                                                    set aw: aw | persist_last_whole
+                                                }
+                                                set aci: aci + 1
+                                            }
+                                        }
+                                        else
+                                            0
+                                this.deep_note_into(aidx, am)
+                                set deep_whole_mask: deep_whole_mask | aw
+                            }
+                        }
                 }
                 this.persist_note_putadd_local(a.source)
                 return this.persist_scan_ops(a.source)
@@ -32821,6 +33072,9 @@ define Planner
                             if this.persist_param_elem_scalar(base)
                                 return false
                         if base.get_length() > 0
+                            if this.persist_alias_index(base) >= 0
+                                return true
+                        if base.get_length() > 0
                             if Planner.persist_names_contain(persist_locals, base)
                                 if Planner.persist_names_contain(persist_pnames, base) = false
                                 {
@@ -32830,6 +33084,8 @@ define Planner
                                 }
                         return true
                     }
+                    if this.persist_alias_index(s0) >= 0
+                        return true
                     if Planner.persist_names_contain(persist_locals, s0)
                     {
                         this.persist_add_tainted_mw(s0, mask, persist_last_whole)
@@ -34213,6 +34469,8 @@ define Planner
             set rr_local_class.length: 0
             set rr_local_arg.length: 0
             set rr_local_concept.length: 0
+            set rr_local_page_names.length: 0
+            set rr_local_page_of.length: 0
             set rr_param_names.length: 0
             set rr_param_page.length: 0
             set rr_param_scalar.length: 0
@@ -34323,6 +34581,21 @@ define Planner
                 set rr_result_arg: arg
                 return
             }
+            var pair23 false
+            if cls = 2
+                if rr_result_class = 3
+                    set pair23: true
+            if cls = 3
+                if rr_result_class = 2
+                    set pair23: true
+            if pair23
+            {
+                if arg <> rr_result_arg
+                    set rr_result_conflict: true
+                ; keep the dependent reading: as local as that argument
+                set rr_result_class: 3
+                return
+            }
             if cls <> rr_result_class
                 set rr_result_conflict: true
             if cls = 2 or cls = 3
@@ -34393,10 +34666,19 @@ define Planner
                     this.rr_walk_action(a, tail)
                 when b: scalyc.compiler.Model.Binding
                 {
-                    let cls this.rr_class_of_ops(b.operation)
+                    var cls this.rr_class_of_ops(b.operation)
                     if b.item.name <> null
                     {
                         let nm (*b.item.name)
+                        let pgi this.rr_page_get_of_param(b.operation)
+                        if pgi >= 0
+                        {
+                            rr_local_page_names.add nm
+                            rr_local_page_of.add pgi
+                            ; the page of parameter k: an explicit page, k
+                            set cls: 2
+                            set rr_class_arg: pgi as size_t
+                        }
                         rr_local_names.add nm
                         rr_local_class.add cls
                         rr_local_arg.add rr_class_arg
@@ -34588,6 +34870,29 @@ define Planner
             set rr_class_arg: 0
             if ops.length = 0
                 return 0
+            ; a trailing `as` relocates nothing: `this.aux as ref[EventAux]`
+            ; is the field path (class 3, this) — classify the prefix
+            if ops.length > 1
+            {
+                let lastp ops.get(ops.length - 1)
+                if lastp <> null
+                    choose (*lastp).expression
+                        when la: scalyc.compiler.Model.As
+                        {
+                            var prefix Vector[Operand](ops.length - 1)
+                            var pi: size_t 0
+                            while pi < ops.length - 1
+                            {
+                                let pp ops.get pi
+                                if pp <> null
+                                    prefix.put(pi, (*pp))
+                                set pi: pi + 1
+                            }
+                            return this.rr_class_of_ops(prefix)
+                        }
+                        else
+                            0
+            }
             if this.persist_mentions_carried(ops, rr_tainted)
                 return 1
             var i: size_t 0
@@ -35088,6 +35393,94 @@ define Planner
                                 return pi as int
                 set pi: pi + 1
             }
+            ; `let host Page.get(this)`: a local naming a parameter's page
+            var li: size_t 0
+            while li < rr_local_page_names.length
+            {
+                let lp rr_local_page_names.get li
+                if lp <> null
+                    if (*lp) = name
+                    {
+                        let ip rr_local_page_of.get li
+                        if ip <> null
+                            return (*ip)
+                        return 0 - 1
+                    }
+                set li: li + 1
+            }
+            0 - 1
+        }
+
+        ; `Page.get(<param>)` as a whole initializer: the index of that
+        ; parameter, -1 otherwise
+        function rr_page_get_of_param(this: Planner, ops: Vector[Operand]) returns int
+        {
+            if ops.length <> 2
+                return 0 - 1
+            let op0 ops.get 0
+            let op1 ops.get 1
+            if op0 = null
+                return 0 - 1
+            if op1 = null
+                return 0 - 1
+            var is_page_get false
+            choose (*op0).expression
+                when ty: scalyc.compiler.Model.Type
+                {
+                    if ty.name.length = 2
+                    {
+                        let h ty.name.get 0
+                        let g ty.name.get 1
+                        if h <> null
+                            if g <> null
+                                if (*h) = "Page"
+                                    if (*g) = "get"
+                                        set is_page_get: true
+                    }
+                }
+                else
+                    0
+            if is_page_get = false
+                return 0 - 1
+            choose (*op1).expression
+                when tup: Tuple
+                {
+                    if tup.components.length <> 1
+                        return 0 - 1
+                    let cp tup.components.get 0
+                    if cp = null
+                        return 0 - 1
+                    if (*cp).value.length <> 1
+                        return 0 - 1
+                    let vp (*cp).value.get 0
+                    if vp = null
+                        return 0 - 1
+                    choose (*vp).expression
+                        when vty: scalyc.compiler.Model.Type
+                        {
+                            if vty.name.length <> 1
+                                return 0 - 1
+                            let vn vty.name.get 0
+                            if vn = null
+                                return 0 - 1
+                            if (*vn) = "this"
+                                return this.rr_this_index() as int
+                            var pi: size_t 0
+                            while pi < rr_param_names.length
+                            {
+                                let pp rr_param_names.get pi
+                                if pp <> null
+                                    if (*pp) = (*vn)
+                                        return pi as int
+                                set pi: pi + 1
+                            }
+                            return 0 - 1
+                        }
+                        else
+                            return 0 - 1
+                }
+                else
+                    return 0 - 1
             0 - 1
         }
 
