@@ -680,6 +680,8 @@ define Planner
         ; (deep_state, indexed like rr_fns) instead of the shallow scan
         var deep_gate: bool
         var deep_trace: bool
+        var census_trace: bool
+        var bv_trace: bool
         ; the gate's post-pass table: per planned body (mangled) the deep
         ; mask and its parameter count, filled at plan_function#
         deep_gate_mangled: Array[String]
@@ -689,6 +691,15 @@ define Planner
         deep_gate_whole: Array[u64]
         deep_gate_plen: Array[size_t]
         deep_gate_takes_this: Array[bool]
+        ; every planned body's return class and argument, by mangled name,
+        ; for the post-pass by-value judge (rr_class_of_call#)
+        var rr_class_index: ConceptIndex
+        rr_class_vals: Array[size_t]
+        rr_class_args: Array[size_t]
+        ; per function of the post-pass: locals bound from a CALL and the
+        ; by-value verdict of that call's result
+        current_fn_bind_names: Array[String]
+        current_fn_bind_local: Array[size_t]
         var deep_gate_index: ConceptIndex
 
         var escape_census: bool
@@ -962,6 +973,12 @@ define Planner
     )
     {
         init(filename: String) linked
+
+
+
+
+
+
 
 
 
@@ -28624,7 +28641,324 @@ define Planner
         ; call, an init) its Local stamp IS its guts — region_of_operand
         ; answers for references only. The addr-taken rule's promotion
         ; moved the binding onto the caller page.
-        function deep_by_value_local(this: Planner, arg: PlannedOperand) @ret_nonlocal true returns bool linked
+        ; the result of a CALL, by value: built on the page this frame
+        ; passed (class 1 — the frame's local page when the frame has no
+        ; caller page, else the promotion's business), or wherever its
+        ; class-3 argument lives; every other class (explicit page, nowhere,
+        ; unknown) is not this frame's
+        function by_value_call_local(this: Planner, c: PlannedCall, result_life: Lifetime) @ret_nonlocal true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; a record handed BY VALUE is copied into the callee's keep — its
+        ; BUFFER is not. Where that buffer lives: a parameter's or a field's
+        ; with the caller (never local); a local bound from a visible
+        ; construction — where its fields point (the map); a local bound
+        ; from a call, or a call itself — by_value_call_local#; an inline
+        ; construction on this frame — where its components point; a
+        ; promoted binding — the caller page.
+        function deep_by_value_local(this: Planner, arg: PlannedOperand) @ret_param_0 true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function type_init_allocates_buffer(t: PlannedType) @ret_nonlocal true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function bind_index_of(this: Planner, name: String) @ret_nonlocal true returns int linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function call_components_local(this: Planner, c: PlannedCall) @ret_nonlocal true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; does a by-value record own a heap buffer — a `pointer[…]` field
+        ; anywhere inside it (String, StringC, Array, Vector, List, Text)?
+        ; A record of `ref[T]` borrows owns nothing (tscaly's IterationTypes).
+        function type_owns_buffer(this: Planner, t: PlannedType, depth: size_t) @ret_nonlocal true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function model_type_owns_buffer(this: Planner, t: scalyc.compiler.Model.Type, depth: size_t) @ret_nonlocal true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -28946,6 +29280,91 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         ; Pass 1 (indirect calls): an indirect call goes THROUGH a delegate
         ; VALUE whose body is unknown at compile time, so we cannot prove it
         ; does not stash its arguments. Conservatively (SOUND) reject passing
@@ -29081,10 +29500,43 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         ; The record itself: destination kind 1 is "frame-external" (what a
         ; global or a deref store uses), which is exactly what a page-hosted
         ; object is from the callee's point of view.
-        procedure escape_record_param_into_region(mutable this: Planner, v: PlannedOperand) io linked
+        procedure escape_record_param_into_region(mutable this: Planner, v: PlannedOperand, dest_kind: size_t) @persists true io linked
 
 
 
@@ -29162,6 +29614,10 @@ define Planner
         ; half sees only arguments with a Local-life TYPE; this one asks
         ; region_of_operand, which knows a `&local` box and an alias.
         procedure escape_check_deep(mutable this: Planner, call: PlannedCall) io linked
+
+
+
+
 
 
 
@@ -29881,6 +30337,59 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         ; Walk one action by value (the whole PlannedAction, mirroring
         ; emit_action(action)). Handle the store first, then recurse into
         ; the source/target operand vectors.
@@ -29938,6 +30447,54 @@ define Planner
 
 
         procedure census_judge(mutable this: Planner, bound: ref[String]?, start: size_t, page: String, tname: String) @persists true io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -30556,6 +31113,19 @@ define Planner
         ; A construction (tuple, variant, another box) with a carrying
         ; component holds a pointer into the candidate.
         function census_construction_carries(this: Planner, op: PlannedOperand) @ret_nonlocal true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -32223,6 +32793,10 @@ define Planner
 
 
 
+
+
+
+
         procedure persist_store_persists(mutable this: Planner, target: Vector[Operand], mask: u64) @ret_nonlocal true returns bool linked
 
 
@@ -32928,6 +33502,10 @@ define Planner
 
 
         procedure build_return_residence_set(mutable this: Planner) io linked
+
+
+
+
 
 
 
@@ -34547,8 +35125,17 @@ define Planner
 
 
 
+
+
         ; Post-pass entry: two passes over instantiated_functions.
         procedure check_interprocedural_escapes(mutable this: Planner) io linked
+
+
+
+
+
+
+
 
 
 
@@ -39237,6 +39824,22 @@ define Planner
             mutable f: Function,
             parent: ref[PlannedType]?
         ) @page true @direct true @ret_caller true returns PlannedFunction io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

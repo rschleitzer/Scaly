@@ -680,6 +680,8 @@ define Planner
         ; (deep_state, indexed like rr_fns) instead of the shallow scan
         var deep_gate: bool
         var deep_trace: bool
+        var census_trace: bool
+        var bv_trace: bool
         ; the gate's post-pass table: per planned body (mangled) the deep
         ; mask and its parameter count, filled at plan_function#
         deep_gate_mangled: Array[String]
@@ -689,6 +691,15 @@ define Planner
         deep_gate_whole: Array[u64]
         deep_gate_plen: Array[size_t]
         deep_gate_takes_this: Array[bool]
+        ; every planned body's return class and argument, by mangled name,
+        ; for the post-pass by-value judge (rr_class_of_call#)
+        var rr_class_index: ConceptIndex
+        rr_class_vals: Array[size_t]
+        rr_class_args: Array[size_t]
+        ; per function of the post-pass: locals bound from a CALL and the
+        ; by-value verdict of that call's result
+        current_fn_bind_names: Array[String]
+        current_fn_bind_local: Array[size_t]
         var deep_gate_index: ConceptIndex
 
         var escape_census: bool
@@ -1102,6 +1113,7 @@ define Planner
             set rr_armed: false
             set deep_gate: false
             set deep_trace: false
+            set census_trace: false
             set deep_gate_mangled: Array[String]^this()
             set deep_gate_masks: Array[u64]^this()
             set deep_gate_this: Array[u64]^this()
@@ -1109,6 +1121,11 @@ define Planner
             set deep_gate_whole: Array[u64]^this()
             set deep_gate_plen: Array[size_t]^this()
             set deep_gate_takes_this: Array[bool]^this()
+            set rr_class_index: ConceptIndex.create(16)
+            set rr_class_vals: Array[size_t]^this()
+            set rr_class_args: Array[size_t]^this()
+            set current_fn_bind_names: Array[String]^this()
+            set current_fn_bind_local: Array[size_t]^this()
             set deep_gate_index: ConceptIndex.create(16)
             set escape_census: false
             set host_report: false
@@ -28451,7 +28468,7 @@ define Planner
             choose op0.expr
                 when tp: Tuple
                 {
-                    current_fn_ctor_locals.add(String(bind_name))
+                    current_fn_ctor_locals.add(String^this(bind_name))
                     if tp.components <> null
                     {
                         let comps (*tp.components)
@@ -28624,9 +28641,74 @@ define Planner
         ; call, an init) its Local stamp IS its guts — region_of_operand
         ; answers for references only. The addr-taken rule's promotion
         ; moved the binding onto the caller page.
+        ; the result of a CALL, by value: built on the page this frame
+        ; passed (class 1 — the frame's local page when the frame has no
+        ; caller page, else the promotion's business), or wherever its
+        ; class-3 argument lives; every other class (explicit page, nowhere,
+        ; unknown) is not this frame's
+        function by_value_call_local(this: Planner, c: PlannedCall, result_life: Lifetime) returns bool
+        {
+            ; `Array[T]^host()`: an explicit page names where the buffer
+            ; will be — never this frame
+            if Planner.lifetime_is_reference(c.life)
+                return false
+            let ci rr_class_index.lookup(c.mangled_name)
+            if bv_trace
+            {
+                scaly_eputs "bvtrace call "
+                scaly_eputs(c.mangled_name.to_c_string())
+                scaly_eputs " class_index="
+                scaly_eputi ci
+                scaly_eputs " result_life="
+                scaly_eputs(Planner.lifetime_kind_name(result_life).to_c_string())
+                scaly_eputs " call_life="
+                scaly_eputs(Planner.lifetime_kind_name(c.life).to_c_string())
+                scaly_eputs "\n"
+            }
+            if ci < 0
+            {
+                ; a LINKED callee (another package's body) carries its
+                ; class only as the stamp rr_result_not_local# left on the
+                ; RESULT: lifted for 2/3/4, Local for 1 and unknown
+                return Planner.lifetime_is_local(result_life)
+            }
+            let cvp rr_class_vals.get(ci as size_t)
+            let cap rr_class_args.get(ci as size_t)
+            if cvp = null
+                return false
+            ; class 1 says where the RECORD was built, not its buffer: a
+            ; user record's buffers come from its components (unknown); the
+            ; stdlib owners allocate theirs through Page.get(this), i.e. on
+            ; the page the record lands on
+            if (*cvp) = 1
+                return Planner.type_init_allocates_buffer(c.result_type)
+            if (*cvp) = 3
+                if cap <> null
+                    if c.args <> null
+                    {
+                        let plen c.args.length
+                        ; the argument index counts the callee's inputs;
+                        ; the receiver of a method is the first argument
+                        var ai (*cap)
+                        if ai < c.args.length
+                        {
+                            let ap c.args.get ai
+                            if ap <> null
+                                return this.deep_by_value_local(ap.unwrap())
+                        }
+                    }
+            false
+        }
+
+        ; a record handed BY VALUE is copied into the callee's keep — its
+        ; BUFFER is not. Where that buffer lives: a parameter's or a field's
+        ; with the caller (never local); a local bound from a visible
+        ; construction — where its fields point (the map); a local bound
+        ; from a call, or a call itself — by_value_call_local#; an inline
+        ; construction on this frame — where its components point; a
+        ; promoted binding — the caller page.
         function deep_by_value_local(this: Planner, arg: PlannedOperand) returns bool
         {
-            var bare_name String("")
             var has_member false
             if arg.member_access <> null
             {
@@ -28637,30 +28719,282 @@ define Planner
             choose arg.expr
                 when bv: Variable
                 {
-                    if has_member = false
-                        set bare_name: bv.name
-                    ; a field read off `this` or a parameter lives with
-                    ; the caller's object, whatever its stamp says
-                    if has_member
+                    if bv_trace
+                    {
+                        scaly_eputs "bvtrace judge "
+                        scaly_eputs(bv.name.to_c_string())
+                        if has_member
+                            scaly_eputs " member"
                         if this.escape_name_is_current_param(bv.name)
-                            return false
+                            scaly_eputs " param"
+                        if this.array_contains_name(promoted_binding_names, bv.name)
+                            scaly_eputs " promoted"
+                        if this.array_contains_name(current_fn_ctor_locals, bv.name)
+                            scaly_eputs " ctor"
+                        scaly_eputs " binds="
+                        scaly_eputi current_fn_bind_names.length
+                        scaly_eputs "\n"
+                    }
+                    if has_member
+                        return false
+                    if this.escape_name_is_current_param(bv.name)
+                        return false
+                    if this.array_contains_name(promoted_binding_names, bv.name)
+                        return false
+                    if this.array_contains_name(current_fn_ctor_locals, bv.name)
+                        return this.fpt_any_local(arg)
+                    let bidx this.bind_index_of(bv.name)
+                    if bv_trace
+                    {
+                        scaly_eputs "bvtrace bind_index "
+                        scaly_eputi bidx
+                        scaly_eputs "\n"
+                    }
+                    if bidx < 0
+                        return false
+                    let lp current_fn_bind_local.get(bidx as size_t)
+                    if lp = null
+                        return false
+                    return (*lp) = 1
+                }
+                when c: Call
+                {
+                    if has_member
+                        return false
+                    if c.is_operator
+                        return false
+                    ; an inline construction on this frame: its components
+                    if this.name_is_capitalized(c.name)
+                        return this.call_components_local(c)
+                    if c.name = "init"
+                        return this.call_components_local(c)
+                    return this.by_value_call_local(c, arg.result_type.life)
+                }
+                when tp: Tuple
+                {
+                    if Planner.lifetime_is_reference(tp.life)
+                        return false
+                    if tp.components <> null
+                    {
+                        let comps (*tp.components)
+                        var i: size_t 0
+                        while i < comps.length
+                        {
+                            let cp comps.get i
+                            if cp <> null
+                                if cp.value <> null
+                                {
+                                    let vals (*cp.value)
+                                    if vals.length = 1
+                                    {
+                                        let vp vals.get 0
+                                        if vp <> null
+                                        {
+                                            let v vp.unwrap()
+                                            if this.census_type_is_ref_like(v.result_type)
+                                            {
+                                                if this.region_of_operand(v) < Planner.required_region_for_escape()
+                                                    return true
+                                            }
+                                            else
+                                                if this.type_owns_buffer(v.result_type, 0)
+                                                    if this.deep_by_value_local(v)
+                                                        return true
+                                        }
+                                    }
+                                }
+                            set i: i + 1
+                        }
+                    }
+                    return false
+                }
+                else
+                    return false
+            false
+        }
+
+        function type_init_allocates_buffer(t: PlannedType) returns bool
+        {
+            if t.name = "String"
+                return true
+            if t.name = "StringC"
+                return true
+            if t.name = "StringBuilder"
+                return true
+            if t.name = "Array"
+                return true
+            if t.name = "Vector"
+                return true
+            if t.name = "List"
+                return true
+            if t.name = "HashMap"
+                return true
+            false
+        }
+
+        function bind_index_of(this: Planner, name: String) returns int
+        {
+            var bi: size_t 0
+            while bi < current_fn_bind_names.length
+            {
+                let np current_fn_bind_names.get bi
+                if np <> null
+                    if (*np) = name
+                        return bi as int
+                set bi: bi + 1
+            }
+            0 - 1
+        }
+
+        function call_components_local(this: Planner, c: PlannedCall) returns bool
+        {
+            if Planner.lifetime_is_reference(c.life)
+                return false
+            if c.args = null
+                return false
+            var i: size_t 0
+            while i < c.args.length
+            {
+                let ap c.args.get i
+                if ap <> null
+                {
+                    let v ap.unwrap()
+                    if this.census_type_is_ref_like(v.result_type)
+                    {
+                        if this.region_of_operand(v) < Planner.required_region_for_escape()
+                            return true
+                    }
+                    else
+                        if this.type_owns_buffer(v.result_type, 0)
+                            if this.deep_by_value_local(v)
+                                return true
+                }
+                set i: i + 1
+            }
+            false
+        }
+
+        ; does a by-value record own a heap buffer — a `pointer[…]` field
+        ; anywhere inside it (String, StringC, Array, Vector, List, Text)?
+        ; A record of `ref[T]` borrows owns nothing (tscaly's IterationTypes).
+        function type_owns_buffer(this: Planner, t: PlannedType, depth: size_t) returns bool
+        {
+            if Planner.is_reference_like(t)
+                return false
+            if t.name = "pointer"
+                return true
+            if t.name = "Option"
+            {
+                if t.generics <> null
+                    if t.generics.length = 1
+                    {
+                        let g0 t.generics.get 0
+                        if g0 <> null
+                            return this.type_owns_buffer((*g0), depth)
+                    }
+                return false
+            }
+            if t.name = "String"
+                return true
+            if t.name = "StringC"
+                return true
+            if t.name = "Array"
+                return true
+            if t.name = "Vector"
+                return true
+            if t.name = "List"
+                return true
+            if t.name = "HashMap"
+                return true
+            if t.name = "StringBuilder"
+                return true
+            if depth > 3
+                return false
+            let idx concept_index.lookup(t.name)
+            if idx < 0
+                return false
+            let kvp concepts.get(idx as size_t)
+            if kvp = null
+                return false
+            let c (*kvp).value
+            choose c.definition
+                when st: Structure
+                {
+                    var qi: size_t 0
+                    while qi < st.properties.length
+                    {
+                        let prp st.properties.get qi
+                        if prp <> null
+                            if (*prp).type <> null
+                            {
+                                let pt (*prp).type
+                                if this.model_type_owns_buffer((*pt), depth + 1)
+                                    return true
+                            }
+                        set qi: qi + 1
+                    }
                 }
                 else
                     0
-            if bare_name.get_length() > 0
-            {
-                if this.array_contains_name(current_fn_ctor_locals, bare_name)
-                    return this.fpt_any_local(arg)
-                if this.array_contains_name(promoted_binding_names, bare_name)
-                    return false
-            }
-            if Planner.lifetime_is_local(arg.result_type.life)
+            false
+        }
+
+        function model_type_owns_buffer(this: Planner, t: scalyc.compiler.Model.Type, depth: size_t) returns bool
+        {
+            if t.name.length = 0
+                return false
+            let lp t.name.get(t.name.length - 1)
+            if lp = null
+                return false
+            let n (*lp)
+            if n = "pointer"
                 return true
-            choose arg.expr
-                when lv: Variable
-                    return Planner.lifetime_is_local(lv.variable_type.life)
+            if n = "ref"
+                return false
+            if n = "String"
+                return true
+            if n = "StringC"
+                return true
+            if n = "Array"
+                return true
+            if n = "Vector"
+                return true
+            if n = "List"
+                return true
+            if n = "HashMap"
+                return true
+            if n = "StringBuilder"
+                return true
+            if Planner.is_primitive_type_name(n)
+                return false
+            if depth > 3
+                return false
+            let idx concept_index.lookup(n)
+            if idx < 0
+                return false
+            let kvp concepts.get(idx as size_t)
+            if kvp = null
+                return false
+            let c (*kvp).value
+            choose c.definition
+                when st: Structure
+                {
+                    var qi: size_t 0
+                    while qi < st.properties.length
+                    {
+                        let prp st.properties.get qi
+                        if prp <> null
+                            if (*prp).type <> null
+                            {
+                                let pt (*prp).type
+                                if this.model_type_owns_buffer((*pt), depth + 1)
+                                    return true
+                            }
+                        set qi: qi + 1
+                    }
+                }
                 else
-                    return false
+                    0
             false
         }
 
@@ -28897,8 +29231,42 @@ define Planner
             {
                 if this.arg_is_stack_closure(arg)
                     set arg_is_closure: true
-                if this.region_of_operand(arg) < Planner.required_region_for_escape()
-                    set arg_escapes: true
+                ; a by-value record with heap guts is judged by WHERE ITS
+                ; BUFFER lives (deep_by_value_local#), never by the Local
+                ; stamp region_of_operand reads off its type — that stamp
+                ; is the flat one and says local for every unknown class
+                ; the by-value rule is the GATE's and the census's for now
+                ; (measured, not armed: dazzle's `Element.make(host, gi)`
+                ; still reads local through it, 2026-09-23)
+                var by_value_guts false
+                if deep_gate or escape_census
+                    if this.census_type_is_ref_like(arg.result_type) = false
+                        if this.type_owns_buffer(arg.result_type, 0)
+                            set by_value_guts: true
+                if by_value_guts
+                {
+                    let bvl this.deep_by_value_local(arg)
+                    if census_trace
+                    {
+                        scaly_eputs "ctrace  by_value judge="
+                        if bvl
+                            scaly_eputs "local\n"
+                        else
+                            scaly_eputs "not-local\n"
+                    }
+                    if bvl
+                        set arg_escapes: true
+                    if escape_census
+                    {
+                        if this.census_is_candidate(arg)
+                            set arg_escapes: true
+                        if this.census_carry(arg)
+                            set arg_escapes: true
+                    }
+                }
+                else
+                    if this.region_of_operand(arg) < Planner.required_region_for_escape()
+                        set arg_escapes: true
                 if arg_is_closure
                     set arg_escapes: true
             }
@@ -28906,6 +29274,49 @@ define Planner
             {
                 if this.region_of_arg_path(arg, rec) < Planner.required_region_for_escape()
                     set arg_escapes: true
+            }
+            if census_trace
+            {
+                scaly_eputs "ctrace  record callee="
+                let cfp instantiated_functions.get rec.callee_fn_index
+                if cfp <> null
+                    scaly_eputs(cfp.name.to_c_string())
+                scaly_eputs " param="
+                scaly_eputi rec.param_index
+                scaly_eputs " dest_kind="
+                scaly_eputi rec.dest_kind
+                scaly_eputs " dest="
+                scaly_eputi rec.dest_index
+                scaly_eputs " path="
+                scaly_eputi rec.src_path_len
+                scaly_eputs " arg_escapes="
+                if arg_escapes
+                    scaly_eputs "1"
+                else
+                    scaly_eputs "0"
+                scaly_eputs " arg_type="
+                scaly_eputs(arg.result_type.name.to_c_string())
+                scaly_eputs " life="
+                scaly_eputs(Planner.lifetime_kind_name(arg.result_type.life).to_c_string())
+                scaly_eputs " kind="
+                choose arg.expr
+                    when kv: Variable
+                    {
+                        scaly_eputs "variable:"
+                        scaly_eputs(kv.name.to_c_string())
+                    }
+                    when kc: Call
+                    {
+                        scaly_eputs "call:"
+                        scaly_eputs(kc.name.to_c_string())
+                    }
+                    when kt: Tuple
+                        scaly_eputs "tuple"
+                    else
+                        scaly_eputs "other"
+                if arg.member_access <> null
+                    scaly_eputs " +member"
+                scaly_eputs "\n"
             }
             if arg_escapes
             {
@@ -28921,6 +29332,14 @@ define Planner
                         if dest_ptr <> null
                             set violates: this.escape_dest_arg_outlives(dest_ptr.unwrap())
                     }
+                }
+                if census_trace
+                {
+                    scaly_eputs "ctrace   violates="
+                    if violates
+                        scaly_eputs "1\n"
+                    else
+                        scaly_eputs "0 (dest does not outlive)\n"
                 }
                 if violates
                 {
@@ -29052,6 +29471,19 @@ define Planner
                 return
             if tp.components = null
                 return
+            ; `T^this(…)` in a method builds on the RECEIVER's page: the
+            ; destination is input 0 (judged at the call site by whether the
+            ; receiver outlives — `acc.add(node)` on a frame-local List is
+            ; the same frame); any other named region is frame-external
+            var region_kind: size_t 1
+            choose tp.life
+                when rl: scalyc.compiler.Model.Reference
+                {
+                    if rl.location = "this"
+                        set region_kind: 0
+                }
+                else
+                    0
             let comps (*tp.components)
             var i: size_t 0
             while i < comps.length
@@ -29071,7 +29503,27 @@ define Planner
                             {
                                 let v (*vp)
                                 if Planner.is_reference_like(v.result_type)
-                                    this.escape_record_param_into_region(v)
+                                    this.escape_record_param_into_region(v, region_kind)
+                                ; a BY-VALUE record that owns heap guts
+                                ; (String, StringC, Array, Text) copies its
+                                ; buffer pointer into the region record:
+                                ; opensp's `EndPrologEvent^host(…, ges, …)`
+                                ; with `let ges Array()` — acid test 2026-09-22
+                                ; only the BARE parameter: a call over it
+                                ; (`StringC^host(src.as_slice())`) is a copy
+                                ; or a view of a copy, never the buffer itself
+                                var bare_value_param false
+                                if v.member_access = null
+                                    choose v.expr
+                                        when bv: Variable
+                                            set bare_value_param: true
+                                        else
+                                            0
+                                if bare_value_param
+                                    if deep_gate or host_report
+                                        if this.census_type_is_ref_like(v.result_type) = false
+                                            if this.type_owns_buffer(v.result_type, 0)
+                                                this.escape_record_param_into_region(v, region_kind)
                             }
                             set j: j + 1
                         }
@@ -29084,13 +29536,13 @@ define Planner
         ; The record itself: destination kind 1 is "frame-external" (what a
         ; global or a deref store uses), which is exactly what a page-hosted
         ; object is from the callee's point of view.
-        procedure escape_record_param_into_region(mutable this: Planner, v: PlannedOperand)
+        procedure escape_record_param_into_region(mutable this: Planner, v: PlannedOperand, dest_kind: size_t)
         {
             let root this.escape_value_param_root(v)
             if root < 0
                 return
             let cpc this.escape_current_param_count()
-            if this.escape_record_exists(escape_fn_index, (root as size_t), 1, 0, 0, 0, 0)
+            if this.escape_record_exists(escape_fn_index, (root as size_t), dest_kind, 0, 0, 0, 0)
                 return
             if getenv("SCALYC_ESCAPE_PROBE") <> null
             {
@@ -29108,7 +29560,7 @@ define Planner
                 escape_fn_index,
                 cpc,
                 (root as size_t),
-                1,
+                dest_kind,
                 0,
                 0,
                 0,
@@ -29325,8 +29777,12 @@ define Planner
                             ; StringC read `local` past both oracles and broke
                             ; 142 corpus models when dropped (2026-09-22)
                             if escape_census
+                            {
                                 if this.census_carry(arg)
                                     set local: true
+                                if this.census_is_candidate(arg)
+                                    set local: true
+                            }
                         }
                         else
                         {
@@ -29848,6 +30304,59 @@ define Planner
                                 if bop0 <> null
                                 {
                                     let bo bop0.unwrap()
+                                    ; a by-value local bound from a CALL: the
+                                    ; verdict of that call's result, kept for
+                                    ; deep_by_value_local#
+                                    ; the LAST operand of the initializer is
+                                    ; the call whose result is bound (`sb.to_string()`
+                                    ; plans as a chain)
+                                    let blast_p bops.get(bops.length - 1)
+                                    if blast_p <> null
+                                    {
+                                        let blast blast_p.unwrap()
+                                        if bv_trace
+                                        {
+                                            scaly_eputs "bvtrace binding "
+                                            scaly_eputs((*binding.binding_item.name).to_c_string())
+                                            scaly_eputs " ops="
+                                            scaly_eputi bops.length
+                                            scaly_eputs " last="
+                                            choose blast.expr
+                                                when tc: Call
+                                                    scaly_eputs "call"
+                                                when tv: Variable
+                                                    scaly_eputs "variable"
+                                                when tt: Tuple
+                                                    scaly_eputs "tuple"
+                                                else
+                                                    scaly_eputs "other"
+                                            scaly_eputs "\n"
+                                        }
+                                        choose blast.expr
+                                            when bcall: Call
+                                            {
+                                                let bverdict this.by_value_call_local(bcall, blast.result_type.life)
+                                                if bv_trace
+                                                {
+                                                    scaly_eputs "bvtrace stored "
+                                                    scaly_eputs((*binding.binding_item.name).to_c_string())
+                                                    if bverdict
+                                                        scaly_eputs " local\n"
+                                                    else
+                                                        scaly_eputs " not-local\n"
+                                                }
+                                                ; ^this: a `String(x)` built inline here lived on
+                                                ; the walker's frame and compared unequal at the
+                                                ; judge — the bound-result hole, in the checker
+                                                current_fn_bind_names.add(String^this((*binding.binding_item.name)))
+                                                var bvv: size_t 0
+                                                if bverdict
+                                                    set bvv: 1
+                                                current_fn_bind_local.add bvv
+                                            }
+                                            else
+                                                0
+                                    }
                                     var bo_esc false
                                     if Planner.is_reference_like(bo.result_type)
                                         set bo_esc: true
@@ -29947,11 +30456,50 @@ define Planner
                 census_names.add(String((*bound)))
             set census_box_start: start
             set census_escaped: false
+            set census_trace: false
+            let ctr getenv("SCALYC_CENSUS_TRACE")
+            if ctr <> null
+                if fn_ptr.name.equals(ctr)
+                    set census_trace: true
             choose fn_ptr.impl
                 when action: Action
                     this.census_walk_action(action)
                 else
                     0
+            if census_trace
+            {
+                scaly_eputs "ctrace "
+                scaly_eputs(fn_ptr.name.to_c_string())
+                scaly_eputs " cand@"
+                scaly_eputi start
+                scaly_eputs " ^"
+                scaly_eputs(page.to_c_string())
+                scaly_eputs " "
+                scaly_eputs(tname.to_c_string())
+                if bound <> null
+                {
+                    scaly_eputs " as "
+                    scaly_eputs((*bound).to_c_string())
+                }
+                scaly_eputs " walk1="
+                if census_escaped
+                    scaly_eputs "escapes"
+                else
+                    scaly_eputs "local"
+                scaly_eputs " names="
+                var cni: size_t 0
+                while cni < census_names.length
+                {
+                    let cnp census_names.get cni
+                    if cnp <> null
+                    {
+                        scaly_eputs((*cnp).to_c_string())
+                        scaly_eputs ","
+                    }
+                    set cni: cni + 1
+                }
+                scaly_eputs "\n"
+            }
             if census_escaped = false
             {
                 set escape_census: true
@@ -29959,9 +30507,18 @@ define Planner
                 this.escape_walk_function_body((*fn_ptr))
                 if escape_found
                     set census_escaped: true
+                if census_trace
+                {
+                    scaly_eputs "ctrace  escape_walk="
+                    if escape_found
+                        scaly_eputs "escapes\n"
+                    else
+                        scaly_eputs "local\n"
+                }
                 set escape_found: false
                 set escape_census: false
             }
+            set census_trace: false
             var seen: size_t 0
             var seen_at: size_t 0
             var si: size_t 0
@@ -30564,11 +31121,24 @@ define Planner
                         return false
                     if c.is_operator
                         return false
-                    choose c.life
-                        when u: Unspecified
-                            return false
-                        else
-                            0
+                    ; a CONSTRUCTION carries its components whatever its
+                    ; life: a by-value record built on the frame
+                    ; (`Text(StringC^host(…), lbuf)`, life Unspecified)
+                    ; copies the candidate's guts pointer into every copy of
+                    ; itself — AttributeList.set_value's `set text: Text(…)`
+                    ; collected no alias and eight opensp sigils read `local`
+                    ; past the census (2026-09-22 acid test)
+                    var is_ctor false
+                    if this.name_is_capitalized(c.name)
+                        set is_ctor: true
+                    if c.name = "init"
+                        set is_ctor: true
+                    if is_ctor = false
+                        choose c.life
+                            when u: Unspecified
+                                return false
+                            else
+                                0
                     return this.census_operands_carry_deep(c.args)
                 }
                 when tp: Tuple
@@ -32190,14 +32760,18 @@ define Planner
             var mw persist_last_whole
             ; `set p.f: p.g | x`: a parameter stored into ITSELF keeps
             ; nothing beyond what it already reaches
+            ; (only a TAINTED parameter: persist_mask_of answers all-ones
+            ; for a name without a taint entry — `this` — and wiped every
+            ; `set this.f: name` for a day, 2026-09-22)
             let self_head Planner.persist_ops_head_name(a.target)
             if self_head.get_length() > 0
-                if Planner.persist_names_contain(persist_pnames, self_head)
-                {
-                    let self_bit this.persist_mask_of(self_head)
-                    set m: m & (self_bit xor ((0 as u64) - (1 as u64)))
-                    set mw: mw & (self_bit xor ((0 as u64) - (1 as u64)))
-                }
+                if self_head <> "this"
+                    if Planner.persist_names_contain(persist_tainted, self_head)
+                    {
+                        let self_bit this.persist_mask_of(self_head)
+                        set m: m & (self_bit xor ((0 as u64) - (1 as u64)))
+                        set mw: mw & (self_bit xor ((0 as u64) - (1 as u64)))
+                    }
             if m <> (0 as u64)
                 if this.persist_store_persists(a.target, m)
                 {
@@ -33093,6 +33667,10 @@ define Planner
                     set gcap: gcap * 2
                 set deep_gate_index: ConceptIndex.create(gcap)
             }
+            var ccap: size_t 1024
+            while ccap < rr_fns.length * 4
+                set ccap: ccap * 2
+            set rr_class_index: ConceptIndex.create(ccap)
             if getenv("SCALYC_RR_PROBE") <> null
             {
                 var pi: size_t 0
@@ -34538,6 +35116,8 @@ define Planner
             set current_fn_alias_params.length: 0
             set current_fn_fpt_names.length: 0
             set current_fn_ctor_locals.length: 0
+            set current_fn_bind_names.length: 0
+            set current_fn_bind_local.length: 0
             set current_fn_fpt_fields.length: 0
             set current_fn_fpt_regions.length: 0
             choose func.impl
@@ -34606,13 +35186,20 @@ define Planner
 
             ; Pass 1: check every call against the summary.
             set escape_checking: true
+            let etr getenv("SCALYC_ESCAPE_TRACE")
+            set bv_trace: getenv("SCALYC_GATE_TRACE") <> null
             var j: size_t 0
             for func in instantiated_functions
             {
                 if escape_found = false
                 {
                     set escape_fn_index: j
+                    set census_trace: false
+                    if etr <> null
+                        if func.name.equals(etr)
+                            set census_trace: true
                     this.escape_walk_function_body(func)
+                    set census_trace: false
                 }
                 set j: j + 1
             }
@@ -39704,6 +40291,22 @@ define Planner
                     set hk: hk + 1
                 }
                 deep_ret_state.add 0
+            }
+            if rr_armed
+            {
+                let cdi this.return_residence_index(f)
+                if cdi >= 0
+                {
+                    let ccp ret_res_class.get(cdi as size_t)
+                    let cap ret_res_arg.get(cdi as size_t)
+                    if ccp <> null
+                        if cap <> null
+                        {
+                            rr_class_index.insert(result.mangled_name, rr_class_vals.length)
+                            rr_class_vals.add((*ccp))
+                            rr_class_args.add((*cap))
+                        }
+                }
             }
             if deep_gate
             {
