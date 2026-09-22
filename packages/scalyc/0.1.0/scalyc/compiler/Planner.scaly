@@ -609,6 +609,7 @@ define Planner
         deep_into_masks: Array[u64]
         deep_by_name_into: Array[u64]
         deep_state_into: Array[size_t]
+        deep_state_hasinto: Array[size_t]
         deep_gate_into: Array[u64]
         deep_by_name_this: Array[u64]
         deep_by_name_beyond: Array[u64]
@@ -722,6 +723,13 @@ define Planner
         census_names: Array[String]
         var census_box_start: size_t
         var census_escaped: bool
+        ; The candidate's ADDRESS was persisted into a LOCAL keeper (`seen.add(&T^host(…))`,
+        ; `let r &T^host(…)` + `list.add(r)`): the value never leaves the routine, but the
+        ; de-sigiled spelling is a stack temporary whose slot every loop iteration reuses —
+        ; `local-pinned`, never droppable (tscaly acid test 2026-09-23: three TS1117/TS1119
+        ; units silent at rc 0, invisible to poison because no page is released).
+        var census_pinned: bool
+        var census_pinned_count: size_t
         census_files: Array[String]
         census_offsets: Array[size_t]
         census_texts: Array[String]
@@ -1070,6 +1078,7 @@ define Planner
             }
             set deep_by_name_into: Array[u64]^this()
             set deep_state_into: Array[size_t]^this()
+            set deep_state_hasinto: Array[size_t]^this()
             set deep_gate_into: Array[u64]^this()
             set deep_by_name_this: Array[u64]^this()
             set deep_by_name_beyond: Array[u64]^this()
@@ -1157,6 +1166,9 @@ define Planner
             set census_texts: Array[String]^this()
             set census_total: 0
             set census_local: 0
+            set census_pinned: false
+            set census_pinned_count: 0
+            set bv_trace: false
             set current_fn_closure_names: Array[String]^this()
             set current_fn_alias_names: Array[String]^this()
             set current_fn_alias_params: Array[size_t]^this()
@@ -29776,8 +29788,19 @@ define Planner
                             {
                                 let dp call.args.get(off + kd)
                                 if dp <> null
+                                {
                                     if this.escape_dest_arg_outlives(dp.unwrap())
                                         set judged: true
+                                    else
+                                        if escape_census
+                                            if off + k < call.args.length
+                                            {
+                                                let pinp call.args.get(off + k)
+                                                if pinp <> null
+                                                    if this.census_operand_is_candidate_address(pinp.unwrap())
+                                                        set census_pinned: true
+                                            }
+                                }
                             }
                     set kd: kd + 1
                 }
@@ -29842,6 +29865,14 @@ define Planner
                             {
                                 if this.region_of_operand(arg) < Planner.required_region_for_escape()
                                     set local: true
+                                ; under the census `&cand` and a reference alias
+                                ; are local by claim (the eight PrivateIdentifierInfo
+                                ; boxes handed to cf_set_private_identifier, whose
+                                ; into-mask the census had never asked; tscaly acid
+                                ; test 2026-09-23)
+                                if escape_census
+                                    if this.census_operand_is_candidate_address(arg)
+                                        set local: true
                             }
                         if by_value
                         {
@@ -29876,6 +29907,9 @@ define Planner
                             ; parameter-filled record is unrecorded, SAFE)
                             if this.fpt_any_local(arg)
                                 set local: true
+                            if escape_census
+                                if this.census_operand_is_candidate_address(arg)
+                                    set local: true
                         }
                         if gate_trace
                         {
@@ -30540,6 +30574,7 @@ define Planner
                 census_names.add(String^this((*bound)))
             set census_box_start: start
             set census_escaped: false
+            set census_pinned: false
             set census_trace: false
             let ctr getenv("SCALYC_CENSUS_TRACE")
             if ctr <> null
@@ -30640,7 +30675,13 @@ define Planner
             else
             {
                 set census_local: census_local + 1
-                text.append "local ^"
+                if census_pinned
+                {
+                    set census_pinned_count: census_pinned_count + 1
+                    text.append "local-pinned ^"
+                }
+                else
+                    text.append "local ^"
             }
             text.append(page)
             text.append " "
@@ -31050,7 +31091,16 @@ define Planner
                                 {
                                     let aa c.args.get 0
                                     if aa <> null
-                                        return this.census_carry(aa.unwrap())
+                                    {
+                                        let inner aa.unwrap()
+                                        ; `&T^host(…)` handed to a keeper: the
+                                        ; box of the CANDIDATE itself (eight
+                                        ; PrivateIdentifierInfo boxes of tscaly's
+                                        ; class-fields transformer read `local`)
+                                        if this.census_is_candidate(inner)
+                                            return true
+                                        return this.census_carry(inner)
+                                    }
                                 }
                         return false
                     }
@@ -31106,7 +31156,7 @@ define Planner
         ; the RECEIVER is frame-local itself. The verdict is the DEEP one
         ; (persists_deep_for#, every resolved callee under --host-report);
         ; a callee not in it is unknown and passes.
-        procedure census_persisting_call_carries(this: Planner, call: PlannedCall) returns bool
+        procedure census_persisting_call_carries(mutable this: Planner, call: PlannedCall) returns bool
         {
             if call.args = null
                 return false
@@ -31134,6 +31184,30 @@ define Planner
                     }
                 set idx: idx + 1
             }
+            ; under the gate the into-slots are judged precisely by escape_check_deep
+            ; (destination outlives → escape, destination local → pinned); here only
+            ; beyond/this/page-of count, or every into-only callee would read escapes
+            if persists
+                if deep_gate
+                {
+                    let gfound deep_gate_index.lookup(call.mangled_name)
+                    if gfound >= 0
+                    {
+                        let gfi gfound as size_t
+                        var gsum: u64 0
+                        let gbp deep_gate_beyond.get gfi
+                        if gbp <> null
+                            set gsum: gsum | (*gbp)
+                        let gtp deep_gate_this.get gfi
+                        if gtp <> null
+                            set gsum: gsum | (*gtp)
+                        let gpp deep_gate_pageof.get gfi
+                        if gpp <> null
+                            set gsum: gsum | (*gpp)
+                        if gsum = (0 as u64)
+                            set persists: false
+                    }
+                }
             if getenv("SCALYC_DEEP_PROBE") <> null
             {
                 scaly_eputs "ask "
@@ -31149,18 +31223,25 @@ define Planner
             if a0 = null
                 return false
             let receiver a0.unwrap()
+            var local_keeper false
             if this.census_carry(receiver)
-                return false
+                set local_keeper: true
             if Planner.lifetime_is_local(receiver.result_type.life)
-                return false
+                set local_keeper: true
             choose receiver.expr
                 when rv: Variable
                 {
                     if Planner.lifetime_is_local(rv.variable_type.life)
-                        return false
+                        set local_keeper: true
                 }
                 else
                     0
+            if local_keeper
+            {
+                if this.census_args_persist_address(call)
+                    set census_pinned: true
+                return false
+            }
             var ai: size_t 0
             while ai < call.args.length
             {
@@ -31175,6 +31256,60 @@ define Planner
                 }
                 set ai: ai + 1
             }
+            false
+        }
+
+        ; Does a persisted argument (beyond the receiver) hand over the candidate's
+        ; ADDRESS — `&cand`/`&alias`, or a reference-typed alias name?
+        function census_args_persist_address(this: Planner, call: PlannedCall) returns bool
+        {
+            if call.args = null
+                return false
+            var ai: size_t 1
+            while ai < call.args.length
+            {
+                let ap call.args.get ai
+                if ap <> null
+                    if this.census_operand_is_candidate_address(ap.unwrap())
+                        return true
+                set ai: ai + 1
+            }
+            false
+        }
+
+        ; `&cand`/`&alias` (under any `as`), or a reference-typed alias name
+        function census_operand_is_candidate_address(this: Planner, op: PlannedOperand) returns bool
+        {
+            ; peel the `as ref[T]` a boxed construction usually carries
+            var a op
+            var peeled true
+            while peeled
+            {
+                set peeled: false
+                choose a.expr
+                    when cast: As
+                    {
+                        if cast.value <> null
+                        {
+                            let cv cast.value
+                            set a: (*cv)
+                            set peeled: true
+                        }
+                    }
+                    else
+                        0
+            }
+            if this.census_call_yields_alias(a)
+                return true
+            choose a.expr
+                when v: Variable
+                {
+                    if this.census_type_is_ref_like(v.variable_type)
+                        if this.array_contains_name(census_names, v.name)
+                            return true
+                }
+                else
+                    0
             false
         }
 
@@ -31681,6 +31816,20 @@ define Planner
         ; `fill_interface_data`, a list freed under a live type). Nested
         ; blocks are walked; flow-insensitive within one body. The interface
         ; fact `@persists` is derived here too (facts_function#).
+        function deep_into_any(masks: ref[Array[u64]]) returns bool
+        {
+            var ik: size_t 1
+            while ik < 16
+            {
+                let ip masks.get ik
+                if ip <> null
+                    if (*ip) <> (0 as u64)
+                        return true
+                set ik: ik + 1
+            }
+            false
+        }
+
         procedure function_persists_param_guts_deep(mutable this: Planner, f: Function) returns bool
         {
             this.deep_into_reset()
@@ -31890,6 +32039,41 @@ define Planner
                         if fp <> null
                         {
                             let persists this.function_persists_param_guts_deep((*fp))
+                            ; kept ONLY in another parameter's guts (`cf_set_private_identifier(env,
+                            ; name, info)` storing info into env): no beyond/this bit, so the body
+                            ; stays OPEN (a later round may still find a beyond persist through a
+                            ; callee marked after it) — but its into-slots are recorded and the
+                            ; body enters the gate index, where the kd loop judges the destination.
+                            ; Before, such a callee was indexed nowhere and eight
+                            ; `&PrivateIdentifierInfo^host(…)` boxes read `local` (tscaly acid test
+                            ; 2026-09-23); closing it on the into bit instead re-read six sites
+                            ; `local` that transitive beyond persists had made `escapes`.
+                            if persists = false
+                                if (*st) = 0
+                                    if Planner.deep_into_any(deep_into_masks)
+                                    {
+                                        var ik2: size_t 0
+                                        while ik2 < 16
+                                        {
+                                            let ip2 deep_into_masks.get ik2
+                                            if ip2 <> null
+                                                deep_state_into.put(i * 16 + ik2, (*ip2) as size_t)
+                                            set ik2: ik2 + 1
+                                        }
+                                        let hip deep_state_hasinto.get i
+                                        if hip <> null
+                                            if (*hip) = 0
+                                            {
+                                                deep_state_hasinto.put(i, 1)
+                                                set changed: true
+                                                if getenv("SCALYC_DEEP_PROBE") <> null
+                                                {
+                                                    scaly_eputs "hasinto "
+                                                    scaly_eputs((*fp).name.to_c_string())
+                                                    scaly_eputs "\n"
+                                                }
+                                            }
+                                    }
                             if persists
                                 if (*st) = 0
                                 {
@@ -34054,6 +34238,7 @@ define Planner
                 set deep_state_beyond.length: 0
                 set deep_state_whole.length: 0
                 set deep_state_into.length: 0
+                set deep_state_hasinto.length: 0
                 set deep_state_pageof.length: 0
                 set deep_ret_state.length: 0
                 var gi: size_t 0
@@ -34069,6 +34254,7 @@ define Planner
                         deep_state_beyond.add 0
                         deep_state_whole.add 0
                         deep_state_pageof.add 0
+                        deep_state_hasinto.add 0
                         var fk: size_t 0
                         while fk < 16
                         {
@@ -40859,6 +41045,7 @@ define Planner
                 deep_state_beyond.add 0
                 deep_state_whole.add 0
                 deep_state_pageof.add 0
+                deep_state_hasinto.add 0
                 var hk: size_t 0
                 while hk < 16
                 {
@@ -40889,8 +41076,29 @@ define Planner
                 if gdi >= 0
                 {
                     let gst deep_state.get(gdi as size_t)
+                    var g_any false
                     if gst <> null
                         if (*gst) <> 0
+                            set g_any: true
+                    let ghi deep_state_hasinto.get(gdi as size_t)
+                    if ghi <> null
+                        if (*ghi) <> 0
+                            set g_any: true
+                    if getenv("SCALYC_DEEP_PROBE") <> null
+                    {
+                        scaly_eputs "gidx "
+                        scaly_eputs(result.mangled_name.to_c_string())
+                        if g_any
+                            scaly_eputs " 1"
+                        else
+                            scaly_eputs " 0"
+                        if ghi <> null
+                            if (*ghi) <> 0
+                                scaly_eputs " into"
+                        scaly_eputs "\n"
+                    }
+                    if gst <> null
+                        if g_any
                         {
                             var gplen: size_t 0
                             var gtakes false

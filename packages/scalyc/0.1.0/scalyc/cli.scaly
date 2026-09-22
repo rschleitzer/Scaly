@@ -1300,6 +1300,12 @@ define cli
         head.append " candidates, "
         head.append(cli.format_size(planner.census_local))
         head.append " local"
+        if planner.census_pinned_count > 0
+        {
+            head.append " ("
+            head.append(cli.format_size(planner.census_pinned_count))
+            head.append " pinned)"
+        }
         let head_str head.to_string()
         Console.println(head_str.to_c_string())
         cli.print_located("host-report: ", &planner.census_files, &planner.census_offsets, &planner.census_texts)

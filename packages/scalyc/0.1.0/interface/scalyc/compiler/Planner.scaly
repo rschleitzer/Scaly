@@ -609,6 +609,7 @@ define Planner
         deep_into_masks: Array[u64]
         deep_by_name_into: Array[u64]
         deep_state_into: Array[size_t]
+        deep_state_hasinto: Array[size_t]
         deep_gate_into: Array[u64]
         deep_by_name_this: Array[u64]
         deep_by_name_beyond: Array[u64]
@@ -722,6 +723,13 @@ define Planner
         census_names: Array[String]
         var census_box_start: size_t
         var census_escaped: bool
+        ; The candidate's ADDRESS was persisted into a LOCAL keeper (`seen.add(&T^host(…))`,
+        ; `let r &T^host(…)` + `list.add(r)`): the value never leaves the routine, but the
+        ; de-sigiled spelling is a stack temporary whose slot every loop iteration reuses —
+        ; `local-pinned`, never droppable (tscaly acid test 2026-09-23: three TS1117/TS1119
+        ; units silent at rc 0, invisible to poison because no page is released).
+        var census_pinned: bool
+        var census_pinned_count: size_t
         census_files: Array[String]
         census_offsets: Array[size_t]
         census_texts: Array[String]
@@ -985,6 +993,10 @@ define Planner
     )
     {
         init(filename: String) linked
+
+
+
+
 
 
 
@@ -29923,6 +29935,28 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         function escape_record_exists(this: Planner, fn_index: size_t, param_index: size_t, dest_kind: size_t, dest_index: size_t, path_len: size_t, field0: size_t, field1: size_t) @ret_nonlocal true returns bool linked
 
 
@@ -30665,6 +30699,13 @@ define Planner
 
 
 
+
+
+
+
+
+
+
         ; Collect: every Box in the body is a candidate; a Box that is the
         ; whole initializer of a binding is judged under the binding's name.
         procedure census_collect_action(mutable this: Planner, act: PlannedAction) @ret_nonlocal true io linked
@@ -31082,6 +31123,15 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
         ; A reference, a pointer, the NPO option of one, or a view.
         function census_type_is_ref_like(this: Planner, t: PlannedType) @ret_nonlocal true returns bool linked
 
@@ -31106,7 +31156,7 @@ define Planner
         ; the RECEIVER is frame-local itself. The verdict is the DEEP one
         ; (persists_deep_for#, every resolved callee under --host-report);
         ; a callee not in it is unknown and passes.
-        procedure census_persisting_call_carries(this: Planner, call: PlannedCall) @ret_nonlocal true returns bool io linked
+        procedure census_persisting_call_carries(mutable this: Planner, call: PlannedCall) @ret_nonlocal true returns bool io linked
 
 
 
@@ -31144,6 +31194,91 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; Does a persisted argument (beyond the receiver) hand over the candidate's
+        ; ADDRESS — `&cand`/`&alias`, or a reference-typed alias name?
+        function census_args_persist_address(this: Planner, call: PlannedCall) @ret_nonlocal true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; `&cand`/`&alias` (under any `as`), or a reference-typed alias name
+        function census_operand_is_candidate_address(this: Planner, op: PlannedOperand) @ret_nonlocal true returns bool linked
 
 
 
@@ -31681,6 +31816,20 @@ define Planner
         ; `fill_interface_data`, a list freed under a live type). Nested
         ; blocks are walked; flow-insensitive within one body. The interface
         ; fact `@persists` is derived here too (facts_function#).
+        function deep_into_any(masks: ref[Array[u64]]) @ret_nonlocal true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
         procedure function_persists_param_guts_deep(mutable this: Planner, f: Function) @ret_nonlocal true returns bool io linked
 
 
@@ -31863,6 +32012,41 @@ define Planner
         ; body that persists under the current deep_by_name; a body marked
         ; this round can make its callers persist in the next.
         procedure deep_persist_fixpoint(mutable this: Planner) io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -33937,6 +34121,8 @@ define Planner
 
 
         procedure build_return_residence_set(mutable this: Planner) io linked
+
+
 
 
 
@@ -40398,6 +40584,28 @@ define Planner
             mutable f: Function,
             parent: ref[PlannedType]?
         ) @page true @direct true @ret_caller true returns PlannedFunction io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -1305,6 +1305,12 @@ define cli
 
 
 
+
+
+
+
+
+
     ; --pointer-report: the head line carries one count per class, then one
     ; located line per site (PointerCensus.scaly has the class list).
     procedure print_pointer_report(pc: ref[PointerCensus.PointerCensus]) @ret_nonlocal true io linked
