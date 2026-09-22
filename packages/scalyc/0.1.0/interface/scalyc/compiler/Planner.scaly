@@ -574,6 +574,34 @@ define Planner
         ; on the Planner's page, because the walk grows them from nested
         ; blocks and a frame-hosted Array's growth would die with the frame.
         persist_tainted: Array[String]
+        ; the ORIGIN MASK of every tainted name: bit i = derived from input
+        ; parameter i (bit 63 = beyond); a scan's verdict is the union of the
+        ; masks that reached a persisting store — per PARAMETER, so the gate
+        ; can ask which argument positions persist
+        persist_tmask: Array[u64]
+        var persist_last_mask: u64
+        var deep_persist_mask: u64
+        ; the split the post-pass needs: which positions persist INTO THE
+        ; RECEIVER (`this`, judged against the receiver argument at the call
+        ; site), and which are persisted WHOLE (a bare name) rather than as a
+        ; FIELD of the parameter (judged through the field-points-to map)
+        persist_twhole: Array[u64]
+        var persist_last_whole: u64
+        ; per parameter: its ONE generic argument is a scalar (`ref[int]`,
+        ; `Slice[char]`, `Vector[u8]`) — what is stored through or into it
+        ; carries no reference
+        persist_pelem_scalar: Array[bool]
+        var deep_this_mask: u64
+        var deep_whole_mask: u64
+        deep_by_name_this: Array[u64]
+        deep_by_name_beyond: Array[u64]
+        deep_by_name_whole: Array[u64]
+        deep_qualified_all: Array[String]
+        deep_state_this: Array[size_t]
+        deep_state_beyond: Array[size_t]
+        deep_state_whole: Array[size_t]
+        var persist_masked: bool
+        deep_by_name_mask: Array[u64]
         persist_locals: Array[String]
         ; the parameters' names and concepts, for the scalar-field question
         persist_pnames: Array[String]
@@ -644,6 +672,16 @@ define Planner
         ; (deep_state, indexed like rr_fns) instead of the shallow scan
         var deep_gate: bool
         var deep_trace: bool
+        ; the gate's post-pass table: per planned body (mangled) the deep
+        ; mask and its parameter count, filled at plan_function#
+        deep_gate_mangled: Array[String]
+        deep_gate_masks: Array[u64]
+        deep_gate_this: Array[u64]
+        deep_gate_beyond: Array[u64]
+        deep_gate_whole: Array[u64]
+        deep_gate_plen: Array[size_t]
+        deep_gate_takes_this: Array[bool]
+        var deep_gate_index: ConceptIndex
 
         var escape_census: bool
         ; set by cli BEFORE planning under --host-report: the persist summary
@@ -912,6 +950,31 @@ define Planner
     )
     {
         init(filename: String) linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -7352,6 +7415,51 @@ define Planner
         ; THIS frame's local page? Only such calls can need the persist
         ; promotion; sigiled (`#`) arguments carry Call life, so the gate
         ; keeps the summary walk off every sigiled call site (neutrality).
+        ; the deep gate's mask for f (which input positions persist), all-ones
+        ; when the gate is off or the function is not in the pre-pass
+        function persists_mask_for(this: Planner, f: Function) @ret_param_0 true returns u64 linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; does an argument at a PERSISTING position carry Local life
+        function args_have_local_life_masked(arg_types: Vector[PlannedType], mask: u64, off: size_t) @ret_nonlocal true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         function args_have_local_life(arg_types: Vector[PlannedType]) @ret_nonlocal true returns bool linked
 
 
@@ -7374,6 +7482,12 @@ define Planner
             char_fold: bool,
             arg_ops: Vector[PlannedOperand]
         ) @page true @direct true @ret_caller true returns ref[MethodMatch]? io linked
+
+
+
+
+
+
 
 
 
@@ -16411,6 +16525,12 @@ define Planner
             arg_types: Vector[PlannedType],
             arg_ops: Vector[PlannedOperand]
         ) @page true @direct true @ret_caller true returns ref[MethodMatch]? io linked
+
+
+
+
+
+
 
 
 
@@ -28464,6 +28584,74 @@ define Planner
         ; (safe) when not recorded. Only LOCAL-region fields are ever recorded
         ; (escape_record_field_points_to#), so an unrecorded field is treated as
         ; Caller — the UNKNOWN -> SAFE default that keeps the self-host green.
+        ; does the field-points-to map hold a LOCAL field for the record the
+        ; operand denotes (a bare `X` or `&X`)?
+        function fpt_any_local(this: Planner, arg: PlannedOperand) @ret_nonlocal true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         function fpt_region_of(this: Planner, base_name: String, field: size_t) @ret_param_0 true returns size_t linked
 
 
@@ -28842,10 +29030,147 @@ define Planner
 
 
 
+
+
         ; True when the summary already carries a record equal to this one
         ; (callee_fn_index + param_index + dest_kind + dest_index). callee_param_
         ; count is derived from callee_fn_index so it is not part of identity.
         ; Dedup is what makes the forwarding fixpoint terminate.
+        ; The deep gate's post-pass half (SCALYC_DEEP_GATE): a callee whose
+        ; deep mask names this argument position keeps the argument beyond
+        ; its frame; a local-page argument there is an escape. The inline
+        ; half sees only arguments with a Local-life TYPE; this one asks
+        ; region_of_operand, which knows a `&local` box and an alias.
+        procedure escape_check_deep(mutable this: Planner, call: PlannedCall) linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         function escape_record_exists(this: Planner, fn_index: size_t, param_index: size_t, dest_kind: size_t, dest_index: size_t, path_len: size_t, field0: size_t, field1: size_t) @ret_nonlocal true returns bool linked
 
 
@@ -30531,6 +30856,73 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         procedure persist_tail_carries(mutable this: Planner, ops: Vector[Operand]) @ret_nonlocal true returns bool linked
 
 
@@ -30659,13 +31051,300 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         procedure persist_add_local(mutable this: Planner, name: String) @ret_param_0 true linked
 
 
 
 
 
-        procedure persist_add_tainted(mutable this: Planner, name: String) @ret_param_0 true linked
+        procedure persist_add_tainted(mutable this: Planner, name: String) @ret_nonlocal true linked
+
+
+
+
+        procedure persist_add_tainted_mask(mutable this: Planner, name: String, mask: u64) @ret_nonlocal true linked
+
+
+        procedure persist_add_tainted_mw(mutable this: Planner, name: String, mask: u64, whole: u64) @persists true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function persist_whole_of(this: Planner, name: String) @ret_param_0 true returns u64 linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; the declared concept of a parameter (`this` included), "" if unknown
+        function persist_concept_of_param(this: Planner, name: String) @page true @direct true returns String linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function persist_param_elem_scalar(this: Planner, name: String) @ret_param_0 true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; a bare name that is neither a parameter nor a local and that the
+        ; receiver's concept declares as a property: a field of `this`
+        function persist_name_is_this_field(this: Planner, name: String) @ret_nonlocal true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; the value of `... as int` carries no reference
+        function persist_ops_end_scalar_cast(ops: Vector[Operand]) @ret_nonlocal true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; a store target that lies in the receiver's guts: `this`, `this.f`,
+        ; a bare field of this, `*this.f`, `*(this.f)`
+        procedure persist_target_is_this(mutable this: Planner, target: Vector[Operand]) @ret_nonlocal true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; the first segment of an operand sequence's head name, "" otherwise
+        function persist_ops_head_name(ops: Vector[Operand]) @page true @direct true @ret_caller true returns String linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; the head of an operand sequence is the receiver `this`
+        function persist_ops_head_is_this(ops: Vector[Operand]) @ret_nonlocal true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function persist_mask_of(this: Planner, name: String) @ret_param_0 true returns u64 linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -30816,8 +31495,7 @@ define Planner
 
 
         ; The scan proper: true as soon as a tainted value persists.
-        procedure persist_scan_stmts(mutable this: Planner, stmts: Vector[Statement]) @ret_nonlocal true returns bool linked
-
+        procedure persist_scan_stmts(mutable this: Planner, stmts: Vector[Statement]) @ret_param_0 true returns bool linked
 
 
 
@@ -30856,9 +31534,11 @@ define Planner
         ; (a capitalized head, no explicit page) over it? A lowercase call's
         ; result is not followed — the checker's own blind spot, kept here so
         ; a fresh value computed FROM a parameter does not mark the callee.
-        function persist_mentions_carried(this: Planner, ops: Vector[Operand], names: Array[String]) @ret_nonlocal true returns bool linked
+        procedure persist_mentions_carried(mutable this: Planner, ops: Vector[Operand], names: Array[String]) @ret_nonlocal true returns bool linked
 
 
+        ; The origin mask of everything tainted this value carries (0: nothing).
+        procedure persist_carried_mask(mutable this: Planner, ops: Vector[Operand], names: Array[String]) @ret_param_0 true returns u64 linked
 
 
 
@@ -30868,6 +31548,7 @@ define Planner
 
 
 
+        procedure persist_carried_acc(mutable this: Planner, ops: Vector[Operand], names: Array[String]) linked
 
 
 
@@ -30979,8 +31660,43 @@ define Planner
 
 
 
-        ; A recorded body's name may be qualified (`Box.mk`); a call names the
-        ; last segment.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         function persist_callee_named(this: Planner, stored: Array[String], seg: String) @ret_nonlocal true returns bool linked
 
 
@@ -31001,6 +31717,9 @@ define Planner
 
 
         procedure persist_scan_binding(mutable this: Planner, b: scalyc.compiler.Model.Binding) @ret_nonlocal true returns bool linked
+
+
+
 
 
 
@@ -31047,9 +31766,6 @@ define Planner
 
 
 
-        ; A store's target: a local head is tainted (and the store is the
-        ; local's business), anything else keeps the value beyond the call.
-        procedure persist_store_persists(mutable this: Planner, target: Vector[Operand]) @ret_nonlocal true returns bool linked
 
 
 
@@ -31090,7 +31806,75 @@ define Planner
 
 
 
-        ; the base name under a deref target: `*(x + i)` → x, `*x` → x
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure persist_store_persists(mutable this: Planner, target: Vector[Operand], mask: u64) @ret_nonlocal true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         function rr_deref_base_name(this: Planner, target: Vector[Operand]) @page true @direct true returns String linked
 
 
@@ -31139,6 +31923,8 @@ define Planner
 
 
         ; `d.add(p)` / `d.put(i, p)` on a LOCAL receiver taints the local.
+        ; `d.add(p)` / `d.put(i, p)` on a LOCAL receiver taints the local
+        ; with what the arguments carry.
         procedure persist_note_putadd_local(mutable this: Planner, ops: Vector[Operand]) linked
 
 
@@ -31175,7 +31961,8 @@ define Planner
 
 
 
-        procedure persist_scan_whens(mutable this: Planner, whens: Vector[When]) @ret_nonlocal true returns bool linked
+
+        procedure persist_scan_whens(mutable this: Planner, whens: Vector[When]) @ret_param_0 true returns bool linked
 
 
 
@@ -31188,22 +31975,7 @@ define Planner
 
 
 
-
-        procedure persist_scan_ops(mutable this: Planner, ops: Vector[Operand]) @ret_nonlocal true returns bool linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        procedure persist_scan_ops(mutable this: Planner, ops: Vector[Operand]) @ret_param_0 true returns bool linked
 
 
 
@@ -31219,13 +31991,9 @@ define Planner
 
 
 
-
-
-
-
-        ; ops[i] names a callee (last segment in deep_by_name) and ops[i+1]
-        ; is its argument tuple carrying a tainted value: the callee keeps
-        ; it, so this body persists it too.
+        ; ops[i] names a callee and ops[i+1] is its argument tuple: what the
+        ; callee keeps (its mask, per input position) of what our arguments
+        ; carry persists here too — or taints a LOCAL receiver.
         procedure persist_call_forwards(mutable this: Planner, ops: Vector[Operand], i: size_t) @ret_nonlocal true returns bool linked
 
 
@@ -31291,7 +32059,6 @@ define Planner
 
 
 
-        procedure persist_scan_op(mutable this: Planner, op: Operand) @ret_nonlocal true returns bool linked
 
 
 
@@ -31389,34 +32156,275 @@ define Planner
 
 
 
-        ; ====================================================================
-        ; RETURN RESIDENCE — where a routine's RESULT lives (2026-09-21).
-        ; A call to a page-taking callee stamps its result Local ("its guts
-        ; live on the page this frame passed"); that is right for a value
-        ; built on the caller page and wrong for one built on an EXPLICIT
-        ; page (`slice_copy_on(host, …)`), on the receiver's page, or handed
-        ; back from an argument — and the wrong stamp is what made every
-        ; sharper escape rule drown in false positives (~600 sites of the
-        ; ports). This pre-pass classifies every function's return positions
-        ; at the Model level, to a fixpoint over callees:
-        ;   1 caller page   — a plain or `#` construction, a value that
-        ;                     carries one, a callee of class 1; the TAINT
-        ;                     set holds every local bound from such a value
-        ;   2 explicit page — `T^host(…)` with `host` a page parameter, or a
-        ;                     class-2 callee handed that parameter
-        ;                     (return_arg = the parameter's input index)
-        ;   3 argument      — a parameter, a field of one, `^this`, or a
-        ;                     class-3 callee's forwarded argument
-        ;   4 nowhere local — `null`, a global
-        ;   0 unknown       — anything else, and any two positions that
-        ;                     disagree; the call site keeps today's stamp
-        ; A named-page construction whose arguments carry a class-1 value is
-        ; class 1 (the record on `host` would point at the caller page).
-        ; Consumed at the call site (rr_armed): a class-2 result is never
-        ; local, a class-3 result is as local as the argument it came from,
-        ; class 4 never, classes 0/1 as before. Linked routines carry the
-        ; verdict as an attribute (`@ret_caller`, `@ret_explicit_2`, …).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure deep_by_name_merge(mutable this: Planner, name: String, mask: u64, tmask: u64, bmask: u64, wmask: u64) @persists true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function deep_name_this_of(this: Planner, name: String) @ret_param_0 true returns u64 linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function deep_name_beyond_of(this: Planner, name: String) @ret_param_0 true returns u64 linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function deep_name_whole_of(this: Planner, name: String) @ret_param_0 true returns u64 linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; the union of the masks of every persisting function of that name;
+        ; a name marked without a mask (a linked routine) is all-ones
+        function deep_name_mask_of(this: Planner, name: String) @ret_param_0 true returns u64 linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure persist_scan_op(mutable this: Planner, op: Operand) @ret_param_0 true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         procedure build_return_residence_set(mutable this: Planner) io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -32076,6 +33084,7 @@ define Planner
 
         ; ---- the classifier over one body -----------------------------------
         procedure rr_classify_function(mutable this: Planner, f: Function, owner: String) @ret_param_0 true returns size_t io linked
+
 
 
 
@@ -37687,6 +38696,53 @@ define Planner
             mutable f: Function,
             parent: ref[PlannedType]?
         ) @page true @direct true @ret_caller true returns PlannedFunction io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

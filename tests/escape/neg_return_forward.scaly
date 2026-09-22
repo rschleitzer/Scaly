@@ -1,6 +1,8 @@
-; ACCEPTED at rc 0 today, unsound: mk returns a host record holding its
-; parameter, and the caller stores the result (`set links.resolved: this.mk(p)`).
-; As FREE functions the checker rejects the same shape; the METHOD slips past.
+; NEG: a METHOD returns a host record holding its parameter (`&Sig^host(params,
+; …)`), and the caller stores the result (`set links.resolved: this.mk(p)`) —
+; with `p` on the caller's LOCAL page. Rejected by the 2026-09-20 construction
+; route. It sat in tests/escape/pending/ until 2026-09-22 with `^host` arguments,
+; which are not local at all — the "hole" was the fixture, not the checker.
 define Sig (var params: ref[Array[int]]?  var n: int)
 define Link (var resolved: ref[Sig]?)
 define Box (var host: ref[Page]  var count: int)
@@ -13,13 +15,13 @@ define Box (var host: ref[Page]  var count: int)
     }
     procedure fill(mutable this, mutable links: ref[Link])
     {
-        let p &Array[int]^host()
+        let p &Array[int]()
         p.add(1)
         set links.resolved: this.mk(p)
     }
     procedure fill2(mutable this, mutable links: ref[Link])
     {
-        let q &Array[int]^host()
+        let q &Array[int]()
         q.add(2)
         let made this.mk(q)
         set links.resolved: made
