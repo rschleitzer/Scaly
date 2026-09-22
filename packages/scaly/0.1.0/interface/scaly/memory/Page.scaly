@@ -580,7 +580,13 @@ define Page
     ; ★What this cannot know is whether anything above the mark is still
     ; reachable: proving that is the caller's job (dazzle's FrameMark and its
     ; six conditions). A wrong rewind is a dangling pointer, not a diagnostic.
-    procedure rewind(this: Page, mark_page: pointer[Page], mark: pointer[void], exclusive: pointer[PageNode], head_exclusive: pointer[PageNode]) @ret_nonlocal true returns bool linked
+    procedure rewind(this: Page, mark_page: pointer[Page], mutable mark: pointer[void], exclusive: pointer[PageNode], head_exclusive: pointer[PageNode]) @ret_nonlocal true returns bool linked
+
+
+
+
+
+
 
 
 

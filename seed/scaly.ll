@@ -1652,9 +1652,29 @@ if.else:                                          ; preds = %while.exit44
 
 if.end56:                                         ; preds = %if.else, %if.then55
   %if.value = phi ptr [ null, %if.then55 ], [ %1, %if.else ]
-  %next_object58 = getelementptr inbounds nuw %_Z4Page, ptr %1, i32 0, i32 0
-  store ptr %2, ptr %next_object58, align 8
+  %global.load = load i1, ptr @page_poison, align 1
+  br i1 %global.load, label %if.then58, label %if.end59
+
+if.then58:                                        ; preds = %if.end56
+  %as.ptrtoint60 = ptrtoint ptr %next_object to i64
+  %as.ptrtoint61 = ptrtoint ptr %2 to i64
+  %gt62 = icmp ugt i64 %as.ptrtoint60, %as.ptrtoint61
+  br i1 %gt62, label %if.then63, label %if.end64
+
+if.end59:                                         ; preds = %if.end64, %if.end56
+  %next_object67 = getelementptr inbounds nuw %_Z4Page, ptr %1, i32 0, i32 0
+  store ptr %2, ptr %next_object67, align 8
   ret i1 true
+
+if.then63:                                        ; preds = %if.then58
+  %as.ptrtoint65 = ptrtoint ptr %next_object to i64
+  %as.ptrtoint66 = ptrtoint ptr %2 to i64
+  %sub = sub i64 %as.ptrtoint65, %as.ptrtoint66
+  %call = call ptr @memset(ptr %2, i32 221, i64 %sub)
+  br label %if.end64
+
+if.end64:                                         ; preds = %if.then63, %if.then58
+  br label %if.end59
 }
 
 declare ptr @getenv(ptr)

@@ -18,6 +18,7 @@ use scaly.memory.root_pages.getenv
 ; LLVMGetNamedFunction lookup failed and the system()/unlink() calls —
 ; the entire link step — silently dropped from stage-2's cli.run. Same
 ; in-file pattern as Planner.scaly's local `exit` extern (line 143).
+function getpid() returns i32 extern
 function system(command: pointer[const_char]) returns i32 extern
 function unlink(path: pointer[const_char]) returns i32 extern
 
@@ -445,6 +446,10 @@ define cli
     ; Run the compiler with parsed options
     ; Returns 0 on success, non-zero on error
     procedure run(mutable opts: Options) @ret_nonlocal true returns int io mutable modeler_error_count reads modeler_error_count linked
+
+
+
+
 
 
 

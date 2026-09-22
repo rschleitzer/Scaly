@@ -580,7 +580,7 @@ define Page
     ; ★What this cannot know is whether anything above the mark is still
     ; reachable: proving that is the caller's job (dazzle's FrameMark and its
     ; six conditions). A wrong rewind is a dangling pointer, not a diagnostic.
-    procedure rewind(this: Page, mark_page: pointer[Page], mark: pointer[void], exclusive: pointer[PageNode], head_exclusive: pointer[PageNode]) returns bool
+    procedure rewind(this: Page, mark_page: pointer[Page], mutable mark: pointer[void], exclusive: pointer[PageNode], head_exclusive: pointer[PageNode]) returns bool
     {
         let now mark_page.next_object
         if now = null
@@ -621,6 +621,12 @@ define Page
             set current_page: null
         else
             set current_page: mark_page
+        ; Poison mode: the rewound stretch of the mark page itself is not
+        ; released, so overwrite it here — a dangling read into it survived
+        ; SCALY_POISON otherwise (asked 2026-09-23, the dazzle frame mark)
+        if page_poison
+            if (now as size_t) > (mark as size_t)
+                memset(mark, 0xDD, (now as size_t) - (mark as size_t))
         set mark_page.next_object: mark
         true
     }
