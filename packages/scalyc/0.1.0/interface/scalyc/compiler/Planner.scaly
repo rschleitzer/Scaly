@@ -28147,6 +28147,16 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
         ; binding_inits_stack_closure: true when a PlannedBinding's initializer
         ; is a stack (Lifetime.Local) closure — i.e. `let g: Cb \x: …` whose
         ; make_closure# stamped Local (env on the frame). Read structurally from
@@ -29152,6 +29162,14 @@ define Planner
         ; half sees only arguments with a Local-life TYPE; this one asks
         ; region_of_operand, which knows a `&local` box and an alias.
         procedure escape_check_deep(mutable this: Planner, call: PlannedCall) io linked
+
+
+
+
+
+
+
+
 
 
 
@@ -30374,6 +30392,21 @@ define Planner
         ; view (`get`, `get_ptr`, `at`, `slice_from`, ...) hands out a
         ; pointer into the candidate.
         function census_call_yields_alias(this: Planner, op: PlannedOperand) @ret_nonlocal true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

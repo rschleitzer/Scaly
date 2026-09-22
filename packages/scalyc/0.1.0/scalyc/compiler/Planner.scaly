@@ -28138,6 +28138,16 @@ define Planner
                             return true
                         else
                             0
+                    ; a REFERENCE-typed local whose value is not on this
+                    ; frame's local page points at memory that outlives it —
+                    ; `let a this.attribute(i)` / `a.set_value(v)`: the
+                    ; result of a class-3/2/4 call carries no life stamp at
+                    ; all, and read as "frame-local" here; eight sigils of
+                    ; opensp read `local` past both oracles through this
+                    ; (2026-09-22). A by-value local keeps the life test.
+                    if this.census_type_is_ref_like(v.variable_type)
+                        if this.region_of_operand(op) >= Planner.required_region_for_escape()
+                            return true
                     return false
                 }
                 when g: GlobalRef
@@ -29309,6 +29319,14 @@ define Planner
                             else
                                 if this.fpt_any_local(arg)
                                     set local: true
+                            ; under the census the candidate's value and its
+                            ; aliases (`set text: Text(StringC^host(…), …)`) are
+                            ; local by claim — AttributeList.set_value's
+                            ; StringC read `local` past both oracles and broke
+                            ; 142 corpus models when dropped (2026-09-22)
+                            if escape_census
+                                if this.census_carry(arg)
+                                    set local: true
                         }
                         else
                         {
@@ -30378,8 +30396,23 @@ define Planner
             choose op.expr
                 when c: Call
                 {
+                    ; `&x` over a candidate (or an alias of one) is a reference
+                    ; into the local page the census pretends the value has —
+                    ; without this the three `make_entity(host, &ents)` sites
+                    ; read `local` while the real compile rejected the drop
+                    ; (2026-09-22, opensp acid test)
                     if c.is_operator
+                    {
+                        if c.name = "&"
+                            if c.args <> null
+                                if c.args.length = 1
+                                {
+                                    let aa c.args.get 0
+                                    if aa <> null
+                                        return this.census_carry(aa.unwrap())
+                                }
                         return false
+                    }
                     if c.args = null
                         return false
                     if c.args.length = 0
