@@ -1,0 +1,47 @@
+; Regression (2026-09-23): a string LITERAL as the argument of a method called on
+; a CALL RESULT. The chained hop handed lookup_method an empty operand vector and
+; never coerced its arguments, so the literal went into a `Slice[char]` parameter
+; as the raw String struct: `name_of(1).equals("Symbol")` answered FALSE at rc 0
+; while the same value bound to a local answered true (tscaly lessons §3.5jy), and
+; `this.w().count("four")` was refused as "String, expected Slice[char]" (§3.5jg).
+; Expected: PASS
+function name_of(k: int) returns Slice[char]
+{
+    if k = 1
+        return "Symbol"
+    "Other"
+}
+
+define Writer (base: int)
+{
+    function count(this, s: Slice[char]) returns int
+        (s.length as int) + base
+}
+
+define Holder (w: ref[Writer])
+{
+    function the_writer(this) returns ref[Writer]
+        w
+
+    function via_chain(this) returns int
+        this.the_writer().count("four")
+}
+
+function check() returns int
+{
+    if name_of(1).equals("Symbol") = false
+        return 1
+    if name_of(2).equals("Symbol")
+        return 2
+    let root Page.allocate_page()
+    let h Holder(&Writer^root(10))
+    if h.via_chain() <> 14
+        return 3
+    42
+}
+
+let rc check()
+if rc = 42
+    print("PASS")
+else
+    print("FAIL `rc`")

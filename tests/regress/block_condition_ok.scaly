@@ -1,0 +1,32 @@
+; Control for xfail_block_on_condition_line.scaly: the block on a line of its
+; own, and a condition that merely CONTAINS a block-free call, both plan and run.
+; Expected: PASS
+function own_line(k: int) returns int
+{
+    if k = 1
+    {
+        return 10
+    }
+    20
+}
+
+function check() returns int
+{
+    if own_line(1) <> 10
+        return 1
+    if own_line(2) <> 20
+        return 2
+    var n 0
+    while n < 3
+    {
+        set n: n + 1
+    }
+    if n <> 3
+        return 3
+    42
+}
+
+if check() = 42
+    print("PASS")
+else
+    print("FAIL")

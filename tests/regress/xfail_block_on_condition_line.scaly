@@ -1,0 +1,15 @@
+; Regression (2026-09-23): a `{` block on the same line as an `if` condition.
+; An Expression may be a Block, so `if k = 1 { return 10 }` parsed the block as
+; the condition's LAST OPERAND, the line break ended the condition, and the
+; NEXT statement became the body: the block never ran and the tail value after
+; it was swallowed — this function answered 0 for every k at rc 0 (tscaly
+; lessons §3.5ji: 237 printer dispatch arms fell through). The same holds for
+; while/for/choose/match; the block belongs on a line of its own.
+; xfail: error: a block on the same line as the if condition is read as part of the condition
+function one_line(k: int) returns int
+{
+    if k = 1 { return 10 }
+    20
+}
+
+print "`one_line(1)`\n"

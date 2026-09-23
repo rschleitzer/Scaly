@@ -14519,89 +14519,16 @@ define Planner
                                                         0
                                                 if is_tuple
                                                 {
-                                                    let match_ref this.lookup_method(
-                                                        result.result_type, method_name,
-                                                        Planner.extract_arg_types(next_args),
-                                                        Vector[PlannedOperand]()
-                                                    )
-                                                    if match_ref <> null
+                                                    ; the hop, its arguments and their coercions:
+                                                    ; plan_chained_method_call# (one statement here,
+                                                    ; the s178 rule)
+                                                    var ch_found false
+                                                    set result: this.plan_chained_method_call(result, method_name, next_args, &ch_found)
+                                                    if ch_found
                                                     {
-                                                        let m (*match_ref)
-                                                        ; s112: build the chained
-                                                        ; PlannedCall's args list as
-                                                        ; [receiver, ...flattened tuple
-                                                        ; components]. Old code passed
-                                                        ; [receiver, tuple_operand] —
-                                                        ; emit_call then treated the
-                                                        ; tuple as a second user arg
-                                                        ; and the LLVMBuildCall2 arg
-                                                        ; count didn't match the
-                                                        ; method's `(this)` arity,
-                                                        ; so emit_operand on an empty
-                                                        ; Tuple returned null and
-                                                        ; the entire outer call
-                                                        ; dropped. Mirror the non-
-                                                        ; chained call branch at
-                                                        ; line ~3815.
-                                                        var chained_args_arr Array[PlannedOperand]()
-                                                        chained_args_arr.add result
-                                                        choose next_args.expr
-                                                            when chained_tp: PlannedTuple
-                                                            {
-                                                                if chained_tp.components <> null
-                                                                {
-                                                                    let chained_comps (*chained_tp.components)
-                                                                    var chained_ci: size_t 0
-                                                                    while chained_ci < chained_comps.length
-                                                                    {
-                                                                        let chained_c_ptr chained_comps.get chained_ci
-                                                                        if chained_c_ptr <> null
-                                                                        {
-                                                                            let chained_c (*chained_c_ptr)
-                                                                            if chained_c.value <> null
-                                                                            {
-                                                                                let chained_v (*chained_c.value)
-                                                                                chained_args_arr.add(this.collapse_operand_sequence(chained_v))
-                                                                            }
-                                                                        }
-                                                                        set chained_ci: chained_ci + 1
-                                                                    }
-                                                                }
-                                                            }
-                                                            else
-                                                                0
-                                                        var new_args Vector[PlannedOperand](chained_args_arr)
-                                                        let chained this.make_planned_call(
-                                                            next_args.loc,
-                                                            method_name,
-                                                            m.mangled_name,
-                                                            m.return_type,
-                                                            new_args,
-                                                            m.requires_page_param
-                                                        )
-                                                        set result: PlannedOperand(
-                                                            next_args.loc,
-                                                            PlannedExpression.Call chained,
-                                                            null,
-                                                            m.return_type
-                                                        )
                                                         set prev_tuple: next_args
                                                         set next_idx: next_idx + 1
                                                         set keep_chaining: true
-                                                    }
-                                                    else
-                                                    {
-                                                        ; B2: a chained hop with a
-                                                        ; following args Tuple whose
-                                                        ; method does not resolve was
-                                                        ; silently spliced/collapsed
-                                                        ; (rc 0). Diagnose it, matching
-                                                        ; the non-chained `x.bogus()`
-                                                        ; hard failure.
-                                                        var b2_sb StringBuilder()
-                                                        b2_sb.append "method not found: "
-                                                        b2_sb.append method_name
-                                                        this.add_diagnostic(next_args.loc, b2_sb.to_string())
                                                     }
                                                 }
                                             }
@@ -14965,6 +14892,10 @@ define Planner
                 let rhs_ptr ops.get(i + 1)
                 var consumed_rest: bool false
                 var rhs_call_consumed: bool false
+                ; further argument tuples folded into a CHAINED right side
+                ; (`a or this.acc().m(x)`: `()` then `(x)`), past the one
+                ; rhs_call_consumed counts
+                var rhs_extra: size_t 0
                 ; When the precedence look-ahead climbs, this records the
                 ; operator position the right side stopped at (the precedence
                 ; boundary). ops.length means it ran to the end. Read after the
@@ -15078,11 +15009,7 @@ define Planner
                                         0
                                 if is_tuple_after
                                 {
-                                    var sub_arr Array[PlannedOperand]()
-                                    sub_arr.add rhs
-                                    sub_arr.add after_op
-                                    var sub_vec Vector[PlannedOperand](sub_arr)
-                                    set rhs: this.collapse_operand_sequence(sub_vec)
+                                    set rhs: this.fold_rhs_call(rhs, ops, i + 2, &rhs_extra)
                                     set rhs_call_consumed: true
                                 }
                             }
@@ -15188,7 +15115,7 @@ define Planner
                     ; "Unknown option".
                     var prec_next: size_t i + 2
                     if rhs_call_consumed
-                        set prec_next: i + 3
+                        set prec_next: i + 3 + rhs_extra
                     ; A text-named (non-operator-char) declared operator binds
                     ; weakest — precedence 1, like ||. Gated on NOT
                     ; is_operator_name so opchar operators (incl. source `==`
@@ -15567,7 +15494,7 @@ define Planner
                                     }
                                     if rhs_call_consumed
                                     {
-                                        set i: i + 3
+                                        set i: i + 3 + rhs_extra
                                         continue
                                     }
                                     set i: i + 2
@@ -15696,7 +15623,7 @@ define Planner
                                         }
                                         if rhs_call_consumed
                                         {
-                                            set i: i + 3
+                                            set i: i + 3 + rhs_extra
                                             continue
                                         }
                                         set i: i + 2
@@ -15916,7 +15843,7 @@ define Planner
                 }
                 if rhs_call_consumed
                 {
-                    set i: i + 3
+                    set i: i + 3 + rhs_extra
                     continue
                 }
                 set i: i + 2
@@ -20494,8 +20421,174 @@ define Planner
         ; statement, and optionally the alternative. Emits a bool
         ; constraint on the condition and (when an alternative exists)
         ; unifies the two branches' result types.
+        ; A method hop on a CALL RESULT with its argument tuple (`name_of().equals(
+        ; "Symbol")`, `this.acc().m(x)`). The hop handed lookup_method an EMPTY
+        ; operand vector and never coerced the arguments afterwards, so a string
+        ; literal into a `Slice[char]` parameter went in as the raw String
+        ; struct: `name_of().equals("Symbol")` answered false at rc 0 (tscaly
+        ; lessons §3.5jy, §3.5jg). The arguments are collapsed first and
+        ; travel with their types, and the matched call gets the same null /
+        ; cstr / char-and-Slice coercions as the non-chained path. False (after
+        ; a diagnostic) when the method does not resolve.
+        procedure plan_chained_method_call(mutable this: Planner, result: PlannedOperand, mutable method_name: String, next_args: PlannedOperand, mutable found: ref[bool]) returns PlannedOperand
+        {
+            set found: false
+            var ops_arr Array[PlannedOperand]()
+            var types_arr Array[PlannedType]()
+            choose next_args.expr
+                when tp: PlannedTuple
+                {
+                    if tp.components <> null
+                    {
+                        let comps (*tp.components)
+                        var ci: size_t 0
+                        while ci < comps.length
+                        {
+                            let cp comps.get ci
+                            if cp <> null
+                                if (*cp).value <> null
+                                {
+                                    let v (*(*cp).value)
+                                    let collapsed this.collapse_operand_sequence(v)
+                                    ops_arr.add collapsed
+                                    types_arr.add collapsed.result_type
+                                }
+                            set ci: ci + 1
+                        }
+                    }
+                }
+                else
+                    0
+            var arg_ops Vector[PlannedOperand](ops_arr)
+            let arg_types Vector[PlannedType](types_arr)
+            var recv_type result.result_type
+            let match_ref this.lookup_method(recv_type, method_name, arg_types, arg_ops)
+            if match_ref = null
+            {
+                var sb StringBuilder()
+                sb.append "method not found: "
+                sb.append method_name
+                this.add_diagnostic(next_args.loc, String^this(sb.to_string()))
+                return result
+            }
+            let m (*match_ref)
+            if m.parameter_types <> null
+            {
+                this.report_null_into_ref_arg(arg_ops, (*m.parameter_types), method_name)
+                set arg_ops: this.coerce_string_args_to_cstr(arg_ops, (*m.parameter_types))
+                set arg_ops: this.fold_string_args_to_char(arg_ops, (*m.parameter_types))
+            }
+            var call_arr Array[PlannedOperand]()
+            call_arr.add(result)
+            var ai: size_t 0
+            while ai < arg_ops.length
+            {
+                let ap arg_ops.get ai
+                if ap <> null
+                    call_arr.add((*ap))
+                set ai: ai + 1
+            }
+            var new_args Vector[PlannedOperand](call_arr)
+            let chained this.make_planned_call(next_args.loc, method_name, m.mangled_name, m.return_type, new_args, m.requires_page_param)
+            set found: true
+            PlannedOperand(next_args.loc, PlannedExpression.Call chained, null, m.return_type)
+        }
+
+        ; A CHAINED call as the right side of a binary operator (`a or
+        ; this.acc().m(x)`): the call-fold folded ONE argument tuple, and the
+        ; method hop `.m` rides on that tuple — folding `[this.acc, ()]` alone
+        ; left `(x)` behind and dropped `.m` with it, so the right side was
+        ; `this.acc()`, whose POINTER went into the phi as the i1: false for
+        ; every input (tscaly lessons §3.5jm, §3.5kw). The whole run is folded
+        ; at once — each further tuple while the one before it carries a
+        ; member hop — and the chain loop of collapse_operand_sequence# resolves
+        ; it as it does in statement position. `extra` counts the tuples past
+        ; the first.
+        procedure fold_rhs_call(mutable this: Planner, rhs: PlannedOperand, ops: Vector[PlannedOperand], at: size_t, mutable extra: ref[size_t]) returns PlannedOperand
+        {
+            var arr Array[PlannedOperand]()
+            arr.add rhs
+            var k at
+            var n: size_t 0
+            repeat
+            {
+                if k >= ops.length
+                    break
+                let kp ops.get k
+                if kp = null
+                    break
+                if k > at
+                {
+                    if Planner.operand_is_tuple((*kp)) = false
+                        break
+                    let pp ops.get(k - 1)
+                    if pp = null
+                        break
+                    if Planner.tuple_ends_in_method((*pp)) = false
+                        break
+                    set n: n + 1
+                }
+                arr.add((*kp))
+                set k: k + 1
+            }
+            set extra: n
+            var vec Vector[PlannedOperand](arr)
+            this.collapse_operand_sequence(vec)
+        }
+
+        function operand_is_tuple(op: PlannedOperand) returns bool
+        {
+            choose op.expr
+                when tp: PlannedTuple
+                    return true
+                else
+                    return false
+            false
+        }
+
+        ; an argument tuple with a member hop after it (`()` of `f().m`): the
+        ; hop is UNRESOLVED here — the call's result type is not known before
+        ; the fold, so `is_method` cannot be asked (the chain loop asks the
+        ; hop's NAME with the following tuple, and so does this)
+        function tuple_ends_in_method(op: PlannedOperand) returns bool
+        {
+            if Planner.operand_is_tuple(op) = false
+                return false
+            if op.member_access = null
+                return false
+            let ma (*op.member_access)
+            ma.length > 0
+        }
+
+        ; `if c { … }` on ONE line: an Expression may be a Block, so the block
+        ; is the condition's LAST OPERAND (`c {…}`), the line break ends the
+        ; condition and the NEXT statement becomes the body. The body never ran
+        ; and a tail value after it was swallowed — `if k = 1 { return 10 }` then
+        ; `20` answered 0 for every k, rc 0 (tscaly lessons §3.5ji; 237 printer
+        ; dispatch arms fell through). No condition ends in a block on purpose.
+        procedure report_block_in_condition(mutable this: Planner, ops: Vector[Operand], what: Slice[char])
+        {
+            if ops.length < 2
+                return
+            let lp ops.get(ops.length - 1)
+            if lp = null
+                return
+            choose (*lp).expression
+                when bk: Block
+                {
+                    var sb StringBuilder()
+                    sb.append "a block on the same line as the "
+                    sb.append(what.data, what.length)
+                    sb.append " condition is read as part of the condition, and the next statement as its body; begin the block on a line of its own"
+                    this.add_diagnostic(bk.span, String^this(sb.to_string()))
+                }
+                else
+                    0
+        }
+
         procedure plan_if(mutable this: Planner, mutable f: If) returns PlannedIf
         {
+            this.report_block_in_condition(f.condition, "if")
             let planned_cond_flat this.plan_operands(f.condition)
             ; A `ref[bool]` condition is the VALUE -- deref_ref_into_pointee#.
             ; `var`, not `let`: a `set` on a let-bound local is silently
@@ -21623,6 +21716,7 @@ define Planner
         ; this is a reasonable approximation today).
         procedure plan_while(mutable this: Planner, mutable w: While) returns PlannedWhile
         {
+            this.report_block_in_condition(w.condition.operation, "while")
             this.push_scope()
             let planned_cond this.plan_binding(w.condition)
             ; `while x <> null` proves x at the top of the body -- the linked
@@ -21742,6 +21836,7 @@ define Planner
         ; peeled before the dispatch.
         procedure plan_for(mutable this: Planner, mutable f: For) returns PlannedFor
         {
+            this.report_block_in_condition(f.expression, "for")
             this.push_scope()
             let planned_expr this.plan_operands(f.expression)
             let collapsed_expr this.collapse_operand_sequence(planned_expr)
@@ -22572,6 +22667,7 @@ define Planner
 
         procedure plan_choose(mutable this: Planner, mutable c: Choose) returns PlannedChoose
         {
+            this.report_block_in_condition(c.condition, "choose")
             let planned_cond this.plan_operands(c.condition)
             ; Fold the choose condition down to a single value to
             ; recover its type — that's the union each `when` pattern
@@ -22785,6 +22881,7 @@ define Planner
 
         procedure plan_match(mutable this: Planner, mutable m: Match) returns PlannedMatch
         {
+            this.report_block_in_condition(m.condition, "match")
             let planned_cond this.plan_operands(m.condition)
             ; Fold the match condition so its result_type is
             ; comparable against each case's collapsed condition type.
