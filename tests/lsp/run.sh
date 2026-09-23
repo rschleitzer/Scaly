@@ -5584,15 +5584,16 @@ if [ $rc -eq 0 ]; then ok "lsp codeLens instantiations"; else bad "lsp codeLens 
 # ---- codeLens: mutable / shared module globals ----
 # codelens.storage_lens# states two things a reader cannot see on the line:
 # which THREAD sees the cell (`mutable` is thread-local, `shared` is
-# process-global) and whether the declaration produces a global AT ALL — the
-# Modeler drops one whose annotation is not a TYPE, silently, with rc 0.
+# process-global) and whether the declaration produces a global AT ALL — one
+# whose annotation is not a TYPE is an rc-4 at the declaration since
+# 2026-09-23 (it used to be DROPPED, silently, with rc 0).
 #
 # The gate is an IR cross-check for the same reason the placement gate is one:
 # the emitted IR is the second producer of both facts, so the expectation is
 # DERIVED from it per declaration rather than written down here —
 #   @n = thread_local global ...  -> "thread-local: ..."
 #   @n = global ...               -> "process-global: ..."
-#   no @n at all                  -> "dropped: ..."
+#   no @n at all                  -> "no type: ..." (and the compiler names it)
 # It cannot rot as the emitter's choices move; it breaks only when the lens and
 # the compiler disagree.
 python3 - "$SCALYC" <<'PYSTOR'
@@ -5626,7 +5627,7 @@ def lenses(path):
     res = (r or {}).get("result")
     return res if isinstance(res, list) else []
 # Only this family's lenses, keyed by 1-based line.
-KINDS = ("thread-local", "process-global", "dropped:")
+KINDS = ("thread-local", "process-global", "no type:")
 def storage(ls):
     out = {}
     for l in ls:
@@ -5670,12 +5671,26 @@ rows = storage(lenses(path))
 check(sorted(rows) == [d[0] for d in decls],
       "one lens per declaration, on its own line (%s)" % sorted(rows))
 
+# ---- the compiler rejects the four untyped declarations, at their lines --
+full = subprocess.run([scalyc, "-S", "--no-tests", "-o", ws + "/full.ll", path],
+                      stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+msgs = full.stdout.decode()
+untyped = [(5, "nameless"), (6, "unnamed"), (7, "pair"), (8, "spair")]
+check(full.returncode != 0 and all(
+          ("storage.scaly:%d:1: error: module global %s has no type" % (ln, nm)) in msgs
+          for (ln, nm) in untyped),
+      "the compiler reports every untyped declaration at its own line")
+
 # ---- the IR decides what each label SHOULD be -------------------------
+# over the fixture without the four untyped lines (blank, so lines keep)
+good = ws + "/good.scaly"
+open(good, "w").write("\n".join("" if i + 1 in dict(untyped) else l
+                                 for i, l in enumerate(src.split("\n"))))
 ir = ws + "/storage.ll"
-rc = subprocess.run([scalyc, "-S", "--no-tests", "-o", ir, path],
+rc = subprocess.run([scalyc, "-S", "--no-tests", "-o", ir, good],
                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode
 check(rc == 0 and os.path.exists(ir),
-      "the fixture compiles with rc 0 - every drop below is SILENT")
+      "the fixture without them compiles with rc 0")
 if os.path.exists(ir):
     text = open(ir).read()
     def ir_state(name):
@@ -5693,7 +5708,7 @@ if os.path.exists(ir):
     for (line, kw, name) in decls:
         st = ir_state(name)
         states[st] = states.get(st, 0) + 1
-        expect = want.get(st, "dropped: needs a type annotation - %s NAME: TYPE INIT" % kw)
+        expect = want.get(st, "no type: the compiler rejects this - %s NAME: TYPE INIT" % kw)
         got = rows.get(line, ("<none>", None, None))[0]
         if got != expect: wrong.append((line, name, st, expect, got))
     # A comparison is only worth something if the fixture reaches every state;
@@ -5707,9 +5722,9 @@ if os.path.exists(ir):
     # implementation from a colon test: both `pair` lines carry a colon and
     # neither reaches the IR.
     check(ir_state("pair") == "dropped" and ir_state("spair") == "dropped"
-          and rows.get(7, ("", ))[0].startswith("dropped:")
-          and rows.get(8, ("", ))[0].startswith("dropped:"),
-          "a colon is not enough: `: (x: int)` is dropped and the lens says so")
+          and rows.get(7, ("", ))[0].startswith("no type:")
+          and rows.get(8, ("", ))[0].startswith("no type:"),
+          "a colon is not enough: `: (x: int)` is no type and the lens says so")
     # The namespace pair is a correction to CLAUDE.md, which calls a namespace
     # `mutable` rejected. It is not rejected, so the lens must cover it.
     check(ir_state("inner") == "thread-local" and ir_state("outer") == "process-global",

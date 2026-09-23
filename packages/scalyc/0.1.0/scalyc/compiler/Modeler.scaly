@@ -2649,6 +2649,16 @@ define Modeler
         )
     }
 
+    ; global_type_or_empty: a module global's annotation, or an EMPTY type (no
+    ; name) where the annotation names none — plan_untyped_global# reports it
+    ; at the declaration instead of the declaration vanishing here.
+    function global_type_or_empty(t: ref[Type]?, at: Span) returns Type
+    {
+        if t <> null
+            return *t
+        Type(at, Vector[String](0), null, Lifetime.Unspecified(Unspecified()))
+    }
+
     procedure handle_declaration(mutable path: String, mutable syntax: DeclarationSyntax, mutable symbols_builder: ref[HashMapBuilder[String, Nameable]]) returns Member mutable modeler_error_count
     {
         choose syntax
@@ -2687,26 +2697,23 @@ define Modeler
                 ; Module-level mutable global: `mutable NAME: T init`. Modeled
                 ; as a Concept wrapping a mutable Global so it flows through
                 ; plan_concept → plan_global# and is emitted as a real @global
-                ; with load/store reads (s189). Requires a type annotation;
-                ; without one we drop it (mirrors stage-0's hard error leniently).
+                ; with load/store reads (s189). An annotation that names no type
+                ; is handed on EMPTY, and plan_global# reports it at the
+                ; declaration — it used to be dropped here, rc 0.
                 var mg_type_ref: ref[Type]? null
                 if mut.binding.annotation <> null
                     set mg_type_ref: handle_binding_annotation(*mut.binding.annotation)
-                if mg_type_ref <> null
-                {
-                    let mg_value handle_operands(mut.binding.operation)
-                    let mg_global Global(Span(mut.start, mut.end), *mg_type_ref, mg_value, true, false, false, mut.linked_mark <> null)
-                    let mg_concept Concept(
-                        Span(mut.start, mut.end),
-                        String(mut.binding.name),
-                        Vector[GenericParameter](0),
-                        Vector[Attribute](0),
-                        Definition.Global mg_global
-                    )
-                    symbols_builder.add(mg_concept.name, Nameable.Concept mg_concept)
-                    return Member.Concept mg_concept
-                }
-                Member.Package(Vector[Module](0))
+                let mg_value handle_operands(mut.binding.operation)
+                let mg_global Global(Span(mut.start, mut.end), global_type_or_empty(mg_type_ref, Span(mut.start, mut.end)), mg_value, true, false, false, mut.linked_mark <> null)
+                let mg_concept Concept(
+                    Span(mut.start, mut.end),
+                    String(mut.binding.name),
+                    Vector[GenericParameter](0),
+                    Vector[Attribute](0),
+                    Definition.Global mg_global
+                )
+                symbols_builder.add(mg_concept.name, Nameable.Concept mg_concept)
+                Member.Concept mg_concept
             }
             when sh: SharedSyntax
             {
@@ -2718,24 +2725,20 @@ define Modeler
                 var sg_type_ref: ref[Type]? null
                 if sh.binding.annotation <> null
                     set sg_type_ref: handle_binding_annotation(*sh.binding.annotation)
-                if sg_type_ref <> null
-                {
-                    let sg_value handle_operands(sh.binding.operation)
-                    var sg_atomic false
-                    if sh.atomic_mark <> null
-                        set sg_atomic: true
-                    let sg_global Global(Span(sh.start, sh.end), *sg_type_ref, sg_value, true, true, sg_atomic, sh.linked_mark <> null)
-                    let sg_concept Concept(
-                        Span(sh.start, sh.end),
-                        String(sh.binding.name),
-                        Vector[GenericParameter](0),
-                        Vector[Attribute](0),
-                        Definition.Global sg_global
-                    )
-                    symbols_builder.add(sg_concept.name, Nameable.Concept sg_concept)
-                    return Member.Concept sg_concept
-                }
-                Member.Package(Vector[Module](0))
+                let sg_value handle_operands(sh.binding.operation)
+                var sg_atomic false
+                if sh.atomic_mark <> null
+                    set sg_atomic: true
+                let sg_global Global(Span(sh.start, sh.end), global_type_or_empty(sg_type_ref, Span(sh.start, sh.end)), sg_value, true, true, sg_atomic, sh.linked_mark <> null)
+                let sg_concept Concept(
+                    Span(sh.start, sh.end),
+                    String(sh.binding.name),
+                    Vector[GenericParameter](0),
+                    Vector[Attribute](0),
+                    Definition.Global sg_global
+                )
+                symbols_builder.add(sg_concept.name, Nameable.Concept sg_concept)
+                Member.Concept sg_concept
             }
             when mod: ModuleSyntax
                 Member.Package(Vector[Module](0))

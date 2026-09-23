@@ -1,0 +1,11 @@
+; Regression (2026-09-23): `s as pointer[const_char]` on a Slice VALUE. The
+; Emitter coerces any record cast to a C string as if it were a String, so the
+; LENGTH word became the first byte of the "string", rc 0; cast to any other
+; pointer the record's own address came out. The data pointer is `s.data`.
+; xfail: error: cast of a Slice value to a pointer
+function c_text(s: Slice[char]) returns pointer[const_char]
+    s as pointer[const_char]
+
+let text "abc"
+if c_text(Slice[char](3, text.get_buffer() as pointer[char])) <> null
+    print("PASS")

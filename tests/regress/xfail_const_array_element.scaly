@@ -1,0 +1,16 @@
+; Regression (2026-09-23): a const ARRAY global element that is not one integer
+; constant. The Emitter took every constant CELL of an element as an element of
+; its own and skipped the operators, so `[0x10, 0 - 0x5, 0x30]` emitted
+; `[16, 0, 5]` at rc 0 — the tail dropped to keep the declared count, every
+; later value read as its neighbour's (tscaly lessons §3.5ha (5): a case table
+; in which `Lowercase<"Ο">` answered `ξ`). Elements that fold on ONE precedence
+; level are folded now (const_array_folded_elements.scaly); anything else is
+; this diagnostic.
+; xfail: error: const array element 2 of MIXED does not fold to an integer constant
+define MIXED: int[] [1, 2 + 3 * 4, 5]
+
+function pick(i: int) returns int
+    MIXED[i]
+
+if pick(2) = 5
+    print("PASS")

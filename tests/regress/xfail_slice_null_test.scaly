@@ -1,0 +1,17 @@
+; Regression (2026-09-23): `s <> null` / `s = null` on a Slice VALUE. A Slice
+; is a (length, data) record and never null. `<>` went to Slice's own
+; `operator <>`, which dereferenced the null argument (SIGSEGV); `=` compared
+; the address of the value's slot with null and answered a constant false —
+; live in tscaly's `TypeDump.write_stops`, whose "no-tag" branch never ran.
+; Ask the length or the data (slice_view_ok.scaly).
+; xfail: error: null test on a Slice value
+function present(s: Slice[char]) returns bool
+{
+    if s <> null
+        return true
+    false
+}
+
+let text "abc"
+if present(Slice[char](3, text.get_buffer() as pointer[char]))
+    print("PASS")

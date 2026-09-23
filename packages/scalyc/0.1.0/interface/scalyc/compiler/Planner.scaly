@@ -5170,41 +5170,6 @@ define Planner
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         ; ================================================================
         ; Method / initializer / property lookup on user types.
         ; ================================================================
@@ -15911,6 +15876,10 @@ define Planner
 
 
 
+
+
+
+
         ; check_operator_match: test a single Operator candidate against
         ; argument types. Same shape as check_function_match.
         procedure check_operator_match(
@@ -17538,6 +17507,16 @@ define Planner
             arg_ops: Vector[PlannedOperand],
             loc: Span
         ) @page true @direct true @deep true @deep_this_2 true returns ref[MethodMatch]? io linked
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -26337,6 +26316,74 @@ define Planner
 
 
 
+
+
+
+        ; report_container_arithmetic#: `s + i` on a container VALUE — a Slice,
+        ; Vector, Array or String. No operator resolves, the Emitter adds the
+        ; integer to the STRUCT (`add %Slice`) and `*(s + i)` reads garbage at
+        ; rc 0; the same through a field, `*(h.s + 1)`. A view is walked with
+        ; `s[i]`, narrowed with `slice_from`/`subslice`, and handed to C as
+        ; `s.data`.
+        procedure report_container_arithmetic(
+            mutable this: Planner,
+            lhs_type: PlannedType,
+            rhs_type: PlannedType,
+            op_name: String,
+            loc: Span
+        ) @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; report_view_cast#: `s as pointer[T]` on a Slice or Vector VALUE. The
+        ; Emitter coerces any record cast to a C string as if it were a String,
+        ; so the LENGTH word became the first byte, rc 0; to any other pointer
+        ; the record's own address came out. The data pointer is `s.data`.
+        procedure report_view_cast(mutable this: Planner, from: PlannedType, target: PlannedType, loc: Span) @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         ; report_deref_of_non_pointer#: `*x` on a SCALAR. Until 2026-08-27 it
         ; emitted `load i64, i64 %0` -- INVALID IR, whose pointer operand is an
         ; integer -- at rc 0 with no word, and the program then died with
@@ -26465,6 +26512,55 @@ define Planner
         ; ONE statement at the call site: an inline branch in
         ; collapse_operand_sequence# perturbs its s178 alloca pool (six -g
         ; checks, measured).
+        ; report_null_test_on_view#: `s <> null` / `s = null` on a Slice or
+        ; Vector VALUE. It is a (length, data) record and never null: the
+        ; comparison went to Slice's own `operator <>`, which dereferenced the
+        ; null argument (SIGSEGV), and `=` answered a constant. It runs before
+        ; any operator resolves, because the member operator path never comes
+        ; back to report_null_test_on_ref#.
+        procedure report_null_test_on_view(
+            mutable this: Planner,
+            lhs: PlannedOperand,
+            rhs: PlannedOperand,
+            op_name: String,
+            loc: Span
+        ) @deep true @deep_into_1_4 true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         procedure report_null_test_on_ref(
             mutable this: Planner,
             lhs: PlannedOperand,
@@ -45588,151 +45684,39 @@ define Planner
 
 
 
+        ; plan_untyped_global: a module `mutable`/`shared` whose annotation names
+        ; no type — the Modeler hands it on with an EMPTY type instead of dropping
+        ; it. `mutable bad 9` (no colon), `mutable buf u8[64]` (the local array
+        ; form) and `mutable pair: (x: int) 0` all vanished at rc 0, and the first
+        ; USE failed as `unknown assignment target` at the use's own line. It is
+        ; reported at the declaration and recorded as an int, so the uses stay
+        ; quiet.
+        procedure plan_untyped_global(mutable this: Planner, g: Global, name: String) @page true @direct true @ret_caller true @deep true returns PlannedGlobal linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         ; plan_global: Model.Global → Plan.PlannedGlobal.
         ; The `name` comes from the enclosing Concept — Global itself has
         ; no name field.
         procedure plan_global(mutable this: Planner, mutable g: Global, name: String) @page true @direct true @deep true @deep_this_2 true returns PlannedGlobal io linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -49530,6 +49514,174 @@ define Planner
 
 
 
+    ; fold_constant_ops: the plan-time fold of an integer operand run whose
+    ; operators all sit on ONE precedence level (strict left-to-right is then
+    ; exact: `0 - 1`, `-1`, `3 * 4`, `1 << 4`), one leading unary minus per
+    ; value. Writes the value to `out` and answers true, or answers false for
+    ; any other shape. Shared by a scalar global's initializer and by every
+    ; element of a const ARRAY global.
+    procedure fold_constant_ops(ops: Vector[PlannedOperand], mutable out: ref[size_t]) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     ; global_array_count: element count of a const-global ARRAY value.
     ; The planned value of `define X: T[] [a, b, ...]` is exactly one
     ; PlannedMatrix of either N rows x 1 column (comma/newline-separated
@@ -49550,6 +49702,107 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ; fold_array_elements: every element of a const ARRAY global folded to ONE
+    ; integer constant, in place — a row keeps its buffer, narrowed to the one
+    ; operand it now holds. Answers 0, or the 1-based index of the first element
+    ; that is not an integer constant. The Emitter takes one constant per
+    ; element; it used to take every constant CELL of a row and skip the rest,
+    ; so `[0x10, 0 - 0x5, 0x30]` emitted `[16, 0, 5]` and `-2` emitted 2, rc 0,
+    ; the tail dropped to keep the declared count.
+    procedure fold_array_elements(value: Vector[PlannedOperand], elem: PlannedType) @ret_nonlocal true @deep true returns size_t linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ; operand_is_integer_literal: a bare Integer or Hex constant, no member access.
+    function operand_is_integer_literal(p: ref[PlannedOperand]?) @ret_nonlocal true @deep true returns bool linked
 
 
 

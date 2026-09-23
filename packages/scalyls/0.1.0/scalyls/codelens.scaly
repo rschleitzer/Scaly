@@ -512,11 +512,12 @@ define codelens
     ; `shared t: pointer[void] null` emits `@t = global ptr null`
     ; (Emitter.scaly's global loop: LLVMSetThreadLocal unless is_shared).
     ;
-    ; (2) WHETHER THERE IS A GLOBAL AT ALL — the more valuable half, because
-    ; the failure is SILENT. Modeler.handle_declaration# models the
-    ; declaration only when its annotation resolves to a TYPE, and DROPS it
-    ; otherwise ("mirrors stage-0's hard error leniently"). Both of these
-    ; compile with rc 0 and emit NOTHING (measured):
+    ; (2) WHETHER THERE IS A GLOBAL AT ALL. Until 2026-09-23 the failure was
+    ; SILENT: Modeler.handle_declaration# modeled the declaration only when
+    ; its annotation resolved to a TYPE and DROPPED it otherwise. Since then
+    ; the compiler reports it at the declaration (Planner.plan_untyped_global#,
+    ; rc 4), and the lens says the same thing while the file is being typed.
+    ; Both of these compiled with rc 0 and emitted NOTHING (measured):
     ;
     ;   mutable bad 9            — no annotation at all. An annotation starts
     ;                              at a COLON (parse_bindingannotation#), so
@@ -527,9 +528,9 @@ define codelens
     ;                              Structure / Type / Array and only the Type
     ;                              arm models to a type.
     ;
-    ; Nothing is reported at the declaration. The first USE is what fails, as
+    ; Nothing was reported at the declaration; the first USE failed, as
     ; `unknown assignment target: bad` at the use's own line — a diagnostic
-    ; that names the wrong place. The second example is why the condition
+    ; that named the wrong place. The second example is why the condition
     ; below MIRRORS THE MODELER (the spec must be a TypeSyntax) instead of
     ; testing for a colon, and it is the case the gate uses to prove the
     ; difference; the Modeler stays the authority, so if it ever accepts
@@ -564,11 +565,11 @@ define codelens
             return symbols.lens_object(text, offset, width, title, "", "")
 
         var sb StringBuilder()
-        sb.append "dropped: needs a type annotation - "
+        sb.append "no type: the compiler rejects this - "
         sb.append keyword
         sb.append " NAME: TYPE INIT"
-        let dropped sb.to_string()
-        symbols.lens_object(text, offset, width, dropped, "", "")
+        let untyped sb.to_string()
+        symbols.lens_object(text, offset, width, untyped, "", "")
     }
 
     ; Exactly Modeler.handle_binding_annotation#'s condition: an annotation is

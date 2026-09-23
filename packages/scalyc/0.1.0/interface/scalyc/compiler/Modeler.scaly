@@ -2649,14 +2649,17 @@ define Modeler
 
 
 
+    ; global_type_or_empty: a module global's annotation, or an EMPTY type (no
+    ; name) where the annotation names none — plan_untyped_global# reports it
+    ; at the declaration instead of the declaration vanishing here.
+    function global_type_or_empty(t: ref[Type]?, at: Span) @page true @direct true @ret_caller true @deep true returns Type linked
+
+
+
+
+
+
     procedure handle_declaration(mutable path: String, mutable syntax: DeclarationSyntax, mutable symbols_builder: ref[HashMapBuilder[String, Nameable]]) @page true @direct true @deep true returns Member io mutable modeler_error_count reads modeler_error_count linked
-
-
-
-
-
-
-
 
 
 

@@ -1,0 +1,43 @@
+; Regression (2026-09-23): const ARRAY global elements that are operand runs.
+; `0 - 0x5` used to become TWO elements (0 and 5) and `-2` lost its sign, rc 0,
+; with the tail dropped to keep the declared count (xfail_const_array_element
+; has the account). Each element now folds to one constant, like a scalar
+; global's initializer: operators of one precedence level, one leading minus.
+; Expected: PASS
+
+define SHIFTED: int[] [0x10, 0 - 0x5, 0x30]
+define SIGNED: int[] [1, -2, 3]
+define LEVELS: int[] [
+    2 * 3 * 4,
+    1 << 4,
+    0xF0 | 0x0F,
+    7,
+]
+
+function check() returns int
+{
+    if SHIFTED[0] <> 16
+        return 1
+    if SHIFTED[1] <> 0 - 5
+        return 2
+    if SHIFTED[2] <> 48
+        return 3
+    if SIGNED[1] <> 0 - 2
+        return 4
+    if SIGNED[2] <> 3
+        return 5
+    if LEVELS[0] <> 24
+        return 6
+    if LEVELS[1] <> 16
+        return 7
+    if LEVELS[2] <> 255
+        return 8
+    if LEVELS[3] <> 7
+        return 9
+    0
+}
+
+if check() = 0
+    print("PASS")
+else
+    print("FAIL")

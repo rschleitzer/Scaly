@@ -1,0 +1,10 @@
+; Regression (2026-09-23): the planner registered `aligned_alloc` as a built-in
+; C runtime function, although the runtime has called scaly_aligned_alloc for
+; a long time and nothing called the bare name. Any program could call it with
+; no declaration and it was emitted against a synthesized `(...)` signature,
+; rc 0 — on a target whose libc has no aligned_alloc (MSVC) that is a link
+; failure with no line and no relation to the change that caused it.
+; xfail: error: function not found: aligned_alloc
+let p aligned_alloc(16, 64)
+if p <> null
+    print("PASS")

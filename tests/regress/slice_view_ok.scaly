@@ -1,0 +1,40 @@
+; Control for xfail_slice_arithmetic, xfail_slice_pointer_cast and
+; xfail_slice_null_test: the spellings those diagnostics name compile and
+; answer correctly — index, narrow, test the length, and take `s.data` for C.
+; Expected: PASS
+define Holder (s: Slice[char])
+
+function strlen(s: pointer[const_char]) returns size_t extern
+
+function second(h: Holder) returns char
+    h.s[1]
+
+function tail_first(s: Slice[char]) returns char
+    s.slice_from(2)[0]
+
+function empty(s: Slice[char]) returns bool
+    s.length = 0
+
+function check() returns int
+{
+    let text "abc"
+    let s Slice[char](3, text.get_buffer() as pointer[char])
+    if second(Holder(s)) <> "b" as char
+        return 1
+    if tail_first(s) <> "c" as char
+        return 2
+    if empty(s)
+        return 3
+    if empty(s.slice_from(3)) = false
+        return 4
+    let z "xyz"
+    let zs Slice[char](3, z.to_c_string() as pointer[char])
+    if strlen(zs.data as pointer[const_char]) <> 3
+        return 5
+    0
+}
+
+if check() = 0
+    print("PASS")
+else
+    print("FAIL")

@@ -1,0 +1,91 @@
+; Regression (2026-09-23): a caller's local or parameter named like a generic
+; container's FIELD captured that field inside the container's operator body.
+; The lazily instantiated `operator []` was planned in the middle of the
+; caller's routine with the caller's scopes visible, so the bare `data` in
+; `Slice.operator []` read the CALLER's `data`: a `pointer` local answered 0
+; at rc 0, a `ref` local gave an rc-4 "arithmetic on a reference" at an
+; unrelated line. Same for Vector's `data` and Array's `buffer`. It is the
+; "opzero" class too: `hashing.hash(data: Slice[char])` read `data[i]` as 0
+; and became a length-only hash. The operator is planned with the caller's
+; scopes isolated now, as a structure's bodies always were.
+; Expected: PASS
+
+function slice_local(other: pointer[double]) returns double
+{
+    var src double[3]
+    set src[1]: 8.5
+    let s Slice[double](3, &src[0])
+    let data other
+    s[1]
+}
+
+function slice_param(data: pointer[double]) returns double
+{
+    var src double[3]
+    set src[1]: 8.5
+    let s Slice[double](3, &src[0])
+    s[1]
+}
+
+function slice_ref(data: ref[double]) returns double
+{
+    var src double[3]
+    set src[1]: 8.5
+    let s Slice[double](3, &src[0])
+    s[1]
+}
+
+function vector_local(other: pointer[int]) returns int
+{
+    var v Vector[int](3)
+    v.put(2, 41)
+    let data other
+    v[2] + 1
+}
+
+function array_local(other: pointer[int]) returns int
+{
+    var a Array[int]()
+    a.add 7
+    a.add 9
+    let buffer other
+    a[1]
+}
+
+function hash_of(data: Slice[char]) returns int
+{
+    var h 0
+    var i: size_t 0
+    while i < data.length
+    {
+        set h: h * 31 + (data[i] as int)
+        set i: i + 1
+    }
+    h
+}
+
+function check() returns int
+{
+    var z double[3]
+    var zi int[3]
+    if slice_local(&z[0]) <> 8.5
+        return 1
+    if slice_param(&z[0]) <> 8.5
+        return 2
+    if slice_ref(&z[0]) <> 8.5
+        return 3
+    if vector_local(&zi[0]) <> 42
+        return 4
+    if array_local(&zi[0]) <> 9
+        return 5
+    let ab "ab"
+    let ba "ba"
+    if hash_of(Slice[char](2, ab.get_buffer() as pointer[char])) = hash_of(Slice[char](2, ba.get_buffer() as pointer[char]))
+        return 6
+    0
+}
+
+if check() = 0
+    print("PASS")
+else
+    print("FAIL")
