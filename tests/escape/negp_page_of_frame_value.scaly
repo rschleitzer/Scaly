@@ -1,8 +1,8 @@
 ; The deep gate's page-of rule: the callee takes the PAGE of its argument
 ; (`Page.get(out)`) and allocates on it. Handed the address of a frame value,
 ; that page is garbage — the address is on the stack, not on a page (opensp's
-; parse_literal was the witness, 2026-09-22). The default checker accepts this;
-; the gate must reject it. Control: ../posp_page_of_host_value.scaly. A variable
+; parse_literal was the witness, 2026-09-22). The checker before the armed
+; deep gate accepted this; it must be rejected. Control: posp_page_of_host_value.scaly. A variable
 ; of a PAGE-RESIDENT concept (`var a Array[T]()`) is exempt: the emitter hosts
 ; it on a page, so Page.get of it is valid.
 define Box (var s: String)

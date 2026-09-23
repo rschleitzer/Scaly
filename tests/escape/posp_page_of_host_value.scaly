@@ -1,4 +1,4 @@
-; Control for pending/page_of_frame_value.scaly: the Box is built on a named
+; Control for negp_page_of_frame_value.scaly: the Box is built on a named
 ; page, so Page.get of its address is that page and the fill is sound.
 define Box (var s: String)
 

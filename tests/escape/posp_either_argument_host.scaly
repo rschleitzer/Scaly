@@ -1,4 +1,4 @@
-; Control for pending/either_argument.scaly: both arguments are views of arrays
+; Control for negp_either_argument.scaly: both arguments are views of arrays
 ; on a named page, so whichever `pick` hands back outlives the frame.
 define Keeper (var kept: Slice[int])
 

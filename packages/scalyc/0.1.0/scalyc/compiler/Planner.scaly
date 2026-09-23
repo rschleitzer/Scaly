@@ -158,6 +158,30 @@ define EscapeAccess
 ; of its elements (`new_type_list(types)` returns a fresh list holding
 ; types' members): `cur` for the body being scanned, `by_name` parallel to
 ; Planner.deep_returns_by_name. Behind a reference: the Planner record is full.
+; A hash index over a name table the deep gate asks by name (`deep_by_name`,
+; `deep_returns_by_name`, `deep_qualified_all`): name -> its FIRST position.
+; The tables were scanned linearly per lookup, and the armed gate spent 3.5x
+; the plan time of the tscaly root in those scans (2026-09-23, `sample`).
+; The table doubles past half load and is refilled from the array it mirrors.
+define GrowIndex (var table: ConceptIndex  var count: size_t)
+
+; the residence table's two lookups (return_residence_index#: name and span;
+; return_residence_static#: owner's last segment and name, `dup` marking a key
+; two functions share — the linear scan answered 0 for those), built once
+; after build_return_residence_set# fills the table
+define ResidenceIndex (var by_key: ConceptIndex  var by_static: ConceptIndex  var static_dup: ConceptIndex)
+
+define DeepIndexes
+(
+    res: ref[ResidenceIndex]
+    by_name: ref[GrowIndex]
+    ret_names: ref[GrowIndex]
+    ; the LAST dotted segment of every deep_returns_by_name entry
+    ; (persist_callee_named#: `seg` itself or any `Owner.seg`)
+    returns_seg: ref[GrowIndex]
+    qualified: ref[GrowIndex]
+)
+
 ; A body's residence class across a SELF call (`return this.f(x.sub)`): the
 ; call asks the body's own, still undecided class and read 0, so every
 ; recursive function stayed unknown. `mode` 1 reads the self call as neutral
@@ -681,6 +705,7 @@ define Planner
         deep_returns_masks: ref[Array[u64]]
         deep_ret_whole: ref[DeepRetWhole]
         rr_self: ref[RrSelf]
+        deep_idx: ref[DeepIndexes]
         var deep_ret_mask: u64
         deep_returns_by_name: Array[String]
         deep_returns_mangled: Array[String]
@@ -734,8 +759,9 @@ define Planner
         var rr_class_arg: size_t
         var rr_static_arg: size_t
         var rr_armed: bool
-        ; SCALYC_DEEP_GATE=1: the escape gate asks the DEEP persist verdict
-        ; (deep_state, indexed like rr_fns) instead of the shallow scan
+        ; the escape gate asks the DEEP persist verdict (deep_state, indexed
+        ; like rr_fns) instead of the shallow scan — armed by default since
+        ; 2026-09-23, SCALYC_DEEP_GATE_OFF=1 restores the shallow scan
         var deep_gate: bool
         var deep_trace: bool
         var census_trace: bool
@@ -1164,6 +1190,7 @@ define Planner
             set deep_returns_masks: &Array[u64]^this()
             set deep_ret_whole: &DeepRetWhole^this(0, &Array[u64]^this(), &Array[bool]^this())
             set rr_self: &RrSelf^this(0, String(""), false, 0, 0, 0, false)
+            set deep_idx: &DeepIndexes^this(&ResidenceIndex^this(ConceptIndex(), ConceptIndex(), ConceptIndex()), &GrowIndex^this(ConceptIndex(), 0), &GrowIndex^this(ConceptIndex(), 0), &GrowIndex^this(ConceptIndex(), 0), &GrowIndex^this(ConceptIndex(), 0))
             set deep_ret_mask: 0
             set deep_returns_by_name: Array[String]^this()
             set deep_returns_mangled: Array[String]^this()
@@ -30007,7 +30034,7 @@ define Planner
         ; (callee_fn_index + param_index + dest_kind + dest_index). callee_param_
         ; count is derived from callee_fn_index so it is not part of identity.
         ; Dedup is what makes the forwarding fixpoint terminate.
-        ; The deep gate's post-pass half (SCALYC_DEEP_GATE): a callee whose
+        ; The deep gate's post-pass half (armed; SCALYC_DEEP_GATE_OFF): a callee whose
         ; deep mask names this argument position keeps the argument beyond
         ; its frame; a local-page argument there is an escape. The inline
         ; half sees only arguments with a Local-life TYPE; this one asks
@@ -30120,7 +30147,7 @@ define Planner
                             if cur_fn <> null
                                 set this.file: String^this(cur_fn.file)
                             if escape_census = false
-                                this.add_diagnostic(call.loc, "the callee takes this argument's page (Page.get) and allocates on it, but the argument is frame-local; construct it on a page ('^name' or '#')")
+                                this.add_diagnostic(call.loc, "the callee takes this argument's page (Page.get) and allocates on it, but the argument is frame-local - what it builds there escapes with the frame; construct it on a page ('^name' or '#')")
                             this.escape_note_found()
                             return
                         }
@@ -33900,18 +33927,18 @@ define Planner
                                         scaly_eputs((*rl).to_c_string())
                                         scaly_eputs " q="
                                         scaly_eputs(rq.to_c_string())
-                                        if Planner.persist_names_contain(deep_returns_by_name, rq)
+                                        if (Planner.gi_find(deep_idx.ret_names, rq) >= 0)
                                         {
                                             scaly_eputs " mask="
                                             scaly_eputi(this.deep_returns_mask_of(rq) as int)
                                         }
-                                        if this.persist_callee_named(deep_returns_by_name, (*rl))
+                                        if (Planner.gi_find(deep_idx.returns_seg, (*rl)) >= 0)
                                             scaly_eputs " bare-returns"
                                         scaly_eputs "\n"
                                     }
                                     if rq.get_length() > 0
                                     {
-                                        if Planner.persist_names_contain(deep_returns_by_name, rq)
+                                        if (Planner.gi_find(deep_idx.ret_names, rq) >= 0)
                                         {
                                             set cur_returns: true
                                             set cur_ret_mask: this.deep_returns_mask_of(rq)
@@ -33928,7 +33955,7 @@ define Planner
                                         }
                                     }
                                     else
-                                        if this.persist_callee_named(deep_returns_by_name, (*rl))
+                                        if (Planner.gi_find(deep_idx.returns_seg, (*rl)) >= 0)
                                             set cur_returns: true
                                 }
                             }
@@ -34161,7 +34188,10 @@ define Planner
         ; OR `mask` into the returns-mask entry of `name` (made when absent)
         procedure deep_returns_note(mutable this: Planner, name: String, mask: u64)
         {
-            var i: size_t 0
+            var i: size_t deep_returns_by_name.length
+            let fpos Planner.gi_find(deep_idx.ret_names, name)
+            if fpos >= 0
+                set i: fpos as size_t
             while i < deep_returns_by_name.length
             {
                 let np deep_returns_by_name.get i
@@ -34178,6 +34208,8 @@ define Planner
                 set i: i + 1
             }
             deep_returns_by_name.add(String^this(name))
+            this.gi_note(deep_idx.ret_names, &deep_returns_by_name, deep_returns_by_name.length - 1, false)
+            this.gi_note(deep_idx.returns_seg, &deep_returns_by_name, deep_returns_by_name.length - 1, true)
             while deep_returns_masks.length < deep_returns_by_name.length - 1
                 deep_returns_masks.add((0 as u64) - (1 as u64))
             deep_returns_masks.add mask
@@ -34209,7 +34241,10 @@ define Planner
         procedure deep_returns_note_whole(mutable this: Planner, name: String, whole: u64) returns bool
         {
             let wa deep_ret_whole.by_name
-            var i: size_t 0
+            var i: size_t deep_returns_by_name.length
+            let fpos Planner.gi_find(deep_idx.ret_names, name)
+            if fpos >= 0
+                set i: fpos as size_t
             while i < deep_returns_by_name.length
             {
                 let np deep_returns_by_name.get i
@@ -34250,7 +34285,10 @@ define Planner
         function deep_returns_whole_of(this: Planner, name: String) returns u64
         {
             let wa deep_ret_whole.by_name
-            var i: size_t 0
+            var i: size_t deep_returns_by_name.length
+            let fpos Planner.gi_find(deep_idx.ret_names, name)
+            if fpos >= 0
+                set i: fpos as size_t
             while i < deep_returns_by_name.length
             {
                 let np deep_returns_by_name.get i
@@ -34270,7 +34308,10 @@ define Planner
         ; the inputs a callee name hands back: all-ones where no mask is known
         function deep_returns_mask_of(this: Planner, name: String) returns u64
         {
-            var i: size_t 0
+            var i: size_t deep_returns_by_name.length
+            let fpos Planner.gi_find(deep_idx.ret_names, name)
+            if fpos >= 0
+                set i: fpos as size_t
             while i < deep_returns_by_name.length
             {
                 let np deep_returns_by_name.get i
@@ -34305,7 +34346,7 @@ define Planner
                 bsb.append "."
                 bsb.append((*bp))
                 let bq bsb.to_string()
-                if Planner.persist_names_contain(deep_qualified_all, bq)
+                if (Planner.gi_find(deep_idx.qualified, bq) >= 0)
                     return bq
                 return String("")
             }
@@ -34338,9 +34379,69 @@ define Planner
             sb.append "."
             sb.append((*lp))
             let q sb.to_string()
-            if Planner.persist_names_contain(deep_qualified_all, q)
+            if (Planner.gi_find(deep_idx.qualified, q) >= 0)
                 return q
             String("")
+        }
+
+        ; the first position of `name` in the table `g` mirrors, -1 when absent
+        function gi_find(g: ref[GrowIndex], name: String) returns i64
+            g.table.lookup(name)
+
+        ; enter names[pos], the element just added; past half load the table
+        ; doubles and every earlier element is entered again
+        procedure gi_note(mutable this: Planner, mutable g: ref[GrowIndex], names: ref[Array[String]], pos: size_t, seg: bool)
+        {
+            if (g.count + 1) * 2 > g.table.cap
+            {
+                var ncap: size_t 1024
+                while ncap < (g.count + 1) * 4
+                    set ncap: ncap * 2
+                set g.table: ConceptIndex.create(ncap)
+                set g.count: 0
+                var i: size_t 0
+                while i < pos
+                {
+                    let ep names.get i
+                    if ep <> null
+                        this.gi_put(g, (*ep), i, seg)
+                    set i: i + 1
+                }
+            }
+            let np names.get pos
+            if np <> null
+                this.gi_put(g, (*np), pos, seg)
+        }
+
+        procedure gi_put(mutable this: Planner, mutable g: ref[GrowIndex], name: String, pos: size_t, seg: bool)
+        {
+            if seg
+            {
+                var dot: i64 0 - 1
+                var k: size_t 0
+                while k < name.get_length()
+                {
+                    if name.get(k) = ("." as u8)
+                        set dot: k as i64
+                    set k: k + 1
+                }
+                if dot >= 0
+                {
+                    let from (dot + 1) as size_t
+                    let key String^this(name.substring(from, name.get_length() - from))
+                    g.table.insert_if_absent(key, pos)
+                    set g.count: g.count + 1
+                    return
+                }
+            }
+            g.table.insert_if_absent(name, pos)
+            set g.count: g.count + 1
+        }
+
+        procedure gi_reset(mutable g: ref[GrowIndex])
+        {
+            set g.table: ConceptIndex()
+            set g.count: 0
         }
 
         function persist_callee_named(this: Planner, stored: Array[String], seg: String) returns bool
@@ -35048,11 +35149,11 @@ define Planner
                         var qual_known false
                         if qual.get_length() > 0
                         {
-                            if Planner.persist_names_contain(deep_by_name, qual)
+                            if (Planner.gi_find(deep_idx.by_name, qual) >= 0)
                                 set qual_known: true
                             ; an owner the pre-pass knows whose body never
                             ; persisted: nothing, not the union of the name
-                            if Planner.persist_names_contain(deep_qualified_all, qual)
+                            if (Planner.gi_find(deep_idx.qualified, qual) >= 0)
                                 set qual_known: true
                         }
                         ; a method of ANOTHER package's concept (`out.append(…)` on a
@@ -35375,7 +35476,10 @@ define Planner
 
         procedure deep_by_name_merge(mutable this: Planner, name: String, mask: u64, tmask: u64, bmask: u64, wmask: u64)
         {
-            var i: size_t 0
+            var i: size_t deep_by_name.length
+            let fpos Planner.gi_find(deep_idx.by_name, name)
+            if fpos >= 0
+                set i: fpos as size_t
             while i < deep_by_name.length
             {
                 let np deep_by_name.get i
@@ -35412,6 +35516,7 @@ define Planner
                 set i: i + 1
             }
             deep_by_name.add name
+            this.gi_note(deep_idx.by_name, &deep_by_name, deep_by_name.length - 1, false)
             deep_by_name_mask.add mask
             deep_by_name_this.add tmask
             deep_by_name_beyond.add bmask
@@ -35431,7 +35536,10 @@ define Planner
 
         function deep_name_into_of(this: Planner, name: String, k: size_t) returns u64
         {
-            var i: size_t 0
+            var i: size_t deep_by_name.length
+            let fpos Planner.gi_find(deep_idx.by_name, name)
+            if fpos >= 0
+                set i: fpos as size_t
             while i < deep_by_name.length
             {
                 let np deep_by_name.get i
@@ -35450,7 +35558,10 @@ define Planner
 
         function deep_name_pageof_of(this: Planner, name: String) returns u64
         {
-            var i: size_t 0
+            var i: size_t deep_by_name.length
+            let fpos Planner.gi_find(deep_idx.by_name, name)
+            if fpos >= 0
+                set i: fpos as size_t
             while i < deep_by_name.length
             {
                 let np deep_by_name.get i
@@ -35469,7 +35580,10 @@ define Planner
 
         function deep_name_this_of(this: Planner, name: String) returns u64
         {
-            var i: size_t 0
+            var i: size_t deep_by_name.length
+            let fpos Planner.gi_find(deep_idx.by_name, name)
+            if fpos >= 0
+                set i: fpos as size_t
             while i < deep_by_name.length
             {
                 let np deep_by_name.get i
@@ -35488,7 +35602,10 @@ define Planner
 
         function deep_name_beyond_of(this: Planner, name: String) returns u64
         {
-            var i: size_t 0
+            var i: size_t deep_by_name.length
+            let fpos Planner.gi_find(deep_idx.by_name, name)
+            if fpos >= 0
+                set i: fpos as size_t
             while i < deep_by_name.length
             {
                 let np deep_by_name.get i
@@ -35507,7 +35624,10 @@ define Planner
 
         function deep_name_whole_of(this: Planner, name: String) returns u64
         {
-            var i: size_t 0
+            var i: size_t deep_by_name.length
+            let fpos Planner.gi_find(deep_idx.by_name, name)
+            if fpos >= 0
+                set i: fpos as size_t
             while i < deep_by_name.length
             {
                 let np deep_by_name.get i
@@ -35528,7 +35648,10 @@ define Planner
         ; a name marked without a mask (a linked routine) is all-ones
         function deep_name_mask_of(this: Planner, name: String) returns u64
         {
-            var i: size_t 0
+            var i: size_t deep_by_name.length
+            let fpos Planner.gi_find(deep_idx.by_name, name)
+            if fpos >= 0
+                set i: fpos as size_t
             while i < deep_by_name.length
             {
                 let np deep_by_name.get i
@@ -35751,6 +35874,7 @@ define Planner
                 }
                 set i: i + 1
             }
+            this.rr_build_residence_index()
             ; on by default; SCALYC_RR_OFF=1 restores the flat Local stamp
             set rr_armed: getenv("SCALYC_RR_OFF") = null
             var round: size_t 0
@@ -35791,7 +35915,7 @@ define Planner
             }
             this.rr_resolve_pending()
             this.rr_rebuild_name_buckets()
-            set deep_gate: getenv("SCALYC_DEEP_GATE") <> null
+            set deep_gate: getenv("SCALYC_DEEP_GATE_OFF") = null
             set gate_all: getenv("SCALYC_GATE_ALL") <> null
             if deep_gate or deep_facts
             {
@@ -35830,6 +35954,7 @@ define Planner
                     set gi: gi + 1
                 }
                 set deep_qualified_all.length: 0
+                Planner.gi_reset(deep_idx.qualified)
                 set deep_scanned_owners.length: 0
                 var qi: size_t 0
                 while qi < rr_fns.length
@@ -35846,6 +35971,7 @@ define Planner
                                 qsb.append((*qf).name)
                                 let qn qsb.to_string()
                                 deep_qualified_all.add(String^this(qn))
+                                this.gi_note(deep_idx.qualified, &deep_qualified_all, deep_qualified_all.length - 1, false)
                                 if Planner.persist_names_contain(deep_scanned_owners, (*qo)) = false
                                     deep_scanned_owners.add(String^this((*qo)))
                             }
@@ -36023,22 +36149,67 @@ define Planner
 
         function return_residence_index(this: Planner, f: Function) returns int
         {
+            let key Planner.rr_span_key(f.name, f.span.start, f.span.end)
+            let pos deep_idx.res.by_key.lookup(key)
+            if pos >= 0
+                return pos as int
+            0 - 1
+        }
+
+        function rr_span_key(name: String, start: size_t, end: size_t) returns String
+        {
+            var sb StringBuilder()
+            sb.append name
+            sb.append "@"
+            sb.append start
+            sb.append ":"
+            sb.append end
+            sb.to_string()
+        }
+
+        function rr_static_key(owner: String, name: String) returns String
+        {
+            var sb StringBuilder()
+            sb.append(Planner.rr_last_segment(owner))
+            sb.append "."
+            sb.append name
+            sb.to_string()
+        }
+
+        procedure rr_build_residence_index(mutable this: Planner)
+        {
+            let n ret_res_names.length
+            var cap: size_t 1024
+            while cap < n * 4
+                set cap: cap * 2
+            let ri deep_idx.res
+            set ri.by_key: ConceptIndex.create(cap)
+            set ri.by_static: ConceptIndex.create(cap)
+            set ri.static_dup: ConceptIndex.create(cap)
             var i: size_t 0
-            while i < ret_res_names.length
+            while i < n
             {
                 let np ret_res_names.get i
                 let sp ret_res_starts.get i
                 let ep ret_res_ends.get i
+                let op ret_res_owner.get i
                 if np <> null
                     if sp <> null
                         if ep <> null
-                            if (*sp) = f.span.start
-                                if (*ep) = f.span.end
-                                    if (*np) = f.name
-                                        return i as int
+                        {
+                            let key String^this(Planner.rr_span_key((*np), (*sp), (*ep)))
+                            ri.by_key.insert_if_absent(key, i)
+                            if op <> null
+                            {
+                                let skey String^this(Planner.rr_static_key((*op), (*np)))
+                                if ri.by_static.lookup(skey) >= 0
+                                    ri.static_dup.insert_if_absent(skey, i)
+                                else
+                                    ri.by_static.insert(skey, i)
+                            }
+                        }
                 set i: i + 1
             }
-            0 - 1
         }
 
         ; A static call `Owner.name(...)`: the one function of that owner and
@@ -36046,24 +36217,10 @@ define Planner
         procedure return_residence_static(mutable this: Planner, owner: String, name: String) returns size_t
         {
             set rr_static_arg: 0
-            let oseg Planner.rr_last_segment(owner)
-            var found: int 0 - 1
-            var i: size_t 0
-            while i < ret_res_names.length
-            {
-                let np ret_res_names.get i
-                let op ret_res_owner.get i
-                if np <> null
-                    if op <> null
-                        if (*np) = name
-                            if Planner.rr_last_segment((*op)) = oseg
-                            {
-                                if found >= 0
-                                    return 0
-                                set found: i as int
-                            }
-                set i: i + 1
-            }
+            let skey Planner.rr_static_key(owner, name)
+            if deep_idx.res.static_dup.lookup(skey) >= 0
+                return 0
+            let found deep_idx.res.by_static.lookup(skey)
             if found < 0
                 return 0
             let cp ret_res_class.get(found as size_t)

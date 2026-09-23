@@ -1,22 +1,13 @@
-; ACCEPTED at rc 0 today, unsound: `insts` lives on make's local page, fill
-; launders it through a local copy of the union arm into t.data.
+; Was ACCEPTED at rc 0 until the deep gate was armed (2026-09-23), unsound: a parameter stored into another parameter's
+; field THROUGH a plain construction (no `^name`) — the 2026-09-20 construction
+; route covers only constructions that name a region.
 define Inner (var list: ref[Array[int]]?  var n: int)
 define Other (var m: int)
 define Data union (Inner: Inner  Other: Other)
 define Ty (var data: Data)
 
 procedure fill(mutable t: ref[Ty], insts: ref[Array[int]])
-{
-    choose t.data
-        when i: Inner
-        {
-            var d i
-            set d.list: insts
-            set t.data: Data.Inner(d)
-        }
-        else
-            0
-}
+    set t.data: Data.Inner(Inner(insts, 0))
 
 procedure make(mutable t: ref[Ty])
 {

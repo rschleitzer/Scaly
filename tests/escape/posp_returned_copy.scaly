@@ -1,4 +1,4 @@
-; Control for pending/returned_whole.scaly: `copy` returns a fresh list on the
+; Control for negp_returned_whole.scaly: `copy` returns a fresh list on the
 ; named page holding the frame-local list's ELEMENTS (Leafs on the same page),
 ; so keeping the copy keeps nothing of this frame — `new_type_list(types)` in
 ; tscaly's checker has this shape (a body's returned inputs are tracked WHOLE

@@ -3,7 +3,7 @@
 ; the two; here b is a view of a frame-local array, and the caller keeps the
 ; result beyond the frame. Before class 5 the two arguments were a conflict,
 ; the class stayed undecided, and an undecided class read "not local" for years.
-; Control: ../posp_either_argument_host.scaly.
+; Control: posp_either_argument_host.scaly.
 define Keeper (var kept: Slice[int])
 
 function pick(a: Slice[int], b: Slice[int], first: bool) returns Slice[int]

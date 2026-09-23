@@ -1,4 +1,4 @@
-; Control for pending/view_in_record.scaly and pending/view_stored_into_local.scaly:
+; Control for negp_view_in_record.scaly and negp_view_stored_into_local.scaly:
 ; the Array is built on a named page, so the view the record carries outlives
 ; the frame and keeping the record is fine — through both spellings of wrap.
 define Box (var s: Slice[int]  n: int)

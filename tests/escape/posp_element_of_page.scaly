@@ -1,4 +1,4 @@
-; Control for pending/element_of_local.scaly: the elements live on a page, so
+; Control for negp_element_of_local.scaly: the elements live on a page, so
 ; keeping one is no escape although the container is frame-local — the
 ; union-type shape of tscaly (get_union_type(pair) with pair on the frame).
 define Box (var v: int)

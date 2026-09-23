@@ -158,6 +158,30 @@ define EscapeAccess
 ; of its elements (`new_type_list(types)` returns a fresh list holding
 ; types' members): `cur` for the body being scanned, `by_name` parallel to
 ; Planner.deep_returns_by_name. Behind a reference: the Planner record is full.
+; A hash index over a name table the deep gate asks by name (`deep_by_name`,
+; `deep_returns_by_name`, `deep_qualified_all`): name -> its FIRST position.
+; The tables were scanned linearly per lookup, and the armed gate spent 3.5x
+; the plan time of the tscaly root in those scans (2026-09-23, `sample`).
+; The table doubles past half load and is refilled from the array it mirrors.
+define GrowIndex (var table: ConceptIndex  var count: size_t)
+
+; the residence table's two lookups (return_residence_index#: name and span;
+; return_residence_static#: owner's last segment and name, `dup` marking a key
+; two functions share — the linear scan answered 0 for those), built once
+; after build_return_residence_set# fills the table
+define ResidenceIndex (var by_key: ConceptIndex  var by_static: ConceptIndex  var static_dup: ConceptIndex)
+
+define DeepIndexes
+(
+    res: ref[ResidenceIndex]
+    by_name: ref[GrowIndex]
+    ret_names: ref[GrowIndex]
+    ; the LAST dotted segment of every deep_returns_by_name entry
+    ; (persist_callee_named#: `seg` itself or any `Owner.seg`)
+    returns_seg: ref[GrowIndex]
+    qualified: ref[GrowIndex]
+)
+
 ; A body's residence class across a SELF call (`return this.f(x.sub)`): the
 ; call asks the body's own, still undecided class and read 0, so every
 ; recursive function stayed unknown. `mode` 1 reads the self call as neutral
@@ -681,6 +705,7 @@ define Planner
         deep_returns_masks: ref[Array[u64]]
         deep_ret_whole: ref[DeepRetWhole]
         rr_self: ref[RrSelf]
+        deep_idx: ref[DeepIndexes]
         var deep_ret_mask: u64
         deep_returns_by_name: Array[String]
         deep_returns_mangled: Array[String]
@@ -734,8 +759,9 @@ define Planner
         var rr_class_arg: size_t
         var rr_static_arg: size_t
         var rr_armed: bool
-        ; SCALYC_DEEP_GATE=1: the escape gate asks the DEEP persist verdict
-        ; (deep_state, indexed like rr_fns) instead of the shallow scan
+        ; the escape gate asks the DEEP persist verdict (deep_state, indexed
+        ; like rr_fns) instead of the shallow scan — armed by default since
+        ; 2026-09-23, SCALYC_DEEP_GATE_OFF=1 restores the shallow scan
         var deep_gate: bool
         var deep_trace: bool
         var census_trace: bool
@@ -1052,6 +1078,7 @@ define Planner
     )
     {
         init(filename: String) linked
+
 
 
 
@@ -30007,7 +30034,7 @@ define Planner
         ; (callee_fn_index + param_index + dest_kind + dest_index). callee_param_
         ; count is derived from callee_fn_index so it is not part of identity.
         ; Dedup is what makes the forwarding fixpoint terminate.
-        ; The deep gate's post-pass half (SCALYC_DEEP_GATE): a callee whose
+        ; The deep gate's post-pass half (armed; SCALYC_DEEP_GATE_OFF): a callee whose
         ; deep mask names this argument position keeps the argument beyond
         ; its frame; a local-page argument there is an escape. The inline
         ; half sees only arguments with a Local-life TYPE; this one asks
@@ -34183,6 +34210,11 @@ define Planner
 
 
 
+
+
+
+
+
         ; OR the scan's whole mask into `name`'s entry and its owner-qualified
         ; twin; true when either grew
         procedure deep_returns_note_whole_owned(mutable this: Planner, name: String, i: size_t) @ret_nonlocal true @deep true returns bool linked
@@ -34246,6 +34278,9 @@ define Planner
 
 
 
+
+
+
         ; the inputs a callee name hands back WHOLE: all-ones where not known
         function deep_returns_whole_of(this: Planner, name: String) @deep true returns u64 linked
 
@@ -34267,8 +34302,14 @@ define Planner
 
 
 
+
+
+
         ; the inputs a callee name hands back: all-ones where no mask is known
         function deep_returns_mask_of(this: Planner, name: String) @ret_param_0 true @deep true returns u64 linked
+
+
+
 
 
 
@@ -34338,6 +34379,66 @@ define Planner
 
 
 
+
+
+
+
+
+        ; the first position of `name` in the table `g` mirrors, -1 when absent
+        function gi_find(g: ref[GrowIndex], name: String) @ret_param_0 true @deep true returns i64 linked
+
+
+        ; enter names[pos], the element just added; past half load the table
+        ; doubles and every earlier element is entered again
+        procedure gi_note(mutable this: Planner, mutable g: ref[GrowIndex], names: ref[Array[String]], pos: size_t, seg: bool) @ret_nonlocal true @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure gi_put(mutable this: Planner, mutable g: ref[GrowIndex], name: String, pos: size_t, seg: bool) @deep true @deep_into_1_4 true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure gi_reset(mutable g: ref[GrowIndex]) @deep true linked
 
 
 
@@ -35429,7 +35530,14 @@ define Planner
 
 
 
+
+
+
+
         function deep_name_into_of(this: Planner, name: String, k: size_t) @ret_param_0 true @deep true returns u64 linked
+
+
+
 
 
 
@@ -35467,7 +35575,13 @@ define Planner
 
 
 
+
+
+
         function deep_name_this_of(this: Planner, name: String) @ret_param_0 true @deep true returns u64 linked
+
+
+
 
 
 
@@ -35505,7 +35619,13 @@ define Planner
 
 
 
+
+
+
         function deep_name_whole_of(this: Planner, name: String) @ret_param_0 true @deep true returns u64 linked
+
+
+
 
 
 
@@ -35527,6 +35647,9 @@ define Planner
         ; the union of the masks of every persisting function of that name;
         ; a name marked without a mask (a linked routine) is all-ones
         function deep_name_mask_of(this: Planner, name: String) @ret_param_0 true @deep true returns u64 linked
+
+
+
 
 
 
@@ -35629,6 +35752,9 @@ define Planner
 
 
         procedure build_return_residence_set(mutable this: Planner) @deep true io linked
+
+
+
 
 
 
@@ -36021,7 +36147,52 @@ define Planner
 
 
 
-        function return_residence_index(this: Planner, f: Function) @ret_nonlocal true @deep true returns int linked
+        function return_residence_index(this: Planner, f: Function) @ret_param_0 true @deep true returns int linked
+
+
+
+
+
+
+
+
+        function rr_span_key(name: String, start: size_t, end: size_t) @page true @direct true @ret_caller true @deep true returns String linked
+
+
+
+
+
+
+
+
+
+
+        function rr_static_key(owner: String, name: String) @page true @direct true @ret_caller true @deep true returns String linked
+
+
+
+
+
+
+
+
+        procedure rr_build_residence_index(mutable this: Planner) @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -36044,20 +36215,6 @@ define Planner
         ; A static call `Owner.name(...)`: the one function of that owner and
         ; name (compared on their last dotted segments), or 0.
         procedure return_residence_static(mutable this: Planner, owner: String, name: String) @ret_param_0 true @deep true returns size_t linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
