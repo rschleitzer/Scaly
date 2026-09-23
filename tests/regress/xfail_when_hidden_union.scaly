@@ -1,0 +1,23 @@
+; xfail: error: unknown variant: Sqare
+;
+; args: -S --no-prelude
+;
+; Regression (2026-09-23): a `choose` whose `when` arms name the variants of a
+; union the module cannot SEE (a record holding it was `use`d, the union was
+; not). The union comes from the subject's TYPE, but both variant lookups went
+; through the use-visibility gate: they answered nothing, the arm's tag stayed
+; 0, and every arm tested variant 0 — the reader's switch carried `i8 0` for
+; BOTH arms, and tscaly's printer answered null for every class at rc 0 until
+; its module globbed the ast (lessons §3.5ji 2). The gate saw nothing either:
+; "unknown variant" was reported only for a union it could resolve. The
+; lookups ask again without the gate on a miss now, so the misspelt arm below
+; is named — before, the compile passed in silence.
+; A LIBRARY root on purpose: its modules' bodies are planned only when the
+; library itself is compiled, and a module of a library is where the
+; use-visibility gate bites (the same modules under a program root saw the
+; union).
+define xfail_when_hidden_union
+{
+    module shapes
+    module reader
+}

@@ -87,6 +87,8 @@ define LocalBinding
     ; The binding's DECLARED type is still the Option, so the author's `*x`
     ; remains an honest deref and report_deref_of_ref# must let it through.
     var is_narrowed: bool
+    ; A `when` binding: a COPY of the union arm (report_when_binding_store#).
+    var is_when_copy: bool
 )
 
 ; One HARD diagnostic: a construct the planner could not resolve and that
@@ -1328,6 +1330,63 @@ define Planner
 
 
         procedure pop_scope(mutable this: Planner) @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+        ; mark the innermost binding of `name` as a `when` arm's COPY
+        procedure mark_when_copy(mutable this: Planner, name: String) @deep true @deep_this_2 true @deep_whole_2 true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; `set a.x: v` where `a` is a `when` binding: the binding is a COPY of the
+        ; arm (and the choose itself copies its subject), so a member store into
+        ; it can never reach the union — and the emitter GEP'd through the LOADED
+        ; payload VALUE, a store to wherever its first eight bytes pointed: exit
+        ; 139 when they were not an address, a silent wrong write when they were.
+        ; The idiom is copy out, change, write the arm back (89 sites in tscaly).
+        procedure report_when_binding_store(mutable this: Planner, target: Vector[Operand]) @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -22342,6 +22401,54 @@ define Planner
         ; extract the payload and compare tags correctly. When union_type
         ; is void (the fallback from plan_try with no exception type),
         ; the arm still plans but variant_type stays void and tag stays 0.
+        ; The union a `when` arm names a variant of comes from the choose
+        ; SUBJECT's type, not from a name the module wrote, so the use-visibility
+        ; gate has no say in it. With the union invisible in the module (a record
+        ; holding it was `use`d, the union was not), both lookups answered
+        ; nothing, the tag stayed 0 and every arm tested variant 0: tscaly's
+        ; printer answered null for every class until it globbed the ast module
+        ; (lessons §3.5ji 2). Asked as before first; only a miss asks again with
+        ; the gate off, so a visible union — and its glob disambiguation — is
+        ; answered exactly as before.
+        procedure when_variant_tag(mutable this: Planner, union_name: String, variant_name: String) @ret_param_0 true @deep true returns int linked
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure when_variant_type(mutable this: Planner, mutable union_name: String, variant_name: String) @deep true returns ref[PlannedType]? io linked
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure when_union_concept(mutable this: Planner, union_name: String) @ret_param_0 true @deep true returns ref[Concept]? linked
+
+
+
+
+
+
+
+
+
+
+
+
         procedure plan_when(
             mutable this: Planner,
             mutable w: When,
@@ -22349,6 +22456,7 @@ define Planner
             is_throws_call: bool,
             throws_ty: ref[PlannedType]?
         ) @page true @direct true @deep true @deep_this_22 true @deep_whole_20 true returns PlannedWhen io linked
+
 
 
 
@@ -27088,6 +27196,8 @@ define Planner
 
 
         procedure plan_action(mutable this: Planner, mutable a: Action) @page true @direct true @deep true @deep_this_2 true returns PlannedAction io linked
+
+
 
 
 

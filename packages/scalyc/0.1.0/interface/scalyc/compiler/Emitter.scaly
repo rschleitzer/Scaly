@@ -18485,6 +18485,33 @@ define Emitter
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         ; s86: when emit_action is storing a stack-alloca'd ctor result into a
         ; member of `this` (a heap-allocated parent), copy the struct value onto
         ; the parent's page so the field stores a stable heap pointer rather

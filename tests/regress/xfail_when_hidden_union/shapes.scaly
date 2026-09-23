@@ -1,0 +1,4 @@
+define CircleData (r: int)
+define SquareData (s: int)
+define Shape union (Circle: CircleData  Square: SquareData)
+define Holder (data: Shape)

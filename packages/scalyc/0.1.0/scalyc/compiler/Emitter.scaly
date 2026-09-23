@@ -18309,6 +18309,33 @@ define Emitter
                             let sv_ty LLVMTypeOf(store_val)
                             copy_struct_value(var_ptr, store_val, sv_ty)
                         }
+                        when cast_t: As
+                        {
+                            ; `set (x as ref[T]).f: v` -- collapse_grouping_target#
+                            ; hands the CAST on carrying the field chain, and this
+                            ; dispatch had no arm for it: the statement fell into
+                            ; the silent else, rc 0, the record never changed
+                            ; (tscaly lessons §3.5il, three live sites). A cast to
+                            ; a reference IS the address, so GEP through its value
+                            ; as the call arm below does through a call's.
+                            if target_op.member_access <> null
+                                if target_op.member_access.length > 0
+                                {
+                                    var cast_is_ref false
+                                    if cast_t.target_type.name = "ref"
+                                        set cast_is_ref: true
+                                    if cast_t.target_type.name = "pointer"
+                                        set cast_is_ref: true
+                                    if cast_is_ref
+                                    {
+                                        let c_base emit_as(cast_t)
+                                        if c_base = null
+                                            return value
+                                        let c_pv PlannedVariable(cast_t.loc, String("as"), cast_t.target_type, true)
+                                        return emit_member_assignment(c_base, c_pv, target_op.member_access, value)
+                                    }
+                                }
+                        }
                         when call: Call
                         {
                             ; `set accessor(args).field: value` — the target's base is

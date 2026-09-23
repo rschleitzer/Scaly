@@ -1,0 +1,62 @@
+; Control for xfail_when_binding_store.scaly: the copy / mutate / write-back
+; idiom, and an arm that carries a REFERENCE — there the binding copies the
+; pointer, and a store through it reaches the shared object, so it is not a
+; copy's store and must stay legal.
+; Expected: PASS
+define PayloadA (var x: int  var y: int)
+define PayloadB (var z: int)
+define Data union (A: PayloadA  B: PayloadB)
+define Holder (var data: Data)
+
+define Counter (var n: int)
+define Slot union (Held: ref[Counter]  Empty: int)
+
+procedure bump_writeback(mutable h: ref[Holder])
+{
+    choose h.data
+        when a: A
+        {
+            var d a
+            set d.x: d.x + 100
+            set h.data: Data.A(d)
+        }
+        else
+            0
+}
+
+function x_of(h: ref[Holder]) returns int
+{
+    choose h.data
+        when a: A
+            return a.x
+        else
+            return 0 - 1
+}
+
+procedure bump_held(mutable s: Slot)
+{
+    choose s
+        when c: Held
+            set c.n: c.n + 1
+        else
+            0
+}
+
+function check() returns int
+{
+    let root Page.allocate_page()
+    let h &Holder^root(Data.A(PayloadA(1, 2)))
+    bump_writeback(h)
+    if x_of(h) <> 101
+        return 1
+    let k &Counter^root(41)
+    bump_held(Slot.Held(k))
+    if k.n <> 42
+        return 2
+    42
+}
+
+if check() = 42
+    print("PASS")
+else
+    print("FAIL")

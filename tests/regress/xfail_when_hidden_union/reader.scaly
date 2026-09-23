@@ -1,0 +1,15 @@
+; `Shape` is NOT used here, only the record that holds it: the union and its
+; payload records are invisible in this module, and the arms still name its
+; variants — the shape tscaly's printer met (lessons §3.5ji 2).
+use xfail_when_hidden_union.shapes.Holder
+
+function kind_of(h: Holder) returns int
+{
+    choose h.data
+        when c: Circle
+            return 1
+        when q: Sqare
+            return 2
+        else
+            return 0
+}

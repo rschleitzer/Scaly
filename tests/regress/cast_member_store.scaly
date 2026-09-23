@@ -1,0 +1,32 @@
+; Regression (2026-09-23): `set (x as ref[T]).field: v` was a SILENT NO-OP.
+; collapse_grouping_target# hands the parenthesised cast on carrying the field
+; chain, and the emitter's set-target dispatch had arms for a variable, a call
+; and a global only — the cast fell into its silent else, rc 0, the record never
+; changed (tscaly lessons §3.5il: three live sites in one file). A cast to a
+; reference is the address, and the store now goes through it.
+; Expected: PASS
+define Info (var arity: int)
+
+procedure reset_cast(mutable p: pointer[void])
+    set (p as ref[Info]).arity: 0
+
+procedure reset_ref(mutable p: pointer[Info])
+    set (p as ref[Info]).arity: 5
+
+function check() returns int
+{
+    let root Page.allocate_page()
+    let i &Info^root(7)
+    reset_cast(i as pointer[void])
+    if i.arity <> 0
+        return 1
+    reset_ref(i as pointer[Info])
+    if i.arity <> 5
+        return 2
+    42
+}
+
+if check() = 42
+    print("PASS")
+else
+    print("FAIL")

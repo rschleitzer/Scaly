@@ -87,6 +87,8 @@ define LocalBinding
     ; The binding's DECLARED type is still the Option, so the author's `*x`
     ; remains an honest deref and report_deref_of_ref# must let it through.
     var is_narrowed: bool
+    ; A `when` binding: a COPY of the union arm (report_when_binding_store#).
+    var is_when_copy: bool
 )
 
 ; One HARD diagnostic: a construct the planner could not resolve and that
@@ -1340,6 +1342,63 @@ define Planner
             set scope_boundaries.length: last_idx
         }
 
+        ; mark the innermost binding of `name` as a `when` arm's COPY
+        procedure mark_when_copy(mutable this: Planner, name: String)
+        {
+            var i scope_bindings.length
+            while i > 0
+            {
+                set i: i - 1
+                let kvp scope_bindings.get i
+                if kvp <> null
+                    if (*kvp).key = name
+                    {
+                        var lb (*kvp).value
+                        set lb.is_when_copy: true
+                        scope_bindings.put(i, KeyValuePair[String, LocalBinding](name, lb))
+                        return
+                    }
+            }
+        }
+
+        ; `set a.x: v` where `a` is a `when` binding: the binding is a COPY of the
+        ; arm (and the choose itself copies its subject), so a member store into
+        ; it can never reach the union — and the emitter GEP'd through the LOADED
+        ; payload VALUE, a store to wherever its first eight bytes pointed: exit
+        ; 139 when they were not an address, a silent wrong write when they were.
+        ; The idiom is copy out, change, write the arm back (89 sites in tscaly).
+        procedure report_when_binding_store(mutable this: Planner, target: Vector[Operand])
+        {
+            let t0 target.get 0
+            if t0 = null
+                return
+            choose (*t0).expression
+                when ty: scalyc.compiler.Model.Type
+                {
+                    if ty.name.length < 2
+                        return
+                    let hp ty.name.get 0
+                    if hp = null
+                        return
+                    let lb this.lookup_local_binding((*hp))
+                    if lb = null
+                        return
+                    if (*lb).is_when_copy = false
+                        return
+                    ; an arm that carries a REFERENCE: the copy is of the
+                    ; pointer, and the store lands in the shared object
+                    if Planner.type_is_reference_shaped((*lb).binding_type)
+                        return
+                    var sb StringBuilder()
+                    sb.append "the when binding "
+                    sb.append((*hp))
+                    sb.append " is a copy of the union arm, and a store into it changes nothing; copy the arm out, change the copy and write the arm back"
+                    this.add_diagnostic(ty.span, String^this(sb.to_string()))
+                }
+                else
+                    0
+        }
+
         procedure define_local(
             mutable this: Planner,
             name: String,
@@ -1351,7 +1410,7 @@ define Planner
             scope_bindings.add(
                 KeyValuePair[String, LocalBinding](
                     name,
-                    LocalBinding(t, is_mutable, is_on_page, false, false)
+                    LocalBinding(t, is_mutable, is_on_page, false, false, false)
                 )
             )
         }
@@ -1366,7 +1425,7 @@ define Planner
             scope_bindings.add(
                 KeyValuePair[String, LocalBinding](
                     name,
-                    LocalBinding(t, false, false, true, false)
+                    LocalBinding(t, false, false, true, false, false)
                 )
             )
         }
@@ -4321,7 +4380,7 @@ define Planner
             scope_bindings.add(
                 KeyValuePair[String, LocalBinding](
                     name,
-                    LocalBinding(dn.binding_type, dn.is_mutable, dn.is_on_page, dn.is_parameter, true)
+                    LocalBinding(dn.binding_type, dn.is_mutable, dn.is_on_page, dn.is_parameter, true, dn.is_when_copy)
                 )
             )
             true
@@ -4364,7 +4423,7 @@ define Planner
             scope_bindings.add(
                 KeyValuePair[String, LocalBinding](
                     path,
-                    LocalBinding(t, false, false, false, true)
+                    LocalBinding(t, false, false, false, true, false)
                 )
             )
             true
@@ -22342,6 +22401,54 @@ define Planner
         ; extract the payload and compare tags correctly. When union_type
         ; is void (the fallback from plan_try with no exception type),
         ; the arm still plans but variant_type stays void and tag stays 0.
+        ; The union a `when` arm names a variant of comes from the choose
+        ; SUBJECT's type, not from a name the module wrote, so the use-visibility
+        ; gate has no say in it. With the union invisible in the module (a record
+        ; holding it was `use`d, the union was not), both lookups answered
+        ; nothing, the tag stayed 0 and every arm tested variant 0: tscaly's
+        ; printer answered null for every class until it globbed the ast module
+        ; (lessons §3.5ji 2). Asked as before first; only a miss asks again with
+        ; the gate off, so a visible union — and its glob disambiguation — is
+        ; answered exactly as before.
+        procedure when_variant_tag(mutable this: Planner, union_name: String, variant_name: String) returns int
+        {
+            var tag this.lookup_variant_tag(union_name, variant_name)
+            if tag < 0
+                if use_vis_enforce
+                {
+                    set use_vis_enforce: false
+                    set tag: this.lookup_variant_tag(union_name, variant_name)
+                    set use_vis_enforce: true
+                }
+            tag
+        }
+
+        procedure when_variant_type(mutable this: Planner, mutable union_name: String, variant_name: String) returns ref[PlannedType]?
+        {
+            var found this.lookup_variant_type(union_name, variant_name)
+            if found = null
+                if use_vis_enforce
+                {
+                    set use_vis_enforce: false
+                    set found: this.lookup_variant_type(union_name, variant_name)
+                    set use_vis_enforce: true
+                }
+            found
+        }
+
+        procedure when_union_concept(mutable this: Planner, union_name: String) returns ref[Concept]?
+        {
+            var found this.lookup_concept(union_name)
+            if found = null
+                if use_vis_enforce
+                {
+                    set use_vis_enforce: false
+                    set found: this.lookup_concept(union_name)
+                    set use_vis_enforce: true
+                }
+            found
+        }
+
         procedure plan_when(
             mutable this: Planner,
             mutable w: When,
@@ -22403,7 +22510,7 @@ define Planner
                         }
                     }
                 }
-                let payload_ref this.lookup_variant_type(
+                let payload_ref this.when_variant_type(
                     union_type.name, variant_name
                 )
                 set type_substitutions.length: saved_subst_when
@@ -22412,7 +22519,7 @@ define Planner
                     set binding_ty: (*payload_ref)
                     set variant_type: (*payload_ref)
                 }
-                let tag this.lookup_variant_tag(union_type.name, variant_name)
+                let tag this.when_variant_tag(union_type.name, variant_name)
                 if tag >= 0
                     set variant_tag: tag as size_t
                 ; B3: a resolved union with no such variant tag (misspelled
@@ -22434,7 +22541,7 @@ define Planner
                     if is_throws_call = false
                     {
                         var b3_union_resolved: bool false
-                        let b3_cref this.lookup_concept(union_type.name)
+                        let b3_cref this.when_union_concept(union_type.name)
                         if b3_cref <> null
                             choose (*b3_cref).definition
                                 when b3u: scalyc.compiler.Model.Union
@@ -22529,6 +22636,7 @@ define Planner
             }
 
             this.define_local(w.name, binding_ty, false, false)
+            this.mark_when_copy(w.name)
 
             let cons_box &^this this.plan_statement(w.consequent)
             this.pop_scope()
@@ -27189,6 +27297,8 @@ define Planner
             if a.target.length > 0
                 if set_stores_through = false
                     this.report_unassignable_ref_target(planned_target_collapsed, planned_target_collapsed.loc)
+            if a.target.length > 0
+                this.report_when_binding_store(a.target)
 
             ; String literal assigned into a Slice[char] target (`set s: "text"`
             ; with s a Slice[char] local or field): materialise the view, as
@@ -55908,8 +56018,8 @@ define Planner
             return 179
 
         ; lookup_local_in_scope - hit, miss.
-        let lb_x LocalBinding(int_ty, false, false, false, false)
-        let lb_y LocalBinding(bool_ty, true, true, false, false)
+        let lb_x LocalBinding(int_ty, false, false, false, false, false)
+        let lb_y LocalBinding(bool_ty, true, true, false, false, false)
         var scope1 Vector[KeyValuePair[String, LocalBinding]](2)
         scope1.put(0, KeyValuePair[String, LocalBinding]("x", lb_x))
         scope1.put(1, KeyValuePair[String, LocalBinding]("y", lb_y))
@@ -55922,8 +56032,8 @@ define Planner
             return 182
 
         ; lookup_local_in_stack - innermost shadows outer.
-        let lb_x_outer LocalBinding(int_ty, false, false, false, false)
-        let lb_x_inner LocalBinding(bool_ty, true, false, false, false)
+        let lb_x_outer LocalBinding(int_ty, false, false, false, false, false)
+        let lb_x_inner LocalBinding(bool_ty, true, false, false, false, false)
         var outer_scope Vector[KeyValuePair[String, LocalBinding]](1)
         outer_scope.put(0, KeyValuePair[String, LocalBinding]("x", lb_x_outer))
         var inner_scope Vector[KeyValuePair[String, LocalBinding]](1)
