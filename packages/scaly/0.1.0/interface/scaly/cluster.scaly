@@ -176,7 +176,7 @@ define Cluster
     ; Accept one peer: TCP accept, then the frozen-preamble handshake.
     ; Returns null when the connect was refused (mismatch — already
     ; reported loudly) or the transport failed.
-    procedure accept(lfd: i32) @page true @returnpage true @ret_caller true @deep true returns ref[NodePeer]? io linked
+    procedure accept(lfd: i32) @page true @returnpage true @deep true returns ref[NodePeer]? io linked
 
 
 
@@ -187,7 +187,7 @@ define Cluster
     ; Connect to host:port (getaddrinfo — real hosts), then the frozen-
     ; preamble handshake. host must be NUL-terminated (a string
     ; literal, or String.to_c_string). Returns null when refused.
-    procedure connect(mutable host: pointer[const_char], port: i32) @page true @returnpage true @ret_caller true @deep true returns ref[NodePeer]? io linked
+    procedure connect(mutable host: pointer[const_char], port: i32) @page true @returnpage true @deep true returns ref[NodePeer]? io linked
 
 
 
@@ -198,7 +198,7 @@ define Cluster
     ; Both directions run the same handshake: send our preamble
     ; immediately, read theirs, compare BEFORE any other byte is
     ; parsed. Mismatch = loud refuse with both stamps (rule 10).
-    procedure setup(fd: i32) @page true @direct true @ret_caller true @deep true returns ref[NodePeer]? io linked
+    procedure setup(fd: i32) @page true @direct true @deep true returns ref[NodePeer]? io linked
 
 
 
@@ -311,7 +311,7 @@ define Cluster
     ; A down-notice channel (memo rule 5): receives ONE NodeDown when
     ; the peer is suspected dead or said goodbye, then closes. On a
     ; peer already down the notice is delivered immediately.
-    procedure monitor(mutable p: pointer[NodePeer]) @ret_caller true @deep true returns ref[Channel] io linked
+    procedure monitor(mutable p: pointer[NodePeer]) @deep true returns ref[Channel] io linked
 
 
 

@@ -74,7 +74,7 @@ function get_prime(size: size_t) @deep true returns size_t linked
 
 
 ; FNV-1a hash
-function hash(data: Slice[char]) @ret_caller true @deep true returns size_t linked
+function hash(data: Slice[char]) @deep true returns size_t linked
 
 
 

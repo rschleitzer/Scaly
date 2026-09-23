@@ -1,0 +1,21 @@
+; Control for pending/element_of_local.scaly: the elements live on a page, so
+; keeping one is no escape although the container is frame-local — the
+; union-type shape of tscaly (get_union_type(pair) with pair on the frame).
+define Box (var v: int)
+define Holder (var kept: ref[Box]?)
+
+procedure keep_first(mutable h: ref[Holder], list: ref[Array[ref[Box]?]])
+    set h.kept: list[0]
+
+procedure make(host: ref[Page], mutable h: ref[Holder])
+{
+    let b &Box^host(1)
+    let list &Array[ref[Box]?]()
+    list.add(b)
+    keep_first(h, list)
+}
+
+let root Page.allocate_page()
+var h Holder(null)
+make(root, &h)
+print "done\n"

@@ -612,7 +612,7 @@ define Planner
         deep_into_masks: Array[u64]
         deep_by_name_into: Array[u64]
         deep_state_into: Array[size_t]
-        deep_state_hasinto: Array[size_t]
+        deep_state_hasinto: ref[Array[size_t]]
         deep_gate_into: Array[u64]
         deep_by_name_this: Array[u64]
         deep_by_name_beyond: Array[u64]
@@ -621,7 +621,7 @@ define Planner
         deep_qualified_all: Array[String]
         ; the owners of the bodies this root plans; a known owner that is NOT
         ; among them lives in another package (its body linked)
-        deep_scanned_owners: Array[String]
+        deep_scanned_owners: ref[Array[String]]
         ; --interface-facts: run the deep pre-pass without judging, so a
         ; package's interface can state each routine's deep masks (`@deep`)
         var deep_facts: bool
@@ -650,6 +650,11 @@ define Planner
         ; deep_ret_state per body, deep_returns_by_name for the Model-level
         ; match; persist_ret_hit is the scan's own flag
         deep_ret_state: Array[size_t]
+        ; per name in deep_returns_by_name, WHICH inputs the body hands back
+        ; (bit 0 is `this`); deep_ret_state holds the same mask per body.
+        ; Behind a reference: the Planner's page budget.
+        deep_returns_masks: ref[Array[u64]]
+        var deep_ret_mask: u64
         deep_returns_by_name: Array[String]
         deep_returns_mangled: Array[String]
         var persist_ret_hit: bool
@@ -679,6 +684,12 @@ define Planner
         var rr_lookup_this: size_t
         var rr_trace: bool
         rr_tainted: Array[String]
+        ; locals bound with an UNKNOWN class (0: a callee the fixpoint has not
+        ; decided yet) — an expression over one answers 0, never 1, so the body
+        ; stays open for the next round; before, round one closed it at class 1
+        ; for good (dazzle's attribute_string, whose `value` callee was decided
+        ; one round later). Behind a reference: the Planner's page budget.
+        rr_unknown: ref[Array[String]]
         rr_local_names: Array[String]
         rr_local_class: Array[size_t]
         rr_local_arg: Array[size_t]
@@ -721,7 +732,19 @@ define Planner
         ; per function of the post-pass: locals bound from a CALL and the
         ; by-value verdict of that call's result
         current_fn_bind_names: Array[String]
+        ; local containers this body put a frame-local value INTO (the deep
+        ; gate's element rule: a callee that keeps an ELEMENT of such a
+        ; container keeps something local)
+        ; ★★★ BEHIND A REFERENCE, like deep_scanned_owners: the Planner record
+        ; is 4 040 bytes of a 4 096-byte page (2026-09-23), and one more
+        ; embedded Array made it OVERSIZED — every Array field's Page.get then
+        ; answered the oversized page and stage 1 died at exit 19.
+        current_fn_local_filled: ref[Array[String]]
         current_fn_bind_local: Array[size_t]
+        ; beside it, the REFERENCE verdict of the same bound call
+        ; (ref_call_verdict#: -1 unknown, 0 not local, 1 local) — behind a
+        ; reference for the Planner's page budget (see current_fn_local_filled)
+        current_fn_bind_refv: ref[Array[int]]
         var deep_gate_index: ConceptIndex
 
         var escape_census: bool
@@ -1002,6 +1025,11 @@ define Planner
     )
     {
         init(filename: String) linked
+
+
+
+
+
 
 
 
@@ -2103,7 +2131,7 @@ define Planner
 
 
 
-        procedure delegate_return_type(mutable this: Planner, mutable name: String) @page true @direct true @ret_caller true @deep true returns PlannedType io linked
+        procedure delegate_return_type(mutable this: Planner, mutable name: String) @page true @direct true @deep true returns PlannedType io linked
 
 
 
@@ -5159,7 +5187,7 @@ define Planner
             mutable this: Planner,
             struct_name: String,
             property_name: String
-        ) @ret_caller true @deep true returns ref[Property]? linked
+        ) @ret_param_0 true @deep true returns ref[Property]? linked
 
 
 
@@ -6519,7 +6547,7 @@ define Planner
             mutable this: Planner,
             mutable struct_name: String,
             arg_types: Vector[PlannedType]
-        ) @page true @direct true @ret_caller true @deep true returns ref[Initializer]? io linked
+        ) @page true @direct true @ret_param_0 true @deep true returns ref[Initializer]? io linked
 
 
 
@@ -6659,7 +6687,7 @@ define Planner
         function variant_payload_points_at(
             v_type: ref[scalyc.compiler.Model.Type],
             variant_name: String
-        ) @ret_caller true @deep true returns bool linked
+        ) @deep true returns bool linked
 
 
 
@@ -7017,7 +7045,7 @@ define Planner
             mutable this: Planner,
             mutable f: Function,
             args: Vector[KeyValuePair[String, PlannedType]]
-        ) @page true @direct true @ret_caller true @deep true @deep_this_4 true returns PlannedFunction io linked
+        ) @page true @direct true @deep true @deep_this_4 true returns PlannedFunction io linked
 
 
 
@@ -8020,7 +8048,7 @@ define Planner
             mutable suffix: String,
             arg_types: Vector[PlannedType],
             arg_ops: Vector[PlannedOperand]
-        ) @page true @direct true @ret_caller true @deep true @deep_this_8 true returns ref[MethodMatch]? io linked
+        ) @page true @direct true @deep true @deep_this_8 true returns ref[MethodMatch]? io linked
 
 
 
@@ -8158,7 +8186,7 @@ define Planner
             mutable suffix: String,
             mutable arg_types: Vector[PlannedType],
             arg_ops: Vector[PlannedOperand]
-        ) @page true @returnpage true @ret_caller true @deep true @deep_this_8 true returns ref[MethodMatch]? io linked
+        ) @page true @returnpage true @deep true @deep_this_8 true returns ref[MethodMatch]? io linked
 
 
 
@@ -8397,7 +8425,7 @@ define Planner
             mutable f: Function,
             generics: Vector[PlannedType],
             arg_types: Vector[PlannedType]
-        ) @page true @direct true @ret_caller true @deep true @deep_this_6 true returns ref[MethodMatch]? io linked
+        ) @page true @direct true @deep true @deep_this_6 true returns ref[MethodMatch]? io linked
 
 
 
@@ -8468,7 +8496,7 @@ define Planner
             mutable name: String,
             mutable arg_types: Vector[PlannedType],
             arg_ops: Vector[PlannedOperand]
-        ) @page true @returnpage true @ret_caller true @deep true @deep_this_4 true returns ref[MethodMatch]? io linked
+        ) @page true @returnpage true @deep true @deep_this_4 true returns ref[MethodMatch]? io linked
 
 
         ; ★★★A generic FREE function whose type parameter appears only in the
@@ -8486,7 +8514,7 @@ define Planner
             mutable arg_types: Vector[PlannedType],
             arg_ops: Vector[PlannedOperand],
             explicit_generics: ref[Vector[PlannedType]]?
-        ) @page true @direct true @ret_caller true @deep true @deep_this_20 true returns ref[MethodMatch]? io linked
+        ) @page true @direct true @deep true @deep_this_20 true returns ref[MethodMatch]? io linked
 
 
 
@@ -15957,7 +15985,7 @@ define Planner
             mutable this: Planner,
             mutable name: String,
             operand: PlannedType
-        ) @page true @direct true @ret_caller true @deep true returns ref[PlannedType]? io linked
+        ) @page true @direct true @deep true returns ref[PlannedType]? io linked
 
 
 
@@ -17431,7 +17459,7 @@ define Planner
             arg_types: Vector[PlannedType],
             arg_ops: Vector[PlannedOperand],
             loc: Span
-        ) @page true @direct true @ret_caller true @deep true @deep_this_2 true returns ref[MethodMatch]? io linked
+        ) @page true @direct true @deep true @deep_this_2 true returns ref[MethodMatch]? io linked
 
 
 
@@ -18837,7 +18865,7 @@ define Planner
 
 
 
-        procedure plan_type(mutable this: Planner, mutable t: Type) @page true @direct true @ret_caller true @deep true @deep_this_2 true returns PlannedType io linked
+        procedure plan_type(mutable this: Planner, mutable t: Type) @page true @direct true @deep true @deep_this_2 true returns PlannedType io linked
 
 
 
@@ -19563,7 +19591,7 @@ define Planner
             this: Planner,
             c: Constant,
             loc: Span
-        ) @page true @direct true @ret_caller true @deep true returns PlannedOperand linked
+        ) @page true @direct true @deep true returns PlannedOperand linked
 
 
 
@@ -19591,7 +19619,7 @@ define Planner
         ; matching the LLVM struct layout. Without this, Vector(rp,len)
         ; for Vector[Module] allocates len*8 instead of len*80, and
         ; put(i, m) overruns and SEGVs build_program.
-        procedure plan_sizeof(mutable this: Planner, mutable s: SizeOf) @page true @direct true @ret_caller true @deep true @deep_this_2 true returns PlannedSizeOf io linked
+        procedure plan_sizeof(mutable this: Planner, mutable s: SizeOf) @page true @direct true @deep true @deep_this_2 true returns PlannedSizeOf io linked
 
 
 
@@ -19613,7 +19641,7 @@ define Planner
         ; we resolve the test type and (best-effort) the union_name; the
         ; `variant_tag` and `value` fields get stitched in at the
         ; operand-sequence collapse site, which has the value operand.
-        procedure plan_is(mutable this: Planner, mutable i: Is) @page true @direct true @ret_caller true @deep true @deep_this_2 true returns PlannedIs io linked
+        procedure plan_is(mutable this: Planner, mutable i: Is) @page true @direct true @deep true @deep_this_2 true returns PlannedIs io linked
 
 
 
@@ -19657,7 +19685,7 @@ define Planner
         ; plan_as: `x as TargetType` — explicit cast. Resolves the
         ; target type; the value operand is stitched in at the use site
         ; (typically during collapse, like PlannedIs).
-        procedure plan_as(mutable this: Planner, mutable a: scaly.compiler.Model.As) @page true @direct true @ret_caller true @deep true @deep_this_2 true returns PlannedAs io linked
+        procedure plan_as(mutable this: Planner, mutable a: scaly.compiler.Model.As) @page true @direct true @deep true @deep_this_2 true returns PlannedAs io linked
 
 
 
@@ -19671,7 +19699,7 @@ define Planner
         procedure plan_alignof(
             mutable this: Planner,
             mutable a: scaly.compiler.Model.AlignOf
-        ) @page true @direct true @ret_caller true @deep true @deep_this_2 true returns PlannedAlignOf io linked
+        ) @page true @direct true @deep true @deep_this_2 true returns PlannedAlignOf io linked
 
 
 
@@ -19790,7 +19818,7 @@ define Planner
         ;     call resolution)
         ;   - an actual type name → PlannedExpression.Type with the
         ;     planned type
-        procedure plan_type_operand(mutable this: Planner, mutable t: Type, loc: Span) @page true @direct true @ret_caller true @deep true @deep_this_2 true returns PlannedOperand io linked
+        procedure plan_type_operand(mutable this: Planner, mutable t: Type, loc: Span) @page true @direct true @deep true @deep_this_2 true returns PlannedOperand io linked
 
 
 
@@ -20899,7 +20927,7 @@ define Planner
 
 
 
-        procedure plan_lambda(mutable this: Planner, mutable lam: Lambda) @page true @direct true @ret_caller true @deep true @deep_this_2 true returns PlannedLambda io linked
+        procedure plan_lambda(mutable this: Planner, mutable lam: Lambda) @page true @direct true @deep true @deep_this_2 true returns PlannedLambda io linked
 
 
 
@@ -21335,7 +21363,7 @@ define Planner
         ; plan_repeat: do-while body runs at least once; the terminating
         ; condition lives inside the body action via `break` or an
         ; embedded if. Nothing else to constrain at this level.
-        procedure plan_repeat(mutable this: Planner, mutable r: Repeat) @page true @direct true @ret_caller true @deep true @deep_this_2 true returns PlannedRepeat io linked
+        procedure plan_repeat(mutable this: Planner, mutable r: Repeat) @page true @direct true @deep true @deep_this_2 true returns PlannedRepeat io linked
 
 
 
@@ -21351,7 +21379,7 @@ define Planner
         ; consequents and nested blocks, but NOT into nested while/for/repeat
         ; bodies (an unlabeled break there targets the inner loop, not this
         ; repeat). Returns void when no break-with-value is found.
-        function find_break_type_in_operands(this: Planner, ops: ref[Vector[PlannedOperand]]?) @page true @direct true @ret_caller true @deep true returns PlannedType linked
+        function find_break_type_in_operands(this: Planner, ops: ref[Vector[PlannedOperand]]?) @page true @direct true @deep true returns PlannedType linked
 
 
 
@@ -21501,7 +21529,7 @@ define Planner
         ; that the planned binding's type is bool (the solver promotes
         ; `while let maybe_x = ...` through Option's None sentinel, so
         ; this is a reasonable approximation today).
-        procedure plan_while(mutable this: Planner, mutable w: While) @page true @direct true @ret_caller true @deep true @deep_this_2 true returns PlannedWhile io linked
+        procedure plan_while(mutable this: Planner, mutable w: While) @page true @direct true @deep true @deep_this_2 true returns PlannedWhile io linked
 
 
 
@@ -21620,7 +21648,7 @@ define Planner
         ;      iterator type; the element type is what `next` returns.
         ; Option[T] and ref/pointer wrappers on the collection type are
         ; peeled before the dispatch.
-        procedure plan_for(mutable this: Planner, mutable f: For) @page true @direct true @ret_caller true @deep true @deep_this_2 true returns PlannedFor io linked
+        procedure plan_for(mutable this: Planner, mutable f: For) @page true @direct true @deep true @deep_this_2 true returns PlannedFor io linked
 
 
 
@@ -22034,7 +22062,7 @@ define Planner
 
 
         ; plan_try: try { binding } catch WhenPatterns else alt.
-        procedure plan_try(mutable this: Planner, mutable t: Try) @page true @direct true @ret_caller true @deep true @deep_this_2 true returns PlannedTry io linked
+        procedure plan_try(mutable this: Planner, mutable t: Try) @page true @direct true @deep true @deep_this_2 true returns PlannedTry io linked
 
 
 
@@ -22133,7 +22161,7 @@ define Planner
             mutable union_type: PlannedType,
             is_throws_call: bool,
             throws_ty: ref[PlannedType]?
-        ) @page true @direct true @ret_caller true @deep true @deep_this_22 true @deep_whole_20 true returns PlannedWhen io linked
+        ) @page true @direct true @deep true @deep_this_22 true @deep_whole_20 true returns PlannedWhen io linked
 
 
 
@@ -22642,7 +22670,7 @@ define Planner
 
 
 
-        procedure plan_branch(mutable this: Planner, mutable b: Branch) @page true @direct true @ret_caller true @deep true returns PlannedBranch io linked
+        procedure plan_branch(mutable this: Planner, mutable b: Branch) @page true @direct true @deep true returns PlannedBranch io linked
 
 
 
@@ -22980,7 +23008,7 @@ define Planner
 
 
 
-        procedure plan_tuple(mutable this: Planner, mutable t: Tuple) @page true @direct true @ret_caller true @deep true @deep_this_2 true returns PlannedTuple io linked
+        procedure plan_tuple(mutable this: Planner, mutable t: Tuple) @page true @direct true @deep true @deep_this_2 true returns PlannedTuple io linked
 
 
 
@@ -23066,7 +23094,7 @@ define Planner
         ; table, so we plan the type skeleton and arguments and leave
         ; the call layout for later resolution. For now we model it as
         ; a PlannedTuple carrying the argument list and the planned type.
-        procedure plan_new(mutable this: Planner, mutable n: New) @page true @direct true @ret_caller true @deep true @deep_this_2 true returns PlannedTuple io linked
+        procedure plan_new(mutable this: Planner, mutable n: New) @page true @direct true @deep true @deep_this_2 true returns PlannedTuple io linked
 
 
 
@@ -23124,7 +23152,7 @@ define Planner
         ; plan_operand: dispatch by Expression variant, then wrap with
         ; any member-access chain declared on the operand.
         ; ================================================================
-        procedure plan_operand(mutable this: Planner, mutable op: scalyc.compiler.Model.Operand) @page true @direct true @ret_caller true @deep true returns PlannedOperand io linked
+        procedure plan_operand(mutable this: Planner, mutable op: scalyc.compiler.Model.Operand) @page true @direct true @deep true returns PlannedOperand io linked
 
 
 
@@ -23343,7 +23371,7 @@ define Planner
             mutable this: Planner,
             t: Type,
             loc: Span
-        ) @page true @direct true @ret_caller true @deep true returns ref[PlannedOperand]? linked
+        ) @page true @direct true @deep true returns ref[PlannedOperand]? linked
 
 
 
@@ -26870,7 +26898,7 @@ define Planner
 
 
 
-        procedure plan_action(mutable this: Planner, mutable a: Action) @page true @direct true @ret_caller true @deep true @deep_this_2 true returns PlannedAction io linked
+        procedure plan_action(mutable this: Planner, mutable a: Action) @page true @direct true @deep true @deep_this_2 true returns PlannedAction io linked
 
 
 
@@ -28905,6 +28933,9 @@ define Planner
 
 
 
+
+
+
         ; a record handed BY VALUE is copied into the callee's keep — its
         ; BUFFER is not. Where that buffer lives: a parameter's or a field's
         ; with the caller (never local); a local bound from a visible
@@ -30175,6 +30206,27 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         function escape_record_exists(this: Planner, fn_index: size_t, param_index: size_t, dest_kind: size_t, dest_index: size_t, path_len: size_t, field0: size_t, field1: size_t) @ret_nonlocal true @deep true returns bool linked
 
 
@@ -30611,6 +30663,7 @@ define Planner
 
         ; Walk one statement by value. choose stmt mirrors emit_statement.
         procedure escape_walk_statement(mutable this: Planner, stmt: PlannedStatement) @deep true io linked
+
 
 
 
@@ -32059,6 +32112,153 @@ define Planner
 
 
 
+        ; a frame-local receiver (`pair.add(x)`) given a frame-local value at a
+        ; position its callee keeps in the receiver: remember the receiver
+        procedure deep_note_local_fill(mutable this: Planner, call: PlannedCall, off: size_t, plen: size_t, tmask: u64) @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; where a REFERENCE or view a plain call answers lives, from the callee's
+        ; residence class: 4 nowhere local, 2 on the page argument (judged), 3
+        ; wherever that argument lives (judged); 1 and unknown answer -1 — the
+        ; gate uses it only to LIFT a Local stamp, never to add one
+        function ref_call_verdict(this: Planner, c: PlannedCall) @ret_nonlocal true @deep true returns int linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function ref_arg_lifted(this: Planner, arg: PlannedOperand) @ret_param_0 true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function arg_is_local_filled(this: Planner, arg: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
         ; a finding stops the walk — except while measuring (SCALYC_GATE_ALL),
         ; and never for the census, whose verdict IS escape_found
         procedure escape_note_found(mutable this: Planner) @deep true linked
@@ -32281,6 +32481,10 @@ define Planner
 
 
 
+
+
+
+
         procedure persist_tail_carries(mutable this: Planner, ops: Vector[Operand]) @ret_nonlocal true @deep true returns bool linked
 
 
@@ -32315,6 +32519,25 @@ define Planner
         ; body that persists under the current deep_by_name; a body marked
         ; this round can make its callers persist in the next.
         procedure deep_persist_fixpoint(mutable this: Planner) @deep true io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -33259,6 +33482,9 @@ define Planner
 
 
 
+
+
+
         ; Does the value carry a tainted name: bare, or inside a CONSTRUCTION
         ; (a capitalized head, no explicit page) over it? A lowercase call's
         ; result is not followed — the checker's own blind spot, kept here so
@@ -33391,6 +33617,212 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; the inputs a returned expression carries (0 = cannot tell: all)
+        procedure deep_note_ret(mutable this: Planner, ops: Vector[Operand]) @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; OR `mask` into the returns-mask entry of `name` (made when absent)
+        procedure deep_returns_note(mutable this: Planner, name: String, mask: u64) @persists true @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; the inputs a callee name hands back: all-ones where no mask is known
+        function deep_returns_mask_of(this: Planner, name: String) @ret_param_0 true @deep true returns u64 linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; `Owner.f` (a capitalized head), `this.f`, `param.f`: the owner-qualified
+        ; name when this root scanned the owner's body of that name — else ""
+        function persist_call_qualified(this: Planner, name: Vector[String]) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -35103,7 +35535,7 @@ define Planner
 
 
         ; `let x [&]T[G][^page](...)`: the concept the binding holds
-        function rr_ops_construction_concept(this: Planner, ops: Vector[Operand]) @page true @direct true @ret_caller true @deep true returns String linked
+        function rr_ops_construction_concept(this: Planner, ops: Vector[Operand]) @page true @direct true @deep true returns String linked
 
 
 
@@ -35437,6 +35869,7 @@ define Planner
 
 
 
+
         procedure rr_merge(mutable this: Planner, cls: size_t, arg: size_t) @deep true linked
 
 
@@ -35594,7 +36027,15 @@ define Planner
 
 
 
+
+
+
         procedure rr_walk_action(mutable this: Planner, a: scalyc.compiler.Model.Action, tail: bool) @deep true linked
+
+
+
+
+
 
 
 
@@ -35662,7 +36103,13 @@ define Planner
 
 
 
+
+
+
         procedure rr_walk_op(mutable this: Planner, op: Operand, tail: bool) @deep true linked
+
+
+
 
 
 
@@ -36060,11 +36507,19 @@ define Planner
 
 
 
+
+
         ; A construction without a sigil: a record with an `init` may
         ; allocate on the caller page (class 1); an init-less record and a
         ; `Slice` (a view) copy their components, so the value carries what
         ; the components carry — `null` neutral, one argument at most.
         procedure rr_plain_construction_class(mutable this: Planner, tname: String, tuple_i: size_t, ops: Vector[Operand]) @ret_nonlocal true @deep true returns size_t linked
+
+
+
+
+
+
 
 
 
@@ -36223,10 +36678,50 @@ define Planner
 
 
 
+
+
         ; The call site's question: is this call's result proven NOT to live
         ; on the page this frame passed? Class 2 and 4 always; class 3 when
         ; the argument the result comes from carries no Local life itself.
         procedure rr_result_not_local(this: Planner, mm: MethodMatch, args: Vector[PlannedOperand], fn_name: String) @ret_nonlocal true @deep true returns bool io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -36404,6 +36899,8 @@ define Planner
 
 
         procedure escape_walk_function_body(mutable this: Planner, func: PlannedFunction) @ret_nonlocal true @deep true io linked
+
+
 
 
 
@@ -37070,7 +37567,7 @@ define Planner
         ; re-stamped (everything else copied verbatim): rebuilding the
         ; result_type, which embeds the Lifetime union, by value trips the
         ; s34/s196 union-struct-copy ABI hazard and crashes the emitter.
-        procedure restamp_operand_life(mutable this: Planner, op: PlannedOperand, new_life: Lifetime) @page true @direct true @ret_caller true @deep true returns ref[PlannedOperand]? linked
+        procedure restamp_operand_life(mutable this: Planner, op: PlannedOperand, new_life: Lifetime) @page true @direct true @deep true returns ref[PlannedOperand]? linked
 
 
 
@@ -37275,7 +37772,7 @@ define Planner
         ; caller keeps the operand verbatim, so sigiled source whose nested
         ; constructions carry explicit #/^ lifetimes stays byte-identical). All
         ; rebuilds copy PlannedType/String fields verbatim (s34/s196 hazard).
-        procedure promote_escaping_guts(mutable this: Planner, op: PlannedOperand, new_life: Lifetime) @page true @direct true @ret_caller true @deep true returns ref[PlannedOperand]? linked
+        procedure promote_escaping_guts(mutable this: Planner, op: PlannedOperand, new_life: Lifetime) @page true @direct true @deep true returns ref[PlannedOperand]? linked
 
 
 
@@ -37429,7 +37926,7 @@ define Planner
         ; fields verbatim and only swap the promoted sub-operand, avoiding the
         ; s34/s196 result_type-rebuild hazard.
         ; ================================================================
-        procedure promote_tail_operand(mutable this: Planner, op: PlannedOperand, new_life: Lifetime) @page true @direct true @ret_caller true @deep true returns ref[PlannedOperand]? linked
+        procedure promote_tail_operand(mutable this: Planner, op: PlannedOperand, new_life: Lifetime) @page true @direct true @deep true returns ref[PlannedOperand]? linked
 
 
 
@@ -39329,7 +39826,7 @@ define Planner
 
 
 
-        function last_segment_is_capitalized(n: String) @ret_caller true @deep true returns bool linked
+        function last_segment_is_capitalized(n: String) @deep true returns bool linked
 
 
 
@@ -41141,7 +41638,7 @@ define Planner
             mutable this: Planner,
             mutable f: Function,
             parent: ref[PlannedType]?
-        ) @page true @direct true @ret_caller true @deep true @deep_this_6 true returns PlannedFunction io linked
+        ) @page true @direct true @deep true @deep_this_6 true returns PlannedFunction io linked
 
 
 
@@ -42032,7 +42529,7 @@ define Planner
             mutable this: Planner,
             mutable ini: Initializer,
             parent: ref[PlannedType]?
-        ) @page true @direct true @ret_caller true @deep true @deep_this_6 true returns PlannedInitializer io linked
+        ) @page true @direct true @deep true @deep_this_6 true returns PlannedInitializer io linked
 
 
 
@@ -42276,7 +42773,7 @@ define Planner
             mutable this: Planner,
             mutable dei: DeInitializer,
             parent: ref[PlannedType]?
-        ) @page true @direct true @ret_caller true @deep true returns PlannedDeInitializer io linked
+        ) @page true @direct true @deep true returns PlannedDeInitializer io linked
 
 
 
@@ -42298,7 +42795,7 @@ define Planner
             mutable this: Planner,
             mutable op: Operator,
             parent: ref[PlannedType]?
-        ) @page true @direct true @ret_caller true @deep true @deep_this_6 true returns PlannedOperator io linked
+        ) @page true @direct true @deep true @deep_this_6 true returns PlannedOperator io linked
 
 
 
@@ -43154,7 +43651,7 @@ define Planner
         ; plan_global: Model.Global → Plan.PlannedGlobal.
         ; The `name` comes from the enclosing Concept — Global itself has
         ; no name field.
-        procedure plan_global(mutable this: Planner, mutable g: Global, name: String) @page true @direct true @ret_caller true @deep true @deep_this_2 true returns PlannedGlobal io linked
+        procedure plan_global(mutable this: Planner, mutable g: Global, name: String) @page true @direct true @deep true @deep_this_2 true returns PlannedGlobal io linked
 
 
 
@@ -47331,7 +47828,7 @@ define Planner
     function lookup_local_in_stack(
         scopes: Vector[Vector[KeyValuePair[String, LocalBinding]]],
         name: String
-    ) @ret_caller true @deep true returns ref[LocalBinding]? linked
+    ) @ret_nonlocal true @deep true returns ref[LocalBinding]? linked
 
 
 
@@ -47809,7 +48306,7 @@ define Planner
     ; Planner.cpp. Returns null on any unification failure.
     function solve_constraints(
         constraints: ref[Vector[TypeConstraint]]?
-    ) @page true @direct true @ret_caller true @deep true returns ref[Vector[KeyValuePair[size_t, PlannedType]]]? linked
+    ) @page true @direct true @deep true returns ref[Vector[KeyValuePair[size_t, PlannedType]]]? linked
 
 
 
@@ -47946,7 +48443,7 @@ define Planner
     ;
     ; Static, and called in ONE statement: the locals this needs would perturb
     ; collapse_operand_sequence's s178 alloca pool if they were inlined there.
-    function chain_tail_is_property(operand: PlannedOperand) @ret_caller true @deep true returns bool linked
+    function chain_tail_is_property(operand: PlannedOperand) @deep true returns bool linked
 
 
 
@@ -50533,7 +51030,7 @@ define Planner
     ; temporaries of a `while` loop then die one level further out). Its sibling
     ; `ret_page_type_last_name` already unwraps both. Same class as the six NPO
     ; sightings in CLAUDE.md: ask the shape, not the name.
-    function ret_page_type_is_page_pointer(t: scalyc.compiler.Model.Type) @ret_caller true @deep true returns bool linked
+    function ret_page_type_is_page_pointer(t: scalyc.compiler.Model.Type) @deep true returns bool linked
 
 
 
@@ -50782,7 +51279,7 @@ define Planner
     ; same overload narrowing as ret_page_members_decision, but the answers must
     ; agree on the type NAME (they do for every real overload set; a disagreement
     ; answers null rather than guessing).
-    function ret_page_members_return_type(pl: Planner, members: Vector[Member], method: String, argc: size_t) @ret_caller true @deep true returns ref[String]? linked
+    function ret_page_members_return_type(pl: Planner, members: Vector[Member], method: String, argc: size_t) @deep true returns ref[String]? linked
 
 
 
@@ -50834,7 +51331,7 @@ define Planner
 
 
 
-    function ret_page_concept_return_type(pl: Planner, concept_name: String, method: String, argc: size_t) @ret_caller true @deep true returns ref[String]? linked
+    function ret_page_concept_return_type(pl: Planner, concept_name: String, method: String, argc: size_t) @deep true returns ref[String]? linked
 
 
 
@@ -50850,7 +51347,7 @@ define Planner
 
 
 
-    function ret_page_functions_return_type(pl: Planner, name: String, argc: size_t) @ret_caller true @deep true returns ref[String]? linked
+    function ret_page_functions_return_type(pl: Planner, name: String, argc: size_t) @deep true returns ref[String]? linked
 
 
 

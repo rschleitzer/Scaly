@@ -1148,7 +1148,7 @@ define server
     ; Diagnostics are computed in a crash-isolated worker subprocess (see
     ; scalyls.worker): a SIGSEGV/abort/hang in the compiler pipeline on a
     ; bad document then loses only that one result, not the whole server.
-    procedure publish_for(mutable uri: String, mutable text: String) @ret_caller true @deep true @deep_beyond_1 true io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+    procedure publish_for(mutable uri: String, mutable text: String) @deep true @deep_beyond_1 true io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
 
 
 

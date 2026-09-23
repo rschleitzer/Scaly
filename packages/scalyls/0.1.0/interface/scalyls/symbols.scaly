@@ -4725,7 +4725,7 @@ define symbols
     ; source parses. A `Different` error carries no offset — the construct was
     ; not recognised at all — and answers "no repair" rather than have
     ; blank_line_at# guess a line.
-    procedure parse_error_offset(rp, mutable source: String) @ret_caller true @deep true returns size_t linked
+    procedure parse_error_offset(rp, mutable source: String) @deep true returns size_t linked
 
 
 
@@ -12534,7 +12534,7 @@ define symbols
     ; not in a recognised call.
     ; ====================================================================
 
-    procedure signature_packed(rp, mutable source: String, mutable uri: String, packed: String) @direct true @ret_caller true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig reads prof_list linked
+    procedure signature_packed(rp, mutable source: String, mutable uri: String, packed: String) @direct true @ret_nonlocal true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig reads prof_list linked
 
 
 

@@ -1,0 +1,18 @@
+; Control for pending/view_of_frame_array.scaly: the Array is built on a named
+; page, so a view into its buffer outlives the frame and keeping it is fine.
+define Keeper (var locs: Slice[int])
+
+procedure keep(mutable k: ref[Keeper], s: Slice[int])
+    set k.locs: s
+
+procedure make(host: ref[Page], mutable k: ref[Keeper])
+{
+    let a Array[int]^host()
+    a.add(1)
+    keep(k, a.as_slice())
+}
+
+let root Page.allocate_page()
+var k Keeper(null)
+make(root, &k)
+print "done\n"

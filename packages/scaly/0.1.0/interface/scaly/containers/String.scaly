@@ -215,7 +215,7 @@ define String @resident true (data: pointer[u8](null))
     function c_data(this: String) @ret_param_0 true @deep true returns pointer[const_char] linked
 
 
-    function to_c_string(page, this: String) @ret_caller true @deep true returns pointer[const_char] linked
+    function to_c_string(page, this: String) @ret_param_0 true @deep true returns pointer[const_char] linked
 
 
 

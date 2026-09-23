@@ -78,7 +78,7 @@ define File
 {
     ; Colorless like the rest (milestone 2.5 residual): the access(2)
     ; probe blocks on disk metadata just like a read does.
-    procedure exists(mutable path: String) @ret_caller true @deep true returns bool io linked
+    procedure exists(mutable path: String) @deep true returns bool io linked
 
 
 
@@ -158,7 +158,7 @@ define File
     ; The task path of write_from_string: pack a {path, buffer, length}
     ; request cell on its own heap page (path and buffer point into the
     ; requester's region — alive while parked), offload, free the cell.
-    procedure write_from_string_offloaded(path: String, contents: String) @ret_caller true @deep true returns bool io linked
+    procedure write_from_string_offloaded(path: String, contents: String) @deep true returns bool io linked
 
 
 

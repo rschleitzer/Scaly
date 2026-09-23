@@ -1158,7 +1158,7 @@ define PointerCensus
 
 
 
-        function find_initializer(this: PointerCensus, mangled: String) @ret_caller true @deep true returns ref[PlannedInitializer]? linked
+        function find_initializer(this: PointerCensus, mangled: String) @deep true returns ref[PlannedInitializer]? linked
 
 
 
@@ -1972,7 +1972,7 @@ define PointerCensus
 
 
         ; Does the callee of `call` take a receiver (first param `this`)?
-        function call_takes_this(this: PointerCensus, call: PlannedCall) @ret_caller true @deep true returns bool linked
+        function call_takes_this(this: PointerCensus, call: PlannedCall) @deep true returns bool linked
 
 
 

@@ -56,7 +56,7 @@ define FunctionIndex
 {
     ; Allocate + initialise a slot table of `cap` slots and a `next` chain of
     ; `entry_cap` entries. Exits loudly on malloc failure.
-    function create(cap: size_t, entry_cap: size_t) @page true @direct true @ret_caller true @deep true returns FunctionIndex linked
+    function create(cap: size_t, entry_cap: size_t) @page true @direct true @deep true returns FunctionIndex linked
 
 
 
@@ -154,7 +154,7 @@ define FunctionIndex
 
     ; The next sibling registry index after entry `i` in insertion order, or -1
     ; at the end of the chain (sentinel == entry_cap).
-    function next_of(this: FunctionIndex, i: size_t) @ret_caller true @deep true returns i64 linked
+    function next_of(this: FunctionIndex, i: size_t) @deep true returns i64 linked
 
 
 

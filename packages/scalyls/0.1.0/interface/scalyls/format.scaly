@@ -231,7 +231,7 @@ define format
     ; state on entry. Bytes inside string literals, char literals, string
     ; identifiers and comments never count as brackets — that is the whole
     ; reason this is a scan and not a character count.
-    function scan_line(rp, source: String, start: size_t, end: size_t, in_block: bool) @direct true @ret_caller true @deep true returns LineScan linked
+    function scan_line(rp, source: String, start: size_t, end: size_t, in_block: bool) @direct true @deep true returns LineScan linked
 
 
 

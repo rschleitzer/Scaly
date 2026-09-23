@@ -109,7 +109,7 @@ define GpuTape
     ; static lands in recyclable temp storage and dies under the
     ; caller; a page-hosted record behind a pointer does not). The
     ; page lives as long as the process, like the MTLBuffers it maps.
-    procedure attach(mutable t: Tape, params: Vector[int], loss_id: int, msl: int) @ret_caller true @deep true returns ref[GpuTape] io linked
+    procedure attach(mutable t: Tape, params: Vector[int], loss_id: int, msl: int) @deep true returns ref[GpuTape] io linked
 
 
 
@@ -223,7 +223,7 @@ define GpuTape
     ; second graph reads the LIVE weights. Non-shared leaves allocate
     ; and copy like attach; no grad or Adam moment slots exist - step,
     ; step_adam and encode_bwd on the result are loud fatal errors.
-    procedure attach_gen(mutable t: Tape, leaves: Vector[int], primary: ref[GpuTape], primary_leaves: Vector[int], msl: int) @ret_caller true @deep true returns ref[GpuTape] io linked
+    procedure attach_gen(mutable t: Tape, leaves: Vector[int], primary: ref[GpuTape], primary_leaves: Vector[int], msl: int) @deep true returns ref[GpuTape] io linked
 
 
 

@@ -51,7 +51,7 @@ define ConceptIndex (slots: pointer[ConceptSlot](null), cap: size_t(0))
 {
     ; Allocate + initialise a table of `cap` slots. Exits loudly on malloc
     ; failure (the Planner cannot proceed without its concept index).
-    function create(cap: size_t) @page true @direct true @ret_caller true @deep true returns ConceptIndex linked
+    function create(cap: size_t) @page true @direct true @deep true returns ConceptIndex linked
 
 
 

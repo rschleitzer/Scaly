@@ -418,7 +418,7 @@ define Page
 
 
 
-    procedure allocate_oversized(this: Page, size: size_t) @ret_caller true @deep true returns pointer[void] linked
+    procedure allocate_oversized(this: Page, size: size_t) @deep true returns pointer[void] linked
 
 
 
@@ -478,7 +478,7 @@ define Page
     ; not part of the Itanium name, so `_Z3getPv` — which the Emitter looks
     ; up by that literal — stays put. Measured 2026-09-05: `let host
     ; Page.get(...)` was the origin of 551 pointer-into-ref sites in the ports.
-    function get(address: pointer[void]) @ret_caller true @deep true returns ref[Page] linked
+    function get(address: pointer[void]) @deep true returns ref[Page] linked
 
 
 

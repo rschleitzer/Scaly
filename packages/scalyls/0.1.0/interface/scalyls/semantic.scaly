@@ -656,7 +656,7 @@ define semantic
     ; ====================================================================
     ; Plan walk — first FOUND match wins across non-overlapping siblings.
     ; ====================================================================
-    function walk_plan(rp, plan: Plan, mode: size_t, offset: size_t, file: FileSyntax, path: String) @direct true @ret_caller true @deep true returns ResolveResult linked
+    function walk_plan(rp, plan: Plan, mode: size_t, offset: size_t, file: FileSyntax, path: String) @direct true @ret_nonlocal true @deep true returns ResolveResult linked
 
 
 
@@ -748,7 +748,7 @@ define semantic
 
 
 
-    function walk_structure(rp, st: PlannedStructure, mode: size_t, offset: size_t, file: FileSyntax, path: String) @direct true @ret_caller true @deep true returns ResolveResult linked
+    function walk_structure(rp, st: PlannedStructure, mode: size_t, offset: size_t, file: FileSyntax, path: String) @direct true @ret_nonlocal true @deep true returns ResolveResult linked
 
 
 
@@ -819,7 +819,7 @@ define semantic
 
 
 
-    function walk_union(rp, un: PlannedUnion, mode: size_t, offset: size_t, file: FileSyntax, path: String) @direct true @ret_caller true @deep true returns ResolveResult linked
+    function walk_union(rp, un: PlannedUnion, mode: size_t, offset: size_t, file: FileSyntax, path: String) @direct true @ret_nonlocal true @deep true returns ResolveResult linked
 
 
 
@@ -863,7 +863,7 @@ define semantic
 
 
 
-    function walk_impl(rp, impl: PlannedImplementation, mode: size_t, offset: size_t) @direct true @ret_caller true @deep true returns ResolveResult linked
+    function walk_impl(rp, impl: PlannedImplementation, mode: size_t, offset: size_t) @direct true @ret_nonlocal true @deep true returns ResolveResult linked
 
 
 
@@ -876,7 +876,7 @@ define semantic
 
 
 
-    function walk_action(rp, act: PlannedAction, mode: size_t, offset: size_t) @direct true @ret_caller true @deep true returns ResolveResult linked
+    function walk_action(rp, act: PlannedAction, mode: size_t, offset: size_t) @direct true @ret_nonlocal true @deep true returns ResolveResult linked
 
 
 
@@ -892,7 +892,7 @@ define semantic
     ; ====================================================================
     ; Statements
     ; ====================================================================
-    function walk_statements(rp, stmts: Vector[PlannedStatement], mode: size_t, offset: size_t) @direct true @ret_caller true @deep true returns ResolveResult linked
+    function walk_statements(rp, stmts: Vector[PlannedStatement], mode: size_t, offset: size_t) @direct true @ret_nonlocal true @deep true returns ResolveResult linked
 
 
 
@@ -989,7 +989,7 @@ define semantic
     ; ====================================================================
     ; Operands / expressions
     ; ====================================================================
-    function walk_operands(rp, ops: Vector[PlannedOperand], mode: size_t, offset: size_t) @direct true @ret_caller true @deep true returns ResolveResult linked
+    function walk_operands(rp, ops: Vector[PlannedOperand], mode: size_t, offset: size_t) @direct true @ret_nonlocal true @deep true returns ResolveResult linked
 
 
 
@@ -1006,7 +1006,7 @@ define semantic
 
 
 
-    function walk_operands_opt(rp, opt: ref[Vector[PlannedOperand]]?, mode: size_t, offset: size_t) @direct true @ret_caller true @deep true returns ResolveResult linked
+    function walk_operands_opt(rp, opt: ref[Vector[PlannedOperand]]?, mode: size_t, offset: size_t) @direct true @ret_nonlocal true @deep true returns ResolveResult linked
 
 
 
@@ -1183,14 +1183,14 @@ define semantic
 
 
 
-    function walk_call(rp, c: PlannedCall, mode: size_t, offset: size_t) @direct true @ret_caller true @deep true returns ResolveResult linked
+    function walk_call(rp, c: PlannedCall, mode: size_t, offset: size_t) @direct true @ret_nonlocal true @deep true returns ResolveResult linked
 
 
 
 
 
 
-    function walk_tuple(rp, t: PlannedTuple, mode: size_t, offset: size_t) @direct true @ret_caller true @deep true returns ResolveResult linked
+    function walk_tuple(rp, t: PlannedTuple, mode: size_t, offset: size_t) @direct true @ret_nonlocal true @deep true returns ResolveResult linked
 
 
 
@@ -1215,14 +1215,14 @@ define semantic
 
 
 
-    function walk_block(rp, b: PlannedBlock, mode: size_t, offset: size_t) @direct true @ret_caller true @deep true returns ResolveResult linked
+    function walk_block(rp, b: PlannedBlock, mode: size_t, offset: size_t) @direct true @ret_nonlocal true @deep true returns ResolveResult linked
 
 
 
 
 
 
-    function walk_if(rp, iff: PlannedIf, mode: size_t, offset: size_t) @direct true @ret_caller true @deep true returns ResolveResult linked
+    function walk_if(rp, iff: PlannedIf, mode: size_t, offset: size_t) @direct true @ret_nonlocal true @deep true returns ResolveResult linked
 
 
 
@@ -1240,7 +1240,7 @@ define semantic
 
 
 
-    function walk_match(rp, m: PlannedMatch, mode: size_t, offset: size_t) @direct true @ret_caller true @deep true returns ResolveResult linked
+    function walk_match(rp, m: PlannedMatch, mode: size_t, offset: size_t) @direct true @ret_nonlocal true @deep true returns ResolveResult linked
 
 
 
@@ -1272,7 +1272,7 @@ define semantic
 
 
 
-    function walk_choose(rp, ch: PlannedChoose, mode: size_t, offset: size_t) @direct true @ret_caller true @deep true returns ResolveResult linked
+    function walk_choose(rp, ch: PlannedChoose, mode: size_t, offset: size_t) @direct true @ret_nonlocal true @deep true returns ResolveResult linked
 
 
 
@@ -1320,7 +1320,7 @@ define semantic
 
 
 
-    function walk_try(rp, tr: PlannedTry, mode: size_t, offset: size_t) @direct true @ret_caller true @deep true returns ResolveResult linked
+    function walk_try(rp, tr: PlannedTry, mode: size_t, offset: size_t) @direct true @deep true returns ResolveResult linked
 
 
 

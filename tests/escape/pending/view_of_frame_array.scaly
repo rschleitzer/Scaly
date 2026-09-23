@@ -1,0 +1,21 @@
+; A view into a frame-local Array's buffer, kept by the callee: the buffer is on
+; this frame's page, so the view dangles once make returns. The deep gate must
+; reject it; the control posp_view_of_host_array.scaly (the same Array built on
+; a named page) must pass. Both hinge on the receiver of `as_slice` — a class-3
+; result — being read at the right index (2026-09-23: the index ran one past
+; the receiver, and every such view kept its Local stamp).
+define Keeper (var locs: Slice[int])
+
+procedure keep(mutable k: ref[Keeper], s: Slice[int])
+    set k.locs: s
+
+procedure make(mutable k: ref[Keeper])
+{
+    let a Array[int]()
+    a.add(1)
+    keep(k, a.as_slice())
+}
+
+var k Keeper(null)
+make(&k)
+print "done\n"

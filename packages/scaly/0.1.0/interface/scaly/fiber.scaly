@@ -1018,7 +1018,7 @@ define Scheduler
     ; Scheduler.task_arg — cast an fd through size_t), and put it at the
     ; ready-queue tail. Callable from the main context and from inside a
     ; running task alike. Non-default stack sizes bypass the stack pool.
-    procedure spawn_sized(mutable fn: pointer[void], mutable arg: pointer[void], size: size_t) @ret_caller true @deep true returns ref[SchedTask] linked
+    procedure spawn_sized(mutable fn: pointer[void], mutable arg: pointer[void], size: size_t) @deep true returns ref[SchedTask] linked
 
 
 
@@ -1028,14 +1028,14 @@ define Scheduler
 
 
     ; spawn_sized with the default stack size.
-    procedure spawn_arg(mutable fn: pointer[void], mutable arg: pointer[void]) @ret_caller true @deep true returns ref[SchedTask] linked
+    procedure spawn_arg(mutable fn: pointer[void], mutable arg: pointer[void]) @deep true returns ref[SchedTask] linked
 
 
 
 
 
     ; spawn_arg without an argument.
-    procedure spawn(mutable fn: pointer[void]) @ret_caller true @deep true returns ref[SchedTask] linked
+    procedure spawn(mutable fn: pointer[void]) @deep true returns ref[SchedTask] linked
 
 
     ; The running task's spawn_arg argument (null on the main context).
@@ -1962,7 +1962,7 @@ define Channel
     ; the record is shared cross-thread and must not sit in any fiber's
     ; or scheduler's region). Sends never block. The creator holds the
     ; first send handle.
-    procedure create() @ret_caller true @deep true returns ref[Channel] linked
+    procedure create() @deep true returns ref[Channel] linked
 
 
 
@@ -1970,7 +1970,7 @@ define Channel
     ; Create a channel with a bounded queue: at most `capacity`
     ; undelivered messages, after which a send BLOCKS until a receiver
     ; frees a slot (backpressure). capacity 0 is unbounded (== create).
-    procedure create_bounded(capacity: i64) @ret_caller true @deep true returns ref[Channel] linked
+    procedure create_bounded(capacity: i64) @deep true returns ref[Channel] linked
 
 
 
@@ -2470,7 +2470,7 @@ define TaskGroup
     ; was created. A worker installs one only if it did -- so a program that
     ; catches nothing keeps exactly today's behaviour, message and code
     ; included, and pays nothing (TRAPS.md 3.19).
-    procedure create() @ret_caller true @deep true returns ref[TaskGroup] io linked
+    procedure create() @deep true returns ref[TaskGroup] io linked
 
 
 
@@ -2695,7 +2695,7 @@ define TaskPool
     ; Start a pool of nworkers OS threads (clamped to at least one).
     ; Traps (exit 112) when the OS refuses the pipe; a refused thread
     ; traps in Thread.spawn (exit 109).
-    procedure create(nworkers: i64) @ret_caller true @deep true returns ref[TaskPool] io linked
+    procedure create(nworkers: i64) @ret_nonlocal true @deep true returns ref[TaskPool] io linked
 
 
 
@@ -2848,7 +2848,7 @@ define TaskPool
     ; Reached through the TLS cell task_default_pool (never handed to
     ; another thread's TLS — workers reach the pool via their spawn
     ; cells like any pool).
-    procedure default_pool() @ret_caller true @deep true returns ref[TaskPool] io linked
+    procedure default_pool() @ret_nonlocal true @deep true returns ref[TaskPool] io linked
 
 
 

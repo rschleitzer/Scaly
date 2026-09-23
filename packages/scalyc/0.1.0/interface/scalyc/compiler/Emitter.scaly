@@ -703,7 +703,7 @@ define Emitter
         ; a single-ptr-field struct param arrives as a stack-alloca alias under
         ; the stage-0/1 ABI (s34/s36), so LLVMSetSubprogram would get a garbage
         ; handle. The field read is unaffected.
-        procedure set_function_debug_scope(mutable this, mutable func: PlannedFunction) @ret_caller true @deep true @deep_this_2 true linked
+        procedure set_function_debug_scope(mutable this, mutable func: PlannedFunction) @deep true @deep_this_2 true linked
 
 
 
@@ -7523,7 +7523,7 @@ define Emitter
         ; the emitter crashed on them). dep_object_symbols: the mangled names those
         ; objects define, so emit_jit_stubs leaves them as declarations. Both null
         ; when the program has no non-scaly dependencies (behavior unchanged).
-        procedure jit_run(mutable this, mutable plan: Plan, mutable module_name: String, mutable fn_mangled: String, mutable dep_object_files: ref[Array[String]]?, dep_object_symbols: ref[Array[String]]) @ret_caller true @deep true @deep_into_1_4 true returns i64 io linked
+        procedure jit_run(mutable this, mutable plan: Plan, mutable module_name: String, mutable fn_mangled: String, mutable dep_object_files: ref[Array[String]]?, dep_object_symbols: ref[Array[String]]) @deep true @deep_into_1_4 true returns i64 io linked
 
 
 
@@ -7858,7 +7858,7 @@ define Emitter
 
 
         ; Emit member access chain (e.g., person.address.city)
-        procedure emit_member_access_chain(mutable this, mutable base_value: LLVMValueRef, mutable chain: Vector[PlannedMemberAccess], result_type: PlannedType) @direct true @ret_caller true @deep true returns LLVMValueRef linked
+        procedure emit_member_access_chain(mutable this, mutable base_value: LLVMValueRef, mutable chain: Vector[PlannedMemberAccess], result_type: PlannedType) @direct true @deep true returns LLVMValueRef linked
 
 
 
@@ -8390,7 +8390,7 @@ define Emitter
         ; captures from `self` (fields 1..) and call the real monomorphized lambda
         ; `real(captures..., params...)`. Mirrors a hand-written trampoline; emitted
         ; as direct IR (no body planning) with the builder saved/restored.
-        procedure emit_closure_thunk(mutable this, mutable clo: PlannedClosure, mutable clo_ty_param: LLVMTypeRef) @direct true @ret_caller true @deep true returns LLVMValueRef linked
+        procedure emit_closure_thunk(mutable this, mutable clo: PlannedClosure, mutable clo_ty_param: LLVMTypeRef) @direct true @deep true returns LLVMValueRef linked
 
 
 
@@ -12025,7 +12025,7 @@ define Emitter
 
 
         ; Emit an intrinsic function call
-        procedure emit_intrinsic_function(mutable this, mutable call: PlannedCall) @direct true @ret_caller true @deep true returns LLVMValueRef linked
+        procedure emit_intrinsic_function(mutable this, mutable call: PlannedCall) @direct true @deep true returns LLVMValueRef linked
 
 
 
@@ -17173,7 +17173,7 @@ define Emitter
 
 
         ; Emit is expression (type test)
-        procedure emit_is(mutable this, mutable is_expr: PlannedIs) @direct true @ret_caller true @deep true returns LLVMValueRef linked
+        procedure emit_is(mutable this, mutable is_expr: PlannedIs) @direct true @deep true returns LLVMValueRef linked
 
 
 
@@ -18867,7 +18867,7 @@ define Emitter
 
 
         ; Helper for member field assignment
-        procedure emit_member_assignment(mutable this, mutable var_ptr: LLVMValueRef, mutable planned_var: PlannedVariable, mutable members: ref[Vector[PlannedMemberAccess]]?, mutable value: LLVMValueRef) @direct true @ret_caller true @deep true returns LLVMValueRef linked
+        procedure emit_member_assignment(mutable this, mutable var_ptr: LLVMValueRef, mutable planned_var: PlannedVariable, mutable members: ref[Vector[PlannedMemberAccess]]?, mutable value: LLVMValueRef) @direct true @deep true returns LLVMValueRef linked
 
 
 
@@ -19604,7 +19604,7 @@ define Emitter
         ; ========================================================================
 
         ; Push a loop context onto the stack
-        procedure push_loop(mutable this, exit_block: LLVMBasicBlockRef, continue_block: LLVMBasicBlockRef, loop_label: String, result_slot: LLVMValueRef) @ret_caller true @deep true linked
+        procedure push_loop(mutable this, exit_block: LLVMBasicBlockRef, continue_block: LLVMBasicBlockRef, loop_label: String, result_slot: LLVMValueRef) @deep true linked
 
 
 

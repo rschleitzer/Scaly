@@ -782,7 +782,7 @@ procedure reset_page(p: ref[Page]) @deep true linked
 ; Bucket creation
 ; --------------------------------------------------------------------------
 
-procedure create_stack_bucket(mutable prev: pointer[StackBucketHeader]) @ret_caller true @deep true returns pointer[StackBucketHeader] linked
+procedure create_stack_bucket(mutable prev: pointer[StackBucketHeader]) @deep true returns pointer[StackBucketHeader] linked
 
 
 
@@ -797,7 +797,7 @@ procedure create_stack_bucket(mutable prev: pointer[StackBucketHeader]) @ret_cal
 
 
 
-function create_heap_bucket() @ret_caller true @deep true returns ref[HeapBucketHeader] linked
+function create_heap_bucket() @deep true returns ref[HeapBucketHeader] linked
 
 
 

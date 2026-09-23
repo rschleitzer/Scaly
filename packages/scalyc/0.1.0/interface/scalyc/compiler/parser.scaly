@@ -111,7 +111,7 @@ define Parser
 
 
 
-    procedure parse_literal_token(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns Literal throws ParserError linked
+    procedure parse_literal_token(mutable this: Parser) @page true @direct true @deep true returns Literal throws ParserError linked
 
 
 
@@ -149,7 +149,7 @@ define Parser
 
 
 
-    procedure parse_program(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns ProgramSyntax throws ParserError linked
+    procedure parse_program(mutable this: Parser) @page true @direct true @deep true returns ProgramSyntax throws ParserError linked
 
 
 
@@ -241,7 +241,7 @@ define Parser
 
 
 
-    procedure parse_declaration(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns DeclarationSyntax throws ParserError linked
+    procedure parse_declaration(mutable this: Parser) @page true @direct true @deep true returns DeclarationSyntax throws ParserError linked
 
 
 
@@ -376,7 +376,7 @@ define Parser
 
 
 
-    procedure parse_private(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns PrivateSyntax throws ParserError linked
+    procedure parse_private(mutable this: Parser) @page true @direct true @deep true returns PrivateSyntax throws ParserError linked
 
 
 
@@ -402,7 +402,7 @@ define Parser
 
 
 
-    procedure parse_export(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns ExportSyntax throws ParserError linked
+    procedure parse_export(mutable this: Parser) @page true @direct true @deep true returns ExportSyntax throws ParserError linked
 
 
 
@@ -496,7 +496,7 @@ define Parser
 
 
 
-    procedure parse_member(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns MemberSyntax throws ParserError linked
+    procedure parse_member(mutable this: Parser) @page true @direct true @deep true returns MemberSyntax throws ParserError linked
 
 
 
@@ -611,7 +611,7 @@ define Parser
 
 
 
-    procedure parse_definition(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns DefinitionSyntax throws ParserError linked
+    procedure parse_definition(mutable this: Parser) @page true @direct true @deep true returns DefinitionSyntax throws ParserError linked
 
 
 
@@ -669,7 +669,7 @@ define Parser
 
 
 
-    procedure parse_genericparameters(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns GenericParametersSyntax throws ParserError linked
+    procedure parse_genericparameters(mutable this: Parser) @page true @direct true @deep true returns GenericParametersSyntax throws ParserError linked
 
 
 
@@ -755,7 +755,7 @@ define Parser
 
 
 
-    procedure parse_concept(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns ConceptSyntax throws ParserError linked
+    procedure parse_concept(mutable this: Parser) @page true @direct true @deep true returns ConceptSyntax throws ParserError linked
 
 
 
@@ -820,7 +820,7 @@ define Parser
 
 
 
-    procedure parse_class(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns ClassSyntax throws ParserError linked
+    procedure parse_class(mutable this: Parser) @page true @direct true @deep true returns ClassSyntax throws ParserError linked
 
 
 
@@ -934,7 +934,7 @@ define Parser
 
 
 
-    procedure parse_union(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns UnionSyntax throws ParserError linked
+    procedure parse_union(mutable this: Parser) @page true @direct true @deep true returns UnionSyntax throws ParserError linked
 
 
 
@@ -1012,7 +1012,7 @@ define Parser
 
 
 
-    procedure parse_variant(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns VariantSyntax throws ParserError linked
+    procedure parse_variant(mutable this: Parser) @page true @direct true @deep true returns VariantSyntax throws ParserError linked
 
 
 
@@ -1054,7 +1054,7 @@ define Parser
 
 
 
-    procedure parse_constant(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns ConstantSyntax throws ParserError linked
+    procedure parse_constant(mutable this: Parser) @page true @direct true @deep true returns ConstantSyntax throws ParserError linked
 
 
 
@@ -1084,7 +1084,7 @@ define Parser
 
 
 
-    procedure parse_delegate(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns DelegateSyntax throws ParserError linked
+    procedure parse_delegate(mutable this: Parser) @page true @direct true @deep true returns DelegateSyntax throws ParserError linked
 
 
 
@@ -1205,7 +1205,7 @@ define Parser
 
 
 
-    procedure parse_genericargument(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns GenericArgumentSyntax throws ParserError linked
+    procedure parse_genericargument(mutable this: Parser) @page true @direct true @deep true returns GenericArgumentSyntax throws ParserError linked
 
 
 
@@ -1236,7 +1236,7 @@ define Parser
 
 
 
-    procedure parse_parameterset(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns ParameterSetSyntax throws ParserError linked
+    procedure parse_parameterset(mutable this: Parser) @page true @direct true @deep true returns ParameterSetSyntax throws ParserError linked
 
 
 
@@ -1318,7 +1318,7 @@ define Parser
 
 
 
-    procedure parse_item(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns ItemSyntax throws ParserError linked
+    procedure parse_item(mutable this: Parser) @page true @direct true @deep true returns ItemSyntax throws ParserError linked
 
 
 
@@ -1549,7 +1549,7 @@ define Parser
 
 
 
-    procedure parse_returns(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns ReturnsSyntax throws ParserError linked
+    procedure parse_returns(mutable this: Parser) @page true @direct true @deep true returns ReturnsSyntax throws ParserError linked
 
 
 
@@ -1588,7 +1588,7 @@ define Parser
 
 
 
-    procedure parse_throws(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns ThrowsSyntax throws ParserError linked
+    procedure parse_throws(mutable this: Parser) @page true @direct true @deep true returns ThrowsSyntax throws ParserError linked
 
 
 
@@ -1656,7 +1656,7 @@ define Parser
 
 
 
-    procedure parse_use(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns UseSyntax throws ParserError linked
+    procedure parse_use(mutable this: Parser) @page true @direct true @deep true returns UseSyntax throws ParserError linked
 
 
 
@@ -1684,7 +1684,7 @@ define Parser
 
 
 
-    procedure parse_implement(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns ImplementSyntax throws ParserError linked
+    procedure parse_implement(mutable this: Parser) @page true @direct true @deep true returns ImplementSyntax throws ParserError linked
 
 
 
@@ -1757,7 +1757,7 @@ define Parser
 
 
 
-    procedure parse_trait(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns TraitSyntax throws ParserError linked
+    procedure parse_trait(mutable this: Parser) @page true @direct true @deep true returns TraitSyntax throws ParserError linked
 
 
 
@@ -1870,7 +1870,7 @@ define Parser
 
 
 
-    procedure parse_method(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns MethodSyntax throws ParserError linked
+    procedure parse_method(mutable this: Parser) @page true @direct true @deep true returns MethodSyntax throws ParserError linked
 
 
 
@@ -1934,7 +1934,7 @@ define Parser
 
 
 
-    procedure parse_init(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns InitSyntax throws ParserError linked
+    procedure parse_init(mutable this: Parser) @page true @direct true @deep true returns InitSyntax throws ParserError linked
 
 
 
@@ -1990,7 +1990,7 @@ define Parser
 
 
 
-    procedure parse_deinit(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns DeInitSyntax throws ParserError linked
+    procedure parse_deinit(mutable this: Parser) @page true @direct true @deep true returns DeInitSyntax throws ParserError linked
 
 
 
@@ -2020,7 +2020,7 @@ define Parser
 
 
 
-    procedure parse_function(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns FunctionSyntax throws ParserError linked
+    procedure parse_function(mutable this: Parser) @page true @direct true @deep true returns FunctionSyntax throws ParserError linked
 
 
 
@@ -2046,7 +2046,7 @@ define Parser
 
 
 
-    procedure parse_procedure(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns ProcedureSyntax throws ParserError linked
+    procedure parse_procedure(mutable this: Parser) @page true @direct true @deep true returns ProcedureSyntax throws ParserError linked
 
 
 
@@ -2072,7 +2072,7 @@ define Parser
 
 
 
-    procedure parse_operator(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns OperatorSyntax throws ParserError linked
+    procedure parse_operator(mutable this: Parser) @page true @direct true @deep true returns OperatorSyntax throws ParserError linked
 
 
 
@@ -2098,7 +2098,7 @@ define Parser
 
 
 
-    procedure parse_target(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns TargetSyntax throws ParserError linked
+    procedure parse_target(mutable this: Parser) @page true @direct true @deep true returns TargetSyntax throws ParserError linked
 
 
 
@@ -2123,7 +2123,7 @@ define Parser
 
 
 
-    procedure parse_named(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns NamedSyntax throws ParserError linked
+    procedure parse_named(mutable this: Parser) @page true @direct true @deep true returns NamedSyntax throws ParserError linked
 
 
 
@@ -2150,7 +2150,7 @@ define Parser
 
 
 
-    procedure parse_routine(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns RoutineSyntax throws ParserError linked
+    procedure parse_routine(mutable this: Parser) @page true @direct true @deep true returns RoutineSyntax throws ParserError linked
 
 
 
@@ -2298,7 +2298,7 @@ define Parser
 
 
 
-    procedure parse_implementation(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns ImplementationSyntax throws ParserError linked
+    procedure parse_implementation(mutable this: Parser) @page true @direct true @deep true returns ImplementationSyntax throws ParserError linked
 
 
 
@@ -2455,7 +2455,7 @@ define Parser
 
 
 
-    procedure parse_extend(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns ExtendSyntax throws ParserError linked
+    procedure parse_extend(mutable this: Parser) @page true @direct true @deep true returns ExtendSyntax throws ParserError linked
 
 
 
@@ -2474,7 +2474,7 @@ define Parser
 
 
 
-    procedure parse_macro(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns MacroSyntax throws ParserError linked
+    procedure parse_macro(mutable this: Parser) @page true @direct true @deep true returns MacroSyntax throws ParserError linked
 
 
 
@@ -2547,7 +2547,7 @@ define Parser
 
 
 
-    procedure parse_attribute(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns AttributeSyntax throws ParserError linked
+    procedure parse_attribute(mutable this: Parser) @page true @direct true @deep true returns AttributeSyntax throws ParserError linked
 
 
 
@@ -2574,7 +2574,7 @@ define Parser
 
 
 
-    procedure parse_model(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns ModelSyntax throws ParserError linked
+    procedure parse_model(mutable this: Parser) @page true @direct true @deep true returns ModelSyntax throws ParserError linked
 
 
 
@@ -2664,7 +2664,7 @@ define Parser
 
 
 
-    procedure parse_package(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns PackageSyntax throws ParserError linked
+    procedure parse_package(mutable this: Parser) @page true @direct true @deep true returns PackageSyntax throws ParserError linked
 
 
 
@@ -2705,7 +2705,7 @@ define Parser
 
 
 
-    procedure parse_version(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns VersionSyntax throws ParserError linked
+    procedure parse_version(mutable this: Parser) @page true @direct true @deep true returns VersionSyntax throws ParserError linked
 
 
 
@@ -2731,7 +2731,7 @@ define Parser
 
 
 
-    procedure parse_initializer(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns InitializerSyntax throws ParserError linked
+    procedure parse_initializer(mutable this: Parser) @page true @direct true @deep true returns InitializerSyntax throws ParserError linked
 
 
 
@@ -2789,7 +2789,7 @@ define Parser
 
 
 
-    procedure parse_operand(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns OperandSyntax throws ParserError linked
+    procedure parse_operand(mutable this: Parser) @page true @direct true @deep true returns OperandSyntax throws ParserError linked
 
 
 
@@ -2848,7 +2848,7 @@ define Parser
 
 
 
-    procedure parse_memberaccess(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns MemberAccessSyntax throws ParserError linked
+    procedure parse_memberaccess(mutable this: Parser) @page true @direct true @deep true returns MemberAccessSyntax throws ParserError linked
 
 
 
@@ -2874,7 +2874,7 @@ define Parser
 
 
 
-    procedure parse_expression(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns ExpressionSyntax throws ParserError linked
+    procedure parse_expression(mutable this: Parser) @page true @direct true @deep true returns ExpressionSyntax throws ParserError linked
 
 
 
@@ -3059,7 +3059,7 @@ define Parser
 
 
 
-    procedure parse_literal(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns LiteralSyntax throws ParserError linked
+    procedure parse_literal(mutable this: Parser) @page true @direct true @deep true returns LiteralSyntax throws ParserError linked
 
 
 
@@ -3132,7 +3132,7 @@ define Parser
 
 
 
-    procedure parse_component(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns ComponentSyntax throws ParserError linked
+    procedure parse_component(mutable this: Parser) @page true @direct true @deep true returns ComponentSyntax throws ParserError linked
 
 
 
@@ -3176,7 +3176,7 @@ define Parser
 
 
 
-    procedure parse_value(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns ValueSyntax throws ParserError linked
+    procedure parse_value(mutable this: Parser) @page true @direct true @deep true returns ValueSyntax throws ParserError linked
 
 
 
@@ -3215,7 +3215,7 @@ define Parser
 
 
 
-    procedure parse_vector(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns VectorSyntax throws ParserError linked
+    procedure parse_vector(mutable this: Parser) @page true @direct true @deep true returns VectorSyntax throws ParserError linked
 
 
 
@@ -3286,7 +3286,7 @@ define Parser
 
 
 
-    procedure parse_element(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns ElementSyntax throws ParserError linked
+    procedure parse_element(mutable this: Parser) @page true @direct true @deep true returns ElementSyntax throws ParserError linked
 
 
 
@@ -3331,7 +3331,7 @@ define Parser
 
 
 
-    procedure parse_if(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns IfSyntax throws ParserError linked
+    procedure parse_if(mutable this: Parser) @page true @direct true @deep true returns IfSyntax throws ParserError linked
 
 
 
@@ -3387,7 +3387,7 @@ define Parser
 
 
 
-    procedure parse_then(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns ThenSyntax throws ParserError linked
+    procedure parse_then(mutable this: Parser) @page true @direct true @deep true returns ThenSyntax throws ParserError linked
 
 
 
@@ -3404,7 +3404,7 @@ define Parser
 
 
 
-    procedure parse_else(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns ElseSyntax throws ParserError linked
+    procedure parse_else(mutable this: Parser) @page true @direct true @deep true returns ElseSyntax throws ParserError linked
 
 
 
@@ -3437,7 +3437,7 @@ define Parser
 
 
 
-    procedure parse_match(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns MatchSyntax throws ParserError linked
+    procedure parse_match(mutable this: Parser) @page true @direct true @deep true returns MatchSyntax throws ParserError linked
 
 
 
@@ -3522,7 +3522,7 @@ define Parser
 
 
 
-    procedure parse_branch(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns BranchSyntax throws ParserError linked
+    procedure parse_branch(mutable this: Parser) @page true @direct true @deep true returns BranchSyntax throws ParserError linked
 
 
 
@@ -3587,7 +3587,7 @@ define Parser
 
 
 
-    procedure parse_case(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns CaseSyntax throws ParserError linked
+    procedure parse_case(mutable this: Parser) @page true @direct true @deep true returns CaseSyntax throws ParserError linked
 
 
 
@@ -3613,7 +3613,7 @@ define Parser
 
 
 
-    procedure parse_while(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns WhileSyntax throws ParserError linked
+    procedure parse_while(mutable this: Parser) @page true @direct true @deep true returns WhileSyntax throws ParserError linked
 
 
 
@@ -3671,7 +3671,7 @@ define Parser
 
 
 
-    procedure parse_choose(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns ChooseSyntax throws ParserError linked
+    procedure parse_choose(mutable this: Parser) @page true @direct true @deep true returns ChooseSyntax throws ParserError linked
 
 
 
@@ -3726,7 +3726,7 @@ define Parser
 
 
 
-    procedure parse_try(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns TrySyntax throws ParserError linked
+    procedure parse_try(mutable this: Parser) @page true @direct true @deep true returns TrySyntax throws ParserError linked
 
 
 
@@ -3794,7 +3794,7 @@ define Parser
 
 
 
-    procedure parse_condition(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns ConditionSyntax throws ParserError linked
+    procedure parse_condition(mutable this: Parser) @page true @direct true @deep true returns ConditionSyntax throws ParserError linked
 
 
 
@@ -3848,7 +3848,7 @@ define Parser
 
 
 
-    procedure parse_when(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns WhenSyntax throws ParserError linked
+    procedure parse_when(mutable this: Parser) @page true @direct true @deep true returns WhenSyntax throws ParserError linked
 
 
 
@@ -3928,7 +3928,7 @@ define Parser
 
 
 
-    procedure parse_statement(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns StatementSyntax throws ParserError linked
+    procedure parse_statement(mutable this: Parser) @page true @direct true @deep true returns StatementSyntax throws ParserError linked
 
 
 
@@ -4033,7 +4033,7 @@ define Parser
 
 
 
-    procedure parse_let(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns LetSyntax throws ParserError linked
+    procedure parse_let(mutable this: Parser) @page true @direct true @deep true returns LetSyntax throws ParserError linked
 
 
 
@@ -4059,7 +4059,7 @@ define Parser
 
 
 
-    procedure parse_var(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns VarSyntax throws ParserError linked
+    procedure parse_var(mutable this: Parser) @page true @direct true @deep true returns VarSyntax throws ParserError linked
 
 
 
@@ -4085,7 +4085,7 @@ define Parser
 
 
 
-    procedure parse_mutable(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns MutableSyntax throws ParserError linked
+    procedure parse_mutable(mutable this: Parser) @page true @direct true @deep true returns MutableSyntax throws ParserError linked
 
 
 
@@ -4124,7 +4124,7 @@ define Parser
 
 
 
-    procedure parse_shared(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns SharedSyntax throws ParserError linked
+    procedure parse_shared(mutable this: Parser) @page true @direct true @deep true returns SharedSyntax throws ParserError linked
 
 
 
@@ -4188,7 +4188,7 @@ define Parser
 
 
 
-    procedure parse_binding(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns BindingSyntax throws ParserError linked
+    procedure parse_binding(mutable this: Parser) @page true @direct true @deep true returns BindingSyntax throws ParserError linked
 
 
 
@@ -4226,7 +4226,7 @@ define Parser
 
 
 
-    procedure parse_bindingannotation(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns BindingAnnotationSyntax throws ParserError linked
+    procedure parse_bindingannotation(mutable this: Parser) @page true @direct true @deep true returns BindingAnnotationSyntax throws ParserError linked
 
 
 
@@ -4281,7 +4281,7 @@ define Parser
 
 
 
-    procedure parse_bindingspec(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns BindingSpecSyntax throws ParserError linked
+    procedure parse_bindingspec(mutable this: Parser) @page true @direct true @deep true returns BindingSpecSyntax throws ParserError linked
 
 
 
@@ -4401,7 +4401,7 @@ define Parser
 
 
 
-    procedure parse_part(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns PartSyntax throws ParserError linked
+    procedure parse_part(mutable this: Parser) @page true @direct true @deep true returns PartSyntax throws ParserError linked
 
 
 
@@ -4426,7 +4426,7 @@ define Parser
 
 
 
-    procedure parse_field(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns FieldSyntax throws ParserError linked
+    procedure parse_field(mutable this: Parser) @page true @direct true @deep true returns FieldSyntax throws ParserError linked
 
 
 
@@ -4481,7 +4481,7 @@ define Parser
 
 
 
-    procedure parse_property(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns PropertySyntax throws ParserError linked
+    procedure parse_property(mutable this: Parser) @page true @direct true @deep true returns PropertySyntax throws ParserError linked
 
 
 
@@ -4555,7 +4555,7 @@ define Parser
 
 
 
-    procedure parse_typeannotation(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns TypeAnnotationSyntax throws ParserError linked
+    procedure parse_typeannotation(mutable this: Parser) @page true @direct true @deep true returns TypeAnnotationSyntax throws ParserError linked
 
 
 
@@ -4759,7 +4759,7 @@ define Parser
 
 
 
-    procedure parse_lambda(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns LambdaSyntax throws ParserError linked
+    procedure parse_lambda(mutable this: Parser) @page true @direct true @deep true returns LambdaSyntax throws ParserError linked
 
 
 
@@ -4802,7 +4802,7 @@ define Parser
 
 
 
-    procedure parse_for(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns ForSyntax throws ParserError linked
+    procedure parse_for(mutable this: Parser) @page true @direct true @deep true returns ForSyntax throws ParserError linked
 
 
 
@@ -4895,7 +4895,7 @@ define Parser
 
 
 
-    procedure parse_repeat(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns RepeatSyntax throws ParserError linked
+    procedure parse_repeat(mutable this: Parser) @page true @direct true @deep true returns RepeatSyntax throws ParserError linked
 
 
 
@@ -4965,7 +4965,7 @@ define Parser
 
 
 
-    procedure parse_action(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns ActionSyntax throws ParserError linked
+    procedure parse_action(mutable this: Parser) @page true @direct true @deep true returns ActionSyntax throws ParserError linked
 
 
 
@@ -5000,7 +5000,7 @@ define Parser
 
 
 
-    procedure parse_operation(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns OperationSyntax throws ParserError linked
+    procedure parse_operation(mutable this: Parser) @page true @direct true @deep true returns OperationSyntax throws ParserError linked
 
 
 
@@ -5017,7 +5017,7 @@ define Parser
 
 
 
-    procedure parse_set(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns SetSyntax throws ParserError linked
+    procedure parse_set(mutable this: Parser) @page true @direct true @deep true returns SetSyntax throws ParserError linked
 
 
 
@@ -5101,7 +5101,7 @@ define Parser
 
 
 
-    procedure parse_sizeof(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns SizeOfSyntax throws ParserError linked
+    procedure parse_sizeof(mutable this: Parser) @page true @direct true @deep true returns SizeOfSyntax throws ParserError linked
 
 
 
@@ -5127,7 +5127,7 @@ define Parser
 
 
 
-    procedure parse_alignof(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns AlignOfSyntax throws ParserError linked
+    procedure parse_alignof(mutable this: Parser) @page true @direct true @deep true returns AlignOfSyntax throws ParserError linked
 
 
 
@@ -5153,7 +5153,7 @@ define Parser
 
 
 
-    procedure parse_is(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns IsSyntax throws ParserError linked
+    procedure parse_is(mutable this: Parser) @page true @direct true @deep true returns IsSyntax throws ParserError linked
 
 
 
@@ -5179,7 +5179,7 @@ define Parser
 
 
 
-    procedure parse_as(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns AsSyntax throws ParserError linked
+    procedure parse_as(mutable this: Parser) @page true @direct true @deep true returns AsSyntax throws ParserError linked
 
 
 
@@ -5234,7 +5234,7 @@ define Parser
 
 
 
-    procedure parse_type(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns TypeSyntax throws ParserError linked
+    procedure parse_type(mutable this: Parser) @page true @direct true @deep true returns TypeSyntax throws ParserError linked
 
 
 
@@ -5361,7 +5361,7 @@ define Parser
 
 
 
-    procedure parse_lifetime(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns LifetimeSyntax throws ParserError linked
+    procedure parse_lifetime(mutable this: Parser) @page true @direct true @deep true returns LifetimeSyntax throws ParserError linked
 
 
 
