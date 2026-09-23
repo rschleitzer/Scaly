@@ -103,14 +103,14 @@ define symindex
     ; `at(i)` (bounds-checked, answers ref[IdxSlot]) instead of pointer
     ; arithmetic. Inside the namespace, so `symindex.idx_view()` and the
     ; definition mangle alike.
-    procedure idx_view() @page true @direct true returns Slice[IdxSlot] reads idx_slots linked
+    procedure idx_view() @page true @direct true @deep true returns Slice[IdxSlot] reads idx_slots linked
 
-    procedure dir_view() @page true @direct true returns Slice[DirSlot] reads dir_slots linked
+    procedure dir_view() @page true @direct true @deep true returns Slice[DirSlot] reads dir_slots linked
 
 
     ; Lazily allocate + zero the slot array on first use. A malloc failure
     ; leaves idx_slots null; callers then treat every file as a cache miss.
-    procedure ensure() mutable idx_slots reads idx_slots linked
+    procedure ensure() @deep true mutable idx_slots reads idx_slots linked
 
 
 
@@ -137,14 +137,14 @@ define symindex
 
     ; Start a new request epoch. Called once per worker request, which is what
     ; makes `fresh` mean "already validated in THIS request" — see idx_epoch.
-    procedure begin_request() mutable idx_epoch reads idx_epoch linked
+    procedure begin_request() @deep true mutable idx_epoch reads idx_epoch linked
 
 
 
 
     ; True when `path`'s cached blob was already validated during this request,
     ; so the caller may use it WITHOUT reading and hashing the file again.
-    procedure fresh(path: String) @ret_nonlocal true returns bool reads idx_epoch linked
+    procedure fresh(path: String) @ret_nonlocal true @deep true returns bool reads idx_epoch linked
 
 
 
@@ -159,7 +159,7 @@ define symindex
 
     ; Record that `path`'s cached blob is valid as of this request. Called
     ; after a read+hash confirmed (or refreshed) the slot.
-    procedure touch(path: String) mutable idx_slots reads idx_slots linked
+    procedure touch(path: String) @deep true mutable idx_slots reads idx_slots linked
 
 
 
@@ -169,7 +169,7 @@ define symindex
 
 
     ; Index of the live slot whose path matches, or -1.
-    procedure find(path: String) @ret_nonlocal true returns int reads idx_slots linked
+    procedure find(path: String) @ret_nonlocal true @deep true returns int reads idx_slots linked
 
 
 
@@ -191,7 +191,7 @@ define symindex
 
     ; True when `path` is cached AND was built from content hashing to `chash`
     ; — i.e. the cached blob is still valid for the file's current content.
-    procedure valid(path: String, chash: size_t) @ret_nonlocal true returns bool reads idx_slots linked
+    procedure valid(path: String, chash: size_t) @ret_nonlocal true @deep true returns bool reads idx_slots linked
 
 
 
@@ -206,7 +206,7 @@ define symindex
     ; The cached blob for `path` (a fresh copy on the caller's page), or "" on a
     ; miss. Callers should gate on valid() first; an empty blob is a legitimate
     ; cached value (a file with no symbols).
-    procedure get_blob(rp, path: String) @direct true @ret_caller true returns String reads idx_slots linked
+    procedure get_blob(rp, path: String) @direct true @ret_caller true @deep true returns String reads idx_slots linked
 
 
 
@@ -220,7 +220,7 @@ define symindex
 
     ; Replace slot `s`'s blob with a fresh malloc'd copy of `blob`'s bytes,
     ; freeing the previous copy. An empty blob leaves blob_data null.
-    procedure set_blob(mutable s: ref[IdxSlot], blob: String) linked
+    procedure set_blob(mutable s: ref[IdxSlot], blob: String) @deep true linked
 
 
 
@@ -242,7 +242,7 @@ define symindex
 
     ; Set slot `s`'s path to a fresh malloc'd copy of `path`'s bytes, freeing
     ; any previous copy (slots are reused after overflow eviction).
-    procedure set_path(mutable s: ref[IdxSlot], path: String) linked
+    procedure set_path(mutable s: ref[IdxSlot], path: String) @deep true linked
 
 
 
@@ -264,7 +264,7 @@ define symindex
 
     ; Record (or replace) the symbol blob + content hash for `path`. Replacing
     ; frees the old blob first (bounded: one live copy per indexed file).
-    procedure put(path: String, chash: size_t, blob: String) mutable idx_slots reads idx_slots linked
+    procedure put(path: String, chash: size_t, blob: String) @deep true mutable idx_slots reads idx_slots linked
 
 
 
@@ -309,7 +309,7 @@ define symindex
     ; Small and separate from the file table on purpose: a request touches one
     ; or two directories, while the file table holds thousands of entries and is
     ; searched linearly.
-    procedure ensure_dirs() mutable dir_slots reads dir_slots linked
+    procedure ensure_dirs() @deep true mutable dir_slots reads dir_slots linked
 
 
 
@@ -333,7 +333,7 @@ define symindex
 
 
     ; Index of the live dir slot for `dir` that was filled in THIS request, or -1.
-    procedure find_dir(dir: String) @ret_nonlocal true returns int reads dir_slots linked
+    procedure find_dir(dir: String) @ret_nonlocal true @deep true returns int reads dir_slots linked
 
 
 
@@ -354,7 +354,7 @@ define symindex
 
 
     ; True when this request already listed `dir`.
-    procedure has_listing(dir: String) @ret_nonlocal true returns bool reads idx_epoch linked
+    procedure has_listing(dir: String) @ret_nonlocal true @deep true returns bool reads idx_epoch linked
 
 
 
@@ -362,7 +362,7 @@ define symindex
 
 
     ; The listing cached for `dir` in this request ("" when there is none).
-    procedure get_listing(rp, dir: String) @direct true @ret_caller true returns String reads dir_slots linked
+    procedure get_listing(rp, dir: String) @direct true @ret_caller true @deep true returns String reads dir_slots linked
 
 
 
@@ -376,7 +376,7 @@ define symindex
     ; Cache `listing` for `dir` for the rest of this request. Slots are reused
     ; round-robin: an entry from an earlier epoch is dead by definition, so the
     ; first stale slot is always free to take.
-    procedure put_listing(dir: String, listing: String) mutable dir_slots reads dir_slots linked
+    procedure put_listing(dir: String, listing: String) @deep true mutable dir_slots reads dir_slots linked
 
 
 
@@ -404,7 +404,7 @@ define symindex
 
 
 
-    procedure set_dir_path(mutable s: ref[DirSlot], dir: String) linked
+    procedure set_dir_path(mutable s: ref[DirSlot], dir: String) @deep true linked
 
 
 
@@ -423,7 +423,7 @@ define symindex
 
 
 
-    procedure set_dir_list(mutable s: ref[DirSlot], listing: String) linked
+    procedure set_dir_list(mutable s: ref[DirSlot], listing: String) @deep true linked
 
 
 

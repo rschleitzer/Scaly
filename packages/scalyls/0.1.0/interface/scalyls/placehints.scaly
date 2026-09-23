@@ -87,7 +87,7 @@ define placehints
 {
     ; The placement hints for the packed "<sl> <sc> <el> <ec>" range as a
     ; COMMA-JOINED FRAGMENT of InlayHint objects, or "".
-    procedure fragment(rp, mutable uri: String, mutable text: String, packed: String) @direct true @ret_caller true returns String io mutable lc_col, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used reads ph_used linked
+    procedure fragment(rp, mutable uri: String, mutable text: String, packed: String) @direct true @ret_caller true @deep true returns String io mutable lc_col, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used reads ph_used linked
 
 
 
@@ -127,7 +127,7 @@ define placehints
     ; load-bearing file in this server for a cosmetic gain. The shape it answers
     ; is known exactly — `[]` or `[...]` — so `[]` becomes `[mine]` and anything
     ; else takes `,mine` before its final byte.
-    procedure merged(rp, mutable repaired: String, mutable source: String, mutable uri: String, packed: String) @direct true @ret_caller true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig reads ph_used linked
+    procedure merged(rp, mutable repaired: String, mutable source: String, mutable uri: String, packed: String) @direct true @ret_caller true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig reads ph_used linked
 
 
 
@@ -161,7 +161,7 @@ define placehints
     ; ends after the callee name and its arguments are outside. The start is the
     ; one end of it that reliably sits on the construction's first token.
     ; ====================================================================
-    procedure build(rp, mutable path: String, mutable text: String) @direct true @ret_caller true returns String io mutable modeler_error_count reads modeler_error_count linked
+    procedure build(rp, mutable path: String, mutable text: String) @direct true @ret_caller true @deep true @deep_beyond_1 true returns String io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -221,7 +221,7 @@ define placehints
     ; module-level global's initializer is an operand list of its own. Walking
     ; only `functions` misses every constructor body — which in this tree is where
     ; a large share of the interesting constructions live.
-    procedure collect_plan(mutable sb: ref[StringBuilder], plan: Plan, file: FileSyntax, own_statements: bool) linked
+    procedure collect_plan(mutable sb: ref[StringBuilder], plan: Plan, file: FileSyntax, own_statements: bool) @deep true linked
 
 
 
@@ -297,7 +297,7 @@ define placehints
 
 
 
-    procedure collect_structure(mutable sb: ref[StringBuilder], st: PlannedStructure, file: FileSyntax) @ret_nonlocal true linked
+    procedure collect_structure(mutable sb: ref[StringBuilder], st: PlannedStructure, file: FileSyntax) @ret_nonlocal true @deep true linked
 
 
 
@@ -356,7 +356,7 @@ define placehints
 
 
 
-    procedure collect_union(mutable sb: ref[StringBuilder], un: PlannedUnion, file: FileSyntax) linked
+    procedure collect_union(mutable sb: ref[StringBuilder], un: PlannedUnion, file: FileSyntax) @deep true linked
 
 
 
@@ -392,7 +392,7 @@ define placehints
 
 
 
-    procedure collect_impl(mutable sb: ref[StringBuilder], has_page: bool, impl: PlannedImplementation) @ret_nonlocal true linked
+    procedure collect_impl(mutable sb: ref[StringBuilder], has_page: bool, impl: PlannedImplementation) @ret_nonlocal true @deep true linked
 
 
 
@@ -411,39 +411,13 @@ define placehints
     ; operand's children are not inside its span, so there is nothing to prune on.
     ; ====================================================================
 
-    procedure collect_action(mutable sb: ref[StringBuilder], has_page: bool, act: PlannedAction) @ret_nonlocal true linked
+    procedure collect_action(mutable sb: ref[StringBuilder], has_page: bool, act: PlannedAction) @ret_nonlocal true @deep true linked
 
 
 
 
 
-    procedure collect_statement(mutable sb: ref[StringBuilder], has_page: bool, stmt: PlannedStatement) @ret_nonlocal true linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    procedure collect_statement_opt(mutable sb: ref[StringBuilder], has_page: bool, opt: ref[PlannedStatement]?) @ret_nonlocal true linked
-
-
-
-
-
-
-
-
-    procedure collect_operands_opt(mutable sb: ref[StringBuilder], has_page: bool, opt: ref[Vector[PlannedOperand]]?) linked
+    procedure collect_statement(mutable sb: ref[StringBuilder], has_page: bool, stmt: PlannedStatement) @ret_nonlocal true @deep true linked
 
 
 
@@ -458,7 +432,9 @@ define placehints
 
 
 
-    procedure collect_operand_opt(mutable sb: ref[StringBuilder], has_page: bool, opt: ref[PlannedOperand]?) @ret_nonlocal true linked
+
+
+    procedure collect_statement_opt(mutable sb: ref[StringBuilder], has_page: bool, opt: ref[PlannedStatement]?) @ret_nonlocal true @deep true linked
 
 
 
@@ -467,7 +443,7 @@ define placehints
 
 
 
-    procedure collect_operand(mutable sb: ref[StringBuilder], has_page: bool, op: PlannedOperand) @ret_nonlocal true linked
+    procedure collect_operands_opt(mutable sb: ref[StringBuilder], has_page: bool, opt: ref[Vector[PlannedOperand]]?) @deep true linked
 
 
 
@@ -477,7 +453,31 @@ define placehints
 
 
 
-    procedure collect_expr(mutable sb: ref[StringBuilder], has_page: bool, expr: PlannedExpression, loc: Span) linked
+
+
+
+
+
+    procedure collect_operand_opt(mutable sb: ref[StringBuilder], has_page: bool, opt: ref[PlannedOperand]?) @ret_nonlocal true @deep true linked
+
+
+
+
+
+
+
+
+    procedure collect_operand(mutable sb: ref[StringBuilder], has_page: bool, op: PlannedOperand) @ret_nonlocal true @deep true linked
+
+
+
+
+
+
+
+
+
+    procedure collect_expr(mutable sb: ref[StringBuilder], has_page: bool, expr: PlannedExpression, loc: Span) @deep true linked
 
 
 
@@ -633,7 +633,7 @@ define placehints
     ; A constructor call: "C1E" in the mangled name is the discriminator
     ; Emitter.scaly:9598 routes on. Region for Local / Call / Reference, stack
     ; for anything else (emit_constructor_call_into#).
-    function label_for_call(rp, c: PlannedCall, has_page: bool) @direct true @ret_caller true returns String linked
+    function label_for_call(rp, c: PlannedCall, has_page: bool) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -650,7 +650,7 @@ define placehints
     ; while a grouping tuple carries whatever its expression yields, which for
     ; every case seen is a PRIMITIVE (symbols.is_primitive_type_name#, the same
     ; list the type hints suppress). An unnamed type answers nothing either.
-    function label_for_tuple(rp, t: PlannedTuple, has_page: bool) @direct true @ret_caller true returns String linked
+    function label_for_tuple(rp, t: PlannedTuple, has_page: bool) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -677,7 +677,7 @@ define placehints
     ; PlannedInitializer carries `page_parameter`, and an operator, a `deinit`, a
     ; global initializer and the program's top-level statements have none — so a
     ; `#` construction there reads as `stack`, which is what the emitter does.
-    function label_for_life(rp, life: Lifetime, on_region: bool, has_page: bool) @direct true @ret_caller true returns String linked
+    function label_for_life(rp, life: Lifetime, on_region: bool, has_page: bool) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -720,7 +720,7 @@ define placehints
     ; `label`: `label` is a reserved word and cannot be a binding name.)
     ; One blob line: "<offset>\t<label>\n". (The parameter is `note`, not `label`:
     ; `label` is a reserved word and cannot be a binding name.)
-    procedure emit_site(mutable sb: ref[StringBuilder], offset: size_t, note: String) @ret_nonlocal true linked
+    procedure emit_site(mutable sb: ref[StringBuilder], offset: size_t, note: String) @ret_nonlocal true @deep true linked
 
 
 
@@ -749,7 +749,7 @@ define placehints
     ; shown. Every site of this tree with more than one copy agrees (checked on
     ; Vector.scaly, where all 20 copies label both of its sites identically), and
     ; they should — same source, same escape analysis.
-    function dedupe(rp, blob: String) @direct true @ret_caller true returns String linked
+    function dedupe(rp, blob: String) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -793,7 +793,7 @@ define placehints
 
 
     ; Is a line of `kept` introduced by exactly `digits` followed by a tab?
-    function has_offset(kept: String, digits: String) @ret_nonlocal true returns bool linked
+    function has_offset(kept: String, digits: String) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -838,7 +838,7 @@ define placehints
     ; ====================================================================
     ; Rendering: filter the blob by the requested range, one InlayHint each.
     ; ====================================================================
-    procedure render(rp, blob: String, source: String, packed: String) @direct true @ret_caller true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure render(rp, blob: String, source: String, packed: String) @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -929,7 +929,7 @@ define placehints
     ; ====================================================================
     ; The one-slot cache (symindex.scaly's memory model — malloc'd copies).
     ; ====================================================================
-    procedure cache_hit(path: String, hash: size_t) @ret_nonlocal true returns bool reads ph_used linked
+    procedure cache_hit(path: String, hash: size_t) @ret_nonlocal true @deep true returns bool reads ph_used linked
 
 
 
@@ -948,14 +948,14 @@ define placehints
 
 
 
-    procedure cached_blob(rp) @direct true @ret_caller true returns String reads ph_used linked
+    procedure cached_blob(rp) @direct true @ret_caller true @deep true returns String reads ph_used linked
 
 
 
 
 
 
-    procedure cache_put(path: String, hash: size_t, blob: String) mutable ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used reads ph_used linked
+    procedure cache_put(path: String, hash: size_t, blob: String) @deep true mutable ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used reads ph_used linked
 
 
 

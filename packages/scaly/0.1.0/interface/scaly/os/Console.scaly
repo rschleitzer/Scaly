@@ -6,13 +6,13 @@ use scaly.fiber.Io
 ; nonblocking, and needs no scheduler at all — colorless I/O.
 define Console
 {
-    procedure print(message: pointer[const_char]) @ret_nonlocal true io linked
+    procedure print(message: pointer[const_char]) @ret_nonlocal true @deep true io linked
 
 
 
 
 
-    procedure println(message: pointer[const_char]) @ret_nonlocal true io linked
+    procedure println(message: pointer[const_char]) @ret_nonlocal true @deep true io linked
 
 
 

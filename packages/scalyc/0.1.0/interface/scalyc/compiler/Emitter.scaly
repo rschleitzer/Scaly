@@ -117,7 +117,7 @@ define Emitter
 
 
 
-        function lookup_named_region(this, name: String) @direct true @ret_param_0 true returns LLVMValueRef linked
+        function lookup_named_region(this, name: String) @direct true @ret_param_0 true @deep true returns LLVMValueRef linked
 
 
 
@@ -134,7 +134,7 @@ define Emitter
 
 
 
-        procedure add_named_region(mutable this, name: String, value: LLVMValueRef) @persists true @ret_param_0 true linked
+        procedure add_named_region(mutable this, name: String, value: LLVMValueRef) @persists true @ret_param_0 true @deep true linked
 
 
 
@@ -449,7 +449,7 @@ define Emitter
         ; ========================================================================
 
         ; Initialize the emitter (create LLVM context, builder, etc.)
-        procedure initialize(mutable this, mutable module_name: String) @ret_nonlocal true io linked
+        procedure initialize(mutable this, mutable module_name: String) @ret_nonlocal true @deep true io linked
 
 
 
@@ -488,7 +488,7 @@ define Emitter
         ; TargetMachine and copy its DataLayout string onto the module. Best
         ; effort: on any failure the module keeps no layout — the llc path
         ; still works exactly as before.
-        procedure apply_target_layout(mutable this) io linked
+        procedure apply_target_layout(mutable this) @deep true io linked
 
 
 
@@ -545,7 +545,7 @@ define Emitter
         ; Windows triple carries `windows` (x86_64-pc-windows-msvc,
         ; aarch64-pc-windows-gnu, …) and no ELF or Mach-O triple does. Asked of
         ; the TRIPLE rather than of the host, because `--target` cross-emits.
-        procedure triple_is_coff(mutable this, t: pointer[const_char]) @ret_nonlocal true returns bool linked
+        procedure triple_is_coff(mutable this, t: pointer[const_char]) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -596,12 +596,12 @@ define Emitter
         ; ★For the six targets this compiler emits for, COFF and Windows are the
         ; same set, which is why one predicate can serve a linkage question and a
         ; link-command question at the same time.
-        function target_is_coff_format(this) @ret_param_0 true returns bool linked
+        function target_is_coff_format(this) @ret_param_0 true @deep true returns bool linked
 
 
 
 
-        procedure set_linkonce_odr(mutable this, mutable fn: LLVMValueRef) linked
+        procedure set_linkonce_odr(mutable this, mutable fn: LLVMValueRef) @deep true linked
 
 
 
@@ -618,7 +618,7 @@ define Emitter
 
         ; Record the source file path + contents for -g. Must be called
         ; before emit() so initialize()'s init_debug_info() sees them.
-        procedure set_debug_source(mutable this, file: String, src: String) linked
+        procedure set_debug_source(mutable this, file: String, src: String) @deep true @deep_this_6 true @deep_whole_6 true linked
 
 
 
@@ -627,7 +627,7 @@ define Emitter
         ; Create the DIBuilder, compile unit and file, and set the DWARF
         ; module flags. Gated on emit_debug_info (if runs the return when
         ; the flag is FALSE — Scaly hard rule #6).
-        procedure init_debug_info(mutable this) linked
+        procedure init_debug_info(mutable this) @deep true linked
 
 
 
@@ -659,7 +659,7 @@ define Emitter
 
         ; Convert a byte offset into the source into a 1-based (line, column).
         ; Mirrors cli.print_diagnostics#'s scan; numeric LF compare (10) per s185.
-        function compute_debug_pos(this, offset: size_t) @page true @direct true @ret_nonlocal true returns DebugPos linked
+        function compute_debug_pos(this, offset: size_t) @page true @direct true @ret_nonlocal true @deep true returns DebugPos linked
 
 
 
@@ -685,7 +685,7 @@ define Emitter
 
         ; Attach a DILocation to the builder for subsequent instructions.
         ; No-op unless emit_debug_info and a function scope is active.
-        procedure set_debug_location(mutable this, span: Span) linked
+        procedure set_debug_location(mutable this, span: Span) @deep true linked
 
 
 
@@ -703,7 +703,7 @@ define Emitter
         ; a single-ptr-field struct param arrives as a stack-alloca alias under
         ; the stage-0/1 ABI (s34/s36), so LLVMSetSubprogram would get a garbage
         ; handle. The field read is unaffected.
-        procedure set_function_debug_scope(mutable this, mutable func: PlannedFunction) @ret_caller true linked
+        procedure set_function_debug_scope(mutable this, mutable func: PlannedFunction) @ret_caller true @deep true @deep_this_2 true linked
 
 
 
@@ -799,7 +799,7 @@ define Emitter
         ; forward-decl-then-RAUW cycle break.
         ; ------------------------------------------------------------------------
 
-        function lookup_di_cache(this, name: String) @direct true @ret_param_0 true returns LLVMMetadataRef linked
+        function lookup_di_cache(this, name: String) @direct true @ret_param_0 true @deep true returns LLVMMetadataRef linked
 
 
 
@@ -814,7 +814,7 @@ define Emitter
         ; Map a primitive type name to a DWARF basic type; null if not primitive.
         ; Encodings: signed=5, unsigned=7, boolean=2, float=4, signed_char=6,
         ; unsigned_char=8.
-        procedure di_basic_type(mutable this, mutable name: String) @direct true @ret_caller true returns LLVMMetadataRef linked
+        procedure di_basic_type(mutable this, mutable name: String) @direct true @ret_caller true @deep true returns LLVMMetadataRef linked
 
 
 
@@ -896,7 +896,7 @@ define Emitter
         ; Synthesize an opaque unsigned basic type of the given width — used
         ; for a struct member whose own DIType couldn't be resolved, so the
         ; member stays typed (valid DWARF) and the layout offset is preserved.
-        procedure di_placeholder_type(mutable this, bits: size_t) @direct true @ret_caller true returns LLVMMetadataRef linked
+        procedure di_placeholder_type(mutable this, bits: size_t) @direct true @ret_caller true @deep true returns LLVMMetadataRef linked
 
 
 
@@ -948,7 +948,7 @@ define Emitter
         ; it would mean a new page-hosted allocation inside plan_structure, where the
         ; surrounding idiom takes `&` of stack locals — a dangling-pointer risk paid
         ; for a cosmetic gain. The PlannedType already has the answer.)
-        function di_display_name(this, readable: String, mangled: String) @page true @direct true returns String linked
+        function di_display_name(this, readable: String, mangled: String) @page true @direct true @deep true returns String linked
 
 
 
@@ -961,7 +961,7 @@ define Emitter
 
 
 
-        procedure di_stdlib_struct_type(mutable this, mutable name: String) @persists true @direct true returns LLVMMetadataRef linked
+        procedure di_stdlib_struct_type(mutable this, mutable name: String) @persists true @direct true @deep true @deep_this_2 true @deep_whole_2 true returns LLVMMetadataRef linked
 
 
 
@@ -999,7 +999,7 @@ define Emitter
         ; value IS the object's address, so #dbg_declare goes straight on it; for
         ; anything else the value must be spilled to a shadow slot first. Getting
         ; this backwards is silently wrong by one indirection.
-        procedure di_planned_type_is_composite(mutable this, mutable pt: PlannedType) @ret_nonlocal true returns bool linked
+        procedure di_planned_type_is_composite(mutable this, mutable pt: PlannedType) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -1014,7 +1014,7 @@ define Emitter
         ; -g only: attach a DWARF variable to STORAGE at the current insertion
         ; point. arg_no = 0 yields a local (DW_TAG_variable); arg_no > 0 yields a
         ; DW_TAG_formal_parameter at that 1-based SOURCE position.
-        procedure debug_declare_at(mutable this, mutable name: String, mutable storage: LLVMValueRef, mutable dty: LLVMMetadataRef, dpos: DebugPos, arg_no: size_t, indirect: bool) linked
+        procedure debug_declare_at(mutable this, mutable name: String, mutable storage: LLVMValueRef, mutable dty: LLVMMetadataRef, dpos: DebugPos, arg_no: size_t, indirect: bool) @deep true linked
 
 
 
@@ -1071,7 +1071,7 @@ define Emitter
         ; handed to another binding while the debugger still believes it holds this
         ; one. Nothing ever READS the shadow, so define_variable keeps binding the
         ; SSA value and not one of lookup_variable's ~40 consumers changes.
-        procedure debug_declare_value(mutable this, mutable name: String, mutable value: LLVMValueRef, mutable pt: PlannedType, dpos: DebugPos, arg_no: size_t) linked
+        procedure debug_declare_value(mutable this, mutable name: String, mutable value: LLVMValueRef, mutable pt: PlannedType, dpos: DebugPos, arg_no: size_t) @deep true linked
 
 
 
@@ -1090,7 +1090,7 @@ define Emitter
 
 
 
-        procedure di_type_for(mutable this, mutable pt: PlannedType) @direct true returns LLVMMetadataRef linked
+        procedure di_type_for(mutable this, mutable pt: PlannedType) @direct true @deep true @deep_beyond_2 true returns LLVMMetadataRef linked
 
 
 
@@ -1194,7 +1194,7 @@ define Emitter
         ; Member sizes/offsets come from the planner's already-computed
         ; PlannedProperty.offset (size = next field's offset - this offset, or
         ; struct size for the last field), so no type-size re-derivation needed.
-        procedure di_struct_type(mutable this, mutable s: PlannedStructure, mutable readable: String) @direct true returns LLVMMetadataRef linked
+        procedure di_struct_type(mutable this, mutable s: PlannedStructure, mutable readable: String) @direct true @deep true @deep_this_2 true returns LLVMMetadataRef linked
 
 
 
@@ -1262,7 +1262,7 @@ define Emitter
 
         ; A tagged union: outer struct { tag @ 0, payload @ tag_size }, where the
         ; payload is a DWARF union of the variant payload types (each at offset 0).
-        procedure di_union_type(mutable this, mutable u: PlannedUnion, mutable readable: String) @direct true returns LLVMMetadataRef linked
+        procedure di_union_type(mutable this, mutable u: PlannedUnion, mutable readable: String) @direct true @deep true @deep_this_2 true returns LLVMMetadataRef linked
 
 
 
@@ -1385,7 +1385,7 @@ define Emitter
         ; no PlannedFunction (the top-level `main` wrapping the program's
         ; top-level statements). -g only; caller guards on emit_debug_info.
         ; Attaches to current_function (set by the caller before this).
-        procedure set_synthetic_debug_scope(mutable this, mutable name: String, line: i32) @ret_caller true linked
+        procedure set_synthetic_debug_scope(mutable this, mutable name: String, line: i32) @ret_caller true @deep true linked
 
 
 
@@ -1399,14 +1399,14 @@ define Emitter
         ; Clear the builder's current debug location and the active scope.
         ; Called at function-body exit so later stub/forwarder emission (which
         ; has no DISubprogram) does not inherit a stale scope.
-        procedure clear_debug_location(mutable this) @ret_caller true linked
+        procedure clear_debug_location(mutable this) @ret_caller true @deep true linked
 
 
 
 
 
         ; Set the line location for a statement before emitting it. -g only.
-        procedure set_statement_debug_location(mutable this, stmt: PlannedStatement) @ret_param_0 true linked
+        procedure set_statement_debug_location(mutable this, stmt: PlannedStatement) @ret_param_0 true @deep true linked
 
 
 
@@ -1424,7 +1424,7 @@ define Emitter
 
 
         ; Initialize intrinsic type mappings
-        procedure init_intrinsic_types(mutable this) @ret_nonlocal true linked
+        procedure init_intrinsic_types(mutable this) @ret_nonlocal true @deep true linked
 
 
 
@@ -1460,14 +1460,14 @@ define Emitter
 
 
 
-        procedure register_intrinsic_type(mutable this, name: String, llvm_type: LLVMTypeRef, size: size_t, alignment: size_t, is_signed: bool) @persists true @ret_nonlocal true linked
+        procedure register_intrinsic_type(mutable this, name: String, llvm_type: LLVMTypeRef, size: size_t, alignment: size_t, is_signed: bool) @persists true @ret_nonlocal true @deep true @deep_this_4 true @deep_whole_4 true linked
 
 
 
 
 
         ; Dispose of LLVM resources
-        procedure dispose(mutable this) linked
+        procedure dispose(mutable this) @deep true linked
 
 
 
@@ -1484,7 +1484,7 @@ define Emitter
         ; Type Cache
         ; ========================================================================
 
-        function lookup_type_cache(this, name: String) @direct true @ret_param_0 true returns LLVMTypeRef linked
+        function lookup_type_cache(this, name: String) @direct true @ret_param_0 true @deep true returns LLVMTypeRef linked
 
 
 
@@ -1496,7 +1496,7 @@ define Emitter
 
 
 
-        procedure cache_type(mutable this, name: String, llvm_type: LLVMTypeRef) @persists true @ret_nonlocal true linked
+        procedure cache_type(mutable this, name: String, llvm_type: LLVMTypeRef) @persists true @ret_nonlocal true @deep true @deep_this_2 true @deep_whole_2 true linked
 
 
 
@@ -1509,7 +1509,7 @@ define Emitter
         ; Struct Cache
         ; ========================================================================
 
-        function lookup_struct_cache(this, name: String) @direct true @ret_param_0 true returns LLVMTypeRef linked
+        function lookup_struct_cache(this, name: String) @direct true @ret_param_0 true @deep true returns LLVMTypeRef linked
 
 
 
@@ -1521,7 +1521,7 @@ define Emitter
 
 
 
-        procedure cache_struct(mutable this, name: String, llvm_type: LLVMTypeRef) @persists true @ret_nonlocal true linked
+        procedure cache_struct(mutable this, name: String, llvm_type: LLVMTypeRef) @persists true @ret_nonlocal true @deep true @deep_this_2 true @deep_whole_2 true linked
 
 
 
@@ -1541,7 +1541,7 @@ define Emitter
         ; via LLVMGetInsertBlock, repositions to before the entry block's first
         ; instruction (or at-end if empty), emits the alloca, then restores
         ; the insertion point.
-        procedure entry_alloca(mutable this, mutable ty: LLVMTypeRef, mutable name: pointer[const_char]) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure entry_alloca(mutable this, mutable ty: LLVMTypeRef, mutable name: pointer[const_char]) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -1587,7 +1587,7 @@ define Emitter
         ; ========================================================================
 
         ; Look up or declare Page.allocate_root_page() -> ptr.
-        procedure get_alloc_root_page_fn(mutable this) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure get_alloc_root_page_fn(mutable this) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -1604,7 +1604,7 @@ define Emitter
 
 
         ; Look up or declare scaly_release_root_page(ptr) -> void.
-        procedure get_release_root_page_fn(mutable this) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure get_release_root_page_fn(mutable this) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -1627,7 +1627,7 @@ define Emitter
         ; frame's page, PARENTS FIRST (root_pages.scaly, where the LIFO ordering
         ; argument lives). Called wherever a REAL page is needed: the Page.allocate
         ; sites, and nowhere else. Handing a frame to a callee needs no call at all.
-        procedure get_force_frame_fn(mutable this) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure get_force_frame_fn(mutable this) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -1647,7 +1647,7 @@ define Emitter
 
         ; Look up or declare scaly_release_frame(ptr frame) -> void — the epilogue
         ; counterpart, a no-op on a frame nothing ever forced.
-        procedure get_release_frame_fn(mutable this) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure get_release_frame_fn(mutable this) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -1668,7 +1668,7 @@ define Emitter
 
         ; The two-word frame record {page, parent} the caller-page argument points
         ; at. Built as a named struct so the GEPs below read as field accesses.
-        procedure frame_struct_type(mutable this) @direct true @ret_caller true returns LLVMTypeRef linked
+        procedure frame_struct_type(mutable this) @direct true @ret_caller true @deep true returns LLVMTypeRef linked
 
 
 
@@ -1678,7 +1678,7 @@ define Emitter
 
 
         ; Emit `scaly_force_frame(frame)` at the current position.
-        procedure force_frame(mutable this, frame_val: LLVMValueRef) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure force_frame(mutable this, frame_val: LLVMValueRef) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -1703,7 +1703,7 @@ define Emitter
         ; outer frame before the outer call reads it (store outer, store inner,
         ; call inner, call outer) and the outer callee would allocate on the inner
         ; page. The alloca costs stack space only.
-        procedure wrap_page_in_frame(mutable this, mutable page_val: LLVMValueRef) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure wrap_page_in_frame(mutable this, mutable page_val: LLVMValueRef) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -1728,7 +1728,7 @@ define Emitter
         ; NOT on the function-local page, which is released on exit (s196: an
         ; escaping allocation on the local page is a use-after-free).
         ; Peel pointer[T]/ref[T] down to the underlying concept name (else t.name).
-        function peel_concept_name(this, t: PlannedType) @page true @direct true returns String linked
+        function peel_concept_name(this, t: PlannedType) @page true @direct true @deep true returns String linked
 
 
 
@@ -1737,7 +1737,7 @@ define Emitter
 
 
 
-        function first_generic_name(this, t: PlannedType) @page true @direct true returns String linked
+        function first_generic_name(this, t: PlannedType) @page true @direct true @deep true returns String linked
 
 
 
@@ -1758,7 +1758,7 @@ define Emitter
         ; exit through one local keeps it clear of the multi-branch by-value
         ; return hazard (a struct returned from several branches region-
         ; allocates per site and the merging phi fails llc verification).
-        function first_generic_of(this, t: PlannedType) @page true @direct true @ret_param_1 true returns PlannedType linked
+        function first_generic_of(this, t: PlannedType) @page true @direct true @ret_param_1 true @deep true returns PlannedType linked
 
 
 
@@ -1776,7 +1776,7 @@ define Emitter
 
         ; Index of the receiver concept's property named `field_name` (-1 if none).
         ; Used to lower a `^field` page sigil (host is a member, not a local).
-        function receiver_field_index(this, field_name: String) @ret_param_0 true returns int linked
+        function receiver_field_index(this, field_name: String) @ret_param_0 true @deep true returns int linked
 
 
 
@@ -1816,7 +1816,7 @@ define Emitter
 
 
 
-        procedure resolve_reference_page(mutable this, mutable ref_name: String) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure resolve_reference_page(mutable this, mutable ref_name: String) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -1901,7 +1901,7 @@ define Emitter
         ; travels as it is. Keeps the two currencies apart at every call site —
         ; passing a raw page where a callee expects a frame is the one mistake this
         ; ABI cannot diagnose (both are a bare `ptr`).
-        procedure resolve_reference_frame(mutable this, mutable ref_name: String) @direct true returns LLVMValueRef linked
+        procedure resolve_reference_frame(mutable this, mutable ref_name: String) @direct true @deep true returns LLVMValueRef linked
 
 
 
@@ -1937,7 +1937,7 @@ define Emitter
         ;
         ; ★The frame is created on FIRST DEMAND, not at entry: a function that
         ; never needs a region at all should not pay two stores for one.
-        procedure get_local_frame(mutable this) @direct true returns LLVMValueRef linked
+        procedure get_local_frame(mutable this) @direct true @deep true returns LLVMValueRef linked
 
 
 
@@ -1984,7 +1984,7 @@ define Emitter
         ; Materialise an arbitrary frame's page. Routed through the block cache
         ; when the frame is this function's own, so several allocations in one
         ; block still share a single call.
-        procedure materialise_frame(mutable this, frame_val: LLVMValueRef) @direct true @ret_param_0 true returns LLVMValueRef linked
+        procedure materialise_frame(mutable this, frame_val: LLVMValueRef) @direct true @ret_param_0 true @deep true returns LLVMValueRef linked
 
 
 
@@ -2004,7 +2004,7 @@ define Emitter
         ; would invalidate every insert block those walkers captured before
         ; asking for a page. The runtime helper is small enough that opt/LTO
         ; inlines its fast path; an -O0 build keeps one call per demand.
-        procedure get_or_create_local_page(mutable this) @direct true @ret_param_0 true returns LLVMValueRef linked
+        procedure get_or_create_local_page(mutable this) @direct true @ret_param_0 true @deep true returns LLVMValueRef linked
 
 
 
@@ -2035,7 +2035,7 @@ define Emitter
         ; scaly_release_root_page the eager version could use here: a return
         ; inside a LOOP body is emitted before a demand site further down, yet the
         ; second iteration reaches it with the page long since materialised.
-        procedure patch_prior_returns(mutable this, slot: LLVMValueRef) linked
+        procedure patch_prior_returns(mutable this, slot: LLVMValueRef) @deep true linked
 
 
 
@@ -2072,7 +2072,7 @@ define Emitter
         ; runtime full-teardown entry point (root_pages.scaly). It gates
         ; deallocate_extensions internally on the page-used predicate, then
         ; releases the StackBucket root slot.
-        procedure get_release_root_page_full_fn(mutable this) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure get_release_root_page_full_fn(mutable this) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -2108,7 +2108,7 @@ define Emitter
         ; GetElementPtrInst::Create with a null PointeeType). Emitting a single
         ; call sidesteps it; stage-0's own emitter keeps its inline gate
         ; (Emitter.cpp CleanupLocalPage) — same runtime behaviour either way.
-        procedure emit_release_local_page(mutable this) linked
+        procedure emit_release_local_page(mutable this) @deep true linked
 
 
 
@@ -2183,7 +2183,7 @@ define Emitter
         ;
         ; Measured on `dazzledoc -t fot`: 26.86 G → 22.84 G instructions,
         ; 1.34 s → 1.15 s CPU, output byte-identical.
-        procedure elide_unused_pages(mutable this) linked
+        procedure elide_unused_pages(mutable this) @deep true linked
 
 
 
@@ -2409,7 +2409,7 @@ define Emitter
         ; exception the predicate would be false for every function that opens a
         ; region at all, and the pass would go inert: a cut chain is exactly what
         ; a nulled argument produces, and it is sound for the same reason.
-        procedure page_param_is_unused(this, mutable f: LLVMValueRef, page_index: int) @ret_caller true returns bool linked
+        procedure page_param_is_unused(this, mutable f: LLVMValueRef, page_index: int) @ret_caller true @deep true returns bool linked
 
 
 
@@ -2448,7 +2448,7 @@ define Emitter
         ; over the finished module long after the per-function emitter state was
         ; reset. The shape is unambiguous: the value stored is the caller-frame
         ; parameter itself, and the destination is the second word of an alloca.
-        procedure parent_link_store(this, mutable usr: LLVMValueRef, p: LLVMValueRef) @ret_nonlocal true returns bool linked
+        procedure parent_link_store(this, mutable usr: LLVMValueRef, p: LLVMValueRef) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -2488,7 +2488,7 @@ define Emitter
         ; straight off a call result are both silent-mis-parse shapes in this
         ; compiler — the first version of this function had them and the pass came
         ; out INERT under the seed compiler.
-        procedure null_page_arguments(this, mutable f: LLVMValueRef, page_index: int) linked
+        procedure null_page_arguments(this, mutable f: LLVMValueRef, page_index: int) @deep true linked
 
 
 
@@ -2539,7 +2539,7 @@ define Emitter
         ; non-digit (the s192 fixed-array stack alloca only fires on a numeric
         ; array_size; named-constant sizes return 0 and fall back to a plain
         ; pointer slot, matching stage-0's std::stoull if at Emitter.cpp:2393).
-        function parse_array_size(s: String) @ret_nonlocal true returns size_t linked
+        function parse_array_size(s: String) @ret_nonlocal true @deep true returns size_t linked
 
 
 
@@ -2561,7 +2561,7 @@ define Emitter
         ; s178: start a fresh pool window when a new function begins.
         ; Slots registered by earlier functions live in dead frames'
         ; entry blocks and must never be matched again.
-        procedure reset_temp_pool(mutable this) linked
+        procedure reset_temp_pool(mutable this) @deep true linked
 
 
 
@@ -2578,7 +2578,7 @@ define Emitter
         ; ~600-byte slot per spill site (~450 of them) and the static
         ; frame reaches ~460KB — deep recursion then needs ulimit -s
         ; 65520 to self-compile.
-        procedure acquire_temp(mutable this, mutable ty: LLVMTypeRef, mutable name: pointer[const_char]) @direct true returns LLVMValueRef linked
+        procedure acquire_temp(mutable this, mutable ty: LLVMTypeRef, mutable name: pointer[const_char]) @direct true @deep true returns LLVMValueRef linked
 
 
 
@@ -2627,7 +2627,7 @@ define Emitter
         ; null-check compares. A GEP derives a new pointer — recurse into
         ; its uses. Storing the pointer AS A VALUE escapes; anything
         ; unrecognized (phi of arm results, select, ret) escapes too.
-        procedure temp_user_is_safe(this, mutable user_v: LLVMValueRef, ptr_v: LLVMValueRef, depth: size_t) @ret_nonlocal true returns bool linked
+        procedure temp_user_is_safe(this, mutable user_v: LLVMValueRef, ptr_v: LLVMValueRef, depth: size_t) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -2668,7 +2668,7 @@ define Emitter
         ; emitter retains — local bindings are checked separately in
         ; release_statement_temps, and values cannot cross statement
         ; windows because emit_statement returns only bool.
-        procedure temp_value_escapes(this, mutable v: LLVMValueRef, depth: size_t) @ret_nonlocal true returns bool linked
+        procedure temp_value_escapes(this, mutable v: LLVMValueRef, depth: size_t) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -2693,7 +2693,7 @@ define Emitter
         ; pinned arm results back to the pool slot they live in (a when-
         ; payload binding holds a GEP into the choose.union slot, not the
         ; slot itself).
-        procedure temp_base_alloca(this, mutable v: LLVMValueRef) @direct true @ret_param_1 true returns LLVMValueRef linked
+        procedure temp_base_alloca(this, mutable v: LLVMValueRef) @direct true @ret_param_1 true @deep true returns LLVMValueRef linked
 
 
 
@@ -2718,7 +2718,7 @@ define Emitter
         ; expires with the enclosing statement window (emit_statement
         ; restores temp_pinned.length), by which point the merge PHI
         ; exists and the escape walk sees it.
-        procedure pin_temp_value(mutable this, mutable v: LLVMValueRef) @ret_param_0 true linked
+        procedure pin_temp_value(mutable this, mutable v: LLVMValueRef) @ret_param_0 true @deep true linked
 
 
 
@@ -2733,7 +2733,7 @@ define Emitter
         ; store, the handle only lives in local_var_values — or its IR
         ; uses show the pointer escaping. Conservative on all three:
         ; kept slots are simply never reused.
-        procedure release_slot_if_dead(mutable this, idx: size_t) @ret_nonlocal true linked
+        procedure release_slot_if_dead(mutable this, idx: size_t) @ret_nonlocal true @deep true linked
 
 
 
@@ -2803,7 +2803,7 @@ define Emitter
         ; in value position (the `when variable:` assignment arm tail in
         ; emit_action) keep their exact observable behavior at null
         ; checks and PHI void-gates.
-        procedure copy_struct_value(mutable this, mutable dst: LLVMValueRef, mutable src_value: LLVMValueRef, mutable ty: LLVMTypeRef) @direct true returns LLVMValueRef linked
+        procedure copy_struct_value(mutable this, mutable dst: LLVMValueRef, mutable src_value: LLVMValueRef, mutable ty: LLVMTypeRef) @direct true @deep true returns LLVMValueRef linked
 
 
 
@@ -2888,7 +2888,7 @@ define Emitter
         ; Page::allocate(sizeof, alignof) → copy the value in → return ptr) but
         ; for a single pre-existing value rather than field-by-field init.
         ; Replaces the hand-rolled `var H Vector[X]^rp(1); H.put(0, v); H.get(0)`.
-        procedure emit_box(mutable this, mutable bx: PlannedBox) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure emit_box(mutable this, mutable bx: PlannedBox) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -3001,7 +3001,7 @@ define Emitter
 
         ; s178: return the current statement window's pooled temps to the
         ; free pool when provably dead (see release_slot_if_dead).
-        procedure release_statement_temps(mutable this) linked
+        procedure release_statement_temps(mutable this) @deep true linked
 
 
 
@@ -3021,7 +3021,7 @@ define Emitter
         ; Function Cache
         ; ========================================================================
 
-        function lookup_function_cache(this, mangled_name: String) @direct true @ret_param_0 true returns LLVMValueRef linked
+        function lookup_function_cache(this, mangled_name: String) @direct true @ret_param_0 true @deep true returns LLVMValueRef linked
 
 
 
@@ -3033,7 +3033,7 @@ define Emitter
 
 
 
-        procedure cache_function(mutable this, mangled_name: String, llvm_func: LLVMValueRef) @persists true @ret_nonlocal true linked
+        procedure cache_function(mutable this, mangled_name: String, llvm_func: LLVMValueRef) @persists true @ret_nonlocal true @deep true @deep_this_2 true @deep_whole_2 true linked
 
 
 
@@ -3049,7 +3049,7 @@ define Emitter
 
         ; Record where emit_function_decl put the caller-page parameter of the
         ; function it has just cached (the most recent entry).
-        procedure note_page_param_index(mutable this, index: size_t) @persists true linked
+        procedure note_page_param_index(mutable this, index: size_t) @persists true @deep true linked
 
 
 
@@ -3061,7 +3061,7 @@ define Emitter
         ; Local Variable Management
         ; ========================================================================
 
-        function lookup_variable(this, name: String) @direct true @ret_param_0 true returns LLVMValueRef linked
+        function lookup_variable(this, name: String) @direct true @ret_param_0 true @deep true returns LLVMValueRef linked
 
 
 
@@ -3088,13 +3088,13 @@ define Emitter
 
 
 
-        procedure define_variable(mutable this, name: String, value: LLVMValueRef) @persists true @ret_param_0 true linked
+        procedure define_variable(mutable this, name: String, value: LLVMValueRef) @persists true @ret_param_0 true @deep true linked
 
 
 
 
 
-        procedure clear_local_variables(mutable this) linked
+        procedure clear_local_variables(mutable this) @deep true linked
 
 
 
@@ -3107,7 +3107,7 @@ define Emitter
         ; on entry and exit_scope right before their terminator. Mirrors
         ; stage-0's Emitter::enterScope / exitScope (which use a SmallVector
         ; of similar snapshots).
-        procedure enter_scope(mutable this) @ret_param_0 true linked
+        procedure enter_scope(mutable this) @ret_param_0 true @deep true linked
 
 
 
@@ -3119,7 +3119,7 @@ define Emitter
         ; each other; lookup_variable's forward-iteration first-match rule
         ; now picks the most recently defined version visible at the current
         ; point.
-        procedure exit_scope(mutable this) linked
+        procedure exit_scope(mutable this) @deep true linked
 
 
 
@@ -3191,7 +3191,7 @@ define Emitter
         ; current plan. Linear scan over current_plan.delegates, which is empty for
         ; delegate-free programs (the scaly package) — so the common path is a
         ; single null/length check (GAP B).
-        function is_delegate_type_name(this, name: String) @ret_nonlocal true returns bool linked
+        function is_delegate_type_name(this, name: String) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -3210,7 +3210,7 @@ define Emitter
 
 
 
-        procedure map_type(mutable this, planned_type: PlannedType) @direct true returns LLVMTypeRef linked
+        procedure map_type(mutable this, planned_type: PlannedType) @direct true @deep true returns LLVMTypeRef linked
 
 
 
@@ -3411,7 +3411,7 @@ define Emitter
         ; (pointer-payload), a delegate (function pointer) and the intrinsics
         ; (which map_type resolves before ever reaching the fallback) are really
         ; pointers.
-        procedure type_is_pointer_shaped(mutable this, t: PlannedType) @ret_nonlocal true returns bool linked
+        procedure type_is_pointer_shaped(mutable this, t: PlannedType) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -3448,7 +3448,7 @@ define Emitter
         ; ★ NOT type_is_pointer_shaped#: that helper answers a different
         ; question (is map_type's opaque `ptr` a real pointer) and says true for
         ; the INTRINSICS, so it would call a `pointer[int]` slot a reference.
-        function deref_slot_holds_a_reference(this, deref_rt: PlannedType) @ret_param_0 true returns bool linked
+        function deref_slot_holds_a_reference(this, deref_rt: PlannedType) @ret_param_0 true @deep true returns bool linked
 
 
 
@@ -3478,7 +3478,7 @@ define Emitter
         ; keeps for exactly the never-laid-out stdlib types give the real stride;
         ; if even that has no entry, keep map_type's answer rather than emit a
         ; GEP over a type this module has no definition for.
-        procedure stride_type(mutable this, mutable elem: PlannedType) @direct true @ret_param_0 true returns LLVMTypeRef linked
+        procedure stride_type(mutable this, mutable elem: PlannedType) @direct true @ret_param_0 true @deep true returns LLVMTypeRef linked
 
 
 
@@ -3503,7 +3503,7 @@ define Emitter
         ; (e.g. Vector) would over-estimate the slot size, which is incorrect
         ; for stack layout but the failure mode is that data after the struct
         ; gets clobbered, not that the function corrupts memory beyond bounds.
-        procedure get_or_create_struct_placeholder(mutable this, name: String, mangled_name: String) @direct true returns LLVMTypeRef linked
+        procedure get_or_create_struct_placeholder(mutable this, name: String, mangled_name: String) @direct true @deep true returns LLVMTypeRef linked
 
 
 
@@ -3536,7 +3536,7 @@ define Emitter
         ; Type variables in the generic (e.g. `pointer[T]`) map to ptr,
         ; concrete primitives map normally. Returns null if no Structure
         ; matches or it has no properties.
-        procedure synthesize_literal_struct(mutable this, name: String) @direct true @ret_caller true returns LLVMTypeRef linked
+        procedure synthesize_literal_struct(mutable this, name: String) @direct true @ret_caller true @deep true returns LLVMTypeRef linked
 
 
 
@@ -3759,12 +3759,12 @@ define Emitter
 
 
         ; s89: Cached sret kind id (lazily looked up). 0 = uninitialized.
-        function sret_kind_id(this) @ret_caller true returns u32 linked
+        function sret_kind_id(this) @ret_caller true @deep true returns u32 linked
 
 
 
 
-        function noalias_kind_id(this) @ret_caller true returns u32 linked
+        function noalias_kind_id(this) @ret_caller true @deep true returns u32 linked
 
 
 
@@ -3787,7 +3787,7 @@ define Emitter
         ; return by their own C contract. `exit` is the one this tree traps
         ; with (exit 14/15/17/19/20); `abort` and `_exit` are here because a
         ; port may reach for them and a missing attribute is silent.
-        procedure mark_noreturn_callee(mutable this, mutable fn: LLVMValueRef, name: String) linked
+        procedure mark_noreturn_callee(mutable this, mutable fn: LLVMValueRef, name: String) @deep true linked
 
 
 
@@ -3875,7 +3875,7 @@ define Emitter
 
 
 
-        procedure add_function_attribute(mutable this, mutable fn: LLVMValueRef, mutable name: String) linked
+        procedure add_function_attribute(mutable this, mutable fn: LLVMValueRef, mutable name: String) @deep true linked
 
 
 
@@ -3892,7 +3892,7 @@ define Emitter
         ; backend keeps what it must in memory, so a `try` can use its own
         ; locals in the else arm (measured against clang's own output for the
         ; same shape, TRAPS.md 5.6).
-        procedure mark_returns_twice_callee(mutable this, mutable fn: LLVMValueRef) linked
+        procedure mark_returns_twice_callee(mutable this, mutable fn: LLVMValueRef) @deep true linked
 
 
 
@@ -3925,7 +3925,7 @@ define Emitter
         ; and no stderr; the raw NTSTATUS varies with the Windows build and is
         ; NOT a fingerprint (0xC00000FF, 0xC0000005 and 0xC0000028 were all one
         ; bug). Every catching program on Windows died this way.
-        procedure get_setjmp_fn(mutable this) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure get_setjmp_fn(mutable this) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -3948,7 +3948,7 @@ define Emitter
         ; The COFF half of get_setjmp_fn: `i32 @_setjmp(ptr buf, ptr frame)`.
         ; Exactly what clang emits for a C `setjmp` on this target, read off
         ; its own output rather than guessed.
-        procedure get_setjmp_fn_coff(mutable this) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure get_setjmp_fn_coff(mutable this) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -3970,7 +3970,7 @@ define Emitter
         ; wants. Declared by NAME and TYPE: LLVM recognises an intrinsic by its
         ; mangled name, and `p0` is the address space of the pointer it
         ; answers. It is the only `llvm.*` this emitter declares.
-        procedure get_frameaddress_fn(mutable this) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure get_frameaddress_fn(mutable this) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -3988,7 +3988,7 @@ define Emitter
         ; Build the catch point's `setjmp` call — two arguments on COFF, one
         ; everywhere else. It is its own procedure so the `try` emission stays
         ; one statement at the call site.
-        procedure emit_catch_setjmp(mutable this, mutable sj_fn: LLVMValueRef, mutable buf: LLVMValueRef) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure emit_catch_setjmp(mutable this, mutable sj_fn: LLVMValueRef, mutable buf: LLVMValueRef) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -4014,7 +4014,7 @@ define Emitter
         ; function POINTERS that reach the region watermark and the unwind, so
         ; that neither this file nor the C shim writes the other's mangled
         ; names; it answers a pointer to the frame's jmp_buf.
-        procedure get_catch_fn(mutable this, mutable name: String, nargs: int, returns_ptr: bool) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure get_catch_fn(mutable this, mutable name: String, nargs: int, returns_ptr: bool) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -4038,7 +4038,7 @@ define Emitter
         ; prelude's RuntimeFault, and the filler that writes a variant's
         ; payload record in place. The FILLER exists so the record's field
         ; layout stays in the shim instead of being rebuilt with GEPs here.
-        procedure get_panic_kind_fn(mutable this) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure get_panic_kind_fn(mutable this) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -4057,7 +4057,7 @@ define Emitter
         ; same callee, and the arm that runs is by construction the one whose
         ; tag equals that kind. A third trap kind appends a variant in the
         ; prelude and a case in the shim, and touches nothing here.
-        procedure get_panic_fill_fn(mutable this) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure get_panic_fill_fn(mutable this) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -4081,7 +4081,7 @@ define Emitter
         ; one). They are looked up rather than declared where possible, so a
         ; rename shows up as an undefined symbol at link time and not as a
         ; silently wrong call.
-        procedure get_panic_mark_fn(mutable this) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure get_panic_mark_fn(mutable this) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -4094,7 +4094,7 @@ define Emitter
 
 
 
-        procedure get_panic_unwind_fn(mutable this) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure get_panic_unwind_fn(mutable this) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -4114,7 +4114,7 @@ define Emitter
         ; libscaly.a, which EVERY `-o` link pulls in (SCALY_HOME's lib or the
         ; cwd fallback), so a generated call resolves in exactly the programs
         ; the s186 on-the-fly path already emits runtime calls into.
-        procedure get_eputs_fn(mutable this) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure get_eputs_fn(mutable this) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -4133,7 +4133,7 @@ define Emitter
 
 
 
-        procedure get_eputnl_fn(mutable this) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure get_eputnl_fn(mutable this) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -4157,7 +4157,7 @@ define Emitter
         ; ★★★The literal FREEZES scaly_panic_null's parameter types, the ninth
         ; such case in this tree (CLAUDE.md's rule): grep for the string before
         ; re-signing it. The RETURN is free -- Itanium does not encode one.
-        procedure get_panic_null_fn(mutable this) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure get_panic_null_fn(mutable this) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -4181,7 +4181,7 @@ define Emitter
         ; `int`) and marked noreturn through the same helper every other trap
         ; callee goes through — without the attribute the block after the call
         ; stays live and nothing may be hoisted out of a loop containing a trap.
-        procedure get_exit_fn(mutable this) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure get_exit_fn(mutable this) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -4217,7 +4217,7 @@ define Emitter
         ; and, where the value is provably non-null, deletes the whole thing.
         ; Nullable in the sense the unwrap asserts away: the NPO Option
         ; wrapper (`ref[T]?` / `pointer[T]?`) or a bare pointer.
-        function type_may_be_null(this, t: PlannedType) @ret_nonlocal true returns bool linked
+        function type_may_be_null(this, t: PlannedType) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -4228,7 +4228,7 @@ define Emitter
 
         ; The enclosing symbol's name, for the trap message. There is no source
         ; location at run time; a mangled name is what a reader can grep for.
-        procedure current_function_label(mutable this) @ret_caller true returns pointer[char] linked
+        procedure current_function_label(mutable this) @ret_caller true @deep true returns pointer[char] linked
 
 
 
@@ -4236,7 +4236,7 @@ define Emitter
 
 
 
-        procedure emit_null_unwrap_trap(mutable this, mutable value: LLVMValueRef, mutable site: pointer[char]) linked
+        procedure emit_null_unwrap_trap(mutable this, mutable value: LLVMValueRef, mutable site: pointer[char]) @deep true linked
 
 
 
@@ -4286,7 +4286,7 @@ define Emitter
         ; package without plan.structures entry) are assumed to be Scaly
         ; structs and sret-ified — they otherwise mis-link against stage-0's
         ; libscaly.a (which always sret-ifies the same return).
-        procedure needs_sret_for_return(mutable this, mangled_name: String, return_type_ref: ref[PlannedType]?) @ret_nonlocal true returns bool linked
+        procedure needs_sret_for_return(mutable this, mangled_name: String, return_type_ref: ref[PlannedType]?) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -4325,7 +4325,7 @@ define Emitter
         ; the Option[ref/pointer] collapse only. Without this, a union whose
         ; first variant is nullary (variant_index 0, so the has_some heuristic
         ; misfires) dispatches on `this == null` and always takes variant 0.
-        function type_name_is_plan_union(this, name: String) @ret_nonlocal true returns bool linked
+        function type_name_is_plan_union(this, name: String) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -4346,7 +4346,7 @@ define Emitter
 
         ; NPO (null-pointer optimization) Option layout that's represented
         ; as a single nullable pointer rather than a tagged union.
-        function is_npo_option(this, t: PlannedType) @ret_nonlocal true returns bool linked
+        function is_npo_option(this, t: PlannedType) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -4369,7 +4369,7 @@ define Emitter
         ; The LLVM type of the loop-var VALUE for a scalar iterator element.
         ; `element_type` is `pointer[T]`; return the LLVM type of T so the
         ; caller can load the scalar through next()'s element pointer.
-        procedure scalar_element_value_type(mutable this, element_type: PlannedType) @direct true returns LLVMTypeRef linked
+        procedure scalar_element_value_type(mutable this, element_type: PlannedType) @direct true @deep true returns LLVMTypeRef linked
 
 
 
@@ -4388,7 +4388,7 @@ define Emitter
         ; s89: Equivalent predicate for a callee at a call site. Reads
         ; the planned result_type (the Plan-side return type the call
         ; site expects to receive). Same heuristic as needs_sret_for_return.
-        procedure call_needs_sret(mutable this, mangled_name: String, result_type: PlannedType) @ret_nonlocal true returns bool linked
+        procedure call_needs_sret(mutable this, mangled_name: String, result_type: PlannedType) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -4407,7 +4407,7 @@ define Emitter
 
 
         ; Map intrinsic type name to LLVM type
-        function map_intrinsic_type(this, name: String) @direct true @ret_param_0 true returns LLVMTypeRef linked
+        function map_intrinsic_type(this, name: String) @direct true @ret_param_0 true @deep true returns LLVMTypeRef linked
 
 
 
@@ -4430,7 +4430,7 @@ define Emitter
         ; init_intrinsic_types whose `data` dangles once init returns).
         ; Returns null when the name isn't a known intrinsic — callers
         ; should fall back to map_type for struct/pointer/ref handling.
-        procedure map_intrinsic_type_by_name(mutable this, name: String) @direct true returns LLVMTypeRef linked
+        procedure map_intrinsic_type_by_name(mutable this, name: String) @direct true @deep true returns LLVMTypeRef linked
 
 
 
@@ -4482,7 +4482,7 @@ define Emitter
 
 
         ; Check if a type name is an intrinsic type
-        function is_intrinsic_type(this, name: String) @ret_nonlocal true returns bool linked
+        function is_intrinsic_type(this, name: String) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -4498,7 +4498,7 @@ define Emitter
         ; ========================================================================
 
         ; Emit LLVM struct type for a PlannedStructure
-        procedure emit_struct_type(mutable this, mutable struct: PlannedStructure) @direct true returns LLVMTypeRef linked
+        procedure emit_struct_type(mutable this, mutable struct: PlannedStructure) @direct true @deep true returns LLVMTypeRef linked
 
 
 
@@ -4595,7 +4595,7 @@ define Emitter
         ; s179: round offset up to a multiple of align (a power of two).
         ; Local to Emitter — small let-steps instead of one mixed
         ; +/-//* expression (no fixed operator precedence).
-        function abi_align_to(this, offset: size_t, align: size_t) @ret_nonlocal true returns size_t linked
+        function abi_align_to(this, offset: size_t, align: size_t) @ret_nonlocal true @deep true returns size_t linked
 
 
 
@@ -4609,7 +4609,7 @@ define Emitter
         ; size. Opaque structs (fresh type vars, s114 placeholders), void,
         ; vectors, and function types are unsizeable — callers must fall
         ; back to a conservative estimate rather than risk under-sizing.
-        procedure llvm_type_sizable(this, mutable ty: LLVMTypeRef) @ret_nonlocal true returns bool linked
+        procedure llvm_type_sizable(this, mutable ty: LLVMTypeRef) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -4652,7 +4652,7 @@ define Emitter
         ; Never calls into DataLayout: LLVMABISizeOfType corrupts
         ; stage-1 process state (s149) and getTypeSizeInBits SIGTRAPs
         ; on opaque structs (s97). Check llvm_type_sizable first.
-        procedure llvm_type_abi_align(this, mutable ty: LLVMTypeRef) @ret_nonlocal true returns size_t linked
+        procedure llvm_type_abi_align(this, mutable ty: LLVMTypeRef) @ret_nonlocal true @deep true returns size_t linked
 
 
 
@@ -4700,7 +4700,7 @@ define Emitter
         ; Emitter.cpp:6637) without touching DataLayout — see the s149/
         ; s97 cautions on llvm_type_abi_align. Check llvm_type_sizable
         ; first; unsizeable kinds return 0 here.
-        procedure llvm_type_abi_size(this, mutable ty: LLVMTypeRef) @ret_caller true returns size_t linked
+        procedure llvm_type_abi_size(this, mutable ty: LLVMTypeRef) @ret_caller true @deep true returns size_t linked
 
 
 
@@ -4756,7 +4756,7 @@ define Emitter
 
 
         ; Emit LLVM type for a PlannedUnion (tagged union)
-        procedure emit_union_type(mutable this, mutable union_type: PlannedUnion) @direct true returns LLVMTypeRef linked
+        procedure emit_union_type(mutable this, mutable union_type: PlannedUnion) @direct true @deep true returns LLVMTypeRef linked
 
 
 
@@ -4856,7 +4856,7 @@ define Emitter
         ; conservative over-allocation) when the type is null/opaque/unsizeable
         ; or the `{ptr}` cross-package placeholder (unknown true size — under-
         ; sizing would let a store overflow the caller's slot).
-        procedure throws_wrapper_payload_size(this, mutable ty: LLVMTypeRef) @ret_param_0 true returns size_t linked
+        procedure throws_wrapper_payload_size(this, mutable ty: LLVMTypeRef) @ret_param_0 true @deep true returns size_t linked
 
 
 
@@ -4884,7 +4884,7 @@ define Emitter
 
 
 
-        procedure build_throws_result_type(mutable this, mutable value_ty: LLVMTypeRef, mutable throws_ty: LLVMTypeRef, mangled_name: String) @persists true @direct true returns LLVMTypeRef linked
+        procedure build_throws_result_type(mutable this, mutable value_ty: LLVMTypeRef, mutable throws_ty: LLVMTypeRef, mangled_name: String) @persists true @direct true @deep true returns LLVMTypeRef linked
 
 
 
@@ -4955,7 +4955,7 @@ define Emitter
 
 
         ; Emit function declaration (signature only)
-        procedure emit_function_decl(mutable this, mutable func: PlannedFunction) @direct true returns LLVMValueRef linked
+        procedure emit_function_decl(mutable this, mutable func: PlannedFunction) @direct true @deep true returns LLVMValueRef linked
 
 
 
@@ -5271,7 +5271,7 @@ define Emitter
         ; tail of a multi-digit length prefix on a real type name (e.g. an
         ; 11-char name `11Txxxxxxxxx`). Concrete instantiations spell out their
         ; types (`6String`, `i`, `IiE`) and never carry a length-1 T/K/V token.
-        function is_uninstantiated_template(this, mangled: String) @ret_nonlocal true returns bool linked
+        function is_uninstantiated_template(this, mangled: String) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -5344,7 +5344,7 @@ define Emitter
         ; place the next iteration's allocations on another page. Unspecified and
         ; Call are both fine — Call means "the caller's page", and after the jump
         ; the caller's page is still ours.
-        function return_is_self_call(this, result: ref[Vector[PlannedOperand]]?, mangled: String, arity: size_t) @ret_nonlocal true returns bool linked
+        function return_is_self_call(this, result: ref[Vector[PlannedOperand]]?, mangled: String, arity: size_t) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -5400,7 +5400,7 @@ define Emitter
         ; return inside an `if`, a `choose` arm or even a `while` body is a tail
         ; call all the same — the jump leaves those blocks the way a `ret` does.
         ; Lambda bodies are deliberately NOT walked: they are separate functions.
-        function operands_have_self_tail_call(this, ops: ref[Vector[PlannedOperand]]?, mangled: String, arity: size_t) @ret_nonlocal true returns bool linked
+        function operands_have_self_tail_call(this, ops: ref[Vector[PlannedOperand]]?, mangled: String, arity: size_t) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -5554,12 +5554,12 @@ define Emitter
 
 
 
-        function action_has_self_tail_call(this, action: PlannedAction, mangled: String, arity: size_t) @ret_nonlocal true returns bool linked
+        function action_has_self_tail_call(this, action: PlannedAction, mangled: String, arity: size_t) @ret_nonlocal true @deep true returns bool linked
 
 
 
 
-        function statement_has_self_tail_call(this, st: PlannedStatement, mangled: String, arity: size_t) @ret_nonlocal true returns bool linked
+        function statement_has_self_tail_call(this, st: PlannedStatement, mangled: String, arity: size_t) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -5576,7 +5576,7 @@ define Emitter
 
 
 
-        function statements_have_self_tail_call(this, sts: ref[Vector[PlannedStatement]]?, mangled: String, arity: size_t) @ret_nonlocal true returns bool linked
+        function statements_have_self_tail_call(this, sts: ref[Vector[PlannedStatement]]?, mangled: String, arity: size_t) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -5596,7 +5596,7 @@ define Emitter
 
 
         ; Does this function qualify, and can its parameters carry the loop?
-        procedure tail_loop_eligible(mutable this, mutable func: PlannedFunction, mutable llvm_func: LLVMValueRef, user_count: size_t, arg_offset: size_t) @ret_nonlocal true returns bool linked
+        procedure tail_loop_eligible(mutable this, mutable func: PlannedFunction, mutable llvm_func: LLVMValueRef, user_count: size_t, arg_offset: size_t) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -5687,7 +5687,7 @@ define Emitter
         ; PHI seeded with the incoming argument. Must run AFTER the page
         ; parameter is bound (its force_frame belongs in entry) and BEFORE the
         ; user parameters are bound — they bind to these PHIs.
-        procedure open_tail_loop(mutable this, func: PlannedFunction, mutable llvm_func: LLVMValueRef, entry_block: LLVMBasicBlockRef, mangled: String, user_count: size_t, arg_offset: size_t) linked
+        procedure open_tail_loop(mutable this, func: PlannedFunction, mutable llvm_func: LLVMValueRef, entry_block: LLVMBasicBlockRef, mangled: String, user_count: size_t, arg_offset: size_t) @deep true @deep_this_20 true @deep_whole_20 true linked
 
 
 
@@ -5763,7 +5763,7 @@ define Emitter
         ; member-access argument cannot become a type crash. Anything left is an
         ; emitter inconsistency, and it dies LOUDLY rather than emitting IR that
         ; llc would reject with a message pointing nowhere near here.
-        procedure coerce_tail_arg(mutable this, mutable val: LLVMValueRef, mutable want: LLVMTypeRef) @direct true returns LLVMValueRef linked
+        procedure coerce_tail_arg(mutable this, mutable val: LLVMValueRef, mutable want: LLVMTypeRef) @direct true @deep true returns LLVMValueRef linked
 
 
 
@@ -5805,7 +5805,7 @@ define Emitter
         ; (`return f(y, x, …)`) therefore goes through the copy machinery, where
         ; staging orders the reads correctly — a little more work than swapping two
         ; pointers, and correct for every mix of sites.
-        function value_is_phi_at(this, v: LLVMValueRef, index: size_t) @ret_nonlocal true returns bool linked
+        function value_is_phi_at(this, v: LLVMValueRef, index: size_t) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -5831,7 +5831,7 @@ define Emitter
         ; through the parameter (its own copy is dead after the tail call) nor
         ; derive a page from the address (Page.get of frame storage is meaningless
         ; already). That asymmetry is what makes this direction the safe one.
-        procedure pointer_outside_frame(this, mutable v: LLVMValueRef) @ret_nonlocal true returns bool linked
+        procedure pointer_outside_frame(this, mutable v: LLVMValueRef) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -5863,7 +5863,7 @@ define Emitter
         ; the two ways they could coincide are ruled out before this is reached
         ; (value_is_own_phi for the pass-through, and a same-type sub-field being
         ; impossible for a strict part of a struct).
-        procedure copy_struct_bytes(mutable this, dst: LLVMValueRef, src: LLVMValueRef, mutable ty: LLVMTypeRef) @ret_caller true linked
+        procedure copy_struct_bytes(mutable this, dst: LLVMValueRef, src: LLVMValueRef, mutable ty: LLVMTypeRef) @ret_caller true @deep true linked
 
 
 
@@ -5895,7 +5895,7 @@ define Emitter
         ; committed: the arguments are already emitted, so a giving-up path there
         ; would evaluate them twice (a call argument would run twice). Hence the
         ; loud exits rather than a late `return false`.
-        procedure emit_self_tail_jump(mutable this, mutable ret: PlannedReturn) @ret_nonlocal true returns bool linked
+        procedure emit_self_tail_jump(mutable this, mutable ret: PlannedReturn) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -6088,7 +6088,7 @@ define Emitter
 
 
         ; Emit function body (implementation)
-        procedure emit_function_body(mutable this, mutable func: PlannedFunction) @ret_nonlocal true returns bool linked
+        procedure emit_function_body(mutable this, mutable func: PlannedFunction) @ret_nonlocal true @deep true @deep_this_2 true @deep_into_1_2 true returns bool linked
 
 
 
@@ -6581,7 +6581,7 @@ define Emitter
         ; c_data() zero-copy for C/extern interop; the empty string is just
         ; { null } (get_length treats null as 0). Mirrors String.init#'s LEB128
         ; varint exactly so get_length/get_buffer decode it.
-        procedure emit_string_constant(mutable this, value: String) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure emit_string_constant(mutable this, value: String) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -6643,7 +6643,7 @@ define Emitter
 
 
         ; Emit a constant value
-        procedure emit_constant(mutable this, mutable const: PlannedConstant, mutable result_type: PlannedType) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure emit_constant(mutable this, mutable const: PlannedConstant, mutable result_type: PlannedType) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -6737,7 +6737,7 @@ define Emitter
         ; ========================================================================
 
         ; Create a new basic block in the current function
-        procedure create_block(mutable this, mutable name: String) @direct true @ret_caller true returns LLVMBasicBlockRef linked
+        procedure create_block(mutable this, mutable name: String) @direct true @ret_caller true @deep true returns LLVMBasicBlockRef linked
 
 
 
@@ -6755,7 +6755,7 @@ define Emitter
         ; seed build passes --no-tests so these dead symbols drop and the seed
         ; links with zero undefined. NOT a compiler-wide name skip (that regresses
         ; AOT sibling_call's legit `function test()`) — gated on the flag.
-        function is_test_function(this, func: PlannedFunction) @ret_nonlocal true returns bool linked
+        function is_test_function(this, func: PlannedFunction) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -6764,7 +6764,7 @@ define Emitter
 
 
 
-        procedure emit(mutable this, mutable plan: Plan, mutable module_name: String) @ret_nonlocal true returns bool io linked
+        procedure emit(mutable this, mutable plan: Plan, mutable module_name: String) @ret_nonlocal true @deep true @deep_this_2 true @deep_whole_2 true returns bool io linked
 
 
 
@@ -7033,7 +7033,7 @@ define Emitter
         ; `_Z3getPv` is referenced but bodyless, emit `_Z3getPv` as a
         ; LinkOnceODR forwarder. Emitting it ONLY where Page.get is defined
         ; keeps scalyc.ll declaring-not-defining (no duplicate at link).
-        procedure ensure_free_page_get(mutable this) linked
+        procedure ensure_free_page_get(mutable this) @deep true linked
 
 
 
@@ -7072,7 +7072,7 @@ define Emitter
         ; The stdlib Node handshake reads the stamp through an extern
         ; declaration and exchanges it as the FIRST bytes on the wire — two
         ; binaries from different builds refuse each other loudly (rule 10).
-        function stamp_line_skipped(this, text: pointer[char], i: size_t) @ret_nonlocal true returns bool linked
+        function stamp_line_skipped(this, text: pointer[char], i: size_t) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -7116,7 +7116,7 @@ define Emitter
 
 
 
-        procedure emit_build_stamp(mutable this) linked
+        procedure emit_build_stamp(mutable this) @deep true linked
 
 
 
@@ -7168,7 +7168,7 @@ define Emitter
         ; already have at least one basic block (definitions). Skips
         ; non-template extern declarations (libc / LLVM-C API) by
         ; requiring the literal-T marker in the symbol name.
-        procedure emit_template_stubs(mutable this) linked
+        procedure emit_template_stubs(mutable this) @deep true linked
 
 
 
@@ -7347,7 +7347,7 @@ define Emitter
         ; names in `set` (a dependency-package's provided symbols). Linear scan —
         ; the set is small (one entry per dep-package top-level function) and this
         ; runs once per module declaration at JIT setup.
-        function jit_symbol_in_set(this, sym_set: ref[Array[String]]?, name_ptr: Slice[char]) @ret_nonlocal true returns bool linked
+        function jit_symbol_in_set(this, sym_set: ref[Array[String]]?, name_ptr: Slice[char]) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -7387,7 +7387,7 @@ define Emitter
         ; symbol in that set must NOT be stubbed — the ORC object linker resolves
         ; it to the real dependency body; a null-returning stub here would shadow
         ; it (the old jit_dep_bodies false-pass). Everything else is unchanged.
-        procedure emit_jit_stubs(mutable this, dep_symbols: ref[Array[String]]) io linked
+        procedure emit_jit_stubs(mutable this, dep_symbols: ref[Array[String]]) @deep true io linked
 
 
 
@@ -7477,7 +7477,7 @@ define Emitter
         ; host process's real, dyld-registered TLV via the ORC process generator,
         ; and clearing the bit there would read the descriptor as the value.
         ; AOT emission is untouched — this runs inside jit_run, after emit.
-        procedure jit_clear_thread_locals(mutable this) linked
+        procedure jit_clear_thread_locals(mutable this) @deep true linked
 
 
 
@@ -7492,7 +7492,7 @@ define Emitter
         ; Print an ORC/LLVM error (a non-null LLVMErrorRef) and consume it.
         ; LLVMGetErrorMessage itself consumes the error and yields a C string the
         ; caller must dispose; do NOT also call LLVMConsumeError.
-        procedure report_jit_error(this, mutable err: LLVMErrorRef, ctx: Slice[char]) @ret_caller true io linked
+        procedure report_jit_error(this, mutable err: LLVMErrorRef, ctx: Slice[char]) @ret_caller true @deep true io linked
 
 
 
@@ -7523,7 +7523,7 @@ define Emitter
         ; the emitter crashed on them). dep_object_symbols: the mangled names those
         ; objects define, so emit_jit_stubs leaves them as declarations. Both null
         ; when the program has no non-scaly dependencies (behavior unchanged).
-        procedure jit_run(mutable this, mutable plan: Plan, mutable module_name: String, mutable fn_mangled: String, mutable dep_object_files: ref[Array[String]]?, dep_object_symbols: ref[Array[String]]) @ret_caller true returns i64 io linked
+        procedure jit_run(mutable this, mutable plan: Plan, mutable module_name: String, mutable fn_mangled: String, mutable dep_object_files: ref[Array[String]]?, dep_object_symbols: ref[Array[String]]) @ret_caller true @deep true @deep_into_1_4 true returns i64 io linked
 
 
 
@@ -7674,7 +7674,7 @@ define Emitter
         ; ========================================================================
 
         ; Print module IR to string (for debugging)
-        procedure print_module_to_string(mutable this) returns pointer[char] linked
+        procedure print_module_to_string(mutable this) @deep true returns pointer[char] linked
 
 
 
@@ -7696,7 +7696,7 @@ define Emitter
         ; The extra copy (print-to-string, then write) is what it costs: ~18 MB for
         ; the compiler's own module, against a build that already works in
         ; hundreds. `-c` is untouched — an object file has no line endings.
-        procedure write_module_to_file(mutable this, filename: String) @ret_nonlocal true returns bool io linked
+        procedure write_module_to_file(mutable this, filename: String) @ret_nonlocal true @deep true returns bool io linked
 
 
 
@@ -7708,7 +7708,7 @@ define Emitter
 
 
         ; Write bitcode to file
-        procedure write_bitcode_to_file(mutable this, mutable filename: String) @ret_caller true returns bool io linked
+        procedure write_bitcode_to_file(mutable this, mutable filename: String) @ret_caller true @deep true returns bool io linked
 
 
 
@@ -7717,7 +7717,7 @@ define Emitter
 
         ; Write native object file via host target machine.
         ; LLVMObjectFile codegen type = 1. Reloc=PIC(2), OptLevel=None(0).
-        procedure write_object_to_file(mutable this, mutable filename: String) @ret_caller true returns bool io linked
+        procedure write_object_to_file(mutable this, mutable filename: String) @ret_caller true @deep true returns bool io linked
 
 
 
@@ -7805,7 +7805,7 @@ define Emitter
 
 
         ; Verify module
-        procedure verify_module(mutable this) @ret_caller true returns bool linked
+        procedure verify_module(mutable this) @ret_caller true @deep true returns bool linked
 
 
 
@@ -7816,7 +7816,7 @@ define Emitter
         ; ========================================================================
 
         ; Emit a sequence of operands (typically collapsed to single operand)
-        procedure emit_operands(mutable this, mutable ops: ref[Vector[PlannedOperand]]?) @direct true @ret_nonlocal true returns LLVMValueRef linked
+        procedure emit_operands(mutable this, mutable ops: ref[Vector[PlannedOperand]]?) @direct true @ret_nonlocal true @deep true returns LLVMValueRef linked
 
 
 
@@ -7833,7 +7833,7 @@ define Emitter
 
 
         ; Emit a single operand
-        procedure emit_operand(mutable this, mutable op: PlannedOperand) @direct true @ret_nonlocal true returns LLVMValueRef linked
+        procedure emit_operand(mutable this, mutable op: PlannedOperand) @direct true @ret_nonlocal true @deep true returns LLVMValueRef linked
 
 
 
@@ -7858,7 +7858,7 @@ define Emitter
 
 
         ; Emit member access chain (e.g., person.address.city)
-        procedure emit_member_access_chain(mutable this, mutable base_value: LLVMValueRef, mutable chain: Vector[PlannedMemberAccess], result_type: PlannedType) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure emit_member_access_chain(mutable this, mutable base_value: LLVMValueRef, mutable chain: Vector[PlannedMemberAccess], result_type: PlannedType) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -8128,7 +8128,7 @@ define Emitter
 
 
         ; Emit an expression
-        procedure emit_expression(mutable this, mutable expr: PlannedExpression) @direct true returns LLVMValueRef linked
+        procedure emit_expression(mutable this, mutable expr: PlannedExpression) @direct true @deep true returns LLVMValueRef linked
 
 
 
@@ -8241,7 +8241,7 @@ define Emitter
         ; usable as an LLVM ptr (a delegate value). The symbol is a monomorphized
         ; lambda (or an ordinary function) already emitted into the module; declare
         ; it as an external if it is not yet present.
-        procedure emit_function_ref(mutable this, mutable fref: PlannedFunctionRef) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure emit_function_ref(mutable this, mutable fref: PlannedFunctionRef) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -8261,7 +8261,7 @@ define Emitter
         ; `{ ptr thunk, capture0, capture1, ... }` and return the record pointer.
         ; The record's field 0 is the bridge thunk; the indirect call loads it and
         ; calls `thunk(record, args...)`. Captures are stored at fields 1.. in order.
-        procedure emit_closure(mutable this, mutable clo: PlannedClosure) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure emit_closure(mutable this, mutable clo: PlannedClosure) @direct true @ret_caller true @deep true @deep_beyond_2 true returns LLVMValueRef linked
 
 
 
@@ -8369,7 +8369,7 @@ define Emitter
 
         ; Resolve the page a closure record is allocated on from its lifetime:
         ; Local → this function's local region; Call (`#`) → caller's `rp`.
-        procedure resolve_closure_page(mutable this, life: scaly.compiler.Model.Lifetime) @direct true returns LLVMValueRef linked
+        procedure resolve_closure_page(mutable this, life: scaly.compiler.Model.Lifetime) @direct true @deep true returns LLVMValueRef linked
 
 
 
@@ -8390,7 +8390,7 @@ define Emitter
         ; captures from `self` (fields 1..) and call the real monomorphized lambda
         ; `real(captures..., params...)`. Mirrors a hand-written trampoline; emitted
         ; as direct IR (no body planning) with the builder saved/restored.
-        procedure emit_closure_thunk(mutable this, mutable clo: PlannedClosure, mutable clo_ty_param: LLVMTypeRef) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure emit_closure_thunk(mutable this, mutable clo: PlannedClosure, mutable clo_ty_param: LLVMTypeRef) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -8480,7 +8480,7 @@ define Emitter
         ; ========================================================================
 
         ; Emit a variable reference
-        procedure emit_variable(mutable this, mutable variable: PlannedVariable) @direct true returns LLVMValueRef linked
+        procedure emit_variable(mutable this, mutable variable: PlannedVariable) @direct true @deep true returns LLVMValueRef linked
 
 
 
@@ -8604,7 +8604,7 @@ define Emitter
         ; array (array_size empty) or any element is not an integer/hex
         ; constant — the caller falls through to the scalar path. Mirrors
         ; stage-0 Emitter.cpp:1115-1204.
-        procedure emit_array_global(mutable this, mutable global: PlannedGlobal) @ret_nonlocal true returns bool linked
+        procedure emit_array_global(mutable this, mutable global: PlannedGlobal) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -8722,13 +8722,13 @@ define Emitter
         ; Only CONSTANTS. A `mutable` global stays external — the runtime's
         ; allocator state is reached by name from emitted prologue code — and a
         ; `shared` one is a deliberate process-global cell.
-        procedure set_module_constant_linkage(this, mutable gv: LLVMValueRef) @ret_caller true linked
+        procedure set_module_constant_linkage(this, mutable gv: LLVMValueRef) @ret_caller true @deep true linked
 
 
 
 
         ; Emit a global reference
-        procedure emit_global_ref(mutable this, mutable global: PlannedGlobalRef) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure emit_global_ref(mutable this, mutable global: PlannedGlobalRef) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -8782,7 +8782,7 @@ define Emitter
         ; local var (function# callers); non-# callers get a lazy root-page
         ; alloc — same fallback as emit_call's existing requires_page_param
         ; path.
-        procedure emit_constructor_call(mutable this, mutable call: PlannedCall) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure emit_constructor_call(mutable this, mutable call: PlannedCall) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -8793,7 +8793,7 @@ define Emitter
         ; emit_in_place_field_ctor): no page resolution, no scratch allocation.
         ; The caller guarantees dest is big enough (its LLVM type equals the
         ; ctor's struct type) and that no ctor arg aliases the destination.
-        procedure emit_constructor_call_into(mutable this, mutable call: PlannedCall, dest: LLVMValueRef) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure emit_constructor_call_into(mutable this, mutable call: PlannedCall, dest: LLVMValueRef) @direct true @ret_caller true @deep true @deep_beyond_2 true returns LLVMValueRef linked
 
 
 
@@ -9120,7 +9120,7 @@ define Emitter
         ; pointer[u8] — i.e. a C-string position. The planner wraps a String
         ; argument bound to such a parameter in a PlannedAs(target = t); emit_as
         ; uses this to lower the String to its c_data content pointer.
-        function target_is_cstr_pointer(this, t: PlannedType) @ret_nonlocal true returns bool linked
+        function target_is_cstr_pointer(this, t: PlannedType) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -9158,7 +9158,7 @@ define Emitter
         ; String coercion in emit_as keys off this, and a String cast to
         ; pointer[void] (Page.get(this as pointer[void]) in String methods)
         ; must keep the record address, not the content buffer.
-        function target_is_char_pointer(this, t: PlannedType) @ret_nonlocal true returns bool linked
+        function target_is_char_pointer(this, t: PlannedType) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -9190,7 +9190,7 @@ define Emitter
         ; so its get_buffer()/c_data() yields null — but a C callee that
         ; dereferences the pointer (LLVMBuildCall2 reads name[0]) needs a valid
         ; "\0". Built once and reused (keyed by name in the module).
-        procedure get_or_build_empty_cstr(mutable this) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure get_or_build_empty_cstr(mutable this) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -9213,7 +9213,7 @@ define Emitter
         ; constant — flows into a const_char position (e.g. `var name "x";
         ; LLVMBuildCall2(.., name)`). A String constant takes the cheaper cstr-
         ; global fast path in emit_as instead.
-        procedure coerce_string_value_to_cstr(mutable this, mutable sval: LLVMValueRef) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure coerce_string_value_to_cstr(mutable this, mutable sval: LLVMValueRef) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -9253,7 +9253,7 @@ define Emitter
         ;   scaly_atomic_load_u64(p) / scaly_atomic_store_u64(p, v)
         ;   scaly_atomic_or_u64 / and_u64 / add_u64 (p, v) returns OLD value
         ;   scaly_atomic_cas_u64(p, expected, desired) returns OLD value
-        procedure emit_atomic_call(mutable this, mutable call: PlannedCall) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure emit_atomic_call(mutable this, mutable call: PlannedCall) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -9311,7 +9311,7 @@ define Emitter
         ; delegate-record calling convention prepends the record as a hidden
         ; first argument, so a plain C-shaped fn(arg) invocation (a
         ; pthread-entry signature) needs this emitter-lowered form.
-        procedure emit_ptr_call(mutable this, mutable call: PlannedCall) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure emit_ptr_call(mutable this, mutable call: PlannedCall) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -9364,7 +9364,7 @@ define Emitter
         ; `remangle_generic#` re-mints the name from the type's own ARGUMENTS and is
         ; the identity for a non-generic type, so the fallback still serves the case
         ; it was written for.
-        function region_walker_symbol(this, t: PlannedType) @page true @direct true @ret_caller true returns String linked
+        function region_walker_symbol(this, t: PlannedType) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -9378,7 +9378,7 @@ define Emitter
 
         ; Page headers are swizzled by Region.deserialize itself — the typed
         ; walk fixes pointers TO them but never descends INTO them.
-        function region_walker_header_name(this, name: String) @ret_nonlocal true returns bool linked
+        function region_walker_header_name(this, name: String) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -9397,7 +9397,7 @@ define Emitter
 
         ; A slot the walker fixes in place: pointer, ref, or an NPO Option
         ; (a bare nullable pointer at the LLVM level).
-        function region_is_ptr_slot(this, ft: PlannedType) @ret_nonlocal true returns bool linked
+        function region_is_ptr_slot(this, ft: PlannedType) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -9410,7 +9410,7 @@ define Emitter
 
         ; The type a fixed slot of type ft points AT ("void" = opaque target,
         ; fix-only): pointer[X]/ref[X] → X, Option[pointer[X]]/Option[ref[X]] → X.
-        function region_slot_pointee(this, ft: PlannedType) @page true @direct true returns PlannedType linked
+        function region_slot_pointee(this, ft: PlannedType) @page true @direct true @deep true returns PlannedType linked
 
 
 
@@ -9436,7 +9436,7 @@ define Emitter
 
 
 
-        function find_planned_structure(this, mangled: String, name: String) @ret_param_0 true returns ref[PlannedStructure]? linked
+        function find_planned_structure(this, mangled: String, name: String) @ret_param_0 true @deep true returns ref[PlannedStructure]? linked
 
 
 
@@ -9473,7 +9473,7 @@ define Emitter
 
 
 
-        function find_planned_union(this, mangled: String, name: String) @ret_param_0 true returns ref[PlannedUnion]? linked
+        function find_planned_union(this, mangled: String, name: String) @ret_param_0 true @deep true returns ref[PlannedUnion]? linked
 
 
 
@@ -9513,7 +9513,7 @@ define Emitter
         ; Does `t` transitively contain slots to fix? Terminates without a
         ; seen-set: recursion only follows BY-VALUE embedding (pointer-like
         ; types answer true immediately), and value-embedding cannot cycle.
-        function region_type_needs_walk(this, t: PlannedType) @ret_nonlocal true returns bool linked
+        function region_type_needs_walk(this, t: PlannedType) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -9574,7 +9574,7 @@ define Emitter
         ; Should a fixed slot's target be walked? Mirrors the planner's
         ; check_message_pointee: scalars, raw buffers, and page headers are
         ; fix-only.
-        function region_walker_descends(this, target: PlannedType) @ret_nonlocal true returns bool linked
+        function region_walker_descends(this, target: PlannedType) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -9588,7 +9588,7 @@ define Emitter
 
 
         ; Anything to do for a value of type ft lying at some address?
-        function region_field_acts(this, ft: PlannedType) @ret_nonlocal true returns bool linked
+        function region_field_acts(this, ft: PlannedType) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -9600,7 +9600,7 @@ define Emitter
         ; The stdlib slot mapper: `_ZN14ReceivedRegion9fix_valueEm` —
         ; i64 fix_value(ptr this, i64 old). Declared on demand; the body
         ; lives in scaly.memory.Region (libscaly.a / in-process for --run).
-        procedure region_fix_value_fn(mutable this) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure region_fix_value_fn(mutable this) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -9609,7 +9609,7 @@ define Emitter
 
 
 
-        procedure region_fix_value_type(mutable this) @direct true @ret_caller true returns LLVMTypeRef linked
+        procedure region_fix_value_type(mutable this) @direct true @ret_caller true @deep true returns LLVMTypeRef linked
 
 
 
@@ -9619,7 +9619,7 @@ define Emitter
 
 
 
-        procedure region_walker_fn_type(mutable this) @direct true @ret_caller true returns LLVMTypeRef linked
+        procedure region_walker_fn_type(mutable this) @direct true @ret_caller true @deep true returns LLVMTypeRef linked
 
 
 
@@ -9631,7 +9631,7 @@ define Emitter
 
         ; Fix one slot in place: load old (align 1), map through fix_value,
         ; store back (align 1). Returns the NEW value as i64.
-        procedure emit_region_fix_slot(mutable this, rr: LLVMValueRef, mutable slot: LLVMValueRef) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure emit_region_fix_slot(mutable this, rr: LLVMValueRef, mutable slot: LLVMValueRef) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -9646,7 +9646,7 @@ define Emitter
 
 
 
-        procedure emit_region_walker_call(mutable this, rr: LLVMValueRef, objp: LLVMValueRef, mutable t: PlannedType) linked
+        procedure emit_region_walker_call(mutable this, rr: LLVMValueRef, objp: LLVMValueRef, mutable t: PlannedType) @deep true linked
 
 
 
@@ -9658,7 +9658,7 @@ define Emitter
         ; Handle one value of planned type ft lying at `addr`: fix pointer
         ; slots (and descend through them), fix a String's data slot, walk an
         ; embedded aggregate in place. Scalars are untouched.
-        procedure emit_region_value_at(mutable this, mutable fn: LLVMValueRef, mutable rr: LLVMValueRef, mutable addr: LLVMValueRef, mutable ft: PlannedType) linked
+        procedure emit_region_value_at(mutable this, mutable fn: LLVMValueRef, mutable rr: LLVMValueRef, mutable addr: LLVMValueRef, mutable ft: PlannedType) @deep true linked
 
 
 
@@ -9692,7 +9692,7 @@ define Emitter
 
         ; Elements data[0..count): one value_at per element. `data_i64` is the
         ; freshly mapped data pointer as i64 (0 = empty), `count` an i64.
-        procedure emit_region_elem_loop(mutable this, mutable fn: LLVMValueRef, mutable rr: LLVMValueRef, mutable data_i64: LLVMValueRef, mutable count: LLVMValueRef, mutable elem: PlannedType) @ret_caller true linked
+        procedure emit_region_elem_loop(mutable this, mutable fn: LLVMValueRef, mutable rr: LLVMValueRef, mutable data_i64: LLVMValueRef, mutable count: LLVMValueRef, mutable elem: PlannedType) @ret_caller true @deep true linked
 
 
 
@@ -9733,7 +9733,7 @@ define Emitter
         ; Vector[T] = { length @0, data @1 }: fix data, then walk the elements
         ; when T carries pointers. All loads align 1 — an embedded Vector in a
         ; union payload sits at byte offset 1.
-        procedure emit_region_vector_body(mutable this, mutable fn: LLVMValueRef, mutable rr: LLVMValueRef, mutable obj: LLVMValueRef, mutable t: PlannedType) linked
+        procedure emit_region_vector_body(mutable this, mutable fn: LLVMValueRef, mutable rr: LLVMValueRef, mutable obj: LLVMValueRef, mutable t: PlannedType) @deep true linked
 
 
 
@@ -9766,7 +9766,7 @@ define Emitter
         ; Array[T] = { length @0, vector: pointer[Vector[T]] @1 }: fix the
         ; vector pointer, fix the backing vector's data slot, walk the VALID
         ; prefix (array.length — the backing capacity tail is zeroed).
-        procedure emit_region_array_body(mutable this, mutable fn: LLVMValueRef, mutable rr: LLVMValueRef, mutable obj: LLVMValueRef, mutable t: PlannedType) linked
+        procedure emit_region_array_body(mutable this, mutable fn: LLVMValueRef, mutable rr: LLVMValueRef, mutable obj: LLVMValueRef, mutable t: PlannedType) @deep true linked
 
 
 
@@ -9851,7 +9851,7 @@ define Emitter
 
         ; Node[T] = { element @0, next @1 }: walk the CHAIN iteratively — a
         ; per-node recursive walker would recurse list-length deep.
-        procedure emit_region_node_body(mutable this, mutable fn: LLVMValueRef, mutable rr: LLVMValueRef, mutable obj: LLVMValueRef, mutable t: PlannedType) @ret_caller true linked
+        procedure emit_region_node_body(mutable this, mutable fn: LLVMValueRef, mutable rr: LLVMValueRef, mutable obj: LLVMValueRef, mutable t: PlannedType) @ret_caller true @deep true linked
 
 
 
@@ -9906,7 +9906,7 @@ define Emitter
         ; Tagged union { tag @0 (i8; i32 past 256 variants), payload @tag_size }:
         ; switch on the tag, handle the live variant's payload in place. An
         ; unknown tag falls through silently, matching choose semantics.
-        procedure emit_region_union_body(mutable this, mutable fn: LLVMValueRef, mutable rr: LLVMValueRef, mutable obj: LLVMValueRef, mutable u: PlannedUnion) linked
+        procedure emit_region_union_body(mutable this, mutable fn: LLVMValueRef, mutable rr: LLVMValueRef, mutable obj: LLVMValueRef, mutable u: PlannedUnion) @deep true linked
 
 
 
@@ -9968,7 +9968,7 @@ define Emitter
 
 
 
-        procedure emit_region_walk_body(mutable this, mutable fn: LLVMValueRef, mutable rr: LLVMValueRef, mutable obj: LLVMValueRef, mutable t: PlannedType) linked
+        procedure emit_region_walk_body(mutable this, mutable fn: LLVMValueRef, mutable rr: LLVMValueRef, mutable obj: LLVMValueRef, mutable t: PlannedType) @deep true linked
 
 
 
@@ -10062,7 +10062,7 @@ define Emitter
 
 
 
-        procedure ensure_region_walker(mutable this, mutable t: PlannedType) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure ensure_region_walker(mutable this, mutable t: PlannedType) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -10098,7 +10098,7 @@ define Emitter
         ; Entry from emit_call: derive the root type from the call's last
         ; argument (pointer[T] — the planner validated the shape) and make
         ; sure the walker set exists before the call is emitted.
-        procedure ensure_region_walker_for_call(mutable this, mutable call: PlannedCall) linked
+        procedure ensure_region_walker_for_call(mutable this, mutable call: PlannedCall) @deep true linked
 
 
 
@@ -10122,7 +10122,7 @@ define Emitter
 
 
 
-        procedure emit_call(mutable this, mutable call: PlannedCall) @direct true returns LLVMValueRef linked
+        procedure emit_call(mutable this, mutable call: PlannedCall) @direct true @deep true @deep_beyond_2 true returns LLVMValueRef linked
 
 
 
@@ -11097,7 +11097,7 @@ define Emitter
         ; ========================================================================
 
         ; Emit an intrinsic operator call
-        procedure emit_intrinsic_operator(mutable this, mutable call: PlannedCall) @direct true returns LLVMValueRef linked
+        procedure emit_intrinsic_operator(mutable this, mutable call: PlannedCall) @direct true @deep true returns LLVMValueRef linked
 
 
 
@@ -11455,7 +11455,7 @@ define Emitter
 
 
         ; Emit an intrinsic unary operator
-        procedure emit_intrinsic_unary_op(mutable this, op_name: String, mutable operand: LLVMValueRef, mutable result_type: PlannedType) @direct true returns LLVMValueRef linked
+        procedure emit_intrinsic_unary_op(mutable this, op_name: String, mutable operand: LLVMValueRef, mutable result_type: PlannedType) @direct true @deep true returns LLVMValueRef linked
 
 
 
@@ -11608,7 +11608,7 @@ define Emitter
 
 
         ; Emit an intrinsic binary operator
-        procedure emit_intrinsic_binary_op(mutable this, op_name: String, mutable left: LLVMValueRef, mutable right: LLVMValueRef, mutable result_type: PlannedType, left_operand_type: PlannedType, right_operand_type: PlannedType) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure emit_intrinsic_binary_op(mutable this, op_name: String, mutable left: LLVMValueRef, mutable right: LLVMValueRef, mutable result_type: PlannedType, left_operand_type: PlannedType, right_operand_type: PlannedType) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -12025,7 +12025,7 @@ define Emitter
 
 
         ; Emit an intrinsic function call
-        procedure emit_intrinsic_function(mutable this, mutable call: PlannedCall) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure emit_intrinsic_function(mutable this, mutable call: PlannedCall) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -12120,7 +12120,7 @@ define Emitter
         ; ========================================================================
 
         ; Check if type is floating point
-        function is_floating_point_type(this, t: PlannedType) @ret_nonlocal true returns bool linked
+        function is_floating_point_type(this, t: PlannedType) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -12132,7 +12132,7 @@ define Emitter
 
 
         ; Check if type is signed
-        function is_signed_type(this, t: PlannedType) @ret_nonlocal true returns bool linked
+        function is_signed_type(this, t: PlannedType) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -12194,10 +12194,10 @@ define Emitter
         ; `Thing.Alpha^host(...)` carries its sigil on `union_type.life` and
         ; used to land on a stack `alloca` with the sigil dropped in silence —
         ; the same class as the 2026-08-29 tuple-path fix, one bahn over.
-        procedure region_alloc_tuple(mutable this, tuple: PlannedTuple, mutable struct_type: LLVMTypeRef) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure region_alloc_tuple(mutable this, tuple: PlannedTuple, mutable struct_type: LLVMTypeRef) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
-        procedure region_alloc_life(mutable this, is_region: bool, life: Lifetime, mutable struct_type: LLVMTypeRef) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure region_alloc_life(mutable this, is_region: bool, life: Lifetime, mutable struct_type: LLVMTypeRef) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -12306,7 +12306,7 @@ define Emitter
 
 
         ; Emit a tuple construction
-        procedure emit_tuple(mutable this, mutable tuple: PlannedTuple) @direct true returns LLVMValueRef linked
+        procedure emit_tuple(mutable this, mutable tuple: PlannedTuple) @direct true @deep true returns LLVMValueRef linked
 
 
 
@@ -12905,7 +12905,7 @@ define Emitter
 
 
         ; Emit a matrix (array literal)
-        procedure emit_matrix(mutable this, mutable matrix: PlannedMatrix) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure emit_matrix(mutable this, mutable matrix: PlannedMatrix) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -13002,7 +13002,7 @@ define Emitter
         ; ========================================================================
 
         ; Emit a block
-        procedure emit_block(mutable this, mutable block: PlannedBlock) @direct true @ret_nonlocal true returns LLVMValueRef linked
+        procedure emit_block(mutable this, mutable block: PlannedBlock) @direct true @ret_nonlocal true @deep true returns LLVMValueRef linked
 
 
 
@@ -13039,7 +13039,7 @@ define Emitter
 
 
         ; Emit an if expression
-        procedure emit_if(mutable this, mutable if_expr: PlannedIf) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure emit_if(mutable this, mutable if_expr: PlannedIf) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -13211,7 +13211,7 @@ define Emitter
 
 
         ; Emit a match expression
-        procedure emit_match(mutable this, mutable match_expr: PlannedMatch) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure emit_match(mutable this, mutable match_expr: PlannedMatch) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -13475,7 +13475,7 @@ define Emitter
 
 
         ; Emit a choose expression (pattern match on union)
-        procedure emit_choose(mutable this, mutable choose_expr: PlannedChoose) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure emit_choose(mutable this, mutable choose_expr: PlannedChoose) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -14406,7 +14406,7 @@ define Emitter
 
 
         ; Emit a for loop
-        procedure emit_for(mutable this, mutable for_expr: PlannedFor) @direct true @ret_param_0 true returns LLVMValueRef linked
+        procedure emit_for(mutable this, mutable for_expr: PlannedFor) @direct true @ret_param_0 true @deep true returns LLVMValueRef linked
 
 
 
@@ -14425,7 +14425,7 @@ define Emitter
         ; Milestone 4.4: should this loop site dispatch through the engine?
         ; Delegates to the TaskPlanner classifier (conservative, transitive
         ; purity, disjoint writes, no early exit, foundation containment).
-        procedure promote_for(mutable this, for_expr: PlannedFor) @ret_nonlocal true returns bool linked
+        procedure promote_for(mutable this, for_expr: PlannedFor) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -14435,7 +14435,7 @@ define Emitter
 
 
         ; Emit integer range for loop: for i in N (iterates 0 to N-1)
-        procedure emit_for_integer_range(mutable this, mutable for_expr: PlannedFor) @direct true @ret_nonlocal true returns LLVMValueRef linked
+        procedure emit_for_integer_range(mutable this, mutable for_expr: PlannedFor) @direct true @ret_nonlocal true @deep true returns LLVMValueRef linked
 
 
 
@@ -14508,7 +14508,7 @@ define Emitter
 
 
         ; Emit iterator-based for loop
-        procedure emit_for_iterator(mutable this, mutable for_expr: PlannedFor) @direct true @ret_nonlocal true returns LLVMValueRef linked
+        procedure emit_for_iterator(mutable this, mutable for_expr: PlannedFor) @direct true @ret_nonlocal true @deep true returns LLVMValueRef linked
 
 
 
@@ -14694,10 +14694,10 @@ define Emitter
 
         ; Record a body-bound name (scoped: scanners save/restore the
         ; length of parfor_locals around nested scopes).
-        procedure parfor_add_local(mutable this, name: String) @persists true @ret_param_0 true linked
+        procedure parfor_add_local(mutable this, name: String) @persists true @ret_param_0 true @deep true linked
 
 
-        function parfor_is_local(this, name: String) @ret_nonlocal true returns bool linked
+        function parfor_is_local(this, name: String) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -14715,7 +14715,7 @@ define Emitter
         ; already recorded, and actually resolves to a local of the
         ; enclosing function (names that resolve to nothing here are
         ; globals, functions, or namespaces — not frame state).
-        procedure parfor_add_capture(mutable this, name: String) @persists true linked
+        procedure parfor_add_capture(mutable this, name: String) @persists true @deep true linked
 
 
 
@@ -14734,7 +14734,7 @@ define Emitter
 
 
 
-        procedure parfor_scan_operands(mutable this, ops: ref[Vector[PlannedOperand]]?) linked
+        procedure parfor_scan_operands(mutable this, ops: ref[Vector[PlannedOperand]]?) @deep true linked
 
 
 
@@ -14748,7 +14748,7 @@ define Emitter
 
 
 
-        procedure parfor_scan_statement_ref(mutable this, stmt: ref[PlannedStatement]?) @ret_nonlocal true linked
+        procedure parfor_scan_statement_ref(mutable this, stmt: ref[PlannedStatement]?) @ret_nonlocal true @deep true linked
 
 
 
@@ -14757,14 +14757,14 @@ define Emitter
 
 
 
-        procedure parfor_scan_action(mutable this, act: PlannedAction) @ret_nonlocal true linked
+        procedure parfor_scan_action(mutable this, act: PlannedAction) @ret_nonlocal true @deep true linked
 
 
 
 
 
 
-        procedure parfor_scan_statement(mutable this, stmt: PlannedStatement) @ret_param_0 true linked
+        procedure parfor_scan_statement(mutable this, stmt: PlannedStatement) @ret_param_0 true @deep true linked
 
 
 
@@ -14785,7 +14785,7 @@ define Emitter
 
 
 
-        procedure parfor_scan_operand(mutable this, op: PlannedOperand) linked
+        procedure parfor_scan_operand(mutable this, op: PlannedOperand) @deep true linked
 
 
 
@@ -14993,7 +14993,7 @@ define Emitter
         ; Look up or declare a runtime symbol with the given type — the 3.3
         ; dispatch calls (TaskPool/TaskGroup/Page.get/Page.allocate), keyed
         ; by mangled name like every emitter runtime declare.
-        procedure get_parfor_runtime_fn(mutable this, mutable mangled: String, mutable fn_ty: LLVMTypeRef) @direct true @ret_param_0 true returns LLVMValueRef linked
+        procedure get_parfor_runtime_fn(mutable this, mutable mangled: String, mutable fn_ty: LLVMTypeRef) @direct true @ret_param_0 true @deep true @deep_into_1_4 true returns LLVMValueRef linked
 
 
 
@@ -15020,7 +15020,7 @@ define Emitter
         ; branches are summed (overshoot only moves the first check earlier).
         ; ------------------------------------------------------------------
 
-        function parfor_wadd(this, a: size_t, b: size_t) @ret_nonlocal true returns size_t linked
+        function parfor_wadd(this, a: size_t, b: size_t) @ret_nonlocal true @deep true returns size_t linked
 
 
 
@@ -15033,7 +15033,7 @@ define Emitter
 
 
 
-        function parfor_wmul(this, a: size_t, b: size_t) @ret_nonlocal true returns size_t linked
+        function parfor_wmul(this, a: size_t, b: size_t) @ret_nonlocal true @deep true returns size_t linked
 
 
 
@@ -15046,7 +15046,7 @@ define Emitter
 
 
 
-        function parfor_weight_is_construction(this, name: String) @ret_nonlocal true returns bool linked
+        function parfor_weight_is_construction(this, name: String) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -15064,7 +15064,7 @@ define Emitter
         ; extern name all fall back to the flat call cost. Declaration
         ; duplicates: a body entry wins over an extern declare for the same
         ; mangled name (the TaskPlanner's effectively_pure discipline).
-        procedure parfor_weight_fn(mutable this, mangled: String) @persists true @ret_param_0 true returns size_t linked
+        procedure parfor_weight_fn(mutable this, mangled: String) @persists true @ret_param_0 true @deep true returns size_t linked
 
 
 
@@ -15118,7 +15118,7 @@ define Emitter
 
 
 
-        procedure parfor_weight_operands(mutable this, ops: ref[Vector[PlannedOperand]]?) @ret_nonlocal true returns size_t linked
+        procedure parfor_weight_operands(mutable this, ops: ref[Vector[PlannedOperand]]?) @ret_nonlocal true @deep true returns size_t linked
 
 
 
@@ -15137,7 +15137,7 @@ define Emitter
 
 
 
-        procedure parfor_weight_statement_ref(mutable this, stmt: ref[PlannedStatement]?) @ret_nonlocal true returns size_t linked
+        procedure parfor_weight_statement_ref(mutable this, stmt: ref[PlannedStatement]?) @ret_nonlocal true @deep true returns size_t linked
 
 
 
@@ -15147,7 +15147,7 @@ define Emitter
 
 
 
-        procedure parfor_weight_action(mutable this, act: PlannedAction) @ret_nonlocal true returns size_t linked
+        procedure parfor_weight_action(mutable this, act: PlannedAction) @ret_nonlocal true @deep true returns size_t linked
 
 
 
@@ -15158,7 +15158,7 @@ define Emitter
 
 
 
-        procedure parfor_weight_statement(mutable this, stmt: PlannedStatement) @ret_nonlocal true returns size_t linked
+        procedure parfor_weight_statement(mutable this, stmt: PlannedStatement) @ret_nonlocal true @deep true returns size_t linked
 
 
 
@@ -15188,7 +15188,7 @@ define Emitter
 
 
 
-        procedure parfor_weight_call(mutable this, call: PlannedCall) @ret_nonlocal true returns size_t linked
+        procedure parfor_weight_call(mutable this, call: PlannedCall) @ret_nonlocal true @deep true returns size_t linked
 
 
 
@@ -15203,7 +15203,7 @@ define Emitter
 
 
 
-        procedure parfor_weight_operand(mutable this, op: PlannedOperand) @ret_nonlocal true returns size_t linked
+        procedure parfor_weight_operand(mutable this, op: PlannedOperand) @ret_nonlocal true @deep true returns size_t linked
 
 
 
@@ -15419,7 +15419,7 @@ define Emitter
 
 
 
-        procedure emit_parallel_for(mutable this, mutable for_expr: PlannedFor) @direct true @ret_nonlocal true returns LLVMValueRef linked
+        procedure emit_parallel_for(mutable this, mutable for_expr: PlannedFor) @direct true @ret_nonlocal true @deep true returns LLVMValueRef linked
 
 
 
@@ -16608,7 +16608,7 @@ define Emitter
 
 
         ; Emit a while loop
-        procedure emit_while(mutable this, mutable while_expr: PlannedWhile) @direct true @ret_nonlocal true returns LLVMValueRef linked
+        procedure emit_while(mutable this, mutable while_expr: PlannedWhile) @direct true @ret_nonlocal true @deep true returns LLVMValueRef linked
 
 
 
@@ -16704,7 +16704,7 @@ define Emitter
         ; When the repeat yields a value (`let x repeat { ... break v }`), a
         ; result slot is allocated; emit_break stores into it and the exit
         ; block loads it as the repeat expression's value.
-        procedure emit_repeat(mutable this, mutable repeat_expr: PlannedRepeat) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure emit_repeat(mutable this, mutable repeat_expr: PlannedRepeat) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -16768,7 +16768,7 @@ define Emitter
         ; ★No value is bound on the catch path: the binding leaks into the
         ; enclosing scope (see plan_try) and the else arm of every shape in the
         ; tree ends in a return or a throw, so nothing downstream reads it.
-        procedure emit_try_panic_catch(mutable this, mutable try_expr: PlannedTry) @direct true @ret_param_0 true returns LLVMValueRef linked
+        procedure emit_try_panic_catch(mutable this, mutable try_expr: PlannedTry) @direct true @ret_param_0 true @deep true returns LLVMValueRef linked
 
 
 
@@ -16907,7 +16907,7 @@ define Emitter
 
 
 
-        procedure emit_try(mutable this, mutable try_expr: PlannedTry) @direct true returns LLVMValueRef linked
+        procedure emit_try(mutable this, mutable try_expr: PlannedTry) @direct true @deep true returns LLVMValueRef linked
 
 
 
@@ -17133,7 +17133,7 @@ define Emitter
         ; ========================================================================
 
         ; Emit sizeof
-        procedure emit_sizeof(mutable this, mutable sizeof_expr: PlannedSizeOf) @direct true returns LLVMValueRef linked
+        procedure emit_sizeof(mutable this, mutable sizeof_expr: PlannedSizeOf) @direct true @deep true returns LLVMValueRef linked
 
 
 
@@ -17165,7 +17165,7 @@ define Emitter
 
 
         ; Emit alignof
-        procedure emit_alignof(mutable this, alignof_expr: PlannedAlignOf) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure emit_alignof(mutable this, alignof_expr: PlannedAlignOf) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -17173,7 +17173,7 @@ define Emitter
 
 
         ; Emit is expression (type test)
-        procedure emit_is(mutable this, mutable is_expr: PlannedIs) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure emit_is(mutable this, mutable is_expr: PlannedIs) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -17314,7 +17314,7 @@ define Emitter
 
 
         ; Emit as expression (type cast)
-        procedure emit_as(mutable this, mutable as_expr: PlannedAs) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure emit_as(mutable this, mutable as_expr: PlannedAs) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -17529,7 +17529,7 @@ define Emitter
 
 
         ; Emit variant construction (e.g., Result.Ok value, Option.Some value)
-        procedure emit_variant_construction(mutable this, mutable vc: PlannedVariantConstruction) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure emit_variant_construction(mutable this, mutable vc: PlannedVariantConstruction) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -17728,7 +17728,7 @@ define Emitter
         ; Values cannot leak across windows: emit_statement returns only
         ; bool, so expression values always flow through emit_action /
         ; emit_operand inside one window.
-        procedure emit_statement(mutable this, mutable stmt: PlannedStatement) @ret_param_0 true returns bool linked
+        procedure emit_statement(mutable this, mutable stmt: PlannedStatement) @ret_param_0 true @deep true returns bool linked
 
 
 
@@ -17740,7 +17740,7 @@ define Emitter
 
 
 
-        procedure emit_statement_inner(mutable this, mutable stmt: PlannedStatement) @ret_param_0 true returns bool linked
+        procedure emit_statement_inner(mutable this, mutable stmt: PlannedStatement) @ret_param_0 true @deep true returns bool linked
 
 
 
@@ -17779,7 +17779,7 @@ define Emitter
         ; in-place field-construction aliasing guard; CONSERVATIVE: any expression
         ; shape the walker doesn't enumerate counts as a mention (keep the
         ; scratch when in doubt).
-        function operand_mentions_name(this, op: PlannedOperand, name: String) @ret_nonlocal true returns bool linked
+        function operand_mentions_name(this, op: PlannedOperand, name: String) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -17882,7 +17882,7 @@ define Emitter
         ; references the target variable or any hop of the target member chain.
         ; `set f: String(f)` must KEEP the scratch — the ctor reads the old value
         ; while in-place construction would clobber it first.
-        function ctor_args_mention_chain(this, call: PlannedCall, variable: PlannedVariable, chain: Vector[PlannedMemberAccess]) @ret_nonlocal true returns bool linked
+        function ctor_args_mention_chain(this, call: PlannedCall, variable: PlannedVariable, chain: Vector[PlannedMemberAccess]) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -17932,7 +17932,7 @@ define Emitter
         ;   - no ctor arg mentions the target chain (aliasing guard).
         ; Returns null (nothing emitted) when not applicable — emit_action then
         ; falls through to the legacy scratch path.
-        procedure emit_in_place_field_ctor(mutable this, mutable action: PlannedAction) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure emit_in_place_field_ctor(mutable this, mutable action: PlannedAction) @direct true @ret_caller true @deep true @deep_beyond_2 true returns LLVMValueRef linked
 
 
 
@@ -18037,7 +18037,7 @@ define Emitter
 
 
 
-        procedure emit_action(mutable this, mutable action: PlannedAction) @direct true returns LLVMValueRef linked
+        procedure emit_action(mutable this, mutable action: PlannedAction) @direct true @deep true returns LLVMValueRef linked
 
 
 
@@ -18493,7 +18493,7 @@ define Emitter
         ; Triggers only for: variable name "this" + single-operand source whose
         ; expr is a Call with Lifetime.Unspecified and a C1 (Itanium ctor)
         ; mangled name. Other shapes pass through unchanged.
-        procedure maybe_heap_copy_ctor_value(mutable this, value: LLVMValueRef, var_ptr: LLVMValueRef, variable: PlannedVariable, source: ref[Vector[PlannedOperand]]?) @direct true returns LLVMValueRef linked
+        procedure maybe_heap_copy_ctor_value(mutable this, value: LLVMValueRef, var_ptr: LLVMValueRef, variable: PlannedVariable, source: ref[Vector[PlannedOperand]]?) @direct true @deep true returns LLVMValueRef linked
 
 
 
@@ -18599,7 +18599,7 @@ define Emitter
         ; + GEP-chain walk). Factored out of emit_member_assignment so the
         ; in-place field construction path (emit_in_place_field_ctor) can compute
         ; the destination without emitting a store.
-        procedure emit_member_address(mutable this, mutable var_ptr: LLVMValueRef, planned_var: PlannedVariable, mutable members: ref[Vector[PlannedMemberAccess]]?) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure emit_member_address(mutable this, mutable var_ptr: LLVMValueRef, planned_var: PlannedVariable, mutable members: ref[Vector[PlannedMemberAccess]]?) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -18867,7 +18867,7 @@ define Emitter
 
 
         ; Helper for member field assignment
-        procedure emit_member_assignment(mutable this, mutable var_ptr: LLVMValueRef, mutable planned_var: PlannedVariable, mutable members: ref[Vector[PlannedMemberAccess]]?, mutable value: LLVMValueRef) @direct true @ret_caller true returns LLVMValueRef linked
+        procedure emit_member_assignment(mutable this, mutable var_ptr: LLVMValueRef, mutable planned_var: PlannedVariable, mutable members: ref[Vector[PlannedMemberAccess]]?, mutable value: LLVMValueRef) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
 
 
@@ -18912,7 +18912,7 @@ define Emitter
         ; The signedness of a binding's initializer, read off its planned type
         ; (the first collapsed operand); signed when nothing says otherwise, as
         ; is_signed_type# decides.
-        function binding_initializer_is_signed(this, binding: PlannedBinding) @ret_param_0 true returns bool linked
+        function binding_initializer_is_signed(this, binding: PlannedBinding) @ret_param_0 true @deep true returns bool linked
 
 
 
@@ -18926,7 +18926,7 @@ define Emitter
 
 
 
-        procedure emit_binding(mutable this, mutable binding: PlannedBinding) @ret_nonlocal true returns bool linked
+        procedure emit_binding(mutable this, mutable binding: PlannedBinding) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -19267,7 +19267,7 @@ define Emitter
 
 
         ; Emit a return statement
-        procedure emit_return(mutable this, mutable ret: PlannedReturn) @ret_nonlocal true returns bool linked
+        procedure emit_return(mutable this, mutable ret: PlannedReturn) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -19415,7 +19415,7 @@ define Emitter
 
 
         ; Emit a throw statement
-        procedure emit_throw(mutable this, mutable throw_stmt: PlannedThrow) @ret_nonlocal true returns bool linked
+        procedure emit_throw(mutable this, mutable throw_stmt: PlannedThrow) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -19545,7 +19545,7 @@ define Emitter
 
 
         ; Emit a break statement
-        procedure emit_break(mutable this, mutable brk: PlannedBreak) @ret_nonlocal true returns bool linked
+        procedure emit_break(mutable this, mutable brk: PlannedBreak) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -19586,7 +19586,7 @@ define Emitter
 
 
         ; Emit a continue statement
-        procedure emit_continue(mutable this, mutable cont: PlannedContinue) @ret_nonlocal true returns bool linked
+        procedure emit_continue(mutable this, mutable cont: PlannedContinue) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -19604,7 +19604,7 @@ define Emitter
         ; ========================================================================
 
         ; Push a loop context onto the stack
-        procedure push_loop(mutable this, exit_block: LLVMBasicBlockRef, continue_block: LLVMBasicBlockRef, loop_label: String, result_slot: LLVMValueRef) @ret_caller true linked
+        procedure push_loop(mutable this, exit_block: LLVMBasicBlockRef, continue_block: LLVMBasicBlockRef, loop_label: String, result_slot: LLVMValueRef) @ret_caller true @deep true linked
 
 
 
@@ -19613,7 +19613,7 @@ define Emitter
         ; Resolve the loop a break/continue targets. An empty loop_label means the
         ; innermost loop (top of stack); a non-empty loop_label scans from innermost
         ; outward for the matching loop. Returns null when no match is found.
-        function find_loop_context(this, loop_label: String) @ret_param_0 true returns ref[LoopContext]? linked
+        function find_loop_context(this, loop_label: String) @ret_param_0 true @deep true returns ref[LoopContext]? linked
 
 
 
@@ -19634,7 +19634,7 @@ define Emitter
 
 
         ; Pop a loop context from the stack
-        procedure pop_loop(mutable this) linked
+        procedure pop_loop(mutable this) @deep true linked
 
 
 
@@ -19645,7 +19645,7 @@ define Emitter
     ; Test function
     ; ============================================================================
 
-    procedure test() @ret_nonlocal true returns int io mutable modeler_error_count reads modeler_error_count linked
+    procedure test() @ret_nonlocal true @deep true returns int io mutable modeler_error_count reads modeler_error_count linked
 
 
 

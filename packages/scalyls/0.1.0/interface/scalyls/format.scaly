@@ -97,7 +97,7 @@ define format
     ; A stack frame packed into one size_t so the stack is a plain
     ; Array[size_t] (push = add, pop = set length - 1, the idiom TaskPlanner
     ; uses). Layout: bits 0..1 kind, bit 2 paren_cancels, bits 8.. level.
-    function frame_make(kind: size_t, level: size_t, paren_cancels: bool) @ret_nonlocal true returns size_t linked
+    function frame_make(kind: size_t, level: size_t, paren_cancels: bool) @ret_nonlocal true @deep true returns size_t linked
 
 
 
@@ -105,18 +105,18 @@ define format
 
 
 
-    function frame_kind(f: size_t) @ret_nonlocal true returns size_t linked
+    function frame_kind(f: size_t) @ret_nonlocal true @deep true returns size_t linked
 
 
-    function frame_level(f: size_t) @ret_nonlocal true returns size_t linked
+    function frame_level(f: size_t) @ret_nonlocal true @deep true returns size_t linked
 
 
-    function frame_paren_cancels(f: size_t) @ret_nonlocal true returns bool linked
+    function frame_paren_cancels(f: size_t) @ret_nonlocal true @deep true returns bool linked
 
 
     ; ---- byte classification ----------------------------------------------
 
-    function is_opener(c: u8) @ret_nonlocal true returns bool linked
+    function is_opener(c: u8) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -127,7 +127,7 @@ define format
 
 
 
-    function is_closer(c: u8) @ret_nonlocal true returns bool linked
+    function is_closer(c: u8) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -138,7 +138,7 @@ define format
 
 
 
-    function is_space(c: u8) @ret_nonlocal true returns bool linked
+    function is_space(c: u8) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -149,7 +149,7 @@ define format
 
 
 
-    function is_word_byte(c: u8) @ret_nonlocal true returns bool linked
+    function is_word_byte(c: u8) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -168,7 +168,7 @@ define format
     ; A routine header ending in one of these is a DECLARATION: it has no body,
     ; so it must not open a braceless block (`operator +(...) returns i64
     ; intrinsic`, one per line, would otherwise stair-step the whole file).
-    function is_bodyless_word(w: String) @ret_nonlocal true returns bool linked
+    function is_bodyless_word(w: String) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -179,7 +179,7 @@ define format
 
 
 
-    function is_one_word(w: String) @ret_nonlocal true returns bool linked
+    function is_one_word(w: String) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -199,7 +199,7 @@ define format
     ; `else` is an ARM as well as an `if`'s alternative: a `choose` may end in
     ; `else`, and treating it as an ordinary statement there would close the
     ; choose block before its last arm.
-    function is_arm_word(w: String) @ret_nonlocal true returns bool linked
+    function is_arm_word(w: String) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -210,7 +210,7 @@ define format
 
 
 
-    function is_routine_word(w: String) @ret_nonlocal true returns bool linked
+    function is_routine_word(w: String) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -231,7 +231,7 @@ define format
     ; state on entry. Bytes inside string literals, char literals, string
     ; identifiers and comments never count as brackets — that is the whole
     ; reason this is a scan and not a character count.
-    function scan_line(rp, source: String, start: size_t, end: size_t, in_block: bool) @direct true @ret_caller true returns LineScan linked
+    function scan_line(rp, source: String, start: size_t, end: size_t, in_block: bool) @direct true @ret_caller true @deep true returns LineScan linked
 
 
 
@@ -459,7 +459,7 @@ define format
     ; ---- the formatter ------------------------------------------------------
 
     ; `source` re-indented. The line count is preserved exactly.
-    function format_source(rp, source: String) @direct true @ret_caller true returns String linked
+    function format_source(rp, source: String) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -733,7 +733,7 @@ define format
     ; The stack is an Array[size_t] of packed frames: push = add, pop = shorten
     ; (the idiom TaskPlanner.scaly uses; Array has no remove_last).
 
-    function top_kind(stack: ref[Array[size_t]]) @ret_nonlocal true returns size_t linked
+    function top_kind(stack: ref[Array[size_t]]) @ret_nonlocal true @deep true returns size_t linked
 
 
 
@@ -744,7 +744,7 @@ define format
 
 
 
-    function top_paren_cancels(stack: ref[Array[size_t]]) @ret_nonlocal true returns bool linked
+    function top_paren_cancels(stack: ref[Array[size_t]]) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -756,7 +756,7 @@ define format
 
 
     ; Pop the top frame and answer the level it recorded.
-    procedure pop_frame(mutable stack: ref[Array[size_t]]) @ret_nonlocal true returns size_t linked
+    procedure pop_frame(mutable stack: ref[Array[size_t]]) @ret_nonlocal true @deep true returns size_t linked
 
 
 
@@ -771,7 +771,7 @@ define format
     ; Drop frames until a bracket frame is popped; answer its level. Braceless
     ; frames inside the bracket die with it — the block they were waiting for a
     ; statement in has ended.
-    procedure unwind_to_bracket(mutable stack: ref[Array[size_t]], level: size_t) @ret_nonlocal true returns size_t linked
+    procedure unwind_to_bracket(mutable stack: ref[Array[size_t]], level: size_t) @ret_nonlocal true @deep true returns size_t linked
 
 
 
@@ -804,7 +804,7 @@ define format
     ; after the line's content — which in this tree routinely contains non-ASCII
     ; (an em dash in a comment) — so that offset goes through utf16_length#. An
     ; edit at a wrong character offset does not fail, it CORRUPTS the document.
-    function format_edits(rp, source: String) @direct true @ret_caller true returns String linked
+    function format_edits(rp, source: String) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -916,7 +916,7 @@ define format
 
 
     ; One TextEdit on `line`, replacing [from, to) (UTF-16 units) with `text`.
-    function edit(rp, line: size_t, from: size_t, to: size_t, text: String) @direct true @ret_caller true returns String linked
+    function edit(rp, line: size_t, from: size_t, to: size_t, text: String) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -935,7 +935,7 @@ define format
 
 
 
-    function pos(rp, line: size_t, character: size_t) @direct true @ret_caller true returns String linked
+    function pos(rp, line: size_t, character: size_t) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -948,7 +948,7 @@ define format
 
 
 
-    function key(rp, k: Slice[char]) @direct true @ret_caller true returns String linked
+    function key(rp, k: Slice[char]) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -962,7 +962,7 @@ define format
     ; of 0xF0 or above encodes a character outside the BMP, which is a SURROGATE
     ; PAIR in UTF-16 and therefore counts twice; continuation bytes count for
     ; nothing.
-    function utf16_length(source: String, start: size_t, end: size_t) @ret_nonlocal true returns size_t linked
+    function utf16_length(source: String, start: size_t, end: size_t) @ret_nonlocal true @deep true returns size_t linked
 
 
 

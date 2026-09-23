@@ -140,7 +140,7 @@ define storelens
 {
     ; The store lenses as a COMMA-JOINED FRAGMENT, or "". The plan is the
     ; caller's — codelens.scaly plans once for every plan-derived family.
-    procedure fragment(rp, plan: Plan, plan_text: String, anchor_text: String) @direct true @ret_caller true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure fragment(rp, plan: Plan, plan_text: String, anchor_text: String) @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -169,7 +169,7 @@ define storelens
     ; `declared_here` is the file filter without which the flat function vector
     ; draws other files' offsets into this one.
     ; ====================================================================
-    function collect(rp, plan: Plan, plan_text: String) @direct true @ret_caller true returns String linked
+    function collect(rp, plan: Plan, plan_text: String) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -197,7 +197,7 @@ define storelens
 
 
 
-    function declared_here(plan_text: String, fn: PlannedFunction) @ret_caller true returns bool linked
+    function declared_here(plan_text: String, fn: PlannedFunction) @ret_caller true @deep true returns bool linked
 
 
 
@@ -222,7 +222,7 @@ define storelens
     ; `PlannedType.name` for a pointer is the bare word "pointer" with the
     ; pointee in `generics[0]` (Planner.get_readable_name#), so this is an exact
     ; test and not a prefix match on a rendered name.
-    function pointer_params(rp, fn: PlannedFunction) @direct true @ret_caller true returns String linked
+    function pointer_params(rp, fn: PlannedFunction) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -260,7 +260,7 @@ define storelens
 
 
 
-    procedure collect_impl(mutable sb: ref[StringBuilder], plan: Plan, params: String, impl: PlannedImplementation) @ret_nonlocal true linked
+    procedure collect_impl(mutable sb: ref[StringBuilder], plan: Plan, params: String, impl: PlannedImplementation) @ret_nonlocal true @deep true linked
 
 
 
@@ -276,7 +276,7 @@ define storelens
     ; The one place that decides. A function BODY is also a PlannedAction, and
     ; so is a for/while/repeat body — all of them target-less, which is what
     ; keeps them out of here without a special case.
-    procedure collect_action(mutable sb: ref[StringBuilder], plan: Plan, params: String, act: PlannedAction) @ret_nonlocal true linked
+    procedure collect_action(mutable sb: ref[StringBuilder], plan: Plan, params: String, act: PlannedAction) @ret_nonlocal true @deep true linked
 
 
 
@@ -322,7 +322,7 @@ define storelens
     ;
     ; The depth cap is a loop guard, for dedupe#'s reason: a plan must not be
     ; able to spin the worker.
-    function source_settled(source: ref[Vector[PlannedOperand]]?) @ret_nonlocal true returns bool linked
+    function source_settled(source: ref[Vector[PlannedOperand]]?) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -336,7 +336,7 @@ define storelens
 
 
 
-    function operand_settled(op: PlannedOperand, depth: int) @ret_nonlocal true returns bool linked
+    function operand_settled(op: PlannedOperand, depth: int) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -412,7 +412,7 @@ define storelens
     ; ROOT (which would mean modelling the deref operator's call shape); the only
     ; way it could differ is a pointer parameter used as a SUBSCRIPT, which is
     ; not a thing an index can be.
-    function target_param(rp, target: ref[Vector[PlannedOperand]]?, params: String) @direct true @ret_caller true returns String linked
+    function target_param(rp, target: ref[Vector[PlannedOperand]]?, params: String) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -432,7 +432,7 @@ define storelens
 
 
 
-    function param_in_operand(rp, op: PlannedOperand, params: String) @direct true returns String linked
+    function param_in_operand(rp, op: PlannedOperand, params: String) @direct true @deep true returns String linked
 
 
 
@@ -440,7 +440,7 @@ define storelens
     ; Only the arms an lvalue chain can be built from are walked: a Variable is
     ; the answer, a Call is the deref/subscript operator (its receiver sits in
     ; the arguments), and an As is a cast. Everything else answers "".
-    function param_in_expr(rp, expr: PlannedExpression, params: String) @direct true returns String linked
+    function param_in_expr(rp, expr: PlannedExpression, params: String) @direct true @deep true returns String linked
 
 
 
@@ -493,7 +493,7 @@ define storelens
     ; value, but a truncated plan must not be able to spin the worker), and it
     ; also bounds the cost, since each level rescans plan.structures.
     ; ====================================================================
-    function carrier_of(rp, plan: Plan, ty: PlannedType, depth: int) @direct true @ret_caller true returns String linked
+    function carrier_of(rp, plan: Plan, ty: PlannedType, depth: int) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -532,14 +532,14 @@ define storelens
     ; The mangled name is the precise key (it distinguishes two instantiations of
     ; one generic); the readable name is the fallback for a type planned without
     ; one.
-    function structure_matches(st: PlannedStructure, ty: PlannedType) @ret_param_0 true returns bool linked
+    function structure_matches(st: PlannedStructure, ty: PlannedType) @ret_param_0 true @deep true returns bool linked
 
 
 
 
 
 
-    function carrier_in_properties(rp, plan: Plan, st: PlannedStructure, depth: int) @direct true @ret_caller true returns String linked
+    function carrier_in_properties(rp, plan: Plan, st: PlannedStructure, depth: int) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -564,7 +564,7 @@ define storelens
     ; The rest of the walk — the arms that only recurse.
     ; ====================================================================
 
-    procedure collect_statement(mutable sb: ref[StringBuilder], plan: Plan, params: String, stmt: PlannedStatement) @ret_nonlocal true linked
+    procedure collect_statement(mutable sb: ref[StringBuilder], plan: Plan, params: String, stmt: PlannedStatement) @ret_nonlocal true @deep true linked
 
 
 
@@ -581,7 +581,7 @@ define storelens
 
 
 
-    procedure collect_statement_opt(mutable sb: ref[StringBuilder], plan: Plan, params: String, opt: ref[PlannedStatement]?) @ret_nonlocal true linked
+    procedure collect_statement_opt(mutable sb: ref[StringBuilder], plan: Plan, params: String, opt: ref[PlannedStatement]?) @ret_nonlocal true @deep true linked
 
 
 
@@ -590,25 +590,7 @@ define storelens
 
 
 
-    procedure collect_operands_opt(mutable sb: ref[StringBuilder], plan: Plan, params: String, opt: ref[Vector[PlannedOperand]]?) linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    procedure collect_operand_opt(mutable sb: ref[StringBuilder], plan: Plan, params: String, opt: ref[PlannedOperand]?) @ret_nonlocal true linked
+    procedure collect_operands_opt(mutable sb: ref[StringBuilder], plan: Plan, params: String, opt: ref[Vector[PlannedOperand]]?) @deep true linked
 
 
 
@@ -618,7 +600,25 @@ define storelens
 
 
 
-    procedure collect_expr(mutable sb: ref[StringBuilder], plan: Plan, params: String, expr: PlannedExpression) linked
+
+
+
+
+
+
+
+
+    procedure collect_operand_opt(mutable sb: ref[StringBuilder], plan: Plan, params: String, opt: ref[PlannedOperand]?) @ret_nonlocal true @deep true linked
+
+
+
+
+
+
+
+
+
+    procedure collect_expr(mutable sb: ref[StringBuilder], plan: Plan, params: String, expr: PlannedExpression) @deep true linked
 
 
 
@@ -762,7 +762,7 @@ define storelens
     ; The blob.
     ; ====================================================================
 
-    procedure emit_site(mutable sb: ref[StringBuilder], offset: size_t, param: String, stored: String, carrier: String) @ret_nonlocal true linked
+    procedure emit_site(mutable sb: ref[StringBuilder], offset: size_t, param: String, stored: String, carrier: String) @ret_nonlocal true @deep true linked
 
 
 
@@ -778,7 +778,7 @@ define storelens
     ; is planned once per instantiation, so one source store is reached many
     ; times. Same shape and same reason as placehints.dedupe#, including why it
     ; is a second pass over a String rather than a set threaded through the walk.
-    function dedupe(rp, blob: String) @direct true @ret_caller true returns String linked
+    function dedupe(rp, blob: String) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -810,7 +810,7 @@ define storelens
 
 
     ; Is a line with the same leading OFFSET field already kept?
-    function has_line(kept: String, line: String) @ret_nonlocal true returns bool linked
+    function has_line(kept: String, line: String) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -849,7 +849,7 @@ define storelens
     ; Rendering: one lens per blob line, drawn at the BUFFER's `set` site of the
     ; same index as the plan text's.
     ; ====================================================================
-    procedure render(rp, blob: String, plan_text: String, anchor_text: String) @direct true @ret_caller true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure render(rp, blob: String, plan_text: String, anchor_text: String) @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -883,7 +883,7 @@ define storelens
 
 
 
-    procedure lens_for(rp, line: String, plan_text: String, anchor_text: String) @direct true @ret_caller true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure lens_for(rp, line: String, plan_text: String, anchor_text: String) @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -918,7 +918,7 @@ define storelens
 
 
     ; The n-th TAB-separated field of `line`, or "".
-    function field_at(rp, line: String, n: size_t) @direct true @ret_caller true returns String linked
+    function field_at(rp, line: String, n: size_t) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -950,7 +950,7 @@ define storelens
 
 
 
-    function parse_size(digits: String) @ret_nonlocal true returns size_t linked
+    function parse_size(digits: String) @ret_nonlocal true @deep true returns size_t linked
 
 
 
@@ -978,7 +978,7 @@ define storelens
     ; index by one.
     ; ====================================================================
 
-    function next_set_site(source: String, from: size_t) @ret_nonlocal true returns size_t linked
+    function next_set_site(source: String, from: size_t) @ret_nonlocal true @deep true returns size_t linked
 
 
 
@@ -1000,7 +1000,7 @@ define storelens
 
 
 
-    function count_set_sites(source: String) @ret_nonlocal true returns size_t linked
+    function count_set_sites(source: String) @ret_nonlocal true @deep true returns size_t linked
 
 
 
@@ -1018,7 +1018,7 @@ define storelens
 
     ; The index of the `set` site at or before `offset`, or -1 when the offset
     ; precedes every one of them.
-    function set_index_at(source: String, offset: size_t) @ret_nonlocal true returns int linked
+    function set_index_at(source: String, offset: size_t) @ret_nonlocal true @deep true returns int linked
 
 
 
@@ -1038,7 +1038,7 @@ define storelens
 
 
 
-    function set_site_at_index(source: String, idx: int) @ret_nonlocal true returns size_t linked
+    function set_site_at_index(source: String, idx: int) @ret_nonlocal true @deep true returns size_t linked
 
 
 
@@ -1058,7 +1058,7 @@ define storelens
 
     ; Is source[k..] the keyword `set` on both token boundaries? A bare `set` at
     ; EOF is not an assignment (it needs a target), so k+3 must exist.
-    function is_set_token(source: String, k: size_t, len: size_t) @ret_nonlocal true returns bool linked
+    function is_set_token(source: String, k: size_t, len: size_t) @ret_nonlocal true @deep true returns bool linked
 
 
 

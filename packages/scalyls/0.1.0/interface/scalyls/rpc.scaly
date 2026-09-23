@@ -25,7 +25,7 @@ define rpc
 {
     ; Read a single byte from stdin. Returns the byte (0..255), or -1 on
     ; EOF / error.
-    procedure read_byte() @ret_nonlocal true returns int io linked
+    procedure read_byte() @ret_nonlocal true @deep true returns int io linked
 
 
 
@@ -47,7 +47,7 @@ define rpc
 
 
     ; Fill exactly `n` bytes from stdin into `buf`. Stops early on EOF.
-    procedure read_exact(mutable buf: pointer[void], n: size_t) io linked
+    procedure read_exact(mutable buf: pointer[void], n: size_t) @deep true io linked
 
 
 
@@ -67,7 +67,7 @@ define rpc
 
     ; Read one framed message. Returns the JSON body as a String on the
     ; caller's page, or an empty String at EOF / on a malformed frame.
-    procedure read_message(rp) @direct true @ret_caller true returns String io linked
+    procedure read_message(rp) @direct true @ret_caller true @deep true returns String io linked
 
 
 
@@ -115,7 +115,7 @@ define rpc
 
 
     ; Parse the integer value from a "Header-Name: <digits>" line.
-    function parse_header_size(line: String) @ret_nonlocal true returns size_t linked
+    function parse_header_size(line: String) @ret_nonlocal true @deep true returns size_t linked
 
 
 
@@ -138,7 +138,7 @@ define rpc
 
 
     ; Write a JSON body as a framed message to stdout.
-    procedure write_message(body: String) @ret_nonlocal true io linked
+    procedure write_message(body: String) @ret_nonlocal true @deep true io linked
 
 
 
@@ -158,7 +158,7 @@ define rpc
 
 
     ; Write every byte of `s` to stdout, retrying short writes.
-    procedure write_all(s: String) io linked
+    procedure write_all(s: String) @deep true io linked
 
 
 
@@ -181,7 +181,7 @@ define rpc
 
 
 
-    function format_size(rp, n: size_t) @direct true @ret_caller true returns String linked
+    function format_size(rp, n: size_t) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -214,7 +214,7 @@ define rpc
     ; never disturbed.
     ; ====================================================================
 
-    procedure read_byte_fd(fd: int) @ret_nonlocal true returns int io linked
+    procedure read_byte_fd(fd: int) @ret_nonlocal true @deep true returns int io linked
 
 
 
@@ -232,7 +232,7 @@ define rpc
 
 
 
-    procedure read_exact_fd(fd: int, mutable buf: pointer[void], n: size_t) io linked
+    procedure read_exact_fd(fd: int, mutable buf: pointer[void], n: size_t) @deep true io linked
 
 
 
@@ -250,7 +250,7 @@ define rpc
 
 
 
-    procedure read_message_fd(rp, fd: int) @direct true @ret_caller true returns String io linked
+    procedure read_message_fd(rp, fd: int) @direct true @ret_caller true @deep true returns String io linked
 
 
 
@@ -295,7 +295,7 @@ define rpc
 
 
 
-    procedure write_all_fd(fd: int, s: String) io linked
+    procedure write_all_fd(fd: int, s: String) @deep true io linked
 
 
 
@@ -323,7 +323,7 @@ define rpc
 
 
 
-    procedure write_message_fd(fd: int, body: String) @ret_nonlocal true io linked
+    procedure write_message_fd(fd: int, body: String) @ret_nonlocal true @deep true io linked
 
 
 

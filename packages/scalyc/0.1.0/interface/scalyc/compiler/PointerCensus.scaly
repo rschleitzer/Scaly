@@ -264,7 +264,7 @@ define PointerCensus
         ; Entry point: declarations over the module tree, then every
         ; planned body plus the program's top-level statements.
         ; ================================================================
-        procedure analyze(mutable this: PointerCensus, plan: Plan, model: ref[Program], entry_file: String) io linked
+        procedure analyze(mutable this: PointerCensus, plan: Plan, model: ref[Program], entry_file: String) @deep true @deep_this_2 true io linked
 
 
 
@@ -313,7 +313,7 @@ define PointerCensus
 
 
 
-        function total(this: PointerCensus) @ret_param_0 true returns size_t linked
+        function total(this: PointerCensus) @ret_param_0 true @deep true returns size_t linked
 
 
         ; ================================================================
@@ -321,7 +321,7 @@ define PointerCensus
         ; ================================================================
 
         ; The type under a one-argument `Option`, or the type itself.
-        function peel_option(t: PlannedType) @page true @direct true @ret_param_0 true returns PlannedType linked
+        function peel_option(t: PlannedType) @page true @direct true @ret_param_0 true @deep true returns PlannedType linked
 
 
 
@@ -336,18 +336,18 @@ define PointerCensus
 
 
 
-        function void_type() @page true @direct true @ret_nonlocal true returns PlannedType linked
+        function void_type() @page true @direct true @ret_nonlocal true @deep true returns PlannedType linked
 
 
         ; `pointer[T]` or `pointer[T]?`.
-        function is_pointer_shaped(t: PlannedType) @ret_param_0 true returns bool linked
+        function is_pointer_shaped(t: PlannedType) @ret_param_0 true @deep true returns bool linked
 
 
 
 
 
         ; `ref[T]?` -- the one deref spelling that is the language's own.
-        function is_optional_ref(t: PlannedType) @ret_param_0 true returns bool linked
+        function is_optional_ref(t: PlannedType) @ret_param_0 true @deep true returns bool linked
 
 
 
@@ -356,7 +356,7 @@ define PointerCensus
 
 
         ; A `pointer[X]` (or `pointer[X]?`) whose X is an alias pointee.
-        function is_handle(this: PointerCensus, t: PlannedType) @ret_nonlocal true returns bool linked
+        function is_handle(this: PointerCensus, t: PlannedType) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -383,7 +383,7 @@ define PointerCensus
 
         ; The receiver the planner passes for a sibling method call: the
         ; `this` variable, planned as `pointer[T]` by the compiler itself.
-        function operand_is_this(op: PlannedOperand) @ret_param_0 true returns bool linked
+        function operand_is_this(op: PlannedOperand) @ret_param_0 true @deep true returns bool linked
 
 
 
@@ -402,7 +402,7 @@ define PointerCensus
         ; a copy inside would be made): "argument on the local page is
         ; stored beyond the frame by record".
         ; ================================================================
-        procedure record(mutable this: PointerCensus, offset: size_t, cls: String, text: String) @persists true linked
+        procedure record(mutable this: PointerCensus, offset: size_t, cls: String, text: String) @persists true @deep true linked
 
 
 
@@ -416,7 +416,7 @@ define PointerCensus
 
         ; Answers true when (current_file, offset, cid) was recorded before;
         ; otherwise inserts it and answers false.
-        procedure dedupe_seen(mutable this: PointerCensus, offset: size_t, cid: size_t) @ret_nonlocal true returns bool linked
+        procedure dedupe_seen(mutable this: PointerCensus, offset: size_t, cid: size_t) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -458,7 +458,7 @@ define PointerCensus
 
 
 
-        function class_id(cls: String) @ret_nonlocal true returns size_t linked
+        function class_id(cls: String) @ret_nonlocal true @deep true returns size_t linked
 
 
 
@@ -507,7 +507,7 @@ define PointerCensus
 
 
 
-        procedure bump(mutable this: PointerCensus, cid: size_t) linked
+        procedure bump(mutable this: PointerCensus, cid: size_t) @deep true linked
 
 
 
@@ -551,7 +551,7 @@ define PointerCensus
 
 
 
-        procedure record_typed(mutable this: PointerCensus, offset: size_t, cls: String, t: PlannedType) linked
+        procedure record_typed(mutable this: PointerCensus, offset: size_t, cls: String, t: PlannedType) @deep true linked
 
 
 
@@ -567,7 +567,7 @@ define PointerCensus
 
 
 
-        procedure record_named(mutable this: PointerCensus, offset: size_t, cls: String, t: PlannedType, name: String) linked
+        procedure record_named(mutable this: PointerCensus, offset: size_t, cls: String, t: PlannedType, name: String) @deep true linked
 
 
 
@@ -590,7 +590,7 @@ define PointerCensus
         ; ================================================================
 
         ; Last segment of a Model type name (`scaly.memory.Page` -> `Page`).
-        function model_last_segment(t: Type) @page true @direct true @ret_caller true returns String linked
+        function model_last_segment(t: Type) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -602,7 +602,7 @@ define PointerCensus
 
         ; `pointer[T]` or `pointer[T]?` as WRITTEN (s113 wraps `T?` into
         ; `Option[T]` at Model level, so the Option is peeled here too).
-        function model_is_pointer(t: Type) @ret_nonlocal true returns bool linked
+        function model_is_pointer(t: Type) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -620,7 +620,7 @@ define PointerCensus
 
 
         ; Readable rendering of a Model type: `a.b.Name[T, U]`.
-        function model_type_name(t: Type) @page true @direct true @ret_caller true returns String linked
+        function model_type_name(t: Type) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -651,7 +651,7 @@ define PointerCensus
 
 
 
-        procedure record_model_typed(mutable this: PointerCensus, offset: size_t, cls: String, t: Type, name: String) @ret_nonlocal true linked
+        procedure record_model_typed(mutable this: PointerCensus, offset: size_t, cls: String, t: Type, name: String) @ret_nonlocal true @deep true linked
 
 
 
@@ -664,7 +664,7 @@ define PointerCensus
 
 
 
-        procedure walk_model_module(mutable this: PointerCensus, m: Module) linked
+        procedure walk_model_module(mutable this: PointerCensus, m: Module) @deep true linked
 
 
 
@@ -682,7 +682,7 @@ define PointerCensus
 
 
 
-        procedure walk_members(mutable this: PointerCensus, members: Vector[Member]) linked
+        procedure walk_members(mutable this: PointerCensus, members: Vector[Member]) @deep true linked
 
 
 
@@ -705,7 +705,7 @@ define PointerCensus
 
 
 
-        procedure walk_model_function(mutable this: PointerCensus, f: Function) @ret_nonlocal true linked
+        procedure walk_model_function(mutable this: PointerCensus, f: Function) @ret_nonlocal true @deep true linked
 
 
 
@@ -718,13 +718,13 @@ define PointerCensus
 
 
 
-        procedure remember_extern(mutable this: PointerCensus, name: String) @ret_param_0 true linked
+        procedure remember_extern(mutable this: PointerCensus, name: String) @ret_param_0 true @deep true linked
 
 
 
 
 
-        function is_extern_name(this: PointerCensus, name: String) @ret_nonlocal true returns bool linked
+        function is_extern_name(this: PointerCensus, name: String) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -739,7 +739,7 @@ define PointerCensus
 
 
         ; Dependency packages: only their extern NAMES are wanted.
-        procedure collect_externs_module(mutable this: PointerCensus, m: Module) linked
+        procedure collect_externs_module(mutable this: PointerCensus, m: Module) @deep true linked
 
 
 
@@ -752,7 +752,7 @@ define PointerCensus
 
 
 
-        procedure collect_externs_members(mutable this: PointerCensus, members: Vector[Member]) linked
+        procedure collect_externs_members(mutable this: PointerCensus, members: Vector[Member]) @deep true linked
 
 
 
@@ -810,7 +810,7 @@ define PointerCensus
 
 
         ; `ref[T]` or `ref[T]?` as written.
-        function model_is_ref(t: Type) @ret_nonlocal true returns bool linked
+        function model_is_ref(t: Type) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -834,7 +834,7 @@ define PointerCensus
             is_extern: bool,
             owner: String,
             owner_off: size_t
-        ) @ret_nonlocal true linked
+        ) @ret_nonlocal true @deep true linked
 
 
 
@@ -914,7 +914,7 @@ define PointerCensus
 
 
 
-        procedure walk_model_concept(mutable this: PointerCensus, c: Concept) linked
+        procedure walk_model_concept(mutable this: PointerCensus, c: Concept) @deep true linked
 
 
 
@@ -1029,7 +1029,7 @@ define PointerCensus
         ; ================================================================
         ; Callee lookup by mangled name.
         ; ================================================================
-        function fn_is_body(f: PlannedFunction) @ret_nonlocal true returns bool linked
+        function fn_is_body(f: PlannedFunction) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -1038,7 +1038,7 @@ define PointerCensus
 
 
 
-        procedure index_functions(mutable this: PointerCensus) linked
+        procedure index_functions(mutable this: PointerCensus) @deep true linked
 
 
 
@@ -1099,7 +1099,7 @@ define PointerCensus
 
 
 
-        procedure index_initializers(mutable this: PointerCensus) linked
+        procedure index_initializers(mutable this: PointerCensus) @deep true linked
 
 
 
@@ -1158,7 +1158,7 @@ define PointerCensus
 
 
 
-        function find_initializer(this: PointerCensus, mangled: String) @ret_caller true returns ref[PlannedInitializer]? linked
+        function find_initializer(this: PointerCensus, mangled: String) @ret_caller true @deep true returns ref[PlannedInitializer]? linked
 
 
 
@@ -1195,7 +1195,7 @@ define PointerCensus
 
 
 
-        function find_function(this: PointerCensus, mangled: String) @ret_param_0 true returns ref[PlannedFunction]? linked
+        function find_function(this: PointerCensus, mangled: String) @ret_param_0 true @deep true returns ref[PlannedFunction]? linked
 
 
 
@@ -1223,7 +1223,7 @@ define PointerCensus
 
 
         ; Is `op` a `*q` whose `q` is a `pointer[ref[X]]` (plain or `q + i`)?
-        function operand_is_deref_of_ref_slot(op: PlannedOperand) @ret_nonlocal true returns bool linked
+        function operand_is_deref_of_ref_slot(op: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -1255,7 +1255,7 @@ define PointerCensus
 
 
         ; Walk the children of the slot pointer under `*q` / `*(q + i)`.
-        procedure walk_below_deref(mutable this: PointerCensus, op: PlannedOperand) linked
+        procedure walk_below_deref(mutable this: PointerCensus, op: PlannedOperand) @deep true linked
 
 
 
@@ -1277,7 +1277,7 @@ define PointerCensus
 
 
         ; The slot pointer's type under such a deref (for the report line).
-        function deref_slot_type(op: PlannedOperand) @page true @direct true returns PlannedType linked
+        function deref_slot_type(op: PlannedOperand) @page true @direct true @deep true returns PlannedType linked
 
 
 
@@ -1299,7 +1299,7 @@ define PointerCensus
         ; `pointer[ref[X]]` (or `pointer[ref[X]]?`): a slot whose pointee is a
         ; NON-optional reference. `pointer[ref[X]?]` is deliberately excluded:
         ; a store into an Option slot rebinds.
-        function is_ref_slot_pointer(t: PlannedType) returns bool linked
+        function is_ref_slot_pointer(t: PlannedType) @deep true returns bool linked
 
 
 
@@ -1315,7 +1315,7 @@ define PointerCensus
 
 
         ; `ref[T]` or `ref[T]?` in the plan.
-        function is_ref_shaped(t: PlannedType) @ret_param_0 true returns bool linked
+        function is_ref_shaped(t: PlannedType) @ret_param_0 true @deep true returns bool linked
 
 
 
@@ -1324,7 +1324,7 @@ define PointerCensus
         ; ================================================================
         ; Source files: the join that verifies a body's file.
         ; ================================================================
-        procedure remember_file(mutable this: PointerCensus, file: String) linked
+        procedure remember_file(mutable this: PointerCensus, file: String) @deep true linked
 
 
 
@@ -1345,7 +1345,7 @@ define PointerCensus
 
 
         ; The text of the i-th remembered file, read on first use.
-        procedure source_of(mutable this: PointerCensus, i: size_t) @ret_param_0 true returns ref[String]? io linked
+        procedure source_of(mutable this: PointerCensus, i: size_t) @ret_param_0 true @deep true returns ref[String]? io linked
 
 
 
@@ -1364,7 +1364,7 @@ define PointerCensus
 
 
         ; Does `src` read `lit` at offset `off`?
-        function text_at(src: String, off: size_t, lit: String) @ret_nonlocal true returns bool linked
+        function text_at(src: String, off: size_t, lit: String) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -1382,7 +1382,7 @@ define PointerCensus
         ; A routine header at `off`: one of the four keywords, then the
         ; routine's own name after the blanks. A lambda body has a synthetic
         ; name and starts at its backslash.
-        function header_at(src: String, off: size_t, name: String) @ret_nonlocal true returns bool linked
+        function header_at(src: String, off: size_t, name: String) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -1418,7 +1418,7 @@ define PointerCensus
         ; instantiated by this root) names a file outside this root's module
         ; tree; it is remembered here on first sight, so its sites are
         ; reported under their true file and the sweep's union dedupes them.
-        procedure resolve_body_file(mutable this: PointerCensus, func: PlannedFunction) @page true @direct true @ret_caller true returns String io linked
+        procedure resolve_body_file(mutable this: PointerCensus, func: PlannedFunction) @page true @direct true @ret_caller true @deep true returns String io linked
 
 
 
@@ -1462,7 +1462,7 @@ define PointerCensus
         ; off each operand before its children are walked.
         ; ================================================================
 
-        procedure find_operands(mutable this: PointerCensus, ops: ref[Vector[PlannedOperand]]?) linked
+        procedure find_operands(mutable this: PointerCensus, ops: ref[Vector[PlannedOperand]]?) @deep true linked
 
 
 
@@ -1476,7 +1476,7 @@ define PointerCensus
 
 
 
-        procedure find_statement_ref(mutable this: PointerCensus, stmt: ref[PlannedStatement]?) @ret_nonlocal true linked
+        procedure find_statement_ref(mutable this: PointerCensus, stmt: ref[PlannedStatement]?) @ret_nonlocal true @deep true linked
 
 
 
@@ -1487,7 +1487,7 @@ define PointerCensus
 
         ; A `set` whose target is a deref is a store THROUGH a pointer --
         ; the side of a `set` no text scan could tell apart.
-        procedure find_action(mutable this: PointerCensus, act: PlannedAction) linked
+        procedure find_action(mutable this: PointerCensus, act: PlannedAction) @deep true linked
 
 
 
@@ -1508,7 +1508,7 @@ define PointerCensus
 
         ; Answers true when the target head is a store through a pointer and
         ; has been reported (and its children walked) here.
-        procedure note_store_target(mutable this: PointerCensus, head: PlannedOperand) @ret_nonlocal true returns bool linked
+        procedure note_store_target(mutable this: PointerCensus, head: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -1563,7 +1563,7 @@ define PointerCensus
 
 
 
-        procedure find_statement(mutable this: PointerCensus, stmt: PlannedStatement) @ret_nonlocal true linked
+        procedure find_statement(mutable this: PointerCensus, stmt: PlannedStatement) @ret_nonlocal true @deep true linked
 
 
 
@@ -1586,7 +1586,7 @@ define PointerCensus
         ; A local whose (declared or inferred) type is a pointer. This is
         ; where `let p allocate(...) as pointer[X]` surfaces -- the cast that
         ; is a declaration without a colon.
-        procedure note_binding(mutable this: PointerCensus, binding: PlannedBinding) linked
+        procedure note_binding(mutable this: PointerCensus, binding: PlannedBinding) @deep true linked
 
 
 
@@ -1644,14 +1644,14 @@ define PointerCensus
         ; ================================================================
 
         ; Remember a pointer-typed local with the KIND of its initializer.
-        procedure note_local(mutable this: PointerCensus, name: String, ops: ref[Vector[PlannedOperand]]?) @ret_nonlocal true linked
+        procedure note_local(mutable this: PointerCensus, name: String, ops: ref[Vector[PlannedOperand]]?) @ret_nonlocal true @deep true linked
 
 
 
 
 
 
-        function local_kind(this: PointerCensus, name: String) @page true @direct true @ret_caller true returns String linked
+        function local_kind(this: PointerCensus, name: String) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -1672,7 +1672,7 @@ define PointerCensus
 
 
         ; Index of `name` in the current body's parameters, or -1.
-        function param_index(this: PointerCensus, name: String) @ret_nonlocal true returns int linked
+        function param_index(this: PointerCensus, name: String) @ret_nonlocal true @deep true returns int linked
 
 
 
@@ -1692,7 +1692,7 @@ define PointerCensus
 
 
 
-        function is_integer_type(t: PlannedType) @ret_nonlocal true returns bool linked
+        function is_integer_type(t: PlannedType) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -1720,14 +1720,14 @@ define PointerCensus
 
 
 
-        function item_is_integer(it: PlannedItem) @ret_nonlocal true returns bool linked
+        function item_is_integer(it: PlannedItem) @ret_nonlocal true @deep true returns bool linked
 
 
 
 
 
 
-        function item_name(it: PlannedItem) @page true @direct true @ret_caller true returns String linked
+        function item_name(it: PlannedItem) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -1736,7 +1736,7 @@ define PointerCensus
 
         ; The length beside a pointer PARAMETER: the first integer parameter
         ; after it, else the first integer parameter anywhere, else "".
-        function neighbour_length(this: PointerCensus, idx: int) @page true @direct true @ret_caller true returns String linked
+        function neighbour_length(this: PointerCensus, idx: int) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -1771,7 +1771,7 @@ define PointerCensus
 
         ; The planned structure behind a type, by mangled name first (an
         ; instantiation carries its own), then by bare name.
-        function find_structure(this: PointerCensus, t: PlannedType) @ret_param_0 true returns ref[PlannedStructure]? linked
+        function find_structure(this: PointerCensus, t: PlannedType) @ret_param_0 true @deep true returns ref[PlannedStructure]? linked
 
 
 
@@ -1796,7 +1796,7 @@ define PointerCensus
 
 
 
-        function name_says_length(n: String) @ret_nonlocal true returns bool linked
+        function name_says_length(n: String) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -1815,7 +1815,7 @@ define PointerCensus
 
         ; `T.n` for the first integer field of T that reads like a length,
         ; else the first integer field, else "".
-        function sibling_length(this: PointerCensus, t: PlannedType) @page true @direct true @ret_caller true returns String linked
+        function sibling_length(this: PointerCensus, t: PlannedType) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -1855,7 +1855,7 @@ define PointerCensus
 
 
 
-        function is_alloc_name(n: String) @ret_nonlocal true returns bool linked
+        function is_alloc_name(n: String) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -1879,7 +1879,7 @@ define PointerCensus
         ; The KIND of an operand, for a local's initializer: where the
         ; pointer came from. A cast is transparent -- it is the declaration,
         ; not the source.
-        function operand_kind(this: PointerCensus, op: PlannedOperand) @page true @direct true returns String linked
+        function operand_kind(this: PointerCensus, op: PlannedOperand) @page true @direct true @deep true returns String linked
 
 
 
@@ -1959,7 +1959,7 @@ define PointerCensus
 
 
 
-        function initializer_kind(this: PointerCensus, ops: ref[Vector[PlannedOperand]]?) @page true @direct true returns String linked
+        function initializer_kind(this: PointerCensus, ops: ref[Vector[PlannedOperand]]?) @page true @direct true @deep true returns String linked
 
 
 
@@ -1972,7 +1972,7 @@ define PointerCensus
 
 
         ; Does the callee of `call` take a receiver (first param `this`)?
-        function call_takes_this(this: PointerCensus, call: PlannedCall) @ret_caller true returns bool linked
+        function call_takes_this(this: PointerCensus, call: PlannedCall) @ret_caller true @deep true returns bool linked
 
 
 
@@ -1992,7 +1992,7 @@ define PointerCensus
 
 
         ; ` base=... len=...` for the base of a buffer walk.
-        function base_detail(this: PointerCensus, base: PlannedOperand) @page true @direct true @ret_caller true returns String linked
+        function base_detail(this: PointerCensus, base: PlannedOperand) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -2086,7 +2086,7 @@ define PointerCensus
 
 
         ; A buffer-walk site: class, type, then provenance.
-        procedure record_walk(mutable this: PointerCensus, offset: size_t, cls: String, base: PlannedOperand) linked
+        procedure record_walk(mutable this: PointerCensus, offset: size_t, cls: String, base: PlannedOperand) @deep true linked
 
 
 
@@ -2105,7 +2105,7 @@ define PointerCensus
 
 
         ; The pointer under `p + i` / `p - i`, or null when `op` is not that.
-        function arith_base(op: PlannedOperand) @ret_param_0 true returns ref[PlannedOperand]? linked
+        function arith_base(op: PlannedOperand) @ret_param_0 true @deep true returns ref[PlannedOperand]? linked
 
 
 
@@ -2135,7 +2135,7 @@ define PointerCensus
 
 
         ; The argument vector of `p + i` / `p - i` on a pointer, or null.
-        function arith_args(op: PlannedOperand) @ret_param_0 true returns ref[Vector[PlannedOperand]]? linked
+        function arith_args(op: PlannedOperand) @ret_param_0 true @deep true returns ref[Vector[PlannedOperand]]? linked
 
 
 
@@ -2168,7 +2168,7 @@ define PointerCensus
         ; (`coerce_string_args_to_cstr#` puts a synthetic PlannedAs over a
         ; literal bound for a `pointer[const_char]` parameter). Neither is a
         ; pointer the AUTHOR wrote, so neither is a site.
-        function operand_is_string_literal(op: PlannedOperand) @ret_nonlocal true returns bool linked
+        function operand_is_string_literal(op: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -2192,7 +2192,7 @@ define PointerCensus
 
 
 
-        function operand_is_null(op: PlannedOperand) @ret_nonlocal true returns bool linked
+        function operand_is_null(op: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -2209,7 +2209,7 @@ define PointerCensus
 
 
 
-        procedure find_operand(mutable this: PointerCensus, op: PlannedOperand) linked
+        procedure find_operand(mutable this: PointerCensus, op: PlannedOperand) @deep true linked
 
 
 
@@ -2431,7 +2431,7 @@ define PointerCensus
 
         ; The call-shaped sites: deref, arithmetic, null comparison, and a
         ; pointer handed to a callee.
-        procedure note_call(mutable this: PointerCensus, op: PlannedOperand, call: PlannedCall) @ret_nonlocal true returns bool linked
+        procedure note_call(mutable this: PointerCensus, op: PlannedOperand, call: PlannedCall) @ret_nonlocal true @deep true returns bool linked
 
 
 

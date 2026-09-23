@@ -158,7 +158,7 @@ define worker
     ; catch. The answer is exact rather than approximate because rpc.read_byte#
     ; reads stdin with a raw one-byte `read`, unbuffered: nothing can be sitting
     ; in a userspace buffer where a poll of the fd would not see it.
-    procedure stdin_has_input() @ret_nonlocal true returns bool io linked
+    procedure stdin_has_input() @ret_nonlocal true @deep true returns bool io linked
 
 
 
@@ -182,7 +182,7 @@ define worker
     ; newlines/quotes/braces). When the document text frame is empty (the
     ; parent has no buffer for this uri) the worker re-reads the file from
     ; disk, preserving the old stateless behavior as a fallback.
-    procedure serve(in_fd: int, out_fd: int) @ret_nonlocal true returns int io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig reads prof_list linked
+    procedure serve(in_fd: int, out_fd: int) @ret_nonlocal true @deep true returns int io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig reads prof_list linked
 
 
 
@@ -205,14 +205,14 @@ define worker
     ; per-kind branches so the instrument covers every request kind instead of
     ; the one it was built for; an instrument whose scope is narrower than its
     ; name is the trap it exists to prevent.
-    procedure serve_one(in_fd: int, out_fd: int) @ret_nonlocal true returns bool io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig reads prof_list linked
+    procedure serve_one(in_fd: int, out_fd: int) @ret_nonlocal true @deep true returns bool io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig reads prof_list linked
 
 
 
 
 
 
-    procedure serve_request(in_fd: int, out_fd: int) @ret_nonlocal true returns bool io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig reads idx_epoch linked
+    procedure serve_request(in_fd: int, out_fd: int) @ret_nonlocal true @deep true returns bool io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig reads idx_epoch linked
 
 
 
@@ -460,7 +460,7 @@ define worker
 
     ; Fork a fresh worker and record its pid + pipe fds. On any failure
     ; worker_pid stays 0 (analyze then falls back to a clear payload).
-    procedure spawn() io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+    procedure spawn() @deep true io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
 
 
 
@@ -510,7 +510,7 @@ define worker
 
 
 
-    procedure ensure() io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+    procedure ensure() @deep true io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
 
 
 
@@ -518,7 +518,7 @@ define worker
 
     ; Kill + reap the current worker and close its pipes. Leaves state in
     ; the "no worker" condition so the next analyze re-spawns.
-    procedure shutdown() io mutable worker_in, worker_out, worker_pid reads worker_pid linked
+    procedure shutdown() @deep true io mutable worker_in, worker_out, worker_pid reads worker_pid linked
 
 
 
@@ -542,37 +542,37 @@ define worker
     ; payload, or an empty-diagnostics clear payload if the worker is
     ; unavailable / crashed / hung (and respawns it next time). The text is
     ; the editor's latest buffer (the position frame is unused for diagnostics).
-    procedure analyze(rp, uri: String, text: String) @direct true @ret_nonlocal true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+    procedure analyze(rp, uri: String, text: String) @direct true @ret_nonlocal true @deep true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
 
 
     ; Build the documentSymbol result for `uri` in the worker. `text` is the
     ; in-memory document copy (empty -> worker reads disk). Returns the JSON
     ; array; an empty array `[]` if the worker is unavailable/crashed/hung.
-    procedure symbols(rp, uri: String, text: String) @direct true @ret_nonlocal true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+    procedure symbols(rp, uri: String, text: String) @direct true @ret_nonlocal true @deep true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
 
 
     ; Hover for `uri` at the packed "<line> <char>" position. `text` is the
     ; in-memory document copy (empty -> worker reads disk). Returns the LSP
     ; hover object, or "" (empty) if unavailable / no symbol at the cursor.
-    procedure hover(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+    procedure hover(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true @deep true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
 
 
     ; Go-to-definition for `uri` at the packed "<line> <char>" position.
     ; `text` is the in-memory copy (empty -> worker reads disk). Returns the
     ; LSP Location object, or "" if unavailable / no matching declaration.
-    procedure definition(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+    procedure definition(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true @deep true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
 
 
     ; Find-all-references for `uri` at the packed "<line> <char>" position.
     ; `text` is the in-memory copy (empty -> worker reads disk). Returns the
     ; LSP Location[] array; `[]` if unavailable / crashed / hung / no identifier.
-    procedure references(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+    procedure references(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true @deep true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
 
 
     ; documentHighlight for `uri` at the packed "<line> <char>" position.
     ; `text` is the in-memory copy (empty -> worker reads disk). Returns the
     ; LSP DocumentHighlight[] array (ranges only); `[]` if unavailable / none.
-    procedure highlights(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+    procedure highlights(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true @deep true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
 
 
     ; Completion for `uri` at the packed "<line> <char>" position. `text` is
@@ -580,7 +580,7 @@ define worker
     ; the `.`-qualified receiver under the cursor when it names a declared
     ; concept, else a CompletionItem[] of every declared name; `[]` if
     ; unavailable.
-    procedure completion(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+    procedure completion(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true @deep true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
 
 
     ; completionItem/resolve: the doc block of ONE entry. `uri` is the entry's
@@ -589,41 +589,41 @@ define worker
     ; resolves from disk, which is the same rule every other request follows.
     ; `packed` is the entry's label. Returns the MarkupContent object, or ""
     ; when the declaration carries no doc block / the worker is unavailable.
-    procedure completion_resolve(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+    procedure completion_resolve(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true @deep true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
 
 
     ; Rename for `uri`. `packed` is "<line> <char> <newName>". `text` is the
     ; in-memory copy (empty -> worker reads disk). Returns the LSP
     ; WorkspaceEdit, or "" if unavailable / no identifier at the cursor.
-    procedure rename(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+    procedure rename(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true @deep true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
 
 
     ; prepareRename for `uri` at the packed "<line> <char>" position. `text`
     ; is the in-memory copy (empty -> worker reads disk). Returns the LSP Range
     ; of the renameable identifier, or "" if unavailable / not renameable.
-    procedure prepare_rename(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+    procedure prepare_rename(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true @deep true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
 
 
     ; signatureHelp for `uri` at the packed "<line> <char>" position. `text`
     ; is the in-memory copy (empty -> worker reads disk). Returns the LSP
     ; SignatureHelp, or "" if unavailable / cursor not inside a known call.
-    procedure signature_help(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+    procedure signature_help(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true @deep true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
 
 
     ; inlayHint for `uri` over the packed "<sl> <sc> <el> <ec>" range. `text` is
     ; the in-memory copy (empty -> worker reads disk). Returns the LSP
     ; InlayHint[] array; `[]` if unavailable / crashed / hung.
-    procedure inlay_hints(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+    procedure inlay_hints(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true @deep true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
 
 
     ; foldingRange for `uri` (uri-only, no position). `text` is the in-memory
     ; copy (empty -> worker reads disk). Returns the LSP FoldingRange[] array;
     ; `[]` if unavailable / crashed / hung.
-    procedure folding(rp, uri: String, text: String) @direct true @ret_nonlocal true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+    procedure folding(rp, uri: String, text: String) @direct true @ret_nonlocal true @deep true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
 
 
     ; formatting: the TextEdit[] that re-indents the open document.
-    procedure formatting(rp, uri: String, text: String) @direct true @ret_nonlocal true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+    procedure formatting(rp, uri: String, text: String) @direct true @ret_nonlocal true @deep true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
 
 
     ; codeLens for `uri` (uri-only, no position). `text` is the in-memory copy
@@ -635,47 +635,47 @@ define worker
     ; reaches it through budget_for_kind#'s fallthrough — measured 0.45 s for
     ; the scaly root and 2.45 s for dazzle, the largest in this tree, against
     ; a 30 s budget.
-    procedure code_lenses(rp, uri: String, text: String) @direct true @ret_nonlocal true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+    procedure code_lenses(rp, uri: String, text: String) @direct true @ret_nonlocal true @deep true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
 
 
     ; typeDefinition at the packed "<line> <char>" position.
-    procedure type_definition(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+    procedure type_definition(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true @deep true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
 
 
     ; prepareCallHierarchy at the packed "<line> <char>" position.
-    procedure prepare_call_hierarchy(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+    procedure prepare_call_hierarchy(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true @deep true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
 
 
     ; incomingCalls for "<root>\n<name>".
-    procedure incoming_calls(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+    procedure incoming_calls(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true @deep true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
 
 
     ; outgoingCalls for the item declared at the packed "<line> <char>".
-    procedure outgoing_calls(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+    procedure outgoing_calls(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true @deep true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
 
 
     ; selectionRange for the packed cursor positions (one per line).
-    procedure selection_ranges(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+    procedure selection_ranges(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true @deep true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
 
 
     ; codeAction for `uri`. `packed` is the newline-separated list of `use`
     ; paths the parent read out of the request's diagnostics. Returns the LSP
     ; CodeAction[] array.
-    procedure code_actions(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+    procedure code_actions(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true @deep true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
 
 
     ; Semantic type at the packed "<line> <char>" position. `text` is the
     ; in-memory copy (empty -> worker reads disk). Returns the framed reply
     ; "1<name>" on a hit, "0" on a miss, or "" if unavailable / crashed / hung
     ; (the server decodes the tag and falls back to the lexical hover).
-    procedure semantic_type(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+    procedure semantic_type(rp, uri: String, text: String, packed: String) @direct true @ret_param_2 true @deep true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
 
 
     ; semanticTokens for `uri` (uri-only, no position). `text` is the in-memory
     ; copy (empty -> worker reads disk). Returns the LSP {"data":[...]} object;
     ; an empty-data object if unavailable / crashed / hung. The fallback is
     ; built with quote BYTES (string-literal escapes are not decoded).
-    procedure semantic_tokens(rp, uri: String, text: String) @direct true @ret_nonlocal true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+    procedure semantic_tokens(rp, uri: String, text: String) @direct true @ret_nonlocal true @deep true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
 
 
 
@@ -693,7 +693,7 @@ define worker
     ; matching `query`. `root` rides in the uri frame, `query` in the position
     ; frame; the text frame is unused. Returns SymbolInformation[]; `[]` if
     ; unavailable / no root / no match.
-    procedure workspace_symbols(rp, root: String, query: String) @direct true @ret_param_1 true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+    procedure workspace_symbols(rp, root: String, query: String) @direct true @ret_param_1 true @deep true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
 
 
     ; Send one (kind,uri,text,position) request to the worker and return its
@@ -755,7 +755,7 @@ define worker
     ; genuinely huge workspace needs more than the table allows. 0 or unset =
     ; the table. A value that does not parse as a positive number is IGNORED
     ; rather than treated as 0 — a typo must not disable the hang detector.
-    procedure budget_override() @ret_nonlocal true returns i32 io linked
+    procedure budget_override() @ret_nonlocal true @deep true returns i32 io linked
 
 
 
@@ -779,7 +779,7 @@ define worker
 
 
 
-    procedure budget_for_kind(kind: String) returns i32 io linked
+    procedure budget_for_kind(kind: String) @deep true returns i32 io linked
 
 
 
@@ -818,7 +818,7 @@ define worker
 
 
 
-    procedure exchange(rp, kind: Slice[char], uri: String, text: String, position: String, fallback: String) @direct true @ret_param_4 true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+    procedure exchange(rp, kind: Slice[char], uri: String, text: String, position: String, fallback: String) @direct true @ret_param_4 true @deep true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
 
 
 

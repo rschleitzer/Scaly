@@ -56,7 +56,7 @@ define FunctionIndex
 {
     ; Allocate + initialise a slot table of `cap` slots and a `next` chain of
     ; `entry_cap` entries. Exits loudly on malloc failure.
-    function create(cap: size_t, entry_cap: size_t) @page true @direct true @ret_caller true returns FunctionIndex linked
+    function create(cap: size_t, entry_cap: size_t) @page true @direct true @ret_caller true @deep true returns FunctionIndex linked
 
 
 
@@ -87,7 +87,7 @@ define FunctionIndex
     ; Append `index` to `name`'s insertion-ordered chain. A new name starts a
     ; one-element chain; an existing name links `index` after the current tail.
     ; `next[index]` is set to the sentinel (entry_cap) so the chain terminates.
-    procedure insert(mutable this: FunctionIndex, name: String, index: size_t) linked
+    procedure insert(mutable this: FunctionIndex, name: String, index: size_t) @deep true @deep_this_2 true @deep_whole_2 true linked
 
 
 
@@ -130,7 +130,7 @@ define FunctionIndex
 
 
     ; The head (first-inserted) registry index for `name`, or -1 if absent.
-    function lookup_head(this: FunctionIndex, name: String) @ret_param_0 true returns i64 linked
+    function lookup_head(this: FunctionIndex, name: String) @ret_param_0 true @deep true returns i64 linked
 
 
 
@@ -154,7 +154,7 @@ define FunctionIndex
 
     ; The next sibling registry index after entry `i` in insertion order, or -1
     ; at the end of the chain (sentinel == entry_cap).
-    function next_of(this: FunctionIndex, i: size_t) @ret_caller true returns i64 linked
+    function next_of(this: FunctionIndex, i: size_t) @ret_caller true @deep true returns i64 linked
 
 
 

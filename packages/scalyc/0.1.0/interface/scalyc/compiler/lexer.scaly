@@ -82,7 +82,7 @@ define lexer
 
 
 
-        procedure read_character(mutable this) linked
+        procedure read_character(mutable this) @deep true linked
 
 
 
@@ -94,15 +94,15 @@ define lexer
 
 
 
-        procedure empty(mutable this) linked
+        procedure empty(mutable this) @deep true linked
 
 
 
 
-        function is_at_end(this) @ret_param_0 true returns bool linked
+        function is_at_end(this) @ret_param_0 true @deep true returns bool linked
 
 
-        procedure advance(mutable this) linked
+        procedure advance(mutable this) @deep true linked
 
 
 
@@ -219,7 +219,7 @@ define lexer
 
 
 
-        procedure scan_line_feed(mutable this) @page true @direct true returns Token linked
+        procedure scan_line_feed(mutable this) @page true @direct true @deep true returns Token linked
 
 
 
@@ -256,7 +256,7 @@ define lexer
 
 
 
-        procedure scan_identifier(mutable this) @page true @direct true returns Token linked
+        procedure scan_identifier(mutable this) @page true @direct true @deep true returns Token linked
 
 
 
@@ -282,7 +282,7 @@ define lexer
 
 
 
-        procedure scan_attribute(mutable this) @page true @direct true returns Token linked
+        procedure scan_attribute(mutable this) @page true @direct true @deep true returns Token linked
 
 
 
@@ -308,7 +308,7 @@ define lexer
 
 
 
-        procedure scan_operator(mutable this) @page true @direct true returns Token linked
+        procedure scan_operator(mutable this) @page true @direct true @deep true returns Token linked
 
 
 
@@ -339,7 +339,7 @@ define lexer
 
 
 
-        procedure scan_string_literal(mutable this) @page true @direct true returns Token linked
+        procedure scan_string_literal(mutable this) @page true @direct true @deep true returns Token linked
 
 
 
@@ -398,7 +398,7 @@ define lexer
 
 
         ; Single-quoted strings are freeform identifiers (like SQL's 'column name')
-        procedure scan_string_identifier(mutable this) @page true @direct true returns Token linked
+        procedure scan_string_identifier(mutable this) @page true @direct true @deep true returns Token linked
 
 
 
@@ -455,7 +455,7 @@ define lexer
 
 
 
-        procedure scan_fragment_literal(mutable this) @page true @direct true returns Token linked
+        procedure scan_fragment_literal(mutable this) @page true @direct true @deep true returns Token linked
 
 
 
@@ -493,7 +493,7 @@ define lexer
 
 
 
-        procedure scan_numeric_literal(mutable this) @page true @direct true returns Token linked
+        procedure scan_numeric_literal(mutable this) @page true @direct true @deep true returns Token linked
 
 
 
@@ -524,7 +524,7 @@ define lexer
 
 
 
-        procedure scan_integer_literal(mutable this, start: pointer[char], initial_length: size_t) @page true @direct true returns Token linked
+        procedure scan_integer_literal(mutable this, start: pointer[char], initial_length: size_t) @page true @direct true @deep true returns Token linked
 
 
 
@@ -551,7 +551,7 @@ define lexer
 
 
 
-        procedure scan_fraction(mutable this, start: pointer[char], initial_length: size_t) @page true @direct true returns Token linked
+        procedure scan_fraction(mutable this, start: pointer[char], initial_length: size_t) @page true @direct true @deep true returns Token linked
 
 
 
@@ -575,7 +575,7 @@ define lexer
 
 
 
-        procedure scan_exponent(mutable this, start: pointer[char], initial_length: size_t) @page true @direct true returns Token linked
+        procedure scan_exponent(mutable this, start: pointer[char], initial_length: size_t) @page true @direct true @deep true returns Token linked
 
 
 
@@ -596,7 +596,7 @@ define lexer
 
 
 
-        procedure scan_hex_literal(mutable this, start: pointer[char], initial_length: size_t) @page true @direct true returns Token linked
+        procedure scan_hex_literal(mutable this, start: pointer[char], initial_length: size_t) @page true @direct true @deep true returns Token linked
 
 
 
@@ -617,7 +617,7 @@ define lexer
 
 
 
-        procedure scan_boolean_literal(mutable this) @page true @direct true @ret_caller true returns Token linked
+        procedure scan_boolean_literal(mutable this) @page true @direct true @ret_caller true @deep true returns Token linked
 
 
 
@@ -633,7 +633,7 @@ define lexer
 
 
 
-        procedure skip_whitespace(mutable this, skip_line_feed: bool) linked
+        procedure skip_whitespace(mutable this, skip_line_feed: bool) @deep true linked
 
 
 
@@ -711,7 +711,7 @@ define lexer
 
 
 
-        procedure handle_single_line_comment(mutable this) linked
+        procedure handle_single_line_comment(mutable this) @deep true linked
 
 
 
@@ -727,7 +727,7 @@ define lexer
 
 
 
-        procedure handle_multi_line_comment(mutable this) linked
+        procedure handle_multi_line_comment(mutable this) @deep true linked
 
 
 
@@ -769,7 +769,7 @@ define lexer
 
 
         ; Parser helper: parse keyword
-        procedure parse_keyword(mutable this, keyword: String) @ret_nonlocal true returns bool linked
+        procedure parse_keyword(mutable this, keyword: String) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -792,7 +792,7 @@ define lexer
 
         ; Parser helper: parse identifier, returns empty string if not found
         ; or if the identifier is a keyword (matches C++ parseName behaviour).
-        procedure parse_identifier(mutable this, keywords: HashSet[String]) @page true @direct true @ret_caller true returns String linked
+        procedure parse_identifier(mutable this, keywords: HashSet[String]) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -815,7 +815,7 @@ define lexer
 
 
         ; Parser helper: peek identifier without consuming
-        procedure peek_identifier(mutable this) @page true @direct true @ret_caller true returns String linked
+        procedure peek_identifier(mutable this) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -831,7 +831,7 @@ define lexer
 
 
         ; Parser helper: parse attribute
-        procedure parse_attribute(mutable this) @page true @direct true @ret_caller true returns String linked
+        procedure parse_attribute(mutable this) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -851,7 +851,7 @@ define lexer
 
 
         ; Parser helper: parse punctuation
-        procedure parse_punctuation(mutable this, c: u8) @ret_nonlocal true returns bool linked
+        procedure parse_punctuation(mutable this, c: u8) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -873,7 +873,7 @@ define lexer
 
 
         ; Parser helper: parse colon
-        procedure parse_colon(mutable this) @ret_nonlocal true returns bool linked
+        procedure parse_colon(mutable this) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -894,10 +894,10 @@ define lexer
         ; Backtracking: snapshot/restore the scan position + pending token.
         ; Used by the parser's speculative else-lookahead so a separator colon
         ; can be un-consumed when no else follows (no-else if).
-        procedure save_state(this) @page true @direct true @ret_param_0 true returns LexerState linked
+        procedure save_state(this) @page true @direct true @ret_param_0 true @deep true returns LexerState linked
 
 
-        procedure restore_state(mutable this, s: LexerState) linked
+        procedure restore_state(mutable this, s: LexerState) @deep true @deep_this_2 true linked
 
 
 
@@ -910,7 +910,7 @@ define lexer
     ; Test function
     ; ========================================================================
 
-    function test() @ret_nonlocal true returns int linked
+    function test() @ret_nonlocal true @deep true returns int linked
 
 
 

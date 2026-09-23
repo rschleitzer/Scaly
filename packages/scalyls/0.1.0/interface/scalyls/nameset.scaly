@@ -54,7 +54,7 @@ define nameset
     ; FNV-1a over p[0,len) (mirrors scaly.containers.hashing.hash); used for
     ; BOTH insert (name bytes) and lookup (source bytes) so equal byte
     ; sequences hash identically.
-    function hash_ptr(p: Slice[u8]) @ret_nonlocal true returns size_t linked
+    function hash_ptr(p: Slice[u8]) @ret_nonlocal true @deep true returns size_t linked
 
 
 
@@ -73,7 +73,7 @@ define nameset
 
     ; FNV-1a over the byte range s[start,end). Hashes the logical content (after
     ; the String's varint length prefix) via get_buffer, no per-call allocation.
-    function hash_range(s: String, start: size_t, end: size_t) @ret_nonlocal true returns size_t linked
+    function hash_range(s: String, start: size_t, end: size_t) @ret_nonlocal true @deep true returns size_t linked
 
 
 
@@ -82,7 +82,7 @@ define nameset
 
 
     ; Byte-equality of a[0,len) and b[0,len) over two raw pointers.
-    function eq_ptr(a: Slice[u8], b: Slice[u8]) @ret_nonlocal true returns bool linked
+    function eq_ptr(a: Slice[u8], b: Slice[u8]) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -101,7 +101,7 @@ define nameset
 
     ; Allocate + zero a slot array of `cap` entries. null on malloc failure
     ; (callers then treat every name as absent — colours by shape).
-    function create(cap: size_t) @ret_caller true returns pointer[NameSlot] linked
+    function create(cap: size_t) @ret_caller true @deep true returns pointer[NameSlot] linked
 
 
 
@@ -120,7 +120,7 @@ define nameset
 
 
 
-    procedure destroy(mutable slots: pointer[NameSlot]) @ret_nonlocal true linked
+    procedure destroy(mutable slots: pointer[NameSlot]) @ret_nonlocal true @deep true linked
 
 
 
@@ -130,7 +130,7 @@ define nameset
     ; precomputed hash `h`. Open addressing, linear probe. An existing entry for
     ; the same name is only ever raised (kind 2 function > 1 type), so function
     ; wins regardless of order. A full table drops the name silently.
-    procedure insert(mutable slots: pointer[NameSlot], cap: size_t, name: Slice[u8], h: size_t, kind: i64) linked
+    procedure insert(mutable slots: pointer[NameSlot], cap: size_t, name: Slice[u8], h: size_t, kind: i64) @deep true linked
 
 
 
@@ -163,7 +163,7 @@ define nameset
     ; Insert every newline-delimited segment of `list` (a names_from_items# /
     ; primitive_type_list# / tagged_name_list# result) with the given kind. Slots
     ; borrow the list's buffer, so `list` must outlive the table.
-    procedure insert_name_list(mutable slots: pointer[NameSlot], cap: size_t, list: String, kind: i64) linked
+    procedure insert_name_list(mutable slots: pointer[NameSlot], cap: size_t, list: String, kind: i64) @deep true @deep_beyond_1 true @deep_whole_1 true linked
 
 
 
@@ -200,7 +200,7 @@ define nameset
 
 
     ; The token kind for source[start,end), or -1 if the name is not in the set.
-    function lookup(slots: pointer[NameSlot], cap: size_t, source: String, start: size_t, end: size_t) @ret_param_0 true returns i64 linked
+    function lookup(slots: pointer[NameSlot], cap: size_t, source: String, start: size_t, end: size_t) @ret_param_0 true @deep true returns i64 linked
 
 
 

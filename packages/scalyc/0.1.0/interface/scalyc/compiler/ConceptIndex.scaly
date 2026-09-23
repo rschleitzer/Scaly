@@ -51,7 +51,7 @@ define ConceptIndex (slots: pointer[ConceptSlot](null), cap: size_t(0))
 {
     ; Allocate + initialise a table of `cap` slots. Exits loudly on malloc
     ; failure (the Planner cannot proceed without its concept index).
-    function create(cap: size_t) @page true @direct true @ret_caller true returns ConceptIndex linked
+    function create(cap: size_t) @page true @direct true @ret_caller true @deep true returns ConceptIndex linked
 
 
 
@@ -74,7 +74,7 @@ define ConceptIndex (slots: pointer[ConceptSlot](null), cap: size_t(0))
     ; Insert (or OVERWRITE) the index for `name`. Open addressing, linear probe.
     ; A duplicate key overwrites the stored index (last-write-wins, s95). A full
     ; table exits loudly.
-    procedure insert(mutable this: ConceptIndex, name: String, index: size_t) linked
+    procedure insert(mutable this: ConceptIndex, name: String, index: size_t) @deep true @deep_this_2 true @deep_whole_2 true linked
 
 
 
@@ -109,7 +109,7 @@ define ConceptIndex (slots: pointer[ConceptSlot](null), cap: size_t(0))
     ; Used by the Emitter caches, whose linear scans return the FIRST matching
     ; entry (unlike the Planner's last-write-wins concept registry). A full
     ; table exits loudly.
-    procedure insert_if_absent(mutable this: ConceptIndex, name: String, index: size_t) linked
+    procedure insert_if_absent(mutable this: ConceptIndex, name: String, index: size_t) @deep true @deep_this_2 true @deep_whole_2 true linked
 
 
 
@@ -138,7 +138,7 @@ define ConceptIndex (slots: pointer[ConceptSlot](null), cap: size_t(0))
 
 
     ; The registry index for `name`, or -1 if absent.
-    function lookup(this: ConceptIndex, name: String) @ret_param_0 true returns i64 linked
+    function lookup(this: ConceptIndex, name: String) @ret_param_0 true @deep true returns i64 linked
 
 
 

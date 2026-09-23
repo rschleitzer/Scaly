@@ -81,7 +81,7 @@ define instlens
     ; family). `has_diag` suppresses the not-emitted claim: a root that produced
     ; hard diagnostics may have a truncated plan, and then "not emitted" would be
     ; a statement about the error rather than about demand.
-    procedure fragment(rp, plan: Plan, has_diag: bool, plan_text: String, anchor_text: String) @direct true @ret_caller true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure fragment(rp, plan: Plan, has_diag: bool, plan_text: String, anchor_text: String) @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -177,7 +177,7 @@ define instlens
     ; that started that detour was MY GREP: `_ZN6VectorI…` demands a type-argument
     ; list right after the class name and so misses the bare form. The instrument
     ; was wrong, not the product.
-    function title_for(rp, plan: Plan, has_diag: bool, start: size_t, name: String) @direct true @ret_caller true returns String linked
+    function title_for(rp, plan: Plan, has_diag: bool, start: size_t, name: String) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -273,7 +273,7 @@ define instlens
     ; Is there at least ONE plan entry for the routine named `name` at `start`?
     ; Stops at the first hit, which is what makes the file-level pre-pass cheap
     ; for the ordinary file where everything is planned.
-    function is_planned_at(plan: Plan, start: size_t, name: String) @ret_nonlocal true returns bool linked
+    function is_planned_at(plan: Plan, start: size_t, name: String) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -295,7 +295,7 @@ define instlens
 
 
     ; The readable type of a planned routine's FIRST input item, or "".
-    function first_input_type(rp, fn: PlannedFunction) @direct true @ret_nonlocal true returns String linked
+    function first_input_type(rp, fn: PlannedFunction) @direct true @ret_nonlocal true @deep true returns String linked
 
 
 
@@ -312,7 +312,7 @@ define instlens
 
 
 
-    function contains_name(seen: ref[Array[String]], name: String) @ret_nonlocal true returns bool linked
+    function contains_name(seen: ref[Array[String]], name: String) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -340,7 +340,7 @@ define instlens
     ; the same guard tasklens.scaly needs for the same reason.
     ; ====================================================================
 
-    function next_routine_site(source: String, from: size_t) @ret_nonlocal true returns size_t linked
+    function next_routine_site(source: String, from: size_t) @ret_nonlocal true @deep true returns size_t linked
 
 
 
@@ -367,7 +367,7 @@ define instlens
 
 
 
-    function count_routine_sites(source: String) @ret_nonlocal true returns size_t linked
+    function count_routine_sites(source: String) @ret_nonlocal true @deep true returns size_t linked
 
 
 
@@ -385,7 +385,7 @@ define instlens
 
     ; Is `word` the token at source[k..]? Both boundaries are checked, so neither
     ; `functions` nor `myfunction` is a site.
-    function is_keyword_at(source: String, k: size_t, len: size_t, word: String) @ret_nonlocal true returns bool linked
+    function is_keyword_at(source: String, k: size_t, len: size_t, word: String) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -414,7 +414,7 @@ define instlens
     ; The declared name that follows the keyword at `offset` ("" when the next
     ; token is not a plain identifier — a string-identifier target is rare and
     ; answering nothing for it is better than answering a wrong name).
-    function routine_name_at(rp, source: String, offset: size_t) @direct true @ret_caller true returns String linked
+    function routine_name_at(rp, source: String, offset: size_t) @direct true @ret_caller true @deep true returns String linked
 
 
 

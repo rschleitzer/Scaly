@@ -57,86 +57,86 @@ define LLVMComdatRef pointer[LLVMComdat]
 ; LLVMIntPredicate - Integer comparison predicates
 define LLVMIntPredicate
 {
-    function EQ() @ret_nonlocal true returns int linked
-    function NE() @ret_nonlocal true returns int linked
-    function UGT() @ret_nonlocal true returns int linked
-    function UGE() @ret_nonlocal true returns int linked
-    function ULT() @ret_nonlocal true returns int linked
-    function ULE() @ret_nonlocal true returns int linked
-    function SGT() @ret_nonlocal true returns int linked
-    function SGE() @ret_nonlocal true returns int linked
-    function SLT() @ret_nonlocal true returns int linked
-    function SLE() @ret_nonlocal true returns int linked
+    function EQ() @ret_nonlocal true @deep true returns int linked
+    function NE() @ret_nonlocal true @deep true returns int linked
+    function UGT() @ret_nonlocal true @deep true returns int linked
+    function UGE() @ret_nonlocal true @deep true returns int linked
+    function ULT() @ret_nonlocal true @deep true returns int linked
+    function ULE() @ret_nonlocal true @deep true returns int linked
+    function SGT() @ret_nonlocal true @deep true returns int linked
+    function SGE() @ret_nonlocal true @deep true returns int linked
+    function SLT() @ret_nonlocal true @deep true returns int linked
+    function SLE() @ret_nonlocal true @deep true returns int linked
 }
 
 ; LLVMRealPredicate - Floating point comparison predicates
 define LLVMRealPredicate
 {
-    function OEQ() @ret_nonlocal true returns int linked
-    function OGT() @ret_nonlocal true returns int linked
-    function OGE() @ret_nonlocal true returns int linked
-    function OLT() @ret_nonlocal true returns int linked
-    function OLE() @ret_nonlocal true returns int linked
-    function ONE() @ret_nonlocal true returns int linked
-    function ORD() @ret_nonlocal true returns int linked
-    function UNO() @ret_nonlocal true returns int linked
-    function UEQ() @ret_nonlocal true returns int linked
-    function UGT() @ret_nonlocal true returns int linked
-    function UGE() @ret_nonlocal true returns int linked
-    function ULT() @ret_nonlocal true returns int linked
-    function ULE() @ret_nonlocal true returns int linked
-    function UNE() @ret_nonlocal true returns int linked
+    function OEQ() @ret_nonlocal true @deep true returns int linked
+    function OGT() @ret_nonlocal true @deep true returns int linked
+    function OGE() @ret_nonlocal true @deep true returns int linked
+    function OLT() @ret_nonlocal true @deep true returns int linked
+    function OLE() @ret_nonlocal true @deep true returns int linked
+    function ONE() @ret_nonlocal true @deep true returns int linked
+    function ORD() @ret_nonlocal true @deep true returns int linked
+    function UNO() @ret_nonlocal true @deep true returns int linked
+    function UEQ() @ret_nonlocal true @deep true returns int linked
+    function UGT() @ret_nonlocal true @deep true returns int linked
+    function UGE() @ret_nonlocal true @deep true returns int linked
+    function ULT() @ret_nonlocal true @deep true returns int linked
+    function ULE() @ret_nonlocal true @deep true returns int linked
+    function UNE() @ret_nonlocal true @deep true returns int linked
 }
 
 ; LLVMTypeKind - Type kind for LLVMGetTypeKind
 define LLVMTypeKind
 {
-    function Void() @ret_nonlocal true returns int linked
-    function Half() @ret_nonlocal true returns int linked
-    function Float() @ret_nonlocal true returns int linked
-    function Double() @ret_nonlocal true returns int linked
-    function X86_FP80() @ret_nonlocal true returns int linked
-    function FP128() @ret_nonlocal true returns int linked
-    function PPC_FP128() @ret_nonlocal true returns int linked
-    function Label() @ret_nonlocal true returns int linked
-    function Integer() @ret_nonlocal true returns int linked
+    function Void() @ret_nonlocal true @deep true returns int linked
+    function Half() @ret_nonlocal true @deep true returns int linked
+    function Float() @ret_nonlocal true @deep true returns int linked
+    function Double() @ret_nonlocal true @deep true returns int linked
+    function X86_FP80() @ret_nonlocal true @deep true returns int linked
+    function FP128() @ret_nonlocal true @deep true returns int linked
+    function PPC_FP128() @ret_nonlocal true @deep true returns int linked
+    function Label() @ret_nonlocal true @deep true returns int linked
+    function Integer() @ret_nonlocal true @deep true returns int linked
     ; s179: Function/Array/Vector are named *Kind because the bare
     ; names collide with the Model.Function / stdlib Array / Vector
     ; concepts: stage-1's planner resolves `LLVMTypeKind.Array()` as
     ; a zero-init construction of the colliding concept instead of
     ; this call, silently dropping the comparison that uses it.
-    function FunctionKind() @ret_nonlocal true returns int linked
-    function Struct() @ret_nonlocal true returns int linked
-    function ArrayKind() @ret_nonlocal true returns int linked
-    function Pointer() @ret_nonlocal true returns int linked
-    function VectorKind() @ret_nonlocal true returns int linked
-    function Metadata() @ret_nonlocal true returns int linked
+    function FunctionKind() @ret_nonlocal true @deep true returns int linked
+    function Struct() @ret_nonlocal true @deep true returns int linked
+    function ArrayKind() @ret_nonlocal true @deep true returns int linked
+    function Pointer() @ret_nonlocal true @deep true returns int linked
+    function VectorKind() @ret_nonlocal true @deep true returns int linked
+    function Metadata() @ret_nonlocal true @deep true returns int linked
 }
 
 ; LLVMLinkage - Linkage types
 define LLVMLinkage
 {
-    function External() @ret_nonlocal true returns int linked
-    function AvailableExternally() @ret_nonlocal true returns int linked
-    function LinkOnceAny() @ret_nonlocal true returns int linked
-    function LinkOnceODR() @ret_nonlocal true returns int linked
-    function WeakAny() @ret_nonlocal true returns int linked
-    function WeakODR() @ret_nonlocal true returns int linked
-    function Appending() @ret_nonlocal true returns int linked
-    function Internal() @ret_nonlocal true returns int linked
-    function Private() @ret_nonlocal true returns int linked
-    function ExternalWeak() @ret_nonlocal true returns int linked
-    function Common() @ret_nonlocal true returns int linked
+    function External() @ret_nonlocal true @deep true returns int linked
+    function AvailableExternally() @ret_nonlocal true @deep true returns int linked
+    function LinkOnceAny() @ret_nonlocal true @deep true returns int linked
+    function LinkOnceODR() @ret_nonlocal true @deep true returns int linked
+    function WeakAny() @ret_nonlocal true @deep true returns int linked
+    function WeakODR() @ret_nonlocal true @deep true returns int linked
+    function Appending() @ret_nonlocal true @deep true returns int linked
+    function Internal() @ret_nonlocal true @deep true returns int linked
+    function Private() @ret_nonlocal true @deep true returns int linked
+    function ExternalWeak() @ret_nonlocal true @deep true returns int linked
+    function Common() @ret_nonlocal true @deep true returns int linked
 }
 
 ; LLVMCallConv - Calling conventions
 define LLVMCallConv
 {
-    function C() @ret_nonlocal true returns int linked
-    function Fast() @ret_nonlocal true returns int linked
-    function Cold() @ret_nonlocal true returns int linked
-    function X86Stdcall() @ret_nonlocal true returns int linked
-    function X86Fastcall() @ret_nonlocal true returns int linked
+    function C() @ret_nonlocal true @deep true returns int linked
+    function Fast() @ret_nonlocal true @deep true returns int linked
+    function Cold() @ret_nonlocal true @deep true returns int linked
+    function X86Stdcall() @ret_nonlocal true @deep true returns int linked
+    function X86Fastcall() @ret_nonlocal true @deep true returns int linked
 }
 
 ; ============================================================================

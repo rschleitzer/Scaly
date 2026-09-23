@@ -60,12 +60,12 @@ define docstore
 {
     ; Borrowed view over the malloc'd table: a slot is reached through `at(i)`
     ; (bounds-checked, answers ref[DocSlot]) instead of pointer arithmetic.
-    procedure doc_view() @page true @direct true returns Slice[DocSlot] reads doc_slots linked
+    procedure doc_view() @page true @direct true @deep true returns Slice[DocSlot] reads doc_slots linked
 
 
     ; Record the workspace root (a filesystem path) as a fresh malloc'd copy,
     ; freeing any previous one. Empty path leaves it null.
-    procedure set_workspace_root(path: String) mutable ws_root_data, ws_root_len reads ws_root_data linked
+    procedure set_workspace_root(path: String) @deep true mutable ws_root_data, ws_root_len reads ws_root_data linked
 
 
 
@@ -87,7 +87,7 @@ define docstore
 
     ; The workspace root path (a fresh copy on the caller's page), or "" when
     ; initialize provided none.
-    procedure workspace_root(rp) @direct true @ret_caller true returns String reads ws_root_data linked
+    procedure workspace_root(rp) @direct true @ret_caller true @deep true returns String reads ws_root_data linked
 
 
 
@@ -96,7 +96,7 @@ define docstore
     ; Lazily allocate + zero the slot array on first use. A malloc failure
     ; leaves doc_slots null; callers then no-op and navigation falls back to
     ; reading the file from disk.
-    procedure ensure() mutable doc_slots reads doc_slots linked
+    procedure ensure() @deep true mutable doc_slots reads doc_slots linked
 
 
 
@@ -122,7 +122,7 @@ define docstore
 
     ; Index of the live slot whose uri matches, or -1. Builds a String view
     ; over each stored uri (on this function's local page) for the compare.
-    procedure find(uri: String) @ret_nonlocal true returns int reads doc_slots linked
+    procedure find(uri: String) @ret_nonlocal true @deep true returns int reads doc_slots linked
 
 
 
@@ -144,7 +144,7 @@ define docstore
 
     ; Replace slot `s`'s text with a fresh malloc'd copy of `text`'s content
     ; bytes, freeing the previous copy. An empty text leaves text_data null.
-    procedure set_text(mutable s: ref[DocSlot], text: String) linked
+    procedure set_text(mutable s: ref[DocSlot], text: String) @deep true linked
 
 
 
@@ -166,7 +166,7 @@ define docstore
 
     ; Set slot `s`'s uri to a fresh malloc'd copy of `uri`'s content bytes,
     ; freeing any previous copy (slots are reused after didClose).
-    procedure set_uri(mutable s: ref[DocSlot], uri: String) linked
+    procedure set_uri(mutable s: ref[DocSlot], uri: String) @deep true linked
 
 
 
@@ -188,7 +188,7 @@ define docstore
 
     ; Record (or replace) the latest text for `uri`. Called on didOpen and
     ; every didChange. Replacing frees the old text copy first (bounded).
-    procedure put(uri: String, text: String) mutable doc_slots reads doc_slots linked
+    procedure put(uri: String, text: String) @deep true mutable doc_slots reads doc_slots linked
 
 
 
@@ -221,7 +221,7 @@ define docstore
 
 
     ; Drop the entry for `uri` (didClose), freeing its malloc'd copies.
-    procedure remove(uri: String) mutable doc_slots reads doc_slots linked
+    procedure remove(uri: String) @deep true mutable doc_slots reads doc_slots linked
 
 
 
@@ -249,7 +249,7 @@ define docstore
     ; runs and the completion answer arrived 10.83 s later, long after the editor
     ; had given up on it. server.flush_dirty# runs it when the input queue is
     ; empty instead, i.e. once per typing burst.
-    procedure mark_dirty(uri: String) mutable doc_slots reads doc_slots linked
+    procedure mark_dirty(uri: String) @deep true mutable doc_slots reads doc_slots linked
 
 
 
@@ -260,7 +260,7 @@ define docstore
 
 
     ; Clear `uri`'s owed-analysis mark.
-    procedure clear_dirty(uri: String) mutable doc_slots reads doc_slots linked
+    procedure clear_dirty(uri: String) @deep true mutable doc_slots reads doc_slots linked
 
 
 
@@ -272,7 +272,7 @@ define docstore
 
     ; The uri of a live slot that still owes a diagnostics run (a fresh copy on
     ; the caller's page), or "" when none does.
-    procedure dirty_uri(rp) @direct true @ret_caller true returns String reads doc_slots linked
+    procedure dirty_uri(rp) @direct true @ret_caller true @deep true returns String reads doc_slots linked
 
 
 
@@ -292,7 +292,7 @@ define docstore
 
     ; The stored text for `uri` (a fresh copy on the caller's page), or an
     ; empty String on a miss. The worker treats empty as "read from disk".
-    procedure get(rp, uri: String) @direct true @ret_caller true returns String reads doc_slots linked
+    procedure get(rp, uri: String) @direct true @ret_caller true @deep true returns String reads doc_slots linked
 
 
 

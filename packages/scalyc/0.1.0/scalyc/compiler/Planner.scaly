@@ -540,6 +540,9 @@ define Planner
         escape_records: Array[EscapeRecord]
         var escape_checking: bool
         var escape_found: bool
+        ; SCALYC_GATE_ALL: keep walking after a finding (a measurement of
+        ; every site, not the one-at-a-time a fatal checker gives)
+        var gate_all: bool
         var escape_fn_index: size_t
 
         ; Transitive Vector-3 (interprocedural pass-to-storing-callee closure).
@@ -616,6 +619,12 @@ define Planner
         deep_by_name_whole: Array[u64]
         deep_by_name_pageof: Array[u64]
         deep_qualified_all: Array[String]
+        ; the owners of the bodies this root plans; a known owner that is NOT
+        ; among them lives in another package (its body linked)
+        deep_scanned_owners: Array[String]
+        ; --interface-facts: run the deep pre-pass without judging, so a
+        ; package's interface can state each routine's deep masks (`@deep`)
+        var deep_facts: bool
         deep_state_this: Array[size_t]
         deep_state_beyond: Array[size_t]
         deep_state_whole: Array[size_t]
@@ -1053,6 +1062,7 @@ define Planner
             set escape_records: Array[EscapeRecord]^this()
             set escape_checking: false
             set escape_found: false
+            set gate_all: false
             set escape_fn_index: 0
             set escape_forwarding: false
             set escape_saw_indirect: false
@@ -1085,6 +1095,8 @@ define Planner
             set deep_by_name_whole: Array[u64]^this()
             set deep_by_name_pageof: Array[u64]^this()
             set deep_qualified_all: Array[String]^this()
+            set deep_scanned_owners: Array[String]^this()
+            set deep_facts: false
             set deep_state_this: Array[size_t]^this()
             set deep_state_beyond: Array[size_t]^this()
             set deep_state_whole: Array[size_t]^this()
@@ -5910,6 +5922,70 @@ define Planner
                 sb.append(this.return_residence_arg(f))
                 sb.append "\n"
             }
+            if g = false
+                if deep_facts
+                    sb.append(this.facts_deep_line(f))
+            sb.to_string()
+        }
+
+        ; `X beyond this whole pageof into1 … into15`: the deep persist masks
+        ; of a body (bit 0 is `this`), for a linked caller's deep gate
+        procedure facts_deep_line(mutable this: Planner, f: Function) returns String
+        {
+            let di this.return_residence_index(f)
+            if di < 0
+                return String("")
+            let d di as size_t
+            var sb StringBuilder()
+            sb.append "X"
+            var st: size_t 0
+            let sp deep_state.get d
+            if sp <> null
+                set st: (*sp)
+            var bey: size_t 0
+            let bp deep_state_beyond.get d
+            if bp <> null
+                set bey: (*bp)
+            var thm: size_t 0
+            let tp deep_state_this.get d
+            if tp <> null
+                set thm: (*tp)
+            var who: size_t 0
+            let wp deep_state_whole.get d
+            if wp <> null
+                set who: (*wp)
+            var pgo: size_t 0
+            let pp deep_state_pageof.get d
+            if pp <> null
+                set pgo: (*pp)
+            ; an unmarked body: nothing kept, its slots may still say where
+            if st = 0
+            {
+                set bey: 0
+                set thm: 0
+                set who: 0
+                set pgo: 0
+            }
+            sb.append " "
+            sb.append bey
+            sb.append " "
+            sb.append thm
+            sb.append " "
+            sb.append who
+            sb.append " "
+            sb.append pgo
+            var k: size_t 1
+            while k < 16
+            {
+                var iv: size_t 0
+                let ip deep_state_into.get(d * 16 + k)
+                if ip <> null
+                    set iv: (*ip)
+                sb.append " "
+                sb.append iv
+                set k: k + 1
+            }
+            sb.append "\n"
             sb.to_string()
         }
 
@@ -7024,7 +7100,11 @@ define Planner
 
             if already_cached = false
             {
-                instantiating_structures.add mangled
+                ; on the Planner's page: the entry is popped in this frame
+                ; below, but the deep escape gate cannot see a LIFO and the
+                ; copy costs one name per instantiation
+                let mangled_kept String^this(mangled)
+                instantiating_structures.add mangled_kept
 
                 let saved_subst_len type_substitutions.length
 
@@ -7509,6 +7589,83 @@ define Planner
         }
 
         ; does an argument at a PERSISTING position carry Local life
+        ; SCALYC_GATE_TRACE: which argument the inline half judged local
+        procedure inline_gate_trace(fn_name: String, args: ref[Vector[PlannedOperand]])
+        {
+            scaly_eputs "itrace "
+            scaly_eputs(fn_name.to_c_string())
+            scaly_eputs "\n"
+            var i: size_t 0
+            while i < args.length
+            {
+                let ap args.get i
+                if ap <> null
+                {
+                    let a ap.unwrap()
+                    scaly_eputs "itrace  arg "
+                    scaly_eputi i
+                    scaly_eputs " life="
+                    scaly_eputs(Planner.lifetime_kind_name(a.result_type.life).to_c_string())
+                    scaly_eputs " type="
+                    scaly_eputs(a.result_type.name.to_c_string())
+                    choose a.expr
+                        when v: Variable
+                        {
+                            scaly_eputs " var="
+                            scaly_eputs(v.name.to_c_string())
+                            scaly_eputs " vlife="
+                            scaly_eputs(Planner.lifetime_kind_name(v.variable_type.life).to_c_string())
+                        }
+                        when c: Call
+                        {
+                            scaly_eputs " call="
+                            scaly_eputs(c.name.to_c_string())
+                        }
+                        else
+                            0
+                    scaly_eputs "\n"
+                }
+                set i: i + 1
+            }
+        }
+
+        ; Under the deep gate a masked position counts only where the argument
+        ; can DANGLE: a reference or a record that owns a buffer. A by-value
+        ; record of scalars (`location: TextRange` into the jsx transforms) is
+        ; copied whole into whatever keeps it — three of tscaly's gate residuals.
+        ; Without the gate the mask is all-ones and nothing changes (emission).
+        function args_local_masked_owning(this: Planner, arg_types: Vector[PlannedType], mask: u64, off: size_t) returns bool
+        {
+            if deep_gate = false
+                return Planner.args_have_local_life_masked(arg_types, mask, off)
+            var i: size_t 0
+            while i < arg_types.length
+            {
+                let ap arg_types.get i
+                if ap <> null
+                    if Planner.lifetime_is_local((*ap).life)
+                    {
+                        var can_dangle true
+                        if this.census_type_is_ref_like((*ap)) = false
+                            if this.type_owns_buffer((*ap), 0) = false
+                                set can_dangle: false
+                        if can_dangle
+                        {
+                            if i < off
+                                return true
+                            let pos i - off
+                            var bit: u64 (1 as u64) << 63
+                            if pos < 63
+                                set bit: (1 as u64) << pos
+                            if (mask & bit) <> (0 as u64)
+                                return true
+                        }
+                    }
+                set i: i + 1
+            }
+            false
+        }
+
         function args_have_local_life_masked(arg_types: Vector[PlannedType], mask: u64, off: size_t) returns bool
         {
             var i: size_t 0
@@ -7772,7 +7929,7 @@ define Planner
                     var cfm_off: size_t 0
                     if arg_types.length > f.input.length
                         set cfm_off: arg_types.length - f.input.length
-                    if Planner.args_have_local_life_masked(arg_types, this.persists_mask_for(f), cfm_off)
+                    if this.args_local_masked_owning(arg_types, this.persists_mask_for(f), cfm_off)
                         set cfm_persists: true
                 }
             }
@@ -14175,6 +14332,8 @@ define Planner
                                     }
                                     else
                                     {
+                                        if getenv("SCALYC_GATE_TRACE") <> null
+                                            Planner.inline_gate_trace(fn_name, &call_args_holder)
                                         var pa_sb StringBuilder()
                                         pa_sb.append "argument on the local page is stored beyond the frame by "
                                         pa_sb.append fn_name
@@ -17225,7 +17384,15 @@ define Planner
                     var mm_off: size_t 0
                     if arg_types.length > f.input.length
                         set mm_off: arg_types.length - f.input.length
-                    if Planner.args_have_local_life_masked(arg_types, this.persists_mask_for(f), mm_off)
+                    ; the scanner's bit 0 is `this`, which a method call's
+                    ; arg_types do not carry: shift, or argument k is judged
+                    ; against parameter k-1 (every get_property_of_type(t, d)
+                    ; reported `d` for `t`'s bit — six tscaly gate residuals)
+                    var mm_mask this.persists_mask_for(f)
+                    if deep_gate
+                        if param_start > 0
+                            set mm_mask: mm_mask >> (param_start as u64)
+                    if this.args_local_masked_owning(arg_types, mm_mask, mm_off)
                         set mm_persists: true
                 }
             }
@@ -28713,7 +28880,13 @@ define Planner
             ; stdlib owners allocate theirs through Page.get(this), i.e. on
             ; the page the record lands on
             if (*cvp) = 1
+            {
+                ; a VIEW or reference built on the caller page points INTO it:
+                ; this frame's page, local
+                if this.census_type_is_ref_like(c.result_type)
+                    return true
                 return Planner.type_init_allocates_buffer(c.result_type)
+            }
             if (*cvp) = 3
                 if cap <> null
                     if c.args <> null
@@ -28821,8 +28994,12 @@ define Planner
                                 }
                         return false
                     }
-                    ; an inline construction on this frame: its components
-                    if this.name_is_capitalized(c.name)
+                    ; an inline construction on this frame: its components —
+                    ; judged by the LAST segment: `LangObj.key_of(hp, v)` is a
+                    ; static call whose QUALIFIER is capitalized, and reading it
+                    ; as a construction judged `v` instead of the result
+                    ; (dazzle's LangObj.compile, the one gate residual there)
+                    if Planner.last_segment_is_capitalized(c.name)
                         return this.call_components_local(c)
                     if c.name = "init"
                         return this.call_components_local(c)
@@ -28919,15 +29096,41 @@ define Planner
                 if ap <> null
                 {
                     let v ap.unwrap()
+                    ; a VIEW bound from a call (`let name s.token_value()`): the
+                    ; binding table's verdict on that call's result, which knows
+                    ; a class-3 view into the receiver; the Local stamp a
+                    ; page-taking callee leaves does not (scanner.scaly's
+                    ; RegExpGroupRef(…, name), a tscaly gate residual)
+                    var judged_by_binding false
                     if this.census_type_is_ref_like(v.result_type)
+                        if v.member_access = null
+                            choose v.expr
+                                when vv: Variable
+                                {
+                                    let vbi this.bind_index_of(vv.name)
+                                    if vbi >= 0
+                                    {
+                                        set judged_by_binding: true
+                                        let vlp current_fn_bind_local.get(vbi as size_t)
+                                        if vlp <> null
+                                            if (*vlp) = 1
+                                                return true
+                                    }
+                                }
+                                else
+                                    0
+                    if judged_by_binding = false
                     {
-                        if this.region_of_operand(v) < Planner.required_region_for_escape()
-                            return true
-                    }
-                    else
-                        if this.type_owns_buffer(v.result_type, 0)
-                            if this.deep_by_value_local(v)
+                        if this.census_type_is_ref_like(v.result_type)
+                        {
+                            if this.region_of_operand(v) < Planner.required_region_for_escape()
                                 return true
+                        }
+                        else
+                            if this.type_owns_buffer(v.result_type, 0)
+                                if this.deep_by_value_local(v)
+                                    return true
+                    }
                 }
                 set i: i + 1
             }
@@ -29420,7 +29623,7 @@ define Planner
                             else
                                 this.add_diagnostic(call.loc, "reference into a local page escapes via call - the callee stores it into memory that outlives this frame; allocate with '#' (caller page) or '^name' (region)")
                     }
-                    set escape_found: true
+                    this.escape_note_found()
                 }
             }
         }
@@ -29470,7 +29673,7 @@ define Planner
                             else
                                 this.add_diagnostic(call.loc, "reference into a local page escapes via indirect call - the callee is an unknown function value that may store it beyond this frame; allocate with '#' (caller page) or '^name' (region)")
                         }
-                        set escape_found: true
+                        this.escape_note_found()
                     }
                 }
                 set ai: ai + 1
@@ -29771,7 +29974,7 @@ define Planner
                                 set this.file: String^this(cur_fn.file)
                             if escape_census = false
                                 this.add_diagnostic(call.loc, "the callee takes this argument's page (Page.get) and allocates on it, but the argument is frame-local; construct it on a page ('^name' or '#')")
-                            set escape_found: true
+                            this.escape_note_found()
                             return
                         }
                     }
@@ -29848,6 +30051,13 @@ define Planner
                         }
                         if promoted
                             set judged: false
+                        ; a value that is neither a reference nor owns a buffer
+                        ; cannot dangle, whatever keeps it: the `value: T` of a
+                        ; generic `Slice[char].put` (258 tscaly findings)
+                        if judged
+                            if this.census_type_is_ref_like(arg.result_type) = false
+                                if this.type_owns_buffer(arg.result_type, 0) = false
+                                    set judged: false
                     }
                 }
                 if judged
@@ -29946,9 +30156,17 @@ define Planner
                             let cur_fn instantiated_functions.get escape_fn_index
                             if cur_fn <> null
                                 set this.file: String^this(cur_fn.file)
+                            if gate_trace
+                            {
+                                scaly_eputs "gtrace REPORT "
+                                scaly_eputs(call.mangled_name.to_c_string())
+                                scaly_eputs " pos "
+                                scaly_eputi k
+                                scaly_eputs "\n"
+                            }
                             if escape_census = false
                                 this.add_diagnostic(call.loc, "reference into a local page escapes via call - the callee keeps this argument beyond its frame; allocate with '#' (caller page) or '^name' (region)")
-                            set escape_found: true
+                            this.escape_note_found()
                             return
                         }
                     }
@@ -31816,6 +32034,66 @@ define Planner
         ; `fill_interface_data`, a list freed under a live type). Nested
         ; blocks are walked; flow-insensitive within one body. The interface
         ; fact `@persists` is derived here too (facts_function#).
+        procedure deep_trace_result(beyond: u64, this_mask: u64, pageof: u64, into: ref[Array[u64]])
+        {
+            scaly_eputs "  dtrace RESULT beyond="
+            scaly_eputi(beyond as int)
+            scaly_eputs " this="
+            scaly_eputi(this_mask as int)
+            scaly_eputs " pageof="
+            scaly_eputi(pageof as int)
+            var k: size_t 1
+            while k < 16
+            {
+                let ip into.get k
+                if ip <> null
+                    if (*ip) <> (0 as u64)
+                    {
+                        scaly_eputs " into"
+                        scaly_eputi(k as int)
+                        scaly_eputs "="
+                        scaly_eputi((*ip) as int)
+                    }
+                set k: k + 1
+            }
+            scaly_eputs "\n"
+        }
+
+        ; a finding stops the walk — except while measuring (SCALYC_GATE_ALL),
+        ; and never for the census, whose verdict IS escape_found
+        procedure escape_note_found(mutable this: Planner)
+        {
+            if gate_all
+                if escape_census = false
+                    return
+            set escape_found: true
+        }
+
+        function empty_init_allocates_nothing(n: String) returns bool
+        {
+            if n = "String"
+                return true
+            if n = "StringC"
+                return true
+            if n = "Array"
+                return true
+            false
+        }
+
+        ; the stdlib methods that KEEP an argument (containers/*.scaly)
+        function stdlib_keeper_name(n: String) returns bool
+        {
+            if n = "add"
+                return true
+            if n = "put"
+                return true
+            if n = "add_on"
+                return true
+            if n = "add_internal"
+                return true
+            false
+        }
+
         function deep_into_any(masks: ref[Array[u64]]) returns bool
         {
             var ik: size_t 1
@@ -31839,6 +32117,29 @@ define Planner
                 set deep_persist_mask: 0
                 set deep_this_mask: 0
                 set deep_whole_mask: 0
+                ; a generated interface that states the deep masks (`@deep`):
+                ; the body's own verdict, per position and destination
+                if Planner.attributes_have(f.attributes, "deep")
+                {
+                    set deep_persist_mask: Planner.deep_attr_mask(f, "deep_beyond_")
+                    set deep_this_mask: Planner.deep_attr_mask(f, "deep_this_")
+                    set deep_whole_mask: Planner.deep_attr_mask(f, "deep_whole_")
+                    set deep_pageof_mask: Planner.deep_attr_mask(f, "deep_pageof_")
+                    var dk: size_t 1
+                    while dk < 16
+                    {
+                        var psb StringBuilder()
+                        psb.append "deep_into_"
+                        psb.append dk
+                        psb.append "_"
+                        let pfx psb.to_string()
+                        let iv Planner.deep_attr_mask(f, pfx.to_c_string())
+                        if iv <> (0 as u64)
+                            deep_into_masks.put(dk, iv)
+                        set dk: dk + 1
+                    }
+                    return (deep_persist_mask | deep_this_mask | deep_pageof_mask) <> (0 as u64)
+                }
                 if Planner.attributes_have(f.attributes, "persists")
                 {
                     set deep_persist_mask: (0 as u64) - (1 as u64)
@@ -31970,6 +32271,8 @@ define Planner
                     if a.target.length = 0
                         if this.persist_tail_carries(a.source)
                             set persist_ret_hit: true
+                    if deep_trace
+                        Planner.deep_trace_result(deep_persist_mask, deep_this_mask, deep_pageof_mask, deep_into_masks)
                     if (deep_persist_mask | deep_this_mask | deep_pageof_mask) <> (0 as u64)
                         return true
                 }
@@ -32092,6 +32395,28 @@ define Planner
                                         set sk: sk + 1
                                     }
                                     this.deep_by_name_merge((*fp).name, union_mask, deep_this_mask, deep_persist_mask, deep_whole_mask)
+                                    let mpr getenv("SCALYC_DEEP_MERGE")
+                                    if mpr <> null
+                                        if (*fp).name.equals(mpr)
+                                        {
+                                            scaly_eputs "merge "
+                                            scaly_eputs((*fp).name.to_c_string())
+                                            scaly_eputs " at "
+                                            scaly_eputi((*fp).span.start as int)
+                                            let mown ret_res_owner.get i
+                                            if mown <> null
+                                            {
+                                                scaly_eputs " owner="
+                                                scaly_eputs((*mown).to_c_string())
+                                            }
+                                            scaly_eputs " params="
+                                            scaly_eputi((*fp).input.length as int)
+                                            scaly_eputs " beyond="
+                                            scaly_eputi(deep_persist_mask as int)
+                                            scaly_eputs " this="
+                                            scaly_eputi(deep_this_mask as int)
+                                            scaly_eputs "\n"
+                                        }
                                     ; and under `Owner.name`, so a call whose
                                     ; receiver concept is known asks THAT
                                     ; body, not the union of every `make`
@@ -32325,6 +32650,96 @@ define Planner
             String("")
         }
 
+        ; `this.f` or a bare `f` of this, whose declared type is a primitive
+        function persist_target_this_scalar(this: Planner, target: Vector[Operand]) returns bool
+        {
+            if target.length <> 1
+                return false
+            let t0 target.get 0
+            if t0 = null
+                return false
+            let mac (*t0).member_access
+            if mac <> null
+                if mac.length > 0
+                    return false
+            choose (*t0).expression
+                when tty: scalyc.compiler.Model.Type
+                {
+                    var field String("")
+                    if tty.name.length = 2
+                    {
+                        let h tty.name.get 0
+                        let fp tty.name.get 1
+                        if h <> null
+                            if fp <> null
+                                if (*h) = "this"
+                                    set field: (*fp)
+                    }
+                    if tty.name.length = 1
+                    {
+                        let fp tty.name.get 0
+                        if fp <> null
+                            if this.persist_name_is_this_field((*fp))
+                                set field: (*fp)
+                    }
+                    if field.get_length() = 0
+                        return false
+                    return this.persist_this_field_is_primitive(field)
+                }
+                else
+                    return false
+            false
+        }
+
+        function persist_this_field_is_primitive(this: Planner, name: String) returns bool
+        {
+            if persist_pnames.length = 0
+                return false
+            let p0 persist_pnames.get 0
+            if p0 = null
+                return false
+            if (*p0) <> "this"
+                return false
+            let c0 persist_pconcepts.get 0
+            if c0 = null
+                return false
+            let idx concept_index.lookup((*c0))
+            if idx < 0
+                return false
+            let kvp concepts.get(idx as size_t)
+            if kvp = null
+                return false
+            let c (*kvp).value
+            choose c.definition
+                when st: Structure
+                {
+                    var qi: size_t 0
+                    while qi < st.properties.length
+                    {
+                        let prp st.properties.get qi
+                        if prp <> null
+                            if (*prp).name = name
+                            {
+                                if (*prp).type = null
+                                    return false
+                                let pt (*prp).type
+                                if (*pt).generics <> null
+                                    return false
+                                if (*pt).name.length <> 1
+                                    return false
+                                let tn (*pt).name.get 0
+                                if tn = null
+                                    return false
+                                return Planner.is_primitive_type_name((*tn))
+                            }
+                        set qi: qi + 1
+                    }
+                }
+                else
+                    0
+            false
+        }
+
         ; a bare name that is neither a parameter nor a local and that the
         ; receiver's concept declares as a property: a field of `this`
         function persist_name_is_this_field(this: Planner, name: String) returns bool
@@ -32459,9 +32874,30 @@ define Planner
         ; it), k a bare parameter, -2 a bare local, -1 anything else
         function persist_dest_kind(this: Planner, ops: Vector[Operand]) returns int
         {
-            if ops.length <> 1
+            ; `&sb` is the flat sequence [&, sb]: the destination is `sb`
+            ; (to_text's `JsonText.write(&sb, v, …)` read as kept BEYOND)
+            var at: size_t 0
+            if ops.length = 2
+            {
+                let amp ops.get 0
+                if amp <> null
+                    choose (*amp).expression
+                        when aty: scalyc.compiler.Model.Type
+                        {
+                            if aty.name.length = 1
+                            {
+                                let an aty.name.get 0
+                                if an <> null
+                                    if (*an) = "&"
+                                        set at: 1
+                            }
+                        }
+                        else
+                            0
+            }
+            if ops.length <> at + 1
                 return 0 - 1
-            let op0p ops.get 0
+            let op0p ops.get at
             if op0p = null
                 return 0 - 1
             if (*op0p).member_access <> null
@@ -32551,6 +32987,32 @@ define Planner
         }
 
         ; the first segment of an operand sequence's head name, "" otherwise
+        ; the head name past a leading `&` (the flat [&, x] of `&x`)
+        function persist_ops_head_name_peeled(ops: Vector[Operand]) returns String
+        {
+            let h Planner.persist_ops_head_name(ops)
+            if h <> "&"
+                return h
+            if ops.length <> 2
+                return h
+            let op1 ops.get 1
+            if op1 = null
+                return h
+            choose (*op1).expression
+                when ty: scalyc.compiler.Model.Type
+                {
+                    if ty.name.length = 0
+                        return h
+                    let s1 ty.name.get 0
+                    if s1 = null
+                        return h
+                    return (*s1)
+                }
+                else
+                    return h
+            h
+        }
+
         function persist_ops_head_name(ops: Vector[Operand]) returns String
         {
             if ops.length = 0
@@ -33348,6 +33810,15 @@ define Planner
                         set m: m & (self_bit xor ((0 as u64) - (1 as u64)))
                         set mw: mw & (self_bit xor ((0 as u64) - (1 as u64)))
                     }
+            ; `set this.flag: text.equals("\n")`: a SCALAR field keeps no guts,
+            ; whatever the call that computed the value was handed (HelpWriter's
+            ; chunk: fourteen tscaly gate residuals through chunk/bold/chunk_string)
+            if m <> (0 as u64)
+                if this.persist_target_this_scalar(a.target)
+                {
+                    set m: 0
+                    set mw: 0
+                }
             if m <> (0 as u64)
                 if this.persist_store_persists(a.target, m)
                 {
@@ -33571,6 +34042,7 @@ define Planner
                         ; `Owner.f(...)`, `this.f(...)`, `param.f(...)`: the
                         ; owner's own body where it is known
                         var qual String("")
+                        var owner_name_seen String("")
                         if ty.name.length > 1
                         {
                             let hp0 ty.name.get 0
@@ -33600,6 +34072,7 @@ define Planner
                                 }
                                 if owner_name.get_length() > 0
                                 {
+                                    set owner_name_seen: owner_name
                                     var qsb StringBuilder()
                                     qsb.append owner_name
                                     qsb.append "."
@@ -33618,7 +34091,41 @@ define Planner
                             if Planner.persist_names_contain(deep_qualified_all, qual)
                                 set qual_known: true
                         }
-                        if qual_known
+                        ; a method of ANOTHER package's concept (`out.append(…)` on a
+                        ; StringBuilder field): its body is linked, not scanned, and
+                        ; the name union over this root's bodies answers for the wrong
+                        ; concept — every `append` of tscaly for StringBuilder's, which
+                        ; copies. The stdlib's keepers are `add`/`put` (the put/add rule
+                        ; judges those on its own), `add_on` and `add_internal`, which
+                        ; stay on the union; any other method keeps nothing.
+                        var foreign_clean false
+                        if qual_known = false
+                            if owner_name_seen.get_length() > 0
+                                if deep_scanned_owners.length > 0
+                                    if Planner.persist_names_contain(deep_scanned_owners, owner_name_seen) = false
+                                        if Planner.stdlib_keeper_name((*lastp)) = false
+                                            set foreign_clean: true
+                        if deep_trace
+                        {
+                            scaly_eputs "  dtrace lookup qual="
+                            scaly_eputs(qual.to_c_string())
+                            scaly_eputs " owner="
+                            scaly_eputs(owner_name_seen.to_c_string())
+                            if qual_known
+                                scaly_eputs " known"
+                            if foreign_clean
+                                scaly_eputs " foreign"
+                            scaly_eputs "\n"
+                        }
+                        if foreign_clean
+                        {
+                            set qual_used: qual
+                            set callee_mask: 0
+                            set callee_this: 0
+                            set callee_beyond: 0
+                            set callee_whole: 0
+                        }
+                        else if qual_known
                         {
                             set qual_used: qual
                             set callee_mask: this.deep_name_mask_of(qual)
@@ -33850,7 +34357,7 @@ define Planner
                                     let dk this.persist_dest_kind((*dp).value)
                                     if dk = 0 - 2
                                     {
-                                        let dn Planner.persist_ops_head_name((*dp).value)
+                                        let dn Planner.persist_ops_head_name_peeled((*dp).value)
                                         this.persist_add_tainted_mw(String^this(dn), cm, cw)
                                     }
                                     else
@@ -34229,7 +34736,8 @@ define Planner
             }
             this.rr_rebuild_name_buckets()
             set deep_gate: getenv("SCALYC_DEEP_GATE") <> null
-            if deep_gate
+            set gate_all: getenv("SCALYC_GATE_ALL") <> null
+            if deep_gate or deep_facts
             {
                 set deep_fns.length: 0
                 set deep_mangled.length: 0
@@ -34266,6 +34774,7 @@ define Planner
                     set gi: gi + 1
                 }
                 set deep_qualified_all.length: 0
+                set deep_scanned_owners.length: 0
                 var qi: size_t 0
                 while qi < rr_fns.length
                 {
@@ -34281,6 +34790,8 @@ define Planner
                                 qsb.append((*qf).name)
                                 let qn qsb.to_string()
                                 deep_qualified_all.add(String^this(qn))
+                                if Planner.persist_names_contain(deep_scanned_owners, (*qo)) = false
+                                    deep_scanned_owners.add(String^this((*qo)))
                             }
                     set qi: qi + 1
                 }
@@ -34801,6 +35312,15 @@ define Planner
             if p >= 0
                 return p as size_t
             0
+        }
+
+        ; `@deep_beyond_6 true`: the mask in the attribute's name, 0 where absent
+        function deep_attr_mask(f: Function, prefix: pointer[const_char]) returns u64
+        {
+            let v Planner.linked_return_prefixed(f, prefix)
+            if v < 0
+                return 0
+            v as u64
         }
 
         function linked_return_prefixed(f: Function, prefix: pointer[const_char]) returns int
@@ -35559,6 +36079,24 @@ define Planner
                 else
                     scaly_eputs " no_init\n"
             }
+            ; `String()`, `StringC()`, `Array[T]()`: the empty init allocates
+            ; nothing, so the value has no buffer anywhere — class 4, not the
+            ; caller page (dazzle's `var result StringC()` then `set result:
+            ; obj.string_data(host)` read as a caller-page StringC)
+            if view = false
+                if Planner.empty_init_allocates_nothing(tname)
+                {
+                    let etp ops.get tuple_i
+                    if etp <> null
+                        choose (*etp).expression
+                            when etup: Tuple
+                            {
+                                if etup.components.length = 0
+                                    return 4
+                            }
+                            else
+                                0
+                }
             if view = false
                 if this.rr_concept_has_init(tname)
                     return 1
@@ -38791,6 +39329,26 @@ define Planner
             if this.array_contains_name(escaping_return_locals, name) = false
                 escaping_return_locals.add(String^this(name))
         }
+        function last_segment_is_capitalized(n: String) returns bool
+        {
+            let len n.get_length()
+            if len = 0
+                return false
+            let b n.get_buffer()
+            var start: size_t 0
+            var i: size_t 0
+            while i < len
+            {
+                if (*(b + i)) = ("." as char)
+                    set start: i + 1
+                set i: i + 1
+            }
+            if start >= len
+                return false
+            let c (*(b + start))
+            (c >= 65) && (c <= 90)
+        }
+
         function name_is_capitalized(this: Planner, n: String) returns bool
         {
             if n.get_length() = 0
@@ -41075,6 +41633,27 @@ define Planner
                 let gdi this.return_residence_index(f)
                 if gdi >= 0
                 {
+                    ; ★The gate's pre-pass registers every body under an EMPTY
+                    ; name (the mangled one does not exist before planning), so
+                    ; the census's two name tables — "this callee keeps an
+                    ; argument" and "this call's RESULT carries one" — stayed
+                    ; empty under the gate: two `no_args` boxes handed to
+                    ; `new_new_expression`, whose node keeps its argument list,
+                    ; read `local`, were dropped, and casejs crashed 116 times
+                    ; (2026-09-23). The name is known here; record it.
+                    let rgst deep_state.get(gdi as size_t)
+                    if rgst <> null
+                        if (*rgst) <> 0
+                            if Planner.persist_names_contain(persist_deep_names, result.mangled_name) = false
+                            {
+                                persist_deep_names.add(String^this(result.mangled_name))
+                                persist_deep_vals.add((*rgst))
+                            }
+                    let rgrs deep_ret_state.get(gdi as size_t)
+                    if rgrs <> null
+                        if (*rgrs) <> 0
+                            if Planner.persist_names_contain(deep_returns_mangled, result.mangled_name) = false
+                                deep_returns_mangled.add(String^this(result.mangled_name))
                     let gst deep_state.get(gdi as size_t)
                     var g_any false
                     if gst <> null
@@ -48803,6 +49382,61 @@ define Planner
     ; (receiver a this-field or a name that is neither a parameter nor a
     ; body-local, i.e. a field/global reached via the implicit-property
     ; path), whose value mentions a parameter bare?
+    function persist_paren_receiver_persists(op0p: ref[Operand], pnames: Array[String], locals: Array[String]) returns bool
+    {
+        let mac op0p.member_access
+        if mac = null
+            return false
+        if mac.length <> 1
+            return false
+        let mp mac.get 0
+        if mp = null
+            return false
+        var is_putadd false
+        if (*mp) = "add"
+            set is_putadd: true
+        if (*mp) = "put"
+            set is_putadd: true
+        if is_putadd = false
+            return false
+        choose op0p.expression
+            when tup: Tuple
+            {
+                if tup.components.length <> 1
+                    return false
+                let cp tup.components.get 0
+                if cp = null
+                    return false
+                let inner cp.value
+                if inner.length = 0
+                    return false
+                let ip inner.get 0
+                if ip = null
+                    return false
+                choose ip.expression
+                    when ity: scalyc.compiler.Model.Type
+                    {
+                        if ity.name.length = 0
+                            return false
+                        let s0p ity.name.get 0
+                        if s0p = null
+                            return false
+                        if (*s0p) = "this"
+                            return ity.name.length > 1
+                        if Planner.persist_names_contain(pnames, (*s0p))
+                            return false
+                        if Planner.persist_names_contain(locals, (*s0p))
+                            return false
+                        return true
+                    }
+                    else
+                        return false
+            }
+            else
+                return false
+        false
+    }
+
     function persist_ops_putadd_param(ops: Vector[Operand], pnames: Array[String], locals: Array[String]) returns bool
     {
         if ops.length < 2
@@ -48811,7 +49445,14 @@ define Planner
         if op0p = null
             return false
         if (*op0p).member_access <> null
+        {
+            ; `(field as ref[Array[T]]).add(v)`: a parenthesised receiver with
+            ; the method as its member access (tscaly's cf_add_pending_expression
+            ; — the census read two `no_args` boxes stored through it `local`)
+            if Planner.persist_paren_receiver_persists(op0p as ref[Operand], pnames, locals)
+                return Planner.persist_value_mentions_param(ops, 1, pnames)
             return false
+        }
         var recv_persists false
         choose (*op0p).expression
             when ty: scalyc.compiler.Model.Type

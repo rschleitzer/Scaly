@@ -187,6 +187,17 @@ def transform(text, facts):
                              '3': 'ret_param_' + arg, '4': 'ret_nonlocal'}.get(cls)
                     if rname:
                         facts_attrs += ' @' + rname + ' true'
+                # the deep persist masks (Planner.facts_deep_line#): `@deep` says
+                # they are stated, a missing mask is zero
+                if a.get('deep') is not None:
+                    d = a['deep']
+                    facts_attrs += ' @deep true'
+                    for key, v in zip(('beyond', 'this', 'whole', 'pageof'), d[:4]):
+                        if v:
+                            facts_attrs += ' @deep_%s_%d true' % (key, v)
+                    for k, v in enumerate(d[4:19], start=1):
+                        if v:
+                            facts_attrs += ' @deep_into_%d_%d true' % (k, v)
                 rel = close + 1 - s
                 head = head[:rel] + facts_attrs + head[rel:]
             if s in io_starts and not re.search(r'\)[^;]*\bio\b', head):
@@ -249,6 +260,11 @@ def parse_facts(path):
         # V continues the F line before it: the return residence, class + arg
         if p[0] == 'V' and last is not None:
             last[6]['ret'] = (p[1], p[2])
+            continue
+        # X continues the F line before it: the deep persist masks, beyond this
+        # whole pageof and the fifteen into-parameter slots (bit 0 is `this`)
+        if p[0] == 'X' and last is not None:
+            last[6]['deep'] = [int(x) for x in p[1:]]
             continue
         if not p or p[0] not in ('F', 'C', 'G', 'R', 'I', 'M'):
             continue

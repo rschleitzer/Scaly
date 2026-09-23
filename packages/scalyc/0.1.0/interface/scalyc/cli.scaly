@@ -118,10 +118,10 @@ define Options
 
 
 
-    function has_error(this) @ret_nonlocal true returns bool linked
+    function has_error(this) @ret_nonlocal true @deep true returns bool linked
 
 
-    function has_input(this) @ret_nonlocal true returns bool linked
+    function has_input(this) @ret_nonlocal true @deep true returns bool linked
 
 }
 
@@ -134,7 +134,7 @@ define cli
     ; Parse command-line arguments
     ; argc: argument count
     ; argv: argument vector (C-style array of char pointers)
-    function parse_args(argc: int, argv: pointer[pointer[char]]) @page true @direct true @ret_caller true returns Options linked
+    function parse_args(argc: int, argv: pointer[pointer[char]]) @page true @direct true @ret_caller true @deep true returns Options linked
 
 
 
@@ -332,7 +332,7 @@ define cli
 
 
     ; Print usage information
-    procedure print_usage() @ret_nonlocal true io linked
+    procedure print_usage() @ret_nonlocal true @deep true io linked
 
 
 
@@ -371,7 +371,7 @@ define cli
     ; ★POSIX is untouched by construction — the caller only asks when the
     ; resolved target is COFF, so every existing path stays the literal
     ; "/tmp/..." string it has always been.
-    procedure windows_scratch_dir() @page true @direct true @ret_caller true returns String io linked
+    procedure windows_scratch_dir() @page true @direct true @ret_caller true @deep true returns String io linked
 
 
 
@@ -398,7 +398,7 @@ define cli
     ; ★Stage 7: on a COFF target the archive is `libscaly.lib` and the scratch
     ; directory is the one above. The suffix is not cosmetic — that is the name
     ; `llvm-ar` gives it there and the name the MSVC-driver link expects.
-    procedure runtime_archive_path(coff: bool) @page true @direct true @ret_caller true returns String io linked
+    procedure runtime_archive_path(coff: bool) @page true @direct true @ret_caller true @deep true returns String io linked
 
 
 
@@ -430,7 +430,7 @@ define cli
     ; found, e.g. clang-18 on a box that has no plain `clang`), then $CC,
     ; falling back to `clang`. Unset → `clang`, exactly as before, so CI /
     ; bootstrap / AOT linking is byte-for-byte unchanged.
-    procedure link_compiler() @page true @direct true @ret_caller true returns String io linked
+    procedure link_compiler() @page true @direct true @ret_caller true @deep true returns String io linked
 
 
 
@@ -445,7 +445,9 @@ define cli
 
     ; Run the compiler with parsed options
     ; Returns 0 on success, non-zero on error
-    procedure run(mutable opts: Options) @ret_nonlocal true returns int io mutable modeler_error_count reads modeler_error_count linked
+    procedure run(mutable opts: Options) @ret_nonlocal true @deep true @deep_beyond_1 true returns int io mutable modeler_error_count reads modeler_error_count linked
+
+
 
 
 
@@ -973,7 +975,7 @@ define cli
     ; procedure form so each `register` call is at function-statement
     ; granularity (avoids the same in-place Vector[Module].add codegen
     ; pitfall worked around in Modeler.scaly).
-    procedure register_packages(mutable planner: ref[Planner.Planner], model: ref[Program]) linked
+    procedure register_packages(mutable planner: ref[Planner.Planner], model: ref[Program]) @deep true @deep_this_2 true linked
 
 
 
@@ -994,7 +996,7 @@ define cli
     ; functions resolve to the real bodies (see Emitter.jit_run). The `scaly`
     ; stdlib is skipped — its symbols are already in the host scalyc image and
     ; resolve via the ORC process generator. Returns false on any dep failure.
-    procedure compile_jit_dependencies(mutable model: ref[Program], mutable dep_objs: ref[Array[String]], mutable dep_syms: ref[Array[String]]) @ret_nonlocal true returns bool io mutable modeler_error_count reads modeler_error_count linked
+    procedure compile_jit_dependencies(mutable model: ref[Program], mutable dep_objs: ref[Array[String]], mutable dep_syms: ref[Array[String]]) @ret_nonlocal true @deep true @deep_pageof_2 true returns bool io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -1037,7 +1039,7 @@ define cli
 
 
     ; `<dir>/interface/<p>.scaly` -> `<dir>/<p>.scaly`; any other path as it is
-    function source_root(file: String) @page true @direct true returns String linked
+    function source_root(file: String) @page true @direct true @deep true returns String linked
 
 
 
@@ -1057,7 +1059,7 @@ define cli
     ; an object at out_obj, and append the mangled names it defines to `syms`.
     ; This ROOT path plans the package's bodies correctly (unlike the retired
     ; jit_dep_bodies dependency path). Returns false on any failure.
-    procedure compile_dep_package_to_object(mutable entry_file_in: String, mutable out_obj: String, mutable syms: ref[Array[String]]) @ret_nonlocal true returns bool io mutable modeler_error_count reads modeler_error_count linked
+    procedure compile_dep_package_to_object(mutable entry_file_in: String, mutable out_obj: String, mutable syms: ref[Array[String]]) @ret_nonlocal true @deep true @deep_pageof_4 true returns bool io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -1130,7 +1132,7 @@ define cli
     ; s194: format a single parse error as `file:line:col: <message>`,
     ; mirroring print_diagnostics#'s offset→line/col walk (numeric LF
     ; compare — `"\n" as char` mis-compiles under stage-1).
-    procedure print_parse_error(file_path: String, source: String, offset: size_t, message: String) @ret_nonlocal true io linked
+    procedure print_parse_error(file_path: String, source: String, offset: size_t, message: String) @ret_nonlocal true @deep true io linked
 
 
 
@@ -1163,7 +1165,7 @@ define cli
 
 
 
-    procedure print_diagnostics(planner: ref[Planner.Planner], file_path: String, source: String) io linked
+    procedure print_diagnostics(planner: ref[Planner.Planner], file_path: String, source: String) @deep true io linked
 
 
 
@@ -1226,7 +1228,7 @@ define cli
     ; (concept, looking-up file) miss. A [lazy] tag marks a first
     ; sighting during lazy instantiation — those need the visibility-
     ; context switch (nested-planning trap), not a use line.
-    procedure print_use_vis(planner: ref[Planner.Planner]) io linked
+    procedure print_use_vis(planner: ref[Planner.Planner]) @deep true io linked
 
 
 
@@ -1277,7 +1279,7 @@ define cli
     ; line per `for` loop, file:line:col like print_diagnostics — the byte
     ; offset is relative to the loop's own source file, so re-read the file
     ; when it changes (entries arrive grouped by file, one read per file).
-    procedure print_task_plan(tp: ref[TaskPlanner.TaskPlanner]) @ret_nonlocal true io linked
+    procedure print_task_plan(tp: ref[TaskPlanner.TaskPlanner]) @ret_nonlocal true @deep true io linked
 
 
 
@@ -1292,7 +1294,7 @@ define cli
 
     ; --host-report: the head line counts the candidates and the LOCAL
     ; verdicts, then one located line per candidate (Planner.host_census#).
-    procedure print_host_report(planner: ref[Planner.Planner]) @ret_nonlocal true io linked
+    procedure print_host_report(planner: ref[Planner.Planner]) @ret_nonlocal true @deep true io linked
 
 
 
@@ -1313,7 +1315,7 @@ define cli
 
     ; --pointer-report: the head line carries one count per class, then one
     ; located line per site (PointerCensus.scaly has the class list).
-    procedure print_pointer_report(pc: ref[PointerCensus.PointerCensus]) @ret_nonlocal true io linked
+    procedure print_pointer_report(pc: ref[PointerCensus.PointerCensus]) @ret_nonlocal true @deep true io linked
 
 
 
@@ -1369,7 +1371,7 @@ define cli
 
 
 
-    procedure print_write_report(wc: ref[WriteCensus.WriteCensus]) @ret_nonlocal true io linked
+    procedure print_write_report(wc: ref[WriteCensus.WriteCensus]) @ret_nonlocal true @deep true io linked
 
 
 
@@ -1420,7 +1422,7 @@ define cli
 
 
 
-    procedure print_purity_check(wc: ref[WriteCensus.WriteCensus]) @ret_nonlocal true io linked
+    procedure print_purity_check(wc: ref[WriteCensus.WriteCensus]) @ret_nonlocal true @deep true io linked
 
 
 
@@ -1447,7 +1449,7 @@ define cli
         files: ref[Array[String]],
         offsets: ref[Array[size_t]],
         texts: ref[Array[String]]
-    ) io linked
+    ) @deep true io linked
 
 
 
@@ -1516,7 +1518,7 @@ define cli
     ; the interface keeps every line where the source has it (a generic body,
     ; the usual origin of such a report, is even the same text), so the line
     ; and column computed from the interface are the source's.
-    function display_path(path: String) @page true @direct true returns String linked
+    function display_path(path: String) @page true @direct true @deep true returns String linked
 
 
 
@@ -1540,7 +1542,7 @@ define cli
     ; Decimal formatting for diagnostics. Local mirror of
     ; Planner.size_to_string to avoid cross-namespace call resolution
     ; risk under stage-1.
-    function format_size(n: size_t) @page true @direct true @ret_caller true returns String linked
+    function format_size(n: size_t) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -1564,7 +1566,7 @@ define cli
 
 
 
-    function extract_program_name(file_path: String) @page true @direct true returns String linked
+    function extract_program_name(file_path: String) @page true @direct true @deep true returns String linked
 
 
 
@@ -1604,14 +1606,14 @@ define cli
 
 
     ; Main entry point
-    procedure main(argc: int, mutable argv: pointer[pointer[char]]) @ret_nonlocal true returns int io mutable modeler_error_count reads modeler_error_count linked
+    procedure main(argc: int, mutable argv: pointer[pointer[char]]) @ret_nonlocal true @deep true returns int io mutable modeler_error_count reads modeler_error_count linked
 
 
 
 
 
     ; Test function
-    procedure test() @ret_nonlocal true returns int io mutable modeler_error_count reads modeler_error_count linked
+    procedure test() @ret_nonlocal true @deep true returns int io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -1653,7 +1655,7 @@ define cli
 
 
     ; Test compiling hello.scaly from disk
-    procedure test_hello_scaly() @ret_nonlocal true returns int io mutable modeler_error_count reads modeler_error_count linked
+    procedure test_hello_scaly() @ret_nonlocal true @deep true returns int io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -1699,7 +1701,7 @@ define cli
 
 
     ; Test the compilation pipeline on a minimal program
-    procedure test_pipeline() @ret_nonlocal true returns int io mutable modeler_error_count reads modeler_error_count linked
+    procedure test_pipeline() @ret_nonlocal true @deep true returns int io mutable modeler_error_count reads modeler_error_count linked
 
 
 
