@@ -14,7 +14,7 @@
 #
 # Phase 2 runs in lanes, all at once; inside a lane the steps are in order:
 #   compiler  regress, selfhosted, target, fiber, escape, pointer-report,
-#             write-report, abi, debuginfo, cluster, then tools/interfaces.sh
+#             write-report, abi, debuginfo, then tools/interfaces.sh
 #             --check — last, so its 6.5 GB tscaly compilation does not overlap
 #             the one the tscaly lane starts with
 #   lsp       tests/lsp/run.sh
@@ -26,6 +26,7 @@
 #             build, then one --bench-batch run (in BAR_VSCODE_DIR, default the
 #             scenario's directory) whose first BAR_VSCODE_LINES lines must equal
 #             the baseline's
+# tests/cluster runs last and alone: it is bound by TIMING (see below).
 # The port and tscaly suites run under SCALY_POISON=1, as the acid rounds did.
 #
 # Every step's output is in its own log under $BAR_LOG (default: a fresh
@@ -100,13 +101,16 @@ lane_compiler() {
   step write-report tests/write-report/run.sh "$BIN" || rc=1
   step abi tests/abi/run.sh || rc=1
   step debuginfo tests/debuginfo/run.sh "$BIN" || rc=1
-  step cluster tests/cluster/run.sh "$BIN" || rc=1
   step interfaces tools/interfaces.sh --check "$BIN" || rc=1
   return $rc
 }
 
 lane_lsp() {
-  step lsp tests/lsp/run.sh "$BIN"
+  # A request's 60 s budget is sized for an idle machine; beside the other lanes
+  # `definition` over the whole tree exceeded it and answered empty (a red that
+  # is the machine, not the server). The budget tests set or remove the variable
+  # themselves, so the lane only moves the ceiling.
+  step lsp env SCALYLS_BUDGET_MS=300000 tests/lsp/run.sh "$BIN"
 }
 
 dazzle_all() {
@@ -209,9 +213,16 @@ for l in "${LANES[@]}"; do
 done
 RC=0
 for i in "${!PIDS[@]}"; do wait "${PIDS[$i]}" || RC=1; done
+
+# The TIMING-bound suite runs after the lanes, alone: tests/cluster waits at
+# most ~10 s for a peer's marker ("S: linked"), and beside the lanes a peer
+# missed it — a parity rc 110 in one run, a survivor waiting forever in the
+# next — where it passes in 2-5 s on its own.
+step cluster tests/cluster/run.sh "$BIN" > "$LOG/lane_tail.txt" || RC=1
 kill $MEM_PID 2>/dev/null
 
 for l in "${LANES[@]}"; do cat "$LOG/lane_$l.txt"; done
+cat "$LOG/lane_tail.txt"
 echo "bar: phase 1 $(( T1 - T0 ))s, phase 2 $(( $(date +%s) - T1 ))s, total $(( $(date +%s) - T0 ))s — $([ $RC = 0 ] && echo PASS || echo FAIL)"
 echo "bar: peak swap $(awk '{print $2}' "$LOG/memory.txt" | sort -t= -k2 -n | tail -1)  (logs: $LOG)"
 exit $RC

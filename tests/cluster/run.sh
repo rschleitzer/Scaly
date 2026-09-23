@@ -117,6 +117,10 @@ else
   VPID=$!
   if wait_marker "$OUT/cluster_${t}_s.log" "^S: linked$"; then
     kill -9 $VPID 2>/dev/null
+  else
+    # never linked: the survivor would wait for its peer forever (measured
+    # beside a loaded machine) — end both and let the verdict say FAIL
+    kill -9 $VPID $SPID 2>/dev/null
   fi
   wait $VPID 2>/dev/null
   wait $SPID
