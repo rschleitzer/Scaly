@@ -13,8 +13,14 @@ cd "$(dirname "$0")/../.." || exit 1
 . tests/platform.sh || exit 1
 STAGE=${1:-$SCALY_STAGE_DEFAULT}
 scaly_need_archive regress "$STAGE" || exit 1
-pass=0; fail=0; failures=()
-for f in tests/regress/*.scaly; do
+# One fixture per call, its verdict as ONE line on stdout (`PASS name` or
+# `FAIL name: detail`), so the fixtures run in parallel (REGRESS_JOBS, default
+# every core; 1 is the old serial loop). Each fixture owns its binary
+# /tmp/rt_<name> and its temp files, and since 2026-09-23 every compile links
+# from an object named by its PID, so concurrent fixtures share nothing.
+report_fail() { printf 'FAIL %s\n' "$(printf '%s' "$*" | tr '\n' ' ')"; }
+run_one() {
+  f=$1
   t=$(basename "$f" .scaly)
   bin=/tmp/rt_$t$SCALY_EXE; rm -f "$bin"
   case "$t" in
@@ -38,9 +44,9 @@ for f in tests/regress/*.scaly; do
       while IFS= read -r a; do [ -n "$a" ] && arg_args+=($a); done < <(sed -n 's/^; args: //p' "$f")
       err=$(env "${env_args[@]}" "$STAGE" "${arg_args[@]}" -o "$bin" "$f" 2>&1); rc=$?
       if [ $rc -ne 0 ] && printf '%s' "$err" | grep -qF "$want"; then
-        pass=$((pass+1))
+        echo "PASS $t"
       else
-        fail=$((fail+1)); failures+=("$t: rc=$rc '$err'")
+        report_fail "$t: rc=$rc '$err'"
       fi
       ;;
     *)
@@ -69,7 +75,7 @@ for f in tests/regress/*.scaly; do
         crc=0
         "$STAGE" -o "$bin" "$f" "${extra[@]}" >/dev/null 2>&1 || crc=$?
         if [ $crc -ne 0 ]; then
-          fail=$((fail+1)); failures+=("$t: compile failed rc=$crc")
+          report_fail "$t: compile failed rc=$crc"
         else
           out=$("$bin" 2>&1); rc=$?
           missing=""
@@ -77,9 +83,9 @@ for f in tests/regress/*.scaly; do
             [ -n "$w" ] && ! printf '%s' "$out" | grep -qF "$w" && missing="$w"
           done < <(sed -n 's/^; expect-out: //p' "$f")
           if [ "$rc" = "$want_rc" ] && [ -z "$missing" ]; then
-            pass=$((pass+1))
+            echo "PASS $t"
           else
-            fail=$((fail+1)); failures+=("$t: rc=$rc want=$want_rc missing='$missing' out='$out'")
+            report_fail "$t: rc=$rc want=$want_rc missing='$missing' out='$out'"
           fi
         fi
       else
@@ -100,18 +106,25 @@ for f in tests/regress/*.scaly; do
         "$STAGE" -o "$bin" "$f" "${extra[@]}" > "$cerr" 2>&1 || crc=$?
         out=$("$bin" 2>"$rerr"); rc=$?
         if [ "$out" = "PASS" ]; then
-          pass=$((pass+1))
+          echo "PASS $t"
         else
-          fail=$((fail+1))
           detail="rc=$rc"
           [ $crc -ne 0 ] && detail="$detail compile-rc=$crc compile='$(tail -2 "$cerr" | tr '\n' ' ')'"
           [ -s "$rerr" ] && detail="$detail stderr='$(head -c 300 "$rerr" | tr '\n' ' ')'"
-          failures+=("$t: '$out' $detail")
+          report_fail "$t: '$out' $detail"
         fi
         rm -f "$cerr" "$rerr"
       fi
       ;;
   esac
-done
-echo "regress: $pass PASS, $fail FAIL ${failures[*]}"
+}
+export -f run_one report_fail
+export STAGE SCALY_EXE
+JOBS=${REGRESS_JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)}
+res=$(mktemp)
+ls tests/regress/*.scaly | xargs -P "$JOBS" -I{} bash -c 'run_one "$1"' _ {} > "$res"
+pass=$(grep -c '^PASS ' "$res"); fail=$(grep -c '^FAIL ' "$res")
+failures=$(grep '^FAIL ' "$res" | sed 's/^FAIL //' | tr '\n' ' ')
+rm -f "$res"
+echo "regress: $pass PASS, $fail FAIL $failures"
 [ $fail -eq 0 ]

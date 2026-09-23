@@ -27,26 +27,35 @@ if [ "${1:-}" = "--check" ]; then CHECK=1; shift; fi
 BIN="${1:-scalyc/build/scalyc}"
 PKGS="scaly opensp dazzle scalyc scalyls tscaly scalygpu"
 T="$(mktemp -d)"
-rc=0
-for p in $PKGS; do
-  root="packages/$p/0.1.0/$p.scaly"
-  flags=""
+# One job per package, side by side (the tscaly facts alone take ~33 s and
+# 6.5 GB; the others a few seconds each); the reports print in package order.
+one() {
+  local p=$1 root="packages/$1/0.1.0/$1.scaly" flags="" out="packages/$1/0.1.0/interface"
   [ "$p" = scaly ] && flags="--no-prelude"
   if ! ( ulimit -s 65520; SCALY_HOME="$PWD" "$BIN" --plan --no-tests $flags --interface-facts "$root" ) > "$T/$p.facts" 2> "$T/$p.err"; then
-    echo "interfaces: FAIL (facts of $p)"; head -5 "$T/$p.err"; rc=1; continue
+    echo "interfaces: FAIL (facts of $p)"; head -5 "$T/$p.err"; return 1
   fi
-  out="packages/$p/0.1.0/interface"
   if [ "$CHECK" = 1 ]; then
-    python3 tools/interface/geninterface.py "$root" "$T/$p.facts" --out "$T/$p" > /dev/null || { rc=1; continue; }
+    python3 tools/interface/geninterface.py "$root" "$T/$p.facts" --out "$T/$p" > /dev/null || return 1
     if diff -r -q "$out" "$T/$p" > "$T/$p.diff" 2>&1; then
       echo "interfaces: $p current"
     else
-      echo "interfaces: STALE $p — run tools/interfaces.sh"; head -5 "$T/$p.diff"; rc=1
+      echo "interfaces: STALE $p — run tools/interfaces.sh"; head -5 "$T/$p.diff"; return 1
     fi
   else
     rm -rf "$out"
     python3 tools/interface/geninterface.py "$root" "$T/$p.facts" --out "$out" | sed "s#^#interfaces: $p: #"
   fi
+}
+pids=""
+for p in $PKGS; do
+  one "$p" > "$T/$p.log" 2>&1 & pids="$pids $!"
+done
+rc=0
+set -- $pids
+for p in $PKGS; do
+  wait "$1" || rc=1; shift
+  cat "$T/$p.log"
 done
 rm -rf "$T"
 exit $rc

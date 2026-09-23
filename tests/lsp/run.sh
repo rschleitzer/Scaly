@@ -49,16 +49,19 @@ if [ "$MODE" = selfhosted ]; then
     echo "scalyls build: selfhosted 4-root via $SCALYC"
     LSO="$(mktemp -d)"
     trap 'rm -rf "$LSO"' EXIT
-    ( ulimit -s 65520
-      "$SCALYC" -S --no-tests -o "$LSO/scalyc.ll"       packages/scalyc/0.1.0/scalyc.scaly
-      "$SCALYC" -S --no-tests -o "$LSO/scaly.ll"        packages/scaly/0.1.0/scaly.scaly
-      "$SCALYC" -S --no-tests -o "$LSO/scalyls.ll"      packages/scalyls/0.1.0/scalyls.scaly
-      "$SCALYC" -S --no-tests -o "$LSO/scalyls_main.ll" packages/scalyls/0.1.0/main.scaly
-    ) || { echo "FAIL  selfhosted scalyls emission"; exit 1; }
-    for f in scalyc scaly scalyls scalyls_main; do
-        "$LLC" -relocation-model=pic -filetype=obj "$LSO/$f.ll" -o "$LSO/$f.o" \
-            || { echo "FAIL  llc $f"; exit 1; }
-    done
+    # The four roots are independent: emit and llc each one in its own job.
+    lsp_root() {
+        ( ulimit -s 65520; "$SCALYC" -S --no-tests -o "$LSO/$1.ll" "$2" ) \
+            || { echo "FAIL  selfhosted scalyls emission ($1)"; return 1; }
+        "$LLC" -relocation-model=pic -filetype=obj "$LSO/$1.ll" -o "$LSO/$1.o" \
+            || { echo "FAIL  llc $1"; return 1; }
+    }
+    pids=()
+    lsp_root scalyc       packages/scalyc/0.1.0/scalyc.scaly & pids+=($!)
+    lsp_root scaly        packages/scaly/0.1.0/scaly.scaly & pids+=($!)
+    lsp_root scalyls      packages/scalyls/0.1.0/scalyls.scaly & pids+=($!)
+    lsp_root scalyls_main packages/scalyls/0.1.0/main.scaly & pids+=($!)
+    for p in "${pids[@]}"; do wait "$p" || exit 1; done
     # scaly.o references the fiber context-switch primitives (vendored asm)
     # and the evented-I/O backend shim (kqueue/epoll C); ctime.o is the
     # civil-time shim every scalyc-family link carries (scaly/time/ctime.c).

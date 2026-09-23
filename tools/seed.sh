@@ -88,13 +88,30 @@ fi
 # `scalyc.ll` differed only in the functions that had changed. The emission is
 # a property of the TARGET and the LLVM version, not of who ran it.
 SEED_TARGET=${SEED_TARGET:-arm64-apple-darwin}
-echo "seed: emitting .ll with $CC --no-tests --target $SEED_TARGET"
-( ulimit -s 65520
-  for f in main scalyc; do
-    "$CC" -S --no-tests --target "$SEED_TARGET" -o "$OUT/$f.ll" packages/scalyc/0.1.0/$f.scaly || exit 1
+# The roots are independent, so every step over them runs them side by side;
+# `waitall` fails if any of them did.
+waitall() { local rc=0 p; for p in "$@"; do wait "$p" || rc=1; done; return $rc; }
+# emit_roots <compiler> <name>=<root>...: each root's IR as $OUT/<name>.ll.
+emit_roots() {
+  local cc=$1 a pids=(); shift
+  for a in "$@"; do
+    ( ulimit -s 65520; "$cc" -S --no-tests --target "$SEED_TARGET" -o "$OUT/${a%%=*}.ll" "${a#*=}" ) & pids+=($!)
   done
-  "$CC" -S --no-tests --target "$SEED_TARGET" -o "$OUT/scaly.ll" packages/scaly/0.1.0/scaly.scaly || exit 1
-) || fail "emission"
+  waitall "${pids[@]}"
+}
+# llc_objs <name>...: $OUT/<name>.ll -> $OUT/<name>.o.
+llc_objs() {
+  local f pids=()
+  for f in "$@"; do
+    # -relocation-model=pic: x86-64 Linux PIE rejects llc's default R_X86_64_32
+    # abs relocations; PIC is the Mach-O default, so this is a no-op on macOS.
+    "$LLC" -relocation-model=pic -filetype=obj "$OUT/$f.ll" -o "$OUT/$f.o" & pids+=($!)
+  done
+  waitall "${pids[@]}"
+}
+C=packages/scalyc/0.1.0 L=packages/scalyls/0.1.0
+echo "seed: emitting .ll with $CC --no-tests --target $SEED_TARGET"
+emit_roots "$CC" main=$C/main.scaly scalyc=$C/scalyc.scaly scaly=packages/scaly/0.1.0/scaly.scaly || fail "emission"
 
 if [ "$SCALY_COFF" = 1 ]; then
 # ★The Windows box: the seed text is Mach-O-targeted and carries no COMDATs,
@@ -109,11 +126,7 @@ if ! tools/win-lto.sh --llvm "$OUT/scalyc_seed$SCALY_EXE" "$OUT/main.ll" "$OUT/s
 fi
 else
 echo "seed: llc -> obj (LLVM 20) + link ($CLANG, no dynamic_lookup)"
-for f in main scalyc scaly; do
-  # -relocation-model=pic: x86-64 Linux PIE rejects llc's default R_X86_64_32
-  # abs relocations; PIC is the Mach-O default, so this is a no-op on macOS.
-  "$LLC" -relocation-model=pic -filetype=obj "$OUT/$f.ll" -o "$OUT/$f.o" || fail "llc $f.ll"
-done
+llc_objs main scalyc scaly || fail "llc"
 # NO -Wl,-undefined,dynamic_lookup — a clean link proves zero undefined.
 # (The final link is plain object linking, so any clang/cc works. What is NOT
 # free is -lLLVM-20 below: libLLVM prints the IR, so its major must match the
@@ -135,24 +148,26 @@ fi
 fi
 echo "seed: linked clean -> $OUT/scalyc_seed"
 
-echo "seed: hello.scaly"
-"$OUT/scalyc_seed" -o "$OUT/hello" tests/aot/hello.scaly || fail "compile hello"
-out=$("$OUT/hello")
-[ "$out" = "Hello, World!" ] || fail "hello output: '$out'"
-
-echo "seed: AOT corpus"
-# `| tail -1` keeps the summary line only — so check the SCRIPT's status, not
-# the pipeline's (which is tail's, always 0).
-tools/aot_corpus.sh "$OUT/scalyc_seed" seed | tail -1
-[ "${PIPESTATUS[0]}" = "0" ] || fail "AOT corpus"
-
+# The seed compiler's four jobs are independent of each other and run side by
+# side: hello + the AOT corpus, and the re-emission of the three compiler roots.
+# The scalyls roots (below) are emitted in the same round.
+echo "seed: hello.scaly, AOT corpus, fixed-point re-emission, scalyls roots"
+( "$OUT/scalyc_seed" -o "$OUT/hello" tests/aot/hello.scaly || { echo "compile hello"; exit 1; }
+  out=$("$OUT/hello")
+  [ "$out" = "Hello, World!" ] || { echo "hello output: '$out'"; exit 1; }
+  # `| tail -1` keeps the summary line only — so check the SCRIPT's status, not
+  # the pipeline's (which is tail's, always 0).
+  tools/aot_corpus.sh "$OUT/scalyc_seed" seed | tail -1
+  [ "${PIPESTATUS[0]}" = "0" ] || { echo "AOT corpus"; exit 1; }
+) > "$OUT/aot.log" 2>&1 & aot_pid=$!
+emit_roots "$OUT/scalyc_seed" r_main=$C/main.scaly r_scalyc=$C/scalyc.scaly r_scaly=packages/scaly/0.1.0/scaly.scaly & reemit_pid=$!
+emit_roots "$OUT/scalyc_seed" scalyls_main=$L/main.scaly scalyls=$L/scalyls.scaly & ls_pid=$!
+wait $aot_pid; aot_rc=$?
+cat "$OUT/aot.log"; rm -f "$OUT/aot.log"
+[ $aot_rc = 0 ] || fail "hello / AOT corpus"
+wait $reemit_pid || fail "re-emission"
+wait $ls_pid || fail "scalyls emission"
 echo "seed: fixed-point self-reproduction"
-( ulimit -s 65520
-  for f in main scalyc; do
-    "$OUT/scalyc_seed" -S --no-tests --target "$SEED_TARGET" -o "$OUT/r_$f.ll" packages/scalyc/0.1.0/$f.scaly || exit 1
-  done
-  "$OUT/scalyc_seed" -S --no-tests --target "$SEED_TARGET" -o "$OUT/r_scaly.ll" packages/scaly/0.1.0/scaly.scaly || exit 1
-) || fail "re-emission"
 for f in main scalyc scaly; do
   cmp -s "$OUT/r_$f.ll" "$OUT/$f.ll" || fail "fixed point: $f.ll differs"
 done
@@ -189,11 +204,8 @@ done
 # scalyls depends on, already emitted above) and add scalyls' OWN main + root.
 # NO fixed-point requirement (scalyls does not self-compile): link it clean
 # (zero undefined) and smoke-test documentSymbol against a known input.
-echo "seed: emitting scalyls roots with $OUT/scalyc_seed (self-hosted)"
-( ulimit -s 65520
-  "$OUT/scalyc_seed" -S --no-tests --target "$SEED_TARGET" -o "$OUT/scalyls_main.ll" packages/scalyls/0.1.0/main.scaly || exit 1
-  "$OUT/scalyc_seed" -S --no-tests --target "$SEED_TARGET" -o "$OUT/scalyls.ll"      packages/scalyls/0.1.0/scalyls.scaly || exit 1
-) || fail "scalyls emission"
+# (The two scalyls roots were emitted by $OUT/scalyc_seed above, beside the
+# fixed-point re-emission.)
 if [ "$SCALY_COFF" = 1 ]; then
 # ★The Windows box: the scalyls ROOTS are emitted above (for the seed's own
 # target — they are seed files and reproduce here like the other three), but
@@ -205,9 +217,7 @@ if [ "$SCALY_COFF" = 1 ]; then
 echo "seed: SKIP scalyls link + LSP smoke on the Windows box (worker.scaly: fork/popen/waitpid/kill)"
 SCALYLS_VERDICT="scalyls roots emitted, link + smoke SKIPPED (Windows box)"
 else
-for f in scalyls_main scalyls; do
-  "$LLC" -relocation-model=pic -filetype=obj "$OUT/$f.ll" -o "$OUT/$f.o" || fail "llc $f.ll"
-done
+llc_objs scalyls_main scalyls || fail "llc scalyls"
 if ! "$CLANG" "${LINKARGS[@]}" "$OUT/scalyls_main.o" "$OUT/scalyls.o" "$OUT/scalyc.o" "$OUT/scaly.o" "$OUT/fcontext.o" "$OUT/eio.o" "$OUT/ctime.o" "$OUT/panic.o" \
      -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -lm -o "$OUT/scalyls" 2> "$OUT/scalyls_link.log"; then
   grep -v 'reexported library' "$OUT/scalyls_link.log" || true

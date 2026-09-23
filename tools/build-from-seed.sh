@@ -95,6 +95,81 @@ if [ "${SCALYC_NO_OPT:-0}" != "1" ] && [ -n "$OPT" ] && [ -n "$LLVM_LINK" ]; the
     fi
 fi
 
+# On Linux, stock GNU ld (BFD) fails to link libLLVM-20 ("failed to set dynamic
+# section sizes: bad value"); lld handles it. Use lld when present. macOS ld64
+# links fine, so leave it alone there.
+LINKARGS=()
+if [ "$(uname -s)" = "Linux" ]; then
+    for c in "$LLVM_PREFIX/bin/ld.lld" ld.lld ld.lld-20; do
+        p=$(command -v "$c" 2>/dev/null || true)
+        [ -n "$p" ] && { LINKARGS+=("-fuse-ld=$p"); break; }
+    done
+    # ELF executables put a global symbol in .dynsym (dlsym-visible) only when
+    # explicitly exported. The whole-program build's runtime bodies (weak_odr,
+    # see above) live in .symtab but the in-process JIT resolves them via
+    # dlsym/ORC, which searches .dynsym — so export them. macOS keeps weak defs
+    # in the export trie already (no flag needed there). Harmless on the -O0
+    # fallback path too.
+    LINKARGS+=("-rdynamic")
+fi
+
+# The fiber context-switch primitives (vendored assembly, selected by host
+# arch) and the evented-I/O backend shim (kqueue/epoll, selected by cpp) —
+# scaly's Fiber/Io procedures reference them, so every link that includes
+# the scaly package needs both objects. The civil-time shim rides along: the
+# compiler calls none of it, but a dazzle stylesheet run through --jit
+# resolves the time primitives out of the compiler process, so the symbols
+# must be in the binary (see packages/scaly/0.1.0/scaly/time/ctime.c).
+tools/fcontext.sh "$WORK/fcontext.o"
+tools/eio.sh "$WORK/eio.o"
+tools/ctime.sh "$WORK/ctime.o"
+tools/panic.sh "$WORK/panic.o"
+
+# Build the scalyls language server from its seed, when committed. scalyls is
+# a separate program with its own two roots (scalyls_main.ll + scalyls.ll);
+# it depends on the scalyc + scaly packages, whose bodies come from the
+# compiler seed objects already built above — same recipe as tools/seed.sh.
+# Lands beside the compiler so tools/install.sh and the VS Code extension can
+# find it.
+# SCALYC_SEED_NO_SCALYLS=1 skips the language server — bootstrap/cycle roots
+# only need the compiler, and the scalyls whole-program opt pass re-optimizes
+# the entire scalyc+scaly superset module (~1min it would spend for nothing).
+# In the whole-program route it shares nothing with the compiler chain but the
+# shim objects, so it runs BESIDE it and is waited for at the end; the
+# per-object route reuses the compiler's objects and runs after them.
+build_scalyls() {
+    LSOUT="$(dirname "$OUT")/scalyls"
+    if [ "$use_opt" = "1" ] && grep -q '^define i64 @main(' "$SEED/scalyls_main.ll"; then
+        # Same whole-program shape as the compiler: scalyls' own two roots
+        # plus the scalyc + scaly package bodies (the compiler's main.ll is
+        # excluded — scalyls_main.ll provides this program's @main anchor).
+        "$LLVM_LINK" "$SEED/scalyls_main.ll" "$SEED/scalyls.ll" \
+            "$SEED/scalyc.ll" "$SEED/scaly.ll" -o "$WORK/scalyls_linked.bc"
+        "$OPT" -O2 "$WORK/scalyls_linked.bc" -o "$WORK/scalyls_opt.bc"
+        "$LLC" -relocation-model=pic -filetype=obj "$WORK/scalyls_opt.bc" -o "$WORK/scalyls_all.o"
+        SCALYLS_OBJS=("$WORK/scalyls_all.o")
+    else
+        for f in scalyls_main scalyls; do
+            "$LLC" -relocation-model=pic -filetype=obj "$SEED/$f.ll" -o "$WORK/$f.o"
+        done
+        if [ ! -f "$WORK/scalyc.o" ]; then
+            for f in scalyc scaly; do
+                "$LLC" -relocation-model=pic -filetype=obj "$SEED/$f.ll" -o "$WORK/$f.o"
+            done
+        fi
+        SCALYLS_OBJS=("$WORK/scalyls_main.o" "$WORK/scalyls.o" "$WORK/scalyc.o" "$WORK/scaly.o")
+    fi
+    ${CLANG:-clang} "${LINKARGS[@]}" "${SCALYLS_OBJS[@]}" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" "$WORK/panic.o" \
+        -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -lm -o "$LSOUT"
+    echo "build-from-seed: OK — $LSOUT (language server)"
+}
+WANT_SCALYLS=0
+if [ "${SCALYC_SEED_NO_SCALYLS:-0}" != "1" ] && [ -f "$SEED/scalyls.ll" ] && [ -f "$SEED/scalyls_main.ll" ]; then WANT_SCALYLS=1; fi
+ls_pid=""
+if [ "$WANT_SCALYLS" = 1 ] && [ "$use_opt" = 1 ]; then
+    build_scalyls > "$WORK/scalyls.log" 2>&1 & ls_pid=$!
+fi
+
 if [ "$use_opt" = "1" ]; then
     # Whole-program opt, but keep the RBMM runtime + stdlib bodies present AND
     # exported so the in-process ORC JIT (--jit/--run) can resolve them from the
@@ -145,35 +220,6 @@ else
     SCALYC_OBJS=("$WORK/main.o" "$WORK/scalyc.o" "$WORK/scaly.o")
 fi
 
-# On Linux, stock GNU ld (BFD) fails to link libLLVM-20 ("failed to set dynamic
-# section sizes: bad value"); lld handles it. Use lld when present. macOS ld64
-# links fine, so leave it alone there.
-LINKARGS=()
-if [ "$(uname -s)" = "Linux" ]; then
-    for c in "$LLVM_PREFIX/bin/ld.lld" ld.lld ld.lld-20; do
-        p=$(command -v "$c" 2>/dev/null || true)
-        [ -n "$p" ] && { LINKARGS+=("-fuse-ld=$p"); break; }
-    done
-    # ELF executables put a global symbol in .dynsym (dlsym-visible) only when
-    # explicitly exported. The whole-program build's runtime bodies (weak_odr,
-    # see above) live in .symtab but the in-process JIT resolves them via
-    # dlsym/ORC, which searches .dynsym — so export them. macOS keeps weak defs
-    # in the export trie already (no flag needed there). Harmless on the -O0
-    # fallback path too.
-    LINKARGS+=("-rdynamic")
-fi
-
-# The fiber context-switch primitives (vendored assembly, selected by host
-# arch) and the evented-I/O backend shim (kqueue/epoll, selected by cpp) —
-# scaly's Fiber/Io procedures reference them, so every link that includes
-# the scaly package needs both objects. The civil-time shim rides along: the
-# compiler calls none of it, but a dazzle stylesheet run through --jit
-# resolves the time primitives out of the compiler process, so the symbols
-# must be in the binary (see packages/scaly/0.1.0/scaly/time/ctime.c).
-tools/fcontext.sh "$WORK/fcontext.o"
-tools/eio.sh "$WORK/eio.o"
-tools/ctime.sh "$WORK/ctime.o"
-tools/panic.sh "$WORK/panic.o"
 
 # -lm AFTER the objects: the stdlib's tensor tape kernels call tanhf/expf/sqrtf/
 # logf/powf, and on Linux those live in a separate libm (macOS has them in
@@ -217,38 +263,10 @@ cp "$WORK/panic.o" /tmp/panic.o
 rm -f /tmp/libscaly.a; ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o /tmp/ctime.o /tmp/panic.o
 echo "build-from-seed: runtime archive /tmp/libscaly.a ready"
 
-# Build the scalyls language server from its seed, when committed. scalyls is
-# a separate program with its own two roots (scalyls_main.ll + scalyls.ll);
-# it depends on the scalyc + scaly packages, whose bodies come from the
-# compiler seed objects already built above — same recipe as tools/seed.sh.
-# Lands beside the compiler so tools/install.sh and the VS Code extension can
-# find it.
-# SCALYC_SEED_NO_SCALYLS=1 skips the language server — bootstrap/cycle roots
-# only need the compiler, and the scalyls whole-program opt pass re-optimizes
-# the entire scalyc+scaly superset module (~1min it would spend for nothing).
-if [ "${SCALYC_SEED_NO_SCALYLS:-0}" != "1" ] && [ -f "$SEED/scalyls.ll" ] && [ -f "$SEED/scalyls_main.ll" ]; then
-    LSOUT="$(dirname "$OUT")/scalyls"
-    if [ "$use_opt" = "1" ] && grep -q '^define i64 @main(' "$SEED/scalyls_main.ll"; then
-        # Same whole-program shape as the compiler: scalyls' own two roots
-        # plus the scalyc + scaly package bodies (the compiler's main.ll is
-        # excluded — scalyls_main.ll provides this program's @main anchor).
-        "$LLVM_LINK" "$SEED/scalyls_main.ll" "$SEED/scalyls.ll" \
-            "$SEED/scalyc.ll" "$SEED/scaly.ll" -o "$WORK/scalyls_linked.bc"
-        "$OPT" -O2 "$WORK/scalyls_linked.bc" -o "$WORK/scalyls_opt.bc"
-        "$LLC" -relocation-model=pic -filetype=obj "$WORK/scalyls_opt.bc" -o "$WORK/scalyls_all.o"
-        SCALYLS_OBJS=("$WORK/scalyls_all.o")
-    else
-        for f in scalyls_main scalyls; do
-            "$LLC" -relocation-model=pic -filetype=obj "$SEED/$f.ll" -o "$WORK/$f.o"
-        done
-        if [ ! -f "$WORK/scalyc.o" ]; then
-            for f in scalyc scaly; do
-                "$LLC" -relocation-model=pic -filetype=obj "$SEED/$f.ll" -o "$WORK/$f.o"
-            done
-        fi
-        SCALYLS_OBJS=("$WORK/scalyls_main.o" "$WORK/scalyls.o" "$WORK/scalyc.o" "$WORK/scaly.o")
-    fi
-    ${CLANG:-clang} "${LINKARGS[@]}" "${SCALYLS_OBJS[@]}" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" "$WORK/panic.o" \
-        -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -lm -o "$LSOUT"
-    echo "build-from-seed: OK — $LSOUT (language server)"
+if [ -n "$ls_pid" ]; then
+    wait "$ls_pid" && ls_rc=0 || ls_rc=$?
+    cat "$WORK/scalyls.log"
+    [ "$ls_rc" = 0 ] || exit "$ls_rc"
+elif [ "$WANT_SCALYLS" = 1 ]; then
+    build_scalyls
 fi

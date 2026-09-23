@@ -47,9 +47,26 @@ link_stage() {
 
 # Bootstrap ROOT: the committed seed. The C++ stage-0 fallback is retired
 # (sources frozen under retired/scalyc0/) — no seed means no bootstrap.
-if [ -f seed/scalyc.ll ] && SCALYC_SEED_NO_SCALYLS=1 tools/build-from-seed.sh /tmp/scalyc_seed_root >/dev/null 2>&1; then
+# The ROOT is a function of the seed and of the script that builds it, so it is
+# reused while both hash as they did when it was built (41 s of a 60 s
+# bootstrap). A reused ROOT still gets a runtime archive of its OWN before it
+# links stage1 — the archive in /tmp may come from any other compiler — the way
+# tools/cycle.sh does it. The Windows box always rebuilds.
+root_key() { cat seed/main.ll seed/scalyc.ll seed/scaly.ll tools/build-from-seed.sh 2>/dev/null | shasum -a 256 | cut -c1-64; }
+if [ "$SCALY_COFF" != 1 ] && [ -f seed/scalyc.ll ] && [ -x /tmp/scalyc_seed_root ] \
+     && [ "$(cat /tmp/scalyc_seed_root.key 2>/dev/null)" = "$(root_key)" ]; then
+  echo "bootstrap: ROOT = seed-built compiler -> /tmp/scalyc_seed_root (reused, seed unchanged)"
+  ROOT=/tmp/scalyc_seed_root
+  ( ulimit -s 65520; "$ROOT" -c --no-prelude --no-tests -o /tmp/libscaly.o packages/scaly/0.1.0/scaly.scaly )
+  tools/fcontext.sh /tmp/fcontext.o
+  tools/eio.sh /tmp/eio.o
+  tools/ctime.sh /tmp/ctime.o
+  tools/panic.sh /tmp/panic.o
+  rm -f /tmp/libscaly.a; ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o /tmp/ctime.o /tmp/panic.o
+elif [ -f seed/scalyc.ll ] && SCALYC_SEED_NO_SCALYLS=1 tools/build-from-seed.sh /tmp/scalyc_seed_root >/dev/null 2>&1; then
   echo "bootstrap: ROOT = seed-built compiler -> /tmp/scalyc_seed_root"
   ROOT=/tmp/scalyc_seed_root
+  root_key > /tmp/scalyc_seed_root.key
 else
   echo "bootstrap: FAIL — no usable seed (seed/scalyc.ll missing or build-from-seed failed)"
   exit 1
@@ -78,18 +95,23 @@ if [ "$SCALY_COFF" = 1 ]; then
   echo "bootstrap: stage1 -> /tmp/libscaly.lib (runtime archive)"
   tools/win-archive.sh /tmp/scalyc_stage1 > /dev/null
 else
-echo "bootstrap: stage1 -> /tmp/libscaly.a (runtime archive)"
+echo "bootstrap: stage1 -> /tmp/libscaly.a (runtime archive) and the scalyc package, side by side"
+# The package object does not need the archive, only stage2's link does.
+( ulimit -s 65520; /tmp/scalyc_stage1 -c -o /tmp/sc1.o packages/scalyc/0.1.0/scalyc.scaly ) & sc1_pid=$!
 ( ulimit -s 65520; /tmp/scalyc_stage1 -c --no-prelude --no-tests -o /tmp/libscaly.o packages/scaly/0.1.0/scaly.scaly )
 tools/fcontext.sh /tmp/fcontext.o
 tools/eio.sh /tmp/eio.o
 tools/ctime.sh /tmp/ctime.o
 tools/panic.sh /tmp/panic.o
 rm -f /tmp/libscaly.a; ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o /tmp/ctime.o /tmp/panic.o
+wait $sc1_pid || { echo "bootstrap: FAIL — stage1 could not compile the scalyc package"; exit 1; }
 fi
 
 echo "bootstrap: stage1 -> stage2"
+# A failed link must not leave the previous stage2 behind to be tested instead.
+rm -f /tmp/scalyc_stage2
 ( ulimit -s 65520
-  /tmp/scalyc_stage1 -c -o /tmp/sc1.o packages/scalyc/0.1.0/scalyc.scaly
+  [ "$SCALY_COFF" = 1 ] && /tmp/scalyc_stage1 -c -o /tmp/sc1.o packages/scalyc/0.1.0/scalyc.scaly
   rm -f /tmp/libscalyc1.a; ar rcs /tmp/libscalyc1.a /tmp/sc1.o
   link_stage /tmp/scalyc_stage1 /tmp/scalyc_stage2 /tmp/libscalyc1.a
 ) 2>&1 | grep -v 'ld: warning' || true
