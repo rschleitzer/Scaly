@@ -1,0 +1,27 @@
+; Control for pending/either_argument.scaly: both arguments are views of arrays
+; on a named page, so whichever `pick` hands back outlives the frame.
+define Keeper (var kept: Slice[int])
+
+function pick(a: Slice[int], b: Slice[int], first: bool) returns Slice[int]
+{
+    if first
+        return a
+    b
+}
+
+procedure keep(mutable k: ref[Keeper], s: Slice[int])
+    set k.kept: s
+
+procedure make(host: ref[Page], mutable k: ref[Keeper])
+{
+    let x Array[int]^host()
+    x.add(1)
+    let y Array[int]^host()
+    y.add(2)
+    keep(k, pick(x.as_slice(), y.as_slice(), false))
+}
+
+let root Page.allocate_page()
+var k Keeper(null)
+make(root, &k)
+print "done\n"

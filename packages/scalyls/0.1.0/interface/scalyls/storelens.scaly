@@ -412,7 +412,7 @@ define storelens
     ; ROOT (which would mean modelling the deref operator's call shape); the only
     ; way it could differ is a pointer parameter used as a SUBSCRIPT, which is
     ; not a thing an index can be.
-    function target_param(rp, target: ref[Vector[PlannedOperand]]?, params: String) @direct true @deep true returns String linked
+    function target_param(rp, target: ref[Vector[PlannedOperand]]?, params: String) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -432,7 +432,7 @@ define storelens
 
 
 
-    function param_in_operand(rp, op: PlannedOperand, params: String) @direct true @deep true returns String linked
+    function param_in_operand(rp, op: PlannedOperand, params: String) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -440,7 +440,7 @@ define storelens
     ; Only the arms an lvalue chain can be built from are walked: a Variable is
     ; the answer, a Call is the deref/subscript operator (its receiver sits in
     ; the arguments), and an As is a cast. Everything else answers "".
-    function param_in_expr(rp, expr: PlannedExpression, params: String) @direct true @deep true returns String linked
+    function param_in_expr(rp, expr: PlannedExpression, params: String) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -493,7 +493,7 @@ define storelens
     ; value, but a truncated plan must not be able to spin the worker), and it
     ; also bounds the cost, since each level rescans plan.structures.
     ; ====================================================================
-    function carrier_of(rp, plan: Plan, ty: PlannedType, depth: int) @direct true @deep true returns String linked
+    function carrier_of(rp, plan: Plan, ty: PlannedType, depth: int) @direct true @ret_nonlocal true @deep true returns String linked
 
 
 
@@ -539,7 +539,7 @@ define storelens
 
 
 
-    function carrier_in_properties(rp, plan: Plan, st: PlannedStructure, depth: int) @direct true @deep true returns String linked
+    function carrier_in_properties(rp, plan: Plan, st: PlannedStructure, depth: int) @direct true @ret_nonlocal true @deep true returns String linked
 
 
 

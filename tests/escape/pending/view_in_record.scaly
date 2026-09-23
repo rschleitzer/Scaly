@@ -1,0 +1,24 @@
+; A view into a frame-local Array's buffer, wrapped in a RECORD by value and kept
+; by the callee: the class-3 result `wrap(v)` hands back its argument, and that
+; argument is a view — it was judged as a record (its receiver `a` read as not
+; local), so the wrapped view passed where the bare one is rejected
+; (view_of_frame_array.scaly). Control: posp_view_in_record_host.scaly.
+define Box (var s: Slice[int]  n: int)
+define Keeper (var b: Box)
+
+function wrap(s: Slice[int]) returns Box
+    Box(s, 0)
+
+procedure keep(mutable k: ref[Keeper], b: Box)
+    set k.b: b
+
+procedure make(mutable k: ref[Keeper])
+{
+    let a Array[int]()
+    a.add(1)
+    keep(k, wrap(a.as_slice()))
+}
+
+var k Keeper(Box(null, 0))
+make(&k)
+print "done\n"

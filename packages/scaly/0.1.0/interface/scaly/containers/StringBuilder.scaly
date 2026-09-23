@@ -39,13 +39,13 @@ define StringBuilder
 
 
 
-    procedure append(mutable this: StringBuilder, character: char) @persists true @ret_param_0 true @deep true linked
+    procedure append(mutable this: StringBuilder, character: char) @persists true @ret_nonlocal true @deep true linked
 
 
     procedure append(mutable this: StringBuilder, string: String) @ret_nonlocal true @deep true linked
 
 
-    procedure append(mutable this: StringBuilder, c_string: pointer[const_char]) @persists true @deep true @deep_this_2 true @deep_whole_2 true linked
+    procedure append(mutable this: StringBuilder, c_string: pointer[const_char]) @persists true @deep true linked
 
 
 

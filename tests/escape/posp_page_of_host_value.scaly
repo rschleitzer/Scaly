@@ -1,0 +1,20 @@
+; Control for pending/page_of_frame_value.scaly: the Box is built on a named
+; page, so Page.get of its address is that page and the fill is sound.
+define Box (var s: String)
+
+procedure fill(mutable out: ref[Box])
+{
+    let pg Page.get(out)
+    set out.s: String^pg("filled")
+}
+
+procedure make(host: ref[Page])
+{
+    let b &Box^host(String())
+    fill(b)
+    print b.s
+}
+
+let root Page.allocate_page()
+make(root)
+print "\n"

@@ -782,7 +782,7 @@ procedure reset_page(p: ref[Page]) @deep true linked
 ; Bucket creation
 ; --------------------------------------------------------------------------
 
-procedure create_stack_bucket(mutable prev: pointer[StackBucketHeader]) @deep true returns pointer[StackBucketHeader] linked
+procedure create_stack_bucket(mutable prev: pointer[StackBucketHeader]) @ret_param_0 true @deep true returns pointer[StackBucketHeader] linked
 
 
 
@@ -797,7 +797,7 @@ procedure create_stack_bucket(mutable prev: pointer[StackBucketHeader]) @deep tr
 
 
 
-function create_heap_bucket() @deep true returns ref[HeapBucketHeader] linked
+function create_heap_bucket() @ret_nonlocal true @deep true returns ref[HeapBucketHeader] linked
 
 
 
@@ -933,7 +933,7 @@ procedure scaly_release_root_page(p: pointer[Page]) @deep true @deep_beyond_1 tr
 ; reference lives on a local page, so the unconditional release is not a
 ; use-after-free. Mirrors stage-0's emitReturn CleanupLocalPage
 ; (emitPageNeedsCleanup gate + deallocate_extensions + release).
-procedure scaly_release_root_page_full(p: pointer[Page]) @deep true linked
+procedure scaly_release_root_page_full(p: pointer[Page]) @deep true @deep_beyond_1 true @deep_whole_1 true linked
 
 
 
@@ -1037,7 +1037,7 @@ procedure scaly_force_frame(mutable f: pointer[Frame]) @ret_param_0 true @deep t
 ; function whose region nobody demanded pays a load and a compare on the way
 ; out. Clears before releasing for the same reason the slot version does: an
 ; epilogue that runs twice must not release the same root page twice.
-procedure scaly_release_frame(mutable f: pointer[Frame]) @deep true linked
+procedure scaly_release_frame(mutable f: pointer[Frame]) @deep true @deep_beyond_1 true linked
 
 
 
@@ -1153,7 +1153,7 @@ procedure scaly_rt_register_trace() @deep true linked
 
 
 
-function scaly_trace_find_or_add(name: pointer[const_char]) @page true @direct true @ret_nonlocal true @deep true returns ref[TraceEntry]? linked
+function scaly_trace_find_or_add(name: pointer[const_char]) @page true @direct true @ret_param_0 true @deep true returns ref[TraceEntry]? linked
 
 
 
@@ -1320,7 +1320,7 @@ procedure heap_trace_unlock(hdr: pointer[HeapTraceHeader]) @ret_nonlocal true @d
 
 
 ; Caller holds hdr's lock.
-procedure scaly_heap_trace_find_or_add(mutable hdr: ref[HeapTraceHeader], name: pointer[const_char]) @page true @direct true @ret_param_0 true @deep true returns ref[TraceEntry]? linked
+procedure scaly_heap_trace_find_or_add(mutable hdr: ref[HeapTraceHeader], name: pointer[const_char]) @page true @direct true @ret_args_3 true @deep true returns ref[TraceEntry]? linked
 
 
 

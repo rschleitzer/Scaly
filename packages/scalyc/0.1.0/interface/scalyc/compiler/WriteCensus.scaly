@@ -1268,7 +1268,7 @@ define WriteCensus
 
 
 
-        procedure record(mutable this: WriteCensus, offset: size_t, text: String) @persists true @ret_param_0 true @deep true linked
+        procedure record(mutable this: WriteCensus, offset: size_t, text: String) @persists true @ret_nonlocal true @deep true @deep_this_4 true @deep_whole_4 true linked
 
 
 
@@ -1572,7 +1572,7 @@ define WriteCensus
 
 
         ; What an operand's value may alias: the parameters it reaches.
-        function mask_of(this: WriteCensus, op: PlannedOperand) @ret_nonlocal true @deep true returns u64 linked
+        function mask_of(this: WriteCensus, op: PlannedOperand) @deep true returns u64 linked
 
 
 
@@ -3895,7 +3895,7 @@ define WriteCensus
         ; `mangled` must already live on this pass's page (String^this at the
         ; call): the escape checker reads a callee that stores its argument
         ; as storing the caller's local, as in PointerCensus.record.
-        procedure add_summary(mutable this: WriteCensus, mangled: String, m: u64, n_in: size_t, globals: String) @persists true @deep true linked
+        procedure add_summary(mutable this: WriteCensus, mangled: String, m: u64, n_in: size_t, globals: String) @persists true @deep true @deep_this_18 true @deep_whole_18 true linked
 
 
 
@@ -4162,7 +4162,7 @@ define WriteCensus
 
 
         ; the walked function reads `name`, itself or through `callee`
-        procedure note_read_site(mutable this: WriteCensus, offset: size_t, name: String, callee: String) @ret_param_0 true @deep true linked
+        procedure note_read_site(mutable this: WriteCensus, offset: size_t, name: String, callee: String) @ret_nonlocal true @deep true linked
 
 
 
@@ -4523,7 +4523,7 @@ define WriteCensus
         ; by tools/purify/mark_var.py -- the two-phase discipline every rule
         ; here has followed.
         ; ====================================================================
-        procedure note_let_store(mutable this: WriteCensus, head: PlannedOperand, base_mask: u64) @deep true @deep_this_2 true io linked
+        procedure note_let_store(mutable this: WriteCensus, head: PlannedOperand, base_mask: u64) @deep true io linked
 
 
 
@@ -4791,7 +4791,7 @@ define WriteCensus
 
 
 
-        procedure find_action(mutable this: WriteCensus, act: PlannedAction) @deep true @deep_this_2 true io linked
+        procedure find_action(mutable this: WriteCensus, act: PlannedAction) @deep true io linked
 
 
 

@@ -3230,7 +3230,7 @@ define symbols
 
     ; One structure part -> its field-declaration record (verified against the
     ; declared name so a stray non-name byte never produces a bogus offset).
-    function field_record(rp, source: String, part: PartSyntax) @direct true @ret_nonlocal true @deep true returns String linked
+    function field_record(rp, source: String, part: PartSyntax) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -3452,7 +3452,7 @@ define symbols
 
 
     ; A union -> its body members' records (variants carry no params/fields).
-    function st_union(rp, source: String, un: UnionSyntax) @direct true @ret_nonlocal true @deep true returns String linked
+    function st_union(rp, source: String, un: UnionSyntax) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -4899,7 +4899,7 @@ define symbols
     ; "" when the cursor is not inside one. Parse-only, like every other walk
     ; here; the innermost wins, so a nested define inside a namespace or a class
     ; body answers for its own body.
-    procedure enclosing_concept_name(rp, mutable source: String, offset: size_t) @direct true @ret_nonlocal true @deep true returns String linked
+    procedure enclosing_concept_name(rp, mutable source: String, offset: size_t) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -4977,7 +4977,7 @@ define symbols
 
 
     ; The innermost nested `define` of a class/union body, or "".
-    function enclosing_concept_body(rp, source: String, body: ref[BodySyntax]?, offset: size_t) @direct true @ret_nonlocal true @deep true returns String linked
+    function enclosing_concept_body(rp, source: String, body: ref[BodySyntax]?, offset: size_t) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -5016,7 +5016,7 @@ define symbols
 
 
     ; The innermost nested `define` of a namespace, or "".
-    function enclosing_concept_namespace(rp, source: String, ns: NamespaceSyntax, offset: size_t) @direct true @ret_nonlocal true @deep true returns String linked
+    function enclosing_concept_namespace(rp, source: String, ns: NamespaceSyntax, offset: size_t) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -5062,7 +5062,7 @@ define symbols
     ; find_definition_in_workspace#: the current file's directory tree first,
     ; then ON A MISS the package dependency tree (so stdlib String/StringBuilder/
     ; Vector members complete). "" if none.
-    procedure member_completions_in_workspace(rp, mutable uri: String, type_name: String) @direct true @ret_nonlocal true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_fresh, prof_list, prof_read reads prof_list linked
+    procedure member_completions_in_workspace(rp, mutable uri: String, type_name: String) @direct true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_fresh, prof_list, prof_read reads prof_list linked
 
 
 
@@ -5084,7 +5084,7 @@ define symbols
     ; detail field = the concept's bracketless member-completion fragment, so the
     ; member list is rebuilt from the cache (members_from_ws_blob#) — no re-parse,
     ; shared with workspace/symbol + cross-file definition + semanticTokens.
-    procedure member_completions_in_dir(rp, mutable dir: String, self_path: String, type_name: String) @direct true @ret_nonlocal true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_fresh, prof_list, prof_read reads prof_list linked
+    procedure member_completions_in_dir(rp, mutable dir: String, self_path: String, type_name: String) @direct true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_fresh, prof_list, prof_read reads prof_list linked
 
 
 
@@ -5131,7 +5131,7 @@ define symbols
     ;     (a lifetime sigil $/#/^ or `[`/`(` right after TYPE) -> TYPE.
     ; "" when no such declaration is found (e.g. `let r compute(x)` with no
     ; sigil, or an undeclared name) -> caller falls back to the flat list.
-    function resolve_variable_type(rp, source: String, receiver: String) @direct true @ret_nonlocal true @deep true returns String linked
+    function resolve_variable_type(rp, source: String, receiver: String) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -5350,7 +5350,7 @@ define symbols
     ; The type (base concept name) of member `member_name` of concept
     ; `type_name`, searching THIS source only: a field/property's declared type,
     ; or a method's return type. "" when the concept or member is not found here.
-    procedure member_type(rp, mutable source: String, type_name: String, member_name: String) @direct true @ret_nonlocal true @deep true returns String linked
+    procedure member_type(rp, mutable source: String, type_name: String, member_name: String) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -5382,7 +5382,7 @@ define symbols
 
 
 
-    function mt_decl(rp, source: String, decl: DeclarationSyntax, type_name: String, member_name: String) @direct true @ret_nonlocal true @deep true returns String linked
+    function mt_decl(rp, source: String, decl: DeclarationSyntax, type_name: String, member_name: String) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -5393,7 +5393,7 @@ define symbols
 
 
 
-    function mt_export(rp, source: String, export_: ExportSyntax, type_name: String, member_name: String) @direct true @ret_nonlocal true @deep true returns String linked
+    function mt_export(rp, source: String, export_: ExportSyntax, type_name: String, member_name: String) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -5404,7 +5404,7 @@ define symbols
 
     ; The concept named `type_name`: look up `member_name` in its fields/methods.
     ; Otherwise recurse into a namespace's nested declarations.
-    function mt_definition(rp, source: String, def: DefinitionSyntax, type_name: String, member_name: String) @direct true @ret_nonlocal true @deep true returns String linked
+    function mt_definition(rp, source: String, def: DefinitionSyntax, type_name: String, member_name: String) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -5425,7 +5425,7 @@ define symbols
 
 
 
-    function mt_namespace(rp, source: String, ns: NamespaceSyntax, type_name: String, member_name: String) @direct true @ret_nonlocal true @deep true returns String linked
+    function mt_namespace(rp, source: String, ns: NamespaceSyntax, type_name: String, member_name: String) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -5451,7 +5451,7 @@ define symbols
 
     ; Look up `member_name` in a class: its structure fields first, then its
     ; method bodies' return types. "" when absent.
-    function mt_in_class(rp, source: String, c: ClassSyntax, member_name: String) @direct true @ret_nonlocal true @deep true returns String linked
+    function mt_in_class(rp, source: String, c: ClassSyntax, member_name: String) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -5532,7 +5532,7 @@ define symbols
     ; member_type# across the workspace: THIS source first, then the current
     ; file's directory tree, then the package tree (so stdlib field/method types
     ; resolve). "" when the concept/member is found nowhere.
-    procedure member_type_ws(rp, mutable source: String, mutable uri: String, type_name: String, member_name: String) @direct true @ret_nonlocal true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_fresh, prof_list, prof_read reads prof_list linked
+    procedure member_type_ws(rp, mutable source: String, mutable uri: String, type_name: String, member_name: String) @direct true @ret_caller true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_fresh, prof_list, prof_read reads prof_list linked
 
 
 
@@ -5555,7 +5555,7 @@ define symbols
     ; member_type_from_ws_blob# — no per-request, per-segment re-parse. Shared
     ; with workspace/symbol + def + sig + member-completion + type-hint +
     ; semanticTokens. Structured like return_type_in_dir#.
-    procedure member_type_in_dir(rp, mutable dir: String, self_path: String, type_name: String, member_name: String) @direct true @ret_nonlocal true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_fresh, prof_list, prof_read reads prof_list linked
+    procedure member_type_in_dir(rp, mutable dir: String, self_path: String, type_name: String, member_name: String) @direct true @ret_caller true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_fresh, prof_list, prof_read reads prof_list linked
 
 
 
@@ -5589,7 +5589,7 @@ define symbols
     ; The declared return-type base of a top-level (or namespace-nested)
     ; function/procedure named `fname`, searching THIS source only. "" when not
     ; found / no return type.
-    procedure function_return_type(rp, mutable source: String, fname: String) @direct true @ret_nonlocal true @deep true returns String linked
+    procedure function_return_type(rp, mutable source: String, fname: String) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -5649,7 +5649,7 @@ define symbols
 
 
 
-    function frt_definition(rp, source: String, def: DefinitionSyntax, fname: String) @direct true @ret_nonlocal true @deep true returns String linked
+    function frt_definition(rp, source: String, def: DefinitionSyntax, fname: String) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -5681,7 +5681,7 @@ define symbols
 
     ; function_return_type# across the workspace: THIS source, then dir tree,
     ; then package tree. "" when found nowhere.
-    procedure function_return_type_ws(rp, mutable source: String, mutable uri: String, fname: String) @direct true @ret_nonlocal true @deep true returns String io mutable dir_slots, prof_list reads prof_list linked
+    procedure function_return_type_ws(rp, mutable source: String, mutable uri: String, fname: String) @direct true @ret_caller true @deep true returns String io mutable dir_slots, prof_list reads prof_list linked
 
 
 
@@ -5698,7 +5698,7 @@ define symbols
 
 
 
-    procedure function_return_type_in_dir(rp, mutable dir: String, self_path: String, fname: String) @direct true @ret_nonlocal true @deep true returns String io mutable dir_slots, prof_list reads prof_list linked
+    procedure function_return_type_in_dir(rp, mutable dir: String, self_path: String, fname: String) @direct true @ret_caller true @deep true returns String io mutable dir_slots, prof_list reads prof_list linked
 
 
 
@@ -5792,7 +5792,7 @@ define symbols
     ; Resolve the type (base concept name) of a multi-segment receiver chain
     ; `a.b.c`: resolve `a`'s declared type, then follow each subsequent segment
     ; as a field/method of the running type. "" when any step fails to resolve.
-    procedure resolve_chain_type(rp, mutable source: String, mutable uri: String, chain: String) @direct true @ret_nonlocal true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_fresh, prof_list, prof_read reads prof_list linked
+    procedure resolve_chain_type(rp, mutable source: String, mutable uri: String, chain: String) @direct true @ret_caller true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_fresh, prof_list, prof_read reads prof_list linked
 
 
 
@@ -5945,7 +5945,7 @@ define symbols
     ; named `receiver` (found at top level or nested in a namespace), or "" when
     ; no such concept exists. A found concept with no members yields "[]" (a
     ; non-empty string), distinguishing it from the not-found "".
-    procedure member_completions(rp, mutable source: String, receiver: String) @direct true @ret_nonlocal true @deep true returns String linked
+    procedure member_completions(rp, mutable source: String, receiver: String) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -6069,7 +6069,7 @@ define symbols
 
     ; Nested declarations of a namespace: first nested definition named
     ; `receiver`, else "".
-    function mem_namespace(rp, source: String, ns: NamespaceSyntax, receiver: String) @direct true @ret_nonlocal true @deep true returns String linked
+    function mem_namespace(rp, source: String, ns: NamespaceSyntax, receiver: String) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -6184,7 +6184,7 @@ define symbols
 
     ; Parse the program and return the hover text for the innermost top-level
     ; declaration containing `offset`, or "" on no match / parse error.
-    procedure hover_at(rp, mutable source: String, line: size_t, character: size_t) @direct true @ret_nonlocal true @deep true returns String linked
+    procedure hover_at(rp, mutable source: String, line: size_t, character: size_t) @direct true @deep true returns String linked
 
 
 
@@ -6346,7 +6346,7 @@ define symbols
     ; the one it is on. A cursor on the closing paren therefore reports the last
     ; property, exactly as one on a routine's closing paren reports the last
     ; parameter.
-    function hover_structure_at(rp, source: String, structure: StructureSyntax, offset: size_t, limit: size_t) @direct true @ret_nonlocal true @deep true returns String linked
+    function hover_structure_at(rp, source: String, structure: StructureSyntax, offset: size_t, limit: size_t) @direct true @deep true returns String linked
 
 
 
@@ -6396,7 +6396,7 @@ define symbols
 
 
     ; Innermost-matching member of a class body, or "".
-    function hover_body(rp, source: String, body: ref[BodySyntax]?, offset: size_t) @direct true @ret_nonlocal true @deep true returns String linked
+    function hover_body(rp, source: String, body: ref[BodySyntax]?, offset: size_t) @direct true @deep true returns String linked
 
 
 
@@ -6453,7 +6453,7 @@ define symbols
 
 
     ; Innermost-matching nested declaration of a namespace, or "".
-    function hover_namespace(rp, source: String, ns: NamespaceSyntax, offset: size_t) @direct true @ret_nonlocal true @deep true returns String linked
+    function hover_namespace(rp, source: String, ns: NamespaceSyntax, offset: size_t) @direct true @deep true returns String linked
 
 
 
@@ -6478,7 +6478,7 @@ define symbols
 
 
     ; A union: each variant, then any body members.
-    function hover_union(rp, source: String, un: UnionSyntax, offset: size_t) @direct true @ret_nonlocal true @deep true returns String linked
+    function hover_union(rp, source: String, un: UnionSyntax, offset: size_t) @direct true @deep true returns String linked
 
 
 
@@ -6950,7 +6950,7 @@ define symbols
 
     ; `parameter name: Type` for the parameter the cursor is on (the bare type
     ; for an unnamed single-type parameter set), or "" when it is on none.
-    function hover_parameter_at(rp, source: String, offset: size_t, parameters: ref[ParameterSetSyntax]?) @direct true @ret_nonlocal true @deep true returns String linked
+    function hover_parameter_at(rp, source: String, offset: size_t, parameters: ref[ParameterSetSyntax]?) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -6992,7 +6992,7 @@ define symbols
 
     ; `generic T` for the generic parameter the cursor is on, or "". `limit` is
     ; the start of the parameter list (the generics end where it begins).
-    function hover_generic_at(rp, source: String, offset: size_t, generics: ref[GenericArgumentsSyntax]?, limit: size_t) @direct true @ret_nonlocal true @deep true returns String linked
+    function hover_generic_at(rp, source: String, offset: size_t, generics: ref[GenericArgumentsSyntax]?, limit: size_t) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -7091,7 +7091,7 @@ define symbols
     ; The request frame packs the position as "<line> <character>" (same as
     ; hover). Parse it, find the identifier at that offset, and resolve it to a
     ; Location, or "" when there is no identifier / no matching declaration.
-    procedure definition_packed(rp, mutable source: String, uri: String, packed: String) @direct true @ret_nonlocal true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure definition_packed(rp, mutable source: String, uri: String, packed: String) @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -7187,7 +7187,7 @@ define symbols
 
     ; Parse the program and return the Location of the first declaration named
     ; `name`, or "" on no match / parse error.
-    procedure find_definition(rp, mutable source: String, uri: String, name: String) @direct true @ret_nonlocal true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure find_definition(rp, mutable source: String, uri: String, name: String) @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -7299,7 +7299,7 @@ define symbols
     ; NAME token (name_offset_at# of the part's `previous_position` start),
     ; because a property has no keyword ahead of it the way every other
     ; declaration this file matches does.
-    procedure def_structure(rp, source: String, uri: String, structure: StructureSyntax, name: String) @direct true @ret_nonlocal true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure def_structure(rp, source: String, uri: String, structure: StructureSyntax, name: String) @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -7327,7 +7327,7 @@ define symbols
 
 
     ; Members of a class body.
-    procedure def_body(rp, source: String, uri: String, body: ref[BodySyntax]?, name: String) @direct true @ret_nonlocal true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure def_body(rp, source: String, uri: String, body: ref[BodySyntax]?, name: String) @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -7384,7 +7384,7 @@ define symbols
 
 
     ; Nested declarations of a namespace.
-    procedure def_namespace(rp, source: String, uri: String, ns: NamespaceSyntax, name: String) @direct true @ret_nonlocal true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure def_namespace(rp, source: String, uri: String, ns: NamespaceSyntax, name: String) @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -7409,7 +7409,7 @@ define symbols
 
 
     ; Variants of a union, then any body members.
-    procedure def_union(rp, source: String, uri: String, un: UnionSyntax, name: String) @direct true @ret_nonlocal true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure def_union(rp, source: String, uri: String, un: UnionSyntax, name: String) @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -7517,7 +7517,7 @@ define symbols
 
     ; The concept that scopes a member reference at `offset`, or "" when the
     ; cursor is not on a `.`-qualified member / the receiver names nothing.
-    procedure scoping_type_at(rp, mutable source: String, offset: size_t) @direct true @ret_param_0 true @deep true returns String linked
+    procedure scoping_type_at(rp, mutable source: String, offset: size_t) @direct true @deep true returns String linked
 
 
 
@@ -7534,7 +7534,7 @@ define symbols
     ; that turns out to be neither costs one lookup that finds nothing.
     ; Split out of scoping_type_at# because the call-hierarchy caller resolves a
     ; receiver PER CALL SITE and must not pay the `this` parse each time.
-    function scoping_type_of_receiver(rp, source: String, receiver: String) @direct true @ret_param_1 true @deep true returns String linked
+    function scoping_type_of_receiver(rp, source: String, receiver: String) @direct true @deep true returns String linked
 
 
 
@@ -7590,7 +7590,7 @@ define symbols
     ; THIS source (namespaces, unions and nested concepts included), or "".
     ; Reuses the def_* member walkers, so a hit is exactly what a definition jump
     ; answers — only scoped to one concept instead of to the whole file.
-    procedure member_definition(rp, mutable source: String, uri: String, type_name: String, member_name: String) @direct true @ret_nonlocal true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure member_definition(rp, mutable source: String, uri: String, type_name: String, member_name: String) @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -7622,7 +7622,7 @@ define symbols
 
 
 
-    procedure md_decl(rp, source: String, uri: String, decl: DeclarationSyntax, type_name: String, member_name: String) @direct true @ret_nonlocal true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure md_decl(rp, source: String, uri: String, decl: DeclarationSyntax, type_name: String, member_name: String) @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -7633,7 +7633,7 @@ define symbols
 
 
 
-    procedure md_export(rp, source: String, uri: String, export_: ExportSyntax, type_name: String, member_name: String) @direct true @ret_nonlocal true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure md_export(rp, source: String, uri: String, export_: ExportSyntax, type_name: String, member_name: String) @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -7645,7 +7645,7 @@ define symbols
     ; The concept named `type_name`: look `member_name` up among ITS members.
     ; Otherwise recurse into a namespace's nested declarations — every concept of
     ; a package module is declared inside `define <namespace>`.
-    procedure md_definition(rp, source: String, uri: String, def: DefinitionSyntax, type_name: String, member_name: String) @direct true @ret_nonlocal true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure md_definition(rp, source: String, uri: String, def: DefinitionSyntax, type_name: String, member_name: String) @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -7674,7 +7674,7 @@ define symbols
 
 
 
-    procedure md_namespace(rp, source: String, uri: String, ns: NamespaceSyntax, type_name: String, member_name: String) @direct true @ret_nonlocal true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure md_namespace(rp, source: String, uri: String, ns: NamespaceSyntax, type_name: String, member_name: String) @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -7891,7 +7891,7 @@ define symbols
     ; cached. Eight call sites carried this read+hash+valid+put dance inline;
     ; they all built the identical blob and now route through here, so the
     ; freshness rule holds for every cross-file feature rather than one.
-    procedure blob_for_file(rp, mutable fpath: String) @persists true @direct true @ret_caller true @deep true @deep_beyond_1 true @deep_whole_1 true returns String io mutable idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_fresh, prof_read reads prof_fresh linked
+    procedure blob_for_file(rp, mutable fpath: String) @persists true @direct true @ret_caller true @deep true returns String io mutable idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_fresh, prof_read reads prof_fresh linked
 
 
 
@@ -8631,7 +8631,7 @@ define symbols
     ; (dir tree, then package tree), "" when found nowhere / void. Reads CACHED
     ; ws blobs via the symindex; structured like function_return_type_ws# but
     ; cache-served (no per-file re-parse).
-    procedure return_type_in_workspace(rp, mutable uri: String, name: String) @direct true @ret_nonlocal true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_fresh, prof_list, prof_read reads prof_list linked
+    procedure return_type_in_workspace(rp, mutable uri: String, name: String) @direct true @ret_caller true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_fresh, prof_list, prof_read reads prof_list linked
 
 
 
@@ -8645,7 +8645,7 @@ define symbols
 
 
 
-    procedure return_type_in_dir(rp, mutable dir: String, self_path: String, name: String) @direct true @ret_nonlocal true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_fresh, prof_list, prof_read reads prof_list linked
+    procedure return_type_in_dir(rp, mutable dir: String, self_path: String, name: String) @direct true @ret_caller true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_fresh, prof_list, prof_read reads prof_list linked
 
 
 
@@ -12534,7 +12534,7 @@ define symbols
     ; not in a recognised call.
     ; ====================================================================
 
-    procedure signature_packed(rp, mutable source: String, mutable uri: String, packed: String) @direct true @ret_nonlocal true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig reads prof_list linked
+    procedure signature_packed(rp, mutable source: String, mutable uri: String, packed: String) @direct true @ret_caller true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig reads prof_list linked
 
 
 
@@ -13753,7 +13753,7 @@ define symbols
 
     ; Parse the program and return the SignatureHelp for the first function /
     ; procedure / operator / method named `name`, or "" on no match / parse error.
-    procedure find_signature(rp, mutable source: String, name: String, active: size_t) @direct true @ret_nonlocal true @deep true returns String linked
+    procedure find_signature(rp, mutable source: String, name: String, active: size_t) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -13838,7 +13838,7 @@ define symbols
 
     ; A `define X`: recurse into the body / namespace / union for a member
     ; routine named `name` (a definition itself has no parameter list).
-    function sig_definition(rp, source: String, def: DefinitionSyntax, name: String, active: size_t) @direct true @ret_nonlocal true @deep true returns String linked
+    function sig_definition(rp, source: String, def: DefinitionSyntax, name: String, active: size_t) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -13854,7 +13854,7 @@ define symbols
 
 
     ; Members of a class body.
-    function sig_body(rp, source: String, body: ref[BodySyntax]?, name: String, active: size_t) @direct true @ret_nonlocal true @deep true returns String linked
+    function sig_body(rp, source: String, body: ref[BodySyntax]?, name: String, active: size_t) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -13911,7 +13911,7 @@ define symbols
 
 
     ; Nested declarations of a namespace.
-    function sig_namespace(rp, source: String, ns: NamespaceSyntax, name: String, active: size_t) @direct true @ret_nonlocal true @deep true returns String linked
+    function sig_namespace(rp, source: String, ns: NamespaceSyntax, name: String, active: size_t) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -13936,7 +13936,7 @@ define symbols
 
 
     ; Body members of a union (variants carry no parameter list).
-    function sig_union(rp, source: String, un: UnionSyntax, name: String, active: size_t) @direct true @ret_nonlocal true @deep true returns String linked
+    function sig_union(rp, source: String, un: UnionSyntax, name: String, active: size_t) @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -14423,7 +14423,7 @@ define symbols
     ; Cross-file signatureHelp: the current file's directory tree first, then —
     ; on a miss — the package dependency tree (so stdlib routines resolve), the
     ; same two-step search as find_definition_in_workspace#. "" if none.
-    procedure find_signature_in_workspace(rp, mutable uri: String, name: String, active: size_t) @direct true @ret_nonlocal true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig reads prof_list linked
+    procedure find_signature_in_workspace(rp, mutable uri: String, name: String, active: size_t) @direct true @ret_caller true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig reads prof_list linked
 
 
 
@@ -14445,7 +14445,7 @@ define symbols
     ; detail field = the routine's 0x1F-joined param labels, so the SignatureHelp
     ; is rebuilt from the cache (sig_from_ws_blob#) — no re-parse, shared with
     ; workspace/symbol + cross-file definition + member completion.
-    procedure find_signature_in_dir(rp, mutable dir: String, self_path: String, name: String, active: size_t) @direct true @ret_nonlocal true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig reads prof_list linked
+    procedure find_signature_in_dir(rp, mutable dir: String, self_path: String, name: String, active: size_t) @direct true @ret_caller true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig reads prof_list linked
 
 
 
@@ -14484,7 +14484,7 @@ define symbols
     ; dazzle's BoundVarList.append). Directory tree first, then the package tree
     ; (matching find_signature_in_workspace#). "" when not found -> the caller
     ; falls back to the unscoped, name-only search.
-    procedure find_signature_in_concept_ws(rp, mutable uri: String, concept: String, name: String, active: size_t) @direct true @ret_nonlocal true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig reads prof_list linked
+    procedure find_signature_in_concept_ws(rp, mutable uri: String, concept: String, name: String, active: size_t) @direct true @ret_caller true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig reads prof_list linked
 
 
 
@@ -14503,7 +14503,7 @@ define symbols
     ; that same blob's signature for routine `name`. Mirrors find_signature_in_dir#
     ; but gates on the concept, so the signature is read from the receiver's own
     ; type's file — not the first file that happens to declare `name`. "" if none.
-    procedure find_signature_in_concept_dir(rp, mutable dir: String, self_path: String, concept: String, name: String, active: size_t) @direct true @ret_nonlocal true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig reads prof_list linked
+    procedure find_signature_in_concept_dir(rp, mutable dir: String, self_path: String, concept: String, name: String, active: size_t) @direct true @ret_caller true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig reads prof_list linked
 
 
 

@@ -1,0 +1,44 @@
+; Control for pending/returned_whole.scaly: `copy` returns a fresh list on the
+; named page holding the frame-local list's ELEMENTS (Leafs on the same page),
+; so keeping the copy keeps nothing of this frame — `new_type_list(types)` in
+; tscaly's checker has this shape (a body's returned inputs are tracked WHOLE
+; or as elements since 2026-09-23).
+define Leaf (v: int)
+define Keeper (var list: ref[Array[ref[Leaf]?]]?)
+
+define Lists
+(
+    host: ref[Page]
+)
+{
+    function same(this, xs: ref[Array[ref[Leaf]?]]) returns ref[Array[ref[Leaf]?]]
+        xs
+
+    function copy(this, xs: ref[Array[ref[Leaf]?]]) returns ref[Array[ref[Leaf]?]]
+    {
+        let c &Array[ref[Leaf]?]^host()
+        var i: size_t 0
+        while i < xs.length
+        {
+            c.add(xs.get(i) as ref[Leaf]?)
+            set i: i + 1
+        }
+        c
+    }
+
+    procedure keep(this, mutable k: ref[Keeper], xs: ref[Array[ref[Leaf]?]])
+        set k.list: this.copy(xs)
+}
+
+procedure make(host: ref[Page], lists: ref[Lists], mutable k: ref[Keeper])
+{
+    let xs &Array[ref[Leaf]?]()
+    xs.add(&Leaf^host(1))
+    lists.keep(k, xs)
+}
+
+let root Page.allocate_page()
+let lists Lists(root)
+var k Keeper(null)
+make(root, &lists, &k)
+print "done\n"

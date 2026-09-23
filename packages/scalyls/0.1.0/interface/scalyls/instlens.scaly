@@ -295,7 +295,7 @@ define instlens
 
 
     ; The readable type of a planned routine's FIRST input item, or "".
-    function first_input_type(rp, fn: PlannedFunction) @direct true @ret_nonlocal true @deep true returns String linked
+    function first_input_type(rp, fn: PlannedFunction) @direct true @deep true returns String linked
 
 
 

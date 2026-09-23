@@ -2411,7 +2411,7 @@ define Modeler
     ; Class/Structure handling
     ; ============================================================================
 
-    procedure handle_class(name: String, mutable path: String, mutable syntax: ClassSyntax, is_private: bool) @page true @direct true @ret_caller true @deep true returns Structure io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_class(name: String, mutable path: String, mutable syntax: ClassSyntax, is_private: bool) @page true @direct true @deep true returns Structure io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -2954,7 +2954,7 @@ define Modeler
     ; helper exists in procedure form so the choose-arm in build_module# is a
     ; single call (works around a stage-0 codegen issue where an in-place
     ; collection .add inside a choose-arm corrupts the caller's frame).
-    procedure handle_module_decl(path: String, mod_syntax: ModuleSyntax, is_private: bool, mutable modules: ref[Array[Module]]) @page true @direct true @ret_caller true @deep true io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_module_decl(path: String, mod_syntax: ModuleSyntax, is_private: bool, mutable modules: ref[Array[Module]]) @page true @direct true @ret_caller true @deep true @deep_into_3_2 true io mutable modeler_error_count reads modeler_error_count linked
 
 
 
@@ -3026,7 +3026,7 @@ define Modeler
 
 
 
-    procedure handle_package_decl(pkg_syntax: PackageSyntax, mutable packages: ref[Array[Module]]) @page true @direct true @ret_caller true @deep true io mutable modeler_error_count reads modeler_error_count linked
+    procedure handle_package_decl(pkg_syntax: PackageSyntax, mutable packages: ref[Array[Module]]) @page true @direct true @ret_caller true @deep true @deep_into_1_1 true io mutable modeler_error_count reads modeler_error_count linked
 
 
 

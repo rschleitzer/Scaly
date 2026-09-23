@@ -154,6 +154,31 @@ define EscapeAccess
     field1: size_t
 )
 
+; which inputs a body hands back WHOLE — the parameter itself, not a copy
+; of its elements (`new_type_list(types)` returns a fresh list holding
+; types' members): `cur` for the body being scanned, `by_name` parallel to
+; Planner.deep_returns_by_name. Behind a reference: the Planner record is full.
+; A body's residence class across a SELF call (`return this.f(x.sub)`): the
+; call asks the body's own, still undecided class and read 0, so every
+; recursive function stayed unknown. `mode` 1 reads the self call as neutral
+; (class 4, which decides nothing in the merge), `mode` 2 maps it through the
+; candidate `cls`/`arg` — iterated from that bottom until the class stops
+; moving, the least fixpoint. `takes_this` and `arity` recognise the call.
+define RrSelf
+(
+    var mode: int
+    var name: String
+    var takes_this: bool
+    var arity: size_t
+    var cls: size_t
+    var arg: size_t
+    var hit: bool
+)
+
+; `seen` marks an entry noted at least once (the first note replaces the
+; all-ones default instead of OR-ing into it).
+define DeepRetWhole (var cur: u64  by_name: ref[Array[u64]]  seen: ref[Array[bool]])
+
 define Planner
 {
     ; ========================================================================
@@ -604,7 +629,7 @@ define Planner
         ; page parameter) to allocate on: the argument must be page-hosted
         var deep_pageof_mask: u64
         deep_state_pageof: Array[size_t]
-        deep_gate_pageof: Array[u64]
+        deep_gate_pageof: ref[Array[u64]]
         ; INTO WHICH parameter: slot k (1..15) holds the positions kept in
         ; parameter k's guts (slot 0 is deep_this_mask); a position 16 or
         ; beyond counts as beyond. Per body, per name entry and per gate
@@ -613,7 +638,7 @@ define Planner
         deep_by_name_into: Array[u64]
         deep_state_into: Array[size_t]
         deep_state_hasinto: ref[Array[size_t]]
-        deep_gate_into: Array[u64]
+        deep_gate_into: ref[Array[u64]]
         deep_by_name_this: Array[u64]
         deep_by_name_beyond: Array[u64]
         deep_by_name_whole: Array[u64]
@@ -654,6 +679,8 @@ define Planner
         ; (bit 0 is `this`); deep_ret_state holds the same mask per body.
         ; Behind a reference: the Planner's page budget.
         deep_returns_masks: ref[Array[u64]]
+        deep_ret_whole: ref[DeepRetWhole]
+        rr_self: ref[RrSelf]
         var deep_ret_mask: u64
         deep_returns_by_name: Array[String]
         deep_returns_mangled: Array[String]
@@ -668,8 +695,8 @@ define Planner
         ; stamp on.
         rr_fns: Array[Function]
         ret_res_names: Array[String]
-        ret_res_starts: Array[size_t]
-        ret_res_ends: Array[size_t]
+        ret_res_starts: ref[Array[size_t]]
+        ret_res_ends: ref[Array[size_t]]
         ret_res_class: Array[size_t]
         ret_res_arg: Array[size_t]
         rr_bucket_names: Array[String]
@@ -1101,7 +1128,7 @@ define Planner
             set deep_whole_mask: 0
             set deep_pageof_mask: 0
             set deep_state_pageof: Array[size_t]^this()
-            set deep_gate_pageof: Array[u64]^this()
+            set deep_gate_pageof: &Array[u64]^this()
             set deep_into_masks: Array[u64]^this()
             var dik: size_t 0
             while dik < 16
@@ -1112,7 +1139,7 @@ define Planner
             set deep_by_name_into: Array[u64]^this()
             set deep_state_into: Array[size_t]^this()
             set deep_state_hasinto: &Array[size_t]^this()
-            set deep_gate_into: Array[u64]^this()
+            set deep_gate_into: &Array[u64]^this()
             set deep_by_name_this: Array[u64]^this()
             set deep_by_name_beyond: Array[u64]^this()
             set deep_by_name_whole: Array[u64]^this()
@@ -1135,6 +1162,8 @@ define Planner
             set deep_by_name: Array[String]^this()
             set deep_ret_state: Array[size_t]^this()
             set deep_returns_masks: &Array[u64]^this()
+            set deep_ret_whole: &DeepRetWhole^this(0, &Array[u64]^this(), &Array[bool]^this())
+            set rr_self: &RrSelf^this(0, String(""), false, 0, 0, 0, false)
             set deep_ret_mask: 0
             set deep_returns_by_name: Array[String]^this()
             set deep_returns_mangled: Array[String]^this()
@@ -1143,8 +1172,8 @@ define Planner
             set persist_deep_vals: Array[size_t]^this()
             set rr_fns: Array[Function]^this()
             set ret_res_names: Array[String]^this()
-            set ret_res_starts: Array[size_t]^this()
-            set ret_res_ends: Array[size_t]^this()
+            set ret_res_starts: &Array[size_t]^this()
+            set ret_res_ends: &Array[size_t]^this()
             set ret_res_class: Array[size_t]^this()
             set ret_res_arg: Array[size_t]^this()
             set rr_bucket_names: Array[String]^this()
@@ -7580,6 +7609,12 @@ define Planner
                     let ds deep_state.get(di as size_t)
                     if ds <> null
                         set computed: (*ds) <> 0
+                    ; an into-only body (kept only in another parameter's guts)
+                    ; arms the promotion too — persists_mask_for# names where
+                    let hs deep_state_hasinto.get(di as size_t)
+                    if hs <> null
+                        if (*hs) <> 0
+                            set computed: true
                 }
             }
             persist_summary_names.add(String^this(mangled))
@@ -7607,13 +7642,31 @@ define Planner
             let ds deep_state.get(di as size_t)
             if ds = null
                 return (0 as u64) - (1 as u64)
-            ; the inline gate judges the argument's TYPE life and knows no
-            ; receiver: it takes the positions kept BEYOND the callee's own
-            ; receiver; the into-receiver ones are the post-pass's
+            ; the PROMOTION this mask arms moves a Local-life argument onto
+            ; the caller page, and the post-pass skips such an argument on the
+            ; strength of it — so every position kept anywhere counts: beyond,
+            ; in the receiver, in another parameter. Beyond alone left
+            ; `log.note(sb.to_string())` (entries.add message) unpromoted and
+            ; unjudged: tests/regress/persist_arg_promotion read FAIL under
+            ; the gate. A receiver or destination that is itself frame-local
+            ; is persist_receiver_is_frame_local#'s business, as without the gate.
+            var m: u64 (*ds) as u64
             let bs deep_state_beyond.get(di as size_t)
             if bs <> null
-                return (*bs) as u64
-            (*ds) as u64
+                set m: m | ((*bs) as u64)
+            let ts deep_state_this.get(di as size_t)
+            if ts <> null
+                set m: m | ((*ts) as u64)
+            let ibase (di as size_t) * 16
+            var k: size_t 0
+            while k < 16
+            {
+                let ip deep_state_into.get(ibase + k)
+                if ip <> null
+                    set m: m | ((*ip) as u64)
+                set k: k + 1
+            }
+            m
         }
 
         ; does an argument at a PERSISTING position carry Local life
@@ -14362,11 +14415,23 @@ define Planner
                                     {
                                         if getenv("SCALYC_GATE_TRACE") <> null
                                             Planner.inline_gate_trace(fn_name, &call_args_holder)
-                                        var pa_sb StringBuilder()
-                                        pa_sb.append "argument on the local page is stored beyond the frame by "
-                                        pa_sb.append fn_name
-                                        pa_sb.append "; no caller page in scope"
-                                        this.add_diagnostic(result.loc, pa_sb.to_string())
+                                        ; under the deep gate the promotion also arms the
+                                        ; positions a callee keeps in its RECEIVER or in
+                                        ; another parameter (persists_mask_for#), where
+                                        ; the argument's type life alone is too blunt a
+                                        ; judge — 599 opensp report calls with a Local
+                                        ; MessageType. Without a caller page the post-pass
+                                        ; judges every position itself (its promotion skip
+                                        ; needs one), with the receiver's and the
+                                        ; destination's lifetime in hand.
+                                        if deep_gate = false
+                                        {
+                                            var pa_sb StringBuilder()
+                                            pa_sb.append "argument on the local page is stored beyond the frame by "
+                                            pa_sb.append fn_name
+                                            pa_sb.append "; no caller page in scope"
+                                            this.add_diagnostic(result.loc, pa_sb.to_string())
+                                        }
                                     }
                                 }
                             }
@@ -17167,7 +17232,7 @@ define Planner
                             {
                                 if (*li_conc).parameters.length > 0
                                 {
-                                    instantiating_methods.add li_smangled
+                                    instantiating_methods.add(String^this(li_smangled))
                                     var li_args_holder Vector[PlannedType](li_gens)
                                     var li_snap Array[KeyValuePair[String, PlannedType]]()
                                     var li_si: size_t 0
@@ -17550,7 +17615,7 @@ define Planner
                         return null
                 set gi_i: gi_i + 1
             }
-            instantiating_methods.add guard_key
+            instantiating_methods.add(String^this(guard_key))
 
             ; s167 substitution rebuild: receiver generic bindings must WIN
             ; over same-named ambient bindings (first-wins lookup). Snapshot
@@ -23823,7 +23888,7 @@ define Planner
                     if promoted_init <> null
                     {
                         set collapsed: (*promoted_init)
-                        promoted_binding_names.add(String(bn))
+                        promoted_binding_names.add(String^this(bn))
                     }
                     else
                     {
@@ -23841,7 +23906,7 @@ define Planner
                         if promoted_ctrl <> null
                         {
                             set collapsed: (*promoted_ctrl)
-                            promoted_binding_names.add(String(bn))
+                            promoted_binding_names.add(String^this(bn))
                         }
                     }
                 }
@@ -23917,7 +23982,7 @@ define Planner
                                 ; shortcut: the binding's allocation now
                                 ; lives on the caller page.
                                 if this.array_contains_name(promoted_binding_names, abn) = false
-                                    promoted_binding_names.add(String(abn))
+                                    promoted_binding_names.add(String^this(abn))
                             }
                         }
                         else
@@ -28717,7 +28782,7 @@ define Planner
                                                 if Planner.is_reference_like(vp.result_type)
                                                     if this.region_of_operand(vp.unwrap()) < Planner.required_region_for_escape()
                                                     {
-                                                        current_fn_fpt_names.add(String(bind_name))
+                                                        current_fn_fpt_names.add(String^this(bind_name))
                                                         current_fn_fpt_fields.add(i)
                                                         current_fn_fpt_regions.add(Planner.region_rank_local())
                                                     }
@@ -28918,6 +28983,28 @@ define Planner
                     return true
                 return Planner.type_init_allocates_buffer(c.result_type)
             }
+            ; a set of arguments: local where any of them is
+            if (*cvp) = 5
+                if cap <> null
+                    if c.args <> null
+                    {
+                        var k: size_t 0
+                        while k < 63
+                        {
+                            if (((*cap) as u64) & ((1 as u64) << k)) <> (0 as u64)
+                                if k < c.args.length
+                                {
+                                    let kp c.args.get k
+                                    if kp <> null
+                                    {
+                                        if this.dep_arg_local(kp.unwrap())
+                                            return true
+                                    }
+                                }
+                            set k: k + 1
+                        }
+                        return false
+                    }
             if (*cvp) = 3
                 if cap <> null
                     if c.args <> null
@@ -28930,10 +29017,28 @@ define Planner
                         {
                             let ap c.args.get ai
                             if ap <> null
-                                return this.deep_by_value_local(ap.unwrap())
+                                return this.dep_arg_local(ap.unwrap())
                         }
                     }
             false
+        }
+
+        ; the argument a class-3/5 result is handed back from: a VIEW or
+        ; reference is local where it points into this frame (`wrap(a.as_slice())`
+        ; over a frame-local Array — judged by value, the view's receiver read
+        ; as the Array and was never local), a record by its own guts
+        function dep_arg_local(this: Planner, a: PlannedOperand) returns bool
+        {
+            if this.census_type_is_ref_like(a.result_type)
+            {
+                if this.region_of_operand(a) >= Planner.required_region_for_escape()
+                    return false
+                if escape_census = false
+                    if this.ref_arg_lifted(a)
+                        return false
+                return true
+            }
+            this.deep_by_value_local(a)
         }
 
         ; a record handed BY VALUE is copied into the callee's keep — its
@@ -30001,6 +30106,14 @@ define Planner
                             if this.census_is_candidate(parg)
                                 set page_local: true
                         }
+                        ; `&x` over a variable of a PAGE-RESIDENT concept (`var a
+                        ; Array[String]()`): the emitter hosts the value on a page
+                        ; (heap-bound, `alloca ptr`), so Page.get of it is that
+                        ; page — valid, and as long-lived as x itself (cli's
+                        ; compile_jit_dependencies(&model, &run_dep_objs, …))
+                        if page_local
+                            if this.arg_is_resident_var_address(parg)
+                                set page_local: false
                         if page_local
                         {
                             let cur_fn instantiated_functions.get escape_fn_index
@@ -30677,7 +30790,14 @@ define Planner
                     if binding.binding_item.name <> null
                     {
                         if this.binding_inits_stack_closure(binding)
-                            current_fn_closure_names.add(String((*binding.binding_item.name)))
+                            current_fn_closure_names.add(String^this((*binding.binding_item.name)))
+                        ; a binding the persist promotion moved to the caller page
+                        ; (its initializer carries Call life): the planning pass's
+                        ; promoted_binding_names is gone by now, and without it
+                        ; `&props_holder` read as a frame address (plan_structure)
+                        if this.binding_init_has_call_life(binding)
+                            if this.array_contains_name(promoted_binding_names, (*binding.binding_item.name)) = false
+                                promoted_binding_names.add(String^this((*binding.binding_item.name)))
                         ; Reshape alias: a local whose initializer derives from a
                         ; reference-like/delegate parameter aliases that param, so
                         ; a later `store q` / `forward(q)` is attributed to it.
@@ -32179,6 +32299,37 @@ define Planner
             let cls (*cvp)
             if cls = 4
                 return 0
+            if cls = 5
+            {
+                if cap = null
+                    return 0 - 1
+                if c.args = null
+                    return 0 - 1
+                var k: size_t 0
+                while k < 63
+                {
+                    if (((*cap) as u64) & ((1 as u64) << k)) <> (0 as u64)
+                    {
+                        if k >= c.args.length
+                            return 0 - 1
+                        let kp c.args.get k
+                        if kp = null
+                            return 0 - 1
+                        let ka kp.unwrap()
+                        if this.census_type_is_ref_like(ka.result_type)
+                        {
+                            if this.region_of_operand(ka) < Planner.required_region_for_escape()
+                                return 1
+                        }
+                        else
+                            if this.type_owns_buffer(ka.result_type, 0)
+                                if this.deep_by_value_local(ka)
+                                    return 1
+                    }
+                    set k: k + 1
+                }
+                return 0
+            }
             if cls = 2 or cls = 3
             {
                 if cap = null
@@ -32242,6 +32393,63 @@ define Planner
                         return false
                     return (*rp) = 0
                 }
+                else
+                    return false
+            false
+        }
+
+        procedure arg_is_resident_var_address(mutable this: Planner, a: PlannedOperand) returns bool
+        {
+            if a.member_access <> null
+                return false
+            choose a.expr
+                when c: Call
+                {
+                    if c.is_operator = false
+                        return false
+                    if c.name <> "&"
+                        return false
+                    if c.args = null
+                        return false
+                    if c.args.length <> 1
+                        return false
+                    let ip c.args.get 0
+                    if ip = null
+                        return false
+                    let inner ip.unwrap()
+                    if inner.member_access <> null
+                        return false
+                    choose inner.expr
+                        when v: Variable
+                            return this.concept_needs_this_residency(v.variable_type.name)
+                        else
+                            return false
+                }
+                else
+                    return false
+            false
+        }
+
+        function binding_init_has_call_life(this: Planner, b: PlannedBinding) returns bool
+        {
+            if b.operation = null
+                return false
+            let ops (*b.operation)
+            if ops.length <> 1
+                return false
+            let op0 ops.get 0
+            if op0 = null
+                return false
+            choose op0.expr
+                when c: Call
+                {
+                    if c.is_operator
+                        return false
+                    return Planner.lifetime_is_call(c.life)
+                }
+                ; NOT a Tuple: a positional construction restamped Call is still
+                ; emitted as a stack `alloca` (pending/page_of_frame_value —
+                ; poison rc 139 — would have passed)
                 else
                     return false
             false
@@ -32445,6 +32653,16 @@ define Planner
             }
             set persist_ret_hit: false
             set deep_ret_mask: 0
+            set deep_ret_whole.cur: 0
+            ; the body's owner, for a bare sibling call (persist_call_qualified#)
+            set rr_owner: String("")
+            let own_i this.return_residence_index(f)
+            if own_i >= 0
+            {
+                let own_p ret_res_owner.get(own_i as size_t)
+                if own_p <> null
+                    set rr_owner: Planner.rr_last_segment((*own_p))
+            }
             set deep_trace: false
             let dtr getenv("SCALYC_DEEP_TRACE")
             if dtr <> null
@@ -32567,6 +32785,17 @@ define Planner
                                                 deep_state_into.put(i * 16 + ik2, (*ip2) as size_t)
                                             set ik2: ik2 + 1
                                         }
+                                        ; and WHICH of them whole: without it the gate read
+                                        ; wmask 0 for every into-only callee and judged a
+                                        ; container kept whole as a field (`set k.list:
+                                        ; this.same(xs)` with a frame-local xs)
+                                        let wsp deep_state_whole.get i
+                                        if wsp <> null
+                                        {
+                                            let wold (*wsp) as u64
+                                            let wnew wold | deep_whole_mask
+                                            deep_state_whole.put(i, wnew as size_t)
+                                        }
                                         let hip deep_state_hasinto.get i
                                         if hip <> null
                                             if (*hip) = 0
@@ -32638,43 +32867,47 @@ define Planner
                                     set changed: true
                                 }
                             if persist_ret_hit
-                            {
-                                var rmask deep_ret_mask
-                                if rmask = (0 as u64)
-                                    set rmask: (0 as u64) - (1 as u64)
-                                let old_rs (*rs) as u64
-                                if (old_rs | rmask) <> old_rs
+                                if deep_ret_mask <> (0 as u64)
                                 {
-                                    deep_ret_state.put(i, (old_rs | rmask) as size_t)
-                                    this.deep_returns_note((*fp).name, rmask)
-                                    let rown2 ret_res_owner.get i
-                                    if rown2 <> null
-                                        if (*rown2).get_length() > 0
-                                        {
-                                            var rsb2 StringBuilder()
-                                            rsb2.append((*rown2))
-                                            rsb2.append "."
-                                            rsb2.append((*fp).name)
-                                            let rqn2 rsb2.to_string()
-                                            this.deep_returns_note(String^this(rqn2), rmask)
-                                        }
-                                    set changed: true
-                                    if old_rs = (0 as u64)
+                                    let rmask deep_ret_mask
+                                    let old_rs (*rs) as u64
+                                    if (old_rs | rmask) <> old_rs
                                     {
-                                        let mp deep_mangled.get i
-                                        if mp <> null
-                                        {
-                                            deep_returns_mangled.add((*mp))
-                                            if getenv("SCALYC_DEEP_PROBE") <> null
+                                        deep_ret_state.put(i, (old_rs | rmask) as size_t)
+                                        this.deep_returns_note((*fp).name, rmask)
+                                        let rown2 ret_res_owner.get i
+                                        if rown2 <> null
+                                            if (*rown2).get_length() > 0
                                             {
-                                                scaly_eputs "ret "
-                                                scaly_eputs((*mp).to_c_string())
-                                                scaly_eputs "\n"
+                                                var rsb2 StringBuilder()
+                                                rsb2.append((*rown2))
+                                                rsb2.append "."
+                                                rsb2.append((*fp).name)
+                                                let rqn2 rsb2.to_string()
+                                                this.deep_returns_note(String^this(rqn2), rmask)
+                                            }
+                                        set changed: true
+                                        if old_rs = (0 as u64)
+                                        {
+                                            let mp deep_mangled.get i
+                                            if mp <> null
+                                            {
+                                                deep_returns_mangled.add((*mp))
+                                                if getenv("SCALYC_DEEP_PROBE") <> null
+                                                {
+                                                    scaly_eputs "ret "
+                                                    scaly_eputs((*mp).to_c_string())
+                                                    scaly_eputs "\n"
+                                                }
                                             }
                                         }
                                     }
                                 }
-                            }
+                            ; which of them WHOLE: noted on every rescan, since a
+                            ; later round can make an already-carried input whole
+                            if persist_ret_hit
+                                if this.deep_returns_note_whole_owned((*fp).name, i)
+                                    set changed: true
                         }
                     }
                     set i: i + 1
@@ -32826,6 +33059,134 @@ define Planner
                     }
                 set i: i + 1
             }
+            false
+        }
+
+        ; `p.add(…)`, `f.put(…)`, `this.f.add(…)` where the receiver is a
+        ; parameter or a field of the owner whose element type is a scalar
+        function persist_scalar_container_putadd(this: Planner, name: Vector[String]) returns bool
+        {
+            let lastp name.get(name.length - 1)
+            if lastp = null
+                return false
+            var putadd false
+            if (*lastp) = "add"
+                set putadd: true
+            if (*lastp) = "put"
+                set putadd: true
+            if putadd = false
+                return false
+            if name.length = 2
+            {
+                let hp name.get 0
+                if hp = null
+                    return false
+                if this.persist_param_elem_scalar((*hp))
+                    return true
+                if Planner.persist_names_contain(persist_pnames, (*hp))
+                    return false
+                if Planner.persist_names_contain(persist_locals, (*hp))
+                    return false
+                return this.persist_this_field_elem_scalar((*hp))
+            }
+            if name.length = 3
+            {
+                let hp name.get 0
+                let fp name.get 1
+                if hp = null
+                    return false
+                if fp = null
+                    return false
+                if (*hp) = "this"
+                    return this.persist_this_field_elem_scalar((*fp))
+            }
+            false
+        }
+
+        ; `ns.f(…)` whose head names a namespace (a define without fields)
+        function persist_head_is_namespace(this: Planner, ops: Vector[Operand]) returns bool
+        {
+            let op0 ops.get 0
+            if op0 = null
+                return false
+            choose (*op0).expression
+                when ty: scalyc.compiler.Model.Type
+                {
+                    if ty.name.length < 2
+                        return false
+                    let hp ty.name.get 0
+                    if hp = null
+                        return false
+                    if Planner.persist_names_contain(persist_pnames, (*hp))
+                        return false
+                    if Planner.persist_names_contain(persist_locals, (*hp))
+                        return false
+                    let idx concept_index.lookup((*hp))
+                    if idx < 0
+                        return false
+                    let kvp concepts.get(idx as size_t)
+                    if kvp = null
+                        return false
+                    choose (*kvp).value.definition
+                        when ns: Namespace
+                            return true
+                        else
+                            return false
+                }
+                else
+                    return false
+            false
+        }
+
+        ; a property of the receiver's concept whose ONE generic is a scalar
+        ; (`buffer: Array[char]`): an add or put on it copies, keeps no guts
+        function persist_this_field_elem_scalar(this: Planner, name: String) returns bool
+        {
+            if persist_pnames.length = 0
+                return false
+            let p0 persist_pnames.get 0
+            if p0 = null
+                return false
+            if (*p0) <> "this"
+                return false
+            let c0 persist_pconcepts.get 0
+            if c0 = null
+                return false
+            if (*c0).get_length() = 0
+                return false
+            let idx concept_index.lookup((*c0))
+            if idx < 0
+                return false
+            let kvp concepts.get(idx as size_t)
+            if kvp = null
+                return false
+            choose (*kvp).value.definition
+                when st: Structure
+                {
+                    var qi: size_t 0
+                    while qi < st.properties.length
+                    {
+                        let prp st.properties.get qi
+                        if prp <> null
+                            if (*prp).name = name
+                                if (*prp).type <> null
+                                {
+                                    let pt (*prp).type
+                                    if pt.generics = null
+                                        return false
+                                    let gs (*pt.generics)
+                                    if gs.length <> 1
+                                        return false
+                                    let g0 gs.get 0
+                                    if g0 = null
+                                        return false
+                                    return this.rr_model_type_is_scalar((*g0), 0)
+                                }
+                        set qi: qi + 1
+                    }
+                }
+                else
+                    0
             false
         }
 
@@ -33510,6 +33871,8 @@ define Planner
             ; which inputs the returning callee hands back, and where its
             ; arguments start (1 behind a method's receiver)
             var prev_ret_mask: u64 (0 as u64) - (1 as u64)
+            ; and which of them WHOLE (a copy of the elements is not whole)
+            var prev_ret_whole: u64 (0 as u64) - (1 as u64)
             var prev_arg_off: size_t 0
             var i: size_t 0
             while i < ops.length
@@ -33520,6 +33883,7 @@ define Planner
                     var cur_ctor false
                     var cur_returns false
                     var cur_ret_mask: u64 (0 as u64) - (1 as u64)
+                    var cur_ret_whole: u64 (0 as u64) - (1 as u64)
                     var cur_arg_off: size_t 0
                     choose (*op_ptr).expression
                         when ty: scalyc.compiler.Model.Type
@@ -33551,11 +33915,16 @@ define Planner
                                         {
                                             set cur_returns: true
                                             set cur_ret_mask: this.deep_returns_mask_of(rq)
-                                            ; `Owner.f(…)` is static; `x.f(…)` a method
-                                            let rh ty.name.get 0
-                                            if rh <> null
-                                                if this.name_is_capitalized((*rh)) = false
-                                                    set cur_arg_off: 1
+                                            set cur_ret_whole: this.deep_returns_whole_of(rq)
+                                            ; `Owner.f(…)` and a bare `f(…)` are static;
+                                            ; `x.f(…)` a method (its receiver is input 0)
+                                            if ty.name.length = 2
+                                            {
+                                                let rh ty.name.get 0
+                                                if rh <> null
+                                                    if this.name_is_capitalized((*rh)) = false
+                                                        set cur_arg_off: 1
+                                            }
                                         }
                                     }
                                     else
@@ -33637,6 +34006,9 @@ define Planner
                                                 {
                                                     set hit: true
                                                     set whole: true
+                                                    if cur_arg_off = 1
+                                                        if (cur_ret_whole & (1 as u64)) = (0 as u64)
+                                                            set whole: false
                                                 }
                                             }
                                         }
@@ -33697,20 +34069,28 @@ define Planner
                                     ; inputs in its mask (SymbolTable.get(t, d)
                                     ; returns from t, never d)
                                     var carries true
+                                    var elems_only false
                                     if prev_returns
                                         if prev_ctor = false
                                             if i > 0
                                             {
                                                 let pos ci + prev_arg_off
                                                 if pos < 63
+                                                {
                                                     if (prev_ret_mask & ((1 as u64) << pos)) = (0 as u64)
                                                         set carries: false
+                                                    if (prev_ret_whole & ((1 as u64) << pos)) = (0 as u64)
+                                                        set elems_only: true
+                                                }
                                             }
                                     let cp tup.components.get ci
+                                    let comp_whole_before persist_last_whole
                                     if cp <> null
                                         if carries
                                             if Planner.persist_ops_end_scalar_cast((*cp).value) = false
                                                 this.persist_carried_acc((*cp).value, names)
+                                    if elems_only
+                                        set persist_last_whole: comp_whole_before
                                     set ci: ci + 1
                                 }
                                 ; `(*pr).a`: a member access on the tuple
@@ -33728,6 +34108,7 @@ define Planner
                     set prev_ctor: cur_ctor
                     set prev_returns: cur_returns
                     set prev_ret_mask: cur_ret_mask
+                    set prev_ret_whole: cur_ret_whole
                     set prev_arg_off: cur_arg_off
                 }
                 set i: i + 1
@@ -33767,10 +34148,12 @@ define Planner
             }
             let saved_mask persist_last_mask
             let saved_whole persist_last_whole
-            var m this.persist_carried_mask(ops, persist_tainted)
-            if m = (0 as u64)
-                set m: (0 as u64) - (1 as u64)
+            ; 0 is "nothing PROVEN carried yet" (a callee not yet known to hand
+            ; back its argument): the body stays open for the next round — read
+            ; as "all", round one fixed make_implied's mask at every input
+            let m this.persist_carried_mask(ops, persist_tainted)
             set deep_ret_mask: deep_ret_mask | m
+            set deep_ret_whole.cur: deep_ret_whole.cur | persist_last_whole
             set persist_last_mask: saved_mask
             set persist_last_whole: saved_whole
         }
@@ -33800,6 +34183,90 @@ define Planner
             deep_returns_masks.add mask
         }
 
+        ; OR the scan's whole mask into `name`'s entry and its owner-qualified
+        ; twin; true when either grew
+        procedure deep_returns_note_whole_owned(mutable this: Planner, name: String, i: size_t) returns bool
+        {
+            let wm deep_ret_whole.cur
+            var grew this.deep_returns_note_whole(name, wm)
+            let rown ret_res_owner.get i
+            if rown <> null
+                if (*rown).get_length() > 0
+                {
+                    var sb StringBuilder()
+                    sb.append((*rown))
+                    sb.append "."
+                    sb.append name
+                    let qn sb.to_string()
+                    if this.deep_returns_note_whole(qn, wm)
+                        set grew: true
+                }
+            grew
+        }
+
+        ; an entry of deep_returns_by_name not noted yet reads WHOLE (all ones)
+        ; — until the first note replaces the default
+        procedure deep_returns_note_whole(mutable this: Planner, name: String, whole: u64) returns bool
+        {
+            let wa deep_ret_whole.by_name
+            var i: size_t 0
+            while i < deep_returns_by_name.length
+            {
+                let np deep_returns_by_name.get i
+                if np <> null
+                    if (*np) = name
+                    {
+                        while wa.length <= i
+                            wa.add((0 as u64) - (1 as u64))
+                        let sa deep_ret_whole.seen
+                        let seen sa.get i
+                        let wp wa.get i
+                        if wp = null
+                            return false
+                        var old (*wp)
+                        var fresh true
+                        if seen <> null
+                            if (*seen)
+                                set fresh: false
+                        if fresh
+                        {
+                            while sa.length <= i
+                                sa.add false
+                            sa.put(i, true)
+                            wa.put(i, whole)
+                            return true
+                        }
+                        if (old | whole) = old
+                            return false
+                        wa.put(i, old | whole)
+                        return true
+                    }
+                set i: i + 1
+            }
+            false
+        }
+
+        ; the inputs a callee name hands back WHOLE: all-ones where not known
+        function deep_returns_whole_of(this: Planner, name: String) returns u64
+        {
+            let wa deep_ret_whole.by_name
+            var i: size_t 0
+            while i < deep_returns_by_name.length
+            {
+                let np deep_returns_by_name.get i
+                if np <> null
+                    if (*np) = name
+                    {
+                        let wp wa.get i
+                        if wp <> null
+                            return (*wp)
+                        return (0 as u64) - (1 as u64)
+                    }
+                set i: i + 1
+            }
+            (0 as u64) - (1 as u64)
+        }
+
         ; the inputs a callee name hands back: all-ones where no mask is known
         function deep_returns_mask_of(this: Planner, name: String) returns u64
         {
@@ -33824,6 +34291,24 @@ define Planner
         ; name when this root scanned the owner's body of that name — else ""
         function persist_call_qualified(this: Planner, name: Vector[String]) returns String
         {
+            ; a bare `f(…)` inside a concept is the concept's own f (rr_owner is
+            ; the scanned body's owner, set by function_persists_param_guts_deep#)
+            if name.length = 1
+            {
+                let bp name.get 0
+                if bp = null
+                    return String("")
+                if rr_owner.get_length() = 0
+                    return String("")
+                var bsb StringBuilder()
+                bsb.append rr_owner
+                bsb.append "."
+                bsb.append((*bp))
+                let bq bsb.to_string()
+                if Planner.persist_names_contain(deep_qualified_all, bq)
+                    return bq
+                return String("")
+            }
             if name.length <> 2
                 return String("")
             let hp name.get 0
@@ -33868,9 +34353,15 @@ define Planner
                 {
                     if (*p) = seg
                         return true
+                    ; `Owner.seg`, never any name that merely ENDS in seg
+                    ; (`make_implied` matched every stored `…implied`)
                     if (*p).get_length() > seg.get_length()
                         if (*p).ends_with(seg)
-                            return true
+                        {
+                            let dot_at (*p).get_length() - seg.get_length() - 1
+                            if (*p).get(dot_at) = ("." as u8)
+                                return true
+                        }
                 }
                 set i: i + 1
             }
@@ -34117,7 +34608,14 @@ define Planner
         {
             if a.target.length = 0
             {
-                if Planner.persist_ops_putadd_param(a.source, persist_tainted, persist_locals)
+                ; `symindex.put(path, …)` calls a NAMESPACE's function named put,
+                ; not a container's: its own summary answers (scalyls' index
+                ; copies the path with malloc + memcpy)
+                var container_putadd Planner.persist_ops_putadd_param(a.source, persist_tainted, persist_locals)
+                if container_putadd
+                    if this.persist_head_is_namespace(a.source)
+                        set container_putadd: false
+                if container_putadd
                 {
                     var putadd_scalar false
                     let sh0 a.source.get 0
@@ -34129,8 +34627,27 @@ define Planner
                                 {
                                     let shn shty.name.get 0
                                     if shn <> null
+                                    {
                                         if this.persist_param_elem_scalar((*shn))
                                             set putadd_scalar: true
+                                        ; a bare field of the owner (`buffer.add(…)` on
+                                        ; StringBuilder's Array[char]): chars are copied
+                                        if Planner.persist_names_contain(persist_pnames, (*shn)) = false
+                                            if Planner.persist_names_contain(persist_locals, (*shn)) = false
+                                                if this.persist_this_field_elem_scalar((*shn))
+                                                    set putadd_scalar: true
+                                    }
+                                }
+                                ; `this.buffer.add(…)`
+                                if shty.name.length = 3
+                                {
+                                    let shh shty.name.get 0
+                                    let shf shty.name.get 1
+                                    if shh <> null
+                                        if shf <> null
+                                            if (*shh) = "this"
+                                                if this.persist_this_field_elem_scalar((*shf))
+                                                    set putadd_scalar: true
                                 }
                             }
                             else
@@ -34159,7 +34676,22 @@ define Planner
                                     }
                                 }
                                 else
-                                    0
+                                {
+                                    ; `entries.add message`: the parenless value is
+                                    ; every operand after the callee (before, the
+                                    ; mask read 0 and a kept String went unpromoted)
+                                    var prest Vector[Operand](a.source.length - 1)
+                                    var pri: size_t 1
+                                    while pri < a.source.length
+                                    {
+                                        let prp a.source.get pri
+                                        if prp <> null
+                                            prest.put(pri - 1, (*prp))
+                                        set pri: pri + 1
+                                    }
+                                    set pm: this.persist_carried_mask(prest, persist_tainted)
+                                    set pw: persist_last_whole
+                                }
                         set persist_last_whole: pw
                         if deep_trace
                             scaly_eputs "  dtrace putadd\n"
@@ -34585,6 +35117,11 @@ define Planner
                                 if Planner.persist_names_contain(persist_locals, (*hp))
                                     if Planner.persist_names_contain(persist_pnames, (*hp)) = false
                                         set local_receiver: true
+                                ; `buffer.add(…)` / `this.buffer.put(…)` on a container
+                                ; of scalars (StringBuilder's Array[char]): it copies,
+                                ; whatever the generic add keeps for a T that points
+                                if this.persist_scalar_container_putadd(ty.name)
+                                    return false
                             }
                         }
                     }
@@ -34677,7 +35214,39 @@ define Planner
                     }
                 }
                 else
-                    return false
+                {
+                    ; `f x` / `r.m x`: ONE argument, the operand after the callee
+                    if i + 2 <> ops.length
+                        return false
+                    var pl_last String("")
+                    choose (*op_ptr).expression
+                        when plty: scalyc.compiler.Model.Type
+                        {
+                            let plp plty.name.get(plty.name.length - 1)
+                            if plp <> null
+                                set pl_last: (*plp)
+                        }
+                        else
+                            0
+                    if Planner.rr_parenless_argument(ops, i + 1, pl_last) = false
+                        return false
+                    var pbit: u64 1
+                    if has_receiver
+                        set pbit: 2
+                    if (callee_mask & pbit) <> (0 as u64)
+                    {
+                        var one Vector[Operand](1)
+                        one.put(0, (*next_ptr))
+                        let cm this.persist_carried_mask(one, persist_tainted)
+                        set carried: carried | cm
+                        if (callee_this & pbit) <> (0 as u64)
+                            set carried_this: carried_this | cm
+                        if (callee_beyond & pbit) <> (0 as u64)
+                            set carried_beyond: carried_beyond | cm
+                        if (callee_whole & pbit) <> (0 as u64)
+                            set carried_whole: carried_whole | persist_last_whole
+                    }
+                }
             if carried = (0 as u64)
                 return false
             if local_receiver
@@ -35093,6 +35662,15 @@ define Planner
                             this.gather_member_functions(u.members, all)
                             0
                         }
+                        when ns: Namespace
+                        {
+                            ; a namespace's functions are already in the list
+                            ; (free, owner ""): name their owner, so a static
+                            ; `TsOptionDecls.enum_value(…)` finds THAT body
+                            ; instead of every same-named one
+                            this.rr_own_namespace_functions(ns.members, all, owners, cname)
+                            0
+                        }
                         else
                             0
                     while owners.length < all.length
@@ -35114,6 +35692,51 @@ define Planner
                         set cls: Planner.linked_return_class((*fp))
                         set arg: Planner.linked_return_arg((*fp))
                     }
+                    ; a C function sees Scaly memory only through its arguments:
+                    ; its result is fresh heap, static, or derived from one of
+                    ; them (memcpy hands back dst) — as local as its pointer
+                    ; arguments, nowhere local without one. Unknown (0) before, and
+                    ; a store of `mmap(…)` into a `^host` record made Fiber.create
+                    ; undecided through the store join.
+                    choose (*fp).implementation
+                        when ex: Extern
+                        {
+                            var em: u64 0
+                            var ek: size_t 0
+                            while ek < (*fp).input.length
+                            {
+                                let ip (*fp).input.get ek
+                                var scalar false
+                                if ip <> null
+                                    if (*ip).type <> null
+                                    {
+                                        let it (*ip).type
+                                        if this.rr_model_type_is_scalar((*it), 0)
+                                            set scalar: true
+                                    }
+                                if scalar = false
+                                    if ek < 63
+                                        set em: em | ((1 as u64) << ek)
+                                set ek: ek + 1
+                            }
+                            if em = (0 as u64)
+                                set cls: 4
+                            else
+                            {
+                                if Planner.rr_mask_single(em)
+                                {
+                                    set cls: 3
+                                    set arg: Planner.rr_mask_index(em)
+                                }
+                                else
+                                {
+                                    set cls: 5
+                                    set arg: em as size_t
+                                }
+                            }
+                        }
+                        else
+                            0
                     rr_fns.add((*fp))
                     let ow owners.get i
                     if ow <> null
@@ -35166,6 +35789,7 @@ define Planner
                 if round >= 8
                     set changed: false
             }
+            this.rr_resolve_pending()
             this.rr_rebuild_name_buckets()
             set deep_gate: getenv("SCALYC_DEEP_GATE") <> null
             set gate_all: getenv("SCALYC_GATE_ALL") <> null
@@ -35334,17 +35958,33 @@ define Planner
                                     rr_bucket_scalar.put(bi, 0)
                                 let bc rr_bucket_class.get bi
                                 let ba rr_bucket_arg.get bi
+                                ; a PENDING body (6, phase 2 of the fixpoint) decides
+                                ; nothing: the other bodies of the name answer
+                                var neutral false
+                                if (*cp) = 6
+                                    set neutral: true
                                 if bc <> null
-                                    if ba <> null
-                                    {
-                                        var same true
-                                        if (*bc) <> (*cp)
-                                            set same: false
-                                        if (*ba) <> (*ap)
-                                            set same: false
-                                        if same = false
-                                            rr_bucket_conflict.put(bi, 1)
-                                    }
+                                    if (*bc) = 6
+                                        if (*cp) <> 6
+                                        {
+                                            rr_bucket_class.put(bi, (*cp))
+                                            rr_bucket_arg.put(bi, (*ap))
+                                            set neutral: true
+                                        }
+                                if neutral = false
+                                {
+                                    if bc <> null
+                                        if ba <> null
+                                        {
+                                            var same true
+                                            if (*bc) <> (*cp)
+                                                set same: false
+                                            if (*ba) <> (*ap)
+                                                set same: false
+                                            if same = false
+                                                rr_bucket_conflict.put(bi, 1)
+                                        }
+                                }
                             }
                         }
                 set i: i + 1
@@ -35532,6 +36172,126 @@ define Planner
                 else
                     0
             String("")
+        }
+
+        ; the concept a local holds: its annotation (`let v: Vector[int] …`), a
+        ; trailing cast (`let v g as ref[Vector[int]]`), or a construction
+        function rr_binding_concept(this: Planner, b: scalyc.compiler.Model.Binding) returns String
+        {
+            if b.item.type <> null
+            {
+                let it b.item.type
+                return Planner.rr_type_concept((*it))
+            }
+            if b.operation.length > 1
+            {
+                let lastp b.operation.get(b.operation.length - 1)
+                if lastp <> null
+                    choose (*lastp).expression
+                        when la: scalyc.compiler.Model.As
+                            return Planner.rr_type_concept(la.target_type)
+                        else
+                            0
+            }
+            this.rr_ops_construction_concept(b.operation)
+        }
+
+        ; `x.f.g` with x of concept `start`: true when every hop resolves and
+        ; the last field is a scalar
+        function rr_field_path_scalar(this: Planner, start: String, name: Vector[String]) returns bool
+        {
+            var cur start
+            var j: size_t 1
+            while j < name.length
+            {
+                if cur.get_length() = 0
+                    return false
+                let segp name.get j
+                if segp = null
+                    return false
+                let idx concept_index.lookup cur
+                if idx < 0
+                    return false
+                let kvp concepts.get(idx as size_t)
+                if kvp = null
+                    return false
+                var next String("")
+                var found false
+                var scalar false
+                choose (*kvp).value.definition
+                    when st: Structure
+                    {
+                        var qi: size_t 0
+                        while qi < st.properties.length
+                        {
+                            let prp st.properties.get qi
+                            if prp <> null
+                                if (*prp).name = (*segp)
+                                    if (*prp).type <> null
+                                    {
+                                        let pt (*prp).type
+                                        set found: true
+                                        set scalar: this.rr_model_type_is_scalar((*pt), 0)
+                                        set next: Planner.rr_type_concept((*pt))
+                                    }
+                            set qi: qi + 1
+                        }
+                    }
+                    else
+                        return false
+                if found = false
+                    return false
+                if j + 1 = name.length
+                    return scalar
+                set cur: next
+                set j: j + 1
+            }
+            false
+        }
+
+        ; the concept at the end of `head.f.g.m`'s receiver path (`f.g`),
+        ; starting from head's concept; "" where a hop does not resolve
+        function rr_path_concept(this: Planner, start: String, name: Vector[String]) returns String
+        {
+            var cur start
+            var j: size_t 1
+            while j + 1 < name.length
+            {
+                if cur.get_length() = 0
+                    return String("")
+                let segp name.get j
+                if segp = null
+                    return String("")
+                let idx concept_index.lookup cur
+                if idx < 0
+                    return String("")
+                let kvp concepts.get(idx as size_t)
+                if kvp = null
+                    return String("")
+                var next String("")
+                choose (*kvp).value.definition
+                    when st: Structure
+                    {
+                        var qi: size_t 0
+                        while qi < st.properties.length
+                        {
+                            let prp st.properties.get qi
+                            if prp <> null
+                                if (*prp).name = (*segp)
+                                    if (*prp).type <> null
+                                    {
+                                        let pt (*prp).type
+                                        set next: Planner.rr_type_concept((*pt))
+                                    }
+                            set qi: qi + 1
+                        }
+                    }
+                    else
+                        return String("")
+                set cur: next
+                set j: j + 1
+            }
+            cur
         }
 
         ; `let x [&]T[G][^page](...)`: the concept the binding holds
@@ -35732,6 +36492,9 @@ define Planner
                 return 2
             if Planner.linked_return_prefixed(f, "ret_param_") >= 0
                 return 3
+            ; a SET of arguments (class 5), the mask in the name
+            if Planner.linked_return_prefixed(f, "ret_args_") >= 0
+                return 5
             0
         }
 
@@ -35743,6 +36506,9 @@ define Planner
             let p Planner.linked_return_prefixed(f, "ret_param_")
             if p >= 0
                 return p as size_t
+            let m Planner.linked_return_prefixed(f, "ret_args_")
+            if m >= 0
+                return m as size_t
             0
         }
 
@@ -35775,7 +36541,191 @@ define Planner
         }
 
         ; ---- the classifier over one body -----------------------------------
+        ; Phase 2 of the residence fixpoint. Phase 1 decides a body only once
+        ; every callee is decided, so a CYCLE (generate_name_for_node ->
+        ; …_method_or_accessor -> …_node_cached -> generate_name_for_node) stays
+        ; 0 for good. Here every body still undecided starts PENDING (6, read as
+        ; neutral — class 4 — by a caller) and all of them are re-classified
+        ; together until no class moves: iterated from that bottom, the least
+        ; fixpoint. A round cap without convergence puts them all back to 0.
+        procedure rr_resolve_pending(mutable this: Planner)
+        {
+            if getenv("SCALYC_RR_NO_PENDING") <> null
+                return
+            var pending Array[size_t]()
+            var k: size_t 0
+            while k < rr_fns.length
+            {
+                let st ret_res_class.get k
+                let fp rr_fns.get k
+                if st <> null
+                    if fp <> null
+                        if (*st) = 0
+                            if Planner.is_linked((*fp)) = false
+                            {
+                                pending.add k
+                                ret_res_class.put(k, 6)
+                                ret_res_arg.put(k, 0)
+                            }
+                set k: k + 1
+            }
+            if pending.length = 0
+                return
+            var rounds: size_t 0
+            var moved true
+            while moved
+            {
+                if rounds >= 16
+                    break
+                set moved: false
+                this.rr_rebuild_name_buckets()
+                var pi: size_t 0
+                while pi < pending.length
+                {
+                    let kp pending.get pi
+                    if kp <> null
+                    {
+                        let pk (*kp)
+                        let fp rr_fns.get pk
+                        if fp <> null
+                        {
+                            var own String("")
+                            let owp ret_res_owner.get pk
+                            if owp <> null
+                                set own: (*owp)
+                            let cls this.rr_classify_function((*fp), own)
+                            let arg rr_result_arg
+                            let oc ret_res_class.get pk
+                            let oa ret_res_arg.get pk
+                            var same false
+                            if oc <> null
+                                if oa <> null
+                                    if (*oc) = cls
+                                        if (*oa) = arg
+                                            set same: true
+                            if same = false
+                            {
+                                ret_res_class.put(pk, cls)
+                                ret_res_arg.put(pk, arg)
+                                set moved: true
+                            }
+                        }
+                    }
+                    set pi: pi + 1
+                }
+                set rounds: rounds + 1
+            }
+            ; not converged: nothing of the phase stands
+            if moved
+            {
+                var ri: size_t 0
+                while ri < pending.length
+                {
+                    let kp pending.get ri
+                    if kp <> null
+                    {
+                        ret_res_class.put((*kp), 0)
+                        ret_res_arg.put((*kp), 0)
+                    }
+                    set ri: ri + 1
+                }
+            }
+            if getenv("SCALYC_RR_PROBE") <> null
+            {
+                scaly_eputs "rr pending "
+                scaly_eputi pending.length
+                scaly_eputs " rounds "
+                scaly_eputi rounds
+                if moved
+                    scaly_eputs " not-converged"
+                scaly_eputs "\n"
+            }
+        }
+
         procedure rr_classify_function(mutable this: Planner, f: Function, owner: String) returns size_t
+        {
+            set rr_self.name: String^this(f.name)
+            set rr_self.takes_this: false
+            if f.input.length > 0
+            {
+                let ip0 f.input.get 0
+                if ip0 <> null
+                    if (*ip0).name <> null
+                        if (*(*ip0).name) = "this"
+                            set rr_self.takes_this: true
+            }
+            set rr_self.arity: f.input.length
+            set rr_self.mode: 1
+            set rr_self.hit: false
+            var cls this.rr_classify_once(f, owner)
+            var arg rr_result_arg
+            var rounds 0
+            while rr_self.hit
+            {
+                if cls = 0
+                    break
+                if rounds >= 4
+                {
+                    set cls: 0
+                    break
+                }
+                set rr_self.mode: 2
+                set rr_self.cls: cls
+                set rr_self.arg: arg
+                set rr_self.hit: false
+                let c2 this.rr_classify_once(f, owner)
+                let a2 rr_result_arg
+                if c2 = cls
+                    if a2 = arg
+                        break
+                set cls: c2
+                set arg: a2
+                ; the same answer again ends it; a moved one is checked again
+                set rr_self.hit: true
+                set rounds: rounds + 1
+            }
+            set rr_self.mode: 0
+            set rr_result_arg: arg
+            cls
+        }
+
+        ; `f(…)`, `this.f(…)` or `Owner.f(…)` inside f itself, with f's arity
+        function rr_is_self_call(this: Planner, name: Vector[String], head: String, rc: String, ops: Vector[Operand], tuple_i: size_t) returns bool
+        {
+            let lastp name.get(name.length - 1)
+            if lastp = null
+                return false
+            if (*lastp) <> rr_self.name
+                return false
+            var ncomp: size_t 1
+            let tp ops.get tuple_i
+            if tp = null
+                return false
+            choose (*tp).expression
+                when tup: Tuple
+                    set ncomp: tup.components.length
+                else
+                    0
+            if name.length = 1
+            {
+                if rr_self.takes_this
+                    return ncomp + 1 = rr_self.arity
+                return ncomp = rr_self.arity
+            }
+            if name.length = 2
+            {
+                if head = "this"
+                    if rr_self.takes_this
+                        return ncomp + 1 = rr_self.arity
+                if this.name_is_capitalized(head)
+                    if rr_self.takes_this = false
+                        if head = rr_owner
+                            return ncomp = rr_self.arity
+            }
+            false
+        }
+
+        procedure rr_classify_once(mutable this: Planner, f: Function, owner: String) returns size_t
         {
             set rr_owner: Planner.rr_last_segment(owner)
             set persist_masked: false
@@ -35901,26 +36851,257 @@ define Planner
                 set rr_result_arg: arg
                 return
             }
-            var pair23 false
-            if cls = 2
-                if rr_result_class = 3
-                    set pair23: true
-            if cls = 3
-                if rr_result_class = 2
-                    set pair23: true
-            if pair23
-            {
-                if arg <> rr_result_arg
-                    set rr_result_conflict: true
-                ; keep the dependent reading: as local as that argument
-                set rr_result_class: 3
-                return
-            }
+            ; 2, 3 and 5 all say "as local as THESE arguments": the union of the
+            ; argument sets (class 5 over a mask when it holds more than one —
+            ; real_path hands back `path` or something of `this`; before, two
+            ; arguments were a conflict and the body stayed undecided)
+            if Planner.rr_is_dep(cls)
+                if Planner.rr_is_dep(rr_result_class)
+                {
+                    let m1 Planner.rr_dep_mask(rr_result_class, rr_result_arg)
+                    let m2 Planner.rr_dep_mask(cls, arg)
+                    if (m1 = (0 as u64)) or (m2 = (0 as u64))
+                    {
+                        set rr_result_conflict: true
+                        return
+                    }
+                    let m m1 | m2
+                    if Planner.rr_mask_single(m)
+                    {
+                        ; one argument: 2 only where both said 2
+                        set rr_result_arg: Planner.rr_mask_index(m)
+                        if cls = 2
+                            if rr_result_class = 2
+                                return
+                        set rr_result_class: 3
+                        return
+                    }
+                    set rr_result_class: 5
+                    set rr_result_arg: m as size_t
+                    return
+                }
             if cls <> rr_result_class
                 set rr_result_conflict: true
-            if cls = 2 or cls = 3
-                if arg <> rr_result_arg
-                    set rr_result_conflict: true
+        }
+
+        ; the class of a call whose callee answers class 5 over `mask`: every
+        ; masked input mapped onto this call's operands (the single-argument
+        ; mapping of rr_class_of_ops#, input by input), then combined
+        procedure rr_class_of_arg_set(mutable this: Planner, mask: u64, ops: Vector[Operand], tuple_i: size_t, name: Vector[String], cthis: size_t) returns size_t
+        {
+            let tp ops.get tuple_i
+            if tp = null
+                return 0
+            let hp name.get 0
+            if hp = null
+                return 0
+            let head (*hp)
+            var is_method false
+            if name.length > 1
+                if this.name_is_capitalized(head) = false
+                    set is_method: true
+            var implicit_this false
+            if name.length = 1
+            {
+                if cthis = 2
+                    return 0
+                if cthis = 1
+                    if Planner.persist_names_contain(rr_param_names, "this")
+                        set implicit_this: true
+            }
+            var acc_cls: size_t 4
+            var acc_mask: u64 0
+            var k: size_t 0
+            while k < 63
+            {
+                if (mask & ((1 as u64) << k)) <> (0 as u64)
+                {
+                    var c: size_t 0
+                    if implicit_this or is_method
+                    {
+                        if k = 0
+                        {
+                            if implicit_this
+                                set c: this.rr_class_of_name(String("this"))
+                            else
+                                set c: this.rr_class_of_name(head)
+                        }
+                        else
+                            set c: this.rr_arg_class(ops, tuple_i, k - 1)
+                    }
+                    else
+                        set c: this.rr_arg_class(ops, tuple_i, k)
+                    let ca rr_class_arg
+                    if c = 0
+                        return 0
+                    if c = 1
+                        return 1
+                    if c <> 4
+                    {
+                        let cm Planner.rr_dep_mask(c, ca)
+                        if cm = (0 as u64)
+                            return 0
+                        set acc_mask: acc_mask | cm
+                        set acc_cls: 3
+                    }
+                }
+                set k: k + 1
+            }
+            if acc_cls = 4
+            {
+                set rr_class_arg: 0
+                return 4
+            }
+            if Planner.rr_mask_single(acc_mask)
+            {
+                set rr_class_arg: Planner.rr_mask_index(acc_mask)
+                return 3
+            }
+            set rr_class_arg: acc_mask as size_t
+            5
+        }
+
+        ; the class of argument `idx` of a call whose arguments start at `at`:
+        ; a Tuple's component, or the one operand of a parenless call
+        procedure rr_arg_class(mutable this: Planner, ops: Vector[Operand], at: size_t, idx: size_t) returns size_t
+        {
+            set rr_class_arg: 0
+            let tp ops.get at
+            if tp = null
+                return 0
+            choose (*tp).expression
+                when tup: Tuple
+                {
+                    let comp tup.components.get idx
+                    if comp = null
+                        return 0
+                    return this.rr_class_of_ops((*comp).value)
+                }
+                else
+                {
+                    if idx <> 0
+                        return 0
+                    var one Vector[Operand](1)
+                    one.put(0, (*tp))
+                    return this.rr_class_of_ops(one)
+                }
+            0
+        }
+
+        ; `f x`: the name `last` is a callee (not an operator, prefix `-`/`not`
+        ; included) and the operand at `at` is a plain argument — a name or a
+        ; literal, not a subscript, a cast, a tuple or a block
+        function rr_parenless_argument(ops: Vector[Operand], at: size_t, last: String) returns bool
+        {
+            if Planner.rr_name_is_operator(last)
+                return false
+            let ap ops.get at
+            if ap = null
+                return false
+            choose (*ap).expression
+                when aty: scalyc.compiler.Model.Type
+                {
+                    if aty.name.length = 0
+                        return false
+                    let a0 aty.name.get 0
+                    if a0 = null
+                        return false
+                    if Planner.rr_name_is_operator((*a0))
+                        return false
+                    return true
+                }
+                when c: Constant
+                    return true
+                else
+                    return false
+            false
+        }
+
+        function rr_name_is_operator(n: String) returns bool
+        {
+            if n = "and"
+                return true
+            if n = "or"
+                return true
+            if n = "not"
+                return true
+            if n = "xor"
+                return true
+            if n.get_length() = 0
+                return false
+            var i: size_t 0
+            while i < n.get_length()
+            {
+                let c n.get_buffer()[i]
+                var op false
+                if c = "+" as char
+                    set op: true
+                if c = "-" as char
+                    set op: true
+                if c = "*" as char
+                    set op: true
+                if c = "/" as char
+                    set op: true
+                if c = "=" as char
+                    set op: true
+                if c = "%" as char
+                    set op: true
+                if c = "&" as char
+                    set op: true
+                if c = "|" as char
+                    set op: true
+                if c = "~" as char
+                    set op: true
+                if c = "<" as char
+                    set op: true
+                if c = ">" as char
+                    set op: true
+                if op = false
+                    return false
+                set i: i + 1
+            }
+            true
+        }
+
+        ; residence classes that depend on arguments (2 explicit page, 3 handed
+        ; back, 5 a set of them)
+        function rr_is_dep(c: size_t) returns bool
+        {
+            if c = 2
+                return true
+            if c = 3
+                return true
+            c = 5
+        }
+
+        ; the argument set of a dependent class: bit k for 2/3 on k, the mask
+        ; itself for 5; 0 where k does not fit
+        function rr_dep_mask(c: size_t, a: size_t) returns u64
+        {
+            if c = 5
+                return a as u64
+            if a >= 63
+                return 0
+            (1 as u64) << a
+        }
+
+        function rr_mask_single(m: u64) returns bool
+        {
+            if m = (0 as u64)
+                return false
+            (m & (m - (1 as u64))) = (0 as u64)
+        }
+
+        function rr_mask_index(m: u64) returns size_t
+        {
+            var k: size_t 0
+            while k < 63
+            {
+                if (m & ((1 as u64) << k)) <> (0 as u64)
+                    return k
+                set k: k + 1
+            }
+            0
         }
 
         ; A tail expression: a block, an `if`, a `choose`, a `match` or a
@@ -35944,6 +37125,10 @@ define Planner
                         when mt: scalyc.compiler.Model.Match
                             set structured: true
                         when tr: scalyc.compiler.Model.Try
+                            set structured: true
+                        ; a `repeat` yields only through `break v` (a conflict
+                        ; in rr_walk_stmt) and its `return`s
+                        when rp: scalyc.compiler.Model.Repeat
                             set structured: true
                         else
                             0
@@ -36002,7 +37187,7 @@ define Planner
                         rr_local_names.add nm
                         rr_local_class.add cls
                         rr_local_arg.add rr_class_arg
-                        rr_local_concept.add(this.rr_ops_construction_concept(b.operation))
+                        rr_local_concept.add(String^this(this.rr_binding_concept(b)))
                         if cls = 0 or cls = 1
                             if Planner.persist_names_contain(rr_tainted, nm) = false
                                 rr_tainted.add nm
@@ -36037,9 +37222,13 @@ define Planner
                 if tail
                     this.rr_merge_ops(a.source)
                 else
+                {
+                    this.rr_owner_keeps(a.source)
                     this.rr_walk_ops(a.source, false)
+                }
                 return
             }
+            this.rr_join_store_into_local(a)
             ; a store of a caller-page value into a local taints the local
             if this.persist_mentions_carried(a.source, rr_tainted)
             {
@@ -36068,6 +37257,290 @@ define Planner
             this.rr_walk_ops(a.source, false)
         }
 
+        ; `f.add(x)` / `f.put(i, x)` / `this.f.add(x)` on a field f of the owner,
+        ; x a local of UNKNOWN class: after the store x is as local as `this`.
+        ; The escape checker refuses a frame-local x kept by the receiver, so a
+        ; value that passes it lives at least as long as the owner. Written for
+        ; Page.allocate_oversized, whose `scaly_aligned_alloc` result (an extern,
+        ; unknown) goes into `exclusive_pages` and is freed with the page — read
+        ; as unknown, it made Page.allocate, and every host-allocating path
+        ; helper after it, undecided once `allocate_oversized gross_size` was
+        ; read as the call it is.
+        procedure rr_owner_keeps(mutable this: Planner, ops: Vector[Operand])
+        {
+            if Planner.persist_names_contain(rr_param_names, "this") = false
+                return
+            if ops.length <> 2
+                return
+            let op0 ops.get 0
+            if op0 = null
+                return
+            var put false
+            choose (*op0).expression
+                when ty: scalyc.compiler.Model.Type
+                {
+                    if ty.name.length < 2
+                        return
+                    let lastp ty.name.get(ty.name.length - 1)
+                    if lastp = null
+                        return
+                    var putadd false
+                    if (*lastp) = "add"
+                        set putadd: true
+                    if (*lastp) = "put"
+                    {
+                        set putadd: true
+                        set put: true
+                    }
+                    if putadd = false
+                        return
+                    let hp ty.name.get 0
+                    if hp = null
+                        return
+                    if ty.name.length = 2
+                    {
+                        if Planner.persist_names_contain(rr_param_names, (*hp))
+                            return
+                        if Planner.persist_names_contain(persist_locals, (*hp))
+                            return
+                        if this.persist_this_field_concept((*hp)).get_length() = 0
+                            return
+                    }
+                    else
+                    {
+                        if ty.name.length <> 3
+                            return
+                        if (*hp) <> "this"
+                            return
+                    }
+                }
+                else
+                    return
+            ; the stored value: the one argument of `add`, the second of `put`
+            var vname String("")
+            let op1 ops.get 1
+            if op1 = null
+                return
+            choose (*op1).expression
+                when tup: Tuple
+                {
+                    var vi: size_t 0
+                    if put
+                        set vi: 1
+                    if tup.components.length <> vi + 1
+                        return
+                    let cp tup.components.get vi
+                    if cp = null
+                        return
+                    if (*cp).value.length <> 1
+                        return
+                    let vp (*cp).value.get 0
+                    if vp = null
+                        return
+                    choose (*vp).expression
+                        when vty: scalyc.compiler.Model.Type
+                        {
+                            if vty.name.length = 1
+                            {
+                                let v0 vty.name.get 0
+                                if v0 <> null
+                                    set vname: (*v0)
+                            }
+                        }
+                        else
+                            0
+                }
+                when pty: scalyc.compiler.Model.Type
+                {
+                    if put = false
+                        if pty.name.length = 1
+                        {
+                            let p0 pty.name.get 0
+                            if p0 <> null
+                                set vname: (*p0)
+                        }
+                }
+                else
+                    0
+            if vname.get_length() = 0
+                return
+            var li rr_local_names.length
+            var found false
+            while li > 0
+            {
+                set li: li - 1
+                let lp rr_local_names.get li
+                if lp <> null
+                    if (*lp) = vname
+                    {
+                        set found: true
+                        break
+                    }
+            }
+            if found = false
+                return
+            let lcp rr_local_class.get li
+            if lcp = null
+                return
+            ; unknown (0) or nowhere local (4 — a C allocator's result, which
+            ; the page registers and frees with itself): as local as `this` is
+            ; the conservative reading of both; a class tied to an argument
+            ; keeps it — storing into a list does not move memory
+            var owned false
+            if (*lcp) = 0
+                set owned: true
+            if (*lcp) = 4
+                set owned: true
+            if owned = false
+                return
+            rr_local_class.put(li, 3)
+            rr_local_arg.put(li, this.rr_this_index())
+            Planner.rr_names_remove(rr_unknown, vname)
+            Planner.rr_names_remove(&rr_tainted, vname)
+        }
+
+        procedure rr_names_remove(mutable names: ref[Array[String]], name: String)
+        {
+            var i: size_t 0
+            while i < names.length
+            {
+                var hit false
+                let np names.get i
+                if np <> null
+                    if (*np) = name
+                        set hit: true
+                if hit
+                {
+                    let lastp names.get(names.length - 1)
+                    if lastp <> null
+                        names.put(i, (*lastp))
+                    set names.length: names.length - 1
+                }
+                else
+                    set i: i + 1
+            }
+        }
+
+        ; `set x: v` and `set x.f: v` on a local: x now carries v's guts as well as
+        ; its own, so its class is the JOIN of both (`var b empty()` + `set b.s: s`
+        ; + `b` handed back s, and read as class 4 — nowhere local — before)
+        procedure rr_join_store_into_local(mutable this: Planner, a: scalyc.compiler.Model.Action)
+        {
+            let t0 a.target.get 0
+            if t0 = null
+                return
+            var head String("")
+            var tpath Vector[String](0)
+            choose (*t0).expression
+                when ty: scalyc.compiler.Model.Type
+                {
+                    if ty.name.length > 0
+                    {
+                        let s0 ty.name.get 0
+                        if s0 <> null
+                            set head: (*s0)
+                        set tpath: ty.name
+                    }
+                }
+                else
+                    return
+            if head.get_length() = 0
+                return
+            var li rr_local_names.length
+            var found false
+            while li > 0
+            {
+                set li: li - 1
+                let lp rr_local_names.get li
+                if lp <> null
+                    if (*lp) = head
+                    {
+                        set found: true
+                        break
+                    }
+            }
+            if found = false
+                return
+            let lcp rr_local_class.get li
+            let lap rr_local_arg.get li
+            if lcp = null
+                return
+            if lap = null
+                return
+            ; a SCALAR field keeps no guts (`set pl.pipe_read: *(fds as
+            ; pointer[i32])` made Io.ensure_pool undecided)
+            if tpath.length > 1
+            {
+                let lcc rr_local_concept.get li
+                if lcc <> null
+                    if this.rr_field_path_scalar((*lcc), tpath)
+                        return
+            }
+            let scls this.rr_class_of_ops(a.source)
+            let sarg rr_class_arg
+            let jc Planner.rr_join_class((*lcp), (*lap), scls, sarg)
+            let ja Planner.rr_join_arg((*lcp), (*lap), scls, sarg)
+            rr_local_class.put(li, jc)
+            rr_local_arg.put(li, ja)
+            if jc = 0 or jc = 1
+                if Planner.persist_names_contain(rr_tainted, head) = false
+                    rr_tainted.add(String^this(head))
+            if jc = 0
+                if Planner.persist_names_contain(rr_unknown, head) = false
+                    rr_unknown.add(String^this(head))
+        }
+
+        ; rr_merge#'s rule as a pure join of two (class, argument) pairs; 0 when
+        ; they conflict
+        function rr_join_class(c1: size_t, a1: size_t, c2: size_t, a2: size_t) returns size_t
+        {
+            if c1 = 0 or c2 = 0
+                return 0
+            if c2 = 4
+                return c1
+            if c1 = 4
+                return c2
+            if Planner.rr_is_dep(c1)
+                if Planner.rr_is_dep(c2)
+                {
+                    let m1 Planner.rr_dep_mask(c1, a1)
+                    let m2 Planner.rr_dep_mask(c2, a2)
+                    if (m1 = (0 as u64)) or (m2 = (0 as u64))
+                        return 0
+                    let m m1 | m2
+                    if Planner.rr_mask_single(m)
+                    {
+                        if c1 = 2
+                            if c2 = 2
+                                return 2
+                        return 3
+                    }
+                    return 5
+                }
+            if c1 = c2
+                return c1
+            0
+        }
+
+        function rr_join_arg(c1: size_t, a1: size_t, c2: size_t, a2: size_t) returns size_t
+        {
+            if c1 = 0 or c2 = 0
+                return 0
+            if c2 = 4
+                return a1
+            if c1 = 4
+                return a2
+            if Planner.rr_is_dep(c1)
+                if Planner.rr_is_dep(c2)
+                {
+                    let m Planner.rr_dep_mask(c1, a1) | Planner.rr_dep_mask(c2, a2)
+                    if Planner.rr_mask_single(m)
+                        return Planner.rr_mask_index(m)
+                    return m as size_t
+                }
+            a1
+        }
+
         procedure rr_walk_ops(mutable this: Planner, ops: Vector[Operand], tail: bool)
         {
             var i: size_t 0
@@ -36078,6 +37551,45 @@ define Planner
                     this.rr_walk_op((*op_ptr), tail)
                 set i: i + 1
             }
+        }
+
+        ; the payload concept of variant `v` of the owner, when the owner is a union
+        function rr_variant_concept(this: Planner, v: Vector[String]) returns String
+        {
+            if v.length <> 1
+                return String("")
+            let vn v.get 0
+            if vn = null
+                return String("")
+            if rr_owner.get_length() = 0
+                return String("")
+            let idx concept_index.lookup(rr_owner)
+            if idx < 0
+                return String("")
+            let kvp concepts.get(idx as size_t)
+            if kvp = null
+                return String("")
+            let c (*kvp).value
+            choose c.definition
+                when u: Union
+                {
+                    var i: size_t 0
+                    while i < u.variants.length
+                    {
+                        let vp u.variants.get i
+                        if vp <> null
+                            if (*vp).name = (*vn)
+                                if (*vp).type <> null
+                                {
+                                    let vt (*vp).type
+                                    return Planner.rr_type_concept((*vt))
+                                }
+                        set i: i + 1
+                    }
+                }
+                else
+                    0
+            String("")
         }
 
         ; a `when` binding is a copy of the subject's arm: it carries the
@@ -36093,7 +37605,11 @@ define Planner
                     rr_local_names.add((*wp).name)
                     rr_local_class.add subj_cls
                     rr_local_arg.add subj_arg
-                    rr_local_concept.add(String(""))
+                    ; the arm's payload concept, where the owner is the union
+                    ; (`choose this when i: Internal` → InternalEntity): a call
+                    ; on `i` then asks THAT body instead of the union of every
+                    ; same-named one — opensp's Entity.get_name stayed undecided
+                    rr_local_concept.add(String^this(this.rr_variant_concept((*wp).variant)))
                     if subj_cls = 0 or subj_cls = 1
                         if Planner.persist_names_contain(rr_tainted, (*wp).name) = false
                             rr_tainted.add((*wp).name)
@@ -36368,6 +37884,16 @@ define Planner
                                 else
                                     0
                     }
+                    ; `f x` / `ns.f x`: a PARENLESS single-argument call. Read as
+                    ; the name alone it took the HEAD's class — `wrapped(s) =
+                    ; shout s` answered 4 (a global head), the result was lifted,
+                    ; the persist promotion never fired and a String built on the
+                    ; caller's frame was kept past it (FAIL at rc 0, 2026-09-23)
+                    var parenless false
+                    if has_tuple = false
+                        if next_i + 1 = ops.length
+                            if Planner.rr_parenless_argument(ops, next_i, last)
+                                set parenless: true
                     if this.name_is_capitalized(last)
                     {
                         ; a construction
@@ -36406,7 +37932,7 @@ define Planner
                         }
                         return 1
                     }
-                    if has_tuple
+                    if has_tuple or parenless
                     {
                         ; a call: the callee's verdict mapped onto our operands
                         var ccls this.rr_lookup_name(last)
@@ -36422,6 +37948,11 @@ define Planner
                                 set rc: head
                             else
                                 set rc: this.rr_receiver_concept(head)
+                            ; `c.stop_log.at(i)`: the receiver is the FIELD path,
+                            ; its concept the last hop's property type (before,
+                            ; `Checker.at` was asked for an Array's `at`)
+                            if ty.name.length > 2
+                                set rc: this.rr_path_concept(rc, ty.name)
                         }
                         else
                             if Planner.persist_names_contain(rr_param_names, "this")
@@ -36437,6 +37968,18 @@ define Planner
                                     set cthis: 1
                             }
                         }
+                        if rr_self.mode <> 0
+                            if this.rr_is_self_call(ty.name, head, rc, ops, tuple_i)
+                            {
+                                set rr_self.hit: true
+                                if rr_self.mode = 1
+                                    return 4
+                                set ccls: rr_self.cls
+                                set carg: rr_self.arg
+                                set cthis: 0
+                                if rr_self.takes_this
+                                    set cthis: 1
+                            }
                         if rr_trace
                         {
                             scaly_eputs "  trace call "
@@ -36449,10 +37992,17 @@ define Planner
                         }
                         if ccls = 0
                             return 0
+                        ; a pending callee (phase 2): neutral until it is decided
+                        if ccls = 6
+                            return 4
                         if ccls = 1
                             return 1
                         if ccls = 4
                             return 4
+                        ; a set of arguments: each one's class, combined as
+                        ; the merge does (a caller-page one makes the whole 1)
+                        if ccls = 5
+                            return this.rr_class_of_arg_set(carg as u64, ops, tuple_i, ty.name, cthis)
                         let tp ops.get tuple_i
                         if tp = null
                             return 0
@@ -36471,35 +38021,19 @@ define Planner
                                 if Planner.persist_names_contain(rr_param_names, "this")
                                     set implicit_this: true
                         }
-                        choose (*tp).expression
-                            when tup: Tuple
-                            {
-                                if implicit_this
-                                {
-                                    if carg = 0
-                                        return this.rr_class_of_name(String("this"))
-                                    let comp tup.components.get(carg - 1)
-                                    if comp = null
-                                        return 0
-                                    return this.rr_class_of_ops((*comp).value)
-                                }
-                                if is_method
-                                {
-                                    if carg = 0
-                                        return this.rr_class_of_name(head)
-                                    let comp tup.components.get(carg - 1)
-                                    if comp = null
-                                        return 0
-                                    return this.rr_class_of_ops((*comp).value)
-                                }
-                                let comp tup.components.get carg
-                                if comp = null
-                                    return 0
-                                return this.rr_class_of_ops((*comp).value)
-                            }
-                            else
-                                return 0
-                        return 0
+                        if implicit_this
+                        {
+                            if carg = 0
+                                return this.rr_class_of_name(String("this"))
+                            return this.rr_arg_class(ops, tuple_i, carg - 1)
+                        }
+                        if is_method
+                        {
+                            if carg = 0
+                                return this.rr_class_of_name(head)
+                            return this.rr_arg_class(ops, tuple_i, carg - 1)
+                        }
+                        return this.rr_arg_class(ops, tuple_i, carg)
                     }
                     ; a bare or dotted name
                     return this.rr_class_of_name(head)
@@ -36683,6 +38217,38 @@ define Planner
         ; The call site's question: is this call's result proven NOT to live
         ; on the page this frame passed? Class 2 and 4 always; class 3 when
         ; the argument the result comes from carries no Local life itself.
+        ; is a call argument frame-local, for a class-3/5 result that lives with it
+        procedure rr_call_arg_local(this: Planner, a: PlannedOperand) returns bool
+        {
+            var arg_local false
+            if Planner.lifetime_is_local(a.result_type.life)
+                set arg_local: true
+            choose a.expr
+                when v: Variable
+                {
+                    if Planner.lifetime_is_local(v.variable_type.life)
+                        set arg_local: true
+                    ; a by-VALUE local that owns a buffer (`let a
+                    ; Array[int]()`, no page named): its buffer is
+                    ; on this frame's page, so is a view into it
+                    if a.member_access = null
+                        if Planner.lifetime_is_reference(v.variable_type.life) = false
+                            if this.census_type_is_ref_like(v.variable_type) = false
+                                if this.type_owns_buffer(v.variable_type, 0)
+                                {
+                                    let vlb this.lookup_local_binding(v.name)
+                                    if vlb <> null
+                                        if vlb.is_parameter = false
+                                            set arg_local: true
+                                }
+                    if this.array_contains_name(promoted_binding_names, v.name)
+                        set arg_local: false
+                }
+                else
+                    0
+            arg_local
+        }
+
         procedure rr_result_not_local(this: Planner, mm: MethodMatch, args: Vector[PlannedOperand], fn_name: String) returns bool
         {
             var verdict false
@@ -36690,6 +38256,40 @@ define Planner
                 set verdict: true
             if mm.return_class = 4
                 set verdict: true
+            if mm.return_class = 5
+                if mm.parameter_types <> null
+                {
+                    let plen5 (*mm.parameter_types).length
+                    if args.length >= plen5
+                    {
+                        var off5 args.length - plen5
+                        if args.length > plen5
+                            set off5: off5 - 1
+                        var all_out true
+                        var k5: size_t 0
+                        while k5 < 63
+                        {
+                            if ((mm.return_arg as u64) & ((1 as u64) << k5)) <> (0 as u64)
+                            {
+                                let idx5 off5 + k5
+                                if idx5 >= args.length
+                                    set all_out: false
+                                else
+                                {
+                                    let ap5 args.get idx5
+                                    if ap5 = null
+                                        set all_out: false
+                                    else
+                                        if this.rr_call_arg_local(ap5.unwrap())
+                                            set all_out: false
+                                }
+                            }
+                            set k5: k5 + 1
+                        }
+                        if all_out
+                            set verdict: true
+                    }
+                }
             if mm.return_class = 3
             {
                 if mm.parameter_types <> null
@@ -36714,32 +38314,7 @@ define Planner
                             if ap <> null
                             {
                                 let a ap.unwrap()
-                                var arg_local false
-                                if Planner.lifetime_is_local(a.result_type.life)
-                                    set arg_local: true
-                                choose a.expr
-                                    when v: Variable
-                                    {
-                                        if Planner.lifetime_is_local(v.variable_type.life)
-                                            set arg_local: true
-                                        ; a by-VALUE local that owns a buffer (`let a
-                                        ; Array[int]()`, no page named): its buffer is
-                                        ; on this frame's page, so is a view into it
-                                        if a.member_access = null
-                                            if Planner.lifetime_is_reference(v.variable_type.life) = false
-                                                if this.census_type_is_ref_like(v.variable_type) = false
-                                                    if this.type_owns_buffer(v.variable_type, 0)
-                                                    {
-                                                        let vlb this.lookup_local_binding(v.name)
-                                                        if vlb <> null
-                                                            if vlb.is_parameter = false
-                                                                set arg_local: true
-                                                    }
-                                        if this.array_contains_name(promoted_binding_names, v.name)
-                                            set arg_local: false
-                                    }
-                                    else
-                                        0
+                                let arg_local this.rr_call_arg_local(a)
                                 if arg_local = false
                                     set verdict: true
                                 if getenv("SCALYC_RR_PROBE") <> null
@@ -36911,6 +38486,7 @@ define Planner
             set current_fn_ctor_locals.length: 0
             set current_fn_bind_names.length: 0
             set current_fn_local_filled.length: 0
+            set promoted_binding_names.length: 0
             set current_fn_bind_local.length: 0
             set current_fn_bind_refv.length: 0
             set current_fn_fpt_fields.length: 0
@@ -45098,6 +46674,38 @@ define Planner
 
         ; Collect every Function member of a concept (struct/union) into acc.
         ; Mirrors collect_methods_in# but takes no name filter.
+        procedure rr_own_namespace_functions(mutable this: Planner, members: Vector[Member], all: ref[Array[Function]], mutable owners: ref[Array[String]], cname: String)
+        {
+            var i: size_t 0
+            while i < members.length
+            {
+                let mp members.get i
+                if mp <> null
+                    choose (*mp)
+                        when f: Function
+                        {
+                            var k: size_t 0
+                            while k < all.length
+                            {
+                                let ap all.get k
+                                if ap <> null
+                                    if (*ap).name = f.name
+                                        if (*ap).span.start = f.span.start
+                                        {
+                                            let op owners.get k
+                                            if op <> null
+                                                if (*op).get_length() = 0
+                                                    owners.put(k, String^this(cname))
+                                        }
+                                set k: k + 1
+                            }
+                        }
+                        else
+                            0
+                set i: i + 1
+            }
+        }
+
         procedure gather_member_functions(this: Planner, members: Vector[Member], mutable acc: ref[Array[Function]])
         {
             var i: size_t 0

@@ -517,7 +517,7 @@ define json
     ; Low-level cursor helpers
     ; ====================================================================
 
-    function peek(p: ref[JsonParser]) @ret_param_0 true @deep true returns u8 linked
+    function peek(p: ref[JsonParser]) @deep true returns u8 linked
 
 
 
@@ -600,7 +600,7 @@ define json
     ; sibling arg-count match.
     ; ====================================================================
 
-    function stringify(rp, this: JsonValue) @direct true @deep true returns String linked
+    function stringify(rp, this: JsonValue) @direct true @ret_caller true @deep true returns String linked
 
 
 

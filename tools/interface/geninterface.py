@@ -184,7 +184,8 @@ def transform(text, facts):
                 if a.get('ret'):
                     cls, arg = a['ret']
                     rname = {'1': 'ret_caller', '2': 'ret_explicit_' + arg,
-                             '3': 'ret_param_' + arg, '4': 'ret_nonlocal'}.get(cls)
+                             '3': 'ret_param_' + arg, '4': 'ret_nonlocal',
+                             '5': 'ret_args_' + arg}.get(cls)
                     if rname:
                         facts_attrs += ' @' + rname + ' true'
                 # the deep persist masks (Planner.facts_deep_line#): `@deep` says

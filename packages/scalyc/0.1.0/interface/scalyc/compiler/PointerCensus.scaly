@@ -321,7 +321,7 @@ define PointerCensus
         ; ================================================================
 
         ; The type under a one-argument `Option`, or the type itself.
-        function peel_option(t: PlannedType) @page true @direct true @ret_param_0 true @deep true returns PlannedType linked
+        function peel_option(t: PlannedType) @page true @direct true @deep true returns PlannedType linked
 
 
 
@@ -340,14 +340,14 @@ define PointerCensus
 
 
         ; `pointer[T]` or `pointer[T]?`.
-        function is_pointer_shaped(t: PlannedType) @ret_param_0 true @deep true returns bool linked
+        function is_pointer_shaped(t: PlannedType) @deep true returns bool linked
 
 
 
 
 
         ; `ref[T]?` -- the one deref spelling that is the language's own.
-        function is_optional_ref(t: PlannedType) @ret_param_0 true @deep true returns bool linked
+        function is_optional_ref(t: PlannedType) @deep true returns bool linked
 
 
 
@@ -402,7 +402,7 @@ define PointerCensus
         ; a copy inside would be made): "argument on the local page is
         ; stored beyond the frame by record".
         ; ================================================================
-        procedure record(mutable this: PointerCensus, offset: size_t, cls: String, text: String) @persists true @deep true linked
+        procedure record(mutable this: PointerCensus, offset: size_t, cls: String, text: String) @persists true @deep true @deep_this_8 true @deep_whole_8 true linked
 
 
 
@@ -718,7 +718,7 @@ define PointerCensus
 
 
 
-        procedure remember_extern(mutable this: PointerCensus, name: String) @ret_param_0 true @deep true linked
+        procedure remember_extern(mutable this: PointerCensus, name: String) @ret_nonlocal true @deep true linked
 
 
 
@@ -1315,7 +1315,7 @@ define PointerCensus
 
 
         ; `ref[T]` or `ref[T]?` in the plan.
-        function is_ref_shaped(t: PlannedType) @ret_param_0 true @deep true returns bool linked
+        function is_ref_shaped(t: PlannedType) @deep true returns bool linked
 
 
 
@@ -1879,7 +1879,7 @@ define PointerCensus
         ; The KIND of an operand, for a local's initializer: where the
         ; pointer came from. A cast is transparent -- it is the declaration,
         ; not the source.
-        function operand_kind(this: PointerCensus, op: PlannedOperand) @page true @direct true @deep true returns String linked
+        function operand_kind(this: PointerCensus, op: PlannedOperand) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -1959,7 +1959,7 @@ define PointerCensus
 
 
 
-        function initializer_kind(this: PointerCensus, ops: ref[Vector[PlannedOperand]]?) @page true @direct true @deep true returns String linked
+        function initializer_kind(this: PointerCensus, ops: ref[Vector[PlannedOperand]]?) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -2105,7 +2105,7 @@ define PointerCensus
 
 
         ; The pointer under `p + i` / `p - i`, or null when `op` is not that.
-        function arith_base(op: PlannedOperand) @ret_param_0 true @deep true returns ref[PlannedOperand]? linked
+        function arith_base(op: PlannedOperand) @deep true returns ref[PlannedOperand]? linked
 
 
 

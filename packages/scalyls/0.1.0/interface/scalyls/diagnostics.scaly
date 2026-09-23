@@ -561,7 +561,7 @@ define diagnostics
 
     ; True when `file` belongs to the tree rooted at `entry`: the entry itself,
     ; or anything under the directory it owns.
-    function owns_file(entry: String, prefix: String, file: String) @ret_param_2 true @deep true returns bool linked
+    function owns_file(entry: String, prefix: String, file: String) @ret_nonlocal true @deep true returns bool linked
 
 
 

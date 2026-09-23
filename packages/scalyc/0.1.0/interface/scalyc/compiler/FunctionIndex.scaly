@@ -56,7 +56,7 @@ define FunctionIndex
 {
     ; Allocate + initialise a slot table of `cap` slots and a `next` chain of
     ; `entry_cap` entries. Exits loudly on malloc failure.
-    function create(cap: size_t, entry_cap: size_t) @page true @direct true @deep true returns FunctionIndex linked
+    function create(cap: size_t, entry_cap: size_t) @page true @direct true @ret_nonlocal true @deep true returns FunctionIndex linked
 
 
 

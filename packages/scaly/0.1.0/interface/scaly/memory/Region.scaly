@@ -281,7 +281,7 @@ define Region
     ; that is not a nonzero PAGE_SIZE multiple) — the v1 trust boundary.
     ; Structural pointer violations inside accepted pages fail loud in
     ; fix() instead: by then the frame claims to be a closed region.
-    function deserialize(frame: pointer[u8], host: ref[Page]) @page true @direct true @ret_explicit_1 true @deep true returns ref[ReceivedRegion]? linked
+    function deserialize(frame: pointer[u8], host: ref[Page]) @page true @direct true @ret_args_3 true @deep true returns ref[ReceivedRegion]? linked
 
 
 
@@ -443,7 +443,7 @@ define Region
     ; construction: the regions between the trap and the catch point are gone
     ; by the time this can be asked, so the detail travels as scalars and a
     ; static string.
-    function panic_what() @deep true returns pointer[const_char] linked
+    function panic_what() @ret_nonlocal true @deep true returns pointer[const_char] linked
 
 
     function panic_index() @ret_nonlocal true @deep true returns i64 linked

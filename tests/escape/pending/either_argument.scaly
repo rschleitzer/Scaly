@@ -1,0 +1,31 @@
+; Residence class 5 (2026-09-23): a callee that hands back EITHER of two
+; arguments (`pick` returns a or b). Its result is as local as the more local of
+; the two; here b is a view of a frame-local array, and the caller keeps the
+; result beyond the frame. Before class 5 the two arguments were a conflict,
+; the class stayed undecided, and an undecided class read "not local" for years.
+; Control: ../posp_either_argument_host.scaly.
+define Keeper (var kept: Slice[int])
+
+function pick(a: Slice[int], b: Slice[int], first: bool) returns Slice[int]
+{
+    if first
+        return a
+    b
+}
+
+procedure keep(mutable k: ref[Keeper], s: Slice[int])
+    set k.kept: s
+
+procedure make(host: ref[Page], mutable k: ref[Keeper])
+{
+    let on_host Array[int]^host()
+    on_host.add(1)
+    let on_frame Array[int]()
+    on_frame.add(2)
+    keep(k, pick(on_host.as_slice(), on_frame.as_slice(), false))
+}
+
+let root Page.allocate_page()
+var k Keeper(null)
+make(root, &k)
+print "done\n"

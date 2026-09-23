@@ -1,0 +1,94 @@
+; Regression: a PARENLESS call in return position and its residence class
+; (2026-09-23). `wrapped(s)` is `shout s` — a single-argument call without
+; parentheses — and shout builds its String on the caller page (class 1).
+; The residence walk recognised a call only by the Tuple after the name, so it
+; read `shout s` as the name `shout` alone, answered class 4 (nowhere local),
+; lifted the Local stamp off every `wrapped(…)` result, and the persist
+; promotion that moves a kept argument onto the caller page never fired:
+; `log.note(wrapped(…))` kept a String on note_result's released page and the
+; read-back after the churn failed at rc 0 (PASS with SCALYC_RR_OFF=1).
+; Self-hosted-only.
+; Expected: PASS
+
+package scaly 0.1.0
+
+use scaly.containers.Array
+use scaly.containers.String
+use scaly.containers.StringBuilder
+
+define Log
+(
+    entries: Array[String]
+)
+{
+    init()
+    {
+        ; ^this gives the residency scan a signal so a bare Log()
+        ; construction is page-resident (entries' lazy backing derives
+        ; its page from Page.get(this)).
+        set entries: Array[String]^this()
+    }
+
+    procedure note(mutable this: Log, message: String)
+    {
+        entries.add message
+    }
+}
+
+function shout(s: String) returns String
+{
+    var sb StringBuilder()
+    sb.append s
+    sb.to_string()
+}
+
+function wrapped(s: String) returns String
+    shout s
+
+procedure note_result(mutable log: Log) returns String
+{
+    ; returns a page-owning value so rp is injected — mirrors the real
+    ; diag-text sites (resolve_function_call etc. are all rp-injected).
+    var sb StringBuilder()
+    sb.append "the quick brown fox jumps over the lazy dog"
+    log.note(wrapped(sb.to_string()))
+    String("done")
+}
+
+function churn(n: size_t) returns size_t
+{
+    var total: size_t 0
+    var i: size_t 0
+    while i < n
+    {
+        var csb StringBuilder()
+        csb.append "recycle recycle recycle recycle recycle recycle"
+        let junk csb.to_string()
+        set total: total + junk.get_length()
+        set i: i + 1
+    }
+    total
+}
+
+function check() returns int
+{
+    var log Log()
+    let noted note_result(log)
+    if noted.get_length() <> 4
+        return 1
+    let churned churn(64)
+    if churned = 0
+        return 2
+    let e log.entries.get 0
+    if e = null
+        return 3
+    let text (*e)
+    if text.equals("the quick brown fox jumps over the lazy dog") = false
+        return 4
+    42
+}
+
+if check() = 42
+    print("PASS")
+else
+    print("FAIL")

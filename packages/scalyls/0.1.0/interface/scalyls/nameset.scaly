@@ -101,7 +101,7 @@ define nameset
 
     ; Allocate + zero a slot array of `cap` entries. null on malloc failure
     ; (callers then treat every name as absent — colours by shape).
-    function create(cap: size_t) @deep true returns pointer[NameSlot] linked
+    function create(cap: size_t) @ret_nonlocal true @deep true returns pointer[NameSlot] linked
 
 
 

@@ -748,7 +748,7 @@ define Fiber
     ; and allocates into its own region. The first create installs the
     ; guard-page overflow handler (best-effort diagnostic — a failed
     ; install just keeps the plain-crash behavior).
-    procedure create_sized(host: ref[Page], mutable fn: pointer[void], size: size_t) @ret_explicit_0 true @deep true returns ref[Fiber] linked
+    procedure create_sized(host: ref[Page], mutable fn: pointer[void], size: size_t) @ret_args_3 true @deep true returns ref[Fiber] linked
 
 
 
@@ -785,7 +785,7 @@ define Fiber
 
 
 
-    procedure create(host: ref[Page], mutable fn: pointer[void]) @ret_explicit_0 true @deep true returns ref[Fiber] linked
+    procedure create(host: ref[Page], mutable fn: pointer[void]) @ret_args_3 true @deep true returns ref[Fiber] linked
 
 
 
@@ -827,7 +827,7 @@ define Fiber
     ; Finish the running fiber: marks it done and returns to the resumer
     ; for good. Never returns (resume refuses a done fiber; if the entry
     ; function itself ever returned, the switcher traps).
-    procedure finish() @deep true linked
+    procedure finish() @ret_nonlocal true @deep true linked
 
 
 
@@ -1400,7 +1400,7 @@ define IoPool
 ; operation, on this worker's own thread-local allocator; a result
 ; lives on its own heap page, freed cross-thread by the requester
 ; (safe since milestone 2.3). The loop never returns.
-procedure io_worker(mutable arg: pointer[void]) @deep true returns pointer[void] io linked
+procedure io_worker(mutable arg: pointer[void]) @ret_nonlocal true @deep true returns pointer[void] io linked
 
 
 
@@ -2218,7 +2218,7 @@ define Channel
     ; blocks on the wake handle when nothing is runnable. The receiving
     ; thread needs a scheduler (Scheduler.create) — the wake handle is
     ; armed here BEFORE any park so remote senders always find it.
-    procedure receive(mutable m: ref[Channel]) @deep true returns pointer[void] io linked
+    procedure receive(mutable m: ref[Channel]) @ret_param_0 true @deep true returns pointer[void] io linked
 
 
 
@@ -2323,7 +2323,7 @@ define Channel
     ; (CHAN_DEADLOCK_MS). A TASK caller cooperatively yields between
     ; checks (v1: the runtime has no timer wheel — sibling tasks run in
     ; between, an otherwise-idle scheduler spins until the deadline).
-    procedure receive_timeout(mutable m: ref[Channel], ms: i32, mutable timed_out: ref[bool]) @deep true returns pointer[void] io linked
+    procedure receive_timeout(mutable m: ref[Channel], ms: i32, mutable timed_out: ref[bool]) @ret_param_0 true @deep true returns pointer[void] io linked
 
 
 
@@ -2401,7 +2401,7 @@ define Thread
     ; process limit on POSIX and the current thread's bounds on Windows;
     ; 0 ("cannot tell") keeps the platform default. The reservation is
     ; virtual: a 64 MB stack costs the pages it touches.
-    procedure spawn(fn: pointer[void], arg: pointer[void]) @deep true returns size_t linked
+    procedure spawn(fn: pointer[void], arg: pointer[void]) @ret_nonlocal true @deep true returns size_t linked
 
 
     ; spawn with an explicit stack size (0 = the platform default)
@@ -2781,7 +2781,7 @@ define TaskPool
     ; one item exists SOMEWHERE — a scan pass can still race a push in
     ; flight, hence the outer retry loop (bounded by that push's
     ; completion).
-    procedure take(mutable pl: pointer[TaskPool], start: i64) @deep true returns ref[TaskItem] linked
+    procedure take(mutable pl: pointer[TaskPool], start: i64) @ret_param_0 true @deep true returns ref[TaskItem] linked
 
 
 
@@ -2880,7 +2880,7 @@ define TaskPool
 ; per task; results the task keeps go into caller-owned disjoint slots
 ; (see the module header). Runs on its own OS thread: everything it
 ; touches arrives through the spawn cell.
-procedure task_worker(arg: pointer[void]) @deep true returns pointer[void] io linked
+procedure task_worker(arg: pointer[void]) @ret_nonlocal true @deep true returns pointer[void] io linked
 
 
 

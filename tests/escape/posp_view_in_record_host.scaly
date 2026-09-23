@@ -1,0 +1,35 @@
+; Control for pending/view_in_record.scaly and pending/view_stored_into_local.scaly:
+; the Array is built on a named page, so the view the record carries outlives
+; the frame and keeping the record is fine — through both spellings of wrap.
+define Box (var s: Slice[int]  n: int)
+define Keeper (var b: Box)
+
+function empty() returns Box
+    Box(null, 0)
+
+function wrap(s: Slice[int]) returns Box
+    Box(s, 0)
+
+function wrap_set(s: Slice[int]) returns Box
+{
+    var b empty()
+    set b.s: s
+    b
+}
+
+procedure keep(mutable k: ref[Keeper], b: Box)
+    set k.b: b
+
+procedure make(host: ref[Page], mutable k: ref[Keeper], mutable j: ref[Keeper])
+{
+    let a Array[int]^host()
+    a.add(1)
+    keep(k, wrap(a.as_slice()))
+    keep(j, wrap_set(a.as_slice()))
+}
+
+let root Page.allocate_page()
+var k Keeper(Box(null, 0))
+var j Keeper(Box(null, 0))
+make(root, &k, &j)
+print "done\n"

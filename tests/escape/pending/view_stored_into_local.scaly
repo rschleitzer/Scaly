@@ -1,0 +1,31 @@
+; The same view, stored into a FIELD of a local record that is then handed back
+; (`var b empty()` / `set b.s: s` / `b`): the residence walk classified the local
+; by its binding alone, so `wrap` read as nowhere-local (class 4) and its result
+; was never judged. A store into a local joins the source's class into the
+; local's now. Control: posp_view_in_record_host.scaly.
+define Box (var s: Slice[int]  n: int)
+define Keeper (var b: Box)
+
+function empty() returns Box
+    Box(null, 0)
+
+function wrap(s: Slice[int]) returns Box
+{
+    var b empty()
+    set b.s: s
+    b
+}
+
+procedure keep(mutable k: ref[Keeper], b: Box)
+    set k.b: b
+
+procedure make(mutable k: ref[Keeper])
+{
+    let a Array[int]()
+    a.add(1)
+    keep(k, wrap(a.as_slice()))
+}
+
+var k Keeper(Box(null, 0))
+make(&k)
+print "done\n"

@@ -418,7 +418,7 @@ define Page
 
 
 
-    procedure allocate_oversized(this: Page, size: size_t) @deep true returns pointer[void] linked
+    procedure allocate_oversized(this: Page, size: size_t) @ret_param_0 true @deep true returns pointer[void] linked
 
 
 
@@ -494,7 +494,7 @@ define Page
 
 
 
-    procedure allocate_exclusive_page(this: Page) @ret_nonlocal true @deep true returns ref[Page] linked
+    procedure allocate_exclusive_page(this: Page) @ret_param_0 true @deep true returns ref[Page] linked
 
 
 
@@ -548,7 +548,7 @@ define Page
 
 
 
-    procedure deallocate_exclusive_page(this: Page, page: ref[Page]) @ret_param_0 true @deep true @deep_beyond_2 true @deep_whole_2 true linked
+    procedure deallocate_exclusive_page(this: Page, page: ref[Page]) @ret_nonlocal true @deep true @deep_beyond_2 true @deep_whole_2 true linked
 
 
 

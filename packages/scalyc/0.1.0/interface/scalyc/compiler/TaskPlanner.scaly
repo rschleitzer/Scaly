@@ -407,7 +407,7 @@ define TaskPlanner
         ; move checker's move_found discipline).
         ; ================================================================
 
-        procedure classify_for(mutable this: TaskPlanner, fr: PlannedFor) @ret_param_0 true @deep true @deep_this_2 true linked
+        procedure classify_for(mutable this: TaskPlanner, fr: PlannedFor) @ret_nonlocal true @deep true linked
 
 
 
@@ -1259,7 +1259,7 @@ define TaskPlanner
         ; immutable. Memoized per mangled name.
         ; ================================================================
 
-        procedure memo_purity(mutable this: TaskPlanner, mangled: String, is_pure: bool) @ret_param_0 true @deep true linked
+        procedure memo_purity(mutable this: TaskPlanner, mangled: String, is_pure: bool) @ret_nonlocal true @deep true linked
 
 
 
@@ -1772,7 +1772,7 @@ define TaskPlanner
 
 
 
-        procedure memo_written(mutable this: TaskPlanner, mangled: String, mask: size_t) @persists true @ret_param_0 true @deep true linked
+        procedure memo_written(mutable this: TaskPlanner, mangled: String, mask: size_t) @persists true @ret_nonlocal true @deep true linked
 
 
 
@@ -1964,7 +1964,7 @@ define TaskPlanner
 
         ; ---- the per-callee body walk ----
 
-        procedure wr_add_name(mutable this: TaskPlanner, name: String, mask: size_t) @persists true @ret_param_0 true @deep true linked
+        procedure wr_add_name(mutable this: TaskPlanner, name: String, mask: size_t) @persists true @ret_nonlocal true @deep true linked
 
 
 
@@ -2110,7 +2110,7 @@ define TaskPlanner
 
 
 
-        procedure wr_statement(mutable this: TaskPlanner, stmt: PlannedStatement) @ret_param_0 true @deep true linked
+        procedure wr_statement(mutable this: TaskPlanner, stmt: PlannedStatement) @ret_nonlocal true @deep true linked
 
 
 

@@ -696,7 +696,7 @@ define Tape
 
 
 
-    procedure run_node(mutable this: Tape, id: int) @ret_param_0 true @deep true linked
+    procedure run_node(mutable this: Tape, id: int) @ret_nonlocal true @deep true linked
 
 
 
@@ -722,7 +722,7 @@ define Tape
 
 
 
-    procedure bwd_node(mutable this: Tape, id: int) @ret_param_0 true @deep true linked
+    procedure bwd_node(mutable this: Tape, id: int) @ret_nonlocal true @deep true linked
 
 
 

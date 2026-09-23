@@ -1,0 +1,45 @@
+; A frame-local list handed to a method that returns it WHOLE (`same`), and
+; the result stored into another parameter's field: the store is into-only
+; (no beyond, no receiver bit), and the fixpoint recorded an into-only body's
+; slots but not WHICH inputs it keeps whole — the gate read the list as kept
+; by a field and let it pass. Control: posp_returned_copy.scaly, where the
+; callee returns a COPY holding the list's elements.
+define Leaf (v: int)
+define Keeper (var list: ref[Array[ref[Leaf]?]]?)
+
+define Lists
+(
+    host: ref[Page]
+)
+{
+    function same(this, xs: ref[Array[ref[Leaf]?]]) returns ref[Array[ref[Leaf]?]]
+        xs
+
+    function copy(this, xs: ref[Array[ref[Leaf]?]]) returns ref[Array[ref[Leaf]?]]
+    {
+        let c &Array[ref[Leaf]?]^host()
+        var i: size_t 0
+        while i < xs.length
+        {
+            c.add(xs.get(i) as ref[Leaf]?)
+            set i: i + 1
+        }
+        c
+    }
+
+    procedure keep(this, mutable k: ref[Keeper], xs: ref[Array[ref[Leaf]?]])
+        set k.list: this.same(xs)
+}
+
+procedure make(host: ref[Page], lists: ref[Lists], mutable k: ref[Keeper])
+{
+    let xs &Array[ref[Leaf]?]()
+    xs.add(&Leaf^host(1))
+    lists.keep(k, xs)
+}
+
+let root Page.allocate_page()
+let lists Lists(root)
+var k Keeper(null)
+make(root, &lists, &k)
+print "done\n"
