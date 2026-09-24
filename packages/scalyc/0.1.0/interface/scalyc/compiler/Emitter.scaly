@@ -13433,7 +13433,49 @@ define Emitter
 
 
         ; Emit a match expression
+        ; operands_are_true#: the operand run is the one constant `true`.
+        function operands_are_true(cond: ref[Vector[PlannedOperand]]?) @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         procedure emit_match(mutable this, mutable match_expr: PlannedMatch) @direct true @ret_caller true @deep true returns LLVMValueRef linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

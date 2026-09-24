@@ -1,0 +1,31 @@
+; Regression (2026-09-24): `match` on a narrow integer and a multi-case branch.
+; A case literal is retyped to the scrutinee's width, as in `if c = 40` -- `match
+; c` on a u8 emitted `icmp eq i8 %c, i64 40`, invalid IR the first time the tree
+; matched on a byte (Planner.plan_match#). And the cases of a branch are a
+; SHORT-CIRCUIT chain now (Emitter.emit_match#): a String match stops at its
+; first `equals` instead of evaluating every case.
+; Expected: PASS
+function is_paren(c: u8) returns bool
+{
+    match c
+        case 40 case 41 case 0x5B case 0x5D: return true
+    false
+}
+
+function kind(n: String) returns int
+{
+    match n
+        case "a" case "b" case "c": return 1
+        case "d": return 2
+    0
+}
+
+var ok: bool true
+if is_paren(40 as u8) = false or is_paren(0x5D as u8) = false or is_paren(65 as u8)
+    set ok: false
+if kind(String("b")) <> 1 or kind(String("d")) <> 2 or kind(String("e")) <> 0
+    set ok: false
+if ok
+    print("PASS")
+else
+    print("FAIL")

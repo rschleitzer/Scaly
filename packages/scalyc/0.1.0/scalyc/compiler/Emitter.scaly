@@ -13433,6 +13433,31 @@ define Emitter
         }
 
         ; Emit a match expression
+        ; operands_are_true#: the operand run is the one constant `true`.
+        function operands_are_true(cond: ref[Vector[PlannedOperand]]?) returns bool
+        {
+            if cond = null
+                return false
+            let ops (*cond)
+            if ops.length <> 1
+                return false
+            let p ops.get 0
+            if p = null
+                return false
+            choose (*p).expr
+                when c: Constant
+                {
+                    choose c.value
+                        when b: Boolean
+                            return b.value
+                        else
+                            return false
+                }
+                else
+                    return false
+            false
+        }
+
         procedure emit_match(mutable this, mutable match_expr: PlannedMatch) returns LLVMValueRef
         {
             ; Compare-chain match (port of stage-0 emitMatch, Emitter.cpp:5145):
@@ -13455,6 +13480,7 @@ define Emitter
                 set cond_is_float: true
 
             let merge_block create_block("match.end")
+            let scrutinee_is_true Emitter.operands_are_true(match_expr.condition)
 
             var branch_total: size_t 0
             if match_expr.branches <> null
@@ -13510,25 +13536,41 @@ define Emitter
                             }
                         }
 
-                        ; OR-combined compare chain in the current block.
+                        ; The cases of a branch as a SHORT-CIRCUIT chain: each
+                        ; compare branches into the arm on a hit and on to the
+                        ; next case otherwise, so a String match with 51 cases
+                        ; stops at its first `equals` like the `or` chain it
+                        ; replaces (the cases used to be OR-ed, every compare
+                        ; evaluated). The LAST compare is left in `branch_cond`
+                        ; for the false edge below. A match on `true` -- a
+                        ; record scrutinee, Planner.match_by_equals# -- branches
+                        ; on the case's own flag.
                         var branch_cond: LLVMValueRef null
                         if (*branch_ptr).cases <> null
                         {
                             let cases_ref (*branch_ptr).cases
                             for case_cond in (*cases_ref)
                             {
+                                ; branch on the PREVIOUS case before this one is
+                                ; evaluated at all -- that is the short circuit
+                                if branch_cond <> null
+                                {
+                                    let alt_block create_block("match.alt")
+                                    LLVMBuildCondBr(builder, branch_cond, case_block, alt_block)
+                                    LLVMPositionBuilderAtEnd(builder, alt_block)
+                                    set branch_cond: LLVMConstInt(LLVMInt1TypeInContext(context), 0, 0)
+                                }
                                 let case_value emit_operands case_cond.condition
                                 if case_value <> null
                                 {
                                     var case_cmp: LLVMValueRef null
-                                    if cond_is_float
+                                    if scrutinee_is_true
+                                        set case_cmp: case_value
+                                    else if cond_is_float
                                         set case_cmp: LLVMBuildFCmp(builder, LLVMRealPredicate.OEQ(), cond_value, case_value, "match.cmp")
                                     else
                                         set case_cmp: LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), cond_value, case_value, "match.cmp")
-                                    if branch_cond = null
-                                        set branch_cond: case_cmp
-                                    else
-                                        set branch_cond: LLVMBuildOr(builder, branch_cond, case_cmp, "match.or")
+                                    set branch_cond: case_cmp
                                 }
                             }
                         }

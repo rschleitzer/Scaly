@@ -23377,6 +23377,16 @@ define Planner
                                 {
                                     let cond_list (*case_cond.condition)
                                     let collapsed_case this.collapse_operand_sequence(cond_list)
+                                    ; an integer literal takes the scrutinee's
+                                    ; width, as in `if c = 40`: `match c` on a
+                                    ; u8 emitted `icmp eq i8 %c, i64 40`,
+                                    ; invalid IR (2026-09-24, first `match` on
+                                    ; a narrow integer in the tree)
+                                    if this.operand_retypes_to_integer(collapsed_case, cond_type)
+                                    {
+                                        let cvec case_cond.condition
+                                        (*cvec).put(0, this.retype_integer_operand(collapsed_case, cond_type))
+                                    }
                                     this.add_equality_constraint(
                                         cond_type,
                                         collapsed_case.result_type,
