@@ -16507,12 +16507,9 @@ define Planner
         ; pointer[void] dies loudly in fix_value at runtime).
         function is_walker_header_name(this: Planner, name: String) returns bool
         {
-            if name = "Page"
-                return true
-            if name = "PageList"
-                return true
             match name
-                case "PageNode" case "PageListIterator" case "HeapBucketHeader" case "StackBucketHeader": return true
+                case "Page" case "PageList" case "PageNode" case "PageListIterator": return true
+                case "HeapBucketHeader" case "StackBucketHeader": return true
             false
         }
 
@@ -30232,10 +30229,9 @@ define Planner
                 return true
             if n = "ref"
                 return false
-            if n = "String"
-                return true
             match n
-                case "StringC" case "Array" case "Vector" case "List" case "HashMap" case "StringBuilder": return true
+                case "String" case "StringC" case "Array" case "Vector": return true
+                case "List" case "HashMap" case "StringBuilder": return true
             if Planner.is_primitive_type_name(n)
                 return false
             if depth > 3
@@ -48629,14 +48625,8 @@ define Planner
     ; the emitter's is_signed_type# has it).
     function integer_name_is_unsigned(normalized: String) returns bool
     {
-        if normalized = "u8"
-            return true
-        if normalized = "u16"
-            return true
-        if normalized = "u32"
-            return true
         match normalized
-            case "u64" case "size_t" case "uint" case "char": return true
+            case "u8" case "u16" case "u32" case "u64" case "size_t" case "uint" case "char": return true
         false
     }
 
@@ -48663,24 +48653,9 @@ define Planner
 
     function is_integer_type(normalized: String) returns bool
     {
-        if normalized = "i64"
-            return true
-        if normalized = "i32"
-            return true
-        if normalized = "i16"
-            return true
-        if normalized = "i8"
-            return true
-        if normalized = "u64"
-            return true
-        if normalized = "u32"
-            return true
-        if normalized = "u16"
-            return true
-        if normalized = "u8"
-            return true
         match normalized
-            case "size_t" case "int" case "uint" case "char": return true
+            case "i64" case "i32" case "i16" case "i8" case "u64" case "u32": return true
+            case "u16" case "u8" case "size_t" case "int" case "uint" case "char": return true
         false
     }
 
@@ -49206,37 +49181,9 @@ define Planner
 
     function is_primitive_type_name(name: String) returns bool
     {
-        if name = "void"
-            return true
-        if name = "bool"
-            return true
-        if name = "int"
-            return true
-        if name = "uint"
-            return true
-        if name = "char"
-            return true
-        if name = "i8"
-            return true
-        if name = "i16"
-            return true
-        if name = "i32"
-            return true
-        if name = "i64"
-            return true
-        if name = "u8"
-            return true
-        if name = "u16"
-            return true
-        if name = "u32"
-            return true
-        if name = "u64"
-            return true
-        if name = "f32"
-            return true
-        if name = "f64"
-            return true
         match name
+            case "void" case "bool" case "int" case "uint" case "char" case "i8" case "i16": return true
+            case "i32" case "i64" case "u8" case "u16" case "u32" case "u64" case "f32" case "f64": return true
             case "float" case "double" case "size_t" case "size" case "pointer" case "ref": return true
         false
     }
@@ -51513,29 +51460,9 @@ define Planner
     ; already skips parameterized concepts.
     function is_runtime_opaque_struct(name: String) returns bool
     {
-        if name = "String"
-            return true
-        if name = "StringBuilder"
-            return true
-        if name = "StringIterator"
-            return true
-        if name = "Page"
-            return true
-        if name = "PageList"
-            return true
-        if name = "PageListIterator"
-            return true
-        if name = "PageNode"
-            return true
-        if name = "Path"
-            return true
-        if name = "File"
-            return true
-        if name = "Directory"
-            return true
-        if name = "Console"
-            return true
         match name
+            case "String" case "StringBuilder" case "StringIterator" case "Page" case "PageList": return true
+            case "PageListIterator" case "PageNode" case "Path" case "File" case "Directory" case "Console": return true
             case "FileError" case "HeapBucketHeader" case "StackBucketHeader" case "TraceEntry": return true
         false
     }

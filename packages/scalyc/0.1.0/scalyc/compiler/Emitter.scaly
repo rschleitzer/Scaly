@@ -9414,12 +9414,9 @@ define Emitter
         ; walk fixes pointers TO them but never descends INTO them.
         function region_walker_header_name(this, name: String) returns bool
         {
-            if name = "Page"
-                return true
-            if name = "PageList"
-                return true
             match name
-                case "PageNode" case "PageListIterator" case "HeapBucketHeader" case "StackBucketHeader": return true
+                case "Page" case "PageList" case "PageNode" case "PageListIterator": return true
+                case "HeapBucketHeader" case "StackBucketHeader": return true
             false
         }
 

@@ -1349,28 +1349,10 @@ define WriteCensus
         function is_scalar(t: PlannedType) returns bool
         {
             let n t.name
-            if n = "int"
-                return true
-            if n = "i8"
-                return true
-            if n = "i16"
-                return true
-            if n = "i32"
-                return true
-            if n = "i64"
-                return true
-            if n = "u8"
-                return true
-            if n = "u16"
-                return true
-            if n = "u32"
-                return true
-            if n = "u64"
-                return true
-            if n = "size_t"
-                return true
             match n
-                case "bool" case "char" case "float" case "double" case "f32" case "f64" case "void": return true
+                case "int" case "i8" case "i16" case "i32" case "i64" case "u8": return true
+                case "u16" case "u32" case "u64" case "size_t" case "bool" case "char": return true
+                case "float" case "double" case "f32" case "f64" case "void": return true
             false
         }
 
@@ -4184,14 +4166,10 @@ define WriteCensus
         {
             if name.starts_with(String("LLVM"))
             {
-                if name = "LLVMCreateMemoryBufferWithContentsOfFile"
-                    return true
-                if name = "LLVMGetDefaultTargetTriple"
-                    return true
-                if name = "LLVMPrintModuleToFile"
-                    return true
-                if name = "LLVMTargetMachineEmitToFile" or name = "LLVMWriteBitcodeToFile"
-                    return true
+                match name
+                    case "LLVMCreateMemoryBufferWithContentsOfFile": return true
+                    case "LLVMGetDefaultTargetTriple" case "LLVMPrintModuleToFile": return true
+                    case "LLVMTargetMachineEmitToFile" case "LLVMWriteBitcodeToFile": return true
                 return false
             }
             if name.starts_with(String("scaly_atomic_"))
@@ -4212,104 +4190,26 @@ define WriteCensus
         function extern_computes(name: String) returns bool
         {
             ; memory
-            if name = "malloc"
-                return true
-            if name = "calloc"
-                return true
-            if name = "realloc"
-                return true
-            if name = "free"
-                return true
-            if name = "memcpy"
-                return true
-            if name = "memmove"
-                return true
-            if name = "memset"
-                return true
-            if name = "memcmp"
-                return true
-            if name = "mmap"
-                return true
-            if name = "munmap"
-                return true
-            if name = "mprotect"
-                return true
-            if name = "getpagesize"
-                return true
-            if name = "aligned_alloc"
-                return true
             match name
-                case "scaly_aligned_alloc" case "scaly_aligned_free" case "scaly_alloc_fail_after": return true
+                case "malloc" case "calloc" case "realloc" case "free" case "memcpy": return true
+                case "memmove" case "memset" case "memcmp" case "mmap" case "munmap": return true
+                case "mprotect" case "getpagesize" case "aligned_alloc" case "scaly_aligned_alloc": return true
+                case "scaly_aligned_free" case "scaly_alloc_fail_after": return true
             ; strings and numbers
-            if name = "strlen"
-                return true
-            if name = "strcmp"
-                return true
-            if name = "strncmp"
-                return true
-            if name = "strdup"
-                return true
             match name
-                case "strtod" case "atoll" case "strerror" case "basename" case "dirname": return true
+                case "strlen" case "strcmp" case "strncmp" case "strdup" case "strtod": return true
+                case "atoll" case "strerror" case "basename" case "dirname": return true
             ; maths
-            if name = "sin"
-                return true
-            if name = "cos"
-                return true
-            if name = "tan"
-                return true
-            if name = "asin"
-                return true
-            if name = "acos"
-                return true
-            if name = "atan"
-                return true
-            if name = "atan2"
-                return true
-            if name = "exp"
-                return true
-            if name = "expf"
-                return true
-            if name = "log"
-                return true
-            if name = "logf"
-                return true
-            if name = "log10"
-                return true
-            if name = "pow"
-                return true
-            if name = "powf"
-                return true
-            if name = "sqrt"
-                return true
-            if name = "sqrtf"
-                return true
-            if name = "tanh"
-                return true
-            if name = "tanhf"
-                return true
             match name
+                case "sin" case "cos" case "tan" case "asin" case "acos" case "atan": return true
+                case "atan2" case "exp" case "expf" case "log" case "logf" case "log10": return true
+                case "pow" case "powf" case "sqrt" case "sqrtf" case "tanh" case "tanhf": return true
                 case "floor" case "ceil" case "trunc" case "fmod" case "fabs" case "fabsf": return true
             ; the runtime's coordination and its guards
-            if name = "scaly_thread_spawn_sized"
-                return true
-            if name = "scaly_stack_limit"
-                return true
-            if name = "pthread_create"
-                return true
-            if name = "pthread_join"
-                return true
-            if name = "sched_yield"
-                return true
-            if name = "scaly_make_context"
-                return true
-            if name = "scaly_jump_context"
-                return true
-            if name = "scaly_stack_guard"
-                return true
-            if name = "scaly_stack_limit"
-                return true
             match name
+                case "scaly_thread_spawn_sized" case "scaly_stack_limit" case "pthread_create": return true
+                case "pthread_join" case "sched_yield" case "scaly_make_context": return true
+                case "scaly_jump_context" case "scaly_stack_guard" case "scaly_stack_limit": return true
                 case "scaly_guard_install" case "scaly_build_stamp" case "signal" case "atexit": return true
             ; the abort path
             if name = "exit" or name = "abort"

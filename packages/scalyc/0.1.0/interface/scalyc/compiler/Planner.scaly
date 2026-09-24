@@ -16513,9 +16513,6 @@ define Planner
 
 
 
-
-
-
         ; check_message_pointee: what a fixed pointer slot's TARGET needs.
         ; Scalars/void/const_char buffers and page headers are fix-only;
         ; aggregates recurse.
@@ -30221,7 +30218,6 @@ define Planner
 
 
         function model_type_owns_buffer(this: Planner, t: scalyc.compiler.Model.Type, depth: size_t) @ret_nonlocal true @deep true returns bool linked
-
 
 
 
@@ -48634,12 +48630,6 @@ define Planner
 
 
 
-
-
-
-
-
-
     ; The width of a normalized integer type name, in bits (64 for the
     ; pointer-sized and default names).
     function integer_type_bits(normalized: String) @ret_nonlocal true @deep true returns int linked
@@ -48662,21 +48652,6 @@ define Planner
 
 
     function is_integer_type(normalized: String) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -49205,34 +49180,6 @@ define Planner
 
 
     function is_primitive_type_name(name: String) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -51512,26 +51459,6 @@ define Planner
     ; containers (Vector/Array/HashMap/...) need no entry here: the caller
     ; already skips parameterized concepts.
     function is_runtime_opaque_struct(name: String) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

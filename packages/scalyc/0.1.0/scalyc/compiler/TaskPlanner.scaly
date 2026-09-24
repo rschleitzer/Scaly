@@ -1144,69 +1144,24 @@ define TaskPlanner
         {
             if name.starts_with("scaly_atomic_")
                 return true
-            if name = "aligned_alloc"
-                return true
-            if name = "malloc"
-                return true
-            if name = "calloc"
-                return true
-            if name = "realloc"
-                return true
-            if name = "free"
-                return true
-            if name = "memcpy"
-                return true
-            if name = "memmove"
-                return true
-            if name = "memset"
-                return true
-            if name = "memcmp"
-                return true
-            if name = "strlen"
-                return true
-            if name = "strcmp"
-                return true
-            if name = "strncmp"
-                return true
             match name
+                case "aligned_alloc" case "malloc" case "calloc" case "realloc" case "free" case "memcpy": return true
+                case "memmove" case "memset" case "memcmp" case "strlen" case "strcmp" case "strncmp": return true
                 case "strdup" case "exit" case "scaly_eputs" case "scaly_eputi" case "scaly_eputnl": return true
             ; libm scalar math (5.1 op kernels: softmax/GELU/layernorm).
             ; Pure value→value; errno is thread-local, so concurrent calls
             ; cannot race.
-            if name = "expf"
-                return true
-            if name = "exp"
-                return true
-            if name = "tanhf"
-                return true
-            if name = "tanh"
-                return true
-            if name = "sqrtf"
-                return true
-            if name = "sqrt"
-                return true
             match name
+                case "expf" case "exp" case "tanhf" case "tanh" case "sqrtf" case "sqrt": return true
                 case "logf" case "log" case "powf" case "pow" case "fabsf" case "fabs": return true
             false
         }
 
         function global_is_sanctioned(this: TaskPlanner, name: String) returns bool
         {
-            if name = "heap_head"
-                return true
-            if name = "stack_head"
-                return true
-            if name = "stack_top"
-                return true
-            if name = "dead_buckets_reclaimed"
-                return true
-            if name = "trace_enabled"
-                return true
-            if name = "trace_atexit_registered"
-                return true
-            if name = "trace_count"
-                return true
             match name
+                case "heap_head" case "stack_head" case "stack_top" case "dead_buckets_reclaimed": return true
+                case "trace_enabled" case "trace_atexit_registered" case "trace_count": return true
                 case "trace_entries" case "fmt_scratch" case "heap_trace_state" case "heap_trace": return true
             false
         }

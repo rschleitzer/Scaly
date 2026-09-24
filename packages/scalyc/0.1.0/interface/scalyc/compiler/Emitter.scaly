@@ -9420,9 +9420,6 @@ define Emitter
 
 
 
-
-
-
         ; A slot the walker fixes in place: pointer, ref, or an NPO Option
         ; (a bare nullable pointer at the LLVM level).
         function region_is_ptr_slot(this, ft: PlannedType) @ret_nonlocal true @deep true returns bool linked

@@ -1356,24 +1356,6 @@ define WriteCensus
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         ; The parameter bit of a name, or a local's inherited mask.
         function name_mask(this: WriteCensus, name: String) @deep true returns u64 linked
 
@@ -4205,89 +4187,7 @@ define WriteCensus
 
 
 
-
-
-
-
         function extern_computes(name: String) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -16,7 +16,9 @@ Two shapes:
                      stmt
 
   M  a run of `if x = LIT` / `return true` over one plain name, three or
-     more: a `match` (cases wrapped at --max, a branch per line)
+     more: a `match` (cases wrapped at --max, a branch per line, spread
+     evenly); `if x = A or x = B` lines and `match x` blocks whose branches
+     all `return true` join the same run, so a run is ONE `match`
 
   B  a run of `if X` / `return true` at one indent
          if c1                     if c1 or c2
@@ -218,18 +220,120 @@ def fold_match(lines, i, max_len):
         return None                       # two cases read fine as `or`
     if j < len(lines) and lines[j].strip().startswith('else') and ind(lines[j]) == base:
         return None
-    out = [' ' * base + 'match ' + subject]
-    pad = ' ' * (base + 4)
-    line = ''
-    for lit in lits:
-        cand = (line + ' ' if line else '') + 'case ' + lit
-        if line and len(pad + cand + ': return true') > max_len:
-            out.append(pad + line + ': return true')
-            line = 'case ' + lit
-        else:
-            line = cand
-    out.append(pad + line + ': return true')
-    return out, j - i
+    return [' ' * base + 'match ' + subject] + wrap_cases(' ' * (base + 4), lits, max_len), j - i
+
+
+def wrap_cases(pad, lits, max_len):
+    """Branches of `case ...: return true`, as few as fit --max, the cases
+    spread evenly over them (the narrowest width that needs no more lines)."""
+    def greedy(width):
+        rows, line = [], ''
+        for lit in lits:
+            cand = (line + ' ' if line else '') + 'case ' + lit
+            if line and len(pad + cand + ': return true') > width:
+                rows.append(line)
+                line = 'case ' + lit
+            else:
+                line = cand
+        rows.append(line)
+        return rows
+    n = len(greedy(max_len))
+    width = max_len
+    while width > 0 and len(greedy(width - 1)) == n:
+        width -= 1
+    return [pad + r + ': return true' for r in greedy(width)]
+
+
+CASE_LINE = re.compile(r'((case\s+' + MATCH_LIT + r')\s*)+: return true')
+
+
+def subject_lits(cond):
+    """`x = A` or `x = A or x = B ...` over one plain name: (x, [A, B, ...])."""
+    subject, lits = None, []
+    for part in cond.split(' or '):
+        m = re.fullmatch(r'([a-z][A-Za-z0-9_]*) = ' + MATCH_LIT, part)
+        if not m or (subject is not None and m.group(1) != subject):
+            return None
+        subject = m.group(1)
+        lits.append(part[len(subject) + 3:])
+    return subject, lits
+
+
+def case_lits(line):
+    """The literals of a `case A case B: return true` line."""
+    body = line.strip()[:-len(': return true')]
+    return [m.group(1) for m in re.finditer(r'case\s+' + MATCH_LIT, body)]
+
+
+def fold_subject_run(lines, i, max_len):
+    """Shape M over a whole run at one indent: `if x = A` / `return true`,
+    `if x = B or x = C` / `return true` and `match x` blocks whose branches
+    all `return true`, over ONE plain name, become ONE `match` (a first pass
+    left runs split where a line grew past --max, and a second one would put
+    two `match x` side by side)."""
+    base = ind(lines[i])
+    subject, lits, items, has_match, j = None, [], 0, False, i
+    while j < len(lines) and ind(lines[j]) == base and lines[j].strip():
+        s = lines[j].strip()
+        c = cond_of(lines[j])
+        if c is not None:
+            sl = subject_lits(c)
+            if not sl or (subject is not None and sl[0] != subject):
+                break
+            if j + 1 >= len(lines) or lines[j + 1].strip() != 'return true' or ind(lines[j + 1]) != base + 4:
+                break
+            subject = sl[0]
+            lits += sl[1]
+            items += 1
+            j += 2
+            continue
+        m = re.fullmatch(r'match ([a-z][A-Za-z0-9_]*)', s)
+        if m and (subject is None or m.group(1) == subject):
+            k = j + 1
+            got = []
+            while k < len(lines) and lines[k].strip() and ind(lines[k]) > base:
+                if ind(lines[k]) != base + 4 or not CASE_LINE.fullmatch(lines[k].strip()):
+                    got = None
+                    break
+                got += case_lits(lines[k])
+                k += 1
+            if not got:
+                break
+            subject = m.group(1)
+            lits += got
+            items += 1
+            has_match = True
+            j = k
+            continue
+        break
+    if items < 2 or len(lits) < 3:
+        return None
+    # an `else` after the run would bind to its last `if` -- or, after a
+    # `match`, become the match's own `else`
+    if j < len(lines) and lines[j].strip().startswith('else'):
+        return None
+    return [' ' * base + 'match ' + subject] + wrap_cases(' ' * (base + 4), lits, max_len), j - i
+
+
+def wrap_cases(pad, lits, max_len):
+    """Branches of `case ...: return true`, as few as fit --max, the cases
+    spread evenly over them (the narrowest width that needs no more lines)."""
+    def greedy(width):
+        rows, line = [], ''
+        for lit in lits:
+            cand = (line + ' ' if line else '') + 'case ' + lit
+            if line and len(pad + cand + ': return true') > width:
+                rows.append(line)
+                line = 'case ' + lit
+            else:
+                line = cand
+        rows.append(line)
+        return rows
+    n = len(greedy(max_len))
+    width = max_len
+    while width > 0 and len(greedy(width - 1)) == n:
+        width -= 1
+    return [pad + r + ': return true' for r in greedy(width)]
 
 
 def fold_match_or(lines, i, max_len):
@@ -284,6 +388,10 @@ def process(path, apply, max_len, shapes):
         return 0, 0
     out, i, n_and, n_or = [], 0, 0, 0
     while i < len(lines):
+        r = fold_subject_run(lines, i, max_len) if 'match' in shapes else None
+        if r:
+            out.extend(r[0]); i += r[1]; n_or += 1
+            continue
         r = fold_match_or(lines, i, max_len) if 'match' in shapes else None
         if r:
             out.extend(r[0]); i += r[1]; n_or += 1

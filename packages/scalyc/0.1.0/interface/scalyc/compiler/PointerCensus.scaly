@@ -1686,11 +1686,6 @@ define PointerCensus
 
 
 
-
-
-
-
-
         function item_is_integer(it: PlannedItem) @ret_nonlocal true @deep true returns bool linked
 
 
@@ -1818,11 +1813,6 @@ define PointerCensus
 
 
         function is_alloc_name(n: String) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
 
 
 

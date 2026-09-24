@@ -1680,14 +1680,9 @@ define PointerCensus
         function is_integer_type(t: PlannedType) returns bool
         {
             let n t.name
-            if n = "int"
-                return true
-            if n = "uint"
-                return true
-            if n = "size_t"
-                return true
             match n
-                case "i8" case "i16" case "i32" case "i64" case "u8" case "u16" case "u32" case "u64": return true
+                case "int" case "uint" case "size_t" case "i8" case "i16": return true
+                case "i32" case "i64" case "u8" case "u16" case "u32" case "u64": return true
             false
         }
 
@@ -1819,14 +1814,9 @@ define PointerCensus
 
         function is_alloc_name(n: String) returns bool
         {
-            if n = "allocate"
-                return true
-            if n = "allocate_oversized"
-                return true
-            if n = "malloc"
-                return true
             match n
-                case "calloc" case "realloc" case "aligned_alloc" case "scaly_aligned_alloc" case "mmap": return true
+                case "allocate" case "allocate_oversized" case "malloc" case "calloc": return true
+                case "realloc" case "aligned_alloc" case "scaly_aligned_alloc" case "mmap": return true
             false
         }
 
