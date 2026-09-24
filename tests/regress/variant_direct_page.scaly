@@ -1,0 +1,66 @@
+; Regression (2026-09-24): the DIRECT form `&Union.Variant^host(...)` at a
+; return and at a store. It was refused ("reference into a local page escapes")
+; where `&Concept^host()` passes: operand_addr_is_frame_local# counted every
+; variant construction as a frame temporary. A `^name` life is the one the
+; emitter honors for a variant, so only that one passes now; the unsigiled and
+; the `#` form stay refused (tests/escape/neg_variant_temporary_nosig.scaly).
+; Three records built by separate calls and read back after the last, and the
+; page each sits on checked, as in variant_page_sigil.scaly.
+; Expected: PASS
+use scaly.memory.Page
+
+define Payload (v: int)
+
+define Thing union
+(
+    Alpha: Payload
+    Beta: int
+)
+
+define Holder (var slot: ref[Thing]?)
+
+function make(host: ref[Page], x: int) returns ref[Thing]
+    &Thing.Beta^host(x)
+
+function make_alpha(host: ref[Page], x: int) returns ref[Thing]
+{
+    return &Thing.Alpha^host(Payload(x))
+}
+
+procedure fill(mutable h: ref[Holder], host: ref[Page], x: int)
+{
+    set h.slot: &Thing.Beta^host(x)
+}
+
+function value_of(t: ref[Thing]) returns int
+{
+    choose t
+        when a: Payload
+            return a.v
+        when b: int
+            return b
+    0
+}
+
+let rp Page.allocate_root_page()
+let host rp as ref[Page]
+
+let one make(host, 1)
+let two make_alpha(host, 2)
+let h Holder^host(null)
+fill(&h, host, 3)
+
+var ok true
+if value_of(one) <> 1 or value_of(two) <> 2
+    set ok: false
+let s h.slot
+if s = null
+    set ok: false
+else if value_of(s as ref[Thing]) <> 3
+    set ok: false
+if (Page.get(one) as size_t) <> (rp as size_t)
+    set ok: false
+if ok
+    print "PASS"
+else
+    print "FAIL"

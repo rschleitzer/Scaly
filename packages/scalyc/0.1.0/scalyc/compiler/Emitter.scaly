@@ -10733,105 +10733,37 @@ define Emitter
                                                                             set current_ptr: LLVMBuildLoad2(builder, LLVMPointerTypeInContext(context, 0), current_ptr, "base.deref")
                                                                     }
                                                                 }
-                                                                var chain_ok: bool true
-                                                                var last_field_is_ptr: bool false
-                                                                var last_field_ty: LLVMTypeRef null
-                                                                var ci: size_t 0
-                                                                while ci < chain.length
+                                                                let in_place this.inplace_chain_ptr(chain, current_ptr, current_struct_ty)
+                                                                if in_place <> null
                                                                 {
-                                                                    let acc_ptr chain.get ci
-                                                                    if acc_ptr <> null
-                                                                    {
-                                                                        ; s120: bail when the next step's parent
-                                                                        ; struct type collapsed to opaque `ptr` —
-                                                                        ; stage-1's map_type fallback for
-                                                                        ; unresolved generics (e.g.
-                                                                        ; Array[KeyValuePair[String, LocalBinding]])
-                                                                        ; returns ptr, and LLVMBuildStructGEP2 with
-                                                                        ; that source type emits
-                                                                        ; `getelementptr inbounds ptr, ptr X, i32 0, i32 N`
-                                                                        ; which llc rejects with "invalid
-                                                                        ; getelementptr indices". Symptom: re-
-                                                                        ; including Planner in safe-walk crashes
-                                                                        ; -c at push_scope's
-                                                                        ; `scope_boundaries.add(scope_bindings.length)`.
-                                                                        if LLVMGetTypeKind(current_struct_ty) <> LLVMTypeKind.Struct()
-                                                                            set chain_ok: false
-                                                                        if chain_ok
-                                                                        {
-                                                                            let acc (*acc_ptr)
-                                                                            ; s122: remember whether the field's
-                                                                            ; IR slot is `ptr` (heap-stored, e.g.
-                                                                            ; stage-1's `Array[T]^this()` fields)
-                                                                            ; vs. an inline struct (e.g.
-                                                                            ; `Parser.lexer: Lexer`). Drives the
-                                                                            ; post-loop deref-load decision.
-                                                                            let field_ir_ty LLVMStructGetTypeAtIndex(current_struct_ty, acc.field_index as int)
-                                                                            set last_field_is_ptr: LLVMGetTypeKind(field_ir_ty) = LLVMTypeKind.Pointer()
-                                                                            set last_field_ty: field_ir_ty
-                                                                            set current_ptr: LLVMBuildStructGEP2(builder, current_struct_ty, current_ptr, acc.field_index as u32, "field.inplace")
-                                                                            if ci + 1 < chain.length
-                                                                            {
-                                                                                set current_struct_ty: map_type(acc.result_type)
-                                                                                ; A middle hop through a `ref`/`pointer`
-                                                                                ; FIELD: load the reference and go on in
-                                                                                ; its pointee. Without this the next hop
-                                                                                ; saw `ptr`, the chain bailed (s120) and
-                                                                                ; `x.inner.arr.add(v)` ran on a COPY of
-                                                                                ; the record, rc 0 — the change lost, and
-                                                                                ; the copy's Page.get(this) a stack
-                                                                                ; address (2026-09-24).
-                                                                                if LLVMGetTypeKind(field_ir_ty) = LLVMTypeKind.Pointer()
-                                                                                {
-                                                                                    let ref_pointee this.reference_pointee_struct(acc.result_type)
-                                                                                    if ref_pointee <> null
-                                                                                    {
-                                                                                        set current_ptr: LLVMBuildLoad2(builder, LLVMPointerTypeInContext(context, 0), current_ptr, "field.ref")
-                                                                                        set current_struct_ty: ref_pointee
-                                                                                    }
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                    set ci: ci + 1
-                                                                }
-                                                                if chain_ok
-                                                                {
-                                                                    ; s122: load through if the final field's
-                                                                    ; IR slot is `ptr`. Otherwise the callee
-                                                                    ; receives `&slot_addr` and reads garbage
-                                                                    ; when treating it as the struct start —
-                                                                    ; breaks every method receiver whose field
-                                                                    ; is heap-stored (`Array[T]^this()`,
-                                                                    ; `Vector[T]^this()`, etc.) or genuinely
-                                                                    ; `pointer[T]`/`ref[T]`. Inline-struct
-                                                                    ; fields (e.g. `Parser.lexer`) keep the
-                                                                    ; pre-s122 behavior (pass slot ptr = struct
-                                                                    ; start). Mirrors C++ stage-0's reliance on
-                                                                    ; inline struct storage at Emitter.cpp:3984.
-                                                                    if last_field_is_ptr
-                                                                        set current_ptr: LLVMBuildLoad2(builder, LLVMPointerTypeInContext(context, 0), current_ptr, "deref.recv")
-                                                                    ; s169: inline scalar final field (e.g. an Array's
-                                                                    ; i64 `length`) passed to a by-value scalar param
-                                                                    ; (`size_t`) — load the value, don't pass the
-                                                                    ; field address. Without this, the in-place GEP
-                                                                    ; ptr (a constant `this+offset`) is reinterpreted
-                                                                    ; by the callee as the i64 value, corrupting it.
-                                                                    ; Symptom: `scope_boundaries.add(scope_bindings.length)`
-                                                                    ; pushed `&scope_bindings.length`; pop_scope read it
-                                                                    ; back into scope_bindings.length → self-referential
-                                                                    ; corruption → SEGV in lookup_local_binding. Struct
-                                                                    ; final fields keep the pre-s169 in-place-ptr path
-                                                                    ; (real receiver, by-ptr ABI).
-                                                                    if last_field_is_ptr = false
-                                                                    {
-                                                                        if LLVMGetTypeKind(last_field_ty) <> LLVMTypeKind.Struct()
-                                                                            set current_ptr: LLVMBuildLoad2(builder, last_field_ty, current_ptr, "field.val")
-                                                                    }
-                                                                    set arg_value: current_ptr
+                                                                    set arg_value: in_place
                                                                     set direct_alloca: true
                                                                 }
                                                             }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            when g: GlobalRef
+                                            {
+                                                ; A pointer/ref global is loaded to its pointee, a by-value
+                                                ; struct global is its own base.
+                                                let gv LLVMGetNamedGlobal(llvm_module, g.mangled_name.c_data())
+                                                let first_g chain.get 0
+                                                if gv <> null and first_g <> null
+                                                {
+                                                    let g_struct_ty map_type((*first_g).parent_type)
+                                                    if LLVMGetTypeKind(g_struct_ty) = LLVMTypeKind.Struct()
+                                                    {
+                                                        var g_base gv
+                                                        let gv_ty LLVMGlobalGetValueType(gv)
+                                                        if LLVMGetTypeKind(gv_ty) = LLVMTypeKind.Pointer()
+                                                            set g_base: LLVMBuildLoad2(builder, gv_ty, gv, "global.base")
+                                                        let g_in_place this.inplace_chain_ptr(chain, g_base, g_struct_ty)
+                                                        if g_in_place <> null
+                                                        {
+                                                            set arg_value: g_in_place
+                                                            set direct_alloca: true
                                                         }
                                                     }
                                                 }
@@ -19047,6 +18979,115 @@ define Emitter
         ; + GEP-chain walk). Factored out of emit_member_assignment so the
         ; in-place field construction path (emit_in_place_field_ctor) can compute
         ; the destination without emitting a store.
+        ; inplace_chain_ptr#: the address of the field a receiver chain names,
+        ; GEP'd in place from `base` (whose struct type is `struct_ty`), or null
+        ; when a hop cannot be walked. Shared by the Variable base (s102) and
+        ; the GlobalRef base (`gp.inner.inc(10)` on a pointer global ran on a
+        ; COPY of `inner` before 2026-09-24).
+        procedure inplace_chain_ptr(mutable this, chain: Vector[PlannedMemberAccess], mutable base: LLVMValueRef, mutable struct_ty: LLVMTypeRef) returns LLVMValueRef
+        {
+            var current_ptr base
+            var current_struct_ty struct_ty
+            var chain_ok: bool true
+            var last_field_is_ptr: bool false
+            var last_field_ty: LLVMTypeRef null
+            var ci: size_t 0
+            while ci < chain.length
+            {
+                let acc_ptr chain.get ci
+                if acc_ptr <> null
+                {
+                    ; s120: bail when the next step's parent
+                    ; struct type collapsed to opaque `ptr` —
+                    ; stage-1's map_type fallback for
+                    ; unresolved generics (e.g.
+                    ; Array[KeyValuePair[String, LocalBinding]])
+                    ; returns ptr, and LLVMBuildStructGEP2 with
+                    ; that source type emits
+                    ; `getelementptr inbounds ptr, ptr X, i32 0, i32 N`
+                    ; which llc rejects with "invalid
+                    ; getelementptr indices". Symptom: re-
+                    ; including Planner in safe-walk crashes
+                    ; -c at push_scope's
+                    ; `scope_boundaries.add(scope_bindings.length)`.
+                    if LLVMGetTypeKind(current_struct_ty) <> LLVMTypeKind.Struct()
+                        set chain_ok: false
+                    if chain_ok
+                    {
+                        let acc (*acc_ptr)
+                        ; s122: remember whether the field's
+                        ; IR slot is `ptr` (heap-stored, e.g.
+                        ; stage-1's `Array[T]^this()` fields)
+                        ; vs. an inline struct (e.g.
+                        ; `Parser.lexer: Lexer`). Drives the
+                        ; post-loop deref-load decision.
+                        let field_ir_ty LLVMStructGetTypeAtIndex(current_struct_ty, acc.field_index as int)
+                        set last_field_is_ptr: LLVMGetTypeKind(field_ir_ty) = LLVMTypeKind.Pointer()
+                        set last_field_ty: field_ir_ty
+                        set current_ptr: LLVMBuildStructGEP2(builder, current_struct_ty, current_ptr, acc.field_index as u32, "field.inplace")
+                        if ci + 1 < chain.length
+                        {
+                            set current_struct_ty: map_type(acc.result_type)
+                            ; A middle hop through a `ref`/`pointer`
+                            ; FIELD: load the reference and go on in
+                            ; its pointee. Without this the next hop
+                            ; saw `ptr`, the chain bailed (s120) and
+                            ; `x.inner.arr.add(v)` ran on a COPY of
+                            ; the record, rc 0 — the change lost, and
+                            ; the copy's Page.get(this) a stack
+                            ; address (2026-09-24).
+                            if LLVMGetTypeKind(field_ir_ty) = LLVMTypeKind.Pointer()
+                            {
+                                let ref_pointee this.reference_pointee_struct(acc.result_type)
+                                if ref_pointee <> null
+                                {
+                                    set current_ptr: LLVMBuildLoad2(builder, LLVMPointerTypeInContext(context, 0), current_ptr, "field.ref")
+                                    set current_struct_ty: ref_pointee
+                                }
+                            }
+                        }
+                    }
+                }
+                set ci: ci + 1
+            }
+            if chain_ok
+            {
+                ; s122: load through if the final field's
+                ; IR slot is `ptr`. Otherwise the callee
+                ; receives `&slot_addr` and reads garbage
+                ; when treating it as the struct start —
+                ; breaks every method receiver whose field
+                ; is heap-stored (`Array[T]^this()`,
+                ; `Vector[T]^this()`, etc.) or genuinely
+                ; `pointer[T]`/`ref[T]`. Inline-struct
+                ; fields (e.g. `Parser.lexer`) keep the
+                ; pre-s122 behavior (pass slot ptr = struct
+                ; start). Mirrors C++ stage-0's reliance on
+                ; inline struct storage at Emitter.cpp:3984.
+                if last_field_is_ptr
+                    set current_ptr: LLVMBuildLoad2(builder, LLVMPointerTypeInContext(context, 0), current_ptr, "deref.recv")
+                ; s169: inline scalar final field (e.g. an Array's
+                ; i64 `length`) passed to a by-value scalar param
+                ; (`size_t`) — load the value, don't pass the
+                ; field address. Without this, the in-place GEP
+                ; ptr (a constant `this+offset`) is reinterpreted
+                ; by the callee as the i64 value, corrupting it.
+                ; Symptom: `scope_boundaries.add(scope_bindings.length)`
+                ; pushed `&scope_bindings.length`; pop_scope read it
+                ; back into scope_bindings.length → self-referential
+                ; corruption → SEGV in lookup_local_binding. Struct
+                ; final fields keep the pre-s169 in-place-ptr path
+                ; (real receiver, by-ptr ABI).
+                if last_field_is_ptr = false
+                {
+                    if LLVMGetTypeKind(last_field_ty) <> LLVMTypeKind.Struct()
+                        set current_ptr: LLVMBuildLoad2(builder, last_field_ty, current_ptr, "field.val")
+                }
+                return current_ptr
+            }
+            null
+        }
+
         ; reference_pointee_struct#: the LLVM struct a `ref[T]`/`pointer[T]`
         ; points at, or null when `t` is no such reference or T is no laid-out
         ; record.

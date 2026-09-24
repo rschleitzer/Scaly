@@ -20376,8 +20376,14 @@ define Planner
                     ; the operand fell through to a dotted Type and the
                     ; enclosing statement was DROPPED SILENTLY (the
                     ; heap_head.prev list-integrity stores never emitted).
-                    ; Method hops and unresolvable fields keep the
-                    ; fall-through (no instance dispatch on globals).
+                    ; A chain ENDING in a method hop (`es_prim.add(x)`,
+                    ; `gb.inner.inc()`) returns the GlobalRef with the full
+                    ; chain, exactly as the local-binding branch does, and
+                    ; the s83 method-on-chain dispatch in
+                    ; collapse_operand_sequence# truncates it to the
+                    ; receiver (2026-09-24; before, the call fell through to
+                    ; a dotted Type and was `function not found: gb.inc`).
+                    ; Unresolvable fields keep the fall-through.
                     let g_dot this.lookup_global(first_name)
                     if g_dot <> null
                     {
@@ -20453,6 +20459,25 @@ define Planner
                                         )),
                                         &gaccess_holder,
                                         gfinal_type
+                                    )
+                                }
+                            }
+                            if g_has_method and gchain.length > 0
+                            {
+                                let gm_last gchain.get(gchain.length - 1)
+                                if gm_last <> null and (*gm_last).is_method
+                                {
+                                    var gm_holder Vector[PlannedMemberAccess](gchain)
+                                    return PlannedOperand(
+                                        loc,
+                                        PlannedExpression.GlobalRef(PlannedGlobalRef(
+                                            loc,
+                                            gg.name,
+                                            gg.mangled_name,
+                                            gg.global_type
+                                        )),
+                                        &gm_holder,
+                                        (*gm_last).result_type
                                     )
                                 }
                             }
@@ -28520,8 +28545,22 @@ define Planner
                 }
                 when vc: VariantConstruction
                 {
+                    ; `&Union.Variant^host(...)` lives on host's page -- the
+                    ; emitter honors a `^name` (Reference) life for a variant
+                    ; and nothing else (region_alloc_life#), so only that one
+                    ; is not a frame temporary. Before 2026-09-24 every
+                    ; variant counted as frame, and the direct form was
+                    ; refused at a return or a store where `&Concept^host()`
+                    ; passes.
                     if op.member_access = null
+                    {
                         set result: true
+                        choose vc.union_type.life
+                            when rf: Reference
+                                set result: false
+                            else
+                                0
+                    }
                 }
                 else
                     0
@@ -45467,22 +45506,31 @@ define Planner
             ; Array[T], i)`) come through plan_items already; mangle_operator
             ; skips the leading "this" item by name either way, so mangled
             ; names are unchanged.
+            ; A BARE leading `this` (`operator ==(this, other: T)`, the
+            ; spelling every function and procedure uses) carries no type:
+            ; it IS the implicit receiver, and is dropped for the typed one
+            ; below. Before 2026-09-24 it counted as an explicit declaration,
+            ; so no receiver was bound and the body failed on `this` and on
+            ; every bare field.
             var oi_arr Array[PlannedItem]()
             var needs_this: bool false
+            var skip_first: bool false
             if parent <> null
                 set needs_this: true
-            if needs_this
+            if needs_this and planned_input.length > 0
             {
-                if planned_input.length > 0
+                let fi_ptr planned_input.get 0
+                if fi_ptr <> null
                 {
-                    let fi_ptr planned_input.get 0
-                    if fi_ptr <> null
+                    let fi (*fi_ptr)
+                    if fi.name <> null
                     {
-                        let fi (*fi_ptr)
-                        if fi.name <> null
+                        let fin (*fi.name)
+                        if fin = "this"
                         {
-                            let fin (*fi.name)
-                            if fin = "this"
+                            if fi.item_type = null
+                                set skip_first: true
+                            else
                                 set needs_this: false
                         }
                     }
@@ -45496,6 +45544,8 @@ define Planner
                 oi_arr.add(PlannedItem(op.span, false, tn_holder.get(0), &^this pt, null))
             }
             var pii: size_t 0
+            if skip_first
+                set pii: 1
             while pii < planned_input.length
             {
                 let ip planned_input.get pii

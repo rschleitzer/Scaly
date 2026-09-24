@@ -1,0 +1,16 @@
+; ESCAPE (negative, NO-SIGIL and `#`): the address of a VARIANT construction
+; that names no page is a frame temporary -- the emitter builds a variant on a
+; page only for a `^name` sigil (region_alloc_life#), so `#` does not lift it
+; either. Both returns must stay REJECTED now that `&Union.Variant^host(...)`
+; passes (Planner.operand_addr_is_frame_local#, 2026-09-24).
+define Thing union
+(
+    Alpha: int
+    Beta: int
+)
+
+function leak() returns ref[Thing]
+    &Thing.Beta(5)
+
+function leak_caller() returns ref[Thing]
+    &Thing.Beta#(5)

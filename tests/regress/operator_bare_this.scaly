@@ -1,0 +1,40 @@
+; Regression (2026-09-24): a BARE `this` leading an operator's parameter list
+; (`operator ==(this, other: T)`, the spelling every function and procedure
+; uses) was taken for an explicit receiver declaration, so no receiver was
+; bound: the body failed on `this` and on every bare field ("unknown
+; identifier: a", reported inside the body, never at the declaration). It is
+; the implicit receiver now (Planner.plan_operator#). A typed explicit `this`
+; (`operator [](this: Array[T], i)`) is unchanged. Three shapes: a generic
+; binary operator, a subscript, an operator constructing its own type.
+; Expected: PASS
+define Pair[T] (a: T, b: T)
+{
+    operator ==(this, other: Pair[T]) returns bool
+        a = other.a and this.b = other.b
+}
+
+define Row (n: int, base: int)
+{
+    operator [](this, i: int) returns int
+    {
+        if i >= n
+            return 0 - 1
+        base + i
+    }
+}
+
+define Cnt (k: int)
+{
+    operator +(this, d: int) returns Cnt
+        Cnt(k + d)
+}
+
+let p Pair[int](1, 2)
+let q Pair[int](1, 3)
+let r Pair[int](1, 2)
+let x Row(3, 100)
+let c Cnt(5) + 4
+if p == q = false and p == r and x[2] = 102 and x[5] = 0 - 1 and c.k = 9
+    print "PASS"
+else
+    print "FAIL"

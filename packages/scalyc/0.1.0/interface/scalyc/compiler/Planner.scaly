@@ -20548,6 +20548,31 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         ; ================================================================
         ; Control-flow planners.
         ; ================================================================
@@ -28483,6 +28508,20 @@ define Planner
         ; flagged — binding_is_frame_local's {Unspecified,Local} gate excludes
         ; Reference life; deferred to a later soundness step.
         function operand_addr_is_frame_local(this: Planner, op: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -45433,6 +45472,17 @@ define Planner
             mutable op: Operator,
             parent: ref[PlannedType]?
         ) @page true @direct true @deep true @deep_this_6 true returns PlannedOperator io linked
+
+
+
+
+
+
+
+
+
+
+
 
 
 

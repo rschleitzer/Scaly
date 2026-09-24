@@ -1,0 +1,56 @@
+; Regression (2026-09-24): a METHOD called through a mutable module global.
+; `gp.inc()` / `ga.add(7)` were `function not found: gp.inc` -- the global's
+; member branch in the planner resolved field chains only and let a method
+; hop fall through to a dotted Type (Planner, "First segment names a MUTABLE
+; module global"). It hands the chain to the method-on-chain dispatch now,
+; as the local-binding branch does. The emitter half: a FIELD hop before the
+; method (`gp.inner.inc(10)`) ran on a COPY of `inner` -- the in-place
+; receiver GEP (s102) knew a Variable base only (Emitter.inplace_chain_ptr#).
+; Shapes: a `ref[T]?` global, a `pointer[T]` global, a field hop, a reading
+; method, a stdlib container behind a `shared` global.
+; Expected: PASS
+define Inner (var v: int)
+{
+    procedure inc(mutable this, by: int) { set this.v: this.v + by }
+    function get(this) returns int
+        v
+}
+
+define Box (var n: int, var inner: Inner)
+{
+    procedure inc(mutable this) { set this.n: this.n + 1 }
+    function twice(this) returns int
+        n * 2
+}
+
+mutable gb: ref[Box]? null
+mutable gp: pointer[Box] null
+shared ga: pointer[Array[int]] null
+
+procedure bump() mutable gb, gp
+{
+    gb.inc()
+    gp.inc()
+    gp.inner.inc(10)
+}
+
+procedure run() mutable gb, gp, ga
+{
+    let host Page.allocate_page()
+    let b Box^host(1, Inner(5))
+    set gb: &b
+    set gp: &b as pointer[Box]
+    bump()
+    let t gp.twice()
+    let g gp.inner.get()
+    let arr Array[int]^host()
+    set ga: &arr as pointer[Array[int]]
+    ga.add(7)
+    ga.add(8)
+    if b.n = 3 and t = 6 and g = 15 and b.inner.v = 15 and arr.length = 2 and arr[1] = 8
+        print "PASS"
+    else
+        print "FAIL"
+}
+
+run()

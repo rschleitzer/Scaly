@@ -11139,74 +11139,6 @@ define Emitter
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         ; ========================================================================
         ; Intrinsic Operator Emission
         ; ========================================================================
@@ -19047,6 +18979,115 @@ define Emitter
         ; + GEP-chain walk). Factored out of emit_member_assignment so the
         ; in-place field construction path (emit_in_place_field_ctor) can compute
         ; the destination without emitting a store.
+        ; inplace_chain_ptr#: the address of the field a receiver chain names,
+        ; GEP'd in place from `base` (whose struct type is `struct_ty`), or null
+        ; when a hop cannot be walked. Shared by the Variable base (s102) and
+        ; the GlobalRef base (`gp.inner.inc(10)` on a pointer global ran on a
+        ; COPY of `inner` before 2026-09-24).
+        procedure inplace_chain_ptr(mutable this, chain: Vector[PlannedMemberAccess], mutable base: LLVMValueRef, mutable struct_ty: LLVMTypeRef) @direct true @deep true returns LLVMValueRef linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         ; reference_pointee_struct#: the LLVM struct a `ref[T]`/`pointer[T]`
         ; points at, or null when `t` is no such reference or T is no laid-out
         ; record.
