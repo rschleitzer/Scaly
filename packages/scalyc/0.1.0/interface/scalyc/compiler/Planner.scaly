@@ -6715,6 +6715,66 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; check_initializer_option_match#: the compatible match, except that an
+        ; Option around a reference also matches a `ref` parameter of the same
+        ; pointee -- at least one argument must need it. The argument gate at
+        ; the construction (report_null_into_ref_arg#) then judges the OPERAND:
+        ; a name a null test has proven passes (define_narrowed#), anything
+        ; else is told to unwrap. Before 2026-09-24 the init was refused and a
+        ; guarded `Holder(o)` reported "property n would be left
+        ; uninitialized", the positional-tuple path's message.
+        procedure check_initializer_option_match(
+            mutable this: Planner,
+            mutable ini: Initializer,
+            arg_types: Vector[PlannedType]
+        ) @ret_nonlocal true @deep true @deep_this_2 true returns bool io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         ; get_property_index: position of a named property in the struct.
         ; Returns -1 if the type isn't a struct or the property is missing.
         procedure get_property_index(
@@ -7591,6 +7651,12 @@ define Planner
 
 
 
+
+
+
+
+
+
         ; Phase-5 class 1: a persist into a receiver that is itself a
         ; frame-local, non-escaping binding does not outlive the frame —
         ; receiver and argument share the frame's lifetime, so promoting
@@ -7837,6 +7903,18 @@ define Planner
             char_fold: bool,
             arg_ops: Vector[PlannedOperand]
         ) @page true @direct true @deep true @deep_this_2 true returns ref[MethodMatch]? io linked
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -1,0 +1,97 @@
+; Regression (2026-09-24): a null test narrows a name for a FREE function's
+; `ref` parameter, as it always did for a method's (and_chain_narrowing).
+; `if o = null return 0 / value_of(o)` was `function not found: value_of`:
+; check_function_match# refused an Option against a `ref` while the method path
+; took its one candidate unexamined. The last resolution pass now matches the
+; pair and the argument gate judges the operand -- a proven name passes, an
+; unproven one is told to unwrap (xfail_option_into_free_function). The early
+; return, the guarded branch in both forms, an `and` chain, a program-level
+; guard, an overload pair whose nullable twin must still win, and an `init`
+; parameter (find_initializer#'s last pass; it reported "property n would be
+; left uninitialized", the positional-tuple path's message).
+; Expected: PASS
+define Box (v: int)
+
+function value_of(b: ref[Box]) returns int
+    b.v
+
+function pick(b: ref[Box]) returns int
+    1
+
+function pick(b: ref[Box]?) returns int
+    2
+
+define Holder
+(
+    b: ref[Box]
+    n: int
+)
+{
+    init(b: ref[Box])
+    {
+        set this.b: b
+        set this.n: 1
+    }
+}
+
+function held(o: ref[Box]?) returns int
+{
+    if o = null
+        return 0
+    let h Holder(o)
+    h.b.v + h.n
+}
+
+function early(o: ref[Box]?) returns int
+{
+    if o = null
+        return 0
+    value_of(o)
+}
+
+function branch(o: ref[Box]?) returns int
+{
+    if o <> null
+        return value_of(o)
+    0
+}
+
+function block(o: ref[Box]?) returns int
+{
+    if o <> null
+    {
+        let v value_of(o)
+        return v
+    }
+    0
+}
+
+function chain(o: ref[Box]?, n: int) returns int
+{
+    if n > 0 and o <> null and value_of(o) = 4
+        return 1
+    0
+}
+
+function overload(o: ref[Box]?) returns int
+{
+    if o = null
+        return 0
+    pick(o)
+}
+
+procedure run(host: ref[Page]) returns bool
+{
+    let b Box^host(4)
+    let o: ref[Box]? &b
+    var top 0
+    if o <> null
+        set top: value_of(o)
+    early(o) = 4 and early(null) = 0 and branch(o) = 4 and block(o) = 4 and chain(o, 1) = 1 and chain(null, 1) = 0 and overload(o) = 2 and pick(&b) = 1 and top = 4 and held(o) = 5 and held(null) = 0
+}
+
+let rp Page.allocate_root_page()
+if run(rp as ref[Page])
+    print "PASS"
+else
+    print "FAIL"

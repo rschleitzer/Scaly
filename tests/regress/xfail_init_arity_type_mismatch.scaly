@@ -1,4 +1,10 @@
-; xfail: no matching initializer for Holder with 2 argument(s)
+; xfail: optional reference passed to a non-optional reference parameter: Option[ref[Leaf]]
+;
+; (Since 2026-09-24 the init is FOUND by find_initializer#'s last pass, which
+; lets an Option meet a `ref` parameter, and the argument gate then names the
+; exact defect -- argument 1 of Holder may be nothing. Until then it read "no
+; matching initializer for Holder with 2 argument(s)". Loud either way; the
+; shape this file exists for, the SILENT tuple, stays impossible.)
 ;
 ; Regression: an init of the RIGHT ARITY that matches no argument TYPE used to
 ; fall through to the positional-tuple path silently (2026-08-24).

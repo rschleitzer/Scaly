@@ -6709,10 +6709,70 @@ define Planner
                         }
                     }
 
+                    ; Pass 4: an Option around a reference into a `ref`
+                    ; parameter (check_initializer_option_match#). Last, so
+                    ; no init chosen before can lose to it.
+                    var q: size_t 0
+                    while q < s.initializers.length
+                    {
+                        let init_ptr s.initializers.get q
+                        if init_ptr <> null
+                        {
+                            let ini (*init_ptr)
+                            if this.check_initializer_option_match(ini, arg_types)
+                                return init_ptr
+                        }
+                        set q: q + 1
+                    }
+
                     null
                 }
                 else
                     null
+        }
+
+        ; check_initializer_option_match#: the compatible match, except that an
+        ; Option around a reference also matches a `ref` parameter of the same
+        ; pointee -- at least one argument must need it. The argument gate at
+        ; the construction (report_null_into_ref_arg#) then judges the OPERAND:
+        ; a name a null test has proven passes (define_narrowed#), anything
+        ; else is told to unwrap. Before 2026-09-24 the init was refused and a
+        ; guarded `Holder(o)` reported "property n would be left
+        ; uninitialized", the positional-tuple path's message.
+        procedure check_initializer_option_match(
+            mutable this: Planner,
+            mutable ini: Initializer,
+            arg_types: Vector[PlannedType]
+        ) returns bool
+        {
+            if ini.input.length <> arg_types.length
+                return false
+            var any_option: bool false
+            var j: size_t 0
+            while j < arg_types.length
+            {
+                let p_ptr ini.input.get j
+                let a_ptr arg_types.get j
+                if p_ptr = null or a_ptr = null
+                    return false
+                if p_ptr.type <> null
+                {
+                    let planned_pt this.plan_type((*p_ptr.type))
+                    let arg (*a_ptr)
+                    var ok: bool Planner.types_compatible(planned_pt, arg)
+                    if ok = false
+                        set ok: Planner.region_value_matches_pointer(planned_pt, arg)
+                    if ok = false and Planner.option_arg_into_plain_ref(planned_pt, arg)
+                    {
+                        set ok: true
+                        set any_option: true
+                    }
+                    if ok = false
+                        return false
+                }
+                set j: j + 1
+            }
+            any_option
         }
 
         ; get_property_index: position of a named property in the struct.
@@ -7581,6 +7641,12 @@ define Planner
                                     set ok: true
                                     set any_fold: true
                                 }
+                    ; Option-into-ref fallback (see check_function_match#).
+                    if ok = false and Planner.option_arg_into_plain_ref(planned_p, arg)
+                    {
+                        set ok: true
+                        set any_fold: true
+                    }
                     if ok = false
                         return false
                 }
@@ -7903,6 +7969,18 @@ define Planner
                                 if Planner.type_is_char_slice(planned_p)
                                     if this.arg_is_foldable_char_string(arg_ops, j)
                                         set ok: true
+                    ; Option-into-ref fallback: an Option around a reference
+                    ; matches a `ref` parameter of the same pointee, and the
+                    ; argument gate at the call (report_null_into_ref_arg#)
+                    ; then judges the OPERAND -- a name a null test has proven
+                    ; passes (define_narrowed#), anything else is told to
+                    ; unwrap. Before 2026-09-24 a free function refused the
+                    ; pair here, so `if o = null return 0 / f(o)` was
+                    ; `function not found` where the same call through a
+                    ; method compiled. Last pass only (char_fold), so no
+                    ; overload that matched before can lose to it.
+                    if ok = false and char_fold and Planner.option_arg_into_plain_ref(planned_p, arg)
+                        set ok: true
                     if ok = false
                         return null
                     ; Ensure a by-value cross-package param type's layout so the

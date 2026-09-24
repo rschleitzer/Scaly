@@ -1,0 +1,14 @@
+; Regression (2026-09-24): an Option that NO null test has proven, handed to a
+; free function's `ref` parameter, is told to unwrap -- it used to be the
+; unhelpful `function not found`, and the narrowed form did not compile either
+; (narrowing_free_function.scaly is the positive half).
+; xfail: error: optional reference passed to a non-optional reference parameter
+define Box (v: int)
+
+function value_of(b: ref[Box]) returns int
+    b.v
+
+function unguarded(o: ref[Box]?) returns int
+    value_of(o)
+
+print "x"
