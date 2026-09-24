@@ -15990,6 +15990,23 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         ; check_operator_match: test a single Operator candidate against
         ; argument types. Same shape as check_function_match.
         procedure check_operator_match(
@@ -28596,6 +28613,7 @@ define Planner
         function is_value_scalar_name(name: String) @ret_nonlocal true @deep true returns bool linked
 
 
+        function lifetime_is_thrown(life: Lifetime) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -28604,6 +28622,58 @@ define Planner
 
 
 
+
+        ; marker_has_no_receiver#: the operand before position `mi` is missing
+        ; or an operator -- nothing a lifetime sigil could belong to.
+        function marker_has_no_receiver(this: Planner, ops: Vector[PlannedOperand], mi: size_t) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+        ; is_operator_char#: one of the eleven characters an operator identifier
+        ; consists of (CLAUDE.md, Lexical; the scanner's own class).
+        function is_operator_char(c: char) @ret_nonlocal true @deep true returns bool linked
+
+
+        ; operand_is_operator_name#: an operand that is an operator identifier
+        ; (only the eleven operator characters) or a word operator.
+        function operand_is_operator_name(op: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; report_dropped_thrown_marker#: `!` is the THROWN lifetime sigil
+        ; (`Foo!(...)`, `x.m!(...)`), not negation. In `if !a` it stands alone,
+        ; joins nothing, and the marker pass dropped it: `if !a` ran as `if a`,
+        ; `!a and b` as `a and b`, `!(x = 3)` as `x = 3` -- all at rc 0, while
+        ; CLAUDE.md listed `!` as a synonym of `not` (2026-09-24; nothing in the
+        ; tree spelled it, found while probing `and`-chains). Negation is `not`.
+        procedure report_dropped_thrown_marker(mutable this: Planner, life: Lifetime, at: Span) @ret_nonlocal true @deep true linked
 
 
 
@@ -28619,18 +28689,6 @@ define Planner
         ; The usual source is a subscript on a `pointer[Array[T]]`: pointer
         ; arithmetic at Array stride that yields the Array itself (2026-09-24).
         procedure report_record_scalar_compare(mutable this: Planner, lhs: PlannedType, rhs: PlannedType, op_name: String, at: Span) @deep true linked
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

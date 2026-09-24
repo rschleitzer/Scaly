@@ -10825,6 +10825,16 @@ define Planner
                         ; HashSet nodes once the local page is released.
                         ; Otherwise (no following tuple) drop the marker as
                         ; before.
+                        ; A `!` with nothing before it but an operator (`!(x =
+                        ; 3)`, `b and !(c)`) is a negation attempt, never a
+                        ; method's thrown sigil -- report_dropped_thrown_marker#.
+                        if Planner.lifetime_is_thrown(this_marker_life)
+                            if this.marker_has_no_receiver(ops, mi)
+                            {
+                                this.report_dropped_thrown_marker(this_marker_life, mp_op.loc)
+                                set mi: mi + 1
+                                continue
+                            }
                         if mi + 1 < ops.length
                         {
                             let mtp_ptr ops.get(mi + 1)
@@ -10861,6 +10871,9 @@ define Planner
                                 }
                             }
                         }
+                        ; a marker that joined nothing is DROPPED here --
+                        ; report_dropped_thrown_marker# for the `!` one
+                        this.report_dropped_thrown_marker(this_marker_life, mp_op.loc)
                         set mi: mi + 1
                         continue
                     }
@@ -10898,6 +10911,10 @@ define Planner
 
                             if next_is_marker
                             {
+                                ; `b and !a`: the `!` would attach to the
+                                ; OPERATOR -- report_dropped_thrown_marker#
+                                if Planner.operand_is_operator_name(mp_op)
+                                    this.report_dropped_thrown_marker(marker_life, next_op.loc)
                                 choose mp_op.expr
                                     when prev_ty: PlannedType
                                     {
@@ -28594,22 +28611,75 @@ define Planner
         ; `ref`, which is_primitive_type_name# counts as primitive and which a
         ; record may legitimately be compared with (an identity test).
         function is_value_scalar_name(name: String) returns bool
+            Planner.is_integer_type(name) or name = "bool" or name = "char" or name = "float" or name = "double" or name = "f32" or name = "f64"
+
+        function lifetime_is_thrown(life: Lifetime) returns bool
         {
-            if Planner.is_integer_type(name)
-                return true
-            if name = "bool"
-                return true
-            if name = "char"
-                return true
-            if name = "float"
-                return true
-            if name = "double"
-                return true
-            if name = "f32"
-                return true
-            if name = "f64"
-                return true
+            choose life
+                when t: Thrown
+                    return true
+                else
+                    return false
             false
+        }
+
+        ; marker_has_no_receiver#: the operand before position `mi` is missing
+        ; or an operator -- nothing a lifetime sigil could belong to.
+        function marker_has_no_receiver(this: Planner, ops: Vector[PlannedOperand], mi: size_t) returns bool
+        {
+            if mi = 0
+                return true
+            let pp ops.get(mi - 1)
+            if pp = null
+                return true
+            Planner.operand_is_operator_name((*pp))
+        }
+
+        ; is_operator_char#: one of the eleven characters an operator identifier
+        ; consists of (CLAUDE.md, Lexical; the scanner's own class).
+        function is_operator_char(c: char) returns bool
+            c = "+" as char or c = "-" as char or c = "*" as char or c = "/" as char or c = "=" as char or c = "%" as char or c = "&" as char or c = "|" as char or c = "~" as char or c = "<" as char or c = ">" as char
+
+        ; operand_is_operator_name#: an operand that is an operator identifier
+        ; (only the eleven operator characters) or a word operator.
+        function operand_is_operator_name(op: PlannedOperand) returns bool
+        {
+            choose op.expr
+                when t: PlannedType
+                {
+                    let n t.name
+                    let len n.get_length()
+                    if len = 0
+                        return false
+                    if n = "and" or n = "or" or n = "not" or n = "xor"
+                        return true
+                    var i: size_t 0
+                    while i < len
+                    {
+                        if Planner.is_operator_char(n.get(i)) = false
+                            return false
+                        set i: i + 1
+                    }
+                    return true
+                }
+                else
+                    return false
+            false
+        }
+
+        ; report_dropped_thrown_marker#: `!` is the THROWN lifetime sigil
+        ; (`Foo!(...)`, `x.m!(...)`), not negation. In `if !a` it stands alone,
+        ; joins nothing, and the marker pass dropped it: `if !a` ran as `if a`,
+        ; `!a and b` as `a and b`, `!(x = 3)` as `x = 3` -- all at rc 0, while
+        ; CLAUDE.md listed `!` as a synonym of `not` (2026-09-24; nothing in the
+        ; tree spelled it, found while probing `and`-chains). Negation is `not`.
+        procedure report_dropped_thrown_marker(mutable this: Planner, life: Lifetime, at: Span)
+        {
+            choose life
+                when t: Thrown
+                    this.add_diagnostic(at, "'!' is the thrown-lifetime sigil, not negation - it applies to nothing here and would be dropped; write 'not'")
+                else
+                    0
         }
 
         ; report_record_scalar_compare#: a comparison between a RECORD by
@@ -28620,19 +28690,7 @@ define Planner
         ; arithmetic at Array stride that yields the Array itself (2026-09-24).
         procedure report_record_scalar_compare(mutable this: Planner, lhs: PlannedType, rhs: PlannedType, op_name: String, at: Span)
         {
-            var is_cmp false
-            if op_name = "="
-                set is_cmp: true
-            if op_name = "<>"
-                set is_cmp: true
-            if op_name = "<"
-                set is_cmp: true
-            if op_name = ">"
-                set is_cmp: true
-            if op_name = "<="
-                set is_cmp: true
-            if op_name = ">="
-                set is_cmp: true
+            let is_cmp op_name = "=" or op_name = "<>" or op_name = "<" or op_name = ">" or op_name = "<=" or op_name = ">="
             if is_cmp = false
                 return
             var record: String ""
