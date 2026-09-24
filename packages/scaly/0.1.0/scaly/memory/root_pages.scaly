@@ -30,9 +30,12 @@
 ; take a caller-page parameter) — otherwise we'd recurse back into
 ; Page.allocate_root_page during its own emission and deadlock at runtime.
 
+; Derived from PAGE_SIZE (scaly/memory/Page.scaly), so the page size is ONE
+; number: a hand-written 0x40000 / 0x3FFFF here made every other page size
+; crash in allocate_exclusive_buffer (measured 2026-09-24).
 define BUCKET_PAGES  size_t 64
-define BUCKET_SIZE   size_t 0x40000        ; PAGE_SIZE * BUCKET_PAGES
-define BUCKET_MASK   size_t 0x3FFFF         ; BUCKET_SIZE - 1
+define BUCKET_SIZE   size_t PAGE_SIZE * BUCKET_PAGES
+define BUCKET_MASK   size_t BUCKET_SIZE - 1
 define BITMAP_ALL_FREE u64 0x7FFFFFFFFFFFFFFF  ; bits 0..62 set (page 0 is header)
 
 ; Bucket headers sit at offset 0 of each bucket.

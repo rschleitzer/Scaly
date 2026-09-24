@@ -259,6 +259,313 @@ define Planner
     ; search paths, loaded-package cache, and error accumulator.
     ; ========================================================================
 
+    ; DeepGateState: the deep escape gate (SCALYC_DEEP_GATE): per-function persist masks, the
+    ; gate tables by name and by mangled name, and the indexes over them.
+    ; Held by the Planner behind `gate`; allocated on its page in its init.
+    define DeepGateState
+    @resident true (
+        var deep_persist_mask: u64
+        var deep_this_mask: u64
+        var deep_whole_mask: u64
+        ; positions whose PAGE the body takes (`Page.get(p)`, `^p` on a
+        ; page parameter) to allocate on: the argument must be page-hosted
+        var deep_pageof_mask: u64
+        deep_state_pageof: Array[size_t]
+        deep_gate_pageof: ref[Array[u64]]
+        ; INTO WHICH parameter: slot k (1..15) holds the positions kept in
+        ; parameter k's guts (slot 0 is deep_this_mask); a position 16 or
+        ; beyond counts as beyond. Per body, per name entry and per gate
+        ; entry, sixteen slots each, flattened
+        deep_into_masks: Array[u64]
+        deep_by_name_into: Array[u64]
+        deep_state_into: Array[size_t]
+        deep_state_hasinto: ref[Array[size_t]]
+        deep_gate_into: ref[Array[u64]]
+        deep_by_name_this: Array[u64]
+        deep_by_name_beyond: Array[u64]
+        deep_by_name_whole: Array[u64]
+        deep_by_name_pageof: Array[u64]
+        deep_qualified_all: Array[String]
+        ; the owners of the bodies this root plans; a known owner that is NOT
+        ; among them lives in another package (its body linked)
+        deep_scanned_owners: ref[Array[String]]
+        ; --interface-facts: run the deep pre-pass without judging, so a
+        ; package's interface can state each routine's deep masks (`@deep`)
+        var deep_facts: bool
+        deep_state_this: Array[size_t]
+        deep_state_beyond: Array[size_t]
+        deep_state_whole: Array[size_t]
+        deep_by_name_mask: Array[u64]
+        ; the deep verdicts (host_census#): every planned body is recorded
+        ; under --host-report (deep_fns/deep_mangled) and judged to a
+        ; fixpoint, because the question is TRANSITIVE — a body that hands a
+        ; parameter to a persisting callee persists it too. deep_by_name is
+        ; the persisting callees by plain name, what a Model-level call can
+        ; be matched against; persist_deep_names/vals is the census's lookup
+        ; by mangled name.
+        deep_fns: Array[Function]
+        deep_mangled: Array[String]
+        deep_state: Array[size_t]
+        deep_by_name: Array[String]
+        ; the second verdict: a body whose RETURN carries a parameter (or a
+        ; call result that does) hands the caller a value holding it —
+        ; deep_ret_state per body, deep_returns_by_name for the Model-level
+        ; match; persist_ret_hit is the scan's own flag
+        deep_ret_state: Array[size_t]
+        ; per name in deep_returns_by_name, WHICH inputs the body hands back
+        ; (bit 0 is `this`); deep_ret_state holds the same mask per body.
+        ; Behind a reference: the Planner's page budget.
+        deep_returns_masks: ref[Array[u64]]
+        deep_ret_whole: ref[DeepRetWhole]
+        deep_idx: ref[DeepIndexes]
+        var deep_ret_mask: u64
+        deep_returns_by_name: Array[String]
+        deep_returns_mangled: Array[String]
+        ; the escape gate asks the DEEP persist verdict (deep_state, indexed
+        ; like rr_fns) instead of the shallow scan — armed by default since
+        ; 2026-09-23, SCALYC_DEEP_GATE_OFF=1 restores the shallow scan
+        var deep_gate: bool
+        var deep_trace: bool
+        ; the gate's post-pass table: per planned body (mangled) the deep
+        ; mask and its parameter count, filled at plan_function#
+        deep_gate_mangled: Array[String]
+        deep_gate_masks: Array[u64]
+        deep_gate_this: Array[u64]
+        deep_gate_beyond: Array[u64]
+        deep_gate_whole: Array[u64]
+        deep_gate_plen: Array[size_t]
+        deep_gate_takes_this: Array[bool]
+        var deep_gate_index: ConceptIndex
+    )
+    {
+        init() linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    }
+
+    ; ResidenceState: return residence (build_return_residence_set#): what each call result is
+    ; built on — the per-function buckets, locals, parameters and classes.
+    ; Held by the Planner behind `residence`; allocated on its page in its init.
+    define ResidenceState
+    @resident true (
+        rr_self: ref[RrSelf]
+        ; Return residence (build_return_residence_set#): per function, keyed
+        ; like return_page_names, rr_fns the Model functions in the same
+        ; order; the name buckets answer a Model-level call; rr_* below is
+        ; the classifier's scratch; rr_armed (SCALYC_RR) turns the call-site
+        ; stamp on.
+        rr_fns: Array[Function]
+        rr_bucket_names: Array[String]
+        rr_bucket_class: Array[size_t]
+        rr_bucket_arg: Array[size_t]
+        rr_bucket_conflict: Array[size_t]
+        rr_bucket_this: Array[size_t]
+        ; 1 when every function of the name returns a scalar (or nothing)
+        rr_bucket_scalar: Array[size_t]
+        var rr_bucket_index: ConceptIndex
+        var rr_lookup_arg: size_t
+        var rr_lookup_this: size_t
+        var rr_trace: bool
+        rr_tainted: Array[String]
+        ; locals bound with an UNKNOWN class (0: a callee the fixpoint has not
+        ; decided yet) — an expression over one answers 0, never 1, so the body
+        ; stays open for the next round; before, round one closed it at class 1
+        ; for good (dazzle's attribute_string, whose `value` callee was decided
+        ; one round later). Behind a reference: the Planner's page budget.
+        rr_unknown: ref[Array[String]]
+        rr_local_names: Array[String]
+        rr_local_class: Array[size_t]
+        rr_local_arg: Array[size_t]
+        rr_local_concept: Array[String]
+        rr_param_names: Array[String]
+        rr_param_page: Array[size_t]
+        rr_param_scalar: Array[size_t]
+        rr_param_concept: Array[String]
+        var rr_owner: String
+        var rr_result_class: size_t
+        var rr_result_arg: size_t
+        var rr_result_seen: bool
+        var rr_result_conflict: bool
+        var rr_class_arg: size_t
+        var rr_static_arg: size_t
+        var rr_armed: bool
+        rr_local_page_names: Array[String]
+        rr_local_page_of: Array[int]
+        ; every planned body's return class and argument, by mangled name,
+        ; for the post-pass by-value judge (rr_class_of_call#)
+        var rr_class_index: ConceptIndex
+        rr_class_vals: Array[size_t]
+        rr_class_args: Array[size_t]
+    )
+    {
+        init() linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    }
+
+    ; PersistState: the persist analysis: taint, masks, aliases and the per-function summaries
+    ; the deep gate and the promotion read.
+    ; Held by the Planner behind `persistence`; allocated on its page in its init.
+    define PersistState
+    @resident true (
+        ; --host-report census (host_census#): the named-page constructions
+        ; (`T^host(...)`, `T^this(...)`, any `^name`) whose value never leaves
+        ; the routine that builds them. escape_census switches the checker's
+        ; walk into census mode: region_of_operand answers LOCAL for the
+        ; candidate (census_box_start pins an unbound one by its span) and its
+        ; aliases (census_names), the diagnostics stay silent and escape_found
+        ; is read as the verdict. census_escaped is the inline half's verdict.
+        ; The report is three parallel arrays for cli.print_located.
+        ; Persist scan (function_persists_param_guts#): the names a
+        ; parameter's guts may travel under inside one body (the parameters
+        ; and every local that received one), and the body's locals — both
+        ; on the Planner's page, because the walk grows them from nested
+        ; blocks and a frame-hosted Array's growth would die with the frame.
+        persist_tainted: Array[String]
+        ; the ORIGIN MASK of every tainted name: bit i = derived from input
+        ; parameter i (bit 63 = beyond); a scan's verdict is the union of the
+        ; masks that reached a persisting store — per PARAMETER, so the gate
+        ; can ask which argument positions persist
+        persist_tmask: Array[u64]
+        var persist_last_mask: u64
+        ; the split the post-pass needs: which positions persist INTO THE
+        ; RECEIVER (`this`, judged against the receiver argument at the call
+        ; site), and which are persisted WHOLE (a bare name) rather than as a
+        ; FIELD of the parameter (judged through the field-points-to map)
+        persist_twhole: Array[u64]
+        var persist_last_whole: u64
+        ; per parameter: its ONE generic argument is a scalar (`ref[int]`,
+        ; `Slice[char]`, `Vector[u8]`) — what is stored through or into it
+        ; carries no reference
+        persist_pelem_scalar: Array[bool]
+        ; locals that ALIAS a parameter's guts (`let a this.need_aux()`,
+        ; `let e p.entry`): a store into them lands in that parameter
+        persist_alias_names: Array[String]
+        persist_alias_dest: Array[int]
+        var persist_masked: bool
+        persist_locals: Array[String]
+        ; the parameters' names and concepts, for the scalar-field question
+        persist_pnames: Array[String]
+        persist_pconcepts: Array[String]
+        var persist_ret_hit: bool
+        persist_deep_names: Array[String]
+        persist_deep_vals: Array[size_t]
+        ; Phase-5 class 1 (value-guts persist summary memo): mangled name ->
+        ; does the function's body store a parameter's VALUE into state that
+        ; outlives its frame (this-field/global putadd of a bare param, or a
+        ; param embedded in a bare-lifetime construction —
+        ; `errors.add message`, `diagnostics.add(PlannerDiagnostic(...,
+        ; message, ...))`)? Consulted at call resolution ONLY when an
+        ; argument's planned type carries Local life (a Design-B
+        ; local-flipped call result), so the model walk runs rarely and the
+        ; memo stays small. Planner-lived, append-only, NEVER truncated —
+        ; summaries are global facts about function bodies, not per-function
+        ; scan state (the s02i base-scope trap does not apply). Declared
+        ; LAST so the field indices of everything before stay stable.
+        persist_summary_names: Array[String]
+        persist_summary_vals: Array[size_t]
+    )
+    {
+        init() linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    }
+
     define Planner
     @resident true (
         var file: String
@@ -614,176 +921,20 @@ define Planner
         ; indirect calls (the common, delegate-free case incl. the compiler).
         var escape_saw_indirect: bool
 
-        ; --host-report census (host_census#): the named-page constructions
-        ; (`T^host(...)`, `T^this(...)`, any `^name`) whose value never leaves
-        ; the routine that builds them. escape_census switches the checker's
-        ; walk into census mode: region_of_operand answers LOCAL for the
-        ; candidate (census_box_start pins an unbound one by its span) and its
-        ; aliases (census_names), the diagnostics stay silent and escape_found
-        ; is read as the verdict. census_escaped is the inline half's verdict.
-        ; The report is three parallel arrays for cli.print_located.
-        ; Persist scan (function_persists_param_guts#): the names a
-        ; parameter's guts may travel under inside one body (the parameters
-        ; and every local that received one), and the body's locals — both
-        ; on the Planner's page, because the walk grows them from nested
-        ; blocks and a frame-hosted Array's growth would die with the frame.
-        persist_tainted: Array[String]
-        ; the ORIGIN MASK of every tainted name: bit i = derived from input
-        ; parameter i (bit 63 = beyond); a scan's verdict is the union of the
-        ; masks that reached a persisting store — per PARAMETER, so the gate
-        ; can ask which argument positions persist
-        persist_tmask: Array[u64]
-        var persist_last_mask: u64
-        var deep_persist_mask: u64
-        ; the split the post-pass needs: which positions persist INTO THE
-        ; RECEIVER (`this`, judged against the receiver argument at the call
-        ; site), and which are persisted WHOLE (a bare name) rather than as a
-        ; FIELD of the parameter (judged through the field-points-to map)
-        persist_twhole: Array[u64]
-        var persist_last_whole: u64
-        ; per parameter: its ONE generic argument is a scalar (`ref[int]`,
-        ; `Slice[char]`, `Vector[u8]`) — what is stored through or into it
-        ; carries no reference
-        persist_pelem_scalar: Array[bool]
-        ; locals that ALIAS a parameter's guts (`let a this.need_aux()`,
-        ; `let e p.entry`): a store into them lands in that parameter
-        persist_alias_names: Array[String]
-        persist_alias_dest: Array[int]
-        var deep_this_mask: u64
-        var deep_whole_mask: u64
-        ; positions whose PAGE the body takes (`Page.get(p)`, `^p` on a
-        ; page parameter) to allocate on: the argument must be page-hosted
-        var deep_pageof_mask: u64
-        deep_state_pageof: Array[size_t]
-        deep_gate_pageof: ref[Array[u64]]
-        ; INTO WHICH parameter: slot k (1..15) holds the positions kept in
-        ; parameter k's guts (slot 0 is deep_this_mask); a position 16 or
-        ; beyond counts as beyond. Per body, per name entry and per gate
-        ; entry, sixteen slots each, flattened
-        deep_into_masks: Array[u64]
-        deep_by_name_into: Array[u64]
-        deep_state_into: Array[size_t]
-        deep_state_hasinto: ref[Array[size_t]]
-        deep_gate_into: ref[Array[u64]]
-        deep_by_name_this: Array[u64]
-        deep_by_name_beyond: Array[u64]
-        deep_by_name_whole: Array[u64]
-        deep_by_name_pageof: Array[u64]
-        deep_qualified_all: Array[String]
-        ; the owners of the bodies this root plans; a known owner that is NOT
-        ; among them lives in another package (its body linked)
-        deep_scanned_owners: ref[Array[String]]
-        ; --interface-facts: run the deep pre-pass without judging, so a
-        ; package's interface can state each routine's deep masks (`@deep`)
-        var deep_facts: bool
-        deep_state_this: Array[size_t]
-        deep_state_beyond: Array[size_t]
-        deep_state_whole: Array[size_t]
-        var persist_masked: bool
-        deep_by_name_mask: Array[u64]
-        persist_locals: Array[String]
-        ; the parameters' names and concepts, for the scalar-field question
-        persist_pnames: Array[String]
-        persist_pconcepts: Array[String]
-        ; the deep verdicts (host_census#): every planned body is recorded
-        ; under --host-report (deep_fns/deep_mangled) and judged to a
-        ; fixpoint, because the question is TRANSITIVE — a body that hands a
-        ; parameter to a persisting callee persists it too. deep_by_name is
-        ; the persisting callees by plain name, what a Model-level call can
-        ; be matched against; persist_deep_names/vals is the census's lookup
-        ; by mangled name.
-        deep_fns: Array[Function]
-        deep_mangled: Array[String]
-        deep_state: Array[size_t]
-        deep_by_name: Array[String]
-        ; the second verdict: a body whose RETURN carries a parameter (or a
-        ; call result that does) hands the caller a value holding it —
-        ; deep_ret_state per body, deep_returns_by_name for the Model-level
-        ; match; persist_ret_hit is the scan's own flag
-        deep_ret_state: Array[size_t]
-        ; per name in deep_returns_by_name, WHICH inputs the body hands back
-        ; (bit 0 is `this`); deep_ret_state holds the same mask per body.
-        ; Behind a reference: the Planner's page budget.
-        deep_returns_masks: ref[Array[u64]]
-        deep_ret_whole: ref[DeepRetWhole]
-        rr_self: ref[RrSelf]
-        deep_idx: ref[DeepIndexes]
-        var deep_ret_mask: u64
-        deep_returns_by_name: Array[String]
-        deep_returns_mangled: Array[String]
-        var persist_ret_hit: bool
-        persist_deep_names: Array[String]
-        persist_deep_vals: Array[size_t]
+        ; the analysis state, one record per analysis (split off 2026-09-24:
+        ; the Planner record had reached its page — 4 008 of 4 056 bytes)
+        gate: ref[DeepGateState]
+        residence: ref[ResidenceState]
+        persistence: ref[PersistState]
 
-        ; Return residence (build_return_residence_set#): per function, keyed
-        ; like return_page_names, rr_fns the Model functions in the same
-        ; order; the name buckets answer a Model-level call; rr_* below is
-        ; the classifier's scratch; rr_armed (SCALYC_RR) turns the call-site
-        ; stamp on.
-        rr_fns: Array[Function]
         ret_res_names: Array[String]
         ret_res_starts: ref[Array[size_t]]
         ret_res_ends: ref[Array[size_t]]
         ret_res_class: Array[size_t]
         ret_res_arg: Array[size_t]
-        rr_bucket_names: Array[String]
-        rr_bucket_class: Array[size_t]
-        rr_bucket_arg: Array[size_t]
-        rr_bucket_conflict: Array[size_t]
-        rr_bucket_this: Array[size_t]
-        ; 1 when every function of the name returns a scalar (or nothing)
-        rr_bucket_scalar: Array[size_t]
-        var rr_bucket_index: ConceptIndex
-        var rr_lookup_arg: size_t
-        var rr_lookup_this: size_t
-        var rr_trace: bool
-        rr_tainted: Array[String]
-        ; locals bound with an UNKNOWN class (0: a callee the fixpoint has not
-        ; decided yet) — an expression over one answers 0, never 1, so the body
-        ; stays open for the next round; before, round one closed it at class 1
-        ; for good (dazzle's attribute_string, whose `value` callee was decided
-        ; one round later). Behind a reference: the Planner's page budget.
-        rr_unknown: ref[Array[String]]
-        rr_local_names: Array[String]
-        rr_local_class: Array[size_t]
-        rr_local_arg: Array[size_t]
-        rr_local_concept: Array[String]
-        rr_param_names: Array[String]
-        rr_param_page: Array[size_t]
-        rr_param_scalar: Array[size_t]
-        rr_param_concept: Array[String]
-        var rr_owner: String
         ret_res_owner: Array[String]
-        var rr_result_class: size_t
-        var rr_result_arg: size_t
-        var rr_result_seen: bool
-        var rr_result_conflict: bool
-        var rr_class_arg: size_t
-        var rr_static_arg: size_t
-        var rr_armed: bool
-        ; the escape gate asks the DEEP persist verdict (deep_state, indexed
-        ; like rr_fns) instead of the shallow scan — armed by default since
-        ; 2026-09-23, SCALYC_DEEP_GATE_OFF=1 restores the shallow scan
-        var deep_gate: bool
-        var deep_trace: bool
         var census_trace: bool
         var bv_trace: bool
-        ; the gate's post-pass table: per planned body (mangled) the deep
-        ; mask and its parameter count, filled at plan_function#
-        deep_gate_mangled: Array[String]
-        deep_gate_masks: Array[u64]
-        deep_gate_this: Array[u64]
-        deep_gate_beyond: Array[u64]
-        deep_gate_whole: Array[u64]
-        deep_gate_plen: Array[size_t]
-        deep_gate_takes_this: Array[bool]
-        rr_local_page_names: Array[String]
-        rr_local_page_of: Array[int]
-        ; every planned body's return class and argument, by mangled name,
-        ; for the post-pass by-value judge (rr_class_of_call#)
-        var rr_class_index: ConceptIndex
-        rr_class_vals: Array[size_t]
-        rr_class_args: Array[size_t]
         ; per function of the post-pass: locals bound from a CALL and the
         ; by-value verdict of that call's result
         current_fn_bind_names: Array[String]
@@ -800,7 +951,6 @@ define Planner
         ; (ref_call_verdict#: -1 unknown, 0 not local, 1 local) — behind a
         ; reference for the Planner's page budget (see current_fn_local_filled)
         current_fn_bind_refv: ref[Array[int]]
-        var deep_gate_index: ConceptIndex
 
         var escape_census: bool
         ; set by cli BEFORE planning under --host-report: the persist summary
@@ -912,20 +1062,6 @@ define Planner
         prepass_veto_names: Array[String]
         var transitive_page_built: bool
 
-        ; Phase-5 class 1 (value-guts persist summary memo): mangled name ->
-        ; does the function's body store a parameter's VALUE into state that
-        ; outlives its frame (this-field/global putadd of a bare param, or a
-        ; param embedded in a bare-lifetime construction —
-        ; `errors.add message`, `diagnostics.add(PlannerDiagnostic(...,
-        ; message, ...))`)? Consulted at call resolution ONLY when an
-        ; argument's planned type carries Local life (a Design-B
-        ; local-flipped call result), so the model walk runs rarely and the
-        ; memo stays small. Planner-lived, append-only, NEVER truncated —
-        ; summaries are global facts about function bodies, not per-function
-        ; scan state (the s02i base-scope trap does not apply). Declared
-        ; LAST so the field indices of everything before stay stable.
-        persist_summary_names: Array[String]
-        persist_summary_vals: Array[size_t]
 
         ; ===== use-visibility infrastructure (stage 1: recording only) =====
         ; Rust-style strict `use` visibility for concepts. Stage 1 only
@@ -1080,92 +1216,6 @@ define Planner
     )
     {
         init(filename: String) linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -2546,6 +2596,49 @@ define Planner
         ; instead of falling through to PlannedExpression.Type (which
         ; emit_call drops as an arg, silently dropping the whole
         ; statement). Mirrors Planner.cpp:6950-6995.
+        ; page_size_constant: the stdlib's PAGE_SIZE as this compilation sees it
+        ; (the prelude's `define PAGE_SIZE`), or 0 when it is not in reach
+        ; (--no-prelude). The Emitter checks against it that a record which
+        ; derives its page from its own address fits on one (check_receiver_
+        ; fits_page#).
+        function page_size_constant(this: Planner) @deep true returns size_t linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         function lookup_global(this: Planner, name: String) @ret_param_0 true @deep true returns ref[PlannedGlobal]? linked
 
 
@@ -18538,6 +18631,73 @@ define Planner
         ; advisory miss and the EMITTER aborted, rc 16 `member not found`, with
         ; no file and no line (tscaly lessons §3.5jf). Reported here, at the
         ; access, with the `use` that fixes it.
+        ; report_unknown_target_field#: a `set` whose field chain names a field
+        ; its RECORD does not declare. The member resolver records such a hop as
+        ; a placeholder at field 0 with an advisory error only; a READ of it is
+        ; the emitter's exit 16, but a STORE went through the placeholder: `set
+        ; o.nosuch: 7` on a local wrote 7 into the record's FIRST field, rc 0.
+        ; It was live in the compiler itself: after the Planner's analysis state
+        ; moved into sub-records (2026-09-24), `set planner.deep_facts: true` in
+        ; cli.scaly compiled, wrote `true` over the Planner's first field and
+        ; left the interface facts off. A hop on a PARAMETER was already refused
+        ; by the let-field gate, with a message about the wrong thing. Only a
+        ; hop into a Structure is judged: methods, variants and a `.value` are
+        ; resolved by other arms and never carry a field index.
+        procedure report_unknown_target_field(mutable this: Planner, target: PlannedOperand) @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; is_structure_name: does `name` resolve to a concept defined as a
+        ; Structure (a record with fields)?
+        procedure is_structure_name(mutable this: Planner, name: String) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
         procedure report_hidden_member(mutable this: Planner, owner: String, member: String, at: Span) @deep true linked
 
 
@@ -27338,6 +27498,11 @@ define Planner
 
 
         procedure plan_action(mutable this: Planner, mutable a: Action) @page true @direct true @deep true @deep_this_2 true returns PlannedAction io linked
+
+
+
+
+
 
 
 

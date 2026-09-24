@@ -1,0 +1,20 @@
+; Regression (2026-09-24): a `set` whose field chain names a field the record
+; does not declare. The member resolver records such a hop as a placeholder at
+; field 0, and on a LOCAL the store went through it: `set o.nosuch: 7` wrote 7
+; into the record's FIRST field, rc 0. Live in the compiler itself, where a
+; store to a field that had moved into a sub-record overwrote the Planner's
+; first field. Reported now (Planner.report_unknown_target_field#).
+; xfail: error: unknown field 'nosuch' in the assignment target: Box declares no such field
+define Box (var a: int  var y: int)
+
+procedure run()
+{
+    var o Box(1, 2)
+    set o.nosuch: 7
+    if o.a = 1
+        print("PASS")
+    else
+        print("FAIL")
+}
+
+run()

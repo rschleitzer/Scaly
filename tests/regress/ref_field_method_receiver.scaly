@@ -1,0 +1,62 @@
+; Regression (2026-09-24): a method called through a chain whose MIDDLE hop is
+; a `ref` field — `x.inner.arr.add(v)`, `inner` a `ref[Inner]`, `arr` held by
+; value in Inner. The receiver chain GEP'd hop by hop, met the reference as a
+; bare `ptr`, gave up, and fell back to loading the WHOLE record as a value:
+; `add` ran on a COPY, the change was lost at rc 0, and the copy's
+; Page.get(this) answered a stack address (an Array growing there aborted with
+; exit 19). Splitting the Planner record into sub-records behind refs hit it on
+; its first `gate.deep_into_masks.add 0`. The chain loads the reference now.
+; Binding the ref first (`let r x.inner`) was never affected.
+; Expected: PASS
+define Inner (arr: Array[u64]  var n: size_t)
+{
+    init()
+    {
+        set arr: Array[u64]^this()
+        set n: 0
+    }
+}
+
+define Outer (name: String  inner: ref[Inner])
+{
+    init(nm: String)
+    {
+        set name: String^this(nm)
+        let st Inner^this()
+        set inner: &st
+        var i: size_t 0
+        while i < 40
+        {
+            inner.arr.add(i as u64)
+            set i: i + 1
+        }
+    }
+
+    procedure more(mutable this)
+    {
+        inner.arr.add 100
+        this.inner.arr.add 101
+    }
+}
+
+function check() returns int
+{
+    var o Outer(String("x"))
+    if o.inner.arr.length <> 40
+        return 1
+    o.more()
+    if o.inner.arr.length <> 42
+        return 2
+    o.inner.arr.add 102
+    if o.inner.arr.length <> 43
+        return 3
+    let last o.inner.arr[42]
+    if last <> 102
+        return 4
+    0
+}
+
+if check() = 0
+    print("PASS")
+else
+    print("FAIL")

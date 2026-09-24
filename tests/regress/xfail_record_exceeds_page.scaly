@@ -1,0 +1,26 @@
+; Regression (2026-09-24): a record that derives its page from its OWN address
+; (`^this`, `Page.get(this)`) and is larger than a page minus the page header.
+; Such an object is allocated OVERSIZED, and the page found from its address
+; answered `exit 19` at run time — frames away from the cause, with no name
+; (the compiler's own Planner record met it at 4 056 of 4 056 bytes). The
+; Emitter knows the true size and says so at compile time now
+; (Emitter.check_receiver_fits_page#, against the stdlib's PAGE_SIZE).
+; xfail: error: Big takes 4104 bytes; with the page header (40) that is more than one page
+define W8 (a: int  b: int  c: int  d: int  e: int  f: int  g: int  h: int)
+define W64 (a: W8  b: W8  c: W8  d: W8  e: W8  f: W8  g: W8  h: W8)
+define W512 (a: W64  b: W64  c: W64  d: W64  e: W64  f: W64  g: W64  h: W64)
+define Big (var n: int  data: W512)
+{
+    procedure keep(mutable this) returns String
+        String^this("kept")
+}
+
+let w8 W8(0, 0, 0, 0, 0, 0, 0, 0)
+let w64 W64(w8, w8, w8, w8, w8, w8, w8, w8)
+let w512 W512(w64, w64, w64, w64, w64, w64, w64, w64)
+let host String("host")
+let pg Page.get(host)
+var b Big^pg(0, w512)
+let k b.keep()
+if k.get_length() = 4
+    print("PASS")

@@ -69,6 +69,7 @@ define Emitter
         target_triple: String       ; Empty = host
         data_layout: String         ; Empty = default for target
         skip_tests: bool            ; --no-tests: omit test/test_* functions
+        page_size: size_t           ; the stdlib's PAGE_SIZE; 0 = no page-fit check
     )
     {
         init()
@@ -79,6 +80,7 @@ define Emitter
             set target_triple: String()
             set data_layout: String()
             set skip_tests: false
+            set page_size: 0
         }
     }
 
@@ -1867,6 +1869,7 @@ define Emitter
             }
             if ref_name = "this"
             {
+                this.check_receiver_fits_page()
                 ; ^this: wrap the receiver in Page.get(this). Mirrors stage-0's
                 ; generatePageGetThis.
                 var get_fn lookup_function_cache("_Z3getPv")
@@ -10180,8 +10183,88 @@ define Emitter
             let wfn ensure_region_walker((*gp))
         }
 
+        ; check_receiver_fits_page#: a record that derives its page from its OWN
+        ; address — `^this`, `Page.get(this)` — must lie inside one page, and an
+        ; object larger than a page minus its header is allocated OVERSIZED, so
+        ; the page found there answers exit 19 at run time, frames away from the
+        ; cause (the compiler's own Planner record met it at 4 056 of 4 056
+        ; bytes). Checked at emission, where the true size is known: the
+        ; receiver's ABI size plus the page header against the stdlib's
+        ; PAGE_SIZE (config.page_size, from Planner.page_size_constant#).
+        procedure check_receiver_fits_page(mutable this)
+        {
+            if config.page_size = 0
+                return
+            if current_receiver_concept.get_length() = 0
+                return
+            ; the cache is keyed by mangled name; the literal struct built
+            ; from the plan's properties has the same layout (the ^field
+            ; lowering above takes the same fallback)
+            var sty lookup_struct_cache(current_receiver_concept)
+            if sty = null
+                set sty: synthesize_literal_struct(current_receiver_concept)
+            if sty = null
+                return
+            if LLVMCountStructElementTypes(sty) = 0
+                return
+            let td LLVMGetModuleDataLayout(llvm_module)
+            let size LLVMABISizeOfType(td, sty)
+            var header: u64 40
+            let page_ty lookup_struct_cache(String("Page"))
+            if page_ty <> null
+                if LLVMCountStructElementTypes(page_ty) > 0
+                    set header: LLVMABISizeOfType(td, page_ty)
+            if size + header <= (config.page_size as u64)
+                return
+            var sb StringBuilder()
+            sb.append "error: "
+            sb.append current_receiver_concept
+            sb.append " takes "
+            sb.append(size as size_t)
+            sb.append " bytes; with the page header ("
+            sb.append(header as size_t)
+            sb.append ") that is more than one page ("
+            sb.append config.page_size
+            sb.append "). It derives its page from its own address (^this, Page.get(this)), which works only inside a page: move fields behind a ref, or raise PAGE_SIZE"
+            let msg sb.to_string()
+            scaly_eputs msg
+            scaly_eputnl()
+            exit 4
+        }
+
+        ; `Page.get(this)` inside a method: the receiver's own page
+        function call_is_page_of_this(this, call: PlannedCall) returns bool
+        {
+            var is_get: bool false
+            if call.mangled_name = "_Z3getPv"
+                set is_get: true
+            if call.mangled_name = "_ZN4Page3getEPv"
+                set is_get: true
+            if is_get = false
+                return false
+            if call.args = null
+                return false
+            let args (*call.args)
+            if args.length <> 1
+                return false
+            let a_ptr args.get 0
+            if a_ptr = null
+                return false
+            if a_ptr.member_access <> null
+                return false
+            var yes: bool false
+            choose a_ptr.expr
+                when v: Variable
+                    set yes: v.name = "this"
+                else
+                    0
+            yes
+        }
+
         procedure emit_call(mutable this, mutable call: PlannedCall) returns LLVMValueRef
         {
+            if this.call_is_page_of_this(call)
+                this.check_receiver_fits_page()
             ; Indirect call through a function pointer value (Phase-1 JIT). args[0]
             ; is the callee pointer; the signature is i64() (zero-arg, returns i64).
             ; Used by jit_execute_int to invoke an ORC-resolved address. Mirrors
@@ -10733,7 +10816,26 @@ define Emitter
                                                                             set last_field_ty: field_ir_ty
                                                                             set current_ptr: LLVMBuildStructGEP2(builder, current_struct_ty, current_ptr, acc.field_index as u32, "field.inplace")
                                                                             if ci + 1 < chain.length
+                                                                            {
                                                                                 set current_struct_ty: map_type(acc.result_type)
+                                                                                ; A middle hop through a `ref`/`pointer`
+                                                                                ; FIELD: load the reference and go on in
+                                                                                ; its pointee. Without this the next hop
+                                                                                ; saw `ptr`, the chain bailed (s120) and
+                                                                                ; `x.inner.arr.add(v)` ran on a COPY of
+                                                                                ; the record, rc 0 — the change lost, and
+                                                                                ; the copy's Page.get(this) a stack
+                                                                                ; address (2026-09-24).
+                                                                                if LLVMGetTypeKind(field_ir_ty) = LLVMTypeKind.Pointer()
+                                                                                {
+                                                                                    let ref_pointee this.reference_pointee_struct(acc.result_type)
+                                                                                    if ref_pointee <> null
+                                                                                    {
+                                                                                        set current_ptr: LLVMBuildLoad2(builder, LLVMPointerTypeInContext(context, 0), current_ptr, "field.ref")
+                                                                                        set current_struct_ty: ref_pointee
+                                                                                    }
+                                                                                }
+                                                                            }
                                                                         }
                                                                     }
                                                                     set ci: ci + 1
@@ -18748,6 +18850,36 @@ define Emitter
         ; + GEP-chain walk). Factored out of emit_member_assignment so the
         ; in-place field construction path (emit_in_place_field_ctor) can compute
         ; the destination without emitting a store.
+        ; reference_pointee_struct#: the LLVM struct a `ref[T]`/`pointer[T]`
+        ; points at, or null when `t` is no such reference or T is no laid-out
+        ; record.
+        procedure reference_pointee_struct(mutable this, t: PlannedType) returns LLVMTypeRef
+        {
+            var is_ref: bool false
+            if t.name = "ref"
+                set is_ref: true
+            if t.name = "pointer"
+                set is_ref: true
+            if is_ref = false
+                return null
+            if t.generics = null
+                return null
+            let gs (*t.generics)
+            if gs.length <> 1
+                return null
+            let g_ptr gs.get 0
+            if g_ptr = null
+                return null
+            let inner map_type((*g_ptr))
+            if inner = null
+                return null
+            if LLVMGetTypeKind(inner) <> LLVMTypeKind.Struct()
+                return null
+            if LLVMCountStructElementTypes(inner) = 0
+                return null
+            inner
+        }
+
         procedure emit_member_address(mutable this, mutable var_ptr: LLVMValueRef, planned_var: PlannedVariable, mutable members: ref[Vector[PlannedMemberAccess]]?) returns LLVMValueRef
         {
             ; s34 root fix: plain var copies of the by-ptr struct params

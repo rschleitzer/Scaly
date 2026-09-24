@@ -1,0 +1,19 @@
+; Control for xfail_record_exceeds_page: the same shape one level smaller
+; (520 bytes) derives its page from its own address and runs.
+; Expected: PASS
+define W8 (a: int  b: int  c: int  d: int  e: int  f: int  g: int  h: int)
+define W64 (a: W8  b: W8  c: W8  d: W8  e: W8  f: W8  g: W8  h: W8)
+define Mid (var n: int  data: W64)
+{
+    procedure keep(mutable this) returns String
+        String^this("kept")
+}
+
+let w8 W8(0, 0, 0, 0, 0, 0, 0, 0)
+let w64 W64(w8, w8, w8, w8, w8, w8, w8, w8)
+let host String("host")
+let pg Page.get(host)
+var m Mid^pg(0, w64)
+let k m.keep()
+if k.get_length() = 4
+    print("PASS")

@@ -568,7 +568,7 @@ define cli
         if opts.host_report
             set planner.host_report: true
         if opts.interface_facts
-            set planner.deep_facts: true
+            set planner.gate.deep_facts: true
         if opts.use_vis
             set planner.use_vis_measure: true
         if opts.no_use_vis
@@ -764,6 +764,7 @@ define cli
         set config.skip_tests: opts.no_tests
         set config.target_triple: opts.target_triple
         set config.opt_level: opts.opt_level
+        set config.page_size: planner.page_size_constant()
 
         var emitter Emitter.Emitter(config)
         if opts.debug

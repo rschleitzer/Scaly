@@ -69,9 +69,11 @@ define Emitter
         target_triple: String       ; Empty = host
         data_layout: String         ; Empty = default for target
         skip_tests: bool            ; --no-tests: omit test/test_* functions
+        page_size: size_t           ; the stdlib's PAGE_SIZE; 0 = no page-fit check
     )
     {
         init() linked
+
 
 
 
@@ -1817,6 +1819,7 @@ define Emitter
 
 
         procedure resolve_reference_page(mutable this, mutable ref_name: String) @direct true @deep true returns LLVMValueRef linked
+
 
 
 
@@ -10180,7 +10183,106 @@ define Emitter
 
 
 
+        ; check_receiver_fits_page#: a record that derives its page from its OWN
+        ; address — `^this`, `Page.get(this)` — must lie inside one page, and an
+        ; object larger than a page minus its header is allocated OVERSIZED, so
+        ; the page found there answers exit 19 at run time, frames away from the
+        ; cause (the compiler's own Planner record met it at 4 056 of 4 056
+        ; bytes). Checked at emission, where the true size is known: the
+        ; receiver's ABI size plus the page header against the stdlib's
+        ; PAGE_SIZE (config.page_size, from Planner.page_size_constant#).
+        procedure check_receiver_fits_page(mutable this) @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; `Page.get(this)` inside a method: the receiver's own page
+        function call_is_page_of_this(this, call: PlannedCall) @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         procedure emit_call(mutable this, mutable call: PlannedCall) @direct true @deep true @deep_beyond_2 true returns LLVMValueRef linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -18748,6 +18850,36 @@ define Emitter
         ; + GEP-chain walk). Factored out of emit_member_assignment so the
         ; in-place field construction path (emit_in_place_field_ctor) can compute
         ; the destination without emitting a store.
+        ; reference_pointee_struct#: the LLVM struct a `ref[T]`/`pointer[T]`
+        ; points at, or null when `t` is no such reference or T is no laid-out
+        ; record.
+        procedure reference_pointee_struct(mutable this, t: PlannedType) @direct true @deep true returns LLVMTypeRef linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         procedure emit_member_address(mutable this, mutable var_ptr: LLVMValueRef, planned_var: PlannedVariable, mutable members: ref[Vector[PlannedMemberAccess]]?) @direct true @deep true returns LLVMValueRef linked
 
 

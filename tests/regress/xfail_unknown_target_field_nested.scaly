@@ -1,0 +1,21 @@
+; Regression (2026-09-24): the second hop of a `set` target chain naming a field
+; its record does not declare — `set o.inner.nosuch: v` through a `ref` field —
+; wrote into the inner record's first field at rc 0, like the one-hop form in
+; xfail_unknown_target_field. Planner.report_unknown_target_field# judges
+; every hop.
+; xfail: error: unknown field 'nosuch' in the assignment target: Inner declares no such field
+define Inner (var x: int)
+define Outer (var y: int  var inner: ref[Inner])
+
+procedure run()
+{
+    var i Inner(1)
+    var o Outer(2, &i)
+    set o.inner.nosuch: 8
+    if i.x = 1
+        print("PASS")
+    else
+        print("FAIL")
+}
+
+run()
