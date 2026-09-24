@@ -13199,7 +13199,118 @@ define Emitter
 
 
         ; Emit an if expression
+        ; logical_condition#: the one operand of an `if` condition when it is a
+        ; short-circuit `and`/`&&`/`or`/`||` call, else null.
+        function logical_condition(cond: ref[Vector[PlannedOperand]]?) @deep true returns ref[PlannedOperand]? linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function operand_is_logical(op: PlannedOperand) @ret_param_0 true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; emit_cond_branch#: branch to `on_true`/`on_false` on the value of `op`,
+        ; an `and`/`or` chain becoming a chain of conditional branches with the
+        ; same short-circuit order as the value form (emit_intrinsic's lor/land)
+        ; -- the right side is only reached when the left does not decide. A
+        ; leaf that cannot be emitted takes `null_true` (the value form's
+        ; fallback: an `and` left side reads as true, anything else as false).
+        procedure emit_cond_branch(mutable this, mutable op: PlannedOperand, mutable on_true: LLVMBasicBlockRef, mutable on_false: LLVMBasicBlockRef, null_true: bool) @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         procedure emit_if(mutable this, mutable if_expr: PlannedIf) @direct true @deep true returns LLVMValueRef linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

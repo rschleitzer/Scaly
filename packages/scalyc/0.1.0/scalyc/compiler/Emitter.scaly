@@ -13199,39 +13199,150 @@ define Emitter
         }
 
         ; Emit an if expression
+        ; logical_condition#: the one operand of an `if` condition when it is a
+        ; short-circuit `and`/`&&`/`or`/`||` call, else null.
+        function logical_condition(cond: ref[Vector[PlannedOperand]]?) returns ref[PlannedOperand]?
+        {
+            if cond = null
+                return null
+            let ops (*cond)
+            if ops.length <> 1
+                return null
+            let op_ptr ops.get 0
+            if op_ptr = null
+                return null
+            if Emitter.operand_is_logical(*op_ptr)
+                return op_ptr
+            null
+        }
+
+        function operand_is_logical(op: PlannedOperand) returns bool
+        {
+            if op.member_access <> null
+                if op.member_access.length > 0
+                    return false
+            choose op.expr
+                when c: Call
+                {
+                    if c.args = null
+                        return false
+                    if (*c.args).length <> 2
+                        return false
+                    return c.name = "and" or c.name = "&&" or c.name = "or" or c.name = "||"
+                }
+                else
+                    return false
+            false
+        }
+
+        ; emit_cond_branch#: branch to `on_true`/`on_false` on the value of `op`,
+        ; an `and`/`or` chain becoming a chain of conditional branches with the
+        ; same short-circuit order as the value form (emit_intrinsic's lor/land)
+        ; -- the right side is only reached when the left does not decide. A
+        ; leaf that cannot be emitted takes `null_true` (the value form's
+        ; fallback: an `and` left side reads as true, anything else as false).
+        procedure emit_cond_branch(mutable this, mutable op: PlannedOperand, mutable on_true: LLVMBasicBlockRef, mutable on_false: LLVMBasicBlockRef, null_true: bool)
+        {
+            if Emitter.operand_is_logical(op)
+            {
+                choose op.expr
+                    when c: Call
+                    {
+                        let args (*c.args)
+                        let lp args.get 0
+                        let rp_arg args.get 1
+                        if lp <> null and rp_arg <> null
+                        {
+                            let is_or c.name = "or" or c.name = "||"
+                            if is_or
+                            {
+                                let mid create_block("lor.rhs")
+                                this.emit_cond_branch((*lp), on_true, mid, false)
+                                LLVMPositionBuilderAtEnd(builder, mid)
+                            }
+                            else
+                            {
+                                let mid create_block("land.rhs")
+                                this.emit_cond_branch((*lp), mid, on_false, true)
+                                LLVMPositionBuilderAtEnd(builder, mid)
+                            }
+                            this.emit_cond_branch((*rp_arg), on_true, on_false, false)
+                            return
+                        }
+                    }
+                    else
+                        0
+            }
+            let i1_ty LLVMInt1TypeInContext(context)
+            var v emit_operand(op)
+            if v = null
+            {
+                if null_true
+                    set v: LLVMConstInt(i1_ty, 1, 0)
+                else
+                    set v: LLVMConstInt(i1_ty, 0, 0)
+            }
+            let vt LLVMTypeOf(v)
+            if LLVMGetIntTypeWidth(vt) <> 1
+                set v: LLVMBuildICmp(builder, LLVMIntPredicate.NE(), v, LLVMConstInt(vt, 0, 0), "if.tobool")
+            LLVMBuildCondBr(builder, v, on_true, on_false)
+        }
+
         procedure emit_if(mutable this, mutable if_expr: PlannedIf) returns LLVMValueRef
         {
-            ; Emit the condition
-            let cond_value emit_operands if_expr.condition
-            if cond_value = null
-                return null
-
-            ; Ensure we have a boolean (i1) for the branch. LLVMGetTypeKind
-            ; returns IntegerTypeKind for i1, i32, i64, etc.; a kind-only check
-            ; would miss i32/i64 conds and emit `br i32 %x, ...`. Compare the
-            ; integer bit-width instead.
-            var bool_cond cond_value
-            let cond_type LLVMTypeOf(cond_value)
-
-            ; If not i1, convert to boolean via icmp ne 0
-            if LLVMGetIntTypeWidth(cond_type) <> 1
-            {
-                let zero LLVMConstInt(cond_type, 0, 0)
-                set bool_cond: LLVMBuildICmp(builder, LLVMIntPredicate.NE(), cond_value, zero, "if.tobool")
-            }
-
-            ; Create basic blocks
-            let then_block create_block("if.then")
+            var then_block: LLVMBasicBlockRef null
             var else_block: LLVMBasicBlockRef null
-            if if_expr.alternative <> null
-                set else_block: create_block("if.else")
-            let merge_block create_block("if.end")
-
-            ; Branch based on condition
-            if else_block <> null
-                LLVMBuildCondBr(builder, bool_cond, then_block, else_block)
+            var merge_block: LLVMBasicBlockRef null
+            let logical_cond Emitter.logical_condition(if_expr.condition)
+            if logical_cond <> null
+            {
+                ; `if a and b` / `if a or b`: branch straight into the arms
+                ; (emit_cond_branch#) -- the control flow of nested `if`s,
+                ; without first folding the chain into an `i1` phi and
+                ; branching on that. The blocks come first here; the plain
+                ; path below keeps its order, so it emits what it always did.
+                set then_block: create_block("if.then")
+                if if_expr.alternative <> null
+                    set else_block: create_block("if.else")
+                set merge_block: create_block("if.end")
+                var false_target merge_block
+                if else_block <> null
+                    set false_target: else_block
+                this.emit_cond_branch((*logical_cond), then_block, false_target, false)
+            }
             else
-                LLVMBuildCondBr(builder, bool_cond, then_block, merge_block)
+            {
+                ; Emit the condition
+                let cond_value emit_operands if_expr.condition
+                if cond_value = null
+                    return null
+
+                ; Ensure we have a boolean (i1) for the branch. LLVMGetTypeKind
+                ; returns IntegerTypeKind for i1, i32, i64, etc.; a kind-only check
+                ; would miss i32/i64 conds and emit `br i32 %x, ...`. Compare the
+                ; integer bit-width instead.
+                var bool_cond cond_value
+                let cond_type LLVMTypeOf(cond_value)
+
+                ; If not i1, convert to boolean via icmp ne 0
+                if LLVMGetIntTypeWidth(cond_type) <> 1
+                {
+                    let zero LLVMConstInt(cond_type, 0, 0)
+                    set bool_cond: LLVMBuildICmp(builder, LLVMIntPredicate.NE(), cond_value, zero, "if.tobool")
+                }
+
+                ; Create basic blocks
+                set then_block: create_block("if.then")
+                if if_expr.alternative <> null
+                    set else_block: create_block("if.else")
+                set merge_block: create_block("if.end")
+
+                ; Branch based on condition
+                if else_block <> null
+                    LLVMBuildCondBr(builder, bool_cond, then_block, else_block)
+                else
+                    LLVMBuildCondBr(builder, bool_cond, then_block, merge_block)
+            }
 
             ; Emit then block
             LLVMPositionBuilderAtEnd(builder, then_block)

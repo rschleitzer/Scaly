@@ -4602,25 +4602,13 @@ entry:
   %load.struct = load %_Z5ArrayIiE, ptr %0, align 8
   %buffer = extractvalue %_Z5ArrayIiE %load.struct, 2
   %eq = icmp eq ptr %buffer, null
-  br i1 %eq, label %lor.end, label %lor.rhs
+  br i1 %eq, label %if.then, label %lor.rhs
 
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayIiE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayIiE %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayIiE, ptr %0, align 8
-  %capacity = extractvalue %_Z5ArrayIiE %load.struct2, 1
-  %eq3 = icmp eq i64 %length, %capacity
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %eq3, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
+if.then:                                          ; preds = %lor.rhs, %entry
   call void @_ZN5ArrayIiE10reallocateEv(ptr %0)
   br label %if.end
 
-if.end:                                           ; preds = %if.then, %lor.end
+if.end:                                           ; preds = %if.then, %lor.rhs
   %load.struct4 = load %_Z5ArrayIiE, ptr %0, align 8
   %buffer5 = extractvalue %_Z5ArrayIiE %load.struct4, 2
   %load.struct6 = load %_Z5ArrayIiE, ptr %0, align 8
@@ -4633,6 +4621,14 @@ if.end:                                           ; preds = %if.then, %lor.end
   %length10 = getelementptr inbounds nuw %_Z5ArrayIiE, ptr %0, i32 0, i32 0
   store i64 %add, ptr %length10, align 8
   ret void
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayIiE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayIiE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayIiE, ptr %0, align 8
+  %capacity = extractvalue %_Z5ArrayIiE %load.struct2, 1
+  %eq3 = icmp eq i64 %length, %capacity
+  br i1 %eq3, label %if.then, label %if.end
 }
 
 define linkonce_odr void @_ZN5ArrayIiE3addE6VectorIiE(ptr %0, ptr %1) {
@@ -4659,34 +4655,30 @@ if.then:                                          ; preds = %entry
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
-  %load.struct8 = load %_Z5ArrayIiE, ptr %0, align 8
-  %buffer = extractvalue %_Z5ArrayIiE %load.struct8, 2
-  %eq = icmp eq ptr %buffer, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %if.end
-  %new_length9 = load i64, ptr %new_length, align 8
   %load.struct10 = load %_Z5ArrayIiE, ptr %0, align 8
-  %capacity = extractvalue %_Z5ArrayIiE %load.struct10, 1
-  %gt = icmp ugt i64 %new_length9, %capacity
-  br label %lor.end
+  %buffer = extractvalue %_Z5ArrayIiE %load.struct10, 2
+  %eq = icmp eq ptr %buffer, null
+  br i1 %eq, label %if.then8, label %lor.rhs
 
-lor.end:                                          ; preds = %lor.rhs, %if.end
-  %lor.result = phi i1 [ true, %if.end ], [ %gt, %lor.rhs ]
-  br i1 %lor.result, label %if.then11, label %if.end12
-
-if.then11:                                        ; preds = %lor.end
+if.then8:                                         ; preds = %lor.rhs, %if.end
   call void @_ZN5ArrayIiE10reallocateEv(ptr %0)
-  br label %if.end12
+  br label %if.end9
 
-if.end12:                                         ; preds = %if.then11, %lor.end
+if.end9:                                          ; preds = %if.then8, %lor.rhs
   %new_length13 = load i64, ptr %new_length, align 8
   %load.struct14 = load %_Z5ArrayIiE, ptr %0, align 8
   %capacity15 = extractvalue %_Z5ArrayIiE %load.struct14, 1
   %gt16 = icmp ugt i64 %new_length13, %capacity15
   br i1 %gt16, label %if.then17, label %if.end18
 
-if.then17:                                        ; preds = %if.end12
+lor.rhs:                                          ; preds = %if.end
+  %new_length11 = load i64, ptr %new_length, align 8
+  %load.struct12 = load %_Z5ArrayIiE, ptr %0, align 8
+  %capacity = extractvalue %_Z5ArrayIiE %load.struct12, 1
+  %gt = icmp ugt i64 %new_length11, %capacity
+  br i1 %gt, label %if.then8, label %if.end9
+
+if.then17:                                        ; preds = %if.end9
   %call = call ptr @_ZN4Page3getEPv(ptr %0)
   %load.struct19 = load %_Z5ArrayIiE, ptr %0, align 8
   %buffer20 = extractvalue %_Z5ArrayIiE %load.struct19, 2
@@ -4699,7 +4691,7 @@ if.then17:                                        ; preds = %if.end12
   %le25 = icmp ule i64 %mul24, 1024
   br i1 %le25, label %if.then26, label %if.else
 
-if.end18:                                         ; preds = %if.end50, %if.end12
+if.end18:                                         ; preds = %if.end50, %if.end9
   %load.struct52 = load %_Z6VectorIiE, ptr %1, align 8
   %length53 = extractvalue %_Z6VectorIiE %load.struct52, 0
   %gt54 = icmp ugt i64 %length53, 0
@@ -5486,25 +5478,13 @@ entry:
   %load.struct = load %_Z5ArrayI6StringE, ptr %0, align 8
   %buffer = extractvalue %_Z5ArrayI6StringE %load.struct, 2
   %eq = icmp eq ptr %buffer, null
-  br i1 %eq, label %lor.end, label %lor.rhs
+  br i1 %eq, label %if.then, label %lor.rhs
 
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI6StringE %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %capacity = extractvalue %_Z5ArrayI6StringE %load.struct2, 1
-  %eq3 = icmp eq i64 %length, %capacity
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %eq3, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
+if.then:                                          ; preds = %lor.rhs, %entry
   call void @_ZN5ArrayI6StringE10reallocateEv(ptr %0)
   br label %if.end
 
-if.end:                                           ; preds = %if.then, %lor.end
+if.end:                                           ; preds = %if.then, %lor.rhs
   %load.struct4 = load %_Z5ArrayI6StringE, ptr %0, align 8
   %buffer5 = extractvalue %_Z5ArrayI6StringE %load.struct4, 2
   %load.struct6 = load %_Z5ArrayI6StringE, ptr %0, align 8
@@ -5518,6 +5498,14 @@ if.end:                                           ; preds = %if.then, %lor.end
   %length10 = getelementptr inbounds nuw %_Z5ArrayI6StringE, ptr %0, i32 0, i32 0
   store i64 %add, ptr %length10, align 8
   ret void
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI6StringE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %capacity = extractvalue %_Z5ArrayI6StringE %load.struct2, 1
+  %eq3 = icmp eq i64 %length, %capacity
+  br i1 %eq3, label %if.then, label %if.end
 }
 
 define linkonce_odr ptr @_ZN6VectorI6StringE3getEm(ptr %0, i64 %1) {
@@ -6265,34 +6253,30 @@ if.then:                                          ; preds = %entry
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
-  %load.struct8 = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %buffer = extractvalue %_Z5ArrayI6StringE %load.struct8, 2
-  %eq = icmp eq ptr %buffer, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %if.end
-  %new_length9 = load i64, ptr %new_length, align 8
   %load.struct10 = load %_Z5ArrayI6StringE, ptr %0, align 8
-  %capacity = extractvalue %_Z5ArrayI6StringE %load.struct10, 1
-  %gt = icmp ugt i64 %new_length9, %capacity
-  br label %lor.end
+  %buffer = extractvalue %_Z5ArrayI6StringE %load.struct10, 2
+  %eq = icmp eq ptr %buffer, null
+  br i1 %eq, label %if.then8, label %lor.rhs
 
-lor.end:                                          ; preds = %lor.rhs, %if.end
-  %lor.result = phi i1 [ true, %if.end ], [ %gt, %lor.rhs ]
-  br i1 %lor.result, label %if.then11, label %if.end12
-
-if.then11:                                        ; preds = %lor.end
+if.then8:                                         ; preds = %lor.rhs, %if.end
   call void @_ZN5ArrayI6StringE10reallocateEv(ptr %0)
-  br label %if.end12
+  br label %if.end9
 
-if.end12:                                         ; preds = %if.then11, %lor.end
+if.end9:                                          ; preds = %if.then8, %lor.rhs
   %new_length13 = load i64, ptr %new_length, align 8
   %load.struct14 = load %_Z5ArrayI6StringE, ptr %0, align 8
   %capacity15 = extractvalue %_Z5ArrayI6StringE %load.struct14, 1
   %gt16 = icmp ugt i64 %new_length13, %capacity15
   br i1 %gt16, label %if.then17, label %if.end18
 
-if.then17:                                        ; preds = %if.end12
+lor.rhs:                                          ; preds = %if.end
+  %new_length11 = load i64, ptr %new_length, align 8
+  %load.struct12 = load %_Z5ArrayI6StringE, ptr %0, align 8
+  %capacity = extractvalue %_Z5ArrayI6StringE %load.struct12, 1
+  %gt = icmp ugt i64 %new_length11, %capacity
+  br i1 %gt, label %if.then8, label %if.end9
+
+if.then17:                                        ; preds = %if.end9
   %call = call ptr @_ZN4Page3getEPv(ptr %0)
   %load.struct19 = load %_Z5ArrayI6StringE, ptr %0, align 8
   %buffer20 = extractvalue %_Z5ArrayI6StringE %load.struct19, 2
@@ -6305,7 +6289,7 @@ if.then17:                                        ; preds = %if.end12
   %le25 = icmp ule i64 %mul24, 1024
   br i1 %le25, label %if.then26, label %if.else
 
-if.end18:                                         ; preds = %if.end50, %if.end12
+if.end18:                                         ; preds = %if.end50, %if.end9
   %load.struct52 = load %_Z6VectorI6StringE, ptr %1, align 8
   %length53 = extractvalue %_Z6VectorI6StringE %load.struct52, 0
   %gt54 = icmp ugt i64 %length53, 0
@@ -7357,25 +7341,13 @@ entry:
   %load.struct = load %_Z5ArrayI4ListI4SlotI6StringEEE, ptr %0, align 8
   %buffer = extractvalue %_Z5ArrayI4ListI4SlotI6StringEEE %load.struct, 2
   %eq = icmp eq ptr %buffer, null
-  br i1 %eq, label %lor.end, label %lor.rhs
+  br i1 %eq, label %if.then, label %lor.rhs
 
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI4ListI4SlotI6StringEEE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI4ListI4SlotI6StringEEE %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayI4ListI4SlotI6StringEEE, ptr %0, align 8
-  %capacity = extractvalue %_Z5ArrayI4ListI4SlotI6StringEEE %load.struct2, 1
-  %eq3 = icmp eq i64 %length, %capacity
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %eq3, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
+if.then:                                          ; preds = %lor.rhs, %entry
   call void @_ZN5ArrayI4ListI4SlotI6StringEEE10reallocateEv(ptr %0)
   br label %if.end
 
-if.end:                                           ; preds = %if.then, %lor.end
+if.end:                                           ; preds = %if.then, %lor.rhs
   %load.struct4 = load %_Z5ArrayI4ListI4SlotI6StringEEE, ptr %0, align 8
   %buffer5 = extractvalue %_Z5ArrayI4ListI4SlotI6StringEEE %load.struct4, 2
   %load.struct6 = load %_Z5ArrayI4ListI4SlotI6StringEEE, ptr %0, align 8
@@ -7389,6 +7361,14 @@ if.end:                                           ; preds = %if.then, %lor.end
   %length10 = getelementptr inbounds nuw %_Z5ArrayI4ListI4SlotI6StringEEE, ptr %0, i32 0, i32 0
   store i64 %add, ptr %length10, align 8
   ret void
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI4ListI4SlotI6StringEEE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI4ListI4SlotI6StringEEE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayI4ListI4SlotI6StringEEE, ptr %0, align 8
+  %capacity = extractvalue %_Z5ArrayI4ListI4SlotI6StringEEE %load.struct2, 1
+  %eq3 = icmp eq i64 %length, %capacity
+  br i1 %eq3, label %if.then, label %if.end
 }
 
 define linkonce_odr void @_ZN5ArrayI4ListI4SlotI6StringEEE3addE6VectorI4ListI4SlotI6StringEEE(ptr %0, ptr %1) {
@@ -7415,34 +7395,30 @@ if.then:                                          ; preds = %entry
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
-  %load.struct8 = load %_Z5ArrayI4ListI4SlotI6StringEEE, ptr %0, align 8
-  %buffer = extractvalue %_Z5ArrayI4ListI4SlotI6StringEEE %load.struct8, 2
-  %eq = icmp eq ptr %buffer, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %if.end
-  %new_length9 = load i64, ptr %new_length, align 8
   %load.struct10 = load %_Z5ArrayI4ListI4SlotI6StringEEE, ptr %0, align 8
-  %capacity = extractvalue %_Z5ArrayI4ListI4SlotI6StringEEE %load.struct10, 1
-  %gt = icmp ugt i64 %new_length9, %capacity
-  br label %lor.end
+  %buffer = extractvalue %_Z5ArrayI4ListI4SlotI6StringEEE %load.struct10, 2
+  %eq = icmp eq ptr %buffer, null
+  br i1 %eq, label %if.then8, label %lor.rhs
 
-lor.end:                                          ; preds = %lor.rhs, %if.end
-  %lor.result = phi i1 [ true, %if.end ], [ %gt, %lor.rhs ]
-  br i1 %lor.result, label %if.then11, label %if.end12
-
-if.then11:                                        ; preds = %lor.end
+if.then8:                                         ; preds = %lor.rhs, %if.end
   call void @_ZN5ArrayI4ListI4SlotI6StringEEE10reallocateEv(ptr %0)
-  br label %if.end12
+  br label %if.end9
 
-if.end12:                                         ; preds = %if.then11, %lor.end
+if.end9:                                          ; preds = %if.then8, %lor.rhs
   %new_length13 = load i64, ptr %new_length, align 8
   %load.struct14 = load %_Z5ArrayI4ListI4SlotI6StringEEE, ptr %0, align 8
   %capacity15 = extractvalue %_Z5ArrayI4ListI4SlotI6StringEEE %load.struct14, 1
   %gt16 = icmp ugt i64 %new_length13, %capacity15
   br i1 %gt16, label %if.then17, label %if.end18
 
-if.then17:                                        ; preds = %if.end12
+lor.rhs:                                          ; preds = %if.end
+  %new_length11 = load i64, ptr %new_length, align 8
+  %load.struct12 = load %_Z5ArrayI4ListI4SlotI6StringEEE, ptr %0, align 8
+  %capacity = extractvalue %_Z5ArrayI4ListI4SlotI6StringEEE %load.struct12, 1
+  %gt = icmp ugt i64 %new_length11, %capacity
+  br i1 %gt, label %if.then8, label %if.end9
+
+if.then17:                                        ; preds = %if.end9
   %call = call ptr @_ZN4Page3getEPv(ptr %0)
   %load.struct19 = load %_Z5ArrayI4ListI4SlotI6StringEEE, ptr %0, align 8
   %buffer20 = extractvalue %_Z5ArrayI4ListI4SlotI6StringEEE %load.struct19, 2
@@ -7455,7 +7431,7 @@ if.then17:                                        ; preds = %if.end12
   %le25 = icmp ule i64 %mul24, 1024
   br i1 %le25, label %if.then26, label %if.else
 
-if.end18:                                         ; preds = %if.end50, %if.end12
+if.end18:                                         ; preds = %if.end50, %if.end9
   %load.struct52 = load %_Z6VectorI4ListI4SlotI6StringEEE, ptr %1, align 8
   %length53 = extractvalue %_Z6VectorI4ListI4SlotI6StringEEE %load.struct52, 0
   %gt54 = icmp ugt i64 %length53, 0
@@ -8091,7 +8067,18 @@ entry:
   %load.struct1 = load %_Z14HashSetBuilderI6StringE, ptr %0, align 8
   %slots = extractvalue %_Z14HashSetBuilderI6StringE %load.struct1, 1
   %eq = icmp eq ptr %slots, null
-  br i1 %eq, label %lor.end, label %lor.rhs
+  br i1 %eq, label %if.then, label %lor.rhs
+
+if.then:                                          ; preds = %lor.rhs, %entry
+  %load.struct5 = load %_Z14HashSetBuilderI6StringE, ptr %0, align 8
+  %length6 = extractvalue %_Z14HashSetBuilderI6StringE %load.struct5, 0
+  %add7 = add i64 %length6, 1
+  call void @_ZN14HashSetBuilderI6StringE10reallocateEm(ptr %0, i64 %add7)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %lor.rhs
+  %call8 = call i1 @_ZN14HashSetBuilderI6StringE12add_internalE6String(ptr %0, ptr %1)
+  ret i1 %call8
 
 lor.rhs:                                          ; preds = %entry
   %load.struct2 = load %_Z14HashSetBuilderI6StringE, ptr %0, align 8
@@ -8099,22 +8086,7 @@ lor.rhs:                                          ; preds = %entry
   %deref = load %_Z6VectorI4ListI4SlotI6StringEEE, ptr %slots3, align 8
   %length4 = extractvalue %_Z6VectorI4ListI4SlotI6StringEEE %deref, 0
   %gt = icmp ugt i64 %call, %length4
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %gt, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
-  %load.struct5 = load %_Z14HashSetBuilderI6StringE, ptr %0, align 8
-  %length6 = extractvalue %_Z14HashSetBuilderI6StringE %load.struct5, 0
-  %add7 = add i64 %length6, 1
-  call void @_ZN14HashSetBuilderI6StringE10reallocateEm(ptr %0, i64 %add7)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %lor.end
-  %call8 = call i1 @_ZN14HashSetBuilderI6StringE12add_internalE6String(ptr %0, ptr %1)
-  ret i1 %call8
+  br i1 %gt, label %if.then, label %if.end
 }
 
 define linkonce_odr i64 @_ZN6String4hashEv(ptr %0) {
@@ -8986,25 +8958,13 @@ entry:
   %load.struct = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
   %buffer = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct, 2
   %eq = icmp eq ptr %buffer, null
-  br i1 %eq, label %lor.end, label %lor.rhs
+  br i1 %eq, label %if.then, label %lor.rhs
 
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
-  %capacity = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct2, 1
-  %eq3 = icmp eq i64 %length, %capacity
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %eq3, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
+if.then:                                          ; preds = %lor.rhs, %entry
   call void @_ZN5ArrayI6VectorI6StringEE10reallocateEv(ptr %0)
   br label %if.end
 
-if.end:                                           ; preds = %if.then, %lor.end
+if.end:                                           ; preds = %if.then, %lor.rhs
   %load.struct4 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
   %buffer5 = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct4, 2
   %load.struct6 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
@@ -9018,6 +8978,14 @@ if.end:                                           ; preds = %if.then, %lor.end
   %length10 = getelementptr inbounds nuw %_Z5ArrayI6VectorI6StringEE, ptr %0, i32 0, i32 0
   store i64 %add, ptr %length10, align 8
   ret void
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %capacity = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct2, 1
+  %eq3 = icmp eq i64 %length, %capacity
+  br i1 %eq3, label %if.then, label %if.end
 }
 
 define linkonce_odr void @_ZN5ArrayI6VectorI6StringEE3addE6VectorI6VectorI6StringEE(ptr %0, ptr %1) {
@@ -9044,34 +9012,30 @@ if.then:                                          ; preds = %entry
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
-  %load.struct8 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
-  %buffer = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct8, 2
-  %eq = icmp eq ptr %buffer, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %if.end
-  %new_length9 = load i64, ptr %new_length, align 8
   %load.struct10 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
-  %capacity = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct10, 1
-  %gt = icmp ugt i64 %new_length9, %capacity
-  br label %lor.end
+  %buffer = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct10, 2
+  %eq = icmp eq ptr %buffer, null
+  br i1 %eq, label %if.then8, label %lor.rhs
 
-lor.end:                                          ; preds = %lor.rhs, %if.end
-  %lor.result = phi i1 [ true, %if.end ], [ %gt, %lor.rhs ]
-  br i1 %lor.result, label %if.then11, label %if.end12
-
-if.then11:                                        ; preds = %lor.end
+if.then8:                                         ; preds = %lor.rhs, %if.end
   call void @_ZN5ArrayI6VectorI6StringEE10reallocateEv(ptr %0)
-  br label %if.end12
+  br label %if.end9
 
-if.end12:                                         ; preds = %if.then11, %lor.end
+if.end9:                                          ; preds = %if.then8, %lor.rhs
   %new_length13 = load i64, ptr %new_length, align 8
   %load.struct14 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
   %capacity15 = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct14, 1
   %gt16 = icmp ugt i64 %new_length13, %capacity15
   br i1 %gt16, label %if.then17, label %if.end18
 
-if.then17:                                        ; preds = %if.end12
+lor.rhs:                                          ; preds = %if.end
+  %new_length11 = load i64, ptr %new_length, align 8
+  %load.struct12 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
+  %capacity = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct12, 1
+  %gt = icmp ugt i64 %new_length11, %capacity
+  br i1 %gt, label %if.then8, label %if.end9
+
+if.then17:                                        ; preds = %if.end9
   %call = call ptr @_ZN4Page3getEPv(ptr %0)
   %load.struct19 = load %_Z5ArrayI6VectorI6StringEE, ptr %0, align 8
   %buffer20 = extractvalue %_Z5ArrayI6VectorI6StringEE %load.struct19, 2
@@ -9084,7 +9048,7 @@ if.then17:                                        ; preds = %if.end12
   %le25 = icmp ule i64 %mul24, 1024
   br i1 %le25, label %if.then26, label %if.else
 
-if.end18:                                         ; preds = %if.end50, %if.end12
+if.end18:                                         ; preds = %if.end50, %if.end9
   %load.struct52 = load %_Z6VectorI6VectorI6StringEE, ptr %1, align 8
   %length53 = extractvalue %_Z6VectorI6VectorI6StringEE %load.struct52, 0
   %gt54 = icmp ugt i64 %length53, 0
@@ -9923,25 +9887,13 @@ entry:
   %load.struct = load %_Z5ArrayI12KeyValuePairI6StringiEE, ptr %0, align 8
   %buffer = extractvalue %_Z5ArrayI12KeyValuePairI6StringiEE %load.struct, 2
   %eq = icmp eq ptr %buffer, null
-  br i1 %eq, label %lor.end, label %lor.rhs
+  br i1 %eq, label %if.then, label %lor.rhs
 
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6StringiEE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI12KeyValuePairI6StringiEE %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayI12KeyValuePairI6StringiEE, ptr %0, align 8
-  %capacity = extractvalue %_Z5ArrayI12KeyValuePairI6StringiEE %load.struct2, 1
-  %eq3 = icmp eq i64 %length, %capacity
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %eq3, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
+if.then:                                          ; preds = %lor.rhs, %entry
   call void @_ZN5ArrayI12KeyValuePairI6StringiEE10reallocateEv(ptr %0)
   br label %if.end
 
-if.end:                                           ; preds = %if.then, %lor.end
+if.end:                                           ; preds = %if.then, %lor.rhs
   %load.struct4 = load %_Z5ArrayI12KeyValuePairI6StringiEE, ptr %0, align 8
   %buffer5 = extractvalue %_Z5ArrayI12KeyValuePairI6StringiEE %load.struct4, 2
   %load.struct6 = load %_Z5ArrayI12KeyValuePairI6StringiEE, ptr %0, align 8
@@ -9955,6 +9907,14 @@ if.end:                                           ; preds = %if.then, %lor.end
   %length10 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6StringiEE, ptr %0, i32 0, i32 0
   store i64 %add, ptr %length10, align 8
   ret void
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6StringiEE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI12KeyValuePairI6StringiEE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayI12KeyValuePairI6StringiEE, ptr %0, align 8
+  %capacity = extractvalue %_Z5ArrayI12KeyValuePairI6StringiEE %load.struct2, 1
+  %eq3 = icmp eq i64 %length, %capacity
+  br i1 %eq3, label %if.then, label %if.end
 }
 
 define linkonce_odr ptr @_ZN6VectorI12KeyValuePairI6StringiEE3getEm(ptr %0, i64 %1) {
@@ -10702,34 +10662,30 @@ if.then:                                          ; preds = %entry
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
-  %load.struct8 = load %_Z5ArrayI12KeyValuePairI6StringiEE, ptr %0, align 8
-  %buffer = extractvalue %_Z5ArrayI12KeyValuePairI6StringiEE %load.struct8, 2
-  %eq = icmp eq ptr %buffer, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %if.end
-  %new_length9 = load i64, ptr %new_length, align 8
   %load.struct10 = load %_Z5ArrayI12KeyValuePairI6StringiEE, ptr %0, align 8
-  %capacity = extractvalue %_Z5ArrayI12KeyValuePairI6StringiEE %load.struct10, 1
-  %gt = icmp ugt i64 %new_length9, %capacity
-  br label %lor.end
+  %buffer = extractvalue %_Z5ArrayI12KeyValuePairI6StringiEE %load.struct10, 2
+  %eq = icmp eq ptr %buffer, null
+  br i1 %eq, label %if.then8, label %lor.rhs
 
-lor.end:                                          ; preds = %lor.rhs, %if.end
-  %lor.result = phi i1 [ true, %if.end ], [ %gt, %lor.rhs ]
-  br i1 %lor.result, label %if.then11, label %if.end12
-
-if.then11:                                        ; preds = %lor.end
+if.then8:                                         ; preds = %lor.rhs, %if.end
   call void @_ZN5ArrayI12KeyValuePairI6StringiEE10reallocateEv(ptr %0)
-  br label %if.end12
+  br label %if.end9
 
-if.end12:                                         ; preds = %if.then11, %lor.end
+if.end9:                                          ; preds = %if.then8, %lor.rhs
   %new_length13 = load i64, ptr %new_length, align 8
   %load.struct14 = load %_Z5ArrayI12KeyValuePairI6StringiEE, ptr %0, align 8
   %capacity15 = extractvalue %_Z5ArrayI12KeyValuePairI6StringiEE %load.struct14, 1
   %gt16 = icmp ugt i64 %new_length13, %capacity15
   br i1 %gt16, label %if.then17, label %if.end18
 
-if.then17:                                        ; preds = %if.end12
+lor.rhs:                                          ; preds = %if.end
+  %new_length11 = load i64, ptr %new_length, align 8
+  %load.struct12 = load %_Z5ArrayI12KeyValuePairI6StringiEE, ptr %0, align 8
+  %capacity = extractvalue %_Z5ArrayI12KeyValuePairI6StringiEE %load.struct12, 1
+  %gt = icmp ugt i64 %new_length11, %capacity
+  br i1 %gt, label %if.then8, label %if.end9
+
+if.then17:                                        ; preds = %if.end9
   %call = call ptr @_ZN4Page3getEPv(ptr %0)
   %load.struct19 = load %_Z5ArrayI12KeyValuePairI6StringiEE, ptr %0, align 8
   %buffer20 = extractvalue %_Z5ArrayI12KeyValuePairI6StringiEE %load.struct19, 2
@@ -10742,7 +10698,7 @@ if.then17:                                        ; preds = %if.end12
   %le25 = icmp ule i64 %mul24, 1024
   br i1 %le25, label %if.then26, label %if.else
 
-if.end18:                                         ; preds = %if.end50, %if.end12
+if.end18:                                         ; preds = %if.end50, %if.end9
   %load.struct52 = load %_Z6VectorI12KeyValuePairI6StringiEE, ptr %1, align 8
   %length53 = extractvalue %_Z6VectorI12KeyValuePairI6StringiEE %load.struct52, 0
   %gt54 = icmp ugt i64 %length53, 0
@@ -11781,25 +11737,13 @@ entry:
   %load.struct = load %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, align 8
   %buffer = extractvalue %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringiEEEE %load.struct, 2
   %eq = icmp eq ptr %buffer, null
-  br i1 %eq, label %lor.end, label %lor.rhs
+  br i1 %eq, label %if.then, label %lor.rhs
 
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringiEEEE %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, align 8
-  %capacity = extractvalue %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringiEEEE %load.struct2, 1
-  %eq3 = icmp eq i64 %length, %capacity
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %eq3, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
+if.then:                                          ; preds = %lor.rhs, %entry
   call void @_ZN5ArrayI4ListI4SlotI12KeyValuePairI6StringiEEEE10reallocateEv(ptr %0)
   br label %if.end
 
-if.end:                                           ; preds = %if.then, %lor.end
+if.end:                                           ; preds = %if.then, %lor.rhs
   %load.struct4 = load %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, align 8
   %buffer5 = extractvalue %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringiEEEE %load.struct4, 2
   %load.struct6 = load %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, align 8
@@ -11813,6 +11757,14 @@ if.end:                                           ; preds = %if.then, %lor.end
   %length10 = getelementptr inbounds nuw %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, i32 0, i32 0
   store i64 %add, ptr %length10, align 8
   ret void
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringiEEEE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, align 8
+  %capacity = extractvalue %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringiEEEE %load.struct2, 1
+  %eq3 = icmp eq i64 %length, %capacity
+  br i1 %eq3, label %if.then, label %if.end
 }
 
 define linkonce_odr void @_ZN5ArrayI4ListI4SlotI12KeyValuePairI6StringiEEEE3addE6VectorI4ListI4SlotI12KeyValuePairI6StringiEEEE(ptr %0, ptr %1) {
@@ -11839,34 +11791,30 @@ if.then:                                          ; preds = %entry
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
-  %load.struct8 = load %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, align 8
-  %buffer = extractvalue %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringiEEEE %load.struct8, 2
-  %eq = icmp eq ptr %buffer, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %if.end
-  %new_length9 = load i64, ptr %new_length, align 8
   %load.struct10 = load %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, align 8
-  %capacity = extractvalue %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringiEEEE %load.struct10, 1
-  %gt = icmp ugt i64 %new_length9, %capacity
-  br label %lor.end
+  %buffer = extractvalue %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringiEEEE %load.struct10, 2
+  %eq = icmp eq ptr %buffer, null
+  br i1 %eq, label %if.then8, label %lor.rhs
 
-lor.end:                                          ; preds = %lor.rhs, %if.end
-  %lor.result = phi i1 [ true, %if.end ], [ %gt, %lor.rhs ]
-  br i1 %lor.result, label %if.then11, label %if.end12
-
-if.then11:                                        ; preds = %lor.end
+if.then8:                                         ; preds = %lor.rhs, %if.end
   call void @_ZN5ArrayI4ListI4SlotI12KeyValuePairI6StringiEEEE10reallocateEv(ptr %0)
-  br label %if.end12
+  br label %if.end9
 
-if.end12:                                         ; preds = %if.then11, %lor.end
+if.end9:                                          ; preds = %if.then8, %lor.rhs
   %new_length13 = load i64, ptr %new_length, align 8
   %load.struct14 = load %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, align 8
   %capacity15 = extractvalue %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringiEEEE %load.struct14, 1
   %gt16 = icmp ugt i64 %new_length13, %capacity15
   br i1 %gt16, label %if.then17, label %if.end18
 
-if.then17:                                        ; preds = %if.end12
+lor.rhs:                                          ; preds = %if.end
+  %new_length11 = load i64, ptr %new_length, align 8
+  %load.struct12 = load %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, align 8
+  %capacity = extractvalue %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringiEEEE %load.struct12, 1
+  %gt = icmp ugt i64 %new_length11, %capacity
+  br i1 %gt, label %if.then8, label %if.end9
+
+if.then17:                                        ; preds = %if.end9
   %call = call ptr @_ZN4Page3getEPv(ptr %0)
   %load.struct19 = load %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringiEEEE, ptr %0, align 8
   %buffer20 = extractvalue %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringiEEEE %load.struct19, 2
@@ -11879,7 +11827,7 @@ if.then17:                                        ; preds = %if.end12
   %le25 = icmp ule i64 %mul24, 1024
   br i1 %le25, label %if.then26, label %if.else
 
-if.end18:                                         ; preds = %if.end50, %if.end12
+if.end18:                                         ; preds = %if.end50, %if.end9
   %load.struct52 = load %_Z6VectorI4ListI4SlotI12KeyValuePairI6StringiEEEE, ptr %1, align 8
   %length53 = extractvalue %_Z6VectorI4ListI4SlotI12KeyValuePairI6StringiEEEE %load.struct52, 0
   %gt54 = icmp ugt i64 %length53, 0
@@ -12468,7 +12416,18 @@ entry:
   %load.struct1 = load %_Z14HashMapBuilderI6StringiE, ptr %0, align 8
   %slots = extractvalue %_Z14HashMapBuilderI6StringiE %load.struct1, 1
   %eq = icmp eq ptr %slots, null
-  br i1 %eq, label %lor.end, label %lor.rhs
+  br i1 %eq, label %if.then, label %lor.rhs
+
+if.then:                                          ; preds = %lor.rhs, %entry
+  %load.struct5 = load %_Z14HashMapBuilderI6StringiE, ptr %0, align 8
+  %length6 = extractvalue %_Z14HashMapBuilderI6StringiE %load.struct5, 0
+  %add7 = add i64 %length6, 1
+  call void @_ZN14HashMapBuilderI6StringiE10reallocateEm(ptr %0, i64 %add7)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %lor.rhs
+  %call8 = call i1 @_ZN14HashMapBuilderI6StringiE12add_internalE6Stringi(ptr %0, ptr %1, i64 %2)
+  ret i1 %call8
 
 lor.rhs:                                          ; preds = %entry
   %load.struct2 = load %_Z14HashMapBuilderI6StringiE, ptr %0, align 8
@@ -12476,22 +12435,7 @@ lor.rhs:                                          ; preds = %entry
   %deref = load %_Z6VectorI4ListI4SlotI12KeyValuePairI6StringiEEEE, ptr %slots3, align 8
   %length4 = extractvalue %_Z6VectorI4ListI4SlotI12KeyValuePairI6StringiEEEE %deref, 0
   %gt = icmp ugt i64 %call, %length4
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %gt, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
-  %load.struct5 = load %_Z14HashMapBuilderI6StringiE, ptr %0, align 8
-  %length6 = extractvalue %_Z14HashMapBuilderI6StringiE %load.struct5, 0
-  %add7 = add i64 %length6, 1
-  call void @_ZN14HashMapBuilderI6StringiE10reallocateEm(ptr %0, i64 %add7)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %lor.end
-  %call8 = call i1 @_ZN14HashMapBuilderI6StringiE12add_internalE6Stringi(ptr %0, ptr %1, i64 %2)
-  ret i1 %call8
+  br i1 %gt, label %if.then, label %if.end
 }
 
 define linkonce_odr i1 @_ZN14HashMapBuilderI6StringiE12add_internalE6Stringi(ptr %0, ptr %1, i64 %2) {
@@ -13381,25 +13325,13 @@ entry:
   %load.struct = load %_Z5ArrayI6VectorI12KeyValuePairI6StringiEEE, ptr %0, align 8
   %buffer = extractvalue %_Z5ArrayI6VectorI12KeyValuePairI6StringiEEE %load.struct, 2
   %eq = icmp eq ptr %buffer, null
-  br i1 %eq, label %lor.end, label %lor.rhs
+  br i1 %eq, label %if.then, label %lor.rhs
 
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI6VectorI12KeyValuePairI6StringiEEE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI6VectorI12KeyValuePairI6StringiEEE %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayI6VectorI12KeyValuePairI6StringiEEE, ptr %0, align 8
-  %capacity = extractvalue %_Z5ArrayI6VectorI12KeyValuePairI6StringiEEE %load.struct2, 1
-  %eq3 = icmp eq i64 %length, %capacity
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %eq3, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
+if.then:                                          ; preds = %lor.rhs, %entry
   call void @_ZN5ArrayI6VectorI12KeyValuePairI6StringiEEE10reallocateEv(ptr %0)
   br label %if.end
 
-if.end:                                           ; preds = %if.then, %lor.end
+if.end:                                           ; preds = %if.then, %lor.rhs
   %load.struct4 = load %_Z5ArrayI6VectorI12KeyValuePairI6StringiEEE, ptr %0, align 8
   %buffer5 = extractvalue %_Z5ArrayI6VectorI12KeyValuePairI6StringiEEE %load.struct4, 2
   %load.struct6 = load %_Z5ArrayI6VectorI12KeyValuePairI6StringiEEE, ptr %0, align 8
@@ -13413,6 +13345,14 @@ if.end:                                           ; preds = %if.then, %lor.end
   %length10 = getelementptr inbounds nuw %_Z5ArrayI6VectorI12KeyValuePairI6StringiEEE, ptr %0, i32 0, i32 0
   store i64 %add, ptr %length10, align 8
   ret void
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI6VectorI12KeyValuePairI6StringiEEE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI6VectorI12KeyValuePairI6StringiEEE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayI6VectorI12KeyValuePairI6StringiEEE, ptr %0, align 8
+  %capacity = extractvalue %_Z5ArrayI6VectorI12KeyValuePairI6StringiEEE %load.struct2, 1
+  %eq3 = icmp eq i64 %length, %capacity
+  br i1 %eq3, label %if.then, label %if.end
 }
 
 define linkonce_odr void @_ZN5ArrayI6VectorI12KeyValuePairI6StringiEEE3addE6VectorI6VectorI12KeyValuePairI6StringiEEE(ptr %0, ptr %1) {
@@ -13439,34 +13379,30 @@ if.then:                                          ; preds = %entry
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
-  %load.struct8 = load %_Z5ArrayI6VectorI12KeyValuePairI6StringiEEE, ptr %0, align 8
-  %buffer = extractvalue %_Z5ArrayI6VectorI12KeyValuePairI6StringiEEE %load.struct8, 2
-  %eq = icmp eq ptr %buffer, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %if.end
-  %new_length9 = load i64, ptr %new_length, align 8
   %load.struct10 = load %_Z5ArrayI6VectorI12KeyValuePairI6StringiEEE, ptr %0, align 8
-  %capacity = extractvalue %_Z5ArrayI6VectorI12KeyValuePairI6StringiEEE %load.struct10, 1
-  %gt = icmp ugt i64 %new_length9, %capacity
-  br label %lor.end
+  %buffer = extractvalue %_Z5ArrayI6VectorI12KeyValuePairI6StringiEEE %load.struct10, 2
+  %eq = icmp eq ptr %buffer, null
+  br i1 %eq, label %if.then8, label %lor.rhs
 
-lor.end:                                          ; preds = %lor.rhs, %if.end
-  %lor.result = phi i1 [ true, %if.end ], [ %gt, %lor.rhs ]
-  br i1 %lor.result, label %if.then11, label %if.end12
-
-if.then11:                                        ; preds = %lor.end
+if.then8:                                         ; preds = %lor.rhs, %if.end
   call void @_ZN5ArrayI6VectorI12KeyValuePairI6StringiEEE10reallocateEv(ptr %0)
-  br label %if.end12
+  br label %if.end9
 
-if.end12:                                         ; preds = %if.then11, %lor.end
+if.end9:                                          ; preds = %if.then8, %lor.rhs
   %new_length13 = load i64, ptr %new_length, align 8
   %load.struct14 = load %_Z5ArrayI6VectorI12KeyValuePairI6StringiEEE, ptr %0, align 8
   %capacity15 = extractvalue %_Z5ArrayI6VectorI12KeyValuePairI6StringiEEE %load.struct14, 1
   %gt16 = icmp ugt i64 %new_length13, %capacity15
   br i1 %gt16, label %if.then17, label %if.end18
 
-if.then17:                                        ; preds = %if.end12
+lor.rhs:                                          ; preds = %if.end
+  %new_length11 = load i64, ptr %new_length, align 8
+  %load.struct12 = load %_Z5ArrayI6VectorI12KeyValuePairI6StringiEEE, ptr %0, align 8
+  %capacity = extractvalue %_Z5ArrayI6VectorI12KeyValuePairI6StringiEEE %load.struct12, 1
+  %gt = icmp ugt i64 %new_length11, %capacity
+  br i1 %gt, label %if.then8, label %if.end9
+
+if.then17:                                        ; preds = %if.end9
   %call = call ptr @_ZN4Page3getEPv(ptr %0)
   %load.struct19 = load %_Z5ArrayI6VectorI12KeyValuePairI6StringiEEE, ptr %0, align 8
   %buffer20 = extractvalue %_Z5ArrayI6VectorI12KeyValuePairI6StringiEEE %load.struct19, 2
@@ -13479,7 +13415,7 @@ if.then17:                                        ; preds = %if.end12
   %le25 = icmp ule i64 %mul24, 1024
   br i1 %le25, label %if.then26, label %if.else
 
-if.end18:                                         ; preds = %if.end50, %if.end12
+if.end18:                                         ; preds = %if.end50, %if.end9
   %load.struct52 = load %_Z6VectorI6VectorI12KeyValuePairI6StringiEEE, ptr %1, align 8
   %length53 = extractvalue %_Z6VectorI6VectorI12KeyValuePairI6StringiEEE %load.struct52, 0
   %gt54 = icmp ugt i64 %length53, 0
@@ -15077,25 +15013,13 @@ entry:
   %load.struct = load %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, align 8
   %buffer = extractvalue %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringmEEEE %load.struct, 2
   %eq = icmp eq ptr %buffer, null
-  br i1 %eq, label %lor.end, label %lor.rhs
+  br i1 %eq, label %if.then, label %lor.rhs
 
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringmEEEE %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, align 8
-  %capacity = extractvalue %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringmEEEE %load.struct2, 1
-  %eq3 = icmp eq i64 %length, %capacity
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %eq3, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
+if.then:                                          ; preds = %lor.rhs, %entry
   call void @_ZN5ArrayI4ListI4SlotI12KeyValuePairI6StringmEEEE10reallocateEv(ptr %0)
   br label %if.end
 
-if.end:                                           ; preds = %if.then, %lor.end
+if.end:                                           ; preds = %if.then, %lor.rhs
   %load.struct4 = load %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, align 8
   %buffer5 = extractvalue %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringmEEEE %load.struct4, 2
   %load.struct6 = load %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, align 8
@@ -15109,6 +15033,14 @@ if.end:                                           ; preds = %if.then, %lor.end
   %length10 = getelementptr inbounds nuw %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, i32 0, i32 0
   store i64 %add, ptr %length10, align 8
   ret void
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringmEEEE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, align 8
+  %capacity = extractvalue %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringmEEEE %load.struct2, 1
+  %eq3 = icmp eq i64 %length, %capacity
+  br i1 %eq3, label %if.then, label %if.end
 }
 
 define linkonce_odr void @_ZN5ArrayI4ListI4SlotI12KeyValuePairI6StringmEEEE3addE6VectorI4ListI4SlotI12KeyValuePairI6StringmEEEE(ptr %0, ptr %1) {
@@ -15135,34 +15067,30 @@ if.then:                                          ; preds = %entry
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
-  %load.struct8 = load %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, align 8
-  %buffer = extractvalue %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringmEEEE %load.struct8, 2
-  %eq = icmp eq ptr %buffer, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %if.end
-  %new_length9 = load i64, ptr %new_length, align 8
   %load.struct10 = load %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, align 8
-  %capacity = extractvalue %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringmEEEE %load.struct10, 1
-  %gt = icmp ugt i64 %new_length9, %capacity
-  br label %lor.end
+  %buffer = extractvalue %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringmEEEE %load.struct10, 2
+  %eq = icmp eq ptr %buffer, null
+  br i1 %eq, label %if.then8, label %lor.rhs
 
-lor.end:                                          ; preds = %lor.rhs, %if.end
-  %lor.result = phi i1 [ true, %if.end ], [ %gt, %lor.rhs ]
-  br i1 %lor.result, label %if.then11, label %if.end12
-
-if.then11:                                        ; preds = %lor.end
+if.then8:                                         ; preds = %lor.rhs, %if.end
   call void @_ZN5ArrayI4ListI4SlotI12KeyValuePairI6StringmEEEE10reallocateEv(ptr %0)
-  br label %if.end12
+  br label %if.end9
 
-if.end12:                                         ; preds = %if.then11, %lor.end
+if.end9:                                          ; preds = %if.then8, %lor.rhs
   %new_length13 = load i64, ptr %new_length, align 8
   %load.struct14 = load %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, align 8
   %capacity15 = extractvalue %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringmEEEE %load.struct14, 1
   %gt16 = icmp ugt i64 %new_length13, %capacity15
   br i1 %gt16, label %if.then17, label %if.end18
 
-if.then17:                                        ; preds = %if.end12
+lor.rhs:                                          ; preds = %if.end
+  %new_length11 = load i64, ptr %new_length, align 8
+  %load.struct12 = load %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, align 8
+  %capacity = extractvalue %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringmEEEE %load.struct12, 1
+  %gt = icmp ugt i64 %new_length11, %capacity
+  br i1 %gt, label %if.then8, label %if.end9
+
+if.then17:                                        ; preds = %if.end9
   %call = call ptr @_ZN4Page3getEPv(ptr %0)
   %load.struct19 = load %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringmEEEE, ptr %0, align 8
   %buffer20 = extractvalue %_Z5ArrayI4ListI4SlotI12KeyValuePairI6StringmEEEE %load.struct19, 2
@@ -15175,7 +15103,7 @@ if.then17:                                        ; preds = %if.end12
   %le25 = icmp ule i64 %mul24, 1024
   br i1 %le25, label %if.then26, label %if.else
 
-if.end18:                                         ; preds = %if.end50, %if.end12
+if.end18:                                         ; preds = %if.end50, %if.end9
   %load.struct52 = load %_Z6VectorI4ListI4SlotI12KeyValuePairI6StringmEEEE, ptr %1, align 8
   %length53 = extractvalue %_Z6VectorI4ListI4SlotI12KeyValuePairI6StringmEEEE %load.struct52, 0
   %gt54 = icmp ugt i64 %length53, 0
@@ -15764,7 +15692,18 @@ entry:
   %load.struct1 = load %_Z14HashMapBuilderI6StringmE, ptr %0, align 8
   %slots = extractvalue %_Z14HashMapBuilderI6StringmE %load.struct1, 1
   %eq = icmp eq ptr %slots, null
-  br i1 %eq, label %lor.end, label %lor.rhs
+  br i1 %eq, label %if.then, label %lor.rhs
+
+if.then:                                          ; preds = %lor.rhs, %entry
+  %load.struct5 = load %_Z14HashMapBuilderI6StringmE, ptr %0, align 8
+  %length6 = extractvalue %_Z14HashMapBuilderI6StringmE %load.struct5, 0
+  %add7 = add i64 %length6, 1
+  call void @_ZN14HashMapBuilderI6StringmE10reallocateEm(ptr %0, i64 %add7)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %lor.rhs
+  %call8 = call i1 @_ZN14HashMapBuilderI6StringmE12add_internalE6Stringm(ptr %0, ptr %1, i64 %2)
+  ret i1 %call8
 
 lor.rhs:                                          ; preds = %entry
   %load.struct2 = load %_Z14HashMapBuilderI6StringmE, ptr %0, align 8
@@ -15772,22 +15711,7 @@ lor.rhs:                                          ; preds = %entry
   %deref = load %_Z6VectorI4ListI4SlotI12KeyValuePairI6StringmEEEE, ptr %slots3, align 8
   %length4 = extractvalue %_Z6VectorI4ListI4SlotI12KeyValuePairI6StringmEEEE %deref, 0
   %gt = icmp ugt i64 %call, %length4
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %gt, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
-  %load.struct5 = load %_Z14HashMapBuilderI6StringmE, ptr %0, align 8
-  %length6 = extractvalue %_Z14HashMapBuilderI6StringmE %load.struct5, 0
-  %add7 = add i64 %length6, 1
-  call void @_ZN14HashMapBuilderI6StringmE10reallocateEm(ptr %0, i64 %add7)
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %lor.end
-  %call8 = call i1 @_ZN14HashMapBuilderI6StringmE12add_internalE6Stringm(ptr %0, ptr %1, i64 %2)
-  ret i1 %call8
+  br i1 %gt, label %if.then, label %if.end
 }
 
 define linkonce_odr i1 @_ZN14HashMapBuilderI6StringmE12add_internalE6Stringm(ptr %0, ptr %1, i64 %2) {
@@ -16586,25 +16510,13 @@ entry:
   %load.struct = load %_Z5ArrayI12KeyValuePairI6StringmEE, ptr %0, align 8
   %buffer = extractvalue %_Z5ArrayI12KeyValuePairI6StringmEE %load.struct, 2
   %eq = icmp eq ptr %buffer, null
-  br i1 %eq, label %lor.end, label %lor.rhs
+  br i1 %eq, label %if.then, label %lor.rhs
 
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6StringmEE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI12KeyValuePairI6StringmEE %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayI12KeyValuePairI6StringmEE, ptr %0, align 8
-  %capacity = extractvalue %_Z5ArrayI12KeyValuePairI6StringmEE %load.struct2, 1
-  %eq3 = icmp eq i64 %length, %capacity
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %eq3, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
+if.then:                                          ; preds = %lor.rhs, %entry
   call void @_ZN5ArrayI12KeyValuePairI6StringmEE10reallocateEv(ptr %0)
   br label %if.end
 
-if.end:                                           ; preds = %if.then, %lor.end
+if.end:                                           ; preds = %if.then, %lor.rhs
   %load.struct4 = load %_Z5ArrayI12KeyValuePairI6StringmEE, ptr %0, align 8
   %buffer5 = extractvalue %_Z5ArrayI12KeyValuePairI6StringmEE %load.struct4, 2
   %load.struct6 = load %_Z5ArrayI12KeyValuePairI6StringmEE, ptr %0, align 8
@@ -16618,6 +16530,14 @@ if.end:                                           ; preds = %if.then, %lor.end
   %length10 = getelementptr inbounds nuw %_Z5ArrayI12KeyValuePairI6StringmEE, ptr %0, i32 0, i32 0
   store i64 %add, ptr %length10, align 8
   ret void
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI12KeyValuePairI6StringmEE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI12KeyValuePairI6StringmEE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayI12KeyValuePairI6StringmEE, ptr %0, align 8
+  %capacity = extractvalue %_Z5ArrayI12KeyValuePairI6StringmEE %load.struct2, 1
+  %eq3 = icmp eq i64 %length, %capacity
+  br i1 %eq3, label %if.then, label %if.end
 }
 
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI6StringmEE3addE6VectorI12KeyValuePairI6StringmEE(ptr %0, ptr %1) {
@@ -16644,34 +16564,30 @@ if.then:                                          ; preds = %entry
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
-  %load.struct8 = load %_Z5ArrayI12KeyValuePairI6StringmEE, ptr %0, align 8
-  %buffer = extractvalue %_Z5ArrayI12KeyValuePairI6StringmEE %load.struct8, 2
-  %eq = icmp eq ptr %buffer, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %if.end
-  %new_length9 = load i64, ptr %new_length, align 8
   %load.struct10 = load %_Z5ArrayI12KeyValuePairI6StringmEE, ptr %0, align 8
-  %capacity = extractvalue %_Z5ArrayI12KeyValuePairI6StringmEE %load.struct10, 1
-  %gt = icmp ugt i64 %new_length9, %capacity
-  br label %lor.end
+  %buffer = extractvalue %_Z5ArrayI12KeyValuePairI6StringmEE %load.struct10, 2
+  %eq = icmp eq ptr %buffer, null
+  br i1 %eq, label %if.then8, label %lor.rhs
 
-lor.end:                                          ; preds = %lor.rhs, %if.end
-  %lor.result = phi i1 [ true, %if.end ], [ %gt, %lor.rhs ]
-  br i1 %lor.result, label %if.then11, label %if.end12
-
-if.then11:                                        ; preds = %lor.end
+if.then8:                                         ; preds = %lor.rhs, %if.end
   call void @_ZN5ArrayI12KeyValuePairI6StringmEE10reallocateEv(ptr %0)
-  br label %if.end12
+  br label %if.end9
 
-if.end12:                                         ; preds = %if.then11, %lor.end
+if.end9:                                          ; preds = %if.then8, %lor.rhs
   %new_length13 = load i64, ptr %new_length, align 8
   %load.struct14 = load %_Z5ArrayI12KeyValuePairI6StringmEE, ptr %0, align 8
   %capacity15 = extractvalue %_Z5ArrayI12KeyValuePairI6StringmEE %load.struct14, 1
   %gt16 = icmp ugt i64 %new_length13, %capacity15
   br i1 %gt16, label %if.then17, label %if.end18
 
-if.then17:                                        ; preds = %if.end12
+lor.rhs:                                          ; preds = %if.end
+  %new_length11 = load i64, ptr %new_length, align 8
+  %load.struct12 = load %_Z5ArrayI12KeyValuePairI6StringmEE, ptr %0, align 8
+  %capacity = extractvalue %_Z5ArrayI12KeyValuePairI6StringmEE %load.struct12, 1
+  %gt = icmp ugt i64 %new_length11, %capacity
+  br i1 %gt, label %if.then8, label %if.end9
+
+if.then17:                                        ; preds = %if.end9
   %call = call ptr @_ZN4Page3getEPv(ptr %0)
   %load.struct19 = load %_Z5ArrayI12KeyValuePairI6StringmEE, ptr %0, align 8
   %buffer20 = extractvalue %_Z5ArrayI12KeyValuePairI6StringmEE %load.struct19, 2
@@ -16684,7 +16600,7 @@ if.then17:                                        ; preds = %if.end12
   %le25 = icmp ule i64 %mul24, 1024
   br i1 %le25, label %if.then26, label %if.else
 
-if.end18:                                         ; preds = %if.end50, %if.end12
+if.end18:                                         ; preds = %if.end50, %if.end9
   %load.struct52 = load %_Z6VectorI12KeyValuePairI6StringmEE, ptr %1, align 8
   %length53 = extractvalue %_Z6VectorI12KeyValuePairI6StringmEE %load.struct52, 0
   %gt54 = icmp ugt i64 %length53, 0
@@ -21961,25 +21877,13 @@ entry:
   %load.struct = load %_Z5ArrayIcE, ptr %0, align 8
   %buffer = extractvalue %_Z5ArrayIcE %load.struct, 2
   %eq = icmp eq ptr %buffer, null
-  br i1 %eq, label %lor.end, label %lor.rhs
+  br i1 %eq, label %if.then, label %lor.rhs
 
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayIcE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayIcE %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayIcE, ptr %0, align 8
-  %capacity = extractvalue %_Z5ArrayIcE %load.struct2, 1
-  %eq3 = icmp eq i64 %length, %capacity
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %eq3, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
+if.then:                                          ; preds = %lor.rhs, %entry
   call void @_ZN5ArrayIcE10reallocateEv(ptr %0)
   br label %if.end
 
-if.end:                                           ; preds = %if.then, %lor.end
+if.end:                                           ; preds = %if.then, %lor.rhs
   %load.struct4 = load %_Z5ArrayIcE, ptr %0, align 8
   %buffer5 = extractvalue %_Z5ArrayIcE %load.struct4, 2
   %load.struct6 = load %_Z5ArrayIcE, ptr %0, align 8
@@ -21992,6 +21896,14 @@ if.end:                                           ; preds = %if.then, %lor.end
   %length10 = getelementptr inbounds nuw %_Z5ArrayIcE, ptr %0, i32 0, i32 0
   store i64 %add, ptr %length10, align 8
   ret void
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayIcE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayIcE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayIcE, ptr %0, align 8
+  %capacity = extractvalue %_Z5ArrayIcE %load.struct2, 1
+  %eq3 = icmp eq i64 %length, %capacity
+  br i1 %eq3, label %if.then, label %if.end
 }
 
 define linkonce_odr void @_ZN5ArrayIcE3addE6VectorIcE(ptr %0, ptr %1) {
@@ -22018,34 +21930,30 @@ if.then:                                          ; preds = %entry
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
-  %load.struct8 = load %_Z5ArrayIcE, ptr %0, align 8
-  %buffer = extractvalue %_Z5ArrayIcE %load.struct8, 2
-  %eq = icmp eq ptr %buffer, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %if.end
-  %new_length9 = load i64, ptr %new_length, align 8
   %load.struct10 = load %_Z5ArrayIcE, ptr %0, align 8
-  %capacity = extractvalue %_Z5ArrayIcE %load.struct10, 1
-  %gt = icmp ugt i64 %new_length9, %capacity
-  br label %lor.end
+  %buffer = extractvalue %_Z5ArrayIcE %load.struct10, 2
+  %eq = icmp eq ptr %buffer, null
+  br i1 %eq, label %if.then8, label %lor.rhs
 
-lor.end:                                          ; preds = %lor.rhs, %if.end
-  %lor.result = phi i1 [ true, %if.end ], [ %gt, %lor.rhs ]
-  br i1 %lor.result, label %if.then11, label %if.end12
-
-if.then11:                                        ; preds = %lor.end
+if.then8:                                         ; preds = %lor.rhs, %if.end
   call void @_ZN5ArrayIcE10reallocateEv(ptr %0)
-  br label %if.end12
+  br label %if.end9
 
-if.end12:                                         ; preds = %if.then11, %lor.end
+if.end9:                                          ; preds = %if.then8, %lor.rhs
   %new_length13 = load i64, ptr %new_length, align 8
   %load.struct14 = load %_Z5ArrayIcE, ptr %0, align 8
   %capacity15 = extractvalue %_Z5ArrayIcE %load.struct14, 1
   %gt16 = icmp ugt i64 %new_length13, %capacity15
   br i1 %gt16, label %if.then17, label %if.end18
 
-if.then17:                                        ; preds = %if.end12
+lor.rhs:                                          ; preds = %if.end
+  %new_length11 = load i64, ptr %new_length, align 8
+  %load.struct12 = load %_Z5ArrayIcE, ptr %0, align 8
+  %capacity = extractvalue %_Z5ArrayIcE %load.struct12, 1
+  %gt = icmp ugt i64 %new_length11, %capacity
+  br i1 %gt, label %if.then8, label %if.end9
+
+if.then17:                                        ; preds = %if.end9
   %call = call ptr @_ZN4Page3getEPv(ptr %0)
   %load.struct19 = load %_Z5ArrayIcE, ptr %0, align 8
   %buffer20 = extractvalue %_Z5ArrayIcE %load.struct19, 2
@@ -22058,7 +21966,7 @@ if.then17:                                        ; preds = %if.end12
   %le25 = icmp ule i64 %mul24, 1024
   br i1 %le25, label %if.then26, label %if.else
 
-if.end18:                                         ; preds = %if.end50, %if.end12
+if.end18:                                         ; preds = %if.end50, %if.end9
   %load.struct52 = load %_Z6VectorIcE, ptr %1, align 8
   %length53 = extractvalue %_Z6VectorIcE %load.struct52, 0
   %gt54 = icmp ugt i64 %length53, 0
@@ -29563,25 +29471,13 @@ entry:
   %load.struct = load %_Z5ArrayIfE, ptr %0, align 8
   %buffer = extractvalue %_Z5ArrayIfE %load.struct, 2
   %eq = icmp eq ptr %buffer, null
-  br i1 %eq, label %lor.end, label %lor.rhs
+  br i1 %eq, label %if.then, label %lor.rhs
 
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayIfE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayIfE %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayIfE, ptr %0, align 8
-  %capacity = extractvalue %_Z5ArrayIfE %load.struct2, 1
-  %eq3 = icmp eq i64 %length, %capacity
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %eq3, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
+if.then:                                          ; preds = %lor.rhs, %entry
   call void @_ZN5ArrayIfE10reallocateEv(ptr %0)
   br label %if.end
 
-if.end:                                           ; preds = %if.then, %lor.end
+if.end:                                           ; preds = %if.then, %lor.rhs
   %load.struct4 = load %_Z5ArrayIfE, ptr %0, align 8
   %buffer5 = extractvalue %_Z5ArrayIfE %load.struct4, 2
   %load.struct6 = load %_Z5ArrayIfE, ptr %0, align 8
@@ -29594,6 +29490,14 @@ if.end:                                           ; preds = %if.then, %lor.end
   %length10 = getelementptr inbounds nuw %_Z5ArrayIfE, ptr %0, i32 0, i32 0
   store i64 %add, ptr %length10, align 8
   ret void
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayIfE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayIfE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayIfE, ptr %0, align 8
+  %capacity = extractvalue %_Z5ArrayIfE %load.struct2, 1
+  %eq3 = icmp eq i64 %length, %capacity
+  br i1 %eq3, label %if.then, label %if.end
 }
 
 define linkonce_odr void @_ZN5ArrayIfE3addE6VectorIfE(ptr %0, ptr %1) {
@@ -29620,34 +29524,30 @@ if.then:                                          ; preds = %entry
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
-  %load.struct8 = load %_Z5ArrayIfE, ptr %0, align 8
-  %buffer = extractvalue %_Z5ArrayIfE %load.struct8, 2
-  %eq = icmp eq ptr %buffer, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %if.end
-  %new_length9 = load i64, ptr %new_length, align 8
   %load.struct10 = load %_Z5ArrayIfE, ptr %0, align 8
-  %capacity = extractvalue %_Z5ArrayIfE %load.struct10, 1
-  %gt = icmp ugt i64 %new_length9, %capacity
-  br label %lor.end
+  %buffer = extractvalue %_Z5ArrayIfE %load.struct10, 2
+  %eq = icmp eq ptr %buffer, null
+  br i1 %eq, label %if.then8, label %lor.rhs
 
-lor.end:                                          ; preds = %lor.rhs, %if.end
-  %lor.result = phi i1 [ true, %if.end ], [ %gt, %lor.rhs ]
-  br i1 %lor.result, label %if.then11, label %if.end12
-
-if.then11:                                        ; preds = %lor.end
+if.then8:                                         ; preds = %lor.rhs, %if.end
   call void @_ZN5ArrayIfE10reallocateEv(ptr %0)
-  br label %if.end12
+  br label %if.end9
 
-if.end12:                                         ; preds = %if.then11, %lor.end
+if.end9:                                          ; preds = %if.then8, %lor.rhs
   %new_length13 = load i64, ptr %new_length, align 8
   %load.struct14 = load %_Z5ArrayIfE, ptr %0, align 8
   %capacity15 = extractvalue %_Z5ArrayIfE %load.struct14, 1
   %gt16 = icmp ugt i64 %new_length13, %capacity15
   br i1 %gt16, label %if.then17, label %if.end18
 
-if.then17:                                        ; preds = %if.end12
+lor.rhs:                                          ; preds = %if.end
+  %new_length11 = load i64, ptr %new_length, align 8
+  %load.struct12 = load %_Z5ArrayIfE, ptr %0, align 8
+  %capacity = extractvalue %_Z5ArrayIfE %load.struct12, 1
+  %gt = icmp ugt i64 %new_length11, %capacity
+  br i1 %gt, label %if.then8, label %if.end9
+
+if.then17:                                        ; preds = %if.end9
   %call = call ptr @_ZN4Page3getEPv(ptr %0)
   %load.struct19 = load %_Z5ArrayIfE, ptr %0, align 8
   %buffer20 = extractvalue %_Z5ArrayIfE %load.struct19, 2
@@ -29660,7 +29560,7 @@ if.then17:                                        ; preds = %if.end12
   %le25 = icmp ule i64 %mul24, 1024
   br i1 %le25, label %if.then26, label %if.else
 
-if.end18:                                         ; preds = %if.end50, %if.end12
+if.end18:                                         ; preds = %if.end50, %if.end9
   %load.struct52 = load %_Z6VectorIfE, ptr %1, align 8
   %length53 = extractvalue %_Z6VectorIfE %load.struct52, 0
   %gt54 = icmp ugt i64 %length53, 0
@@ -32764,25 +32664,13 @@ entry:
   %load.struct = load %_Z5ArrayI3i64E, ptr %0, align 8
   %buffer = extractvalue %_Z5ArrayI3i64E %load.struct, 2
   %eq = icmp eq ptr %buffer, null
-  br i1 %eq, label %lor.end, label %lor.rhs
+  br i1 %eq, label %if.then, label %lor.rhs
 
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI3i64E, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI3i64E %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayI3i64E, ptr %0, align 8
-  %capacity = extractvalue %_Z5ArrayI3i64E %load.struct2, 1
-  %eq3 = icmp eq i64 %length, %capacity
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %eq3, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
+if.then:                                          ; preds = %lor.rhs, %entry
   call void @_ZN5ArrayI3i64E10reallocateEv(ptr %0)
   br label %if.end
 
-if.end:                                           ; preds = %if.then, %lor.end
+if.end:                                           ; preds = %if.then, %lor.rhs
   %load.struct4 = load %_Z5ArrayI3i64E, ptr %0, align 8
   %buffer5 = extractvalue %_Z5ArrayI3i64E %load.struct4, 2
   %load.struct6 = load %_Z5ArrayI3i64E, ptr %0, align 8
@@ -32795,6 +32683,14 @@ if.end:                                           ; preds = %if.then, %lor.end
   %length10 = getelementptr inbounds nuw %_Z5ArrayI3i64E, ptr %0, i32 0, i32 0
   store i64 %add, ptr %length10, align 8
   ret void
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI3i64E, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI3i64E %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayI3i64E, ptr %0, align 8
+  %capacity = extractvalue %_Z5ArrayI3i64E %load.struct2, 1
+  %eq3 = icmp eq i64 %length, %capacity
+  br i1 %eq3, label %if.then, label %if.end
 }
 
 define linkonce_odr void @_ZN5ArrayI3i64E3addE6VectorI3i64E(ptr %0, ptr %1) {
@@ -32821,34 +32717,30 @@ if.then:                                          ; preds = %entry
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
-  %load.struct8 = load %_Z5ArrayI3i64E, ptr %0, align 8
-  %buffer = extractvalue %_Z5ArrayI3i64E %load.struct8, 2
-  %eq = icmp eq ptr %buffer, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %if.end
-  %new_length9 = load i64, ptr %new_length, align 8
   %load.struct10 = load %_Z5ArrayI3i64E, ptr %0, align 8
-  %capacity = extractvalue %_Z5ArrayI3i64E %load.struct10, 1
-  %gt = icmp ugt i64 %new_length9, %capacity
-  br label %lor.end
+  %buffer = extractvalue %_Z5ArrayI3i64E %load.struct10, 2
+  %eq = icmp eq ptr %buffer, null
+  br i1 %eq, label %if.then8, label %lor.rhs
 
-lor.end:                                          ; preds = %lor.rhs, %if.end
-  %lor.result = phi i1 [ true, %if.end ], [ %gt, %lor.rhs ]
-  br i1 %lor.result, label %if.then11, label %if.end12
-
-if.then11:                                        ; preds = %lor.end
+if.then8:                                         ; preds = %lor.rhs, %if.end
   call void @_ZN5ArrayI3i64E10reallocateEv(ptr %0)
-  br label %if.end12
+  br label %if.end9
 
-if.end12:                                         ; preds = %if.then11, %lor.end
+if.end9:                                          ; preds = %if.then8, %lor.rhs
   %new_length13 = load i64, ptr %new_length, align 8
   %load.struct14 = load %_Z5ArrayI3i64E, ptr %0, align 8
   %capacity15 = extractvalue %_Z5ArrayI3i64E %load.struct14, 1
   %gt16 = icmp ugt i64 %new_length13, %capacity15
   br i1 %gt16, label %if.then17, label %if.end18
 
-if.then17:                                        ; preds = %if.end12
+lor.rhs:                                          ; preds = %if.end
+  %new_length11 = load i64, ptr %new_length, align 8
+  %load.struct12 = load %_Z5ArrayI3i64E, ptr %0, align 8
+  %capacity = extractvalue %_Z5ArrayI3i64E %load.struct12, 1
+  %gt = icmp ugt i64 %new_length11, %capacity
+  br i1 %gt, label %if.then8, label %if.end9
+
+if.then17:                                        ; preds = %if.end9
   %call = call ptr @_ZN4Page3getEPv(ptr %0)
   %load.struct19 = load %_Z5ArrayI3i64E, ptr %0, align 8
   %buffer20 = extractvalue %_Z5ArrayI3i64E %load.struct19, 2
@@ -32861,7 +32753,7 @@ if.then17:                                        ; preds = %if.end12
   %le25 = icmp ule i64 %mul24, 1024
   br i1 %le25, label %if.then26, label %if.else
 
-if.end18:                                         ; preds = %if.end50, %if.end12
+if.end18:                                         ; preds = %if.end50, %if.end9
   %load.struct52 = load %_Z6VectorI3i64E, ptr %1, align 8
   %length53 = extractvalue %_Z6VectorI3i64E %load.struct52, 0
   %gt54 = icmp ugt i64 %length53, 0
@@ -33563,25 +33455,13 @@ entry:
   %load.struct = load %_Z5ArrayI8TapeNodeE, ptr %0, align 8
   %buffer = extractvalue %_Z5ArrayI8TapeNodeE %load.struct, 2
   %eq = icmp eq ptr %buffer, null
-  br i1 %eq, label %lor.end, label %lor.rhs
+  br i1 %eq, label %if.then, label %lor.rhs
 
-lor.rhs:                                          ; preds = %entry
-  %load.struct1 = load %_Z5ArrayI8TapeNodeE, ptr %0, align 8
-  %length = extractvalue %_Z5ArrayI8TapeNodeE %load.struct1, 0
-  %load.struct2 = load %_Z5ArrayI8TapeNodeE, ptr %0, align 8
-  %capacity = extractvalue %_Z5ArrayI8TapeNodeE %load.struct2, 1
-  %eq3 = icmp eq i64 %length, %capacity
-  br label %lor.end
-
-lor.end:                                          ; preds = %lor.rhs, %entry
-  %lor.result = phi i1 [ true, %entry ], [ %eq3, %lor.rhs ]
-  br i1 %lor.result, label %if.then, label %if.end
-
-if.then:                                          ; preds = %lor.end
+if.then:                                          ; preds = %lor.rhs, %entry
   call void @_ZN5ArrayI8TapeNodeE10reallocateEv(ptr %0)
   br label %if.end
 
-if.end:                                           ; preds = %if.then, %lor.end
+if.end:                                           ; preds = %if.then, %lor.rhs
   %load.struct4 = load %_Z5ArrayI8TapeNodeE, ptr %0, align 8
   %buffer5 = extractvalue %_Z5ArrayI8TapeNodeE %load.struct4, 2
   %load.struct6 = load %_Z5ArrayI8TapeNodeE, ptr %0, align 8
@@ -33595,6 +33475,14 @@ if.end:                                           ; preds = %if.then, %lor.end
   %length10 = getelementptr inbounds nuw %_Z5ArrayI8TapeNodeE, ptr %0, i32 0, i32 0
   store i64 %add, ptr %length10, align 8
   ret void
+
+lor.rhs:                                          ; preds = %entry
+  %load.struct1 = load %_Z5ArrayI8TapeNodeE, ptr %0, align 8
+  %length = extractvalue %_Z5ArrayI8TapeNodeE %load.struct1, 0
+  %load.struct2 = load %_Z5ArrayI8TapeNodeE, ptr %0, align 8
+  %capacity = extractvalue %_Z5ArrayI8TapeNodeE %load.struct2, 1
+  %eq3 = icmp eq i64 %length, %capacity
+  br i1 %eq3, label %if.then, label %if.end
 }
 
 define linkonce_odr ptr @_ZN6VectorI8TapeNodeE3getEm(ptr %0, i64 %1) {
@@ -34342,34 +34230,30 @@ if.then:                                          ; preds = %entry
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
-  %load.struct8 = load %_Z5ArrayI8TapeNodeE, ptr %0, align 8
-  %buffer = extractvalue %_Z5ArrayI8TapeNodeE %load.struct8, 2
-  %eq = icmp eq ptr %buffer, null
-  br i1 %eq, label %lor.end, label %lor.rhs
-
-lor.rhs:                                          ; preds = %if.end
-  %new_length9 = load i64, ptr %new_length, align 8
   %load.struct10 = load %_Z5ArrayI8TapeNodeE, ptr %0, align 8
-  %capacity = extractvalue %_Z5ArrayI8TapeNodeE %load.struct10, 1
-  %gt = icmp ugt i64 %new_length9, %capacity
-  br label %lor.end
+  %buffer = extractvalue %_Z5ArrayI8TapeNodeE %load.struct10, 2
+  %eq = icmp eq ptr %buffer, null
+  br i1 %eq, label %if.then8, label %lor.rhs
 
-lor.end:                                          ; preds = %lor.rhs, %if.end
-  %lor.result = phi i1 [ true, %if.end ], [ %gt, %lor.rhs ]
-  br i1 %lor.result, label %if.then11, label %if.end12
-
-if.then11:                                        ; preds = %lor.end
+if.then8:                                         ; preds = %lor.rhs, %if.end
   call void @_ZN5ArrayI8TapeNodeE10reallocateEv(ptr %0)
-  br label %if.end12
+  br label %if.end9
 
-if.end12:                                         ; preds = %if.then11, %lor.end
+if.end9:                                          ; preds = %if.then8, %lor.rhs
   %new_length13 = load i64, ptr %new_length, align 8
   %load.struct14 = load %_Z5ArrayI8TapeNodeE, ptr %0, align 8
   %capacity15 = extractvalue %_Z5ArrayI8TapeNodeE %load.struct14, 1
   %gt16 = icmp ugt i64 %new_length13, %capacity15
   br i1 %gt16, label %if.then17, label %if.end18
 
-if.then17:                                        ; preds = %if.end12
+lor.rhs:                                          ; preds = %if.end
+  %new_length11 = load i64, ptr %new_length, align 8
+  %load.struct12 = load %_Z5ArrayI8TapeNodeE, ptr %0, align 8
+  %capacity = extractvalue %_Z5ArrayI8TapeNodeE %load.struct12, 1
+  %gt = icmp ugt i64 %new_length11, %capacity
+  br i1 %gt, label %if.then8, label %if.end9
+
+if.then17:                                        ; preds = %if.end9
   %call = call ptr @_ZN4Page3getEPv(ptr %0)
   %load.struct19 = load %_Z5ArrayI8TapeNodeE, ptr %0, align 8
   %buffer20 = extractvalue %_Z5ArrayI8TapeNodeE %load.struct19, 2
@@ -34382,7 +34266,7 @@ if.then17:                                        ; preds = %if.end12
   %le25 = icmp ule i64 %mul24, 1024
   br i1 %le25, label %if.then26, label %if.else
 
-if.end18:                                         ; preds = %if.end50, %if.end12
+if.end18:                                         ; preds = %if.end50, %if.end9
   %load.struct52 = load %_Z6VectorI8TapeNodeE, ptr %1, align 8
   %length53 = extractvalue %_Z6VectorI8TapeNodeE %load.struct52, 0
   %gt54 = icmp ugt i64 %length53, 0
