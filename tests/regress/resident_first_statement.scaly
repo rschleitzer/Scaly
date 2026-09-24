@@ -1,0 +1,49 @@
+; Regression (2026-09-24): a construction of a type whose bodies call
+; `Page.get(this)` (HashMapBuilder) as a routine's FIRST statement, with a tail
+; that reads it, was promoted to the CALLER page — and the routine has none.
+; The emitter fell back to a STACK alloca, and `reallocate`'s `Page.get(this)`
+; then answered a "page" below the object, in the callee frames' region: exit
+; 139 (19 under SCALY_POISON) at rc 0. Planner.residency_stays_local# keeps
+; such a construction on the routine's own frame.
+; Expected: PASS
+define Span(start: size_t, end: size_t)
+
+function build(host: ref[Page]) returns int
+{
+    var b HashMapBuilder[String, Span]()
+    var i: int 0
+    while i < 8
+    {
+        var sb StringBuilder()
+        sb.append "k"
+        sb.append i
+        b.add(sb.to_string(), Span(i as size_t, (i * 3) as size_t))
+        set i: i + 1
+    }
+    let m HashMap[String, Span]^host(b)
+    var sum: int 0
+    set i: 0
+    while i < 8
+    {
+        var sb StringBuilder()
+        sb.append "k"
+        sb.append i
+        let v m.get(sb.to_string())
+        if v <> null
+            set sum: sum + (v.end as int) - (v.start as int)
+        set i: i + 1
+    }
+    sum
+}
+
+procedure run()
+{
+    let root Page.allocate_page()
+    let s build(root)
+    if s = 56
+        print("PASS")
+    else
+        print("FAIL")
+}
+
+run()

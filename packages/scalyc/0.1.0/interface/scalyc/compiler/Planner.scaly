@@ -79,7 +79,9 @@ function atoll(s: pointer[const_char]) returns i64 extern
 ; appropriate page-cleanup hooks.
 define LocalBinding
 (
-    binding_type: scalyc.compiler.Plan.PlannedType
+    ; `var`: a local that is handed a reference to something frame-local
+    ; after its declaration is re-stamped -- stamp_local_ref_holder#.
+    var binding_type: scalyc.compiler.Plan.PlannedType
     is_mutable: bool
     is_on_page: bool
     is_parameter: bool
@@ -18631,6 +18633,56 @@ define Planner
         ; advisory miss and the EMITTER aborted, rc 16 `member not found`, with
         ; no file and no line (tscaly lessons §3.5jf). Reported here, at the
         ; access, with the `use` that fixes it.
+        ; operand_holds_local_ref#: is `op` a reference to something that dies
+        ; with this frame -- a `&<frame-local>` (the same conjunction the return
+        ; leaf judges: a Local pointee AND a region below the escape threshold,
+        ; so a `&^this` box passes) or a reference field read off a tainted
+        ; local struct.
+        function operand_holds_local_ref(this: Planner, op: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+        ; stamp_local_ref_holder#: a `set` whose target is a plain LOCAL (no
+        ; field chain, not a parameter) and whose source is a reference to
+        ; something frame-local. The escape checker judges a returned, stored
+        ; or passed name by the Local pointee on its TYPE, and a declared type
+        ; carries none: `var r: ref[X]? null` / `set r: &a` / `r` returned the
+        ; address of a stack slot at rc 0 -- also through a `when` binding,
+        ; the "set ref_var: <choose-bound value>" class CLAUDE.md carried as
+        ; ACTIVE since session 25. Only `let r &a` (no annotation) inherited
+        ; the stamp. The binding's type is re-stamped in place, flow-
+        ; insensitively on purpose: after `if c set r: &a` the name may hold
+        ; the address wherever it is read.
+        procedure stamp_local_ref_holder(mutable this: Planner, target: PlannedOperand, source: PlannedOperand) @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         ; report_unknown_target_field#: a `set` whose field chain names a field
         ; its RECORD does not declare. The member resolver records such a hop as
         ; a placeholder at field 0 with an advisory error only; a READ of it is
@@ -24660,6 +24712,19 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
         ; ================================================================
         ; plan_action / plan_return / plan_break / plan_throw.
         ;
@@ -27498,6 +27563,11 @@ define Planner
 
 
         procedure plan_action(mutable this: Planner, mutable a: Action) @page true @direct true @deep true @deep_this_2 true returns PlannedAction io linked
+
+
+
+
+
 
 
 
@@ -39814,7 +39884,35 @@ define Planner
         ; re-stamped (everything else copied verbatim): rebuilding the
         ; result_type, which embeds the Lifetime union, by value trips the
         ; s34/s196 union-struct-copy ABI hazard and crashes the emitter.
+        ; residency_stays_local#: a construction of a type whose bodies derive a
+        ; page from `this` (concept_needs_this_residency#) is NOT moved to the
+        ; CALLER page when this routine has none. The emitter finds no `_rp`
+        ; for it and falls back to a STACK alloca, and a `Page.get(this)` on a
+        ; stack object answers a page header below the object, in the callee
+        ; frames' region: `var b HashMapBuilder[K, V]()` as a routine's FIRST
+        ; statement with a tail of `b.n as int` was promoted this way and
+        ; allocated its slots through the stack -- exit 139, or 19 under
+        ; SCALY_POISON, rc 0 at compile time (2026-09-24). Kept Local it lands
+        ; on the routine's own frame, which is where the promotion would have
+        ; ended up anyway had it asked. A plain value struct is not judged: its
+        ; stack slot is correct and cheaper (a frame page per loop iteration).
+        procedure residency_stays_local(mutable this: Planner, type_name: String, new_life: Lifetime) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
         procedure restamp_operand_life(mutable this: Planner, op: PlannedOperand, new_life: Lifetime) @page true @direct true @deep true returns ref[PlannedOperand]? linked
+
+
 
 
 
@@ -40020,6 +40118,10 @@ define Planner
         ; constructions carry explicit #/^ lifetimes stays byte-identical). All
         ; rebuilds copy PlannedType/String fields verbatim (s34/s196 hazard).
         procedure promote_escaping_guts(mutable this: Planner, op: PlannedOperand, new_life: Lifetime) @page true @direct true @deep true returns ref[PlannedOperand]? linked
+
+
+
+
 
 
 

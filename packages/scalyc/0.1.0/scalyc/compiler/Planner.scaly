@@ -79,7 +79,9 @@ function atoll(s: pointer[const_char]) returns i64 extern
 ; appropriate page-cleanup hooks.
 define LocalBinding
 (
-    binding_type: scalyc.compiler.Plan.PlannedType
+    ; `var`: a local that is handed a reference to something frame-local
+    ; after its declaration is re-stamped -- stamp_local_ref_holder#.
+    var binding_type: scalyc.compiler.Plan.PlannedType
     is_mutable: bool
     is_on_page: bool
     is_parameter: bool
@@ -18631,6 +18633,56 @@ define Planner
         ; advisory miss and the EMITTER aborted, rc 16 `member not found`, with
         ; no file and no line (tscaly lessons §3.5jf). Reported here, at the
         ; access, with the `use` that fixes it.
+        ; operand_holds_local_ref#: is `op` a reference to something that dies
+        ; with this frame -- a `&<frame-local>` (the same conjunction the return
+        ; leaf judges: a Local pointee AND a region below the escape threshold,
+        ; so a `&^this` box passes) or a reference field read off a tainted
+        ; local struct.
+        function operand_holds_local_ref(this: Planner, op: PlannedOperand) returns bool
+        {
+            if this.operand_reads_tainted_local_field(op)
+                return true
+            if Planner.is_local_ref_pointer(op.result_type) = false
+                return false
+            this.region_of_operand(op) < Planner.required_region_for_escape()
+        }
+
+        ; stamp_local_ref_holder#: a `set` whose target is a plain LOCAL (no
+        ; field chain, not a parameter) and whose source is a reference to
+        ; something frame-local. The escape checker judges a returned, stored
+        ; or passed name by the Local pointee on its TYPE, and a declared type
+        ; carries none: `var r: ref[X]? null` / `set r: &a` / `r` returned the
+        ; address of a stack slot at rc 0 -- also through a `when` binding,
+        ; the "set ref_var: <choose-bound value>" class CLAUDE.md carried as
+        ; ACTIVE since session 25. Only `let r &a` (no annotation) inherited
+        ; the stamp. The binding's type is re-stamped in place, flow-
+        ; insensitively on purpose: after `if c set r: &a` the name may hold
+        ; the address wherever it is read.
+        procedure stamp_local_ref_holder(mutable this: Planner, target: PlannedOperand, source: PlannedOperand)
+        {
+            if target.member_access <> null
+            {
+                let chain (*target.member_access)
+                if chain.length > 0
+                    return
+            }
+            choose target.expr
+                when v: Variable
+                {
+                    if this.operand_holds_local_ref(source) = false
+                        return
+                    let lb this.lookup_local_binding(v.name)
+                    if lb = null
+                        return
+                    if lb.is_parameter
+                        return
+                    let stamped &^this Planner.stamp_getref_local_pointee(lb.binding_type)
+                    set lb.binding_type: stamped
+                }
+                else
+                    0
+        }
+
         ; report_unknown_target_field#: a `set` whose field chain names a field
         ; its RECORD does not declare. The member resolver records such a hop as
         ; a placeholder at field 0 with an advisory error only; a READ of it is
@@ -24626,11 +24678,24 @@ define Planner
             if is_stack_array_decl = false
                 set collapsed: this.narrow_constant_integer_operand(binding_type, collapsed)
 
-            ; Register the local in the current scope.
+            ; Register the local in the current scope. An initializer that is a
+            ; reference to something FRAME-LOCAL keeps its Local pointee on the
+            ; binding -- operand_holds_local_ref#: the declared type carries no
+            ; life, and every later read of the name answered with it.
             if planned_item.name <> null
             {
                 let n (*planned_item.name)
-                this.define_local(n, binding_type, b.binding_type.equals "var", false)
+                var scope_type binding_type
+                if is_stack_array_decl = false
+                    if this.operand_holds_local_ref(collapsed)
+                    {
+                        ; On the Planner's page: the scope entry outlives this
+                        ; routine (a frame-built type here read "6Option" as an
+                        ; address in the next function's planning).
+                        let stamped &^this Planner.stamp_getref_local_pointee(binding_type)
+                        set scope_type: stamped
+                    }
+                this.define_local(n, scope_type, b.binding_type.equals "var", false)
             }
 
             ; s93: only include the collapsed operand when there's an
@@ -27550,6 +27615,11 @@ define Planner
             ; report_unknown_target_field#.
             if a.target.length > 0
                 this.report_unknown_target_field(planned_target_collapsed)
+
+            ; A `set` that hands a LOCAL a reference to something frame-local --
+            ; stamp_local_ref_holder#.
+            if a.target.length > 0
+                this.stamp_local_ref_holder(planned_target_collapsed, planned_source_collapsed)
 
             ; A `set` whose target is a declared `ref[T]` and whose source is
             ; the bare null literal -- report_null_into_ref#.
@@ -39814,6 +39884,32 @@ define Planner
         ; re-stamped (everything else copied verbatim): rebuilding the
         ; result_type, which embeds the Lifetime union, by value trips the
         ; s34/s196 union-struct-copy ABI hazard and crashes the emitter.
+        ; residency_stays_local#: a construction of a type whose bodies derive a
+        ; page from `this` (concept_needs_this_residency#) is NOT moved to the
+        ; CALLER page when this routine has none. The emitter finds no `_rp`
+        ; for it and falls back to a STACK alloca, and a `Page.get(this)` on a
+        ; stack object answers a page header below the object, in the callee
+        ; frames' region: `var b HashMapBuilder[K, V]()` as a routine's FIRST
+        ; statement with a tail of `b.n as int` was promoted this way and
+        ; allocated its slots through the stack -- exit 139, or 19 under
+        ; SCALY_POISON, rc 0 at compile time (2026-09-24). Kept Local it lands
+        ; on the routine's own frame, which is where the promotion would have
+        ; ended up anyway had it asked. A plain value struct is not judged: its
+        ; stack slot is correct and cheaper (a frame page per loop iteration).
+        procedure residency_stays_local(mutable this: Planner, type_name: String, new_life: Lifetime) returns bool
+        {
+            choose new_life
+                when c: Call
+                {
+                    if this.lookup_local_binding("_rp") <> null
+                        return false
+                    return this.concept_needs_this_residency(type_name)
+                }
+                else
+                    return false
+            false
+        }
+
         procedure restamp_operand_life(mutable this: Planner, op: PlannedOperand, new_life: Lifetime) returns ref[PlannedOperand]?
         {
             if Planner.result_owns_page_guts(op.result_type) = false
@@ -39870,6 +39966,8 @@ define Planner
                         else
                             0
                     if t_local = false
+                        return null
+                    if this.residency_stays_local(t.tuple_type.name, new_life)
                         return null
                     ; Recursively promote the tuple's component values (struct
                     ; field constructions) to the same page — same reasoning as
@@ -40071,12 +40169,16 @@ define Planner
                     }
                     var out_life t.life
                     var out_region t.is_region_alloc
+                    let stays_local this.residency_stays_local(t.tuple_type.name, new_life)
                     choose t.life
                         when l: Local
                         {
-                            set out_life: new_life
-                            set out_region: true
-                            set changed: true
+                            if stays_local = false
+                            {
+                                set out_life: new_life
+                                set out_region: true
+                                set changed: true
+                            }
                         }
                         else
                             0

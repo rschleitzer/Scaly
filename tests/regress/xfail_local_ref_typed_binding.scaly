@@ -1,0 +1,16 @@
+; Regression (2026-09-24): a TYPED binding initialized with the address of a
+; frame-local, then returned — `let r: ref[Payload] &a` compiled at rc 0 where
+; the untyped `let r &a` was refused, because the annotation replaced the
+; initializer's Local pointee (Planner.plan_binding#, operand_holds_local_ref#).
+; xfail: error: reference into a local page escapes via return
+define Payload (var name: String  var n: int)
+
+procedure pick(n: int) returns ref[Payload]
+{
+    let a Payload(String("hello"), n)
+    let r: ref[Payload] &a
+    r
+}
+
+let p pick(42)
+print("FAIL")

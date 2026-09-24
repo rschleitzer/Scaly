@@ -1,0 +1,19 @@
+; Regression (2026-09-24): a LOCAL handed the address of something frame-local
+; by a `set`, then returned. The escape checker judges a name by the Local
+; pointee on its TYPE, and a declared type carries none, so the address of a
+; stack slot was returned at rc 0. Only `let r &a` (no annotation) inherited
+; the stamp. Planner.stamp_local_ref_holder# re-stamps the binding.
+; xfail: error: reference into a local page escapes via return
+define Payload (var name: String  var n: int)
+
+procedure pick(n: int) returns ref[Payload]?
+{
+    let a Payload(String("hello"), n)
+    var r: ref[Payload]? null
+    if n > 0
+        set r: &a
+    r
+}
+
+let p pick(42)
+print("FAIL")

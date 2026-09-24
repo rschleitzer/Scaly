@@ -13835,8 +13835,18 @@ define Emitter
                                         set ri: ri + 1
                                     }
                                 }
+                                ; An Option[ref/pointer] IS the NPO layout, whatever
+                                ; its arms resolved to: `choose h.item when x: Some`
+                                ; over a `ref[Item]?` field resolves Some to ref[Item],
+                                ; and the demotion sent it down the tagged path — the
+                                ; bare pointer stored into an Option slot, its LOW
+                                ; BYTE read as the tag and the payload loaded from
+                                ; offset 1 (SIGSEGV, or the else arm, at rc 0; the
+                                ; session-25 "NPO garbage under the choose form").
+                                ; Ask the SHAPE, never the arms.
                                 if has_resolved_variant
-                                    set is_npo: false
+                                    if this.is_npo_option(cond_op.result_type) = false
+                                        set is_npo: false
                             }
                             var has_some: bool false
                             if choose_expr.cases <> null

@@ -1,0 +1,47 @@
+; Regression (2026-09-24): `choose` over a `ref[T]?` whose `when x: Some` arm
+; resolved to ref[T]. An Option[ref/pointer] is ONE nullable pointer (NPO),
+; but a resolved arm demoted the choose onto the TAGGED path: the pointer was
+; stored into an Option slot, its low byte read as the tag and the payload
+; loaded from offset 1 — SIGSEGV or the else arm, rc 0 (the session-25 "NPO
+; garbage under the choose form"). Emitter.emit_choose asks is_npo_option now.
+; Expected: PASS
+define Item (var name: String  var n: int)
+define Holder (var item: ref[Item]?)
+
+function probe(h: Holder) returns int
+{
+    choose h.item
+        when x: Some
+            return x.n
+        else
+            return -1
+}
+
+function probe_name(h: Holder) returns int
+{
+    choose h.item
+        when x: Some
+            return x.name.get_length() as int
+        else
+            return -1
+}
+
+procedure run()
+{
+    var it Item(String("hello"), 42)
+    let h Holder(&it)
+    let r probe(h)
+    let l probe_name(h)
+    let e Holder(null)
+    let r2 probe(e)
+    if r = 42
+        if l = 5
+            if r2 = -1
+            {
+                print("PASS")
+                return
+            }
+    print("FAIL")
+}
+
+run()

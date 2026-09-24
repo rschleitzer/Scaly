@@ -1,0 +1,36 @@
+; Control for xfail_local_ref_{via_set,typed_binding,when_binding}: a local
+; that holds a reference to a frame-local is fine while it stays in the frame,
+; and a local that is handed a reference the CALLER owns may be returned.
+; Expected: PASS
+define Payload (var name: String  var n: int)
+
+procedure sum_local(n: int) returns int
+{
+    let a Payload(String("hello"), n)
+    var r: ref[Payload]? null
+    set r: &a
+    let t: ref[Payload] &a
+    var s 0
+    if r <> null
+        set s: r.n
+    s + t.n
+}
+
+procedure pass_on(p: ref[Payload]) returns ref[Payload]?
+{
+    var r: ref[Payload]? null
+    set r: p
+    r
+}
+
+var x Payload(String("x"), 5)
+let q pass_on(&x)
+var ok: bool false
+if q <> null
+    if q.n = 5
+        if sum_local(21) = 42
+            set ok: true
+if ok
+    print("PASS")
+else
+    print("FAIL")
