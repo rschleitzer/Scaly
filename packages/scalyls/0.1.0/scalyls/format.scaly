@@ -77,6 +77,8 @@ define format
     define LK_HEADER_ONE: size_t 4
     define LK_HEADER_MULTI: size_t 5
     define LK_STMT: size_t 6
+    ; `case A case B: stmt` -- an arm whose body is on the same line
+    define LK_ARM_INLINE: size_t 7
 
     define INDENT_WIDTH: size_t 4
 
@@ -151,15 +153,15 @@ define format
     ; intrinsic`, one per line, would otherwise stair-step the whole file).
     function is_bodyless_word(w: String) returns bool
     {
-        if w = "extern" or w = "intrinsic" or w = "instruction"
-            return true
+        match w
+            case "extern" case "intrinsic" case "instruction": return true
         false
     }
 
     function is_one_word(w: String) returns bool
     {
-        if w = "if" or w = "while" or w = "for" or w = "repeat" or w = "label" or w = "try"
-            return true
+        match w
+            case "if" case "while" case "for" case "repeat" case "label" case "try": return true
         false
     }
 
@@ -168,15 +170,64 @@ define format
     ; choose block before its last arm.
     function is_arm_word(w: String) returns bool
     {
-        if w = "when" or w = "case" or w = "else"
-            return true
+        match w
+            case "when" case "case" case "else": return true
+        false
+    }
+
+    ; case_has_inline_body#: text after the first `:` outside quotes and
+    ; brackets -- `case "a" case "b": return true` carries its body on the
+    ; line, and opening a one-line body for it pushed the NEXT line one level
+    ; deeper (found 2026-09-24, when the tree first used `match` this way;
+    ; `when x: T` is not asked, its colon introduces the binding's type).
+    function case_has_inline_body(source: String, from: size_t, end: size_t) returns bool
+    {
+        var i from
+        var depth: size_t 0
+        var in_str false
+        var after_colon false
+        while i < end
+        {
+            let c source.get i
+            if after_colon
+            {
+                if c = (";" as char)
+                    return false
+                if c <> (" " as char) and c <> ("\t" as char) and c <> ("\r" as char)
+                    return true
+            }
+            else
+            {
+                if in_str
+                {
+                    if c = ("\\" as char)
+                        set i: i + 1
+                    else if c = ("\"" as char)
+                        set in_str: false
+                }
+                else
+                {
+                    if c = ("\"" as char)
+                        set in_str: true
+                    if c = ("(" as char) or c = ("[" as char)
+                        set depth: depth + 1
+                    if (c = (")" as char) or c = ("]" as char)) and depth > 0
+                        set depth: depth - 1
+                    if c = (":" as char) and depth = 0
+                        set after_colon: true
+                    if c = (";" as char)
+                        return false
+                }
+            }
+            set i: i + 1
+        }
         false
     }
 
     function is_routine_word(w: String) returns bool
     {
-        if w = "function" or w = "procedure" or w = "operator" or w = "init" or w = "deinit"
-            return true
+        match w
+            case "function" case "procedure" case "operator" case "init" case "deinit": return true
         false
     }
 
@@ -361,7 +412,11 @@ define format
             if w = "define"
                 set is_define: true
             if format.is_arm_word w
+            {
                 set kind: LK_ARM
+                if w = "case" and format.case_has_inline_body(source, first_word_end, end)
+                    set kind: LK_ARM_INLINE
+            }
             else
             {
                 if opened > 0
@@ -538,7 +593,7 @@ define format
                             else
                             {
                                 ; A statement at arm level ends the choose block.
-                                if sc.kind <> LK_ARM
+                                if sc.kind <> LK_ARM and sc.kind <> LK_ARM_INLINE
                                 {
                                     while format.top_kind(&stack) = FK_MULTI
                                         set level: format.pop_frame(&stack)

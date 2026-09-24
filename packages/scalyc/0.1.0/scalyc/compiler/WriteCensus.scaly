@@ -1369,8 +1369,8 @@ define WriteCensus
                 return true
             if n = "size_t"
                 return true
-            if n = "bool" or n = "char" or n = "float" or n = "double" or n = "f32" or n = "f64" or n = "void"
-                return true
+            match n
+                case "bool" case "char" case "float" case "double" case "f32" case "f64" case "void": return true
             false
         }
 
@@ -4238,8 +4238,8 @@ define WriteCensus
                 return true
             if name = "aligned_alloc"
                 return true
-            if name = "scaly_aligned_alloc" or name = "scaly_aligned_free" or name = "scaly_alloc_fail_after"
-                return true
+            match name
+                case "scaly_aligned_alloc" case "scaly_aligned_free" case "scaly_alloc_fail_after": return true
             ; strings and numbers
             if name = "strlen"
                 return true
@@ -4249,8 +4249,8 @@ define WriteCensus
                 return true
             if name = "strdup"
                 return true
-            if name = "strtod" or name = "atoll" or name = "strerror" or name = "basename" or name = "dirname"
-                return true
+            match name
+                case "strtod" case "atoll" case "strerror" case "basename" case "dirname": return true
             ; maths
             if name = "sin"
                 return true
@@ -4288,8 +4288,8 @@ define WriteCensus
                 return true
             if name = "tanhf"
                 return true
-            if name = "floor" or name = "ceil" or name = "trunc" or name = "fmod" or name = "fabs" or name = "fabsf"
-                return true
+            match name
+                case "floor" case "ceil" case "trunc" case "fmod" case "fabs" case "fabsf": return true
             ; the runtime's coordination and its guards
             if name = "scaly_thread_spawn_sized"
                 return true
@@ -4309,8 +4309,8 @@ define WriteCensus
                 return true
             if name = "scaly_stack_limit"
                 return true
-            if name = "scaly_guard_install" or name = "scaly_build_stamp" or name = "signal" or name = "atexit"
-                return true
+            match name
+                case "scaly_guard_install" case "scaly_build_stamp" case "signal" case "atexit": return true
             ; the abort path
             if name = "exit" or name = "abort"
                 return true

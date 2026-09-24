@@ -1686,8 +1686,8 @@ define PointerCensus
                 return true
             if n = "size_t"
                 return true
-            if n = "i8" or n = "i16" or n = "i32" or n = "i64" or n = "u8" or n = "u16" or n = "u32" or n = "u64"
-                return true
+            match n
+                case "i8" case "i16" case "i32" case "i64" case "u8" case "u16" case "u32" case "u64": return true
             false
         }
 
@@ -1825,8 +1825,8 @@ define PointerCensus
                 return true
             if n = "malloc"
                 return true
-            if n = "calloc" or n = "realloc" or n = "aligned_alloc" or n = "scaly_aligned_alloc" or n = "mmap"
-                return true
+            match n
+                case "calloc" case "realloc" case "aligned_alloc" case "scaly_aligned_alloc" case "mmap": return true
             false
         }
 

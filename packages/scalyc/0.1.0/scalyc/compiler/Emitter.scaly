@@ -9418,8 +9418,8 @@ define Emitter
                 return true
             if name = "PageList"
                 return true
-            if name = "PageNode" or name = "PageListIterator" or name = "HeapBucketHeader" or name = "StackBucketHeader"
-                return true
+            match name
+                case "PageNode" case "PageListIterator" case "HeapBucketHeader" case "StackBucketHeader": return true
             false
         }
 

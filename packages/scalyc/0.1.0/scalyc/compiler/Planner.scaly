@@ -4069,8 +4069,8 @@ define Planner
         ; widening), and that is a change of meaning rather than a fix.
         function is_integer_arithmetic_operator(name: String) returns bool
         {
-            if name = "+" or name = "-" or name = "*" or name = "/" or name = "%" or name = "div" or name = "mod"
-                return true
+            match name
+                case "+" case "-" case "*" case "/" case "%" case "div" case "mod": return true
             ; ★NOT the shifts. Their operands are not symmetric: the result
             ; width comes from the LEFT operand alone and the shift COUNT on
             ; the right does not participate in it, so pulling a left-hand
@@ -4079,8 +4079,8 @@ define Planner
             ; with a u32 index became `shl i32 1, %index`, and the following
             ; `xor`/`zext` then cleared the TOP 32 BITS of the 64-bit bucket
             ; bitmap instead of one bit. tests/fiber thread_reclaim caught it.
-            if name = "&" or name = "|" or name = "xor"
-                return true
+            match name
+                case "&" case "|" case "xor": return true
             false
         }
 
@@ -4100,8 +4100,8 @@ define Planner
         ; to ask for narrow arithmetic.
         function is_integer_comparison_operator(name: String) returns bool
         {
-            if name = "<" or name = ">" or name = "<=" or name = ">=" or name = "=" or name = "<>"
-                return true
+            match name
+                case "<" case ">" case "<=" case ">=" case "=" case "<>": return true
             false
         }
 
@@ -16511,8 +16511,8 @@ define Planner
                 return true
             if name = "PageList"
                 return true
-            if name = "PageNode" or name = "PageListIterator" or name = "HeapBucketHeader" or name = "StackBucketHeader"
-                return true
+            match name
+                case "PageNode" case "PageListIterator" case "HeapBucketHeader" case "StackBucketHeader": return true
             false
         }
 
@@ -28680,8 +28680,8 @@ define Planner
                     let len n.get_length()
                     if len = 0
                         return false
-                    if n = "and" or n = "or" or n = "not" or n = "xor"
-                        return true
+                    match n
+                        case "and" case "or" case "not" case "xor": return true
                     var i: size_t 0
                     while i < len
                     {
@@ -30234,8 +30234,8 @@ define Planner
                 return false
             if n = "String"
                 return true
-            if n = "StringC" or n = "Array" or n = "Vector" or n = "List" or n = "HashMap" or n = "StringBuilder"
-                return true
+            match n
+                case "StringC" case "Array" case "Vector" case "List" case "HashMap" case "StringBuilder": return true
             if Planner.is_primitive_type_name(n)
                 return false
             if depth > 3
@@ -33312,16 +33312,16 @@ define Planner
 
         function empty_init_allocates_nothing(n: String) returns bool
         {
-            if n = "String" or n = "StringC" or n = "Array"
-                return true
+            match n
+                case "String" case "StringC" case "Array": return true
             false
         }
 
         ; the stdlib methods that KEEP an argument (containers/*.scaly)
         function stdlib_keeper_name(n: String) returns bool
         {
-            if n = "add" or n = "put" or n = "add_on" or n = "add_internal"
-                return true
+            match n
+                case "add" case "put" case "add_on" case "add_internal": return true
             false
         }
 
@@ -37915,8 +37915,8 @@ define Planner
 
         function rr_name_is_operator(n: String) returns bool
         {
-            if n = "and" or n = "or" or n = "not" or n = "xor"
-                return true
+            match n
+                case "and" case "or" case "not" case "xor": return true
             if n.get_length() = 0
                 return false
             var i: size_t 0
@@ -42303,8 +42303,8 @@ define Planner
         ; escape back from the drained element to the container).
         function is_alias_method_name(n: String) returns bool
         {
-            if n = "get" or n = "next" or n = "get_iterator"
-                return true
+            match n
+                case "get" case "next" case "get_iterator": return true
             false
         }
         function binding_get_receiver(this: Planner, ops: Vector[Operand]) returns String
@@ -48635,8 +48635,8 @@ define Planner
             return true
         if normalized = "u32"
             return true
-        if normalized = "u64" or normalized = "size_t" or normalized = "uint" or normalized = "char"
-            return true
+        match normalized
+            case "u64" case "size_t" case "uint" case "char": return true
         false
     }
 
@@ -48679,8 +48679,8 @@ define Planner
             return true
         if normalized = "u8"
             return true
-        if normalized = "size_t" or normalized = "int" or normalized = "uint" or normalized = "char"
-            return true
+        match normalized
+            case "size_t" case "int" case "uint" case "char": return true
         false
     }
 
@@ -48710,13 +48710,13 @@ define Planner
         ; u8 is ABI-identical to the 1-byte char family.
         if param_inner = "u8"
         {
-            if arg_inner = "char" or arg_inner = "const_char" or arg_inner = "i8" or arg_inner = "u8"
-                return true
+            match arg_inner
+                case "char" case "const_char" case "i8" case "u8": return true
         }
         if arg_inner = "u8"
         {
-            if param_inner = "char" or param_inner = "const_char" or param_inner = "i8"
-                return true
+            match param_inner
+                case "char" case "const_char" case "i8": return true
         }
 
         false
@@ -49236,8 +49236,8 @@ define Planner
             return true
         if name = "f64"
             return true
-        if name = "float" or name = "double" or name = "size_t" or name = "size" or name = "pointer" or name = "ref"
-            return true
+        match name
+            case "float" case "double" case "size_t" case "size" case "pointer" case "ref": return true
         false
     }
 
@@ -51535,8 +51535,8 @@ define Planner
             return true
         if name = "Console"
             return true
-        if name = "FileError" or name = "HeapBucketHeader" or name = "StackBucketHeader" or name = "TraceEntry"
-            return true
+        match name
+            case "FileError" case "HeapBucketHeader" case "StackBucketHeader" case "TraceEntry": return true
         false
     }
 

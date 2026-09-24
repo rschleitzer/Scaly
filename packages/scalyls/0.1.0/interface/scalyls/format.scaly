@@ -77,6 +77,8 @@ define format
     define LK_HEADER_ONE: size_t 4
     define LK_HEADER_MULTI: size_t 5
     define LK_STMT: size_t 6
+    ; `case A case B: stmt` -- an arm whose body is on the same line
+    define LK_ARM_INLINE: size_t 7
 
     define INDENT_WIDTH: size_t 4
 
@@ -173,6 +175,55 @@ define format
 
 
 
+    ; case_has_inline_body#: text after the first `:` outside quotes and
+    ; brackets -- `case "a" case "b": return true` carries its body on the
+    ; line, and opening a one-line body for it pushed the NEXT line one level
+    ; deeper (found 2026-09-24, when the tree first used `match` this way;
+    ; `when x: T` is not asked, its colon introduces the binding's type).
+    function case_has_inline_body(source: String, from: size_t, end: size_t) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     function is_routine_word(w: String) @ret_nonlocal true @deep true returns bool linked
 
 
@@ -187,6 +238,10 @@ define format
     ; identifiers and comments never count as brackets — that is the whole
     ; reason this is a scan and not a character count.
     function scan_line(rp, source: String, start: size_t, end: size_t, in_block: bool) @direct true @deep true returns LineScan linked
+
+
+
+
 
 
 

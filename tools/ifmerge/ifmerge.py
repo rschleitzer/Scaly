@@ -15,6 +15,9 @@ Two shapes:
                  if c3
                      stmt
 
+  M  a run of `if x = LIT` / `return true` over one plain name, three or
+     more: a `match` (cases wrapped at --max, a branch per line)
+
   B  a run of `if X` / `return true` at one indent
          if c1                     if c1 or c2
              return true     ->        return true
@@ -186,6 +189,94 @@ def fold_or(lines, i, max_len):
     return [head, ' ' * (base + 4) + 'return true'], j - i
 
 
+MATCH_LIT = r'("([^"\\]|\\.)*"(\s+as\s+char)?|0x[0-9A-Fa-f]+|-?\d+|[A-Z][A-Z0-9_]*)'
+
+
+def fold_match(lines, i, max_len):
+    """Shape M at line i: a run of `if x = LIT` / `return true` over ONE plain
+    name becomes a `match` -- a branch per line of cases, each `return true`
+    (the grammar keeps a branch's cases on one line)."""
+    base = ind(lines[i])
+    subject, lits, j = None, [], i
+    while j + 1 < len(lines):
+        c = cond_of(lines[j])
+        if c is None or ind(lines[j]) != base:
+            break
+        r = lines[j + 1]
+        if r.strip() != 'return true' or ind(r) != base + 4:
+            break
+        m = re.fullmatch(r'([a-z][A-Za-z0-9_]*) = ' + MATCH_LIT, c)
+        if not m:
+            return None
+        if subject is None:
+            subject = m.group(1)
+        elif m.group(1) != subject:
+            return None
+        lits.append(c[len(subject) + 3:])
+        j += 2
+    if len(lits) < 3:
+        return None                       # two cases read fine as `or`
+    if j < len(lines) and lines[j].strip().startswith('else') and ind(lines[j]) == base:
+        return None
+    out = [' ' * base + 'match ' + subject]
+    pad = ' ' * (base + 4)
+    line = ''
+    for lit in lits:
+        cand = (line + ' ' if line else '') + 'case ' + lit
+        if line and len(pad + cand + ': return true') > max_len:
+            out.append(pad + line + ': return true')
+            line = 'case ' + lit
+        else:
+            line = cand
+    out.append(pad + line + ': return true')
+    return out, j - i
+
+
+def fold_match_or(lines, i, max_len):
+    """Shape M on an already folded line: `if x = A or x = B or x = C` with a
+    one-line body and no `else` becomes `match x  case A case B case C: body`.
+    Wrapped over several branches only for `return true` (the body repeats)."""
+    c = cond_of(lines[i])
+    if c is None or i + 2 > len(lines):
+        return None
+    base = ind(lines[i])
+    parts = c.split(' or ')
+    if len(parts) < 3:
+        return None
+    subject, lits = None, []
+    for part in parts:
+        m = re.fullmatch(r'([a-z][A-Za-z0-9_]*) = ' + MATCH_LIT, part)
+        if not m:
+            return None
+        if subject is None:
+            subject = m.group(1)
+        elif m.group(1) != subject:
+            return None
+        lits.append(part[len(subject) + 3:])
+    body = lines[i + 1]
+    if ind(body) != base + 4 or not body.strip() or body.strip().startswith(';'):
+        return None
+    k = i + 2
+    if k < len(lines) and lines[k].strip() and ind(lines[k]) > base:
+        return None                       # the body is more than one line
+    if k < len(lines) and lines[k].strip().startswith('else') and ind(lines[k]) == base:
+        return None
+    stmt = body.strip()
+    pad = ' ' * (base + 4)
+    out, line = [' ' * base + 'match ' + subject], ''
+    for lit in lits:
+        cand = (line + ' ' if line else '') + 'case ' + lit
+        if line and len(pad + cand + ': ' + stmt) > max_len:
+            if stmt != 'return true':
+                return None
+            out.append(pad + line + ': ' + stmt)
+            line = 'case ' + lit
+        else:
+            line = cand
+    out.append(pad + line + ': ' + stmt)
+    return out, 2
+
+
 def process(path, apply, max_len, shapes):
     text = open(path, encoding='utf-8').read()
     lines = text.split('\n')
@@ -193,6 +284,14 @@ def process(path, apply, max_len, shapes):
         return 0, 0
     out, i, n_and, n_or = [], 0, 0, 0
     while i < len(lines):
+        r = fold_match_or(lines, i, max_len) if 'match' in shapes else None
+        if r:
+            out.extend(r[0]); i += r[1]; n_or += 1
+            continue
+        r = fold_match(lines, i, max_len) if 'match' in shapes else None
+        if r:
+            out.extend(r[0]); i += r[1]; n_or += 1
+            continue
         r = fold_or(lines, i, max_len) if 'or' in shapes else None
         if r:
             out.extend(r[0]); i += r[1]; n_or += 1
@@ -214,7 +313,7 @@ def main():
     max_len = 120
     if '--max' in args:
         max_len = int(args[args.index('--max') + 1])
-    shapes = {'and', 'or'}
+    shapes = {'and', 'or', 'match'}
     if '--only' in args:
         shapes = {args[args.index('--only') + 1]}
     files = [a for a in args if a.endswith('.scaly')]

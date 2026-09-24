@@ -524,16 +524,16 @@ define symbols
     ; True for `(`, `[`, `{`.
     function is_open_bracket(c: u8) returns bool
     {
-        if c = 0x28 or c = 0x5B or c = 0x7B
-            return true
+        match c
+            case 0x28 case 0x5B case 0x7B: return true
         false
     }
 
     ; True for `)`, `]`, `}`.
     function is_close_bracket(c: u8) returns bool
     {
-        if c = 0x29 or c = 0x5D or c = 0x7D
-            return true
+        match c
+            case 0x29 case 0x5D case 0x7D: return true
         false
     }
 
@@ -2235,8 +2235,8 @@ define symbols
     ; ASCII whitespace: space, tab, LF, CR.
     function is_ws_byte(c: u8) returns bool
     {
-        if c = 32 or c = 9 or c = 10 or c = 13
-            return true
+        match c
+            case 32 case 9 case 10 case 13: return true
         false
     }
 
@@ -2923,8 +2923,8 @@ define symbols
     ; Quote bytes that open a string: " (34), ' (39), ` (96).
     function is_string_start(c: u8) returns bool
     {
-        if c = 34 or c = 39 or c = 96
-            return true
+        match c
+            case 34 case 39 case 96: return true
         false
     }
 
