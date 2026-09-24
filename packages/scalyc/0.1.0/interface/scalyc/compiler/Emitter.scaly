@@ -13475,7 +13475,71 @@ define Emitter
 
 
         ; Emit a choose expression (pattern match on union)
+        ; choose_deref_subject#: `choose *p` over a union behind a pointer is
+        ; `choose p`. The prefix `*` on a laid-out struct materialises a stack
+        ; copy (emit_intrinsic_unary_op#: alloca + memcpy of the WHOLE union)
+        ; before the tag is read, while a pointer subject GEPs straight into
+        ; the union and each arm loads only its own payload — the same values,
+        ; since a `when` binding is a copy of its arm either way. Measured on
+        ; dazzle's `Insn` (80 B) when the tree was converted by hand: -3.7 % on
+        ; the heaviest codegen. Answers the pointer, or null for any other
+        ; subject (and for a `*` whose operand does not emit as a pointer).
+        procedure choose_deref_subject(mutable this, mutable choose_expr: PlannedChoose) @direct true @deep true returns LLVMValueRef linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         procedure emit_choose(mutable this, mutable choose_expr: PlannedChoose) @direct true @ret_caller true @deep true @deep_beyond_2 true returns LLVMValueRef linked
+
+
+
+
+
 
 
 

@@ -1,0 +1,54 @@
+; Regression (2026-09-24): `choose *p` over a union behind a pointer reads
+; through the pointer, as `choose p` always did — the prefix `*` used to
+; materialise a stack copy of the WHOLE union (alloca + memcpy) before the tag
+; was read (Emitter.choose_deref_subject#). The meaning must not move: a
+; `when` binding is still a copy of its arm, so an arm that rewrites the union
+; through the pointer still sees the value it matched.
+; Expected: PASS
+define Small (x: int)
+define Wide (a: int  b: int  c: int  d: int)
+define Shape union (S: Small  W: Wide)
+{
+    function first(this) returns int
+    {
+        choose *this
+            when s: S
+                return s.x
+            when w: W
+                return w.a
+        0
+    }
+}
+
+procedure flip(mutable p: pointer[Shape]) returns int
+{
+    choose *p
+        when w: W
+        {
+            set *p: Shape.S(Small(99))
+            return w.a + w.d
+        }
+        when s: S
+            return s.x
+    0
+}
+
+function check() returns int
+{
+    var sh Shape.W(Wide(1, 2, 3, 4))
+    if sh.first() <> 1
+        return 1
+    let p &sh as pointer[Shape]
+    if flip(p) <> 5
+        return 2
+    if sh.first() <> 99
+        return 3
+    if flip(p) <> 99
+        return 4
+    0
+}
+
+if check() = 0
+    print("PASS")
+else
+    print("FAIL")

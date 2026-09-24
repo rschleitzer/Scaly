@@ -13475,10 +13475,72 @@ define Emitter
         }
 
         ; Emit a choose expression (pattern match on union)
+        ; choose_deref_subject#: `choose *p` over a union behind a pointer is
+        ; `choose p`. The prefix `*` on a laid-out struct materialises a stack
+        ; copy (emit_intrinsic_unary_op#: alloca + memcpy of the WHOLE union)
+        ; before the tag is read, while a pointer subject GEPs straight into
+        ; the union and each arm loads only its own payload — the same values,
+        ; since a `when` binding is a copy of its arm either way. Measured on
+        ; dazzle's `Insn` (80 B) when the tree was converted by hand: -3.7 % on
+        ; the heaviest codegen. Answers the pointer, or null for any other
+        ; subject (and for a `*` whose operand does not emit as a pointer).
+        procedure choose_deref_subject(mutable this, mutable choose_expr: PlannedChoose) returns LLVMValueRef
+        {
+            if choose_expr.condition = null
+                return null
+            let cv (*choose_expr.condition)
+            if cv.length <> 1
+                return null
+            let op_ptr cv.get 0
+            if op_ptr = null
+                return null
+            let op (*op_ptr)
+            if op.member_access <> null
+                return null
+            if this.type_name_is_plan_union(op.result_type.name) = false
+                return null
+            var subject: LLVMValueRef null
+            choose op.expr
+                when call: Call
+                {
+                    if call.name = "*"
+                    {
+                        if call.args <> null
+                        {
+                            let args (*call.args)
+                            if args.length = 1
+                            {
+                                let a_ptr args.get 0
+                                if a_ptr <> null
+                                {
+                                    var v emit_operand (*a_ptr)
+                                    if v <> null
+                                    {
+                                        let vt LLVMTypeOf(v)
+                                        if LLVMGetTypeKind(vt) = LLVMTypeKind.Struct()
+                                            if LLVMCountStructElementTypes(vt) = 1
+                                                if LLVMGetTypeKind(LLVMStructGetTypeAtIndex(vt, 0)) = LLVMTypeKind.Pointer()
+                                                    set v: LLVMBuildExtractValue(builder, v, 0, "deref.unwrap")
+                                        if LLVMGetTypeKind(LLVMTypeOf(v)) = LLVMTypeKind.Pointer()
+                                            set subject: v
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                    0
+            subject
+        }
+
         procedure emit_choose(mutable this, mutable choose_expr: PlannedChoose) returns LLVMValueRef
         {
-            ; Emit the condition (union value)
-            let union_value emit_operands choose_expr.condition
+            ; Emit the condition (union value); `choose *p` reads through p
+            let deref_subject this.choose_deref_subject(choose_expr)
+            var union_value deref_subject
+            if union_value = null
+                set union_value: emit_operands choose_expr.condition
             if union_value = null
                 return null
 
@@ -13693,6 +13755,8 @@ define Emitter
             ; condition means union_value is already a pointer to the union;
             ; a value-typed condition (struct value) needs alloca+store.
             var cond_is_pointer: bool false
+            if deref_subject <> null
+                set cond_is_pointer: true
             ; s143: throws-call return type for binding the synthetic Success
             ; arm to the bare sret value. Stage-1 doesn't wrap throws returns
             ; in a Result struct, so for `choose parse_X() when success:
