@@ -674,6 +674,10 @@ define Planner
         ; initializer is the view (collect_view_sources#)
         view_alias_locals: Array[String]
         promoted_binding_names: Array[String]
+        ; lambda literals planned as OPERANDS, so a call can turn one into a
+        ; closure for a delegate parameter (closure_for_lambda_arg#)
+        lambda_arg_models: Array[Lambda]
+        lambda_arg_starts: Array[size_t]
         ; Hole-1 field provenance (escape soundness): names of frame-local
         ; VALUE-struct bindings constructed with a Local-ref argument
         ; (`let h Holder(&b)` where &b points into this frame). A later
@@ -1259,6 +1263,8 @@ define Planner
             set view_receiver_locals: Array[String]^this()
             set view_alias_locals: Array[String]^this()
             set promoted_binding_names: Array[String]^this()
+            set lambda_arg_models: Array[Lambda]^this()
+            set lambda_arg_starts: Array[size_t]^this()
             set local_tainted_struct_bindings: Array[String]^this()
             set escaping_targets: Array[String]^this()
             set address_taken_locals: Array[String]^this()
@@ -3399,6 +3405,107 @@ define Planner
                 }
                 set at: s + 1
             }
+            ""
+        }
+
+        ; basename_hash#: a deterministic number for a source file's NAME,
+        ; independent of the directory it was compiled from (lambda symbols).
+        function basename_hash(path: String) returns size_t
+        {
+            let slash path.last_index_of(47)
+            if slash < 0
+                return path.hash()
+            let from (slash as size_t) + 1
+            let base path.substring(from, path.get_length() - from)
+            base.hash()
+        }
+
+        ; lambda_arg_fits#: is argument j a lambda LITERAL whose parameter
+        ; count matches the delegate `pt`? Asked in the last resolution pass
+        ; only, like the other literal folds.
+        procedure lambda_arg_fits(mutable this: Planner, pt: PlannedType, arg_ops: Vector[PlannedOperand], j: size_t) returns bool
+        {
+            if j >= arg_ops.length
+                return false
+            if this.is_delegate_type(pt.name) = false
+                return false
+            let ap arg_ops.get j
+            if ap = null
+                return false
+            choose ap.expr
+                when pl: PlannedLambda
+                {
+                    var n: size_t 0
+                    if pl.input <> null
+                        set n: (*pl.input).length
+                    var dn String(pt.name)
+                    let dparams this.delegate_param_types(dn)
+                    return n = dparams.length
+                }
+                else
+                    0
+            false
+        }
+
+        ; closure_for_lambda_arg#: a lambda literal handed straight to a
+        ; `delegate` parameter (`apply(\a b: a + b, 3, 4)`) becomes the closure
+        ; a delegate-typed binding builds (make_closure#) -- until 2026-09-24
+        ; the call was "function not found": the literal planned as its body's
+        ; RESULT type and matched no delegate. Null when `a` is no lambda
+        ; literal this planner recorded.
+        procedure closure_for_lambda_arg(mutable this: Planner, a: PlannedOperand, pt: PlannedType) returns ref[PlannedOperand]?
+        {
+            choose a.expr
+                when pl: PlannedLambda
+                    0
+                else
+                    return null
+            var k lambda_arg_starts.length
+            while k > 0
+            {
+                set k: k - 1
+                let sp lambda_arg_starts.get k
+                if sp <> null and (*sp) = a.loc.start
+                {
+                    let lp lambda_arg_models.get k
+                    if lp = null
+                        return null
+                    var lm (*lp)
+                    var dn String(pt.name)
+                    let dparams this.delegate_param_types(dn)
+                    let dret this.delegate_return_type(dn)
+                    let clo this.make_closure("arg", lm, dparams, dret, pt, Lifetime.Local(scalyc.compiler.Model.Local(a.loc)))
+                    return PlannedOperand^this(a.loc, PlannedExpression.Closure clo, null, pt)
+                }
+            }
+            null
+        }
+
+        ; generic_static_hop#: the name of the one member hop a planned Type
+        ; operand of a GENERIC concept carries (`Stack[int].make`), or "" --
+        ; no hop, a union variant hop, or a non-generic type (`Plain.make`
+        ; goes through the s155 static path and stays there).
+        function generic_static_hop(op: PlannedOperand) returns String
+        {
+            if op.member_access = null
+                return ""
+            let ma (*op.member_access)
+            if ma.length <> 1
+                return ""
+            let hp ma.get 0
+            if hp = null or hp.is_union_value or hp.is_method
+                return ""
+            choose op.expr
+                when t: PlannedType
+                {
+                    if t.generics = null
+                        return ""
+                    if (*t.generics).length = 0
+                        return ""
+                    return hp.name
+                }
+                else
+                    0
             ""
         }
 
@@ -7747,6 +7854,12 @@ define Planner
                         set ok: true
                         set any_fold: true
                     }
+                    ; Lambda-into-delegate fallback (see closure_for_lambda_arg#).
+                    if ok = false and this.lambda_arg_fits(planned_p, arg_ops, j)
+                    {
+                        set ok: true
+                        set any_fold: true
+                    }
                     if ok = false
                         return false
                 }
@@ -8080,6 +8193,8 @@ define Planner
                     ; method compiled. Last pass only (char_fold), so no
                     ; overload that matched before can lose to it.
                     if ok = false and char_fold and Planner.option_arg_into_plain_ref(planned_p, arg)
+                        set ok: true
+                    if ok = false and char_fold and this.lambda_arg_fits(planned_p, arg_ops, j)
                         set ok: true
                     if ok = false
                         return null
@@ -9688,6 +9803,17 @@ define Planner
                                     out.add(this.fold_string_operand_to_char(a, pt))
                                     set folded: true
                                 }
+                            ; A lambda literal into a delegate parameter becomes
+                            ; the closure a delegate-typed binding would hold.
+                            if folded = false and this.is_delegate_type(pt.name)
+                            {
+                                let clo_op this.closure_for_lambda_arg(a, pt)
+                                if clo_op <> null
+                                {
+                                    out.add((*clo_op))
+                                    set folded: true
+                                }
+                            }
                             ; String literal into a Slice[char] parameter:
                             ; materialise the {length, data} view the callee
                             ; declares. Unlike every other arm here this is a
@@ -12112,6 +12238,15 @@ define Planner
                         var ctor_union_type: PlannedType Planner.make_void_type()
                         var ctor_variant_name: String ""
                         var ctor_variant_tag: size_t 0
+                        ; `Stack[int].make(5)`: a STATIC of a GENERIC concept.
+                        ; The planned Type carries the static's name as a
+                        ; (non-method) hop, and the Structure arm below took the
+                        ; whole thing for `Stack[int](5)` -- the static never
+                        ; ran, rc 0 (2026-09-24). Such a call is resolved
+                        ; through lookup_method# on the instantiated type
+                        ; after the free-function resolution below.
+                        var static_on_type: bool false
+                        var static_type: PlannedType Planner.make_void_type()
 
                         ; Resolve struct construction regardless of lifetime.
                         ; The reshape below force-sets Lifetime.Unspecified on
@@ -12135,12 +12270,26 @@ define Planner
                             choose conc.definition
                                 when s: Structure
                                 {
-                                    set is_struct_ctor: true
-                                    choose result.expr
-                                        when t: PlannedType
-                                            set ctor_struct_type: t
-                                        else
-                                            0
+                                    let sh_name Planner.generic_static_hop(result)
+                                    if sh_name.get_length() > 0
+                                    {
+                                        set static_on_type: true
+                                        set fn_name: sh_name
+                                        choose result.expr
+                                            when t: PlannedType
+                                                set static_type: t
+                                            else
+                                                0
+                                    }
+                                    else
+                                    {
+                                        set is_struct_ctor: true
+                                        choose result.expr
+                                            when t: PlannedType
+                                                set ctor_struct_type: t
+                                            else
+                                                0
+                                    }
                                 }
                                 when un: scalyc.compiler.Model.Union
                                 {
@@ -12824,6 +12973,12 @@ define Planner
                                 else
                                     0
                         var match_ref this.resolve_function_call_generic(fn_name, arg_types, arg_ops, call_generics)
+                        if match_ref = null and static_on_type
+                        {
+                            let sm_ref this.lookup_method(static_type, fn_name, arg_types, arg_ops)
+                            if sm_ref <> null and sm_ref.takes_this = false
+                                set match_ref: sm_ref
+                        }
 
                         ; First-hop method dispatch (s75): when fn_name
                         ; is a dotted name `arg.starts_with` and `arg`
@@ -16653,6 +16808,8 @@ define Planner
                                 if Planner.type_is_char_slice(planned_p)
                                     if this.arg_is_foldable_char_string(arg_ops, j)
                                         set ok: true
+                    if ok = false and char_fold and this.lambda_arg_fits(planned_p, arg_ops, j)
+                        set ok: true
                     if ok = false
                         return false
                 }
@@ -21867,6 +22024,17 @@ define Planner
             var ml_sb StringBuilder()
             ml_sb.append "_ZN6lambdaN"
             ml_sb.append base_name
+            ; The DEFINITION, not only its name: the source offset and the
+            ; file's basename (a hash -- the directory must not move the
+            ; seed). Until 2026-09-24 two `let g: IntFn \v: ...` in different
+            ; functions shared one symbol, the second reused the first
+            ; lambda's body -- f2 answered f1's result, rc 0.
+            let lam_at lam.span.start
+            let lam_file Planner.basename_hash(file)
+            ml_sb.append "_"
+            ml_sb.append lam_at
+            ml_sb.append "_"
+            ml_sb.append lam_file
             ml_sb.append "E"
             var cmi: size_t 0
             while cmi < cap_types.length
@@ -24183,7 +24351,16 @@ define Planner
                 }
                 when lam: Lambda
                 {
+                    lambda_arg_models.add(lam)
+                    lambda_arg_starts.add(op.span.start)
+                    ; This plan has no parameter TYPES yet, so a call in the
+                    ; body (`\a: inc(a)`) cannot resolve here; what it reports
+                    ; is dropped. The body is planned for real, with the
+                    ; delegate's types, when the literal becomes a closure
+                    ; (closure_for_lambda_arg#) -- and its diagnostics stand.
+                    let lam_diag_mark diagnostics.length
                     let pl this.plan_lambda(lam)
+                    set diagnostics.length: lam_diag_mark
                     PlannedOperand(op.span, PlannedExpression.Lambda pl, null, pl.return_type)
                 }
                 when rep: Repeat
@@ -40893,6 +41070,284 @@ define Planner
         ; would convert twice. Returns null when nothing applies, so it is
         ; a no-op after a direct conversion has already fired.
         ; ================================================================
+        ; ================================================================
+        ; self_tail_to_return#: an IMPLICIT self tail call -- `f(n - 1, acc)`
+        ; as the value a body ends with, directly or as the last statement of
+        ; a block or an if/choose/match arm -- is rewritten into the
+        ; `return f(...)` it means. The emitter turns an explicit self tail
+        ; return into a jump to its tail loop (Emitter.return_is_self_call#)
+        ; and never saw the implicit one: until 2026-09-24 `count(n - 1, acc
+        ; + 1)` at the end of a body recursed and SIGSEGVed at ten million
+        ; where the same line with `return` ran in one frame. Only a DIRECT
+        ; call to this very function qualifies (no member hop, no operator,
+        ; intrinsic or indirect call); the emitter still decides whether the
+        ; loop applies, and where it does not the `return` is what the
+        ; implicit tail was. Functions with a result only.
+        ; ================================================================
+        function impl_or(alt: ref[PlannedImplementation]?, base: PlannedImplementation) returns PlannedImplementation
+        {
+            if alt <> null
+                return *alt
+            base
+        }
+
+        function operand_is_self_call(op: PlannedOperand, mangled: String) returns bool
+        {
+            if op.member_access <> null
+            {
+                let chain (*op.member_access)
+                if chain.length > 0
+                    return false
+            }
+            choose op.expr
+                when c: PlannedCall
+                    return c.mangled_name = mangled and c.is_intrinsic = false and c.is_operator = false and c.is_indirect = false
+                else
+                    0
+            false
+        }
+
+        procedure self_tail_to_return(mutable this: Planner, impl: PlannedImplementation, mangled: String) returns ref[PlannedImplementation]?
+        {
+            choose impl
+                when a: PlannedAction
+                {
+                    if a.target <> null or a.source = null
+                        return null
+                    let src (*a.source)
+                    if src.length <> 1
+                        return null
+                    let s0 src.get 0
+                    if s0 = null
+                        return null
+                    var new_op: ref[PlannedOperand]? null
+                    if Planner.operand_is_self_call((*s0), mangled)
+                    {
+                        ; a body that IS the call: a one-statement block
+                        ; returning it
+                        var rh Vector[PlannedStatement](1)
+                        let nr PlannedReturn(a.loc, a.source)
+                        rh.put(0, PlannedStatement.Return nr)
+                        let blk PlannedBlock(a.loc, &rh)
+                        set new_op: PlannedOperand^this(a.loc, PlannedExpression.Block blk, null, a.result_type)
+                    }
+                    else
+                        set new_op: this.self_tail_operand((*s0), mangled)
+                    if new_op = null
+                        return null
+                    var nsrc Vector[PlannedOperand](1)
+                    nsrc.put(0, (*new_op))
+                    let na PlannedAction(a.loc, &nsrc, a.target, a.result_type)
+                    var ih Vector[PlannedImplementation](1)
+                    ih.put(0, PlannedImplementation.Action na)
+                    return ih.get(0)
+                }
+                else
+                    return null
+            null
+        }
+
+        procedure self_tail_statement(mutable this: Planner, stmt: PlannedStatement, mangled: String) returns ref[PlannedStatement]?
+        {
+            choose stmt
+                when a: PlannedAction
+                {
+                    if a.target <> null or a.source = null
+                        return null
+                    let src (*a.source)
+                    if src.length <> 1
+                        return null
+                    let s0 src.get 0
+                    if s0 = null
+                        return null
+                    var h Vector[PlannedStatement](1)
+                    if Planner.operand_is_self_call((*s0), mangled)
+                    {
+                        let nr PlannedReturn(a.loc, a.source)
+                        h.put(0, PlannedStatement.Return nr)
+                        return h.get(0)
+                    }
+                    let sub this.self_tail_operand((*s0), mangled)
+                    if sub = null
+                        return null
+                    var nsrc Vector[PlannedOperand](1)
+                    nsrc.put(0, (*sub))
+                    let na PlannedAction(a.loc, &nsrc, a.target, a.result_type)
+                    h.put(0, PlannedStatement.Action na)
+                    return h.get(0)
+                }
+                else
+                    return null
+            null
+        }
+
+        procedure self_tail_operand(mutable this: Planner, op: PlannedOperand, mangled: String) returns ref[PlannedOperand]?
+        {
+            if op.member_access <> null
+            {
+                let chain (*op.member_access)
+                if chain.length > 0
+                    return null
+            }
+            choose op.expr
+                when ch: PlannedChoose
+                {
+                    var changed false
+                    var new_cases: ref[Vector[PlannedWhen]]? ch.cases
+                    if ch.cases <> null
+                    {
+                        let cases_in (*ch.cases)
+                        var out_cases Vector[PlannedWhen](cases_in.length)
+                        var i: size_t 0
+                        while i < cases_in.length
+                        {
+                            let cp cases_in.get i
+                            if cp <> null
+                            {
+                                let cw (*cp)
+                                var new_cons: ref[PlannedStatement]? cw.consequent
+                                if cw.consequent <> null
+                                {
+                                    let pc this.self_tail_statement((*cw.consequent), mangled)
+                                    if pc <> null
+                                    {
+                                        set new_cons: pc
+                                        set changed: true
+                                    }
+                                }
+                                out_cases.put(i, PlannedWhen(cw.loc, cw.name, cw.variant_type, cw.variant_index, new_cons))
+                            }
+                            set i: i + 1
+                        }
+                        var ch_holder Vector[PlannedWhen](out_cases)
+                        set new_cases: &ch_holder
+                    }
+                    var new_alt: ref[PlannedStatement]? ch.alternative
+                    if ch.alternative <> null
+                    {
+                        let pa this.self_tail_statement((*ch.alternative), mangled)
+                        if pa <> null
+                        {
+                            set new_alt: pa
+                            set changed: true
+                        }
+                    }
+                    if changed = false
+                        return null
+                    let nch PlannedChoose(ch.loc, ch.condition, new_cases, new_alt)
+                    return PlannedOperand^this(op.loc, PlannedExpression.Choose nch, op.member_access, op.result_type)
+                }
+                when iff: PlannedIf
+                {
+                    var changed false
+                    var new_cons: ref[PlannedStatement]? iff.consequent
+                    if iff.consequent <> null
+                    {
+                        let pc this.self_tail_statement((*iff.consequent), mangled)
+                        if pc <> null
+                        {
+                            set new_cons: pc
+                            set changed: true
+                        }
+                    }
+                    var new_alt: ref[PlannedStatement]? iff.alternative
+                    if iff.alternative <> null
+                    {
+                        let pa this.self_tail_statement((*iff.alternative), mangled)
+                        if pa <> null
+                        {
+                            set new_alt: pa
+                            set changed: true
+                        }
+                    }
+                    if changed = false
+                        return null
+                    let nif PlannedIf(iff.loc, iff.condition, iff.prop, new_cons, new_alt)
+                    return PlannedOperand^this(op.loc, PlannedExpression.If nif, op.member_access, op.result_type)
+                }
+                when mt: PlannedMatch
+                {
+                    var changed false
+                    var new_branches: ref[Vector[PlannedBranch]]? mt.branches
+                    if mt.branches <> null
+                    {
+                        let brs_in (*mt.branches)
+                        var out_brs Vector[PlannedBranch](brs_in.length)
+                        var i: size_t 0
+                        while i < brs_in.length
+                        {
+                            let bp brs_in.get i
+                            if bp <> null
+                            {
+                                let br (*bp)
+                                var new_cons: ref[PlannedStatement]? br.consequent
+                                if br.consequent <> null
+                                {
+                                    let pc this.self_tail_statement((*br.consequent), mangled)
+                                    if pc <> null
+                                    {
+                                        set new_cons: pc
+                                        set changed: true
+                                    }
+                                }
+                                out_brs.put(i, PlannedBranch(br.loc, br.cases, new_cons))
+                            }
+                            set i: i + 1
+                        }
+                        var mb_holder Vector[PlannedBranch](out_brs)
+                        set new_branches: &mb_holder
+                    }
+                    var new_malt: ref[PlannedStatement]? mt.alternative
+                    if mt.alternative <> null
+                    {
+                        let pa this.self_tail_statement((*mt.alternative), mangled)
+                        if pa <> null
+                        {
+                            set new_malt: pa
+                            set changed: true
+                        }
+                    }
+                    if changed = false
+                        return null
+                    let nmt PlannedMatch(mt.loc, mt.condition, new_branches, new_malt)
+                    return PlannedOperand^this(op.loc, PlannedExpression.Match nmt, op.member_access, op.result_type)
+                }
+                when blk: PlannedBlock
+                {
+                    if blk.statements = null
+                        return null
+                    let stmts (*blk.statements)
+                    if stmts.length = 0
+                        return null
+                    let last_ptr stmts.get(stmts.length - 1)
+                    if last_ptr = null
+                        return null
+                    let pl this.self_tail_statement((*last_ptr), mangled)
+                    if pl = null
+                        return null
+                    var out_stmts Vector[PlannedStatement](stmts.length)
+                    var i: size_t 0
+                    while i < stmts.length
+                    {
+                        let sp stmts.get i
+                        if sp <> null
+                        {
+                            if i = stmts.length - 1
+                                out_stmts.put(i, (*pl))
+                            else
+                                out_stmts.put(i, (*sp))
+                        }
+                        set i: i + 1
+                    }
+                    var sh Vector[PlannedStatement](out_stmts)
+                    let nblk PlannedBlock(blk.loc, &sh)
+                    return PlannedOperand^this(op.loc, PlannedExpression.Block nblk, op.member_access, op.result_type)
+                }
+                else
+                    return null
+            null
+        }
+
         procedure convert_tail_literal(mutable this: Planner, op: PlannedOperand, rt: PlannedType) returns ref[PlannedOperand]?
         {
             var rt_is_charlike: bool false
@@ -44873,6 +45328,17 @@ define Planner
                 mangled_holder.put(0, Planner.mangle_function(mname, &input_holder, parent, has_page))
             let mangled (*mangled_holder.get(0))
 
+            ; An IMPLICIT self tail call becomes an explicit `return`, so the
+            ; emitter's tail loop (return_is_self_call#) takes it as it takes
+            ; `return f(...)` -- self_tail_to_return#.
+            ; (A `var planned_impl` rebound to the rewrite crashed the stage
+            ; built from this source in a memmove -- a union held in a `var`
+            ; and reassigned; bound once instead.)
+            var tail_impl: ref[PlannedImplementation]? null
+            if return_type <> null
+                set tail_impl: this.self_tail_to_return(planned_impl, mangled)
+            let body_impl Planner.impl_or(tail_impl, planned_impl)
+
             var can_throw: bool false
             if throws_type <> null
                 set can_throw: true
@@ -44951,7 +45417,7 @@ define Planner
                 return_type,
                 throws_type,
                 f.lifetime,
-                planned_impl,
+                body_impl,
                 null,
                 needs_local_page,
                 can_throw,

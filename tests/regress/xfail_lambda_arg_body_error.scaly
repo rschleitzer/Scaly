@@ -1,0 +1,12 @@
+; Regression (2026-09-24): a lambda literal handed to a delegate parameter is
+; planned twice -- once without parameter types (its diagnostics dropped), once
+; as the closure. A genuine error in its body must still be reported, by the
+; second (lambda_arg_delegate.scaly is the positive half).
+; xfail: function not found: nosuch
+define UnFn delegate(int) returns int
+
+function apply1(f: UnFn, x: int) returns int
+    f(x)
+
+let r apply1(\a: nosuch(a), 3)
+print "`r`"

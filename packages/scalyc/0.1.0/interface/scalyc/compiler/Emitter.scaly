@@ -13361,6 +13361,27 @@ define Emitter
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         ; Emit a match expression
         ; operands_are_true#: the operand run is the one constant `true`.
         function operands_are_true(cond: ref[Vector[PlannedOperand]]?) @deep true returns bool linked
@@ -13728,6 +13749,10 @@ define Emitter
 
 
         procedure emit_choose(mutable this, mutable choose_expr: PlannedChoose) @direct true @ret_caller true @deep true @deep_beyond_2 true returns LLVMValueRef linked
+
+
+
+
 
 
 
@@ -18979,6 +19004,30 @@ define Emitter
         ; + GEP-chain walk). Factored out of emit_member_assignment so the
         ; in-place field construction path (emit_in_place_field_ctor) can compute
         ; the destination without emitting a store.
+        ; is_tail_loop_phi#: is `v` one of the current tail loop's parameter
+        ; PHIs? Inside a self tail loop (TCO) every parameter reads as its PHI,
+        ; not as the function's Argument, so a test that recognizes a
+        ; by-pointer STRUCT parameter by comparing with LLVMGetParam misses it.
+        ; emit_choose's did: `choose s` over a by-value union parameter stored
+        ; the POINTER into its union copy and read the tag out of an address,
+        ; so `return g(Step.More(m - 1), ...)` answered the else arm -- rc 0,
+        ; for every such function the transform ever took (2026-09-24).
+        function is_tail_loop_phi(this, v: LLVMValueRef) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         ; inplace_chain_ptr#: the address of the field a receiver chain names,
         ; GEP'd in place from `base` (whose struct type is `struct_ty`), or null
         ; when a hop cannot be walked. Shared by the Variable base (s102) and

@@ -1,0 +1,27 @@
+; Regression (2026-09-24): two delegate-typed bindings of the SAME NAME in
+; different functions shared one lambda symbol -- it was built from the name
+; and the parameter types, and the second reused the first's body: f2 answered
+; f1's result, rc 0. The symbol names the definition now, its source offset
+; and file (Planner.monomorphize_lambda#).
+; Expected: PASS
+define IntFn delegate(int) returns int
+
+function apply(f: IntFn, x: int) returns int
+    f(x)
+
+function f1(x: int) returns int
+{
+    let g: IntFn \v: v + 1
+    apply(g, x)
+}
+
+function f2(x: int) returns int
+{
+    let g: IntFn \v: v * 2
+    apply(g, x)
+}
+
+if f1(10) = 11 and f2(10) = 20
+    print "PASS"
+else
+    print "FAIL"

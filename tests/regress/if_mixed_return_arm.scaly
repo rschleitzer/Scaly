@@ -1,0 +1,31 @@
+; Regression (2026-09-24): an `if`/`else` whose one arm yields a value and whose
+; other arm leaves with `return` answered the WRONG value at rc 0 -- emit_if
+; built a PHI only when both arms had values, so the if yielded nothing and the
+; enclosing implicit return answered 0 (`ret i64 0`), in both orders. The merge
+; has the value arm as its only predecessor, so that value IS the if's value
+; (Emitter.emit_if#). The tree held no live instance -- emission moved by dead
+; PHIs only -- but the shape is what the implicit tail call rewrite produces.
+; Expected: PASS
+function other(n: int) returns int
+    n * 100
+
+function value_then(n: int) returns int
+{
+    if n = 0
+        7
+    else
+        return other(n)
+}
+
+function value_else(n: int) returns int
+{
+    if n = 0
+        return 7
+    else
+        other(n)
+}
+
+if value_then(0) = 7 and value_then(3) = 300 and value_else(0) = 7 and value_else(3) = 300
+    print "PASS"
+else
+    print "FAIL"

@@ -1,0 +1,48 @@
+; Regression (2026-09-24): `choose` over a by-value UNION parameter inside a
+; self tail loop read its tag out of an ADDRESS. In the loop the parameter is
+; the header PHI, not the function's Argument, and emit_choose recognized a
+; by-pointer parameter by comparing with LLVMGetParam -- so it copied the
+; POINTER into its union slot and every call took the else arm, rc 0, for the
+; EXPLICIT `return f(Step.More(m - 1), ...)` as much as for the implicit one
+; (Emitter.is_tail_loop_phi#).
+; Expected: PASS
+define Step union
+(
+    More: int
+    Done: int
+)
+
+function explicit(s: Step, acc: int) returns int
+{
+    choose s
+        when m: More
+        {
+            if m = 0
+                return acc
+            return explicit(Step.More(m - 1), acc + 1)
+        }
+        when d: Done
+            d
+        else
+            0
+}
+
+function implicit(s: Step, acc: int) returns int
+{
+    choose s
+        when m: More
+        {
+            if m = 0
+                return implicit(Step.Done(acc), 0)
+            implicit(Step.More(m - 1), acc + 1)
+        }
+        when d: Done
+            d + acc
+        else
+            0
+}
+
+if explicit(Step.More(1000000), 0) = 1000000 and implicit(Step.More(1000000), 0) = 1000000
+    print "PASS"
+else
+    print "FAIL"

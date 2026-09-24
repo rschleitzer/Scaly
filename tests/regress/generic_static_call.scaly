@@ -1,0 +1,39 @@
+; Regression (2026-09-24): a STATIC of a GENERIC concept, `Stack[int].make(5)`.
+; The planned Type carried the static's name as a plain hop and the Structure
+; arm of the construction check took the call for `Stack[int](5)`: the static
+; never ran, rc 0 -- here that would read 5, not 50. It resolves through
+; lookup_method# on the instantiated type now (Planner.generic_static_hop#), a
+; this-less member only. Shapes: one argument, two, a parameter of type T, a
+; page parameter, and the plain construction beside them.
+; Expected: PASS
+define Stack[T] (var n: int)
+{
+    function make(k: int) returns Stack[T]
+        Stack[T](k * 10)
+    function make2(k: int, j: int) returns Stack[T]
+        Stack[T](k + j)
+    function size(this) returns int
+        n
+}
+
+define Box[T] (var v: T, var n: int)
+{
+    function of(x: T) returns Box[T]
+        Box[T](x, 1)
+    function on(host: ref[Page], x: T) returns ref[Box[T]]
+    {
+        let b Box[T]^host(x, 2)
+        &b
+    }
+}
+
+let s Stack[int].make(5)
+let t Stack[int].make2(5, 1)
+let c Stack[int](5)
+let a Box[int].of(42)
+let rp Page.allocate_root_page()
+let h Box[int].on(rp as ref[Page], 9)
+if s.size() = 50 and t.size() = 6 and c.size() = 5 and a.v = 42 and a.n = 1 and h.v = 9 and h.n = 2
+    print "PASS"
+else
+    print "FAIL"

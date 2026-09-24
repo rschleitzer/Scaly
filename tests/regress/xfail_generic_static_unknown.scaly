@@ -1,0 +1,12 @@
+; Regression (2026-09-24): an UNKNOWN static on a generic concept was a
+; construction of the concept, rc 0 -- `Box[int].nosuch(42)` built a Box. It is
+; `function not found` now (generic_static_call.scaly is the positive half).
+; xfail: function not found: nosuch
+define Box[T] (var v: T)
+{
+    function of(x: T) returns Box[T]
+        Box[T](x)
+}
+
+let a Box[int].nosuch(42)
+print "`a.v`"

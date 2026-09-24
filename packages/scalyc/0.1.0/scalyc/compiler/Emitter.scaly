@@ -11067,7 +11067,7 @@ define Emitter
                                         if arg_load_isa = null
                                         {
                                             let arg_arg_isa LLVMIsAArgument(arg_value)
-                                            if arg_arg_isa <> null
+                                            if arg_arg_isa <> null or this.is_tail_loop_phi(arg_value)
                                             {
                                                 if arg_operand.result_type.name.starts_with("LLVM")
                                                 {
@@ -13250,6 +13250,9 @@ define Emitter
 
             ; Jump to merge block if not already terminated
             let then_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
+            ; An arm that ended in its own terminator (`return`, `break`, a
+            ; throw) never reaches the merge -- see the one-armed value below.
+            let then_left then_term <> null
             if then_term = null
                 LLVMBuildBr(builder, merge_block)
             let then_end_block LLVMGetInsertBlock(builder)
@@ -13262,6 +13265,7 @@ define Emitter
             ; Emit else block if present
             var else_value: LLVMValueRef null
             var else_end_block: LLVMBasicBlockRef null
+            var else_left: bool false
 
             if else_block <> null
             {
@@ -13280,6 +13284,7 @@ define Emitter
                 }
 
                 let else_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
+                set else_left: else_term <> null
                 if else_term = null
                     LLVMBuildBr(builder, merge_block)
                 set else_end_block: LLVMGetInsertBlock(builder)
@@ -13291,6 +13296,22 @@ define Emitter
 
             ; Continue at merge block
             LLVMPositionBuilderAtEnd(builder, merge_block)
+
+            ; ONE arm left through its own terminator (`if n = 0  acc  else
+            ; return f(n)`): the merge has the other arm as its only
+            ; predecessor, so that arm's value IS the if's value and dominates
+            ; the merge. Until 2026-09-24 no PHI was built for the pair and the
+            ; if yielded nothing -- the enclosing implicit return answered 0,
+            ; rc 0, in both orders.
+            if else_block <> null
+            {
+                if then_left and else_left = false and else_value <> null
+                    if LLVMGetTypeKind(LLVMTypeOf(else_value)) <> LLVMTypeKind.Void()
+                        return else_value
+                if else_left and then_left = false and then_value <> null
+                    if LLVMGetTypeKind(LLVMTypeOf(then_value)) <> LLVMTypeKind.Void()
+                        return then_value
+            }
 
             ; If both branches produce values of the same type, create a PHI node
             if then_value <> null
@@ -14054,6 +14075,10 @@ define Emitter
                             set cond_is_pointer: true
                         set pi: pi + 1
                     }
+                    ; ... and inside a tail loop the parameter IS its PHI
+                    ; (is_tail_loop_phi#).
+                    if this.is_tail_loop_phi(union_value)
+                        set cond_is_pointer: true
                 }
             }
             ; s175: a let-bound struct/union local used as the choose subject
@@ -18979,6 +19004,30 @@ define Emitter
         ; + GEP-chain walk). Factored out of emit_member_assignment so the
         ; in-place field construction path (emit_in_place_field_ctor) can compute
         ; the destination without emitting a store.
+        ; is_tail_loop_phi#: is `v` one of the current tail loop's parameter
+        ; PHIs? Inside a self tail loop (TCO) every parameter reads as its PHI,
+        ; not as the function's Argument, so a test that recognizes a
+        ; by-pointer STRUCT parameter by comparing with LLVMGetParam misses it.
+        ; emit_choose's did: `choose s` over a by-value union parameter stored
+        ; the POINTER into its union copy and read the tag out of an address,
+        ; so `return g(Step.More(m - 1), ...)` answered the else arm -- rc 0,
+        ; for every such function the transform ever took (2026-09-24).
+        function is_tail_loop_phi(this, v: LLVMValueRef) returns bool
+        {
+            if tail_loop_block = null or tail_loop_phis = null
+                return false
+            let phis (*tail_loop_phis)
+            var i: size_t 0
+            while i < phis.length
+            {
+                let pp phis.get i
+                if pp <> null and (*pp) = v
+                    return true
+                set i: i + 1
+            }
+            false
+        }
+
         ; inplace_chain_ptr#: the address of the field a receiver chain names,
         ; GEP'd in place from `base` (whose struct type is `struct_ty`), or null
         ; when a hop cannot be walked. Shared by the Variable base (s102) and

@@ -674,6 +674,10 @@ define Planner
         ; initializer is the view (collect_view_sources#)
         view_alias_locals: Array[String]
         promoted_binding_names: Array[String]
+        ; lambda literals planned as OPERANDS, so a call can turn one into a
+        ; closure for a delegate parameter (closure_for_lambda_arg#)
+        lambda_arg_models: Array[Lambda]
+        lambda_arg_starts: Array[size_t]
         ; Hole-1 field provenance (escape soundness): names of frame-local
         ; VALUE-struct bindings constructed with a Local-ref argument
         ; (`let h Holder(&b)` where &b points into this frame). A later
@@ -1227,6 +1231,8 @@ define Planner
     )
     {
         init(filename: String) linked
+
+
 
 
 
@@ -3381,6 +3387,107 @@ define Planner
         ; or "" for a file outside any package (a program's own modules).
         ; Diagnostic path only.
         function package_dir_of(path: String) @page true @direct true @ret_caller true @deep true returns String linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; basename_hash#: a deterministic number for a source file's NAME,
+        ; independent of the directory it was compiled from (lambda symbols).
+        function basename_hash(path: String) @ret_nonlocal true @deep true returns size_t linked
+
+
+
+
+
+
+
+
+
+        ; lambda_arg_fits#: is argument j a lambda LITERAL whose parameter
+        ; count matches the delegate `pt`? Asked in the last resolution pass
+        ; only, like the other literal folds.
+        procedure lambda_arg_fits(mutable this: Planner, pt: PlannedType, arg_ops: Vector[PlannedOperand], j: size_t) @ret_caller true @deep true returns bool io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; closure_for_lambda_arg#: a lambda literal handed straight to a
+        ; `delegate` parameter (`apply(\a b: a + b, 3, 4)`) becomes the closure
+        ; a delegate-typed binding builds (make_closure#) -- until 2026-09-24
+        ; the call was "function not found": the literal planned as its body's
+        ; RESULT type and matched no delegate. Null when `a` is no lambda
+        ; literal this planner recorded.
+        procedure closure_for_lambda_arg(mutable this: Planner, a: PlannedOperand, pt: PlannedType) @page true @direct true @ret_caller true @deep true returns ref[PlannedOperand]? io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; generic_static_hop#: the name of the one member hop a planned Type
+        ; operand of a GENERIC concept carries (`Stack[int].make`), or "" --
+        ; no hop, a union variant hop, or a non-generic type (`Plain.make`
+        ; goes through the s155 static path and stays there).
+        function generic_static_hop(op: PlannedOperand) @page true @direct true @deep true returns String linked
+
+
 
 
 
@@ -7757,6 +7864,12 @@ define Planner
 
 
 
+
+
+
+
+
+
         ; Phase-5 class 1: a persist into a receiver that is itself a
         ; frame-local, non-escaping binding does not outlive the frame —
         ; receiver and argument share the frame's lifetime, so promoting
@@ -8003,6 +8116,8 @@ define Planner
             char_fold: bool,
             arg_ops: Vector[PlannedOperand]
         ) @page true @direct true @deep true @deep_this_2 true returns ref[MethodMatch]? io linked
+
+
 
 
 
@@ -9660,7 +9775,18 @@ define Planner
             mutable this: Planner,
             mutable args: Vector[PlannedOperand],
             mutable param_types: Vector[PlannedType]
-        ) @page true @direct true @ret_caller true @deep true returns Vector[PlannedOperand] linked
+        ) @page true @direct true @ret_caller true @deep true returns Vector[PlannedOperand] io linked
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -9905,6 +10031,35 @@ define Planner
             mutable this: Planner,
             mutable ops: Vector[PlannedOperand]
         ) @page true @direct true @deep true @deep_this_2 true returns PlannedOperand io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -16661,6 +16816,8 @@ define Planner
 
 
 
+
+
         ; lookup_method: more-detailed method lookup that returns a
         ; MethodMatch with mangled name, return type, and parameter
         ; types pre-computed. The `method` field of MethodMatch points
@@ -21986,6 +22143,17 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
         ; GAP B substep 2: build a closure VALUE for a lambda assigned to a
         ; delegate type. Monomorphizes the real lambda against the delegate's
         ; parameter types (captures become leading params, reused from
@@ -24016,6 +24184,15 @@ define Planner
         ; any member-access chain declared on the operand.
         ; ================================================================
         procedure plan_operand(mutable this: Planner, mutable op: scalyc.compiler.Model.Operand) @page true @direct true @deep true returns PlannedOperand io linked
+
+
+
+
+
+
+
+
+
 
 
 
@@ -40893,6 +41070,284 @@ define Planner
         ; would convert twice. Returns null when nothing applies, so it is
         ; a no-op after a direct conversion has already fired.
         ; ================================================================
+        ; ================================================================
+        ; self_tail_to_return#: an IMPLICIT self tail call -- `f(n - 1, acc)`
+        ; as the value a body ends with, directly or as the last statement of
+        ; a block or an if/choose/match arm -- is rewritten into the
+        ; `return f(...)` it means. The emitter turns an explicit self tail
+        ; return into a jump to its tail loop (Emitter.return_is_self_call#)
+        ; and never saw the implicit one: until 2026-09-24 `count(n - 1, acc
+        ; + 1)` at the end of a body recursed and SIGSEGVed at ten million
+        ; where the same line with `return` ran in one frame. Only a DIRECT
+        ; call to this very function qualifies (no member hop, no operator,
+        ; intrinsic or indirect call); the emitter still decides whether the
+        ; loop applies, and where it does not the `return` is what the
+        ; implicit tail was. Functions with a result only.
+        ; ================================================================
+        function impl_or(alt: ref[PlannedImplementation]?, base: PlannedImplementation) @page true @direct true @ret_param_1 true @deep true returns PlannedImplementation linked
+
+
+
+
+
+
+        function operand_is_self_call(op: PlannedOperand, mangled: String) @ret_param_0 true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure self_tail_to_return(mutable this: Planner, impl: PlannedImplementation, mangled: String) @page true @direct true @ret_caller true @deep true returns ref[PlannedImplementation]? linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure self_tail_statement(mutable this: Planner, stmt: PlannedStatement, mangled: String) @page true @direct true @ret_caller true @deep true returns ref[PlannedStatement]? linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure self_tail_operand(mutable this: Planner, op: PlannedOperand, mangled: String) @page true @direct true @deep true returns ref[PlannedOperand]? linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         procedure convert_tail_literal(mutable this: Planner, op: PlannedOperand, rt: PlannedType) @page true @direct true @deep true returns ref[PlannedOperand]? linked
 
 
@@ -44503,6 +44958,17 @@ define Planner
             mutable f: Function,
             parent: ref[PlannedType]?
         ) @page true @direct true @deep true @deep_this_6 true @deep_whole_6 true returns PlannedFunction io linked
+
+
+
+
+
+
+
+
+
+
+
 
 
 

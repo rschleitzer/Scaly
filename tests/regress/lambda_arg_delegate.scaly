@@ -1,0 +1,35 @@
+; Regression (2026-09-24): a lambda LITERAL handed straight to a `delegate`
+; parameter. `apply2(\a b: a * b, 3, 5)` was "function not found: apply2" -- the
+; literal planned as its body's RESULT type and matched no delegate -- and a
+; body calling a free function failed before that, planned without parameter
+; types. The last resolution pass now lets a literal of the delegate's arity
+; match, and the call builds the closure a delegate-typed binding would hold
+; (Planner.closure_for_lambda_arg#). Shapes: two parameters, a free function in
+; the body, a capture, a method taking a delegate.
+; Expected: PASS
+define UnFn delegate(int) returns int
+define BinFn delegate(int, int) returns int
+
+function inc(a: int) returns int
+    a + 1
+
+function apply1(f: UnFn, x: int) returns int
+    f(x)
+
+function apply2(f: BinFn, x: int, y: int) returns int
+    f(x, y)
+
+function scaled(k: int, x: int) returns int
+    apply1(\a: a * k, x)
+
+define Runner (base: int)
+{
+    function run(this, f: UnFn) returns int
+        f(base)
+}
+
+let r Runner(40)
+if apply2(\a b: a * b, 3, 5) = 15 and apply1(\a: inc(a), 3) = 4 and scaled(3, 5) = 15 and scaled(4, 5) = 20 and r.run(\v: v + 2) = 42
+    print "PASS"
+else
+    print "FAIL"

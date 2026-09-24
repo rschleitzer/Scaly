@@ -1,0 +1,57 @@
+; Regression (2026-09-24): an IMPLICIT self tail call runs in one frame, as
+; `return f(...)` always did. The emitter's tail loop (return_is_self_call#)
+; only ever saw an explicit return, so `count(n - 1, acc + 1)` as the value a
+; body ends with recursed and SIGSEGVed at ten million (rc 139) where the same
+; line with `return` ran fine. Planner.self_tail_to_return# rewrites the call
+; into the return it means: the body's own value, a block's last statement,
+; and an if / match / choose arm. Ten million steps each, far past the stack.
+; Expected: PASS
+define Step union
+(
+    More: int
+    Done: int
+)
+
+function block_tail(n: int, acc: int) returns int
+{
+    if n = 0
+        return acc
+    block_tail(n - 1, acc + 1)
+}
+
+function if_arms(n: int, acc: int) returns int
+{
+    if n = 0
+        acc
+    else
+        if_arms(n - 1, acc + 1)
+}
+
+function match_arms(n: int, acc: int) returns int
+{
+    match n
+        case 0: acc
+    else
+        match_arms(n - 1, acc + 1)
+}
+
+function choose_arms(s: Step, acc: int) returns int
+{
+    choose s
+        when m: More
+        {
+            if m = 0
+                return choose_arms(Step.Done(0), acc)
+            choose_arms(Step.More(m - 1), acc + 1)
+        }
+        when d: Done
+            acc + d
+        else
+            acc
+}
+
+let n 10000000
+if block_tail(n, 0) = n and if_arms(n, 0) = n and match_arms(n, 0) = n and choose_arms(Step.More(n), 0) = n
+    print "PASS"
+else
+    print "FAIL"
