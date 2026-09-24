@@ -27,7 +27,7 @@ use scaly.containers.String
 ; opaque struct, so the pointer is taken back explicitly (a cast keeps the
 ; address meaning).
 let anchor String(64 as size_t)
-let page Page.get(anchor.data) as pointer[Page]
+let page Page.get(anchor.c_data()) as pointer[Page]
 
 let direct page.get_capacity(8 as size_t)
 let through (*page).get_capacity(8 as size_t)

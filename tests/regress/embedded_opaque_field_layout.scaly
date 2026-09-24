@@ -31,7 +31,7 @@ define Embedder (work: Page  tail: size_t  tail2: int)
 }
 
 let anchor String(64 as size_t)
-let host Page.get(anchor.data)
+let host Page.get(anchor.c_data())
 let e host.allocate(sizeof Embedder, alignof Embedder) as pointer[Embedder]
 set e.tail: 1234 as size_t
 set e.tail2: 567

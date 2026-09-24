@@ -3388,6 +3388,15 @@ define Planner
         ; Diagnostic path only.
         function package_dir_of(path: String) returns String
         {
+            ; a RELATIVE path (`packages/scaly/...`, the in-tree build) has
+            ; no leading slash before the marker
+            if path.starts_with("packages/")
+            {
+                let rel_end path.index_of(47, 9)
+                if rel_end < 0
+                    return ""
+                return path.substring(0, (rel_end as size_t) + 1)
+            }
             let n path.get_length()
             var at: size_t 0
             while at + 10 <= n
@@ -3406,6 +3415,23 @@ define Planner
                 set at: s + 1
             }
             ""
+        }
+
+        ; report_string_data_read#: `s.data` on a String outside the standard
+        ; library. The field points at the VARINT-PREFIXED buffer, not at the
+        ; characters -- `let nm "NaN"` then `takes(nm.data)` read the length
+        ; byte 3 where `N` was meant, rc 0 (2026-09-24). An untyped binding of
+        ; a string literal IS a String, so the spelling a Slice reader would
+        ; write compiles and reads the wrong bytes. The stdlib owns the layout
+        ; and is exempt.
+        procedure report_string_data_read(mutable this: Planner, type_name: String, member: String, at: Span)
+        {
+            if type_name <> "String" or member <> "data"
+                return
+            let pkg Planner.package_dir_of(file)
+            if pkg = "packages/scaly/" or pkg.ends_with("/packages/scaly/")
+                return
+            this.add_diagnostic(at, String^this("String.data points at the length-prefixed buffer, not at the characters: use as_slice() for the bytes, c_data() or to_c_string() for C"))
         }
 
         ; basename_hash#: a deterministic number for a source file's NAME,
@@ -18616,6 +18642,7 @@ define Planner
                             }
                         }
                         let idx this.get_property_index(lookup_type.name, m)
+                        this.report_string_data_read(lookup_type.name, m, at)
                         ; s173: record the UNWRAPPED lookup_type as the
                         ; hop's parent (mirrors stage-0 Planner.cpp:5104
                         ; "Use dereferenced type for auto-deref").

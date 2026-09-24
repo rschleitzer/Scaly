@@ -3408,6 +3408,32 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+        ; report_string_data_read#: `s.data` on a String outside the standard
+        ; library. The field points at the VARINT-PREFIXED buffer, not at the
+        ; characters -- `let nm "NaN"` then `takes(nm.data)` read the length
+        ; byte 3 where `N` was meant, rc 0 (2026-09-24). An untyped binding of
+        ; a string literal IS a String, so the spelling a Slice reader would
+        ; write compiles and reads the wrong bytes. The stdlib owns the layout
+        ; and is exempt.
+        procedure report_string_data_read(mutable this: Planner, type_name: String, member: String, at: Span) @deep true linked
+
+
+
+
+
+
+
+
+
         ; basename_hash#: a deterministic number for a source file's NAME,
         ; independent of the directory it was compiled from (lambda symbols).
         function basename_hash(path: String) @ret_nonlocal true @deep true returns size_t linked
@@ -18361,6 +18387,7 @@ define Planner
             mutable members: Vector[String],
             at: Span
         ) @page true @direct true @ret_caller true @deep true @deep_this_2 true returns Vector[PlannedMemberAccess] io linked
+
 
 
 

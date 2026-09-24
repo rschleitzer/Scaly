@@ -20,16 +20,19 @@
 
 procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
 {
-    var buf u8[16]
+    let host Page.allocate_page()
+    let buf host.allocate(16, 1) as pointer[u8]
     var i 0
     while i < 16
     {
-        set buf[i]: 0x80 as u8       ; continuation bit set, forever
+        set *(buf + i): 0x80 as u8   ; continuation bit set, forever
         set i: i + 1
     }
 
     var s String()
-    set s.data: &buf[0]
+    ; String.data is the stdlib's (report_string_data_read#): write the one
+    ; pointer field through the record's address, which says what it is
+    set *(&s as pointer[pointer[u8]]): buf
     let n s.get_length()
 
     print "FAIL: the malformed string was read"

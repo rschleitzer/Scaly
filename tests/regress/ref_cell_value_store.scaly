@@ -158,7 +158,7 @@ procedure drive(host: pointer[Page]) returns int
 }
 
 let anchor String("anchor")
-let host_page Page.get(anchor.data)
+let host_page Page.get(anchor.c_data())
 let rc drive(host_page)
 if rc = 0
     Console.println "PASS"

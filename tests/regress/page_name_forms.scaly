@@ -62,7 +62,7 @@ function drive(host: pointer[Page]) returns int
 ; (the idiom deref_receiver_opaque_struct.scaly uses). A page taken from
 ; address 0 would make every allocation below a scheme rather than a test.
 let anchor String("anchor")
-let host_page Page.get(anchor.data)
+let host_page Page.get(anchor.c_data())
 let total drive(host_page)
 if total <> 4567
     print "FAIL"

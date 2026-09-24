@@ -1,0 +1,12 @@
+; Regression (2026-09-24): an untyped binding of a string literal IS a String,
+; and `nm.data` on it points at the length-PREFIXED buffer -- `takes(nm.data)`
+; read the varint 3 where `N` was meant, rc 0. Reading String.data outside the
+; standard library is rc 4 now and names the accessors
+; (Planner.report_string_data_read#). No root in the tree read it.
+; xfail: String.data points at the length-prefixed buffer
+function takes(p: pointer[u8]) returns u8
+    *p
+
+let nm "NaN"
+let first takes(nm.data)
+print "`first as int`"
