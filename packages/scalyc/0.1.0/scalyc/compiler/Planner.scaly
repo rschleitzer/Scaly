@@ -30921,9 +30921,10 @@ define Planner
                 ; BUFFER lives (deep_by_value_local#), never by the Local
                 ; stamp region_of_operand reads off its type — that stamp
                 ; is the flat one and says local for every unknown class
-                ; the by-value rule is the GATE's and the census's for now
-                ; (measured, not armed: dazzle's `Element.make(host, gi)`
-                ; still reads local through it, 2026-09-23)
+                ; the by-value rule is the GATE's and the census's -- and the
+                ; gate is armed by default, so it is every compile's
+                ; (dazzle's `Element.make(host, gi)`, once read local
+                ; through it, reads not-local: re-measured 2026-09-24)
                 var by_value_guts false
                 if gate.deep_gate or escape_census
                     if this.census_type_is_ref_like(arg.result_type) = false

@@ -1,0 +1,24 @@
+; Regression (2026-09-24): R2 lets a `let` field be written while its object is
+; still this frame's own. A local whose ADDRESS the body handed out before the
+; write was taken for a fresh construction -- the base mask alone cannot see
+; `&b` -- so the write passed although `keeper` holds the object. The census
+; records the address in program order now (WriteCensus.note_address_taken#);
+; let_field_before_address_ok.scaly is the same write before the hand-out.
+; xfail: writes let field Box.fixed through b, whose address this body handed out before
+define Box (fixed: int, var count: int)
+
+mutable keeper: ref[Box]? null
+
+procedure keep(b: ref[Box]) mutable keeper
+{
+    set keeper: b
+}
+
+procedure after(host: ref[Page]) mutable keeper
+{
+    var b Box^host(1, 0)
+    keep(&b)
+    set b.fixed: 2
+}
+
+print "x"

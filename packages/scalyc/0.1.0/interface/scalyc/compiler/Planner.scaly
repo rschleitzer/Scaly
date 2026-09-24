@@ -31051,6 +31051,7 @@ define Planner
 
 
 
+
         ; Pass 1 (indirect calls): an indirect call goes THROUGH a delegate
         ; VALUE whose body is unknown at compile time, so we cannot prove it
         ; does not stash its arguments. Conservatively (SOUND) reject passing

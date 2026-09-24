@@ -80,6 +80,9 @@ define WriteCensus
         ; a note per site, the way the parameter and global rules report
         var cur_let_bad: Array[String]
         var cur_let_offsets: Array[size_t]
+        ; locals of the body walked whose ADDRESS was taken so far (`&x`), in
+        ; program order: from there on the object is published (note_let_store#)
+        var cur_addr_taken: Array[String]
         ; the file of the body being walked, for a let-site's line (a body's
         ; file is resolved for the report only; the walk knows func.file)
         var cur_file_hint: String
@@ -330,6 +333,7 @@ define WriteCensus
 
 
 
+
         ; ================================================================
         ; Entry point: the pointer census's tables, the fixpoint, the report.
         ; ================================================================
@@ -459,6 +463,7 @@ define WriteCensus
 
 
         procedure enter_body(mutable this: WriteCensus, func: PlannedFunction) @deep true @deep_this_2 true linked
+
 
 
 
@@ -4348,7 +4353,69 @@ define WriteCensus
         ; by tools/purify/mark_var.py -- the two-phase discipline every rule
         ; here has followed.
         ; ====================================================================
+        ; note_address_taken#: `&x` of a bare local -- the object is published
+        ; from this point of the walk on (note_let_store#).
+        procedure note_address_taken(mutable this: WriteCensus, call: PlannedCall) @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function addr_taken(this: WriteCensus, name: String) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
         procedure note_let_store(mutable this: WriteCensus, head: PlannedOperand, base_mask: u64) @deep true io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -4762,6 +4829,7 @@ define WriteCensus
 
 
         procedure find_operand(mutable this: WriteCensus, op: PlannedOperand) @deep true io linked
+
 
 
 

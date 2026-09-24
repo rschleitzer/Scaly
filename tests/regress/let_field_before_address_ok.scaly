@@ -1,0 +1,27 @@
+; Control for xfail_let_field_after_address.scaly: the same `let` field written
+; BEFORE the body hands the object's address out is still the construction of
+; this frame, and a `var` field stays writable after it.
+; Expected: PASS
+define Box (fixed: int, var count: int)
+
+mutable keeper: ref[Box]? null
+
+procedure keep(b: ref[Box]) mutable keeper
+{
+    set keeper: b
+}
+
+procedure before(host: ref[Page]) returns int mutable keeper
+{
+    var b Box^host(1, 0)
+    set b.fixed: 2
+    keep(&b)
+    set b.count: 5
+    b.fixed + b.count
+}
+
+let rp Page.allocate_root_page()
+if before(rp as ref[Page]) = 7
+    print "PASS"
+else
+    print "FAIL"

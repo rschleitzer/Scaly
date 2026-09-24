@@ -80,6 +80,9 @@ define WriteCensus
         ; a note per site, the way the parameter and global rules report
         var cur_let_bad: Array[String]
         var cur_let_offsets: Array[size_t]
+        ; locals of the body walked whose ADDRESS was taken so far (`&x`), in
+        ; program order: from there on the object is published (note_let_store#)
+        var cur_addr_taken: Array[String]
         ; the file of the body being walked, for a let-site's line (a body's
         ; file is resolved for the report only; the walk knows func.file)
         var cur_file_hint: String
@@ -240,6 +243,7 @@ define WriteCensus
             set let_fns: Array[size_t]^this()
             set cur_let_bad: Array[String]^this()
             set cur_let_offsets: Array[size_t]^this()
+            set cur_addr_taken: Array[String]^this()
             set cur_file_hint: String^this("")
             set masks: Array[u64]^this()
             set cur_input: null
@@ -466,6 +470,7 @@ define WriteCensus
                 set cur_page: String^this((*func.page_parameter))
             set cur_name: String^this(func.name)
             set cur_file_hint: String^this(func.file)
+            set cur_addr_taken.length: 0
             set cur_pure: func.pure
             set cur_substrate: WriteCensus.in_substrate(func.file)
             set body_mask: 0
@@ -4348,6 +4353,41 @@ define WriteCensus
         ; by tools/purify/mark_var.py -- the two-phase discipline every rule
         ; here has followed.
         ; ====================================================================
+        ; note_address_taken#: `&x` of a bare local -- the object is published
+        ; from this point of the walk on (note_let_store#).
+        procedure note_address_taken(mutable this: WriteCensus, call: PlannedCall)
+        {
+            if call.is_operator = false or call.name <> "&" or call.args = null
+                return
+            let args (*call.args)
+            if args.length <> 1
+                return
+            let a0 args.get 0
+            if a0 = null or a0.member_access <> null
+                return
+            choose a0.expr
+                when v: Variable
+                {
+                    if this.addr_taken(v.name) = false
+                        cur_addr_taken.add(String^this(v.name))
+                }
+                else
+                    0
+        }
+
+        function addr_taken(this: WriteCensus, name: String) returns bool
+        {
+            var i: size_t 0
+            while i < cur_addr_taken.length
+            {
+                let np cur_addr_taken.get i
+                if np <> null and (*np) = name
+                    return true
+                set i: i + 1
+            }
+            false
+        }
+
         procedure note_let_store(mutable this: WriteCensus, head: PlannedOperand, base_mask: u64)
         {
             ; the frozen report answers a different question (writes into
@@ -4376,6 +4416,24 @@ define WriteCensus
                 set published: true
             if (base_mask & (WC_GLOBAL - (1 as u64)) & (0 - (WC_FROZEN + (1 as u64))) & (0 - (WC_OVERFLOW + (1 as u64)))) <> (0 as u64)
                 set published: true
+            ; a local whose address this body took EARLIER is published from
+            ; there on: `var b Box(1)  keep(&b)  set b.fixed: 2` writes a let
+            ; field of an object somebody else may hold. Program order, as the
+            ; walk goes; the mask alone called it a fresh construction
+            ; (flow-insensitive until 2026-09-24).
+            var via_local String()
+            if published = false
+            {
+                choose head.expr
+                    when hv: Variable
+                        if this.addr_taken(hv.name)
+                        {
+                            set published: true
+                            set via_local: String^this(hv.name)
+                        }
+                    else
+                        0
+            }
             ; an intermediate hop of reference shape loads another object
             var i: size_t 0
             while i + 1 < hops.length
@@ -4395,7 +4453,13 @@ define WriteCensus
                 cb.append "."
                 cb.append last.name
                 cb.append " through "
-                cb.append(this.mask_names(base_mask))
+                if via_local.get_length() > 0
+                {
+                    cb.append via_local
+                    cb.append ", whose address this body handed out before"
+                }
+                else
+                    cb.append(this.mask_names(base_mask))
                 let ctext cb.to_string()
                 if this.let_bad_seen(head.loc.start) = false
                 {
@@ -4417,7 +4481,10 @@ define WriteCensus
             sb.append "."
             sb.append last.name
             sb.append " through "
-            sb.append(this.mask_names(base_mask))
+            if via_local.get_length() > 0
+                sb.append via_local
+            else
+                sb.append(this.mask_names(base_mask))
             if getenv("SCALYC_LET_PROBE") <> null
             {
                 sb.append " [fn "
@@ -4766,6 +4833,7 @@ define WriteCensus
             choose op.expr
                 when call: Call
                 {
+                    this.note_address_taken(call)
                     this.note_call(op, call)
                     this.find_operands(call.args)
                 }
