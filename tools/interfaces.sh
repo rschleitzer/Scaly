@@ -27,8 +27,9 @@ if [ "${1:-}" = "--check" ]; then CHECK=1; shift; fi
 BIN="${1:-scalyc/build/scalyc}"
 PKGS="scaly opensp dazzle scalyc scalyls tscaly scalygpu"
 T="$(mktemp -d)"
-# One job per package, side by side (the tscaly facts alone take ~33 s and
-# 6.5 GB; the others a few seconds each); the reports print in package order.
+# One job per package, side by side under --check (the tscaly facts alone take
+# ~33 s and 6.5 GB; the others a few seconds each); the reports print in package
+# order.
 one() {
   local p=$1 root="packages/$1/0.1.0/$1.scaly" flags="" out="packages/$1/0.1.0/interface"
   [ "$p" = scaly ] && flags="--no-prelude"
@@ -47,15 +48,28 @@ one() {
     python3 tools/interface/geninterface.py "$root" "$T/$p.facts" --out "$out" | sed "s#^#interfaces: $p: #"
   fi
 }
-pids=""
-for p in $PKGS; do
-  one "$p" > "$T/$p.log" 2>&1 & pids="$pids $!"
-done
+# ★Side by side only under --check, which reads the committed interfaces and
+# writes into $T. REWRITING goes one package at a time, in the order above: a
+# dependent's facts are computed against its dependencies' interfaces, and a
+# parallel rewrite handed scalyls and tscaly the scalyc interface while it was
+# being deleted and written (2026-09-24: "FAIL (facts of scalyls)" on the first
+# run, green on the second — and had it not failed, the facts would have been
+# computed against the OLD dependency interface).
 rc=0
-set -- $pids
-for p in $PKGS; do
-  wait "$1" || rc=1; shift
-  cat "$T/$p.log"
-done
+if [ "$CHECK" = 1 ]; then
+  pids=""
+  for p in $PKGS; do
+    one "$p" > "$T/$p.log" 2>&1 & pids="$pids $!"
+  done
+  set -- $pids
+  for p in $PKGS; do
+    wait "$1" || rc=1; shift
+    cat "$T/$p.log"
+  done
+else
+  for p in $PKGS; do
+    one "$p" || rc=1
+  done
+fi
 rm -rf "$T"
 exit $rc
