@@ -1,0 +1,8 @@
+; Sidecar module for xfail_later_module_constant.scaly, which loads it via
+; `module later_const_helper` AFTER the module that reads its constant. The
+; harness also runs it standalone (every *.scaly here is a test), so it prints
+; PASS itself; module loading ignores top-level statements.
+; Expected: PASS
+define LATER_LIMIT: int 7
+
+print "PASS"

@@ -1,0 +1,12 @@
+; xfail: which is planned after this module
+;
+; Regression (2026-09-24): a module-level constant is planned in module
+; DECLARATION order, so a module reading one from a LATER module is rc 4
+; `unknown identifier`. The hint used to say "add: use <path>" -- and adding
+; that use changes nothing (measured). It names the order now, and the two
+; fixes (Planner.use_vis_hint#, concept_is_constant#); a constant of ANOTHER
+; package inside a module gets its own wording (package_dir_of#).
+module xfail_later_const_reader
+module later_const_helper
+
+print "`twice_limit()`"

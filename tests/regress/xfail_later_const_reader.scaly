@@ -1,0 +1,9 @@
+; xfail: unknown identifier: LATER_LIMIT
+;
+; Sidecar for xfail_later_module_constant.scaly: a module reading a constant of
+; a module the root declares AFTER it. Compiled STANDALONE by the harness the
+; constant does not exist at all (this xfail entry); loaded by the root it
+; exists but is not planned yet, and the diagnostic must say so.
+
+function twice_limit() returns int
+    LATER_LIMIT * 2

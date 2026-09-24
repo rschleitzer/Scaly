@@ -1,0 +1,17 @@
+; Regression (2026-09-24): a FIRST parameter named `page`/`rp` is peeled into
+; the implicit caller page, so an explicit page argument leaves one argument
+; too many. That was a bare "function not found: make" for a function that
+; plainly exists; the diagnostic now says why and names both ways out
+; (Planner.peeled_page_hint#).
+; xfail: its first parameter 'page' is the implicit caller page
+define Box (v: int)
+
+function make(page: pointer[Page], v: int) returns ref[Box]
+{
+    let b Box^page(v)
+    &b
+}
+
+let rp Page.allocate_root_page()
+let b make(rp, 5)
+print "`b.v`"

@@ -3342,6 +3342,81 @@ define Planner
             ok
         }
 
+        ; peeled_page_hint#: why `f(root, 5)` is "function not found" when `f`
+        ; exists. A FIRST parameter named `page`/`rp` of type pointer[Page] (or
+        ; a bare `rp`) is PEELED into the implicit caller page, so every call
+        ; passes it implicitly and an explicit page argument leaves one
+        ; argument too many -- the arity no longer matches any candidate. Says
+        ; so when a function of that name takes its page that way and expects
+        ; exactly one argument fewer; empty otherwise. Diagnostic path only.
+        procedure peeled_page_hint(mutable this: Planner, fn_name: String, argc: size_t) returns String
+        {
+            var short fn_name
+            let dot fn_name.last_index_of(46)
+            if dot >= 0
+                set short: fn_name.substring((dot + 1) as size_t, fn_name.get_length() - ((dot + 1) as size_t))
+            var fi: size_t 0
+            while fi < model_functions.length
+            {
+                let fkvp model_functions.get fi
+                if fkvp <> null and fkvp.key = short
+                {
+                    let f fkvp.value
+                    if f.page_parameter <> null and f.input.length + 1 = argc
+                    {
+                        let pname (*f.page_parameter)
+                        var hsb StringBuilder()
+                        hsb.append " (its first parameter '"
+                        hsb.append pname
+                        hsb.append "' is the implicit caller page, so a call passes no page argument: drop it, or rename the parameter, e.g. 'host: ref[Page]', to pass a page explicitly)"
+                        return hsb.to_string()
+                    }
+                }
+                set fi: fi + 1
+            }
+            ""
+        }
+
+        ; package_dir_of#: the `.../packages/<name>/` prefix of a source path,
+        ; or "" for a file outside any package (a program's own modules).
+        ; Diagnostic path only.
+        function package_dir_of(path: String) returns String
+        {
+            let n path.get_length()
+            var at: size_t 0
+            while at + 10 <= n
+            {
+                let slash path.index_of(47, at)
+                if slash < 0
+                    return ""
+                let s slash as size_t
+                if s + 10 <= n and path.substring(s, 10) = "/packages/"
+                {
+                    let end path.index_of(47, s + 10)
+                    if end < 0
+                        return ""
+                    return path.substring(0, (end as size_t) + 1)
+                }
+                set at: s + 1
+            }
+            ""
+        }
+
+        ; concept_is_constant#: is the registry entry at `idx` a module-level
+        ; `define NAME: T value` (a Global definition)? Diagnostic path only.
+        function concept_is_constant(this: Planner, idx: size_t) returns bool
+        {
+            let ck concepts.get idx
+            if ck = null
+                return false
+            choose ck.value.definition
+                when g: Global
+                    return true
+                else
+                    0
+            false
+        }
+
         ; use_vis_hint: when `name` exists in the registry but is not
         ; visible from the current file, a "; add: use <path>" hint for
         ; the not-found diagnostic — empty otherwise. Diagnostic paths
@@ -3360,6 +3435,31 @@ define Planner
             let op_ptr concept_origin_paths.get(idx as size_t)
             if op_ptr = null
                 return ""
+            ; A module-level CONSTANT is not use-gated: it is planned in
+            ; module DECLARATION order, so one from a later module (or, inside
+            ; a module, from another package) is simply not planned yet, and
+            ; the `use` this hint suggested did not help -- measured
+            ; 2026-09-24, the same error with the `use` added.
+            if this.concept_is_constant(idx as size_t)
+            {
+                var csb StringBuilder()
+                csb.append " - a constant of "
+                csb.append((*op_ptr))
+                var other_package: bool false
+                let cf_ptr concept_origin_files.get(idx as size_t)
+                if cf_ptr <> null
+                {
+                    let their Planner.package_dir_of((*cf_ptr))
+                    let ours Planner.package_dir_of(file)
+                    set other_package: their <> ours
+                }
+                if other_package
+                    csb.append ", another package: a module does not see another package's constants (a program root does), so export the value through a function of that package (a use does not help)"
+                else
+                    csb.append ", which is planned after this module: constants are visible in module declaration order, so declare its module earlier in the root or move the constant to an earlier module (a use does not help)"
+                let chint csb.to_string()
+                return String^this(chint)
+            }
             var sb StringBuilder()
             sb.append " - defined in "
             sb.append((*op_ptr))
@@ -14302,6 +14402,8 @@ define Planner
                                 let vis_hint this.use_vis_hint(fn_name)
                                 if vis_hint.get_length() > 0
                                     dsb.append vis_hint
+                                let page_hint this.peeled_page_hint(fn_name, call_args_holder.length)
+                                dsb.append page_hint
                                 this.add_diagnostic(result.loc, dsb.to_string())
                             }
                         }

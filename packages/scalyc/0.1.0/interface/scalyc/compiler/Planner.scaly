@@ -3342,11 +3342,111 @@ define Planner
 
 
 
+        ; peeled_page_hint#: why `f(root, 5)` is "function not found" when `f`
+        ; exists. A FIRST parameter named `page`/`rp` of type pointer[Page] (or
+        ; a bare `rp`) is PEELED into the implicit caller page, so every call
+        ; passes it implicitly and an explicit page argument leaves one
+        ; argument too many -- the arity no longer matches any candidate. Says
+        ; so when a function of that name takes its page that way and expects
+        ; exactly one argument fewer; empty otherwise. Diagnostic path only.
+        procedure peeled_page_hint(mutable this: Planner, fn_name: String, argc: size_t) @page true @direct true @ret_caller true @deep true returns String linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; package_dir_of#: the `.../packages/<name>/` prefix of a source path,
+        ; or "" for a file outside any package (a program's own modules).
+        ; Diagnostic path only.
+        function package_dir_of(path: String) @page true @direct true @ret_caller true @deep true returns String linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; concept_is_constant#: is the registry entry at `idx` a module-level
+        ; `define NAME: T value` (a Global definition)? Diagnostic path only.
+        function concept_is_constant(this: Planner, idx: size_t) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
         ; use_vis_hint: when `name` exists in the registry but is not
         ; visible from the current file, a "; add: use <path>" hint for
         ; the not-found diagnostic — empty otherwise. Diagnostic paths
         ; only (never hot).
         procedure use_vis_hint(mutable this: Planner, name: String) @page true @direct true @ret_param_0 true @deep true returns String linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -9805,6 +9905,8 @@ define Planner
             mutable this: Planner,
             mutable ops: Vector[PlannedOperand]
         ) @page true @direct true @deep true @deep_this_2 true returns PlannedOperand io linked
+
+
 
 
 
