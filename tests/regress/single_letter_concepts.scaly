@@ -1,0 +1,61 @@
+; Regression (2026-09-24): concepts named with ONE uppercase letter — the A, B,
+; C of the literature — must behave like any other name. Two defects broke
+; some of them, each by asking a NAME a question only the plan can answer:
+;  - the Emitter's type cache was looked up by a type's NAME and filled under
+;    MANGLED names, whose only entries are pointer/ref types keyed `P…`/`R…`,
+;    so a concept `P` answered `ptr`: `set p.a: 4` crashed the compiler
+;    (rc 139) and `set p: P(4, 1)` read garbage at rc 0;
+;  - a function whose symbol carries `1T`/`1K`/`1V` was taken for an
+;    uninstantiated generic TEMPLATE and emitted as `ret 0`: every method of a
+;    concept `T`, `K` or `V` answered zero, and `Array[T]` on a user `T`
+;    collided with the stdlib template of the same symbol.
+; Expected: PASS
+define P (var a: int  b: int)
+define R (var a: int)
+define T (var a: int  b: int)
+{
+    function twice(this) returns int
+        a * 2
+}
+define K (id: int)
+{
+    function key(this) returns int
+        id + 100
+}
+define V (w: int)
+define Pair[X, Y] (x: X  y: Y)
+
+function check() returns int
+{
+    var p P(3, 1)
+    set p.a: 4
+    if p.a <> 4
+        return 1
+    set p: P(5, 1)
+    if p.a <> 5
+        return 2
+    var r R(1)
+    set r.a: 2
+    if r.a <> 2
+        return 3
+    let t T(6, 0)
+    if t.twice() <> 12
+        return 4
+    if K(7).key() <> 107
+        return 5
+    var arr Array[T]()
+    arr.add(T(1, 2))
+    arr.add(T(3, 4))
+    let e arr[1]
+    if e.b <> 4
+        return 6
+    let pr Pair[K, V](K(8), V(9))
+    if pr.x.id + pr.y.w <> 17
+        return 7
+    0
+}
+
+if check() = 0
+    print("PASS")
+else
+    print("FAIL")

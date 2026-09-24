@@ -5336,7 +5336,7 @@ entry:
 }
 
 define linkonce_odr ptr @_ZN12ListIteratorI1TE4nextEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
@@ -17276,72 +17276,72 @@ if.end10:                                         ; preds = %while.body
 }
 
 define linkonce_odr ptr @_ZN5SliceI1TE3getEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr ptr @_ZN5SliceI1TE2atEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN5SliceI1TE3putEm1T(ptr %0, i64 %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr i1 @_ZN5SliceI1TE8is_emptyEv(ptr %0) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr void @_ZN5SliceI1TE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI1TE) %0, ptr %1, ptr %2, i64 %3, i64 %4) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5SliceI1TE10slice_fromEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI1TE) %0, ptr %1, ptr %2, i64 %3) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5SliceI1TE8slice_toEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI1TE) %0, ptr %1, ptr %2, i64 %3) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr i1 @_ZN5SliceI1TE6equalsE5SliceI1TE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr i1 @_ZN5SliceI1TE11starts_withE5SliceI1TE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr i1 @_ZN5SliceI1TE9ends_withE5SliceI1TE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr ptr @_ZN13SliceIteratorI1TE4nextEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN13SliceIteratorI1TEC1E5SliceI1TE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5SliceI1TE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13SliceIteratorI1TE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5SliceI1TEC1Ev(ptr %0) {
-entry:
+stub.entry:
   ret void
 }
 
@@ -18611,7 +18611,7 @@ if.end:                                           ; preds = %if.then, %entry
 }
 
 define linkonce_odr void @_ZN5Slice3putEm1T(ptr %0, i64 %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
@@ -18704,17 +18704,17 @@ entry:
 }
 
 define linkonce_odr i1 @_ZN5Slice6equalsE5SliceI1TE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr i1 @_ZN5Slice11starts_withE5SliceI1TE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr i1 @_ZN5Slice9ends_withE5SliceI1TE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
@@ -18769,7 +18769,7 @@ if.end:                                           ; preds = %entry
 }
 
 define linkonce_odr void @_ZN13SliceIteratorC1E5SliceI1TE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
@@ -18816,32 +18816,32 @@ if.end:                                           ; No predecessors!
 }
 
 define linkonce_odr ptr @_ZN4ListI1TE8get_headEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr i64 @_ZN4ListI1TE5countEv(ptr %0) {
-entry:
+stub.entry:
   ret i64 0
 }
 
 define linkonce_odr void @_ZN4ListI1TE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI1TE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN4ListI1TE4linkEP4NodeI1TE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN4ListI1TE3addE1T(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN4ListI1TE6add_onER4Page1T(ptr %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
@@ -18902,157 +18902,157 @@ entry:
 }
 
 define linkonce_odr void @_ZN4List3addE1T(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN4List6add_onER4Page1T(ptr %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN4List4linkEP4NodeI1TE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN6VectorI1TE3getEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr ptr @_ZN6VectorI1TE7get_ptrEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN6VectorI1TE3putEm1T(ptr %0, i64 %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI1TE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI1TE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI1TE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI1TE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI1TEC1Ev(ptr %0) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI1TEC1Em(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI1TEC1E6VectorI1TE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN5ArrayI1TE10get_bufferEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr i64 @_ZN5ArrayI1TE10get_lengthEv(ptr %0) {
-entry:
+stub.entry:
   ret i64 0
 }
 
 define linkonce_odr i64 @_ZN5ArrayI1TE12get_capacityEv(ptr %0) {
-entry:
+stub.entry:
   ret i64 0
 }
 
 define linkonce_odr void @_ZN5ArrayI1TE10reallocateEv(ptr %0) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI1TE3addE1T(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI1TE3addE6VectorI1TE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN5ArrayI1TE3getEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr ptr @_ZN5ArrayI1TE2atEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN5ArrayI1TE5clearEv(ptr %0) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI1TE3putEm1T(ptr %0, i64 %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN13ArrayIteratorI1TE4nextEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN13ArrayIteratorI1TEC1E6OptionIR5ArrayI1TEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI1TE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI1TE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI1TE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI1TE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI1TEC1Ev(ptr %0) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI1TEC1Em(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI1TEC1E5ArrayI1TE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI1TEC1E4ListI1TE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN14VectorIteratorI1TE4nextEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN14VectorIteratorI1TEC1E6OptionIR6VectorI1TEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
@@ -19095,7 +19095,7 @@ if.end6:                                          ; preds = %if.end
 }
 
 define linkonce_odr void @_ZN14VectorIteratorC1E6OptionIR6VectorI1TEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
@@ -19134,7 +19134,7 @@ if.end:                                           ; preds = %entry
 }
 
 define linkonce_odr void @_ZN6Vector3putEm1T(ptr %0, i64 %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
@@ -19202,17 +19202,17 @@ if.end:                                           ; preds = %if.else, %if.then
 }
 
 define linkonce_odr void @_ZN6VectorC1E6VectorI1TE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorC1E5ArrayI1TE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorC1E4ListI1TE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
@@ -19256,7 +19256,7 @@ if.end6:                                          ; preds = %if.end
 }
 
 define linkonce_odr void @_ZN13ArrayIteratorC1E6OptionIR5ArrayI1TEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
@@ -19282,12 +19282,12 @@ entry:
 }
 
 define linkonce_odr void @_ZN5Array3addE1T(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5Array3addE6VectorI1TE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
@@ -19336,7 +19336,7 @@ entry:
 }
 
 define linkonce_odr void @_ZN5Array3putEm1T(ptr %0, i64 %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
@@ -19536,307 +19536,307 @@ if.end3:                                          ; preds = %if.else, %if.then2
 }
 
 define linkonce_odr ptr @_ZN6VectorI4ListI4SlotI1TEEE3getEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr ptr @_ZN6VectorI4ListI4SlotI1TEEE7get_ptrEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN6VectorI4ListI4SlotI1TEEE3putEm4ListI4SlotI1TEE(ptr %0, i64 %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN4ListI4ListI4SlotI1TEEE8get_headEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr ptr @_ZN12ListIteratorI4ListI4SlotI1TEEE4nextEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr i64 @_ZN4ListI4ListI4SlotI1TEEE5countEv(ptr %0) {
-entry:
+stub.entry:
   ret i64 0
 }
 
 define linkonce_odr void @_ZN4ListI4ListI4SlotI1TEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI4ListI4SlotI1TEEE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN4ListI4ListI4SlotI1TEEE4linkEP4NodeI4ListI4SlotI1TEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN4ListI4ListI4SlotI1TEEE3addE4ListI4SlotI1TEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN4ListI4ListI4SlotI1TEEE6add_onER4Page4ListI4SlotI1TEE(ptr %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN14VectorIteratorI4ListI4SlotI1TEEE4nextEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN14VectorIteratorI4ListI4SlotI1TEEEC1E6OptionIR6VectorI4ListI4SlotI1TEEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI4ListI4SlotI1TEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI4ListI4SlotI1TEEE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN5SliceI4ListI4SlotI1TEEE3getEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr ptr @_ZN5SliceI4ListI4SlotI1TEEE2atEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN5SliceI4ListI4SlotI1TEEE3putEm4ListI4SlotI1TEE(ptr %0, i64 %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr i1 @_ZN5SliceI4ListI4SlotI1TEEE8is_emptyEv(ptr %0) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr void @_ZN5SliceI4ListI4SlotI1TEEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI4ListI4SlotI1TEEE) %0, ptr %1, ptr %2, i64 %3, i64 %4) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5SliceI4ListI4SlotI1TEEE10slice_fromEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI4ListI4SlotI1TEEE) %0, ptr %1, ptr %2, i64 %3) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5SliceI4ListI4SlotI1TEEE8slice_toEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI4ListI4SlotI1TEEE) %0, ptr %1, ptr %2, i64 %3) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr i1 @_ZN5SliceI4ListI4SlotI1TEEE6equalsE5SliceI4ListI4SlotI1TEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr i1 @_ZN5SliceI4ListI4SlotI1TEEE11starts_withE5SliceI4ListI4SlotI1TEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr i1 @_ZN5SliceI4ListI4SlotI1TEEE9ends_withE5SliceI4ListI4SlotI1TEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr ptr @_ZN13SliceIteratorI4ListI4SlotI1TEEE4nextEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN13SliceIteratorI4ListI4SlotI1TEEEC1E5SliceI4ListI4SlotI1TEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5SliceI4ListI4SlotI1TEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13SliceIteratorI4ListI4SlotI1TEEE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5SliceI4ListI4SlotI1TEEEC1Ev(ptr %0) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI4ListI4SlotI1TEEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI4ListI4SlotI1TEEE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI4ListI4SlotI1TEEEC1Ev(ptr %0) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI4ListI4SlotI1TEEEC1Em(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI4ListI4SlotI1TEEEC1E6VectorI4ListI4SlotI1TEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN5ArrayI4ListI4SlotI1TEEE10get_bufferEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr i64 @_ZN5ArrayI4ListI4SlotI1TEEE10get_lengthEv(ptr %0) {
-entry:
+stub.entry:
   ret i64 0
 }
 
 define linkonce_odr i64 @_ZN5ArrayI4ListI4SlotI1TEEE12get_capacityEv(ptr %0) {
-entry:
+stub.entry:
   ret i64 0
 }
 
 define linkonce_odr void @_ZN5ArrayI4ListI4SlotI1TEEE10reallocateEv(ptr %0) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI4ListI4SlotI1TEEE3addE4ListI4SlotI1TEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI4ListI4SlotI1TEEE3addE6VectorI4ListI4SlotI1TEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN5ArrayI4ListI4SlotI1TEEE3getEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr ptr @_ZN5ArrayI4ListI4SlotI1TEEE2atEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN5ArrayI4ListI4SlotI1TEEE5clearEv(ptr %0) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI4ListI4SlotI1TEEE3putEm4ListI4SlotI1TEE(ptr %0, i64 %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN13ArrayIteratorI4ListI4SlotI1TEEE4nextEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN13ArrayIteratorI4ListI4SlotI1TEEEC1E6OptionIR5ArrayI4ListI4SlotI1TEEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI4ListI4SlotI1TEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI4ListI4SlotI1TEEE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI4ListI4SlotI1TEEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI4ListI4SlotI1TEEE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI4ListI4SlotI1TEEEC1Ev(ptr %0) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI4ListI4SlotI1TEEEC1Em(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI4ListI4SlotI1TEEEC1E5ArrayI4ListI4SlotI1TEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI4ListI4SlotI1TEEEC1E4ListI4ListI4SlotI1TEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN12ListIteratorI4SlotI1TEE4nextEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr ptr @_ZN4ListI4SlotI1TEE8get_headEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr i64 @_ZN4ListI4SlotI1TEE5countEv(ptr %0) {
-entry:
+stub.entry:
   ret i64 0
 }
 
 define linkonce_odr void @_ZN4ListI4SlotI1TEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI4SlotI1TEE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN4ListI4SlotI1TEE4linkEP4NodeI4SlotI1TEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN4ListI4SlotI1TEE3addE4SlotI1TE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN4ListI4SlotI1TEE6add_onER4Page4SlotI1TE(ptr %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN14HashSetBuilderI1TE10reallocateEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr i1 @_ZN14HashSetBuilderI1TE3addE1T(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr i1 @_ZN14HashSetBuilderI1TE12add_internalE1T(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr i1 @_ZN14HashSetBuilderI1TE8containsE1T(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr void @_ZN14HashSetBuilderI1TEC1E6VectorI1TE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
@@ -19921,842 +19921,842 @@ while.exit12:                                     ; preds = %while.cond10
 }
 
 define linkonce_odr i1 @_ZN14HashSetBuilder3addE1T(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr i1 @_ZN14HashSetBuilder12add_internalE1T(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr i1 @_ZN14HashSetBuilder8containsE1T(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr void @_ZN14HashSetBuilderC1E6VectorI1TE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN6VectorI6VectorI1TEE3getEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr ptr @_ZN6VectorI6VectorI1TEE7get_ptrEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN6VectorI6VectorI1TEE3putEm6VectorI1TE(ptr %0, i64 %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN14VectorIteratorI6VectorI1TEE4nextEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN14VectorIteratorI6VectorI1TEEC1E6OptionIR6VectorI6VectorI1TEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI6VectorI1TEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI6VectorI1TEE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN5SliceI6VectorI1TEE3getEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr ptr @_ZN5SliceI6VectorI1TEE2atEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN5SliceI6VectorI1TEE3putEm6VectorI1TE(ptr %0, i64 %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr i1 @_ZN5SliceI6VectorI1TEE8is_emptyEv(ptr %0) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr void @_ZN5SliceI6VectorI1TEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI6VectorI1TEE) %0, ptr %1, ptr %2, i64 %3, i64 %4) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5SliceI6VectorI1TEE10slice_fromEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI6VectorI1TEE) %0, ptr %1, ptr %2, i64 %3) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5SliceI6VectorI1TEE8slice_toEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI6VectorI1TEE) %0, ptr %1, ptr %2, i64 %3) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr i1 @_ZN5SliceI6VectorI1TEE6equalsE5SliceI6VectorI1TEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr i1 @_ZN5SliceI6VectorI1TEE11starts_withE5SliceI6VectorI1TEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr i1 @_ZN5SliceI6VectorI1TEE9ends_withE5SliceI6VectorI1TEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr ptr @_ZN13SliceIteratorI6VectorI1TEE4nextEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN13SliceIteratorI6VectorI1TEEC1E5SliceI6VectorI1TEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5SliceI6VectorI1TEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13SliceIteratorI6VectorI1TEE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5SliceI6VectorI1TEEC1Ev(ptr %0) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI6VectorI1TEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI6VectorI1TEE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI6VectorI1TEEC1Ev(ptr %0) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI6VectorI1TEEC1Em(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI6VectorI1TEEC1E6VectorI6VectorI1TEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN5ArrayI6VectorI1TEE10get_bufferEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr i64 @_ZN5ArrayI6VectorI1TEE10get_lengthEv(ptr %0) {
-entry:
+stub.entry:
   ret i64 0
 }
 
 define linkonce_odr i64 @_ZN5ArrayI6VectorI1TEE12get_capacityEv(ptr %0) {
-entry:
+stub.entry:
   ret i64 0
 }
 
 define linkonce_odr void @_ZN5ArrayI6VectorI1TEE10reallocateEv(ptr %0) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI6VectorI1TEE3addE6VectorI1TE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI6VectorI1TEE3addE6VectorI6VectorI1TEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN5ArrayI6VectorI1TEE3getEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr ptr @_ZN5ArrayI6VectorI1TEE2atEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN5ArrayI6VectorI1TEE5clearEv(ptr %0) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI6VectorI1TEE3putEm6VectorI1TE(ptr %0, i64 %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN13ArrayIteratorI6VectorI1TEE4nextEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN13ArrayIteratorI6VectorI1TEEC1E6OptionIR5ArrayI6VectorI1TEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI6VectorI1TEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI6VectorI1TEE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI6VectorI1TEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI6VectorI1TEE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI6VectorI1TEEC1Ev(ptr %0) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI6VectorI1TEEC1Em(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI6VectorI1TEEC1E5ArrayI6VectorI1TEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN4ListI6VectorI1TEE8get_headEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr ptr @_ZN12ListIteratorI6VectorI1TEE4nextEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr i64 @_ZN4ListI6VectorI1TEE5countEv(ptr %0) {
-entry:
+stub.entry:
   ret i64 0
 }
 
 define linkonce_odr void @_ZN4ListI6VectorI1TEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI6VectorI1TEE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN4ListI6VectorI1TEE4linkEP4NodeI6VectorI1TEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN4ListI6VectorI1TEE3addE6VectorI1TE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN4ListI6VectorI1TEE6add_onER4Page6VectorI1TE(ptr %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI6VectorI1TEEC1E4ListI6VectorI1TEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr i1 @_ZN7HashSetI1TE8containsE1T(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr void @_ZN7HashSetI1TEC1E14HashSetBuilderI1TE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr i1 @_ZN7HashSet8containsE1T(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr void @_ZN7HashSetC1E14HashSetBuilderI1TE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN4ListI4SlotI12KeyValuePairI1K1VEEE8get_headEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr ptr @_ZN12ListIteratorI4SlotI12KeyValuePairI1K1VEEE4nextEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr i64 @_ZN4ListI4SlotI12KeyValuePairI1K1VEEE5countEv(ptr %0) {
-entry:
+stub.entry:
   ret i64 0
 }
 
 define linkonce_odr void @_ZN4ListI4SlotI12KeyValuePairI1K1VEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI4SlotI12KeyValuePairI1K1VEEE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN4ListI4SlotI12KeyValuePairI1K1VEEE4linkEP4NodeI4SlotI12KeyValuePairI1K1VEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN4ListI4SlotI12KeyValuePairI1K1VEEE3addE4SlotI12KeyValuePairI1K1VEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN4ListI4SlotI12KeyValuePairI1K1VEEE6add_onER4Page4SlotI12KeyValuePairI1K1VEE(ptr %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN6VectorI4ListI4SlotI12KeyValuePairI1K1VEEEE3getEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr ptr @_ZN6VectorI4ListI4SlotI12KeyValuePairI1K1VEEEE7get_ptrEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN6VectorI4ListI4SlotI12KeyValuePairI1K1VEEEE3putEm4ListI4SlotI12KeyValuePairI1K1VEEE(ptr %0, i64 %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN14VectorIteratorI4ListI4SlotI12KeyValuePairI1K1VEEEE4nextEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN14VectorIteratorI4ListI4SlotI12KeyValuePairI1K1VEEEEC1E6OptionIR6VectorI4ListI4SlotI12KeyValuePairI1K1VEEEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI4ListI4SlotI12KeyValuePairI1K1VEEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI4ListI4SlotI12KeyValuePairI1K1VEEEE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN5SliceI4ListI4SlotI12KeyValuePairI1K1VEEEE3getEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr ptr @_ZN5SliceI4ListI4SlotI12KeyValuePairI1K1VEEEE2atEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN5SliceI4ListI4SlotI12KeyValuePairI1K1VEEEE3putEm4ListI4SlotI12KeyValuePairI1K1VEEE(ptr %0, i64 %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr i1 @_ZN5SliceI4ListI4SlotI12KeyValuePairI1K1VEEEE8is_emptyEv(ptr %0) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr void @_ZN5SliceI4ListI4SlotI12KeyValuePairI1K1VEEEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI4ListI4SlotI12KeyValuePairI1K1VEEEE) %0, ptr %1, ptr %2, i64 %3, i64 %4) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5SliceI4ListI4SlotI12KeyValuePairI1K1VEEEE10slice_fromEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI4ListI4SlotI12KeyValuePairI1K1VEEEE) %0, ptr %1, ptr %2, i64 %3) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5SliceI4ListI4SlotI12KeyValuePairI1K1VEEEE8slice_toEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI4ListI4SlotI12KeyValuePairI1K1VEEEE) %0, ptr %1, ptr %2, i64 %3) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr i1 @_ZN5SliceI4ListI4SlotI12KeyValuePairI1K1VEEEE6equalsE5SliceI4ListI4SlotI12KeyValuePairI1K1VEEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr i1 @_ZN5SliceI4ListI4SlotI12KeyValuePairI1K1VEEEE11starts_withE5SliceI4ListI4SlotI12KeyValuePairI1K1VEEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr i1 @_ZN5SliceI4ListI4SlotI12KeyValuePairI1K1VEEEE9ends_withE5SliceI4ListI4SlotI12KeyValuePairI1K1VEEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr ptr @_ZN13SliceIteratorI4ListI4SlotI12KeyValuePairI1K1VEEEE4nextEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN13SliceIteratorI4ListI4SlotI12KeyValuePairI1K1VEEEEC1E5SliceI4ListI4SlotI12KeyValuePairI1K1VEEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5SliceI4ListI4SlotI12KeyValuePairI1K1VEEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13SliceIteratorI4ListI4SlotI12KeyValuePairI1K1VEEEE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5SliceI4ListI4SlotI12KeyValuePairI1K1VEEEEC1Ev(ptr %0) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI4ListI4SlotI12KeyValuePairI1K1VEEEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI4ListI4SlotI12KeyValuePairI1K1VEEEE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI4ListI4SlotI12KeyValuePairI1K1VEEEEC1Ev(ptr %0) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI4ListI4SlotI12KeyValuePairI1K1VEEEEC1Em(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI4ListI4SlotI12KeyValuePairI1K1VEEEEC1E6VectorI4ListI4SlotI12KeyValuePairI1K1VEEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN5ArrayI4ListI4SlotI12KeyValuePairI1K1VEEEE10get_bufferEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr i64 @_ZN5ArrayI4ListI4SlotI12KeyValuePairI1K1VEEEE10get_lengthEv(ptr %0) {
-entry:
+stub.entry:
   ret i64 0
 }
 
 define linkonce_odr i64 @_ZN5ArrayI4ListI4SlotI12KeyValuePairI1K1VEEEE12get_capacityEv(ptr %0) {
-entry:
+stub.entry:
   ret i64 0
 }
 
 define linkonce_odr void @_ZN5ArrayI4ListI4SlotI12KeyValuePairI1K1VEEEE10reallocateEv(ptr %0) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI4ListI4SlotI12KeyValuePairI1K1VEEEE3addE4ListI4SlotI12KeyValuePairI1K1VEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI4ListI4SlotI12KeyValuePairI1K1VEEEE3addE6VectorI4ListI4SlotI12KeyValuePairI1K1VEEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN5ArrayI4ListI4SlotI12KeyValuePairI1K1VEEEE3getEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr ptr @_ZN5ArrayI4ListI4SlotI12KeyValuePairI1K1VEEEE2atEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN5ArrayI4ListI4SlotI12KeyValuePairI1K1VEEEE5clearEv(ptr %0) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI4ListI4SlotI12KeyValuePairI1K1VEEEE3putEm4ListI4SlotI12KeyValuePairI1K1VEEE(ptr %0, i64 %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN13ArrayIteratorI4ListI4SlotI12KeyValuePairI1K1VEEEE4nextEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN13ArrayIteratorI4ListI4SlotI12KeyValuePairI1K1VEEEEC1E6OptionIR5ArrayI4ListI4SlotI12KeyValuePairI1K1VEEEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI4ListI4SlotI12KeyValuePairI1K1VEEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI4ListI4SlotI12KeyValuePairI1K1VEEEE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI4ListI4SlotI12KeyValuePairI1K1VEEEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI4ListI4SlotI12KeyValuePairI1K1VEEEE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI4ListI4SlotI12KeyValuePairI1K1VEEEEC1Ev(ptr %0) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI4ListI4SlotI12KeyValuePairI1K1VEEEEC1Em(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI4ListI4SlotI12KeyValuePairI1K1VEEEEC1E5ArrayI4ListI4SlotI12KeyValuePairI1K1VEEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN4ListI4ListI4SlotI12KeyValuePairI1K1VEEEE8get_headEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr ptr @_ZN12ListIteratorI4ListI4SlotI12KeyValuePairI1K1VEEEE4nextEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr i64 @_ZN4ListI4ListI4SlotI12KeyValuePairI1K1VEEEE5countEv(ptr %0) {
-entry:
+stub.entry:
   ret i64 0
 }
 
 define linkonce_odr void @_ZN4ListI4ListI4SlotI12KeyValuePairI1K1VEEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI4ListI4SlotI12KeyValuePairI1K1VEEEE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN4ListI4ListI4SlotI12KeyValuePairI1K1VEEEE4linkEP4NodeI4ListI4SlotI12KeyValuePairI1K1VEEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN4ListI4ListI4SlotI12KeyValuePairI1K1VEEEE3addE4ListI4SlotI12KeyValuePairI1K1VEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN4ListI4ListI4SlotI12KeyValuePairI1K1VEEEE6add_onER4Page4ListI4SlotI12KeyValuePairI1K1VEEE(ptr %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI4ListI4SlotI12KeyValuePairI1K1VEEEEC1E4ListI4ListI4SlotI12KeyValuePairI1K1VEEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN14HashMapBuilderI1K1VE10reallocateEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr i1 @_ZN14HashMapBuilderI1K1VE3addE1K1V(ptr %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr i1 @_ZN14HashMapBuilderI1K1VE12add_internalE1K1V(ptr %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr i1 @_ZN14HashMapBuilderI1K1VE8containsE1K(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr ptr @_ZN14HashMapBuilderI1K1VE3getE1K(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr ptr @_ZN6VectorI12KeyValuePairI1K1VEE3getEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr ptr @_ZN6VectorI12KeyValuePairI1K1VEE7get_ptrEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN6VectorI12KeyValuePairI1K1VEE3putEm12KeyValuePairI1K1VE(ptr %0, i64 %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN14VectorIteratorI12KeyValuePairI1K1VEE4nextEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN14VectorIteratorI12KeyValuePairI1K1VEEC1E6OptionIR6VectorI12KeyValuePairI1K1VEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI12KeyValuePairI1K1VEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI12KeyValuePairI1K1VEE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN5SliceI12KeyValuePairI1K1VEE3getEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr ptr @_ZN5SliceI12KeyValuePairI1K1VEE2atEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN5SliceI12KeyValuePairI1K1VEE3putEm12KeyValuePairI1K1VE(ptr %0, i64 %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr i1 @_ZN5SliceI12KeyValuePairI1K1VEE8is_emptyEv(ptr %0) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr void @_ZN5SliceI12KeyValuePairI1K1VEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI12KeyValuePairI1K1VEE) %0, ptr %1, ptr %2, i64 %3, i64 %4) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5SliceI12KeyValuePairI1K1VEE10slice_fromEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI12KeyValuePairI1K1VEE) %0, ptr %1, ptr %2, i64 %3) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5SliceI12KeyValuePairI1K1VEE8slice_toEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI12KeyValuePairI1K1VEE) %0, ptr %1, ptr %2, i64 %3) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr i1 @_ZN5SliceI12KeyValuePairI1K1VEE6equalsE5SliceI12KeyValuePairI1K1VEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr i1 @_ZN5SliceI12KeyValuePairI1K1VEE11starts_withE5SliceI12KeyValuePairI1K1VEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr i1 @_ZN5SliceI12KeyValuePairI1K1VEE9ends_withE5SliceI12KeyValuePairI1K1VEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr ptr @_ZN13SliceIteratorI12KeyValuePairI1K1VEE4nextEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN13SliceIteratorI12KeyValuePairI1K1VEEC1E5SliceI12KeyValuePairI1K1VEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5SliceI12KeyValuePairI1K1VEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13SliceIteratorI12KeyValuePairI1K1VEE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5SliceI12KeyValuePairI1K1VEEC1Ev(ptr %0) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI12KeyValuePairI1K1VEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI12KeyValuePairI1K1VEE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI12KeyValuePairI1K1VEEC1Ev(ptr %0) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI12KeyValuePairI1K1VEEC1Em(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI12KeyValuePairI1K1VEEC1E6VectorI12KeyValuePairI1K1VEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN5ArrayI12KeyValuePairI1K1VEE10get_bufferEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairI1K1VEE10get_lengthEv(ptr %0) {
-entry:
+stub.entry:
   ret i64 0
 }
 
 define linkonce_odr i64 @_ZN5ArrayI12KeyValuePairI1K1VEE12get_capacityEv(ptr %0) {
-entry:
+stub.entry:
   ret i64 0
 }
 
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI1K1VEE10reallocateEv(ptr %0) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI1K1VEE3addE12KeyValuePairI1K1VE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI1K1VEE3addE6VectorI12KeyValuePairI1K1VEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN5ArrayI12KeyValuePairI1K1VEE3getEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr ptr @_ZN5ArrayI12KeyValuePairI1K1VEE2atEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI1K1VEE5clearEv(ptr %0) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI1K1VEE3putEm12KeyValuePairI1K1VE(ptr %0, i64 %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN13ArrayIteratorI12KeyValuePairI1K1VEE4nextEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN13ArrayIteratorI12KeyValuePairI1K1VEEC1E6OptionIR5ArrayI12KeyValuePairI1K1VEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI1K1VEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI12KeyValuePairI1K1VEE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI1K1VEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI12KeyValuePairI1K1VEE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI1K1VEEC1Ev(ptr %0) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI12KeyValuePairI1K1VEEC1Em(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI12KeyValuePairI1K1VEEC1E5ArrayI12KeyValuePairI1K1VEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN4ListI12KeyValuePairI1K1VEE8get_headEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr ptr @_ZN12ListIteratorI12KeyValuePairI1K1VEE4nextEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr i64 @_ZN4ListI12KeyValuePairI1K1VEE5countEv(ptr %0) {
-entry:
+stub.entry:
   ret i64 0
 }
 
 define linkonce_odr void @_ZN4ListI12KeyValuePairI1K1VEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI12KeyValuePairI1K1VEE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN4ListI12KeyValuePairI1K1VEE4linkEP4NodeI12KeyValuePairI1K1VEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN4ListI12KeyValuePairI1K1VEE3addE12KeyValuePairI1K1VE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN4ListI12KeyValuePairI1K1VEE6add_onER4Page12KeyValuePairI1K1VE(ptr %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI12KeyValuePairI1K1VEEC1E4ListI12KeyValuePairI1K1VEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN14HashMapBuilderI1K1VEC1E6VectorI12KeyValuePairI1K1VEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
@@ -20841,297 +20841,297 @@ while.exit12:                                     ; preds = %while.cond10
 }
 
 define linkonce_odr i1 @_ZN14HashMapBuilder3addE1K1V(ptr %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr i1 @_ZN14HashMapBuilder12add_internalE1K1V(ptr %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr i1 @_ZN14HashMapBuilder8containsE1K(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr ptr @_ZN14HashMapBuilder3getE1K(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN14HashMapBuilderC1E6VectorI12KeyValuePairI1K1VEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN6VectorI6VectorI12KeyValuePairI1K1VEEE3getEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr ptr @_ZN6VectorI6VectorI12KeyValuePairI1K1VEEE7get_ptrEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN6VectorI6VectorI12KeyValuePairI1K1VEEE3putEm6VectorI12KeyValuePairI1K1VEE(ptr %0, i64 %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI6VectorI12KeyValuePairI1K1VEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z14VectorIteratorI6VectorI12KeyValuePairI1K1VEEE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN5SliceI6VectorI12KeyValuePairI1K1VEEE3getEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr ptr @_ZN5SliceI6VectorI12KeyValuePairI1K1VEEE2atEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN5SliceI6VectorI12KeyValuePairI1K1VEEE3putEm6VectorI12KeyValuePairI1K1VEE(ptr %0, i64 %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr i1 @_ZN5SliceI6VectorI12KeyValuePairI1K1VEEE8is_emptyEv(ptr %0) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr void @_ZN5SliceI6VectorI12KeyValuePairI1K1VEEE8subsliceEPN4scaly6memory4PageEmm(ptr noalias sret(%_Z5SliceI6VectorI12KeyValuePairI1K1VEEE) %0, ptr %1, ptr %2, i64 %3, i64 %4) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5SliceI6VectorI12KeyValuePairI1K1VEEE10slice_fromEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI6VectorI12KeyValuePairI1K1VEEE) %0, ptr %1, ptr %2, i64 %3) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5SliceI6VectorI12KeyValuePairI1K1VEEE8slice_toEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI6VectorI12KeyValuePairI1K1VEEE) %0, ptr %1, ptr %2, i64 %3) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr i1 @_ZN5SliceI6VectorI12KeyValuePairI1K1VEEE6equalsE5SliceI6VectorI12KeyValuePairI1K1VEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr i1 @_ZN5SliceI6VectorI12KeyValuePairI1K1VEEE11starts_withE5SliceI6VectorI12KeyValuePairI1K1VEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr i1 @_ZN5SliceI6VectorI12KeyValuePairI1K1VEEE9ends_withE5SliceI6VectorI12KeyValuePairI1K1VEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr ptr @_ZN13SliceIteratorI6VectorI12KeyValuePairI1K1VEEE4nextEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN13SliceIteratorI6VectorI12KeyValuePairI1K1VEEEC1E5SliceI6VectorI12KeyValuePairI1K1VEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5SliceI6VectorI12KeyValuePairI1K1VEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13SliceIteratorI6VectorI12KeyValuePairI1K1VEEE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5SliceI6VectorI12KeyValuePairI1K1VEEEC1Ev(ptr %0) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI6VectorI12KeyValuePairI1K1VEEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI6VectorI12KeyValuePairI1K1VEEE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI6VectorI12KeyValuePairI1K1VEEEC1Ev(ptr %0) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI6VectorI12KeyValuePairI1K1VEEEC1Em(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI6VectorI12KeyValuePairI1K1VEEEC1E6VectorI6VectorI12KeyValuePairI1K1VEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN5ArrayI6VectorI12KeyValuePairI1K1VEEE10get_bufferEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr i64 @_ZN5ArrayI6VectorI12KeyValuePairI1K1VEEE10get_lengthEv(ptr %0) {
-entry:
+stub.entry:
   ret i64 0
 }
 
 define linkonce_odr i64 @_ZN5ArrayI6VectorI12KeyValuePairI1K1VEEE12get_capacityEv(ptr %0) {
-entry:
+stub.entry:
   ret i64 0
 }
 
 define linkonce_odr void @_ZN5ArrayI6VectorI12KeyValuePairI1K1VEEE10reallocateEv(ptr %0) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI6VectorI12KeyValuePairI1K1VEEE3addE6VectorI12KeyValuePairI1K1VEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI6VectorI12KeyValuePairI1K1VEEE3addE6VectorI6VectorI12KeyValuePairI1K1VEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN5ArrayI6VectorI12KeyValuePairI1K1VEEE3getEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr ptr @_ZN5ArrayI6VectorI12KeyValuePairI1K1VEEE2atEm(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN5ArrayI6VectorI12KeyValuePairI1K1VEEE5clearEv(ptr %0) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI6VectorI12KeyValuePairI1K1VEEE3putEm6VectorI12KeyValuePairI1K1VEE(ptr %0, i64 %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN13ArrayIteratorI6VectorI12KeyValuePairI1K1VEEE4nextEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN13ArrayIteratorI6VectorI12KeyValuePairI1K1VEEEC1E6OptionIR5ArrayI6VectorI12KeyValuePairI1K1VEEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI6VectorI12KeyValuePairI1K1VEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ArrayIteratorI6VectorI12KeyValuePairI1K1VEEE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI6VectorI12KeyValuePairI1K1VEEE8as_sliceEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI6VectorI12KeyValuePairI1K1VEEE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI6VectorI12KeyValuePairI1K1VEEEC1Ev(ptr %0) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN5ArrayI6VectorI12KeyValuePairI1K1VEEEC1Em(ptr %0, i64 %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI6VectorI12KeyValuePairI1K1VEEEC1E5ArrayI6VectorI12KeyValuePairI1K1VEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN4ListI6VectorI12KeyValuePairI1K1VEEE8get_headEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr ptr @_ZN12ListIteratorI6VectorI12KeyValuePairI1K1VEEE4nextEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr i64 @_ZN4ListI6VectorI12KeyValuePairI1K1VEEE5countEv(ptr %0) {
-entry:
+stub.entry:
   ret i64 0
 }
 
 define linkonce_odr void @_ZN4ListI6VectorI12KeyValuePairI1K1VEEE12get_iteratorEPN4scaly6memory4PageE(ptr noalias sret(%_Z12ListIteratorI6VectorI12KeyValuePairI1K1VEEE) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN4ListI6VectorI12KeyValuePairI1K1VEEE4linkEP4NodeI6VectorI12KeyValuePairI1K1VEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN4ListI6VectorI12KeyValuePairI1K1VEEE3addE6VectorI12KeyValuePairI1K1VEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN4ListI6VectorI12KeyValuePairI1K1VEEE6add_onER4Page6VectorI12KeyValuePairI1K1VEE(ptr %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN6VectorI6VectorI12KeyValuePairI1K1VEEEC1E4ListI6VectorI12KeyValuePairI1K1VEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN14VectorIteratorI6VectorI12KeyValuePairI1K1VEEE4nextEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN14VectorIteratorI6VectorI12KeyValuePairI1K1VEEEC1E6OptionIR6VectorI6VectorI12KeyValuePairI1K1VEEEE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr ptr @_ZN15HashMapIteratorI1K1VE4nextEv(ptr %0) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr i1 @_ZN7HashMapI1K1VE8containsE1K(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr ptr @_ZN7HashMapI1K1VE3getE1K(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN7HashMapI1K1VEC1E14HashMapBuilderI1K1VE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr void @_ZN15HashMapIteratorI1K1VEC1E7HashMapI1K1VE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
@@ -21171,22 +21171,22 @@ if.end4:                                          ; preds = %if.end
 }
 
 define linkonce_odr void @_ZN15HashMapIteratorC1E7HashMapI1K1VE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
 define linkonce_odr i1 @_ZN7HashMap8containsE1K(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret i1 false
 }
 
 define linkonce_odr ptr @_ZN7HashMap3getE1K(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret ptr null
 }
 
 define linkonce_odr void @_ZN7HashMapC1E14HashMapBuilderI1K1VE(ptr %0, ptr %1) {
-entry:
+stub.entry:
   ret void
 }
 
@@ -23570,7 +23570,7 @@ choose.when:                                      ; preds = %entry
 }
 
 define linkonce_odr void @_ZN6Result9unwrap_orE1T(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 
@@ -23619,7 +23619,7 @@ choose.when:                                      ; preds = %entry
 declare void @_ZN6Option6unwrapEv(ptr noalias sret({ ptr }), ptr)
 
 define linkonce_odr void @_ZN6Option9unwrap_orE1T(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
-entry:
+stub.entry:
   ret void
 }
 

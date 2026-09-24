@@ -3212,10 +3212,18 @@ define Emitter
 
         procedure map_type(mutable this, planned_type: PlannedType) returns LLVMTypeRef
         {
-            ; Check type cache first
-            let cached lookup_type_cache planned_type.name
-            if cached <> null
-                return cached
+            ; Check type cache first — under the key cache_type# writes, the
+            ; MANGLED name. It was looked up by the type's NAME, and the only
+            ; entries are pointer/ref types keyed `P…`/`R…`: a concept whose
+            ; NAME equals such a key — `P`, `R`, `Pv` — answered `ptr`, so
+            ; `var p P(3)` + `set p.a: 4` GEP'd through a pointer and the
+            ; compiler crashed (rc 139) or read garbage at rc 0.
+            if planned_type.mangled_name.get_length() > 0
+            {
+                let cached lookup_type_cache planned_type.mangled_name
+                if cached <> null
+                    return cached
+            }
 
             ; Check intrinsic types via the cstring-literal lookup. The
             ; Vector-based map_intrinsic_type stores names from
@@ -5271,6 +5279,63 @@ define Emitter
         ; tail of a multi-digit length prefix on a real type name (e.g. an
         ; 11-char name `11Txxxxxxxxx`). Concrete instantiations spell out their
         ; types (`6String`, `i`, `IiE`) and never carry a length-1 T/K/V token.
+        ; signature_has_resolved_letter#: does a parameter or the return type
+        ; of `func` mention — at its head or inside any generic argument — a
+        ; ONE-LETTER uppercase type that resolved to a concept (it carries a
+        ; mangled name)? A template's own `T`/`K`/`V` is unresolved and carries
+        ; none, so such a function is a real one that only LOOKS like a
+        ; template by its symbol: a method of a user concept `T`, or `Slice[T]`
+        ; instantiated on one.
+        function signature_has_resolved_letter(func: PlannedFunction) returns bool
+        {
+            if func.input <> null
+            {
+                let ins (*func.input)
+                var i: size_t 0
+                while i < ins.length
+                {
+                    let it_ptr ins.get i
+                    if it_ptr <> null
+                    {
+                        if it_ptr.item_type <> null
+                            if Emitter.type_has_resolved_letter((*it_ptr.item_type))
+                                return true
+                    }
+                    set i: i + 1
+                }
+            }
+            if func.return_type <> null
+                if Emitter.type_has_resolved_letter((*func.return_type))
+                    return true
+            false
+        }
+
+        function type_has_resolved_letter(t: PlannedType) returns bool
+        {
+            if t.name.get_length() = 1
+            {
+                let c t.name.get 0
+                if c >= ("A" as char)
+                    if c <= ("Z" as char)
+                        if t.mangled_name.get_length() > 0
+                            return true
+            }
+            if t.generics <> null
+            {
+                let gs (*t.generics)
+                var gi: size_t 0
+                while gi < gs.length
+                {
+                    let g_ptr gs.get gi
+                    if g_ptr <> null
+                        if Emitter.type_has_resolved_letter((*g_ptr))
+                            return true
+                    set gi: gi + 1
+                }
+            }
+            false
+        }
+
         function is_uninstantiated_template(this, mangled: String) returns bool
         {
             let n mangled.get_length()
@@ -6145,26 +6210,19 @@ define Emitter
                     let existing_bb LLVMGetFirstBasicBlock(llvm_func)
                     if existing_bb <> null
                         return true
-                    ; s186: uninstantiated generic template — emit an empty stub
-                    ; body instead of the real (unresolved, garbage-producing)
-                    ; one. Keeps the textual .ll verifiably valid for the Step D
-                    ; seed build; these stubs are never reached at runtime.
+                    ; s186: an uninstantiated generic template gets no body of its
+                    ; own (its types are unresolved, the body would be garbage).
+                    ; It stays a DECLARATION here and emit_template_stubs# gives
+                    ; it the empty stub after every body is in — so a real
+                    ; instantiation that mangles to the SAME symbol (a user
+                    ; concept named `T` in `Slice[T]`) still gets its body,
+                    ; whichever comes first. The name marker alone cannot tell
+                    ; them apart; a signature that carries a RESOLVED one-letter
+                    ; concept (`T` with a mangled name) is real, not a template.
                     if is_uninstantiated_template(func.mangled_name)
                     {
-                        set current_function: llvm_func
-                        let stub_entry "entry"
-                        let stub_block LLVMAppendBasicBlockInContext(context, llvm_func, stub_entry.c_data())
-                        LLVMPositionBuilderAtEnd(builder, stub_block)
-                        let stub_func_ty LLVMGlobalGetValueType(llvm_func)
-                        let stub_ret_ty LLVMGetReturnType(stub_func_ty)
-                        if LLVMGetTypeKind(stub_ret_ty) = LLVMTypeKind.Void()
-                            LLVMBuildRetVoid builder
-                        if LLVMGetTypeKind(stub_ret_ty) <> LLVMTypeKind.Void()
-                        {
-                            let stub_zero LLVMConstNull(stub_ret_ty)
-                            LLVMBuildRet(builder, stub_zero)
-                        }
-                        return true
+                        if Emitter.signature_has_resolved_letter(func) = false
+                            return true
                     }
                     ; Emit the function body
                     set current_function: llvm_func

@@ -3394,6 +3394,14 @@ define Emitter
 
 
 
+
+
+
+
+
+
+
+
         ; Is this planned type pointer-SHAPED, i.e. does map_type's `ptr` answer
         ; describe the value itself rather than fall out of the last-resort
         ; fallback at the bottom of map_type?
@@ -5271,6 +5279,63 @@ define Emitter
         ; tail of a multi-digit length prefix on a real type name (e.g. an
         ; 11-char name `11Txxxxxxxxx`). Concrete instantiations spell out their
         ; types (`6String`, `i`, `IiE`) and never carry a length-1 T/K/V token.
+        ; signature_has_resolved_letter#: does a parameter or the return type
+        ; of `func` mention — at its head or inside any generic argument — a
+        ; ONE-LETTER uppercase type that resolved to a concept (it carries a
+        ; mangled name)? A template's own `T`/`K`/`V` is unresolved and carries
+        ; none, so such a function is a real one that only LOOKS like a
+        ; template by its symbol: a method of a user concept `T`, or `Slice[T]`
+        ; instantiated on one.
+        function signature_has_resolved_letter(func: PlannedFunction) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function type_has_resolved_letter(t: PlannedType) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         function is_uninstantiated_template(this, mangled: String) @ret_nonlocal true @deep true returns bool linked
 
 
@@ -6089,13 +6154,6 @@ define Emitter
 
         ; Emit function body (implementation)
         procedure emit_function_body(mutable this, mutable func: PlannedFunction) @ret_nonlocal true @deep true @deep_beyond_2 true @deep_this_2 true @deep_into_1_2 true returns bool linked
-
-
-
-
-
-
-
 
 
 
