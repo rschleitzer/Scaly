@@ -18148,6 +18148,107 @@ define Emitter
 
 
 
+        ; In-place construction THROUGH A POINTER: `set *p: Ctor(args)` (and
+        ; `set r: Ctor(args)` on a reference, which the planner rewrites into
+        ; the same deref) constructs straight into `*p`. Only for a LOCAL-life
+        ; constructor without a page parameter -- the residency default the
+        ; planner gives a type whose bodies derive a page from `this`
+        ; (concept_needs_this_residency#). Built as a temporary on this frame's
+        ; page and copied, such an object carried guts that died with the
+        ; frame: `allocate(sizeof StringBuilder)` + `set *p: StringBuilder()`
+        ; ended in a bus error at the first append, rc 0 (2026-09-24). Built
+        ; in place, its `Page.get(this)` answers the page `p` points into.
+        ; Plain value types (Unspecified life) keep the copy path.
+        ; Gates: the pointer is a plain Variable, no ctor argument mentions it.
+        procedure emit_in_place_deref_ctor(mutable this, mutable action: PlannedAction) @direct true @deep true returns LLVMValueRef linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         ; In-place field construction: `set X.field...: Ctor(args)` with a single
         ; construction source constructs directly on the final field address
         ; instead of a discarded scratch. The scratch LEAKED sizeof(struct) on the
@@ -18272,6 +18373,9 @@ define Emitter
 
 
         procedure emit_action(mutable this, mutable action: PlannedAction) @direct true @deep true returns LLVMValueRef linked
+
+
+
 
 
 

@@ -1,0 +1,54 @@
+; Control for xfail_store_local_part / xfail_caller_page_sigil_without_page:
+; the two spellings the diagnostics suggest -- a declared caller page ('rp')
+; with '#', and a named page with '^host' -- both hand the caller a String that
+; survives the return (under SCALY_POISON too).
+; Expected: PASS
+define Holder (var s: String)
+
+procedure fill_rp(rp, mutable out: ref[Holder], n: int)
+{
+    var sb StringBuilder()
+    sb.append "hello-"
+    sb.append n
+    set out: Holder(String#(sb.to_string()))
+}
+
+procedure fill_host(host: ref[Page], mutable out: ref[Holder], n: int)
+{
+    var sb StringBuilder()
+    sb.append "hello-"
+    sb.append n
+    set out: Holder(String^host(sb.to_string()))
+}
+
+procedure churn() returns int
+{
+    var t: int 0
+    var i: int 0
+    while i < 200
+    {
+        let x String("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
+        set t: t + (x.get_length() as int)
+        set i: i + 1
+    }
+    t
+}
+
+procedure run()
+{
+    var a Holder(String(""))
+    fill_rp(&a, 7)
+    churn()
+    var b Holder(String(""))
+    let root Page.allocate_page()
+    fill_host(root, &b, 8)
+    churn()
+    if a.s.equals(String("hello-7"))
+        if b.s.equals(String("hello-8"))
+        {
+            print("PASS")
+            return
+        }
+    print("FAIL")
+}
+run()

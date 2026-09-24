@@ -18148,6 +18148,107 @@ define Emitter
             false
         }
 
+        ; In-place construction THROUGH A POINTER: `set *p: Ctor(args)` (and
+        ; `set r: Ctor(args)` on a reference, which the planner rewrites into
+        ; the same deref) constructs straight into `*p`. Only for a LOCAL-life
+        ; constructor without a page parameter -- the residency default the
+        ; planner gives a type whose bodies derive a page from `this`
+        ; (concept_needs_this_residency#). Built as a temporary on this frame's
+        ; page and copied, such an object carried guts that died with the
+        ; frame: `allocate(sizeof StringBuilder)` + `set *p: StringBuilder()`
+        ; ended in a bus error at the first append, rc 0 (2026-09-24). Built
+        ; in place, its `Page.get(this)` answers the page `p` points into.
+        ; Plain value types (Unspecified life) keep the copy path.
+        ; Gates: the pointer is a plain Variable, no ctor argument mentions it.
+        procedure emit_in_place_deref_ctor(mutable this, mutable action: PlannedAction) returns LLVMValueRef
+        {
+            let no_val: LLVMValueRef null
+            if action.target = null
+                return no_val
+            if action.target.length <> 1
+                return no_val
+            let target_ptr action.target.get 0
+            if target_ptr = null
+                return no_val
+            let target_op (*target_ptr)
+            if target_op.member_access <> null
+                if target_op.member_access.length > 0
+                    return no_val
+            if action.source = null
+                return no_val
+            if action.source.length <> 1
+                return no_val
+            let src_ptr action.source.get 0
+            if src_ptr = null
+                return no_val
+            let src_op (*src_ptr)
+            if src_op.member_access <> null
+                if src_op.member_access.length > 0
+                    return no_val
+            choose target_op.expr
+                when tc: Call
+                {
+                    if tc.name <> "*"
+                        return no_val
+                    if tc.args = null
+                        return no_val
+                    let targs (*tc.args)
+                    if targs.length <> 1
+                        return no_val
+                    let pp targs.get 0
+                    if pp = null
+                        return no_val
+                    let ptr_op (*pp)
+                    if ptr_op.member_access <> null
+                        if ptr_op.member_access.length > 0
+                            return no_val
+                    var ptr_name: String ""
+                    choose ptr_op.expr
+                        when pv: Variable
+                            set ptr_name: pv.name
+                        else
+                            return no_val
+                    choose src_op.expr
+                        when c: Call
+                        {
+                            if c.mangled_name.contains("C1E") = false
+                                return no_val
+                            if c.requires_page_param
+                                return no_val
+                            var life_local: bool false
+                            choose c.life
+                                when l: Local
+                                    set life_local: true
+                                else
+                                    0
+                            if life_local = false
+                                return no_val
+                            if c.args <> null
+                            {
+                                let cargs (*c.args)
+                                var ai: size_t 0
+                                while ai < cargs.length
+                                {
+                                    let ap cargs.get ai
+                                    if ap <> null
+                                        if operand_mentions_name((*ap), ptr_name)
+                                            return no_val
+                                    set ai: ai + 1
+                                }
+                            }
+                            let dest emit_operand ptr_op
+                            if dest = null
+                                return no_val
+                            return emit_constructor_call_into(c, dest)
+                        }
+                        else
+                            return no_val
+                }
+                else
+                    return no_val
+            no_val
+        }
+
         ; In-place field construction: `set X.field...: Ctor(args)` with a single
         ; construction source constructs directly on the final field address
         ; instead of a discarded scratch. The scratch LEAKED sizeof(struct) on the
@@ -18290,6 +18391,9 @@ define Emitter
             let in_place_val emit_in_place_field_ctor(action)
             if in_place_val <> null
                 return in_place_val
+            let in_place_deref emit_in_place_deref_ctor(action)
+            if in_place_deref <> null
+                return in_place_deref
 
             ; Emit source operands
             var value emit_operands action.source

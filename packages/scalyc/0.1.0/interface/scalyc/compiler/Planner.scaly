@@ -28136,6 +28136,26 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         ; Escape checker (RBMM blocker C): true for two escaping shapes:
         ;  (1) a ref[T]/pointer[T] whose POINTEE lives on a Local ($) page — the
         ;      `&` operator and resolve_type keep the pointee (with its life) in
@@ -28541,6 +28561,102 @@ define Planner
         ; global (GlobalRef), or through a pointer deref (Call). A same-frame
         ; local's field (base var/let) dies with the frame → false. Mirrors the
         ; inline frame-external detection in the ref STORE vector above.
+        ; operand_is_pageless_caller_construction#: a construction or call
+        ; whose life says CALLER (`T#(...)`, `x.m#()`) in a routine the page
+        ; rules gave no caller page. The emitter puts it on the routine's own
+        ; frame (s196), and region_of_operand#, which reads the life, took it
+        ; for a surviving value -- so `set out: Holder(String#(s))` through an
+        ; out-parameter, the spelling meant to fix xfail_store_local_part,
+        ; compiled at rc 0 and handed out a released String (2026-09-24). A
+        ; `#` whose value stays in the routine is harmless and not judged.
+        function operand_is_pageless_caller_construction(this: Planner, op: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; operand_carries_local_guts#: a VALUE construction (`Holder(s)`,
+        ; `T(String(..), n)`) whose own life is not local -- it is copied
+        ; wherever it is stored -- but one of whose components is (recursively)
+        ; a reference or a page-owning value on THIS routine's page. The store
+        ; vector judged only the top of the source, so `set out: Holder(sb.
+        ; to_string())` through an out-parameter handed the caller a String on
+        ; a released page at rc 0 (the "out-param store" class CLAUDE.md
+        ; carried since the page-inference era; 2026-09-24). A parameter's
+        ; field and `this.field` with a DIRECT local source were already judged.
+        function operand_carries_local_guts(this: Planner, op: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         function target_is_frame_external(this: Planner, target: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
 
 
@@ -46928,6 +47044,9 @@ define Planner
         ; the name is a struct. Default 8 (matches the catch-all in
         ; get_primitive_alignment for unknown names).
         procedure compute_payload_size(mutable this: Planner, name: String) @ret_nonlocal true @deep true returns size_t linked
+
+
+
 
 
 

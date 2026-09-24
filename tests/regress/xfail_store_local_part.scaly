@@ -1,0 +1,40 @@
+; Regression (2026-09-24): a VALUE construction stored through an out-parameter
+; whose PART lives on this routine's page. `Holder(sb.to_string())` is copied
+; into `*out`, but the String inside it was built on the routine's frame; the
+; store vector judged only the top of the source, so the caller got a String on
+; a released page at rc 0. Planner.operand_carries_local_guts#.
+; xfail: error: a part of the value stored here is built on this routine's page
+define Holder (var s: String)
+
+procedure fill(mutable out: ref[Holder], n: int)
+{
+    var sb StringBuilder()
+    sb.append "hello-"
+    sb.append n
+    set out: Holder(sb.to_string())
+}
+
+procedure churn() returns int
+{
+    var t: int 0
+    var i: int 0
+    while i < 200
+    {
+        let x String("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
+        set t: t + (x.get_length() as int)
+        set i: i + 1
+    }
+    t
+}
+
+procedure run()
+{
+    var h Holder(String(""))
+    fill(&h, 7)
+    churn()
+    if h.s.equals(String("hello-7"))
+        print("PASS")
+    else
+        print("FAIL")
+}
+run()

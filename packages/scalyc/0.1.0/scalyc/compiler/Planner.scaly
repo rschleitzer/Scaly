@@ -27903,6 +27903,21 @@ define Planner
                 set store_src_escapes: true
             if this.operand_reads_tainted_local_field(planned_source_collapsed)
                 set store_src_escapes: true
+            ; A VALUE construction is copied into the target, but a PART of it
+            ; built on this frame's page is not -- operand_carries_local_guts#.
+            var src_escapes_by_part false
+            if store_src_escapes = false
+                if this.operand_carries_local_guts(planned_source_collapsed)
+                {
+                    set store_src_escapes: true
+                    set src_escapes_by_part: true
+                }
+            if store_src_escapes = false
+                if this.operand_is_pageless_caller_construction(planned_source_collapsed)
+                {
+                    set store_src_escapes: true
+                    set src_escapes_by_part: true
+                }
             if a.target.length > 0
                 if store_src_escapes
                 {
@@ -27987,7 +28002,12 @@ define Planner
                                     0
                         if promoted_done = false
                             if defer_this_getref = false
-                                this.add_diagnostic(action_loc, "reference into a local page escapes via store - allocate the target with '#' (caller page) or '^name' (region) so it outlives the use")
+                            {
+                                if src_escapes_by_part
+                                    this.add_diagnostic(action_loc, "a part of the value stored here is built on this routine's page and dies when it returns - build that part on a page the target outlives: '^name', or '#' with the caller page declared (a first parameter 'rp')")
+                                else
+                                    this.add_diagnostic(action_loc, "reference into a local page escapes via store - allocate the target with '#' (caller page) or '^name' (region) so it outlives the use")
+                            }
                     }
                 }
 
@@ -28541,6 +28561,102 @@ define Planner
         ; global (GlobalRef), or through a pointer deref (Call). A same-frame
         ; local's field (base var/let) dies with the frame → false. Mirrors the
         ; inline frame-external detection in the ref STORE vector above.
+        ; operand_is_pageless_caller_construction#: a construction or call
+        ; whose life says CALLER (`T#(...)`, `x.m#()`) in a routine the page
+        ; rules gave no caller page. The emitter puts it on the routine's own
+        ; frame (s196), and region_of_operand#, which reads the life, took it
+        ; for a surviving value -- so `set out: Holder(String#(s))` through an
+        ; out-parameter, the spelling meant to fix xfail_store_local_part,
+        ; compiled at rc 0 and handed out a released String (2026-09-24). A
+        ; `#` whose value stays in the routine is harmless and not judged.
+        function operand_is_pageless_caller_construction(this: Planner, op: PlannedOperand) returns bool
+        {
+            var caller_life false
+            choose op.expr
+                when c: Call
+                {
+                    choose c.life
+                        when cl: Call
+                            set caller_life: true
+                        else
+                            0
+                }
+                when t: PlannedTuple
+                {
+                    choose t.life
+                        when tl: Call
+                            set caller_life: true
+                        else
+                            0
+                }
+                else
+                    0
+            if caller_life = false
+                return false
+            if this.lookup_local_binding("_rp") <> null
+                return false
+            ; a first parameter named `page` is the peeled caller page too,
+            ; bound under its own name only
+            let pb this.lookup_local_binding("page")
+            if pb <> null
+                if pb.is_parameter
+                    return false
+            true
+        }
+
+        ; operand_carries_local_guts#: a VALUE construction (`Holder(s)`,
+        ; `T(String(..), n)`) whose own life is not local -- it is copied
+        ; wherever it is stored -- but one of whose components is (recursively)
+        ; a reference or a page-owning value on THIS routine's page. The store
+        ; vector judged only the top of the source, so `set out: Holder(sb.
+        ; to_string())` through an out-parameter handed the caller a String on
+        ; a released page at rc 0 (the "out-param store" class CLAUDE.md
+        ; carried since the page-inference era; 2026-09-24). A parameter's
+        ; field and `this.field` with a DIRECT local source were already judged.
+        function operand_carries_local_guts(this: Planner, op: PlannedOperand) returns bool
+        {
+            choose op.expr
+                when t: PlannedTuple
+                {
+                    if t.components = null
+                        return false
+                    let comps (*t.components)
+                    var i: size_t 0
+                    while i < comps.length
+                    {
+                        let cp comps.get i
+                        if cp <> null
+                        {
+                            let c (*cp)
+                            if c.value <> null
+                            {
+                                let vals (*c.value)
+                                var j: size_t 0
+                                while j < vals.length
+                                {
+                                    let vp vals.get j
+                                    if vp <> null
+                                    {
+                                        let v (*vp)
+                                        if this.region_of_operand(v) < Planner.required_region_for_escape()
+                                            return true
+                                        if this.operand_is_pageless_caller_construction(v)
+                                            return true
+                                        if this.operand_carries_local_guts(v)
+                                            return true
+                                    }
+                                    set j: j + 1
+                                }
+                            }
+                        }
+                        set i: i + 1
+                    }
+                }
+                else
+                    0
+            false
+        }
+
         function target_is_frame_external(this: Planner, target: PlannedOperand) returns bool
         {
             var has_member false
@@ -46929,20 +47045,23 @@ define Planner
         ; get_primitive_alignment for unknown names).
         procedure compute_payload_size(mutable this: Planner, name: String) returns size_t
         {
-            var size: size_t Planner.get_primitive_alignment(name)
+            var size: size_t 0
+            set size: Planner.get_primitive_alignment(name)
+            ; ★Container shapes by NAME are a table that ages: `Array` said 16
+            ; for a `{ length, capacity, buffer }` of 24, and both builders 8
+            ; for `{ length, slots }` of 16. Where a root does not lay the type
+            ; out itself (a concept loaded through a package interface, e.g.
+            ; `sizeof StringBuilder` in a program), this estimate IS the size:
+            ; `allocate(sizeof StringBuilder)` handed 16 bytes to a 24-byte
+            ; object and its init wrote past them (2026-09-24). Those three are
+            ; now derived from their properties below, like every other record.
             if name = "Vector"
-                return 16
-            if name = "Array"
                 return 16
             if name = "String"
                 return 8
             if name = "HashMap"
                 return 8
             if name = "HashSet"
-                return 8
-            if name = "HashMapBuilder"
-                return 8
-            if name = "HashSetBuilder"
                 return 8
             let c_ref this.lookup_concept_for_layout(name)
             if c_ref <> null
