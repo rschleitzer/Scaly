@@ -386,13 +386,10 @@ define symindex
         while i < DIR_CAP
         {
             let s dir_slots + i
-            if s.used = false
-                if target < 0
-                    set target: i
-            if s.used
-                if s.epoch <> idx_epoch
-                    if target < 0
-                        set target: i
+            if s.used = false and target < 0
+                set target: i
+            if s.used and s.epoch <> idx_epoch and target < 0
+                set target: i
             set i: i + 1
         }
         if target < 0

@@ -166,7 +166,6 @@ define tasklens
 
 
 
-
     ; The report's verdict for `offset` in `path`, or "" when it holds none.
     ;
     ; The answer SHARES the report's buffer (a String struct copy, no

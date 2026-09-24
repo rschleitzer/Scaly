@@ -280,10 +280,8 @@ define docstore
             while i < DOC_CAP
             {
                 let s doc_slots + i
-                if s.used
-                    if s.dirty
-                        if s.uri_data <> null
-                            return String(s.uri_data as pointer[const_char], s.uri_len)
+                if s.used and s.dirty and s.uri_data <> null
+                    return String(s.uri_data as pointer[const_char], s.uri_len)
                 set i: i + 1
             }
         }

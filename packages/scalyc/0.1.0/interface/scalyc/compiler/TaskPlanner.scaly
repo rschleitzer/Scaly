@@ -482,8 +482,6 @@ define TaskPlanner
 
 
 
-
-
         ; Record the first blocker. Later calls are no-ops.
         procedure block(mutable this: TaskPlanner, reason: String) @deep true linked
 
@@ -511,8 +509,6 @@ define TaskPlanner
         ; loop-external no matter what — aliasing wins over a same-named
         ; local binding (conservative under the flat never-popped scratch).
         function is_local(this: TaskPlanner, name: String) @ret_nonlocal true @deep true returns bool linked
-
-
 
 
 
@@ -578,9 +574,7 @@ define TaskPlanner
 
 
 
-
         function op_aliases_external(this: TaskPlanner, op: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
-
 
 
 
@@ -683,10 +677,7 @@ define TaskPlanner
 
 
 
-
         function operand_reads_name(this: TaskPlanner, op: PlannedOperand, name: String) @ret_nonlocal true @deep true returns bool linked
-
-
 
 
 
@@ -1140,7 +1131,6 @@ define TaskPlanner
 
 
 
-
         ; ================================================================
         ; Sanctioned effects. A task allocates in its OWN region, so the
         ; RBMM machinery — allocator externs, allocator/tracer state
@@ -1151,24 +1141,6 @@ define TaskPlanner
         ; ================================================================
 
         function extern_is_benign(this: TaskPlanner, name: String) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1239,12 +1211,6 @@ define TaskPlanner
 
 
 
-
-
-
-
-
-
         ; ================================================================
         ; Transitive purity. `pure` on a PlannedFunction is a DECLARATION
         ; (function vs procedure keyword), not a proof. effectively_pure
@@ -1270,7 +1236,6 @@ define TaskPlanner
 
 
         procedure effectively_pure(mutable this: TaskPlanner, mangled: String) @ret_param_0 true @deep true returns bool linked
-
 
 
 
@@ -1438,7 +1403,6 @@ define TaskPlanner
 
 
         procedure pw_global(mutable this: TaskPlanner, g: PlannedGlobalRef) @deep true linked
-
 
 
 
@@ -1714,10 +1678,8 @@ define TaskPlanner
 
 
 
-
         ; put(receiver, index, element): receiver = args[0], index = args[1].
         function put_is_disjoint(this: TaskPlanner, call: PlannedCall) @ret_nonlocal true @deep true returns bool linked
-
 
 
 
@@ -1780,7 +1742,6 @@ define TaskPlanner
 
 
         procedure written_mask(mutable this: TaskPlanner, mangled: String) @ret_param_0 true @deep true returns size_t linked
-
 
 
 
@@ -2309,7 +2270,6 @@ define TaskPlanner
 
 
 
-
         ; A direct callee must be transitively effect-free
         ; (effectively_pure — the function keyword alone is a claim).
         ; Its written-params mask then says which argument positions it
@@ -2458,8 +2418,6 @@ define TaskPlanner
 
 
 
-
-
         function is_page_type(t: PlannedType) @ret_nonlocal true @deep true returns bool linked
 
 
@@ -2511,10 +2469,7 @@ define TaskPlanner
 
 
 
-
-
         function arg_root_local(this: TaskPlanner, op: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
-
 
 
 

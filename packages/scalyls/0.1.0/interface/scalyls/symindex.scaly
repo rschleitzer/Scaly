@@ -401,9 +401,6 @@ define symindex
 
 
 
-
-
-
     procedure set_dir_path(mutable s: ref[DirSlot], dir: String) @deep true linked
 
 

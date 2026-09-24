@@ -1382,7 +1382,6 @@ define Emitter
 
 
 
-
         ; Like set_function_debug_scope but for a synthetic function that has
         ; no PlannedFunction (the top-level `main` wrapping the program's
         ; top-level statements). -g only; caller guards on emit_debug_info.
@@ -1817,9 +1816,7 @@ define Emitter
 
 
 
-
         procedure resolve_reference_page(mutable this, mutable ref_name: String) @direct true @deep true returns LLVMValueRef linked
-
 
 
 
@@ -1917,8 +1914,6 @@ define Emitter
 
 
 
-
-
         ; Return this function's own FRAME — the {page, parent} record that IS the
         ; caller-page currency. Creating it emits no call: the entry block gets a
         ; two-word alloca initialised to {null, <incoming frame>}, and handing it
@@ -1996,7 +1991,6 @@ define Emitter
 
 
 
-
         ; Return this function's local root PAGE at the current builder position,
         ; materialising it through scaly_force_frame. Only the sites that really
         ; allocate need this; a caller-page argument takes get_local_frame instead.
@@ -2008,7 +2002,6 @@ define Emitter
         ; asking for a page. The runtime helper is small enough that opt/LTO
         ; inlines its fast path; an -O0 build keeps one call per demand.
         procedure get_or_create_local_page(mutable this) @direct true @ret_param_0 true @deep true returns LLVMValueRef linked
-
 
 
 
@@ -2187,7 +2180,6 @@ define Emitter
         ; Measured on `dazzledoc -t fot`: 26.86 G → 22.84 G instructions,
         ; 1.34 s → 1.15 s CPU, output byte-identical.
         procedure elide_unused_pages(mutable this) @deep true linked
-
 
 
 
@@ -3212,7 +3204,6 @@ define Emitter
 
 
 
-
         procedure map_type(mutable this, planned_type: PlannedType) @direct true @deep true returns LLVMTypeRef linked
 
 
@@ -3460,9 +3451,6 @@ define Emitter
         ; question (is map_type's opaque `ptr` a real pointer) and says true for
         ; the INTRINSICS, so it would call a `pointer[int]` slot a reference.
         function deref_slot_holds_a_reference(this, deref_rt: PlannedType) @deep true returns bool linked
-
-
-
 
 
 
@@ -4354,12 +4342,9 @@ define Emitter
 
 
 
-
         ; NPO (null-pointer optimization) Option layout that's represented
         ; as a single nullable pointer rather than a tagged union.
         function is_npo_option(this, t: PlannedType) @ret_nonlocal true @deep true returns bool linked
-
-
 
 
 
@@ -4510,7 +4495,6 @@ define Emitter
 
         ; Emit LLVM struct type for a PlannedStructure
         procedure emit_struct_type(mutable this, mutable struct: PlannedStructure) @direct true @deep true returns LLVMTypeRef linked
-
 
 
 
@@ -5311,12 +5295,7 @@ define Emitter
 
 
 
-
-
         function type_has_resolved_letter(t: PlannedType) @ret_nonlocal true @deep true returns bool linked
-
-
-
 
 
 
@@ -6630,7 +6609,6 @@ define Emitter
 
 
 
-
         ; ========================================================================
         ; Constant Emission
         ; ========================================================================
@@ -6826,7 +6804,6 @@ define Emitter
 
 
         procedure emit(mutable this, mutable plan: Plan, mutable module_name: String) @ret_nonlocal true @deep true @deep_this_2 true @deep_whole_2 true returns bool io linked
-
 
 
 
@@ -7518,7 +7495,6 @@ define Emitter
 
 
 
-
         ; Drop the thread-local bit from every global the JIT module DEFINES.
         ;
         ; M2.2 marks every non-`shared` mutable module global thread-local. That
@@ -7539,7 +7515,6 @@ define Emitter
         ; and clearing the bit there would read the descriptor as the value.
         ; AOT emission is untouched — this runs inside jit_run, after emit.
         procedure jit_clear_thread_locals(mutable this) @deep true linked
-
 
 
 
@@ -9175,8 +9150,6 @@ define Emitter
 
 
 
-
-
         ; True when t is pointer[const_char] / pointer[i8] / pointer[char] /
         ; pointer[u8] — i.e. a C-string position. The planner wraps a String
         ; argument bound to such a parameter in a PlannedAs(target = t); emit_as
@@ -9450,19 +9423,9 @@ define Emitter
 
 
 
-
-
-
-
-
-
         ; A slot the walker fixes in place: pointer, ref, or an NPO Option
         ; (a bare nullable pointer at the LLVM level).
         function region_is_ptr_slot(this, ft: PlannedType) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
 
 
 
@@ -9630,8 +9593,6 @@ define Emitter
 
 
 
-
-
         ; Should a fixed slot's target be walked? Mirrors the planner's
         ; check_message_pointee: scalars, raw buffers, and page headers are
         ; fix-only.
@@ -9650,8 +9611,6 @@ define Emitter
 
         ; Anything to do for a value of type ft lying at some address?
         function region_field_acts(this, ft: PlannedType) @ret_nonlocal true @deep true returns bool linked
-
-
 
 
 
@@ -10192,7 +10151,6 @@ define Emitter
         ; receiver's ABI size plus the page header against the stdlib's
         ; PAGE_SIZE (config.page_size, from Planner.page_size_constant#).
         procedure check_receiver_fits_page(mutable this) @deep true linked
-
 
 
 
@@ -11766,12 +11724,8 @@ define Emitter
 
 
 
-
         ; Emit an intrinsic binary operator
         procedure emit_intrinsic_binary_op(mutable this, op_name: String, mutable left: LLVMValueRef, mutable right: LLVMValueRef, mutable result_type: PlannedType, left_operand_type: PlannedType, right_operand_type: PlannedType) @direct true @deep true returns LLVMValueRef linked
-
-
-
 
 
 
@@ -12464,10 +12418,8 @@ define Emitter
 
 
 
-
         ; Emit a tuple construction
         procedure emit_tuple(mutable this, mutable tuple: PlannedTuple) @direct true @deep true returns LLVMValueRef linked
-
 
 
 
@@ -13217,7 +13169,6 @@ define Emitter
 
 
         function operand_is_logical(op: PlannedOperand) @ret_param_0 true @deep true returns bool linked
-
 
 
 
@@ -14747,9 +14698,6 @@ define Emitter
 
 
 
-
-
-
         ; Emit a for loop
         procedure emit_for(mutable this, mutable for_expr: PlannedFor) @direct true @ret_nonlocal true @deep true returns LLVMValueRef linked
 
@@ -15055,13 +15003,11 @@ define Emitter
 
 
 
-
         ; A free name becomes a capture when it is not body-bound, not
         ; already recorded, and actually resolves to a local of the
         ; enclosing function (names that resolve to nothing here are
         ; globals, functions, or namespaces — not frame state).
         procedure parfor_add_capture(mutable this, name: String) @persists true @deep true @deep_this_2 true @deep_whole_2 true linked
-
 
 
 
@@ -15403,14 +15349,12 @@ define Emitter
 
 
 
-
         ; Weight of a callee body by mangled name, memoized. A name being
         ; weighed further up the walk (recursion) and an unresolved or
         ; extern name all fall back to the flat call cost. Declaration
         ; duplicates: a body entry wins over an extern declare for the same
         ; mangled name (the TaskPlanner's effectively_pure discipline).
         procedure parfor_weight_fn(mutable this, mangled: String) @persists true @ret_param_0 true @deep true @deep_this_2 true @deep_whole_2 true returns size_t linked
-
 
 
 
@@ -17251,7 +17195,6 @@ define Emitter
 
 
 
-
         procedure emit_try(mutable this, mutable try_expr: PlannedTry) @direct true @deep true @deep_beyond_2 true returns LLVMValueRef linked
 
 
@@ -17508,7 +17451,6 @@ define Emitter
 
 
 
-
         ; Emit alignof
         procedure emit_alignof(mutable this, alignof_expr: PlannedAlignOf) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
@@ -17660,11 +17602,6 @@ define Emitter
 
         ; Emit as expression (type cast)
         procedure emit_as(mutable this, mutable as_expr: PlannedAs) @direct true @deep true returns LLVMValueRef linked
-
-
-
-
-
 
 
 
@@ -18272,10 +18209,6 @@ define Emitter
         ; Plain value types (Unspecified life) keep the copy path.
         ; Gates: the pointer is a plain Variable, no ctor argument mentions it.
         procedure emit_in_place_deref_ctor(mutable this, mutable action: PlannedAction) @direct true @deep true returns LLVMValueRef linked
-
-
-
-
 
 
 
@@ -19371,7 +19304,6 @@ define Emitter
 
 
 
-
         ; Helper for member field assignment
         procedure emit_member_assignment(mutable this, mutable var_ptr: LLVMValueRef, mutable planned_var: PlannedVariable, mutable members: ref[Vector[PlannedMemberAccess]]?, mutable value: LLVMValueRef) @direct true @deep true returns LLVMValueRef linked
 
@@ -19433,8 +19365,6 @@ define Emitter
 
 
         procedure emit_binding(mutable this, mutable binding: PlannedBinding) @ret_nonlocal true @deep true returns bool linked
-
-
 
 
 

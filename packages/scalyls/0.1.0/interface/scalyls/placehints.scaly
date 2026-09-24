@@ -296,7 +296,6 @@ define placehints
 
 
 
-
     procedure collect_structure(mutable sb: ref[StringBuilder], st: PlannedStructure, file: FileSyntax) @ret_nonlocal true @deep true linked
 
 
@@ -794,8 +793,6 @@ define placehints
 
     ; Is a line of `kept` introduced by exactly `digits` followed by a tab?
     function has_offset(kept: String, digits: String) @ret_nonlocal true @deep true returns bool linked
-
-
 
 
 

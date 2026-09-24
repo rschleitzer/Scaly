@@ -125,13 +125,7 @@ define format
 
 
 
-
-
     function is_closer(c: u8) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
 
 
 
@@ -145,20 +139,7 @@ define format
 
 
 
-
-
-
-
     function is_word_byte(c: u8) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
-
-
-
 
 
 
@@ -175,21 +156,7 @@ define format
 
 
 
-
-
-
-
     function is_one_word(w: String) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -206,19 +173,7 @@ define format
 
 
 
-
-
-
-
     function is_routine_word(w: String) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
-
-
 
 
 

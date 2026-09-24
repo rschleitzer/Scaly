@@ -273,9 +273,8 @@ define placehints
                 if gp <> null
                 {
                     let g (*gp)
-                    if g.value <> null
-                        if semantic.is_routine_start(file, g.loc.start)
-                            placehints.collect_operands_opt(sb, false, g.value)
+                    if g.value <> null and semantic.is_routine_start(file, g.loc.start)
+                        placehints.collect_operands_opt(sb, false, g.value)
                 }
                 set i: i + 1
             }
@@ -819,10 +818,8 @@ define placehints
                 }
                 set i: i + 1
             }
-            if same
-                if k + dn < kn
-                    if kept.get(k + dn) = 0x09
-                        return true
+            if same and k + dn < kn and kept.get(k + dn) = 0x09
+                return true
             ; advance to the next line
             while k < kn
             {

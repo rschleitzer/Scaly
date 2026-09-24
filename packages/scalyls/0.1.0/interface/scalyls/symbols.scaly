@@ -529,16 +529,8 @@ define symbols
 
 
 
-
-
-
-
     ; True for `)`, `]`, `}`.
     function is_close_bracket(c: u8) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
 
 
 
@@ -593,7 +585,6 @@ define symbols
 
     ; The chain for ONE cursor offset, innermost first.
     procedure selection_chain(rp, source: String, off: size_t) @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
-
 
 
 
@@ -1052,7 +1043,6 @@ define symbols
 
 
 
-
     ; True when source[t,end) begins with `word` (a plain byte compare).
     function line_starts_with(source: String, t: size_t, end: size_t, word: String) @ret_nonlocal true @deep true returns bool linked
 
@@ -1181,7 +1171,6 @@ define symbols
     ; keeps its symbolic name and is left alone, because parenthesizing a real
     ; dead expression would produce nonsense.
     function swallowed_call_head(message: String) @ret_nonlocal true @deep true returns bool linked
-
 
 
 
@@ -1898,7 +1887,6 @@ define symbols
 
 
 
-
     procedure folding_ranges(rp, mutable source: String) @direct true @ret_caller true @deep true returns String linked
 
 
@@ -2252,12 +2240,6 @@ define symbols
 
 
 
-
-
-
-
-
-
     ; ====================================================================
     ; textDocument/semanticTokens/full (lexical)
     ;
@@ -2282,8 +2264,6 @@ define symbols
     ; ====================================================================
 
     procedure semantic_tokens(rp, mutable source: String, mutable uri: String) @direct true @ret_caller true @deep true returns String io mutable dir_slots, prof_list reads prof_list linked
-
-
 
 
 
@@ -2918,10 +2898,6 @@ define symbols
 
 
 
-
-
-
-
     function is_upper(c: u8) @ret_nonlocal true @deep true returns bool linked
 
 
@@ -2929,9 +2905,7 @@ define symbols
 
 
 
-
     function is_digit(c: u8) @ret_nonlocal true @deep true returns bool linked
-
 
 
 
@@ -2946,27 +2920,8 @@ define symbols
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; Quote bytes that open a string: " (34), ' (39), ` (96).
     function is_string_start(c: u8) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
 
 
 
@@ -3252,8 +3207,6 @@ define symbols
 
 
 
-
-
     ; Top-level declaration -> its scope/field records (concatenated, each
     ; newline-terminated, so plain concatenation needs no separator).
     function st_decl(rp, source: String, decl: DeclarationSyntax) @direct true @ret_caller true @deep true returns String linked
@@ -3500,7 +3453,6 @@ define symbols
     ; routine whose [start,end) byte range contains `offset`. Innermost = the
     ; containing P record with the greatest start (nested routines start later).
     function param_in_scope(table: String, source: String, tstart: size_t, tend: size_t, offset: size_t) @ret_nonlocal true @deep true returns bool linked
-
 
 
 
@@ -4894,7 +4846,6 @@ define symbols
 
 
 
-
     ; The name of the innermost `define` whose [start,end) contains `offset`, or
     ; "" when the cursor is not inside one. Parse-only, like every other walk
     ; here; the innermost wins, so a nested define inside a namespace or a class
@@ -5075,7 +5026,6 @@ define symbols
 
 
 
-
     ; Enumerate the .scaly files under `dir` (recursively, skipping self_path)
     ; and return the members of the first concept named `type_name`. "" if none.
     ;
@@ -5132,9 +5082,6 @@ define symbols
     ; "" when no such declaration is found (e.g. `let r compute(x)` with no
     ; sigil, or an undeclared name) -> caller falls back to the flat list.
     function resolve_variable_type(rp, source: String, receiver: String) @direct true @ret_caller true @deep true returns String linked
-
-
-
 
 
 
@@ -5241,10 +5188,8 @@ define symbols
 
 
 
-
     ; First index at or after `pos` that is not a space or tab.
     function skip_ws(source: String, pos: size_t, len: size_t) @ret_nonlocal true @deep true returns size_t linked
-
 
 
 
@@ -5548,7 +5493,6 @@ define symbols
 
 
 
-
     ; Step 33: read each sibling/package file's CACHED ws blob (symindex.valid →
     ; get_blob#, else workspace_symbols_in_file# + put) and resolve the member
     ; type from the concept record's 5th membertypes field via
@@ -5697,7 +5641,6 @@ define symbols
 
 
 
-
     procedure function_return_type_in_dir(rp, mutable dir: String, self_path: String, fname: String) @direct true @ret_caller true @deep true returns String io mutable dir_slots, prof_list reads prof_list linked
 
 
@@ -5787,13 +5730,10 @@ define symbols
 
 
 
-
-
     ; Resolve the type (base concept name) of a multi-segment receiver chain
     ; `a.b.c`: resolve `a`'s declared type, then follow each subsequent segment
     ; as a field/method of the running type. "" when any step fails to resolve.
     procedure resolve_chain_type(rp, mutable source: String, mutable uri: String, chain: String) @direct true @ret_caller true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_fresh, prof_list, prof_read reads prof_list linked
-
 
 
 
@@ -5891,7 +5831,6 @@ define symbols
     ; (the source length, a sentinel) when there is no such receiver. Used to
     ; query the semantic resolver at a use of the receiver variable.
     function receiver_last_offset(rp, source: String, offset: size_t) @ret_nonlocal true @deep true returns size_t linked
-
 
 
 
@@ -6501,10 +6440,8 @@ define symbols
 
 
 
-
     ; `kind name` when start <= offset < end, else "".
     function hover_leaf(rp, source: String, start: size_t, end: size_t, offset: size_t, kind: Slice[char], name: String) @direct true @deep true returns String linked
-
 
 
 
@@ -6636,7 +6573,6 @@ define symbols
 
     ; First offset in [from, to) that is neither a space nor a tab, else `to`.
     function skip_blanks(source: String, from: size_t, to: size_t) @ret_nonlocal true @deep true returns size_t linked
-
 
 
 
@@ -7135,9 +7071,6 @@ define symbols
 
 
 
-
-
-
     ; The maximal identifier run covering `offset`, or "" if the cursor is not
     ; on (or just past) an identifier. Anchors on the byte at `offset`, else
     ; the byte before it (cursor sitting just after the name), then expands.
@@ -7410,7 +7343,6 @@ define symbols
 
     ; Variants of a union, then any body members.
     procedure def_union(rp, source: String, uri: String, un: UnionSyntax, name: String) @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
-
 
 
 
@@ -7808,7 +7740,6 @@ define symbols
 
 
 
-
     ; Enumerate the .scaly files under `dir` (recursively) and return the first
     ; one (other than `self_path`) declaring `name`, as a Location pointing at
     ; that file. "" if none / empty dir.
@@ -8017,7 +7948,6 @@ define symbols
 
 
 
-
     ; True when the OPEN BUFFER itself declares `name`. One parse of the
     ; document — the same blob the answer is read out of two steps later, and
     ; the same test — so asking it first costs nothing and saves a walk of every
@@ -8089,7 +8019,6 @@ define symbols
 
 
 
-
     ; The SymbolKind integer of one ws blob record, given the record's json part
     ; [json_start, rec_end) and the caller's prebuilt "\"kind\":" needle (built
     ; once per blob walk, not per record); `0 - 1` when the record carries none.
@@ -8145,8 +8074,6 @@ define symbols
     ; named file (def_in_module_file#) and, failing that, to answer the module
     ; line — the only thing we know when nothing declares `name`.
     function def_from_ws_blob(rp, blob: String, name: String, modules_only: bool) @direct true @ret_caller true @deep true returns String linked
-
-
 
 
 
@@ -8421,8 +8348,6 @@ define symbols
 
 
 
-
-
     ; True when the FIRST record in `blob` whose name EXACTLY equals `name` is a
     ; concept — its json `"kind":` is 23 (struct) or 10 (enum/union). The first
     ; `"kind":` in a record is always the json's (it precedes the detail field's
@@ -8430,8 +8355,6 @@ define symbols
     ; tagged_names_from_ws_blob#'s kind extraction + def_from_ws_blob#'s exact
     ; name match.
     function concept_in_ws_blob(rp, blob: String, name: String) @ret_nonlocal true @deep true returns bool linked
-
-
 
 
 
@@ -8573,13 +8496,10 @@ define symbols
 
 
 
-
-
     ; Is there a concept named `name` anywhere in the workspace? Mirrors
     ; find_definition_in_workspace#: the current file's directory tree, then ON A
     ; MISS the package dependency tree. Reads CACHED ws blobs via the symindex.
     procedure concept_in_workspace(rp, mutable uri: String, name: String) @ret_nonlocal true @deep true returns bool io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_fresh, prof_list, prof_read reads prof_list linked
-
 
 
 
@@ -8632,7 +8552,6 @@ define symbols
     ; ws blobs via the symindex; structured like function_return_type_ws# but
     ; cache-served (no per-file re-parse).
     procedure return_type_in_workspace(rp, mutable uri: String, name: String) @direct true @ret_caller true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_fresh, prof_list, prof_read reads prof_list linked
-
 
 
 
@@ -8949,7 +8868,6 @@ define symbols
 
 
     function tagged_names_lexical(rp, source: String) @direct true @ret_caller true @deep true returns String linked
-
 
 
 
@@ -10102,7 +10020,6 @@ define symbols
 
 
 
-
     ; True when `name[start..)` begins with `query` (case-insensitive).
     function matches_at(name: String, start: size_t, query: String) @ret_nonlocal true @deep true returns bool linked
 
@@ -10312,7 +10229,6 @@ define symbols
 
 
 
-
     ; True when `offset` falls inside a comment or a string literal (so a
     ; rename/prepareRename request there is rejected). Linear scan to `offset`.
     function offset_in_noncode(source: String, offset: size_t) @ret_nonlocal true @deep true returns bool linked
@@ -10339,7 +10255,6 @@ define symbols
 
     ; True when lo <= off < hi.
     function in_range(off: size_t, lo: size_t, hi: size_t) @ret_nonlocal true @deep true returns bool linked
-
 
 
 
@@ -10679,8 +10594,6 @@ define symbols
 
 
 
-
-
     ; The shadow ranges of `name` in `source`: a newline-terminated list of
     ; "<start> <end>" routine byte spans where `name` is bound as a parameter or
     ; a `let`/`var` local. "" when the file binds `name` nowhere (the common
@@ -10689,10 +10602,6 @@ define symbols
     ; body), NOT a parse — one parse of a large file is ~seconds and would blow
     ; the worker budget when fanned out over many files (s38 measurement).
     function shadow_ranges(rp, source: String, name: String) @direct true @ret_caller true @deep true returns String linked
-
-
-
-
 
 
 
@@ -10890,8 +10799,6 @@ define symbols
 
 
 
-
-
     ; The field `which` (0-based) of the record starting at `at` in `records`.
     function record_field(rp, records: String, at: size_t, which: size_t) @direct true @ret_caller true @deep true returns String linked
 
@@ -10959,7 +10866,6 @@ define symbols
     ; The offset of the record whose [start,end) covers `off`, or the length of
     ; `records` when none does. Routines do not nest, so the first hit wins.
     function record_covering(records: String, off: size_t) @ret_nonlocal true @deep true returns size_t linked
-
 
 
 
@@ -11512,7 +11418,6 @@ define symbols
 
 
 
-
     ; The `uri` field of a Location JSON object, or "".
     function location_uri(rp, loc: String) @direct true @ret_caller true @deep true returns String linked
 
@@ -11597,7 +11502,6 @@ define symbols
     ; (a same-named parameter / `let`/`var` local) is skipped, so a module-wide
     ; rename never touches an unrelated same-named local in any file.
     procedure scan_fragment(rp, source: String, uri: String, name: String, want_uri: bool, range_packed: String, shadow_packed: String) @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
-
 
 
 
@@ -11895,7 +11799,6 @@ define symbols
 
 
 
-
     ; True when `name` is a declared function / type / operator / namespace /
     ; module / mutable (any completion item) or a structure field — a name that
     ; legitimately occurs across routines/scopes, so references/rename must scan
@@ -11912,13 +11815,10 @@ define symbols
 
 
 
-
-
     ; True when `name` is a function/type declared anywhere in the workspace name
     ; blob (current file's directory tree + dependency package tree), each line
     ; "<tag><TAB><name><LF>".
     procedure name_in_workspace(rp, mutable uri: String, name: String) @ret_nonlocal true @deep true returns bool io mutable dir_slots, prof_list reads prof_list linked
-
 
 
 
@@ -12012,11 +11912,9 @@ define symbols
 
 
 
-
     ; True when source[off,off+nlen) equals `name` AND is a whole token (the
     ; following byte, if any, is not an identifier byte).
     function field_name_matches(source: String, off: size_t, nlen: size_t, name: String) @ret_nonlocal true @deep true returns bool linked
-
 
 
 
@@ -12290,7 +12188,6 @@ define symbols
 
 
 
-
     ; Single-file WorkspaceEdit {"changes":{"<uri>":[ <edits_fragment> ]}}.
     procedure rename_edits(rp, source: String, uri: String, old_name: String, new_name: String, range_packed: String) @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
@@ -12327,7 +12224,6 @@ define symbols
     ; would be wrong); the dir-tree fallback is never filtered. Fragments are
     ; appended byte at a time.
     procedure rename_workspace(rp, source: String, uri: String, old_name: String, new_name: String, mutable root: String) @direct true @ret_caller true @deep true returns String io mutable dir_slots, lc_col, lc_line, lc_off, prof_list reads prof_list linked
-
 
 
 
@@ -12669,9 +12565,6 @@ define symbols
 
 
 
-
-
-
     ; The receiver identifier of a method call `recv.NAME(` whose `(` is at
     ; `paren_pos` — the token before the `.` that precedes the method name. ""
     ; when the call is not a simple `ident.NAME(` (a free function `NAME(`, or a
@@ -12717,15 +12610,9 @@ define symbols
 
 
 
-
-
-
     ; Count depth-0 commas between `paren_pos` and `offset` — the 0-based index
     ; of the argument the cursor is in. Nested `()`/`[]` are skipped.
     function count_active_param(source: String, paren_pos: size_t, offset: size_t) @ret_nonlocal true @deep true returns size_t linked
-
-
-
 
 
 
@@ -13141,12 +13028,10 @@ define symbols
 
 
 
-
     ; Strip a "Y"-prefixed 0x1F-joined "name: Type" label list to a 0x1F-joined
     ; list of bare parameter NAMES, preserving positional alignment (one field
     ; per parameter, even when nameless).
     function names_from_labels(rp, payload: String) @direct true @ret_caller true @deep true returns String linked
-
 
 
 
@@ -13478,7 +13363,6 @@ define symbols
 
 
 
-
     ; The k-th 0x1F-separated field of `s` (0-based), or "" when out of range.
     ; (The separator is hardcoded — a u8 parameter adjacent to the size_t `k`
     ; triggers stage-0's adjacent-param mis-widening, truncating `k` to i8.)
@@ -13623,7 +13507,6 @@ define symbols
 
 
 
-
     ; Infer the declared type (base concept name) of a `let`/`var` binding whose
     ; NAME identifier ends at `name_end`, for a Type inlay hint. "" (no hint) when
     ; the binding is annotated (`: T`), the initializer is a literal/operator, or
@@ -13634,9 +13517,6 @@ define symbols
     ;   field chain `a.b.c`       -> resolve_chain_type#
     ;   bare variable `other`     -> resolve_variable_type#
     procedure infer_binding_type(rp, mutable source: String, mutable uri: String, name_end: size_t, map: String) @direct true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_fresh, prof_list, prof_read reads prof_list linked
-
-
-
 
 
 
@@ -14105,7 +13985,6 @@ define symbols
 
 
 
-
     ; The reconstructed parameter labels of a routine joined by 0x1F (unit
     ; separator — never appears in a label, so an internal generic comma like
     ; `Map[String, int]` is preserved within a single label). Drops a leading
@@ -14188,7 +14067,6 @@ define symbols
     ; parameter index. Mirrors build_signature#'s label/array assembly so the
     ; cross-file result is byte-identical to the intra-file one.
     function build_signature_from_labels(rp, name: String, labels: String, active: size_t) @direct true @ret_caller true @deep true returns String linked
-
 
 
 
@@ -14436,7 +14314,6 @@ define symbols
 
 
 
-
     ; Enumerate the .scaly files under `dir` (recursively) and return the first
     ; routine named `name`'s SignatureHelp (skipping `self_path`). "" if none.
     ;
@@ -14485,7 +14362,6 @@ define symbols
     ; (matching find_signature_in_workspace#). "" when not found -> the caller
     ; falls back to the unscoped, name-only search.
     procedure find_signature_in_concept_ws(rp, mutable uri: String, concept: String, name: String, active: size_t) @direct true @ret_caller true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig reads prof_list linked
-
 
 
 

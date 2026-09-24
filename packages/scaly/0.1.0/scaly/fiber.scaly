@@ -2069,9 +2069,8 @@ define Channel
         ; the wake handle once, before any lock (ensure_wake syscalls and
         ; needs the scheduler). Unbounded and scheduler-less senders skip
         ; it: they never park on the FIFO.
-        if me <> null
-            if m.capacity > 0
-                Io.ensure_wake()
+        if me <> null and m.capacity > 0
+            Io.ensure_wake()
         repeat
         {
             Channel.acquire(m)
@@ -2081,9 +2080,8 @@ define Channel
                 exit 110
             }
             var room true
-            if m.capacity > 0
-                if m.count >= m.capacity
-                    set room: false
+            if m.capacity > 0 and m.count >= m.capacity
+                set room: false
             if room
             {
                 if m.tail = null

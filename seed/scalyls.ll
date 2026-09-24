@@ -59837,7 +59837,7 @@ declare ptr @_ZN7Planner12plan_programEPN4scaly6memory4PageE7Program(ptr, ptr, p
 
 define linkonce_odr void @_ZN11diagnostics21sibling_notificationsEPN4scaly6memory4PageER6Module6String6StringR7Planner(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) {
 entry:
-  %sret.result21 = alloca { ptr }, align 8
+  %sret.result19 = alloca { ptr }, align 8
   %sret.result10 = alloca { ptr }, align 8
   %frame = alloca { ptr, ptr }, align 8
   store ptr null, ptr %frame, align 8
@@ -59872,8 +59872,8 @@ while.body:                                       ; preds = %while.cond
   br i1 %eq, label %if.then, label %if.end
 
 while.exit:                                       ; preds = %while.cond
-  %sb25 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result10, ptr %1, ptr %sb25)
+  %sb23 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result10, ptr %1, ptr %sb23)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result10, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result10, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -59886,9 +59886,9 @@ if.then:                                          ; preds = %while.body
   br i1 %gt, label %if.then8, label %if.end9
 
 if.end:                                           ; preds = %if.end9, %while.body
-  %fi23 = load i64, ptr %fi, align 8
-  %add24 = add i64 %fi23, 1
-  store i64 %add24, ptr %fi, align 1
+  %fi21 = load i64, ptr %fi, align 8
+  %add22 = add i64 %fi21, 1
+  store i64 %add22, ptr %fi, align 1
   br label %while.cond
 
 if.then8:                                         ; preds = %if.then
@@ -59897,31 +59897,28 @@ if.then8:                                         ; preds = %if.then
   %fstart13 = load i64, ptr %fstart, align 8
   %sub = sub i64 %fi12, %fstart13
   call void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %sret.result10, ptr %1, ptr %sret.result2, i64 %fstart11, i64 %sub)
-  %call14 = call i1 @_ZN6String6equalsE6String(ptr %sret.result10, ptr %4)
-  %not = xor i1 %call14, true
-  br i1 %not, label %if.then15, label %if.end16
+  %call16 = call i1 @_ZN6String6equalsE6String(ptr %sret.result10, ptr %4)
+  %not = xor i1 %call16, true
+  br i1 %not, label %land.rhs, label %if.end15
 
-if.end9:                                          ; preds = %if.end16, %if.then
-  %fi22 = load i64, ptr %fi, align 8
-  %add = add i64 %fi22, 1
+if.end9:                                          ; preds = %if.end15, %if.then
+  %fi20 = load i64, ptr %fi, align 8
+  %add = add i64 %fi20, 1
   store i64 %add, ptr %fstart, align 1
   br label %if.end
 
-if.then15:                                        ; preds = %if.then8
-  %call17 = call i1 @_ZN11diagnostics9owns_fileE6String6String6String(ptr %3, ptr %sret.result, ptr %sret.result10)
-  br i1 %call17, label %if.then18, label %if.end19
+if.then14:                                        ; preds = %land.rhs
+  %sb18 = load ptr, ptr %sb, align 8
+  call void @_ZN11diagnostics20sibling_notificationEPN4scaly6memory4PageE6StringR7Planner(ptr noalias sret({ ptr }) %sret.result19, ptr %frame, ptr %sret.result10, ptr %5)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb18, ptr %sret.result19)
+  br label %if.end15
 
-if.end16:                                         ; preds = %if.end19, %if.then8
+if.end15:                                         ; preds = %if.then14, %land.rhs, %if.then8
   br label %if.end9
 
-if.then18:                                        ; preds = %if.then15
-  %sb20 = load ptr, ptr %sb, align 8
-  call void @_ZN11diagnostics20sibling_notificationEPN4scaly6memory4PageE6StringR7Planner(ptr noalias sret({ ptr }) %sret.result21, ptr %frame, ptr %sret.result10, ptr %5)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb20, ptr %sret.result21)
-  br label %if.end19
-
-if.end19:                                         ; preds = %if.then18, %if.then15
-  br label %if.end16
+land.rhs:                                         ; preds = %if.then8
+  %call17 = call i1 @_ZN11diagnostics9owns_fileE6String6String6String(ptr %3, ptr %sret.result, ptr %sret.result10)
+  br i1 %call17, label %if.then14, label %if.end15
 }
 
 define linkonce_odr void @_ZN11diagnostics19publish_diagnosticsEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
@@ -60638,12 +60635,12 @@ if.end:                                           ; preds = %entry
 
 define linkonce_odr void @_ZN11diagnostics20sibling_notificationEPN4scaly6memory4PageE6StringR7Planner(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
 entry:
-  %sret.result54 = alloca { ptr }, align 8
-  %sret.result51 = alloca { ptr }, align 8
-  %sret.result50 = alloca { ptr }, align 8
+  %sret.result52 = alloca { ptr }, align 8
+  %sret.result49 = alloca { ptr }, align 8
+  %sret.result48 = alloca { ptr }, align 8
   %dj = alloca i64, align 8
   %first = alloca i1, align 1
-  %sret.result19 = alloca { ptr }, align 8
+  %sret.result17 = alloca { ptr }, align 8
   %sret.result = alloca { ptr }, align 8
   %body = alloca ptr, align 8
   %frame = alloca { ptr, ptr }, align 8
@@ -60675,123 +60672,120 @@ while.body:                                       ; preds = %while.cond
   %di3 = load i64, ptr %di, align 8
   %call = call ptr @_ZN5ArrayI17PlannerDiagnosticE3getEm(ptr %field.inplace, i64 %di3)
   %ne = icmp ne ptr %call, null
-  br i1 %ne, label %if.then, label %if.end
+  br i1 %ne, label %land.rhs, label %if.end
 
 while.exit:                                       ; preds = %while.cond
-  %forced_page11 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
-  %struct.region12 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page11, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1Ev(ptr %struct.region12)
-  store ptr %struct.region12, ptr %body, align 1
-  %count13 = load i64, ptr %count, align 8
-  %gt = icmp ugt i64 %count13, 0
-  br i1 %gt, label %if.then14, label %if.end15
+  %forced_page9 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  %struct.region10 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page9, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region10)
+  store ptr %struct.region10, ptr %body, align 1
+  %count11 = load i64, ptr %count, align 8
+  %gt = icmp ugt i64 %count11, 0
+  br i1 %gt, label %if.then12, label %if.end13
 
-if.then:                                          ; preds = %while.body
-  %field.inplace4 = getelementptr inbounds nuw %_Z17PlannerDiagnostic, ptr %call, i32 0, i32 2
-  %call5 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace4, ptr %2)
-  br i1 %call5, label %if.then6, label %if.end7
-
-if.end:                                           ; preds = %if.end7, %while.body
-  %di9 = load i64, ptr %di, align 8
-  %add10 = add i64 %di9, 1
-  store i64 %add10, ptr %di, align 1
-  br label %while.cond
-
-if.then6:                                         ; preds = %if.then
-  %count8 = load i64, ptr %count, align 8
-  %add = add i64 %count8, 1
+if.then:                                          ; preds = %land.rhs
+  %count6 = load i64, ptr %count, align 8
+  %add = add i64 %count6, 1
   store i64 %add, ptr %count, align 1
-  br label %if.end7
-
-if.end7:                                          ; preds = %if.then6, %if.then
   br label %if.end
 
-if.then14:                                        ; preds = %while.exit
+if.end:                                           ; preds = %if.then, %land.rhs, %while.body
+  %di7 = load i64, ptr %di, align 8
+  %add8 = add i64 %di7, 1
+  store i64 %add8, ptr %di, align 1
+  br label %while.cond
+
+land.rhs:                                         ; preds = %while.body
+  %field.inplace4 = getelementptr inbounds nuw %_Z17PlannerDiagnostic, ptr %call, i32 0, i32 2
+  %call5 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace4, ptr %2)
+  br i1 %call5, label %if.then, label %if.end
+
+if.then12:                                        ; preds = %while.exit
   call void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %2)
-  %call16 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
-  %eq = icmp eq i64 %call16, 0
-  br i1 %eq, label %if.then17, label %if.end18
+  %call14 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
+  %eq = icmp eq i64 %call14, 0
+  br i1 %eq, label %if.then15, label %if.end16
 
-if.end15:                                         ; preds = %while.exit23, %while.exit
-  %sb49 = load ptr, ptr %sb, align 8
-  call void @_ZN7symbols11path_to_uriEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result50, ptr %frame, ptr %2)
-  %body52 = load ptr, ptr %body, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result51, ptr %frame, ptr %body52)
-  call void @_ZN11diagnostics12notificationEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %sret.result50, ptr %sret.result51)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb49, ptr %sret.result)
+if.end13:                                         ; preds = %while.exit21, %while.exit
+  %sb47 = load ptr, ptr %sb, align 8
+  call void @_ZN7symbols11path_to_uriEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result48, ptr %frame, ptr %2)
+  %body50 = load ptr, ptr %body, align 8
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result49, ptr %frame, ptr %body50)
+  call void @_ZN11diagnostics12notificationEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %sret.result48, ptr %sret.result49)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb47, ptr %sret.result)
+  %sb51 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb51, i8 10)
   %sb53 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb53, i8 10)
-  %sb55 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result54, ptr %1, ptr %sb55)
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result52, ptr %1, ptr %sb53)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  %sret.body56 = load { ptr }, ptr %sret.result54, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result54, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  %sret.body54 = load { ptr }, ptr %sret.result52, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result52, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.then17:                                        ; preds = %if.then14
-  %sb20 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result19, ptr %1, ptr %sb20)
+if.then15:                                        ; preds = %if.then12
+  %sb18 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result17, ptr %1, ptr %sb18)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  %sret.body = load { ptr }, ptr %sret.result19, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result19, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  %sret.body = load { ptr }, ptr %sret.result17, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result17, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.end18:                                         ; preds = %if.then14
+if.end16:                                         ; preds = %if.then12
   store i1 true, ptr %first, align 1
   store i64 0, ptr %dj, align 1
-  br label %while.cond21
+  br label %while.cond19
 
-while.cond21:                                     ; preds = %if.end34, %if.end18
-  %dj24 = load i64, ptr %dj, align 8
-  %load.struct25 = load %_Z7Planner, ptr %3, align 8
-  %diagnostics26 = extractvalue %_Z7Planner %load.struct25, 48
-  %length27 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %diagnostics26, 0
-  %lt28 = icmp ult i64 %dj24, %length27
-  br i1 %lt28, label %while.body22, label %while.exit23
+while.cond19:                                     ; preds = %if.end32, %if.end16
+  %dj22 = load i64, ptr %dj, align 8
+  %load.struct23 = load %_Z7Planner, ptr %3, align 8
+  %diagnostics24 = extractvalue %_Z7Planner %load.struct23, 48
+  %length25 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %diagnostics24, 0
+  %lt26 = icmp ult i64 %dj22, %length25
+  br i1 %lt26, label %while.body20, label %while.exit21
 
-while.body22:                                     ; preds = %while.cond21
-  %field.inplace29 = getelementptr inbounds nuw %_Z7Planner, ptr %3, i32 0, i32 48
-  %dj30 = load i64, ptr %dj, align 8
-  %call31 = call ptr @_ZN5ArrayI17PlannerDiagnosticE3getEm(ptr %field.inplace29, i64 %dj30)
-  %ne32 = icmp ne ptr %call31, null
-  br i1 %ne32, label %if.then33, label %if.end34
+while.body20:                                     ; preds = %while.cond19
+  %field.inplace27 = getelementptr inbounds nuw %_Z7Planner, ptr %3, i32 0, i32 48
+  %dj28 = load i64, ptr %dj, align 8
+  %call29 = call ptr @_ZN5ArrayI17PlannerDiagnosticE3getEm(ptr %field.inplace27, i64 %dj28)
+  %ne30 = icmp ne ptr %call29, null
+  br i1 %ne30, label %if.then31, label %if.end32
 
-while.exit23:                                     ; preds = %while.cond21
-  br label %if.end15
+while.exit21:                                     ; preds = %while.cond19
+  br label %if.end13
 
-if.then33:                                        ; preds = %while.body22
-  %field.inplace35 = getelementptr inbounds nuw %_Z17PlannerDiagnostic, ptr %call31, i32 0, i32 2
-  %call36 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace35, ptr %2)
-  br i1 %call36, label %if.then37, label %if.end38
+if.then31:                                        ; preds = %while.body20
+  %field.inplace33 = getelementptr inbounds nuw %_Z17PlannerDiagnostic, ptr %call29, i32 0, i32 2
+  %call34 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace33, ptr %2)
+  br i1 %call34, label %if.then35, label %if.end36
 
-if.end34:                                         ; preds = %if.end38, %while.body22
-  %dj47 = load i64, ptr %dj, align 8
-  %add48 = add i64 %dj47, 1
-  store i64 %add48, ptr %dj, align 1
-  br label %while.cond21
+if.end32:                                         ; preds = %if.end36, %while.body20
+  %dj45 = load i64, ptr %dj, align 8
+  %add46 = add i64 %dj45, 1
+  store i64 %add46, ptr %dj, align 1
+  br label %while.cond19
 
-if.then37:                                        ; preds = %if.then33
-  %first39 = load i1, ptr %first, align 1
-  %eq40 = icmp eq i1 %first39, false
-  br i1 %eq40, label %if.then41, label %if.end42
+if.then35:                                        ; preds = %if.then31
+  %first37 = load i1, ptr %first, align 1
+  %eq38 = icmp eq i1 %first37, false
+  br i1 %eq38, label %if.then39, label %if.end40
 
-if.end38:                                         ; preds = %if.end42, %if.then33
-  br label %if.end34
+if.end36:                                         ; preds = %if.end40, %if.then31
+  br label %if.end32
 
-if.then41:                                        ; preds = %if.then37
-  %body43 = load ptr, ptr %body, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %body43, i8 44)
-  br label %if.end42
+if.then39:                                        ; preds = %if.then35
+  %body41 = load ptr, ptr %body, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %body41, i8 44)
+  br label %if.end40
 
-if.end42:                                         ; preds = %if.then41, %if.then37
-  %body44 = load ptr, ptr %body, align 8
-  %field.inplace45 = getelementptr inbounds nuw %_Z17PlannerDiagnostic, ptr %call31, i32 0, i32 0
-  %field.val = load i64, ptr %field.inplace45, align 8
-  %field.inplace46 = getelementptr inbounds nuw %_Z17PlannerDiagnostic, ptr %call31, i32 0, i32 1
-  call void @_ZN11diagnostics11diag_objectEPN4scaly6memory4PageE6Stringm6String(ptr noalias sret({ ptr }) %sret.result19, ptr %frame, ptr %sret.result, i64 %field.val, ptr %field.inplace46)
-  call void @_ZN13StringBuilder6appendE6String(ptr %body44, ptr %sret.result19)
+if.end40:                                         ; preds = %if.then39, %if.then35
+  %body42 = load ptr, ptr %body, align 8
+  %field.inplace43 = getelementptr inbounds nuw %_Z17PlannerDiagnostic, ptr %call29, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace43, align 8
+  %field.inplace44 = getelementptr inbounds nuw %_Z17PlannerDiagnostic, ptr %call29, i32 0, i32 1
+  call void @_ZN11diagnostics11diag_objectEPN4scaly6memory4PageE6Stringm6String(ptr noalias sret({ ptr }) %sret.result17, ptr %frame, ptr %sret.result, i64 %field.val, ptr %field.inplace44)
+  call void @_ZN13StringBuilder6appendE6String(ptr %body42, ptr %sret.result17)
   store i1 false, ptr %first, align 1
-  br label %if.end38
+  br label %if.end36
 }
 
 define linkonce_odr void @_ZN7symbols11path_to_uriEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
@@ -61374,120 +61368,117 @@ if.end26:                                         ; preds = %while.body15
   br label %while.cond14
 
 if.then30:                                        ; preds = %while.exit16
-  %line_start32 = load i64, ptr %line_start, align 8
-  %ge = icmp uge i64 %3, %line_start32
-  br i1 %ge, label %if.then33, label %if.end34
+  %line_start34 = load i64, ptr %line_start, align 8
+  %ge = icmp uge i64 %3, %line_start34
+  br i1 %ge, label %land.rhs, label %if.end33
 
-if.end31:                                         ; preds = %while.exit42, %while.exit16
-  %line_end85 = load i64, ptr %line_end, align 8
-  %add86 = add i64 %line_end85, 1
-  store i64 %add86, ptr %line_start, align 1
+if.end31:                                         ; preds = %while.exit40, %while.exit16
+  %line_end83 = load i64, ptr %line_end, align 8
+  %add84 = add i64 %line_end83, 1
+  store i64 %add84, ptr %line_start, align 1
   br label %while.cond
 
-if.then33:                                        ; preds = %if.then30
+if.then32:                                        ; preds = %land.rhs
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret i1 false
+
+if.end33:                                         ; preds = %land.rhs, %if.then30
+  %line_start37 = load i64, ptr %line_start, align 8
+  store i64 %line_start37, ptr %w, align 1
+  br label %while.cond38
+
+land.rhs:                                         ; preds = %if.then30
   %line_end35 = load i64, ptr %line_end, align 8
   %le36 = icmp ule i64 %3, %line_end35
-  br i1 %le36, label %if.then37, label %if.end38
+  br i1 %le36, label %if.then32, label %if.end33
 
-if.end34:                                         ; preds = %if.end38, %if.then30
-  %line_start39 = load i64, ptr %line_start, align 8
-  store i64 %line_start39, ptr %w, align 1
-  br label %while.cond40
+while.cond38:                                     ; preds = %if.end82, %if.then78, %if.then75, %if.then72, %if.then48, %if.end33
+  %w41 = load i64, ptr %w, align 8
+  %line_end42 = load i64, ptr %line_end, align 8
+  %lt43 = icmp ult i64 %w41, %line_end42
+  br i1 %lt43, label %while.body39, label %while.exit40
 
-if.then37:                                        ; preds = %if.then33
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret i1 false
+while.body39:                                     ; preds = %while.cond38
+  %w44 = load i64, ptr %w, align 8
+  %call45 = call i8 @_ZN6String3getEm(ptr %1, i64 %w44)
+  %call46 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call45)
+  %eq47 = icmp eq i1 %call46, false
+  br i1 %eq47, label %if.then48, label %if.end49
 
-if.end38:                                         ; preds = %if.then33
-  br label %if.end34
-
-while.cond40:                                     ; preds = %if.end84, %if.then80, %if.then77, %if.then74, %if.then50, %if.end34
-  %w43 = load i64, ptr %w, align 8
-  %line_end44 = load i64, ptr %line_end, align 8
-  %lt45 = icmp ult i64 %w43, %line_end44
-  br i1 %lt45, label %while.body41, label %while.exit42
-
-while.body41:                                     ; preds = %while.cond40
-  %w46 = load i64, ptr %w, align 8
-  %call47 = call i8 @_ZN6String3getEm(ptr %1, i64 %w46)
-  %call48 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call47)
-  %eq49 = icmp eq i1 %call48, false
-  br i1 %eq49, label %if.then50, label %if.end51
-
-while.exit42:                                     ; preds = %while.cond40
+while.exit40:                                     ; preds = %while.cond38
   br label %if.end31
 
-if.then50:                                        ; preds = %while.body41
+if.then48:                                        ; preds = %while.body39
+  %w50 = load i64, ptr %w, align 8
+  %add51 = add i64 %w50, 1
+  store i64 %add51, ptr %w, align 1
+  br label %while.cond38
+
+if.end49:                                         ; preds = %while.body39
   %w52 = load i64, ptr %w, align 8
-  %add53 = add i64 %w52, 1
-  store i64 %add53, ptr %w, align 1
-  br label %while.cond40
+  store i64 %w52, ptr %e, align 1
+  br label %while.cond53
 
-if.end51:                                         ; preds = %while.body41
-  %w54 = load i64, ptr %w, align 8
-  store i64 %w54, ptr %e, align 1
-  br label %while.cond55
+while.cond53:                                     ; preds = %if.end64, %if.end49
+  %e56 = load i64, ptr %e, align 8
+  %line_end57 = load i64, ptr %line_end, align 8
+  %lt58 = icmp ult i64 %e56, %line_end57
+  br i1 %lt58, label %while.body54, label %while.exit55
 
-while.cond55:                                     ; preds = %if.end66, %if.end51
-  %e58 = load i64, ptr %e, align 8
-  %line_end59 = load i64, ptr %line_end, align 8
-  %lt60 = icmp ult i64 %e58, %line_end59
-  br i1 %lt60, label %while.body56, label %while.exit57
+while.body54:                                     ; preds = %while.cond53
+  %e59 = load i64, ptr %e, align 8
+  %call60 = call i8 @_ZN6String3getEm(ptr %1, i64 %e59)
+  %call61 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call60)
+  %eq62 = icmp eq i1 %call61, false
+  br i1 %eq62, label %if.then63, label %if.end64
 
-while.body56:                                     ; preds = %while.cond55
-  %e61 = load i64, ptr %e, align 8
-  %call62 = call i8 @_ZN6String3getEm(ptr %1, i64 %e61)
-  %call63 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call62)
-  %eq64 = icmp eq i1 %call63, false
-  br i1 %eq64, label %if.then65, label %if.end66
-
-while.exit57:                                     ; preds = %if.then65, %while.cond55
+while.exit55:                                     ; preds = %if.then63, %while.cond53
+  %w67 = load i64, ptr %w, align 8
+  %e68 = load i64, ptr %e, align 8
   %w69 = load i64, ptr %w, align 8
+  %sub = sub i64 %e68, %w69
+  call void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %1, i64 %w67, i64 %sub)
   %e70 = load i64, ptr %e, align 8
-  %w71 = load i64, ptr %w, align 8
-  %sub = sub i64 %e70, %w71
-  call void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %1, i64 %w69, i64 %sub)
-  %e72 = load i64, ptr %e, align 8
-  store i64 %e72, ptr %w, align 1
-  %call73 = call i1 @_ZN7grammar10is_keywordE6String(ptr %sret.result)
-  br i1 %call73, label %if.then74, label %if.end75
+  store i64 %e70, ptr %w, align 1
+  %call71 = call i1 @_ZN7grammar10is_keywordE6String(ptr %sret.result)
+  br i1 %call71, label %if.then72, label %if.end73
 
-if.then65:                                        ; preds = %while.body56
-  br label %while.exit57
+if.then63:                                        ; preds = %while.body54
+  br label %while.exit55
 
-if.end66:                                         ; preds = %while.body56
-  %e67 = load i64, ptr %e, align 8
-  %add68 = add i64 %e67, 1
-  store i64 %add68, ptr %e, align 1
-  br label %while.cond55
+if.end64:                                         ; preds = %while.body54
+  %e65 = load i64, ptr %e, align 8
+  %add66 = add i64 %e65, 1
+  store i64 %add66, ptr %e, align 1
+  br label %while.cond53
 
-if.then74:                                        ; preds = %while.exit57
-  br label %while.cond40
+if.then72:                                        ; preds = %while.exit55
+  br label %while.cond38
 
-if.end75:                                         ; preds = %while.exit57
-  %call76 = call i1 @_ZN7grammar13is_value_wordE6String(ptr %sret.result)
-  br i1 %call76, label %if.then77, label %if.end78
+if.end73:                                         ; preds = %while.exit55
+  %call74 = call i1 @_ZN7grammar13is_value_wordE6String(ptr %sret.result)
+  br i1 %call74, label %if.then75, label %if.end76
 
-if.then77:                                        ; preds = %if.end75
-  br label %while.cond40
+if.then75:                                        ; preds = %if.end73
+  br label %while.cond38
 
-if.end78:                                         ; preds = %if.end75
-  %call79 = call i1 @_ZN7grammar16is_word_operatorE6String(ptr %sret.result)
-  br i1 %call79, label %if.then80, label %if.end81
+if.end76:                                         ; preds = %if.end73
+  %call77 = call i1 @_ZN7grammar16is_word_operatorE6String(ptr %sret.result)
+  br i1 %call77, label %if.then78, label %if.end79
 
-if.then80:                                        ; preds = %if.end78
-  br label %while.cond40
+if.then78:                                        ; preds = %if.end76
+  br label %while.cond38
 
-if.end81:                                         ; preds = %if.end78
-  %call82 = call i1 @_ZN7symbols14contains_tokenE6String6String(ptr %4, ptr %sret.result)
-  br i1 %call82, label %if.then83, label %if.end84
+if.end79:                                         ; preds = %if.end76
+  %call80 = call i1 @_ZN7symbols14contains_tokenE6String6String(ptr %4, ptr %sret.result)
+  br i1 %call80, label %if.then81, label %if.end82
 
-if.then83:                                        ; preds = %if.end81
+if.then81:                                        ; preds = %if.end79
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 false
 
-if.end84:                                         ; preds = %if.end81
-  br label %while.cond40
+if.end82:                                         ; preds = %if.end79
+  br label %while.cond38
 }
 
 declare void @_ZN7Planner23register_loaded_packageE6String6Module(ptr, ptr, ptr)
@@ -62815,7 +62806,7 @@ if.end:                                           ; preds = %entry
   store i64 0, ptr %i, align 1
   br label %while.cond
 
-while.cond:                                       ; preds = %if.end15, %if.end
+while.cond:                                       ; preds = %if.end11, %if.end
   %i1 = load i64, ptr %i, align 8
   %lt = icmp slt i64 %i1, 16
   br i1 %lt, label %while.body, label %while.exit
@@ -62826,76 +62817,67 @@ while.body:                                       ; preds = %while.cond
   %ptr.add = getelementptr inbounds %_Z7DirSlot, ptr %global.load2, i64 %i3
   %load.struct = load %_Z7DirSlot, ptr %ptr.add, align 8
   %used = extractvalue %_Z7DirSlot %load.struct, 4
-  %eq4 = icmp eq i1 %used, false
-  br i1 %eq4, label %if.then5, label %if.end6
+  %eq6 = icmp eq i1 %used, false
+  br i1 %eq6, label %land.rhs, label %if.end5
 
 while.exit:                                       ; preds = %while.cond
-  %target26 = load i64, ptr %target, align 8
-  %lt27 = icmp slt i64 %target26, 0
-  br i1 %lt27, label %if.then28, label %if.end29
+  %target22 = load i64, ptr %target, align 8
+  %lt23 = icmp slt i64 %target22, 0
+  br i1 %lt23, label %if.then24, label %if.end25
 
-if.then5:                                         ; preds = %while.body
+if.then4:                                         ; preds = %land.rhs
+  %i9 = load i64, ptr %i, align 8
+  store i64 %i9, ptr %target, align 1
+  br label %if.end5
+
+if.end5:                                          ; preds = %if.then4, %land.rhs, %while.body
+  %load.struct14 = load %_Z7DirSlot, ptr %ptr.add, align 8
+  %used15 = extractvalue %_Z7DirSlot %load.struct14, 4
+  br i1 %used15, label %land.rhs13, label %if.end11
+
+land.rhs:                                         ; preds = %while.body
   %target7 = load i64, ptr %target, align 8
   %lt8 = icmp slt i64 %target7, 0
-  br i1 %lt8, label %if.then9, label %if.end10
+  br i1 %lt8, label %if.then4, label %if.end5
 
-if.end6:                                          ; preds = %if.end10, %while.body
-  %load.struct12 = load %_Z7DirSlot, ptr %ptr.add, align 8
-  %used13 = extractvalue %_Z7DirSlot %load.struct12, 4
-  br i1 %used13, label %if.then14, label %if.end15
+if.then10:                                        ; preds = %land.rhs12
+  %i20 = load i64, ptr %i, align 8
+  store i64 %i20, ptr %target, align 1
+  br label %if.end11
 
-if.then9:                                         ; preds = %if.then5
-  %i11 = load i64, ptr %i, align 8
-  store i64 %i11, ptr %target, align 1
-  br label %if.end10
+if.end11:                                         ; preds = %if.then10, %land.rhs12, %land.rhs13, %if.end5
+  %i21 = load i64, ptr %i, align 8
+  %add = add i64 %i21, 1
+  store i64 %add, ptr %i, align 1
+  br label %while.cond
 
-if.end10:                                         ; preds = %if.then9, %if.then5
-  br label %if.end6
+land.rhs12:                                       ; preds = %land.rhs13
+  %target18 = load i64, ptr %target, align 8
+  %lt19 = icmp slt i64 %target18, 0
+  br i1 %lt19, label %if.then10, label %if.end11
 
-if.then14:                                        ; preds = %if.end6
+land.rhs13:                                       ; preds = %if.end5
   %load.struct16 = load %_Z7DirSlot, ptr %ptr.add, align 8
   %epoch = extractvalue %_Z7DirSlot %load.struct16, 5
   %global.load17 = load i64, ptr @idx_epoch, align 8
   %ne = icmp ne i64 %epoch, %global.load17
-  br i1 %ne, label %if.then18, label %if.end19
+  br i1 %ne, label %land.rhs12, label %if.end11
 
-if.end15:                                         ; preds = %if.end19, %if.end6
-  %i25 = load i64, ptr %i, align 8
-  %add = add i64 %i25, 1
-  store i64 %add, ptr %i, align 1
-  br label %while.cond
-
-if.then18:                                        ; preds = %if.then14
-  %target20 = load i64, ptr %target, align 8
-  %lt21 = icmp slt i64 %target20, 0
-  br i1 %lt21, label %if.then22, label %if.end23
-
-if.end19:                                         ; preds = %if.end23, %if.then14
-  br label %if.end15
-
-if.then22:                                        ; preds = %if.then18
-  %i24 = load i64, ptr %i, align 8
-  store i64 %i24, ptr %target, align 1
-  br label %if.end23
-
-if.end23:                                         ; preds = %if.then22, %if.then18
-  br label %if.end19
-
-if.then28:                                        ; preds = %while.exit
+if.then24:                                        ; preds = %while.exit
   store i64 0, ptr %target, align 1
-  br label %if.end29
+  br label %if.end25
 
-if.end29:                                         ; preds = %if.then28, %while.exit
+if.end25:                                         ; preds = %if.then24, %while.exit
   call void @_ZN8symindex8dir_viewEPN4scaly6memory4PageE(ptr noalias sret(%_Z5SliceI7DirSlotE) %sret.result, ptr null)
-  %target30 = load i64, ptr %target, align 8
-  %call = call ptr @_ZN5SliceI7DirSlotE2atEm(ptr %sret.result, i64 %target30)
+  %target26 = load i64, ptr %target, align 8
+  %call = call ptr @_ZN5SliceI7DirSlotE2atEm(ptr %sret.result, i64 %target26)
   call void @_ZN8symindex12set_dir_pathER7DirSlot6String(ptr %call, ptr %0)
   call void @_ZN8symindex12set_dir_listER7DirSlot6String(ptr %call, ptr %1)
-  %used31 = getelementptr inbounds nuw %_Z7DirSlot, ptr %call, i32 0, i32 4
-  store i1 true, ptr %used31, align 1
-  %global.load32 = load i64, ptr @idx_epoch, align 8
-  %epoch33 = getelementptr inbounds nuw %_Z7DirSlot, ptr %call, i32 0, i32 5
-  store i64 %global.load32, ptr %epoch33, align 8
+  %used27 = getelementptr inbounds nuw %_Z7DirSlot, ptr %call, i32 0, i32 4
+  store i1 true, ptr %used27, align 1
+  %global.load28 = load i64, ptr @idx_epoch, align 8
+  %epoch29 = getelementptr inbounds nuw %_Z7DirSlot, ptr %call, i32 0, i32 5
+  store i64 %global.load28, ptr %epoch29, align 8
   ret void
 }
 
@@ -64292,7 +64274,7 @@ if.then3:                                         ; preds = %if.then1
 if.end4:                                          ; preds = %while.exit, %if.then1
   br label %if.end2
 
-while.cond:                                       ; preds = %if.end16, %if.then3
+while.cond:                                       ; preds = %if.end13, %if.then3
   %probes7 = load i64, ptr %probes, align 8
   %lt = icmp ult i64 %probes7, %1
   br i1 %lt, label %while.body, label %while.exit
@@ -64313,35 +64295,32 @@ if.then10:                                        ; preds = %while.body
   ret i64 -1
 
 if.end11:                                         ; preds = %while.body
-  %load.struct12 = load %_Z8NameSlot, ptr %ptr.add, align 8
-  %name = extractvalue %_Z8NameSlot %load.struct12, 0
-  %length13 = extractvalue %_Z5SliceI2u8E %name, 0
-  %eq14 = icmp eq i64 %length13, %sub
-  br i1 %eq14, label %if.then15, label %if.end16
+  %load.struct14 = load %_Z8NameSlot, ptr %ptr.add, align 8
+  %name = extractvalue %_Z8NameSlot %load.struct14, 0
+  %length15 = extractvalue %_Z5SliceI2u8E %name, 0
+  %eq16 = icmp eq i64 %length15, %sub
+  br i1 %eq16, label %land.rhs, label %if.end13
 
-if.then15:                                        ; preds = %if.end11
-  %field.inplace = getelementptr inbounds nuw %_Z8NameSlot, ptr %ptr.add, i32 0, i32 0
-  %call17 = call i1 @_ZN7nameset6eq_ptrE5SliceI2u8E5SliceI2u8E(ptr %field.inplace, ptr %sret.result5)
-  br i1 %call17, label %if.then18, label %if.end19
-
-if.end16:                                         ; preds = %if.end19, %if.end11
-  %idx21 = load i64, ptr %idx, align 8
-  %add = add i64 %idx21, 1
-  %and22 = and i64 %add, %sub6
-  store i64 %and22, ptr %idx, align 1
-  %probes23 = load i64, ptr %probes, align 8
-  %add24 = add i64 %probes23, 1
-  store i64 %add24, ptr %probes, align 1
-  br label %while.cond
-
-if.then18:                                        ; preds = %if.then15
-  %load.struct20 = load %_Z8NameSlot, ptr %ptr.add, align 8
-  %kind = extractvalue %_Z8NameSlot %load.struct20, 1
+if.then12:                                        ; preds = %land.rhs
+  %load.struct18 = load %_Z8NameSlot, ptr %ptr.add, align 8
+  %kind = extractvalue %_Z8NameSlot %load.struct18, 1
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i64 %kind
 
-if.end19:                                         ; preds = %if.then15
-  br label %if.end16
+if.end13:                                         ; preds = %land.rhs, %if.end11
+  %idx19 = load i64, ptr %idx, align 8
+  %add = add i64 %idx19, 1
+  %and20 = and i64 %add, %sub6
+  store i64 %and20, ptr %idx, align 1
+  %probes21 = load i64, ptr %probes, align 8
+  %add22 = add i64 %probes21, 1
+  store i64 %add22, ptr %probes, align 1
+  br label %while.cond
+
+land.rhs:                                         ; preds = %if.end11
+  %field.inplace = getelementptr inbounds nuw %_Z8NameSlot, ptr %ptr.add, i32 0, i32 0
+  %call17 = call i1 @_ZN7nameset6eq_ptrE5SliceI2u8E5SliceI2u8E(ptr %field.inplace, ptr %sret.result5)
+  br i1 %call17, label %if.then12, label %if.end13
 }
 
 declare ptr @popen(ptr, ptr)
@@ -69389,53 +69368,41 @@ entry:
 define linkonce_odr i1 @_ZN7symbols15is_open_bracketE2u8(i8 %0) {
 entry:
   %eq = icmp eq i8 %0, 40
-  br i1 %eq, label %if.then, label %if.end
+  br i1 %eq, label %if.then, label %lor.rhs1
 
-if.then:                                          ; preds = %entry
+if.then:                                          ; preds = %lor.rhs, %lor.rhs1, %entry
   ret i1 true
 
-if.end:                                           ; preds = %entry
-  %eq1 = icmp eq i8 %0, 91
-  br i1 %eq1, label %if.then2, label %if.end3
-
-if.then2:                                         ; preds = %if.end
-  ret i1 true
-
-if.end3:                                          ; preds = %if.end
-  %eq4 = icmp eq i8 %0, 123
-  br i1 %eq4, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end3
-  ret i1 true
-
-if.end6:                                          ; preds = %if.end3
+if.end:                                           ; preds = %lor.rhs
   ret i1 false
+
+lor.rhs:                                          ; preds = %lor.rhs1
+  %eq3 = icmp eq i8 %0, 123
+  br i1 %eq3, label %if.then, label %if.end
+
+lor.rhs1:                                         ; preds = %entry
+  %eq2 = icmp eq i8 %0, 91
+  br i1 %eq2, label %if.then, label %lor.rhs
 }
 
 define linkonce_odr i1 @_ZN7symbols16is_close_bracketE2u8(i8 %0) {
 entry:
   %eq = icmp eq i8 %0, 41
-  br i1 %eq, label %if.then, label %if.end
+  br i1 %eq, label %if.then, label %lor.rhs1
 
-if.then:                                          ; preds = %entry
+if.then:                                          ; preds = %lor.rhs, %lor.rhs1, %entry
   ret i1 true
 
-if.end:                                           ; preds = %entry
-  %eq1 = icmp eq i8 %0, 93
-  br i1 %eq1, label %if.then2, label %if.end3
-
-if.then2:                                         ; preds = %if.end
-  ret i1 true
-
-if.end3:                                          ; preds = %if.end
-  %eq4 = icmp eq i8 %0, 125
-  br i1 %eq4, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end3
-  ret i1 true
-
-if.end6:                                          ; preds = %if.end3
+if.end:                                           ; preds = %lor.rhs
   ret i1 false
+
+lor.rhs:                                          ; preds = %lor.rhs1
+  %eq3 = icmp eq i8 %0, 125
+  br i1 %eq3, label %if.then, label %if.end
+
+lor.rhs1:                                         ; preds = %entry
+  %eq2 = icmp eq i8 %0, 93
+  br i1 %eq2, label %if.then, label %lor.rhs
 }
 
 define linkonce_odr i1 @_ZN7symbols16is_noncode_startE2u8(i8 %0) {
@@ -69463,169 +69430,166 @@ if.then:                                          ; preds = %entry
   store i1 false, ptr %is_multi, align 1
   %add = add i64 %1, 1
   %lt = icmp ult i64 %add, %2
-  br i1 %lt, label %if.then1, label %if.end2
+  br i1 %lt, label %land.rhs, label %if.end2
 
 if.end:                                           ; preds = %entry
-  %call48 = call i1 @_ZN7symbols15is_string_startE2u8(i8 %call)
-  br i1 %call48, label %if.then49, label %if.end50
+  %call46 = call i1 @_ZN7symbols15is_string_startE2u8(i8 %call)
+  br i1 %call46, label %if.then47, label %if.end48
 
-if.then1:                                         ; preds = %if.then
+if.then1:                                         ; preds = %land.rhs
+  store i1 true, ptr %is_multi, align 1
+  br label %if.end2
+
+if.end2:                                          ; preds = %if.then1, %land.rhs, %if.then
+  %is_multi6 = load i1, ptr %is_multi, align 1
+  br i1 %is_multi6, label %if.then7, label %if.end8
+
+land.rhs:                                         ; preds = %if.then
   %add3 = add i64 %1, 1
   %call4 = call i8 @_ZN6String3getEm(ptr %0, i64 %add3)
   %eq5 = icmp eq i8 %call4, 42
-  br i1 %eq5, label %if.then6, label %if.end7
+  br i1 %eq5, label %if.then1, label %if.end2
 
-if.end2:                                          ; preds = %if.end7, %if.then
-  %is_multi8 = load i1, ptr %is_multi, align 1
-  br i1 %is_multi8, label %if.then9, label %if.end10
-
-if.then6:                                         ; preds = %if.then1
-  store i1 true, ptr %is_multi, align 1
-  br label %if.end7
-
-if.end7:                                          ; preds = %if.then6, %if.then1
-  br label %if.end2
-
-if.then9:                                         ; preds = %if.end2
-  %add11 = add i64 %1, 2
-  store i64 %add11, ptr %j, align 1
+if.then7:                                         ; preds = %if.end2
+  %add9 = add i64 %1, 2
+  store i64 %add9, ptr %j, align 1
   br label %while.cond
 
-if.end10:                                         ; preds = %if.end2
-  %add35 = add i64 %1, 1
-  store i64 %add35, ptr %j, align 1
-  br label %while.cond36
+if.end8:                                          ; preds = %if.end2
+  %add33 = add i64 %1, 1
+  store i64 %add33, ptr %j, align 1
+  br label %while.cond34
 
-while.cond:                                       ; preds = %if.end18, %if.then9
-  %j12 = load i64, ptr %j, align 8
-  %lt13 = icmp ult i64 %j12, %2
-  br i1 %lt13, label %while.body, label %while.exit
+while.cond:                                       ; preds = %if.end16, %if.then7
+  %j10 = load i64, ptr %j, align 8
+  %lt11 = icmp ult i64 %j10, %2
+  br i1 %lt11, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %j14 = load i64, ptr %j, align 8
-  %call15 = call i8 @_ZN6String3getEm(ptr %0, i64 %j14)
-  %eq16 = icmp eq i8 %call15, 42
-  br i1 %eq16, label %if.then17, label %if.end18
+  %j12 = load i64, ptr %j, align 8
+  %call13 = call i8 @_ZN6String3getEm(ptr %0, i64 %j12)
+  %eq14 = icmp eq i8 %call13, 42
+  br i1 %eq14, label %if.then15, label %if.end16
 
 while.exit:                                       ; preds = %while.cond
   ret i64 %2
 
-if.then17:                                        ; preds = %while.body
-  %j19 = load i64, ptr %j, align 8
-  %add20 = add i64 %j19, 1
-  %lt21 = icmp ult i64 %add20, %2
-  br i1 %lt21, label %if.then22, label %if.end23
+if.then15:                                        ; preds = %while.body
+  %j17 = load i64, ptr %j, align 8
+  %add18 = add i64 %j17, 1
+  %lt19 = icmp ult i64 %add18, %2
+  br i1 %lt19, label %if.then20, label %if.end21
 
-if.end18:                                         ; preds = %if.end23, %while.body
-  %j33 = load i64, ptr %j, align 8
-  %add34 = add i64 %j33, 1
-  store i64 %add34, ptr %j, align 1
+if.end16:                                         ; preds = %if.end21, %while.body
+  %j31 = load i64, ptr %j, align 8
+  %add32 = add i64 %j31, 1
+  store i64 %add32, ptr %j, align 1
   br label %while.cond
 
-if.then22:                                        ; preds = %if.then17
-  %j24 = load i64, ptr %j, align 8
-  %add25 = add i64 %j24, 1
-  %call26 = call i8 @_ZN6String3getEm(ptr %0, i64 %add25)
-  %eq27 = icmp eq i8 %call26, 59
-  br i1 %eq27, label %if.then28, label %if.end29
+if.then20:                                        ; preds = %if.then15
+  %j22 = load i64, ptr %j, align 8
+  %add23 = add i64 %j22, 1
+  %call24 = call i8 @_ZN6String3getEm(ptr %0, i64 %add23)
+  %eq25 = icmp eq i8 %call24, 59
+  br i1 %eq25, label %if.then26, label %if.end27
 
-if.end23:                                         ; preds = %if.end29, %if.then17
-  br label %if.end18
+if.end21:                                         ; preds = %if.end27, %if.then15
+  br label %if.end16
 
-if.then28:                                        ; preds = %if.then22
+if.then26:                                        ; preds = %if.then20
+  %j28 = load i64, ptr %j, align 8
+  %add29 = add i64 %j28, 2
+  store i64 %add29, ptr %j, align 1
   %j30 = load i64, ptr %j, align 8
-  %add31 = add i64 %j30, 2
-  store i64 %add31, ptr %j, align 1
-  %j32 = load i64, ptr %j, align 8
-  ret i64 %j32
+  ret i64 %j30
 
-if.end29:                                         ; preds = %if.then22
-  br label %if.end23
+if.end27:                                         ; preds = %if.then20
+  br label %if.end21
 
-while.cond36:                                     ; preds = %if.end44, %if.end10
+while.cond34:                                     ; preds = %if.end42, %if.end8
   %j2 = load i64, ptr %j, align 8
-  %lt39 = icmp ult i64 %j2, %2
-  br i1 %lt39, label %while.body37, label %while.exit38
+  %lt37 = icmp ult i64 %j2, %2
+  br i1 %lt37, label %while.body35, label %while.exit36
 
-while.body37:                                     ; preds = %while.cond36
-  %j240 = load i64, ptr %j, align 8
-  %call41 = call i8 @_ZN6String3getEm(ptr %0, i64 %j240)
-  %eq42 = icmp eq i8 %call41, 10
-  br i1 %eq42, label %if.then43, label %if.end44
+while.body35:                                     ; preds = %while.cond34
+  %j238 = load i64, ptr %j, align 8
+  %call39 = call i8 @_ZN6String3getEm(ptr %0, i64 %j238)
+  %eq40 = icmp eq i8 %call39, 10
+  br i1 %eq40, label %if.then41, label %if.end42
 
-while.exit38:                                     ; preds = %if.then43, %while.cond36
-  %j247 = load i64, ptr %j, align 8
-  ret i64 %j247
-
-if.then43:                                        ; preds = %while.body37
-  br label %while.exit38
-
-if.end44:                                         ; preds = %while.body37
+while.exit36:                                     ; preds = %if.then41, %while.cond34
   %j245 = load i64, ptr %j, align 8
-  %add46 = add i64 %j245, 1
-  store i64 %add46, ptr %j, align 1
-  br label %while.cond36
+  ret i64 %j245
 
-if.then49:                                        ; preds = %if.end
-  %add51 = add i64 %1, 1
-  store i64 %add51, ptr %j, align 1
-  br label %while.cond52
+if.then41:                                        ; preds = %while.body35
+  br label %while.exit36
 
-if.end50:                                         ; preds = %if.end
+if.end42:                                         ; preds = %while.body35
+  %j243 = load i64, ptr %j, align 8
+  %add44 = add i64 %j243, 1
+  store i64 %add44, ptr %j, align 1
+  br label %while.cond34
+
+if.then47:                                        ; preds = %if.end
+  %add49 = add i64 %1, 1
+  store i64 %add49, ptr %j, align 1
+  br label %while.cond50
+
+if.end48:                                         ; preds = %if.end
   ret i64 %1
 
-while.cond52:                                     ; preds = %if.end69, %if.then63, %if.then49
+while.cond50:                                     ; preds = %if.end67, %if.then61, %if.then47
+  %j53 = load i64, ptr %j, align 8
+  %lt54 = icmp ult i64 %j53, %2
+  br i1 %lt54, label %while.body51, label %while.exit52
+
+while.body51:                                     ; preds = %while.cond50
   %j55 = load i64, ptr %j, align 8
-  %lt56 = icmp ult i64 %j55, %2
-  br i1 %lt56, label %while.body53, label %while.exit54
+  %call56 = call i8 @_ZN6String3getEm(ptr %0, i64 %j55)
+  %eq57 = icmp eq i8 %call56, 10
+  br i1 %eq57, label %if.then58, label %if.end59
 
-while.body53:                                     ; preds = %while.cond52
-  %j57 = load i64, ptr %j, align 8
-  %call58 = call i8 @_ZN6String3getEm(ptr %0, i64 %j57)
-  %eq59 = icmp eq i8 %call58, 10
-  br i1 %eq59, label %if.then60, label %if.end61
+while.exit52:                                     ; preds = %if.then66, %if.then58, %while.cond50
+  %j72 = load i64, ptr %j, align 8
+  %gt = icmp ugt i64 %j72, %2
+  br i1 %gt, label %if.then73, label %if.end74
 
-while.exit54:                                     ; preds = %if.then68, %if.then60, %while.cond52
-  %j74 = load i64, ptr %j, align 8
-  %gt = icmp ugt i64 %j74, %2
-  br i1 %gt, label %if.then75, label %if.end76
+if.then58:                                        ; preds = %while.body51
+  br label %while.exit52
 
-if.then60:                                        ; preds = %while.body53
-  br label %while.exit54
+if.end59:                                         ; preds = %while.body51
+  %eq60 = icmp eq i8 %call56, 92
+  br i1 %eq60, label %if.then61, label %if.end62
 
-if.end61:                                         ; preds = %while.body53
-  %eq62 = icmp eq i8 %call58, 92
-  br i1 %eq62, label %if.then63, label %if.end64
+if.then61:                                        ; preds = %if.end59
+  %j63 = load i64, ptr %j, align 8
+  %add64 = add i64 %j63, 2
+  store i64 %add64, ptr %j, align 1
+  br label %while.cond50
 
-if.then63:                                        ; preds = %if.end61
-  %j65 = load i64, ptr %j, align 8
-  %add66 = add i64 %j65, 2
-  store i64 %add66, ptr %j, align 1
-  br label %while.cond52
+if.end62:                                         ; preds = %if.end59
+  %eq65 = icmp eq i8 %call56, %call
+  br i1 %eq65, label %if.then66, label %if.end67
 
-if.end64:                                         ; preds = %if.end61
-  %eq67 = icmp eq i8 %call58, %call
-  br i1 %eq67, label %if.then68, label %if.end69
+if.then66:                                        ; preds = %if.end62
+  %j68 = load i64, ptr %j, align 8
+  %add69 = add i64 %j68, 1
+  store i64 %add69, ptr %j, align 1
+  br label %while.exit52
 
-if.then68:                                        ; preds = %if.end64
+if.end67:                                         ; preds = %if.end62
   %j70 = load i64, ptr %j, align 8
   %add71 = add i64 %j70, 1
   store i64 %add71, ptr %j, align 1
-  br label %while.exit54
+  br label %while.cond50
 
-if.end69:                                         ; preds = %if.end64
-  %j72 = load i64, ptr %j, align 8
-  %add73 = add i64 %j72, 1
-  store i64 %add73, ptr %j, align 1
-  br label %while.cond52
-
-if.then75:                                        ; preds = %while.exit54
+if.then73:                                        ; preds = %while.exit52
   store i64 %2, ptr %j, align 1
-  br label %if.end76
+  br label %if.end74
 
-if.end76:                                         ; preds = %if.then75, %while.exit54
-  %j77 = load i64, ptr %j, align 8
-  ret i64 %j77
+if.end74:                                         ; preds = %if.then73, %while.exit52
+  %j75 = load i64, ptr %j, align 8
+  ret i64 %j75
 }
 
 define linkonce_odr i64 @_ZN7symbols14matching_closeE6Stringmm(ptr %0, i64 %1, i64 %2) {
@@ -69786,67 +69750,58 @@ if.end:                                           ; preds = %if.then, %entry
 define linkonce_odr i1 @_ZN7symbols13is_ident_byteE2u8(i8 %0) {
 entry:
   %ge = icmp uge i8 %0, 48
-  br i1 %ge, label %if.then, label %if.end
+  br i1 %ge, label %land.rhs, label %if.end
 
-if.then:                                          ; preds = %entry
+if.then:                                          ; preds = %land.rhs
+  ret i1 true
+
+if.end:                                           ; preds = %land.rhs, %entry
+  %ge4 = icmp uge i8 %0, 65
+  br i1 %ge4, label %land.rhs3, label %if.end2
+
+land.rhs:                                         ; preds = %entry
   %le = icmp ule i8 %0, 57
-  br i1 %le, label %if.then1, label %if.end2
+  br i1 %le, label %if.then, label %if.end
 
-if.end:                                           ; preds = %if.end2, %entry
-  %ge3 = icmp uge i8 %0, 65
-  br i1 %ge3, label %if.then4, label %if.end5
-
-if.then1:                                         ; preds = %if.then
+if.then1:                                         ; preds = %land.rhs3
   ret i1 true
 
-if.end2:                                          ; preds = %if.then
-  br label %if.end
-
-if.then4:                                         ; preds = %if.end
-  %le6 = icmp ule i8 %0, 90
-  br i1 %le6, label %if.then7, label %if.end8
-
-if.end5:                                          ; preds = %if.end8, %if.end
+if.end2:                                          ; preds = %land.rhs3, %if.end
   %ge9 = icmp uge i8 %0, 97
-  br i1 %ge9, label %if.then10, label %if.end11
+  br i1 %ge9, label %land.rhs8, label %if.end7
 
-if.then7:                                         ; preds = %if.then4
+land.rhs3:                                        ; preds = %if.end
+  %le5 = icmp ule i8 %0, 90
+  br i1 %le5, label %if.then1, label %if.end2
+
+if.then6:                                         ; preds = %land.rhs8
   ret i1 true
 
-if.end8:                                          ; preds = %if.then4
-  br label %if.end5
-
-if.then10:                                        ; preds = %if.end5
-  %le12 = icmp ule i8 %0, 122
-  br i1 %le12, label %if.then13, label %if.end14
-
-if.end11:                                         ; preds = %if.end14, %if.end5
+if.end7:                                          ; preds = %land.rhs8, %if.end2
   %eq = icmp eq i8 %0, 95
-  br i1 %eq, label %if.then15, label %if.end16
+  br i1 %eq, label %if.then11, label %if.end12
 
-if.then13:                                        ; preds = %if.then10
+land.rhs8:                                        ; preds = %if.end2
+  %le10 = icmp ule i8 %0, 122
+  br i1 %le10, label %if.then6, label %if.end7
+
+if.then11:                                        ; preds = %if.end7
   ret i1 true
 
-if.end14:                                         ; preds = %if.then10
-  br label %if.end11
-
-if.then15:                                        ; preds = %if.end11
-  ret i1 true
-
-if.end16:                                         ; preds = %if.end11
+if.end12:                                         ; preds = %if.end7
   ret i1 false
 }
 
 define linkonce_odr void @_ZN7symbols15selection_chainEPN4scaly6memory4PageE6Stringm(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, i64 %3) {
 entry:
-  %sret.result141 = alloca { ptr }, align 8
+  %sret.result139 = alloca { ptr }, align 8
   %e = alloca i64, align 8
-  %s106 = alloca i64, align 8
+  %s104 = alloca i64, align 8
   %ok = alloca i1, align 1
   %anchor = alloca i64, align 8
   %have = alloca i1, align 1
   %tend = alloca i64, align 8
-  %sret.result71 = alloca { ptr }, align 8
+  %sret.result69 = alloca { ptr }, align 8
   %s = alloca i64, align 8
   %k = alloca i64, align 8
   %acc = alloca ptr, align 8
@@ -69865,7 +69820,7 @@ entry:
   store i64 0, ptr %p, align 1
   br label %while.cond
 
-while.cond:                                       ; preds = %if.end21, %if.then, %entry
+while.cond:                                       ; preds = %if.end20, %if.then, %entry
   %p2 = load i64, ptr %p, align 8
   %lt = icmp ult i64 %p2, %3
   br i1 %lt, label %while.body, label %while.exit
@@ -69877,11 +69832,11 @@ while.body:                                       ; preds = %while.cond
   br i1 %call5, label %if.then, label %if.end
 
 while.exit:                                       ; preds = %while.cond
-  %nest28 = load i64, ptr %nest, align 8
-  store i64 %nest28, ptr %kept, align 1
-  %kept29 = load i64, ptr %kept, align 8
-  %gt30 = icmp ugt i64 %kept29, 64
-  br i1 %gt30, label %if.then31, label %if.end32
+  %nest26 = load i64, ptr %nest, align 8
+  store i64 %nest26, ptr %kept, align 1
+  %kept27 = load i64, ptr %kept, align 8
+  %gt28 = icmp ugt i64 %kept27, 64
+  br i1 %gt28, label %if.then29, label %if.end30
 
 if.then:                                          ; preds = %while.body
   %p6 = load i64, ptr %p, align 8
@@ -69899,8 +69854,8 @@ if.then9:                                         ; preds = %if.end
   br i1 %lt12, label %if.then13, label %if.end14
 
 if.end10:                                         ; preds = %if.end14, %if.end
-  %call19 = call i1 @_ZN7symbols16is_close_bracketE2u8(i8 %call4)
-  br i1 %call19, label %if.then20, label %if.end21
+  %call21 = call i1 @_ZN7symbols16is_close_bracketE2u8(i8 %call4)
+  br i1 %call21, label %land.rhs, label %if.end20
 
 if.then13:                                        ; preds = %if.then9
   %p15 = load i64, ptr %p, align 8
@@ -69916,254 +69871,251 @@ if.end14:                                         ; preds = %if.then13, %if.then
   store i64 %add, ptr %nest, align 1
   br label %if.end10
 
-if.then20:                                        ; preds = %if.end10
-  %nest22 = load i64, ptr %nest, align 8
-  %gt = icmp ugt i64 %nest22, 0
-  br i1 %gt, label %if.then23, label %if.end24
+if.then19:                                        ; preds = %land.rhs
+  %nest23 = load i64, ptr %nest, align 8
+  %sub = sub i64 %nest23, 1
+  store i64 %sub, ptr %nest, align 1
+  br label %if.end20
 
-if.end21:                                         ; preds = %if.end24, %if.end10
-  %p26 = load i64, ptr %p, align 8
-  %add27 = add i64 %p26, 1
-  store i64 %add27, ptr %p, align 1
+if.end20:                                         ; preds = %if.then19, %land.rhs, %if.end10
+  %p24 = load i64, ptr %p, align 8
+  %add25 = add i64 %p24, 1
+  store i64 %add25, ptr %p, align 1
   br label %while.cond
 
-if.then23:                                        ; preds = %if.then20
-  %nest25 = load i64, ptr %nest, align 8
-  %sub = sub i64 %nest25, 1
-  store i64 %sub, ptr %nest, align 1
-  br label %if.end24
+land.rhs:                                         ; preds = %if.end10
+  %nest22 = load i64, ptr %nest, align 8
+  %gt = icmp ugt i64 %nest22, 0
+  br i1 %gt, label %if.then19, label %if.end20
 
-if.end24:                                         ; preds = %if.then23, %if.then20
-  br label %if.end21
-
-if.then31:                                        ; preds = %while.exit
+if.then29:                                        ; preds = %while.exit
   store i64 64, ptr %kept, align 1
-  br label %if.end32
+  br label %if.end30
 
-if.end32:                                         ; preds = %if.then31, %while.exit
+if.end30:                                         ; preds = %if.then29, %while.exit
   store { ptr } zeroinitializer, ptr %arg.tmp, align 1
   call void @_ZN7symbols16selection_objectEPN4scaly6memory4PageE6Stringmm6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 0, i64 %call, ptr %arg.tmp)
   store ptr %sret.result, ptr %acc, align 1
   store i64 0, ptr %k, align 1
-  br label %while.cond33
+  br label %while.cond31
 
-while.cond33:                                     ; preds = %if.end45, %if.end32
-  %k36 = load i64, ptr %k, align 8
-  %kept37 = load i64, ptr %kept, align 8
-  %lt38 = icmp ult i64 %k36, %kept37
-  br i1 %lt38, label %while.body34, label %while.exit35
+while.cond31:                                     ; preds = %if.end43, %if.end30
+  %k34 = load i64, ptr %k, align 8
+  %kept35 = load i64, ptr %kept, align 8
+  %lt36 = icmp ult i64 %k34, %kept35
+  br i1 %lt36, label %while.body32, label %while.exit33
 
-while.body34:                                     ; preds = %while.cond33
-  %open_at39 = load ptr, ptr %open_at1, align 8
-  %k40 = load i64, ptr %k, align 8
-  %ptr.add41 = getelementptr inbounds i64, ptr %open_at39, i64 %k40
-  %deref = load i64, ptr %ptr.add41, align 8
-  %call42 = call i64 @_ZN7symbols14matching_closeE6Stringmm(ptr %2, i64 %deref, i64 %call)
-  %call43 = call i8 @_ZN6String3getEm(ptr %2, i64 %deref)
-  %eq = icmp eq i8 %call43, 40
-  br i1 %eq, label %if.then44, label %if.end45
+while.body32:                                     ; preds = %while.cond31
+  %open_at37 = load ptr, ptr %open_at1, align 8
+  %k38 = load i64, ptr %k, align 8
+  %ptr.add39 = getelementptr inbounds i64, ptr %open_at37, i64 %k38
+  %deref = load i64, ptr %ptr.add39, align 8
+  %call40 = call i64 @_ZN7symbols14matching_closeE6Stringmm(ptr %2, i64 %deref, i64 %call)
+  %call41 = call i8 @_ZN6String3getEm(ptr %2, i64 %deref)
+  %eq = icmp eq i8 %call41, 40
+  br i1 %eq, label %if.then42, label %if.end43
 
-while.exit35:                                     ; preds = %while.cond33
+while.exit33:                                     ; preds = %while.cond31
   store i64 %3, ptr %s, align 1
   store i64 %3, ptr %tend, align 1
   store i1 false, ptr %have, align 1
-  %gt77 = icmp ugt i64 %call, 0
-  br i1 %gt77, label %if.then78, label %if.end79
+  %gt75 = icmp ugt i64 %call, 0
+  br i1 %gt75, label %if.then76, label %if.end77
 
-if.then44:                                        ; preds = %while.body34
-  %gt46 = icmp ugt i64 %deref, 0
-  br i1 %gt46, label %if.then47, label %if.end48
+if.then42:                                        ; preds = %while.body32
+  %gt44 = icmp ugt i64 %deref, 0
+  br i1 %gt44, label %if.then45, label %if.end46
 
-if.end45:                                         ; preds = %if.end48, %while.body34
-  %acc72 = load ptr, ptr %acc, align 8
-  call void @_ZN7symbols16selection_objectEPN4scaly6memory4PageE6Stringmm6String(ptr noalias sret({ ptr }) %sret.result71, ptr %1, ptr %2, i64 %deref, i64 %call42, ptr %acc72)
-  %set.dest73 = load ptr, ptr %acc, align 8
-  %set.thru74 = load { ptr }, ptr %sret.result71, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest73, ptr align 1 %sret.result71, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  %k75 = load i64, ptr %k, align 8
-  %add76 = add i64 %k75, 1
-  store i64 %add76, ptr %k, align 1
-  br label %while.cond33
-
-if.then47:                                        ; preds = %if.then44
-  %sub49 = sub i64 %deref, 1
-  %call50 = call i8 @_ZN6String3getEm(ptr %2, i64 %sub49)
-  %call51 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call50)
-  br i1 %call51, label %if.then52, label %if.end53
-
-if.end48:                                         ; preds = %if.end53, %if.then44
-  br label %if.end45
-
-if.then52:                                        ; preds = %if.then47
-  %sub54 = sub i64 %deref, 1
-  store i64 %sub54, ptr %s, align 1
-  br label %while.cond55
-
-if.end53:                                         ; preds = %while.exit57, %if.then47
-  br label %if.end48
-
-while.cond55:                                     ; preds = %if.end66, %if.then52
-  %s58 = load i64, ptr %s, align 8
-  %gt59 = icmp ugt i64 %s58, 0
-  br i1 %gt59, label %while.body56, label %while.exit57
-
-while.body56:                                     ; preds = %while.cond55
-  %s60 = load i64, ptr %s, align 8
-  %sub61 = sub i64 %s60, 1
-  %call62 = call i8 @_ZN6String3getEm(ptr %2, i64 %sub61)
-  %call63 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call62)
-  %eq64 = icmp eq i1 %call63, false
-  br i1 %eq64, label %if.then65, label %if.end66
-
-while.exit57:                                     ; preds = %if.then65, %while.cond55
-  %s69 = load i64, ptr %s, align 8
+if.end43:                                         ; preds = %if.end46, %while.body32
   %acc70 = load ptr, ptr %acc, align 8
-  call void @_ZN7symbols16selection_objectEPN4scaly6memory4PageE6Stringmm6String(ptr noalias sret({ ptr }) %arg.tmp, ptr %1, ptr %2, i64 %s69, i64 %call42, ptr %acc70)
+  call void @_ZN7symbols16selection_objectEPN4scaly6memory4PageE6Stringmm6String(ptr noalias sret({ ptr }) %sret.result69, ptr %1, ptr %2, i64 %deref, i64 %call40, ptr %acc70)
+  %set.dest71 = load ptr, ptr %acc, align 8
+  %set.thru72 = load { ptr }, ptr %sret.result69, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest71, ptr align 1 %sret.result69, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  %k73 = load i64, ptr %k, align 8
+  %add74 = add i64 %k73, 1
+  store i64 %add74, ptr %k, align 1
+  br label %while.cond31
+
+if.then45:                                        ; preds = %if.then42
+  %sub47 = sub i64 %deref, 1
+  %call48 = call i8 @_ZN6String3getEm(ptr %2, i64 %sub47)
+  %call49 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call48)
+  br i1 %call49, label %if.then50, label %if.end51
+
+if.end46:                                         ; preds = %if.end51, %if.then42
+  br label %if.end43
+
+if.then50:                                        ; preds = %if.then45
+  %sub52 = sub i64 %deref, 1
+  store i64 %sub52, ptr %s, align 1
+  br label %while.cond53
+
+if.end51:                                         ; preds = %while.exit55, %if.then45
+  br label %if.end46
+
+while.cond53:                                     ; preds = %if.end64, %if.then50
+  %s56 = load i64, ptr %s, align 8
+  %gt57 = icmp ugt i64 %s56, 0
+  br i1 %gt57, label %while.body54, label %while.exit55
+
+while.body54:                                     ; preds = %while.cond53
+  %s58 = load i64, ptr %s, align 8
+  %sub59 = sub i64 %s58, 1
+  %call60 = call i8 @_ZN6String3getEm(ptr %2, i64 %sub59)
+  %call61 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call60)
+  %eq62 = icmp eq i1 %call61, false
+  br i1 %eq62, label %if.then63, label %if.end64
+
+while.exit55:                                     ; preds = %if.then63, %while.cond53
+  %s67 = load i64, ptr %s, align 8
+  %acc68 = load ptr, ptr %acc, align 8
+  call void @_ZN7symbols16selection_objectEPN4scaly6memory4PageE6Stringmm6String(ptr noalias sret({ ptr }) %arg.tmp, ptr %1, ptr %2, i64 %s67, i64 %call40, ptr %acc68)
   %set.dest = load ptr, ptr %acc, align 8
   %set.thru = load { ptr }, ptr %arg.tmp, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest, ptr align 1 %arg.tmp, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  br label %if.end53
+  br label %if.end51
 
-if.then65:                                        ; preds = %while.body56
-  br label %while.exit57
+if.then63:                                        ; preds = %while.body54
+  br label %while.exit55
 
-if.end66:                                         ; preds = %while.body56
-  %s67 = load i64, ptr %s, align 8
-  %sub68 = sub i64 %s67, 1
-  store i64 %sub68, ptr %s, align 1
-  br label %while.cond55
+if.end64:                                         ; preds = %while.body54
+  %s65 = load i64, ptr %s, align 8
+  %sub66 = sub i64 %s65, 1
+  store i64 %sub66, ptr %s, align 1
+  br label %while.cond53
 
-if.then78:                                        ; preds = %while.exit35
+if.then76:                                        ; preds = %while.exit33
   store i64 %3, ptr %anchor, align 1
-  %anchor80 = load i64, ptr %anchor, align 8
-  %ge = icmp uge i64 %anchor80, %call
-  br i1 %ge, label %if.then81, label %if.end82
+  %anchor78 = load i64, ptr %anchor, align 8
+  %ge = icmp uge i64 %anchor78, %call
+  br i1 %ge, label %if.then79, label %if.end80
 
-if.end79:                                         ; preds = %if.end104, %while.exit35
-  %have138 = load i1, ptr %have, align 1
-  br i1 %have138, label %if.then139, label %if.end140
+if.end77:                                         ; preds = %if.end102, %while.exit33
+  %have136 = load i1, ptr %have, align 1
+  br i1 %have136, label %if.then137, label %if.end138
 
-if.then81:                                        ; preds = %if.then78
-  %sub83 = sub i64 %call, 1
-  store i64 %sub83, ptr %anchor, align 1
-  br label %if.end82
+if.then79:                                        ; preds = %if.then76
+  %sub81 = sub i64 %call, 1
+  store i64 %sub81, ptr %anchor, align 1
+  br label %if.end80
 
-if.end82:                                         ; preds = %if.then81, %if.then78
+if.end80:                                         ; preds = %if.then79, %if.then76
   store i1 true, ptr %ok, align 1
-  %anchor84 = load i64, ptr %anchor, align 8
-  %call85 = call i8 @_ZN6String3getEm(ptr %2, i64 %anchor84)
-  %call86 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call85)
-  %eq87 = icmp eq i1 %call86, false
-  br i1 %eq87, label %if.then88, label %if.end89
+  %anchor82 = load i64, ptr %anchor, align 8
+  %call83 = call i8 @_ZN6String3getEm(ptr %2, i64 %anchor82)
+  %call84 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call83)
+  %eq85 = icmp eq i1 %call84, false
+  br i1 %eq85, label %if.then86, label %if.end87
 
-if.then88:                                        ; preds = %if.end82
+if.then86:                                        ; preds = %if.end80
   store i1 false, ptr %ok, align 1
-  %anchor90 = load i64, ptr %anchor, align 8
-  %gt91 = icmp ugt i64 %anchor90, 0
-  br i1 %gt91, label %if.then92, label %if.end93
+  %anchor88 = load i64, ptr %anchor, align 8
+  %gt89 = icmp ugt i64 %anchor88, 0
+  br i1 %gt89, label %if.then90, label %if.end91
 
-if.end89:                                         ; preds = %if.end93, %if.end82
-  %ok102 = load i1, ptr %ok, align 1
-  br i1 %ok102, label %if.then103, label %if.end104
+if.end87:                                         ; preds = %if.end91, %if.end80
+  %ok100 = load i1, ptr %ok, align 1
+  br i1 %ok100, label %if.then101, label %if.end102
 
-if.then92:                                        ; preds = %if.then88
-  %anchor94 = load i64, ptr %anchor, align 8
-  %sub95 = sub i64 %anchor94, 1
-  %call96 = call i8 @_ZN6String3getEm(ptr %2, i64 %sub95)
-  %call97 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call96)
-  br i1 %call97, label %if.then98, label %if.end99
+if.then90:                                        ; preds = %if.then86
+  %anchor92 = load i64, ptr %anchor, align 8
+  %sub93 = sub i64 %anchor92, 1
+  %call94 = call i8 @_ZN6String3getEm(ptr %2, i64 %sub93)
+  %call95 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call94)
+  br i1 %call95, label %if.then96, label %if.end97
 
-if.end93:                                         ; preds = %if.end99, %if.then88
-  br label %if.end89
+if.end91:                                         ; preds = %if.end97, %if.then86
+  br label %if.end87
 
-if.then98:                                        ; preds = %if.then92
-  %anchor100 = load i64, ptr %anchor, align 8
-  %sub101 = sub i64 %anchor100, 1
-  store i64 %sub101, ptr %anchor, align 1
+if.then96:                                        ; preds = %if.then90
+  %anchor98 = load i64, ptr %anchor, align 8
+  %sub99 = sub i64 %anchor98, 1
+  store i64 %sub99, ptr %anchor, align 1
   store i1 true, ptr %ok, align 1
-  br label %if.end99
+  br label %if.end97
 
-if.end99:                                         ; preds = %if.then98, %if.then92
-  br label %if.end93
+if.end97:                                         ; preds = %if.then96, %if.then90
+  br label %if.end91
 
-if.then103:                                       ; preds = %if.end89
-  %anchor105 = load i64, ptr %anchor, align 8
-  store i64 %anchor105, ptr %s106, align 1
-  br label %while.cond107
+if.then101:                                       ; preds = %if.end87
+  %anchor103 = load i64, ptr %anchor, align 8
+  store i64 %anchor103, ptr %s104, align 1
+  br label %while.cond105
 
-if.end104:                                        ; preds = %while.exit125, %if.end89
-  br label %if.end79
+if.end102:                                        ; preds = %while.exit123, %if.end87
+  br label %if.end77
 
-while.cond107:                                    ; preds = %if.end118, %if.then103
-  %s110 = load i64, ptr %s106, align 8
-  %gt111 = icmp ugt i64 %s110, 0
-  br i1 %gt111, label %while.body108, label %while.exit109
+while.cond105:                                    ; preds = %if.end116, %if.then101
+  %s108 = load i64, ptr %s104, align 8
+  %gt109 = icmp ugt i64 %s108, 0
+  br i1 %gt109, label %while.body106, label %while.exit107
 
-while.body108:                                    ; preds = %while.cond107
-  %s112 = load i64, ptr %s106, align 8
-  %sub113 = sub i64 %s112, 1
-  %call114 = call i8 @_ZN6String3getEm(ptr %2, i64 %sub113)
-  %call115 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call114)
-  %eq116 = icmp eq i1 %call115, false
-  br i1 %eq116, label %if.then117, label %if.end118
+while.body106:                                    ; preds = %while.cond105
+  %s110 = load i64, ptr %s104, align 8
+  %sub111 = sub i64 %s110, 1
+  %call112 = call i8 @_ZN6String3getEm(ptr %2, i64 %sub111)
+  %call113 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call112)
+  %eq114 = icmp eq i1 %call113, false
+  br i1 %eq114, label %if.then115, label %if.end116
 
-while.exit109:                                    ; preds = %if.then117, %while.cond107
-  %anchor121 = load i64, ptr %anchor, align 8
-  %add122 = add i64 %anchor121, 1
-  store i64 %add122, ptr %e, align 1
-  br label %while.cond123
+while.exit107:                                    ; preds = %if.then115, %while.cond105
+  %anchor119 = load i64, ptr %anchor, align 8
+  %add120 = add i64 %anchor119, 1
+  store i64 %add120, ptr %e, align 1
+  br label %while.cond121
 
-if.then117:                                       ; preds = %while.body108
-  br label %while.exit109
+if.then115:                                       ; preds = %while.body106
+  br label %while.exit107
 
-if.end118:                                        ; preds = %while.body108
-  %s119 = load i64, ptr %s106, align 8
-  %sub120 = sub i64 %s119, 1
-  store i64 %sub120, ptr %s106, align 1
-  br label %while.cond107
+if.end116:                                        ; preds = %while.body106
+  %s117 = load i64, ptr %s104, align 8
+  %sub118 = sub i64 %s117, 1
+  store i64 %sub118, ptr %s104, align 1
+  br label %while.cond105
 
-while.cond123:                                    ; preds = %if.end133, %while.exit109
+while.cond121:                                    ; preds = %if.end131, %while.exit107
+  %e124 = load i64, ptr %e, align 8
+  %lt125 = icmp ult i64 %e124, %call
+  br i1 %lt125, label %while.body122, label %while.exit123
+
+while.body122:                                    ; preds = %while.cond121
   %e126 = load i64, ptr %e, align 8
-  %lt127 = icmp ult i64 %e126, %call
-  br i1 %lt127, label %while.body124, label %while.exit125
+  %call127 = call i8 @_ZN6String3getEm(ptr %2, i64 %e126)
+  %call128 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call127)
+  %eq129 = icmp eq i1 %call128, false
+  br i1 %eq129, label %if.then130, label %if.end131
 
-while.body124:                                    ; preds = %while.cond123
-  %e128 = load i64, ptr %e, align 8
-  %call129 = call i8 @_ZN6String3getEm(ptr %2, i64 %e128)
-  %call130 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call129)
-  %eq131 = icmp eq i1 %call130, false
-  br i1 %eq131, label %if.then132, label %if.end133
-
-while.exit125:                                    ; preds = %if.then132, %while.cond123
-  %s136 = load i64, ptr %s106, align 8
-  store i64 %s136, ptr %s, align 1
-  %e137 = load i64, ptr %e, align 8
-  store i64 %e137, ptr %tend, align 1
+while.exit123:                                    ; preds = %if.then130, %while.cond121
+  %s134 = load i64, ptr %s104, align 8
+  store i64 %s134, ptr %s, align 1
+  %e135 = load i64, ptr %e, align 8
+  store i64 %e135, ptr %tend, align 1
   store i1 true, ptr %have, align 1
-  br label %if.end104
+  br label %if.end102
 
-if.then132:                                       ; preds = %while.body124
-  br label %while.exit125
+if.then130:                                       ; preds = %while.body122
+  br label %while.exit123
 
-if.end133:                                        ; preds = %while.body124
-  %e134 = load i64, ptr %e, align 8
-  %add135 = add i64 %e134, 1
-  store i64 %add135, ptr %e, align 1
-  br label %while.cond123
+if.end131:                                        ; preds = %while.body122
+  %e132 = load i64, ptr %e, align 8
+  %add133 = add i64 %e132, 1
+  store i64 %add133, ptr %e, align 1
+  br label %while.cond121
 
-if.then139:                                       ; preds = %if.end79
+if.then137:                                       ; preds = %if.end77
   %tstart = load i64, ptr %s, align 8
-  %tend142 = load i64, ptr %tend, align 8
-  %acc143 = load ptr, ptr %acc, align 8
-  call void @_ZN7symbols16selection_objectEPN4scaly6memory4PageE6Stringmm6String(ptr noalias sret({ ptr }) %sret.result141, ptr %1, ptr %2, i64 %tstart, i64 %tend142, ptr %acc143)
-  %sret.body = load { ptr }, ptr %sret.result141, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result141, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  %tend140 = load i64, ptr %tend, align 8
+  %acc141 = load ptr, ptr %acc, align 8
+  call void @_ZN7symbols16selection_objectEPN4scaly6memory4PageE6Stringmm6String(ptr noalias sret({ ptr }) %sret.result139, ptr %1, ptr %2, i64 %tstart, i64 %tend140, ptr %acc141)
+  %sret.body = load { ptr }, ptr %sret.result139, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result139, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.end140:                                        ; preds = %if.end79
-  %acc144 = load ptr, ptr %acc, align 8
-  %sret.body145 = load { ptr }, ptr %acc144, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %acc144, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+if.end138:                                        ; preds = %if.end77
+  %acc142 = load ptr, ptr %acc, align 8
+  %sret.body143 = load { ptr }, ptr %acc142, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %acc142, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -70907,7 +70859,7 @@ if.end8:                                          ; preds = %while.body
 
 define linkonce_odr i64 @_ZN7symbols15use_insert_lineE6String(ptr %0) {
 entry:
-  %arg.tmp43 = alloca { ptr }, align 8
+  %arg.tmp41 = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
   %in_header = alloca i1, align 1
   %t = alloca i64, align 8
@@ -70921,7 +70873,7 @@ entry:
   %call = call i64 @_ZN6String10get_lengthEv(ptr %0)
   br label %while.cond
 
-while.cond:                                       ; preds = %if.end30, %entry
+while.cond:                                       ; preds = %if.end28, %entry
   %i1 = load i64, ptr %i, align 8
   %le = icmp ule i64 %i1, %call
   br i1 %le, label %while.body, label %while.exit
@@ -70933,8 +70885,8 @@ while.body:                                       ; preds = %while.cond
   br label %while.cond4
 
 while.exit:                                       ; preds = %while.cond
-  %insert_at58 = load i64, ptr %insert_at, align 8
-  ret i64 %insert_at58
+  %insert_at56 = load i64, ptr %insert_at, align 8
+  ret i64 %insert_at56
 
 while.cond4:                                      ; preds = %if.end, %while.body
   %end7 = load i64, ptr %end, align 8
@@ -70970,86 +70922,83 @@ while.body12:                                     ; preds = %while.cond11
   %t17 = load i64, ptr %t, align 8
   %call18 = call i8 @_ZN6String3getEm(ptr %0, i64 %t17)
   %ne = icmp ne i8 %call18, 32
-  br i1 %ne, label %if.then19, label %if.end20
+  br i1 %ne, label %land.rhs, label %if.end20
 
-while.exit13:                                     ; preds = %if.then22, %while.cond11
-  %t26 = load i64, ptr %t, align 8
-  %end27 = load i64, ptr %end, align 8
-  %lt28 = icmp ult i64 %t26, %end27
-  br i1 %lt28, label %if.then29, label %if.end30
-
-if.then19:                                        ; preds = %while.body12
-  %ne21 = icmp ne i8 %call18, 9
-  br i1 %ne21, label %if.then22, label %if.end23
-
-if.end20:                                         ; preds = %if.end23, %while.body12
+while.exit13:                                     ; preds = %if.then19, %while.cond11
   %t24 = load i64, ptr %t, align 8
-  %add25 = add i64 %t24, 1
-  store i64 %add25, ptr %t, align 1
-  br label %while.cond11
+  %end25 = load i64, ptr %end, align 8
+  %lt26 = icmp ult i64 %t24, %end25
+  br i1 %lt26, label %if.then27, label %if.end28
 
-if.then22:                                        ; preds = %if.then19
+if.then19:                                        ; preds = %land.rhs
   br label %while.exit13
 
-if.end23:                                         ; preds = %if.then19
-  br label %if.end20
+if.end20:                                         ; preds = %land.rhs, %while.body12
+  %t22 = load i64, ptr %t, align 8
+  %add23 = add i64 %t22, 1
+  store i64 %add23, ptr %t, align 1
+  br label %while.cond11
 
-if.then29:                                        ; preds = %while.exit13
+land.rhs:                                         ; preds = %while.body12
+  %ne21 = icmp ne i8 %call18, 9
+  br i1 %ne21, label %if.then19, label %if.end20
+
+if.then27:                                        ; preds = %while.exit13
   store i1 false, ptr %in_header, align 1
-  %t31 = load i64, ptr %t, align 8
-  %call32 = call i8 @_ZN6String3getEm(ptr %0, i64 %t31)
-  %eq33 = icmp eq i8 %call32, 59
-  br i1 %eq33, label %if.then34, label %if.end35
+  %t29 = load i64, ptr %t, align 8
+  %call30 = call i8 @_ZN6String3getEm(ptr %0, i64 %t29)
+  %eq31 = icmp eq i8 %call30, 59
+  br i1 %eq31, label %if.then32, label %if.end33
 
-if.end30:                                         ; preds = %if.end50, %while.exit13
-  %line54 = load i64, ptr %line, align 8
-  %add55 = add i64 %line54, 1
-  store i64 %add55, ptr %line, align 1
-  %end56 = load i64, ptr %end, align 8
-  %add57 = add i64 %end56, 1
-  store i64 %add57, ptr %i, align 1
-  br label %while.cond
-
-if.then34:                                        ; preds = %if.then29
-  store i1 true, ptr %in_header, align 1
-  br label %if.end35
-
-if.end35:                                         ; preds = %if.then34, %if.then29
-  %t36 = load i64, ptr %t, align 8
-  %end37 = load i64, ptr %end, align 8
-  store { ptr } { ptr @.sconst.428 }, ptr %arg.tmp, align 1
-  %call38 = call i1 @_ZN7symbols16line_starts_withE6Stringmm6String(ptr %0, i64 %t36, i64 %end37, ptr %arg.tmp)
-  br i1 %call38, label %if.then39, label %if.end40
-
-if.then39:                                        ; preds = %if.end35
-  store i1 true, ptr %in_header, align 1
-  br label %if.end40
-
-if.end40:                                         ; preds = %if.then39, %if.end35
-  %t41 = load i64, ptr %t, align 8
-  %end42 = load i64, ptr %end, align 8
-  store { ptr } { ptr @.sconst.429 }, ptr %arg.tmp43, align 1
-  %call44 = call i1 @_ZN7symbols16line_starts_withE6Stringmm6String(ptr %0, i64 %t41, i64 %end42, ptr %arg.tmp43)
-  br i1 %call44, label %if.then45, label %if.end46
-
-if.then45:                                        ; preds = %if.end40
-  store i1 true, ptr %in_header, align 1
-  br label %if.end46
-
-if.end46:                                         ; preds = %if.then45, %if.end40
-  %in_header47 = load i1, ptr %in_header, align 1
-  %eq48 = icmp eq i1 %in_header47, false
-  br i1 %eq48, label %if.then49, label %if.end50
-
-if.then49:                                        ; preds = %if.end46
-  %insert_at51 = load i64, ptr %insert_at, align 8
-  ret i64 %insert_at51
-
-if.end50:                                         ; preds = %if.end46
+if.end28:                                         ; preds = %if.end48, %while.exit13
   %line52 = load i64, ptr %line, align 8
   %add53 = add i64 %line52, 1
-  store i64 %add53, ptr %insert_at, align 1
-  br label %if.end30
+  store i64 %add53, ptr %line, align 1
+  %end54 = load i64, ptr %end, align 8
+  %add55 = add i64 %end54, 1
+  store i64 %add55, ptr %i, align 1
+  br label %while.cond
+
+if.then32:                                        ; preds = %if.then27
+  store i1 true, ptr %in_header, align 1
+  br label %if.end33
+
+if.end33:                                         ; preds = %if.then32, %if.then27
+  %t34 = load i64, ptr %t, align 8
+  %end35 = load i64, ptr %end, align 8
+  store { ptr } { ptr @.sconst.428 }, ptr %arg.tmp, align 1
+  %call36 = call i1 @_ZN7symbols16line_starts_withE6Stringmm6String(ptr %0, i64 %t34, i64 %end35, ptr %arg.tmp)
+  br i1 %call36, label %if.then37, label %if.end38
+
+if.then37:                                        ; preds = %if.end33
+  store i1 true, ptr %in_header, align 1
+  br label %if.end38
+
+if.end38:                                         ; preds = %if.then37, %if.end33
+  %t39 = load i64, ptr %t, align 8
+  %end40 = load i64, ptr %end, align 8
+  store { ptr } { ptr @.sconst.429 }, ptr %arg.tmp41, align 1
+  %call42 = call i1 @_ZN7symbols16line_starts_withE6Stringmm6String(ptr %0, i64 %t39, i64 %end40, ptr %arg.tmp41)
+  br i1 %call42, label %if.then43, label %if.end44
+
+if.then43:                                        ; preds = %if.end38
+  store i1 true, ptr %in_header, align 1
+  br label %if.end44
+
+if.end44:                                         ; preds = %if.then43, %if.end38
+  %in_header45 = load i1, ptr %in_header, align 1
+  %eq46 = icmp eq i1 %in_header45, false
+  br i1 %eq46, label %if.then47, label %if.end48
+
+if.then47:                                        ; preds = %if.end44
+  %insert_at49 = load i64, ptr %insert_at, align 8
+  ret i64 %insert_at49
+
+if.end48:                                         ; preds = %if.end44
+  %line50 = load i64, ptr %line, align 8
+  %add51 = add i64 %line50, 1
+  store i64 %add51, ptr %insert_at, align 1
+  br label %if.end28
 }
 
 define linkonce_odr void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, i64 %3, i64 %4) {
@@ -71601,10 +71550,10 @@ if.end15:                                         ; preds = %if.end7
 
 define linkonce_odr i1 @_ZN7symbols19swallowed_call_headE6String(ptr %0) {
 entry:
-  %arg.tmp48 = alloca { ptr }, align 8
-  %arg.tmp44 = alloca { ptr }, align 8
-  %arg.tmp40 = alloca { ptr }, align 8
-  %arg.tmp36 = alloca { ptr }, align 8
+  %arg.tmp46 = alloca { ptr }, align 8
+  %arg.tmp42 = alloca { ptr }, align 8
+  %arg.tmp38 = alloca { ptr }, align 8
+  %arg.tmp34 = alloca { ptr }, align 8
   %frame = alloca { ptr, ptr }, align 8
   store ptr null, ptr %frame, align 8
   %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
@@ -71666,84 +71615,81 @@ if.then19:                                        ; preds = %if.end15
   ret i1 false
 
 if.end20:                                         ; preds = %if.end15
-  %ge21 = icmp uge i8 %call16, 48
-  br i1 %ge21, label %if.then22, label %if.end23
+  %ge23 = icmp uge i8 %call16, 48
+  br i1 %ge23, label %land.rhs, label %if.end22
 
-if.then22:                                        ; preds = %if.end20
-  %le = icmp ule i8 %call16, 57
-  br i1 %le, label %if.then24, label %if.end25
+if.then21:                                        ; preds = %land.rhs
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret i1 false
 
-if.end23:                                         ; preds = %if.end25, %if.end20
+if.end22:                                         ; preds = %land.rhs, %if.end20
   store i64 %add, ptr %i, align 1
   br label %while.cond
 
-if.then24:                                        ; preds = %if.then22
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret i1 false
+land.rhs:                                         ; preds = %if.end20
+  %le = icmp ule i8 %call16, 57
+  br i1 %le, label %if.then21, label %if.end22
 
-if.end25:                                         ; preds = %if.then22
-  br label %if.end23
-
-while.cond:                                       ; preds = %if.end33, %if.end23
-  %i26 = load i64, ptr %i, align 8
-  %lt27 = icmp ult i64 %i26, %call9
-  br i1 %lt27, label %while.body, label %while.exit
+while.cond:                                       ; preds = %if.end31, %if.end22
+  %i24 = load i64, ptr %i, align 8
+  %lt25 = icmp ult i64 %i24, %call9
+  br i1 %lt25, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %i28 = load i64, ptr %i, align 8
-  %call29 = call i8 @_ZN6String3getEm(ptr %0, i64 %i28)
-  %call30 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call29)
-  %eq31 = icmp eq i1 %call30, false
-  br i1 %eq31, label %if.then32, label %if.end33
+  %i26 = load i64, ptr %i, align 8
+  %call27 = call i8 @_ZN6String3getEm(ptr %0, i64 %i26)
+  %call28 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call27)
+  %eq29 = icmp eq i1 %call28, false
+  br i1 %eq29, label %if.then30, label %if.end31
 
 while.exit:                                       ; preds = %while.cond
   call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %arg.tmp2, ptr %frame, ptr %0, i64 %add, i64 %call9)
-  store { ptr } { ptr @.sconst.434 }, ptr %arg.tmp36, align 1
-  %call37 = call i1 @_ZN6String6equalsE6String(ptr %arg.tmp2, ptr %arg.tmp36)
-  br i1 %call37, label %if.then38, label %if.end39
+  store { ptr } { ptr @.sconst.434 }, ptr %arg.tmp34, align 1
+  %call35 = call i1 @_ZN6String6equalsE6String(ptr %arg.tmp2, ptr %arg.tmp34)
+  br i1 %call35, label %if.then36, label %if.end37
 
-if.then32:                                        ; preds = %while.body
+if.then30:                                        ; preds = %while.body
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 false
 
-if.end33:                                         ; preds = %while.body
-  %i34 = load i64, ptr %i, align 8
-  %add35 = add i64 %i34, 1
-  store i64 %add35, ptr %i, align 1
+if.end31:                                         ; preds = %while.body
+  %i32 = load i64, ptr %i, align 8
+  %add33 = add i64 %i32, 1
+  store i64 %add33, ptr %i, align 1
   br label %while.cond
 
-if.then38:                                        ; preds = %while.exit
+if.then36:                                        ; preds = %while.exit
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 false
 
-if.end39:                                         ; preds = %while.exit
-  store { ptr } { ptr @.sconst.435 }, ptr %arg.tmp40, align 1
-  %call41 = call i1 @_ZN6String6equalsE6String(ptr %arg.tmp2, ptr %arg.tmp40)
-  br i1 %call41, label %if.then42, label %if.end43
+if.end37:                                         ; preds = %while.exit
+  store { ptr } { ptr @.sconst.435 }, ptr %arg.tmp38, align 1
+  %call39 = call i1 @_ZN6String6equalsE6String(ptr %arg.tmp2, ptr %arg.tmp38)
+  br i1 %call39, label %if.then40, label %if.end41
 
-if.then42:                                        ; preds = %if.end39
+if.then40:                                        ; preds = %if.end37
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 false
 
-if.end43:                                         ; preds = %if.end39
-  store { ptr } { ptr @.sconst.436 }, ptr %arg.tmp44, align 1
-  %call45 = call i1 @_ZN6String6equalsE6String(ptr %arg.tmp2, ptr %arg.tmp44)
-  br i1 %call45, label %if.then46, label %if.end47
+if.end41:                                         ; preds = %if.end37
+  store { ptr } { ptr @.sconst.436 }, ptr %arg.tmp42, align 1
+  %call43 = call i1 @_ZN6String6equalsE6String(ptr %arg.tmp2, ptr %arg.tmp42)
+  br i1 %call43, label %if.then44, label %if.end45
 
-if.then46:                                        ; preds = %if.end43
+if.then44:                                        ; preds = %if.end41
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 false
 
-if.end47:                                         ; preds = %if.end43
-  store { ptr } { ptr @.sconst.437 }, ptr %arg.tmp48, align 1
-  %call49 = call i1 @_ZN6String6equalsE6String(ptr %arg.tmp2, ptr %arg.tmp48)
-  br i1 %call49, label %if.then50, label %if.end51
+if.end45:                                         ; preds = %if.end41
+  store { ptr } { ptr @.sconst.437 }, ptr %arg.tmp46, align 1
+  %call47 = call i1 @_ZN6String6equalsE6String(ptr %arg.tmp2, ptr %arg.tmp46)
+  br i1 %call47, label %if.then48, label %if.end49
 
-if.then50:                                        ; preds = %if.end47
+if.then48:                                        ; preds = %if.end45
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 false
 
-if.end51:                                         ; preds = %if.end47
+if.end49:                                         ; preds = %if.end45
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 true
 }
@@ -72170,27 +72116,24 @@ while.body:                                       ; preds = %while.cond
   %i2 = load i64, ptr %i, align 8
   %call = call i8 @_ZN6String3getEm(ptr %0, i64 %i2)
   %ne = icmp ne i8 %call, 32
-  br i1 %ne, label %if.then, label %if.end
+  br i1 %ne, label %land.rhs, label %if.end
 
 while.exit:                                       ; preds = %while.cond
   ret i64 %2
 
-if.then:                                          ; preds = %while.body
-  %ne3 = icmp ne i8 %call, 9
-  br i1 %ne3, label %if.then4, label %if.end5
+if.then:                                          ; preds = %land.rhs
+  %i4 = load i64, ptr %i, align 8
+  ret i64 %i4
 
-if.end:                                           ; preds = %if.end5, %while.body
-  %i7 = load i64, ptr %i, align 8
-  %add = add i64 %i7, 1
+if.end:                                           ; preds = %land.rhs, %while.body
+  %i5 = load i64, ptr %i, align 8
+  %add = add i64 %i5, 1
   store i64 %add, ptr %i, align 1
   br label %while.cond
 
-if.then4:                                         ; preds = %if.then
-  %i6 = load i64, ptr %i, align 8
-  ret i64 %i6
-
-if.end5:                                          ; preds = %if.then
-  br label %if.end
+land.rhs:                                         ; preds = %while.body
+  %ne3 = icmp ne i8 %call, 9
+  br i1 %ne3, label %if.then, label %if.end
 }
 
 define linkonce_odr void @_ZN7symbols7trimmedEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, i64 %3, i64 %4) {
@@ -72215,31 +72158,28 @@ while.body:                                       ; preds = %while.cond
   %sub = sub i64 %e3, 1
   %call4 = call i8 @_ZN6String3getEm(ptr %2, i64 %sub)
   %ne = icmp ne i8 %call4, 32
-  br i1 %ne, label %if.then, label %if.end
+  br i1 %ne, label %land.rhs, label %if.end
 
-while.exit:                                       ; preds = %if.then6, %while.cond
-  %s10 = load i64, ptr %s, align 8
-  %e11 = load i64, ptr %e, align 8
-  call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %s10, i64 %e11)
+while.exit:                                       ; preds = %if.then, %while.cond
+  %s8 = load i64, ptr %s, align 8
+  %e9 = load i64, ptr %e, align 8
+  call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %s8, i64 %e9)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.then:                                          ; preds = %while.body
-  %ne5 = icmp ne i8 %call4, 9
-  br i1 %ne5, label %if.then6, label %if.end7
-
-if.end:                                           ; preds = %if.end7, %while.body
-  %e8 = load i64, ptr %e, align 8
-  %sub9 = sub i64 %e8, 1
-  store i64 %sub9, ptr %e, align 1
-  br label %while.cond
-
-if.then6:                                         ; preds = %if.then
+if.then:                                          ; preds = %land.rhs
   br label %while.exit
 
-if.end7:                                          ; preds = %if.then
-  br label %if.end
+if.end:                                           ; preds = %land.rhs, %while.body
+  %e6 = load i64, ptr %e, align 8
+  %sub7 = sub i64 %e6, 1
+  store i64 %sub7, ptr %e, align 1
+  br label %while.cond
+
+land.rhs:                                         ; preds = %while.body
+  %ne5 = icmp ne i8 %call4, 9
+  br i1 %ne5, label %if.then, label %if.end
 }
 
 define linkonce_odr void @_ZN7symbols16edit_code_actionEPN4scaly6memory4PageE6String6Stringbmmmm6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, i1 %4, i64 %5, i64 %6, i64 %7, i64 %8, ptr %9) {
@@ -74548,34 +74488,25 @@ if.end8:                                          ; preds = %while.body
 define linkonce_odr i1 @_ZN7symbols10is_ws_byteE2u8(i8 %0) {
 entry:
   %eq = icmp eq i8 %0, 32
-  br i1 %eq, label %if.then, label %if.end
+  br i1 %eq, label %if.then, label %lor.rhs2
 
-if.then:                                          ; preds = %entry
+if.then:                                          ; preds = %lor.rhs, %lor.rhs1, %lor.rhs2, %entry
   ret i1 true
 
-if.end:                                           ; preds = %entry
-  %eq1 = icmp eq i8 %0, 9
-  br i1 %eq1, label %if.then2, label %if.end3
-
-if.then2:                                         ; preds = %if.end
-  ret i1 true
-
-if.end3:                                          ; preds = %if.end
-  %eq4 = icmp eq i8 %0, 10
-  br i1 %eq4, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end3
-  ret i1 true
-
-if.end6:                                          ; preds = %if.end3
-  %eq7 = icmp eq i8 %0, 13
-  br i1 %eq7, label %if.then8, label %if.end9
-
-if.then8:                                         ; preds = %if.end6
-  ret i1 true
-
-if.end9:                                          ; preds = %if.end6
+if.end:                                           ; preds = %lor.rhs
   ret i1 false
+
+lor.rhs:                                          ; preds = %lor.rhs1
+  %eq5 = icmp eq i8 %0, 13
+  br i1 %eq5, label %if.then, label %if.end
+
+lor.rhs1:                                         ; preds = %lor.rhs2
+  %eq4 = icmp eq i8 %0, 10
+  br i1 %eq4, label %if.then, label %lor.rhs
+
+lor.rhs2:                                         ; preds = %entry
+  %eq3 = icmp eq i8 %0, 9
+  br i1 %eq3, label %if.then, label %lor.rhs1
 }
 
 define linkonce_odr void @_ZN7symbols16completion_itemsEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
@@ -75428,173 +75359,125 @@ entry:
 define linkonce_odr i1 @_ZN7symbols15is_string_startE2u8(i8 %0) {
 entry:
   %eq = icmp eq i8 %0, 34
-  br i1 %eq, label %if.then, label %if.end
+  br i1 %eq, label %if.then, label %lor.rhs1
 
-if.then:                                          ; preds = %entry
+if.then:                                          ; preds = %lor.rhs, %lor.rhs1, %entry
   ret i1 true
 
-if.end:                                           ; preds = %entry
-  %eq1 = icmp eq i8 %0, 39
-  br i1 %eq1, label %if.then2, label %if.end3
-
-if.then2:                                         ; preds = %if.end
-  ret i1 true
-
-if.end3:                                          ; preds = %if.end
-  %eq4 = icmp eq i8 %0, 96
-  br i1 %eq4, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end3
-  ret i1 true
-
-if.end6:                                          ; preds = %if.end3
+if.end:                                           ; preds = %lor.rhs
   ret i1 false
+
+lor.rhs:                                          ; preds = %lor.rhs1
+  %eq3 = icmp eq i8 %0, 96
+  br i1 %eq3, label %if.then, label %if.end
+
+lor.rhs1:                                         ; preds = %entry
+  %eq2 = icmp eq i8 %0, 39
+  br i1 %eq2, label %if.then, label %lor.rhs
 }
 
 define linkonce_odr i1 @_ZN7symbols8is_digitE2u8(i8 %0) {
 entry:
   %ge = icmp uge i8 %0, 48
-  br i1 %ge, label %if.then, label %if.end
+  br i1 %ge, label %land.rhs, label %if.end
 
-if.then:                                          ; preds = %entry
-  %le = icmp ule i8 %0, 57
-  br i1 %le, label %if.then1, label %if.end2
-
-if.end:                                           ; preds = %if.end2, %entry
-  ret i1 false
-
-if.then1:                                         ; preds = %if.then
+if.then:                                          ; preds = %land.rhs
   ret i1 true
 
-if.end2:                                          ; preds = %if.then
-  br label %if.end
+if.end:                                           ; preds = %land.rhs, %entry
+  ret i1 false
+
+land.rhs:                                         ; preds = %entry
+  %le = icmp ule i8 %0, 57
+  br i1 %le, label %if.then, label %if.end
 }
 
 define linkonce_odr i1 @_ZN7symbols11is_num_byteE2u8(i8 %0) {
 entry:
   %ge = icmp uge i8 %0, 48
-  br i1 %ge, label %if.then, label %if.end
+  br i1 %ge, label %land.rhs, label %lor.rhs5
 
-if.then:                                          ; preds = %entry
-  %le = icmp ule i8 %0, 57
-  br i1 %le, label %if.then1, label %if.end2
-
-if.end:                                           ; preds = %if.end2, %entry
-  %ge3 = icmp uge i8 %0, 65
-  br i1 %ge3, label %if.then4, label %if.end5
-
-if.then1:                                         ; preds = %if.then
+if.then:                                          ; preds = %lor.rhs, %lor.rhs1, %lor.rhs2, %lor.rhs3, %land.rhs9, %land.rhs6, %land.rhs
   ret i1 true
 
-if.end2:                                          ; preds = %if.then
-  br label %if.end
-
-if.then4:                                         ; preds = %if.end
-  %le6 = icmp ule i8 %0, 70
-  br i1 %le6, label %if.then7, label %if.end8
-
-if.end5:                                          ; preds = %if.end8, %if.end
-  %ge9 = icmp uge i8 %0, 97
-  br i1 %ge9, label %if.then10, label %if.end11
-
-if.then7:                                         ; preds = %if.then4
-  ret i1 true
-
-if.end8:                                          ; preds = %if.then4
-  br label %if.end5
-
-if.then10:                                        ; preds = %if.end5
-  %le12 = icmp ule i8 %0, 102
-  br i1 %le12, label %if.then13, label %if.end14
-
-if.end11:                                         ; preds = %if.end14, %if.end5
-  %eq = icmp eq i8 %0, 120
-  br i1 %eq, label %if.then15, label %if.end16
-
-if.then13:                                        ; preds = %if.then10
-  ret i1 true
-
-if.end14:                                         ; preds = %if.then10
-  br label %if.end11
-
-if.then15:                                        ; preds = %if.end11
-  ret i1 true
-
-if.end16:                                         ; preds = %if.end11
-  %eq17 = icmp eq i8 %0, 88
-  br i1 %eq17, label %if.then18, label %if.end19
-
-if.then18:                                        ; preds = %if.end16
-  ret i1 true
-
-if.end19:                                         ; preds = %if.end16
-  %eq20 = icmp eq i8 %0, 46
-  br i1 %eq20, label %if.then21, label %if.end22
-
-if.then21:                                        ; preds = %if.end19
-  ret i1 true
-
-if.end22:                                         ; preds = %if.end19
-  %eq23 = icmp eq i8 %0, 95
-  br i1 %eq23, label %if.then24, label %if.end25
-
-if.then24:                                        ; preds = %if.end22
-  ret i1 true
-
-if.end25:                                         ; preds = %if.end22
+if.end:                                           ; preds = %lor.rhs
   ret i1 false
+
+lor.rhs:                                          ; preds = %lor.rhs1
+  %eq14 = icmp eq i8 %0, 95
+  br i1 %eq14, label %if.then, label %if.end
+
+lor.rhs1:                                         ; preds = %lor.rhs2
+  %eq13 = icmp eq i8 %0, 46
+  br i1 %eq13, label %if.then, label %lor.rhs
+
+lor.rhs2:                                         ; preds = %lor.rhs3
+  %eq12 = icmp eq i8 %0, 88
+  br i1 %eq12, label %if.then, label %lor.rhs1
+
+lor.rhs3:                                         ; preds = %land.rhs9, %lor.rhs4
+  %eq = icmp eq i8 %0, 120
+  br i1 %eq, label %if.then, label %lor.rhs2
+
+lor.rhs4:                                         ; preds = %land.rhs6, %lor.rhs5
+  %ge10 = icmp uge i8 %0, 97
+  br i1 %ge10, label %land.rhs9, label %lor.rhs3
+
+lor.rhs5:                                         ; preds = %land.rhs, %entry
+  %ge7 = icmp uge i8 %0, 65
+  br i1 %ge7, label %land.rhs6, label %lor.rhs4
+
+land.rhs:                                         ; preds = %entry
+  %le = icmp ule i8 %0, 57
+  br i1 %le, label %if.then, label %lor.rhs5
+
+land.rhs6:                                        ; preds = %lor.rhs5
+  %le8 = icmp ule i8 %0, 70
+  br i1 %le8, label %if.then, label %lor.rhs4
+
+land.rhs9:                                        ; preds = %lor.rhs4
+  %le11 = icmp ule i8 %0, 102
+  br i1 %le11, label %if.then, label %lor.rhs3
 }
 
 define linkonce_odr i1 @_ZN7symbols9is_letterE2u8(i8 %0) {
 entry:
   %ge = icmp uge i8 %0, 65
-  br i1 %ge, label %if.then, label %if.end
+  br i1 %ge, label %land.rhs, label %lor.rhs
 
-if.then:                                          ; preds = %entry
-  %le = icmp ule i8 %0, 90
-  br i1 %le, label %if.then1, label %if.end2
-
-if.end:                                           ; preds = %if.end2, %entry
-  %ge3 = icmp uge i8 %0, 97
-  br i1 %ge3, label %if.then4, label %if.end5
-
-if.then1:                                         ; preds = %if.then
+if.then:                                          ; preds = %land.rhs1, %land.rhs
   ret i1 true
 
-if.end2:                                          ; preds = %if.then
-  br label %if.end
-
-if.then4:                                         ; preds = %if.end
-  %le6 = icmp ule i8 %0, 122
-  br i1 %le6, label %if.then7, label %if.end8
-
-if.end5:                                          ; preds = %if.end8, %if.end
+if.end:                                           ; preds = %land.rhs1, %lor.rhs
   ret i1 false
 
-if.then7:                                         ; preds = %if.then4
-  ret i1 true
+lor.rhs:                                          ; preds = %land.rhs, %entry
+  %ge2 = icmp uge i8 %0, 97
+  br i1 %ge2, label %land.rhs1, label %if.end
 
-if.end8:                                          ; preds = %if.then4
-  br label %if.end5
+land.rhs:                                         ; preds = %entry
+  %le = icmp ule i8 %0, 90
+  br i1 %le, label %if.then, label %lor.rhs
+
+land.rhs1:                                        ; preds = %lor.rhs
+  %le3 = icmp ule i8 %0, 122
+  br i1 %le3, label %if.then, label %if.end
 }
 
 define linkonce_odr i1 @_ZN7symbols8is_upperE2u8(i8 %0) {
 entry:
   %ge = icmp uge i8 %0, 65
-  br i1 %ge, label %if.then, label %if.end
+  br i1 %ge, label %land.rhs, label %if.end
 
-if.then:                                          ; preds = %entry
-  %le = icmp ule i8 %0, 90
-  br i1 %le, label %if.then1, label %if.end2
-
-if.end:                                           ; preds = %if.end2, %entry
-  ret i1 false
-
-if.then1:                                         ; preds = %if.then
+if.then:                                          ; preds = %land.rhs
   ret i1 true
 
-if.end2:                                          ; preds = %if.then
-  br label %if.end
+if.end:                                           ; preds = %land.rhs, %entry
+  ret i1 false
+
+land.rhs:                                         ; preds = %entry
+  %le = icmp ule i8 %0, 90
+  br i1 %le, label %if.then, label %if.end
 }
 
 define linkonce_odr i1 @_ZN7symbols14param_in_scopeE6String6Stringmmm(ptr %0, ptr %1, i64 %2, i64 %3, i64 %4) {
@@ -75816,7 +75699,7 @@ if.then92:                                        ; preds = %while.exit
 if.end93:                                         ; preds = %while.exit97, %while.exit
   ret i1 false
 
-while.cond95:                                     ; preds = %if.end125, %if.then103, %if.then92
+while.cond95:                                     ; preds = %if.end121, %if.then103, %if.then92
   %k = load i64, ptr %rstart, align 8
   %best_name_end98 = load i64, ptr %best_name_end, align 8
   %lt99 = icmp ult i64 %k, %best_name_end98
@@ -75855,11 +75738,11 @@ while.body109:                                    ; preds = %while.cond108
   br i1 %eq115, label %if.then116, label %if.end117
 
 while.exit110:                                    ; preds = %if.then116, %while.cond108
-  %j120 = load i64, ptr %rend, align 8
-  %k121 = load i64, ptr %rstart, align 8
-  %sub122 = sub i64 %j120, %k121
-  %eq123 = icmp eq i64 %sub122, %sub
-  br i1 %eq123, label %if.then124, label %if.end125
+  %j122 = load i64, ptr %rend, align 8
+  %k123 = load i64, ptr %rstart, align 8
+  %sub124 = sub i64 %j122, %k123
+  %eq125 = icmp eq i64 %sub124, %sub
+  br i1 %eq125, label %land.rhs, label %if.end121
 
 if.then116:                                       ; preds = %while.body109
   br label %while.exit110
@@ -75870,21 +75753,18 @@ if.end117:                                        ; preds = %while.body109
   store i64 %add119, ptr %rend, align 1
   br label %while.cond108
 
-if.then124:                                       ; preds = %while.exit110
-  %k126 = load i64, ptr %rstart, align 8
-  %call127 = call i1 @_ZN7symbols12range_equalsE6Stringm6Stringmm(ptr %0, i64 %k126, ptr %1, i64 %2, i64 %sub)
-  br i1 %call127, label %if.then128, label %if.end129
-
-if.end125:                                        ; preds = %if.end129, %while.exit110
-  %j130 = load i64, ptr %rend, align 8
-  store i64 %j130, ptr %rstart, align 1
-  br label %while.cond95
-
-if.then128:                                       ; preds = %if.then124
+if.then120:                                       ; preds = %land.rhs
   ret i1 true
 
-if.end129:                                        ; preds = %if.then124
-  br label %if.end125
+if.end121:                                        ; preds = %land.rhs, %while.exit110
+  %j128 = load i64, ptr %rend, align 8
+  store i64 %j128, ptr %rstart, align 1
+  br label %while.cond95
+
+land.rhs:                                         ; preds = %while.exit110
+  %k126 = load i64, ptr %rstart, align 8
+  %call127 = call i1 @_ZN7symbols12range_equalsE6Stringm6Stringmm(ptr %0, i64 %k126, ptr %1, i64 %2, i64 %sub)
+  br i1 %call127, label %if.then120, label %if.end121
 }
 
 define linkonce_odr i1 @_ZN7symbols20is_field_decl_offsetE6Stringm(ptr %0, i64 %1) {
@@ -76177,33 +76057,33 @@ if.end:                                           ; preds = %if.then, %entry
 
 define linkonce_odr void @_ZN7symbols15semantic_tokensEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
 entry:
-  %sret.result493 = alloca { ptr }, align 8
-  %arg.tmp436 = alloca { ptr }, align 8
-  %arg.tmp428 = alloca { ptr }, align 8
-  %arg.tmp424 = alloca { ptr }, align 8
-  %arg.tmp420 = alloca { ptr }, align 8
-  %arg.tmp416 = alloca { ptr }, align 8
-  %arg.tmp412 = alloca { ptr }, align 8
-  %arg.tmp406 = alloca { ptr }, align 8
-  %arg.tmp402 = alloca { ptr }, align 8
-  %arg.tmp398 = alloca { ptr }, align 8
-  %arg.tmp394 = alloca { ptr }, align 8
-  %arg.tmp386 = alloca { ptr }, align 8
-  %arg.tmp382 = alloca { ptr }, align 8
-  %arg.tmp378 = alloca { ptr }, align 8
-  %arg.tmp374 = alloca { ptr }, align 8
-  %arg.tmp370 = alloca { ptr }, align 8
-  %arg.tmp366 = alloca { ptr }, align 8
+  %sret.result490 = alloca { ptr }, align 8
+  %arg.tmp433 = alloca { ptr }, align 8
+  %arg.tmp425 = alloca { ptr }, align 8
+  %arg.tmp421 = alloca { ptr }, align 8
+  %arg.tmp417 = alloca { ptr }, align 8
+  %arg.tmp413 = alloca { ptr }, align 8
+  %arg.tmp409 = alloca { ptr }, align 8
+  %arg.tmp403 = alloca { ptr }, align 8
+  %arg.tmp399 = alloca { ptr }, align 8
+  %arg.tmp395 = alloca { ptr }, align 8
+  %arg.tmp391 = alloca { ptr }, align 8
+  %arg.tmp383 = alloca { ptr }, align 8
+  %arg.tmp379 = alloca { ptr }, align 8
+  %arg.tmp375 = alloca { ptr }, align 8
+  %arg.tmp371 = alloca { ptr }, align 8
+  %arg.tmp367 = alloca { ptr }, align 8
+  %arg.tmp363 = alloca { ptr }, align 8
   %nm = alloca i64, align 8
   %np = alloca i64, align 8
-  %sret.result358 = alloca { ptr }, align 8
-  %sret.result352 = alloca { ptr }, align 8
+  %sret.result355 = alloca { ptr }, align 8
+  %sret.result349 = alloca { ptr }, align 8
   %m = alloca i64, align 8
   %t = alloca i64, align 8
-  %sret.result241 = alloca { ptr }, align 8
-  %j169 = alloca i64, align 8
-  %sret.result153 = alloca { ptr }, align 8
-  %sret.result124 = alloca { ptr }, align 8
+  %sret.result239 = alloca { ptr }, align 8
+  %j167 = alloca i64, align 8
+  %sret.result151 = alloca { ptr }, align 8
+  %sret.result122 = alloca { ptr }, align 8
   %done = alloca i1, align 1
   %k = alloca i64, align 8
   %seg_line = alloca i64, align 8
@@ -76301,7 +76181,7 @@ entry:
   store ptr %struct.region21, ptr %ro_names, align 1
   br label %while.cond
 
-while.cond:                                       ; preds = %if.end486, %if.end470, %if.end150, %if.end117, %if.then30, %if.then, %entry
+while.cond:                                       ; preds = %if.end483, %if.end467, %if.end148, %if.end115, %if.then30, %if.then, %entry
   %i23 = load i64, ptr %i, align 8
   %lt = icmp ult i64 %i23, %call20
   br i1 %lt, label %while.body, label %while.exit
@@ -76313,18 +76193,18 @@ while.body:                                       ; preds = %while.cond
   br i1 %eq, label %if.then, label %if.end
 
 while.exit:                                       ; preds = %while.cond
-  %sb491 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb491, i8 93)
-  %sb492 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb492, i8 125)
+  %sb488 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb488, i8 93)
+  %sb489 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb489, i8 125)
   call void @_ZN7nameset7destroyEP8NameSlot(ptr %call)
   call void @_ZN7nameset7destroyEP8NameSlot(ptr %call16)
   call void @_ZN7nameset7destroyEP8NameSlot(ptr %call17)
-  %sb494 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result493, ptr %1, ptr %sb494)
+  %sb491 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result490, ptr %1, ptr %sb491)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  %sret.body = load { ptr }, ptr %sret.result493, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result493, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  %sret.body = load { ptr }, ptr %sret.result490, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result490, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
 if.then:                                          ; preds = %while.body
@@ -76356,938 +76236,932 @@ if.end31:                                         ; preds = %if.end
 
 if.then37:                                        ; preds = %if.end31
   store i1 false, ptr %is_multi, align 1
-  %i39 = load i64, ptr %i, align 8
-  %add40 = add i64 %i39, 1
-  %lt41 = icmp ult i64 %add40, %call20
-  br i1 %lt41, label %if.then42, label %if.end43
+  %i41 = load i64, ptr %i, align 8
+  %add42 = add i64 %i41, 1
+  %lt43 = icmp ult i64 %add42, %call20
+  br i1 %lt43, label %land.rhs, label %if.end40
 
 if.end38:                                         ; preds = %if.end31
   store i64 -1, ptr %seg_col, align 1
   store i64 0, ptr %seg_line, align 1
   store i64 0, ptr %k, align 1
-  %col163 = load i64, ptr %col, align 8
-  %call164 = call i1 @_ZN7symbols15is_string_startE2u8(i8 %call25)
-  br i1 %call164, label %if.then165, label %if.end166
+  %col161 = load i64, ptr %col, align 8
+  %call162 = call i1 @_ZN7symbols15is_string_startE2u8(i8 %call25)
+  br i1 %call162, label %if.then163, label %if.end164
 
-if.then42:                                        ; preds = %if.then37
+if.then39:                                        ; preds = %land.rhs
+  store i1 true, ptr %is_multi, align 1
+  br label %if.end40
+
+if.end40:                                         ; preds = %if.then39, %land.rhs, %if.then37
+  %is_multi48 = load i1, ptr %is_multi, align 1
+  br i1 %is_multi48, label %if.then49, label %if.end50
+
+land.rhs:                                         ; preds = %if.then37
   %i44 = load i64, ptr %i, align 8
   %add45 = add i64 %i44, 1
   %call46 = call i8 @_ZN6String3getEm(ptr %2, i64 %add45)
   %eq47 = icmp eq i8 %call46, 42
-  br i1 %eq47, label %if.then48, label %if.end49
+  br i1 %eq47, label %if.then39, label %if.end40
 
-if.end43:                                         ; preds = %if.end49, %if.then37
-  %is_multi50 = load i1, ptr %is_multi, align 1
-  br i1 %is_multi50, label %if.then51, label %if.end52
-
-if.then48:                                        ; preds = %if.then42
-  store i1 true, ptr %is_multi, align 1
-  br label %if.end49
-
-if.end49:                                         ; preds = %if.then48, %if.then42
-  br label %if.end43
-
-if.then51:                                        ; preds = %if.end43
-  %col53 = load i64, ptr %col, align 8
-  store i64 %col53, ptr %seg_col, align 1
-  %line54 = load i64, ptr %line, align 8
-  store i64 %line54, ptr %seg_line, align 1
-  %i55 = load i64, ptr %i, align 8
-  store i64 %i55, ptr %k, align 1
+if.then49:                                        ; preds = %if.end40
+  %col51 = load i64, ptr %col, align 8
+  store i64 %col51, ptr %seg_col, align 1
+  %line52 = load i64, ptr %line, align 8
+  store i64 %line52, ptr %seg_line, align 1
+  %i53 = load i64, ptr %i, align 8
+  store i64 %i53, ptr %k, align 1
   store i1 false, ptr %done, align 1
-  br label %while.cond56
+  br label %while.cond54
 
-if.end52:                                         ; preds = %if.end43
-  %i132 = load i64, ptr %i, align 8
-  store i64 %i132, ptr %seg_col, align 1
-  br label %while.cond133
+if.end50:                                         ; preds = %if.end40
+  %i130 = load i64, ptr %i, align 8
+  store i64 %i130, ptr %seg_col, align 1
+  br label %while.cond131
 
-while.cond56:                                     ; preds = %if.end92, %if.then102, %if.end72, %if.then51
-  %k59 = load i64, ptr %k, align 8
-  %lt60 = icmp ult i64 %k59, %call20
-  br i1 %lt60, label %while.body57, label %while.exit58
+while.cond54:                                     ; preds = %if.end90, %if.then100, %if.end70, %if.then49
+  %k57 = load i64, ptr %k, align 8
+  %lt58 = icmp ult i64 %k57, %call20
+  br i1 %lt58, label %while.body55, label %while.exit56
 
-while.body57:                                     ; preds = %while.cond56
-  %done61 = load i1, ptr %done, align 1
-  br i1 %done61, label %if.then62, label %if.end63
+while.body55:                                     ; preds = %while.cond54
+  %done59 = load i1, ptr %done, align 1
+  br i1 %done59, label %if.then60, label %if.end61
 
-while.exit58:                                     ; preds = %if.then62, %while.cond56
-  %col112 = load i64, ptr %col, align 8
-  %seg_col113 = load i64, ptr %seg_col, align 8
-  %sub114 = sub i64 %col112, %seg_col113
-  %gt115 = icmp ugt i64 %sub114, 0
-  br i1 %gt115, label %if.then116, label %if.end117
+while.exit56:                                     ; preds = %if.then60, %while.cond54
+  %col110 = load i64, ptr %col, align 8
+  %seg_col111 = load i64, ptr %seg_col, align 8
+  %sub112 = sub i64 %col110, %seg_col111
+  %gt113 = icmp ugt i64 %sub112, 0
+  br i1 %gt113, label %if.then114, label %if.end115
 
-if.then62:                                        ; preds = %while.body57
-  br label %while.exit58
+if.then60:                                        ; preds = %while.body55
+  br label %while.exit56
 
-if.end63:                                         ; preds = %while.body57
-  %k64 = load i64, ptr %k, align 8
-  %call65 = call i8 @_ZN6String3getEm(ptr %2, i64 %k64)
-  %eq66 = icmp eq i8 %call65, 10
-  br i1 %eq66, label %if.then67, label %if.end68
+if.end61:                                         ; preds = %while.body55
+  %k62 = load i64, ptr %k, align 8
+  %call63 = call i8 @_ZN6String3getEm(ptr %2, i64 %k62)
+  %eq64 = icmp eq i8 %call63, 10
+  br i1 %eq64, label %if.then65, label %if.end66
 
-if.then67:                                        ; preds = %if.end63
-  %col69 = load i64, ptr %col, align 8
-  %seg_col70 = load i64, ptr %seg_col, align 8
-  %sub = sub i64 %col69, %seg_col70
+if.then65:                                        ; preds = %if.end61
+  %col67 = load i64, ptr %col, align 8
+  %seg_col68 = load i64, ptr %seg_col, align 8
+  %sub = sub i64 %col67, %seg_col68
   %gt = icmp ugt i64 %sub, 0
-  br i1 %gt, label %if.then71, label %if.end72
+  br i1 %gt, label %if.then69, label %if.end70
 
-if.end68:                                         ; preds = %if.end63
-  %eq90 = icmp eq i8 %call65, 42
-  br i1 %eq90, label %if.then91, label %if.end92
+if.end66:                                         ; preds = %if.end61
+  %eq88 = icmp eq i8 %call63, 42
+  br i1 %eq88, label %if.then89, label %if.end90
 
-if.then71:                                        ; preds = %if.then67
-  %first73 = load i1, ptr %first, align 1
-  %eq74 = icmp eq i1 %first73, false
-  br i1 %eq74, label %if.then75, label %if.end76
+if.then69:                                        ; preds = %if.then65
+  %first71 = load i1, ptr %first, align 1
+  %eq72 = icmp eq i1 %first71, false
+  br i1 %eq72, label %if.then73, label %if.end74
 
-if.end72:                                         ; preds = %if.end76, %if.then67
-  %line85 = load i64, ptr %line, align 8
-  %add86 = add i64 %line85, 1
-  store i64 %add86, ptr %line, align 1
+if.end70:                                         ; preds = %if.end74, %if.then65
+  %line83 = load i64, ptr %line, align 8
+  %add84 = add i64 %line83, 1
+  store i64 %add84, ptr %line, align 1
   store i64 0, ptr %col, align 1
-  %k87 = load i64, ptr %k, align 8
-  %add88 = add i64 %k87, 1
-  store i64 %add88, ptr %k, align 1
-  %line89 = load i64, ptr %line, align 8
-  store i64 %line89, ptr %seg_line, align 1
+  %k85 = load i64, ptr %k, align 8
+  %add86 = add i64 %k85, 1
+  store i64 %add86, ptr %k, align 1
+  %line87 = load i64, ptr %line, align 8
+  store i64 %line87, ptr %seg_line, align 1
   store i64 0, ptr %seg_col, align 1
-  br label %while.cond56
+  br label %while.cond54
 
-if.then75:                                        ; preds = %if.then71
-  %sb77 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb77, i8 44)
-  br label %if.end76
+if.then73:                                        ; preds = %if.then69
+  %sb75 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb75, i8 44)
+  br label %if.end74
 
-if.end76:                                         ; preds = %if.then75, %if.then71
-  %sb78 = load ptr, ptr %sb, align 8
-  %prev_line79 = load i64, ptr %prev_line, align 8
-  %prev_col80 = load i64, ptr %prev_col, align 8
+if.end74:                                         ; preds = %if.then73, %if.then69
+  %sb76 = load ptr, ptr %sb, align 8
+  %prev_line77 = load i64, ptr %prev_line, align 8
+  %prev_col78 = load i64, ptr %prev_col, align 8
+  %seg_line79 = load i64, ptr %seg_line, align 8
+  %seg_col80 = load i64, ptr %seg_col, align 8
+  call void @_ZN7symbols12encode_tokenEPN4scaly6memory4PageEmmmmm3i64(ptr noalias sret({ ptr }) %arg.tmp22, ptr %frame, i64 %prev_line77, i64 %prev_col78, i64 %seg_line79, i64 %seg_col80, i64 %sub, i64 7)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb76, ptr %arg.tmp22)
   %seg_line81 = load i64, ptr %seg_line, align 8
+  store i64 %seg_line81, ptr %prev_line, align 1
   %seg_col82 = load i64, ptr %seg_col, align 8
-  call void @_ZN7symbols12encode_tokenEPN4scaly6memory4PageEmmmmm3i64(ptr noalias sret({ ptr }) %arg.tmp22, ptr %frame, i64 %prev_line79, i64 %prev_col80, i64 %seg_line81, i64 %seg_col82, i64 %sub, i64 7)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb78, ptr %arg.tmp22)
-  %seg_line83 = load i64, ptr %seg_line, align 8
-  store i64 %seg_line83, ptr %prev_line, align 1
-  %seg_col84 = load i64, ptr %seg_col, align 8
-  store i64 %seg_col84, ptr %prev_col, align 1
+  store i64 %seg_col82, ptr %prev_col, align 1
   store i1 false, ptr %first, align 1
-  br label %if.end72
+  br label %if.end70
 
-if.then91:                                        ; preds = %if.end68
-  %k93 = load i64, ptr %k, align 8
-  %add94 = add i64 %k93, 1
-  %lt95 = icmp ult i64 %add94, %call20
-  br i1 %lt95, label %if.then96, label %if.end97
+if.then89:                                        ; preds = %if.end66
+  %k91 = load i64, ptr %k, align 8
+  %add92 = add i64 %k91, 1
+  %lt93 = icmp ult i64 %add92, %call20
+  br i1 %lt93, label %if.then94, label %if.end95
 
-if.end92:                                         ; preds = %if.end97, %if.end68
-  %col108 = load i64, ptr %col, align 8
-  %add109 = add i64 %col108, 1
-  store i64 %add109, ptr %col, align 1
-  %k110 = load i64, ptr %k, align 8
-  %add111 = add i64 %k110, 1
-  store i64 %add111, ptr %k, align 1
-  br label %while.cond56
+if.end90:                                         ; preds = %if.end95, %if.end66
+  %col106 = load i64, ptr %col, align 8
+  %add107 = add i64 %col106, 1
+  store i64 %add107, ptr %col, align 1
+  %k108 = load i64, ptr %k, align 8
+  %add109 = add i64 %k108, 1
+  store i64 %add109, ptr %k, align 1
+  br label %while.cond54
 
-if.then96:                                        ; preds = %if.then91
-  %k98 = load i64, ptr %k, align 8
-  %add99 = add i64 %k98, 1
-  %call100 = call i8 @_ZN6String3getEm(ptr %2, i64 %add99)
-  %eq101 = icmp eq i8 %call100, 59
-  br i1 %eq101, label %if.then102, label %if.end103
+if.then94:                                        ; preds = %if.then89
+  %k96 = load i64, ptr %k, align 8
+  %add97 = add i64 %k96, 1
+  %call98 = call i8 @_ZN6String3getEm(ptr %2, i64 %add97)
+  %eq99 = icmp eq i8 %call98, 59
+  br i1 %eq99, label %if.then100, label %if.end101
 
-if.end97:                                         ; preds = %if.end103, %if.then91
-  br label %if.end92
+if.end95:                                         ; preds = %if.end101, %if.then89
+  br label %if.end90
 
-if.then102:                                       ; preds = %if.then96
-  %col104 = load i64, ptr %col, align 8
-  %add105 = add i64 %col104, 2
-  store i64 %add105, ptr %col, align 1
-  %k106 = load i64, ptr %k, align 8
-  %add107 = add i64 %k106, 2
-  store i64 %add107, ptr %k, align 1
+if.then100:                                       ; preds = %if.then94
+  %col102 = load i64, ptr %col, align 8
+  %add103 = add i64 %col102, 2
+  store i64 %add103, ptr %col, align 1
+  %k104 = load i64, ptr %k, align 8
+  %add105 = add i64 %k104, 2
+  store i64 %add105, ptr %k, align 1
   store i1 true, ptr %done, align 1
-  br label %while.cond56
+  br label %while.cond54
 
-if.end103:                                        ; preds = %if.then96
-  br label %if.end97
+if.end101:                                        ; preds = %if.then94
+  br label %if.end95
 
-if.then116:                                       ; preds = %while.exit58
-  %first118 = load i1, ptr %first, align 1
-  %eq119 = icmp eq i1 %first118, false
-  br i1 %eq119, label %if.then120, label %if.end121
+if.then114:                                       ; preds = %while.exit56
+  %first116 = load i1, ptr %first, align 1
+  %eq117 = icmp eq i1 %first116, false
+  br i1 %eq117, label %if.then118, label %if.end119
 
-if.end117:                                        ; preds = %if.end121, %while.exit58
-  %k131 = load i64, ptr %k, align 8
-  store i64 %k131, ptr %i, align 1
+if.end115:                                        ; preds = %if.end119, %while.exit56
+  %k129 = load i64, ptr %k, align 8
+  store i64 %k129, ptr %i, align 1
   store i64 -1, ptr %pending, align 1
   store i64 -1, ptr %pmod, align 1
   store i1 false, ptr %prev_was_dot, align 1
   br label %while.cond
 
-if.then120:                                       ; preds = %if.then116
-  %sb122 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb122, i8 44)
-  br label %if.end121
+if.then118:                                       ; preds = %if.then114
+  %sb120 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb120, i8 44)
+  br label %if.end119
 
-if.end121:                                        ; preds = %if.then120, %if.then116
-  %sb123 = load ptr, ptr %sb, align 8
-  %prev_line125 = load i64, ptr %prev_line, align 8
-  %prev_col126 = load i64, ptr %prev_col, align 8
+if.end119:                                        ; preds = %if.then118, %if.then114
+  %sb121 = load ptr, ptr %sb, align 8
+  %prev_line123 = load i64, ptr %prev_line, align 8
+  %prev_col124 = load i64, ptr %prev_col, align 8
+  %seg_line125 = load i64, ptr %seg_line, align 8
+  %seg_col126 = load i64, ptr %seg_col, align 8
+  call void @_ZN7symbols12encode_tokenEPN4scaly6memory4PageEmmmmm3i64(ptr noalias sret({ ptr }) %sret.result122, ptr %frame, i64 %prev_line123, i64 %prev_col124, i64 %seg_line125, i64 %seg_col126, i64 %sub112, i64 7)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb121, ptr %sret.result122)
   %seg_line127 = load i64, ptr %seg_line, align 8
+  store i64 %seg_line127, ptr %prev_line, align 1
   %seg_col128 = load i64, ptr %seg_col, align 8
-  call void @_ZN7symbols12encode_tokenEPN4scaly6memory4PageEmmmmm3i64(ptr noalias sret({ ptr }) %sret.result124, ptr %frame, i64 %prev_line125, i64 %prev_col126, i64 %seg_line127, i64 %seg_col128, i64 %sub114, i64 7)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb123, ptr %sret.result124)
-  %seg_line129 = load i64, ptr %seg_line, align 8
-  store i64 %seg_line129, ptr %prev_line, align 1
-  %seg_col130 = load i64, ptr %seg_col, align 8
-  store i64 %seg_col130, ptr %prev_col, align 1
+  store i64 %seg_col128, ptr %prev_col, align 1
   store i1 false, ptr %first, align 1
-  br label %if.end117
+  br label %if.end115
 
-while.cond133:                                    ; preds = %if.end141, %if.end52
+while.cond131:                                    ; preds = %if.end139, %if.end50
   %j = load i64, ptr %seg_col, align 8
-  %lt136 = icmp ult i64 %j, %call20
-  br i1 %lt136, label %while.body134, label %while.exit135
+  %lt134 = icmp ult i64 %j, %call20
+  br i1 %lt134, label %while.body132, label %while.exit133
 
-while.body134:                                    ; preds = %while.cond133
-  %j137 = load i64, ptr %seg_col, align 8
-  %call138 = call i8 @_ZN6String3getEm(ptr %2, i64 %j137)
-  %eq139 = icmp eq i8 %call138, 10
-  br i1 %eq139, label %if.then140, label %if.end141
+while.body132:                                    ; preds = %while.cond131
+  %j135 = load i64, ptr %seg_col, align 8
+  %call136 = call i8 @_ZN6String3getEm(ptr %2, i64 %j135)
+  %eq137 = icmp eq i8 %call136, 10
+  br i1 %eq137, label %if.then138, label %if.end139
 
-while.exit135:                                    ; preds = %if.then140, %while.cond133
-  %j144 = load i64, ptr %seg_col, align 8
-  %i145 = load i64, ptr %i, align 8
-  %sub146 = sub i64 %j144, %i145
-  %first147 = load i1, ptr %first, align 1
-  %eq148 = icmp eq i1 %first147, false
-  br i1 %eq148, label %if.then149, label %if.end150
-
-if.then140:                                       ; preds = %while.body134
-  br label %while.exit135
-
-if.end141:                                        ; preds = %while.body134
+while.exit133:                                    ; preds = %if.then138, %while.cond131
   %j142 = load i64, ptr %seg_col, align 8
-  %add143 = add i64 %j142, 1
-  store i64 %add143, ptr %seg_col, align 1
-  br label %while.cond133
+  %i143 = load i64, ptr %i, align 8
+  %sub144 = sub i64 %j142, %i143
+  %first145 = load i1, ptr %first, align 1
+  %eq146 = icmp eq i1 %first145, false
+  br i1 %eq146, label %if.then147, label %if.end148
 
-if.then149:                                       ; preds = %while.exit135
-  %sb151 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb151, i8 44)
-  br label %if.end150
+if.then138:                                       ; preds = %while.body132
+  br label %while.exit133
 
-if.end150:                                        ; preds = %if.then149, %while.exit135
-  %sb152 = load ptr, ptr %sb, align 8
-  %prev_line154 = load i64, ptr %prev_line, align 8
-  %prev_col155 = load i64, ptr %prev_col, align 8
+if.end139:                                        ; preds = %while.body132
+  %j140 = load i64, ptr %seg_col, align 8
+  %add141 = add i64 %j140, 1
+  store i64 %add141, ptr %seg_col, align 1
+  br label %while.cond131
+
+if.then147:                                       ; preds = %while.exit133
+  %sb149 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb149, i8 44)
+  br label %if.end148
+
+if.end148:                                        ; preds = %if.then147, %while.exit133
+  %sb150 = load ptr, ptr %sb, align 8
+  %prev_line152 = load i64, ptr %prev_line, align 8
+  %prev_col153 = load i64, ptr %prev_col, align 8
+  %line154 = load i64, ptr %line, align 8
+  %col155 = load i64, ptr %col, align 8
+  call void @_ZN7symbols12encode_tokenEPN4scaly6memory4PageEmmmmm3i64(ptr noalias sret({ ptr }) %sret.result151, ptr %frame, i64 %prev_line152, i64 %prev_col153, i64 %line154, i64 %col155, i64 %sub144, i64 7)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb150, ptr %sret.result151)
   %line156 = load i64, ptr %line, align 8
+  store i64 %line156, ptr %prev_line, align 1
   %col157 = load i64, ptr %col, align 8
-  call void @_ZN7symbols12encode_tokenEPN4scaly6memory4PageEmmmmm3i64(ptr noalias sret({ ptr }) %sret.result153, ptr %frame, i64 %prev_line154, i64 %prev_col155, i64 %line156, i64 %col157, i64 %sub146, i64 7)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb152, ptr %sret.result153)
-  %line158 = load i64, ptr %line, align 8
-  store i64 %line158, ptr %prev_line, align 1
-  %col159 = load i64, ptr %col, align 8
-  store i64 %col159, ptr %prev_col, align 1
+  store i64 %col157, ptr %prev_col, align 1
   store i1 false, ptr %first, align 1
-  %col160 = load i64, ptr %col, align 8
-  %add161 = add i64 %col160, %sub146
-  store i64 %add161, ptr %col, align 1
-  %j162 = load i64, ptr %seg_col, align 8
-  store i64 %j162, ptr %i, align 1
+  %col158 = load i64, ptr %col, align 8
+  %add159 = add i64 %col158, %sub144
+  store i64 %add159, ptr %col, align 1
+  %j160 = load i64, ptr %seg_col, align 8
+  store i64 %j160, ptr %i, align 1
   store i64 -1, ptr %pending, align 1
   store i64 -1, ptr %pmod, align 1
   store i1 false, ptr %prev_was_dot, align 1
   br label %while.cond
 
-if.then165:                                       ; preds = %if.end38
-  %i167 = load i64, ptr %i, align 8
-  %add168 = add i64 %i167, 1
-  store i64 %add168, ptr %j169, align 1
-  br label %while.cond170
+if.then163:                                       ; preds = %if.end38
+  %i165 = load i64, ptr %i, align 8
+  %add166 = add i64 %i165, 1
+  store i64 %add166, ptr %j167, align 1
+  br label %while.cond168
 
-if.end166:                                        ; preds = %if.end195, %if.end38
-  %call199 = call i1 @_ZN7symbols8is_digitE2u8(i8 %call25)
-  br i1 %call199, label %if.then200, label %if.end201
+if.end164:                                        ; preds = %if.end193, %if.end38
+  %call197 = call i1 @_ZN7symbols8is_digitE2u8(i8 %call25)
+  br i1 %call197, label %if.then198, label %if.end199
 
-while.cond170:                                    ; preds = %if.end187, %if.then181, %if.then165
-  %j173 = load i64, ptr %j169, align 8
-  %lt174 = icmp ult i64 %j173, %call20
-  br i1 %lt174, label %while.body171, label %while.exit172
+while.cond168:                                    ; preds = %if.end185, %if.then179, %if.then163
+  %j171 = load i64, ptr %j167, align 8
+  %lt172 = icmp ult i64 %j171, %call20
+  br i1 %lt172, label %while.body169, label %while.exit170
 
-while.body171:                                    ; preds = %while.cond170
-  %j175 = load i64, ptr %j169, align 8
-  %call176 = call i8 @_ZN6String3getEm(ptr %2, i64 %j175)
-  %eq177 = icmp eq i8 %call176, 10
-  br i1 %eq177, label %if.then178, label %if.end179
+while.body169:                                    ; preds = %while.cond168
+  %j173 = load i64, ptr %j167, align 8
+  %call174 = call i8 @_ZN6String3getEm(ptr %2, i64 %j173)
+  %eq175 = icmp eq i8 %call174, 10
+  br i1 %eq175, label %if.then176, label %if.end177
 
-while.exit172:                                    ; preds = %if.then186, %if.then178, %while.cond170
-  %j192 = load i64, ptr %j169, align 8
-  %gt193 = icmp ugt i64 %j192, %call20
-  br i1 %gt193, label %if.then194, label %if.end195
+while.exit170:                                    ; preds = %if.then184, %if.then176, %while.cond168
+  %j190 = load i64, ptr %j167, align 8
+  %gt191 = icmp ugt i64 %j190, %call20
+  br i1 %gt191, label %if.then192, label %if.end193
 
-if.then178:                                       ; preds = %while.body171
-  br label %while.exit172
+if.then176:                                       ; preds = %while.body169
+  br label %while.exit170
 
-if.end179:                                        ; preds = %while.body171
-  %eq180 = icmp eq i8 %call176, 92
-  br i1 %eq180, label %if.then181, label %if.end182
+if.end177:                                        ; preds = %while.body169
+  %eq178 = icmp eq i8 %call174, 92
+  br i1 %eq178, label %if.then179, label %if.end180
 
-if.then181:                                       ; preds = %if.end179
-  %j183 = load i64, ptr %j169, align 8
-  %add184 = add i64 %j183, 2
-  store i64 %add184, ptr %j169, align 1
-  br label %while.cond170
+if.then179:                                       ; preds = %if.end177
+  %j181 = load i64, ptr %j167, align 8
+  %add182 = add i64 %j181, 2
+  store i64 %add182, ptr %j167, align 1
+  br label %while.cond168
 
-if.end182:                                        ; preds = %if.end179
-  %eq185 = icmp eq i8 %call176, %call25
-  br i1 %eq185, label %if.then186, label %if.end187
+if.end180:                                        ; preds = %if.end177
+  %eq183 = icmp eq i8 %call174, %call25
+  br i1 %eq183, label %if.then184, label %if.end185
 
-if.then186:                                       ; preds = %if.end182
-  %j188 = load i64, ptr %j169, align 8
+if.then184:                                       ; preds = %if.end180
+  %j186 = load i64, ptr %j167, align 8
+  %add187 = add i64 %j186, 1
+  store i64 %add187, ptr %j167, align 1
+  br label %while.exit170
+
+if.end185:                                        ; preds = %if.end180
+  %j188 = load i64, ptr %j167, align 8
   %add189 = add i64 %j188, 1
-  store i64 %add189, ptr %j169, align 1
-  br label %while.exit172
+  store i64 %add189, ptr %j167, align 1
+  br label %while.cond168
 
-if.end187:                                        ; preds = %if.end182
-  %j190 = load i64, ptr %j169, align 8
-  %add191 = add i64 %j190, 1
-  store i64 %add191, ptr %j169, align 1
-  br label %while.cond170
+if.then192:                                       ; preds = %while.exit170
+  store i64 %call20, ptr %j167, align 1
+  br label %if.end193
 
-if.then194:                                       ; preds = %while.exit172
-  store i64 %call20, ptr %j169, align 1
-  br label %if.end195
-
-if.end195:                                        ; preds = %if.then194, %while.exit172
-  %j196 = load i64, ptr %j169, align 8
-  %i197 = load i64, ptr %i, align 8
-  %sub198 = sub i64 %j196, %i197
-  store i64 %sub198, ptr %k, align 1
+if.end193:                                        ; preds = %if.then192, %while.exit170
+  %j194 = load i64, ptr %j167, align 8
+  %i195 = load i64, ptr %i, align 8
+  %sub196 = sub i64 %j194, %i195
+  store i64 %sub196, ptr %k, align 1
   store i64 5, ptr %seg_col, align 1
   store i64 -1, ptr %pending, align 1
   store i64 -1, ptr %pmod, align 1
-  br label %if.end166
+  br label %if.end164
 
-if.then200:                                       ; preds = %if.end166
-  %i202 = load i64, ptr %i, align 8
-  %add203 = add i64 %i202, 1
-  store i64 %add203, ptr %j169, align 1
-  br label %while.cond204
+if.then198:                                       ; preds = %if.end164
+  %i200 = load i64, ptr %i, align 8
+  %add201 = add i64 %i200, 1
+  store i64 %add201, ptr %j167, align 1
+  br label %while.cond202
 
-if.end201:                                        ; preds = %while.exit206, %if.end166
-  %call220 = call i1 @_ZN7symbols9is_letterE2u8(i8 %call25)
-  br i1 %call220, label %if.then221, label %if.end222
+if.end199:                                        ; preds = %while.exit204, %if.end164
+  %call218 = call i1 @_ZN7symbols9is_letterE2u8(i8 %call25)
+  br i1 %call218, label %if.then219, label %if.end220
 
-while.cond204:                                    ; preds = %if.end214, %if.then200
-  %j207 = load i64, ptr %j169, align 8
-  %lt208 = icmp ult i64 %j207, %call20
-  br i1 %lt208, label %while.body205, label %while.exit206
+while.cond202:                                    ; preds = %if.end212, %if.then198
+  %j205 = load i64, ptr %j167, align 8
+  %lt206 = icmp ult i64 %j205, %call20
+  br i1 %lt206, label %while.body203, label %while.exit204
 
-while.body205:                                    ; preds = %while.cond204
-  %j209 = load i64, ptr %j169, align 8
-  %call210 = call i8 @_ZN6String3getEm(ptr %2, i64 %j209)
-  %call211 = call i1 @_ZN7symbols11is_num_byteE2u8(i8 %call210)
-  %eq212 = icmp eq i1 %call211, false
-  br i1 %eq212, label %if.then213, label %if.end214
+while.body203:                                    ; preds = %while.cond202
+  %j207 = load i64, ptr %j167, align 8
+  %call208 = call i8 @_ZN6String3getEm(ptr %2, i64 %j207)
+  %call209 = call i1 @_ZN7symbols11is_num_byteE2u8(i8 %call208)
+  %eq210 = icmp eq i1 %call209, false
+  br i1 %eq210, label %if.then211, label %if.end212
 
-while.exit206:                                    ; preds = %if.then213, %while.cond204
-  %j217 = load i64, ptr %j169, align 8
-  %i218 = load i64, ptr %i, align 8
-  %sub219 = sub i64 %j217, %i218
-  store i64 %sub219, ptr %k, align 1
+while.exit204:                                    ; preds = %if.then211, %while.cond202
+  %j215 = load i64, ptr %j167, align 8
+  %i216 = load i64, ptr %i, align 8
+  %sub217 = sub i64 %j215, %i216
+  store i64 %sub217, ptr %k, align 1
   store i64 6, ptr %seg_col, align 1
   store i64 -1, ptr %pending, align 1
   store i64 -1, ptr %pmod, align 1
-  br label %if.end201
+  br label %if.end199
 
-if.then213:                                       ; preds = %while.body205
-  br label %while.exit206
+if.then211:                                       ; preds = %while.body203
+  br label %while.exit204
 
-if.end214:                                        ; preds = %while.body205
-  %j215 = load i64, ptr %j169, align 8
-  %add216 = add i64 %j215, 1
-  store i64 %add216, ptr %j169, align 1
-  br label %while.cond204
+if.end212:                                        ; preds = %while.body203
+  %j213 = load i64, ptr %j167, align 8
+  %add214 = add i64 %j213, 1
+  store i64 %add214, ptr %j167, align 1
+  br label %while.cond202
 
-if.then221:                                       ; preds = %if.end201
-  %i223 = load i64, ptr %i, align 8
-  %add224 = add i64 %i223, 1
-  store i64 %add224, ptr %j169, align 1
-  br label %while.cond225
+if.then219:                                       ; preds = %if.end199
+  %i221 = load i64, ptr %i, align 8
+  %add222 = add i64 %i221, 1
+  store i64 %add222, ptr %j167, align 1
+  br label %while.cond223
 
-if.end222:                                        ; preds = %if.end442, %if.end201
-  %call443 = call i1 @_ZN7grammar10is_op_charE2u8(i8 %call25)
-  br i1 %call443, label %if.then444, label %if.end445
+if.end220:                                        ; preds = %if.end439, %if.end199
+  %call440 = call i1 @_ZN7grammar10is_op_charE2u8(i8 %call25)
+  br i1 %call440, label %if.then441, label %if.end442
 
-while.cond225:                                    ; preds = %if.end235, %if.then221
-  %j228 = load i64, ptr %j169, align 8
-  %lt229 = icmp ult i64 %j228, %call20
-  br i1 %lt229, label %while.body226, label %while.exit227
+while.cond223:                                    ; preds = %if.end233, %if.then219
+  %j226 = load i64, ptr %j167, align 8
+  %lt227 = icmp ult i64 %j226, %call20
+  br i1 %lt227, label %while.body224, label %while.exit225
 
-while.body226:                                    ; preds = %while.cond225
-  %j230 = load i64, ptr %j169, align 8
-  %call231 = call i8 @_ZN6String3getEm(ptr %2, i64 %j230)
-  %call232 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call231)
-  %eq233 = icmp eq i1 %call232, false
-  br i1 %eq233, label %if.then234, label %if.end235
+while.body224:                                    ; preds = %while.cond223
+  %j228 = load i64, ptr %j167, align 8
+  %call229 = call i8 @_ZN6String3getEm(ptr %2, i64 %j228)
+  %call230 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call229)
+  %eq231 = icmp eq i1 %call230, false
+  br i1 %eq231, label %if.then232, label %if.end233
 
-while.exit227:                                    ; preds = %if.then234, %while.cond225
-  %j238 = load i64, ptr %j169, align 8
-  %i239 = load i64, ptr %i, align 8
-  %sub240 = sub i64 %j238, %i239
-  store i64 %sub240, ptr %k, align 1
-  %i242 = load i64, ptr %i, align 8
-  %j243 = load i64, ptr %j169, align 8
-  call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result241, ptr %frame, ptr %2, i64 %i242, i64 %j243)
-  %prev_was_dot244 = load i1, ptr %prev_was_dot, align 1
+while.exit225:                                    ; preds = %if.then232, %while.cond223
+  %j236 = load i64, ptr %j167, align 8
+  %i237 = load i64, ptr %i, align 8
+  %sub238 = sub i64 %j236, %i237
+  store i64 %sub238, ptr %k, align 1
+  %i240 = load i64, ptr %i, align 8
+  %j241 = load i64, ptr %j167, align 8
+  call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result239, ptr %frame, ptr %2, i64 %i240, i64 %j241)
+  %prev_was_dot242 = load i1, ptr %prev_was_dot, align 1
   store i64 3, ptr %t, align 1
-  %call245 = call i1 @_ZN7symbols8is_upperE2u8(i8 %call25)
-  br i1 %call245, label %if.then246, label %if.end247
+  %call243 = call i1 @_ZN7symbols8is_upperE2u8(i8 %call25)
+  br i1 %call243, label %if.then244, label %if.end245
 
-if.then234:                                       ; preds = %while.body226
-  br label %while.exit227
+if.then232:                                       ; preds = %while.body224
+  br label %while.exit225
 
-if.end235:                                        ; preds = %while.body226
-  %j236 = load i64, ptr %j169, align 8
-  %add237 = add i64 %j236, 1
-  store i64 %add237, ptr %j169, align 1
-  br label %while.cond225
+if.end233:                                        ; preds = %while.body224
+  %j234 = load i64, ptr %j167, align 8
+  %add235 = add i64 %j234, 1
+  store i64 %add235, ptr %j167, align 1
+  br label %while.cond223
 
-if.then246:                                       ; preds = %while.exit227
+if.then244:                                       ; preds = %while.exit225
   store i64 1, ptr %t, align 1
-  br label %if.end247
+  br label %if.end245
 
-if.end247:                                        ; preds = %if.then246, %while.exit227
-  %pending248 = load i64, ptr %pending, align 8
-  %eq249 = icmp eq i64 %pending248, 1
-  br i1 %eq249, label %if.then250, label %if.end251
+if.end245:                                        ; preds = %if.then244, %while.exit225
+  %pending246 = load i64, ptr %pending, align 8
+  %eq247 = icmp eq i64 %pending246, 1
+  br i1 %eq247, label %if.then248, label %if.end249
 
-if.then250:                                       ; preds = %if.end247
+if.then248:                                       ; preds = %if.end245
   store i64 1, ptr %t, align 1
-  br label %if.end251
+  br label %if.end249
 
-if.end251:                                        ; preds = %if.then250, %if.end247
-  %pending252 = load i64, ptr %pending, align 8
-  %eq253 = icmp eq i64 %pending252, 2
-  br i1 %eq253, label %if.then254, label %if.end255
+if.end249:                                        ; preds = %if.then248, %if.end245
+  %pending250 = load i64, ptr %pending, align 8
+  %eq251 = icmp eq i64 %pending250, 2
+  br i1 %eq251, label %if.then252, label %if.end253
 
-if.then254:                                       ; preds = %if.end251
+if.then252:                                       ; preds = %if.end249
   store i64 2, ptr %t, align 1
-  br label %if.end255
+  br label %if.end253
 
-if.end255:                                        ; preds = %if.then254, %if.end251
-  %i256 = load i64, ptr %i, align 8
-  %j257 = load i64, ptr %j169, align 8
-  %call258 = call i64 @_ZN7nameset6lookupEP8NameSlotm6Stringmm(ptr %call, i64 32768, ptr %2, i64 %i256, i64 %j257)
-  %ge = icmp sge i64 %call258, 0
-  br i1 %ge, label %if.then259, label %if.end260
+if.end253:                                        ; preds = %if.then252, %if.end249
+  %i254 = load i64, ptr %i, align 8
+  %j255 = load i64, ptr %j167, align 8
+  %call256 = call i64 @_ZN7nameset6lookupEP8NameSlotm6Stringmm(ptr %call, i64 32768, ptr %2, i64 %i254, i64 %j255)
+  %ge = icmp sge i64 %call256, 0
+  br i1 %ge, label %if.then257, label %if.end258
 
-if.then259:                                       ; preds = %if.end255
-  store i64 %call258, ptr %t, align 1
-  br label %if.end260
+if.then257:                                       ; preds = %if.end253
+  store i64 %call256, ptr %t, align 1
+  br label %if.end258
 
-if.end260:                                        ; preds = %if.then259, %if.end255
+if.end258:                                        ; preds = %if.then257, %if.end253
+  %i259 = load i64, ptr %i, align 8
+  %j260 = load i64, ptr %j167, align 8
   %i261 = load i64, ptr %i, align 8
-  %j262 = load i64, ptr %j169, align 8
-  %i263 = load i64, ptr %i, align 8
-  %call264 = call i1 @_ZN7symbols14param_in_scopeE6String6Stringmmm(ptr %sret.result19, ptr %2, i64 %i261, i64 %j262, i64 %i263)
-  br i1 %call264, label %if.then265, label %if.end266
+  %call262 = call i1 @_ZN7symbols14param_in_scopeE6String6Stringmmm(ptr %sret.result19, ptr %2, i64 %i259, i64 %j260, i64 %i261)
+  br i1 %call262, label %if.then263, label %if.end264
 
-if.then265:                                       ; preds = %if.end260
+if.then263:                                       ; preds = %if.end258
   store i64 8, ptr %t, align 1
-  br label %if.end266
+  br label %if.end264
 
-if.end266:                                        ; preds = %if.then265, %if.end260
-  %i267 = load i64, ptr %i, align 8
-  %call268 = call i1 @_ZN7symbols20is_field_decl_offsetE6Stringm(ptr %sret.result19, i64 %i267)
-  br i1 %call268, label %if.then269, label %if.end270
+if.end264:                                        ; preds = %if.then263, %if.end258
+  %i265 = load i64, ptr %i, align 8
+  %call266 = call i1 @_ZN7symbols20is_field_decl_offsetE6Stringm(ptr %sret.result19, i64 %i265)
+  br i1 %call266, label %if.then267, label %if.end268
 
-if.then269:                                       ; preds = %if.end266
+if.then267:                                       ; preds = %if.end264
   store i64 9, ptr %t, align 1
-  br label %if.end270
+  br label %if.end268
 
-if.end270:                                        ; preds = %if.then269, %if.end266
-  br i1 %prev_was_dot244, label %if.then271, label %if.end272
+if.end268:                                        ; preds = %if.then267, %if.end264
+  br i1 %prev_was_dot242, label %if.then269, label %if.end270
 
-if.then271:                                       ; preds = %if.end270
-  %t273 = load i64, ptr %t, align 8
-  %ne = icmp ne i64 %t273, 1
-  br i1 %ne, label %if.then274, label %if.end275
+if.then269:                                       ; preds = %if.end268
+  %t274 = load i64, ptr %t, align 8
+  %ne = icmp ne i64 %t274, 1
+  br i1 %ne, label %land.rhs273, label %if.end272
 
-if.end272:                                        ; preds = %if.end275, %if.end270
-  %call280 = call i1 @_ZN7grammar10is_keywordE6String(ptr %sret.result241)
-  br i1 %call280, label %if.then281, label %if.end282
+if.end270:                                        ; preds = %if.end272, %if.end268
+  %call277 = call i1 @_ZN7grammar10is_keywordE6String(ptr %sret.result239)
+  br i1 %call277, label %if.then278, label %if.end279
 
-if.then274:                                       ; preds = %if.then271
-  %t276 = load i64, ptr %t, align 8
-  %ne277 = icmp ne i64 %t276, 2
-  br i1 %ne277, label %if.then278, label %if.end279
-
-if.end275:                                        ; preds = %if.end279, %if.then271
+if.then271:                                       ; preds = %land.rhs273
+  store i64 9, ptr %t, align 1
   br label %if.end272
 
-if.then278:                                       ; preds = %if.then274
-  store i64 9, ptr %t, align 1
+if.end272:                                        ; preds = %if.then271, %land.rhs273, %if.then269
+  br label %if.end270
+
+land.rhs273:                                      ; preds = %if.then269
+  %t275 = load i64, ptr %t, align 8
+  %ne276 = icmp ne i64 %t275, 2
+  br i1 %ne276, label %if.then271, label %if.end272
+
+if.then278:                                       ; preds = %if.end270
+  store i64 0, ptr %t, align 1
   br label %if.end279
 
-if.end279:                                        ; preds = %if.then278, %if.then274
-  br label %if.end275
+if.end279:                                        ; preds = %if.then278, %if.end270
+  %call280 = call i1 @_ZN7grammar16is_word_operatorE6String(ptr %sret.result239)
+  br i1 %call280, label %if.then281, label %if.end282
 
-if.then281:                                       ; preds = %if.end272
-  store i64 0, ptr %t, align 1
+if.then281:                                       ; preds = %if.end279
+  store i64 4, ptr %t, align 1
   br label %if.end282
 
-if.end282:                                        ; preds = %if.then281, %if.end272
-  %call283 = call i1 @_ZN7grammar16is_word_operatorE6String(ptr %sret.result241)
+if.end282:                                        ; preds = %if.then281, %if.end279
+  %call283 = call i1 @_ZN7grammar13is_value_wordE6String(ptr %sret.result239)
   br i1 %call283, label %if.then284, label %if.end285
 
 if.then284:                                       ; preds = %if.end282
-  store i64 4, ptr %t, align 1
+  store i64 0, ptr %t, align 1
   br label %if.end285
 
 if.end285:                                        ; preds = %if.then284, %if.end282
-  %call286 = call i1 @_ZN7grammar13is_value_wordE6String(ptr %sret.result241)
-  br i1 %call286, label %if.then287, label %if.end288
-
-if.then287:                                       ; preds = %if.end285
-  store i64 0, ptr %t, align 1
-  br label %if.end288
-
-if.end288:                                        ; preds = %if.then287, %if.end285
-  %t289 = load i64, ptr %t, align 8
-  store i64 %t289, ptr %seg_col, align 1
+  %t286 = load i64, ptr %t, align 8
+  store i64 %t286, ptr %seg_col, align 1
   store i64 0, ptr %m, align 1
-  %t290 = load i64, ptr %t, align 8
-  %ne291 = icmp ne i64 %t290, 0
-  br i1 %ne291, label %if.then292, label %if.end293
+  %t287 = load i64, ptr %t, align 8
+  %ne288 = icmp ne i64 %t287, 0
+  br i1 %ne288, label %if.then289, label %if.end290
 
-if.then292:                                       ; preds = %if.end288
-  %pmod294 = load i64, ptr %pmod, align 8
-  %ge295 = icmp sge i64 %pmod294, 0
-  br i1 %ge295, label %if.then296, label %if.end297
+if.then289:                                       ; preds = %if.end285
+  %pmod291 = load i64, ptr %pmod, align 8
+  %ge292 = icmp sge i64 %pmod291, 0
+  br i1 %ge292, label %if.then293, label %if.end294
 
-if.end293:                                        ; preds = %if.end318, %if.end288
-  %m347 = load i64, ptr %m, align 8
-  store i64 %m347, ptr %seg_line, align 1
-  %pmod348 = load i64, ptr %pmod, align 8
-  %eq349 = icmp eq i64 %pmod348, 3
-  br i1 %eq349, label %if.then350, label %if.end351
+if.end290:                                        ; preds = %if.end315, %if.end285
+  %m344 = load i64, ptr %m, align 8
+  store i64 %m344, ptr %seg_line, align 1
+  %pmod345 = load i64, ptr %pmod, align 8
+  %eq346 = icmp eq i64 %pmod345, 3
+  br i1 %eq346, label %if.then347, label %if.end348
 
-if.then296:                                       ; preds = %if.then292
-  %pmod298 = load i64, ptr %pmod, align 8
-  store i64 %pmod298, ptr %m, align 1
+if.then293:                                       ; preds = %if.then289
+  %pmod295 = load i64, ptr %pmod, align 8
+  store i64 %pmod295, ptr %m, align 1
+  br label %if.end294
+
+if.end294:                                        ; preds = %if.then293, %if.then289
+  br i1 %call266, label %if.then296, label %if.end297
+
+if.then296:                                       ; preds = %if.end294
+  %m298 = load i64, ptr %m, align 8
+  %or = or i64 %m298, 1
+  store i64 %or, ptr %m, align 1
   br label %if.end297
 
-if.end297:                                        ; preds = %if.then296, %if.then292
-  br i1 %call268, label %if.then299, label %if.end300
+if.end297:                                        ; preds = %if.then296, %if.end294
+  %ro_names299 = load ptr, ptr %ro_names, align 8
+  %call300 = call i1 @_ZN7symbols13list_containsE6String6String(ptr %ro_names299, ptr %sret.result239)
+  br i1 %call300, label %if.then301, label %if.end302
 
-if.then299:                                       ; preds = %if.end297
-  %m301 = load i64, ptr %m, align 8
-  %or = or i64 %m301, 1
-  store i64 %or, ptr %m, align 1
-  br label %if.end300
+if.then301:                                       ; preds = %if.end297
+  %m303 = load i64, ptr %m, align 8
+  %or304 = or i64 %m303, 2
+  store i64 %or304, ptr %m, align 1
+  br label %if.end302
 
-if.end300:                                        ; preds = %if.then299, %if.end297
-  %ro_names302 = load ptr, ptr %ro_names, align 8
-  %call303 = call i1 @_ZN7symbols13list_containsE6String6String(ptr %ro_names302, ptr %sret.result241)
-  br i1 %call303, label %if.then304, label %if.end305
+if.end302:                                        ; preds = %if.then301, %if.end297
+  %call305 = call i1 @_ZN7symbols13list_containsE6String6String(ptr %sret.result18, ptr %sret.result239)
+  br i1 %call305, label %if.then306, label %if.end307
 
-if.then304:                                       ; preds = %if.end300
-  %m306 = load i64, ptr %m, align 8
-  %or307 = or i64 %m306, 2
-  store i64 %or307, ptr %m, align 1
-  br label %if.end305
+if.then306:                                       ; preds = %if.end302
+  %m308 = load i64, ptr %m, align 8
+  %or309 = or i64 %m308, 4
+  store i64 %or309, ptr %m, align 1
+  br label %if.end307
 
-if.end305:                                        ; preds = %if.then304, %if.end300
-  %call308 = call i1 @_ZN7symbols13list_containsE6String6String(ptr %sret.result18, ptr %sret.result241)
-  br i1 %call308, label %if.then309, label %if.end310
+if.end307:                                        ; preds = %if.then306, %if.end302
+  %i310 = load i64, ptr %i, align 8
+  %j311 = load i64, ptr %j167, align 8
+  %call312 = call i64 @_ZN7nameset6lookupEP8NameSlotm6Stringmm(ptr %call16, i64 32768, ptr %2, i64 %i310, i64 %j311)
+  %ge313 = icmp sge i64 %call312, 0
+  br i1 %ge313, label %if.then314, label %if.end315
 
-if.then309:                                       ; preds = %if.end305
-  %m311 = load i64, ptr %m, align 8
-  %or312 = or i64 %m311, 4
-  store i64 %or312, ptr %m, align 1
-  br label %if.end310
-
-if.end310:                                        ; preds = %if.then309, %if.end305
-  %i313 = load i64, ptr %i, align 8
-  %j314 = load i64, ptr %j169, align 8
-  %call315 = call i64 @_ZN7nameset6lookupEP8NameSlotm6Stringmm(ptr %call16, i64 32768, ptr %2, i64 %i313, i64 %j314)
-  %ge316 = icmp sge i64 %call315, 0
-  br i1 %ge316, label %if.then317, label %if.end318
-
-if.then317:                                       ; preds = %if.end310
+if.then314:                                       ; preds = %if.end307
   store i1 false, ptr %is_multi, align 1
-  %i319 = load i64, ptr %i, align 8
-  %j320 = load i64, ptr %j169, align 8
-  %call321 = call i64 @_ZN7nameset6lookupEP8NameSlotm6Stringmm(ptr %call17, i64 32768, ptr %2, i64 %i319, i64 %j320)
-  %ge322 = icmp sge i64 %call321, 0
-  br i1 %ge322, label %if.then323, label %if.end324
+  %i316 = load i64, ptr %i, align 8
+  %j317 = load i64, ptr %j167, align 8
+  %call318 = call i64 @_ZN7nameset6lookupEP8NameSlotm6Stringmm(ptr %call17, i64 32768, ptr %2, i64 %i316, i64 %j317)
+  %ge319 = icmp sge i64 %call318, 0
+  br i1 %ge319, label %if.then320, label %if.end321
 
-if.end318:                                        ; preds = %if.end344, %if.end310
-  br label %if.end293
+if.end315:                                        ; preds = %if.end341, %if.end307
+  br label %if.end290
 
-if.then323:                                       ; preds = %if.then317
+if.then320:                                       ; preds = %if.then314
   store i1 true, ptr %is_multi, align 1
-  br label %if.end324
+  br label %if.end321
 
-if.end324:                                        ; preds = %if.then323, %if.then317
-  %m325 = load i64, ptr %m, align 8
-  %and = and i64 %m325, 1
-  %ne326 = icmp ne i64 %and, 0
-  br i1 %ne326, label %if.then327, label %if.end328
+if.end321:                                        ; preds = %if.then320, %if.then314
+  %m322 = load i64, ptr %m, align 8
+  %and = and i64 %m322, 1
+  %ne323 = icmp ne i64 %and, 0
+  br i1 %ne323, label %if.then324, label %if.end325
 
-if.then327:                                       ; preds = %if.end324
+if.then324:                                       ; preds = %if.end321
   store i1 true, ptr %is_multi, align 1
-  br label %if.end328
+  br label %if.end325
 
-if.end328:                                        ; preds = %if.then327, %if.end324
-  %m329 = load i64, ptr %m, align 8
-  %and330 = and i64 %m329, 2
-  %ne331 = icmp ne i64 %and330, 0
-  br i1 %ne331, label %if.then332, label %if.end333
+if.end325:                                        ; preds = %if.then324, %if.end321
+  %m326 = load i64, ptr %m, align 8
+  %and327 = and i64 %m326, 2
+  %ne328 = icmp ne i64 %and327, 0
+  br i1 %ne328, label %if.then329, label %if.end330
 
-if.then332:                                       ; preds = %if.end328
+if.then329:                                       ; preds = %if.end325
   store i1 true, ptr %is_multi, align 1
-  br label %if.end333
+  br label %if.end330
 
-if.end333:                                        ; preds = %if.then332, %if.end328
-  %t334 = load i64, ptr %t, align 8
-  %eq335 = icmp eq i64 %t334, 8
-  br i1 %eq335, label %if.then336, label %if.end337
+if.end330:                                        ; preds = %if.then329, %if.end325
+  %t331 = load i64, ptr %t, align 8
+  %eq332 = icmp eq i64 %t331, 8
+  br i1 %eq332, label %if.then333, label %if.end334
 
-if.then336:                                       ; preds = %if.end333
+if.then333:                                       ; preds = %if.end330
   store i1 true, ptr %is_multi, align 1
-  br label %if.end337
+  br label %if.end334
 
-if.end337:                                        ; preds = %if.then336, %if.end333
-  %t338 = load i64, ptr %t, align 8
-  %eq339 = icmp eq i64 %t338, 9
+if.end334:                                        ; preds = %if.then333, %if.end330
+  %t335 = load i64, ptr %t, align 8
+  %eq336 = icmp eq i64 %t335, 9
+  br i1 %eq336, label %if.then337, label %if.end338
+
+if.then337:                                       ; preds = %if.end334
+  store i1 true, ptr %is_multi, align 1
+  br label %if.end338
+
+if.end338:                                        ; preds = %if.then337, %if.end334
+  %own = load i1, ptr %is_multi, align 1
+  %eq339 = icmp eq i1 %own, false
   br i1 %eq339, label %if.then340, label %if.end341
 
-if.then340:                                       ; preds = %if.end337
-  store i1 true, ptr %is_multi, align 1
+if.then340:                                       ; preds = %if.end338
+  %m342 = load i64, ptr %m, align 8
+  %or343 = or i64 %m342, 8
+  store i64 %or343, ptr %m, align 1
   br label %if.end341
 
-if.end341:                                        ; preds = %if.then340, %if.end337
-  %own = load i1, ptr %is_multi, align 1
-  %eq342 = icmp eq i1 %own, false
-  br i1 %eq342, label %if.then343, label %if.end344
+if.end341:                                        ; preds = %if.then340, %if.end338
+  br label %if.end315
 
-if.then343:                                       ; preds = %if.end341
-  %m345 = load i64, ptr %m, align 8
-  %or346 = or i64 %m345, 8
-  store i64 %or346, ptr %m, align 1
-  br label %if.end344
-
-if.end344:                                        ; preds = %if.then343, %if.end341
-  br label %if.end318
-
-if.then350:                                       ; preds = %if.end293
-  %ro_names353 = load ptr, ptr %ro_names, align 8
-  call void @_ZN7symbols13name_list_addEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result352, ptr %frame, ptr %ro_names353, ptr %sret.result241)
+if.then347:                                       ; preds = %if.end290
+  %ro_names350 = load ptr, ptr %ro_names, align 8
+  call void @_ZN7symbols13name_list_addEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result349, ptr %frame, ptr %ro_names350, ptr %sret.result239)
   %set.dest = load ptr, ptr %ro_names, align 8
-  %set.thru = load { ptr }, ptr %sret.result352, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest, ptr align 1 %sret.result352, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  br label %if.end351
+  %set.thru = load { ptr }, ptr %sret.result349, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest, ptr align 1 %sret.result349, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  br label %if.end348
 
-if.end351:                                        ; preds = %if.then350, %if.end293
-  %pmod354 = load i64, ptr %pmod, align 8
-  %eq355 = icmp eq i64 %pmod354, 1
-  br i1 %eq355, label %if.then356, label %if.end357
+if.end348:                                        ; preds = %if.then347, %if.end290
+  %pmod351 = load i64, ptr %pmod, align 8
+  %eq352 = icmp eq i64 %pmod351, 1
+  br i1 %eq352, label %if.then353, label %if.end354
 
-if.then356:                                       ; preds = %if.end351
-  %ro_names359 = load ptr, ptr %ro_names, align 8
-  call void @_ZN7symbols16name_list_removeEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result358, ptr %frame, ptr %ro_names359, ptr %sret.result241)
-  %set.dest360 = load ptr, ptr %ro_names, align 8
-  %set.thru361 = load { ptr }, ptr %sret.result358, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest360, ptr align 1 %sret.result358, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  br label %if.end357
+if.then353:                                       ; preds = %if.end348
+  %ro_names356 = load ptr, ptr %ro_names, align 8
+  call void @_ZN7symbols16name_list_removeEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result355, ptr %frame, ptr %ro_names356, ptr %sret.result239)
+  %set.dest357 = load ptr, ptr %ro_names, align 8
+  %set.thru358 = load { ptr }, ptr %sret.result355, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest357, ptr align 1 %sret.result355, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  br label %if.end354
 
-if.end357:                                        ; preds = %if.then356, %if.end351
-  %t362 = load i64, ptr %t, align 8
-  %eq363 = icmp eq i64 %t362, 0
-  br i1 %eq363, label %if.then364, label %if.end365
+if.end354:                                        ; preds = %if.then353, %if.end348
+  %t359 = load i64, ptr %t, align 8
+  %eq360 = icmp eq i64 %t359, 0
+  br i1 %eq360, label %if.then361, label %if.end362
 
-if.then364:                                       ; preds = %if.end357
+if.then361:                                       ; preds = %if.end354
   store i64 -1, ptr %np, align 1
   store i64 -1, ptr %nm, align 1
-  store { ptr } { ptr @.sconst.465 }, ptr %arg.tmp366, align 1
-  %call367 = call i1 @_ZN6String6equalsE6String(ptr %sret.result241, ptr %arg.tmp366)
-  br i1 %call367, label %if.then368, label %if.end369
+  store { ptr } { ptr @.sconst.465 }, ptr %arg.tmp363, align 1
+  %call364 = call i1 @_ZN6String6equalsE6String(ptr %sret.result239, ptr %arg.tmp363)
+  br i1 %call364, label %if.then365, label %if.end366
 
-if.end365:                                        ; preds = %if.end433, %if.end357
-  %t439 = load i64, ptr %t, align 8
-  %ne440 = icmp ne i64 %t439, 0
-  br i1 %ne440, label %if.then441, label %if.end442
+if.end362:                                        ; preds = %if.end430, %if.end354
+  %t436 = load i64, ptr %t, align 8
+  %ne437 = icmp ne i64 %t436, 0
+  br i1 %ne437, label %if.then438, label %if.end439
 
-if.then368:                                       ; preds = %if.then364
+if.then365:                                       ; preds = %if.then361
   store i64 2, ptr %np, align 1
-  br label %if.end369
+  br label %if.end366
 
-if.end369:                                        ; preds = %if.then368, %if.then364
-  store { ptr } { ptr @.sconst.466 }, ptr %arg.tmp370, align 1
-  %call371 = call i1 @_ZN6String6equalsE6String(ptr %sret.result241, ptr %arg.tmp370)
-  br i1 %call371, label %if.then372, label %if.end373
+if.end366:                                        ; preds = %if.then365, %if.then361
+  store { ptr } { ptr @.sconst.466 }, ptr %arg.tmp367, align 1
+  %call368 = call i1 @_ZN6String6equalsE6String(ptr %sret.result239, ptr %arg.tmp367)
+  br i1 %call368, label %if.then369, label %if.end370
 
-if.then372:                                       ; preds = %if.end369
+if.then369:                                       ; preds = %if.end366
   store i64 2, ptr %np, align 1
-  br label %if.end373
+  br label %if.end370
 
-if.end373:                                        ; preds = %if.then372, %if.end369
-  store { ptr } { ptr @.sconst.467 }, ptr %arg.tmp374, align 1
-  %call375 = call i1 @_ZN6String6equalsE6String(ptr %sret.result241, ptr %arg.tmp374)
-  br i1 %call375, label %if.then376, label %if.end377
+if.end370:                                        ; preds = %if.then369, %if.end366
+  store { ptr } { ptr @.sconst.467 }, ptr %arg.tmp371, align 1
+  %call372 = call i1 @_ZN6String6equalsE6String(ptr %sret.result239, ptr %arg.tmp371)
+  br i1 %call372, label %if.then373, label %if.end374
 
-if.then376:                                       ; preds = %if.end373
+if.then373:                                       ; preds = %if.end370
   store i64 1, ptr %np, align 1
-  br label %if.end377
+  br label %if.end374
 
-if.end377:                                        ; preds = %if.then376, %if.end373
-  store { ptr } { ptr @.sconst.468 }, ptr %arg.tmp378, align 1
-  %call379 = call i1 @_ZN6String6equalsE6String(ptr %sret.result241, ptr %arg.tmp378)
-  br i1 %call379, label %if.then380, label %if.end381
+if.end374:                                        ; preds = %if.then373, %if.end370
+  store { ptr } { ptr @.sconst.468 }, ptr %arg.tmp375, align 1
+  %call376 = call i1 @_ZN6String6equalsE6String(ptr %sret.result239, ptr %arg.tmp375)
+  br i1 %call376, label %if.then377, label %if.end378
 
-if.then380:                                       ; preds = %if.end377
+if.then377:                                       ; preds = %if.end374
   store i64 1, ptr %np, align 1
-  br label %if.end381
+  br label %if.end378
 
-if.end381:                                        ; preds = %if.then380, %if.end377
-  store { ptr } { ptr @.sconst.469 }, ptr %arg.tmp382, align 1
-  %call383 = call i1 @_ZN6String6equalsE6String(ptr %sret.result241, ptr %arg.tmp382)
-  br i1 %call383, label %if.then384, label %if.end385
+if.end378:                                        ; preds = %if.then377, %if.end374
+  store { ptr } { ptr @.sconst.469 }, ptr %arg.tmp379, align 1
+  %call380 = call i1 @_ZN6String6equalsE6String(ptr %sret.result239, ptr %arg.tmp379)
+  br i1 %call380, label %if.then381, label %if.end382
 
-if.then384:                                       ; preds = %if.end381
+if.then381:                                       ; preds = %if.end378
   store i64 1, ptr %np, align 1
-  br label %if.end385
+  br label %if.end382
 
-if.end385:                                        ; preds = %if.then384, %if.end381
-  store { ptr } { ptr @.sconst.470 }, ptr %arg.tmp386, align 1
-  %call387 = call i1 @_ZN6String6equalsE6String(ptr %sret.result241, ptr %arg.tmp386)
-  br i1 %call387, label %if.then388, label %if.end389
+if.end382:                                        ; preds = %if.then381, %if.end378
+  store { ptr } { ptr @.sconst.470 }, ptr %arg.tmp383, align 1
+  %call384 = call i1 @_ZN6String6equalsE6String(ptr %sret.result239, ptr %arg.tmp383)
+  br i1 %call384, label %if.then385, label %if.end386
 
-if.then388:                                       ; preds = %if.end385
+if.then385:                                       ; preds = %if.end382
   store i64 1, ptr %np, align 1
-  br label %if.end389
+  br label %if.end386
 
-if.end389:                                        ; preds = %if.then388, %if.end385
-  %np390 = load i64, ptr %np, align 8
-  %ge391 = icmp sge i64 %np390, 0
-  br i1 %ge391, label %if.then392, label %if.end393
+if.end386:                                        ; preds = %if.then385, %if.end382
+  %np387 = load i64, ptr %np, align 8
+  %ge388 = icmp sge i64 %np387, 0
+  br i1 %ge388, label %if.then389, label %if.end390
 
-if.then392:                                       ; preds = %if.end389
+if.then389:                                       ; preds = %if.end386
   store i64 1, ptr %nm, align 1
-  br label %if.end393
+  br label %if.end390
 
-if.end393:                                        ; preds = %if.then392, %if.end389
-  store { ptr } { ptr @.sconst.471 }, ptr %arg.tmp394, align 1
-  %call395 = call i1 @_ZN6String6equalsE6String(ptr %sret.result241, ptr %arg.tmp394)
-  br i1 %call395, label %if.then396, label %if.end397
+if.end390:                                        ; preds = %if.then389, %if.end386
+  store { ptr } { ptr @.sconst.471 }, ptr %arg.tmp391, align 1
+  %call392 = call i1 @_ZN6String6equalsE6String(ptr %sret.result239, ptr %arg.tmp391)
+  br i1 %call392, label %if.then393, label %if.end394
 
-if.then396:                                       ; preds = %if.end393
+if.then393:                                       ; preds = %if.end390
   store i64 3, ptr %nm, align 1
-  br label %if.end397
+  br label %if.end394
 
-if.end397:                                        ; preds = %if.then396, %if.end393
-  store { ptr } { ptr @.sconst.472 }, ptr %arg.tmp398, align 1
-  %call399 = call i1 @_ZN6String6equalsE6String(ptr %sret.result241, ptr %arg.tmp398)
-  br i1 %call399, label %if.then400, label %if.end401
+if.end394:                                        ; preds = %if.then393, %if.end390
+  store { ptr } { ptr @.sconst.472 }, ptr %arg.tmp395, align 1
+  %call396 = call i1 @_ZN6String6equalsE6String(ptr %sret.result239, ptr %arg.tmp395)
+  br i1 %call396, label %if.then397, label %if.end398
 
-if.then400:                                       ; preds = %if.end397
+if.then397:                                       ; preds = %if.end394
   store i64 1, ptr %nm, align 1
-  br label %if.end401
+  br label %if.end398
 
-if.end401:                                        ; preds = %if.then400, %if.end397
-  store { ptr } { ptr @.sconst.473 }, ptr %arg.tmp402, align 1
-  %call403 = call i1 @_ZN6String6equalsE6String(ptr %sret.result241, ptr %arg.tmp402)
-  br i1 %call403, label %if.then404, label %if.end405
+if.end398:                                        ; preds = %if.then397, %if.end394
+  store { ptr } { ptr @.sconst.473 }, ptr %arg.tmp399, align 1
+  %call400 = call i1 @_ZN6String6equalsE6String(ptr %sret.result239, ptr %arg.tmp399)
+  br i1 %call400, label %if.then401, label %if.end402
 
-if.then404:                                       ; preds = %if.end401
+if.then401:                                       ; preds = %if.end398
   store i64 5, ptr %nm, align 1
-  br label %if.end405
+  br label %if.end402
 
-if.end405:                                        ; preds = %if.then404, %if.end401
-  store { ptr } { ptr @.sconst.474 }, ptr %arg.tmp406, align 1
-  %call407 = call i1 @_ZN6String6equalsE6String(ptr %sret.result241, ptr %arg.tmp406)
-  br i1 %call407, label %if.then408, label %if.end409
+if.end402:                                        ; preds = %if.then401, %if.end398
+  store { ptr } { ptr @.sconst.474 }, ptr %arg.tmp403, align 1
+  %call404 = call i1 @_ZN6String6equalsE6String(ptr %sret.result239, ptr %arg.tmp403)
+  br i1 %call404, label %if.then405, label %if.end406
 
-if.then408:                                       ; preds = %if.end405
+if.then405:                                       ; preds = %if.end402
   store i64 5, ptr %nm, align 1
-  br label %if.end409
+  br label %if.end406
 
-if.end409:                                        ; preds = %if.then408, %if.end405
-  %np410 = load i64, ptr %np, align 8
-  store i64 %np410, ptr %pending, align 1
-  %nm411 = load i64, ptr %nm, align 8
-  store i64 %nm411, ptr %pmod, align 1
+if.end406:                                        ; preds = %if.then405, %if.end402
+  %np407 = load i64, ptr %np, align 8
+  store i64 %np407, ptr %pending, align 1
+  %nm408 = load i64, ptr %nm, align 8
+  store i64 %nm408, ptr %pmod, align 1
   store i1 false, ptr %is_multi, align 1
-  store { ptr } { ptr @.sconst.475 }, ptr %arg.tmp412, align 1
-  %call413 = call i1 @_ZN6String6equalsE6String(ptr %sret.result241, ptr %arg.tmp412)
-  br i1 %call413, label %if.then414, label %if.end415
+  store { ptr } { ptr @.sconst.475 }, ptr %arg.tmp409, align 1
+  %call410 = call i1 @_ZN6String6equalsE6String(ptr %sret.result239, ptr %arg.tmp409)
+  br i1 %call410, label %if.then411, label %if.end412
 
-if.then414:                                       ; preds = %if.end409
+if.then411:                                       ; preds = %if.end406
   store i1 true, ptr %is_multi, align 1
-  br label %if.end415
+  br label %if.end412
 
-if.end415:                                        ; preds = %if.then414, %if.end409
-  store { ptr } { ptr @.sconst.476 }, ptr %arg.tmp416, align 1
-  %call417 = call i1 @_ZN6String6equalsE6String(ptr %sret.result241, ptr %arg.tmp416)
-  br i1 %call417, label %if.then418, label %if.end419
+if.end412:                                        ; preds = %if.then411, %if.end406
+  store { ptr } { ptr @.sconst.476 }, ptr %arg.tmp413, align 1
+  %call414 = call i1 @_ZN6String6equalsE6String(ptr %sret.result239, ptr %arg.tmp413)
+  br i1 %call414, label %if.then415, label %if.end416
 
-if.then418:                                       ; preds = %if.end415
+if.then415:                                       ; preds = %if.end412
   store i1 true, ptr %is_multi, align 1
-  br label %if.end419
+  br label %if.end416
 
-if.end419:                                        ; preds = %if.then418, %if.end415
-  store { ptr } { ptr @.sconst.477 }, ptr %arg.tmp420, align 1
-  %call421 = call i1 @_ZN6String6equalsE6String(ptr %sret.result241, ptr %arg.tmp420)
-  br i1 %call421, label %if.then422, label %if.end423
+if.end416:                                        ; preds = %if.then415, %if.end412
+  store { ptr } { ptr @.sconst.477 }, ptr %arg.tmp417, align 1
+  %call418 = call i1 @_ZN6String6equalsE6String(ptr %sret.result239, ptr %arg.tmp417)
+  br i1 %call418, label %if.then419, label %if.end420
 
-if.then422:                                       ; preds = %if.end419
+if.then419:                                       ; preds = %if.end416
   store i1 true, ptr %is_multi, align 1
-  br label %if.end423
+  br label %if.end420
 
-if.end423:                                        ; preds = %if.then422, %if.end419
-  store { ptr } { ptr @.sconst.478 }, ptr %arg.tmp424, align 1
-  %call425 = call i1 @_ZN6String6equalsE6String(ptr %sret.result241, ptr %arg.tmp424)
-  br i1 %call425, label %if.then426, label %if.end427
+if.end420:                                        ; preds = %if.then419, %if.end416
+  store { ptr } { ptr @.sconst.478 }, ptr %arg.tmp421, align 1
+  %call422 = call i1 @_ZN6String6equalsE6String(ptr %sret.result239, ptr %arg.tmp421)
+  br i1 %call422, label %if.then423, label %if.end424
 
-if.then426:                                       ; preds = %if.end423
+if.then423:                                       ; preds = %if.end420
   store i1 true, ptr %is_multi, align 1
-  br label %if.end427
+  br label %if.end424
 
-if.end427:                                        ; preds = %if.then426, %if.end423
-  store { ptr } { ptr @.sconst.479 }, ptr %arg.tmp428, align 1
-  %call429 = call i1 @_ZN6String6equalsE6String(ptr %sret.result241, ptr %arg.tmp428)
-  br i1 %call429, label %if.then430, label %if.end431
+if.end424:                                        ; preds = %if.then423, %if.end420
+  store { ptr } { ptr @.sconst.479 }, ptr %arg.tmp425, align 1
+  %call426 = call i1 @_ZN6String6equalsE6String(ptr %sret.result239, ptr %arg.tmp425)
+  br i1 %call426, label %if.then427, label %if.end428
 
-if.then430:                                       ; preds = %if.end427
+if.then427:                                       ; preds = %if.end424
   store i1 true, ptr %is_multi, align 1
-  br label %if.end431
+  br label %if.end428
 
-if.end431:                                        ; preds = %if.then430, %if.end427
+if.end428:                                        ; preds = %if.then427, %if.end424
   %opens_scope = load i1, ptr %is_multi, align 1
-  br i1 %opens_scope, label %if.then432, label %if.end433
+  br i1 %opens_scope, label %if.then429, label %if.end430
 
-if.then432:                                       ; preds = %if.end431
-  %forced_page434 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
-  %struct.region435 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page434, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } zeroinitializer, ptr %arg.tmp436, align 1
-  call void @_ZN6StringC1E6String(ptr %struct.region435, ptr %arg.tmp436)
-  %set.dest437 = load ptr, ptr %ro_names, align 8
-  %set.thru438 = load { ptr }, ptr %struct.region435, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest437, ptr align 1 %struct.region435, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  br label %if.end433
+if.then429:                                       ; preds = %if.end428
+  %forced_page431 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  %struct.region432 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page431, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  store { ptr } zeroinitializer, ptr %arg.tmp433, align 1
+  call void @_ZN6StringC1E6String(ptr %struct.region432, ptr %arg.tmp433)
+  %set.dest434 = load ptr, ptr %ro_names, align 8
+  %set.thru435 = load { ptr }, ptr %struct.region432, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest434, ptr align 1 %struct.region432, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  br label %if.end430
 
-if.end433:                                        ; preds = %if.then432, %if.end431
-  br label %if.end365
+if.end430:                                        ; preds = %if.then429, %if.end428
+  br label %if.end362
 
-if.then441:                                       ; preds = %if.end365
+if.then438:                                       ; preds = %if.end362
+  store i64 -1, ptr %pending, align 1
+  store i64 -1, ptr %pmod, align 1
+  br label %if.end439
+
+if.end439:                                        ; preds = %if.then438, %if.end362
+  br label %if.end220
+
+if.then441:                                       ; preds = %if.end220
+  %i443 = load i64, ptr %i, align 8
+  %add444 = add i64 %i443, 1
+  store i64 %add444, ptr %j167, align 1
+  br label %while.cond445
+
+if.end442:                                        ; preds = %while.exit447, %if.end220
+  %tok_type = load i64, ptr %seg_col, align 8
+  %ge461 = icmp sge i64 %tok_type, 0
+  br i1 %ge461, label %if.then462, label %if.end463
+
+while.cond445:                                    ; preds = %if.end455, %if.then441
+  %j448 = load i64, ptr %j167, align 8
+  %lt449 = icmp ult i64 %j448, %call20
+  br i1 %lt449, label %while.body446, label %while.exit447
+
+while.body446:                                    ; preds = %while.cond445
+  %j450 = load i64, ptr %j167, align 8
+  %call451 = call i8 @_ZN6String3getEm(ptr %2, i64 %j450)
+  %call452 = call i1 @_ZN7grammar10is_op_charE2u8(i8 %call451)
+  %eq453 = icmp eq i1 %call452, false
+  br i1 %eq453, label %if.then454, label %if.end455
+
+while.exit447:                                    ; preds = %if.then454, %while.cond445
+  %j458 = load i64, ptr %j167, align 8
+  %i459 = load i64, ptr %i, align 8
+  %sub460 = sub i64 %j458, %i459
+  store i64 %sub460, ptr %k, align 1
+  store i64 4, ptr %seg_col, align 1
   store i64 -1, ptr %pending, align 1
   store i64 -1, ptr %pmod, align 1
   br label %if.end442
 
-if.end442:                                        ; preds = %if.then441, %if.end365
-  br label %if.end222
+if.then454:                                       ; preds = %while.body446
+  br label %while.exit447
 
-if.then444:                                       ; preds = %if.end222
-  %i446 = load i64, ptr %i, align 8
-  %add447 = add i64 %i446, 1
-  store i64 %add447, ptr %j169, align 1
-  br label %while.cond448
+if.end455:                                        ; preds = %while.body446
+  %j456 = load i64, ptr %j167, align 8
+  %add457 = add i64 %j456, 1
+  store i64 %add457, ptr %j167, align 1
+  br label %while.cond445
 
-if.end445:                                        ; preds = %while.exit450, %if.end222
-  %tok_type = load i64, ptr %seg_col, align 8
-  %ge464 = icmp sge i64 %tok_type, 0
-  br i1 %ge464, label %if.then465, label %if.end466
+if.then462:                                       ; preds = %if.end442
+  %first464 = load i1, ptr %first, align 1
+  %eq465 = icmp eq i1 %first464, false
+  br i1 %eq465, label %if.then466, label %if.end467
 
-while.cond448:                                    ; preds = %if.end458, %if.then444
-  %j451 = load i64, ptr %j169, align 8
-  %lt452 = icmp ult i64 %j451, %call20
-  br i1 %lt452, label %while.body449, label %while.exit450
-
-while.body449:                                    ; preds = %while.cond448
-  %j453 = load i64, ptr %j169, align 8
-  %call454 = call i8 @_ZN6String3getEm(ptr %2, i64 %j453)
-  %call455 = call i1 @_ZN7grammar10is_op_charE2u8(i8 %call454)
-  %eq456 = icmp eq i1 %call455, false
-  br i1 %eq456, label %if.then457, label %if.end458
-
-while.exit450:                                    ; preds = %if.then457, %while.cond448
-  %j461 = load i64, ptr %j169, align 8
-  %i462 = load i64, ptr %i, align 8
-  %sub463 = sub i64 %j461, %i462
-  store i64 %sub463, ptr %k, align 1
-  store i64 4, ptr %seg_col, align 1
-  store i64 -1, ptr %pending, align 1
-  store i64 -1, ptr %pmod, align 1
-  br label %if.end445
-
-if.then457:                                       ; preds = %while.body449
-  br label %while.exit450
-
-if.end458:                                        ; preds = %while.body449
-  %j459 = load i64, ptr %j169, align 8
-  %add460 = add i64 %j459, 1
-  store i64 %add460, ptr %j169, align 1
-  br label %while.cond448
-
-if.then465:                                       ; preds = %if.end445
-  %first467 = load i1, ptr %first, align 1
-  %eq468 = icmp eq i1 %first467, false
-  br i1 %eq468, label %if.then469, label %if.end470
-
-if.end466:                                        ; preds = %if.end445
+if.end463:                                        ; preds = %if.end442
   store i1 false, ptr %is_multi, align 1
-  %eq484 = icmp eq i8 %call25, 46
-  br i1 %eq484, label %if.then485, label %if.end486
+  %eq481 = icmp eq i8 %call25, 46
+  br i1 %eq481, label %if.then482, label %if.end483
 
-if.then469:                                       ; preds = %if.then465
-  %sb471 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb471, i8 44)
-  br label %if.end470
+if.then466:                                       ; preds = %if.then462
+  %sb468 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb468, i8 44)
+  br label %if.end467
 
-if.end470:                                        ; preds = %if.then469, %if.then465
-  %sb472 = load ptr, ptr %sb, align 8
-  %prev_line473 = load i64, ptr %prev_line, align 8
-  %prev_col474 = load i64, ptr %prev_col, align 8
-  %line475 = load i64, ptr %line, align 8
+if.end467:                                        ; preds = %if.then466, %if.then462
+  %sb469 = load ptr, ptr %sb, align 8
+  %prev_line470 = load i64, ptr %prev_line, align 8
+  %prev_col471 = load i64, ptr %prev_col, align 8
+  %line472 = load i64, ptr %line, align 8
   %tlen = load i64, ptr %k, align 8
-  %tok_type476 = load i64, ptr %seg_col, align 8
+  %tok_type473 = load i64, ptr %seg_col, align 8
   %tok_mods = load i64, ptr %seg_line, align 8
-  call void @_ZN7symbols17encode_token_modsEPN4scaly6memory4PageEmmmmm3i643i64(ptr noalias sret({ ptr }) %sret.result241, ptr %frame, i64 %prev_line473, i64 %prev_col474, i64 %line475, i64 %col163, i64 %tlen, i64 %tok_type476, i64 %tok_mods)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb472, ptr %sret.result241)
-  %line477 = load i64, ptr %line, align 8
-  store i64 %line477, ptr %prev_line, align 1
-  store i64 %col163, ptr %prev_col, align 1
+  call void @_ZN7symbols17encode_token_modsEPN4scaly6memory4PageEmmmmm3i643i64(ptr noalias sret({ ptr }) %sret.result239, ptr %frame, i64 %prev_line470, i64 %prev_col471, i64 %line472, i64 %col161, i64 %tlen, i64 %tok_type473, i64 %tok_mods)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb469, ptr %sret.result239)
+  %line474 = load i64, ptr %line, align 8
+  store i64 %line474, ptr %prev_line, align 1
+  store i64 %col161, ptr %prev_col, align 1
   store i1 false, ptr %first, align 1
-  %col478 = load i64, ptr %col, align 8
+  %col475 = load i64, ptr %col, align 8
+  %tlen476 = load i64, ptr %k, align 8
+  %add477 = add i64 %col475, %tlen476
+  store i64 %add477, ptr %col, align 1
+  %i478 = load i64, ptr %i, align 8
   %tlen479 = load i64, ptr %k, align 8
-  %add480 = add i64 %col478, %tlen479
-  store i64 %add480, ptr %col, align 1
-  %i481 = load i64, ptr %i, align 8
-  %tlen482 = load i64, ptr %k, align 8
-  %add483 = add i64 %i481, %tlen482
-  store i64 %add483, ptr %i, align 1
+  %add480 = add i64 %i478, %tlen479
+  store i64 %add480, ptr %i, align 1
   store i1 false, ptr %prev_was_dot, align 1
   br label %while.cond
 
-if.then485:                                       ; preds = %if.end466
+if.then482:                                       ; preds = %if.end463
   store i1 true, ptr %is_multi, align 1
-  br label %if.end486
+  br label %if.end483
 
-if.end486:                                        ; preds = %if.then485, %if.end466
+if.end483:                                        ; preds = %if.then482, %if.end463
   %is_dot = load i1, ptr %is_multi, align 1
   store i1 %is_dot, ptr %prev_was_dot, align 1
-  %col487 = load i64, ptr %col, align 8
-  %add488 = add i64 %col487, 1
-  store i64 %add488, ptr %col, align 1
-  %i489 = load i64, ptr %i, align 8
-  %add490 = add i64 %i489, 1
-  store i64 %add490, ptr %i, align 1
+  %col484 = load i64, ptr %col, align 8
+  %add485 = add i64 %col484, 1
+  store i64 %add485, ptr %col, align 1
+  %i486 = load i64, ptr %i, align 8
+  %add487 = add i64 %i486, 1
+  store i64 %add487, ptr %i, align 1
   store i64 -1, ptr %pending, align 1
   store i64 -1, ptr %pmod, align 1
   br label %while.cond
@@ -78962,7 +78836,7 @@ entry:
 
 define linkonce_odr void @_ZN7symbols12field_recordEPN4scaly6memory4PageE6String10PartSyntax(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
 entry:
-  %sret.result23 = alloca { ptr }, align 8
+  %sret.result20 = alloca { ptr }, align 8
   %sret.result = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
   %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
@@ -78970,7 +78844,7 @@ entry:
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
     i8 0, label %choose.when
-    i8 1, label %choose.when7
+    i8 1, label %choose.when5
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -78991,58 +78865,52 @@ choose.when:                                      ; preds = %entry
   %add = add i64 %call, %call1
   %call2 = call i64 @_ZN6String10get_lengthEv(ptr %2)
   %le = icmp ule i64 %add, %call2
-  br i1 %le, label %if.then, label %if.end
+  br i1 %le, label %land.rhs, label %if.end
 
-if.then:                                          ; preds = %choose.when
-  %name3 = extractvalue %_Z14PropertySyntax %property, 3
-  store { ptr } %name3, ptr %arg.tmp, align 1
-  %call4 = call i1 @_ZN7symbols12range_equalsE6Stringm6Stringmm(ptr %2, i64 %call, ptr %arg.tmp, i64 0, i64 %call1)
-  br i1 %call4, label %if.then5, label %if.end6
-
-if.end:                                           ; preds = %if.end6, %choose.when
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-if.then5:                                         ; preds = %if.then
+if.then:                                          ; preds = %land.rhs
   call void @_ZN7symbols8f_recordEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result, ptr %1, i64 %call)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.end6:                                          ; preds = %if.then
-  br label %if.end
-
-choose.when7:                                     ; preds = %entry
-  %"variant.c_data().ptr8" = getelementptr inbounds nuw %_Z10PartSyntax, ptr %3, i32 0, i32 1
-  %variant.val9 = load %_Z14PropertySyntax, ptr %"variant.c_data().ptr8", align 8
-  %start10 = extractvalue %_Z14PropertySyntax %variant.val9, 0
-  %call11 = call i64 @_ZN7symbols14name_offset_atE6Stringm(ptr %2, i64 %start10)
-  %name12 = extractvalue %_Z14PropertySyntax %variant.val9, 3
-  store { ptr } %name12, ptr %sret.result, align 1
-  %call13 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
-  %add14 = add i64 %call11, %call13
-  %call15 = call i64 @_ZN6String10get_lengthEv(ptr %2)
-  %le16 = icmp ule i64 %add14, %call15
-  br i1 %le16, label %if.then17, label %if.end18
-
-if.then17:                                        ; preds = %choose.when7
-  %name19 = extractvalue %_Z14PropertySyntax %variant.val9, 3
-  store { ptr } %name19, ptr %sret.result, align 1
-  %call20 = call i1 @_ZN7symbols12range_equalsE6Stringm6Stringmm(ptr %2, i64 %call11, ptr %sret.result, i64 0, i64 %call13)
-  br i1 %call20, label %if.then21, label %if.end22
-
-if.end18:                                         ; preds = %if.end22, %choose.when7
+if.end:                                           ; preds = %land.rhs, %choose.when
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 
-if.then21:                                        ; preds = %if.then17
-  call void @_ZN7symbols8f_recordEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result23, ptr %1, i64 %call11)
-  %sret.body24 = load { ptr }, ptr %sret.result23, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result23, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+land.rhs:                                         ; preds = %choose.when
+  %name3 = extractvalue %_Z14PropertySyntax %property, 3
+  store { ptr } %name3, ptr %arg.tmp, align 1
+  %call4 = call i1 @_ZN7symbols12range_equalsE6Stringm6Stringmm(ptr %2, i64 %call, ptr %arg.tmp, i64 0, i64 %call1)
+  br i1 %call4, label %if.then, label %if.end
+
+choose.when5:                                     ; preds = %entry
+  %"variant.c_data().ptr6" = getelementptr inbounds nuw %_Z10PartSyntax, ptr %3, i32 0, i32 1
+  %variant.val7 = load %_Z14PropertySyntax, ptr %"variant.c_data().ptr6", align 8
+  %start8 = extractvalue %_Z14PropertySyntax %variant.val7, 0
+  %call9 = call i64 @_ZN7symbols14name_offset_atE6Stringm(ptr %2, i64 %start8)
+  %name10 = extractvalue %_Z14PropertySyntax %variant.val7, 3
+  store { ptr } %name10, ptr %sret.result, align 1
+  %call11 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
+  %add15 = add i64 %call9, %call11
+  %call16 = call i64 @_ZN6String10get_lengthEv(ptr %2)
+  %le17 = icmp ule i64 %add15, %call16
+  br i1 %le17, label %land.rhs14, label %if.end13
+
+if.then12:                                        ; preds = %land.rhs14
+  call void @_ZN7symbols8f_recordEPN4scaly6memory4PageEm(ptr noalias sret({ ptr }) %sret.result20, ptr %1, i64 %call9)
+  %sret.body21 = load { ptr }, ptr %sret.result20, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result20, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.end22:                                         ; preds = %if.then17
-  br label %if.end18
+if.end13:                                         ; preds = %land.rhs14, %choose.when5
+  store { ptr } zeroinitializer, ptr %0, align 1
+  ret void
+
+land.rhs14:                                       ; preds = %choose.when5
+  %name18 = extractvalue %_Z14PropertySyntax %variant.val7, 3
+  store { ptr } %name18, ptr %sret.result, align 1
+  %call19 = call i1 @_ZN7symbols12range_equalsE6Stringm6Stringmm(ptr %2, i64 %call9, ptr %sret.result, i64 0, i64 %call11)
+  br i1 %call19, label %if.then12, label %if.end13
 }
 
 define linkonce_odr void @_ZN7symbols13st_definitionEPN4scaly6memory4PageE6String16DefinitionSyntax(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
@@ -84062,10 +83930,10 @@ if.then22:                                        ; preds = %if.then16
   store i64 %sub25, ptr %cstart, align 1
   br label %while.cond26
 
-if.end23:                                         ; preds = %if.end54, %if.then16
+if.end23:                                         ; preds = %if.end51, %if.then16
   br label %if.end17
 
-while.cond26:                                     ; preds = %if.end37, %if.then22
+while.cond26:                                     ; preds = %if.end35, %if.then22
   %cstart29 = load i64, ptr %cstart, align 8
   %gt30 = icmp ugt i64 %cstart29, 0
   br i1 %gt30, label %while.body27, label %while.exit28
@@ -84074,59 +83942,53 @@ while.body27:                                     ; preds = %while.cond26
   %cstart31 = load i64, ptr %cstart, align 8
   %sub32 = sub i64 %cstart31, 1
   %call33 = call i8 @_ZN6String3getEm(ptr %2, i64 %sub32)
-  %call34 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call33)
-  %eq35 = icmp eq i1 %call34, false
-  br i1 %eq35, label %if.then36, label %if.end37
+  %call36 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call33)
+  %eq37 = icmp eq i1 %call36, false
+  br i1 %eq37, label %land.rhs, label %if.end35
 
-while.exit28:                                     ; preds = %if.then38, %while.cond26
-  %cstart42 = load i64, ptr %cstart, align 8
-  %lt = icmp ult i64 %cstart42, %sub25
-  br i1 %lt, label %if.then43, label %if.end44
+while.exit28:                                     ; preds = %if.then34, %while.cond26
+  %cstart43 = load i64, ptr %cstart, align 8
+  %lt = icmp ult i64 %cstart43, %sub25
+  br i1 %lt, label %land.rhs42, label %if.end41
 
-if.then36:                                        ; preds = %while.body27
-  %ne = icmp ne i8 %call33, 46
-  br i1 %ne, label %if.then38, label %if.end39
-
-if.end37:                                         ; preds = %if.end39, %while.body27
-  %cstart40 = load i64, ptr %cstart, align 8
-  %sub41 = sub i64 %cstart40, 1
-  store i64 %sub41, ptr %cstart, align 1
-  br label %while.cond26
-
-if.then38:                                        ; preds = %if.then36
+if.then34:                                        ; preds = %land.rhs
   br label %while.exit28
 
-if.end39:                                         ; preds = %if.then36
-  br label %if.end37
+if.end35:                                         ; preds = %land.rhs, %while.body27
+  %cstart38 = load i64, ptr %cstart, align 8
+  %sub39 = sub i64 %cstart38, 1
+  store i64 %sub39, ptr %cstart, align 1
+  br label %while.cond26
 
-if.then43:                                        ; preds = %while.exit28
-  %cstart45 = load i64, ptr %cstart, align 8
-  %call46 = call i8 @_ZN6String3getEm(ptr %2, i64 %cstart45)
-  %eq47 = icmp eq i8 %call46, 46
-  br i1 %eq47, label %if.then48, label %if.end49
+land.rhs:                                         ; preds = %while.body27
+  %ne = icmp ne i8 %call33, 46
+  br i1 %ne, label %if.then34, label %if.end35
 
-if.end44:                                         ; preds = %if.end49, %while.exit28
-  %cstart51 = load i64, ptr %cstart, align 8
-  %lt52 = icmp ult i64 %cstart51, %sub25
-  br i1 %lt52, label %if.then53, label %if.end54
-
-if.then48:                                        ; preds = %if.then43
-  %cstart50 = load i64, ptr %cstart, align 8
-  %add = add i64 %cstart50, 1
+if.then40:                                        ; preds = %land.rhs42
+  %cstart47 = load i64, ptr %cstart, align 8
+  %add = add i64 %cstart47, 1
   store i64 %add, ptr %cstart, align 1
-  br label %if.end49
+  br label %if.end41
 
-if.end49:                                         ; preds = %if.then48, %if.then43
-  br label %if.end44
+if.end41:                                         ; preds = %if.then40, %land.rhs42, %while.exit28
+  %cstart48 = load i64, ptr %cstart, align 8
+  %lt49 = icmp ult i64 %cstart48, %sub25
+  br i1 %lt49, label %if.then50, label %if.end51
 
-if.then53:                                        ; preds = %if.end44
-  %cstart55 = load i64, ptr %cstart, align 8
-  call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %cstart55, i64 %sub25)
+land.rhs42:                                       ; preds = %while.exit28
+  %cstart44 = load i64, ptr %cstart, align 8
+  %call45 = call i8 @_ZN6String3getEm(ptr %2, i64 %cstart44)
+  %eq46 = icmp eq i8 %call45, 46
+  br i1 %eq46, label %if.then40, label %if.end41
+
+if.then50:                                        ; preds = %if.end41
+  %cstart52 = load i64, ptr %cstart, align 8
+  call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %cstart52, i64 %sub25)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.end54:                                         ; preds = %if.end44
+if.end51:                                         ; preds = %if.end41
   br label %if.end23
 }
 
@@ -84163,8 +84025,8 @@ if.end:                                           ; preds = %while.body
 
 define linkonce_odr void @_ZN7symbols18resolve_chain_typeEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
 entry:
-  %sret.result36 = alloca { ptr }, align 8
-  %sret.result31 = alloca { ptr }, align 8
+  %sret.result34 = alloca { ptr }, align 8
+  %sret.result29 = alloca { ptr }, align 8
   %sret.result = alloca { ptr }, align 8
   %at_delim = alloca i1, align 1
   %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
@@ -84181,7 +84043,7 @@ entry:
   store i64 0, ptr %i, align 1
   br label %while.cond
 
-while.cond:                                       ; preds = %if.end13, %entry
+while.cond:                                       ; preds = %if.end11, %entry
   %i1 = load i64, ptr %i, align 8
   %le = icmp ule i64 %i1, %call
   br i1 %le, label %while.body, label %while.exit
@@ -84193,115 +84055,112 @@ while.body:                                       ; preds = %while.cond
   br i1 %eq, label %if.then, label %if.end
 
 while.exit:                                       ; preds = %while.cond
-  %failed47 = load i1, ptr %failed, align 1
-  br i1 %failed47, label %if.then48, label %if.end49
+  %failed45 = load i1, ptr %failed, align 1
+  br i1 %failed45, label %if.then46, label %if.end47
 
 if.then:                                          ; preds = %while.body
   store i1 true, ptr %at_delim, align 1
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %while.body
-  %i3 = load i64, ptr %i, align 8
-  %lt = icmp ult i64 %i3, %call
-  br i1 %lt, label %if.then4, label %if.end5
+  %i5 = load i64, ptr %i, align 8
+  %lt = icmp ult i64 %i5, %call
+  br i1 %lt, label %land.rhs, label %if.end4
 
-if.then4:                                         ; preds = %if.end
+if.then3:                                         ; preds = %land.rhs
+  store i1 true, ptr %at_delim, align 1
+  br label %if.end4
+
+if.end4:                                          ; preds = %if.then3, %land.rhs, %if.end
+  %at_delim9 = load i1, ptr %at_delim, align 1
+  br i1 %at_delim9, label %if.then10, label %if.end11
+
+land.rhs:                                         ; preds = %if.end
   %i6 = load i64, ptr %i, align 8
   %call7 = call i8 @_ZN6String3getEm(ptr %4, i64 %i6)
   %eq8 = icmp eq i8 %call7, 46
-  br i1 %eq8, label %if.then9, label %if.end10
+  br i1 %eq8, label %if.then3, label %if.end4
 
-if.end5:                                          ; preds = %if.end10, %if.end
-  %at_delim11 = load i1, ptr %at_delim, align 1
-  br i1 %at_delim11, label %if.then12, label %if.end13
+if.then10:                                        ; preds = %if.end4
+  %failed12 = load i1, ptr %failed, align 1
+  %eq13 = icmp eq i1 %failed12, false
+  br i1 %eq13, label %if.then14, label %if.end15
 
-if.then9:                                         ; preds = %if.then4
-  store i1 true, ptr %at_delim, align 1
-  br label %if.end10
-
-if.end10:                                         ; preds = %if.then9, %if.then4
-  br label %if.end5
-
-if.then12:                                        ; preds = %if.end5
-  %failed14 = load i1, ptr %failed, align 1
-  %eq15 = icmp eq i1 %failed14, false
-  br i1 %eq15, label %if.then16, label %if.end17
-
-if.end13:                                         ; preds = %if.end17, %if.end5
-  %i45 = load i64, ptr %i, align 8
-  %add46 = add i64 %i45, 1
-  store i64 %add46, ptr %i, align 1
-  br label %while.cond
-
-if.then16:                                        ; preds = %if.then12
-  %seg_start18 = load i64, ptr %seg_start, align 8
-  %i19 = load i64, ptr %i, align 8
-  call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %4, i64 %seg_start18, i64 %i19)
-  %call20 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
-  %eq21 = icmp eq i64 %call20, 0
-  br i1 %eq21, label %if.then22, label %if.end23
-
-if.end17:                                         ; preds = %if.end26, %if.then12
+if.end11:                                         ; preds = %if.end15, %if.end4
   %i43 = load i64, ptr %i, align 8
   %add44 = add i64 %i43, 1
-  store i64 %add44, ptr %seg_start, align 1
-  br label %if.end13
+  store i64 %add44, ptr %i, align 1
+  br label %while.cond
 
-if.then22:                                        ; preds = %if.then16
+if.then14:                                        ; preds = %if.then10
+  %seg_start16 = load i64, ptr %seg_start, align 8
+  %i17 = load i64, ptr %i, align 8
+  call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %4, i64 %seg_start16, i64 %i17)
+  %call18 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
+  %eq19 = icmp eq i64 %call18, 0
+  br i1 %eq19, label %if.then20, label %if.end21
+
+if.end15:                                         ; preds = %if.end24, %if.then10
+  %i41 = load i64, ptr %i, align 8
+  %add42 = add i64 %i41, 1
+  store i64 %add42, ptr %seg_start, align 1
+  br label %if.end11
+
+if.then20:                                        ; preds = %if.then14
   store i1 true, ptr %failed, align 1
-  br label %if.end23
+  br label %if.end21
 
-if.end23:                                         ; preds = %if.then22, %if.then16
-  %call24 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
-  %gt = icmp ugt i64 %call24, 0
-  br i1 %gt, label %if.then25, label %if.end26
+if.end21:                                         ; preds = %if.then20, %if.then14
+  %call22 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
+  %gt = icmp ugt i64 %call22, 0
+  br i1 %gt, label %if.then23, label %if.end24
 
-if.then25:                                        ; preds = %if.end23
-  %seg_index27 = load i64, ptr %seg_index, align 8
-  %eq28 = icmp eq i64 %seg_index27, 0
-  br i1 %eq28, label %if.then29, label %if.end30
+if.then23:                                        ; preds = %if.end21
+  %seg_index25 = load i64, ptr %seg_index, align 8
+  %eq26 = icmp eq i64 %seg_index25, 0
+  br i1 %eq26, label %if.then27, label %if.end28
 
-if.end26:                                         ; preds = %if.end41, %if.end23
-  %seg_index42 = load i64, ptr %seg_index, align 8
-  %add = add i64 %seg_index42, 1
+if.end24:                                         ; preds = %if.end39, %if.end21
+  %seg_index40 = load i64, ptr %seg_index, align 8
+  %add = add i64 %seg_index40, 1
   store i64 %add, ptr %seg_index, align 1
-  br label %if.end17
+  br label %if.end15
 
-if.then29:                                        ; preds = %if.then25
-  call void @_ZN7symbols21resolve_variable_typeEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result31, ptr %1, ptr %2, ptr %sret.result)
-  %set.load = load { ptr }, ptr %sret.result31, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %base, ptr align 1 %sret.result31, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  br label %if.end30
+if.then27:                                        ; preds = %if.then23
+  call void @_ZN7symbols21resolve_variable_typeEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result29, ptr %1, ptr %2, ptr %sret.result)
+  %set.load = load { ptr }, ptr %sret.result29, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %base, ptr align 1 %sret.result29, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  br label %if.end28
 
-if.end30:                                         ; preds = %if.then29, %if.then25
-  %seg_index32 = load i64, ptr %seg_index, align 8
-  %gt33 = icmp ugt i64 %seg_index32, 0
-  br i1 %gt33, label %if.then34, label %if.end35
+if.end28:                                         ; preds = %if.then27, %if.then23
+  %seg_index30 = load i64, ptr %seg_index, align 8
+  %gt31 = icmp ugt i64 %seg_index30, 0
+  br i1 %gt31, label %if.then32, label %if.end33
 
-if.then34:                                        ; preds = %if.end30
-  call void @_ZN7symbols14member_type_wsEPN4scaly6memory4PageE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result36, ptr %1, ptr %2, ptr %3, ptr %base, ptr %sret.result)
-  %set.load37 = load { ptr }, ptr %sret.result36, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %base, ptr align 1 %sret.result36, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  br label %if.end35
+if.then32:                                        ; preds = %if.end28
+  call void @_ZN7symbols14member_type_wsEPN4scaly6memory4PageE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result34, ptr %1, ptr %2, ptr %3, ptr %base, ptr %sret.result)
+  %set.load35 = load { ptr }, ptr %sret.result34, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %base, ptr align 1 %sret.result34, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  br label %if.end33
 
-if.end35:                                         ; preds = %if.then34, %if.end30
-  %call38 = call i64 @_ZN6String10get_lengthEv(ptr %base)
-  %eq39 = icmp eq i64 %call38, 0
-  br i1 %eq39, label %if.then40, label %if.end41
+if.end33:                                         ; preds = %if.then32, %if.end28
+  %call36 = call i64 @_ZN6String10get_lengthEv(ptr %base)
+  %eq37 = icmp eq i64 %call36, 0
+  br i1 %eq37, label %if.then38, label %if.end39
 
-if.then40:                                        ; preds = %if.end35
+if.then38:                                        ; preds = %if.end33
   store i1 true, ptr %failed, align 1
-  br label %if.end41
+  br label %if.end39
 
-if.end41:                                         ; preds = %if.then40, %if.end35
-  br label %if.end26
+if.end39:                                         ; preds = %if.then38, %if.end33
+  br label %if.end24
 
-if.then48:                                        ; preds = %while.exit
+if.then46:                                        ; preds = %while.exit
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 
-if.end49:                                         ; preds = %while.exit
-  %base50 = load { ptr }, ptr %base, align 8
+if.end47:                                         ; preds = %while.exit
+  %base48 = load { ptr }, ptr %base, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %base, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 }
@@ -84702,7 +84561,7 @@ entry:
   store i64 0, ptr %k, align 1
   br label %while.cond
 
-while.cond:                                       ; preds = %if.end30, %entry
+while.cond:                                       ; preds = %if.end26, %entry
   %k1 = load i64, ptr %k, align 8
   %lt = icmp ult i64 %k1, %call
   br i1 %lt, label %while.body, label %while.exit
@@ -84713,7 +84572,7 @@ while.body:                                       ; preds = %while.cond
   br i1 %ne, label %if.then, label %if.end
 
 while.exit:                                       ; preds = %if.then, %while.cond
-  %result58 = load { ptr }, ptr %result, align 8
+  %result54 = load { ptr }, ptr %result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
@@ -84731,9 +84590,9 @@ if.then6:                                         ; preds = %if.end
   %eq8 = icmp eq i8 %call4, 40
   br i1 %eq8, label %if.then9, label %if.end10
 
-if.end7:                                          ; preds = %if.end17, %if.end
-  %call28 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call4)
-  br i1 %call28, label %if.then29, label %if.end30
+if.end7:                                          ; preds = %if.end16, %if.end
+  %call24 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call4)
+  br i1 %call24, label %if.then25, label %if.end26
 
 if.then9:                                         ; preds = %if.then6
   %as.zext = zext i8 %call4 to i64
@@ -84750,96 +84609,87 @@ if.then12:                                        ; preds = %if.end10
   br label %if.end13
 
 if.end13:                                         ; preds = %if.then12, %if.end10
-  %ne15 = icmp ne i8 %call4, 32
-  br i1 %ne15, label %if.then16, label %if.end17
+  %ne19 = icmp ne i8 %call4, 32
+  br i1 %ne19, label %land.rhs18, label %if.end16
 
-if.then16:                                        ; preds = %if.end13
-  %ne18 = icmp ne i8 %call4, 9
-  br i1 %ne18, label %if.then19, label %if.end20
+if.then15:                                        ; preds = %land.rhs
+  store i64 0, ptr %prev_punct, align 1
+  br label %if.end16
 
-if.end17:                                         ; preds = %if.end20, %if.end13
-  %k27 = load i64, ptr %k, align 8
-  %add = add i64 %k27, 1
+if.end16:                                         ; preds = %if.then15, %land.rhs, %land.rhs17, %land.rhs18, %if.end13
+  %k23 = load i64, ptr %k, align 8
+  %add = add i64 %k23, 1
   store i64 %add, ptr %k, align 1
   br label %if.end7
 
-if.then19:                                        ; preds = %if.then16
+land.rhs:                                         ; preds = %land.rhs17
+  %ne22 = icmp ne i8 %call4, 44
+  br i1 %ne22, label %if.then15, label %if.end16
+
+land.rhs17:                                       ; preds = %land.rhs18
   %ne21 = icmp ne i8 %call4, 40
-  br i1 %ne21, label %if.then22, label %if.end23
+  br i1 %ne21, label %land.rhs, label %if.end16
 
-if.end20:                                         ; preds = %if.end23, %if.then16
-  br label %if.end17
+land.rhs18:                                       ; preds = %if.end13
+  %ne20 = icmp ne i8 %call4, 9
+  br i1 %ne20, label %land.rhs17, label %if.end16
 
-if.then22:                                        ; preds = %if.then19
-  %ne24 = icmp ne i8 %call4, 44
-  br i1 %ne24, label %if.then25, label %if.end26
+if.then25:                                        ; preds = %if.end7
+  %k27 = load i64, ptr %k, align 8
+  store i64 %k27, ptr %j, align 1
+  br label %while.cond28
 
-if.end23:                                         ; preds = %if.end26, %if.then19
-  br label %if.end20
-
-if.then25:                                        ; preds = %if.then22
-  store i64 0, ptr %prev_punct, align 1
-  br label %if.end26
-
-if.end26:                                         ; preds = %if.then25, %if.then22
-  br label %if.end23
-
-if.then29:                                        ; preds = %if.end7
-  %k31 = load i64, ptr %k, align 8
-  store i64 %k31, ptr %j, align 1
-  br label %while.cond32
-
-if.end30:                                         ; preds = %if.end49, %if.end7
+if.end26:                                         ; preds = %if.end45, %if.end7
   br label %while.cond
 
-while.cond32:                                     ; preds = %if.end42, %if.then29
-  %j35 = load i64, ptr %j, align 8
-  %lt36 = icmp ult i64 %j35, %call
-  br i1 %lt36, label %while.body33, label %while.exit34
+while.cond28:                                     ; preds = %if.end38, %if.then25
+  %j31 = load i64, ptr %j, align 8
+  %lt32 = icmp ult i64 %j31, %call
+  br i1 %lt32, label %while.body29, label %while.exit30
 
-while.body33:                                     ; preds = %while.cond32
-  %j37 = load i64, ptr %j, align 8
-  %call38 = call i8 @_ZN6String3getEm(ptr %2, i64 %j37)
-  %call39 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call38)
-  %eq40 = icmp eq i1 %call39, false
-  br i1 %eq40, label %if.then41, label %if.end42
+while.body29:                                     ; preds = %while.cond28
+  %j33 = load i64, ptr %j, align 8
+  %call34 = call i8 @_ZN6String3getEm(ptr %2, i64 %j33)
+  %call35 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call34)
+  %eq36 = icmp eq i1 %call35, false
+  br i1 %eq36, label %if.then37, label %if.end38
 
-while.exit34:                                     ; preds = %if.then41, %while.cond32
-  %k45 = load i64, ptr %k, align 8
+while.exit30:                                     ; preds = %if.then37, %while.cond28
+  %k41 = load i64, ptr %k, align 8
+  %j42 = load i64, ptr %j, align 8
+  %call43 = call i1 @_ZN7symbols12token_equalsE6Stringmm6String(ptr %2, i64 %k41, i64 %j42, ptr %3)
+  br i1 %call43, label %if.then44, label %if.end45
+
+if.then37:                                        ; preds = %while.body29
+  br label %while.exit30
+
+if.end38:                                         ; preds = %while.body29
+  %j39 = load i64, ptr %j, align 8
+  %add40 = add i64 %j39, 1
+  store i64 %add40, ptr %j, align 1
+  br label %while.cond28
+
+if.then44:                                        ; preds = %while.exit30
   %j46 = load i64, ptr %j, align 8
-  %call47 = call i1 @_ZN7symbols12token_equalsE6Stringmm6String(ptr %2, i64 %k45, i64 %j46, ptr %3)
-  br i1 %call47, label %if.then48, label %if.end49
-
-if.then41:                                        ; preds = %while.body33
-  br label %while.exit34
-
-if.end42:                                         ; preds = %while.body33
-  %j43 = load i64, ptr %j, align 8
-  %add44 = add i64 %j43, 1
-  store i64 %add44, ptr %j, align 1
-  br label %while.cond32
-
-if.then48:                                        ; preds = %while.exit34
-  %j50 = load i64, ptr %j, align 8
-  %prev_start51 = load i64, ptr %prev_start, align 8
-  %prev_end52 = load i64, ptr %prev_end, align 8
-  %have_prev53 = load i64, ptr %have_prev, align 8
-  %prev_punct54 = load i64, ptr %prev_punct, align 8
-  call void @_ZN7symbols15type_after_declEPN4scaly6memory4PageE6Stringmmmmmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %j50, i64 %call, i64 %prev_start51, i64 %prev_end52, i64 %have_prev53, i64 %prev_punct54)
+  %prev_start47 = load i64, ptr %prev_start, align 8
+  %prev_end48 = load i64, ptr %prev_end, align 8
+  %have_prev49 = load i64, ptr %have_prev, align 8
+  %prev_punct50 = load i64, ptr %prev_punct, align 8
+  call void @_ZN7symbols15type_after_declEPN4scaly6memory4PageE6Stringmmmmmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %j46, i64 %call, i64 %prev_start47, i64 %prev_end48, i64 %have_prev49, i64 %prev_punct50)
   %set.load = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  br label %if.end49
+  br label %if.end45
 
-if.end49:                                         ; preds = %if.then48, %while.exit34
-  %k55 = load i64, ptr %k, align 8
-  store i64 %k55, ptr %prev_start, align 1
-  %j56 = load i64, ptr %j, align 8
-  store i64 %j56, ptr %prev_end, align 1
+if.end45:                                         ; preds = %if.then44, %while.exit30
+  %k51 = load i64, ptr %k, align 8
+  store i64 %k51, ptr %prev_start, align 1
+  %j52 = load i64, ptr %j, align 8
+  store i64 %j52, ptr %prev_end, align 1
   store i64 1, ptr %have_prev, align 1
   store i64 0, ptr %prev_punct, align 1
-  %j57 = load i64, ptr %j, align 8
-  store i64 %j57, ptr %k, align 1
-  br label %if.end30
+  %j53 = load i64, ptr %j, align 8
+  store i64 %j53, ptr %k, align 1
+  br label %if.end26
 }
 
 define linkonce_odr void @_ZN7symbols11member_typeEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
@@ -85004,27 +84854,24 @@ if.end17:                                         ; preds = %if.end23, %while.ex
 if.then22:                                        ; preds = %if.then16
   %p24 = load i64, ptr %p, align 8
   %sub25 = sub i64 %p24, 1
-  %gt26 = icmp ugt i64 %sub25, 0
-  br i1 %gt26, label %if.then27, label %if.end28
+  %gt28 = icmp ugt i64 %sub25, 0
+  br i1 %gt28, label %land.rhs, label %if.end27
 
-if.end23:                                         ; preds = %if.end28, %if.then16
+if.end23:                                         ; preds = %if.end27, %if.then16
   br label %if.end17
 
-if.then27:                                        ; preds = %if.then22
+if.then26:                                        ; preds = %land.rhs
+  %sub32 = sub i64 %sub25, 1
+  ret i64 %sub32
+
+if.end27:                                         ; preds = %land.rhs, %if.then22
+  br label %if.end23
+
+land.rhs:                                         ; preds = %if.then22
   %sub29 = sub i64 %sub25, 1
   %call30 = call i8 @_ZN6String3getEm(ptr %1, i64 %sub29)
   %call31 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call30)
-  br i1 %call31, label %if.then32, label %if.end33
-
-if.end28:                                         ; preds = %if.end33, %if.then22
-  br label %if.end23
-
-if.then32:                                        ; preds = %if.then27
-  %sub34 = sub i64 %sub25, 1
-  ret i64 %sub34
-
-if.end33:                                         ; preds = %if.then27
-  br label %if.end28
+  br i1 %call31, label %if.then26, label %if.end27
 }
 
 define linkonce_odr void @_ZN8semantic23receiver_type_at_offsetEPN4scaly6memory4PageE6String6Stringm(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, i64 %4) {
@@ -85117,7 +84964,7 @@ if.end17:                                         ; preds = %if.then16, %while.b
 
 define linkonce_odr void @_ZN7symbols23function_return_type_wsEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
 entry:
-  %sret.result17 = alloca { ptr }, align 8
+  %sret.result15 = alloca { ptr }, align 8
   %sret.result9 = alloca { ptr }, align 8
   %sret.result3 = alloca { ptr }, align 8
   %sret.result2 = alloca { ptr }, align 8
@@ -85149,32 +84996,29 @@ if.then6:                                         ; preds = %if.end
 
 if.end7:                                          ; preds = %if.end
   call void @_ZN7symbols18package_search_dirEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result9, ptr %1, ptr %sret.result1)
-  %call10 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result9)
-  %gt11 = icmp ugt i64 %call10, 0
-  br i1 %gt11, label %if.then12, label %if.end13
+  %call12 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result9)
+  %gt13 = icmp ugt i64 %call12, 0
+  br i1 %gt13, label %land.rhs, label %if.end11
 
-if.then12:                                        ; preds = %if.end7
-  %call14 = call i1 @_ZN6String6equalsE6String(ptr %sret.result9, ptr %sret.result2)
-  %not = xor i1 %call14, true
-  br i1 %not, label %if.then15, label %if.end16
+if.then10:                                        ; preds = %land.rhs
+  call void @_ZN7symbols27function_return_type_in_dirEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result15, ptr %1, ptr %sret.result9, ptr %sret.result1, ptr %4)
+  %sret.body16 = load { ptr }, ptr %sret.result15, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result15, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  ret void
 
-if.end13:                                         ; preds = %if.end16, %if.end7
+if.end11:                                         ; preds = %land.rhs, %if.end7
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 
-if.then15:                                        ; preds = %if.then12
-  call void @_ZN7symbols27function_return_type_in_dirEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result17, ptr %1, ptr %sret.result9, ptr %sret.result1, ptr %4)
-  %sret.body18 = load { ptr }, ptr %sret.result17, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result17, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  ret void
-
-if.end16:                                         ; preds = %if.then12
-  br label %if.end13
+land.rhs:                                         ; preds = %if.end7
+  %call14 = call i1 @_ZN6String6equalsE6String(ptr %sret.result9, ptr %sret.result2)
+  %not = xor i1 %call14, true
+  br i1 %not, label %if.then10, label %if.end11
 }
 
 define linkonce_odr void @_ZN7symbols31member_completions_in_workspaceEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
 entry:
-  %sret.result11 = alloca { ptr }, align 8
+  %sret.result9 = alloca { ptr }, align 8
   %sret.result3 = alloca { ptr }, align 8
   %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
   %sret.result = alloca { ptr }, align 8
@@ -85194,27 +85038,24 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   call void @_ZN7symbols18package_search_dirEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result3, ptr %1, ptr %sret.result)
-  %call4 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result3)
-  %gt5 = icmp ugt i64 %call4, 0
-  br i1 %gt5, label %if.then6, label %if.end7
+  %call6 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result3)
+  %gt7 = icmp ugt i64 %call6, 0
+  br i1 %gt7, label %land.rhs, label %if.end5
 
-if.then6:                                         ; preds = %if.end
-  %call8 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %sret.result1)
-  %not = xor i1 %call8, true
-  br i1 %not, label %if.then9, label %if.end10
+if.then4:                                         ; preds = %land.rhs
+  call void @_ZN7symbols25member_completions_in_dirEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result9, ptr %1, ptr %sret.result3, ptr %sret.result, ptr %3)
+  %sret.body10 = load { ptr }, ptr %sret.result9, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result9, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  ret void
 
-if.end7:                                          ; preds = %if.end10, %if.end
+if.end5:                                          ; preds = %land.rhs, %if.end
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 
-if.then9:                                         ; preds = %if.then6
-  call void @_ZN7symbols25member_completions_in_dirEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result11, ptr %1, ptr %sret.result3, ptr %sret.result, ptr %3)
-  %sret.body12 = load { ptr }, ptr %sret.result11, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result11, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  ret void
-
-if.end10:                                         ; preds = %if.then6
-  br label %if.end7
+land.rhs:                                         ; preds = %if.end
+  %call8 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %sret.result1)
+  %not = xor i1 %call8, true
+  br i1 %not, label %if.then4, label %if.end5
 }
 
 define linkonce_odr void @_ZN7symbols17completion_packedEPN4scaly6memory4PageE6String6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) {
@@ -86600,7 +86441,7 @@ if.end8:                                          ; preds = %while.body
 
 define linkonce_odr void @_ZN7symbols15type_after_declEPN4scaly6memory4PageE6Stringmmmmmm(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, i64 %3, i64 %4, i64 %5, i64 %6, i64 %7, i64 %8) {
 entry:
-  %sret.result58 = alloca { ptr }, align 8
+  %sret.result56 = alloca { ptr }, align 8
   %te = alloca i64, align 8
   %sret.result = alloca { ptr }, align 8
   %colon_ok = alloca i1, align 1
@@ -86720,7 +86561,7 @@ if.then37:                                        ; preds = %if.then33
   store i64 %call, ptr %te, align 1
   br label %while.cond
 
-if.end38:                                         ; preds = %if.end52, %if.then33
+if.end38:                                         ; preds = %if.end50, %if.then33
   br label %if.end34
 
 while.cond:                                       ; preds = %if.end46, %if.then37
@@ -86736,9 +86577,9 @@ while.body:                                       ; preds = %while.cond
   br i1 %eq44, label %if.then45, label %if.end46
 
 while.exit:                                       ; preds = %if.then45, %while.cond
-  %te49 = load i64, ptr %te, align 8
-  %lt50 = icmp ult i64 %te49, %4
-  br i1 %lt50, label %if.then51, label %if.end52
+  %te51 = load i64, ptr %te, align 8
+  %lt52 = icmp ult i64 %te51, %4
+  br i1 %lt52, label %land.rhs, label %if.end50
 
 if.then45:                                        ; preds = %while.body
   br label %while.exit
@@ -86749,24 +86590,21 @@ if.end46:                                         ; preds = %while.body
   store i64 %add48, ptr %te, align 1
   br label %while.cond
 
-if.then51:                                        ; preds = %while.exit
+if.then49:                                        ; preds = %land.rhs
+  %te57 = load i64, ptr %te, align 8
+  call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result56, ptr %1, ptr %2, i64 %call, i64 %te57)
+  %sret.body58 = load { ptr }, ptr %sret.result56, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result56, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  ret void
+
+if.end50:                                         ; preds = %land.rhs, %while.exit
+  br label %if.end38
+
+land.rhs:                                         ; preds = %while.exit
   %te53 = load i64, ptr %te, align 8
   %call54 = call i8 @_ZN6String3getEm(ptr %2, i64 %te53)
   %call55 = call i1 @_ZN7symbols13is_ctor_sigilE2u8(i8 %call54)
-  br i1 %call55, label %if.then56, label %if.end57
-
-if.end52:                                         ; preds = %if.end57, %while.exit
-  br label %if.end38
-
-if.then56:                                        ; preds = %if.then51
-  %te59 = load i64, ptr %te, align 8
-  call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result58, ptr %1, ptr %2, i64 %call, i64 %te59)
-  %sret.body60 = load { ptr }, ptr %sret.result58, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result58, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  ret void
-
-if.end57:                                         ; preds = %if.then51
-  br label %if.end52
+  br i1 %call55, label %if.then49, label %if.end50
 }
 
 define linkonce_odr i64 @_ZN7symbols7skip_wsE6Stringmm(ptr %0, i64 %1, i64 %2) {
@@ -86784,27 +86622,24 @@ while.body:                                       ; preds = %while.cond
   %p2 = load i64, ptr %p, align 8
   %call = call i8 @_ZN6String3getEm(ptr %0, i64 %p2)
   %ne = icmp ne i8 %call, 32
-  br i1 %ne, label %if.then, label %if.end
+  br i1 %ne, label %land.rhs, label %if.end
 
-while.exit:                                       ; preds = %if.then4, %while.cond
-  %p7 = load i64, ptr %p, align 8
-  ret i64 %p7
+while.exit:                                       ; preds = %if.then, %while.cond
+  %p5 = load i64, ptr %p, align 8
+  ret i64 %p5
 
-if.then:                                          ; preds = %while.body
-  %ne3 = icmp ne i8 %call, 9
-  br i1 %ne3, label %if.then4, label %if.end5
+if.then:                                          ; preds = %land.rhs
+  br label %while.exit
 
-if.end:                                           ; preds = %if.end5, %while.body
-  %p6 = load i64, ptr %p, align 8
-  %add = add i64 %p6, 1
+if.end:                                           ; preds = %land.rhs, %while.body
+  %p4 = load i64, ptr %p, align 8
+  %add = add i64 %p4, 1
   store i64 %add, ptr %p, align 1
   br label %while.cond
 
-if.then4:                                         ; preds = %if.then
-  br label %while.exit
-
-if.end5:                                          ; preds = %if.then
-  br label %if.end
+land.rhs:                                         ; preds = %while.body
+  %ne3 = icmp ne i8 %call, 9
+  br i1 %ne3, label %if.then, label %if.end
 }
 
 define linkonce_odr void @_ZN7symbols14read_type_nameEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, i64 %3, i64 %4) {
@@ -87538,7 +87373,7 @@ if.end23:                                         ; preds = %if.then22, %if.then
 
 define linkonce_odr void @_ZN7symbols14member_type_wsEPN4scaly6memory4PageE6String6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) {
 entry:
-  %sret.result17 = alloca { ptr }, align 8
+  %sret.result15 = alloca { ptr }, align 8
   %sret.result9 = alloca { ptr }, align 8
   %sret.result3 = alloca { ptr }, align 8
   %sret.result2 = alloca { ptr }, align 8
@@ -87570,27 +87405,24 @@ if.then6:                                         ; preds = %if.end
 
 if.end7:                                          ; preds = %if.end
   call void @_ZN7symbols18package_search_dirEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result9, ptr %1, ptr %sret.result1)
-  %call10 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result9)
-  %gt11 = icmp ugt i64 %call10, 0
-  br i1 %gt11, label %if.then12, label %if.end13
+  %call12 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result9)
+  %gt13 = icmp ugt i64 %call12, 0
+  br i1 %gt13, label %land.rhs, label %if.end11
 
-if.then12:                                        ; preds = %if.end7
-  %call14 = call i1 @_ZN6String6equalsE6String(ptr %sret.result9, ptr %sret.result2)
-  %not = xor i1 %call14, true
-  br i1 %not, label %if.then15, label %if.end16
+if.then10:                                        ; preds = %land.rhs
+  call void @_ZN7symbols18member_type_in_dirEPN4scaly6memory4PageE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result15, ptr %1, ptr %sret.result9, ptr %sret.result1, ptr %4, ptr %5)
+  %sret.body16 = load { ptr }, ptr %sret.result15, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result15, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  ret void
 
-if.end13:                                         ; preds = %if.end16, %if.end7
+if.end11:                                         ; preds = %land.rhs, %if.end7
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 
-if.then15:                                        ; preds = %if.then12
-  call void @_ZN7symbols18member_type_in_dirEPN4scaly6memory4PageE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result17, ptr %1, ptr %sret.result9, ptr %sret.result1, ptr %4, ptr %5)
-  %sret.body18 = load { ptr }, ptr %sret.result17, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result17, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  ret void
-
-if.end16:                                         ; preds = %if.then12
-  br label %if.end13
+land.rhs:                                         ; preds = %if.end7
+  %call14 = call i1 @_ZN6String6equalsE6String(ptr %sret.result9, ptr %sret.result2)
+  %not = xor i1 %call14, true
+  br i1 %not, label %if.then10, label %if.end11
 }
 
 define linkonce_odr void @_ZN7symbols24member_type_from_ws_blobEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
@@ -87641,9 +87473,9 @@ if.then:                                          ; preds = %while.body
   br label %while.cond9
 
 if.end:                                           ; preds = %if.end35, %while.body
-  %i99 = load i64, ptr %i, align 8
-  %add100 = add i64 %i99, 1
-  store i64 %add100, ptr %i, align 1
+  %i96 = load i64, ptr %i, align 8
+  %add97 = add i64 %i96, 1
+  store i64 %add97, ptr %i, align 1
   br label %while.cond
 
 while.cond9:                                      ; preds = %if.end19, %if.then
@@ -87703,9 +87535,9 @@ if.then34:                                        ; preds = %while.exit11
   br i1 %eq38, label %if.then39, label %if.end40
 
 if.end35:                                         ; preds = %if.end40, %while.exit11
-  %i97 = load i64, ptr %i, align 8
-  %add98 = add i64 %i97, 1
-  store i64 %add98, ptr %rec_start, align 1
+  %i94 = load i64, ptr %i, align 8
+  %add95 = add i64 %i94, 1
+  store i64 %add95, ptr %rec_start, align 1
   br label %if.end
 
 if.then39:                                        ; preds = %if.then34
@@ -87729,7 +87561,7 @@ if.then43:                                        ; preds = %if.then39
 if.end44:                                         ; preds = %if.then39
   br label %if.end40
 
-while.cond48:                                     ; preds = %if.end70, %if.then43
+while.cond48:                                     ; preds = %if.end68, %if.then43
   %ps51 = load i64, ptr %ps, align 8
   %i52 = load i64, ptr %i, align 8
   %le = icmp ule i64 %ps51, %i52
@@ -87751,87 +87583,81 @@ if.then56:                                        ; preds = %while.body49
   br label %if.end57
 
 if.end57:                                         ; preds = %if.then56, %while.body49
-  %ps58 = load i64, ptr %ps, align 8
-  %i59 = load i64, ptr %i, align 8
-  %lt60 = icmp ult i64 %ps58, %i59
-  br i1 %lt60, label %if.then61, label %if.end62
+  %ps60 = load i64, ptr %ps, align 8
+  %i61 = load i64, ptr %i, align 8
+  %lt62 = icmp ult i64 %ps60, %i61
+  br i1 %lt62, label %land.rhs, label %if.end59
 
-if.then61:                                        ; preds = %if.end57
+if.then58:                                        ; preds = %land.rhs
+  store i1 true, ptr %at_sep, align 1
+  br label %if.end59
+
+if.end59:                                         ; preds = %if.then58, %land.rhs, %if.end57
+  %at_sep66 = load i1, ptr %at_sep, align 1
+  br i1 %at_sep66, label %if.then67, label %if.end68
+
+land.rhs:                                         ; preds = %if.end57
   %ps63 = load i64, ptr %ps, align 8
   %call64 = call i8 @_ZN6String3getEm(ptr %2, i64 %ps63)
   %eq65 = icmp eq i8 %call64, 31
-  br i1 %eq65, label %if.then66, label %if.end67
+  br i1 %eq65, label %if.then58, label %if.end59
 
-if.end62:                                         ; preds = %if.end67, %if.end57
-  %at_sep68 = load i1, ptr %at_sep, align 1
-  br i1 %at_sep68, label %if.then69, label %if.end70
+if.then67:                                        ; preds = %if.end59
+  %expect_name69 = load i1, ptr %expect_name, align 1
+  br i1 %expect_name69, label %if.then70, label %if.end71
 
-if.then66:                                        ; preds = %if.then61
-  store i1 true, ptr %at_sep, align 1
-  br label %if.end67
-
-if.end67:                                         ; preds = %if.then66, %if.then61
-  br label %if.end62
-
-if.then69:                                        ; preds = %if.end62
-  %expect_name71 = load i1, ptr %expect_name, align 1
-  br i1 %expect_name71, label %if.then72, label %if.end73
-
-if.end70:                                         ; preds = %if.end86, %if.end62
-  %ps95 = load i64, ptr %ps, align 8
-  %add96 = add i64 %ps95, 1
-  store i64 %add96, ptr %ps, align 1
+if.end68:                                         ; preds = %if.end83, %if.end59
+  %ps92 = load i64, ptr %ps, align 8
+  %add93 = add i64 %ps92, 1
+  store i64 %add93, ptr %ps, align 1
   br label %while.cond48
 
-if.then72:                                        ; preds = %if.then69
+if.then70:                                        ; preds = %if.then67
   store i1 false, ptr %matched_name, align 1
-  %ps74 = load i64, ptr %ps, align 8
-  %seg_start75 = load i64, ptr %seg_start, align 8
-  %sub76 = sub i64 %ps74, %seg_start75
-  %eq77 = icmp eq i64 %sub76, %call1
-  br i1 %eq77, label %if.then78, label %if.end79
+  %ps72 = load i64, ptr %ps, align 8
+  %seg_start73 = load i64, ptr %seg_start, align 8
+  %sub74 = sub i64 %ps72, %seg_start73
+  %eq75 = icmp eq i64 %sub74, %call1
+  br i1 %eq75, label %if.then76, label %if.end77
 
-if.end73:                                         ; preds = %if.end79, %if.then69
-  %eq84 = icmp eq i1 %expect_name71, false
-  br i1 %eq84, label %if.then85, label %if.end86
+if.end71:                                         ; preds = %if.end77, %if.then67
+  %eq85 = icmp eq i1 %expect_name69, false
+  br i1 %eq85, label %land.rhs84, label %if.end83
 
-if.then78:                                        ; preds = %if.then72
-  %seg_start80 = load i64, ptr %seg_start, align 8
-  %call81 = call i1 @_ZN7symbols12range_equalsE6Stringm6Stringmm(ptr %2, i64 %seg_start80, ptr %4, i64 0, i64 %call1)
-  br i1 %call81, label %if.then82, label %if.end83
+if.then76:                                        ; preds = %if.then70
+  %seg_start78 = load i64, ptr %seg_start, align 8
+  %call79 = call i1 @_ZN7symbols12range_equalsE6Stringm6Stringmm(ptr %2, i64 %seg_start78, ptr %4, i64 0, i64 %call1)
+  br i1 %call79, label %if.then80, label %if.end81
 
-if.end79:                                         ; preds = %if.end83, %if.then72
-  br label %if.end73
+if.end77:                                         ; preds = %if.end81, %if.then70
+  br label %if.end71
 
-if.then82:                                        ; preds = %if.then78
+if.then80:                                        ; preds = %if.then76
   store i1 true, ptr %matched_name, align 1
-  br label %if.end83
+  br label %if.end81
 
-if.end83:                                         ; preds = %if.then82, %if.then78
-  br label %if.end79
+if.end81:                                         ; preds = %if.then80, %if.then76
+  br label %if.end77
 
-if.then85:                                        ; preds = %if.end73
-  %matched_name87 = load i1, ptr %matched_name, align 1
-  br i1 %matched_name87, label %if.then88, label %if.end89
-
-if.end86:                                         ; preds = %if.end89, %if.end73
-  %eq92 = icmp eq i1 %expect_name71, false
-  store i1 %eq92, ptr %expect_name, align 1
-  %ps93 = load i64, ptr %ps, align 8
-  %add94 = add i64 %ps93, 1
-  store i64 %add94, ptr %seg_start, align 1
-  br label %if.end70
-
-if.then88:                                        ; preds = %if.then85
-  %seg_start90 = load i64, ptr %seg_start, align 8
-  %ps91 = load i64, ptr %ps, align 8
-  call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %seg_start90, i64 %ps91)
+if.then82:                                        ; preds = %land.rhs84
+  %seg_start87 = load i64, ptr %seg_start, align 8
+  %ps88 = load i64, ptr %ps, align 8
+  call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %seg_start87, i64 %ps88)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.end89:                                         ; preds = %if.then85
-  br label %if.end86
+if.end83:                                         ; preds = %land.rhs84, %if.end71
+  %eq89 = icmp eq i1 %expect_name69, false
+  store i1 %eq89, ptr %expect_name, align 1
+  %ps90 = load i64, ptr %ps, align 8
+  %add91 = add i64 %ps90, 1
+  store i64 %add91, ptr %seg_start, align 1
+  br label %if.end68
+
+land.rhs84:                                       ; preds = %if.end71
+  %matched_name86 = load i1, ptr %matched_name, align 1
+  br i1 %matched_name86, label %if.then82, label %if.end83
 }
 
 define linkonce_odr void @_ZN7symbols8frt_declEPN4scaly6memory4PageE6String17DeclarationSyntax6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
@@ -89342,29 +89168,26 @@ choose.when57:                                    ; preds = %if.end33
 
 define linkonce_odr void @_ZN7symbols10hover_leafEPN4scaly6memory4PageE6Stringmmm5SliceIcE6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, i64 %3, i64 %4, i64 %5, ptr %6, ptr %7) {
 entry:
-  %sret.result3 = alloca { ptr }, align 8
+  %sret.result1 = alloca { ptr }, align 8
   %sret.result = alloca { ptr }, align 8
   %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
   %ge = icmp uge i64 %5, %3
-  br i1 %ge, label %if.then, label %if.end
+  br i1 %ge, label %land.rhs, label %if.end
 
-if.then:                                          ; preds = %entry
-  %lt = icmp ult i64 %5, %4
-  br i1 %lt, label %if.then1, label %if.end2
-
-if.end:                                           ; preds = %if.end2, %entry
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-if.then1:                                         ; preds = %if.then
-  call void @_ZN7symbols14kind_name_textEPN4scaly6memory4PageE5SliceIcE6String(ptr noalias sret({ ptr }) %sret.result3, ptr %1, ptr %6, ptr %7)
-  call void @_ZN7symbols8with_docEPN4scaly6memory4PageE6Stringm6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %3, ptr %sret.result3)
+if.then:                                          ; preds = %land.rhs
+  call void @_ZN7symbols14kind_name_textEPN4scaly6memory4PageE5SliceIcE6String(ptr noalias sret({ ptr }) %sret.result1, ptr %1, ptr %6, ptr %7)
+  call void @_ZN7symbols8with_docEPN4scaly6memory4PageE6Stringm6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %3, ptr %sret.result1)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.end2:                                          ; preds = %if.then
-  br label %if.end
+if.end:                                           ; preds = %land.rhs, %entry
+  store { ptr } zeroinitializer, ptr %0, align 1
+  ret void
+
+land.rhs:                                         ; preds = %entry
+  %lt = icmp ult i64 %5, %4
+  br i1 %lt, label %if.then, label %if.end
 }
 
 define linkonce_odr void @_ZN7symbols12hover_exportEPN4scaly6memory4PageE6String12ExportSyntaxm(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, i64 %4) {
@@ -89701,7 +89524,7 @@ if.end11:                                         ; preds = %if.then10, %if.then
 
 define linkonce_odr void @_ZN7symbols11hover_unionEPN4scaly6memory4PageE6String11UnionSyntaxm(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, i64 %4) {
 entry:
-  %sret.result27 = alloca { ptr }, align 8
+  %sret.result25 = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
   %sret.result = alloca { ptr }, align 8
   %i = alloca i64, align 8
@@ -89722,9 +89545,9 @@ if.then:                                          ; preds = %entry
   br label %while.cond
 
 if.end:                                           ; preds = %while.exit, %entry
-  %call19 = call i64 @_ZN6String10get_lengthEv(ptr %result)
-  %eq20 = icmp eq i64 %call19, 0
-  br i1 %eq20, label %if.then21, label %if.end22
+  %call21 = call i64 @_ZN6String10get_lengthEv(ptr %result)
+  %eq22 = icmp eq i64 %call21, 0
+  br i1 %eq22, label %land.rhs, label %if.end20
 
 while.cond:                                       ; preds = %if.end6, %if.then
   %i3 = load i64, ptr %i, align 8
@@ -89778,27 +89601,24 @@ if.then10:                                        ; preds = %if.then5
 if.end11:                                         ; preds = %if.then10, %if.then5
   br label %if.end6
 
-if.then21:                                        ; preds = %if.end
-  %load.struct23 = load %_Z11UnionSyntax, ptr %3, align 8
-  %body = extractvalue %_Z11UnionSyntax %load.struct23, 3
-  %ne24 = icmp ne ptr %body, null
-  br i1 %ne24, label %if.then25, label %if.end26
+if.then19:                                        ; preds = %land.rhs
+  %field.inplace26 = getelementptr inbounds nuw %_Z11UnionSyntax, ptr %3, i32 0, i32 3
+  %deref.recv = load ptr, ptr %field.inplace26, align 8
+  call void @_ZN7symbols10hover_bodyEPN4scaly6memory4PageE6String6OptionIR10BodySyntaxEm(ptr noalias sret({ ptr }) %sret.result25, ptr %1, ptr %2, ptr %deref.recv, i64 %4)
+  %set.load27 = load { ptr }, ptr %sret.result25, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result25, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  br label %if.end20
 
-if.end22:                                         ; preds = %if.end26, %if.end
-  %result30 = load { ptr }, ptr %result, align 8
+if.end20:                                         ; preds = %if.then19, %land.rhs, %if.end
+  %result28 = load { ptr }, ptr %result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.then25:                                        ; preds = %if.then21
-  %field.inplace28 = getelementptr inbounds nuw %_Z11UnionSyntax, ptr %3, i32 0, i32 3
-  %deref.recv = load ptr, ptr %field.inplace28, align 8
-  call void @_ZN7symbols10hover_bodyEPN4scaly6memory4PageE6String6OptionIR10BodySyntaxEm(ptr noalias sret({ ptr }) %sret.result27, ptr %1, ptr %2, ptr %deref.recv, i64 %4)
-  %set.load29 = load { ptr }, ptr %sret.result27, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result27, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  br label %if.end26
-
-if.end26:                                         ; preds = %if.then25, %if.then21
-  br label %if.end22
+land.rhs:                                         ; preds = %if.end
+  %load.struct23 = load %_Z11UnionSyntax, ptr %3, align 8
+  %body = extractvalue %_Z11UnionSyntax %load.struct23, 3
+  %ne24 = icmp ne ptr %body, null
+  br i1 %ne24, label %if.then19, label %if.end20
 }
 
 define linkonce_odr void @_ZN7symbols8with_docEPN4scaly6memory4PageE6Stringm6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, i64 %3, ptr %4) {
@@ -93205,7 +93025,7 @@ if.end11:                                         ; preds = %if.then10, %if.then
 
 define linkonce_odr void @_ZN7symbols9def_unionEPN4scaly6memory4PageE6String6String11UnionSyntax6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) {
 entry:
-  %sret.result23 = alloca { ptr }, align 8
+  %sret.result21 = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
   %sret.result = alloca { ptr }, align 8
   %i = alloca i64, align 8
@@ -93226,9 +93046,9 @@ if.then:                                          ; preds = %entry
   br label %while.cond
 
 if.end:                                           ; preds = %while.exit, %entry
-  %call15 = call i64 @_ZN6String10get_lengthEv(ptr %result)
-  %eq16 = icmp eq i64 %call15, 0
-  br i1 %eq16, label %if.then17, label %if.end18
+  %call17 = call i64 @_ZN6String10get_lengthEv(ptr %result)
+  %eq18 = icmp eq i64 %call17, 0
+  br i1 %eq18, label %land.rhs, label %if.end16
 
 while.cond:                                       ; preds = %if.end6, %if.then
   %i3 = load i64, ptr %i, align 8
@@ -93274,27 +93094,24 @@ if.then10:                                        ; preds = %if.then5
 if.end11:                                         ; preds = %if.then10, %if.then5
   br label %if.end6
 
-if.then17:                                        ; preds = %if.end
-  %load.struct19 = load %_Z11UnionSyntax, ptr %4, align 8
-  %body = extractvalue %_Z11UnionSyntax %load.struct19, 3
-  %ne20 = icmp ne ptr %body, null
-  br i1 %ne20, label %if.then21, label %if.end22
+if.then15:                                        ; preds = %land.rhs
+  %field.inplace22 = getelementptr inbounds nuw %_Z11UnionSyntax, ptr %4, i32 0, i32 3
+  %deref.recv = load ptr, ptr %field.inplace22, align 8
+  call void @_ZN7symbols8def_bodyEPN4scaly6memory4PageE6String6String6OptionIR10BodySyntaxE6String(ptr noalias sret({ ptr }) %sret.result21, ptr %1, ptr %2, ptr %3, ptr %deref.recv, ptr %5)
+  %set.load23 = load { ptr }, ptr %sret.result21, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result21, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  br label %if.end16
 
-if.end18:                                         ; preds = %if.end22, %if.end
-  %result26 = load { ptr }, ptr %result, align 8
+if.end16:                                         ; preds = %if.then15, %land.rhs, %if.end
+  %result24 = load { ptr }, ptr %result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.then21:                                        ; preds = %if.then17
-  %field.inplace24 = getelementptr inbounds nuw %_Z11UnionSyntax, ptr %4, i32 0, i32 3
-  %deref.recv = load ptr, ptr %field.inplace24, align 8
-  call void @_ZN7symbols8def_bodyEPN4scaly6memory4PageE6String6String6OptionIR10BodySyntaxE6String(ptr noalias sret({ ptr }) %sret.result23, ptr %1, ptr %2, ptr %3, ptr %deref.recv, ptr %5)
-  %set.load25 = load { ptr }, ptr %sret.result23, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %result, ptr align 1 %sret.result23, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  br label %if.end22
-
-if.end22:                                         ; preds = %if.then21, %if.then17
-  br label %if.end18
+land.rhs:                                         ; preds = %if.end
+  %load.struct19 = load %_Z11UnionSyntax, ptr %4, align 8
+  %body = extractvalue %_Z11UnionSyntax %load.struct19, 3
+  %ne20 = icmp ne ptr %body, null
+  br i1 %ne20, label %if.then15, label %if.end16
 }
 
 define linkonce_odr void @_ZN7symbols10def_memberEPN4scaly6memory4PageE6String6String12MemberSyntax6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) {
@@ -93750,7 +93567,7 @@ if.end12:                                         ; preds = %if.then11, %if.then
 
 define linkonce_odr void @_ZN7symbols28find_definition_in_workspaceEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
 entry:
-  %sret.result11 = alloca { ptr }, align 8
+  %sret.result9 = alloca { ptr }, align 8
   %sret.result3 = alloca { ptr }, align 8
   %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
   %sret.result = alloca { ptr }, align 8
@@ -93770,27 +93587,24 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   call void @_ZN7symbols18package_search_dirEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result3, ptr %1, ptr %sret.result)
-  %call4 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result3)
-  %gt5 = icmp ugt i64 %call4, 0
-  br i1 %gt5, label %if.then6, label %if.end7
+  %call6 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result3)
+  %gt7 = icmp ugt i64 %call6, 0
+  br i1 %gt7, label %land.rhs, label %if.end5
 
-if.then6:                                         ; preds = %if.end
-  %call8 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %sret.result1)
-  %not = xor i1 %call8, true
-  br i1 %not, label %if.then9, label %if.end10
+if.then4:                                         ; preds = %land.rhs
+  call void @_ZN7symbols22find_definition_in_dirEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result9, ptr %1, ptr %sret.result3, ptr %sret.result, ptr %3)
+  %sret.body10 = load { ptr }, ptr %sret.result9, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result9, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  ret void
 
-if.end7:                                          ; preds = %if.end10, %if.end
+if.end5:                                          ; preds = %land.rhs, %if.end
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 
-if.then9:                                         ; preds = %if.then6
-  call void @_ZN7symbols22find_definition_in_dirEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result11, ptr %1, ptr %sret.result3, ptr %sret.result, ptr %3)
-  %sret.body12 = load { ptr }, ptr %sret.result11, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result11, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  ret void
-
-if.end10:                                         ; preds = %if.then6
-  br label %if.end7
+land.rhs:                                         ; preds = %if.end
+  %call8 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %sret.result1)
+  %not = xor i1 %call8, true
+  br i1 %not, label %if.then4, label %if.end5
 }
 
 define linkonce_odr void @_ZN7symbols12location_uriEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
@@ -94499,7 +94313,7 @@ if.end41:                                         ; preds = %if.then40, %if.then
 
 define linkonce_odr void @_ZN7symbols16def_from_ws_blobEPN4scaly6memory4PageE6String6Stringb(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, i1 %4) {
 entry:
-  %sret.result109 = alloca { ptr }, align 8
+  %sret.result106 = alloca { ptr }, align 8
   %depth = alloca i64, align 8
   %j = alloca i64, align 8
   %lstart = alloca i64, align 8
@@ -94578,9 +94392,9 @@ if.then:                                          ; preds = %while.body
   br label %while.cond21
 
 if.end:                                           ; preds = %if.end37, %while.body
-  %i119 = load i64, ptr %i, align 8
-  %add120 = add i64 %i119, 1
-  store i64 %add120, ptr %i, align 1
+  %i116 = load i64, ptr %i, align 8
+  %add117 = add i64 %i116, 1
+  store i64 %add117, ptr %i, align 1
   br label %while.cond
 
 while.cond21:                                     ; preds = %if.end31, %if.then
@@ -94616,10 +94430,10 @@ if.then36:                                        ; preds = %while.exit23
   store i64 0, ptr %k, align 1
   br label %while.cond38
 
-if.end37:                                         ; preds = %if.end72, %while.exit23
-  %i117 = load i64, ptr %i, align 8
-  %add118 = add i64 %i117, 1
-  store i64 %add118, ptr %rec_start, align 1
+if.end37:                                         ; preds = %if.end69, %while.exit23
+  %i114 = load i64, ptr %i, align 8
+  %add115 = add i64 %i114, 1
+  store i64 %add115, ptr %rec_start, align 1
   br label %if.end
 
 while.cond38:                                     ; preds = %if.end50, %if.then36
@@ -94655,130 +94469,124 @@ if.then54:                                        ; preds = %while.exit40
   %tab56 = load i64, ptr %tab, align 8
   %i57 = load i64, ptr %i, align 8
   %call58 = call i64 @_ZN7symbols14ws_record_kindE6Stringmm6String(ptr %2, i64 %tab56, i64 %i57, ptr %sret.result13)
-  br i1 %4, label %if.then59, label %if.end60
+  br i1 %4, label %land.rhs, label %if.end60
 
-if.end55:                                         ; preds = %if.end66, %while.exit40
-  %matched70 = load i1, ptr %matched, align 1
-  br i1 %matched70, label %if.then71, label %if.end72
+if.end55:                                         ; preds = %if.end63, %while.exit40
+  %matched67 = load i1, ptr %matched, align 1
+  br i1 %matched67, label %if.then68, label %if.end69
 
-if.then59:                                        ; preds = %if.then54
+if.then59:                                        ; preds = %land.rhs
+  store i1 false, ptr %matched, align 1
+  br label %if.end60
+
+if.end60:                                         ; preds = %if.then59, %land.rhs, %if.then54
+  %eq65 = icmp eq i1 %4, false
+  br i1 %eq65, label %land.rhs64, label %if.end63
+
+land.rhs:                                         ; preds = %if.then54
   %ne61 = icmp ne i64 %call58, 2
-  br i1 %ne61, label %if.then62, label %if.end63
+  br i1 %ne61, label %if.then59, label %if.end60
 
-if.end60:                                         ; preds = %if.end63, %if.then54
-  %eq64 = icmp eq i1 %4, false
-  br i1 %eq64, label %if.then65, label %if.end66
-
-if.then62:                                        ; preds = %if.then59
+if.then62:                                        ; preds = %land.rhs64
   store i1 false, ptr %matched, align 1
   br label %if.end63
 
-if.end63:                                         ; preds = %if.then62, %if.then59
-  br label %if.end60
-
-if.then65:                                        ; preds = %if.end60
-  %eq67 = icmp eq i64 %call58, 2
-  br i1 %eq67, label %if.then68, label %if.end69
-
-if.end66:                                         ; preds = %if.end69, %if.end60
+if.end63:                                         ; preds = %if.then62, %land.rhs64, %if.end60
   br label %if.end55
 
-if.then68:                                        ; preds = %if.then65
-  store i1 false, ptr %matched, align 1
-  br label %if.end69
+land.rhs64:                                       ; preds = %if.end60
+  %eq66 = icmp eq i64 %call58, 2
+  br i1 %eq66, label %if.then62, label %if.end63
 
-if.end69:                                         ; preds = %if.then68, %if.then65
-  br label %if.end66
+if.then68:                                        ; preds = %if.end55
+  %tab70 = load i64, ptr %tab, align 8
+  store i64 %tab70, ptr %s, align 1
+  br label %while.cond71
 
-if.then71:                                        ; preds = %if.end55
-  %tab73 = load i64, ptr %tab, align 8
-  store i64 %tab73, ptr %s, align 1
-  br label %while.cond74
-
-if.end72:                                         ; preds = %while.exit76, %if.end55
+if.end69:                                         ; preds = %while.exit73, %if.end55
   br label %if.end37
 
-while.cond74:                                     ; preds = %if.end83, %if.then71
+while.cond71:                                     ; preds = %if.end80, %if.then68
+  %s74 = load i64, ptr %s, align 8
+  %add75 = add i64 %s74, %call
+  %i76 = load i64, ptr %i, align 8
+  %le = icmp ule i64 %add75, %i76
+  br i1 %le, label %while.body72, label %while.exit73
+
+while.body72:                                     ; preds = %while.cond71
   %s77 = load i64, ptr %s, align 8
-  %add78 = add i64 %s77, %call
-  %i79 = load i64, ptr %i, align 8
-  %le = icmp ule i64 %add78, %i79
-  br i1 %le, label %while.body75, label %while.exit76
+  %call78 = call i1 @_ZN7symbols10matches_atE6Stringm6String(ptr %2, i64 %s77, ptr %sret.result)
+  br i1 %call78, label %if.then79, label %if.end80
 
-while.body75:                                     ; preds = %while.cond74
-  %s80 = load i64, ptr %s, align 8
-  %call81 = call i1 @_ZN7symbols10matches_atE6Stringm6String(ptr %2, i64 %s80, ptr %sret.result)
-  br i1 %call81, label %if.then82, label %if.end83
+while.exit73:                                     ; preds = %while.cond71
+  br label %if.end69
 
-while.exit76:                                     ; preds = %while.cond74
-  br label %if.end72
-
-if.then82:                                        ; preds = %while.body75
-  %s84 = load i64, ptr %s, align 8
-  %add85 = add i64 %s84, %call
-  store i64 %add85, ptr %lstart, align 1
-  %lstart86 = load i64, ptr %lstart, align 8
-  store i64 %lstart86, ptr %j, align 1
+if.then79:                                        ; preds = %while.body72
+  %s81 = load i64, ptr %s, align 8
+  %add82 = add i64 %s81, %call
+  store i64 %add82, ptr %lstart, align 1
+  %lstart83 = load i64, ptr %lstart, align 8
+  store i64 %lstart83, ptr %j, align 1
   store i64 0, ptr %depth, align 1
-  br label %while.cond87
+  br label %while.cond84
 
-if.end83:                                         ; preds = %while.exit89, %while.body75
-  %s115 = load i64, ptr %s, align 8
-  %add116 = add i64 %s115, 1
-  store i64 %add116, ptr %s, align 1
-  br label %while.cond74
+if.end80:                                         ; preds = %while.exit86, %while.body72
+  %s112 = load i64, ptr %s, align 8
+  %add113 = add i64 %s112, 1
+  store i64 %add113, ptr %s, align 1
+  br label %while.cond71
 
-while.cond87:                                     ; preds = %if.end102, %if.then82
+while.cond84:                                     ; preds = %if.end99, %if.then79
+  %j87 = load i64, ptr %j, align 8
+  %i88 = load i64, ptr %i, align 8
+  %lt89 = icmp ult i64 %j87, %i88
+  br i1 %lt89, label %while.body85, label %while.exit86
+
+while.body85:                                     ; preds = %while.cond84
   %j90 = load i64, ptr %j, align 8
-  %i91 = load i64, ptr %i, align 8
-  %lt92 = icmp ult i64 %j90, %i91
-  br i1 %lt92, label %while.body88, label %while.exit89
+  %call91 = call i8 @_ZN6String3getEm(ptr %2, i64 %j90)
+  %eq92 = icmp eq i8 %call91, 123
+  br i1 %eq92, label %if.then93, label %if.end94
 
-while.body88:                                     ; preds = %while.cond87
-  %j93 = load i64, ptr %j, align 8
-  %call94 = call i8 @_ZN6String3getEm(ptr %2, i64 %j93)
-  %eq95 = icmp eq i8 %call94, 123
-  br i1 %eq95, label %if.then96, label %if.end97
+while.exit86:                                     ; preds = %while.cond84
+  br label %if.end80
 
-while.exit89:                                     ; preds = %while.cond87
-  br label %if.end83
+if.then93:                                        ; preds = %while.body85
+  %depth95 = load i64, ptr %depth, align 8
+  %add96 = add i64 %depth95, 1
+  store i64 %add96, ptr %depth, align 1
+  br label %if.end94
 
-if.then96:                                        ; preds = %while.body88
-  %depth98 = load i64, ptr %depth, align 8
-  %add99 = add i64 %depth98, 1
-  store i64 %add99, ptr %depth, align 1
-  br label %if.end97
+if.end94:                                         ; preds = %if.then93, %while.body85
+  %eq97 = icmp eq i8 %call91, 125
+  br i1 %eq97, label %if.then98, label %if.end99
 
-if.end97:                                         ; preds = %if.then96, %while.body88
-  %eq100 = icmp eq i8 %call94, 125
-  br i1 %eq100, label %if.then101, label %if.end102
+if.then98:                                        ; preds = %if.end94
+  %depth100 = load i64, ptr %depth, align 8
+  %sub101 = sub i64 %depth100, 1
+  store i64 %sub101, ptr %depth, align 1
+  %depth102 = load i64, ptr %depth, align 8
+  %eq103 = icmp eq i64 %depth102, 0
+  br i1 %eq103, label %if.then104, label %if.end105
 
-if.then101:                                       ; preds = %if.end97
-  %depth103 = load i64, ptr %depth, align 8
-  %sub104 = sub i64 %depth103, 1
-  store i64 %sub104, ptr %depth, align 1
-  %depth105 = load i64, ptr %depth, align 8
-  %eq106 = icmp eq i64 %depth105, 0
-  br i1 %eq106, label %if.then107, label %if.end108
+if.end99:                                         ; preds = %if.end105, %if.end94
+  %j110 = load i64, ptr %j, align 8
+  %add111 = add i64 %j110, 1
+  store i64 %add111, ptr %j, align 1
+  br label %while.cond84
 
-if.end102:                                        ; preds = %if.end108, %if.end97
-  %j113 = load i64, ptr %j, align 8
-  %add114 = add i64 %j113, 1
-  store i64 %add114, ptr %j, align 1
-  br label %while.cond87
-
-if.then107:                                       ; preds = %if.then101
-  %lstart110 = load i64, ptr %lstart, align 8
-  %j111 = load i64, ptr %j, align 8
-  %add112 = add i64 %j111, 1
-  call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result109, ptr %1, ptr %2, i64 %lstart110, i64 %add112)
+if.then104:                                       ; preds = %if.then98
+  %lstart107 = load i64, ptr %lstart, align 8
+  %j108 = load i64, ptr %j, align 8
+  %add109 = add i64 %j108, 1
+  call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result106, ptr %1, ptr %2, i64 %lstart107, i64 %add109)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  %sret.body = load { ptr }, ptr %sret.result109, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result109, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  %sret.body = load { ptr }, ptr %sret.result106, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result106, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.end108:                                        ; preds = %if.then101
-  br label %if.end102
+if.end105:                                        ; preds = %if.then98
+  br label %if.end99
 }
 
 define linkonce_odr void @_ZN7symbols25workspace_symbols_in_fileEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
@@ -94912,7 +94720,7 @@ entry:
 
 define linkonce_odr void @_ZN7symbols24return_type_in_workspaceEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
 entry:
-  %sret.result11 = alloca { ptr }, align 8
+  %sret.result9 = alloca { ptr }, align 8
   %sret.result3 = alloca { ptr }, align 8
   %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
   %sret.result = alloca { ptr }, align 8
@@ -94932,34 +94740,31 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   call void @_ZN7symbols18package_search_dirEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result3, ptr %1, ptr %sret.result)
-  %call4 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result3)
-  %gt5 = icmp ugt i64 %call4, 0
-  br i1 %gt5, label %if.then6, label %if.end7
+  %call6 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result3)
+  %gt7 = icmp ugt i64 %call6, 0
+  br i1 %gt7, label %land.rhs, label %if.end5
 
-if.then6:                                         ; preds = %if.end
-  %call8 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %sret.result1)
-  %not = xor i1 %call8, true
-  br i1 %not, label %if.then9, label %if.end10
+if.then4:                                         ; preds = %land.rhs
+  call void @_ZN7symbols18return_type_in_dirEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result9, ptr %1, ptr %sret.result3, ptr %sret.result, ptr %3)
+  %sret.body10 = load { ptr }, ptr %sret.result9, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result9, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  ret void
 
-if.end7:                                          ; preds = %if.end10, %if.end
+if.end5:                                          ; preds = %land.rhs, %if.end
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 
-if.then9:                                         ; preds = %if.then6
-  call void @_ZN7symbols18return_type_in_dirEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result11, ptr %1, ptr %sret.result3, ptr %sret.result, ptr %3)
-  %sret.body12 = load { ptr }, ptr %sret.result11, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result11, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  ret void
-
-if.end10:                                         ; preds = %if.then6
-  br label %if.end7
+land.rhs:                                         ; preds = %if.end
+  %call8 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %sret.result1)
+  %not = xor i1 %call8, true
+  br i1 %not, label %if.then4, label %if.end5
 }
 
 define linkonce_odr void @_ZN7symbols22type_definition_packedEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
 entry:
-  %sret.result65 = alloca { ptr }, align 8
-  %sret.result64 = alloca { ptr }, align 8
-  %sret.result54 = alloca { ptr }, align 8
+  %sret.result63 = alloca { ptr }, align 8
+  %sret.result62 = alloca { ptr }, align 8
+  %sret.result52 = alloca { ptr }, align 8
   %sret.result42 = alloca { ptr }, align 8
   %sret.result31 = alloca { ptr }, align 8
   %type_name = alloca ptr, align 8
@@ -95081,62 +94886,59 @@ if.then40:                                        ; preds = %if.end30
   br label %if.end41
 
 if.end41:                                         ; preds = %if.then40, %if.end30
-  %type_name45 = load ptr, ptr %type_name, align 8
-  %call46 = call i64 @_ZN6String10get_lengthEv(ptr %type_name45)
-  %eq47 = icmp eq i64 %call46, 0
-  br i1 %eq47, label %if.then48, label %if.end49
+  %type_name47 = load ptr, ptr %type_name, align 8
+  %call48 = call i64 @_ZN6String10get_lengthEv(ptr %type_name47)
+  %eq49 = icmp eq i64 %call48, 0
+  br i1 %eq49, label %land.rhs, label %if.end46
 
-if.then48:                                        ; preds = %if.end41
+if.then45:                                        ; preds = %land.rhs
+  call void @_ZN7symbols24return_type_in_workspaceEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result52, ptr %1, ptr %3, ptr %sret.result)
+  %set.dest53 = load ptr, ptr %type_name, align 8
+  %set.thru54 = load { ptr }, ptr %sret.result52, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest53, ptr align 1 %sret.result52, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  br label %if.end46
+
+if.end46:                                         ; preds = %if.then45, %land.rhs, %if.end41
+  %type_name55 = load ptr, ptr %type_name, align 8
+  %call56 = call i64 @_ZN6String10get_lengthEv(ptr %type_name55)
+  %eq57 = icmp eq i64 %call56, 0
+  br i1 %eq57, label %if.then58, label %if.end59
+
+land.rhs:                                         ; preds = %if.end41
   %call50 = call i1 @_ZN7symbols15buffer_declaresE6String6String6String(ptr %2, ptr %3, ptr %sret.result)
   %eq51 = icmp eq i1 %call50, false
-  br i1 %eq51, label %if.then52, label %if.end53
+  br i1 %eq51, label %if.then45, label %if.end46
 
-if.end49:                                         ; preds = %if.end53, %if.end41
-  %type_name57 = load ptr, ptr %type_name, align 8
-  %call58 = call i64 @_ZN6String10get_lengthEv(ptr %type_name57)
-  %eq59 = icmp eq i64 %call58, 0
-  br i1 %eq59, label %if.then60, label %if.end61
+if.then58:                                        ; preds = %if.end46
+  %set.dest60 = load ptr, ptr %type_name, align 8
+  %set.thru61 = load { ptr }, ptr %sret.result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest60, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  br label %if.end59
 
-if.then52:                                        ; preds = %if.then48
-  call void @_ZN7symbols24return_type_in_workspaceEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result54, ptr %1, ptr %3, ptr %sret.result)
-  %set.dest55 = load ptr, ptr %type_name, align 8
-  %set.thru56 = load { ptr }, ptr %sret.result54, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest55, ptr align 1 %sret.result54, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  br label %if.end53
+if.end59:                                         ; preds = %if.then58, %if.end46
+  call void @_ZN7symbols25workspace_symbols_in_fileEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result63, ptr %1, ptr %2, ptr %3)
+  %type_name64 = load ptr, ptr %type_name, align 8
+  call void @_ZN7symbols16def_from_ws_blobEPN4scaly6memory4PageE6String6Stringb(ptr noalias sret({ ptr }) %sret.result62, ptr %1, ptr %sret.result63, ptr %type_name64, i1 false)
+  %call65 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result62)
+  %gt66 = icmp ugt i64 %call65, 0
+  br i1 %gt66, label %if.then67, label %if.end68
 
-if.end53:                                         ; preds = %if.then52, %if.then48
-  br label %if.end49
-
-if.then60:                                        ; preds = %if.end49
-  %set.dest62 = load ptr, ptr %type_name, align 8
-  %set.thru63 = load { ptr }, ptr %sret.result, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest62, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  br label %if.end61
-
-if.end61:                                         ; preds = %if.then60, %if.end49
-  call void @_ZN7symbols25workspace_symbols_in_fileEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result65, ptr %1, ptr %2, ptr %3)
-  %type_name66 = load ptr, ptr %type_name, align 8
-  call void @_ZN7symbols16def_from_ws_blobEPN4scaly6memory4PageE6String6Stringb(ptr noalias sret({ ptr }) %sret.result64, ptr %1, ptr %sret.result65, ptr %type_name66, i1 false)
-  %call67 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result64)
-  %gt68 = icmp ugt i64 %call67, 0
-  br i1 %gt68, label %if.then69, label %if.end70
-
-if.then69:                                        ; preds = %if.end61
-  %sret.body = load { ptr }, ptr %sret.result64, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result64, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+if.then67:                                        ; preds = %if.end59
+  %sret.body = load { ptr }, ptr %sret.result62, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result62, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.end70:                                         ; preds = %if.end61
-  %type_name71 = load ptr, ptr %type_name, align 8
-  call void @_ZN7symbols28find_definition_in_workspaceEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result65, ptr %1, ptr %3, ptr %type_name71)
-  %sret.body72 = load { ptr }, ptr %sret.result65, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result65, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+if.end68:                                         ; preds = %if.end59
+  %type_name69 = load ptr, ptr %type_name, align 8
+  call void @_ZN7symbols28find_definition_in_workspaceEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result63, ptr %1, ptr %3, ptr %type_name69)
+  %sret.body70 = load { ptr }, ptr %sret.result63, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result63, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
 define linkonce_odr void @_ZN7symbols9file_stemEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
 entry:
-  %sret.result14 = alloca { ptr }, align 8
+  %sret.result12 = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
   %end = alloca i64, align 8
   %frame = alloca { ptr, ptr }, align 8
@@ -95161,36 +94963,33 @@ if.then:                                          ; preds = %entry
 if.end:                                           ; preds = %if.then, %entry
   %call2 = call i64 @_ZN6String10get_lengthEv(ptr %2)
   store i64 %call2, ptr %end, align 1
-  %end3 = load i64, ptr %end, align 8
-  %start4 = load i64, ptr %start, align 8
-  %add5 = add i64 %start4, 6
-  %ge = icmp uge i64 %end3, %add5
-  br i1 %ge, label %if.then6, label %if.end7
+  %end5 = load i64, ptr %end, align 8
+  %start6 = load i64, ptr %start, align 8
+  %add7 = add i64 %start6, 6
+  %ge = icmp uge i64 %end5, %add7
+  br i1 %ge, label %land.rhs, label %if.end4
 
-if.then6:                                         ; preds = %if.end
+if.then3:                                         ; preds = %land.rhs
+  %end10 = load i64, ptr %end, align 8
+  %sub11 = sub i64 %end10, 6
+  store i64 %sub11, ptr %end, align 1
+  br label %if.end4
+
+if.end4:                                          ; preds = %if.then3, %land.rhs, %if.end
+  %start13 = load i64, ptr %start, align 8
+  %end14 = load i64, ptr %end, align 8
+  call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result12, ptr %1, ptr %2, i64 %start13, i64 %end14)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  %sret.body = load { ptr }, ptr %sret.result12, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result12, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  ret void
+
+land.rhs:                                         ; preds = %if.end
   %end8 = load i64, ptr %end, align 8
   %sub = sub i64 %end8, 6
   store { ptr } { ptr @.sconst.593 }, ptr %arg.tmp, align 1
   %call9 = call i1 @_ZN7symbols10matches_atE6Stringm6String(ptr %2, i64 %sub, ptr %arg.tmp)
-  br i1 %call9, label %if.then10, label %if.end11
-
-if.end7:                                          ; preds = %if.end11, %if.end
-  %start15 = load i64, ptr %start, align 8
-  %end16 = load i64, ptr %end, align 8
-  call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result14, ptr %1, ptr %2, i64 %start15, i64 %end16)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  %sret.body = load { ptr }, ptr %sret.result14, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result14, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  ret void
-
-if.then10:                                        ; preds = %if.then6
-  %end12 = load i64, ptr %end, align 8
-  %sub13 = sub i64 %end12, 6
-  store i64 %sub13, ptr %end, align 1
-  br label %if.end11
-
-if.end11:                                         ; preds = %if.then10, %if.then6
-  br label %if.end7
+  br i1 %call9, label %if.then3, label %if.end4
 }
 
 define linkonce_odr void @_ZN7symbols16module_file_pathEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
@@ -95573,21 +95372,21 @@ while.exit79:                                     ; preds = %while.cond77
 
 define linkonce_odr void @_ZN7symbols27build_signature_from_labelsEPN4scaly6memory4PageE6String6Stringm(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, i64 %4) {
 entry:
-  %sret.result146 = alloca { ptr }, align 8
-  %sret.result143 = alloca { ptr }, align 8
-  %arg.tmp141 = alloca %_Z5SliceIcE, align 8
-  %tuple137 = alloca %_Z5SliceIcE, align 8
-  %sret.result136 = alloca { ptr }, align 8
-  %arg.tmp132 = alloca %_Z5SliceIcE, align 8
-  %tuple128 = alloca %_Z5SliceIcE, align 8
-  %sret.result127 = alloca { ptr }, align 8
-  %arg.tmp110 = alloca %_Z5SliceIcE, align 8
-  %tuple106 = alloca %_Z5SliceIcE, align 8
-  %sret.result105 = alloca { ptr }, align 8
-  %sret.result102 = alloca { ptr }, align 8
-  %arg.tmp100 = alloca %_Z5SliceIcE, align 8
-  %tuple96 = alloca %_Z5SliceIcE, align 8
-  %sret.result95 = alloca { ptr }, align 8
+  %sret.result144 = alloca { ptr }, align 8
+  %sret.result141 = alloca { ptr }, align 8
+  %arg.tmp139 = alloca %_Z5SliceIcE, align 8
+  %tuple135 = alloca %_Z5SliceIcE, align 8
+  %sret.result134 = alloca { ptr }, align 8
+  %arg.tmp130 = alloca %_Z5SliceIcE, align 8
+  %tuple126 = alloca %_Z5SliceIcE, align 8
+  %sret.result125 = alloca { ptr }, align 8
+  %arg.tmp108 = alloca %_Z5SliceIcE, align 8
+  %tuple104 = alloca %_Z5SliceIcE, align 8
+  %sret.result103 = alloca { ptr }, align 8
+  %sret.result100 = alloca { ptr }, align 8
+  %arg.tmp98 = alloca %_Z5SliceIcE, align 8
+  %tuple94 = alloca %_Z5SliceIcE, align 8
+  %sret.result93 = alloca { ptr }, align 8
   %arg.tmp = alloca %_Z5SliceIcE, align 8
   %tuple = alloca %_Z5SliceIcE, align 8
   %ai = alloca i64, align 8
@@ -95656,9 +95455,9 @@ if.end:                                           ; preds = %while.exit27, %whil
   %sig_label73 = load ptr, ptr %sig_label, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sig_label73, i8 41)
   store i64 %4, ptr %wi, align 1
-  %count74 = load i64, ptr %count, align 8
-  %gt75 = icmp ugt i64 %count74, 0
-  br i1 %gt75, label %if.then76, label %if.end77
+  %count76 = load i64, ptr %count, align 8
+  %gt77 = icmp ugt i64 %count76, 0
+  br i1 %gt77, label %land.rhs, label %if.end75
 
 while.cond12:                                     ; preds = %while.body13, %if.then
   %wi15 = load i64, ptr %wi, align 8
@@ -95773,140 +95572,137 @@ while.exit59:                                     ; preds = %while.cond57
   store i64 %add70, ptr %seg_start, align 1
   br label %if.end33
 
-if.then76:                                        ; preds = %if.end
+if.then74:                                        ; preds = %land.rhs
+  %count79 = load i64, ptr %count, align 8
+  %sub = sub i64 %count79, 1
+  store i64 %sub, ptr %wi, align 1
+  br label %if.end75
+
+if.end75:                                         ; preds = %if.then74, %land.rhs, %if.end
+  %count80 = load i64, ptr %count, align 8
+  %eq81 = icmp eq i64 %count80, 0
+  br i1 %eq81, label %if.then82, label %if.end83
+
+land.rhs:                                         ; preds = %if.end
   %act = load i64, ptr %wi, align 8
   %count78 = load i64, ptr %count, align 8
   %ge = icmp uge i64 %act, %count78
-  br i1 %ge, label %if.then79, label %if.end80
+  br i1 %ge, label %if.then74, label %if.end75
 
-if.end77:                                         ; preds = %if.end80, %if.end
-  %count82 = load i64, ptr %count, align 8
-  %eq83 = icmp eq i64 %count82, 0
-  br i1 %eq83, label %if.then84, label %if.end85
-
-if.then79:                                        ; preds = %if.then76
-  %count81 = load i64, ptr %count, align 8
-  %sub = sub i64 %count81, 1
-  store i64 %sub, ptr %wi, align 1
-  br label %if.end80
-
-if.end80:                                         ; preds = %if.then79, %if.then76
-  br label %if.end77
-
-if.then84:                                        ; preds = %if.end77
+if.then82:                                        ; preds = %if.end75
   store i64 0, ptr %wi, align 1
-  br label %if.end85
+  br label %if.end83
 
-if.end85:                                         ; preds = %if.then84, %if.end77
-  %sig_label86 = load ptr, ptr %sig_label, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %sig_label86)
-  %arr87 = load ptr, ptr %arr, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result34, ptr %frame, ptr %arr87)
-  %forced_page88 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
-  %struct.region89 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page88, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1Ev(ptr %struct.region89)
-  store ptr %struct.region89, ptr %work, align 1
+if.end83:                                         ; preds = %if.then82, %if.end75
+  %sig_label84 = load ptr, ptr %sig_label, align 8
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %sig_label84)
+  %arr85 = load ptr, ptr %arr, align 8
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result34, ptr %frame, ptr %arr85)
+  %forced_page86 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  %struct.region87 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page86, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region87)
+  store ptr %struct.region87, ptr %work, align 1
   %sb = load ptr, ptr %work, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb, i8 123)
-  %sb90 = load ptr, ptr %work, align 8
+  %sb88 = load ptr, ptr %work, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 10, ptr %tuple.field, align 1
-  %tuple.field91 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.697, ptr %tuple.field91, align 1
+  %tuple.field89 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
+  store ptr @.str.697, ptr %tuple.field89, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result55, ptr %frame, ptr %arg.tmp)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb90, ptr %sret.result55)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb88, ptr %sret.result55)
+  %sb90 = load ptr, ptr %work, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb90, i8 91)
+  %sb91 = load ptr, ptr %work, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb91, i8 123)
   %sb92 = load ptr, ptr %work, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb92, i8 91)
-  %sb93 = load ptr, ptr %work, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb93, i8 123)
-  %sb94 = load ptr, ptr %work, align 8
-  %tuple.field97 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple96, i32 0, i32 0
-  store i64 5, ptr %tuple.field97, align 1
-  %tuple.field98 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple96, i32 0, i32 1
-  store ptr @.str.698, ptr %tuple.field98, align 1
-  %tuple.val99 = load %_Z5SliceIcE, ptr %tuple96, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp100, ptr align 1 %tuple96, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result95, ptr %frame, ptr %arg.tmp100)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb94, ptr %sret.result95)
+  %tuple.field95 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple94, i32 0, i32 0
+  store i64 5, ptr %tuple.field95, align 1
+  %tuple.field96 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple94, i32 0, i32 1
+  store ptr @.str.698, ptr %tuple.field96, align 1
+  %tuple.val97 = load %_Z5SliceIcE, ptr %tuple94, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp98, ptr align 1 %tuple94, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result93, ptr %frame, ptr %arg.tmp98)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb92, ptr %sret.result93)
+  %sb99 = load ptr, ptr %work, align 8
+  call void @_ZN4json12quote_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result100, ptr %frame, ptr %sret.result)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb99, ptr %sret.result100)
   %sb101 = load ptr, ptr %work, align 8
-  call void @_ZN4json12quote_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result102, ptr %frame, ptr %sret.result)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb101, ptr %sret.result102)
-  %sb103 = load ptr, ptr %work, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb103, i8 44)
-  %sb104 = load ptr, ptr %work, align 8
-  %tuple.field107 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple106, i32 0, i32 0
-  store i64 10, ptr %tuple.field107, align 1
-  %tuple.field108 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple106, i32 0, i32 1
-  store ptr @.str.699, ptr %tuple.field108, align 1
-  %tuple.val109 = load %_Z5SliceIcE, ptr %tuple106, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp110, ptr align 1 %tuple106, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result105, ptr %frame, ptr %arg.tmp110)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb104, ptr %sret.result105)
-  %sb111 = load ptr, ptr %work, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb111, i8 91)
+  call void @_ZN13StringBuilder6appendEc(ptr %sb101, i8 44)
+  %sb102 = load ptr, ptr %work, align 8
+  %tuple.field105 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple104, i32 0, i32 0
+  store i64 10, ptr %tuple.field105, align 1
+  %tuple.field106 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple104, i32 0, i32 1
+  store ptr @.str.699, ptr %tuple.field106, align 1
+  %tuple.val107 = load %_Z5SliceIcE, ptr %tuple104, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp108, ptr align 1 %tuple104, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result103, ptr %frame, ptr %arg.tmp108)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb102, ptr %sret.result103)
+  %sb109 = load ptr, ptr %work, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb109, i8 91)
   store i64 0, ptr %seg_start, align 1
-  %call112 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result34)
-  br label %while.cond113
+  %call110 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result34)
+  br label %while.cond111
 
-while.cond113:                                    ; preds = %while.body114, %if.end85
+while.cond111:                                    ; preds = %while.body112, %if.end83
   %pi = load i64, ptr %seg_start, align 8
-  %lt116 = icmp ult i64 %pi, %call112
-  br i1 %lt116, label %while.body114, label %while.exit115
+  %lt114 = icmp ult i64 %pi, %call110
+  br i1 %lt114, label %while.body112, label %while.exit113
 
-while.body114:                                    ; preds = %while.cond113
-  %sb117 = load ptr, ptr %work, align 8
+while.body112:                                    ; preds = %while.cond111
+  %sb115 = load ptr, ptr %work, align 8
+  %pi116 = load i64, ptr %seg_start, align 8
+  %call117 = call i8 @_ZN6String3getEm(ptr %sret.result34, i64 %pi116)
+  call void @_ZN13StringBuilder6appendEc(ptr %sb115, i8 %call117)
   %pi118 = load i64, ptr %seg_start, align 8
-  %call119 = call i8 @_ZN6String3getEm(ptr %sret.result34, i64 %pi118)
-  call void @_ZN13StringBuilder6appendEc(ptr %sb117, i8 %call119)
-  %pi120 = load i64, ptr %seg_start, align 8
-  %add121 = add i64 %pi120, 1
-  store i64 %add121, ptr %seg_start, align 1
-  br label %while.cond113
+  %add119 = add i64 %pi118, 1
+  store i64 %add119, ptr %seg_start, align 1
+  br label %while.cond111
 
-while.exit115:                                    ; preds = %while.cond113
+while.exit113:                                    ; preds = %while.cond111
+  %sb120 = load ptr, ptr %work, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb120, i8 93)
+  %sb121 = load ptr, ptr %work, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb121, i8 125)
   %sb122 = load ptr, ptr %work, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb122, i8 93)
   %sb123 = load ptr, ptr %work, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb123, i8 125)
+  call void @_ZN13StringBuilder6appendEc(ptr %sb123, i8 44)
   %sb124 = load ptr, ptr %work, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb124, i8 93)
-  %sb125 = load ptr, ptr %work, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb125, i8 44)
-  %sb126 = load ptr, ptr %work, align 8
-  %tuple.field129 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple128, i32 0, i32 0
-  store i64 15, ptr %tuple.field129, align 1
-  %tuple.field130 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple128, i32 0, i32 1
-  store ptr @.str.700, ptr %tuple.field130, align 1
-  %tuple.val131 = load %_Z5SliceIcE, ptr %tuple128, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp132, ptr align 1 %tuple128, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result127, ptr %frame, ptr %arg.tmp132)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb126, ptr %sret.result127)
+  %tuple.field127 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple126, i32 0, i32 0
+  store i64 15, ptr %tuple.field127, align 1
+  %tuple.field128 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple126, i32 0, i32 1
+  store ptr @.str.700, ptr %tuple.field128, align 1
+  %tuple.val129 = load %_Z5SliceIcE, ptr %tuple126, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp130, ptr align 1 %tuple126, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result125, ptr %frame, ptr %arg.tmp130)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb124, ptr %sret.result125)
+  %sb131 = load ptr, ptr %work, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb131, i8 48)
+  %sb132 = load ptr, ptr %work, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb132, i8 44)
   %sb133 = load ptr, ptr %work, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb133, i8 48)
-  %sb134 = load ptr, ptr %work, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb134, i8 44)
-  %sb135 = load ptr, ptr %work, align 8
-  %tuple.field138 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple137, i32 0, i32 0
-  store i64 15, ptr %tuple.field138, align 1
-  %tuple.field139 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple137, i32 0, i32 1
-  store ptr @.str.701, ptr %tuple.field139, align 1
-  %tuple.val140 = load %_Z5SliceIcE, ptr %tuple137, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp141, ptr align 1 %tuple137, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result136, ptr %frame, ptr %arg.tmp141)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb135, ptr %sret.result136)
-  %sb142 = load ptr, ptr %work, align 8
-  %act144 = load i64, ptr %wi, align 8
-  call void @_ZN4json10format_i64EPN4scaly6memory4PageE3i64(ptr noalias sret({ ptr }) %sret.result143, ptr %frame, i64 %act144)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb142, ptr %sret.result143)
+  %tuple.field136 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple135, i32 0, i32 0
+  store i64 15, ptr %tuple.field136, align 1
+  %tuple.field137 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple135, i32 0, i32 1
+  store ptr @.str.701, ptr %tuple.field137, align 1
+  %tuple.val138 = load %_Z5SliceIcE, ptr %tuple135, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp139, ptr align 1 %tuple135, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result134, ptr %frame, ptr %arg.tmp139)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb133, ptr %sret.result134)
+  %sb140 = load ptr, ptr %work, align 8
+  %act142 = load i64, ptr %wi, align 8
+  call void @_ZN4json10format_i64EPN4scaly6memory4PageE3i64(ptr noalias sret({ ptr }) %sret.result141, ptr %frame, i64 %act142)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb140, ptr %sret.result141)
+  %sb143 = load ptr, ptr %work, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb143, i8 125)
   %sb145 = load ptr, ptr %work, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb145, i8 125)
-  %sb147 = load ptr, ptr %work, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result146, ptr %1, ptr %sb147)
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result144, ptr %1, ptr %sb145)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  %sret.body = load { ptr }, ptr %sret.result146, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result146, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  %sret.body = load { ptr }, ptr %sret.result144, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result144, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -95985,10 +95781,10 @@ if.then:                                          ; preds = %while.body
   store i64 %rec_start8, ptr %t, align 1
   br label %while.cond9
 
-if.end:                                           ; preds = %if.end40, %while.body
-  %i55 = load i64, ptr %i, align 8
-  %add56 = add i64 %i55, 1
-  store i64 %add56, ptr %i, align 1
+if.end:                                           ; preds = %if.end39, %while.body
+  %i52 = load i64, ptr %i, align 8
+  %add53 = add i64 %i52, 1
+  store i64 %add53, ptr %i, align 1
   br label %while.cond
 
 while.cond9:                                      ; preds = %if.end19, %if.then
@@ -96004,9 +95800,9 @@ while.body10:                                     ; preds = %while.cond9
   br i1 %eq17, label %if.then18, label %if.end19
 
 while.exit11:                                     ; preds = %while.cond9
-  %ntabs38 = load i64, ptr %ntabs, align 8
-  %ge = icmp uge i64 %ntabs38, 4
-  br i1 %ge, label %if.then39, label %if.end40
+  %ntabs41 = load i64, ptr %ntabs, align 8
+  %ge = icmp uge i64 %ntabs41, 4
+  br i1 %ge, label %land.rhs40, label %if.end39
 
 if.then18:                                        ; preds = %while.body10
   %ntabs20 = load i64, ptr %ntabs, align 8
@@ -96050,38 +95846,32 @@ if.end33:                                         ; preds = %if.then32, %if.end2
   store i64 %add, ptr %ntabs, align 1
   br label %if.end19
 
-if.then39:                                        ; preds = %while.exit11
-  %tab141 = load i64, ptr %tab1, align 8
-  %rec_start42 = load i64, ptr %rec_start, align 8
-  %sub = sub i64 %tab141, %rec_start42
-  %eq43 = icmp eq i64 %sub, %call
-  br i1 %eq43, label %if.then44, label %if.end45
-
-if.end40:                                         ; preds = %if.end45, %while.exit11
-  %i53 = load i64, ptr %i, align 8
-  %add54 = add i64 %i53, 1
-  store i64 %add54, ptr %rec_start, align 1
-  br label %if.end
-
-if.then44:                                        ; preds = %if.then39
-  %rec_start46 = load i64, ptr %rec_start, align 8
-  %call47 = call i1 @_ZN7symbols12range_equalsE6Stringm6Stringmm(ptr %2, i64 %rec_start46, ptr %3, i64 0, i64 %call)
-  br i1 %call47, label %if.then48, label %if.end49
-
-if.end45:                                         ; preds = %if.end49, %if.then39
-  br label %if.end40
-
-if.then48:                                        ; preds = %if.then44
-  %tab350 = load i64, ptr %tab3, align 8
-  %add51 = add i64 %tab350, 1
-  %tab452 = load i64, ptr %tab4, align 8
-  call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %add51, i64 %tab452)
+if.then38:                                        ; preds = %land.rhs
+  %tab347 = load i64, ptr %tab3, align 8
+  %add48 = add i64 %tab347, 1
+  %tab449 = load i64, ptr %tab4, align 8
+  call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %add48, i64 %tab449)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.end49:                                         ; preds = %if.then44
-  br label %if.end45
+if.end39:                                         ; preds = %land.rhs, %land.rhs40, %while.exit11
+  %i50 = load i64, ptr %i, align 8
+  %add51 = add i64 %i50, 1
+  store i64 %add51, ptr %rec_start, align 1
+  br label %if.end
+
+land.rhs:                                         ; preds = %land.rhs40
+  %rec_start45 = load i64, ptr %rec_start, align 8
+  %call46 = call i1 @_ZN7symbols12range_equalsE6Stringm6Stringmm(ptr %2, i64 %rec_start45, ptr %3, i64 0, i64 %call)
+  br i1 %call46, label %if.then38, label %if.end39
+
+land.rhs40:                                       ; preds = %while.exit11
+  %tab142 = load i64, ptr %tab1, align 8
+  %rec_start43 = load i64, ptr %rec_start, align 8
+  %sub = sub i64 %tab142, %rec_start43
+  %eq44 = icmp eq i64 %sub, %call
+  br i1 %eq44, label %land.rhs, label %if.end39
 }
 
 define linkonce_odr i1 @_ZN7symbols18concept_in_ws_blobEPN4scaly6memory4PageE6String6String(ptr %0, ptr %1, ptr %2) {
@@ -96144,9 +95934,9 @@ if.then:                                          ; preds = %while.body
   br label %while.cond13
 
 if.end:                                           ; preds = %if.end29, %while.body
-  %i79 = load i64, ptr %i, align 8
-  %add80 = add i64 %i79, 1
-  store i64 %add80, ptr %i, align 1
+  %i77 = load i64, ptr %i, align 8
+  %add78 = add i64 %i77, 1
+  store i64 %add78, ptr %i, align 1
   br label %while.cond
 
 while.cond13:                                     ; preds = %if.end23, %if.then
@@ -96183,9 +95973,9 @@ if.then28:                                        ; preds = %while.exit15
   br i1 %call31, label %if.then32, label %if.end33
 
 if.end29:                                         ; preds = %if.end33, %while.exit15
-  %i77 = load i64, ptr %i, align 8
-  %add78 = add i64 %i77, 1
-  store i64 %add78, ptr %rec_start, align 1
+  %i75 = load i64, ptr %i, align 8
+  %add76 = add i64 %i75, 1
+  store i64 %add76, ptr %rec_start, align 1
   br label %if.end
 
 if.then32:                                        ; preds = %if.then28
@@ -96210,9 +96000,9 @@ while.body36:                                     ; preds = %while.cond35
   br i1 %call42, label %if.then43, label %if.end44
 
 while.exit37:                                     ; preds = %while.cond35
-  %kind69 = load i64, ptr %kind, align 8
-  %eq70 = icmp eq i64 %kind69, 23
-  br i1 %eq70, label %if.then71, label %if.end72
+  %kind71 = load i64, ptr %kind, align 8
+  %eq72 = icmp eq i64 %kind71, 23
+  br i1 %eq72, label %if.then69, label %lor.rhs
 
 if.then43:                                        ; preds = %while.body36
   %s45 = load i64, ptr %s, align 8
@@ -96268,22 +96058,18 @@ if.then58:                                        ; preds = %if.then55
 if.end59:                                         ; preds = %if.then55
   br label %if.end56
 
-if.then71:                                        ; preds = %while.exit37
+if.then69:                                        ; preds = %lor.rhs, %while.exit37
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 true
 
-if.end72:                                         ; preds = %while.exit37
-  %kind73 = load i64, ptr %kind, align 8
-  %eq74 = icmp eq i64 %kind73, 10
-  br i1 %eq74, label %if.then75, label %if.end76
-
-if.then75:                                        ; preds = %if.end72
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret i1 true
-
-if.end76:                                         ; preds = %if.end72
+if.end70:                                         ; preds = %lor.rhs
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 false
+
+lor.rhs:                                          ; preds = %while.exit37
+  %kind73 = load i64, ptr %kind, align 8
+  %eq74 = icmp eq i64 %kind73, 10
+  br i1 %eq74, label %if.then69, label %if.end70
 }
 
 define linkonce_odr i1 @_ZN7symbols14concept_in_dirEPN4scaly6memory4PageE6String6String6String(ptr %0, ptr %1, ptr %2, ptr %3) {
@@ -96408,26 +96194,23 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   call void @_ZN7symbols18package_search_dirEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result2, ptr %0, ptr %sret.result)
-  %call3 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result2)
-  %gt = icmp ugt i64 %call3, 0
-  br i1 %gt, label %if.then4, label %if.end5
+  %call5 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result2)
+  %gt = icmp ugt i64 %call5, 0
+  br i1 %gt, label %land.rhs, label %if.end4
 
-if.then4:                                         ; preds = %if.end
-  %call6 = call i1 @_ZN6String6equalsE6String(ptr %sret.result2, ptr %sret.result1)
-  %not = xor i1 %call6, true
-  br i1 %not, label %if.then7, label %if.end8
+if.then3:                                         ; preds = %land.rhs
+  %call7 = call i1 @_ZN7symbols14concept_in_dirEPN4scaly6memory4PageE6String6String6String(ptr %0, ptr %sret.result2, ptr %sret.result, ptr %2)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret i1 %call7
 
-if.end5:                                          ; preds = %if.end8, %if.end
+if.end4:                                          ; preds = %land.rhs, %if.end
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 false
 
-if.then7:                                         ; preds = %if.then4
-  %call9 = call i1 @_ZN7symbols14concept_in_dirEPN4scaly6memory4PageE6String6String6String(ptr %0, ptr %sret.result2, ptr %sret.result, ptr %2)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret i1 %call9
-
-if.end8:                                          ; preds = %if.then4
-  br label %if.end5
+land.rhs:                                         ; preds = %if.end
+  %call6 = call i1 @_ZN6String6equalsE6String(ptr %sret.result2, ptr %sret.result1)
+  %not = xor i1 %call6, true
+  br i1 %not, label %if.then3, label %if.end4
 }
 
 define linkonce_odr void @_ZN7symbols18return_type_in_dirEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
@@ -97187,10 +96970,10 @@ if.end11:                                         ; preds = %if.then5
 
 define linkonce_odr void @_ZN7symbols20tagged_names_lexicalEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
 entry:
-  %arg.tmp98 = alloca { ptr }, align 8
-  %arg.tmp94 = alloca { ptr }, align 8
-  %arg.tmp90 = alloca { ptr }, align 8
-  %sret.result88 = alloca { ptr }, align 8
+  %arg.tmp96 = alloca { ptr }, align 8
+  %arg.tmp92 = alloca { ptr }, align 8
+  %arg.tmp88 = alloca { ptr }, align 8
+  %sret.result86 = alloca { ptr }, align 8
   %tag = alloca i64, align 8
   %sret.result52 = alloca { ptr }, align 8
   %k = alloca i64, align 8
@@ -97226,8 +97009,8 @@ while.body:                                       ; preds = %while.cond
   br i1 %call5, label %if.then, label %if.end
 
 while.exit:                                       ; preds = %while.cond
-  %sb111 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb111)
+  %sb109 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb109)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -97348,105 +97131,102 @@ if.then56:                                        ; preds = %if.then48
   %k61 = load i64, ptr %k, align 8
   %call62 = call i64 @_ZN7symbols11lex_skip_wsE6Stringmm(ptr %2, i64 %k61, i64 %call)
   store i64 %call62, ptr %k, align 1
-  %k63 = load i64, ptr %k, align 8
-  %lt64 = icmp ult i64 %k63, %call
-  br i1 %lt64, label %if.then65, label %if.end66
+  %k65 = load i64, ptr %k, align 8
+  %lt66 = icmp ult i64 %k65, %call
+  br i1 %lt66, label %land.rhs, label %if.end64
 
-if.end57:                                         ; preds = %if.end105, %if.then48
+if.end57:                                         ; preds = %if.end103, %if.then48
   br label %while.cond
 
-if.then65:                                        ; preds = %if.then56
+if.then63:                                        ; preds = %land.rhs
+  %k70 = load i64, ptr %k, align 8
+  %call71 = call i64 @_ZN7symbols17lex_skip_bracketsE6Stringmm(ptr %2, i64 %k70, i64 %call)
+  store i64 %call71, ptr %k, align 1
+  br label %if.end64
+
+if.end64:                                         ; preds = %if.then63, %land.rhs, %if.then56
+  %k72 = load i64, ptr %k, align 8
+  %call73 = call i64 @_ZN7symbols11lex_skip_wsE6Stringmm(ptr %2, i64 %k72, i64 %call)
+  store i64 %call73, ptr %k, align 1
+  store i64 0, ptr %tag, align 1
+  %k74 = load i64, ptr %k, align 8
+  %lt75 = icmp ult i64 %k74, %call
+  br i1 %lt75, label %if.then76, label %if.end77
+
+land.rhs:                                         ; preds = %if.then56
   %k67 = load i64, ptr %k, align 8
   %call68 = call i8 @_ZN6String3getEm(ptr %2, i64 %k67)
   %eq69 = icmp eq i8 %call68, 91
-  br i1 %eq69, label %if.then70, label %if.end71
+  br i1 %eq69, label %if.then63, label %if.end64
 
-if.end66:                                         ; preds = %if.end71, %if.then56
-  %k74 = load i64, ptr %k, align 8
-  %call75 = call i64 @_ZN7symbols11lex_skip_wsE6Stringmm(ptr %2, i64 %k74, i64 %call)
-  store i64 %call75, ptr %k, align 1
-  store i64 0, ptr %tag, align 1
-  %k76 = load i64, ptr %k, align 8
-  %lt77 = icmp ult i64 %k76, %call
-  br i1 %lt77, label %if.then78, label %if.end79
+if.then76:                                        ; preds = %if.end64
+  %k78 = load i64, ptr %k, align 8
+  %call79 = call i8 @_ZN6String3getEm(ptr %2, i64 %k78)
+  %eq80 = icmp eq i8 %call79, 40
+  br i1 %eq80, label %if.then81, label %if.end82
 
-if.then70:                                        ; preds = %if.then65
-  %k72 = load i64, ptr %k, align 8
-  %call73 = call i64 @_ZN7symbols17lex_skip_bracketsE6Stringmm(ptr %2, i64 %k72, i64 %call)
-  store i64 %call73, ptr %k, align 1
-  br label %if.end71
+if.end77:                                         ; preds = %if.end85, %if.end64
+  %tag100 = load i64, ptr %tag, align 8
+  %gt101 = icmp ugt i64 %tag100, 0
+  br i1 %gt101, label %if.then102, label %if.end103
 
-if.end71:                                         ; preds = %if.then70, %if.then65
-  br label %if.end66
-
-if.then78:                                        ; preds = %if.end66
-  %k80 = load i64, ptr %k, align 8
-  %call81 = call i8 @_ZN6String3getEm(ptr %2, i64 %k80)
-  %eq82 = icmp eq i8 %call81, 40
-  br i1 %eq82, label %if.then83, label %if.end84
-
-if.end79:                                         ; preds = %if.end87, %if.end66
-  %tag102 = load i64, ptr %tag, align 8
-  %gt103 = icmp ugt i64 %tag102, 0
-  br i1 %gt103, label %if.then104, label %if.end105
-
-if.then83:                                        ; preds = %if.then78
+if.then81:                                        ; preds = %if.then76
   store i64 84, ptr %tag, align 1
-  br label %if.end84
+  br label %if.end82
 
-if.end84:                                         ; preds = %if.then83, %if.then78
-  %call85 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call81)
-  br i1 %call85, label %if.then86, label %if.end87
+if.end82:                                         ; preds = %if.then81, %if.then76
+  %call83 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call79)
+  br i1 %call83, label %if.then84, label %if.end85
 
-if.then86:                                        ; preds = %if.end84
-  %k89 = load i64, ptr %k, align 8
-  call void @_ZN7symbols14lex_read_identEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result88, ptr %frame, ptr %2, i64 %k89, i64 %call)
-  store { ptr } { ptr @.sconst.601 }, ptr %arg.tmp90, align 1
-  %call91 = call i1 @_ZN6String6equalsE6String(ptr %sret.result88, ptr %arg.tmp90)
-  br i1 %call91, label %if.then92, label %if.end93
+if.then84:                                        ; preds = %if.end82
+  %k87 = load i64, ptr %k, align 8
+  call void @_ZN7symbols14lex_read_identEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result86, ptr %frame, ptr %2, i64 %k87, i64 %call)
+  store { ptr } { ptr @.sconst.601 }, ptr %arg.tmp88, align 1
+  %call89 = call i1 @_ZN6String6equalsE6String(ptr %sret.result86, ptr %arg.tmp88)
+  br i1 %call89, label %if.then90, label %if.end91
 
-if.end87:                                         ; preds = %if.end101, %if.end84
-  br label %if.end79
+if.end85:                                         ; preds = %if.end99, %if.end82
+  br label %if.end77
 
-if.then92:                                        ; preds = %if.then86
+if.then90:                                        ; preds = %if.then84
   store i64 84, ptr %tag, align 1
-  br label %if.end93
+  br label %if.end91
 
-if.end93:                                         ; preds = %if.then92, %if.then86
-  store { ptr } { ptr @.sconst.602 }, ptr %arg.tmp94, align 1
-  %call95 = call i1 @_ZN6String6equalsE6String(ptr %sret.result88, ptr %arg.tmp94)
-  br i1 %call95, label %if.then96, label %if.end97
+if.end91:                                         ; preds = %if.then90, %if.then84
+  store { ptr } { ptr @.sconst.602 }, ptr %arg.tmp92, align 1
+  %call93 = call i1 @_ZN6String6equalsE6String(ptr %sret.result86, ptr %arg.tmp92)
+  br i1 %call93, label %if.then94, label %if.end95
 
-if.then96:                                        ; preds = %if.end93
+if.then94:                                        ; preds = %if.end91
   store i64 84, ptr %tag, align 1
-  br label %if.end97
+  br label %if.end95
 
-if.end97:                                         ; preds = %if.then96, %if.end93
-  store { ptr } { ptr @.sconst.603 }, ptr %arg.tmp98, align 1
-  %call99 = call i1 @_ZN6String6equalsE6String(ptr %sret.result88, ptr %arg.tmp98)
-  br i1 %call99, label %if.then100, label %if.end101
+if.end95:                                         ; preds = %if.then94, %if.end91
+  store { ptr } { ptr @.sconst.603 }, ptr %arg.tmp96, align 1
+  %call97 = call i1 @_ZN6String6equalsE6String(ptr %sret.result86, ptr %arg.tmp96)
+  br i1 %call97, label %if.then98, label %if.end99
 
-if.then100:                                       ; preds = %if.end97
+if.then98:                                        ; preds = %if.end95
   store i64 70, ptr %tag, align 1
-  br label %if.end101
+  br label %if.end99
 
-if.end101:                                        ; preds = %if.then100, %if.end97
-  br label %if.end87
+if.end99:                                         ; preds = %if.then98, %if.end95
+  br label %if.end85
 
-if.then104:                                       ; preds = %if.end79
+if.then102:                                       ; preds = %if.end77
+  %sb104 = load ptr, ptr %sb, align 8
+  %tag105 = load i64, ptr %tag, align 8
+  %as.trunc = trunc i64 %tag105 to i8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb104, i8 %as.trunc)
   %sb106 = load ptr, ptr %sb, align 8
-  %tag107 = load i64, ptr %tag, align 8
-  %as.trunc = trunc i64 %tag107 to i8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb106, i8 %as.trunc)
+  call void @_ZN13StringBuilder6appendEc(ptr %sb106, i8 9)
+  %sb107 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb107, ptr %sret.result52)
   %sb108 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb108, i8 9)
-  %sb109 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb109, ptr %sret.result52)
-  %sb110 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb110, i8 10)
-  br label %if.end105
+  call void @_ZN13StringBuilder6appendEc(ptr %sb108, i8 10)
+  br label %if.end103
 
-if.end105:                                        ; preds = %if.then104, %if.end79
+if.end103:                                        ; preds = %if.then102, %if.end77
   br label %if.end57
 }
 
@@ -100127,21 +99907,18 @@ entry:
 define linkonce_odr i8 @_ZN7symbols10lower_byteE2u8(i8 %0) {
 entry:
   %ge = icmp uge i8 %0, 65
-  br i1 %ge, label %if.then, label %if.end
+  br i1 %ge, label %land.rhs, label %if.end
 
-if.then:                                          ; preds = %entry
-  %le = icmp ule i8 %0, 90
-  br i1 %le, label %if.then1, label %if.end2
-
-if.end:                                           ; preds = %if.end2, %entry
-  ret i8 %0
-
-if.then1:                                         ; preds = %if.then
+if.then:                                          ; preds = %land.rhs
   %add = add i8 %0, 32
   ret i8 %add
 
-if.end2:                                          ; preds = %if.then
-  br label %if.end
+if.end:                                           ; preds = %land.rhs, %entry
+  ret i8 %0
+
+land.rhs:                                         ; preds = %entry
+  %le = icmp ule i8 %0, 90
+  br i1 %le, label %if.then, label %if.end
 }
 
 define linkonce_odr void @_ZN7symbols11root_prefixEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
@@ -100308,11 +100085,11 @@ while.exit:                                       ; preds = %while.cond
 define linkonce_odr void @_ZN7symbols20references_workspaceEPN4scaly6memory4PageE6String6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) {
 entry:
   %fi = alloca i64, align 8
-  %arg.tmp59 = alloca { ptr }, align 8
-  %sret.result58 = alloca { ptr }, align 8
-  %sret.result57 = alloca { ptr }, align 8
+  %arg.tmp57 = alloca { ptr }, align 8
   %sret.result56 = alloca { ptr }, align 8
   %sret.result55 = alloca { ptr }, align 8
+  %sret.result54 = alloca { ptr }, align 8
+  %sret.result53 = alloca { ptr }, align 8
   %skip = alloca i1, align 1
   %sret.result31 = alloca { ptr }, align 8
   %i = alloca i64, align 8
@@ -100400,10 +100177,10 @@ if.then17:                                        ; preds = %if.end12
   br label %while.cond21
 
 if.end18:                                         ; preds = %while.exit23, %if.end12
-  %sb84 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb84, i8 93)
-  %sb85 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result19, ptr %1, ptr %sb85)
+  %sb82 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb82, i8 93)
+  %sb83 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result19, ptr %1, ptr %sb83)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result19, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result19, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -100432,9 +100209,9 @@ if.then29:                                        ; preds = %while.body22
   br i1 %gt34, label %if.then35, label %if.end36
 
 if.end30:                                         ; preds = %if.end36, %while.body22
-  %i82 = load i64, ptr %i, align 8
-  %add83 = add i64 %i82, 1
-  store i64 %add83, ptr %i, align 1
+  %i80 = load i64, ptr %i, align 8
+  %add81 = add i64 %i80, 1
+  store i64 %add81, ptr %i, align 1
   br label %while.cond21
 
 if.then35:                                        ; preds = %if.then29
@@ -100442,10 +100219,10 @@ if.then35:                                        ; preds = %if.then29
   %call37 = call i1 @_ZN6String6equalsE6String(ptr %sret.result31, ptr %arg.tmp)
   br i1 %call37, label %if.then38, label %if.end39
 
-if.end36:                                         ; preds = %if.end51, %if.then29
-  %i80 = load i64, ptr %i, align 8
-  %add81 = add i64 %i80, 1
-  store i64 %add81, ptr %ci, align 1
+if.end36:                                         ; preds = %if.end49, %if.then29
+  %i78 = load i64, ptr %i, align 8
+  %add79 = add i64 %i78, 1
+  store i64 %add79, ptr %ci, align 1
   br label %if.end30
 
 if.then38:                                        ; preds = %if.then35
@@ -100453,83 +100230,80 @@ if.then38:                                        ; preds = %if.then35
   br label %if.end39
 
 if.end39:                                         ; preds = %if.then38, %if.then35
-  %apply_excl40 = load i1, ptr %apply_excl, align 1
-  br i1 %apply_excl40, label %if.then41, label %if.end42
+  %apply_excl42 = load i1, ptr %apply_excl, align 1
+  br i1 %apply_excl42, label %land.rhs, label %if.end41
 
-if.then41:                                        ; preds = %if.end39
+if.then40:                                        ; preds = %land.rhs
+  %call45 = call i1 @_ZN7symbols23excluded_from_root_walkEPN4scaly6memory4PageE6String6String(ptr %frame, ptr %sret.result31, ptr %sret.result14)
+  store i1 %call45, ptr %skip, align 1
+  br label %if.end41
+
+if.end41:                                         ; preds = %if.then40, %land.rhs, %if.end39
+  %skip46 = load i1, ptr %skip, align 1
+  %eq47 = icmp eq i1 %skip46, false
+  br i1 %eq47, label %if.then48, label %if.end49
+
+land.rhs:                                         ; preds = %if.end39
   %skip43 = load i1, ptr %skip, align 1
   %eq44 = icmp eq i1 %skip43, false
-  br i1 %eq44, label %if.then45, label %if.end46
+  br i1 %eq44, label %if.then40, label %if.end41
 
-if.end42:                                         ; preds = %if.end46, %if.end39
-  %skip48 = load i1, ptr %skip, align 1
-  %eq49 = icmp eq i1 %skip48, false
-  br i1 %eq49, label %if.then50, label %if.end51
+if.then48:                                        ; preds = %if.end41
+  %call50 = call i1 @_ZN4File6existsE6String(ptr %sret.result31)
+  br i1 %call50, label %if.then51, label %if.end52
 
-if.then45:                                        ; preds = %if.then41
-  %call47 = call i1 @_ZN7symbols23excluded_from_root_walkEPN4scaly6memory4PageE6String6String(ptr %frame, ptr %sret.result31, ptr %sret.result14)
-  store i1 %call47, ptr %skip, align 1
-  br label %if.end46
-
-if.end46:                                         ; preds = %if.then45, %if.then41
-  br label %if.end42
-
-if.then50:                                        ; preds = %if.end42
-  %call52 = call i1 @_ZN4File6existsE6String(ptr %sret.result31)
-  br i1 %call52, label %if.then53, label %if.end54
-
-if.end51:                                         ; preds = %if.end54, %if.end42
+if.end49:                                         ; preds = %if.end52, %if.end41
   br label %if.end36
 
-if.then53:                                        ; preds = %if.then50
-  call void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result55, ptr %frame, ptr %sret.result31)
-  call void @_ZN7symbols11path_to_uriEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result56, ptr %frame, ptr %sret.result31)
-  call void @_ZN7symbols13shadow_rangesEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result57, ptr %frame, ptr %sret.result55, ptr %4)
-  store { ptr } zeroinitializer, ptr %arg.tmp59, align 1
-  call void @_ZN7symbols13scan_fragmentEPN4scaly6memory4PageE6String6String6Stringb6String6String(ptr noalias sret({ ptr }) %sret.result58, ptr %frame, ptr %sret.result55, ptr %sret.result56, ptr %4, i1 true, ptr %arg.tmp59, ptr %sret.result57)
-  %call60 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result58)
-  %gt61 = icmp ugt i64 %call60, 0
-  br i1 %gt61, label %if.then62, label %if.end63
+if.then51:                                        ; preds = %if.then48
+  call void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result53, ptr %frame, ptr %sret.result31)
+  call void @_ZN7symbols11path_to_uriEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result54, ptr %frame, ptr %sret.result31)
+  call void @_ZN7symbols13shadow_rangesEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result55, ptr %frame, ptr %sret.result53, ptr %4)
+  store { ptr } zeroinitializer, ptr %arg.tmp57, align 1
+  call void @_ZN7symbols13scan_fragmentEPN4scaly6memory4PageE6String6String6Stringb6String6String(ptr noalias sret({ ptr }) %sret.result56, ptr %frame, ptr %sret.result53, ptr %sret.result54, ptr %4, i1 true, ptr %arg.tmp57, ptr %sret.result55)
+  %call58 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result56)
+  %gt59 = icmp ugt i64 %call58, 0
+  br i1 %gt59, label %if.then60, label %if.end61
 
-if.end54:                                         ; preds = %if.end63, %if.then50
-  br label %if.end51
+if.end52:                                         ; preds = %if.end61, %if.then48
+  br label %if.end49
 
-if.then62:                                        ; preds = %if.then53
-  %first64 = load i1, ptr %first, align 1
-  %eq65 = icmp eq i1 %first64, false
-  br i1 %eq65, label %if.then66, label %if.end67
+if.then60:                                        ; preds = %if.then51
+  %first62 = load i1, ptr %first, align 1
+  %eq63 = icmp eq i1 %first62, false
+  br i1 %eq63, label %if.then64, label %if.end65
 
-if.end63:                                         ; preds = %while.exit72, %if.then53
-  br label %if.end54
+if.end61:                                         ; preds = %while.exit70, %if.then51
+  br label %if.end52
 
-if.then66:                                        ; preds = %if.then62
-  %sb68 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb68, i8 44)
-  br label %if.end67
+if.then64:                                        ; preds = %if.then60
+  %sb66 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb66, i8 44)
+  br label %if.end65
 
-if.end67:                                         ; preds = %if.then66, %if.then62
+if.end65:                                         ; preds = %if.then64, %if.then60
   store i64 0, ptr %fi, align 1
-  %call69 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result58)
-  br label %while.cond70
+  %call67 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result56)
+  br label %while.cond68
 
-while.cond70:                                     ; preds = %while.body71, %if.end67
-  %fi73 = load i64, ptr %fi, align 8
-  %lt74 = icmp ult i64 %fi73, %call69
-  br i1 %lt74, label %while.body71, label %while.exit72
+while.cond68:                                     ; preds = %while.body69, %if.end65
+  %fi71 = load i64, ptr %fi, align 8
+  %lt72 = icmp ult i64 %fi71, %call67
+  br i1 %lt72, label %while.body69, label %while.exit70
 
-while.body71:                                     ; preds = %while.cond70
-  %sb75 = load ptr, ptr %sb, align 8
+while.body69:                                     ; preds = %while.cond68
+  %sb73 = load ptr, ptr %sb, align 8
+  %fi74 = load i64, ptr %fi, align 8
+  %call75 = call i8 @_ZN6String3getEm(ptr %sret.result56, i64 %fi74)
+  call void @_ZN13StringBuilder6appendEc(ptr %sb73, i8 %call75)
   %fi76 = load i64, ptr %fi, align 8
-  %call77 = call i8 @_ZN6String3getEm(ptr %sret.result58, i64 %fi76)
-  call void @_ZN13StringBuilder6appendEc(ptr %sb75, i8 %call77)
-  %fi78 = load i64, ptr %fi, align 8
-  %add79 = add i64 %fi78, 1
-  store i64 %add79, ptr %fi, align 1
-  br label %while.cond70
+  %add77 = add i64 %fi76, 1
+  store i64 %add77, ptr %fi, align 1
+  br label %while.cond68
 
-while.exit72:                                     ; preds = %while.cond70
+while.exit70:                                     ; preds = %while.cond68
   store i1 false, ptr %first, align 1
-  br label %if.end63
+  br label %if.end61
 }
 
 define linkonce_odr void @_ZN7symbols17references_packedEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
@@ -100701,20 +100475,17 @@ if.end12:                                         ; preds = %if.then6
 define linkonce_odr i1 @_ZN7symbols8in_rangeEmmm(i64 %0, i64 %1, i64 %2) {
 entry:
   %ge = icmp uge i64 %0, %1
-  br i1 %ge, label %if.then, label %if.end
+  br i1 %ge, label %land.rhs, label %if.end
 
-if.then:                                          ; preds = %entry
-  %lt = icmp ult i64 %0, %2
-  br i1 %lt, label %if.then1, label %if.end2
-
-if.end:                                           ; preds = %if.end2, %entry
-  ret i1 false
-
-if.then1:                                         ; preds = %if.then
+if.then:                                          ; preds = %land.rhs
   ret i1 true
 
-if.end2:                                          ; preds = %if.then
-  br label %if.end
+if.end:                                           ; preds = %land.rhs, %entry
+  ret i1 false
+
+land.rhs:                                         ; preds = %entry
+  %lt = icmp ult i64 %0, %2
+  br i1 %lt, label %if.then, label %if.end
 }
 
 define linkonce_odr i1 @_ZN7symbols18token_is_binder_kwE6Stringmm(ptr %0, i64 %1, i64 %2) {
@@ -101223,28 +100994,25 @@ if.end28:                                         ; preds = %if.end33, %if.then2
   br label %if.end23
 
 if.then32:                                        ; preds = %if.then27
-  %add34 = add i64 %1, 7
-  %eq35 = icmp eq i64 %add34, %call
-  br i1 %eq35, label %if.then36, label %if.end37
+  %add36 = add i64 %1, 7
+  %eq37 = icmp eq i64 %add36, %call
+  br i1 %eq37, label %if.then34, label %lor.rhs
 
 if.end33:                                         ; preds = %if.then27
   br label %if.end28
 
-if.then36:                                        ; preds = %if.then32
+if.then34:                                        ; preds = %lor.rhs, %if.then32
   ret i1 true
 
-if.end37:                                         ; preds = %if.then32
+if.end35:                                         ; preds = %lor.rhs
+  ret i1 false
+
+lor.rhs:                                          ; preds = %if.then32
   %add38 = add i64 %1, 7
   %call39 = call i8 @_ZN6String3getEm(ptr %0, i64 %add38)
   %call40 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call39)
   %eq41 = icmp eq i1 %call40, false
-  br i1 %eq41, label %if.then42, label %if.end43
-
-if.then42:                                        ; preds = %if.end37
-  ret i1 true
-
-if.end43:                                         ; preds = %if.end37
-  ret i1 false
+  br i1 %eq41, label %if.then34, label %if.end35
 }
 
 define linkonce_odr i64 @_ZN7symbols16routine_body_endE6Stringmm(ptr %0, i64 %1, i64 %2) {
@@ -101482,12 +101250,12 @@ if.end102:                                        ; preds = %while.body94
 
 define linkonce_odr void @_ZN7symbols13shadow_rangesEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
 entry:
-  %sret.result98 = alloca { ptr }, align 8
-  %sret.result88 = alloca { ptr }, align 8
+  %sret.result93 = alloca { ptr }, align 8
+  %sret.result83 = alloca { ptr }, align 8
   %sret.result = alloca { ptr }, align 8
-  %arg.tmp71 = alloca { ptr }, align 8
-  %arg.tmp61 = alloca { ptr }, align 8
-  %arg.tmp51 = alloca { ptr }, align 8
+  %arg.tmp68 = alloca { ptr }, align 8
+  %arg.tmp59 = alloca { ptr }, align 8
+  %arg.tmp50 = alloca { ptr }, align 8
   %arg.tmp41 = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
   %is_kw = alloca i1, align 1
@@ -101517,7 +101285,7 @@ if.end:                                           ; preds = %entry
   store i64 0, ptr %k, align 1
   br label %while.cond
 
-while.cond:                                       ; preds = %if.end77, %if.end95, %if.then13, %if.then7, %if.end
+while.cond:                                       ; preds = %if.end72, %if.end90, %if.then13, %if.then7, %if.end
   %k3 = load i64, ptr %k, align 8
   %lt = icmp ult i64 %k3, %call
   br i1 %lt, label %while.body, label %while.exit
@@ -101529,11 +101297,11 @@ while.body:                                       ; preds = %while.cond
   br i1 %call6, label %if.then7, label %if.end8
 
 while.exit:                                       ; preds = %while.cond
-  %sb99 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result98, ptr %1, ptr %sb99)
+  %sb94 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result93, ptr %1, ptr %sb94)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  %sret.body = load { ptr }, ptr %sret.result98, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result98, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  %sret.body = load { ptr }, ptr %sret.result93, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result93, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
 if.then7:                                         ; preds = %while.body
@@ -101592,148 +101360,136 @@ if.then33:                                        ; preds = %while.exit19
   br label %if.end34
 
 if.end34:                                         ; preds = %if.then33, %while.exit19
-  %is_kw35 = load i1, ptr %is_kw, align 1
-  %eq36 = icmp eq i1 %is_kw35, false
-  br i1 %eq36, label %if.then37, label %if.end38
+  %is_kw37 = load i1, ptr %is_kw, align 1
+  %eq38 = icmp eq i1 %is_kw37, false
+  br i1 %eq38, label %land.rhs, label %if.end36
 
-if.then37:                                        ; preds = %if.end34
+if.then35:                                        ; preds = %land.rhs
+  store i1 true, ptr %is_kw, align 1
+  br label %if.end36
+
+if.end36:                                         ; preds = %if.then35, %land.rhs, %if.end34
+  %is_kw46 = load i1, ptr %is_kw, align 1
+  %eq47 = icmp eq i1 %is_kw46, false
+  br i1 %eq47, label %land.rhs45, label %if.end44
+
+land.rhs:                                         ; preds = %if.end34
   %k39 = load i64, ptr %k, align 8
   %j40 = load i64, ptr %j, align 8
   store { ptr } { ptr @.sconst.623 }, ptr %arg.tmp41, align 1
   %call42 = call i1 @_ZN7symbols12token_equalsE6Stringmm6String(ptr %2, i64 %k39, i64 %j40, ptr %arg.tmp41)
-  br i1 %call42, label %if.then43, label %if.end44
+  br i1 %call42, label %if.then35, label %if.end36
 
-if.end38:                                         ; preds = %if.end44, %if.end34
-  %is_kw45 = load i1, ptr %is_kw, align 1
-  %eq46 = icmp eq i1 %is_kw45, false
-  br i1 %eq46, label %if.then47, label %if.end48
-
-if.then43:                                        ; preds = %if.then37
+if.then43:                                        ; preds = %land.rhs45
   store i1 true, ptr %is_kw, align 1
   br label %if.end44
 
-if.end44:                                         ; preds = %if.then43, %if.then37
-  br label %if.end38
-
-if.then47:                                        ; preds = %if.end38
-  %k49 = load i64, ptr %k, align 8
-  %j50 = load i64, ptr %j, align 8
-  store { ptr } { ptr @.sconst.624 }, ptr %arg.tmp51, align 1
-  %call52 = call i1 @_ZN7symbols12token_equalsE6Stringmm6String(ptr %2, i64 %k49, i64 %j50, ptr %arg.tmp51)
-  br i1 %call52, label %if.then53, label %if.end54
-
-if.end48:                                         ; preds = %if.end54, %if.end38
+if.end44:                                         ; preds = %if.then43, %land.rhs45, %if.end36
   %is_kw55 = load i1, ptr %is_kw, align 1
   %eq56 = icmp eq i1 %is_kw55, false
-  br i1 %eq56, label %if.then57, label %if.end58
+  br i1 %eq56, label %land.rhs54, label %if.end53
 
-if.then53:                                        ; preds = %if.then47
+land.rhs45:                                       ; preds = %if.end36
+  %k48 = load i64, ptr %k, align 8
+  %j49 = load i64, ptr %j, align 8
+  store { ptr } { ptr @.sconst.624 }, ptr %arg.tmp50, align 1
+  %call51 = call i1 @_ZN7symbols12token_equalsE6Stringmm6String(ptr %2, i64 %k48, i64 %j49, ptr %arg.tmp50)
+  br i1 %call51, label %if.then43, label %if.end44
+
+if.then52:                                        ; preds = %land.rhs54
   store i1 true, ptr %is_kw, align 1
-  br label %if.end54
+  br label %if.end53
 
-if.end54:                                         ; preds = %if.then53, %if.then47
-  br label %if.end48
+if.end53:                                         ; preds = %if.then52, %land.rhs54, %if.end44
+  %is_kw64 = load i1, ptr %is_kw, align 1
+  %eq65 = icmp eq i1 %is_kw64, false
+  br i1 %eq65, label %land.rhs63, label %if.end62
 
-if.then57:                                        ; preds = %if.end48
-  %k59 = load i64, ptr %k, align 8
-  %j60 = load i64, ptr %j, align 8
-  store { ptr } { ptr @.sconst.625 }, ptr %arg.tmp61, align 1
-  %call62 = call i1 @_ZN7symbols12token_equalsE6Stringmm6String(ptr %2, i64 %k59, i64 %j60, ptr %arg.tmp61)
-  br i1 %call62, label %if.then63, label %if.end64
+land.rhs54:                                       ; preds = %if.end44
+  %k57 = load i64, ptr %k, align 8
+  %j58 = load i64, ptr %j, align 8
+  store { ptr } { ptr @.sconst.625 }, ptr %arg.tmp59, align 1
+  %call60 = call i1 @_ZN7symbols12token_equalsE6Stringmm6String(ptr %2, i64 %k57, i64 %j58, ptr %arg.tmp59)
+  br i1 %call60, label %if.then52, label %if.end53
 
-if.end58:                                         ; preds = %if.end64, %if.end48
-  %is_kw65 = load i1, ptr %is_kw, align 1
-  %eq66 = icmp eq i1 %is_kw65, false
-  br i1 %eq66, label %if.then67, label %if.end68
-
-if.then63:                                        ; preds = %if.then57
+if.then61:                                        ; preds = %land.rhs63
   store i1 true, ptr %is_kw, align 1
-  br label %if.end64
+  br label %if.end62
 
-if.end64:                                         ; preds = %if.then63, %if.then57
-  br label %if.end58
+if.end62:                                         ; preds = %if.then61, %land.rhs63, %if.end53
+  %is_kw70 = load i1, ptr %is_kw, align 1
+  br i1 %is_kw70, label %if.then71, label %if.end72
 
-if.then67:                                        ; preds = %if.end58
-  %k69 = load i64, ptr %k, align 8
-  %j70 = load i64, ptr %j, align 8
-  store { ptr } { ptr @.sconst.626 }, ptr %arg.tmp71, align 1
-  %call72 = call i1 @_ZN7symbols12token_equalsE6Stringmm6String(ptr %2, i64 %k69, i64 %j70, ptr %arg.tmp71)
-  br i1 %call72, label %if.then73, label %if.end74
+land.rhs63:                                       ; preds = %if.end53
+  %k66 = load i64, ptr %k, align 8
+  %j67 = load i64, ptr %j, align 8
+  store { ptr } { ptr @.sconst.626 }, ptr %arg.tmp68, align 1
+  %call69 = call i1 @_ZN7symbols12token_equalsE6Stringmm6String(ptr %2, i64 %k66, i64 %j67, ptr %arg.tmp68)
+  br i1 %call69, label %if.then61, label %if.end62
 
-if.end68:                                         ; preds = %if.end74, %if.end58
-  %is_kw75 = load i1, ptr %is_kw, align 1
-  br i1 %is_kw75, label %if.then76, label %if.end77
+if.then71:                                        ; preds = %if.end62
+  %j73 = load i64, ptr %j, align 8
+  %call74 = call i64 @_ZN7symbols16routine_body_endE6Stringmm(ptr %2, i64 %j73, i64 %call)
+  %k75 = load i64, ptr %k, align 8
+  %call76 = call i1 @_ZN7symbols16range_binds_nameE6String6Stringmm(ptr %2, ptr %3, i64 %k75, i64 %call74)
+  br i1 %call76, label %if.then77, label %if.end78
 
-if.then73:                                        ; preds = %if.then67
-  store i1 true, ptr %is_kw, align 1
-  br label %if.end74
-
-if.end74:                                         ; preds = %if.then73, %if.then67
-  br label %if.end68
-
-if.then76:                                        ; preds = %if.end68
-  %j78 = load i64, ptr %j, align 8
-  %call79 = call i64 @_ZN7symbols16routine_body_endE6Stringmm(ptr %2, i64 %j78, i64 %call)
-  %k80 = load i64, ptr %k, align 8
-  %call81 = call i1 @_ZN7symbols16range_binds_nameE6String6Stringmm(ptr %2, ptr %3, i64 %k80, i64 %call79)
-  br i1 %call81, label %if.then82, label %if.end83
-
-if.end77:                                         ; preds = %if.end68
-  %j97 = load i64, ptr %j, align 8
-  store i64 %j97, ptr %k, align 1
+if.end72:                                         ; preds = %if.end62
+  %j92 = load i64, ptr %j, align 8
+  store i64 %j92, ptr %k, align 1
   br label %while.cond
 
-if.then82:                                        ; preds = %if.then76
+if.then77:                                        ; preds = %if.then71
+  %sb79 = load ptr, ptr %sb, align 8
+  %k80 = load i64, ptr %k, align 8
+  call void @_ZN4json10format_i64EPN4scaly6memory4PageE3i64(ptr noalias sret({ ptr }) %sret.result, ptr %frame, i64 %k80)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb79, ptr %sret.result)
+  %sb81 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb81, i8 32)
+  %sb82 = load ptr, ptr %sb, align 8
+  call void @_ZN4json10format_i64EPN4scaly6memory4PageE3i64(ptr noalias sret({ ptr }) %sret.result83, ptr %frame, i64 %call74)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb82, ptr %sret.result83)
   %sb84 = load ptr, ptr %sb, align 8
-  %k85 = load i64, ptr %k, align 8
-  call void @_ZN4json10format_i64EPN4scaly6memory4PageE3i64(ptr noalias sret({ ptr }) %sret.result, ptr %frame, i64 %k85)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb84, ptr %sret.result)
-  %sb86 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb86, i8 32)
-  %sb87 = load ptr, ptr %sb, align 8
-  call void @_ZN4json10format_i64EPN4scaly6memory4PageE3i64(ptr noalias sret({ ptr }) %sret.result88, ptr %frame, i64 %call79)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb87, ptr %sret.result88)
-  %sb89 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb89, i8 10)
-  br label %if.end83
+  call void @_ZN13StringBuilder6appendEc(ptr %sb84, i8 10)
+  br label %if.end78
 
-if.end83:                                         ; preds = %if.then82, %if.then76
-  %j90 = load i64, ptr %j, align 8
-  %gt = icmp ugt i64 %call79, %j90
-  br i1 %gt, label %if.then91, label %if.end92
+if.end78:                                         ; preds = %if.then77, %if.then71
+  %j85 = load i64, ptr %j, align 8
+  %gt = icmp ugt i64 %call74, %j85
+  br i1 %gt, label %if.then86, label %if.end87
 
-if.then91:                                        ; preds = %if.end83
-  store i64 %call79, ptr %k, align 1
-  br label %if.end92
+if.then86:                                        ; preds = %if.end78
+  store i64 %call74, ptr %k, align 1
+  br label %if.end87
 
-if.end92:                                         ; preds = %if.then91, %if.end83
-  %j93 = load i64, ptr %j, align 8
-  %le = icmp ule i64 %call79, %j93
-  br i1 %le, label %if.then94, label %if.end95
+if.end87:                                         ; preds = %if.then86, %if.end78
+  %j88 = load i64, ptr %j, align 8
+  %le = icmp ule i64 %call74, %j88
+  br i1 %le, label %if.then89, label %if.end90
 
-if.then94:                                        ; preds = %if.end92
-  %j96 = load i64, ptr %j, align 8
-  store i64 %j96, ptr %k, align 1
-  br label %if.end95
+if.then89:                                        ; preds = %if.end87
+  %j91 = load i64, ptr %j, align 8
+  store i64 %j91, ptr %k, align 1
+  br label %if.end90
 
-if.end95:                                         ; preds = %if.then94, %if.end92
+if.end90:                                         ; preds = %if.then89, %if.end87
   br label %while.cond
 }
 
 define linkonce_odr void @_ZN7symbols15routine_recordsEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
 entry:
-  %sret.result155 = alloca { ptr }, align 8
-  %sret.result144 = alloca { ptr }, align 8
-  %sret.result140 = alloca { ptr }, align 8
-  %sret.result136 = alloca { ptr }, align 8
+  %sret.result152 = alloca { ptr }, align 8
+  %sret.result141 = alloca { ptr }, align 8
+  %sret.result137 = alloca { ptr }, align 8
+  %sret.result133 = alloca { ptr }, align 8
   %sret.result = alloca { ptr }, align 8
   %e = alloca i64, align 8
   %t = alloca i64, align 8
   %ne = alloca i64, align 8
   %ns = alloca i64, align 8
-  %arg.tmp67 = alloca { ptr }, align 8
-  %arg.tmp57 = alloca { ptr }, align 8
-  %arg.tmp47 = alloca { ptr }, align 8
+  %arg.tmp64 = alloca { ptr }, align 8
+  %arg.tmp54 = alloca { ptr }, align 8
+  %arg.tmp46 = alloca { ptr }, align 8
   %arg.tmp37 = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
   %named = alloca i1, align 1
@@ -101754,7 +101510,7 @@ entry:
   store i64 0, ptr %k, align 1
   br label %while.cond
 
-while.cond:                                       ; preds = %if.end73, %if.end152, %if.then9, %if.then, %entry
+while.cond:                                       ; preds = %if.end70, %if.end149, %if.then9, %if.then, %entry
   %k2 = load i64, ptr %k, align 8
   %lt = icmp ult i64 %k2, %call
   br i1 %lt, label %while.body, label %while.exit
@@ -101766,11 +101522,11 @@ while.body:                                       ; preds = %while.cond
   br i1 %call5, label %if.then, label %if.end
 
 while.exit:                                       ; preds = %while.cond
-  %sb156 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result155, ptr %1, ptr %sb156)
+  %sb153 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result152, ptr %1, ptr %sb153)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  %sret.body = load { ptr }, ptr %sret.result155, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result155, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  %sret.body = load { ptr }, ptr %sret.result152, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result152, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
 if.then:                                          ; preds = %while.body
@@ -101830,247 +101586,241 @@ if.then29:                                        ; preds = %while.exit15
   br label %if.end30
 
 if.end30:                                         ; preds = %if.then29, %while.exit15
-  %is_kw31 = load i1, ptr %is_kw, align 1
-  %eq32 = icmp eq i1 %is_kw31, false
-  br i1 %eq32, label %if.then33, label %if.end34
+  %is_kw33 = load i1, ptr %is_kw, align 1
+  %eq34 = icmp eq i1 %is_kw33, false
+  br i1 %eq34, label %land.rhs, label %if.end32
 
-if.then33:                                        ; preds = %if.end30
+if.then31:                                        ; preds = %land.rhs
+  store i1 true, ptr %is_kw, align 1
+  br label %if.end32
+
+if.end32:                                         ; preds = %if.then31, %land.rhs, %if.end30
+  %is_kw42 = load i1, ptr %is_kw, align 1
+  %eq43 = icmp eq i1 %is_kw42, false
+  br i1 %eq43, label %land.rhs41, label %if.end40
+
+land.rhs:                                         ; preds = %if.end30
   %k35 = load i64, ptr %k, align 8
   %j36 = load i64, ptr %j, align 8
   store { ptr } { ptr @.sconst.628 }, ptr %arg.tmp37, align 1
   %call38 = call i1 @_ZN7symbols12token_equalsE6Stringmm6String(ptr %2, i64 %k35, i64 %j36, ptr %arg.tmp37)
-  br i1 %call38, label %if.then39, label %if.end40
+  br i1 %call38, label %if.then31, label %if.end32
 
-if.end34:                                         ; preds = %if.end40, %if.end30
-  %is_kw41 = load i1, ptr %is_kw, align 1
-  %eq42 = icmp eq i1 %is_kw41, false
-  br i1 %eq42, label %if.then43, label %if.end44
-
-if.then39:                                        ; preds = %if.then33
+if.then39:                                        ; preds = %land.rhs41
   store i1 true, ptr %is_kw, align 1
   br label %if.end40
 
-if.end40:                                         ; preds = %if.then39, %if.then33
-  br label %if.end34
+if.end40:                                         ; preds = %if.then39, %land.rhs41, %if.end32
+  %is_kw48 = load i1, ptr %is_kw, align 1
+  %eq49 = icmp eq i1 %is_kw48, false
+  br i1 %eq49, label %if.then50, label %if.end51
 
-if.then43:                                        ; preds = %if.end34
-  %k45 = load i64, ptr %k, align 8
-  %j46 = load i64, ptr %j, align 8
-  store { ptr } { ptr @.sconst.629 }, ptr %arg.tmp47, align 1
-  %call48 = call i1 @_ZN7symbols12token_equalsE6Stringmm6String(ptr %2, i64 %k45, i64 %j46, ptr %arg.tmp47)
-  br i1 %call48, label %if.then49, label %if.end50
+land.rhs41:                                       ; preds = %if.end32
+  %k44 = load i64, ptr %k, align 8
+  %j45 = load i64, ptr %j, align 8
+  store { ptr } { ptr @.sconst.629 }, ptr %arg.tmp46, align 1
+  %call47 = call i1 @_ZN7symbols12token_equalsE6Stringmm6String(ptr %2, i64 %k44, i64 %j45, ptr %arg.tmp46)
+  br i1 %call47, label %if.then39, label %if.end40
 
-if.end44:                                         ; preds = %if.end50, %if.end34
-  %is_kw51 = load i1, ptr %is_kw, align 1
-  %eq52 = icmp eq i1 %is_kw51, false
-  br i1 %eq52, label %if.then53, label %if.end54
+if.then50:                                        ; preds = %if.end40
+  %k52 = load i64, ptr %k, align 8
+  %j53 = load i64, ptr %j, align 8
+  store { ptr } { ptr @.sconst.630 }, ptr %arg.tmp54, align 1
+  %call55 = call i1 @_ZN7symbols12token_equalsE6Stringmm6String(ptr %2, i64 %k52, i64 %j53, ptr %arg.tmp54)
+  br i1 %call55, label %if.then56, label %if.end57
 
-if.then49:                                        ; preds = %if.then43
-  store i1 true, ptr %is_kw, align 1
-  br label %if.end50
+if.end51:                                         ; preds = %if.end57, %if.end40
+  %is_kw58 = load i1, ptr %is_kw, align 1
+  %eq59 = icmp eq i1 %is_kw58, false
+  br i1 %eq59, label %if.then60, label %if.end61
 
-if.end50:                                         ; preds = %if.then49, %if.then43
-  br label %if.end44
-
-if.then53:                                        ; preds = %if.end44
-  %k55 = load i64, ptr %k, align 8
-  %j56 = load i64, ptr %j, align 8
-  store { ptr } { ptr @.sconst.630 }, ptr %arg.tmp57, align 1
-  %call58 = call i1 @_ZN7symbols12token_equalsE6Stringmm6String(ptr %2, i64 %k55, i64 %j56, ptr %arg.tmp57)
-  br i1 %call58, label %if.then59, label %if.end60
-
-if.end54:                                         ; preds = %if.end60, %if.end44
-  %is_kw61 = load i1, ptr %is_kw, align 1
-  %eq62 = icmp eq i1 %is_kw61, false
-  br i1 %eq62, label %if.then63, label %if.end64
-
-if.then59:                                        ; preds = %if.then53
+if.then56:                                        ; preds = %if.then50
   store i1 true, ptr %is_kw, align 1
   store i1 false, ptr %named, align 1
-  br label %if.end60
+  br label %if.end57
 
-if.end60:                                         ; preds = %if.then59, %if.then53
-  br label %if.end54
+if.end57:                                         ; preds = %if.then56, %if.then50
+  br label %if.end51
 
-if.then63:                                        ; preds = %if.end54
-  %k65 = load i64, ptr %k, align 8
-  %j66 = load i64, ptr %j, align 8
-  store { ptr } { ptr @.sconst.631 }, ptr %arg.tmp67, align 1
-  %call68 = call i1 @_ZN7symbols12token_equalsE6Stringmm6String(ptr %2, i64 %k65, i64 %j66, ptr %arg.tmp67)
-  br i1 %call68, label %if.then69, label %if.end70
+if.then60:                                        ; preds = %if.end51
+  %k62 = load i64, ptr %k, align 8
+  %j63 = load i64, ptr %j, align 8
+  store { ptr } { ptr @.sconst.631 }, ptr %arg.tmp64, align 1
+  %call65 = call i1 @_ZN7symbols12token_equalsE6Stringmm6String(ptr %2, i64 %k62, i64 %j63, ptr %arg.tmp64)
+  br i1 %call65, label %if.then66, label %if.end67
 
-if.end64:                                         ; preds = %if.end70, %if.end54
-  %is_kw71 = load i1, ptr %is_kw, align 1
-  br i1 %is_kw71, label %if.then72, label %if.end73
+if.end61:                                         ; preds = %if.end67, %if.end51
+  %is_kw68 = load i1, ptr %is_kw, align 1
+  br i1 %is_kw68, label %if.then69, label %if.end70
 
-if.then69:                                        ; preds = %if.then63
+if.then66:                                        ; preds = %if.then60
   store i1 true, ptr %is_kw, align 1
   store i1 false, ptr %named, align 1
-  br label %if.end70
+  br label %if.end67
 
-if.end70:                                         ; preds = %if.then69, %if.then63
-  br label %if.end64
+if.end67:                                         ; preds = %if.then66, %if.then60
+  br label %if.end61
 
-if.then72:                                        ; preds = %if.end64
+if.then69:                                        ; preds = %if.end61
+  %j71 = load i64, ptr %j, align 8
+  %call72 = call i64 @_ZN7symbols16routine_body_endE6Stringmm(ptr %2, i64 %j71, i64 %call)
+  %j73 = load i64, ptr %j, align 8
+  store i64 %j73, ptr %ns, align 1
   %j74 = load i64, ptr %j, align 8
-  %call75 = call i64 @_ZN7symbols16routine_body_endE6Stringmm(ptr %2, i64 %j74, i64 %call)
-  %j76 = load i64, ptr %j, align 8
-  store i64 %j76, ptr %ns, align 1
-  %j77 = load i64, ptr %j, align 8
-  store i64 %j77, ptr %ne, align 1
-  %named78 = load i1, ptr %named, align 1
-  br i1 %named78, label %if.then79, label %if.end80
+  store i64 %j74, ptr %ne, align 1
+  %named75 = load i1, ptr %named, align 1
+  br i1 %named75, label %if.then76, label %if.end77
 
-if.end73:                                         ; preds = %if.end64
-  %j154 = load i64, ptr %j, align 8
-  store i64 %j154, ptr %k, align 1
+if.end70:                                         ; preds = %if.end61
+  %j151 = load i64, ptr %j, align 8
+  store i64 %j151, ptr %k, align 1
   br label %while.cond
 
-if.then79:                                        ; preds = %if.then72
-  %j81 = load i64, ptr %j, align 8
-  store i64 %j81, ptr %t, align 1
-  br label %while.cond82
+if.then76:                                        ; preds = %if.then69
+  %j78 = load i64, ptr %j, align 8
+  store i64 %j78, ptr %t, align 1
+  br label %while.cond79
 
-if.end80:                                         ; preds = %while.exit98, %if.then72
-  %named110 = load i1, ptr %named, align 1
-  %eq111 = icmp eq i1 %named110, false
-  br i1 %eq111, label %if.then112, label %if.end113
+if.end77:                                         ; preds = %while.exit95, %if.then69
+  %named107 = load i1, ptr %named, align 1
+  %eq108 = icmp eq i1 %named107, false
+  br i1 %eq108, label %if.then109, label %if.end110
 
-while.cond82:                                     ; preds = %if.end91, %if.then79
-  %t85 = load i64, ptr %t, align 8
-  %lt86 = icmp ult i64 %t85, %call75
-  br i1 %lt86, label %while.body83, label %while.exit84
+while.cond79:                                     ; preds = %if.end88, %if.then76
+  %t82 = load i64, ptr %t, align 8
+  %lt83 = icmp ult i64 %t82, %call72
+  br i1 %lt83, label %while.body80, label %while.exit81
 
-while.body83:                                     ; preds = %while.cond82
-  %t87 = load i64, ptr %t, align 8
-  %call88 = call i8 @_ZN6String3getEm(ptr %2, i64 %t87)
-  %call89 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call88)
-  br i1 %call89, label %if.then90, label %if.end91
+while.body80:                                     ; preds = %while.cond79
+  %t84 = load i64, ptr %t, align 8
+  %call85 = call i8 @_ZN6String3getEm(ptr %2, i64 %t84)
+  %call86 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call85)
+  br i1 %call86, label %if.then87, label %if.end88
 
-while.exit84:                                     ; preds = %if.then90, %while.cond82
-  %t94 = load i64, ptr %t, align 8
-  store i64 %t94, ptr %ns, align 1
-  %t95 = load i64, ptr %t, align 8
-  store i64 %t95, ptr %e, align 1
-  br label %while.cond96
-
-if.then90:                                        ; preds = %while.body83
-  br label %while.exit84
-
-if.end91:                                         ; preds = %while.body83
+while.exit81:                                     ; preds = %if.then87, %while.cond79
+  %t91 = load i64, ptr %t, align 8
+  store i64 %t91, ptr %ns, align 1
   %t92 = load i64, ptr %t, align 8
-  %add93 = add i64 %t92, 1
-  store i64 %add93, ptr %t, align 1
-  br label %while.cond82
+  store i64 %t92, ptr %e, align 1
+  br label %while.cond93
 
-while.cond96:                                     ; preds = %if.end106, %while.exit84
-  %e99 = load i64, ptr %e, align 8
-  %lt100 = icmp ult i64 %e99, %call75
-  br i1 %lt100, label %while.body97, label %while.exit98
+if.then87:                                        ; preds = %while.body80
+  br label %while.exit81
 
-while.body97:                                     ; preds = %while.cond96
-  %e101 = load i64, ptr %e, align 8
-  %call102 = call i8 @_ZN6String3getEm(ptr %2, i64 %e101)
-  %call103 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call102)
-  %eq104 = icmp eq i1 %call103, false
-  br i1 %eq104, label %if.then105, label %if.end106
+if.end88:                                         ; preds = %while.body80
+  %t89 = load i64, ptr %t, align 8
+  %add90 = add i64 %t89, 1
+  store i64 %add90, ptr %t, align 1
+  br label %while.cond79
 
-while.exit98:                                     ; preds = %if.then105, %while.cond96
-  %e109 = load i64, ptr %e, align 8
-  store i64 %e109, ptr %ne, align 1
-  br label %if.end80
+while.cond93:                                     ; preds = %if.end103, %while.exit81
+  %e96 = load i64, ptr %e, align 8
+  %lt97 = icmp ult i64 %e96, %call72
+  br i1 %lt97, label %while.body94, label %while.exit95
 
-if.then105:                                       ; preds = %while.body97
-  br label %while.exit98
+while.body94:                                     ; preds = %while.cond93
+  %e98 = load i64, ptr %e, align 8
+  %call99 = call i8 @_ZN6String3getEm(ptr %2, i64 %e98)
+  %call100 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call99)
+  %eq101 = icmp eq i1 %call100, false
+  br i1 %eq101, label %if.then102, label %if.end103
 
-if.end106:                                        ; preds = %while.body97
-  %e107 = load i64, ptr %e, align 8
-  %add108 = add i64 %e107, 1
-  store i64 %add108, ptr %e, align 1
-  br label %while.cond96
+while.exit95:                                     ; preds = %if.then102, %while.cond93
+  %e106 = load i64, ptr %e, align 8
+  store i64 %e106, ptr %ne, align 1
+  br label %if.end77
 
-if.then112:                                       ; preds = %if.end80
-  %k114 = load i64, ptr %k, align 8
-  store i64 %k114, ptr %ns, align 1
-  %j115 = load i64, ptr %j, align 8
-  store i64 %j115, ptr %ne, align 1
-  br label %if.end113
+if.then102:                                       ; preds = %while.body94
+  br label %while.exit95
 
-if.end113:                                        ; preds = %if.then112, %if.end80
-  %ne116 = load i64, ptr %ne, align 8
+if.end103:                                        ; preds = %while.body94
+  %e104 = load i64, ptr %e, align 8
+  %add105 = add i64 %e104, 1
+  store i64 %add105, ptr %e, align 1
+  br label %while.cond93
+
+if.then109:                                       ; preds = %if.end77
+  %k111 = load i64, ptr %k, align 8
+  store i64 %k111, ptr %ns, align 1
+  %j112 = load i64, ptr %j, align 8
+  store i64 %j112, ptr %ne, align 1
+  br label %if.end110
+
+if.end110:                                        ; preds = %if.then109, %if.end77
+  %ne113 = load i64, ptr %ne, align 8
+  %ns114 = load i64, ptr %ns, align 8
+  %gt = icmp ugt i64 %ne113, %ns114
+  br i1 %gt, label %if.then115, label %if.end116
+
+if.then115:                                       ; preds = %if.end110
   %ns117 = load i64, ptr %ns, align 8
-  %gt = icmp ugt i64 %ne116, %ns117
-  br i1 %gt, label %if.then118, label %if.end119
+  store i64 %ns117, ptr %t, align 1
+  br label %while.cond118
 
-if.then118:                                       ; preds = %if.end113
-  %ns120 = load i64, ptr %ns, align 8
-  store i64 %ns120, ptr %t, align 1
-  br label %while.cond121
+if.end116:                                        ; preds = %while.exit120, %if.end110
+  %j143 = load i64, ptr %j, align 8
+  %gt144 = icmp ugt i64 %call72, %j143
+  br i1 %gt144, label %if.then145, label %if.end146
 
-if.end119:                                        ; preds = %while.exit123, %if.end113
-  %j146 = load i64, ptr %j, align 8
-  %gt147 = icmp ugt i64 %call75, %j146
-  br i1 %gt147, label %if.then148, label %if.end149
-
-while.cond121:                                    ; preds = %while.body122, %if.then118
+while.cond118:                                    ; preds = %while.body119, %if.then115
   %ri = load i64, ptr %t, align 8
-  %ne124 = load i64, ptr %ne, align 8
-  %lt125 = icmp ult i64 %ri, %ne124
-  br i1 %lt125, label %while.body122, label %while.exit123
+  %ne121 = load i64, ptr %ne, align 8
+  %lt122 = icmp ult i64 %ri, %ne121
+  br i1 %lt122, label %while.body119, label %while.exit120
 
-while.body122:                                    ; preds = %while.cond121
-  %sb126 = load ptr, ptr %sb, align 8
-  %ri127 = load i64, ptr %t, align 8
-  %call128 = call i8 @_ZN6String3getEm(ptr %2, i64 %ri127)
-  call void @_ZN13StringBuilder6appendEc(ptr %sb126, i8 %call128)
-  %ri129 = load i64, ptr %t, align 8
-  %add130 = add i64 %ri129, 1
-  store i64 %add130, ptr %t, align 1
-  br label %while.cond121
+while.body119:                                    ; preds = %while.cond118
+  %sb123 = load ptr, ptr %sb, align 8
+  %ri124 = load i64, ptr %t, align 8
+  %call125 = call i8 @_ZN6String3getEm(ptr %2, i64 %ri124)
+  call void @_ZN13StringBuilder6appendEc(ptr %sb123, i8 %call125)
+  %ri126 = load i64, ptr %t, align 8
+  %add127 = add i64 %ri126, 1
+  store i64 %add127, ptr %t, align 1
+  br label %while.cond118
 
-while.exit123:                                    ; preds = %while.cond121
+while.exit120:                                    ; preds = %while.cond118
+  %sb128 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb128, i8 9)
+  %sb129 = load ptr, ptr %sb, align 8
+  %k130 = load i64, ptr %k, align 8
+  call void @_ZN4json10format_i64EPN4scaly6memory4PageE3i64(ptr noalias sret({ ptr }) %sret.result, ptr %frame, i64 %k130)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb129, ptr %sret.result)
   %sb131 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb131, i8 9)
   %sb132 = load ptr, ptr %sb, align 8
-  %k133 = load i64, ptr %k, align 8
-  call void @_ZN4json10format_i64EPN4scaly6memory4PageE3i64(ptr noalias sret({ ptr }) %sret.result, ptr %frame, i64 %k133)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb132, ptr %sret.result)
-  %sb134 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb134, i8 9)
+  %ns134 = load i64, ptr %ns, align 8
+  call void @_ZN4json10format_i64EPN4scaly6memory4PageE3i64(ptr noalias sret({ ptr }) %sret.result133, ptr %frame, i64 %ns134)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb132, ptr %sret.result133)
   %sb135 = load ptr, ptr %sb, align 8
-  %ns137 = load i64, ptr %ns, align 8
-  call void @_ZN4json10format_i64EPN4scaly6memory4PageE3i64(ptr noalias sret({ ptr }) %sret.result136, ptr %frame, i64 %ns137)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb135, ptr %sret.result136)
-  %sb138 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb138, i8 9)
+  call void @_ZN13StringBuilder6appendEc(ptr %sb135, i8 9)
+  %sb136 = load ptr, ptr %sb, align 8
+  %ne138 = load i64, ptr %ne, align 8
+  call void @_ZN4json10format_i64EPN4scaly6memory4PageE3i64(ptr noalias sret({ ptr }) %sret.result137, ptr %frame, i64 %ne138)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb136, ptr %sret.result137)
   %sb139 = load ptr, ptr %sb, align 8
-  %ne141 = load i64, ptr %ne, align 8
-  call void @_ZN4json10format_i64EPN4scaly6memory4PageE3i64(ptr noalias sret({ ptr }) %sret.result140, ptr %frame, i64 %ne141)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb139, ptr %sret.result140)
+  call void @_ZN13StringBuilder6appendEc(ptr %sb139, i8 9)
+  %sb140 = load ptr, ptr %sb, align 8
+  call void @_ZN4json10format_i64EPN4scaly6memory4PageE3i64(ptr noalias sret({ ptr }) %sret.result141, ptr %frame, i64 %call72)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb140, ptr %sret.result141)
   %sb142 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb142, i8 9)
-  %sb143 = load ptr, ptr %sb, align 8
-  call void @_ZN4json10format_i64EPN4scaly6memory4PageE3i64(ptr noalias sret({ ptr }) %sret.result144, ptr %frame, i64 %call75)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb143, ptr %sret.result144)
-  %sb145 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb145, i8 10)
-  br label %if.end119
+  call void @_ZN13StringBuilder6appendEc(ptr %sb142, i8 10)
+  br label %if.end116
 
-if.then148:                                       ; preds = %if.end119
-  store i64 %call75, ptr %k, align 1
+if.then145:                                       ; preds = %if.end116
+  store i64 %call72, ptr %k, align 1
+  br label %if.end146
+
+if.end146:                                        ; preds = %if.then145, %if.end116
+  %j147 = load i64, ptr %j, align 8
+  %le = icmp ule i64 %call72, %j147
+  br i1 %le, label %if.then148, label %if.end149
+
+if.then148:                                       ; preds = %if.end146
+  %j150 = load i64, ptr %j, align 8
+  store i64 %j150, ptr %k, align 1
   br label %if.end149
 
-if.end149:                                        ; preds = %if.then148, %if.end119
-  %j150 = load i64, ptr %j, align 8
-  %le = icmp ule i64 %call75, %j150
-  br i1 %le, label %if.then151, label %if.end152
-
-if.then151:                                       ; preds = %if.end149
-  %j153 = load i64, ptr %j, align 8
-  store i64 %j153, ptr %k, align 1
-  br label %if.end152
-
-if.end152:                                        ; preds = %if.then151, %if.end149
+if.end149:                                        ; preds = %if.then148, %if.end146
   br label %while.cond
 }
 
@@ -102260,7 +102010,7 @@ entry:
   store i64 0, ptr %at, align 1
   br label %while.cond
 
-while.cond:                                       ; preds = %while.exit13, %entry
+while.cond:                                       ; preds = %while.exit11, %entry
   %at1 = load i64, ptr %at, align 8
   %lt = icmp ult i64 %at1, %call
   br i1 %lt, label %while.body, label %while.exit
@@ -102271,52 +102021,49 @@ while.body:                                       ; preds = %while.cond
   %at4 = load i64, ptr %at, align 8
   %call5 = call i64 @_ZN7symbols13record_numberE6Stringmm(ptr %0, i64 %at4, i64 4)
   %ge = icmp uge i64 %1, %call3
-  br i1 %ge, label %if.then, label %if.end
+  br i1 %ge, label %land.rhs, label %if.end
 
 while.exit:                                       ; preds = %while.cond
   ret i64 %call
 
-if.then:                                          ; preds = %while.body
+if.then:                                          ; preds = %land.rhs
+  %at7 = load i64, ptr %at, align 8
+  ret i64 %at7
+
+if.end:                                           ; preds = %land.rhs, %while.body
+  %at8 = load i64, ptr %at, align 8
+  store i64 %at8, ptr %i, align 1
+  br label %while.cond9
+
+land.rhs:                                         ; preds = %while.body
   %lt6 = icmp ult i64 %1, %call5
-  br i1 %lt6, label %if.then7, label %if.end8
+  br i1 %lt6, label %if.then, label %if.end
 
-if.end:                                           ; preds = %if.end8, %while.body
-  %at10 = load i64, ptr %at, align 8
-  store i64 %at10, ptr %i, align 1
-  br label %while.cond11
+while.cond9:                                      ; preds = %if.end17, %if.end
+  %i12 = load i64, ptr %i, align 8
+  %lt13 = icmp ult i64 %i12, %call
+  br i1 %lt13, label %while.body10, label %while.exit11
 
-if.then7:                                         ; preds = %if.then
-  %at9 = load i64, ptr %at, align 8
-  ret i64 %at9
-
-if.end8:                                          ; preds = %if.then
-  br label %if.end
-
-while.cond11:                                     ; preds = %if.end19, %if.end
+while.body10:                                     ; preds = %while.cond9
   %i14 = load i64, ptr %i, align 8
-  %lt15 = icmp ult i64 %i14, %call
-  br i1 %lt15, label %while.body12, label %while.exit13
+  %call15 = call i8 @_ZN6String3getEm(ptr %0, i64 %i14)
+  %eq = icmp eq i8 %call15, 10
+  br i1 %eq, label %if.then16, label %if.end17
 
-while.body12:                                     ; preds = %while.cond11
-  %i16 = load i64, ptr %i, align 8
-  %call17 = call i8 @_ZN6String3getEm(ptr %0, i64 %i16)
-  %eq = icmp eq i8 %call17, 10
-  br i1 %eq, label %if.then18, label %if.end19
-
-while.exit13:                                     ; preds = %if.then18, %while.cond11
-  %i21 = load i64, ptr %i, align 8
-  %add22 = add i64 %i21, 1
-  store i64 %add22, ptr %at, align 1
+while.exit11:                                     ; preds = %if.then16, %while.cond9
+  %i19 = load i64, ptr %i, align 8
+  %add20 = add i64 %i19, 1
+  store i64 %add20, ptr %at, align 1
   br label %while.cond
 
-if.then18:                                        ; preds = %while.body12
-  br label %while.exit13
+if.then16:                                        ; preds = %while.body10
+  br label %while.exit11
 
-if.end19:                                         ; preds = %while.body12
-  %i20 = load i64, ptr %i, align 8
-  %add = add i64 %i20, 1
+if.end17:                                         ; preds = %while.body10
+  %i18 = load i64, ptr %i, align 8
+  %add = add i64 %i18, 1
   store i64 %add, ptr %i, align 1
-  br label %while.cond11
+  br label %while.cond9
 }
 
 define linkonce_odr i64 @_ZN7symbols13packed_offsetE6String6String(ptr %0, ptr %1) {
@@ -103360,34 +103107,31 @@ while.exit:                                       ; preds = %while.cond
   ret i1 false
 
 if.then:                                          ; preds = %while.body
-  %i5 = load i64, ptr %i, align 8
-  %start6 = load i64, ptr %start, align 8
-  %sub = sub i64 %i5, %start6
-  %eq7 = icmp eq i64 %sub, %call1
-  br i1 %eq7, label %if.then8, label %if.end9
+  %i7 = load i64, ptr %i, align 8
+  %start8 = load i64, ptr %start, align 8
+  %sub = sub i64 %i7, %start8
+  %eq9 = icmp eq i64 %sub, %call1
+  br i1 %eq9, label %land.rhs, label %if.end6
 
-if.end:                                           ; preds = %if.end9, %while.body
-  %i15 = load i64, ptr %i, align 8
-  %add16 = add i64 %i15, 1
-  store i64 %add16, ptr %i, align 1
+if.end:                                           ; preds = %if.end6, %while.body
+  %i13 = load i64, ptr %i, align 8
+  %add14 = add i64 %i13, 1
+  store i64 %add14, ptr %i, align 1
   br label %while.cond
 
-if.then8:                                         ; preds = %if.then
-  %start10 = load i64, ptr %start, align 8
-  %call11 = call i1 @_ZN7symbols12range_equalsE6Stringm6Stringmm(ptr %0, i64 %start10, ptr %1, i64 0, i64 %call1)
-  br i1 %call11, label %if.then12, label %if.end13
+if.then5:                                         ; preds = %land.rhs
+  ret i1 true
 
-if.end9:                                          ; preds = %if.end13, %if.then
-  %i14 = load i64, ptr %i, align 8
-  %add = add i64 %i14, 1
+if.end6:                                          ; preds = %land.rhs, %if.then
+  %i12 = load i64, ptr %i, align 8
+  %add = add i64 %i12, 1
   store i64 %add, ptr %start, align 1
   br label %if.end
 
-if.then12:                                        ; preds = %if.then8
-  ret i1 true
-
-if.end13:                                         ; preds = %if.then8
-  br label %if.end9
+land.rhs:                                         ; preds = %if.then
+  %start10 = load i64, ptr %start, align 8
+  %call11 = call i1 @_ZN7symbols12range_equalsE6Stringm6Stringmm(ptr %0, i64 %start10, ptr %1, i64 0, i64 %call1)
+  br i1 %call11, label %if.then5, label %if.end6
 }
 
 define linkonce_odr void @_ZN7symbols13outgoing_itemEPN4scaly6memory4PageE6String6String6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, ptr %6) {
@@ -104131,7 +103875,7 @@ entry:
 define linkonce_odr void @_ZN7symbols13scan_fragmentEPN4scaly6memory4PageE6String6String6Stringb6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4, i1 %5, ptr %6, ptr %7) {
 entry:
   %ci = alloca i64, align 8
-  %sret.result91 = alloca { ptr }, align 8
+  %sret.result89 = alloca { ptr }, align 8
   %sret.result = alloca { ptr }, align 8
   %piece = alloca { ptr }, align 8
   %ok = alloca i1, align 1
@@ -104239,8 +103983,8 @@ while.body25:                                     ; preds = %while.cond24
   br i1 %call30, label %if.then31, label %if.end32
 
 while.exit26:                                     ; preds = %while.cond24
-  %sb107 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %piece, ptr %1, ptr %sb107)
+  %sb105 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %piece, ptr %1, ptr %sb105)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %piece, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %piece, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -104307,9 +104051,9 @@ if.then61:                                        ; preds = %while.exit47
   %scoped63 = load i1, ptr %scoped, align 1
   br i1 %scoped63, label %if.then64, label %if.end65
 
-if.end62:                                         ; preds = %if.end79, %while.exit47
-  %j106 = load i64, ptr %j, align 8
-  store i64 %j106, ptr %ri, align 1
+if.end62:                                         ; preds = %if.end77, %while.exit47
+  %j104 = load i64, ptr %j, align 8
+  store i64 %j104, ptr %ri, align 1
   br label %if.end43
 
 if.then64:                                        ; preds = %if.then61
@@ -104321,85 +104065,82 @@ if.then64:                                        ; preds = %if.then61
   br label %if.end65
 
 if.end65:                                         ; preds = %if.then64, %if.then61
-  %ok70 = load i1, ptr %ok, align 1
-  br i1 %ok70, label %if.then71, label %if.end72
+  %ok72 = load i1, ptr %ok, align 1
+  br i1 %ok72, label %land.rhs, label %if.end71
 
-if.then71:                                        ; preds = %if.end65
+if.then70:                                        ; preds = %land.rhs
+  store i1 false, ptr %ok, align 1
+  br label %if.end71
+
+if.end71:                                         ; preds = %if.then70, %land.rhs, %if.end65
+  %ok75 = load i1, ptr %ok, align 1
+  br i1 %ok75, label %if.then76, label %if.end77
+
+land.rhs:                                         ; preds = %if.end65
   %k73 = load i64, ptr %ri, align 8
   %call74 = call i1 @_ZN7symbols9in_shadowE6Stringm(ptr %7, i64 %k73)
-  br i1 %call74, label %if.then75, label %if.end76
+  br i1 %call74, label %if.then70, label %if.end71
 
-if.end72:                                         ; preds = %if.end76, %if.end65
-  %ok77 = load i1, ptr %ok, align 1
-  br i1 %ok77, label %if.then78, label %if.end79
-
-if.then75:                                        ; preds = %if.then71
-  store i1 false, ptr %ok, align 1
-  br label %if.end76
-
-if.end76:                                         ; preds = %if.then75, %if.then71
-  br label %if.end72
-
-if.then78:                                        ; preds = %if.end72
+if.then76:                                        ; preds = %if.end71
   %first = load i1, ptr %seen_space, align 1
-  %eq80 = icmp eq i1 %first, false
-  br i1 %eq80, label %if.then81, label %if.end82
+  %eq78 = icmp eq i1 %first, false
+  br i1 %eq78, label %if.then79, label %if.end80
 
-if.end79:                                         ; preds = %while.exit98, %if.end72
+if.end77:                                         ; preds = %while.exit96, %if.end71
   br label %if.end62
 
-if.then81:                                        ; preds = %if.then78
-  %sb83 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb83, i8 44)
-  br label %if.end82
+if.then79:                                        ; preds = %if.then76
+  %sb81 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb81, i8 44)
+  br label %if.end80
 
-if.end82:                                         ; preds = %if.then81, %if.then78
+if.end80:                                         ; preds = %if.then79, %if.then76
   store { ptr } zeroinitializer, ptr %piece, align 1
-  br i1 %5, label %if.then84, label %if.end85
+  br i1 %5, label %if.then82, label %if.end83
 
-if.then84:                                        ; preds = %if.end82
-  %k86 = load i64, ptr %ri, align 8
-  %j87 = load i64, ptr %j, align 8
-  call void @_ZN7symbols20location_span_objectEPN4scaly6memory4PageE6String6Stringmm(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %2, ptr %3, i64 %k86, i64 %j87)
+if.then82:                                        ; preds = %if.end80
+  %k84 = load i64, ptr %ri, align 8
+  %j85 = load i64, ptr %j, align 8
+  call void @_ZN7symbols20location_span_objectEPN4scaly6memory4PageE6String6Stringmm(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %2, ptr %3, i64 %k84, i64 %j85)
   %set.load = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %piece, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  br label %if.end85
+  br label %if.end83
 
-if.end85:                                         ; preds = %if.then84, %if.end82
-  %eq88 = icmp eq i1 %5, false
-  br i1 %eq88, label %if.then89, label %if.end90
+if.end83:                                         ; preds = %if.then82, %if.end80
+  %eq86 = icmp eq i1 %5, false
+  br i1 %eq86, label %if.then87, label %if.end88
 
-if.then89:                                        ; preds = %if.end85
-  %k92 = load i64, ptr %ri, align 8
-  %j93 = load i64, ptr %j, align 8
-  call void @_ZN7symbols16highlight_objectEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result91, ptr %frame, ptr %2, i64 %k92, i64 %j93)
-  %set.load94 = load { ptr }, ptr %sret.result91, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %piece, ptr align 1 %sret.result91, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  br label %if.end90
+if.then87:                                        ; preds = %if.end83
+  %k90 = load i64, ptr %ri, align 8
+  %j91 = load i64, ptr %j, align 8
+  call void @_ZN7symbols16highlight_objectEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result89, ptr %frame, ptr %2, i64 %k90, i64 %j91)
+  %set.load92 = load { ptr }, ptr %sret.result89, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %piece, ptr align 1 %sret.result89, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  br label %if.end88
 
-if.end90:                                         ; preds = %if.then89, %if.end85
+if.end88:                                         ; preds = %if.then87, %if.end83
   store i64 0, ptr %ci, align 1
-  %call95 = call i64 @_ZN6String10get_lengthEv(ptr %piece)
-  br label %while.cond96
+  %call93 = call i64 @_ZN6String10get_lengthEv(ptr %piece)
+  br label %while.cond94
 
-while.cond96:                                     ; preds = %while.body97, %if.end90
-  %ci99 = load i64, ptr %ci, align 8
-  %lt100 = icmp ult i64 %ci99, %call95
-  br i1 %lt100, label %while.body97, label %while.exit98
+while.cond94:                                     ; preds = %while.body95, %if.end88
+  %ci97 = load i64, ptr %ci, align 8
+  %lt98 = icmp ult i64 %ci97, %call93
+  br i1 %lt98, label %while.body95, label %while.exit96
 
-while.body97:                                     ; preds = %while.cond96
-  %sb101 = load ptr, ptr %sb, align 8
+while.body95:                                     ; preds = %while.cond94
+  %sb99 = load ptr, ptr %sb, align 8
+  %ci100 = load i64, ptr %ci, align 8
+  %call101 = call i8 @_ZN6String3getEm(ptr %piece, i64 %ci100)
+  call void @_ZN13StringBuilder6appendEc(ptr %sb99, i8 %call101)
   %ci102 = load i64, ptr %ci, align 8
-  %call103 = call i8 @_ZN6String3getEm(ptr %piece, i64 %ci102)
-  call void @_ZN13StringBuilder6appendEc(ptr %sb101, i8 %call103)
-  %ci104 = load i64, ptr %ci, align 8
-  %add105 = add i64 %ci104, 1
-  store i64 %add105, ptr %ci, align 1
-  br label %while.cond96
+  %add103 = add i64 %ci102, 1
+  store i64 %add103, ptr %ci, align 1
+  br label %while.cond94
 
-while.exit98:                                     ; preds = %while.cond96
+while.exit96:                                     ; preds = %while.cond94
   store i1 false, ptr %seen_space, align 1
-  br label %if.end79
+  br label %if.end77
 }
 
 define linkonce_odr i1 @_ZN7symbols14path_under_dirE6String6String(ptr %0, ptr %1) {
@@ -104678,7 +104419,7 @@ if.end:                                           ; preds = %entry
   store i64 0, ptr %i, align 1
   br label %while.cond
 
-while.cond:                                       ; preds = %while.exit36, %if.end29, %if.end
+while.cond:                                       ; preds = %while.exit34, %if.end27, %if.end
   %i3 = load i64, ptr %i, align 8
   %lt = icmp ult i64 %i3, %call2
   br i1 %lt, label %while.body, label %while.exit
@@ -104700,7 +104441,7 @@ if.then7:                                         ; preds = %while.body
   br label %while.cond10
 
 if.end8:                                          ; preds = %while.body
-  br label %while.cond34
+  br label %while.cond32
 
 while.cond10:                                     ; preds = %if.end19, %if.then7
   %i13 = load i64, ptr %i, align 8
@@ -104717,10 +104458,10 @@ while.exit12:                                     ; preds = %if.then18, %while.c
   %i24 = load i64, ptr %i, align 8
   %add25 = add i64 %i24, 1
   store i64 %add25, ptr %i, align 1
-  %roff26 = load i64, ptr %roff, align 8
-  %add27 = add i64 %roff26, %call1
-  %le = icmp ule i64 %add27, %call
-  br i1 %le, label %if.then28, label %if.end29
+  %roff28 = load i64, ptr %roff, align 8
+  %add29 = add i64 %roff28, %call1
+  %le = icmp ule i64 %add29, %call
+  br i1 %le, label %land.rhs, label %if.end27
 
 if.then18:                                        ; preds = %while.body11
   br label %while.exit12
@@ -104737,45 +104478,42 @@ if.end19:                                         ; preds = %while.body11
   store i64 %add23, ptr %i, align 1
   br label %while.cond10
 
-if.then28:                                        ; preds = %while.exit12
-  %roff30 = load i64, ptr %roff, align 8
-  %call31 = call i1 @_ZN7symbols18field_name_matchesE6Stringmm6String(ptr %1, i64 %roff30, i64 %call1, ptr %3)
-  br i1 %call31, label %if.then32, label %if.end33
-
-if.end29:                                         ; preds = %if.end33, %while.exit12
-  br label %while.cond
-
-if.then32:                                        ; preds = %if.then28
+if.then26:                                        ; preds = %land.rhs
   ret i1 true
 
-if.end33:                                         ; preds = %if.then28
-  br label %if.end29
-
-while.cond34:                                     ; preds = %if.end43, %if.end8
-  %i37 = load i64, ptr %i, align 8
-  %lt38 = icmp ult i64 %i37, %call2
-  br i1 %lt38, label %while.body35, label %while.exit36
-
-while.body35:                                     ; preds = %while.cond34
-  %i39 = load i64, ptr %i, align 8
-  %call40 = call i8 @_ZN6String3getEm(ptr %2, i64 %i39)
-  %eq41 = icmp eq i8 %call40, 10
-  br i1 %eq41, label %if.then42, label %if.end43
-
-while.exit36:                                     ; preds = %if.then42, %while.cond34
-  %i46 = load i64, ptr %i, align 8
-  %add47 = add i64 %i46, 1
-  store i64 %add47, ptr %i, align 1
+if.end27:                                         ; preds = %land.rhs, %while.exit12
   br label %while.cond
 
-if.then42:                                        ; preds = %while.body35
-  br label %while.exit36
+land.rhs:                                         ; preds = %while.exit12
+  %roff30 = load i64, ptr %roff, align 8
+  %call31 = call i1 @_ZN7symbols18field_name_matchesE6Stringmm6String(ptr %1, i64 %roff30, i64 %call1, ptr %3)
+  br i1 %call31, label %if.then26, label %if.end27
 
-if.end43:                                         ; preds = %while.body35
+while.cond32:                                     ; preds = %if.end41, %if.end8
+  %i35 = load i64, ptr %i, align 8
+  %lt36 = icmp ult i64 %i35, %call2
+  br i1 %lt36, label %while.body33, label %while.exit34
+
+while.body33:                                     ; preds = %while.cond32
+  %i37 = load i64, ptr %i, align 8
+  %call38 = call i8 @_ZN6String3getEm(ptr %2, i64 %i37)
+  %eq39 = icmp eq i8 %call38, 10
+  br i1 %eq39, label %if.then40, label %if.end41
+
+while.exit34:                                     ; preds = %if.then40, %while.cond32
   %i44 = load i64, ptr %i, align 8
   %add45 = add i64 %i44, 1
   store i64 %add45, ptr %i, align 1
-  br label %while.cond34
+  br label %while.cond
+
+if.then40:                                        ; preds = %while.body33
+  br label %while.exit34
+
+if.end41:                                         ; preds = %while.body33
+  %i42 = load i64, ptr %i, align 8
+  %add43 = add i64 %i42, 1
+  store i64 %add43, ptr %i, align 1
+  br label %while.cond32
 }
 
 define linkonce_odr i1 @_ZN7symbols17name_in_workspaceEPN4scaly6memory4PageE6String6String(ptr %0, ptr %1, ptr %2) {
@@ -104872,30 +104610,27 @@ if.end26:                                         ; preds = %while.body17
 if.then32:                                        ; preds = %while.exit18
   %t34 = load i64, ptr %t, align 8
   %add35 = add i64 %t34, 1
-  %nl36 = load i64, ptr %nl, align 8
-  %sub = sub i64 %nl36, %add35
-  %eq37 = icmp eq i64 %sub, %call
-  br i1 %eq37, label %if.then38, label %if.end39
+  %nl38 = load i64, ptr %nl, align 8
+  %sub = sub i64 %nl38, %add35
+  %eq39 = icmp eq i64 %sub, %call
+  br i1 %eq39, label %land.rhs, label %if.end37
 
-if.end33:                                         ; preds = %if.end39, %while.exit18
-  %nl43 = load i64, ptr %nl, align 8
-  %add44 = add i64 %nl43, 1
-  store i64 %add44, ptr %i, align 1
+if.end33:                                         ; preds = %if.end37, %while.exit18
+  %nl41 = load i64, ptr %nl, align 8
+  %add42 = add i64 %nl41, 1
+  store i64 %add42, ptr %i, align 1
   br label %while.cond
 
-if.then38:                                        ; preds = %if.then32
-  %call40 = call i1 @_ZN7symbols12range_equalsE6Stringm6Stringmm(ptr %sret.result, i64 %add35, ptr %2, i64 0, i64 %call)
-  br i1 %call40, label %if.then41, label %if.end42
-
-if.end39:                                         ; preds = %if.end42, %if.then32
-  br label %if.end33
-
-if.then41:                                        ; preds = %if.then38
+if.then36:                                        ; preds = %land.rhs
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 true
 
-if.end42:                                         ; preds = %if.then38
-  br label %if.end39
+if.end37:                                         ; preds = %land.rhs, %if.then32
+  br label %if.end33
+
+land.rhs:                                         ; preds = %if.then32
+  %call40 = call i1 @_ZN7symbols12range_equalsE6Stringm6Stringmm(ptr %sret.result, i64 %add35, ptr %2, i64 0, i64 %call)
+  br i1 %call40, label %if.then36, label %if.end37
 }
 
 define linkonce_odr i1 @_ZN7symbols19name_is_module_wideEPN4scaly6memory4PageE6String6String6String6String6String(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) {
@@ -104906,24 +104641,20 @@ entry:
   store ptr %0, ptr %frame.parent, align 8
   %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %0)
   %call = call i1 @_ZN7symbols18name_in_completionEPN4scaly6memory4PageE6String6String(ptr %frame, ptr %2, ptr %5)
-  br i1 %call, label %if.then, label %if.end
+  br i1 %call, label %if.then, label %lor.rhs
 
-if.then:                                          ; preds = %entry
+if.then:                                          ; preds = %lor.rhs, %entry
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 true
 
-if.end:                                           ; preds = %entry
+if.end:                                           ; preds = %lor.rhs
+  %call2 = call i1 @_ZN7symbols17name_in_workspaceEPN4scaly6memory4PageE6String6String(ptr %0, ptr %4, ptr %5)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret i1 %call2
+
+lor.rhs:                                          ; preds = %entry
   %call1 = call i1 @_ZN7symbols13name_is_fieldEPN4scaly6memory4PageE6String6String6String(ptr %frame, ptr %1, ptr %3, ptr %5)
-  br i1 %call1, label %if.then2, label %if.end3
-
-if.then2:                                         ; preds = %if.end
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret i1 true
-
-if.end3:                                          ; preds = %if.end
-  %call4 = call i1 @_ZN7symbols17name_in_workspaceEPN4scaly6memory4PageE6String6String(ptr %0, ptr %4, ptr %5)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret i1 %call4
+  br i1 %call1, label %if.then, label %if.end
 }
 
 define linkonce_odr i1 @_ZN7symbols18field_name_matchesE6Stringmm6String(ptr %0, i64 %1, i64 %2, ptr %3) {
@@ -104939,22 +104670,19 @@ if.end:                                           ; preds = %entry
   %call1 = call i64 @_ZN6String10get_lengthEv(ptr %0)
   %add = add i64 %1, %2
   %lt = icmp ult i64 %add, %call1
-  br i1 %lt, label %if.then2, label %if.end3
+  br i1 %lt, label %land.rhs, label %if.end3
 
-if.then2:                                         ; preds = %if.end
+if.then2:                                         ; preds = %land.rhs
+  ret i1 false
+
+if.end3:                                          ; preds = %land.rhs, %if.end
+  ret i1 true
+
+land.rhs:                                         ; preds = %if.end
   %add4 = add i64 %1, %2
   %call5 = call i8 @_ZN6String3getEm(ptr %0, i64 %add4)
   %call6 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call5)
-  br i1 %call6, label %if.then7, label %if.end8
-
-if.end3:                                          ; preds = %if.end8, %if.end
-  ret i1 true
-
-if.then7:                                         ; preds = %if.then2
-  ret i1 false
-
-if.end8:                                          ; preds = %if.then2
-  br label %if.end3
+  br i1 %call6, label %if.then2, label %if.end3
 }
 
 define linkonce_odr void @_ZN7symbols17highlights_packedEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
@@ -105133,11 +104861,11 @@ while.exit:                                       ; preds = %while.cond
 define linkonce_odr void @_ZN7symbols16rename_workspaceEPN4scaly6memory4PageE6String6String6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, ptr %6) {
 entry:
   %fi = alloca i64, align 8
-  %sret.result79 = alloca { ptr }, align 8
-  %arg.tmp68 = alloca { ptr }, align 8
-  %sret.result67 = alloca { ptr }, align 8
-  %sret.result66 = alloca { ptr }, align 8
+  %sret.result77 = alloca { ptr }, align 8
+  %arg.tmp66 = alloca { ptr }, align 8
   %sret.result65 = alloca { ptr }, align 8
+  %sret.result64 = alloca { ptr }, align 8
+  %sret.result63 = alloca { ptr }, align 8
   %skip = alloca i1, align 1
   %sret.result41 = alloca { ptr }, align 8
   %i = alloca i64, align 8
@@ -105249,12 +104977,12 @@ if.then27:                                        ; preds = %if.end22
   br label %while.cond31
 
 if.end28:                                         ; preds = %while.exit33, %if.end22
+  %sb96 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb96, i8 125)
+  %sb97 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb97, i8 125)
   %sb98 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb98, i8 125)
-  %sb99 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb99, i8 125)
-  %sb100 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result29, ptr %1, ptr %sb100)
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result29, ptr %1, ptr %sb98)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result29, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result29, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -105283,9 +105011,9 @@ if.then39:                                        ; preds = %while.body32
   br i1 %gt44, label %if.then45, label %if.end46
 
 if.end40:                                         ; preds = %if.end46, %while.body32
-  %i96 = load i64, ptr %i, align 8
-  %add97 = add i64 %i96, 1
-  store i64 %add97, ptr %i, align 1
+  %i94 = load i64, ptr %i, align 8
+  %add95 = add i64 %i94, 1
+  store i64 %add95, ptr %i, align 1
   br label %while.cond31
 
 if.then45:                                        ; preds = %if.then39
@@ -105293,10 +105021,10 @@ if.then45:                                        ; preds = %if.then39
   %call47 = call i1 @_ZN6String6equalsE6String(ptr %sret.result41, ptr %sret.result19)
   br i1 %call47, label %if.then48, label %if.end49
 
-if.end46:                                         ; preds = %if.end61, %if.then39
-  %i94 = load i64, ptr %i, align 8
-  %add95 = add i64 %i94, 1
-  store i64 %add95, ptr %ci, align 1
+if.end46:                                         ; preds = %if.end59, %if.then39
+  %i92 = load i64, ptr %i, align 8
+  %add93 = add i64 %i92, 1
+  store i64 %add93, ptr %ci, align 1
   br label %if.end40
 
 if.then48:                                        ; preds = %if.then45
@@ -105304,92 +105032,89 @@ if.then48:                                        ; preds = %if.then45
   br label %if.end49
 
 if.end49:                                         ; preds = %if.then48, %if.then45
-  %apply_excl50 = load i1, ptr %apply_excl, align 1
-  br i1 %apply_excl50, label %if.then51, label %if.end52
+  %apply_excl52 = load i1, ptr %apply_excl, align 1
+  br i1 %apply_excl52, label %land.rhs, label %if.end51
 
-if.then51:                                        ; preds = %if.end49
+if.then50:                                        ; preds = %land.rhs
+  %call55 = call i1 @_ZN7symbols23excluded_from_root_walkEPN4scaly6memory4PageE6String6String(ptr %frame, ptr %sret.result41, ptr %sret.result24)
+  store i1 %call55, ptr %skip, align 1
+  br label %if.end51
+
+if.end51:                                         ; preds = %if.then50, %land.rhs, %if.end49
+  %skip56 = load i1, ptr %skip, align 1
+  %eq57 = icmp eq i1 %skip56, false
+  br i1 %eq57, label %if.then58, label %if.end59
+
+land.rhs:                                         ; preds = %if.end49
   %skip53 = load i1, ptr %skip, align 1
   %eq54 = icmp eq i1 %skip53, false
-  br i1 %eq54, label %if.then55, label %if.end56
+  br i1 %eq54, label %if.then50, label %if.end51
 
-if.end52:                                         ; preds = %if.end56, %if.end49
-  %skip58 = load i1, ptr %skip, align 1
-  %eq59 = icmp eq i1 %skip58, false
-  br i1 %eq59, label %if.then60, label %if.end61
+if.then58:                                        ; preds = %if.end51
+  %call60 = call i1 @_ZN4File6existsE6String(ptr %sret.result41)
+  br i1 %call60, label %if.then61, label %if.end62
 
-if.then55:                                        ; preds = %if.then51
-  %call57 = call i1 @_ZN7symbols23excluded_from_root_walkEPN4scaly6memory4PageE6String6String(ptr %frame, ptr %sret.result41, ptr %sret.result24)
-  store i1 %call57, ptr %skip, align 1
-  br label %if.end56
-
-if.end56:                                         ; preds = %if.then55, %if.then51
-  br label %if.end52
-
-if.then60:                                        ; preds = %if.end52
-  %call62 = call i1 @_ZN4File6existsE6String(ptr %sret.result41)
-  br i1 %call62, label %if.then63, label %if.end64
-
-if.end61:                                         ; preds = %if.end64, %if.end52
+if.end59:                                         ; preds = %if.end62, %if.end51
   br label %if.end46
 
-if.then63:                                        ; preds = %if.then60
-  call void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result65, ptr %frame, ptr %sret.result41)
-  call void @_ZN7symbols13shadow_rangesEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result66, ptr %frame, ptr %sret.result65, ptr %4)
-  store { ptr } zeroinitializer, ptr %arg.tmp68, align 1
-  call void @_ZN7symbols14edits_fragmentEPN4scaly6memory4PageE6String6String6String6String6String(ptr noalias sret({ ptr }) %sret.result67, ptr %frame, ptr %sret.result65, ptr %4, ptr %5, ptr %arg.tmp68, ptr %sret.result66)
-  %call69 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result67)
-  %gt70 = icmp ugt i64 %call69, 0
-  br i1 %gt70, label %if.then71, label %if.end72
+if.then61:                                        ; preds = %if.then58
+  call void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result63, ptr %frame, ptr %sret.result41)
+  call void @_ZN7symbols13shadow_rangesEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result64, ptr %frame, ptr %sret.result63, ptr %4)
+  store { ptr } zeroinitializer, ptr %arg.tmp66, align 1
+  call void @_ZN7symbols14edits_fragmentEPN4scaly6memory4PageE6String6String6String6String6String(ptr noalias sret({ ptr }) %sret.result65, ptr %frame, ptr %sret.result63, ptr %4, ptr %5, ptr %arg.tmp66, ptr %sret.result64)
+  %call67 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result65)
+  %gt68 = icmp ugt i64 %call67, 0
+  br i1 %gt68, label %if.then69, label %if.end70
 
-if.end64:                                         ; preds = %if.end72, %if.then60
-  br label %if.end61
+if.end62:                                         ; preds = %if.end70, %if.then58
+  br label %if.end59
 
-if.then71:                                        ; preds = %if.then63
-  %first73 = load i1, ptr %first, align 1
-  %eq74 = icmp eq i1 %first73, false
-  br i1 %eq74, label %if.then75, label %if.end76
+if.then69:                                        ; preds = %if.then61
+  %first71 = load i1, ptr %first, align 1
+  %eq72 = icmp eq i1 %first71, false
+  br i1 %eq72, label %if.then73, label %if.end74
 
-if.end72:                                         ; preds = %while.exit85, %if.then63
-  br label %if.end64
+if.end70:                                         ; preds = %while.exit83, %if.then61
+  br label %if.end62
 
-if.then75:                                        ; preds = %if.then71
-  %sb77 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb77, i8 44)
-  br label %if.end76
+if.then73:                                        ; preds = %if.then69
+  %sb75 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb75, i8 44)
+  br label %if.end74
 
-if.end76:                                         ; preds = %if.then75, %if.then71
-  call void @_ZN7symbols11path_to_uriEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %arg.tmp68, ptr %frame, ptr %sret.result41)
+if.end74:                                         ; preds = %if.then73, %if.then69
+  call void @_ZN7symbols11path_to_uriEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %arg.tmp66, ptr %frame, ptr %sret.result41)
+  %sb76 = load ptr, ptr %sb, align 8
+  call void @_ZN4json12quote_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result77, ptr %frame, ptr %arg.tmp66)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb76, ptr %sret.result77)
   %sb78 = load ptr, ptr %sb, align 8
-  call void @_ZN4json12quote_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result79, ptr %frame, ptr %arg.tmp68)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb78, ptr %sret.result79)
-  %sb80 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb80, i8 58)
-  %sb81 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb81, i8 91)
+  call void @_ZN13StringBuilder6appendEc(ptr %sb78, i8 58)
+  %sb79 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb79, i8 91)
   store i64 0, ptr %fi, align 1
-  %call82 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result67)
-  br label %while.cond83
+  %call80 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result65)
+  br label %while.cond81
 
-while.cond83:                                     ; preds = %while.body84, %if.end76
-  %fi86 = load i64, ptr %fi, align 8
-  %lt87 = icmp ult i64 %fi86, %call82
-  br i1 %lt87, label %while.body84, label %while.exit85
+while.cond81:                                     ; preds = %while.body82, %if.end74
+  %fi84 = load i64, ptr %fi, align 8
+  %lt85 = icmp ult i64 %fi84, %call80
+  br i1 %lt85, label %while.body82, label %while.exit83
 
-while.body84:                                     ; preds = %while.cond83
-  %sb88 = load ptr, ptr %sb, align 8
+while.body82:                                     ; preds = %while.cond81
+  %sb86 = load ptr, ptr %sb, align 8
+  %fi87 = load i64, ptr %fi, align 8
+  %call88 = call i8 @_ZN6String3getEm(ptr %sret.result65, i64 %fi87)
+  call void @_ZN13StringBuilder6appendEc(ptr %sb86, i8 %call88)
   %fi89 = load i64, ptr %fi, align 8
-  %call90 = call i8 @_ZN6String3getEm(ptr %sret.result67, i64 %fi89)
-  call void @_ZN13StringBuilder6appendEc(ptr %sb88, i8 %call90)
-  %fi91 = load i64, ptr %fi, align 8
-  %add92 = add i64 %fi91, 1
-  store i64 %add92, ptr %fi, align 1
-  br label %while.cond83
+  %add90 = add i64 %fi89, 1
+  store i64 %add90, ptr %fi, align 1
+  br label %while.cond81
 
-while.exit85:                                     ; preds = %while.cond83
-  %sb93 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb93, i8 93)
+while.exit83:                                     ; preds = %while.cond81
+  %sb91 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb91, i8 93)
   store i1 false, ptr %first, align 1
-  br label %if.end72
+  br label %if.end70
 }
 
 define linkonce_odr void @_ZN7symbols13rename_packedEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
@@ -105734,8 +105459,8 @@ while.body25:                                     ; preds = %while.cond24
   br i1 %call30, label %if.then31, label %if.end32
 
 while.exit26:                                     ; preds = %while.cond24
-  %sb98 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb98)
+  %sb96 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb96)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -105802,9 +105527,9 @@ if.then61:                                        ; preds = %while.exit47
   %scoped63 = load i1, ptr %scoped, align 1
   br i1 %scoped63, label %if.then64, label %if.end65
 
-if.end62:                                         ; preds = %if.end79, %while.exit47
-  %j97 = load i64, ptr %j, align 8
-  store i64 %j97, ptr %ri, align 1
+if.end62:                                         ; preds = %if.end77, %while.exit47
+  %j95 = load i64, ptr %j, align 8
+  store i64 %j95, ptr %ri, align 1
   br label %if.end43
 
 if.then64:                                        ; preds = %if.then61
@@ -105816,64 +105541,61 @@ if.then64:                                        ; preds = %if.then61
   br label %if.end65
 
 if.end65:                                         ; preds = %if.then64, %if.then61
-  %ok70 = load i1, ptr %ok, align 1
-  br i1 %ok70, label %if.then71, label %if.end72
+  %ok72 = load i1, ptr %ok, align 1
+  br i1 %ok72, label %land.rhs, label %if.end71
 
-if.then71:                                        ; preds = %if.end65
+if.then70:                                        ; preds = %land.rhs
+  store i1 false, ptr %ok, align 1
+  br label %if.end71
+
+if.end71:                                         ; preds = %if.then70, %land.rhs, %if.end65
+  %ok75 = load i1, ptr %ok, align 1
+  br i1 %ok75, label %if.then76, label %if.end77
+
+land.rhs:                                         ; preds = %if.end65
   %k73 = load i64, ptr %ri, align 8
   %call74 = call i1 @_ZN7symbols9in_shadowE6Stringm(ptr %6, i64 %k73)
-  br i1 %call74, label %if.then75, label %if.end76
+  br i1 %call74, label %if.then70, label %if.end71
 
-if.end72:                                         ; preds = %if.end76, %if.end65
-  %ok77 = load i1, ptr %ok, align 1
-  br i1 %ok77, label %if.then78, label %if.end79
-
-if.then75:                                        ; preds = %if.then71
-  store i1 false, ptr %ok, align 1
-  br label %if.end76
-
-if.end76:                                         ; preds = %if.then75, %if.then71
-  br label %if.end72
-
-if.then78:                                        ; preds = %if.end72
+if.then76:                                        ; preds = %if.end71
   %first = load i1, ptr %seen_space, align 1
-  %eq80 = icmp eq i1 %first, false
-  br i1 %eq80, label %if.then81, label %if.end82
+  %eq78 = icmp eq i1 %first, false
+  br i1 %eq78, label %if.then79, label %if.end80
 
-if.end79:                                         ; preds = %while.exit89, %if.end72
+if.end77:                                         ; preds = %while.exit87, %if.end71
   br label %if.end62
 
-if.then81:                                        ; preds = %if.then78
-  %sb83 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb83, i8 44)
-  br label %if.end82
+if.then79:                                        ; preds = %if.then76
+  %sb81 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb81, i8 44)
+  br label %if.end80
 
-if.end82:                                         ; preds = %if.then81, %if.then78
-  %k84 = load i64, ptr %ri, align 8
-  %j85 = load i64, ptr %j, align 8
-  call void @_ZN7symbols16text_edit_objectEPN4scaly6memory4PageE6Stringmm6String(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %2, i64 %k84, i64 %j85, ptr %4)
+if.end80:                                         ; preds = %if.then79, %if.then76
+  %k82 = load i64, ptr %ri, align 8
+  %j83 = load i64, ptr %j, align 8
+  call void @_ZN7symbols16text_edit_objectEPN4scaly6memory4PageE6Stringmm6String(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %2, i64 %k82, i64 %j83, ptr %4)
   store i64 0, ptr %ci, align 1
-  %call86 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
-  br label %while.cond87
+  %call84 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
+  br label %while.cond85
 
-while.cond87:                                     ; preds = %while.body88, %if.end82
-  %ci90 = load i64, ptr %ci, align 8
-  %lt91 = icmp ult i64 %ci90, %call86
-  br i1 %lt91, label %while.body88, label %while.exit89
+while.cond85:                                     ; preds = %while.body86, %if.end80
+  %ci88 = load i64, ptr %ci, align 8
+  %lt89 = icmp ult i64 %ci88, %call84
+  br i1 %lt89, label %while.body86, label %while.exit87
 
-while.body88:                                     ; preds = %while.cond87
-  %sb92 = load ptr, ptr %sb, align 8
+while.body86:                                     ; preds = %while.cond85
+  %sb90 = load ptr, ptr %sb, align 8
+  %ci91 = load i64, ptr %ci, align 8
+  %call92 = call i8 @_ZN6String3getEm(ptr %sret.result, i64 %ci91)
+  call void @_ZN13StringBuilder6appendEc(ptr %sb90, i8 %call92)
   %ci93 = load i64, ptr %ci, align 8
-  %call94 = call i8 @_ZN6String3getEm(ptr %sret.result, i64 %ci93)
-  call void @_ZN13StringBuilder6appendEc(ptr %sb92, i8 %call94)
-  %ci95 = load i64, ptr %ci, align 8
-  %add96 = add i64 %ci95, 1
-  store i64 %add96, ptr %ci, align 1
-  br label %while.cond87
+  %add94 = add i64 %ci93, 1
+  store i64 %add94, ptr %ci, align 1
+  br label %while.cond85
 
-while.exit89:                                     ; preds = %while.cond87
+while.exit87:                                     ; preds = %while.cond85
   store i1 false, ptr %seen_space, align 1
-  br label %if.end79
+  br label %if.end77
 }
 
 define linkonce_odr void @_ZN7symbols16identifier_rangeEPN4scaly6memory4PageE6Stringm(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, i64 %3) {
@@ -106268,93 +105990,84 @@ while.body:                                       ; preds = %while.cond
   %sub = sub i64 %e2, 1
   %call = call i8 @_ZN6String3getEm(ptr %2, i64 %sub)
   %ne = icmp ne i8 %call, 32
-  br i1 %ne, label %if.then, label %if.end
+  br i1 %ne, label %land.rhs4, label %if.end
 
-while.exit:                                       ; preds = %if.then10, %while.cond
-  %e14 = load i64, ptr %e, align 8
-  %eq = icmp eq i64 %e14, 0
-  br i1 %eq, label %if.then15, label %if.end16
+while.exit:                                       ; preds = %if.then, %while.cond
+  %e10 = load i64, ptr %e, align 8
+  %eq = icmp eq i64 %e10, 0
+  br i1 %eq, label %if.then11, label %if.end12
 
-if.then:                                          ; preds = %while.body
-  %ne3 = icmp ne i8 %call, 9
-  br i1 %ne3, label %if.then4, label %if.end5
-
-if.end:                                           ; preds = %if.end5, %while.body
-  %e12 = load i64, ptr %e, align 8
-  %sub13 = sub i64 %e12, 1
-  store i64 %sub13, ptr %e, align 1
-  br label %while.cond
-
-if.then4:                                         ; preds = %if.then
-  %ne6 = icmp ne i8 %call, 10
-  br i1 %ne6, label %if.then7, label %if.end8
-
-if.end5:                                          ; preds = %if.end8, %if.then
-  br label %if.end
-
-if.then7:                                         ; preds = %if.then4
-  %ne9 = icmp ne i8 %call, 13
-  br i1 %ne9, label %if.then10, label %if.end11
-
-if.end8:                                          ; preds = %if.end11, %if.then4
-  br label %if.end5
-
-if.then10:                                        ; preds = %if.then7
+if.then:                                          ; preds = %land.rhs
   br label %while.exit
 
-if.end11:                                         ; preds = %if.then7
-  br label %if.end8
+if.end:                                           ; preds = %land.rhs, %land.rhs3, %land.rhs4, %while.body
+  %e8 = load i64, ptr %e, align 8
+  %sub9 = sub i64 %e8, 1
+  store i64 %sub9, ptr %e, align 1
+  br label %while.cond
 
-if.then15:                                        ; preds = %while.exit
+land.rhs:                                         ; preds = %land.rhs3
+  %ne7 = icmp ne i8 %call, 13
+  br i1 %ne7, label %if.then, label %if.end
+
+land.rhs3:                                        ; preds = %land.rhs4
+  %ne6 = icmp ne i8 %call, 10
+  br i1 %ne6, label %land.rhs, label %if.end
+
+land.rhs4:                                        ; preds = %while.body
+  %ne5 = icmp ne i8 %call, 9
+  br i1 %ne5, label %land.rhs3, label %if.end
+
+if.then11:                                        ; preds = %while.exit
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 
-if.end16:                                         ; preds = %while.exit
-  %e17 = load i64, ptr %e, align 8
-  %sub18 = sub i64 %e17, 1
-  %call19 = call i8 @_ZN6String3getEm(ptr %2, i64 %sub18)
-  %call20 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call19)
-  %eq21 = icmp eq i1 %call20, false
-  br i1 %eq21, label %if.then22, label %if.end23
+if.end12:                                         ; preds = %while.exit
+  %e13 = load i64, ptr %e, align 8
+  %sub14 = sub i64 %e13, 1
+  %call15 = call i8 @_ZN6String3getEm(ptr %2, i64 %sub14)
+  %call16 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call15)
+  %eq17 = icmp eq i1 %call16, false
+  br i1 %eq17, label %if.then18, label %if.end19
 
-if.then22:                                        ; preds = %if.end16
+if.then18:                                        ; preds = %if.end12
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 
-if.end23:                                         ; preds = %if.end16
-  %e24 = load i64, ptr %e, align 8
-  store i64 %e24, ptr %s, align 1
-  br label %while.cond25
+if.end19:                                         ; preds = %if.end12
+  %e20 = load i64, ptr %e, align 8
+  store i64 %e20, ptr %s, align 1
+  br label %while.cond21
 
-while.cond25:                                     ; preds = %if.end36, %if.end23
-  %s28 = load i64, ptr %s, align 8
-  %gt29 = icmp ugt i64 %s28, 0
-  br i1 %gt29, label %while.body26, label %while.exit27
+while.cond21:                                     ; preds = %if.end32, %if.end19
+  %s24 = load i64, ptr %s, align 8
+  %gt25 = icmp ugt i64 %s24, 0
+  br i1 %gt25, label %while.body22, label %while.exit23
 
-while.body26:                                     ; preds = %while.cond25
-  %s30 = load i64, ptr %s, align 8
-  %sub31 = sub i64 %s30, 1
-  %call32 = call i8 @_ZN6String3getEm(ptr %2, i64 %sub31)
-  %call33 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call32)
-  %eq34 = icmp eq i1 %call33, false
-  br i1 %eq34, label %if.then35, label %if.end36
+while.body22:                                     ; preds = %while.cond21
+  %s26 = load i64, ptr %s, align 8
+  %sub27 = sub i64 %s26, 1
+  %call28 = call i8 @_ZN6String3getEm(ptr %2, i64 %sub27)
+  %call29 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call28)
+  %eq30 = icmp eq i1 %call29, false
+  br i1 %eq30, label %if.then31, label %if.end32
 
-while.exit27:                                     ; preds = %if.then35, %while.cond25
-  %s39 = load i64, ptr %s, align 8
-  %e40 = load i64, ptr %e, align 8
-  call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %s39, i64 %e40)
+while.exit23:                                     ; preds = %if.then31, %while.cond21
+  %s35 = load i64, ptr %s, align 8
+  %e36 = load i64, ptr %e, align 8
+  call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %s35, i64 %e36)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.then35:                                        ; preds = %while.body26
-  br label %while.exit27
+if.then31:                                        ; preds = %while.body22
+  br label %while.exit23
 
-if.end36:                                         ; preds = %while.body26
-  %s37 = load i64, ptr %s, align 8
-  %sub38 = sub i64 %s37, 1
-  store i64 %sub38, ptr %s, align 1
-  br label %while.cond25
+if.end32:                                         ; preds = %while.body22
+  %s33 = load i64, ptr %s, align 8
+  %sub34 = sub i64 %s33, 1
+  store i64 %sub34, ptr %s, align 1
+  br label %while.cond21
 }
 
 define linkonce_odr i64 @_ZN7symbols18count_active_paramE6Stringmm(ptr %0, i64 %1, i64 %2) {
@@ -106380,7 +106093,7 @@ if.end:                                           ; preds = %if.then, %entry
   store i64 %add, ptr %i, align 1
   br label %while.cond
 
-while.cond:                                       ; preds = %if.end34, %if.end
+while.cond:                                       ; preds = %if.end30, %if.end
   %i2 = load i64, ptr %i, align 8
   %end3 = load i64, ptr %end, align 8
   %lt = icmp ult i64 %i2, %end3
@@ -106393,8 +106106,8 @@ while.body:                                       ; preds = %while.cond
   br i1 %eq, label %if.then6, label %if.end7
 
 while.exit:                                       ; preds = %while.cond
-  %commas43 = load i64, ptr %commas, align 8
-  ret i64 %commas43
+  %commas39 = load i64, ptr %commas, align 8
+  ret i64 %commas39
 
 if.then6:                                         ; preds = %while.body
   %depth8 = load i64, ptr %depth, align 8
@@ -106413,64 +106126,55 @@ if.then11:                                        ; preds = %if.end7
   br label %if.end12
 
 if.end12:                                         ; preds = %if.then11, %if.end7
-  %eq15 = icmp eq i8 %call5, 41
-  br i1 %eq15, label %if.then16, label %if.end17
+  %eq17 = icmp eq i8 %call5, 41
+  br i1 %eq17, label %land.rhs, label %if.end16
 
-if.then16:                                        ; preds = %if.end12
+if.then15:                                        ; preds = %land.rhs
+  %depth20 = load i64, ptr %depth, align 8
+  %sub = sub i64 %depth20, 1
+  store i64 %sub, ptr %depth, align 1
+  br label %if.end16
+
+if.end16:                                         ; preds = %if.then15, %land.rhs, %if.end12
+  %eq24 = icmp eq i8 %call5, 93
+  br i1 %eq24, label %land.rhs23, label %if.end22
+
+land.rhs:                                         ; preds = %if.end12
   %depth18 = load i64, ptr %depth, align 8
   %gt19 = icmp ugt i64 %depth18, 0
-  br i1 %gt19, label %if.then20, label %if.end21
+  br i1 %gt19, label %if.then15, label %if.end16
 
-if.end17:                                         ; preds = %if.end21, %if.end12
-  %eq23 = icmp eq i8 %call5, 93
-  br i1 %eq23, label %if.then24, label %if.end25
+if.then21:                                        ; preds = %land.rhs23
+  %depth27 = load i64, ptr %depth, align 8
+  %sub28 = sub i64 %depth27, 1
+  store i64 %sub28, ptr %depth, align 1
+  br label %if.end22
 
-if.then20:                                        ; preds = %if.then16
-  %depth22 = load i64, ptr %depth, align 8
-  %sub = sub i64 %depth22, 1
-  store i64 %sub, ptr %depth, align 1
-  br label %if.end21
-
-if.end21:                                         ; preds = %if.then20, %if.then16
-  br label %if.end17
-
-if.then24:                                        ; preds = %if.end17
-  %depth26 = load i64, ptr %depth, align 8
-  %gt27 = icmp ugt i64 %depth26, 0
-  br i1 %gt27, label %if.then28, label %if.end29
-
-if.end25:                                         ; preds = %if.end29, %if.end17
+if.end22:                                         ; preds = %if.then21, %land.rhs23, %if.end16
   %eq32 = icmp eq i8 %call5, 44
-  br i1 %eq32, label %if.then33, label %if.end34
+  br i1 %eq32, label %land.rhs31, label %if.end30
 
-if.then28:                                        ; preds = %if.then24
-  %depth30 = load i64, ptr %depth, align 8
-  %sub31 = sub i64 %depth30, 1
-  store i64 %sub31, ptr %depth, align 1
-  br label %if.end29
+land.rhs23:                                       ; preds = %if.end16
+  %depth25 = load i64, ptr %depth, align 8
+  %gt26 = icmp ugt i64 %depth25, 0
+  br i1 %gt26, label %if.then21, label %if.end22
 
-if.end29:                                         ; preds = %if.then28, %if.then24
-  br label %if.end25
+if.then29:                                        ; preds = %land.rhs31
+  %commas35 = load i64, ptr %commas, align 8
+  %add36 = add i64 %commas35, 1
+  store i64 %add36, ptr %commas, align 1
+  br label %if.end30
 
-if.then33:                                        ; preds = %if.end25
-  %depth35 = load i64, ptr %depth, align 8
-  %eq36 = icmp eq i64 %depth35, 0
-  br i1 %eq36, label %if.then37, label %if.end38
-
-if.end34:                                         ; preds = %if.end38, %if.end25
-  %i41 = load i64, ptr %i, align 8
-  %add42 = add i64 %i41, 1
-  store i64 %add42, ptr %i, align 1
+if.end30:                                         ; preds = %if.then29, %land.rhs31, %if.end22
+  %i37 = load i64, ptr %i, align 8
+  %add38 = add i64 %i37, 1
+  store i64 %add38, ptr %i, align 1
   br label %while.cond
 
-if.then37:                                        ; preds = %if.then33
-  %commas39 = load i64, ptr %commas, align 8
-  %add40 = add i64 %commas39, 1
-  store i64 %add40, ptr %commas, align 1
-  br label %if.end38
-
-if.end38:                                         ; preds = %if.then37, %if.then33
-  br label %if.end34
+land.rhs31:                                       ; preds = %if.end22
+  %depth33 = load i64, ptr %depth, align 8
+  %eq34 = icmp eq i64 %depth33, 0
+  br i1 %eq34, label %if.then29, label %if.end30
 }
 
 define linkonce_odr void @_ZN7symbols22receiver_before_methodEPN4scaly6memory4PageE6Stringm(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, i64 %3) {
@@ -106494,169 +106198,160 @@ while.body:                                       ; preds = %while.cond
   %sub = sub i64 %e2, 1
   %call = call i8 @_ZN6String3getEm(ptr %2, i64 %sub)
   %ne = icmp ne i8 %call, 32
-  br i1 %ne, label %if.then, label %if.end
+  br i1 %ne, label %land.rhs4, label %if.end
 
-while.exit:                                       ; preds = %if.then10, %while.cond
-  %e14 = load i64, ptr %e, align 8
-  %eq = icmp eq i64 %e14, 0
-  br i1 %eq, label %if.then15, label %if.end16
+while.exit:                                       ; preds = %if.then, %while.cond
+  %e10 = load i64, ptr %e, align 8
+  %eq = icmp eq i64 %e10, 0
+  br i1 %eq, label %if.then11, label %if.end12
 
-if.then:                                          ; preds = %while.body
-  %ne3 = icmp ne i8 %call, 9
-  br i1 %ne3, label %if.then4, label %if.end5
-
-if.end:                                           ; preds = %if.end5, %while.body
-  %e12 = load i64, ptr %e, align 8
-  %sub13 = sub i64 %e12, 1
-  store i64 %sub13, ptr %e, align 1
-  br label %while.cond
-
-if.then4:                                         ; preds = %if.then
-  %ne6 = icmp ne i8 %call, 10
-  br i1 %ne6, label %if.then7, label %if.end8
-
-if.end5:                                          ; preds = %if.end8, %if.then
-  br label %if.end
-
-if.then7:                                         ; preds = %if.then4
-  %ne9 = icmp ne i8 %call, 13
-  br i1 %ne9, label %if.then10, label %if.end11
-
-if.end8:                                          ; preds = %if.end11, %if.then4
-  br label %if.end5
-
-if.then10:                                        ; preds = %if.then7
+if.then:                                          ; preds = %land.rhs
   br label %while.exit
 
-if.end11:                                         ; preds = %if.then7
-  br label %if.end8
+if.end:                                           ; preds = %land.rhs, %land.rhs3, %land.rhs4, %while.body
+  %e8 = load i64, ptr %e, align 8
+  %sub9 = sub i64 %e8, 1
+  store i64 %sub9, ptr %e, align 1
+  br label %while.cond
 
-if.then15:                                        ; preds = %while.exit
+land.rhs:                                         ; preds = %land.rhs3
+  %ne7 = icmp ne i8 %call, 13
+  br i1 %ne7, label %if.then, label %if.end
+
+land.rhs3:                                        ; preds = %land.rhs4
+  %ne6 = icmp ne i8 %call, 10
+  br i1 %ne6, label %land.rhs, label %if.end
+
+land.rhs4:                                        ; preds = %while.body
+  %ne5 = icmp ne i8 %call, 9
+  br i1 %ne5, label %land.rhs3, label %if.end
+
+if.then11:                                        ; preds = %while.exit
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 
-if.end16:                                         ; preds = %while.exit
-  %e17 = load i64, ptr %e, align 8
-  %sub18 = sub i64 %e17, 1
-  %call19 = call i8 @_ZN6String3getEm(ptr %2, i64 %sub18)
-  %call20 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call19)
-  %eq21 = icmp eq i1 %call20, false
-  br i1 %eq21, label %if.then22, label %if.end23
+if.end12:                                         ; preds = %while.exit
+  %e13 = load i64, ptr %e, align 8
+  %sub14 = sub i64 %e13, 1
+  %call15 = call i8 @_ZN6String3getEm(ptr %2, i64 %sub14)
+  %call16 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call15)
+  %eq17 = icmp eq i1 %call16, false
+  br i1 %eq17, label %if.then18, label %if.end19
 
-if.then22:                                        ; preds = %if.end16
+if.then18:                                        ; preds = %if.end12
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 
-if.end23:                                         ; preds = %if.end16
-  %e24 = load i64, ptr %e, align 8
-  store i64 %e24, ptr %s, align 1
-  br label %while.cond25
+if.end19:                                         ; preds = %if.end12
+  %e20 = load i64, ptr %e, align 8
+  store i64 %e20, ptr %s, align 1
+  br label %while.cond21
 
-while.cond25:                                     ; preds = %if.end36, %if.end23
-  %s28 = load i64, ptr %s, align 8
-  %gt29 = icmp ugt i64 %s28, 0
-  br i1 %gt29, label %while.body26, label %while.exit27
+while.cond21:                                     ; preds = %if.end32, %if.end19
+  %s24 = load i64, ptr %s, align 8
+  %gt25 = icmp ugt i64 %s24, 0
+  br i1 %gt25, label %while.body22, label %while.exit23
 
-while.body26:                                     ; preds = %while.cond25
-  %s30 = load i64, ptr %s, align 8
-  %sub31 = sub i64 %s30, 1
-  %call32 = call i8 @_ZN6String3getEm(ptr %2, i64 %sub31)
-  %call33 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call32)
-  %eq34 = icmp eq i1 %call33, false
-  br i1 %eq34, label %if.then35, label %if.end36
+while.body22:                                     ; preds = %while.cond21
+  %s26 = load i64, ptr %s, align 8
+  %sub27 = sub i64 %s26, 1
+  %call28 = call i8 @_ZN6String3getEm(ptr %2, i64 %sub27)
+  %call29 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call28)
+  %eq30 = icmp eq i1 %call29, false
+  br i1 %eq30, label %if.then31, label %if.end32
 
-while.exit27:                                     ; preds = %if.then35, %while.cond25
+while.exit23:                                     ; preds = %if.then31, %while.cond21
+  %s35 = load i64, ptr %s, align 8
+  %eq36 = icmp eq i64 %s35, 0
+  br i1 %eq36, label %if.then37, label %if.end38
+
+if.then31:                                        ; preds = %while.body22
+  br label %while.exit23
+
+if.end32:                                         ; preds = %while.body22
+  %s33 = load i64, ptr %s, align 8
+  %sub34 = sub i64 %s33, 1
+  store i64 %sub34, ptr %s, align 1
+  br label %while.cond21
+
+if.then37:                                        ; preds = %while.exit23
+  store { ptr } zeroinitializer, ptr %0, align 1
+  ret void
+
+if.end38:                                         ; preds = %while.exit23
   %s39 = load i64, ptr %s, align 8
-  %eq40 = icmp eq i64 %s39, 0
-  br i1 %eq40, label %if.then41, label %if.end42
+  %sub40 = sub i64 %s39, 1
+  %call41 = call i8 @_ZN6String3getEm(ptr %2, i64 %sub40)
+  %ne42 = icmp ne i8 %call41, 46
+  br i1 %ne42, label %if.then43, label %if.end44
 
-if.then35:                                        ; preds = %while.body26
-  br label %while.exit27
-
-if.end36:                                         ; preds = %while.body26
-  %s37 = load i64, ptr %s, align 8
-  %sub38 = sub i64 %s37, 1
-  store i64 %sub38, ptr %s, align 1
-  br label %while.cond25
-
-if.then41:                                        ; preds = %while.exit27
+if.then43:                                        ; preds = %if.end38
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 
-if.end42:                                         ; preds = %while.exit27
-  %s43 = load i64, ptr %s, align 8
-  %sub44 = sub i64 %s43, 1
-  %call45 = call i8 @_ZN6String3getEm(ptr %2, i64 %sub44)
-  %ne46 = icmp ne i8 %call45, 46
-  br i1 %ne46, label %if.then47, label %if.end48
+if.end44:                                         ; preds = %if.end38
+  %s45 = load i64, ptr %s, align 8
+  %sub46 = sub i64 %s45, 1
+  store i64 %sub46, ptr %re, align 1
+  %re47 = load i64, ptr %re, align 8
+  %eq48 = icmp eq i64 %re47, 0
+  br i1 %eq48, label %if.then49, label %if.end50
 
-if.then47:                                        ; preds = %if.end42
+if.then49:                                        ; preds = %if.end44
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 
-if.end48:                                         ; preds = %if.end42
-  %s49 = load i64, ptr %s, align 8
-  %sub50 = sub i64 %s49, 1
-  store i64 %sub50, ptr %re, align 1
+if.end50:                                         ; preds = %if.end44
   %re51 = load i64, ptr %re, align 8
-  %eq52 = icmp eq i64 %re51, 0
-  br i1 %eq52, label %if.then53, label %if.end54
+  %sub52 = sub i64 %re51, 1
+  %call53 = call i8 @_ZN6String3getEm(ptr %2, i64 %sub52)
+  %call54 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call53)
+  %eq55 = icmp eq i1 %call54, false
+  br i1 %eq55, label %if.then56, label %if.end57
 
-if.then53:                                        ; preds = %if.end48
+if.then56:                                        ; preds = %if.end50
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 
-if.end54:                                         ; preds = %if.end48
-  %re55 = load i64, ptr %re, align 8
-  %sub56 = sub i64 %re55, 1
-  %call57 = call i8 @_ZN6String3getEm(ptr %2, i64 %sub56)
-  %call58 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call57)
-  %eq59 = icmp eq i1 %call58, false
-  br i1 %eq59, label %if.then60, label %if.end61
+if.end57:                                         ; preds = %if.end50
+  %re58 = load i64, ptr %re, align 8
+  store i64 %re58, ptr %rs, align 1
+  br label %while.cond59
 
-if.then60:                                        ; preds = %if.end54
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
+while.cond59:                                     ; preds = %if.end70, %if.end57
+  %rs62 = load i64, ptr %rs, align 8
+  %gt63 = icmp ugt i64 %rs62, 0
+  br i1 %gt63, label %while.body60, label %while.exit61
 
-if.end61:                                         ; preds = %if.end54
-  %re62 = load i64, ptr %re, align 8
-  store i64 %re62, ptr %rs, align 1
-  br label %while.cond63
+while.body60:                                     ; preds = %while.cond59
+  %rs64 = load i64, ptr %rs, align 8
+  %sub65 = sub i64 %rs64, 1
+  %call66 = call i8 @_ZN6String3getEm(ptr %2, i64 %sub65)
+  %call67 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call66)
+  %eq68 = icmp eq i1 %call67, false
+  br i1 %eq68, label %if.then69, label %if.end70
 
-while.cond63:                                     ; preds = %if.end74, %if.end61
-  %rs66 = load i64, ptr %rs, align 8
-  %gt67 = icmp ugt i64 %rs66, 0
-  br i1 %gt67, label %while.body64, label %while.exit65
-
-while.body64:                                     ; preds = %while.cond63
-  %rs68 = load i64, ptr %rs, align 8
-  %sub69 = sub i64 %rs68, 1
-  %call70 = call i8 @_ZN6String3getEm(ptr %2, i64 %sub69)
-  %call71 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call70)
-  %eq72 = icmp eq i1 %call71, false
-  br i1 %eq72, label %if.then73, label %if.end74
-
-while.exit65:                                     ; preds = %if.then73, %while.cond63
-  %rs77 = load i64, ptr %rs, align 8
-  %re78 = load i64, ptr %re, align 8
-  call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %rs77, i64 %re78)
+while.exit61:                                     ; preds = %if.then69, %while.cond59
+  %rs73 = load i64, ptr %rs, align 8
+  %re74 = load i64, ptr %re, align 8
+  call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %rs73, i64 %re74)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.then73:                                        ; preds = %while.body64
-  br label %while.exit65
+if.then69:                                        ; preds = %while.body60
+  br label %while.exit61
 
-if.end74:                                         ; preds = %while.body64
-  %rs75 = load i64, ptr %rs, align 8
-  %sub76 = sub i64 %rs75, 1
-  store i64 %sub76, ptr %rs, align 1
-  br label %while.cond63
+if.end70:                                         ; preds = %while.body60
+  %rs71 = load i64, ptr %rs, align 8
+  %sub72 = sub i64 %rs71, 1
+  store i64 %sub72, ptr %rs, align 1
+  br label %while.cond59
 }
 
 define linkonce_odr void @_ZN7symbols28find_signature_in_concept_wsEPN4scaly6memory4PageE6String6String6Stringm(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4, i64 %5) {
 entry:
-  %sret.result11 = alloca { ptr }, align 8
+  %sret.result9 = alloca { ptr }, align 8
   %sret.result3 = alloca { ptr }, align 8
   %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
   %sret.result = alloca { ptr }, align 8
@@ -106676,27 +106371,24 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   call void @_ZN7symbols18package_search_dirEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result3, ptr %1, ptr %sret.result)
-  %call4 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result3)
-  %gt5 = icmp ugt i64 %call4, 0
-  br i1 %gt5, label %if.then6, label %if.end7
+  %call6 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result3)
+  %gt7 = icmp ugt i64 %call6, 0
+  br i1 %gt7, label %land.rhs, label %if.end5
 
-if.then6:                                         ; preds = %if.end
-  %call8 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %sret.result1)
-  %not = xor i1 %call8, true
-  br i1 %not, label %if.then9, label %if.end10
+if.then4:                                         ; preds = %land.rhs
+  call void @_ZN7symbols29find_signature_in_concept_dirEPN4scaly6memory4PageE6String6String6String6Stringm(ptr noalias sret({ ptr }) %sret.result9, ptr %1, ptr %sret.result3, ptr %sret.result, ptr %3, ptr %4, i64 %5)
+  %sret.body10 = load { ptr }, ptr %sret.result9, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result9, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  ret void
 
-if.end7:                                          ; preds = %if.end10, %if.end
+if.end5:                                          ; preds = %land.rhs, %if.end
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 
-if.then9:                                         ; preds = %if.then6
-  call void @_ZN7symbols29find_signature_in_concept_dirEPN4scaly6memory4PageE6String6String6String6Stringm(ptr noalias sret({ ptr }) %sret.result11, ptr %1, ptr %sret.result3, ptr %sret.result, ptr %3, ptr %4, i64 %5)
-  %sret.body12 = load { ptr }, ptr %sret.result11, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result11, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  ret void
-
-if.end10:                                         ; preds = %if.then6
-  br label %if.end7
+land.rhs:                                         ; preds = %if.end
+  %call8 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %sret.result1)
+  %not = xor i1 %call8, true
+  br i1 %not, label %if.then4, label %if.end5
 }
 
 define linkonce_odr void @_ZN7symbols14find_signatureEPN4scaly6memory4PageE6String6Stringm(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, i64 %4) {
@@ -106799,7 +106491,7 @@ if.end12:                                         ; preds = %if.then11, %if.then
 
 define linkonce_odr void @_ZN7symbols27find_signature_in_workspaceEPN4scaly6memory4PageE6String6Stringm(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, i64 %4) {
 entry:
-  %sret.result11 = alloca { ptr }, align 8
+  %sret.result9 = alloca { ptr }, align 8
   %sret.result3 = alloca { ptr }, align 8
   %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
   %sret.result = alloca { ptr }, align 8
@@ -106819,27 +106511,24 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   call void @_ZN7symbols18package_search_dirEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result3, ptr %1, ptr %sret.result)
-  %call4 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result3)
-  %gt5 = icmp ugt i64 %call4, 0
-  br i1 %gt5, label %if.then6, label %if.end7
+  %call6 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result3)
+  %gt7 = icmp ugt i64 %call6, 0
+  br i1 %gt7, label %land.rhs, label %if.end5
 
-if.then6:                                         ; preds = %if.end
-  %call8 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %sret.result1)
-  %not = xor i1 %call8, true
-  br i1 %not, label %if.then9, label %if.end10
+if.then4:                                         ; preds = %land.rhs
+  call void @_ZN7symbols21find_signature_in_dirEPN4scaly6memory4PageE6String6String6Stringm(ptr noalias sret({ ptr }) %sret.result9, ptr %1, ptr %sret.result3, ptr %sret.result, ptr %3, i64 %4)
+  %sret.body10 = load { ptr }, ptr %sret.result9, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result9, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  ret void
 
-if.end7:                                          ; preds = %if.end10, %if.end
+if.end5:                                          ; preds = %land.rhs, %if.end
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 
-if.then9:                                         ; preds = %if.then6
-  call void @_ZN7symbols21find_signature_in_dirEPN4scaly6memory4PageE6String6String6Stringm(ptr noalias sret({ ptr }) %sret.result11, ptr %1, ptr %sret.result3, ptr %sret.result, ptr %3, i64 %4)
-  %sret.body12 = load { ptr }, ptr %sret.result11, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result11, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  ret void
-
-if.end10:                                         ; preds = %if.then6
-  br label %if.end7
+land.rhs:                                         ; preds = %if.end
+  %call8 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %sret.result1)
+  %not = xor i1 %call8, true
+  br i1 %not, label %if.then4, label %if.end5
 }
 
 define linkonce_odr void @_ZN7symbols16signature_packedEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
@@ -108151,29 +107840,26 @@ if.end:                                           ; preds = %while.body5
 if.then15:                                        ; preds = %while.exit6
   %rs17 = load i64, ptr %rs, align 8
   %add18 = add i64 %rs17, 2
-  %re19 = load i64, ptr %re, align 8
-  %sub = sub i64 %re19, %add18
-  %eq20 = icmp eq i64 %sub, %call1
-  br i1 %eq20, label %if.then21, label %if.end22
+  %re21 = load i64, ptr %re, align 8
+  %sub = sub i64 %re21, %add18
+  %eq22 = icmp eq i64 %sub, %call1
+  br i1 %eq22, label %land.rhs, label %if.end20
 
-if.end16:                                         ; preds = %if.end22, %while.exit6
-  %re26 = load i64, ptr %re, align 8
-  %add27 = add i64 %re26, 1
-  store i64 %add27, ptr %rs, align 1
+if.end16:                                         ; preds = %if.end20, %while.exit6
+  %re24 = load i64, ptr %re, align 8
+  %add25 = add i64 %re24, 1
+  store i64 %add25, ptr %rs, align 1
   br label %while.cond
 
-if.then21:                                        ; preds = %if.then15
-  %call23 = call i1 @_ZN7symbols12range_equalsE6Stringm6Stringmm(ptr %1, i64 %add18, ptr %2, i64 0, i64 %call1)
-  br i1 %call23, label %if.then24, label %if.end25
-
-if.end22:                                         ; preds = %if.end25, %if.then15
-  br label %if.end16
-
-if.then24:                                        ; preds = %if.then21
+if.then19:                                        ; preds = %land.rhs
   ret i1 true
 
-if.end25:                                         ; preds = %if.then21
-  br label %if.end22
+if.end20:                                         ; preds = %land.rhs, %if.then15
+  br label %if.end16
+
+land.rhs:                                         ; preds = %if.then15
+  %call23 = call i1 @_ZN7symbols12range_equalsE6Stringm6Stringmm(ptr %1, i64 %add18, ptr %2, i64 0, i64 %call1)
+  br i1 %call23, label %if.then19, label %if.end20
 }
 
 define linkonce_odr void @_ZN7symbols17names_from_labelsEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
@@ -108201,7 +107887,7 @@ entry:
   store i64 1, ptr %i, align 1
   br label %while.cond
 
-while.cond:                                       ; preds = %if.end14, %entry
+while.cond:                                       ; preds = %if.end12, %entry
   %i2 = load i64, ptr %i, align 8
   %le = icmp ule i64 %i2, %call
   br i1 %le, label %while.body, label %while.exit
@@ -108213,8 +107899,8 @@ while.body:                                       ; preds = %while.cond
   br i1 %eq, label %if.then, label %if.end
 
 while.exit:                                       ; preds = %while.cond
-  %sb49 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb49)
+  %sb47 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb47)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -108225,106 +107911,103 @@ if.then:                                          ; preds = %while.body
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %while.body
-  %i4 = load i64, ptr %i, align 8
-  %lt = icmp ult i64 %i4, %call
-  br i1 %lt, label %if.then5, label %if.end6
+  %i6 = load i64, ptr %i, align 8
+  %lt = icmp ult i64 %i6, %call
+  br i1 %lt, label %land.rhs, label %if.end5
 
-if.then5:                                         ; preds = %if.end
+if.then4:                                         ; preds = %land.rhs
+  store i1 true, ptr %at_delim, align 1
+  br label %if.end5
+
+if.end5:                                          ; preds = %if.then4, %land.rhs, %if.end
+  %at_delim10 = load i1, ptr %at_delim, align 1
+  br i1 %at_delim10, label %if.then11, label %if.end12
+
+land.rhs:                                         ; preds = %if.end
   %i7 = load i64, ptr %i, align 8
   %call8 = call i8 @_ZN6String3getEm(ptr %2, i64 %i7)
   %eq9 = icmp eq i8 %call8, 31
-  br i1 %eq9, label %if.then10, label %if.end11
+  br i1 %eq9, label %if.then4, label %if.end5
 
-if.end6:                                          ; preds = %if.end11, %if.end
-  %at_delim12 = load i1, ptr %at_delim, align 1
-  br i1 %at_delim12, label %if.then13, label %if.end14
+if.then11:                                        ; preds = %if.end5
+  %first13 = load i1, ptr %first, align 1
+  %eq14 = icmp eq i1 %first13, false
+  br i1 %eq14, label %if.then15, label %if.end16
 
-if.then10:                                        ; preds = %if.then5
-  store i1 true, ptr %at_delim, align 1
-  br label %if.end11
-
-if.end11:                                         ; preds = %if.then10, %if.then5
-  br label %if.end6
-
-if.then13:                                        ; preds = %if.end6
-  %first15 = load i1, ptr %first, align 1
-  %eq16 = icmp eq i1 %first15, false
-  br i1 %eq16, label %if.then17, label %if.end18
-
-if.end14:                                         ; preds = %while.exit36, %if.end6
-  %i47 = load i64, ptr %i, align 8
-  %add48 = add i64 %i47, 1
-  store i64 %add48, ptr %i, align 1
-  br label %while.cond
-
-if.then17:                                        ; preds = %if.then13
-  %sb19 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb19, i8 31)
-  br label %if.end18
-
-if.end18:                                         ; preds = %if.then17, %if.then13
-  %seg_start20 = load i64, ptr %seg_start, align 8
-  store i64 %seg_start20, ptr %ce, align 1
-  br label %while.cond21
-
-while.cond21:                                     ; preds = %if.end31, %if.end18
-  %ce24 = load i64, ptr %ce, align 8
-  %i25 = load i64, ptr %i, align 8
-  %lt26 = icmp ult i64 %ce24, %i25
-  br i1 %lt26, label %while.body22, label %while.exit23
-
-while.body22:                                     ; preds = %while.cond21
-  %ce27 = load i64, ptr %ce, align 8
-  %call28 = call i8 @_ZN6String3getEm(ptr %2, i64 %ce27)
-  %eq29 = icmp eq i8 %call28, 58
-  br i1 %eq29, label %if.then30, label %if.end31
-
-while.exit23:                                     ; preds = %if.then30, %while.cond21
-  %seg_start33 = load i64, ptr %seg_start, align 8
-  store i64 %seg_start33, ptr %ni, align 1
-  br label %while.cond34
-
-if.then30:                                        ; preds = %while.body22
-  br label %while.exit23
-
-if.end31:                                         ; preds = %while.body22
-  %ce32 = load i64, ptr %ce, align 8
-  %add = add i64 %ce32, 1
-  store i64 %add, ptr %ce, align 1
-  br label %while.cond21
-
-while.cond34:                                     ; preds = %while.body35, %while.exit23
-  %ni37 = load i64, ptr %ni, align 8
-  %ce38 = load i64, ptr %ce, align 8
-  %lt39 = icmp ult i64 %ni37, %ce38
-  br i1 %lt39, label %while.body35, label %while.exit36
-
-while.body35:                                     ; preds = %while.cond34
-  %sb40 = load ptr, ptr %sb, align 8
-  %ni41 = load i64, ptr %ni, align 8
-  %call42 = call i8 @_ZN6String3getEm(ptr %2, i64 %ni41)
-  call void @_ZN13StringBuilder6appendEc(ptr %sb40, i8 %call42)
-  %ni43 = load i64, ptr %ni, align 8
-  %add44 = add i64 %ni43, 1
-  store i64 %add44, ptr %ni, align 1
-  br label %while.cond34
-
-while.exit36:                                     ; preds = %while.cond34
-  store i1 false, ptr %first, align 1
+if.end12:                                         ; preds = %while.exit34, %if.end5
   %i45 = load i64, ptr %i, align 8
   %add46 = add i64 %i45, 1
-  store i64 %add46, ptr %seg_start, align 1
-  br label %if.end14
+  store i64 %add46, ptr %i, align 1
+  br label %while.cond
+
+if.then15:                                        ; preds = %if.then11
+  %sb17 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb17, i8 31)
+  br label %if.end16
+
+if.end16:                                         ; preds = %if.then15, %if.then11
+  %seg_start18 = load i64, ptr %seg_start, align 8
+  store i64 %seg_start18, ptr %ce, align 1
+  br label %while.cond19
+
+while.cond19:                                     ; preds = %if.end29, %if.end16
+  %ce22 = load i64, ptr %ce, align 8
+  %i23 = load i64, ptr %i, align 8
+  %lt24 = icmp ult i64 %ce22, %i23
+  br i1 %lt24, label %while.body20, label %while.exit21
+
+while.body20:                                     ; preds = %while.cond19
+  %ce25 = load i64, ptr %ce, align 8
+  %call26 = call i8 @_ZN6String3getEm(ptr %2, i64 %ce25)
+  %eq27 = icmp eq i8 %call26, 58
+  br i1 %eq27, label %if.then28, label %if.end29
+
+while.exit21:                                     ; preds = %if.then28, %while.cond19
+  %seg_start31 = load i64, ptr %seg_start, align 8
+  store i64 %seg_start31, ptr %ni, align 1
+  br label %while.cond32
+
+if.then28:                                        ; preds = %while.body20
+  br label %while.exit21
+
+if.end29:                                         ; preds = %while.body20
+  %ce30 = load i64, ptr %ce, align 8
+  %add = add i64 %ce30, 1
+  store i64 %add, ptr %ce, align 1
+  br label %while.cond19
+
+while.cond32:                                     ; preds = %while.body33, %while.exit21
+  %ni35 = load i64, ptr %ni, align 8
+  %ce36 = load i64, ptr %ce, align 8
+  %lt37 = icmp ult i64 %ni35, %ce36
+  br i1 %lt37, label %while.body33, label %while.exit34
+
+while.body33:                                     ; preds = %while.cond32
+  %sb38 = load ptr, ptr %sb, align 8
+  %ni39 = load i64, ptr %ni, align 8
+  %call40 = call i8 @_ZN6String3getEm(ptr %2, i64 %ni39)
+  call void @_ZN13StringBuilder6appendEc(ptr %sb38, i8 %call40)
+  %ni41 = load i64, ptr %ni, align 8
+  %add42 = add i64 %ni41, 1
+  store i64 %add42, ptr %ni, align 1
+  br label %while.cond32
+
+while.exit34:                                     ; preds = %while.cond32
+  store i1 false, ptr %first, align 1
+  %i43 = load i64, ptr %i, align 8
+  %add44 = add i64 %i43, 1
+  store i64 %add44, ptr %seg_start, align 1
+  br label %if.end12
 }
 
 define linkonce_odr void @_ZN7symbols18infer_binding_typeEPN4scaly6memory4PageE6String6Stringm6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, i64 %4, ptr %5) {
 entry:
-  %sret.result93 = alloca { ptr }, align 8
+  %sret.result89 = alloca { ptr }, align 8
   %frame = alloca { ptr, ptr }, align 8
   store ptr null, ptr %frame, align 8
   %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
   store ptr %1, ptr %frame.parent, align 8
-  %sret.result47 = alloca { ptr }, align 8
+  %sret.result44 = alloca { ptr }, align 8
   %sret.result = alloca { ptr }, align 8
   %ce = alloca i64, align 8
   %te = alloca i64, align 8
@@ -108332,237 +108015,228 @@ entry:
   %call = call i64 @_ZN6String10get_lengthEv(ptr %2)
   %call1 = call i64 @_ZN7symbols7skip_wsE6Stringmm(ptr %2, i64 %4, i64 %call)
   %lt = icmp ult i64 %call1, %call
-  br i1 %lt, label %if.then, label %if.end
+  br i1 %lt, label %land.rhs, label %if.end
 
-if.then:                                          ; preds = %entry
+if.then:                                          ; preds = %land.rhs
+  store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret void
+
+if.end:                                           ; preds = %land.rhs, %entry
+  %ge = icmp uge i64 %call1, %call
+  br i1 %ge, label %if.then3, label %if.end4
+
+land.rhs:                                         ; preds = %entry
   %call2 = call i8 @_ZN6String3getEm(ptr %2, i64 %call1)
   %eq = icmp eq i8 %call2, 58
-  br i1 %eq, label %if.then3, label %if.end4
+  br i1 %eq, label %if.then, label %if.end
 
-if.end:                                           ; preds = %if.end4, %entry
-  %ge = icmp uge i64 %call1, %call
-  br i1 %ge, label %if.then5, label %if.end6
-
-if.then3:                                         ; preds = %if.then
+if.then3:                                         ; preds = %if.end
   store { ptr } zeroinitializer, ptr %0, align 1
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
-if.end4:                                          ; preds = %if.then
-  br label %if.end
+if.end4:                                          ; preds = %if.end
+  %call5 = call i8 @_ZN6String3getEm(ptr %2, i64 %call1)
+  %call6 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call5)
+  %eq7 = icmp eq i1 %call6, false
+  br i1 %eq7, label %if.then8, label %if.end9
 
-if.then5:                                         ; preds = %if.end
+if.then8:                                         ; preds = %if.end4
   store { ptr } zeroinitializer, ptr %0, align 1
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
-if.end6:                                          ; preds = %if.end
-  %call7 = call i8 @_ZN6String3getEm(ptr %2, i64 %call1)
-  %call8 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call7)
-  %eq9 = icmp eq i1 %call8, false
-  br i1 %eq9, label %if.then10, label %if.end11
-
-if.then10:                                        ; preds = %if.end6
-  store { ptr } zeroinitializer, ptr %0, align 1
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  ret void
-
-if.end11:                                         ; preds = %if.end6
+if.end9:                                          ; preds = %if.end4
   store i64 %call1, ptr %te, align 1
   br label %while.cond
 
-while.cond:                                       ; preds = %if.end19, %if.end11
-  %te12 = load i64, ptr %te, align 8
-  %lt13 = icmp ult i64 %te12, %call
-  br i1 %lt13, label %while.body, label %while.exit
+while.cond:                                       ; preds = %if.end17, %if.end9
+  %te10 = load i64, ptr %te, align 8
+  %lt11 = icmp ult i64 %te10, %call
+  br i1 %lt11, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %te14 = load i64, ptr %te, align 8
-  %call15 = call i8 @_ZN6String3getEm(ptr %2, i64 %te14)
-  %call16 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call15)
-  %eq17 = icmp eq i1 %call16, false
-  br i1 %eq17, label %if.then18, label %if.end19
+  %te12 = load i64, ptr %te, align 8
+  %call13 = call i8 @_ZN6String3getEm(ptr %2, i64 %te12)
+  %call14 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call13)
+  %eq15 = icmp eq i1 %call14, false
+  br i1 %eq15, label %if.then16, label %if.end17
 
-while.exit:                                       ; preds = %if.then18, %while.cond
-  %te21 = load i64, ptr %te, align 8
-  %lt22 = icmp ult i64 %te21, %call
-  br i1 %lt22, label %if.then23, label %if.end24
+while.exit:                                       ; preds = %if.then16, %while.cond
+  %te19 = load i64, ptr %te, align 8
+  %lt20 = icmp ult i64 %te19, %call
+  br i1 %lt20, label %if.then21, label %if.end22
 
-if.then18:                                        ; preds = %while.body
+if.then16:                                        ; preds = %while.body
   br label %while.exit
 
-if.end19:                                         ; preds = %while.body
-  %te20 = load i64, ptr %te, align 8
-  %add = add i64 %te20, 1
+if.end17:                                         ; preds = %while.body
+  %te18 = load i64, ptr %te, align 8
+  %add = add i64 %te18, 1
   store i64 %add, ptr %te, align 1
   br label %while.cond
 
-if.then23:                                        ; preds = %while.exit
-  %te25 = load i64, ptr %te, align 8
-  %call26 = call i8 @_ZN6String3getEm(ptr %2, i64 %te25)
-  %eq27 = icmp eq i8 %call26, 46
-  br i1 %eq27, label %if.then28, label %if.end29
+if.then21:                                        ; preds = %while.exit
+  %te23 = load i64, ptr %te, align 8
+  %call24 = call i8 @_ZN6String3getEm(ptr %2, i64 %te23)
+  %eq25 = icmp eq i8 %call24, 46
+  br i1 %eq25, label %if.then26, label %if.end27
 
-if.end24:                                         ; preds = %if.end29, %while.exit
-  %te51 = load i64, ptr %te, align 8
-  call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %call1, i64 %te51)
-  %te52 = load i64, ptr %te, align 8
-  %lt53 = icmp ult i64 %te52, %call
-  br i1 %lt53, label %if.then54, label %if.end55
+if.end22:                                         ; preds = %if.end27, %while.exit
+  %te48 = load i64, ptr %te, align 8
+  call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %call1, i64 %te48)
+  %te49 = load i64, ptr %te, align 8
+  %lt50 = icmp ult i64 %te49, %call
+  br i1 %lt50, label %if.then51, label %if.end52
 
-if.then28:                                        ; preds = %if.then23
-  %te30 = load i64, ptr %te, align 8
-  store i64 %te30, ptr %ce, align 1
-  br label %while.cond31
+if.then26:                                        ; preds = %if.then21
+  %te28 = load i64, ptr %te, align 8
+  store i64 %te28, ptr %ce, align 1
+  br label %while.cond29
 
-if.end29:                                         ; preds = %if.then23
-  br label %if.end24
+if.end27:                                         ; preds = %if.then21
+  br label %if.end22
 
-while.cond31:                                     ; preds = %if.end41, %if.then28
+while.cond29:                                     ; preds = %if.end37, %if.then26
+  %ce32 = load i64, ptr %ce, align 8
+  %lt33 = icmp ult i64 %ce32, %call
+  br i1 %lt33, label %while.body30, label %while.exit31
+
+while.body30:                                     ; preds = %while.cond29
   %ce34 = load i64, ptr %ce, align 8
-  %lt35 = icmp ult i64 %ce34, %call
-  br i1 %lt35, label %while.body32, label %while.exit33
+  %call35 = call i8 @_ZN6String3getEm(ptr %2, i64 %ce34)
+  %call39 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call35)
+  %eq40 = icmp eq i1 %call39, false
+  br i1 %eq40, label %land.rhs38, label %if.end37
 
-while.body32:                                     ; preds = %while.cond31
-  %ce36 = load i64, ptr %ce, align 8
-  %call37 = call i8 @_ZN6String3getEm(ptr %2, i64 %ce36)
-  %call38 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call37)
-  %eq39 = icmp eq i1 %call38, false
-  br i1 %eq39, label %if.then40, label %if.end41
+while.exit31:                                     ; preds = %if.then36, %while.cond29
+  %ce43 = load i64, ptr %ce, align 8
+  call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %call1, i64 %ce43)
+  call void @_ZN7symbols18resolve_chain_typeEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result44, ptr %1, ptr %2, ptr %3, ptr %sret.result)
+  %call45 = call i1 @_ZN7symbols22is_primitive_type_nameEPN4scaly6memory4PageE6String(ptr %frame, ptr %sret.result44)
+  br i1 %call45, label %if.then46, label %if.end47
 
-while.exit33:                                     ; preds = %if.then42, %while.cond31
-  %ce46 = load i64, ptr %ce, align 8
-  call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %call1, i64 %ce46)
-  call void @_ZN7symbols18resolve_chain_typeEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result47, ptr %1, ptr %2, ptr %3, ptr %sret.result)
-  %call48 = call i1 @_ZN7symbols22is_primitive_type_nameEPN4scaly6memory4PageE6String(ptr %frame, ptr %sret.result47)
-  br i1 %call48, label %if.then49, label %if.end50
+if.then36:                                        ; preds = %land.rhs38
+  br label %while.exit31
 
-if.then40:                                        ; preds = %while.body32
-  %ne = icmp ne i8 %call37, 46
-  br i1 %ne, label %if.then42, label %if.end43
+if.end37:                                         ; preds = %land.rhs38, %while.body30
+  %ce41 = load i64, ptr %ce, align 8
+  %add42 = add i64 %ce41, 1
+  store i64 %add42, ptr %ce, align 1
+  br label %while.cond29
 
-if.end41:                                         ; preds = %if.end43, %while.body32
-  %ce44 = load i64, ptr %ce, align 8
-  %add45 = add i64 %ce44, 1
-  store i64 %add45, ptr %ce, align 1
-  br label %while.cond31
+land.rhs38:                                       ; preds = %while.body30
+  %ne = icmp ne i8 %call35, 46
+  br i1 %ne, label %if.then36, label %if.end37
 
-if.then42:                                        ; preds = %if.then40
-  br label %while.exit33
-
-if.end43:                                         ; preds = %if.then40
-  br label %if.end41
-
-if.then49:                                        ; preds = %while.exit33
+if.then46:                                        ; preds = %while.exit31
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 
-if.end50:                                         ; preds = %while.exit33
+if.end47:                                         ; preds = %while.exit31
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  %sret.body = load { ptr }, ptr %sret.result47, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result47, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  %sret.body = load { ptr }, ptr %sret.result44, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result44, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.then54:                                        ; preds = %if.end24
-  %te56 = load i64, ptr %te, align 8
-  %call57 = call i8 @_ZN6String3getEm(ptr %2, i64 %te56)
-  %eq58 = icmp eq i8 %call57, 36
-  br i1 %eq58, label %if.then59, label %if.end60
+if.then51:                                        ; preds = %if.end22
+  %te53 = load i64, ptr %te, align 8
+  %call54 = call i8 @_ZN6String3getEm(ptr %2, i64 %te53)
+  %eq55 = icmp eq i8 %call54, 36
+  br i1 %eq55, label %if.then56, label %if.end57
 
-if.end55:                                         ; preds = %if.end76, %if.end24
-  call void @_ZN7symbols21resolve_variable_typeEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result47, ptr %1, ptr %2, ptr %sret.result)
-  %call89 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result47)
-  %eq90 = icmp eq i64 %call89, 0
-  br i1 %eq90, label %if.then91, label %if.end92
+if.end52:                                         ; preds = %if.end73, %if.end22
+  call void @_ZN7symbols21resolve_variable_typeEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result44, ptr %1, ptr %2, ptr %sret.result)
+  %call85 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result44)
+  %eq86 = icmp eq i64 %call85, 0
+  br i1 %eq86, label %if.then87, label %if.end88
 
-if.then59:                                        ; preds = %if.then54
+if.then56:                                        ; preds = %if.then51
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  %sret.body61 = load { ptr }, ptr %sret.result, align 8
+  %sret.body58 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.end60:                                         ; preds = %if.then54
-  %eq62 = icmp eq i8 %call57, 35
-  br i1 %eq62, label %if.then63, label %if.end64
+if.end57:                                         ; preds = %if.then51
+  %eq59 = icmp eq i8 %call54, 35
+  br i1 %eq59, label %if.then60, label %if.end61
 
-if.then63:                                        ; preds = %if.end60
+if.then60:                                        ; preds = %if.end57
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  %sret.body65 = load { ptr }, ptr %sret.result, align 8
+  %sret.body62 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.end64:                                         ; preds = %if.end60
-  %eq66 = icmp eq i8 %call57, 94
-  br i1 %eq66, label %if.then67, label %if.end68
+if.end61:                                         ; preds = %if.end57
+  %eq63 = icmp eq i8 %call54, 94
+  br i1 %eq63, label %if.then64, label %if.end65
 
-if.then67:                                        ; preds = %if.end64
+if.then64:                                        ; preds = %if.end61
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  %sret.body69 = load { ptr }, ptr %sret.result, align 8
+  %sret.body66 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.end68:                                         ; preds = %if.end64
-  %eq70 = icmp eq i8 %call57, 40
-  br i1 %eq70, label %if.then71, label %if.end72
+if.end65:                                         ; preds = %if.end61
+  %eq67 = icmp eq i8 %call54, 40
+  br i1 %eq67, label %if.then68, label %if.end69
 
-if.then71:                                        ; preds = %if.end68
-  call void @_ZN7symbols22concept_or_return_typeEPN4scaly6memory4PageE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result47, ptr %1, ptr %2, ptr %3, ptr %sret.result, ptr %5)
+if.then68:                                        ; preds = %if.end65
+  call void @_ZN7symbols22concept_or_return_typeEPN4scaly6memory4PageE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result44, ptr %1, ptr %2, ptr %3, ptr %sret.result, ptr %5)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  %sret.body73 = load { ptr }, ptr %sret.result47, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result47, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  %sret.body70 = load { ptr }, ptr %sret.result44, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result44, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.end72:                                         ; preds = %if.end68
-  %eq74 = icmp eq i8 %call57, 91
-  br i1 %eq74, label %if.then75, label %if.end76
+if.end69:                                         ; preds = %if.end65
+  %eq71 = icmp eq i8 %call54, 91
+  br i1 %eq71, label %if.then72, label %if.end73
 
-if.then75:                                        ; preds = %if.end72
-  %call77 = call i1 @_ZN7symbols14map_is_conceptEPN4scaly6memory4PageE6String6String(ptr %frame, ptr %5, ptr %sret.result)
-  br i1 %call77, label %if.then78, label %if.end79
+if.then72:                                        ; preds = %if.end69
+  %call74 = call i1 @_ZN7symbols14map_is_conceptEPN4scaly6memory4PageE6String6String(ptr %frame, ptr %5, ptr %sret.result)
+  br i1 %call74, label %if.then75, label %if.end76
 
-if.end76:                                         ; preds = %if.end72
-  br label %if.end55
+if.end73:                                         ; preds = %if.end69
+  br label %if.end52
 
-if.then78:                                        ; preds = %if.then75
+if.then75:                                        ; preds = %if.then72
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  %sret.body80 = load { ptr }, ptr %sret.result, align 8
+  %sret.body77 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.end79:                                         ; preds = %if.then75
+if.end76:                                         ; preds = %if.then72
   %call81 = call i8 @_ZN6String3getEm(ptr %2, i64 %call1)
   %call82 = call i1 @_ZN7symbols8is_upperE2u8(i8 %call81)
-  br i1 %call82, label %if.then83, label %if.end84
+  br i1 %call82, label %land.rhs80, label %if.end79
 
-if.then83:                                        ; preds = %if.end79
-  %call85 = call i1 @_ZN7symbols20concept_in_workspaceEPN4scaly6memory4PageE6String6String(ptr %frame, ptr %3, ptr %sret.result)
-  br i1 %call85, label %if.then86, label %if.end87
-
-if.end84:                                         ; preds = %if.end87, %if.end79
+if.then78:                                        ; preds = %land.rhs80
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-if.then86:                                        ; preds = %if.then83
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  %sret.body88 = load { ptr }, ptr %sret.result, align 8
+  %sret.body84 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.end87:                                         ; preds = %if.then83
-  br label %if.end84
-
-if.then91:                                        ; preds = %if.end55
+if.end79:                                         ; preds = %land.rhs80, %if.end76
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 
-if.end92:                                         ; preds = %if.end55
-  call void @_ZN7symbols22concept_or_return_typeEPN4scaly6memory4PageE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result93, ptr %1, ptr %2, ptr %3, ptr %sret.result47, ptr %5)
+land.rhs80:                                       ; preds = %if.end76
+  %call83 = call i1 @_ZN7symbols20concept_in_workspaceEPN4scaly6memory4PageE6String6String(ptr %frame, ptr %3, ptr %sret.result)
+  br i1 %call83, label %if.then78, label %if.end79
+
+if.then87:                                        ; preds = %if.end52
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  %sret.body94 = load { ptr }, ptr %sret.result93, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result93, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  store { ptr } zeroinitializer, ptr %0, align 1
+  ret void
+
+if.end88:                                         ; preds = %if.end52
+  call void @_ZN7symbols22concept_or_return_typeEPN4scaly6memory4PageE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result89, ptr %1, ptr %2, ptr %3, ptr %sret.result44, ptr %5)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  %sret.body90 = load { ptr }, ptr %sret.result89, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result89, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -108860,7 +108534,7 @@ while.exit45:                                     ; preds = %while.cond43
 define linkonce_odr void @_ZN7symbols14call_arg_hintsEPN4scaly6memory4PageE6Stringm6Stringmm(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, i64 %3, ptr %4, i64 %5, i64 %6) {
 entry:
   %hi = alloca i64, align 8
-  %sret.result76 = alloca { ptr }, align 8
+  %sret.result74 = alloca { ptr }, align 8
   %sret.result = alloca { ptr }, align 8
   %frame = alloca { ptr, ptr }, align 8
   store ptr null, ptr %frame, align 8
@@ -108888,7 +108562,7 @@ entry:
   store i1 true, ptr %scanning, align 1
   br label %while.cond
 
-while.cond:                                       ; preds = %if.end6, %if.then46, %entry
+while.cond:                                       ; preds = %if.end6, %if.then44, %entry
   %scanning2 = load i1, ptr %scanning, align 1
   br i1 %scanning2, label %while.body, label %while.exit
 
@@ -108898,8 +108572,8 @@ while.body:                                       ; preds = %while.cond
   br i1 %ge, label %if.then, label %if.end
 
 while.exit:                                       ; preds = %while.cond
-  %sb91 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb91)
+  %sb89 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb89)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -108920,7 +108594,7 @@ if.then5:                                         ; preds = %if.end
   %eq = icmp eq i8 %call8, 40
   br i1 %eq, label %if.then9, label %if.end10
 
-if.end6:                                          ; preds = %if.end40, %if.end
+if.end6:                                          ; preds = %if.end38, %if.end
   br label %while.cond
 
 if.then9:                                         ; preds = %if.then5
@@ -108949,8 +108623,8 @@ if.then19:                                        ; preds = %if.end15
   br i1 %eq22, label %if.then23, label %if.end24
 
 if.end20:                                         ; preds = %if.end27, %if.end15
-  %eq29 = icmp eq i8 %call8, 93
-  br i1 %eq29, label %if.then30, label %if.end31
+  %eq31 = icmp eq i8 %call8, 93
+  br i1 %eq31, label %land.rhs, label %if.end30
 
 if.then23:                                        ; preds = %if.then19
   store i1 false, ptr %scanning, align 1
@@ -108970,129 +108644,126 @@ if.then26:                                        ; preds = %if.end24
 if.end27:                                         ; preds = %if.then26, %if.end24
   br label %if.end20
 
-if.then30:                                        ; preds = %if.end20
+if.then29:                                        ; preds = %land.rhs
+  %depth34 = load i64, ptr %depth, align 8
+  %sub35 = sub i64 %depth34, 1
+  store i64 %sub35, ptr %depth, align 1
+  br label %if.end30
+
+if.end30:                                         ; preds = %if.then29, %land.rhs, %if.end20
+  %scanning36 = load i1, ptr %scanning, align 1
+  br i1 %scanning36, label %if.then37, label %if.end38
+
+land.rhs:                                         ; preds = %if.end20
   %depth32 = load i64, ptr %depth, align 8
   %gt33 = icmp ugt i64 %depth32, 0
-  br i1 %gt33, label %if.then34, label %if.end35
+  br i1 %gt33, label %if.then29, label %if.end30
 
-if.end31:                                         ; preds = %if.end35, %if.end20
-  %scanning38 = load i1, ptr %scanning, align 1
-  br i1 %scanning38, label %if.then39, label %if.end40
+if.then37:                                        ; preds = %if.end30
+  %eq39 = icmp eq i8 %call8, 44
+  br i1 %eq39, label %if.then40, label %if.end41
 
-if.then34:                                        ; preds = %if.then30
-  %depth36 = load i64, ptr %depth, align 8
-  %sub37 = sub i64 %depth36, 1
-  store i64 %sub37, ptr %depth, align 1
-  br label %if.end35
-
-if.end35:                                         ; preds = %if.then34, %if.then30
-  br label %if.end31
-
-if.then39:                                        ; preds = %if.end31
-  %eq41 = icmp eq i8 %call8, 44
-  br i1 %eq41, label %if.then42, label %if.end43
-
-if.end40:                                         ; preds = %if.end54, %if.end31
+if.end38:                                         ; preds = %if.end52, %if.end30
   br label %if.end6
 
-if.then42:                                        ; preds = %if.then39
-  %depth44 = load i64, ptr %depth, align 8
-  %eq45 = icmp eq i64 %depth44, 0
-  br i1 %eq45, label %if.then46, label %if.end47
+if.then40:                                        ; preds = %if.then37
+  %depth42 = load i64, ptr %depth, align 8
+  %eq43 = icmp eq i64 %depth42, 0
+  br i1 %eq43, label %if.then44, label %if.end45
 
-if.end43:                                         ; preds = %if.end47, %if.then39
-  %expecting52 = load i1, ptr %expecting, align 1
-  br i1 %expecting52, label %if.then53, label %if.end54
+if.end41:                                         ; preds = %if.end45, %if.then37
+  %expecting50 = load i1, ptr %expecting, align 1
+  br i1 %expecting50, label %if.then51, label %if.end52
 
-if.then46:                                        ; preds = %if.then42
-  %arg_index48 = load i64, ptr %arg_index, align 8
-  %add49 = add i64 %arg_index48, 1
-  store i64 %add49, ptr %arg_index, align 1
+if.then44:                                        ; preds = %if.then40
+  %arg_index46 = load i64, ptr %arg_index, align 8
+  %add47 = add i64 %arg_index46, 1
+  store i64 %add47, ptr %arg_index, align 1
   store i1 true, ptr %expecting, align 1
-  %a50 = load i64, ptr %a, align 8
-  %add51 = add i64 %a50, 1
-  store i64 %add51, ptr %a, align 1
+  %a48 = load i64, ptr %a, align 8
+  %add49 = add i64 %a48, 1
+  store i64 %add49, ptr %a, align 1
   br label %while.cond
 
-if.end47:                                         ; preds = %if.then42
-  br label %if.end43
+if.end45:                                         ; preds = %if.then40
+  br label %if.end41
 
-if.then53:                                        ; preds = %if.end43
-  %call55 = call i1 @_ZN7symbols10is_ws_byteE2u8(i8 %call8)
-  %eq56 = icmp eq i1 %call55, false
-  br i1 %eq56, label %if.then57, label %if.end58
+if.then51:                                        ; preds = %if.end41
+  %call53 = call i1 @_ZN7symbols10is_ws_byteE2u8(i8 %call8)
+  %eq54 = icmp eq i1 %call53, false
+  br i1 %eq54, label %if.then55, label %if.end56
 
-if.end54:                                         ; preds = %if.end58, %if.end43
-  %a89 = load i64, ptr %a, align 8
-  %add90 = add i64 %a89, 1
-  store i64 %add90, ptr %a, align 1
-  br label %if.end40
+if.end52:                                         ; preds = %if.end56, %if.end41
+  %a87 = load i64, ptr %a, align 8
+  %add88 = add i64 %a87, 1
+  store i64 %add88, ptr %a, align 1
+  br label %if.end38
 
-if.then57:                                        ; preds = %if.then53
-  %arg_index59 = load i64, ptr %arg_index, align 8
-  call void @_ZN7symbols9nth_fieldEPN4scaly6memory4PageE6Stringm(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %4, i64 %arg_index59)
-  %call60 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
-  %gt61 = icmp ugt i64 %call60, 0
-  br i1 %gt61, label %if.then62, label %if.end63
+if.then55:                                        ; preds = %if.then51
+  %arg_index57 = load i64, ptr %arg_index, align 8
+  call void @_ZN7symbols9nth_fieldEPN4scaly6memory4PageE6Stringm(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %4, i64 %arg_index57)
+  %call58 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
+  %gt59 = icmp ugt i64 %call58, 0
+  br i1 %gt59, label %if.then60, label %if.end61
 
-if.end58:                                         ; preds = %if.end63, %if.then53
-  br label %if.end54
+if.end56:                                         ; preds = %if.end61, %if.then51
+  br label %if.end52
 
-if.then62:                                        ; preds = %if.then57
-  %a64 = load i64, ptr %a, align 8
-  %ge65 = icmp uge i64 %a64, %5
-  br i1 %ge65, label %if.then66, label %if.end67
+if.then60:                                        ; preds = %if.then55
+  %a62 = load i64, ptr %a, align 8
+  %ge63 = icmp uge i64 %a62, %5
+  br i1 %ge63, label %if.then64, label %if.end65
 
-if.end63:                                         ; preds = %if.end67, %if.then57
+if.end61:                                         ; preds = %if.end65, %if.then55
   store i1 false, ptr %expecting, align 1
-  br label %if.end58
+  br label %if.end56
 
-if.then66:                                        ; preds = %if.then62
-  %a68 = load i64, ptr %a, align 8
-  %le = icmp ule i64 %a68, %6
-  br i1 %le, label %if.then69, label %if.end70
+if.then64:                                        ; preds = %if.then60
+  %a66 = load i64, ptr %a, align 8
+  %le = icmp ule i64 %a66, %6
+  br i1 %le, label %if.then67, label %if.end68
 
-if.end67:                                         ; preds = %if.end70, %if.then62
-  br label %if.end63
+if.end65:                                         ; preds = %if.end68, %if.then60
+  br label %if.end61
 
-if.then69:                                        ; preds = %if.then66
-  %first71 = load i1, ptr %first, align 1
-  %eq72 = icmp eq i1 %first71, false
-  br i1 %eq72, label %if.then73, label %if.end74
+if.then67:                                        ; preds = %if.then64
+  %first69 = load i1, ptr %first, align 1
+  %eq70 = icmp eq i1 %first69, false
+  br i1 %eq70, label %if.then71, label %if.end72
 
-if.end70:                                         ; preds = %while.exit81, %if.then66
-  br label %if.end67
+if.end68:                                         ; preds = %while.exit79, %if.then64
+  br label %if.end65
 
-if.then73:                                        ; preds = %if.then69
-  %sb75 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb75, i8 44)
-  br label %if.end74
+if.then71:                                        ; preds = %if.then67
+  %sb73 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb73, i8 44)
+  br label %if.end72
 
-if.end74:                                         ; preds = %if.then73, %if.then69
-  %a77 = load i64, ptr %a, align 8
-  call void @_ZN7symbols17inlay_hint_objectEPN4scaly6memory4PageE6Stringm6String(ptr noalias sret({ ptr }) %sret.result76, ptr %frame, ptr %2, i64 %a77, ptr %sret.result)
+if.end72:                                         ; preds = %if.then71, %if.then67
+  %a75 = load i64, ptr %a, align 8
+  call void @_ZN7symbols17inlay_hint_objectEPN4scaly6memory4PageE6Stringm6String(ptr noalias sret({ ptr }) %sret.result74, ptr %frame, ptr %2, i64 %a75, ptr %sret.result)
   store i64 0, ptr %hi, align 1
-  %call78 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result76)
-  br label %while.cond79
+  %call76 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result74)
+  br label %while.cond77
 
-while.cond79:                                     ; preds = %while.body80, %if.end74
-  %hi82 = load i64, ptr %hi, align 8
-  %lt83 = icmp ult i64 %hi82, %call78
-  br i1 %lt83, label %while.body80, label %while.exit81
+while.cond77:                                     ; preds = %while.body78, %if.end72
+  %hi80 = load i64, ptr %hi, align 8
+  %lt81 = icmp ult i64 %hi80, %call76
+  br i1 %lt81, label %while.body78, label %while.exit79
 
-while.body80:                                     ; preds = %while.cond79
-  %sb84 = load ptr, ptr %sb, align 8
+while.body78:                                     ; preds = %while.cond77
+  %sb82 = load ptr, ptr %sb, align 8
+  %hi83 = load i64, ptr %hi, align 8
+  %call84 = call i8 @_ZN6String3getEm(ptr %sret.result74, i64 %hi83)
+  call void @_ZN13StringBuilder6appendEc(ptr %sb82, i8 %call84)
   %hi85 = load i64, ptr %hi, align 8
-  %call86 = call i8 @_ZN6String3getEm(ptr %sret.result76, i64 %hi85)
-  call void @_ZN13StringBuilder6appendEc(ptr %sb84, i8 %call86)
-  %hi87 = load i64, ptr %hi, align 8
-  %add88 = add i64 %hi87, 1
-  store i64 %add88, ptr %hi, align 1
-  br label %while.cond79
+  %add86 = add i64 %hi85, 1
+  store i64 %add86, ptr %hi, align 1
+  br label %while.cond77
 
-while.exit81:                                     ; preds = %while.cond79
+while.exit79:                                     ; preds = %while.cond77
   store i1 false, ptr %first, align 1
-  br label %if.end70
+  br label %if.end68
 }
 
 define linkonce_odr void @_ZN7symbols18inlay_hints_packedEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
@@ -109832,10 +109503,10 @@ if.then6:                                         ; preds = %while.body
   store i64 %add, ptr %e, align 1
   br label %while.cond9
 
-if.end7:                                          ; preds = %if.end26, %while.body
-  %i32 = load i64, ptr %i, align 8
-  %add33 = add i64 %i32, 1
-  store i64 %add33, ptr %i, align 1
+if.end7:                                          ; preds = %if.end22, %while.body
+  %i30 = load i64, ptr %i, align 8
+  %add31 = add i64 %i30, 1
+  store i64 %add31, ptr %i, align 1
   br label %while.cond
 
 while.cond9:                                      ; preds = %if.end18, %if.then6
@@ -109850,12 +109521,12 @@ while.body10:                                     ; preds = %while.cond9
   br i1 %eq16, label %if.then17, label %if.end18
 
 while.exit11:                                     ; preds = %if.then17, %while.cond9
-  %e21 = load i64, ptr %e, align 8
-  %i22 = load i64, ptr %i, align 8
-  %add23 = add i64 %i22, 1
-  %sub = sub i64 %e21, %add23
-  %eq24 = icmp eq i64 %sub, %call
-  br i1 %eq24, label %if.then25, label %if.end26
+  %e23 = load i64, ptr %e, align 8
+  %i24 = load i64, ptr %i, align 8
+  %add25 = add i64 %i24, 1
+  %sub = sub i64 %e23, %add25
+  %eq26 = icmp eq i64 %sub, %call
+  br i1 %eq26, label %land.rhs, label %if.end22
 
 if.then17:                                        ; preds = %while.body10
   br label %while.exit11
@@ -109866,21 +109537,18 @@ if.end18:                                         ; preds = %while.body10
   store i64 %add20, ptr %e, align 1
   br label %while.cond9
 
-if.then25:                                        ; preds = %while.exit11
-  %i27 = load i64, ptr %i, align 8
-  %add28 = add i64 %i27, 1
-  %call29 = call i1 @_ZN7symbols12range_equalsE6Stringm6Stringmm(ptr %sret.result, i64 %add28, ptr %1, i64 0, i64 %call)
-  br i1 %call29, label %if.then30, label %if.end31
-
-if.end26:                                         ; preds = %if.end31, %while.exit11
-  br label %if.end7
-
-if.then30:                                        ; preds = %if.then25
+if.then21:                                        ; preds = %land.rhs
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 true
 
-if.end31:                                         ; preds = %if.then25
-  br label %if.end26
+if.end22:                                         ; preds = %land.rhs, %while.exit11
+  br label %if.end7
+
+land.rhs:                                         ; preds = %while.exit11
+  %i27 = load i64, ptr %i, align 8
+  %add28 = add i64 %i27, 1
+  %call29 = call i1 @_ZN7symbols12range_equalsE6Stringm6Stringmm(ptr %sret.result, i64 %add28, ptr %1, i64 0, i64 %call)
+  br i1 %call29, label %if.then21, label %if.end22
 }
 
 define linkonce_odr void @_ZN7symbols22concept_or_return_typeEPN4scaly6memory4PageE6String6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) {
@@ -110553,24 +110221,24 @@ choose.when34:                                    ; preds = %entry
 
 define linkonce_odr void @_ZN7symbols15build_signatureEPN4scaly6memory4PageE6String6String13RoutineSyntaxm(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4, i64 %5) {
 entry:
-  %sret.result184 = alloca { ptr }, align 8
-  %sret.result181 = alloca { ptr }, align 8
-  %arg.tmp179 = alloca %_Z5SliceIcE, align 8
-  %tuple175 = alloca %_Z5SliceIcE, align 8
-  %sret.result174 = alloca { ptr }, align 8
-  %arg.tmp170 = alloca %_Z5SliceIcE, align 8
-  %tuple166 = alloca %_Z5SliceIcE, align 8
-  %sret.result165 = alloca { ptr }, align 8
-  %arg.tmp148 = alloca %_Z5SliceIcE, align 8
-  %tuple144 = alloca %_Z5SliceIcE, align 8
-  %sret.result143 = alloca { ptr }, align 8
-  %sret.result140 = alloca { ptr }, align 8
-  %arg.tmp138 = alloca %_Z5SliceIcE, align 8
-  %tuple134 = alloca %_Z5SliceIcE, align 8
-  %sret.result133 = alloca { ptr }, align 8
-  %arg.tmp129 = alloca %_Z5SliceIcE, align 8
+  %sret.result182 = alloca { ptr }, align 8
+  %sret.result179 = alloca { ptr }, align 8
+  %arg.tmp177 = alloca %_Z5SliceIcE, align 8
+  %tuple173 = alloca %_Z5SliceIcE, align 8
+  %sret.result172 = alloca { ptr }, align 8
+  %arg.tmp168 = alloca %_Z5SliceIcE, align 8
+  %tuple164 = alloca %_Z5SliceIcE, align 8
+  %sret.result163 = alloca { ptr }, align 8
+  %arg.tmp146 = alloca %_Z5SliceIcE, align 8
+  %tuple142 = alloca %_Z5SliceIcE, align 8
+  %sret.result141 = alloca { ptr }, align 8
+  %sret.result138 = alloca { ptr }, align 8
+  %arg.tmp136 = alloca %_Z5SliceIcE, align 8
+  %tuple132 = alloca %_Z5SliceIcE, align 8
+  %sret.result131 = alloca { ptr }, align 8
+  %arg.tmp127 = alloca %_Z5SliceIcE, align 8
   %tuple = alloca %_Z5SliceIcE, align 8
-  %sret.result127 = alloca { ptr }, align 8
+  %sret.result125 = alloca { ptr }, align 8
   %sb = alloca ptr, align 8
   %arg.tmp79 = alloca %_Z10TypeSyntax, align 8
   %ai = alloca i64, align 8
@@ -110644,9 +110312,9 @@ if.end:                                           ; preds = %choose.end, %while.
   %sig_label108 = load ptr, ptr %sig_label, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sig_label108, i8 41)
   store i64 %5, ptr %i, align 1
-  %count109 = load i64, ptr %count, align 8
-  %gt110 = icmp ugt i64 %count109, 0
-  br i1 %gt110, label %if.then111, label %if.end112
+  %count111 = load i64, ptr %count, align 8
+  %gt112 = icmp ugt i64 %count111, 0
+  br i1 %gt112, label %land.rhs, label %if.end110
 
 choose.end:                                       ; preds = %choose.else, %if.end83, %if.end13
   br label %if.end
@@ -110851,140 +110519,137 @@ while.exit98:                                     ; preds = %while.cond96
   store i64 %add107, ptr %count, align 1
   br label %if.end83
 
-if.then111:                                       ; preds = %if.end
+if.then109:                                       ; preds = %land.rhs
+  %count114 = load i64, ptr %count, align 8
+  %sub = sub i64 %count114, 1
+  store i64 %sub, ptr %i, align 1
+  br label %if.end110
+
+if.end110:                                        ; preds = %if.then109, %land.rhs, %if.end
+  %count115 = load i64, ptr %count, align 8
+  %eq116 = icmp eq i64 %count115, 0
+  br i1 %eq116, label %if.then117, label %if.end118
+
+land.rhs:                                         ; preds = %if.end
   %act = load i64, ptr %i, align 8
   %count113 = load i64, ptr %count, align 8
   %ge = icmp uge i64 %act, %count113
-  br i1 %ge, label %if.then114, label %if.end115
+  br i1 %ge, label %if.then109, label %if.end110
 
-if.end112:                                        ; preds = %if.end115, %if.end
-  %count117 = load i64, ptr %count, align 8
-  %eq118 = icmp eq i64 %count117, 0
-  br i1 %eq118, label %if.then119, label %if.end120
-
-if.then114:                                       ; preds = %if.then111
-  %count116 = load i64, ptr %count, align 8
-  %sub = sub i64 %count116, 1
-  store i64 %sub, ptr %i, align 1
-  br label %if.end115
-
-if.end115:                                        ; preds = %if.then114, %if.then111
-  br label %if.end112
-
-if.then119:                                       ; preds = %if.end112
+if.then117:                                       ; preds = %if.end110
   store i64 0, ptr %i, align 1
-  br label %if.end120
+  br label %if.end118
 
-if.end120:                                        ; preds = %if.then119, %if.end112
-  %sig_label121 = load ptr, ptr %sig_label, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %sig_label121)
-  %arr122 = load ptr, ptr %arr, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result60, ptr %frame, ptr %arr122)
-  %forced_page123 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
-  %struct.region124 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page123, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1Ev(ptr %struct.region124)
-  store ptr %struct.region124, ptr %sb, align 1
-  %sb125 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb125, i8 123)
-  %sb126 = load ptr, ptr %sb, align 8
+if.end118:                                        ; preds = %if.then117, %if.end110
+  %sig_label119 = load ptr, ptr %sig_label, align 8
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %sig_label119)
+  %arr120 = load ptr, ptr %arr, align 8
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result60, ptr %frame, ptr %arr120)
+  %forced_page121 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  %struct.region122 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page121, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region122)
+  store ptr %struct.region122, ptr %sb, align 1
+  %sb123 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb123, i8 123)
+  %sb124 = load ptr, ptr %sb, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 10, ptr %tuple.field, align 1
-  %tuple.field128 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.691, ptr %tuple.field128, align 1
+  %tuple.field126 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
+  store ptr @.str.691, ptr %tuple.field126, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp129, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result127, ptr %frame, ptr %arg.tmp129)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb126, ptr %sret.result127)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp127, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result125, ptr %frame, ptr %arg.tmp127)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb124, ptr %sret.result125)
+  %sb128 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb128, i8 91)
+  %sb129 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb129, i8 123)
   %sb130 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb130, i8 91)
-  %sb131 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb131, i8 123)
-  %sb132 = load ptr, ptr %sb, align 8
-  %tuple.field135 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple134, i32 0, i32 0
-  store i64 5, ptr %tuple.field135, align 1
-  %tuple.field136 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple134, i32 0, i32 1
-  store ptr @.str.692, ptr %tuple.field136, align 1
-  %tuple.val137 = load %_Z5SliceIcE, ptr %tuple134, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp138, ptr align 1 %tuple134, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result133, ptr %frame, ptr %arg.tmp138)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb132, ptr %sret.result133)
+  %tuple.field133 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple132, i32 0, i32 0
+  store i64 5, ptr %tuple.field133, align 1
+  %tuple.field134 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple132, i32 0, i32 1
+  store ptr @.str.692, ptr %tuple.field134, align 1
+  %tuple.val135 = load %_Z5SliceIcE, ptr %tuple132, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp136, ptr align 1 %tuple132, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result131, ptr %frame, ptr %arg.tmp136)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb130, ptr %sret.result131)
+  %sb137 = load ptr, ptr %sb, align 8
+  call void @_ZN4json12quote_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result138, ptr %frame, ptr %sret.result)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb137, ptr %sret.result138)
   %sb139 = load ptr, ptr %sb, align 8
-  call void @_ZN4json12quote_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result140, ptr %frame, ptr %sret.result)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb139, ptr %sret.result140)
-  %sb141 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb141, i8 44)
-  %sb142 = load ptr, ptr %sb, align 8
-  %tuple.field145 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple144, i32 0, i32 0
-  store i64 10, ptr %tuple.field145, align 1
-  %tuple.field146 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple144, i32 0, i32 1
-  store ptr @.str.693, ptr %tuple.field146, align 1
-  %tuple.val147 = load %_Z5SliceIcE, ptr %tuple144, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp148, ptr align 1 %tuple144, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result143, ptr %frame, ptr %arg.tmp148)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb142, ptr %sret.result143)
-  %sb149 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb149, i8 91)
+  call void @_ZN13StringBuilder6appendEc(ptr %sb139, i8 44)
+  %sb140 = load ptr, ptr %sb, align 8
+  %tuple.field143 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple142, i32 0, i32 0
+  store i64 10, ptr %tuple.field143, align 1
+  %tuple.field144 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple142, i32 0, i32 1
+  store ptr @.str.693, ptr %tuple.field144, align 1
+  %tuple.val145 = load %_Z5SliceIcE, ptr %tuple142, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp146, ptr align 1 %tuple142, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result141, ptr %frame, ptr %arg.tmp146)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb140, ptr %sret.result141)
+  %sb147 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb147, i8 91)
   store i64 0, ptr %li, align 1
-  %call150 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result60)
-  br label %while.cond151
+  %call148 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result60)
+  br label %while.cond149
 
-while.cond151:                                    ; preds = %while.body152, %if.end120
+while.cond149:                                    ; preds = %while.body150, %if.end118
   %pi = load i64, ptr %li, align 8
-  %lt154 = icmp ult i64 %pi, %call150
-  br i1 %lt154, label %while.body152, label %while.exit153
+  %lt152 = icmp ult i64 %pi, %call148
+  br i1 %lt152, label %while.body150, label %while.exit151
 
-while.body152:                                    ; preds = %while.cond151
-  %sb155 = load ptr, ptr %sb, align 8
+while.body150:                                    ; preds = %while.cond149
+  %sb153 = load ptr, ptr %sb, align 8
+  %pi154 = load i64, ptr %li, align 8
+  %call155 = call i8 @_ZN6String3getEm(ptr %sret.result60, i64 %pi154)
+  call void @_ZN13StringBuilder6appendEc(ptr %sb153, i8 %call155)
   %pi156 = load i64, ptr %li, align 8
-  %call157 = call i8 @_ZN6String3getEm(ptr %sret.result60, i64 %pi156)
-  call void @_ZN13StringBuilder6appendEc(ptr %sb155, i8 %call157)
-  %pi158 = load i64, ptr %li, align 8
-  %add159 = add i64 %pi158, 1
-  store i64 %add159, ptr %li, align 1
-  br label %while.cond151
+  %add157 = add i64 %pi156, 1
+  store i64 %add157, ptr %li, align 1
+  br label %while.cond149
 
-while.exit153:                                    ; preds = %while.cond151
+while.exit151:                                    ; preds = %while.cond149
+  %sb158 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb158, i8 93)
+  %sb159 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb159, i8 125)
   %sb160 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb160, i8 93)
   %sb161 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb161, i8 125)
+  call void @_ZN13StringBuilder6appendEc(ptr %sb161, i8 44)
   %sb162 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb162, i8 93)
-  %sb163 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb163, i8 44)
-  %sb164 = load ptr, ptr %sb, align 8
-  %tuple.field167 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple166, i32 0, i32 0
-  store i64 15, ptr %tuple.field167, align 1
-  %tuple.field168 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple166, i32 0, i32 1
-  store ptr @.str.694, ptr %tuple.field168, align 1
-  %tuple.val169 = load %_Z5SliceIcE, ptr %tuple166, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp170, ptr align 1 %tuple166, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result165, ptr %frame, ptr %arg.tmp170)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb164, ptr %sret.result165)
+  %tuple.field165 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple164, i32 0, i32 0
+  store i64 15, ptr %tuple.field165, align 1
+  %tuple.field166 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple164, i32 0, i32 1
+  store ptr @.str.694, ptr %tuple.field166, align 1
+  %tuple.val167 = load %_Z5SliceIcE, ptr %tuple164, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp168, ptr align 1 %tuple164, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result163, ptr %frame, ptr %arg.tmp168)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb162, ptr %sret.result163)
+  %sb169 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb169, i8 48)
+  %sb170 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb170, i8 44)
   %sb171 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb171, i8 48)
-  %sb172 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb172, i8 44)
-  %sb173 = load ptr, ptr %sb, align 8
-  %tuple.field176 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple175, i32 0, i32 0
-  store i64 15, ptr %tuple.field176, align 1
-  %tuple.field177 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple175, i32 0, i32 1
-  store ptr @.str.695, ptr %tuple.field177, align 1
-  %tuple.val178 = load %_Z5SliceIcE, ptr %tuple175, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp179, ptr align 1 %tuple175, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN7symbols3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result174, ptr %frame, ptr %arg.tmp179)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb173, ptr %sret.result174)
-  %sb180 = load ptr, ptr %sb, align 8
-  %act182 = load i64, ptr %i, align 8
-  call void @_ZN4json10format_i64EPN4scaly6memory4PageE3i64(ptr noalias sret({ ptr }) %sret.result181, ptr %frame, i64 %act182)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb180, ptr %sret.result181)
+  %tuple.field174 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple173, i32 0, i32 0
+  store i64 15, ptr %tuple.field174, align 1
+  %tuple.field175 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple173, i32 0, i32 1
+  store ptr @.str.695, ptr %tuple.field175, align 1
+  %tuple.val176 = load %_Z5SliceIcE, ptr %tuple173, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp177, ptr align 1 %tuple173, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN7symbols3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result172, ptr %frame, ptr %arg.tmp177)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb171, ptr %sret.result172)
+  %sb178 = load ptr, ptr %sb, align 8
+  %act180 = load i64, ptr %i, align 8
+  call void @_ZN4json10format_i64EPN4scaly6memory4PageE3i64(ptr noalias sret({ ptr }) %sret.result179, ptr %frame, i64 %act180)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb178, ptr %sret.result179)
+  %sb181 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb181, i8 125)
   %sb183 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb183, i8 125)
-  %sb185 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result184, ptr %1, ptr %sb185)
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result182, ptr %1, ptr %sb183)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  %sret.body = load { ptr }, ptr %sret.result184, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result184, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  %sret.body = load { ptr }, ptr %sret.result182, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result182, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -112503,300 +112168,228 @@ if.then:                                          ; preds = %entry
   ret i1 true
 
 if.end:                                           ; preds = %entry
-  %eq1 = icmp eq i8 %0, 40
-  br i1 %eq1, label %if.then2, label %if.end3
+  %eq3 = icmp eq i8 %0, 40
+  br i1 %eq3, label %if.then1, label %lor.rhs
 
-if.then2:                                         ; preds = %if.end
+if.then1:                                         ; preds = %lor.rhs, %if.end
   ret i1 true
 
-if.end3:                                          ; preds = %if.end
-  %eq4 = icmp eq i8 %0, 91
-  br i1 %eq4, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end3
-  ret i1 true
-
-if.end6:                                          ; preds = %if.end3
+if.end2:                                          ; preds = %lor.rhs
   ret i1 false
+
+lor.rhs:                                          ; preds = %if.end
+  %eq4 = icmp eq i8 %0, 91
+  br i1 %eq4, label %if.then1, label %if.end2
 }
 
 define linkonce_odr i1 @_ZN6format9is_closerE2u8(i8 %0) {
 entry:
   %eq = icmp eq i8 %0, 125
-  br i1 %eq, label %if.then, label %if.end
+  br i1 %eq, label %if.then, label %lor.rhs1
 
-if.then:                                          ; preds = %entry
+if.then:                                          ; preds = %lor.rhs, %lor.rhs1, %entry
   ret i1 true
 
-if.end:                                           ; preds = %entry
-  %eq1 = icmp eq i8 %0, 41
-  br i1 %eq1, label %if.then2, label %if.end3
-
-if.then2:                                         ; preds = %if.end
-  ret i1 true
-
-if.end3:                                          ; preds = %if.end
-  %eq4 = icmp eq i8 %0, 93
-  br i1 %eq4, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end3
-  ret i1 true
-
-if.end6:                                          ; preds = %if.end3
+if.end:                                           ; preds = %lor.rhs
   ret i1 false
+
+lor.rhs:                                          ; preds = %lor.rhs1
+  %eq3 = icmp eq i8 %0, 93
+  br i1 %eq3, label %if.then, label %if.end
+
+lor.rhs1:                                         ; preds = %entry
+  %eq2 = icmp eq i8 %0, 41
+  br i1 %eq2, label %if.then, label %lor.rhs
 }
 
 define linkonce_odr i1 @_ZN6format8is_spaceE2u8(i8 %0) {
 entry:
   %eq = icmp eq i8 %0, 32
-  br i1 %eq, label %if.then, label %if.end
+  br i1 %eq, label %if.then, label %lor.rhs1
 
-if.then:                                          ; preds = %entry
+if.then:                                          ; preds = %lor.rhs, %lor.rhs1, %entry
   ret i1 true
 
-if.end:                                           ; preds = %entry
-  %eq1 = icmp eq i8 %0, 9
-  br i1 %eq1, label %if.then2, label %if.end3
-
-if.then2:                                         ; preds = %if.end
-  ret i1 true
-
-if.end3:                                          ; preds = %if.end
-  %eq4 = icmp eq i8 %0, 13
-  br i1 %eq4, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end3
-  ret i1 true
-
-if.end6:                                          ; preds = %if.end3
+if.end:                                           ; preds = %lor.rhs
   ret i1 false
+
+lor.rhs:                                          ; preds = %lor.rhs1
+  %eq3 = icmp eq i8 %0, 13
+  br i1 %eq3, label %if.then, label %if.end
+
+lor.rhs1:                                         ; preds = %entry
+  %eq2 = icmp eq i8 %0, 9
+  br i1 %eq2, label %if.then, label %lor.rhs
 }
 
 define linkonce_odr i1 @_ZN6format12is_word_byteE2u8(i8 %0) {
 entry:
   %ge = icmp uge i8 %0, 48
-  br i1 %ge, label %if.then, label %if.end
+  br i1 %ge, label %land.rhs, label %lor.rhs2
 
-if.then:                                          ; preds = %entry
-  %le = icmp ule i8 %0, 57
-  br i1 %le, label %if.then1, label %if.end2
-
-if.end:                                           ; preds = %if.end2, %entry
-  %ge3 = icmp uge i8 %0, 65
-  br i1 %ge3, label %if.then4, label %if.end5
-
-if.then1:                                         ; preds = %if.then
+if.then:                                          ; preds = %lor.rhs, %land.rhs6, %land.rhs3, %land.rhs
   ret i1 true
 
-if.end2:                                          ; preds = %if.then
-  br label %if.end
-
-if.then4:                                         ; preds = %if.end
-  %le6 = icmp ule i8 %0, 90
-  br i1 %le6, label %if.then7, label %if.end8
-
-if.end5:                                          ; preds = %if.end8, %if.end
-  %ge9 = icmp uge i8 %0, 97
-  br i1 %ge9, label %if.then10, label %if.end11
-
-if.then7:                                         ; preds = %if.then4
-  ret i1 true
-
-if.end8:                                          ; preds = %if.then4
-  br label %if.end5
-
-if.then10:                                        ; preds = %if.end5
-  %le12 = icmp ule i8 %0, 122
-  br i1 %le12, label %if.then13, label %if.end14
-
-if.end11:                                         ; preds = %if.end14, %if.end5
-  %eq = icmp eq i8 %0, 95
-  br i1 %eq, label %if.then15, label %if.end16
-
-if.then13:                                        ; preds = %if.then10
-  ret i1 true
-
-if.end14:                                         ; preds = %if.then10
-  br label %if.end11
-
-if.then15:                                        ; preds = %if.end11
-  ret i1 true
-
-if.end16:                                         ; preds = %if.end11
+if.end:                                           ; preds = %lor.rhs
   ret i1 false
+
+lor.rhs:                                          ; preds = %land.rhs6, %lor.rhs1
+  %eq = icmp eq i8 %0, 95
+  br i1 %eq, label %if.then, label %if.end
+
+lor.rhs1:                                         ; preds = %land.rhs3, %lor.rhs2
+  %ge7 = icmp uge i8 %0, 97
+  br i1 %ge7, label %land.rhs6, label %lor.rhs
+
+lor.rhs2:                                         ; preds = %land.rhs, %entry
+  %ge4 = icmp uge i8 %0, 65
+  br i1 %ge4, label %land.rhs3, label %lor.rhs1
+
+land.rhs:                                         ; preds = %entry
+  %le = icmp ule i8 %0, 57
+  br i1 %le, label %if.then, label %lor.rhs2
+
+land.rhs3:                                        ; preds = %lor.rhs2
+  %le5 = icmp ule i8 %0, 90
+  br i1 %le5, label %if.then, label %lor.rhs1
+
+land.rhs6:                                        ; preds = %lor.rhs1
+  %le8 = icmp ule i8 %0, 122
+  br i1 %le8, label %if.then, label %lor.rhs
 }
 
 define linkonce_odr i1 @_ZN6format16is_bodyless_wordE6String(ptr %0) {
 entry:
-  %arg.tmp5 = alloca { ptr }, align 8
-  %arg.tmp1 = alloca { ptr }, align 8
+  %arg.tmp4 = alloca { ptr }, align 8
+  %arg.tmp2 = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
   store { ptr } { ptr @.sconst.709 }, ptr %arg.tmp, align 1
   %call = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp)
-  br i1 %call, label %if.then, label %if.end
+  br i1 %call, label %if.then, label %lor.rhs1
 
-if.then:                                          ; preds = %entry
+if.then:                                          ; preds = %lor.rhs, %lor.rhs1, %entry
   ret i1 true
 
-if.end:                                           ; preds = %entry
-  store { ptr } { ptr @.sconst.710 }, ptr %arg.tmp1, align 1
-  %call2 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp1)
-  br i1 %call2, label %if.then3, label %if.end4
-
-if.then3:                                         ; preds = %if.end
-  ret i1 true
-
-if.end4:                                          ; preds = %if.end
-  store { ptr } { ptr @.sconst.711 }, ptr %arg.tmp5, align 1
-  %call6 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp5)
-  br i1 %call6, label %if.then7, label %if.end8
-
-if.then7:                                         ; preds = %if.end4
-  ret i1 true
-
-if.end8:                                          ; preds = %if.end4
+if.end:                                           ; preds = %lor.rhs
   ret i1 false
+
+lor.rhs:                                          ; preds = %lor.rhs1
+  store { ptr } { ptr @.sconst.711 }, ptr %arg.tmp4, align 1
+  %call5 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp4)
+  br i1 %call5, label %if.then, label %if.end
+
+lor.rhs1:                                         ; preds = %entry
+  store { ptr } { ptr @.sconst.710 }, ptr %arg.tmp2, align 1
+  %call3 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp2)
+  br i1 %call3, label %if.then, label %lor.rhs
 }
 
 define linkonce_odr i1 @_ZN6format11is_one_wordE6String(ptr %0) {
 entry:
-  %arg.tmp17 = alloca { ptr }, align 8
   %arg.tmp13 = alloca { ptr }, align 8
+  %arg.tmp11 = alloca { ptr }, align 8
   %arg.tmp9 = alloca { ptr }, align 8
+  %arg.tmp7 = alloca { ptr }, align 8
   %arg.tmp5 = alloca { ptr }, align 8
-  %arg.tmp1 = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
   store { ptr } { ptr @.sconst.712 }, ptr %arg.tmp, align 1
   %call = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp)
-  br i1 %call, label %if.then, label %if.end
+  br i1 %call, label %if.then, label %lor.rhs4
 
-if.then:                                          ; preds = %entry
+if.then:                                          ; preds = %lor.rhs, %lor.rhs1, %lor.rhs2, %lor.rhs3, %lor.rhs4, %entry
   ret i1 true
 
-if.end:                                           ; preds = %entry
-  store { ptr } { ptr @.sconst.713 }, ptr %arg.tmp1, align 1
-  %call2 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp1)
-  br i1 %call2, label %if.then3, label %if.end4
+if.end:                                           ; preds = %lor.rhs
+  ret i1 false
 
-if.then3:                                         ; preds = %if.end
-  ret i1 true
+lor.rhs:                                          ; preds = %lor.rhs1
+  store { ptr } { ptr @.sconst.717 }, ptr %arg.tmp13, align 1
+  %call14 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp13)
+  br i1 %call14, label %if.then, label %if.end
 
-if.end4:                                          ; preds = %if.end
-  store { ptr } { ptr @.sconst.714 }, ptr %arg.tmp5, align 1
-  %call6 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp5)
-  br i1 %call6, label %if.then7, label %if.end8
+lor.rhs1:                                         ; preds = %lor.rhs2
+  store { ptr } { ptr @.sconst.716 }, ptr %arg.tmp11, align 1
+  %call12 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp11)
+  br i1 %call12, label %if.then, label %lor.rhs
 
-if.then7:                                         ; preds = %if.end4
-  ret i1 true
-
-if.end8:                                          ; preds = %if.end4
+lor.rhs2:                                         ; preds = %lor.rhs3
   store { ptr } { ptr @.sconst.715 }, ptr %arg.tmp9, align 1
   %call10 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp9)
-  br i1 %call10, label %if.then11, label %if.end12
+  br i1 %call10, label %if.then, label %lor.rhs1
 
-if.then11:                                        ; preds = %if.end8
-  ret i1 true
+lor.rhs3:                                         ; preds = %lor.rhs4
+  store { ptr } { ptr @.sconst.714 }, ptr %arg.tmp7, align 1
+  %call8 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp7)
+  br i1 %call8, label %if.then, label %lor.rhs2
 
-if.end12:                                         ; preds = %if.end8
-  store { ptr } { ptr @.sconst.716 }, ptr %arg.tmp13, align 1
-  %call14 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp13)
-  br i1 %call14, label %if.then15, label %if.end16
-
-if.then15:                                        ; preds = %if.end12
-  ret i1 true
-
-if.end16:                                         ; preds = %if.end12
-  store { ptr } { ptr @.sconst.717 }, ptr %arg.tmp17, align 1
-  %call18 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp17)
-  br i1 %call18, label %if.then19, label %if.end20
-
-if.then19:                                        ; preds = %if.end16
-  ret i1 true
-
-if.end20:                                         ; preds = %if.end16
-  ret i1 false
+lor.rhs4:                                         ; preds = %entry
+  store { ptr } { ptr @.sconst.713 }, ptr %arg.tmp5, align 1
+  %call6 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp5)
+  br i1 %call6, label %if.then, label %lor.rhs3
 }
 
 define linkonce_odr i1 @_ZN6format11is_arm_wordE6String(ptr %0) {
 entry:
-  %arg.tmp5 = alloca { ptr }, align 8
-  %arg.tmp1 = alloca { ptr }, align 8
+  %arg.tmp4 = alloca { ptr }, align 8
+  %arg.tmp2 = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
   store { ptr } { ptr @.sconst.718 }, ptr %arg.tmp, align 1
   %call = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp)
-  br i1 %call, label %if.then, label %if.end
+  br i1 %call, label %if.then, label %lor.rhs1
 
-if.then:                                          ; preds = %entry
+if.then:                                          ; preds = %lor.rhs, %lor.rhs1, %entry
   ret i1 true
 
-if.end:                                           ; preds = %entry
-  store { ptr } { ptr @.sconst.719 }, ptr %arg.tmp1, align 1
-  %call2 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp1)
-  br i1 %call2, label %if.then3, label %if.end4
-
-if.then3:                                         ; preds = %if.end
-  ret i1 true
-
-if.end4:                                          ; preds = %if.end
-  store { ptr } { ptr @.sconst.720 }, ptr %arg.tmp5, align 1
-  %call6 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp5)
-  br i1 %call6, label %if.then7, label %if.end8
-
-if.then7:                                         ; preds = %if.end4
-  ret i1 true
-
-if.end8:                                          ; preds = %if.end4
+if.end:                                           ; preds = %lor.rhs
   ret i1 false
+
+lor.rhs:                                          ; preds = %lor.rhs1
+  store { ptr } { ptr @.sconst.720 }, ptr %arg.tmp4, align 1
+  %call5 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp4)
+  br i1 %call5, label %if.then, label %if.end
+
+lor.rhs1:                                         ; preds = %entry
+  store { ptr } { ptr @.sconst.719 }, ptr %arg.tmp2, align 1
+  %call3 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp2)
+  br i1 %call3, label %if.then, label %lor.rhs
 }
 
 define linkonce_odr i1 @_ZN6format15is_routine_wordE6String(ptr %0) {
 entry:
-  %arg.tmp13 = alloca { ptr }, align 8
-  %arg.tmp9 = alloca { ptr }, align 8
-  %arg.tmp5 = alloca { ptr }, align 8
-  %arg.tmp1 = alloca { ptr }, align 8
+  %arg.tmp10 = alloca { ptr }, align 8
+  %arg.tmp8 = alloca { ptr }, align 8
+  %arg.tmp6 = alloca { ptr }, align 8
+  %arg.tmp4 = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
   store { ptr } { ptr @.sconst.721 }, ptr %arg.tmp, align 1
   %call = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp)
-  br i1 %call, label %if.then, label %if.end
+  br i1 %call, label %if.then, label %lor.rhs3
 
-if.then:                                          ; preds = %entry
+if.then:                                          ; preds = %lor.rhs, %lor.rhs1, %lor.rhs2, %lor.rhs3, %entry
   ret i1 true
 
-if.end:                                           ; preds = %entry
-  store { ptr } { ptr @.sconst.722 }, ptr %arg.tmp1, align 1
-  %call2 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp1)
-  br i1 %call2, label %if.then3, label %if.end4
-
-if.then3:                                         ; preds = %if.end
-  ret i1 true
-
-if.end4:                                          ; preds = %if.end
-  store { ptr } { ptr @.sconst.723 }, ptr %arg.tmp5, align 1
-  %call6 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp5)
-  br i1 %call6, label %if.then7, label %if.end8
-
-if.then7:                                         ; preds = %if.end4
-  ret i1 true
-
-if.end8:                                          ; preds = %if.end4
-  store { ptr } { ptr @.sconst.724 }, ptr %arg.tmp9, align 1
-  %call10 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp9)
-  br i1 %call10, label %if.then11, label %if.end12
-
-if.then11:                                        ; preds = %if.end8
-  ret i1 true
-
-if.end12:                                         ; preds = %if.end8
-  store { ptr } { ptr @.sconst.725 }, ptr %arg.tmp13, align 1
-  %call14 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp13)
-  br i1 %call14, label %if.then15, label %if.end16
-
-if.then15:                                        ; preds = %if.end12
-  ret i1 true
-
-if.end16:                                         ; preds = %if.end12
+if.end:                                           ; preds = %lor.rhs
   ret i1 false
+
+lor.rhs:                                          ; preds = %lor.rhs1
+  store { ptr } { ptr @.sconst.725 }, ptr %arg.tmp10, align 1
+  %call11 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp10)
+  br i1 %call11, label %if.then, label %if.end
+
+lor.rhs1:                                         ; preds = %lor.rhs2
+  store { ptr } { ptr @.sconst.724 }, ptr %arg.tmp8, align 1
+  %call9 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp8)
+  br i1 %call9, label %if.then, label %lor.rhs
+
+lor.rhs2:                                         ; preds = %lor.rhs3
+  store { ptr } { ptr @.sconst.723 }, ptr %arg.tmp6, align 1
+  %call7 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp6)
+  br i1 %call7, label %if.then, label %lor.rhs1
+
+lor.rhs3:                                         ; preds = %entry
+  store { ptr } { ptr @.sconst.722 }, ptr %arg.tmp4, align 1
+  %call5 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp4)
+  br i1 %call5, label %if.then, label %lor.rhs2
 }
 
 define linkonce_odr void @_ZN6format9scan_lineEPN4scaly6memory4PageE6Stringmmb(ptr noalias sret(%_Z8LineScan) %0, ptr %1, ptr %2, i64 %3, i64 %4, i1 %5) {
@@ -115432,9 +115025,9 @@ while.body75:                                     ; preds = %while.cond74
 
 while.exit76:                                     ; preds = %if.then83, %while.cond74
   store i1 false, ptr %member, align 1
-  %i87 = load i64, ptr %i, align 8
-  %gt88 = icmp ugt i64 %i87, 0
-  br i1 %gt88, label %if.then89, label %if.end90
+  %i89 = load i64, ptr %i, align 8
+  %gt90 = icmp ugt i64 %i89, 0
+  br i1 %gt90, label %land.rhs, label %if.end88
 
 if.then83:                                        ; preds = %while.body75
   br label %while.exit76
@@ -115445,54 +115038,51 @@ if.end84:                                         ; preds = %while.body75
   store i64 %sub86, ptr %i, align 1
   br label %while.cond74
 
-if.then89:                                        ; preds = %while.exit76
+if.then87:                                        ; preds = %land.rhs
+  store i1 true, ptr %member, align 1
+  br label %if.end88
+
+if.end88:                                         ; preds = %if.then87, %land.rhs, %while.exit76
+  %member95 = load i1, ptr %member, align 1
+  br i1 %member95, label %if.then96, label %if.end97
+
+land.rhs:                                         ; preds = %while.exit76
   %i91 = load i64, ptr %i, align 8
   %sub92 = sub i64 %i91, 1
   %call93 = call i8 @_ZN6String3getEm(ptr %1, i64 %sub92)
   %eq94 = icmp eq i8 %call93, 46
-  br i1 %eq94, label %if.then95, label %if.end96
+  br i1 %eq94, label %if.then87, label %if.end88
 
-if.end90:                                         ; preds = %if.end96, %while.exit76
-  %member97 = load i1, ptr %member, align 1
-  br i1 %member97, label %if.then98, label %if.end99
+if.then96:                                        ; preds = %if.end88
+  %more98 = load i1, ptr %more, align 1
+  br i1 %more98, label %if.then99, label %if.end100
 
-if.then95:                                        ; preds = %if.then89
-  store i1 true, ptr %member, align 1
-  br label %if.end96
+if.end97:                                         ; preds = %if.end88
+  %more101 = load i1, ptr %more, align 1
+  br i1 %more101, label %if.then102, label %if.end103
 
-if.end96:                                         ; preds = %if.then95, %if.then89
-  br label %if.end90
-
-if.then98:                                        ; preds = %if.end90
-  %more100 = load i1, ptr %more, align 1
-  br i1 %more100, label %if.then101, label %if.end102
-
-if.end99:                                         ; preds = %if.end90
-  %more103 = load i1, ptr %more, align 1
-  br i1 %more103, label %if.then104, label %if.end105
-
-if.then101:                                       ; preds = %if.then98
+if.then99:                                        ; preds = %if.then96
   ret i64 2
 
-if.end102:                                        ; preds = %if.then98
+if.end100:                                        ; preds = %if.then96
   ret i64 3
 
-if.then104:                                       ; preds = %if.end99
+if.then102:                                       ; preds = %if.end97
   ret i64 1
 
-if.end105:                                        ; preds = %if.end99
+if.end103:                                        ; preds = %if.end97
   ret i64 0
 }
 
 define linkonce_odr void @_ZN8semantic9walk_planEPN4scaly6memory4PageE4Planmm10FileSyntax6String(ptr noalias sret(%_Z13ResolveResult) %0, ptr %1, ptr %2, i64 %3, i64 %4, ptr %5, ptr %6) {
 entry:
-  %sret.result149 = alloca %_Z13ResolveResult, align 8
-  %deref.tmp140 = alloca %_Z13PlannedGlobal, align 8
-  %sret.result105 = alloca %_Z13ResolveResult, align 8
-  %sret.result70 = alloca %_Z13ResolveResult, align 8
-  %arg.tmp36 = alloca %_Z21PlannedImplementation, align 8
-  %deref.tmp34 = alloca %_Z15PlannedFunction, align 8
-  %sret.result33 = alloca %_Z13ResolveResult, align 8
+  %sret.result146 = alloca %_Z13ResolveResult, align 8
+  %deref.tmp138 = alloca %_Z13PlannedGlobal, align 8
+  %sret.result103 = alloca %_Z13ResolveResult, align 8
+  %sret.result68 = alloca %_Z13ResolveResult, align 8
+  %arg.tmp34 = alloca %_Z21PlannedImplementation, align 8
+  %deref.tmp32 = alloca %_Z15PlannedFunction, align 8
+  %sret.result31 = alloca %_Z13ResolveResult, align 8
   %deref.tmp28 = alloca %_Z15PlannedFunction, align 8
   %arg.tmp = alloca { ptr }, align 8
   %deref.tmp26 = alloca %_Z15PlannedFunction, align 8
@@ -115536,11 +115126,11 @@ if.then6:                                         ; preds = %if.end
   br i1 %ne9, label %if.then10, label %if.end11
 
 if.end7:                                          ; preds = %if.end11, %if.end
-  %result40 = load ptr, ptr %result, align 8
-  %load.struct41 = load %_Z13ResolveResult, ptr %result40, align 8
-  %found42 = extractvalue %_Z13ResolveResult %load.struct41, 0
-  %eq43 = icmp eq i1 %found42, false
-  br i1 %eq43, label %if.then44, label %if.end45
+  %result38 = load ptr, ptr %result, align 8
+  %load.struct39 = load %_Z13ResolveResult, ptr %result38, align 8
+  %found40 = extractvalue %_Z13ResolveResult %load.struct39, 0
+  %eq41 = icmp eq i1 %found40, false
+  br i1 %eq41, label %if.then42, label %if.end43
 
 if.then10:                                        ; preds = %if.then6
   %load.struct12 = load %_Z4Plan, ptr %2, align 8
@@ -115572,16 +115162,30 @@ while.exit:                                       ; preds = %while.cond
 if.then20:                                        ; preds = %while.body
   %i22 = load i64, ptr %i, align 8
   %call = call ptr @_ZN6VectorI15PlannedFunctionE3getEm(ptr %deref.tmp, i64 %i22)
-  %ne23 = icmp ne ptr %call, null
-  br i1 %ne23, label %if.then24, label %if.end25
+  %ne25 = icmp ne ptr %call, null
+  br i1 %ne25, label %land.rhs, label %if.end24
 
-if.end21:                                         ; preds = %if.end25, %while.body
-  %i39 = load i64, ptr %i, align 8
-  %add = add i64 %i39, 1
+if.end21:                                         ; preds = %if.end24, %while.body
+  %i37 = load i64, ptr %i, align 8
+  %add = add i64 %i37, 1
   store i64 %add, ptr %i, align 1
   br label %while.cond
 
-if.then24:                                        ; preds = %if.then20
+if.then23:                                        ; preds = %land.rhs
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp32, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64), i1 false)
+  %load.struct33 = load %_Z15PlannedFunction, ptr %deref.tmp32, align 8
+  %impl = extractvalue %_Z15PlannedFunction %load.struct33, 10
+  store %_Z21PlannedImplementation %impl, ptr %arg.tmp34, align 1
+  call void @_ZN8semantic9walk_implEPN4scaly6memory4PageE21PlannedImplementationmm(ptr noalias sret(%_Z13ResolveResult) %sret.result31, ptr %1, ptr %arg.tmp34, i64 %3, i64 %4)
+  %set.dest35 = load ptr, ptr %result, align 8
+  %set.thru36 = load %_Z13ResolveResult, ptr %sret.result31, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest35, ptr align 1 %sret.result31, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+  br label %if.end24
+
+if.end24:                                         ; preds = %if.then23, %land.rhs, %if.then20
+  br label %if.end21
+
+land.rhs:                                         ; preds = %if.then20
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp26, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64), i1 false)
   %load.struct27 = load %_Z15PlannedFunction, ptr %deref.tmp26, align 8
   %file = extractvalue %_Z15PlannedFunction %load.struct27, 15
@@ -115591,232 +115195,212 @@ if.then24:                                        ; preds = %if.then20
   %loc = extractvalue %_Z15PlannedFunction %load.struct29, 0
   %start = extractvalue %_Z4Span %loc, 0
   %call30 = call i1 @_ZN8semantic12owns_routineEPN4scaly6memory4PageE10FileSyntax6String6Stringm(ptr %frame, ptr %5, ptr %6, ptr %arg.tmp, i64 %start)
-  br i1 %call30, label %if.then31, label %if.end32
+  br i1 %call30, label %if.then23, label %if.end24
 
-if.end25:                                         ; preds = %if.end32, %if.then20
-  br label %if.end21
+if.then42:                                        ; preds = %if.end7
+  %load.struct44 = load %_Z4Plan, ptr %2, align 8
+  %structures = extractvalue %_Z4Plan %load.struct44, 2
+  %ne45 = icmp ne ptr %structures, null
+  br i1 %ne45, label %if.then46, label %if.end47
 
-if.then31:                                        ; preds = %if.then24
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp34, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64), i1 false)
-  %load.struct35 = load %_Z15PlannedFunction, ptr %deref.tmp34, align 8
-  %impl = extractvalue %_Z15PlannedFunction %load.struct35, 10
-  store %_Z21PlannedImplementation %impl, ptr %arg.tmp36, align 1
-  call void @_ZN8semantic9walk_implEPN4scaly6memory4PageE21PlannedImplementationmm(ptr noalias sret(%_Z13ResolveResult) %sret.result33, ptr %1, ptr %arg.tmp36, i64 %3, i64 %4)
-  %set.dest37 = load ptr, ptr %result, align 8
-  %set.thru38 = load %_Z13ResolveResult, ptr %sret.result33, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest37, ptr align 1 %sret.result33, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
-  br label %if.end32
+if.end43:                                         ; preds = %if.end47, %if.end7
+  %result73 = load ptr, ptr %result, align 8
+  %load.struct74 = load %_Z13ResolveResult, ptr %result73, align 8
+  %found75 = extractvalue %_Z13ResolveResult %load.struct74, 0
+  %eq76 = icmp eq i1 %found75, false
+  br i1 %eq76, label %if.then77, label %if.end78
 
-if.end32:                                         ; preds = %if.then31, %if.then24
-  br label %if.end25
-
-if.then44:                                        ; preds = %if.end7
-  %load.struct46 = load %_Z4Plan, ptr %2, align 8
-  %structures = extractvalue %_Z4Plan %load.struct46, 2
-  %ne47 = icmp ne ptr %structures, null
-  br i1 %ne47, label %if.then48, label %if.end49
-
-if.end45:                                         ; preds = %if.end49, %if.end7
-  %result75 = load ptr, ptr %result, align 8
-  %load.struct76 = load %_Z13ResolveResult, ptr %result75, align 8
-  %found77 = extractvalue %_Z13ResolveResult %load.struct76, 0
-  %eq78 = icmp eq i1 %found77, false
-  br i1 %eq78, label %if.then79, label %if.end80
-
-if.then48:                                        ; preds = %if.then44
-  %load.struct50 = load %_Z4Plan, ptr %2, align 8
-  %structures51 = extractvalue %_Z4Plan %load.struct50, 2
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %structures51, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
+if.then46:                                        ; preds = %if.then42
+  %load.struct48 = load %_Z4Plan, ptr %2, align 8
+  %structures49 = extractvalue %_Z4Plan %load.struct48, 2
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %structures49, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
   store i64 0, ptr %i, align 1
-  br label %while.cond52
+  br label %while.cond50
 
-if.end49:                                         ; preds = %while.exit54, %if.then44
-  br label %if.end45
+if.end47:                                         ; preds = %while.exit52, %if.then42
+  br label %if.end43
 
-while.cond52:                                     ; preds = %if.end64, %if.then48
-  %i55 = load i64, ptr %i, align 8
-  %load.struct56 = load %_Z6VectorI16PlannedStructureE, ptr %deref.tmp, align 8
-  %length57 = extractvalue %_Z6VectorI16PlannedStructureE %load.struct56, 0
-  %lt58 = icmp ult i64 %i55, %length57
-  br i1 %lt58, label %while.body53, label %while.exit54
+while.cond50:                                     ; preds = %if.end62, %if.then46
+  %i53 = load i64, ptr %i, align 8
+  %load.struct54 = load %_Z6VectorI16PlannedStructureE, ptr %deref.tmp, align 8
+  %length55 = extractvalue %_Z6VectorI16PlannedStructureE %load.struct54, 0
+  %lt56 = icmp ult i64 %i53, %length55
+  br i1 %lt56, label %while.body51, label %while.exit52
 
-while.body53:                                     ; preds = %while.cond52
-  %result59 = load ptr, ptr %result, align 8
-  %load.struct60 = load %_Z13ResolveResult, ptr %result59, align 8
-  %found61 = extractvalue %_Z13ResolveResult %load.struct60, 0
-  %eq62 = icmp eq i1 %found61, false
-  br i1 %eq62, label %if.then63, label %if.end64
+while.body51:                                     ; preds = %while.cond50
+  %result57 = load ptr, ptr %result, align 8
+  %load.struct58 = load %_Z13ResolveResult, ptr %result57, align 8
+  %found59 = extractvalue %_Z13ResolveResult %load.struct58, 0
+  %eq60 = icmp eq i1 %found59, false
+  br i1 %eq60, label %if.then61, label %if.end62
 
-while.exit54:                                     ; preds = %while.cond52
-  br label %if.end49
+while.exit52:                                     ; preds = %while.cond50
+  br label %if.end47
 
-if.then63:                                        ; preds = %while.body53
-  %i65 = load i64, ptr %i, align 8
-  %call66 = call ptr @_ZN6VectorI16PlannedStructureE3getEm(ptr %deref.tmp, i64 %i65)
-  %ne67 = icmp ne ptr %call66, null
-  br i1 %ne67, label %if.then68, label %if.end69
+if.then61:                                        ; preds = %while.body51
+  %i63 = load i64, ptr %i, align 8
+  %call64 = call ptr @_ZN6VectorI16PlannedStructureE3getEm(ptr %deref.tmp, i64 %i63)
+  %ne65 = icmp ne ptr %call64, null
+  br i1 %ne65, label %if.then66, label %if.end67
 
-if.end64:                                         ; preds = %if.end69, %while.body53
-  %i73 = load i64, ptr %i, align 8
-  %add74 = add i64 %i73, 1
-  store i64 %add74, ptr %i, align 1
-  br label %while.cond52
+if.end62:                                         ; preds = %if.end67, %while.body51
+  %i71 = load i64, ptr %i, align 8
+  %add72 = add i64 %i71, 1
+  store i64 %add72, ptr %i, align 1
+  br label %while.cond50
 
-if.then68:                                        ; preds = %if.then63
-  call void @_ZN8semantic14walk_structureEPN4scaly6memory4PageE16PlannedStructuremm10FileSyntax6String(ptr noalias sret(%_Z13ResolveResult) %sret.result70, ptr %1, ptr %call66, i64 %3, i64 %4, ptr %5, ptr %6)
-  %set.dest71 = load ptr, ptr %result, align 8
-  %set.thru72 = load %_Z13ResolveResult, ptr %sret.result70, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest71, ptr align 1 %sret.result70, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
-  br label %if.end69
+if.then66:                                        ; preds = %if.then61
+  call void @_ZN8semantic14walk_structureEPN4scaly6memory4PageE16PlannedStructuremm10FileSyntax6String(ptr noalias sret(%_Z13ResolveResult) %sret.result68, ptr %1, ptr %call64, i64 %3, i64 %4, ptr %5, ptr %6)
+  %set.dest69 = load ptr, ptr %result, align 8
+  %set.thru70 = load %_Z13ResolveResult, ptr %sret.result68, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest69, ptr align 1 %sret.result68, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+  br label %if.end67
 
-if.end69:                                         ; preds = %if.then68, %if.then63
-  br label %if.end64
+if.end67:                                         ; preds = %if.then66, %if.then61
+  br label %if.end62
 
-if.then79:                                        ; preds = %if.end45
-  %load.struct81 = load %_Z4Plan, ptr %2, align 8
-  %unions = extractvalue %_Z4Plan %load.struct81, 3
-  %ne82 = icmp ne ptr %unions, null
-  br i1 %ne82, label %if.then83, label %if.end84
+if.then77:                                        ; preds = %if.end43
+  %load.struct79 = load %_Z4Plan, ptr %2, align 8
+  %unions = extractvalue %_Z4Plan %load.struct79, 3
+  %ne80 = icmp ne ptr %unions, null
+  br i1 %ne80, label %if.then81, label %if.end82
 
-if.end80:                                         ; preds = %if.end84, %if.end45
-  %result110 = load ptr, ptr %result, align 8
-  %load.struct111 = load %_Z13ResolveResult, ptr %result110, align 8
-  %found112 = extractvalue %_Z13ResolveResult %load.struct111, 0
-  %eq113 = icmp eq i1 %found112, false
-  br i1 %eq113, label %if.then114, label %if.end115
+if.end78:                                         ; preds = %if.end82, %if.end43
+  %result108 = load ptr, ptr %result, align 8
+  %load.struct109 = load %_Z13ResolveResult, ptr %result108, align 8
+  %found110 = extractvalue %_Z13ResolveResult %load.struct109, 0
+  %eq111 = icmp eq i1 %found110, false
+  br i1 %eq111, label %if.then112, label %if.end113
 
-if.then83:                                        ; preds = %if.then79
-  %load.struct85 = load %_Z4Plan, ptr %2, align 8
-  %unions86 = extractvalue %_Z4Plan %load.struct85, 3
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %unions86, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
+if.then81:                                        ; preds = %if.then77
+  %load.struct83 = load %_Z4Plan, ptr %2, align 8
+  %unions84 = extractvalue %_Z4Plan %load.struct83, 3
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %unions84, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
   store i64 0, ptr %i, align 1
-  br label %while.cond87
+  br label %while.cond85
 
-if.end84:                                         ; preds = %while.exit89, %if.then79
-  br label %if.end80
+if.end82:                                         ; preds = %while.exit87, %if.then77
+  br label %if.end78
 
-while.cond87:                                     ; preds = %if.end99, %if.then83
-  %i90 = load i64, ptr %i, align 8
-  %load.struct91 = load %_Z6VectorI12PlannedUnionE, ptr %deref.tmp, align 8
-  %length92 = extractvalue %_Z6VectorI12PlannedUnionE %load.struct91, 0
-  %lt93 = icmp ult i64 %i90, %length92
-  br i1 %lt93, label %while.body88, label %while.exit89
+while.cond85:                                     ; preds = %if.end97, %if.then81
+  %i88 = load i64, ptr %i, align 8
+  %load.struct89 = load %_Z6VectorI12PlannedUnionE, ptr %deref.tmp, align 8
+  %length90 = extractvalue %_Z6VectorI12PlannedUnionE %load.struct89, 0
+  %lt91 = icmp ult i64 %i88, %length90
+  br i1 %lt91, label %while.body86, label %while.exit87
 
-while.body88:                                     ; preds = %while.cond87
-  %result94 = load ptr, ptr %result, align 8
-  %load.struct95 = load %_Z13ResolveResult, ptr %result94, align 8
-  %found96 = extractvalue %_Z13ResolveResult %load.struct95, 0
-  %eq97 = icmp eq i1 %found96, false
-  br i1 %eq97, label %if.then98, label %if.end99
+while.body86:                                     ; preds = %while.cond85
+  %result92 = load ptr, ptr %result, align 8
+  %load.struct93 = load %_Z13ResolveResult, ptr %result92, align 8
+  %found94 = extractvalue %_Z13ResolveResult %load.struct93, 0
+  %eq95 = icmp eq i1 %found94, false
+  br i1 %eq95, label %if.then96, label %if.end97
 
-while.exit89:                                     ; preds = %while.cond87
-  br label %if.end84
+while.exit87:                                     ; preds = %while.cond85
+  br label %if.end82
 
-if.then98:                                        ; preds = %while.body88
-  %i100 = load i64, ptr %i, align 8
-  %call101 = call ptr @_ZN6VectorI12PlannedUnionE3getEm(ptr %deref.tmp, i64 %i100)
-  %ne102 = icmp ne ptr %call101, null
-  br i1 %ne102, label %if.then103, label %if.end104
+if.then96:                                        ; preds = %while.body86
+  %i98 = load i64, ptr %i, align 8
+  %call99 = call ptr @_ZN6VectorI12PlannedUnionE3getEm(ptr %deref.tmp, i64 %i98)
+  %ne100 = icmp ne ptr %call99, null
+  br i1 %ne100, label %if.then101, label %if.end102
 
-if.end99:                                         ; preds = %if.end104, %while.body88
-  %i108 = load i64, ptr %i, align 8
-  %add109 = add i64 %i108, 1
-  store i64 %add109, ptr %i, align 1
-  br label %while.cond87
+if.end97:                                         ; preds = %if.end102, %while.body86
+  %i106 = load i64, ptr %i, align 8
+  %add107 = add i64 %i106, 1
+  store i64 %add107, ptr %i, align 1
+  br label %while.cond85
 
-if.then103:                                       ; preds = %if.then98
-  call void @_ZN8semantic10walk_unionEPN4scaly6memory4PageE12PlannedUnionmm10FileSyntax6String(ptr noalias sret(%_Z13ResolveResult) %sret.result105, ptr %1, ptr %call101, i64 %3, i64 %4, ptr %5, ptr %6)
-  %set.dest106 = load ptr, ptr %result, align 8
-  %set.thru107 = load %_Z13ResolveResult, ptr %sret.result105, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest106, ptr align 1 %sret.result105, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
-  br label %if.end104
+if.then101:                                       ; preds = %if.then96
+  call void @_ZN8semantic10walk_unionEPN4scaly6memory4PageE12PlannedUnionmm10FileSyntax6String(ptr noalias sret(%_Z13ResolveResult) %sret.result103, ptr %1, ptr %call99, i64 %3, i64 %4, ptr %5, ptr %6)
+  %set.dest104 = load ptr, ptr %result, align 8
+  %set.thru105 = load %_Z13ResolveResult, ptr %sret.result103, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest104, ptr align 1 %sret.result103, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+  br label %if.end102
 
-if.end104:                                        ; preds = %if.then103, %if.then98
-  br label %if.end99
+if.end102:                                        ; preds = %if.then101, %if.then96
+  br label %if.end97
 
-if.then114:                                       ; preds = %if.end80
-  %load.struct116 = load %_Z4Plan, ptr %2, align 8
-  %globals = extractvalue %_Z4Plan %load.struct116, 5
-  %ne117 = icmp ne ptr %globals, null
-  br i1 %ne117, label %if.then118, label %if.end119
+if.then112:                                       ; preds = %if.end78
+  %load.struct114 = load %_Z4Plan, ptr %2, align 8
+  %globals = extractvalue %_Z4Plan %load.struct114, 5
+  %ne115 = icmp ne ptr %globals, null
+  br i1 %ne115, label %if.then116, label %if.end117
 
-if.end115:                                        ; preds = %if.end119, %if.end80
-  %result156 = load ptr, ptr %result, align 8
+if.end113:                                        ; preds = %if.end117, %if.end78
+  %result153 = load ptr, ptr %result, align 8
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  %sret.body = load %_Z13ResolveResult, ptr %result156, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result156, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+  %sret.body = load %_Z13ResolveResult, ptr %result153, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result153, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.then118:                                       ; preds = %if.then114
-  %load.struct120 = load %_Z4Plan, ptr %2, align 8
-  %globals121 = extractvalue %_Z4Plan %load.struct120, 5
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %globals121, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
+if.then116:                                       ; preds = %if.then112
+  %load.struct118 = load %_Z4Plan, ptr %2, align 8
+  %globals119 = extractvalue %_Z4Plan %load.struct118, 5
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %globals119, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
   store i64 0, ptr %i, align 1
-  br label %while.cond122
+  br label %while.cond120
 
-if.end119:                                        ; preds = %while.exit124, %if.then114
-  br label %if.end115
+if.end117:                                        ; preds = %while.exit122, %if.then112
+  br label %if.end113
 
-while.cond122:                                    ; preds = %if.end134, %if.then118
-  %i125 = load i64, ptr %i, align 8
-  %load.struct126 = load %_Z6VectorI13PlannedGlobalE, ptr %deref.tmp, align 8
-  %length127 = extractvalue %_Z6VectorI13PlannedGlobalE %load.struct126, 0
-  %lt128 = icmp ult i64 %i125, %length127
-  br i1 %lt128, label %while.body123, label %while.exit124
+while.cond120:                                    ; preds = %if.end132, %if.then116
+  %i123 = load i64, ptr %i, align 8
+  %load.struct124 = load %_Z6VectorI13PlannedGlobalE, ptr %deref.tmp, align 8
+  %length125 = extractvalue %_Z6VectorI13PlannedGlobalE %load.struct124, 0
+  %lt126 = icmp ult i64 %i123, %length125
+  br i1 %lt126, label %while.body121, label %while.exit122
 
-while.body123:                                    ; preds = %while.cond122
-  %result129 = load ptr, ptr %result, align 8
-  %load.struct130 = load %_Z13ResolveResult, ptr %result129, align 8
-  %found131 = extractvalue %_Z13ResolveResult %load.struct130, 0
-  %eq132 = icmp eq i1 %found131, false
-  br i1 %eq132, label %if.then133, label %if.end134
+while.body121:                                    ; preds = %while.cond120
+  %result127 = load ptr, ptr %result, align 8
+  %load.struct128 = load %_Z13ResolveResult, ptr %result127, align 8
+  %found129 = extractvalue %_Z13ResolveResult %load.struct128, 0
+  %eq130 = icmp eq i1 %found129, false
+  br i1 %eq130, label %if.then131, label %if.end132
 
-while.exit124:                                    ; preds = %while.cond122
-  br label %if.end119
+while.exit122:                                    ; preds = %while.cond120
+  br label %if.end117
 
-if.then133:                                       ; preds = %while.body123
-  %i135 = load i64, ptr %i, align 8
-  %call136 = call ptr @_ZN6VectorI13PlannedGlobalE3getEm(ptr %deref.tmp, i64 %i135)
-  %ne137 = icmp ne ptr %call136, null
-  br i1 %ne137, label %if.then138, label %if.end139
+if.then131:                                       ; preds = %while.body121
+  %i133 = load i64, ptr %i, align 8
+  %call134 = call ptr @_ZN6VectorI13PlannedGlobalE3getEm(ptr %deref.tmp, i64 %i133)
+  %ne135 = icmp ne ptr %call134, null
+  br i1 %ne135, label %if.then136, label %if.end137
 
-if.end134:                                        ; preds = %if.end139, %while.body123
-  %i154 = load i64, ptr %i, align 8
-  %add155 = add i64 %i154, 1
-  store i64 %add155, ptr %i, align 1
-  br label %while.cond122
+if.end132:                                        ; preds = %if.end137, %while.body121
+  %i151 = load i64, ptr %i, align 8
+  %add152 = add i64 %i151, 1
+  store i64 %add152, ptr %i, align 1
+  br label %while.cond120
 
-if.then138:                                       ; preds = %if.then133
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp140, ptr align 1 %call136, i64 ptrtoint (ptr getelementptr (%_Z13PlannedGlobal, ptr null, i32 1) to i64), i1 false)
-  %load.struct141 = load %_Z13PlannedGlobal, ptr %deref.tmp140, align 8
-  %value = extractvalue %_Z13PlannedGlobal %load.struct141, 4
-  %ne142 = icmp ne ptr %value, null
-  br i1 %ne142, label %if.then143, label %if.end144
+if.then136:                                       ; preds = %if.then131
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp138, ptr align 1 %call134, i64 ptrtoint (ptr getelementptr (%_Z13PlannedGlobal, ptr null, i32 1) to i64), i1 false)
+  %load.struct142 = load %_Z13PlannedGlobal, ptr %deref.tmp138, align 8
+  %value = extractvalue %_Z13PlannedGlobal %load.struct142, 4
+  %ne143 = icmp ne ptr %value, null
+  br i1 %ne143, label %land.rhs141, label %if.end140
 
-if.end139:                                        ; preds = %if.end144, %if.then133
-  br label %if.end134
+if.end137:                                        ; preds = %if.end140, %if.then131
+  br label %if.end132
 
-if.then143:                                       ; preds = %if.then138
-  %field.inplace = getelementptr inbounds nuw %_Z13PlannedGlobal, ptr %deref.tmp140, i32 0, i32 0
-  %field.inplace145 = getelementptr inbounds nuw %_Z4Span, ptr %field.inplace, i32 0, i32 0
-  %field.val = load i64, ptr %field.inplace145, align 8
-  %call146 = call i1 @_ZN8semantic16is_routine_startEPN4scaly6memory4PageE10FileSyntaxm(ptr %frame, ptr %5, i64 %field.val)
-  br i1 %call146, label %if.then147, label %if.end148
+if.then139:                                       ; preds = %land.rhs141
+  %load.struct147 = load %_Z13PlannedGlobal, ptr %deref.tmp138, align 8
+  %value148 = extractvalue %_Z13PlannedGlobal %load.struct147, 4
+  call void @_ZN8semantic13walk_operandsEPN4scaly6memory4PageE6VectorI14PlannedOperandEmm(ptr noalias sret(%_Z13ResolveResult) %sret.result146, ptr %1, ptr %value148, i64 %3, i64 %4)
+  %set.dest149 = load ptr, ptr %result, align 8
+  %set.thru150 = load %_Z13ResolveResult, ptr %sret.result146, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest149, ptr align 1 %sret.result146, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+  br label %if.end140
 
-if.end144:                                        ; preds = %if.end148, %if.then138
-  br label %if.end139
+if.end140:                                        ; preds = %if.then139, %land.rhs141, %if.then136
+  br label %if.end137
 
-if.then147:                                       ; preds = %if.then143
-  %load.struct150 = load %_Z13PlannedGlobal, ptr %deref.tmp140, align 8
-  %value151 = extractvalue %_Z13PlannedGlobal %load.struct150, 4
-  call void @_ZN8semantic13walk_operandsEPN4scaly6memory4PageE6VectorI14PlannedOperandEmm(ptr noalias sret(%_Z13ResolveResult) %sret.result149, ptr %1, ptr %value151, i64 %3, i64 %4)
-  %set.dest152 = load ptr, ptr %result, align 8
-  %set.thru153 = load %_Z13ResolveResult, ptr %sret.result149, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest152, ptr align 1 %sret.result149, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
-  br label %if.end148
-
-if.end148:                                        ; preds = %if.then147, %if.then143
-  br label %if.end144
+land.rhs141:                                      ; preds = %if.then136
+  %field.inplace = getelementptr inbounds nuw %_Z13PlannedGlobal, ptr %deref.tmp138, i32 0, i32 0
+  %field.inplace144 = getelementptr inbounds nuw %_Z4Span, ptr %field.inplace, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace144, align 8
+  %call145 = call i1 @_ZN8semantic16is_routine_startEPN4scaly6memory4PageE10FileSyntaxm(ptr %frame, ptr %5, i64 %field.val)
+  br i1 %call145, label %if.then139, label %if.end140
 }
 
 define linkonce_odr void @_ZN8semantic20resolve_through_rootEPN4scaly6memory4PageE6String6Stringmm10FileSyntax(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, i64 %4, i64 %5, ptr %6) {
@@ -115969,55 +115553,37 @@ if.end15:                                         ; preds = %if.then14, %if.then
 define linkonce_odr i1 @_ZN8semantic13is_ident_byteE2u8(i8 %0) {
 entry:
   %ge = icmp uge i8 %0, 97
-  br i1 %ge, label %if.then, label %if.end
+  br i1 %ge, label %land.rhs, label %lor.rhs2
 
-if.then:                                          ; preds = %entry
-  %le = icmp ule i8 %0, 122
-  br i1 %le, label %if.then1, label %if.end2
-
-if.end:                                           ; preds = %if.end2, %entry
-  %ge3 = icmp uge i8 %0, 65
-  br i1 %ge3, label %if.then4, label %if.end5
-
-if.then1:                                         ; preds = %if.then
+if.then:                                          ; preds = %lor.rhs, %land.rhs6, %land.rhs3, %land.rhs
   ret i1 true
 
-if.end2:                                          ; preds = %if.then
-  br label %if.end
-
-if.then4:                                         ; preds = %if.end
-  %le6 = icmp ule i8 %0, 90
-  br i1 %le6, label %if.then7, label %if.end8
-
-if.end5:                                          ; preds = %if.end8, %if.end
-  %ge9 = icmp uge i8 %0, 48
-  br i1 %ge9, label %if.then10, label %if.end11
-
-if.then7:                                         ; preds = %if.then4
-  ret i1 true
-
-if.end8:                                          ; preds = %if.then4
-  br label %if.end5
-
-if.then10:                                        ; preds = %if.end5
-  %le12 = icmp ule i8 %0, 57
-  br i1 %le12, label %if.then13, label %if.end14
-
-if.end11:                                         ; preds = %if.end14, %if.end5
-  %eq = icmp eq i8 %0, 95
-  br i1 %eq, label %if.then15, label %if.end16
-
-if.then13:                                        ; preds = %if.then10
-  ret i1 true
-
-if.end14:                                         ; preds = %if.then10
-  br label %if.end11
-
-if.then15:                                        ; preds = %if.end11
-  ret i1 true
-
-if.end16:                                         ; preds = %if.end11
+if.end:                                           ; preds = %lor.rhs
   ret i1 false
+
+lor.rhs:                                          ; preds = %land.rhs6, %lor.rhs1
+  %eq = icmp eq i8 %0, 95
+  br i1 %eq, label %if.then, label %if.end
+
+lor.rhs1:                                         ; preds = %land.rhs3, %lor.rhs2
+  %ge7 = icmp uge i8 %0, 48
+  br i1 %ge7, label %land.rhs6, label %lor.rhs
+
+lor.rhs2:                                         ; preds = %land.rhs, %entry
+  %ge4 = icmp uge i8 %0, 65
+  br i1 %ge4, label %land.rhs3, label %lor.rhs1
+
+land.rhs:                                         ; preds = %entry
+  %le = icmp ule i8 %0, 122
+  br i1 %le, label %if.then, label %lor.rhs2
+
+land.rhs3:                                        ; preds = %lor.rhs2
+  %le5 = icmp ule i8 %0, 90
+  br i1 %le5, label %if.then, label %lor.rhs1
+
+land.rhs6:                                        ; preds = %lor.rhs1
+  %le8 = icmp ule i8 %0, 57
+  br i1 %le8, label %if.then, label %lor.rhs
 }
 
 define linkonce_odr i1 @_ZN8semantic16is_routine_startEPN4scaly6memory4PageE10FileSyntaxm(ptr %0, ptr %1, i64 %2) {
@@ -116056,28 +115622,25 @@ while.body:                                       ; preds = %while.cond
   %i5 = load i64, ptr %i, align 8
   %call = call ptr @_ZN6VectorI17DeclarationSyntaxE3getEm(ptr %deref.tmp, i64 %i5)
   %ne = icmp ne ptr %call, null
-  br i1 %ne, label %if.then6, label %if.end7
+  br i1 %ne, label %land.rhs, label %if.end7
 
 while.exit:                                       ; preds = %while.cond
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 false
 
-if.then6:                                         ; preds = %while.body
-  %call8 = call i1 @_ZN8semantic14decl_has_startEPN4scaly6memory4PageE17DeclarationSyntaxm(ptr %frame, ptr %call, i64 %2)
-  br i1 %call8, label %if.then9, label %if.end10
-
-if.end7:                                          ; preds = %if.end10, %while.body
-  %i11 = load i64, ptr %i, align 8
-  %add = add i64 %i11, 1
-  store i64 %add, ptr %i, align 1
-  br label %while.cond
-
-if.then9:                                         ; preds = %if.then6
+if.then6:                                         ; preds = %land.rhs
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 true
 
-if.end10:                                         ; preds = %if.then6
-  br label %if.end7
+if.end7:                                          ; preds = %land.rhs, %while.body
+  %i9 = load i64, ptr %i, align 8
+  %add = add i64 %i9, 1
+  store i64 %add, ptr %i, align 1
+  br label %while.cond
+
+land.rhs:                                         ; preds = %while.body
+  %call8 = call i1 @_ZN8semantic14decl_has_startEPN4scaly6memory4PageE17DeclarationSyntaxm(ptr %frame, ptr %call, i64 %2)
+  br i1 %call8, label %if.then6, label %if.end7
 }
 
 define linkonce_odr i1 @_ZN8semantic12owns_routineEPN4scaly6memory4PageE10FileSyntax6String6Stringm(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4) {
@@ -116355,28 +115918,25 @@ while.body:                                       ; preds = %while.cond
   %i9 = load i64, ptr %i, align 8
   %call = call ptr @_ZN6VectorI12MemberSyntaxE3getEm(ptr %deref.tmp6, i64 %i9)
   %ne = icmp ne ptr %call, null
-  br i1 %ne, label %if.then10, label %if.end11
+  br i1 %ne, label %land.rhs, label %if.end11
 
 while.exit:                                       ; preds = %while.cond
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 false
 
-if.then10:                                        ; preds = %while.body
-  %call12 = call i1 @_ZN8semantic16member_has_startEPN4scaly6memory4PageE12MemberSyntaxm(ptr %frame, ptr %call, i64 %2)
-  br i1 %call12, label %if.then13, label %if.end14
-
-if.end11:                                         ; preds = %if.end14, %while.body
-  %i15 = load i64, ptr %i, align 8
-  %add = add i64 %i15, 1
-  store i64 %add, ptr %i, align 1
-  br label %while.cond
-
-if.then13:                                        ; preds = %if.then10
+if.then10:                                        ; preds = %land.rhs
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 true
 
-if.end14:                                         ; preds = %if.then10
-  br label %if.end11
+if.end11:                                         ; preds = %land.rhs, %while.body
+  %i13 = load i64, ptr %i, align 8
+  %add = add i64 %i13, 1
+  store i64 %add, ptr %i, align 1
+  br label %while.cond
+
+land.rhs:                                         ; preds = %while.body
+  %call12 = call i1 @_ZN8semantic16member_has_startEPN4scaly6memory4PageE12MemberSyntaxm(ptr %frame, ptr %call, i64 %2)
+  br i1 %call12, label %if.then10, label %if.end11
 }
 
 define linkonce_odr i1 @_ZN8semantic19namespace_has_startEPN4scaly6memory4PageE15NamespaceSyntaxm(ptr %0, ptr %1, i64 %2) {
@@ -116415,28 +115975,25 @@ while.body:                                       ; preds = %while.cond
   %i5 = load i64, ptr %i, align 8
   %call = call ptr @_ZN6VectorI17DeclarationSyntaxE3getEm(ptr %deref.tmp, i64 %i5)
   %ne = icmp ne ptr %call, null
-  br i1 %ne, label %if.then6, label %if.end7
+  br i1 %ne, label %land.rhs, label %if.end7
 
 while.exit:                                       ; preds = %while.cond
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 false
 
-if.then6:                                         ; preds = %while.body
-  %call8 = call i1 @_ZN8semantic14decl_has_startEPN4scaly6memory4PageE17DeclarationSyntaxm(ptr %frame, ptr %call, i64 %2)
-  br i1 %call8, label %if.then9, label %if.end10
-
-if.end7:                                          ; preds = %if.end10, %while.body
-  %i11 = load i64, ptr %i, align 8
-  %add = add i64 %i11, 1
-  store i64 %add, ptr %i, align 1
-  br label %while.cond
-
-if.then9:                                         ; preds = %if.then6
+if.then6:                                         ; preds = %land.rhs
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 true
 
-if.end10:                                         ; preds = %if.then6
-  br label %if.end7
+if.end7:                                          ; preds = %land.rhs, %while.body
+  %i9 = load i64, ptr %i, align 8
+  %add = add i64 %i9, 1
+  store i64 %add, ptr %i, align 1
+  br label %while.cond
+
+land.rhs:                                         ; preds = %while.body
+  %call8 = call i1 @_ZN8semantic14decl_has_startEPN4scaly6memory4PageE17DeclarationSyntaxm(ptr %frame, ptr %call, i64 %2)
+  br i1 %call8, label %if.then6, label %if.end7
 }
 
 define linkonce_odr i1 @_ZN8semantic15union_has_startEPN4scaly6memory4PageE11UnionSyntaxm(ptr %0, ptr %1, i64 %2) {
@@ -117929,21 +117486,21 @@ choose.when9:                                     ; preds = %entry
 
 define linkonce_odr void @_ZN8semantic14walk_structureEPN4scaly6memory4PageE16PlannedStructuremm10FileSyntax6String(ptr noalias sret(%_Z13ResolveResult) %0, ptr %1, ptr %2, i64 %3, i64 %4, ptr %5, ptr %6) {
 entry:
-  %arg.tmp142 = alloca %_Z21PlannedImplementation, align 8
-  %deref.tmp139 = alloca %_Z20PlannedDeInitializer, align 8
-  %sret.result136 = alloca %_Z13ResolveResult, align 8
-  %deref.tmp129 = alloca %_Z20PlannedDeInitializer, align 8
-  %arg.tmp112 = alloca %_Z21PlannedImplementation, align 8
-  %deref.tmp109 = alloca %_Z15PlannedOperator, align 8
-  %sret.result108 = alloca %_Z13ResolveResult, align 8
-  %deref.tmp101 = alloca %_Z15PlannedOperator, align 8
-  %arg.tmp66 = alloca %_Z21PlannedImplementation, align 8
-  %deref.tmp63 = alloca %_Z18PlannedInitializer, align 8
-  %sret.result62 = alloca %_Z13ResolveResult, align 8
-  %deref.tmp55 = alloca %_Z18PlannedInitializer, align 8
-  %arg.tmp23 = alloca %_Z21PlannedImplementation, align 8
-  %deref.tmp21 = alloca %_Z15PlannedFunction, align 8
-  %sret.result20 = alloca %_Z13ResolveResult, align 8
+  %arg.tmp137 = alloca %_Z21PlannedImplementation, align 8
+  %deref.tmp134 = alloca %_Z20PlannedDeInitializer, align 8
+  %sret.result131 = alloca %_Z13ResolveResult, align 8
+  %deref.tmp126 = alloca %_Z20PlannedDeInitializer, align 8
+  %arg.tmp108 = alloca %_Z21PlannedImplementation, align 8
+  %deref.tmp105 = alloca %_Z15PlannedOperator, align 8
+  %sret.result104 = alloca %_Z13ResolveResult, align 8
+  %deref.tmp99 = alloca %_Z15PlannedOperator, align 8
+  %arg.tmp63 = alloca %_Z21PlannedImplementation, align 8
+  %deref.tmp60 = alloca %_Z18PlannedInitializer, align 8
+  %sret.result59 = alloca %_Z13ResolveResult, align 8
+  %deref.tmp54 = alloca %_Z18PlannedInitializer, align 8
+  %arg.tmp21 = alloca %_Z21PlannedImplementation, align 8
+  %deref.tmp19 = alloca %_Z15PlannedFunction, align 8
+  %sret.result18 = alloca %_Z13ResolveResult, align 8
   %deref.tmp15 = alloca %_Z15PlannedFunction, align 8
   %arg.tmp = alloca { ptr }, align 8
   %deref.tmp13 = alloca %_Z15PlannedFunction, align 8
@@ -117971,11 +117528,11 @@ if.then:                                          ; preds = %entry
   br label %while.cond
 
 if.end:                                           ; preds = %while.exit, %entry
-  %result25 = load ptr, ptr %result, align 8
-  %load.struct26 = load %_Z13ResolveResult, ptr %result25, align 8
-  %found27 = extractvalue %_Z13ResolveResult %load.struct26, 0
-  %eq28 = icmp eq i1 %found27, false
-  br i1 %eq28, label %if.then29, label %if.end30
+  %result23 = load ptr, ptr %result, align 8
+  %load.struct24 = load %_Z13ResolveResult, ptr %result23, align 8
+  %found25 = extractvalue %_Z13ResolveResult %load.struct24, 0
+  %eq26 = icmp eq i1 %found25, false
+  br i1 %eq26, label %if.then27, label %if.end28
 
 while.cond:                                       ; preds = %if.end8, %if.then
   %i3 = load i64, ptr %i, align 8
@@ -117997,16 +117554,30 @@ while.exit:                                       ; preds = %while.cond
 if.then7:                                         ; preds = %while.body
   %i9 = load i64, ptr %i, align 8
   %call = call ptr @_ZN6VectorI15PlannedFunctionE3getEm(ptr %deref.tmp, i64 %i9)
-  %ne10 = icmp ne ptr %call, null
-  br i1 %ne10, label %if.then11, label %if.end12
+  %ne12 = icmp ne ptr %call, null
+  br i1 %ne12, label %land.rhs, label %if.end11
 
-if.end8:                                          ; preds = %if.end12, %while.body
-  %i24 = load i64, ptr %i, align 8
-  %add = add i64 %i24, 1
+if.end8:                                          ; preds = %if.end11, %while.body
+  %i22 = load i64, ptr %i, align 8
+  %add = add i64 %i22, 1
   store i64 %add, ptr %i, align 1
   br label %while.cond
 
-if.then11:                                        ; preds = %if.then7
+if.then10:                                        ; preds = %land.rhs
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp19, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64), i1 false)
+  %load.struct20 = load %_Z15PlannedFunction, ptr %deref.tmp19, align 8
+  %impl = extractvalue %_Z15PlannedFunction %load.struct20, 10
+  store %_Z21PlannedImplementation %impl, ptr %arg.tmp21, align 1
+  call void @_ZN8semantic9walk_implEPN4scaly6memory4PageE21PlannedImplementationmm(ptr noalias sret(%_Z13ResolveResult) %sret.result18, ptr %1, ptr %arg.tmp21, i64 %3, i64 %4)
+  %set.dest = load ptr, ptr %result, align 8
+  %set.thru = load %_Z13ResolveResult, ptr %sret.result18, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest, ptr align 1 %sret.result18, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+  br label %if.end11
+
+if.end11:                                         ; preds = %if.then10, %land.rhs, %if.then7
+  br label %if.end8
+
+land.rhs:                                         ; preds = %if.then7
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp13, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64), i1 false)
   %load.struct14 = load %_Z15PlannedFunction, ptr %deref.tmp13, align 8
   %file = extractvalue %_Z15PlannedFunction %load.struct14, 15
@@ -118016,231 +117587,205 @@ if.then11:                                        ; preds = %if.then7
   %loc = extractvalue %_Z15PlannedFunction %load.struct16, 0
   %start = extractvalue %_Z4Span %loc, 0
   %call17 = call i1 @_ZN8semantic12owns_routineEPN4scaly6memory4PageE10FileSyntax6String6Stringm(ptr %frame, ptr %5, ptr %6, ptr %arg.tmp, i64 %start)
-  br i1 %call17, label %if.then18, label %if.end19
+  br i1 %call17, label %if.then10, label %if.end11
 
-if.end12:                                         ; preds = %if.end19, %if.then7
-  br label %if.end8
+if.then27:                                        ; preds = %if.end
+  %load.struct29 = load %_Z16PlannedStructure, ptr %2, align 8
+  %initializers = extractvalue %_Z16PlannedStructure %load.struct29, 6
+  %ne30 = icmp ne ptr %initializers, null
+  br i1 %ne30, label %if.then31, label %if.end32
 
-if.then18:                                        ; preds = %if.then11
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp21, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64), i1 false)
-  %load.struct22 = load %_Z15PlannedFunction, ptr %deref.tmp21, align 8
-  %impl = extractvalue %_Z15PlannedFunction %load.struct22, 10
-  store %_Z21PlannedImplementation %impl, ptr %arg.tmp23, align 1
-  call void @_ZN8semantic9walk_implEPN4scaly6memory4PageE21PlannedImplementationmm(ptr noalias sret(%_Z13ResolveResult) %sret.result20, ptr %1, ptr %arg.tmp23, i64 %3, i64 %4)
-  %set.dest = load ptr, ptr %result, align 8
-  %set.thru = load %_Z13ResolveResult, ptr %sret.result20, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest, ptr align 1 %sret.result20, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
-  br label %if.end19
+if.end28:                                         ; preds = %if.end32, %if.end
+  %result68 = load ptr, ptr %result, align 8
+  %load.struct69 = load %_Z13ResolveResult, ptr %result68, align 8
+  %found70 = extractvalue %_Z13ResolveResult %load.struct69, 0
+  %eq71 = icmp eq i1 %found70, false
+  br i1 %eq71, label %if.then72, label %if.end73
 
-if.end19:                                         ; preds = %if.then18, %if.then11
-  br label %if.end12
-
-if.then29:                                        ; preds = %if.end
-  %load.struct31 = load %_Z16PlannedStructure, ptr %2, align 8
-  %initializers = extractvalue %_Z16PlannedStructure %load.struct31, 6
-  %ne32 = icmp ne ptr %initializers, null
-  br i1 %ne32, label %if.then33, label %if.end34
-
-if.end30:                                         ; preds = %if.end34, %if.end
-  %result71 = load ptr, ptr %result, align 8
-  %load.struct72 = load %_Z13ResolveResult, ptr %result71, align 8
-  %found73 = extractvalue %_Z13ResolveResult %load.struct72, 0
-  %eq74 = icmp eq i1 %found73, false
-  br i1 %eq74, label %if.then75, label %if.end76
-
-if.then33:                                        ; preds = %if.then29
-  %load.struct35 = load %_Z16PlannedStructure, ptr %2, align 8
-  %initializers36 = extractvalue %_Z16PlannedStructure %load.struct35, 6
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %initializers36, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
+if.then31:                                        ; preds = %if.then27
+  %load.struct33 = load %_Z16PlannedStructure, ptr %2, align 8
+  %initializers34 = extractvalue %_Z16PlannedStructure %load.struct33, 6
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %initializers34, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
   store i64 0, ptr %i, align 1
-  br label %while.cond37
+  br label %while.cond35
 
-if.end34:                                         ; preds = %while.exit39, %if.then29
-  br label %if.end30
+if.end32:                                         ; preds = %while.exit37, %if.then27
+  br label %if.end28
 
-while.cond37:                                     ; preds = %if.end49, %if.then33
-  %i40 = load i64, ptr %i, align 8
-  %load.struct41 = load %_Z6VectorI18PlannedInitializerE, ptr %deref.tmp, align 8
-  %length42 = extractvalue %_Z6VectorI18PlannedInitializerE %load.struct41, 0
-  %lt43 = icmp ult i64 %i40, %length42
-  br i1 %lt43, label %while.body38, label %while.exit39
+while.cond35:                                     ; preds = %if.end47, %if.then31
+  %i38 = load i64, ptr %i, align 8
+  %load.struct39 = load %_Z6VectorI18PlannedInitializerE, ptr %deref.tmp, align 8
+  %length40 = extractvalue %_Z6VectorI18PlannedInitializerE %load.struct39, 0
+  %lt41 = icmp ult i64 %i38, %length40
+  br i1 %lt41, label %while.body36, label %while.exit37
 
-while.body38:                                     ; preds = %while.cond37
-  %result44 = load ptr, ptr %result, align 8
-  %load.struct45 = load %_Z13ResolveResult, ptr %result44, align 8
-  %found46 = extractvalue %_Z13ResolveResult %load.struct45, 0
-  %eq47 = icmp eq i1 %found46, false
-  br i1 %eq47, label %if.then48, label %if.end49
+while.body36:                                     ; preds = %while.cond35
+  %result42 = load ptr, ptr %result, align 8
+  %load.struct43 = load %_Z13ResolveResult, ptr %result42, align 8
+  %found44 = extractvalue %_Z13ResolveResult %load.struct43, 0
+  %eq45 = icmp eq i1 %found44, false
+  br i1 %eq45, label %if.then46, label %if.end47
 
-while.exit39:                                     ; preds = %while.cond37
-  br label %if.end34
+while.exit37:                                     ; preds = %while.cond35
+  br label %if.end32
 
-if.then48:                                        ; preds = %while.body38
-  %i50 = load i64, ptr %i, align 8
-  %call51 = call ptr @_ZN6VectorI18PlannedInitializerE3getEm(ptr %deref.tmp, i64 %i50)
-  %ne52 = icmp ne ptr %call51, null
-  br i1 %ne52, label %if.then53, label %if.end54
+if.then46:                                        ; preds = %while.body36
+  %i48 = load i64, ptr %i, align 8
+  %call49 = call ptr @_ZN6VectorI18PlannedInitializerE3getEm(ptr %deref.tmp, i64 %i48)
+  %ne53 = icmp ne ptr %call49, null
+  br i1 %ne53, label %land.rhs52, label %if.end51
 
-if.end49:                                         ; preds = %if.end54, %while.body38
-  %i69 = load i64, ptr %i, align 8
-  %add70 = add i64 %i69, 1
-  store i64 %add70, ptr %i, align 1
-  br label %while.cond37
+if.end47:                                         ; preds = %if.end51, %while.body36
+  %i66 = load i64, ptr %i, align 8
+  %add67 = add i64 %i66, 1
+  store i64 %add67, ptr %i, align 1
+  br label %while.cond35
 
-if.then53:                                        ; preds = %if.then48
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp55, ptr align 1 %call51, i64 ptrtoint (ptr getelementptr (%_Z18PlannedInitializer, ptr null, i32 1) to i64), i1 false)
-  %load.struct56 = load %_Z18PlannedInitializer, ptr %deref.tmp55, align 8
-  %loc57 = extractvalue %_Z18PlannedInitializer %load.struct56, 0
-  %start58 = extractvalue %_Z4Span %loc57, 0
-  %call59 = call i1 @_ZN8semantic16is_routine_startEPN4scaly6memory4PageE10FileSyntaxm(ptr %frame, ptr %5, i64 %start58)
-  br i1 %call59, label %if.then60, label %if.end61
+if.then50:                                        ; preds = %land.rhs52
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp60, ptr align 1 %call49, i64 ptrtoint (ptr getelementptr (%_Z18PlannedInitializer, ptr null, i32 1) to i64), i1 false)
+  %load.struct61 = load %_Z18PlannedInitializer, ptr %deref.tmp60, align 8
+  %impl62 = extractvalue %_Z18PlannedInitializer %load.struct61, 5
+  store %_Z21PlannedImplementation %impl62, ptr %arg.tmp63, align 1
+  call void @_ZN8semantic9walk_implEPN4scaly6memory4PageE21PlannedImplementationmm(ptr noalias sret(%_Z13ResolveResult) %sret.result59, ptr %1, ptr %arg.tmp63, i64 %3, i64 %4)
+  %set.dest64 = load ptr, ptr %result, align 8
+  %set.thru65 = load %_Z13ResolveResult, ptr %sret.result59, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest64, ptr align 1 %sret.result59, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+  br label %if.end51
 
-if.end54:                                         ; preds = %if.end61, %if.then48
-  br label %if.end49
+if.end51:                                         ; preds = %if.then50, %land.rhs52, %if.then46
+  br label %if.end47
 
-if.then60:                                        ; preds = %if.then53
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp63, ptr align 1 %call51, i64 ptrtoint (ptr getelementptr (%_Z18PlannedInitializer, ptr null, i32 1) to i64), i1 false)
-  %load.struct64 = load %_Z18PlannedInitializer, ptr %deref.tmp63, align 8
-  %impl65 = extractvalue %_Z18PlannedInitializer %load.struct64, 5
-  store %_Z21PlannedImplementation %impl65, ptr %arg.tmp66, align 1
-  call void @_ZN8semantic9walk_implEPN4scaly6memory4PageE21PlannedImplementationmm(ptr noalias sret(%_Z13ResolveResult) %sret.result62, ptr %1, ptr %arg.tmp66, i64 %3, i64 %4)
-  %set.dest67 = load ptr, ptr %result, align 8
-  %set.thru68 = load %_Z13ResolveResult, ptr %sret.result62, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest67, ptr align 1 %sret.result62, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
-  br label %if.end61
+land.rhs52:                                       ; preds = %if.then46
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp54, ptr align 1 %call49, i64 ptrtoint (ptr getelementptr (%_Z18PlannedInitializer, ptr null, i32 1) to i64), i1 false)
+  %load.struct55 = load %_Z18PlannedInitializer, ptr %deref.tmp54, align 8
+  %loc56 = extractvalue %_Z18PlannedInitializer %load.struct55, 0
+  %start57 = extractvalue %_Z4Span %loc56, 0
+  %call58 = call i1 @_ZN8semantic16is_routine_startEPN4scaly6memory4PageE10FileSyntaxm(ptr %frame, ptr %5, i64 %start57)
+  br i1 %call58, label %if.then50, label %if.end51
 
-if.end61:                                         ; preds = %if.then60, %if.then53
-  br label %if.end54
+if.then72:                                        ; preds = %if.end28
+  %load.struct74 = load %_Z16PlannedStructure, ptr %2, align 8
+  %operators = extractvalue %_Z16PlannedStructure %load.struct74, 9
+  %ne75 = icmp ne ptr %operators, null
+  br i1 %ne75, label %if.then76, label %if.end77
 
-if.then75:                                        ; preds = %if.end30
-  %load.struct77 = load %_Z16PlannedStructure, ptr %2, align 8
-  %operators = extractvalue %_Z16PlannedStructure %load.struct77, 9
-  %ne78 = icmp ne ptr %operators, null
-  br i1 %ne78, label %if.then79, label %if.end80
+if.end73:                                         ; preds = %if.end77, %if.end28
+  %result113 = load ptr, ptr %result, align 8
+  %load.struct114 = load %_Z13ResolveResult, ptr %result113, align 8
+  %found115 = extractvalue %_Z13ResolveResult %load.struct114, 0
+  %eq116 = icmp eq i1 %found115, false
+  br i1 %eq116, label %if.then117, label %if.end118
 
-if.end76:                                         ; preds = %if.end80, %if.end30
-  %result117 = load ptr, ptr %result, align 8
-  %load.struct118 = load %_Z13ResolveResult, ptr %result117, align 8
-  %found119 = extractvalue %_Z13ResolveResult %load.struct118, 0
-  %eq120 = icmp eq i1 %found119, false
-  br i1 %eq120, label %if.then121, label %if.end122
-
-if.then79:                                        ; preds = %if.then75
-  %load.struct81 = load %_Z16PlannedStructure, ptr %2, align 8
-  %operators82 = extractvalue %_Z16PlannedStructure %load.struct81, 9
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %operators82, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
+if.then76:                                        ; preds = %if.then72
+  %load.struct78 = load %_Z16PlannedStructure, ptr %2, align 8
+  %operators79 = extractvalue %_Z16PlannedStructure %load.struct78, 9
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %operators79, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
   store i64 0, ptr %i, align 1
-  br label %while.cond83
+  br label %while.cond80
 
-if.end80:                                         ; preds = %while.exit85, %if.then75
-  br label %if.end76
+if.end77:                                         ; preds = %while.exit82, %if.then72
+  br label %if.end73
 
-while.cond83:                                     ; preds = %if.end95, %if.then79
-  %i86 = load i64, ptr %i, align 8
-  %load.struct87 = load %_Z6VectorI15PlannedOperatorE, ptr %deref.tmp, align 8
-  %length88 = extractvalue %_Z6VectorI15PlannedOperatorE %load.struct87, 0
-  %lt89 = icmp ult i64 %i86, %length88
-  br i1 %lt89, label %while.body84, label %while.exit85
+while.cond80:                                     ; preds = %if.end92, %if.then76
+  %i83 = load i64, ptr %i, align 8
+  %load.struct84 = load %_Z6VectorI15PlannedOperatorE, ptr %deref.tmp, align 8
+  %length85 = extractvalue %_Z6VectorI15PlannedOperatorE %load.struct84, 0
+  %lt86 = icmp ult i64 %i83, %length85
+  br i1 %lt86, label %while.body81, label %while.exit82
 
-while.body84:                                     ; preds = %while.cond83
-  %result90 = load ptr, ptr %result, align 8
-  %load.struct91 = load %_Z13ResolveResult, ptr %result90, align 8
-  %found92 = extractvalue %_Z13ResolveResult %load.struct91, 0
-  %eq93 = icmp eq i1 %found92, false
-  br i1 %eq93, label %if.then94, label %if.end95
+while.body81:                                     ; preds = %while.cond80
+  %result87 = load ptr, ptr %result, align 8
+  %load.struct88 = load %_Z13ResolveResult, ptr %result87, align 8
+  %found89 = extractvalue %_Z13ResolveResult %load.struct88, 0
+  %eq90 = icmp eq i1 %found89, false
+  br i1 %eq90, label %if.then91, label %if.end92
 
-while.exit85:                                     ; preds = %while.cond83
-  br label %if.end80
+while.exit82:                                     ; preds = %while.cond80
+  br label %if.end77
 
-if.then94:                                        ; preds = %while.body84
-  %i96 = load i64, ptr %i, align 8
-  %call97 = call ptr @_ZN6VectorI15PlannedOperatorE3getEm(ptr %deref.tmp, i64 %i96)
-  %ne98 = icmp ne ptr %call97, null
-  br i1 %ne98, label %if.then99, label %if.end100
+if.then91:                                        ; preds = %while.body81
+  %i93 = load i64, ptr %i, align 8
+  %call94 = call ptr @_ZN6VectorI15PlannedOperatorE3getEm(ptr %deref.tmp, i64 %i93)
+  %ne98 = icmp ne ptr %call94, null
+  br i1 %ne98, label %land.rhs97, label %if.end96
 
-if.end95:                                         ; preds = %if.end100, %while.body84
-  %i115 = load i64, ptr %i, align 8
-  %add116 = add i64 %i115, 1
-  store i64 %add116, ptr %i, align 1
-  br label %while.cond83
+if.end92:                                         ; preds = %if.end96, %while.body81
+  %i111 = load i64, ptr %i, align 8
+  %add112 = add i64 %i111, 1
+  store i64 %add112, ptr %i, align 1
+  br label %while.cond80
 
-if.then99:                                        ; preds = %if.then94
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp101, ptr align 1 %call97, i64 ptrtoint (ptr getelementptr (%_Z15PlannedOperator, ptr null, i32 1) to i64), i1 false)
-  %load.struct102 = load %_Z15PlannedOperator, ptr %deref.tmp101, align 8
-  %loc103 = extractvalue %_Z15PlannedOperator %load.struct102, 0
-  %start104 = extractvalue %_Z4Span %loc103, 0
-  %call105 = call i1 @_ZN8semantic16is_routine_startEPN4scaly6memory4PageE10FileSyntaxm(ptr %frame, ptr %5, i64 %start104)
-  br i1 %call105, label %if.then106, label %if.end107
+if.then95:                                        ; preds = %land.rhs97
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp105, ptr align 1 %call94, i64 ptrtoint (ptr getelementptr (%_Z15PlannedOperator, ptr null, i32 1) to i64), i1 false)
+  %load.struct106 = load %_Z15PlannedOperator, ptr %deref.tmp105, align 8
+  %impl107 = extractvalue %_Z15PlannedOperator %load.struct106, 7
+  store %_Z21PlannedImplementation %impl107, ptr %arg.tmp108, align 1
+  call void @_ZN8semantic9walk_implEPN4scaly6memory4PageE21PlannedImplementationmm(ptr noalias sret(%_Z13ResolveResult) %sret.result104, ptr %1, ptr %arg.tmp108, i64 %3, i64 %4)
+  %set.dest109 = load ptr, ptr %result, align 8
+  %set.thru110 = load %_Z13ResolveResult, ptr %sret.result104, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest109, ptr align 1 %sret.result104, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+  br label %if.end96
 
-if.end100:                                        ; preds = %if.end107, %if.then94
-  br label %if.end95
+if.end96:                                         ; preds = %if.then95, %land.rhs97, %if.then91
+  br label %if.end92
 
-if.then106:                                       ; preds = %if.then99
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp109, ptr align 1 %call97, i64 ptrtoint (ptr getelementptr (%_Z15PlannedOperator, ptr null, i32 1) to i64), i1 false)
-  %load.struct110 = load %_Z15PlannedOperator, ptr %deref.tmp109, align 8
-  %impl111 = extractvalue %_Z15PlannedOperator %load.struct110, 7
-  store %_Z21PlannedImplementation %impl111, ptr %arg.tmp112, align 1
-  call void @_ZN8semantic9walk_implEPN4scaly6memory4PageE21PlannedImplementationmm(ptr noalias sret(%_Z13ResolveResult) %sret.result108, ptr %1, ptr %arg.tmp112, i64 %3, i64 %4)
-  %set.dest113 = load ptr, ptr %result, align 8
-  %set.thru114 = load %_Z13ResolveResult, ptr %sret.result108, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest113, ptr align 1 %sret.result108, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
-  br label %if.end107
+land.rhs97:                                       ; preds = %if.then91
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp99, ptr align 1 %call94, i64 ptrtoint (ptr getelementptr (%_Z15PlannedOperator, ptr null, i32 1) to i64), i1 false)
+  %load.struct100 = load %_Z15PlannedOperator, ptr %deref.tmp99, align 8
+  %loc101 = extractvalue %_Z15PlannedOperator %load.struct100, 0
+  %start102 = extractvalue %_Z4Span %loc101, 0
+  %call103 = call i1 @_ZN8semantic16is_routine_startEPN4scaly6memory4PageE10FileSyntaxm(ptr %frame, ptr %5, i64 %start102)
+  br i1 %call103, label %if.then95, label %if.end96
 
-if.end107:                                        ; preds = %if.then106, %if.then99
-  br label %if.end100
+if.then117:                                       ; preds = %if.end73
+  %load.struct122 = load %_Z16PlannedStructure, ptr %2, align 8
+  %deinitializer = extractvalue %_Z16PlannedStructure %load.struct122, 7
+  %ne123 = icmp ne ptr %deinitializer, null
+  br i1 %ne123, label %land.rhs121, label %if.end120
 
-if.then121:                                       ; preds = %if.end76
-  %load.struct123 = load %_Z16PlannedStructure, ptr %2, align 8
-  %deinitializer = extractvalue %_Z16PlannedStructure %load.struct123, 7
-  %ne124 = icmp ne ptr %deinitializer, null
-  br i1 %ne124, label %if.then125, label %if.end126
-
-if.end122:                                        ; preds = %if.end126, %if.end76
-  %result145 = load ptr, ptr %result, align 8
+if.end118:                                        ; preds = %if.end120, %if.end73
+  %result140 = load ptr, ptr %result, align 8
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  %sret.body = load %_Z13ResolveResult, ptr %result145, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result145, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+  %sret.body = load %_Z13ResolveResult, ptr %result140, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result140, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.then125:                                       ; preds = %if.then121
-  %load.struct127 = load %_Z16PlannedStructure, ptr %2, align 8
-  %deinitializer128 = extractvalue %_Z16PlannedStructure %load.struct127, 7
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp129, ptr align 1 %deinitializer128, i64 ptrtoint (ptr getelementptr (%_Z20PlannedDeInitializer, ptr null, i32 1) to i64), i1 false)
-  %load.struct130 = load %_Z20PlannedDeInitializer, ptr %deref.tmp129, align 8
-  %loc131 = extractvalue %_Z20PlannedDeInitializer %load.struct130, 0
-  %start132 = extractvalue %_Z4Span %loc131, 0
-  %call133 = call i1 @_ZN8semantic16is_routine_startEPN4scaly6memory4PageE10FileSyntaxm(ptr %frame, ptr %5, i64 %start132)
-  br i1 %call133, label %if.then134, label %if.end135
+if.then119:                                       ; preds = %land.rhs121
+  %load.struct132 = load %_Z16PlannedStructure, ptr %2, align 8
+  %deinitializer133 = extractvalue %_Z16PlannedStructure %load.struct132, 7
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp134, ptr align 1 %deinitializer133, i64 ptrtoint (ptr getelementptr (%_Z20PlannedDeInitializer, ptr null, i32 1) to i64), i1 false)
+  %load.struct135 = load %_Z20PlannedDeInitializer, ptr %deref.tmp134, align 8
+  %impl136 = extractvalue %_Z20PlannedDeInitializer %load.struct135, 2
+  store %_Z21PlannedImplementation %impl136, ptr %arg.tmp137, align 1
+  call void @_ZN8semantic9walk_implEPN4scaly6memory4PageE21PlannedImplementationmm(ptr noalias sret(%_Z13ResolveResult) %sret.result131, ptr %1, ptr %arg.tmp137, i64 %3, i64 %4)
+  %set.dest138 = load ptr, ptr %result, align 8
+  %set.thru139 = load %_Z13ResolveResult, ptr %sret.result131, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest138, ptr align 1 %sret.result131, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+  br label %if.end120
 
-if.end126:                                        ; preds = %if.end135, %if.then121
-  br label %if.end122
+if.end120:                                        ; preds = %if.then119, %land.rhs121, %if.then117
+  br label %if.end118
 
-if.then134:                                       ; preds = %if.then125
-  %load.struct137 = load %_Z16PlannedStructure, ptr %2, align 8
-  %deinitializer138 = extractvalue %_Z16PlannedStructure %load.struct137, 7
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp139, ptr align 1 %deinitializer138, i64 ptrtoint (ptr getelementptr (%_Z20PlannedDeInitializer, ptr null, i32 1) to i64), i1 false)
-  %load.struct140 = load %_Z20PlannedDeInitializer, ptr %deref.tmp139, align 8
-  %impl141 = extractvalue %_Z20PlannedDeInitializer %load.struct140, 2
-  store %_Z21PlannedImplementation %impl141, ptr %arg.tmp142, align 1
-  call void @_ZN8semantic9walk_implEPN4scaly6memory4PageE21PlannedImplementationmm(ptr noalias sret(%_Z13ResolveResult) %sret.result136, ptr %1, ptr %arg.tmp142, i64 %3, i64 %4)
-  %set.dest143 = load ptr, ptr %result, align 8
-  %set.thru144 = load %_Z13ResolveResult, ptr %sret.result136, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest143, ptr align 1 %sret.result136, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
-  br label %if.end135
-
-if.end135:                                        ; preds = %if.then134, %if.then125
-  br label %if.end126
+land.rhs121:                                      ; preds = %if.then117
+  %load.struct124 = load %_Z16PlannedStructure, ptr %2, align 8
+  %deinitializer125 = extractvalue %_Z16PlannedStructure %load.struct124, 7
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp126, ptr align 1 %deinitializer125, i64 ptrtoint (ptr getelementptr (%_Z20PlannedDeInitializer, ptr null, i32 1) to i64), i1 false)
+  %load.struct127 = load %_Z20PlannedDeInitializer, ptr %deref.tmp126, align 8
+  %loc128 = extractvalue %_Z20PlannedDeInitializer %load.struct127, 0
+  %start129 = extractvalue %_Z4Span %loc128, 0
+  %call130 = call i1 @_ZN8semantic16is_routine_startEPN4scaly6memory4PageE10FileSyntaxm(ptr %frame, ptr %5, i64 %start129)
+  br i1 %call130, label %if.then119, label %if.end120
 }
 
 define linkonce_odr void @_ZN8semantic10walk_unionEPN4scaly6memory4PageE12PlannedUnionmm10FileSyntax6String(ptr noalias sret(%_Z13ResolveResult) %0, ptr %1, ptr %2, i64 %3, i64 %4, ptr %5, ptr %6) {
 entry:
-  %arg.tmp66 = alloca %_Z21PlannedImplementation, align 8
-  %deref.tmp63 = alloca %_Z15PlannedOperator, align 8
-  %sret.result62 = alloca %_Z13ResolveResult, align 8
-  %deref.tmp55 = alloca %_Z15PlannedOperator, align 8
-  %arg.tmp23 = alloca %_Z21PlannedImplementation, align 8
-  %deref.tmp21 = alloca %_Z15PlannedFunction, align 8
-  %sret.result20 = alloca %_Z13ResolveResult, align 8
+  %arg.tmp63 = alloca %_Z21PlannedImplementation, align 8
+  %deref.tmp60 = alloca %_Z15PlannedOperator, align 8
+  %sret.result59 = alloca %_Z13ResolveResult, align 8
+  %deref.tmp54 = alloca %_Z15PlannedOperator, align 8
+  %arg.tmp21 = alloca %_Z21PlannedImplementation, align 8
+  %deref.tmp19 = alloca %_Z15PlannedFunction, align 8
+  %sret.result18 = alloca %_Z13ResolveResult, align 8
   %deref.tmp15 = alloca %_Z15PlannedFunction, align 8
   %arg.tmp = alloca { ptr }, align 8
   %deref.tmp13 = alloca %_Z15PlannedFunction, align 8
@@ -118268,11 +117813,11 @@ if.then:                                          ; preds = %entry
   br label %while.cond
 
 if.end:                                           ; preds = %while.exit, %entry
-  %result25 = load ptr, ptr %result, align 8
-  %load.struct26 = load %_Z13ResolveResult, ptr %result25, align 8
-  %found27 = extractvalue %_Z13ResolveResult %load.struct26, 0
-  %eq28 = icmp eq i1 %found27, false
-  br i1 %eq28, label %if.then29, label %if.end30
+  %result23 = load ptr, ptr %result, align 8
+  %load.struct24 = load %_Z13ResolveResult, ptr %result23, align 8
+  %found25 = extractvalue %_Z13ResolveResult %load.struct24, 0
+  %eq26 = icmp eq i1 %found25, false
+  br i1 %eq26, label %if.then27, label %if.end28
 
 while.cond:                                       ; preds = %if.end8, %if.then
   %i3 = load i64, ptr %i, align 8
@@ -118294,16 +117839,30 @@ while.exit:                                       ; preds = %while.cond
 if.then7:                                         ; preds = %while.body
   %i9 = load i64, ptr %i, align 8
   %call = call ptr @_ZN6VectorI15PlannedFunctionE3getEm(ptr %deref.tmp, i64 %i9)
-  %ne10 = icmp ne ptr %call, null
-  br i1 %ne10, label %if.then11, label %if.end12
+  %ne12 = icmp ne ptr %call, null
+  br i1 %ne12, label %land.rhs, label %if.end11
 
-if.end8:                                          ; preds = %if.end12, %while.body
-  %i24 = load i64, ptr %i, align 8
-  %add = add i64 %i24, 1
+if.end8:                                          ; preds = %if.end11, %while.body
+  %i22 = load i64, ptr %i, align 8
+  %add = add i64 %i22, 1
   store i64 %add, ptr %i, align 1
   br label %while.cond
 
-if.then11:                                        ; preds = %if.then7
+if.then10:                                        ; preds = %land.rhs
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp19, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64), i1 false)
+  %load.struct20 = load %_Z15PlannedFunction, ptr %deref.tmp19, align 8
+  %impl = extractvalue %_Z15PlannedFunction %load.struct20, 10
+  store %_Z21PlannedImplementation %impl, ptr %arg.tmp21, align 1
+  call void @_ZN8semantic9walk_implEPN4scaly6memory4PageE21PlannedImplementationmm(ptr noalias sret(%_Z13ResolveResult) %sret.result18, ptr %1, ptr %arg.tmp21, i64 %3, i64 %4)
+  %set.dest = load ptr, ptr %result, align 8
+  %set.thru = load %_Z13ResolveResult, ptr %sret.result18, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest, ptr align 1 %sret.result18, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+  br label %if.end11
+
+if.end11:                                         ; preds = %if.then10, %land.rhs, %if.then7
+  br label %if.end8
+
+land.rhs:                                         ; preds = %if.then7
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp13, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64), i1 false)
   %load.struct14 = load %_Z15PlannedFunction, ptr %deref.tmp13, align 8
   %file = extractvalue %_Z15PlannedFunction %load.struct14, 15
@@ -118313,101 +117872,81 @@ if.then11:                                        ; preds = %if.then7
   %loc = extractvalue %_Z15PlannedFunction %load.struct16, 0
   %start = extractvalue %_Z4Span %loc, 0
   %call17 = call i1 @_ZN8semantic12owns_routineEPN4scaly6memory4PageE10FileSyntax6String6Stringm(ptr %frame, ptr %5, ptr %6, ptr %arg.tmp, i64 %start)
-  br i1 %call17, label %if.then18, label %if.end19
+  br i1 %call17, label %if.then10, label %if.end11
 
-if.end12:                                         ; preds = %if.end19, %if.then7
-  br label %if.end8
+if.then27:                                        ; preds = %if.end
+  %load.struct29 = load %_Z12PlannedUnion, ptr %2, align 8
+  %operators = extractvalue %_Z12PlannedUnion %load.struct29, 6
+  %ne30 = icmp ne ptr %operators, null
+  br i1 %ne30, label %if.then31, label %if.end32
 
-if.then18:                                        ; preds = %if.then11
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp21, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64), i1 false)
-  %load.struct22 = load %_Z15PlannedFunction, ptr %deref.tmp21, align 8
-  %impl = extractvalue %_Z15PlannedFunction %load.struct22, 10
-  store %_Z21PlannedImplementation %impl, ptr %arg.tmp23, align 1
-  call void @_ZN8semantic9walk_implEPN4scaly6memory4PageE21PlannedImplementationmm(ptr noalias sret(%_Z13ResolveResult) %sret.result20, ptr %1, ptr %arg.tmp23, i64 %3, i64 %4)
-  %set.dest = load ptr, ptr %result, align 8
-  %set.thru = load %_Z13ResolveResult, ptr %sret.result20, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest, ptr align 1 %sret.result20, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
-  br label %if.end19
-
-if.end19:                                         ; preds = %if.then18, %if.then11
-  br label %if.end12
-
-if.then29:                                        ; preds = %if.end
-  %load.struct31 = load %_Z12PlannedUnion, ptr %2, align 8
-  %operators = extractvalue %_Z12PlannedUnion %load.struct31, 6
-  %ne32 = icmp ne ptr %operators, null
-  br i1 %ne32, label %if.then33, label %if.end34
-
-if.end30:                                         ; preds = %if.end34, %if.end
-  %result71 = load ptr, ptr %result, align 8
+if.end28:                                         ; preds = %if.end32, %if.end
+  %result68 = load ptr, ptr %result, align 8
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  %sret.body = load %_Z13ResolveResult, ptr %result71, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result71, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+  %sret.body = load %_Z13ResolveResult, ptr %result68, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result68, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.then33:                                        ; preds = %if.then29
-  %load.struct35 = load %_Z12PlannedUnion, ptr %2, align 8
-  %operators36 = extractvalue %_Z12PlannedUnion %load.struct35, 6
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %operators36, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
+if.then31:                                        ; preds = %if.then27
+  %load.struct33 = load %_Z12PlannedUnion, ptr %2, align 8
+  %operators34 = extractvalue %_Z12PlannedUnion %load.struct33, 6
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %operators34, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
   store i64 0, ptr %i, align 1
-  br label %while.cond37
+  br label %while.cond35
 
-if.end34:                                         ; preds = %while.exit39, %if.then29
-  br label %if.end30
+if.end32:                                         ; preds = %while.exit37, %if.then27
+  br label %if.end28
 
-while.cond37:                                     ; preds = %if.end49, %if.then33
-  %i40 = load i64, ptr %i, align 8
-  %load.struct41 = load %_Z6VectorI15PlannedOperatorE, ptr %deref.tmp, align 8
-  %length42 = extractvalue %_Z6VectorI15PlannedOperatorE %load.struct41, 0
-  %lt43 = icmp ult i64 %i40, %length42
-  br i1 %lt43, label %while.body38, label %while.exit39
+while.cond35:                                     ; preds = %if.end47, %if.then31
+  %i38 = load i64, ptr %i, align 8
+  %load.struct39 = load %_Z6VectorI15PlannedOperatorE, ptr %deref.tmp, align 8
+  %length40 = extractvalue %_Z6VectorI15PlannedOperatorE %load.struct39, 0
+  %lt41 = icmp ult i64 %i38, %length40
+  br i1 %lt41, label %while.body36, label %while.exit37
 
-while.body38:                                     ; preds = %while.cond37
-  %result44 = load ptr, ptr %result, align 8
-  %load.struct45 = load %_Z13ResolveResult, ptr %result44, align 8
-  %found46 = extractvalue %_Z13ResolveResult %load.struct45, 0
-  %eq47 = icmp eq i1 %found46, false
-  br i1 %eq47, label %if.then48, label %if.end49
+while.body36:                                     ; preds = %while.cond35
+  %result42 = load ptr, ptr %result, align 8
+  %load.struct43 = load %_Z13ResolveResult, ptr %result42, align 8
+  %found44 = extractvalue %_Z13ResolveResult %load.struct43, 0
+  %eq45 = icmp eq i1 %found44, false
+  br i1 %eq45, label %if.then46, label %if.end47
 
-while.exit39:                                     ; preds = %while.cond37
-  br label %if.end34
+while.exit37:                                     ; preds = %while.cond35
+  br label %if.end32
 
-if.then48:                                        ; preds = %while.body38
-  %i50 = load i64, ptr %i, align 8
-  %call51 = call ptr @_ZN6VectorI15PlannedOperatorE3getEm(ptr %deref.tmp, i64 %i50)
-  %ne52 = icmp ne ptr %call51, null
-  br i1 %ne52, label %if.then53, label %if.end54
+if.then46:                                        ; preds = %while.body36
+  %i48 = load i64, ptr %i, align 8
+  %call49 = call ptr @_ZN6VectorI15PlannedOperatorE3getEm(ptr %deref.tmp, i64 %i48)
+  %ne53 = icmp ne ptr %call49, null
+  br i1 %ne53, label %land.rhs52, label %if.end51
 
-if.end49:                                         ; preds = %if.end54, %while.body38
-  %i69 = load i64, ptr %i, align 8
-  %add70 = add i64 %i69, 1
-  store i64 %add70, ptr %i, align 1
-  br label %while.cond37
+if.end47:                                         ; preds = %if.end51, %while.body36
+  %i66 = load i64, ptr %i, align 8
+  %add67 = add i64 %i66, 1
+  store i64 %add67, ptr %i, align 1
+  br label %while.cond35
 
-if.then53:                                        ; preds = %if.then48
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp55, ptr align 1 %call51, i64 ptrtoint (ptr getelementptr (%_Z15PlannedOperator, ptr null, i32 1) to i64), i1 false)
-  %load.struct56 = load %_Z15PlannedOperator, ptr %deref.tmp55, align 8
-  %loc57 = extractvalue %_Z15PlannedOperator %load.struct56, 0
-  %start58 = extractvalue %_Z4Span %loc57, 0
-  %call59 = call i1 @_ZN8semantic16is_routine_startEPN4scaly6memory4PageE10FileSyntaxm(ptr %frame, ptr %5, i64 %start58)
-  br i1 %call59, label %if.then60, label %if.end61
+if.then50:                                        ; preds = %land.rhs52
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp60, ptr align 1 %call49, i64 ptrtoint (ptr getelementptr (%_Z15PlannedOperator, ptr null, i32 1) to i64), i1 false)
+  %load.struct61 = load %_Z15PlannedOperator, ptr %deref.tmp60, align 8
+  %impl62 = extractvalue %_Z15PlannedOperator %load.struct61, 7
+  store %_Z21PlannedImplementation %impl62, ptr %arg.tmp63, align 1
+  call void @_ZN8semantic9walk_implEPN4scaly6memory4PageE21PlannedImplementationmm(ptr noalias sret(%_Z13ResolveResult) %sret.result59, ptr %1, ptr %arg.tmp63, i64 %3, i64 %4)
+  %set.dest64 = load ptr, ptr %result, align 8
+  %set.thru65 = load %_Z13ResolveResult, ptr %sret.result59, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest64, ptr align 1 %sret.result59, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
+  br label %if.end51
 
-if.end54:                                         ; preds = %if.end61, %if.then48
-  br label %if.end49
+if.end51:                                         ; preds = %if.then50, %land.rhs52, %if.then46
+  br label %if.end47
 
-if.then60:                                        ; preds = %if.then53
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp63, ptr align 1 %call51, i64 ptrtoint (ptr getelementptr (%_Z15PlannedOperator, ptr null, i32 1) to i64), i1 false)
-  %load.struct64 = load %_Z15PlannedOperator, ptr %deref.tmp63, align 8
-  %impl65 = extractvalue %_Z15PlannedOperator %load.struct64, 7
-  store %_Z21PlannedImplementation %impl65, ptr %arg.tmp66, align 1
-  call void @_ZN8semantic9walk_implEPN4scaly6memory4PageE21PlannedImplementationmm(ptr noalias sret(%_Z13ResolveResult) %sret.result62, ptr %1, ptr %arg.tmp66, i64 %3, i64 %4)
-  %set.dest67 = load ptr, ptr %result, align 8
-  %set.thru68 = load %_Z13ResolveResult, ptr %sret.result62, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest67, ptr align 1 %sret.result62, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
-  br label %if.end61
-
-if.end61:                                         ; preds = %if.then60, %if.then53
-  br label %if.end54
+land.rhs52:                                       ; preds = %if.then46
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp54, ptr align 1 %call49, i64 ptrtoint (ptr getelementptr (%_Z15PlannedOperator, ptr null, i32 1) to i64), i1 false)
+  %load.struct55 = load %_Z15PlannedOperator, ptr %deref.tmp54, align 8
+  %loc56 = extractvalue %_Z15PlannedOperator %load.struct55, 0
+  %start57 = extractvalue %_Z4Span %loc56, 0
+  %call58 = call i1 @_ZN8semantic16is_routine_startEPN4scaly6memory4PageE10FileSyntaxm(ptr %frame, ptr %5, i64 %start57)
+  br i1 %call58, label %if.then50, label %if.end51
 }
 
 define linkonce_odr ptr @_ZN6VectorI14PlannedOperandE3getEm(ptr %0, i64 %1) {
@@ -122675,100 +122214,97 @@ if.then27:                                        ; preds = %if.end23
   br label %if.end28
 
 if.end28:                                         ; preds = %if.then27, %if.end23
-  %eq30 = icmp eq i64 %3, 3
-  br i1 %eq30, label %if.then31, label %if.end32
+  %eq32 = icmp eq i64 %3, 3
+  br i1 %eq32, label %land.rhs, label %if.end31
 
-if.then31:                                        ; preds = %if.end28
+if.then30:                                        ; preds = %land.rhs
+  %forced_page36 = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
+  %set.heap37 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page36, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  store { ptr } zeroinitializer, ptr %set.heap37, align 1
+  store ptr %set.heap37, ptr %self_type, align 1
+  br label %if.end31
+
+if.end31:                                         ; preds = %if.then30, %land.rhs, %if.end28
+  %load.struct38 = load %_Z13ResolveResult, ptr %sret.result, align 8
+  %found39 = extractvalue %_Z13ResolveResult %load.struct38, 0
+  br i1 %found39, label %if.then40, label %if.end41
+
+land.rhs:                                         ; preds = %if.end28
   %field.inplace33 = getelementptr inbounds nuw %_Z14PlannedOperand, ptr %2, i32 0, i32 2
   %deref.recv = load ptr, ptr %field.inplace33, align 8
   %call34 = call i1 @_ZN8semantic13ends_in_fieldEPN4scaly6memory4PageE6OptionIR6VectorI19PlannedMemberAccessEE(ptr %frame, ptr %deref.recv)
   %eq35 = icmp eq i1 %call34, false
-  br i1 %eq35, label %if.then36, label %if.end37
+  br i1 %eq35, label %if.then30, label %if.end31
 
-if.end32:                                         ; preds = %if.end37, %if.end28
-  %load.struct40 = load %_Z13ResolveResult, ptr %sret.result, align 8
-  %found41 = extractvalue %_Z13ResolveResult %load.struct40, 0
-  br i1 %found41, label %if.then42, label %if.end43
-
-if.then36:                                        ; preds = %if.then31
-  %forced_page38 = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
-  %set.heap39 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page38, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } zeroinitializer, ptr %set.heap39, align 1
-  store ptr %set.heap39, ptr %self_type, align 1
-  br label %if.end37
-
-if.end37:                                         ; preds = %if.then36, %if.then31
-  br label %if.end32
-
-if.then42:                                        ; preds = %if.end32
-  %load.struct44 = load %_Z13ResolveResult, ptr %sret.result, align 8
-  %width = extractvalue %_Z13ResolveResult %load.struct44, 1
+if.then40:                                        ; preds = %if.end31
+  %load.struct42 = load %_Z13ResolveResult, ptr %sret.result, align 8
+  %width = extractvalue %_Z13ResolveResult %load.struct42, 1
   %lt = icmp ult i64 %width, %sub
-  br i1 %lt, label %if.then45, label %if.end46
+  br i1 %lt, label %if.then43, label %if.end44
 
-if.end43:                                         ; preds = %if.end46, %if.end32
-  %load.struct48 = load %_Z13ResolveResult, ptr %sret.result, align 8
-  %found49 = extractvalue %_Z13ResolveResult %load.struct48, 0
-  br i1 %found49, label %if.then50, label %if.end51
+if.end41:                                         ; preds = %if.end44, %if.end31
+  %load.struct46 = load %_Z13ResolveResult, ptr %sret.result, align 8
+  %found47 = extractvalue %_Z13ResolveResult %load.struct46, 0
+  br i1 %found47, label %if.then48, label %if.end49
 
-if.then45:                                        ; preds = %if.then42
+if.then43:                                        ; preds = %if.then40
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  %sret.body47 = load %_Z13ResolveResult, ptr %sret.result, align 8
+  %sret.body45 = load %_Z13ResolveResult, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.end46:                                         ; preds = %if.then42
-  br label %if.end43
+if.end44:                                         ; preds = %if.then40
+  br label %if.end41
 
-if.then50:                                        ; preds = %if.end43
-  %field.inplace52 = getelementptr inbounds nuw %_Z14PlannedOperand, ptr %2, i32 0, i32 1
-  %call53 = call i1 @_ZN8semantic16is_operator_callEPN4scaly6memory4PageE17PlannedExpression(ptr %frame, ptr %field.inplace52)
-  br i1 %call53, label %if.then54, label %if.end55
+if.then48:                                        ; preds = %if.end41
+  %field.inplace50 = getelementptr inbounds nuw %_Z14PlannedOperand, ptr %2, i32 0, i32 1
+  %call51 = call i1 @_ZN8semantic16is_operator_callEPN4scaly6memory4PageE17PlannedExpression(ptr %frame, ptr %field.inplace50)
+  br i1 %call51, label %if.then52, label %if.end53
 
-if.end51:                                         ; preds = %if.end55, %if.end43
-  %self_type57 = load ptr, ptr %self_type, align 8
-  %call58 = call i64 @_ZN6String10get_lengthEv(ptr %self_type57)
-  %gt59 = icmp ugt i64 %call58, 0
-  br i1 %gt59, label %if.then60, label %if.end61
+if.end49:                                         ; preds = %if.end53, %if.end41
+  %self_type55 = load ptr, ptr %self_type, align 8
+  %call56 = call i64 @_ZN6String10get_lengthEv(ptr %self_type55)
+  %gt57 = icmp ugt i64 %call56, 0
+  br i1 %gt57, label %if.then58, label %if.end59
 
-if.then54:                                        ; preds = %if.then50
+if.then52:                                        ; preds = %if.then48
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  %sret.body56 = load %_Z13ResolveResult, ptr %sret.result, align 8
+  %sret.body54 = load %_Z13ResolveResult, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.end55:                                         ; preds = %if.then50
-  br label %if.end51
+if.end53:                                         ; preds = %if.then48
+  br label %if.end49
 
-if.then60:                                        ; preds = %if.end51
-  %self_type62 = load ptr, ptr %self_type, align 8
-  %tuple.field63 = getelementptr inbounds nuw %_Z13ResolveResult, ptr %tuple, i32 0, i32 0
-  store i1 true, ptr %tuple.field63, align 1
-  %tuple.field64 = getelementptr inbounds nuw %_Z13ResolveResult, ptr %tuple, i32 0, i32 1
-  store i64 %sub, ptr %tuple.field64, align 1
-  %field.load65 = load { ptr }, ptr %self_type62, align 8
-  %tuple.field66 = getelementptr inbounds nuw %_Z13ResolveResult, ptr %tuple, i32 0, i32 2
-  store { ptr } %field.load65, ptr %tuple.field66, align 1
-  %tuple.val67 = load %_Z13ResolveResult, ptr %tuple, align 8
+if.then58:                                        ; preds = %if.end49
+  %self_type60 = load ptr, ptr %self_type, align 8
+  %tuple.field61 = getelementptr inbounds nuw %_Z13ResolveResult, ptr %tuple, i32 0, i32 0
+  store i1 true, ptr %tuple.field61, align 1
+  %tuple.field62 = getelementptr inbounds nuw %_Z13ResolveResult, ptr %tuple, i32 0, i32 1
+  store i64 %sub, ptr %tuple.field62, align 1
+  %field.load63 = load { ptr }, ptr %self_type60, align 8
+  %tuple.field64 = getelementptr inbounds nuw %_Z13ResolveResult, ptr %tuple, i32 0, i32 2
+  store { ptr } %field.load63, ptr %tuple.field64, align 1
+  %tuple.val65 = load %_Z13ResolveResult, ptr %tuple, align 8
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  store %_Z13ResolveResult %tuple.val67, ptr %0, align 1
+  store %_Z13ResolveResult %tuple.val65, ptr %0, align 1
   ret void
 
-if.end61:                                         ; preds = %if.end51
-  %load.struct68 = load %_Z13ResolveResult, ptr %sret.result, align 8
-  %found69 = extractvalue %_Z13ResolveResult %load.struct68, 0
-  br i1 %found69, label %if.then70, label %if.end71
+if.end59:                                         ; preds = %if.end49
+  %load.struct66 = load %_Z13ResolveResult, ptr %sret.result, align 8
+  %found67 = extractvalue %_Z13ResolveResult %load.struct66, 0
+  br i1 %found67, label %if.then68, label %if.end69
 
-if.then70:                                        ; preds = %if.end61
+if.then68:                                        ; preds = %if.end59
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  %sret.body72 = load %_Z13ResolveResult, ptr %sret.result, align 8
+  %sret.body70 = load %_Z13ResolveResult, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.end71:                                         ; preds = %if.end61
+if.end69:                                         ; preds = %if.end59
   call void @_ZN8semantic4noneEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ResolveResult) %tuple, ptr %1)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  %sret.body73 = load %_Z13ResolveResult, ptr %tuple, align 8
+  %sret.body71 = load %_Z13ResolveResult, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   ret void
 }
@@ -128689,11 +128225,11 @@ declare void @_ZN11TaskPlanner7analyzeE4Plan6String(ptr, ptr, ptr)
 
 define linkonce_odr void @_ZN8tasklens11lenses_bodyEPN4scaly6memory4PageER11TaskPlannerb6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, i1 %3, ptr %4, ptr %5, ptr %6) {
 entry:
-  %arg.tmp27 = alloca { ptr }, align 8
+  %arg.tmp25 = alloca { ptr }, align 8
   %arg.tmp = alloca %_Z5SliceIcE, align 8
   %tuple = alloca %_Z5SliceIcE, align 8
-  %sret.result24 = alloca { ptr }, align 8
   %sret.result22 = alloca { ptr }, align 8
+  %sret.result20 = alloca { ptr }, align 8
   %emit = alloca i1, align 1
   %sret.result = alloca { ptr }, align 8
   %frame = alloca { ptr, ptr }, align 8
@@ -128715,7 +128251,7 @@ entry:
   store i64 0, ptr %ka, align 1
   br label %while.cond
 
-while.cond:                                       ; preds = %if.end16, %entry
+while.cond:                                       ; preds = %if.end14, %entry
   %kp2 = load i64, ptr %kp, align 8
   %lt = icmp ult i64 %kp2, %call
   br i1 %lt, label %while.body, label %while.exit
@@ -128729,8 +128265,8 @@ while.body:                                       ; preds = %while.cond
   br i1 %ge, label %if.then, label %if.end
 
 while.exit:                                       ; preds = %if.then, %while.cond
-  %sb31 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb31)
+  %sb29 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb29)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -128746,58 +128282,55 @@ if.end:                                           ; preds = %while.body
   %kp8 = load i64, ptr %kp, align 8
   call void @_ZN8tasklens10verdict_atEPN4scaly6memory4PageER11TaskPlanner6Stringm(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %2, ptr %4, i64 %kp8)
   store i1 true, ptr %emit, align 1
-  %call9 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
-  %eq = icmp eq i64 %call9, 0
-  br i1 %eq, label %if.then10, label %if.end11
+  %call11 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
+  %eq = icmp eq i64 %call11, 0
+  br i1 %eq, label %land.rhs, label %if.end10
 
-if.then10:                                        ; preds = %if.end
-  br i1 %3, label %if.then12, label %if.end13
-
-if.end11:                                         ; preds = %if.end13, %if.end
-  %emit14 = load i1, ptr %emit, align 1
-  br i1 %emit14, label %if.then15, label %if.end16
-
-if.then12:                                        ; preds = %if.then10
+if.then9:                                         ; preds = %land.rhs
   store i1 false, ptr %emit, align 1
-  br label %if.end13
+  br label %if.end10
 
-if.end13:                                         ; preds = %if.then12, %if.then10
-  br label %if.end11
+if.end10:                                         ; preds = %if.then9, %land.rhs, %if.end
+  %emit12 = load i1, ptr %emit, align 1
+  br i1 %emit12, label %if.then13, label %if.end14
 
-if.then15:                                        ; preds = %if.end11
-  %first17 = load i1, ptr %first, align 1
-  %eq18 = icmp eq i1 %first17, false
-  br i1 %eq18, label %if.then19, label %if.end20
+land.rhs:                                         ; preds = %if.end
+  br i1 %3, label %if.then9, label %if.end10
 
-if.end16:                                         ; preds = %if.end20, %if.end11
-  %kp28 = load i64, ptr %kp, align 8
-  %add = add i64 %kp28, 3
+if.then13:                                        ; preds = %if.end10
+  %first15 = load i1, ptr %first, align 1
+  %eq16 = icmp eq i1 %first15, false
+  br i1 %eq16, label %if.then17, label %if.end18
+
+if.end14:                                         ; preds = %if.end18, %if.end10
+  %kp26 = load i64, ptr %kp, align 8
+  %add = add i64 %kp26, 3
   store i64 %add, ptr %kp, align 1
-  %ka29 = load i64, ptr %ka, align 8
-  %add30 = add i64 %ka29, 3
-  store i64 %add30, ptr %ka, align 1
+  %ka27 = load i64, ptr %ka, align 8
+  %add28 = add i64 %ka27, 3
+  store i64 %add28, ptr %ka, align 1
   br label %while.cond
 
-if.then19:                                        ; preds = %if.then15
-  %sb21 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb21, i8 44)
-  br label %if.end20
+if.then17:                                        ; preds = %if.then13
+  %sb19 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb19, i8 44)
+  br label %if.end18
 
-if.end20:                                         ; preds = %if.then19, %if.then15
-  call void @_ZN8tasklens9title_forEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result22, ptr %frame, ptr %sret.result)
-  %sb23 = load ptr, ptr %sb, align 8
-  %ka25 = load i64, ptr %ka, align 8
+if.end18:                                         ; preds = %if.then17, %if.then13
+  call void @_ZN8tasklens9title_forEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result20, ptr %frame, ptr %sret.result)
+  %sb21 = load ptr, ptr %sb, align 8
+  %ka23 = load i64, ptr %ka, align 8
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 0, ptr %tuple.field, align 1
-  %tuple.field26 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.scaly.empty.cstr, ptr %tuple.field26, align 1
+  %tuple.field24 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
+  store ptr @.scaly.empty.cstr, ptr %tuple.field24, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
-  store { ptr } zeroinitializer, ptr %arg.tmp27, align 1
-  call void @_ZN7symbols11lens_objectEPN4scaly6memory4PageE6Stringmm6String5SliceIcE6String(ptr noalias sret({ ptr }) %sret.result24, ptr %frame, ptr %6, i64 %ka25, i64 3, ptr %sret.result22, ptr %arg.tmp, ptr %arg.tmp27)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb23, ptr %sret.result24)
+  store { ptr } zeroinitializer, ptr %arg.tmp25, align 1
+  call void @_ZN7symbols11lens_objectEPN4scaly6memory4PageE6Stringmm6String5SliceIcE6String(ptr noalias sret({ ptr }) %sret.result22, ptr %frame, ptr %6, i64 %ka23, i64 3, ptr %sret.result20, ptr %arg.tmp, ptr %arg.tmp25)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb21, ptr %sret.result22)
   store i1 false, ptr %first, align 1
-  br label %if.end16
+  br label %if.end14
 }
 
 define linkonce_odr void @_ZN8tasklens8fragmentEPN4scaly6memory4PageE4Planb6String6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, i1 %3, ptr %4, ptr %5, ptr %6, ptr %7) {
@@ -129296,62 +128829,59 @@ while.body7:                                      ; preds = %while.cond6
   %k11 = load i64, ptr %k, align 8
   %call12 = call i8 @_ZN6String3getEm(ptr %2, i64 %k11)
   %ne = icmp ne i8 %call12, 32
-  br i1 %ne, label %if.then13, label %if.end14
+  br i1 %ne, label %land.rhs, label %if.end14
 
-while.exit8:                                      ; preds = %if.then16, %while.cond6
-  %k20 = load i64, ptr %k, align 8
-  br label %while.cond21
-
-if.then13:                                        ; preds = %while.body7
-  %ne15 = icmp ne i8 %call12, 9
-  br i1 %ne15, label %if.then16, label %if.end17
-
-if.end14:                                         ; preds = %if.end17, %while.body7
+while.exit8:                                      ; preds = %if.then13, %while.cond6
   %k18 = load i64, ptr %k, align 8
-  %add19 = add i64 %k18, 1
-  store i64 %add19, ptr %k, align 1
-  br label %while.cond6
+  br label %while.cond19
 
-if.then16:                                        ; preds = %if.then13
+if.then13:                                        ; preds = %land.rhs
   br label %while.exit8
 
-if.end17:                                         ; preds = %if.then13
-  br label %if.end14
+if.end14:                                         ; preds = %land.rhs, %while.body7
+  %k16 = load i64, ptr %k, align 8
+  %add17 = add i64 %k16, 1
+  store i64 %add17, ptr %k, align 1
+  br label %while.cond6
 
-while.cond21:                                     ; preds = %if.end31, %while.exit8
+land.rhs:                                         ; preds = %while.body7
+  %ne15 = icmp ne i8 %call12, 9
+  br i1 %ne15, label %if.then13, label %if.end14
+
+while.cond19:                                     ; preds = %if.end29, %while.exit8
+  %k22 = load i64, ptr %k, align 8
+  %lt23 = icmp ult i64 %k22, %call
+  br i1 %lt23, label %while.body20, label %while.exit21
+
+while.body20:                                     ; preds = %while.cond19
   %k24 = load i64, ptr %k, align 8
-  %lt25 = icmp ult i64 %k24, %call
-  br i1 %lt25, label %while.body22, label %while.exit23
+  %call25 = call i8 @_ZN6String3getEm(ptr %2, i64 %k24)
+  %call26 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call25)
+  %eq27 = icmp eq i1 %call26, false
+  br i1 %eq27, label %if.then28, label %if.end29
 
-while.body22:                                     ; preds = %while.cond21
-  %k26 = load i64, ptr %k, align 8
-  %call27 = call i8 @_ZN6String3getEm(ptr %2, i64 %k26)
-  %call28 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call27)
-  %eq29 = icmp eq i1 %call28, false
-  br i1 %eq29, label %if.then30, label %if.end31
-
-while.exit23:                                     ; preds = %if.then30, %while.cond21
-  %k34 = load i64, ptr %k, align 8
-  %le = icmp ule i64 %k34, %k20
-  br i1 %le, label %if.then35, label %if.end36
-
-if.then30:                                        ; preds = %while.body22
-  br label %while.exit23
-
-if.end31:                                         ; preds = %while.body22
+while.exit21:                                     ; preds = %if.then28, %while.cond19
   %k32 = load i64, ptr %k, align 8
-  %add33 = add i64 %k32, 1
-  store i64 %add33, ptr %k, align 1
-  br label %while.cond21
+  %le = icmp ule i64 %k32, %k18
+  br i1 %le, label %if.then33, label %if.end34
 
-if.then35:                                        ; preds = %while.exit23
+if.then28:                                        ; preds = %while.body20
+  br label %while.exit21
+
+if.end29:                                         ; preds = %while.body20
+  %k30 = load i64, ptr %k, align 8
+  %add31 = add i64 %k30, 1
+  store i64 %add31, ptr %k, align 1
+  br label %while.cond19
+
+if.then33:                                        ; preds = %while.exit21
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 
-if.end36:                                         ; preds = %while.exit23
-  %k37 = load i64, ptr %k, align 8
-  %sub = sub i64 %k37, %k20
-  call void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %k20, i64 %sub)
+if.end34:                                         ; preds = %while.exit21
+  %k35 = load i64, ptr %k, align 8
+  %sub = sub i64 %k35, %k18
+  call void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %k18, i64 %sub)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
@@ -129395,31 +128925,28 @@ while.exit:                                       ; preds = %while.cond
 
 if.then6:                                         ; preds = %while.body
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp8, ptr align 1 %call, i64 ptrtoint (ptr getelementptr (%_Z15PlannedFunction, ptr null, i32 1) to i64), i1 false)
-  %load.struct9 = load %_Z15PlannedFunction, ptr %deref.tmp8, align 8
-  %loc = extractvalue %_Z15PlannedFunction %load.struct9, 0
+  %load.struct11 = load %_Z15PlannedFunction, ptr %deref.tmp8, align 8
+  %loc = extractvalue %_Z15PlannedFunction %load.struct11, 0
   %start = extractvalue %_Z4Span %loc, 0
-  %eq10 = icmp eq i64 %start, %1
-  br i1 %eq10, label %if.then11, label %if.end12
+  %eq12 = icmp eq i64 %start, %1
+  br i1 %eq12, label %land.rhs, label %if.end10
 
-if.end7:                                          ; preds = %if.end12, %while.body
-  %i16 = load i64, ptr %i, align 8
-  %add = add i64 %i16, 1
+if.end7:                                          ; preds = %if.end10, %while.body
+  %i14 = load i64, ptr %i, align 8
+  %add = add i64 %i14, 1
   store i64 %add, ptr %i, align 1
   br label %while.cond
 
-if.then11:                                        ; preds = %if.then6
-  %field.inplace = getelementptr inbounds nuw %_Z15PlannedFunction, ptr %deref.tmp8, i32 0, i32 3
-  %call13 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %2)
-  br i1 %call13, label %if.then14, label %if.end15
-
-if.end12:                                         ; preds = %if.end15, %if.then6
-  br label %if.end7
-
-if.then14:                                        ; preds = %if.then11
+if.then9:                                         ; preds = %land.rhs
   ret i1 true
 
-if.end15:                                         ; preds = %if.then11
-  br label %if.end12
+if.end10:                                         ; preds = %land.rhs, %if.then6
+  br label %if.end7
+
+land.rhs:                                         ; preds = %if.then6
+  %field.inplace = getelementptr inbounds nuw %_Z15PlannedFunction, ptr %deref.tmp8, i32 0, i32 3
+  %call13 = call i1 @_ZN6String6equalsE6String(ptr %field.inplace, ptr %2)
+  br i1 %call13, label %if.then9, label %if.end10
 }
 
 define linkonce_odr void @_ZN8instlens9title_forEPN4scaly6memory4PageE4Planbm6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, i1 %3, i64 %4, ptr %5) {
@@ -129720,17 +129247,17 @@ if.end111:                                        ; preds = %if.then110, %if.the
 
 define linkonce_odr void @_ZN8instlens8fragmentEPN4scaly6memory4PageE4Planb6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, i1 %3, ptr %4, ptr %5) {
 entry:
-  %arg.tmp67 = alloca { ptr }, align 8
-  %arg.tmp66 = alloca %_Z5SliceIcE, align 8
+  %arg.tmp65 = alloca { ptr }, align 8
+  %arg.tmp64 = alloca %_Z5SliceIcE, align 8
   %tuple = alloca %_Z5SliceIcE, align 8
-  %sret.result62 = alloca { ptr }, align 8
-  %sret.result51 = alloca { ptr }, align 8
-  %sret.result45 = alloca { ptr }, align 8
+  %sret.result60 = alloca { ptr }, align 8
+  %sret.result49 = alloca { ptr }, align 8
+  %sret.result43 = alloca { ptr }, align 8
   %ka = alloca i64, align 8
   %kp = alloca i64, align 8
   %first = alloca i1, align 1
   %sb = alloca ptr, align 8
-  %arg.tmp29 = alloca { ptr }, align 8
+  %arg.tmp27 = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
   %frame = alloca { ptr, ptr }, align 8
   store ptr null, ptr %frame, align 8
@@ -129764,7 +129291,7 @@ if.end3:                                          ; preds = %if.end
   store i64 0, ptr %kq, align 1
   br label %while.cond
 
-while.cond:                                       ; preds = %if.end15, %if.end3
+while.cond:                                       ; preds = %if.end14, %if.end3
   %kq4 = load i64, ptr %kq, align 8
   %call5 = call i64 @_ZN6String10get_lengthEv(ptr %4)
   %lt = icmp ult i64 %kq4, %call5
@@ -129780,9 +129307,9 @@ while.body:                                       ; preds = %while.cond
   br i1 %ge, label %if.then10, label %if.end11
 
 while.exit:                                       ; preds = %if.then10, %while.cond
-  %any_planned21 = load i1, ptr %any_planned, align 1
-  %eq22 = icmp eq i1 %any_planned21, false
-  br i1 %eq22, label %if.then23, label %if.end24
+  %any_planned19 = load i1, ptr %any_planned, align 1
+  %eq20 = icmp eq i1 %any_planned19, false
+  br i1 %eq20, label %if.then21, label %if.end22
 
 if.then10:                                        ; preds = %while.body
   br label %while.exit
@@ -129790,139 +129317,136 @@ if.then10:                                        ; preds = %while.body
 if.end11:                                         ; preds = %while.body
   %kq12 = load i64, ptr %kq, align 8
   call void @_ZN8instlens15routine_name_atEPN4scaly6memory4PageE6Stringm(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %4, i64 %kq12)
-  %call13 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
-  %gt = icmp ugt i64 %call13, 0
-  br i1 %gt, label %if.then14, label %if.end15
+  %call15 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
+  %gt = icmp ugt i64 %call15, 0
+  br i1 %gt, label %land.rhs, label %if.end14
 
-if.then14:                                        ; preds = %if.end11
-  %kq16 = load i64, ptr %kq, align 8
-  %call17 = call i1 @_ZN8instlens13is_planned_atE4Planm6String(ptr %2, i64 %kq16, ptr %sret.result)
-  br i1 %call17, label %if.then18, label %if.end19
+if.then13:                                        ; preds = %land.rhs
+  store i1 true, ptr %any_planned, align 1
+  br label %if.end14
 
-if.end15:                                         ; preds = %if.end19, %if.end11
-  %kq20 = load i64, ptr %kq, align 8
-  %add = add i64 %kq20, 1
+if.end14:                                         ; preds = %if.then13, %land.rhs, %if.end11
+  %kq18 = load i64, ptr %kq, align 8
+  %add = add i64 %kq18, 1
   store i64 %add, ptr %kq, align 1
   br label %while.cond
 
-if.then18:                                        ; preds = %if.then14
-  store i1 true, ptr %any_planned, align 1
-  br label %if.end19
+land.rhs:                                         ; preds = %if.end11
+  %kq16 = load i64, ptr %kq, align 8
+  %call17 = call i1 @_ZN8instlens13is_planned_atE4Planm6String(ptr %2, i64 %kq16, ptr %sret.result)
+  br i1 %call17, label %if.then13, label %if.end14
 
-if.end19:                                         ; preds = %if.then18, %if.then14
-  br label %if.end15
+if.then21:                                        ; preds = %while.exit
+  br i1 %3, label %if.then23, label %if.end24
 
-if.then23:                                        ; preds = %while.exit
-  br i1 %3, label %if.then25, label %if.end26
-
-if.end24:                                         ; preds = %while.exit
-  %forced_page30 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page30, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+if.end22:                                         ; preds = %while.exit
+  %forced_page28 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page28, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   store ptr %struct.region, ptr %sb, align 1
   store i1 true, ptr %first, align 1
-  %call31 = call i64 @_ZN6String10get_lengthEv(ptr %4)
+  %call29 = call i64 @_ZN6String10get_lengthEv(ptr %4)
   store i64 0, ptr %kp, align 1
   store i64 0, ptr %ka, align 1
-  br label %while.cond32
+  br label %while.cond30
 
-if.then25:                                        ; preds = %if.then23
+if.then23:                                        ; preds = %if.then21
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 
-if.end26:                                         ; preds = %if.then23
+if.end24:                                         ; preds = %if.then21
   store { ptr } { ptr @.sconst.790 }, ptr %arg.tmp, align 1
-  %forced_page27 = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
-  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page27, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5SliceIcE }, ptr null, i64 0, i32 1) to i64))
+  %forced_page25 = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page25, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5SliceIcE }, ptr null, i64 0, i32 1) to i64))
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 0
   store i64 0, ptr %tuple.field, align 1
-  %tuple.field28 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
-  store ptr @.scaly.empty.cstr, ptr %tuple.field28, align 1
-  store { ptr } zeroinitializer, ptr %arg.tmp29, align 1
-  call void @_ZN7symbols11lens_objectEPN4scaly6memory4PageE6Stringmm6String5SliceIcE6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %5, i64 0, i64 3, ptr %arg.tmp, ptr %tuple.region, ptr %arg.tmp29)
+  %tuple.field26 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
+  store ptr @.scaly.empty.cstr, ptr %tuple.field26, align 1
+  store { ptr } zeroinitializer, ptr %arg.tmp27, align 1
+  call void @_ZN7symbols11lens_objectEPN4scaly6memory4PageE6Stringmm6String5SliceIcE6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %5, i64 0, i64 3, ptr %arg.tmp, ptr %tuple.region, ptr %arg.tmp27)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
-while.cond32:                                     ; preds = %if.end50, %if.end24
+while.cond30:                                     ; preds = %if.end48, %if.end22
+  %kp33 = load i64, ptr %kp, align 8
+  %lt34 = icmp ult i64 %kp33, %call29
+  br i1 %lt34, label %while.body31, label %while.exit32
+
+while.body31:                                     ; preds = %while.cond30
   %kp35 = load i64, ptr %kp, align 8
-  %lt36 = icmp ult i64 %kp35, %call31
-  br i1 %lt36, label %while.body33, label %while.exit34
-
-while.body33:                                     ; preds = %while.cond32
+  %call36 = call i64 @_ZN8instlens17next_routine_siteE6Stringm(ptr %4, i64 %kp35)
+  store i64 %call36, ptr %kp, align 1
   %kp37 = load i64, ptr %kp, align 8
-  %call38 = call i64 @_ZN8instlens17next_routine_siteE6Stringm(ptr %4, i64 %kp37)
-  store i64 %call38, ptr %kp, align 1
-  %kp39 = load i64, ptr %kp, align 8
-  %ge40 = icmp uge i64 %kp39, %call31
-  br i1 %ge40, label %if.then41, label %if.end42
+  %ge38 = icmp uge i64 %kp37, %call29
+  br i1 %ge38, label %if.then39, label %if.end40
 
-while.exit34:                                     ; preds = %if.then41, %while.cond32
-  %sb72 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result45, ptr %1, ptr %sb72)
+while.exit32:                                     ; preds = %if.then39, %while.cond30
+  %sb70 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result43, ptr %1, ptr %sb70)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  %sret.body73 = load { ptr }, ptr %sret.result45, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result45, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  %sret.body71 = load { ptr }, ptr %sret.result43, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result43, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.then41:                                        ; preds = %while.body33
-  br label %while.exit34
+if.then39:                                        ; preds = %while.body31
+  br label %while.exit32
 
-if.end42:                                         ; preds = %while.body33
-  %ka43 = load i64, ptr %ka, align 8
-  %call44 = call i64 @_ZN8instlens17next_routine_siteE6Stringm(ptr %5, i64 %ka43)
-  store i64 %call44, ptr %ka, align 1
-  %kp46 = load i64, ptr %kp, align 8
-  call void @_ZN8instlens15routine_name_atEPN4scaly6memory4PageE6Stringm(ptr noalias sret({ ptr }) %sret.result45, ptr %frame, ptr %4, i64 %kp46)
-  %call47 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result45)
-  %gt48 = icmp ugt i64 %call47, 0
-  br i1 %gt48, label %if.then49, label %if.end50
+if.end40:                                         ; preds = %while.body31
+  %ka41 = load i64, ptr %ka, align 8
+  %call42 = call i64 @_ZN8instlens17next_routine_siteE6Stringm(ptr %5, i64 %ka41)
+  store i64 %call42, ptr %ka, align 1
+  %kp44 = load i64, ptr %kp, align 8
+  call void @_ZN8instlens15routine_name_atEPN4scaly6memory4PageE6Stringm(ptr noalias sret({ ptr }) %sret.result43, ptr %frame, ptr %4, i64 %kp44)
+  %call45 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result43)
+  %gt46 = icmp ugt i64 %call45, 0
+  br i1 %gt46, label %if.then47, label %if.end48
 
-if.then49:                                        ; preds = %if.end42
-  %kp52 = load i64, ptr %kp, align 8
-  call void @_ZN8instlens9title_forEPN4scaly6memory4PageE4Planbm6String(ptr noalias sret({ ptr }) %sret.result51, ptr %frame, ptr %2, i1 %3, i64 %kp52, ptr %sret.result45)
-  %call53 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result51)
-  %gt54 = icmp ugt i64 %call53, 0
-  br i1 %gt54, label %if.then55, label %if.end56
+if.then47:                                        ; preds = %if.end40
+  %kp50 = load i64, ptr %kp, align 8
+  call void @_ZN8instlens9title_forEPN4scaly6memory4PageE4Planbm6String(ptr noalias sret({ ptr }) %sret.result49, ptr %frame, ptr %2, i1 %3, i64 %kp50, ptr %sret.result43)
+  %call51 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result49)
+  %gt52 = icmp ugt i64 %call51, 0
+  br i1 %gt52, label %if.then53, label %if.end54
 
-if.end50:                                         ; preds = %if.end56, %if.end42
-  %kp68 = load i64, ptr %kp, align 8
-  %add69 = add i64 %kp68, 1
-  store i64 %add69, ptr %kp, align 1
-  %ka70 = load i64, ptr %ka, align 8
-  %add71 = add i64 %ka70, 1
-  store i64 %add71, ptr %ka, align 1
-  br label %while.cond32
+if.end48:                                         ; preds = %if.end54, %if.end40
+  %kp66 = load i64, ptr %kp, align 8
+  %add67 = add i64 %kp66, 1
+  store i64 %add67, ptr %kp, align 1
+  %ka68 = load i64, ptr %ka, align 8
+  %add69 = add i64 %ka68, 1
+  store i64 %add69, ptr %ka, align 1
+  br label %while.cond30
 
-if.then55:                                        ; preds = %if.then49
-  %first57 = load i1, ptr %first, align 1
-  %eq58 = icmp eq i1 %first57, false
-  br i1 %eq58, label %if.then59, label %if.end60
+if.then53:                                        ; preds = %if.then47
+  %first55 = load i1, ptr %first, align 1
+  %eq56 = icmp eq i1 %first55, false
+  br i1 %eq56, label %if.then57, label %if.end58
 
-if.end56:                                         ; preds = %if.end60, %if.then49
-  br label %if.end50
+if.end54:                                         ; preds = %if.end58, %if.then47
+  br label %if.end48
 
-if.then59:                                        ; preds = %if.then55
-  %sb61 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb61, i8 44)
-  br label %if.end60
+if.then57:                                        ; preds = %if.then53
+  %sb59 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb59, i8 44)
+  br label %if.end58
 
-if.end60:                                         ; preds = %if.then59, %if.then55
+if.end58:                                         ; preds = %if.then57, %if.then53
   %addr.heap = load ptr, ptr %sb, align 8
-  %ka63 = load i64, ptr %ka, align 8
-  %tuple.field64 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
-  store i64 0, ptr %tuple.field64, align 1
-  %tuple.field65 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.scaly.empty.cstr, ptr %tuple.field65, align 1
+  %ka61 = load i64, ptr %ka, align 8
+  %tuple.field62 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
+  store i64 0, ptr %tuple.field62, align 1
+  %tuple.field63 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
+  store ptr @.scaly.empty.cstr, ptr %tuple.field63, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp66, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
-  store { ptr } zeroinitializer, ptr %arg.tmp67, align 1
-  call void @_ZN7symbols11lens_objectEPN4scaly6memory4PageE6Stringmm6String5SliceIcE6String(ptr noalias sret({ ptr }) %sret.result62, ptr %frame, ptr %5, i64 %ka63, i64 8, ptr %sret.result51, ptr %arg.tmp66, ptr %arg.tmp67)
-  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap, ptr %sret.result62)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp64, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
+  store { ptr } zeroinitializer, ptr %arg.tmp65, align 1
+  call void @_ZN7symbols11lens_objectEPN4scaly6memory4PageE6Stringmm6String5SliceIcE6String(ptr noalias sret({ ptr }) %sret.result60, ptr %frame, ptr %5, i64 %ka61, i64 8, ptr %sret.result49, ptr %arg.tmp64, ptr %arg.tmp65)
+  call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap, ptr %sret.result60)
   store i1 false, ptr %first, align 1
-  br label %if.end56
+  br label %if.end54
 }
 
 define linkonce_odr i1 @_ZN8instlens13contains_nameER5ArrayI6StringE6String(ptr %0, ptr %1) {
@@ -129941,26 +129465,23 @@ while.body:                                       ; preds = %while.cond
   %i2 = load i64, ptr %i, align 8
   %call3 = call ptr @_ZN5ArrayI6StringE3getEm(ptr %0, i64 %i2)
   %ne = icmp ne ptr %call3, null
-  br i1 %ne, label %if.then, label %if.end
+  br i1 %ne, label %land.rhs, label %if.end
 
 while.exit:                                       ; preds = %while.cond
   ret i1 false
 
-if.then:                                          ; preds = %while.body
-  %call4 = call i1 @_ZN6String6equalsE6String(ptr %call3, ptr %1)
-  br i1 %call4, label %if.then5, label %if.end6
+if.then:                                          ; preds = %land.rhs
+  ret i1 true
 
-if.end:                                           ; preds = %if.end6, %while.body
-  %i7 = load i64, ptr %i, align 8
-  %add = add i64 %i7, 1
+if.end:                                           ; preds = %land.rhs, %while.body
+  %i5 = load i64, ptr %i, align 8
+  %add = add i64 %i5, 1
   store i64 %add, ptr %i, align 1
   br label %while.cond
 
-if.then5:                                         ; preds = %if.then
-  ret i1 true
-
-if.end6:                                          ; preds = %if.then
-  br label %if.end
+land.rhs:                                         ; preds = %while.body
+  %call4 = call i1 @_ZN6String6equalsE6String(ptr %call3, ptr %1)
+  br i1 %call4, label %if.then, label %if.end
 }
 
 define linkonce_odr void @_ZN8instlens16first_input_typeEPN4scaly6memory4PageE15PlannedFunction(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
@@ -135890,7 +135411,7 @@ if.then60:                                        ; preds = %if.end41
   br label %while.cond64
 
 if.end61:                                         ; preds = %while.exit66, %if.end41
-  br i1 %3, label %if.then90, label %if.end91
+  br i1 %3, label %if.then88, label %if.end89
 
 while.cond64:                                     ; preds = %if.end75, %if.then60
   %i67 = load i64, ptr %i, align 8
@@ -135910,81 +135431,78 @@ while.exit66:                                     ; preds = %while.cond64
 
 if.then74:                                        ; preds = %while.body65
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp76, ptr align 1 %call72, i64 ptrtoint (ptr getelementptr (%_Z13PlannedGlobal, ptr null, i32 1) to i64), i1 false)
-  %load.struct77 = load %_Z13PlannedGlobal, ptr %deref.tmp76, align 8
-  %value = extractvalue %_Z13PlannedGlobal %load.struct77, 4
-  %ne78 = icmp ne ptr %value, null
-  br i1 %ne78, label %if.then79, label %if.end80
+  %load.struct79 = load %_Z13PlannedGlobal, ptr %deref.tmp76, align 8
+  %value = extractvalue %_Z13PlannedGlobal %load.struct79, 4
+  %ne80 = icmp ne ptr %value, null
+  br i1 %ne80, label %land.rhs, label %if.end78
 
-if.end75:                                         ; preds = %if.end80, %while.body65
-  %i88 = load i64, ptr %i, align 8
-  %add89 = add i64 %i88, 1
-  store i64 %add89, ptr %i, align 1
+if.end75:                                         ; preds = %if.end78, %while.body65
+  %i86 = load i64, ptr %i, align 8
+  %add87 = add i64 %i86, 1
+  store i64 %add87, ptr %i, align 1
   br label %while.cond64
 
-if.then79:                                        ; preds = %if.then74
+if.then77:                                        ; preds = %land.rhs
+  %field.inplace85 = getelementptr inbounds nuw %_Z13PlannedGlobal, ptr %deref.tmp76, i32 0, i32 4
+  %deref.recv = load ptr, ptr %field.inplace85, align 8
+  call void @_ZN10placehints20collect_operands_optER13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 false, ptr %deref.recv)
+  br label %if.end78
+
+if.end78:                                         ; preds = %if.then77, %land.rhs, %if.then74
+  br label %if.end75
+
+land.rhs:                                         ; preds = %if.then74
   %field.inplace81 = getelementptr inbounds nuw %_Z13PlannedGlobal, ptr %deref.tmp76, i32 0, i32 0
   %field.inplace82 = getelementptr inbounds nuw %_Z4Span, ptr %field.inplace81, i32 0, i32 0
   %field.val83 = load i64, ptr %field.inplace82, align 8
   %call84 = call i1 @_ZN8semantic16is_routine_startEPN4scaly6memory4PageE10FileSyntaxm(ptr %frame, ptr %2, i64 %field.val83)
-  br i1 %call84, label %if.then85, label %if.end86
+  br i1 %call84, label %if.then77, label %if.end78
 
-if.end80:                                         ; preds = %if.end86, %if.then74
-  br label %if.end75
+if.then88:                                        ; preds = %if.end61
+  %load.struct90 = load %_Z4Plan, ptr %1, align 8
+  %statements = extractvalue %_Z4Plan %load.struct90, 1
+  %ne91 = icmp ne ptr %statements, null
+  br i1 %ne91, label %if.then92, label %if.end93
 
-if.then85:                                        ; preds = %if.then79
-  %field.inplace87 = getelementptr inbounds nuw %_Z13PlannedGlobal, ptr %deref.tmp76, i32 0, i32 4
-  %deref.recv = load ptr, ptr %field.inplace87, align 8
-  call void @_ZN10placehints20collect_operands_optER13StringBuilderb6OptionIR6VectorI14PlannedOperandEE(ptr %0, i1 false, ptr %deref.recv)
-  br label %if.end86
-
-if.end86:                                         ; preds = %if.then85, %if.then79
-  br label %if.end80
-
-if.then90:                                        ; preds = %if.end61
-  %load.struct92 = load %_Z4Plan, ptr %1, align 8
-  %statements = extractvalue %_Z4Plan %load.struct92, 1
-  %ne93 = icmp ne ptr %statements, null
-  br i1 %ne93, label %if.then94, label %if.end95
-
-if.end91:                                         ; preds = %if.end95, %if.end61
+if.end89:                                         ; preds = %if.end93, %if.end61
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
-if.then94:                                        ; preds = %if.then90
-  %load.struct96 = load %_Z4Plan, ptr %1, align 8
-  %statements97 = extractvalue %_Z4Plan %load.struct96, 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %statements97, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
+if.then92:                                        ; preds = %if.then88
+  %load.struct94 = load %_Z4Plan, ptr %1, align 8
+  %statements95 = extractvalue %_Z4Plan %load.struct94, 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %deref.tmp, ptr align 1 %statements95, i64 ptrtoint (ptr getelementptr (%_Z6VectorIcE, ptr null, i32 1) to i64), i1 false)
   store i64 0, ptr %i, align 1
-  br label %while.cond98
+  br label %while.cond96
 
-if.end95:                                         ; preds = %while.exit100, %if.then90
-  br label %if.end91
+if.end93:                                         ; preds = %while.exit98, %if.then88
+  br label %if.end89
 
-while.cond98:                                     ; preds = %if.end109, %if.then94
-  %i101 = load i64, ptr %i, align 8
-  %load.struct102 = load %_Z6VectorI16PlannedStatementE, ptr %deref.tmp, align 8
-  %length103 = extractvalue %_Z6VectorI16PlannedStatementE %load.struct102, 0
-  %lt104 = icmp ult i64 %i101, %length103
-  br i1 %lt104, label %while.body99, label %while.exit100
+while.cond96:                                     ; preds = %if.end107, %if.then92
+  %i99 = load i64, ptr %i, align 8
+  %load.struct100 = load %_Z6VectorI16PlannedStatementE, ptr %deref.tmp, align 8
+  %length101 = extractvalue %_Z6VectorI16PlannedStatementE %load.struct100, 0
+  %lt102 = icmp ult i64 %i99, %length101
+  br i1 %lt102, label %while.body97, label %while.exit98
 
-while.body99:                                     ; preds = %while.cond98
-  %i105 = load i64, ptr %i, align 8
-  %call106 = call ptr @_ZN6VectorI16PlannedStatementE3getEm(ptr %deref.tmp, i64 %i105)
-  %ne107 = icmp ne ptr %call106, null
-  br i1 %ne107, label %if.then108, label %if.end109
+while.body97:                                     ; preds = %while.cond96
+  %i103 = load i64, ptr %i, align 8
+  %call104 = call ptr @_ZN6VectorI16PlannedStatementE3getEm(ptr %deref.tmp, i64 %i103)
+  %ne105 = icmp ne ptr %call104, null
+  br i1 %ne105, label %if.then106, label %if.end107
 
-while.exit100:                                    ; preds = %while.cond98
-  br label %if.end95
+while.exit98:                                     ; preds = %while.cond96
+  br label %if.end93
 
-if.then108:                                       ; preds = %while.body99
-  call void @_ZN10placehints17collect_statementER13StringBuilderb16PlannedStatement(ptr %0, i1 false, ptr %call106)
-  br label %if.end109
+if.then106:                                       ; preds = %while.body97
+  call void @_ZN10placehints17collect_statementER13StringBuilderb16PlannedStatement(ptr %0, i1 false, ptr %call104)
+  br label %if.end107
 
-if.end109:                                        ; preds = %if.then108, %while.body99
-  %i110 = load i64, ptr %i, align 8
-  %add111 = add i64 %i110, 1
-  store i64 %add111, ptr %i, align 1
-  br label %while.cond98
+if.end107:                                        ; preds = %if.then106, %while.body97
+  %i108 = load i64, ptr %i, align 8
+  %add109 = add i64 %i108, 1
+  store i64 %add109, ptr %i, align 1
+  br label %while.cond96
 }
 
 define linkonce_odr void @_ZN10placehints6dedupeEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
@@ -137254,7 +136772,7 @@ if.end:                                           ; preds = %entry
   store i64 0, ptr %k, align 1
   br label %while.cond
 
-while.cond:                                       ; preds = %while.exit38, %if.end
+while.cond:                                       ; preds = %while.exit35, %if.end
   %k2 = load i64, ptr %k, align 8
   %lt = icmp ult i64 %k2, %call
   br i1 %lt, label %while.body, label %while.exit
@@ -137280,8 +136798,8 @@ while.body4:                                      ; preds = %while.cond3
   br i1 %ge, label %if.then10, label %if.end11
 
 while.exit5:                                      ; preds = %if.then18, %if.then10, %while.cond3
-  %same22 = load i1, ptr %same, align 1
-  br i1 %same22, label %if.then23, label %if.end24
+  %same25 = load i1, ptr %same, align 1
+  br i1 %same25, label %land.rhs24, label %if.end23
 
 if.then10:                                        ; preds = %while.body4
   store i1 false, ptr %same, align 1
@@ -137307,56 +136825,50 @@ if.end19:                                         ; preds = %if.end11
   store i64 %add21, ptr %i, align 1
   br label %while.cond3
 
-if.then23:                                        ; preds = %while.exit5
-  %k25 = load i64, ptr %k, align 8
-  %add26 = add i64 %k25, %call1
-  %lt27 = icmp ult i64 %add26, %call
-  br i1 %lt27, label %if.then28, label %if.end29
-
-if.end24:                                         ; preds = %if.end29, %while.exit5
-  br label %while.cond36
-
-if.then28:                                        ; preds = %if.then23
-  %k30 = load i64, ptr %k, align 8
-  %add31 = add i64 %k30, %call1
-  %call32 = call i8 @_ZN6String3getEm(ptr %0, i64 %add31)
-  %eq33 = icmp eq i8 %call32, 9
-  br i1 %eq33, label %if.then34, label %if.end35
-
-if.end29:                                         ; preds = %if.end35, %if.then23
-  br label %if.end24
-
-if.then34:                                        ; preds = %if.then28
+if.then22:                                        ; preds = %land.rhs
   ret i1 true
 
-if.end35:                                         ; preds = %if.then28
-  br label %if.end29
+if.end23:                                         ; preds = %land.rhs, %land.rhs24, %while.exit5
+  br label %while.cond33
 
-while.cond36:                                     ; preds = %if.end45, %if.end24
-  %k39 = load i64, ptr %k, align 8
-  %lt40 = icmp ult i64 %k39, %call
-  br i1 %lt40, label %while.body37, label %while.exit38
+land.rhs:                                         ; preds = %land.rhs24
+  %k29 = load i64, ptr %k, align 8
+  %add30 = add i64 %k29, %call1
+  %call31 = call i8 @_ZN6String3getEm(ptr %0, i64 %add30)
+  %eq32 = icmp eq i8 %call31, 9
+  br i1 %eq32, label %if.then22, label %if.end23
 
-while.body37:                                     ; preds = %while.cond36
-  %k41 = load i64, ptr %k, align 8
-  %call42 = call i8 @_ZN6String3getEm(ptr %0, i64 %k41)
-  %eq43 = icmp eq i8 %call42, 10
-  br i1 %eq43, label %if.then44, label %if.end45
+land.rhs24:                                       ; preds = %while.exit5
+  %k26 = load i64, ptr %k, align 8
+  %add27 = add i64 %k26, %call1
+  %lt28 = icmp ult i64 %add27, %call
+  br i1 %lt28, label %land.rhs, label %if.end23
 
-while.exit38:                                     ; preds = %if.then44, %while.cond36
-  %k48 = load i64, ptr %k, align 8
-  %add49 = add i64 %k48, 1
-  store i64 %add49, ptr %k, align 1
+while.cond33:                                     ; preds = %if.end42, %if.end23
+  %k36 = load i64, ptr %k, align 8
+  %lt37 = icmp ult i64 %k36, %call
+  br i1 %lt37, label %while.body34, label %while.exit35
+
+while.body34:                                     ; preds = %while.cond33
+  %k38 = load i64, ptr %k, align 8
+  %call39 = call i8 @_ZN6String3getEm(ptr %0, i64 %k38)
+  %eq40 = icmp eq i8 %call39, 10
+  br i1 %eq40, label %if.then41, label %if.end42
+
+while.exit35:                                     ; preds = %if.then41, %while.cond33
+  %k45 = load i64, ptr %k, align 8
+  %add46 = add i64 %k45, 1
+  store i64 %add46, ptr %k, align 1
   br label %while.cond
 
-if.then44:                                        ; preds = %while.body37
-  br label %while.exit38
+if.then41:                                        ; preds = %while.body34
+  br label %while.exit35
 
-if.end45:                                         ; preds = %while.body37
-  %k46 = load i64, ptr %k, align 8
-  %add47 = add i64 %k46, 1
-  store i64 %add47, ptr %k, align 1
-  br label %while.cond36
+if.end42:                                         ; preds = %while.body34
+  %k43 = load i64, ptr %k, align 8
+  %add44 = add i64 %k43, 1
+  store i64 %add44, ptr %k, align 1
+  br label %while.cond33
 }
 
 define linkonce_odr void @_ZN8codelens13head_fragmentEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
@@ -139859,45 +139371,39 @@ while.body:                                       ; preds = %while.cond
   %ptr.add = getelementptr inbounds %_Z7DocSlot, ptr %global.load2, i64 %i3
   %load.struct = load %_Z7DocSlot, ptr %ptr.add, align 8
   %used = extractvalue %_Z7DocSlot %load.struct, 4
-  br i1 %used, label %if.then4, label %if.end5
+  br i1 %used, label %land.rhs6, label %if.end5
 
 while.exit:                                       ; preds = %while.cond
   br label %if.end
 
-if.then4:                                         ; preds = %while.body
-  %load.struct6 = load %_Z7DocSlot, ptr %ptr.add, align 8
-  %dirty = extractvalue %_Z7DocSlot %load.struct6, 5
-  br i1 %dirty, label %if.then7, label %if.end8
-
-if.end5:                                          ; preds = %if.end8, %while.body
-  %i17 = load i64, ptr %i, align 8
-  %add = add i64 %i17, 1
-  store i64 %add, ptr %i, align 1
-  br label %while.cond
-
-if.then7:                                         ; preds = %if.then4
-  %load.struct9 = load %_Z7DocSlot, ptr %ptr.add, align 8
-  %uri_data = extractvalue %_Z7DocSlot %load.struct9, 0
-  %ne10 = icmp ne ptr %uri_data, null
-  br i1 %ne10, label %if.then11, label %if.end12
-
-if.end8:                                          ; preds = %if.end12, %if.then4
-  br label %if.end5
-
-if.then11:                                        ; preds = %if.then7
-  %forced_page13 = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %load.struct14 = load %_Z7DocSlot, ptr %ptr.add, align 8
-  %uri_data15 = extractvalue %_Z7DocSlot %load.struct14, 0
-  %load.struct16 = load %_Z7DocSlot, ptr %ptr.add, align 8
-  %uri_len = extractvalue %_Z7DocSlot %load.struct16, 1
-  call void @_ZN6StringC1EP10const_charm(ptr %struct.region, ptr %uri_data15, i64 %uri_len)
+if.then4:                                         ; preds = %land.rhs
+  %forced_page10 = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page10, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  %load.struct11 = load %_Z7DocSlot, ptr %ptr.add, align 8
+  %uri_data12 = extractvalue %_Z7DocSlot %load.struct11, 0
+  %load.struct13 = load %_Z7DocSlot, ptr %ptr.add, align 8
+  %uri_len = extractvalue %_Z7DocSlot %load.struct13, 1
+  call void @_ZN6StringC1EP10const_charm(ptr %struct.region, ptr %uri_data12, i64 %uri_len)
   %sret.body = load { ptr }, ptr %struct.region, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.end12:                                         ; preds = %if.then7
-  br label %if.end8
+if.end5:                                          ; preds = %land.rhs, %land.rhs6, %while.body
+  %i14 = load i64, ptr %i, align 8
+  %add = add i64 %i14, 1
+  store i64 %add, ptr %i, align 1
+  br label %while.cond
+
+land.rhs:                                         ; preds = %land.rhs6
+  %load.struct8 = load %_Z7DocSlot, ptr %ptr.add, align 8
+  %uri_data = extractvalue %_Z7DocSlot %load.struct8, 0
+  %ne9 = icmp ne ptr %uri_data, null
+  br i1 %ne9, label %if.then4, label %if.end5
+
+land.rhs6:                                        ; preds = %while.body
+  %load.struct7 = load %_Z7DocSlot, ptr %ptr.add, align 8
+  %dirty = extractvalue %_Z7DocSlot %load.struct7, 5
+  br i1 %dirty, label %land.rhs, label %if.end5
 }
 
 define linkonce_odr void @_ZN8docstore3getEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {

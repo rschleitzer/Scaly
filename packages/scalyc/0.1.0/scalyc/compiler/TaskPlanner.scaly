@@ -477,9 +477,7 @@ define TaskPlanner
         ; and fiber modules stay sequential by rule, not by verdict.
         function file_is_foundation(file: String) returns bool
         {
-            if file.contains("scaly/memory/")
-                return true
-            if file.contains("scaly/fiber/")
+            if file.contains("scaly/memory/") or file.contains("scaly/fiber/")
                 return true
             false
         }
@@ -516,9 +514,8 @@ define TaskPlanner
             while ai < cls_aliased.length
             {
                 let ap cls_aliased.get ai
-                if ap <> null
-                    if (*ap) = name
-                        return false
+                if ap <> null and (*ap) = name
+                    return false
                 set ai: ai + 1
             }
             if name = cls_loop_var
@@ -527,9 +524,8 @@ define TaskPlanner
             while i < cls_locals.length
             {
                 let p cls_locals.get i
-                if p <> null
-                    if (*p) = name
-                        return true
+                if p <> null and (*p) = name
+                    return true
                 set i: i + 1
             }
             false
@@ -571,9 +567,8 @@ define TaskPlanner
             while i < ops.length
             {
                 let op_ptr ops.get i
-                if op_ptr <> null
-                    if this.op_aliases_external(op_ptr.unwrap())
-                        return true
+                if op_ptr <> null and this.op_aliases_external(op_ptr.unwrap())
+                    return true
                 set i: i + 1
             }
             false
@@ -606,9 +601,8 @@ define TaskPlanner
                         while i < tp.components.length
                         {
                             let c_ptr tp.components.get i
-                            if c_ptr <> null
-                                if this.ops_alias_external(c_ptr.value)
-                                    return true
+                            if c_ptr <> null and this.ops_alias_external(c_ptr.value)
+                                return true
                             set i: i + 1
                         }
                     }
@@ -676,9 +670,8 @@ define TaskPlanner
             while i < ops.length
             {
                 let op_ptr ops.get i
-                if op_ptr <> null
-                    if this.operand_reads_name(op_ptr.unwrap(), name)
-                        return true
+                if op_ptr <> null and this.operand_reads_name(op_ptr.unwrap(), name)
+                    return true
                 set i: i + 1
             }
             false
@@ -700,9 +693,8 @@ define TaskPlanner
                         while i < call.args.length
                         {
                             let ap call.args.get i
-                            if ap <> null
-                                if this.operand_reads_name(ap.unwrap(), name)
-                                    return true
+                            if ap <> null and this.operand_reads_name(ap.unwrap(), name)
+                                return true
                             set i: i + 1
                         }
                     }
@@ -727,9 +719,8 @@ define TaskPlanner
                         while i < tp.components.length
                         {
                             let c_ptr tp.components.get i
-                            if c_ptr <> null
-                                if this.operands_read_name(c_ptr.value, name)
-                                    return true
+                            if c_ptr <> null and this.operands_read_name(c_ptr.value, name)
+                                return true
                             set i: i + 1
                         }
                     }
@@ -1133,9 +1124,8 @@ define TaskPlanner
             {
                 if global.mangled_name = g.mangled_name
                 {
-                    if global.is_mutable
-                        if this.global_is_sanctioned(global.name) = false
-                            this.block_named("reads mutable global ", g.name)
+                    if global.is_mutable and this.global_is_sanctioned(global.name) = false
+                        this.block_named("reads mutable global ", g.name)
                     return
                 }
             }
@@ -1178,15 +1168,7 @@ define TaskPlanner
                 return true
             if name = "strncmp"
                 return true
-            if name = "strdup"
-                return true
-            if name = "exit"
-                return true
-            if name = "scaly_eputs"
-                return true
-            if name = "scaly_eputi"
-                return true
-            if name = "scaly_eputnl"
+            if name = "strdup" or name = "exit" or name = "scaly_eputs" or name = "scaly_eputi" or name = "scaly_eputnl"
                 return true
             ; libm scalar math (5.1 op kernels: softmax/GELU/layernorm).
             ; Pure value→value; errno is thread-local, so concurrent calls
@@ -1203,17 +1185,7 @@ define TaskPlanner
                 return true
             if name = "sqrt"
                 return true
-            if name = "logf"
-                return true
-            if name = "log"
-                return true
-            if name = "powf"
-                return true
-            if name = "pow"
-                return true
-            if name = "fabsf"
-                return true
-            if name = "fabs"
+            if name = "logf" or name = "log" or name = "powf" or name = "pow" or name = "fabsf" or name = "fabs"
                 return true
             false
         }
@@ -1234,13 +1206,7 @@ define TaskPlanner
                 return true
             if name = "trace_count"
                 return true
-            if name = "trace_entries"
-                return true
-            if name = "fmt_scratch"
-                return true
-            if name = "heap_trace_state"
-                return true
-            if name = "heap_trace"
+            if name = "trace_entries" or name = "fmt_scratch" or name = "heap_trace_state" or name = "heap_trace"
                 return true
             false
         }
@@ -1291,9 +1257,8 @@ define TaskPlanner
             while j < pure_stack.length
             {
                 let sp pure_stack.get j
-                if sp <> null
-                    if (*sp) = mangled
-                        return true
+                if sp <> null and (*sp) = mangled
+                    return true
                 set j: j + 1
             }
             if plan_functions = null
@@ -1447,9 +1412,8 @@ define TaskPlanner
             {
                 if global.mangled_name = g.mangled_name
                 {
-                    if global.is_mutable
-                        if this.global_is_sanctioned(global.name) = false
-                            set pw_impure: true
+                    if global.is_mutable and this.global_is_sanctioned(global.name) = false
+                        set pw_impure: true
                     return
                 }
             }
@@ -1709,9 +1673,8 @@ define TaskPlanner
             if name.get_length() = 0
                 return false
             let c name.get(0)
-            if c >= ("A" as char)
-                if c <= ("Z" as char)
-                    return true
+            if c >= ("A" as char) and c <= ("Z" as char)
+                return true
             false
         }
 
@@ -1744,9 +1707,8 @@ define TaskPlanner
                             0
             }
             let idx_ptr call.args.get 1
-            if idx_ptr <> null
-                if this.operand_reads_name(idx_ptr.unwrap(), cls_loop_var)
-                    return true
+            if idx_ptr <> null and this.operand_reads_name(idx_ptr.unwrap(), cls_loop_var)
+                return true
             false
         }
 
@@ -1804,9 +1766,8 @@ define TaskPlanner
             while j < wm_stack.length
             {
                 let sp wm_stack.get j
-                if sp <> null
-                    if (*sp) = mangled
-                        return 0
+                if sp <> null and (*sp) = mangled
+                    return 0
                 set j: j + 1
             }
             if plan_functions = null
@@ -2297,9 +2258,8 @@ define TaskPlanner
                     set written: true
                 if i > 62
                     set written: true
-                if written = false
-                    if ((sub >> i) & 1) <> 0
-                        set written: true
+                if written = false and ((sub >> i) & 1) <> 0
+                    set written: true
                 if written
                 {
                     let ap call.args.get i
@@ -2439,15 +2399,13 @@ define TaskPlanner
                         while k < attrs.length
                         {
                             let a_ptr attrs.get k
-                            if a_ptr <> null
-                                if a_ptr.unwrap().name = "mutable"
-                                    set written: true
+                            if a_ptr <> null and a_ptr.unwrap().name = "mutable"
+                                set written: true
                             set k: k + 1
                         }
                     }
-                    if it.item_type <> null
-                        if TaskPlanner.is_page_type((*it.item_type))
-                            set written: true
+                    if it.item_type <> null and TaskPlanner.is_page_type((*it.item_type))
+                        set written: true
                     if written
                     {
                         if i > 62
@@ -2498,15 +2456,13 @@ define TaskPlanner
                     set written: true
                 if i > 62
                     set written: true
-                if written = false
-                    if ((mask >> i) & 1) <> 0
-                        set written: true
+                if written = false and ((mask >> i) & 1) <> 0
+                    set written: true
                 if written
                 {
                     let ap call.args.get i
-                    if ap <> null
-                        if this.arg_root_local(ap.unwrap()) = false
-                            return false
+                    if ap <> null and this.arg_root_local(ap.unwrap()) = false
+                        return false
                 }
                 set i: i + 1
             }
@@ -2544,9 +2500,8 @@ define TaskPlanner
                         while i < inner.args.length
                         {
                             let ap inner.args.get i
-                            if ap <> null
-                                if this.arg_root_local(ap.unwrap()) = false
-                                    return false
+                            if ap <> null and this.arg_root_local(ap.unwrap()) = false
+                                return false
                             set i: i + 1
                         }
                     }

@@ -362,9 +362,8 @@ define semantic
             set i: i - 1
         }
         var member false
-        if i > 0
-            if source.get(i - 1) = 0x2E
-                set member: true
+        if i > 0 and source.get(i - 1) = 0x2E
+            set member: true
         if member
         {
             if more
@@ -381,16 +380,7 @@ define semantic
     ; depend on symbols.
     function is_ident_byte(c: u8) returns bool
     {
-        if c >= 0x61
-            if c <= 0x7A
-                return true
-        if c >= 0x41
-            if c <= 0x5A
-                return true
-        if c >= 0x30
-            if c <= 0x39
-                return true
-        if c = 0x5F
+        if c >= 0x61 and c <= 0x7A or c >= 0x41 and c <= 0x5A or c >= 0x30 and c <= 0x39 or c = 0x5F
             return true
         false
     }
@@ -464,9 +454,8 @@ define semantic
         while i < decls.length
         {
             let dptr decls.get i
-            if dptr <> null
-                if semantic.decl_has_start(*dptr, start)
-                    return true
+            if dptr <> null and semantic.decl_has_start(*dptr, start)
+                return true
             set i: i + 1
         }
         false
@@ -542,9 +531,8 @@ define semantic
         while i < decls.length
         {
             let dptr decls.get i
-            if dptr <> null
-                if semantic.decl_has_start(*dptr, start)
-                    return true
+            if dptr <> null and semantic.decl_has_start(*dptr, start)
+                return true
             set i: i + 1
         }
         false
@@ -567,9 +555,8 @@ define semantic
         while i < members.length
         {
             let mptr members.get i
-            if mptr <> null
-                if semantic.member_has_start(*mptr, start)
-                    return true
+            if mptr <> null and semantic.member_has_start(*mptr, start)
+                return true
             set i: i + 1
         }
         false
@@ -674,9 +661,8 @@ define semantic
                     if result.found = false
                     {
                         let fp fns.get i
-                        if fp <> null
-                            if semantic.owns_routine(file, path, (*fp).file, (*fp).loc.start)
-                                set result: semantic.walk_impl((*fp).impl, mode, offset)
+                        if fp <> null and semantic.owns_routine(file, path, (*fp).file, (*fp).loc.start)
+                            set result: semantic.walk_impl((*fp).impl, mode, offset)
                     }
                     set i: i + 1
                 }
@@ -735,9 +721,8 @@ define semantic
                         if gp <> null
                         {
                             let g (*gp)
-                            if g.value <> null
-                                if semantic.is_routine_start(file, g.loc.start)
-                                    set result: semantic.walk_operands(*g.value, mode, offset)
+                            if g.value <> null and semantic.is_routine_start(file, g.loc.start)
+                                set result: semantic.walk_operands(*g.value, mode, offset)
                         }
                     }
                     set i: i + 1
@@ -761,9 +746,8 @@ define semantic
                 if result.found = false
                 {
                     let mp ms.get i
-                    if mp <> null
-                        if semantic.owns_routine(file, path, (*mp).file, (*mp).loc.start)
-                            set result: semantic.walk_impl((*mp).impl, mode, offset)
+                    if mp <> null and semantic.owns_routine(file, path, (*mp).file, (*mp).loc.start)
+                        set result: semantic.walk_impl((*mp).impl, mode, offset)
                 }
                 set i: i + 1
             }
@@ -780,9 +764,8 @@ define semantic
                     if result.found = false
                     {
                         let ip inits.get i
-                        if ip <> null
-                            if semantic.is_routine_start(file, (*ip).loc.start)
-                                set result: semantic.walk_impl((*ip).impl, mode, offset)
+                        if ip <> null and semantic.is_routine_start(file, (*ip).loc.start)
+                            set result: semantic.walk_impl((*ip).impl, mode, offset)
                     }
                     set i: i + 1
                 }
@@ -800,9 +783,8 @@ define semantic
                     if result.found = false
                     {
                         let op ops.get i
-                        if op <> null
-                            if semantic.is_routine_start(file, (*op).loc.start)
-                                set result: semantic.walk_impl((*op).impl, mode, offset)
+                        if op <> null and semantic.is_routine_start(file, (*op).loc.start)
+                            set result: semantic.walk_impl((*op).impl, mode, offset)
                     }
                     set i: i + 1
                 }
@@ -811,9 +793,8 @@ define semantic
 
         if result.found = false
         {
-            if st.deinitializer <> null
-                if semantic.is_routine_start(file, (*st.deinitializer).loc.start)
-                    set result: semantic.walk_impl((*st.deinitializer).impl, mode, offset)
+            if st.deinitializer <> null and semantic.is_routine_start(file, (*st.deinitializer).loc.start)
+                set result: semantic.walk_impl((*st.deinitializer).impl, mode, offset)
         }
 
         result
@@ -832,9 +813,8 @@ define semantic
                 if result.found = false
                 {
                     let mp ms.get i
-                    if mp <> null
-                        if semantic.owns_routine(file, path, (*mp).file, (*mp).loc.start)
-                            set result: semantic.walk_impl((*mp).impl, mode, offset)
+                    if mp <> null and semantic.owns_routine(file, path, (*mp).file, (*mp).loc.start)
+                        set result: semantic.walk_impl((*mp).impl, mode, offset)
                 }
                 set i: i + 1
             }
@@ -851,9 +831,8 @@ define semantic
                     if result.found = false
                     {
                         let op ops.get i
-                        if op <> null
-                            if semantic.is_routine_start(file, (*op).loc.start)
-                                set result: semantic.walk_impl((*op).impl, mode, offset)
+                        if op <> null and semantic.is_routine_start(file, (*op).loc.start)
+                            set result: semantic.walk_impl((*op).impl, mode, offset)
                     }
                     set i: i + 1
                 }
@@ -1071,9 +1050,8 @@ define semantic
         ; position where a wrong type could still reach a member token; a miss
         ; here falls through to the lexical hover, which says where the cursor
         ; sits rather than naming a type it does not know.
-        if mode = 3
-            if semantic.ends_in_field(op.member_access) = false
-                set self_type: ""
+        if mode = 3 and semantic.ends_in_field(op.member_access) = false
+            set self_type: ""
         ; A strictly-tighter deeper match wins (genuine nesting f(g x)).
         if child.found
         {

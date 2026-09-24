@@ -375,20 +375,10 @@ define semantic
 
 
 
-
     ; Letters, digits and `_` — the bytes an identifier is made of. A private
     ; copy for the same reason position_to_offset# is one: this module does not
     ; depend on symbols.
     function is_ident_byte(c: u8) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
-
-
-
 
 
 
@@ -456,7 +446,6 @@ define semantic
     ; Does the document declare a routine (function / procedure / operator /
     ; init / deinit) or a module-level global starting exactly at `start`?
     function is_routine_start(rp, file: FileSyntax, start: size_t) @ret_nonlocal true @deep true returns bool linked
-
 
 
 
@@ -549,14 +538,12 @@ define semantic
 
 
 
-
     function union_has_start(rp, un: UnionSyntax, start: size_t) @ret_nonlocal true @deep true returns bool linked
 
 
 
 
     function body_has_start(rp, body: ref[BodySyntax]?, start: size_t) @ret_nonlocal true @deep true returns bool linked
-
 
 
 
@@ -746,8 +733,6 @@ define semantic
 
 
 
-
-
     function walk_structure(rp, st: PlannedStructure, mode: size_t, offset: size_t, file: FileSyntax, path: String) @direct true @ret_nonlocal true @deep true returns ResolveResult linked
 
 
@@ -815,13 +800,7 @@ define semantic
 
 
 
-
-
-
-
     function walk_union(rp, un: PlannedUnion, mode: size_t, offset: size_t, file: FileSyntax, path: String) @direct true @ret_nonlocal true @deep true returns ResolveResult linked
-
-
 
 
 
@@ -1014,7 +993,6 @@ define semantic
 
 
     function walk_operand(rp, op: PlannedOperand, mode: size_t, offset: size_t) @direct true @ret_caller true @deep true returns ResolveResult linked
-
 
 
 

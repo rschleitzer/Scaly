@@ -220,9 +220,8 @@ define nameset
                         let s slots + idx
                         if s.used = false
                             return (0 - 1) as i64
-                        if s.name.length = tlen
-                            if nameset.eq_ptr(s.name, sp)
-                                return s.kind
+                        if s.name.length = tlen and nameset.eq_ptr(s.name, sp)
+                            return s.kind
                         set idx: (idx + 1) & mask
                         set probes: probes + 1
                     }

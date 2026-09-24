@@ -458,7 +458,6 @@ define WriteCensus
 
 
 
-
         procedure enter_body(mutable this: WriteCensus, func: PlannedFunction) @deep true @deep_this_2 true linked
 
 
@@ -1375,21 +1374,8 @@ define WriteCensus
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
         ; The parameter bit of a name, or a local's inherited mask.
         function name_mask(this: WriteCensus, name: String) @deep true returns u64 linked
-
 
 
 
@@ -1458,7 +1444,6 @@ define WriteCensus
 
 
 
-
         ; ================================================================
         ; IS against HOLDS. mask_of answers every parameter a value may REACH:
         ; the object it is, and the objects a fresh record it names holds a
@@ -1472,7 +1457,6 @@ define WriteCensus
         ; them -- conservative where the two halves are not told apart.
         ; ================================================================
         function is_of(this: WriteCensus, op: PlannedOperand) @ret_nonlocal true @deep true returns u64 linked
-
 
 
 
@@ -1554,7 +1538,6 @@ define WriteCensus
 
 
 
-
         function mask_of_operands(this: WriteCensus, ops: ref[Vector[PlannedOperand]]?) @ret_nonlocal true @deep true returns u64 linked
 
 
@@ -1573,7 +1556,6 @@ define WriteCensus
 
         ; What an operand's value may alias: the parameters it reaches.
         function mask_of(this: WriteCensus, op: PlannedOperand) @deep true returns u64 linked
-
 
 
 
@@ -1648,7 +1630,6 @@ define WriteCensus
 
 
         function mask_of_base(this: WriteCensus, op: PlannedOperand) @deep true returns u64 linked
-
 
 
 
@@ -1791,7 +1772,6 @@ define WriteCensus
 
 
 
-
         ; The page a Reference lifetime names, as a mask.
         procedure note_life(mutable this: WriteCensus, offset: size_t, life: Lifetime, cls: String) @ret_nonlocal true @deep true linked
 
@@ -1808,7 +1788,6 @@ define WriteCensus
         ; The index + 1 of a callee in plan.functions (0: none), read off the
         ; pointer census's table, which prefers a body over a stub.
         function callee_index(this: WriteCensus, mangled: String) @ret_param_0 true @deep true returns size_t linked
-
 
 
 
@@ -1928,11 +1907,8 @@ define WriteCensus
 
 
 
-
         ; The written parameters of a callee, mapped onto this call's arguments.
         procedure apply_callee(mutable this: WriteCensus, op: PlannedOperand, call: PlannedCall, callee_mask: u64, callee_name: String, n_in: size_t, slot: size_t) @deep true linked
-
-
 
 
 
@@ -2172,7 +2148,6 @@ define WriteCensus
 
 
 
-
         function is_reference_name(n: String) @ret_param_0 true @deep true returns bool linked
 
 
@@ -2180,10 +2155,7 @@ define WriteCensus
 
 
 
-
-
         function is_by_value_local(this: WriteCensus, v: PlannedVariable) @ret_nonlocal true @deep true returns bool linked
-
 
 
 
@@ -2346,7 +2318,6 @@ define WriteCensus
 
 
 
-
         ; The entries' parameters are frozen by their TYPE.
         function entry_param_bits(this: WriteCensus, func: PlannedFunction) @ret_nonlocal true @deep true returns u64 linked
 
@@ -2379,7 +2350,6 @@ define WriteCensus
         ; Breadth-first over the call edges from the entries (edge_mode walks),
         ; then the sites of every reachable body.
         procedure report_frozen(mutable this: WriteCensus) @deep true io linked
-
 
 
 
@@ -2872,7 +2842,6 @@ define WriteCensus
 
 
 
-
         ; a stub's row: its OWNER's declarations of that name and arity (the
         ; owner read off the mangled name), else every owner's
         function stub_row(this: WriteCensus, call: PlannedCall) @ret_nonlocal true @deep true returns size_t linked
@@ -3067,11 +3036,7 @@ define WriteCensus
 
 
 
-
-
         function planned_writable_mask(items: ref[Vector[PlannedItem]]?) @ret_nonlocal true @deep true returns u64 linked
-
-
 
 
 
@@ -3245,14 +3210,11 @@ define WriteCensus
 
 
 
-
-
         ; A local held BY VALUE (not a reference) is the body's own memory: a
         ; procedure handed it, `it.next()` on an iterator, writes the copy. The
         ; ASSUMPTION, stated: such a procedure does not write through the
         ; pointers the copy carries (an iterator's cursor into its container).
         function is_local_value(this: WriteCensus, a: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
-
 
 
 
@@ -3462,7 +3424,6 @@ define WriteCensus
 
         ; is `name` an element of a comma-separated list?
         function list_has(list: String, name: Slice[char]) @ret_nonlocal true @deep true returns bool linked
-
 
 
 
@@ -4088,12 +4049,10 @@ define WriteCensus
 
 
 
-
         ; The allocator substrate is ambient here as it is for globals: its
         ; trace output and the abort path's message (scaly_panic_* live in
         ; scaly/memory) are not I/O a signature declares.
         procedure note_io(mutable this: WriteCensus, offset: size_t, how: String) @deep true linked
-
 
 
 
@@ -4116,7 +4075,6 @@ define WriteCensus
         ; cell. The runtime's own state is ambient (the allocator, the
         ; scheduler); a constant `define` is not a global that can change.
         procedure note_global_read(mutable this: WriteCensus, offset: size_t, name: String) @deep true linked
-
 
 
 
@@ -4215,7 +4173,6 @@ define WriteCensus
 
 
 
-
         ; Does an extern reach the world outside the program? Everything does
         ; but what only computes (memory, strings, maths, atomics), the
         ; runtime's coordination (threads, fiber contexts, the poller's wake
@@ -4252,39 +4209,7 @@ define WriteCensus
 
 
 
-
-
         function extern_computes(name: String) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -4609,8 +4534,6 @@ define WriteCensus
 
 
 
-
-
         ; The let-sites of one body, emitted where its file is known.
         procedure flush_let_sites(mutable this: WriteCensus, fn: size_t) @deep true linked
 
@@ -4790,7 +4713,6 @@ define WriteCensus
 
 
 
-
         procedure find_action(mutable this: WriteCensus, act: PlannedAction) @deep true io linked
 
 
@@ -4864,9 +4786,7 @@ define WriteCensus
 
 
 
-
         procedure find_statement(mutable this: WriteCensus, stmt: PlannedStatement) @ret_nonlocal true @deep true io linked
-
 
 
 

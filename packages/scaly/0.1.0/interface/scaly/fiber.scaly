@@ -2156,8 +2156,6 @@ define Channel
 
 
 
-
-
     ; Retire one send handle. The LAST retirement closes the channel:
     ; every parked receiver is woken (it finds the queue, then null) and
     ; a main-context waiter on the receiving thread is poked. Wakes are

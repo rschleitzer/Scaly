@@ -102,9 +102,8 @@ define instlens
             if kq >= plan_text.get_length()
                 break
             let qname instlens.routine_name_at(plan_text, kq)
-            if qname.get_length() > 0
-                if instlens.is_planned_at(plan, kq, qname)
-                    set any_planned: true
+            if qname.get_length() > 0 and instlens.is_planned_at(plan, kq, qname)
+                set any_planned: true
             set kq: kq + 1
         }
         if any_planned = false
@@ -285,9 +284,8 @@ define instlens
             if fp <> null
             {
                 let fn (*fp)
-                if fn.loc.start = start
-                    if fn.name = name
-                        return true
+                if fn.loc.start = start and fn.name = name
+                    return true
             }
             set i: i + 1
         }
@@ -318,9 +316,8 @@ define instlens
         while i < seen.get_length()
         {
             let sp seen.get i
-            if sp <> null
-                if (*sp) = name
-                    return true
+            if sp <> null and (*sp) = name
+                return true
             set i: i + 1
         }
         false
@@ -428,9 +425,8 @@ define instlens
         while k < n
         {
             let c source.get k
-            if c <> 0x20
-                if c <> 0x09
-                    break
+            if c <> 0x20 and c <> 0x09
+                break
             set k: k + 1
         }
         let start k

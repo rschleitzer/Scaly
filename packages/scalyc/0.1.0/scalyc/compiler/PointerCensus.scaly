@@ -373,9 +373,8 @@ define PointerCensus
             while i < handle_pointees.length
             {
                 let h handle_pointees.get i
-                if h <> null
-                    if (*h) = pointee
-                        return true
+                if h <> null and (*h) = pointee
+                    return true
                 set i: i + 1
             }
             false
@@ -445,13 +444,8 @@ define PointerCensus
                 let ph dd_hashes.get idx
                 let po dd_offsets.get idx
                 let pc dd_classes.get idx
-                if ph <> null
-                    if po <> null
-                        if pc <> null
-                            if (*ph) = fh
-                                if (*po) = offset
-                                    if (*pc) = cid
-                                        return true
+                if ph <> null and po <> null and pc <> null and (*ph) = fh and (*po) = offset and (*pc) = cid
+                    return true
                 set h: (h + 1) & mask
                 set probes: probes + 1
             }
@@ -730,9 +724,8 @@ define PointerCensus
             while i < extern_names.length
             {
                 let e extern_names.get i
-                if e <> null
-                    if (*e) = name
-                        return true
+                if e <> null and (*e) = name
+                    return true
                 set i: i + 1
             }
             false
@@ -1136,9 +1129,8 @@ define PointerCensus
                                         {
                                             if (*slot_ptr) = 0
                                             {
-                                                if si < 65536
-                                                    if ii < 65536
-                                                        init_slots.put(h, (si * 65536) + ii + 1)
+                                                if si < 65536 and ii < 65536
+                                                    init_slots.put(h, (si * 65536) + ii + 1)
                                                 set done: true
                                             }
                                             else
@@ -1184,9 +1176,8 @@ define PointerCensus
                     if st.initializers <> null
                     {
                         let in_ptr st.initializers.get ii
-                        if in_ptr <> null
-                            if in_ptr.unwrap().mangled_name = mangled
-                                return in_ptr
+                        if in_ptr <> null and in_ptr.unwrap().mangled_name = mangled
+                            return in_ptr
                     }
                 }
                 set h: (h + 1) & mask
@@ -1213,9 +1204,8 @@ define PointerCensus
                 if slot = 0
                     return null
                 let cand plan_functions.get(slot - 1)
-                if cand <> null
-                    if cand.unwrap().mangled_name = mangled
-                        return cand
+                if cand <> null and cand.unwrap().mangled_name = mangled
+                    return cand
                 set h: (h + 1) & mask
                 set probes: probes + 1
             }
@@ -1332,9 +1322,8 @@ define PointerCensus
             while i < src_files.length
             {
                 let f src_files.get i
-                if f <> null
-                    if (*f) = file
-                        return
+                if f <> null and (*f) = file
+                    return
                 set i: i + 1
             }
             let copy String^this(file)
@@ -1404,9 +1393,8 @@ define PointerCensus
             while p < len
             {
                 let c src.get p
-                if c <> 32
-                    if c <> 9
-                        break
+                if c <> 32 and c <> 9
+                    break
                 set p: p + 1
             }
             PointerCensus.text_at(src, p, name)
@@ -1426,17 +1414,15 @@ define PointerCensus
             while i < src_files.length
             {
                 let f src_files.get i
-                if f <> null
-                    if (*f) = func.file
-                        set own: i
+                if f <> null and (*f) = func.file
+                    set own: i
                 set i: i + 1
             }
             if own < src_files.length
             {
                 let src this.source_of(own)
-                if src <> null
-                    if PointerCensus.header_at((*src), func.loc.start, func.name)
-                        return String(func.file)
+                if src <> null and PointerCensus.header_at((*src), func.loc.start, func.name)
+                    return String(func.file)
             }
             set i: 0
             while i < src_files.length
@@ -1683,9 +1669,8 @@ define PointerCensus
                 if it <> null
                 {
                     let item it.unwrap()
-                    if item.name <> null
-                        if (*item.name) = name
-                            return i as int
+                    if item.name <> null and (*item.name) = name
+                        return i as int
                 }
                 set i: i + 1
             }
@@ -1701,21 +1686,7 @@ define PointerCensus
                 return true
             if n = "size_t"
                 return true
-            if n = "i8"
-                return true
-            if n = "i16"
-                return true
-            if n = "i32"
-                return true
-            if n = "i64"
-                return true
-            if n = "u8"
-                return true
-            if n = "u16"
-                return true
-            if n = "u32"
-                return true
-            if n = "u64"
+            if n = "i8" or n = "i16" or n = "i32" or n = "i64" or n = "u8" or n = "u16" or n = "u32" or n = "u64"
                 return true
             false
         }
@@ -1744,9 +1715,8 @@ define PointerCensus
             while i < cur_params.length
             {
                 let it cur_params.get i
-                if it <> null
-                    if PointerCensus.item_is_integer(it.unwrap())
-                        return PointerCensus.item_name(it.unwrap())
+                if it <> null and PointerCensus.item_is_integer(it.unwrap())
+                    return PointerCensus.item_name(it.unwrap())
                 set i: i + 1
             }
             set i: 0
@@ -1779,18 +1749,16 @@ define PointerCensus
             while i < plan_structures.length
             {
                 let sp plan_structures.get i
-                if sp <> null
-                    if sp.unwrap().mangled_name = t.mangled_name
-                        return sp
+                if sp <> null and sp.unwrap().mangled_name = t.mangled_name
+                    return sp
                 set i: i + 1
             }
             set i: 0
             while i < plan_structures.length
             {
                 let sp plan_structures.get i
-                if sp <> null
-                    if sp.unwrap().name = t.name
-                        return sp
+                if sp <> null and sp.unwrap().name = t.name
+                    return sp
                 set i: i + 1
             }
             null
@@ -1802,13 +1770,7 @@ define PointerCensus
                 return true
             if n.contains(String("size"))
                 return true
-            if n.contains(String("count"))
-                return true
-            if n.contains(String("cap"))
-                return true
-            if n = "n"
-                return true
-            if n.starts_with(String("n_"))
+            if n.contains(String("count")) or n.contains(String("cap")) or n = "n" or n.starts_with(String("n_"))
                 return true
             false
         }
@@ -1863,15 +1825,7 @@ define PointerCensus
                 return true
             if n = "malloc"
                 return true
-            if n = "calloc"
-                return true
-            if n = "realloc"
-                return true
-            if n = "aligned_alloc"
-                return true
-            if n = "scaly_aligned_alloc"
-                return true
-            if n = "mmap"
+            if n = "calloc" or n = "realloc" or n = "aligned_alloc" or n = "scaly_aligned_alloc" or n = "mmap"
                 return true
             false
         }
@@ -2627,9 +2581,8 @@ define PointerCensus
             while i < argc
             {
                 var skip false
-                if i = 0
-                    if takes_this
-                        set skip: true
+                if i = 0 and takes_this
+                    set skip: true
                 let a_ptr call.args.get i
                 if a_ptr = null
                     set skip: true
@@ -2699,10 +2652,8 @@ define PointerCensus
                             set cls: String("arg-unresolved")
                         if callee_extern
                             set cls: String("arg-extern")
-                        if have_param
-                            if callee_extern = false
-                                if PointerCensus.is_ref_shaped(param_type)
-                                    set cls: String("h-pointer-into-ref")
+                        if have_param and callee_extern = false and PointerCensus.is_ref_shaped(param_type)
+                            set cls: String("h-pointer-into-ref")
                         var sb StringBuilder()
                         sb.append cls
                         sb.append " "

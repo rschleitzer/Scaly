@@ -1286,9 +1286,8 @@ define Emitter
 
             ; Tag: 1 byte for <=256 variants, else 4 (mirrors compute_union_size).
             var tag_size: size_t 1
-            if u.variants <> null
-                if u.variants.length > 256
-                    set tag_size: 4
+            if u.variants <> null and u.variants.length > 256
+                set tag_size: 4
             let payload_bytes (u.size - tag_size)
             let payload_bits (payload_bytes * 8)
 
@@ -1805,9 +1804,8 @@ define Emitter
                             while pi < props.length
                             {
                                 let pp props.get pi
-                                if pp <> null
-                                    if (*pp).name = field_name
-                                        return pi as int
+                                if pp <> null and (*pp).name = field_name
+                                    return pi as int
                                 set pi: pi + 1
                             }
                         }
@@ -1893,9 +1891,8 @@ define Emitter
             ; chain (2026-08-02) holds a FRAME, not a page. Everything else here
             ; — `^this`, a pointer[Page] binding, a pointer[Page] field — is a
             ; genuine page and stays one.
-            if current_frame_parent <> null
-                if page_val = current_frame_parent
-                    return force_frame(page_val)
+            if current_frame_parent <> null and page_val = current_frame_parent
+                return force_frame(page_val)
             page_val
         }
 
@@ -1909,10 +1906,8 @@ define Emitter
             ; The caller-page slot is already a frame — hand it on unforced, or
             ; the `^rp` sigil alone would open the caller's region.
             let nv lookup_variable ref_name
-            if nv <> null
-                if current_frame_parent <> null
-                    if nv = current_frame_parent
-                        return nv
+            if nv <> null and current_frame_parent <> null and nv = current_frame_parent
+                return nv
             let page_val resolve_reference_page(ref_name)
             if page_val = null
                 return null
@@ -1991,9 +1986,8 @@ define Emitter
         {
             if frame_val = null
                 return null
-            if function_local_frame <> null
-                if frame_val = function_local_frame
-                    return get_or_create_local_page()
+            if function_local_frame <> null and frame_val = function_local_frame
+                return get_or_create_local_page()
             force_frame frame_val
         }
 
@@ -2021,9 +2015,8 @@ define Emitter
             ; block (patch_prior_returns, entry_alloca), where the cached call
             ; would not yet dominate the insert point.
             if function_local_page <> null
-                if cur_block = function_local_page_block
-                    if LLVMGetBasicBlockTerminator(cur_block) = null
-                        return function_local_page
+                if cur_block = function_local_page_block and LLVMGetBasicBlockTerminator(cur_block) = null
+                    return function_local_page
 
             set function_local_page: force_frame(frame)
             set function_local_page_block: cur_block
@@ -2298,9 +2291,8 @@ define Emitter
                             while k < frames.length
                             {
                                 let kp frames.get k
-                                if kp <> null
-                                    if (*kp) = fr
-                                        set seen: true
+                                if kp <> null and (*kp) = fr
+                                    set seen: true
                                 set k: k + 1
                             }
                             if seen = false
@@ -3205,9 +3197,8 @@ define Emitter
             while i < dels.length
             {
                 let d_ptr dels.get i
-                if d_ptr <> null
-                    if (*d_ptr) = name
-                        return true
+                if d_ptr <> null and (*d_ptr) = name
+                    return true
                 set i: i + 1
             }
             false
@@ -3461,9 +3452,8 @@ define Emitter
         ; the INTRINSICS, so it would call a `pointer[int]` slot a reference.
         function deref_slot_holds_a_reference(this, deref_rt: PlannedType) returns bool
         {
-            if deref_rt.name <> "pointer"
-                if deref_rt.name <> "ref"
-                    return false
+            if deref_rt.name <> "pointer" and deref_rt.name <> "ref"
+                return false
             if deref_rt.generics = null
                 return false
             let gens (*deref_rt.generics)
@@ -3473,9 +3463,7 @@ define Emitter
             if slot_tp = null
                 return false
             let slot_t (*slot_tp)
-            if slot_t.name = "pointer"
-                return true
-            if slot_t.name = "ref"
+            if slot_t.name = "pointer" or slot_t.name = "ref"
                 return true
             is_npo_option slot_t
         }
@@ -4347,9 +4335,8 @@ define Emitter
             while i < unions.length
             {
                 let up unions.get i
-                if up <> null
-                    if (*up).name = name
-                        return true
+                if up <> null and (*up).name = name
+                    return true
                 set i: i + 1
             }
             false
@@ -4370,9 +4357,7 @@ define Emitter
             if inner_ptr = null
                 return false
             let inner (*inner_ptr)
-            if inner.name = "ref"
-                return true
-            if inner.name = "pointer"
+            if inner.name = "ref" or inner.name = "pointer"
                 return true
             false
         }
@@ -4584,9 +4569,8 @@ define Emitter
                         if type_is_pointer_shaped(prop.prop_type) = false
                         {
                             let lit synthesize_literal_struct prop.prop_type.name
-                            if lit <> null
-                                if LLVMGetTypeKind(lit) = LLVMTypeKind.Struct()
-                                    set prop_llvm_type: lit
+                            if lit <> null and LLVMGetTypeKind(lit) = LLVMTypeKind.Struct()
+                                set prop_llvm_type: lit
                         }
                     element_types.put(i, prop_llvm_type)
                 }
@@ -5300,16 +5284,14 @@ define Emitter
                     let it_ptr ins.get i
                     if it_ptr <> null
                     {
-                        if it_ptr.item_type <> null
-                            if Emitter.type_has_resolved_letter((*it_ptr.item_type))
-                                return true
+                        if it_ptr.item_type <> null and Emitter.type_has_resolved_letter((*it_ptr.item_type))
+                            return true
                     }
                     set i: i + 1
                 }
             }
-            if func.return_type <> null
-                if Emitter.type_has_resolved_letter((*func.return_type))
-                    return true
+            if func.return_type <> null and Emitter.type_has_resolved_letter((*func.return_type))
+                return true
             false
         }
 
@@ -5318,10 +5300,8 @@ define Emitter
             if t.name.get_length() = 1
             {
                 let c t.name.get 0
-                if c >= ("A" as char)
-                    if c <= ("Z" as char)
-                        if t.mangled_name.get_length() > 0
-                            return true
+                if c >= ("A" as char) and c <= ("Z" as char) and t.mangled_name.get_length() > 0
+                    return true
             }
             if t.generics <> null
             {
@@ -5330,9 +5310,8 @@ define Emitter
                 while gi < gs.length
                 {
                     let g_ptr gs.get gi
-                    if g_ptr <> null
-                        if Emitter.type_has_resolved_letter((*g_ptr))
-                            return true
+                    if g_ptr <> null and Emitter.type_has_resolved_letter((*g_ptr))
+                        return true
                     set gi: gi + 1
                 }
             }
@@ -6364,9 +6343,8 @@ define Emitter
 
                                     ; Record the receiver concept so resolve_reference_page
                                     ; can lower `^field` page sigils (opensp Parser's `^host`).
-                                    if param_name = "this"
-                                        if item.item_type <> null
-                                            set current_receiver_concept: this.peel_concept_name(item.item_type.unwrap())
+                                    if param_name = "this" and item.item_type <> null
+                                        set current_receiver_concept: this.peel_concept_name(item.item_type.unwrap())
                                 }
                             }
                             set i: i + 1
@@ -7069,9 +7047,8 @@ define Emitter
             ; cast (the s-main func_cstr pattern): a String constant's c_data()
             ; has no NUL terminator, and this lookup DEPENDS on matching.
             let stamp_main LLVMGetNamedFunction(llvm_module, "main" as pointer[const_char])
-            if stamp_main <> null
-                if LLVMIsDeclaration(stamp_main) = 0
-                    emit_build_stamp()
+            if stamp_main <> null and LLVMIsDeclaration(stamp_main) = 0
+                emit_build_stamp()
 
             ; Last: drop the region frames nothing allocates on. Runs over the
             ; FINISHED module — every body, stub and template instantiation has
@@ -7474,9 +7451,8 @@ define Emitter
                             }
                             ; A dependency-package object provides the real body —
                             ; leave the declaration for the ORC object linker.
-                            if is_scaly_mangled
-                                if this.jit_symbol_in_set(dep_symbols, Slice[char](name_len, name_ptr))
-                                    set is_scaly_mangled: false
+                            if is_scaly_mangled and this.jit_symbol_in_set(dep_symbols, Slice[char](name_len, name_ptr))
+                                set is_scaly_mangled: false
                             ; Skip symbols the host process already exports —
                             ; the RBMM runtime + stdlib (Page.allocate, String/
                             ; Vector/StringBuilder bodies, ...) are all defined in
@@ -7543,9 +7519,8 @@ define Emitter
             var gv LLVMGetFirstGlobal(llvm_module)
             while gv <> null
             {
-                if LLVMIsDeclaration(gv) = 0
-                    if LLVMIsThreadLocal(gv) <> 0
-                        LLVMSetThreadLocal(gv, 0)
+                if LLVMIsDeclaration(gv) = 0 and LLVMIsThreadLocal(gv) <> 0
+                    LLVMSetThreadLocal(gv, 0)
                 set gv: LLVMGetNextGlobal(gv)
             }
         }
@@ -9054,9 +9029,8 @@ define Emitter
             ; cross-package case-2 it must CALL that ctor rather than return
             ; uninitialized memory (SIGSEGV on first use).
             var ctor_is_generic: bool false
-            if ctor_rt.generics <> null
-                if (*ctor_rt.generics).length > 0
-                    set ctor_is_generic: true
+            if ctor_rt.generics <> null and (*ctor_rt.generics).length > 0
+                set ctor_is_generic: true
             if user_arg_count = 0
             {
                 if call.requires_page_param = false
@@ -9102,9 +9076,8 @@ define Emitter
                     ; separate stdlib-generic-instantiation gaps to fix
                     ; independently. Closes ~113 undefined C1Ev refs at
                     ; stage-2 link time.
-                    if LLVMGetTypeKind(struct_ty) <> LLVMTypeKind.Struct()
-                        if ctor_is_generic
-                            return struct_ptr
+                    if LLVMGetTypeKind(struct_ty) <> LLVMTypeKind.Struct() and ctor_is_generic
+                        return struct_ptr
                 }
             }
 
@@ -9445,13 +9418,7 @@ define Emitter
                 return true
             if name = "PageList"
                 return true
-            if name = "PageNode"
-                return true
-            if name = "PageListIterator"
-                return true
-            if name = "HeapBucketHeader"
-                return true
-            if name = "StackBucketHeader"
+            if name = "PageNode" or name = "PageListIterator" or name = "HeapBucketHeader" or name = "StackBucketHeader"
                 return true
             false
         }
@@ -9460,11 +9427,7 @@ define Emitter
         ; (a bare nullable pointer at the LLVM level).
         function region_is_ptr_slot(this, ft: PlannedType) returns bool
         {
-            if ft.name = "pointer"
-                return true
-            if ft.name = "ref"
-                return true
-            if is_npo_option(ft)
+            if ft.name = "pointer" or ft.name = "ref" or is_npo_option(ft)
                 return true
             false
         }
@@ -9576,9 +9539,7 @@ define Emitter
         ; types answer true immediately), and value-embedding cannot cycle.
         function region_type_needs_walk(this, t: PlannedType) returns bool
         {
-            if region_is_ptr_slot(t)
-                return true
-            if t.name = "String"
+            if region_is_ptr_slot(t) or t.name = "String"
                 return true
             if Planner.is_primitive_type_name(t.name)
                 return false
@@ -9651,9 +9612,7 @@ define Emitter
         ; Anything to do for a value of type ft lying at some address?
         function region_field_acts(this, ft: PlannedType) returns bool
         {
-            if region_is_ptr_slot(ft)
-                return true
-            if ft.name = "String"
+            if region_is_ptr_slot(ft) or ft.name = "String"
                 return true
             region_type_needs_walk(ft)
         }
@@ -10211,9 +10170,8 @@ define Emitter
             let size LLVMABISizeOfType(td, sty)
             var header: u64 40
             let page_ty lookup_struct_cache(String("Page"))
-            if page_ty <> null
-                if LLVMCountStructElementTypes(page_ty) > 0
-                    set header: LLVMABISizeOfType(td, page_ty)
+            if page_ty <> null and LLVMCountStructElementTypes(page_ty) > 0
+                set header: LLVMABISizeOfType(td, page_ty)
             if size + header <= (config.page_size as u64)
                 return
             var sb StringBuilder()
@@ -11728,9 +11686,8 @@ define Emitter
                 ; is wrong twice over: there is no size to copy for a placeholder,
                 ; and a method that treats `this` as an address (anything calling
                 ; Page.get(this) or measuring from it) needs the ORIGINAL address.
-                if LLVMGetTypeKind(ty) = LLVMTypeKind.Pointer()
-                    if type_is_pointer_shaped(result_type) = false
-                        return opv
+                if LLVMGetTypeKind(ty) = LLVMTypeKind.Pointer() and type_is_pointer_shaped(result_type) = false
+                    return opv
                 return LLVMBuildLoad2(builder, ty, opv, "deref")
             }
 
@@ -11805,9 +11762,8 @@ define Emitter
             if l_kind = LLVMTypeKind.Double()
                 set is_float: true
             ; Pointer comparisons are unsigned (mirror C++ emitIntrinsicOp).
-            if l_kind = LLVMTypeKind.Pointer()
-                if r_kind = LLVMTypeKind.Pointer()
-                    set is_signed: false
+            if l_kind = LLVMTypeKind.Pointer() and r_kind = LLVMTypeKind.Pointer()
+                set is_signed: false
             if l_kind = LLVMTypeKind.Pointer()
             {
                 if r_kind = LLVMTypeKind.Integer()
@@ -11909,12 +11865,10 @@ define Emitter
             ; must not reach fadd/fcmp as-is (mixed-operand FP instructions
             ; are invalid IR that llc swallows silently). FPExt the narrower
             ; side to the wider, mirroring the integer zext above.
-            if l_kind = LLVMTypeKind.Float()
-                if r_kind = LLVMTypeKind.Double()
-                    set l: LLVMBuildFPExt(builder, l, LLVMTypeOf r, "fpext")
-            if l_kind = LLVMTypeKind.Double()
-                if r_kind = LLVMTypeKind.Float()
-                    set r: LLVMBuildFPExt(builder, r, LLVMTypeOf l, "fpext")
+            if l_kind = LLVMTypeKind.Float() and r_kind = LLVMTypeKind.Double()
+                set l: LLVMBuildFPExt(builder, l, LLVMTypeOf r, "fpext")
+            if l_kind = LLVMTypeKind.Double() and r_kind = LLVMTypeKind.Float()
+                set r: LLVMBuildFPExt(builder, r, LLVMTypeOf l, "fpext")
 
             ; Addition
             if op_name = "+"
@@ -12429,9 +12383,8 @@ define Emitter
                     ; since 2026-08-02; Page::allocate below needs the page.
                     ; (resolve_reference_page has already forced its own result, so
                     ; a value coming from there never matches here.)
-                    if current_frame_parent <> null
-                        if page_val = current_frame_parent
-                            set page_val: force_frame(page_val)
+                    if current_frame_parent <> null and page_val = current_frame_parent
+                        set page_val: force_frame(page_val)
                     var alloc_func lookup_function_cache("_ZN4Page8allocateEmm")
                     if alloc_func = null
                         set alloc_func: LLVMGetNamedFunction(llvm_module, "_ZN4Page8allocateEmm")
@@ -12578,9 +12531,8 @@ define Emitter
                         if g_first <> null
                         {
                             let gf (*g_first)
-                            if gf.name = null
-                                if gf.value <> null
-                                    return emit_operands gf.value
+                            if gf.name = null and gf.value <> null
+                                return emit_operands gf.value
                         }
                     }
 
@@ -13218,9 +13170,8 @@ define Emitter
 
         function operand_is_logical(op: PlannedOperand) returns bool
         {
-            if op.member_access <> null
-                if op.member_access.length > 0
-                    return false
+            if op.member_access <> null and op.member_access.length > 0
+                return false
             choose op.expr
                 when c: Call
                 {
@@ -13955,9 +13906,8 @@ define Emitter
                                 ; offset 1 (SIGSEGV, or the else arm, at rc 0; the
                                 ; session-25 "NPO garbage under the choose form").
                                 ; Ask the SHAPE, never the arms.
-                                if has_resolved_variant
-                                    if this.is_npo_option(cond_op.result_type) = false
-                                        set is_npo: false
+                                if has_resolved_variant and this.is_npo_option(cond_op.result_type) = false
+                                    set is_npo: false
                             }
                             var has_some: bool false
                             if choose_expr.cases <> null
@@ -13989,10 +13939,8 @@ define Emitter
                             ; as NPO here (pointer scrutinee + a named variant-0 arm
                             ; the has_some heuristic can't rule out) and dispatches on
                             ; `this == null`, always taking variant 0.
-                            if is_npo
-                                if rt.name <> "Option"
-                                    if this.type_name_is_plan_union(rt.name)
-                                        set is_npo: false
+                            if is_npo and rt.name <> "Option" and this.type_name_is_plan_union(rt.name)
+                                set is_npo: false
                         }
                         set union_type: map_type(rt)
                         ; s114: when map_type falls back to opaque ptr (the
@@ -15048,9 +14996,8 @@ define Emitter
             while i < parfor_locals.length
             {
                 let p parfor_locals.get i
-                if p <> null
-                    if (*p) = name
-                        return true
+                if p <> null and (*p) = name
+                    return true
                 set i: i + 1
             }
             false
@@ -15068,9 +15015,8 @@ define Emitter
             while i < parfor_captures.length
             {
                 let p parfor_captures.get i
-                if p <> null
-                    if (*p) = name
-                        return
+                if p <> null and (*p) = name
+                    return
                 set i: i + 1
             }
             let v lookup_variable name
@@ -15398,9 +15344,8 @@ define Emitter
             if name.get_length() = 0
                 return false
             let c name.get(0)
-            if c >= ("A" as char)
-                if c <= ("Z" as char)
-                    return true
+            if c >= ("A" as char) and c <= ("Z" as char)
+                return true
             false
         }
 
@@ -15431,9 +15376,8 @@ define Emitter
             while j < weight_stack.length
             {
                 let sp weight_stack.get j
-                if sp <> null
-                    if (*sp) = mangled
-                        return 64 as size_t
+                if sp <> null and (*sp) = mangled
+                    return 64 as size_t
                 set j: j + 1
             }
             if current_plan = null
@@ -17172,9 +17116,8 @@ define Emitter
             ; also why a second trap kind will not touch this code: it appends a
             ; variant in the prelude and a filler in the shim.
             var has_arms: bool false
-            if try_expr.catches <> null
-                if try_expr.catches.length > 0
-                    set has_arms: true
+            if try_expr.catches <> null and try_expr.catches.length > 0
+                set has_arms: true
 
             if has_arms
             {
@@ -17503,9 +17446,8 @@ define Emitter
             ; header then put its first object INSIDE the header. The planner's
             ; compute_payload_size# walks the registered Concept's properties and
             ; is the only estimate available for a type this root never lays out.
-            if LLVMGetTypeKind(ty) = LLVMTypeKind.Pointer()
-                if type_is_pointer_shaped(sizeof_expr.sized_type) = false
-                    return LLVMConstInt(i64_type, sizeof_expr.size, 0)
+            if LLVMGetTypeKind(ty) = LLVMTypeKind.Pointer() and type_is_pointer_shaped(sizeof_expr.sized_type) = false
+                return LLVMConstInt(i64_type, sizeof_expr.size, 0)
             LLVMSizeOf ty
         }
 
@@ -17675,27 +17617,26 @@ define Emitter
             ; the plain NUL-terminated cstr global — byte-identical to the
             ; pre-feature const_char literal, zero runtime cost. The String
             ; VARIABLE case is handled below (struct value → get_buffer).
-            if this.target_is_cstr_pointer(as_expr.target_type)
-                if as_inner.member_access = null
-                    choose as_inner.expr
-                        when as_c: Constant
-                            choose as_c.value
-                                when as_s: String
-                                {
-                                    ; Empty String constant → the valid empty-cstr
-                                    ; global (c_data() is null for the empty String).
-                                    if as_s.value.get_length() = 0
-                                        return this.get_or_build_empty_cstr()
-                                    return LLVMBuildGlobalStringPtr(builder, as_s.value.c_data(), ".str")
-                                }
-                                else
-                                    0
-                                else
-                                    0
+            if this.target_is_cstr_pointer(as_expr.target_type) and as_inner.member_access = null
+                choose as_inner.expr
+                    when as_c: Constant
+                        choose as_c.value
+                            when as_s: String
+                            {
+                                ; Empty String constant → the valid empty-cstr
+                                ; global (c_data() is null for the empty String).
+                                if as_s.value.get_length() = 0
+                                    return this.get_or_build_empty_cstr()
+                                return LLVMBuildGlobalStringPtr(builder, as_s.value.c_data(), ".str")
+                            }
+                            else
+                                0
+                            else
+                                0
 
-                            let src_value emit_operand(as_inner)
-                    if src_value = null
-                        return null
+                        let src_value emit_operand(as_inner)
+                if src_value = null
+                    return null
 
             let src_type LLVMTypeOf(src_value)
             ; Prefer the by-name primitive lookup (s71 class). map_type's
@@ -17724,9 +17665,8 @@ define Emitter
             ; skips the varint length prefix). The constant case took the .str
             ; fast path above.
             if src_kind = LLVMTypeKind.Struct()
-                if dst_kind = ptr_kind
-                    if this.target_is_cstr_pointer(as_expr.target_type)
-                        return this.coerce_string_value_to_cstr(src_value)
+                if dst_kind = ptr_kind and this.target_is_cstr_pointer(as_expr.target_type)
+                    return this.coerce_string_value_to_cstr(src_value)
 
             ; A ONE-POINTER AGGREGATE cast to a pointer IS that pointer.
             ; `x as ref[T]` where x is a CALL RESULT arrives struct-kind --
@@ -17752,9 +17692,8 @@ define Emitter
                         if LLVMGetTypeKind(as_f0) = ptr_kind
                         {
                             let as_p LLVMBuildExtractValue(builder, src_value, 0 as u32, "as.unwrap")
-                            if as_expr.target_type.name = "ref"
-                                if this.type_may_be_null(as_inner.result_type)
-                                    emit_null_unwrap_trap(as_p, current_function_label())
+                            if as_expr.target_type.name = "ref" and this.type_may_be_null(as_inner.result_type)
+                                emit_null_unwrap_trap(as_p, current_function_label())
                             return LLVMBuildBitCast(builder, as_p, dst_type, "as.ptr")
                         }
                     }
@@ -17770,9 +17709,8 @@ define Emitter
             ; are EXCLUDED: `this as pointer[void]` inside String methods
             ; (Page.get) must keep the record address.
             if src_kind = ptr_kind
-                if this.target_is_char_pointer(as_expr.target_type)
-                    if as_inner.result_type.name = "String"
-                        return this.coerce_string_value_to_cstr(src_value)
+                if this.target_is_char_pointer(as_expr.target_type) and as_inner.result_type.name = "String"
+                    return this.coerce_string_value_to_cstr(src_value)
 
             ; Pointer to pointer: bitcast
             if src_kind = ptr_kind
@@ -17786,9 +17724,8 @@ define Emitter
                     ; this compiler. A `pointer[T]` source counts too: it is
                     ; nullable by construction, which is the whole of what makes
                     ; the assertion an assertion.
-                    if as_expr.target_type.name = "ref"
-                        if this.type_may_be_null(as_inner.result_type)
-                            emit_null_unwrap_trap(src_value, current_function_label())
+                    if as_expr.target_type.name = "ref" and this.type_may_be_null(as_inner.result_type)
+                        emit_null_unwrap_trap(src_value, current_function_label())
                     return LLVMBuildBitCast(builder, src_value, dst_type, "as.ptr")
                 }
 
@@ -18282,9 +18219,8 @@ define Emitter
             if target_ptr = null
                 return no_val
             let target_op (*target_ptr)
-            if target_op.member_access <> null
-                if target_op.member_access.length > 0
-                    return no_val
+            if target_op.member_access <> null and target_op.member_access.length > 0
+                return no_val
             if action.source = null
                 return no_val
             if action.source.length <> 1
@@ -18293,9 +18229,8 @@ define Emitter
             if src_ptr = null
                 return no_val
             let src_op (*src_ptr)
-            if src_op.member_access <> null
-                if src_op.member_access.length > 0
-                    return no_val
+            if src_op.member_access <> null and src_op.member_access.length > 0
+                return no_val
             choose target_op.expr
                 when tc: Call
                 {
@@ -18310,9 +18245,8 @@ define Emitter
                     if pp = null
                         return no_val
                     let ptr_op (*pp)
-                    if ptr_op.member_access <> null
-                        if ptr_op.member_access.length > 0
-                            return no_val
+                    if ptr_op.member_access <> null and ptr_op.member_access.length > 0
+                        return no_val
                     var ptr_name: String ""
                     choose ptr_op.expr
                         when pv: Variable
@@ -18341,9 +18275,8 @@ define Emitter
                                 while ai < cargs.length
                                 {
                                     let ap cargs.get ai
-                                    if ap <> null
-                                        if operand_mentions_name((*ap), ptr_name)
-                                            return no_val
+                                    if ap <> null and operand_mentions_name((*ap), ptr_name)
+                                        return no_val
                                     set ai: ai + 1
                                 }
                             }
@@ -19174,9 +19107,8 @@ define Emitter
                     {
                         let slot_ty LLVMGetAllocatedType(current_ptr)
                         var slot_holds_pointer: bool false
-                        if slot_ty <> null
-                            if LLVMGetTypeKind(slot_ty) = LLVMTypeKind.Pointer()
-                                set slot_holds_pointer: true
+                        if slot_ty <> null and LLVMGetTypeKind(slot_ty) = LLVMTypeKind.Pointer()
+                            set slot_holds_pointer: true
                         if slot_holds_pointer
                         {
                             let ptr_type LLVMPointerTypeInContext(context, 0)
@@ -19462,12 +19394,10 @@ define Emitter
                     {
                         let fit_kind LLVMGetTypeKind(fit_mapped)
                         let val_kind LLVMGetTypeKind(LLVMTypeOf value)
-                        if fit_kind = LLVMTypeKind.Float()
-                            if val_kind = LLVMTypeKind.Double()
-                                set value: LLVMBuildFPTrunc(builder, value, fit_mapped, "bind.fptrunc")
-                        if fit_kind = LLVMTypeKind.Double()
-                            if val_kind = LLVMTypeKind.Float()
-                                set value: LLVMBuildFPExt(builder, value, fit_mapped, "bind.fpext")
+                        if fit_kind = LLVMTypeKind.Float() and val_kind = LLVMTypeKind.Double()
+                            set value: LLVMBuildFPTrunc(builder, value, fit_mapped, "bind.fptrunc")
+                        if fit_kind = LLVMTypeKind.Double() and val_kind = LLVMTypeKind.Float()
+                            set value: LLVMBuildFPExt(builder, value, fit_mapped, "bind.fpext")
                         ; s201: an integer-annotated binding whose initializer
                         ; evaluated WIDER (`var n: u16 0` — the literal `0` is
                         ; i64) must truncate the VALUE to the annotated width so

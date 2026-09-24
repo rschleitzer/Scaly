@@ -145,9 +145,8 @@ define tasklens
             ; "not planned" would be a claim about the code rather than about
             ; this file's membership: say nothing instead.
             var emit true
-            if verdict.get_length() = 0
-                if has_diag
-                    set emit: false
+            if verdict.get_length() = 0 and has_diag
+                set emit: false
 
             if emit
             {

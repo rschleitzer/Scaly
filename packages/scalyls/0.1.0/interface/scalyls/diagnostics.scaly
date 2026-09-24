@@ -456,7 +456,6 @@ define diagnostics
 
 
 
-
     ; The publishDiagnostics notification for one sibling module `file`, followed
     ; by its LF, read out of the planner that has already run.
     ;
@@ -466,7 +465,6 @@ define diagnostics
     ; cannot be READ yields nothing at all: its offsets index a text we do not
     ; have, the same bargain the head half makes.
     procedure sibling_notification(rp, file: String, planner: ref[Planner.Planner]) @direct true @ret_caller true @deep true returns String io linked
-
 
 
 

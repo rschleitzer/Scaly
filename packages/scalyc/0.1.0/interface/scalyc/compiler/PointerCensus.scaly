@@ -380,7 +380,6 @@ define PointerCensus
 
 
 
-
         ; The receiver the planner passes for a sibling method call: the
         ; `this` variable, planned as `pointer[T]` by the compiler itself.
         function operand_is_this(op: PlannedOperand) @ret_param_0 true @deep true returns bool linked
@@ -417,11 +416,6 @@ define PointerCensus
         ; Answers true when (current_file, offset, cid) was recorded before;
         ; otherwise inserts it and answers false.
         procedure dedupe_seen(mutable this: PointerCensus, offset: size_t, cid: size_t) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
 
 
 
@@ -725,7 +719,6 @@ define PointerCensus
 
 
         function is_extern_name(this: PointerCensus, name: String) @ret_nonlocal true @deep true returns bool linked
-
 
 
 
@@ -1157,7 +1150,6 @@ define PointerCensus
 
 
 
-
         function find_initializer(this: PointerCensus, mangled: String) @deep true returns ref[PlannedInitializer]? linked
 
 
@@ -1194,9 +1186,7 @@ define PointerCensus
 
 
 
-
         function find_function(this: PointerCensus, mangled: String) @ret_param_0 true @deep true returns ref[PlannedFunction]? linked
-
 
 
 
@@ -1343,7 +1333,6 @@ define PointerCensus
 
 
 
-
         ; The text of the i-th remembered file, read on first use.
         procedure source_of(mutable this: PointerCensus, i: size_t) @ret_param_0 true @deep true returns ref[String]? io linked
 
@@ -1411,7 +1400,6 @@ define PointerCensus
 
 
 
-
         ; The file a body was WRITTEN in: its own `file` when the header
         ; checks out there, else the one remembered file where it does, else
         ; the empty string. A body from a DEPENDENCY package (a stdlib generic
@@ -1419,8 +1407,6 @@ define PointerCensus
         ; tree; it is remembered here on first sight, so its sites are
         ; reported under their true file and the sweep's union dedupes them.
         procedure resolve_body_file(mutable this: PointerCensus, func: PlannedFunction) @page true @direct true @ret_caller true @deep true returns String io linked
-
-
 
 
 
@@ -1691,22 +1677,7 @@ define PointerCensus
 
 
 
-
         function is_integer_type(t: PlannedType) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1768,7 +1739,6 @@ define PointerCensus
 
 
 
-
         ; The planned structure behind a type, by mangled name first (an
         ; instantiation carries its own), then by bare name.
         function find_structure(this: PointerCensus, t: PlannedType) @ret_param_0 true @deep true returns ref[PlannedStructure]? linked
@@ -1794,15 +1764,7 @@ define PointerCensus
 
 
 
-
-
         function name_says_length(n: String) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
 
 
 
@@ -1856,14 +1818,6 @@ define PointerCensus
 
 
         function is_alloc_name(n: String) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
-
-
 
 
 
@@ -2432,9 +2386,6 @@ define PointerCensus
         ; The call-shaped sites: deref, arithmetic, null comparison, and a
         ; pointer handed to a callee.
         procedure note_call(mutable this: PointerCensus, op: PlannedOperand, call: PlannedCall) @ret_nonlocal true @deep true returns bool linked
-
-
-
 
 
 

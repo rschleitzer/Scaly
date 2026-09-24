@@ -288,8 +288,6 @@ define docstore
 
 
 
-
-
     ; The stored text for `uri` (a fresh copy on the caller's page), or an
     ; empty String on a miss. The worker treats empty as "read from disk".
     procedure get(rp, uri: String) @direct true @ret_caller true @deep true returns String reads doc_slots linked

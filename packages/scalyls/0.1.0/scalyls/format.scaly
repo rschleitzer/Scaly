@@ -120,47 +120,28 @@ define format
     {
         if c = ("{" as char)
             return true
-        if c = ("(" as char)
-            return true
-        if c = ("[" as char)
+        if c = ("(" as char) or c = ("[" as char)
             return true
         false
     }
 
     function is_closer(c: u8) returns bool
     {
-        if c = ("}" as char)
-            return true
-        if c = (")" as char)
-            return true
-        if c = ("]" as char)
+        if c = ("}" as char) or c = (")" as char) or c = ("]" as char)
             return true
         false
     }
 
     function is_space(c: u8) returns bool
     {
-        if c = (" " as char)
-            return true
-        if c = ("\t" as char)
-            return true
-        if c = ("\r" as char)
+        if c = (" " as char) or c = ("\t" as char) or c = ("\r" as char)
             return true
         false
     }
 
     function is_word_byte(c: u8) returns bool
     {
-        if c >= 0x30
-            if c <= 0x39
-                return true
-        if c >= 0x41
-            if c <= 0x5A
-                return true
-        if c >= 0x61
-            if c <= 0x7A
-                return true
-        if c = 0x5F
+        if c >= 0x30 and c <= 0x39 or c >= 0x41 and c <= 0x5A or c >= 0x61 and c <= 0x7A or c = 0x5F
             return true
         false
     }
@@ -170,28 +151,14 @@ define format
     ; intrinsic`, one per line, would otherwise stair-step the whole file).
     function is_bodyless_word(w: String) returns bool
     {
-        if w = "extern"
-            return true
-        if w = "intrinsic"
-            return true
-        if w = "instruction"
+        if w = "extern" or w = "intrinsic" or w = "instruction"
             return true
         false
     }
 
     function is_one_word(w: String) returns bool
     {
-        if w = "if"
-            return true
-        if w = "while"
-            return true
-        if w = "for"
-            return true
-        if w = "repeat"
-            return true
-        if w = "label"
-            return true
-        if w = "try"
+        if w = "if" or w = "while" or w = "for" or w = "repeat" or w = "label" or w = "try"
             return true
         false
     }
@@ -201,26 +168,14 @@ define format
     ; choose block before its last arm.
     function is_arm_word(w: String) returns bool
     {
-        if w = "when"
-            return true
-        if w = "case"
-            return true
-        if w = "else"
+        if w = "when" or w = "case" or w = "else"
             return true
         false
     }
 
     function is_routine_word(w: String) returns bool
     {
-        if w = "function"
-            return true
-        if w = "procedure"
-            return true
-        if w = "operator"
-            return true
-        if w = "init"
-            return true
-        if w = "deinit"
+        if w = "function" or w = "procedure" or w = "operator" or w = "init" or w = "deinit"
             return true
         false
     }

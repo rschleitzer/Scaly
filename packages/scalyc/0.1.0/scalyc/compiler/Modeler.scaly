@@ -3390,9 +3390,8 @@ define Modeler
             while pk < packages.length
             {
                 let pkp packages.get pk
-                if pkp <> null
-                    if pkp.name = "scaly"
-                        set has_scaly: true
+                if pkp <> null and pkp.name = "scaly"
+                    set has_scaly: true
                 set pk: pk + 1
             }
             if has_scaly = false

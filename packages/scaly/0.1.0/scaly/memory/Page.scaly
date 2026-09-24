@@ -624,9 +624,8 @@ define Page
         ; Poison mode: the rewound stretch of the mark page itself is not
         ; released, so overwrite it here — a dangling read into it survived
         ; SCALY_POISON otherwise (asked 2026-09-23, the dazzle frame mark)
-        if page_poison
-            if (now as size_t) > (mark as size_t)
-                memset(mark, 0xDD, (now as size_t) - (mark as size_t))
+        if page_poison and (now as size_t) > (mark as size_t)
+            memset(mark, 0xDD, (now as size_t) - (mark as size_t))
         set mark_page.next_object: mark
         true
     }

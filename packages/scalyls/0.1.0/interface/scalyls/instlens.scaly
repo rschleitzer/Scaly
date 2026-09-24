@@ -151,7 +151,6 @@ define instlens
 
 
 
-
     ; The lens title for the routine named `name` declared at `start`, or "" when
     ; there is nothing worth saying (the ordinary single instantiation, an
     ; ambiguous site, or a not-emitted routine in a plan that carries hard
@@ -293,7 +292,6 @@ define instlens
 
 
 
-
     ; The readable type of a planned routine's FIRST input item, or "".
     function first_input_type(rp, fn: PlannedFunction) @direct true @deep true returns String linked
 
@@ -313,7 +311,6 @@ define instlens
 
 
     function contains_name(seen: ref[Array[String]], name: String) @ret_nonlocal true @deep true returns bool linked
-
 
 
 
@@ -415,7 +412,6 @@ define instlens
     ; token is not a plain identifier — a string-identifier target is rare and
     ; answering nothing for it is better than answering a wrong name).
     function routine_name_at(rp, source: String, offset: size_t) @direct true @ret_caller true @deep true returns String linked
-
 
 
 

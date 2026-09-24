@@ -446,9 +446,8 @@ define diagnostics
                 if fi > fstart
                 {
                     let f files.substring(fstart, fi - fstart)
-                    if f <> path
-                        if diagnostics.owns_file(entry, prefix, f)
-                            sb.append(diagnostics.sibling_notification(f, planner))
+                    if f <> path and diagnostics.owns_file(entry, prefix, f)
+                        sb.append(diagnostics.sibling_notification(f, planner))
                 }
                 set fstart: fi + 1
             }
@@ -474,9 +473,8 @@ define diagnostics
         while di < planner.diagnostics.length
         {
             let dp planner.diagnostics.get di
-            if dp <> null
-                if dp.file = file
-                    set count: count + 1
+            if dp <> null and dp.file = file
+                set count: count + 1
             set di: di + 1
         }
 
