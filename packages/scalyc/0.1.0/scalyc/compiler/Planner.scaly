@@ -664,6 +664,15 @@ define Planner
         ; relocatable allocation), consulted at the return site to skip the
         ; escape diagnostic. Both truncated at each function boundary.
         escaping_return_locals: Array[String]
+        ; the function whose returns are being pre-scanned returns a VIEW
+        ; (`Slice[T]`) -- collect_view_receiver#
+        var scan_returns_view: bool
+        ; the locals collect_view_receiver# found (and nothing else did):
+        ; a view-typed one among them is not promoted
+        view_receiver_locals: Array[String]
+        ; locals RETURNED bare by a view-returning function: their
+        ; initializer is the view (collect_view_sources#)
+        view_alias_locals: Array[String]
         promoted_binding_names: Array[String]
         ; Hole-1 field provenance (escape soundness): names of frame-local
         ; VALUE-struct bindings constructed with a Local-ref argument
@@ -1246,6 +1255,9 @@ define Planner
             set local_closure_names: Array[String]^this()
             set local_box_names: Array[String]^this()
             set escaping_return_locals: Array[String]^this()
+            set scan_returns_view: false
+            set view_receiver_locals: Array[String]^this()
+            set view_alias_locals: Array[String]^this()
             set promoted_binding_names: Array[String]^this()
             set local_tainted_struct_bindings: Array[String]^this()
             set escaping_targets: Array[String]^this()
@@ -15792,6 +15804,9 @@ define Planner
                         ; A ref LHS reaches here with a fresh type var and would
                         ; GEP at BYTE stride -- report_ref_arithmetic#.
                         this.report_ref_arithmetic(result.result_type, rhs.result_type, op_name, result.loc)
+                        ; ... and a record compared with a scalar has no `=` at all --
+                        ; report_record_scalar_compare#.
+                        this.report_record_scalar_compare(result.result_type, rhs.result_type, op_name, result.loc)
 
                         ; s90: built-in comparison operators on primitive
                         ; types return bool. Without this, the fresh type
@@ -24350,6 +24365,20 @@ define Planner
                     if Planner.is_local_ref_pointer(collapsed.result_type)
                         set do_promote: false
                 }
+                ; The receiver of a returned VIEW (collect_view_receiver#) is
+                ; promoted on its own, never through the escape fixpoint, and
+                ; only where it would otherwise live on this frame: not a view
+                ; itself (`let buf Slice[char](n, host.allocate(..))` -- moving
+                ; the record helps nothing), and not an initializer that
+                ; already names its page (`String^host(..)`) or builds nothing.
+                ; Through escaping_return_locals it dragged the locals of its
+                ; initializer along and moved 141 tscaly functions for nothing.
+                if do_promote = false
+                    if this.array_contains_name(view_receiver_locals, bn)
+                        if collapsed.result_type.name <> "Slice"
+                            if Planner.operand_life_is_defaulted_construction(collapsed)
+                                if Planner.is_local_ref_pointer(collapsed.result_type) = false
+                                    set do_promote: true
                 if do_promote
                 {
                     let promote_life Lifetime.Call(scalyc.compiler.Model.Call(b.span))
@@ -28561,6 +28590,78 @@ define Planner
         ; global (GlobalRef), or through a pointer deref (Call). A same-frame
         ; local's field (base var/let) dies with the frame → false. Mirrors the
         ; inline frame-external detection in the ref STORE vector above.
+        ; is_value_scalar_name#: a number, `bool` or `char` -- NOT `pointer`/
+        ; `ref`, which is_primitive_type_name# counts as primitive and which a
+        ; record may legitimately be compared with (an identity test).
+        function is_value_scalar_name(name: String) returns bool
+        {
+            if Planner.is_integer_type(name)
+                return true
+            if name = "bool"
+                return true
+            if name = "char"
+                return true
+            if name = "float"
+                return true
+            if name = "double"
+                return true
+            if name = "f32"
+                return true
+            if name = "f64"
+                return true
+            false
+        }
+
+        ; report_record_scalar_compare#: a comparison between a RECORD by
+        ; value and a scalar, with no operator and no `equals` that takes it.
+        ; It reached the emitter, which aborted at exit 14 with no file and no
+        ; line (`'=' between operands of different LLVM kinds ... ptr vs i64`).
+        ; The usual source is a subscript on a `pointer[Array[T]]`: pointer
+        ; arithmetic at Array stride that yields the Array itself (2026-09-24).
+        procedure report_record_scalar_compare(mutable this: Planner, lhs: PlannedType, rhs: PlannedType, op_name: String, at: Span)
+        {
+            var is_cmp false
+            if op_name = "="
+                set is_cmp: true
+            if op_name = "<>"
+                set is_cmp: true
+            if op_name = "<"
+                set is_cmp: true
+            if op_name = ">"
+                set is_cmp: true
+            if op_name = "<="
+                set is_cmp: true
+            if op_name = ">="
+                set is_cmp: true
+            if is_cmp = false
+                return
+            var record: String ""
+            var scalar: String ""
+            if this.is_structure_name(lhs.name)
+                if Planner.is_value_scalar_name(rhs.name)
+                {
+                    set record: lhs.name
+                    set scalar: rhs.name
+                }
+            if this.is_structure_name(rhs.name)
+                if Planner.is_value_scalar_name(lhs.name)
+                {
+                    set record: rhs.name
+                    set scalar: lhs.name
+                }
+            if record.get_length() = 0
+                return
+            var sb StringBuilder()
+            sb.append "cannot compare "
+            sb.append record
+            sb.append " with "
+            sb.append scalar
+            sb.append " - no operator '"
+            sb.append op_name
+            sb.append "' takes them (a subscript on a pointer[Array[T]] is pointer arithmetic and yields the Array itself; declare ref[Array[T]] or ask .at(i))"
+            this.add_diagnostic(at, String^this(sb.to_string()))
+        }
+
         ; operand_is_pageless_caller_construction#: a construction or call
         ; whose life says CALLER (`T#(...)`, `x.m#()`) in a routine the page
         ; rules gave no caller page. The emitter puts it on the routine's own
@@ -42413,6 +42514,224 @@ define Planner
         ; Over-collection is merely leaky, never unsafe; under-collection
         ; dangles. The mutually-recursive collect_flow_stmt# unwraps a branch
         ; statement (Action/Return) to its value operands.
+        ; collect_view_sources_of_tail#: the implicit result of a body -- the
+        ; last statement of its block, or the action itself.
+        procedure collect_view_sources_of_tail(mutable this: Planner, a: Action)
+        {
+            if scan_returns_view = false
+                return
+            if a.source.length = 1
+            {
+                let op_ptr a.source.get 0
+                if op_ptr <> null
+                {
+                    let op (*op_ptr)
+                    choose op.expression
+                        when b: Block
+                        {
+                            if b.statements.length = 0
+                                return
+                            let last_ptr b.statements.get(b.statements.length - 1)
+                            if last_ptr <> null
+                                choose last_ptr.unwrap()
+                                    when la: Action
+                                    {
+                                        if la.target.length = 0
+                                            this.collect_view_sources(la.source)
+                                    }
+                                    else
+                                        0
+                            return
+                        }
+                        else
+                            0
+                }
+            }
+            if a.target.length = 0
+                this.collect_view_sources(a.source)
+        }
+
+        ; collect_view_sources#: the operand run of a RETURNED value (a
+        ; `return`, the implicit tail, or the initializer of a returned alias)
+        ; in a view-returning function: `x.method(...)` names its view source
+        ; `x` (collect_view_receiver#), and a `Slice[...](args)` construction
+        ; takes its view from its arguments. NOT the arguments of any other
+        ; construction -- `String^host(sb.to_string())` returns no view of
+        ; `sb`, and walking it there moved a StringBuilder onto the caller page.
+        procedure collect_view_sources(mutable this: Planner, ops: Vector[Operand])
+        {
+            if scan_returns_view = false
+                return
+            let eff Planner.ops_length_without_trailing_cast(ops)
+            if eff = 1
+            {
+                ; `return v` / tail `v`: v's initializer is the view
+                let vp ops.get 0
+                if vp <> null
+                {
+                    let v (*vp)
+                    if v.member_access = null
+                        choose v.expression
+                            when t: scalyc.compiler.Model.Type
+                            {
+                                if t.generics = null
+                                    if t.name.length = 1
+                                    {
+                                        let np t.name.get 0
+                                        if np <> null
+                                            if this.name_is_capitalized((*np)) = false
+                                                if this.array_contains_name(view_alias_locals, (*np)) = false
+                                                    view_alias_locals.add(String^this((*np)))
+                                    }
+                            }
+                            else
+                                0
+                }
+                return
+            }
+            this.collect_view_receiver(ops)
+            let hp ops.get 0
+            if hp = null
+                return
+            let h (*hp)
+            var is_slice false
+            choose h.expression
+                when t: scalyc.compiler.Model.Type
+                {
+                    if t.name.length = 1
+                    {
+                        let np t.name.get 0
+                        if np <> null
+                            if (*np) = "Slice"
+                                set is_slice: true
+                    }
+                }
+                else
+                    0
+            if is_slice = false
+                return
+            ; `Slice[char](a, b)` models as THREE operands -- the name, the
+            ; generic list read as a vector literal, the argument tuple -- so
+            ; take the first tuple after the head
+            var k: size_t 1
+            while k < ops.length
+            {
+                let kp ops.get k
+                if kp <> null
+                {
+                    let kop (*kp)
+                    choose kop.expression
+                        when tup: scalyc.compiler.Model.Tuple
+                        {
+                            var i: size_t 0
+                            while i < tup.components.length
+                            {
+                                let cp tup.components.get i
+                                if cp <> null
+                                    this.collect_view_receiver((*cp).value)
+                                set i: i + 1
+                            }
+                            return
+                        }
+                        else
+                            0
+                }
+                set k: k + 1
+            }
+        }
+
+        ; collect_view_receiver#: in a function that RETURNS a view (`Slice[T]`),
+        ; a returned `x.method(...)` -- two operands, the dotted name and its
+        ; argument tuple -- is a view of the local `x` (as_slice, slice_from,
+        ; ...), so `x` escapes like a bare `return x` and plan_binding# builds
+        ; it on the caller page. Before, `let s sb.to_string()` + `s.as_slice()`
+        ; returned a view of a String on the routine's own frame, rc 0, garbage
+        ; after the next allocations (CLAUDE.md carried it as ACTIVE since
+        ; 2026-09-13). A dotted FIELD read (one operand) was already collected;
+        ; the call was not. Only a view-returning function is judged, so
+        ; `return s.get_length()` elsewhere promotes nothing.
+        procedure collect_view_receiver(mutable this: Planner, ops: Vector[Operand])
+        {
+            let hp ops.get 0
+            let ap ops.get 1
+            if hp = null
+                return
+            if ap = null
+                return
+            let h (*hp)
+            let a (*ap)
+            if h.member_access <> null
+                return
+            var is_call false
+            choose a.expression
+                when tup: scalyc.compiler.Model.Tuple
+                    set is_call: true
+                else
+                    0
+            if is_call = false
+                return
+            choose h.expression
+                when t: scalyc.compiler.Model.Type
+                {
+                    if t.generics <> null
+                        return
+                    if t.name.length < 2
+                        return
+                    let bp t.name.get 0
+                    if bp <> null
+                        if this.name_is_capitalized((*bp)) = false
+                            if this.array_contains_name(view_receiver_locals, (*bp)) = false
+                                view_receiver_locals.add(String^this((*bp)))
+                }
+                else
+                    0
+        }
+
+        ; operand_life_is_defaulted_construction#: a call or construction whose
+        ; page the planner chose (Local / Unspecified life) -- not `^name`/`#`,
+        ; and not a mere name or field read.
+        function operand_life_is_defaulted_construction(op: PlannedOperand) returns bool
+        {
+            choose op.expr
+                when c: Call
+                {
+                    choose c.life
+                        when l: Local
+                            return true
+                        when u: Unspecified
+                            return true
+                        else
+                            return false
+                }
+                when t: PlannedTuple
+                {
+                    choose t.life
+                        when l: Local
+                            return true
+                        when u: Unspecified
+                            return true
+                        else
+                            return false
+                }
+                else
+                    return false
+            false
+        }
+
+        ; function_returns_view#: does `f` declare a `Slice[...]` result?
+        function function_returns_view(f: Function) returns bool
+        {
+            if f.returns_ = null
+                return false
+            let rt (*f.returns_)
+            if rt.name.length = 0
+                return false
+            let lp rt.name.get(rt.name.length - 1)
+            if lp = null
+                return false
+            (*lp) = "Slice"
+        }
+
         procedure collect_flow_locals(mutable this: Planner, ops: Vector[Operand])
         {
             ; A trailing `as` is transparent here for the same reason it is in
@@ -43098,7 +43417,10 @@ define Planner
                     ; bare local flowing into it (alias, ctor args, branch
                     ; values). collect_flow_locals# subsumes the former
                     ; bare-`return x` add + the deep-R2 `return T(args)` walk.
+                {
                     this.collect_flow_locals(r.result)
+                    this.collect_view_sources(r.result)
+                }
                 when bind: Binding
                 {
                     ; deep-R2 binding closure: when this binding's name is already
@@ -43110,6 +43432,8 @@ define Planner
                         let bnm (*bind.item.name)
                         if this.array_contains_name(escaping_return_locals, bnm)
                             this.collect_flow_locals(bind.operation)
+                        if this.array_contains_name(view_alias_locals, bnm)
+                            this.collect_view_sources(bind.operation)
                         ; deep-R2 store-escape: a binding with an escaping init
                         ; (`^name`/`#`), or an already-promoted name, is a target
                         ; into which put/add stores must place caller-page values.
@@ -44045,6 +44369,10 @@ define Planner
             choose impl
                 when a: Action
                 {
+                    ; the body's REAL tail, once -- not the last statement of
+                    ; every nested block, which collect_returns_operand# counts
+                    ; as a tail for its own (over-approximating) purpose
+                    this.collect_view_sources_of_tail(a)
                     var prev_len: size_t 0
                     var passes: size_t 0
                     repeat
@@ -44302,6 +44630,8 @@ define Planner
             ; caller page. Sets are truncated at the function boundary so
             ; nested functions stay isolated.
             let saved_erl escaping_return_locals.length
+            let saved_vrl view_receiver_locals.length
+            let saved_val view_alias_locals.length
             let saved_pbn promoted_binding_names.length
             let saved_etg escaping_targets.length
             let saved_lts local_tainted_struct_bindings.length
@@ -44350,7 +44680,9 @@ define Planner
             ; Ref-flow provenance (2026-07-02f): record holder locals whose
             ; get-refs reach argument/return positions — see scan_getref_args#.
             this.scan_getref_args(f.implementation)
+            set scan_returns_view: Planner.function_returns_view(f)
             this.scan_top_level_returns(f.implementation)
+            set scan_returns_view: false
             ; Page inference: promote the IMPLICIT-RETURN (tail) expression of a
             ; page-owning-return function to the caller page. R2 only sees
             ; explicit `return`; a function whose body's last expression is a
@@ -44392,6 +44724,8 @@ define Planner
             set this.promote_tail_return: saved_ptr
             set this.check_tail_escape: saved_cte
             set escaping_return_locals.length: saved_erl
+            set view_receiver_locals.length: saved_vrl
+            set view_alias_locals.length: saved_val
             set promoted_binding_names.length: saved_pbn
             set escaping_targets.length: saved_etg
             set local_tainted_struct_bindings.length: saved_lts

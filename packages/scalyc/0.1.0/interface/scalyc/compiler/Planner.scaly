@@ -664,6 +664,15 @@ define Planner
         ; relocatable allocation), consulted at the return site to skip the
         ; escape diagnostic. Both truncated at each function boundary.
         escaping_return_locals: Array[String]
+        ; the function whose returns are being pre-scanned returns a VIEW
+        ; (`Slice[T]`) -- collect_view_receiver#
+        var scan_returns_view: bool
+        ; the locals collect_view_receiver# found (and nothing else did):
+        ; a view-typed one among them is not promoted
+        view_receiver_locals: Array[String]
+        ; locals RETURNED bare by a view-returning function: their
+        ; initializer is the view (collect_view_sources#)
+        view_alias_locals: Array[String]
         promoted_binding_names: Array[String]
         ; Hole-1 field provenance (escape soundness): names of frame-local
         ; VALUE-struct bindings constructed with a Local-ref argument
@@ -1218,6 +1227,9 @@ define Planner
     )
     {
         init(filename: String) linked
+
+
+
 
 
 
@@ -9837,6 +9849,9 @@ define Planner
             mutable this: Planner,
             mutable ops: Vector[PlannedOperand]
         ) @page true @direct true @deep true @deep_this_2 true returns PlannedOperand io linked
+
+
+
 
 
 
@@ -24725,6 +24740,20 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         ; ================================================================
         ; plan_action / plan_return / plan_break / plan_throw.
         ;
@@ -28561,6 +28590,78 @@ define Planner
         ; global (GlobalRef), or through a pointer deref (Call). A same-frame
         ; local's field (base var/let) dies with the frame → false. Mirrors the
         ; inline frame-external detection in the ref STORE vector above.
+        ; is_value_scalar_name#: a number, `bool` or `char` -- NOT `pointer`/
+        ; `ref`, which is_primitive_type_name# counts as primitive and which a
+        ; record may legitimately be compared with (an identity test).
+        function is_value_scalar_name(name: String) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; report_record_scalar_compare#: a comparison between a RECORD by
+        ; value and a scalar, with no operator and no `equals` that takes it.
+        ; It reached the emitter, which aborted at exit 14 with no file and no
+        ; line (`'=' between operands of different LLVM kinds ... ptr vs i64`).
+        ; The usual source is a subscript on a `pointer[Array[T]]`: pointer
+        ; arithmetic at Array stride that yields the Array itself (2026-09-24).
+        procedure report_record_scalar_compare(mutable this: Planner, lhs: PlannedType, rhs: PlannedType, op_name: String, at: Span) @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         ; operand_is_pageless_caller_construction#: a construction or call
         ; whose life says CALLER (`T#(...)`, `x.m#()`) in a routine the page
         ; rules gave no caller page. The emitter puts it on the routine's own
@@ -42413,6 +42514,224 @@ define Planner
         ; Over-collection is merely leaky, never unsafe; under-collection
         ; dangles. The mutually-recursive collect_flow_stmt# unwraps a branch
         ; statement (Action/Return) to its value operands.
+        ; collect_view_sources_of_tail#: the implicit result of a body -- the
+        ; last statement of its block, or the action itself.
+        procedure collect_view_sources_of_tail(mutable this: Planner, a: Action) @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; collect_view_sources#: the operand run of a RETURNED value (a
+        ; `return`, the implicit tail, or the initializer of a returned alias)
+        ; in a view-returning function: `x.method(...)` names its view source
+        ; `x` (collect_view_receiver#), and a `Slice[...](args)` construction
+        ; takes its view from its arguments. NOT the arguments of any other
+        ; construction -- `String^host(sb.to_string())` returns no view of
+        ; `sb`, and walking it there moved a StringBuilder onto the caller page.
+        procedure collect_view_sources(mutable this: Planner, ops: Vector[Operand]) @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; collect_view_receiver#: in a function that RETURNS a view (`Slice[T]`),
+        ; a returned `x.method(...)` -- two operands, the dotted name and its
+        ; argument tuple -- is a view of the local `x` (as_slice, slice_from,
+        ; ...), so `x` escapes like a bare `return x` and plan_binding# builds
+        ; it on the caller page. Before, `let s sb.to_string()` + `s.as_slice()`
+        ; returned a view of a String on the routine's own frame, rc 0, garbage
+        ; after the next allocations (CLAUDE.md carried it as ACTIVE since
+        ; 2026-09-13). A dotted FIELD read (one operand) was already collected;
+        ; the call was not. Only a view-returning function is judged, so
+        ; `return s.get_length()` elsewhere promotes nothing.
+        procedure collect_view_receiver(mutable this: Planner, ops: Vector[Operand]) @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; operand_life_is_defaulted_construction#: a call or construction whose
+        ; page the planner chose (Local / Unspecified life) -- not `^name`/`#`,
+        ; and not a mere name or field read.
+        function operand_life_is_defaulted_construction(op: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; function_returns_view#: does `f` declare a `Slice[...]` result?
+        function function_returns_view(f: Function) @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
         procedure collect_flow_locals(mutable this: Planner, ops: Vector[Operand]) @deep true linked
 
 
@@ -43091,6 +43410,11 @@ define Planner
 
 
         procedure collect_returns_stmt(mutable this: Planner, s: Statement) @ret_nonlocal true @deep true linked
+
+
+
+
+
 
 
 
@@ -44068,6 +44392,10 @@ define Planner
 
 
 
+
+
+
+
         procedure plan_implementation(mutable this: Planner, mutable impl: Implementation) @page true @direct true @deep true returns PlannedImplementation io linked
 
 
@@ -44104,6 +44432,12 @@ define Planner
             mutable f: Function,
             parent: ref[PlannedType]?
         ) @page true @direct true @deep true @deep_this_6 true @deep_whole_6 true returns PlannedFunction io linked
+
+
+
+
+
+
 
 
 

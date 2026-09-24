@@ -1,0 +1,19 @@
+; Regression (2026-09-24): a subscript on a `pointer[Array[T]]` is pointer
+; arithmetic at Array stride and yields the Array itself; compared with an
+; integer it reached the emitter, which aborted at exit 14 with no file and no
+; line ("'=' between operands of different LLVM kinds ... ptr vs i64").
+; Planner.report_record_scalar_compare# reports it at the comparison.
+; xfail: error: cannot compare Array with int
+function first(p: pointer[Array[int]]) returns bool
+    p[0] = 27
+
+procedure run()
+{
+    var a Array[int]()
+    a.add(27)
+    if first(&a as pointer[Array[int]])
+        print("true")
+    else
+        print("false")
+}
+run()

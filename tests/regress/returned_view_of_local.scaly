@@ -1,0 +1,106 @@
+; Regression (2026-09-24): a function returning a VIEW (`Slice[T]`) of a local
+; whose contents it built itself. `let s sb.to_string()` lands on the routine's
+; own frame, and `s.as_slice()` returned a view of a released page at rc 0 --
+; garbage after the next allocations (CLAUDE.md carried it as ACTIVE since
+; 2026-09-13). The escape checker judges only reference TYPES and a Slice is a
+; value with a pointer inside, so the fix is page inference instead: the local
+; behind a returned view is built on the caller page
+; (Planner.collect_view_sources#, collect_view_receiver#). Five spellings: the
+; implicit tail, an explicit return, a returned alias, a chain, and a Slice
+; constructed from the String's parts.
+; Expected: PASS
+function tail_view(n: int) returns Slice[u8]
+{
+    var sb StringBuilder()
+    sb.append "abc-"
+    sb.append n
+    let s sb.to_string()
+    s.as_slice()
+}
+
+function return_view(n: int) returns Slice[u8]
+{
+    var sb StringBuilder()
+    sb.append "abc-"
+    sb.append n
+    let s sb.to_string()
+    return s.as_slice()
+}
+
+function alias_view(n: int) returns Slice[u8]
+{
+    var sb StringBuilder()
+    sb.append "abc-"
+    sb.append n
+    let s sb.to_string()
+    let v s.as_slice()
+    v
+}
+
+function chain_view(n: int) returns Slice[u8]
+{
+    var sb StringBuilder()
+    sb.append "abc-"
+    sb.append n
+    let s sb.to_string()
+    s.as_slice().slice_from(0)
+}
+
+function parts_view(n: int) returns Slice[char]
+{
+    var sb StringBuilder()
+    sb.append "abc-"
+    sb.append n
+    let s sb.to_string()
+    Slice[char](s.get_length(), s.c_data() as pointer[char])
+}
+
+procedure churn() returns int
+{
+    var t: int 0
+    var i: int 0
+    while i < 200
+    {
+        let x String("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
+        set t: t + (x.get_length() as int)
+        set i: i + 1
+    }
+    t
+}
+
+function ok_bytes(v: Slice[u8]) returns bool
+{
+    if v.length <> 5
+        return false
+    if v[0] <> 0x61 as u8
+        return false
+    v[4] = 0x35 as u8
+}
+
+procedure run()
+{
+    let a tail_view(5)
+    let b return_view(5)
+    let c alias_view(5)
+    let d chain_view(5)
+    let e parts_view(5)
+    churn()
+    var ok: bool true
+    if ok_bytes(a) = false
+        set ok: false
+    if ok_bytes(b) = false
+        set ok: false
+    if ok_bytes(c) = false
+        set ok: false
+    if ok_bytes(d) = false
+        set ok: false
+    if e.length <> 5
+        set ok: false
+    if e[4] <> "5" as char
+        set ok: false
+    if ok
+        print("PASS")
+    else
+        print("FAIL")
+}
+run()
