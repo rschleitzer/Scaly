@@ -23228,10 +23228,16 @@ define Planner
         }
 
         ; plan_case / plan_branch / plan_match: the full match-expression form.
+        ; The case's operand run is COLLAPSED: the emitter evaluates the case
+        ; condition as one value, and a flat run (`case 0 - 1`, and the `n =
+        ; "int"` a match_by_equals# case is made of) handed it three operands
+        ; -- measured 2026-09-24, `case 0 - 1` matched -1 never and 1 always.
         procedure plan_case(mutable this: Planner, mutable cs: Case) returns PlannedCase
         {
             let planned_cond this.plan_operands(cs.condition)
-            var cond_holder Vector[PlannedOperand](planned_cond)
+            let collapsed this.collapse_operand_sequence(planned_cond)
+            var cond_holder Vector[PlannedOperand](1)
+            cond_holder.put(0, collapsed)
             PlannedCase(cs.span, &cond_holder)
         }
 
@@ -23256,6 +23262,106 @@ define Planner
             PlannedBranch(b.span, &cases_holder, cons_box)
         }
 
+        ; match_needs_equals#: the emitter matches by `icmp` on the scrutinee's
+        ; VALUE, which is right for numbers, characters, flags and references
+        ; and wrong for a record: `match n` on a String compared the two
+        ; buffers' addresses and never matched, rc 0 (2026-09-24; nothing in
+        ; the tree used `match` on a String -- found weighing `match` for the
+        ; `or`-chain rewrite).
+        procedure match_needs_equals(mutable this: Planner, t: PlannedType) returns bool
+        {
+            if t.name.get_length() = 0
+                return false
+            if t.name = "void"
+                return false
+            if Planner.is_value_scalar_name(t.name)
+                return false
+            if Planner.type_is_reference_shaped(t)
+                return false
+            this.is_structure_name(t.name)
+        }
+
+        ; operands_are_plain_name#: the operand run is one bare name.
+        function operands_are_plain_name(ops: Vector[Operand]) returns bool
+        {
+            if ops.length <> 1
+                return false
+            let op_ptr ops.get 0
+            if op_ptr = null
+                return false
+            let op (*op_ptr)
+            if op.member_access <> null
+                return false
+            choose op.expression
+                when t: scalyc.compiler.Model.Type
+                    return t.generics = null and t.name.length = 1
+                else
+                    return false
+            false
+        }
+
+        ; match_by_equals#: `match n  case A case B: S  case C: T` becomes a
+        ; match on `true` whose cases are `n = A`, `n = B`, `n = C` -- the `=`
+        ; that desugars to `equals`. The scrutinee is a plain name
+        ; (operands_are_plain_name#), so evaluating it once per case changes
+        ; nothing.
+        procedure match_by_equals(mutable this: Planner, m: Match) returns Match
+        {
+            let span m.span
+            var true_ops Vector[Operand]^this(1)
+            true_ops.put(0, Operand(span, Expression.Constant(Constant.Boolean(BooleanConstant(span, true))), null))
+            var eq_name Vector[String]^this(1)
+            eq_name.put(0, String^this("="))
+            let eq_op Operand(span, Expression.Type(scalyc.compiler.Model.Type(span, eq_name, null, Lifetime.Unspecified(Unspecified()))), null)
+            var branches Vector[Branch]^this(m.branches.length)
+            var bi: size_t 0
+            while bi < m.branches.length
+            {
+                let bp m.branches.get bi
+                if bp <> null
+                {
+                    let b (*bp)
+                    var cases Vector[Case]^this(b.cases.length)
+                    var ci: size_t 0
+                    while ci < b.cases.length
+                    {
+                        let cp b.cases.get ci
+                        if cp <> null
+                        {
+                            let c (*cp)
+                            var ops Vector[Operand]^this(m.condition.length + 1 + c.condition.length)
+                            var k: size_t 0
+                            var si: size_t 0
+                            while si < m.condition.length
+                            {
+                                let sp m.condition.get si
+                                if sp <> null
+                                    ops.put(k, (*sp))
+                                set k: k + 1
+                                set si: si + 1
+                            }
+                            ops.put(k, eq_op)
+                            set k: k + 1
+                            var qi: size_t 0
+                            while qi < c.condition.length
+                            {
+                                let qp c.condition.get qi
+                                if qp <> null
+                                    ops.put(k, (*qp))
+                                set k: k + 1
+                                set qi: qi + 1
+                            }
+                            cases.put(ci, Case(c.span, ops))
+                        }
+                        set ci: ci + 1
+                    }
+                    branches.put(bi, Branch(b.span, cases, b.consequent))
+                }
+                set bi: bi + 1
+            }
+            Match(span, true_ops, branches, m.alternative)
+        }
+
         procedure plan_match(mutable this: Planner, mutable m: Match) returns PlannedMatch
         {
             this.report_block_in_condition(m.condition, "match")
@@ -23264,6 +23370,18 @@ define Planner
             ; comparable against each case's collapsed condition type.
             let collapsed_cond this.collapse_operand_sequence(planned_cond)
             let cond_type collapsed_cond.result_type
+
+            ; A scrutinee that is no scalar and no reference -- `match n` on a
+            ; String -- is matched by CONTENT: match_by_equals#.
+            if this.match_needs_equals(cond_type)
+            {
+                if Planner.operands_are_plain_name(m.condition)
+                {
+                    let by_equals this.match_by_equals(m)
+                    return this.plan_match(by_equals)
+                }
+                this.add_diagnostic(m.span, "a match on a value that is no number, character, flag or reference compares by content, and its scrutinee is evaluated once per case - bind it to a name first ('let x ...' then 'match x')")
+            }
 
             var branches_arr Array[PlannedBranch]()
             var i: size_t 0

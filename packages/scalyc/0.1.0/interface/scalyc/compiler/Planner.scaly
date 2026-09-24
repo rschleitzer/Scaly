@@ -23228,14 +23228,120 @@ define Planner
 
 
         ; plan_case / plan_branch / plan_match: the full match-expression form.
-        procedure plan_case(mutable this: Planner, mutable cs: Case) @page true @direct true @ret_caller true @deep true returns PlannedCase io linked
+        ; The case's operand run is COLLAPSED: the emitter evaluates the case
+        ; condition as one value, and a flat run (`case 0 - 1`, and the `n =
+        ; "int"` a match_by_equals# case is made of) handed it three operands
+        ; -- measured 2026-09-24, `case 0 - 1` matched -1 never and 1 always.
+        procedure plan_case(mutable this: Planner, mutable cs: Case) @page true @direct true @ret_caller true @deep true @deep_this_2 true returns PlannedCase io linked
 
 
 
 
 
 
-        procedure plan_branch(mutable this: Planner, mutable b: Branch) @page true @direct true @deep true returns PlannedBranch io linked
+
+
+        procedure plan_branch(mutable this: Planner, mutable b: Branch) @page true @direct true @deep true @deep_this_2 true returns PlannedBranch io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; match_needs_equals#: the emitter matches by `icmp` on the scrutinee's
+        ; VALUE, which is right for numbers, characters, flags and references
+        ; and wrong for a record: `match n` on a String compared the two
+        ; buffers' addresses and never matched, rc 0 (2026-09-24; nothing in
+        ; the tree used `match` on a String -- found weighing `match` for the
+        ; `or`-chain rewrite).
+        procedure match_needs_equals(mutable this: Planner, t: PlannedType) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+        ; operands_are_plain_name#: the operand run is one bare name.
+        function operands_are_plain_name(ops: Vector[Operand]) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; match_by_equals#: `match n  case A case B: S  case C: T` becomes a
+        ; match on `true` whose cases are `n = A`, `n = B`, `n = C` -- the `=`
+        ; that desugars to `equals`. The scrutinee is a plain name
+        ; (operands_are_plain_name#), so evaluating it once per case changes
+        ; nothing.
+        procedure match_by_equals(mutable this: Planner, m: Match) @page true @direct true @deep true returns Match linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -23257,6 +23363,18 @@ define Planner
 
 
         procedure plan_match(mutable this: Planner, mutable m: Match) @page true @direct true @deep true @deep_this_2 true returns PlannedMatch io linked
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

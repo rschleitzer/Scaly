@@ -1,0 +1,43 @@
+; Regression (2026-09-24): two silent `match` defects. (1) A String scrutinee
+; was matched by `icmp` on the record -- the buffers' addresses -- and never
+; matched; a record scrutinee is matched by content now, through `=`/`equals`
+; (Planner.match_by_equals#). (2) A case that is an expression (`case 0 - 1`)
+; reached the emitter as a flat operand run and was never the value it spells
+; (Planner.plan_case# collapses it). Nothing in the tree used `match` either
+; way; both were found weighing `match` for the `or`-chain rewrite.
+; Expected: PASS
+function kind(n: String) returns int
+{
+    match n
+        case "int" case "i8" case "i16": return 1
+        case "float": return 2
+    0
+}
+
+function sign(c: int) returns int
+{
+    match c
+        case 0 - 1: return 1
+        case 2 + 3: return 2
+        else return 0
+}
+
+var ok: bool true
+if kind(String("i8")) <> 1
+    set ok: false
+if kind(String("int")) <> 1
+    set ok: false
+if kind(String("float")) <> 2
+    set ok: false
+if kind(String("u8")) <> 0
+    set ok: false
+if sign(0 - 1) <> 1
+    set ok: false
+if sign(5) <> 2
+    set ok: false
+if sign(1) <> 0
+    set ok: false
+if ok
+    print("PASS")
+else
+    print("FAIL")

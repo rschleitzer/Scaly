@@ -1,0 +1,15 @@
+; Regression (2026-09-24): a match on a RECORD compares by content, case by
+; case, so its scrutinee would be evaluated once per case; a computed one (a
+; call) must be bound to a name first (Planner.plan_match#).
+; xfail: error: a match on a value that is no number, character, flag or reference compares by content
+function name_of(k: int) returns String
+    String("x")
+
+function f(k: int) returns int
+{
+    match name_of(k)
+        case "x": return 1
+    0
+}
+
+print("`f(1)`")
