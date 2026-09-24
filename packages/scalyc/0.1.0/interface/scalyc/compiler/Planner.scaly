@@ -18069,7 +18069,8 @@ define Planner
         procedure resolve_member_access(
             mutable this: Planner,
             mutable base_type: PlannedType,
-            mutable members: Vector[String]
+            mutable members: Vector[String],
+            at: Span
         ) @page true @direct true @ret_caller true @deep true @deep_this_2 true returns Vector[PlannedMemberAccess] io linked
 
 
@@ -18493,6 +18494,51 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; report_hidden_member#: a member hop that misses only because its
+        ; owner's concept is not `use`d in this file — `c.helpers.y` where the
+        ; helpers' type comes from another module. The planner recorded an
+        ; advisory miss and the EMITTER aborted, rc 16 `member not found`, with
+        ; no file and no line (tscaly lessons §3.5jf). Reported here, at the
+        ; access, with the `use` that fixes it.
+        procedure report_hidden_member(mutable this: Planner, owner: String, member: String, at: Span) @deep true linked
 
 
 

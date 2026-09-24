@@ -269,7 +269,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 ")
                                     ($ "
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, \"expected '"(id (element-with-id (link content)))"'\"))
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, \"expected '"(id (element-with-id (link content)))"'\"))
 ")
                                 )
                             )
@@ -290,7 +290,7 @@ define Parser
             throw ParserError.Different(DifferentSyntax())
 "
                                         ($ "
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, \"expected '"(value (element-with-id (link content)))"'\"))
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, \"expected '"(value (element-with-id (link content)))"'\"))
 ")
                                     )
                                 )

@@ -10440,7 +10440,7 @@ define Planner
                                                                             ma_names.put(mni, (*mn_ptr).name)
                                                                         set mni: mni + 1
                                                                     }
-                                                                    let re_chain this.resolve_member_access(merged_type, ma_names)
+                                                                    let re_chain this.resolve_member_access(merged_type, ma_names, cp_op.loc)
                                                                     var handled_union: bool false
                                                                     if re_chain.length = 1
                                                                     {
@@ -14597,7 +14597,7 @@ define Planner
                                         tail_names.put(tni, (*tn_ptr).name)
                                     set tni: tni + 1
                                 }
-                                let tail_chain this.resolve_member_access(result.result_type, tail_names)
+                                let tail_chain this.resolve_member_access(result.result_type, tail_names, result.loc)
                                 var all_props: bool false
                                 if tail_chain.length > 0
                                     set all_props: true
@@ -17980,7 +17980,7 @@ define Planner
                     tail_names.put(tni, (*tn_ptr).name)
                 set tni: tni + 1
             }
-            let tail_chain this.resolve_member_access(operand.result_type, tail_names)
+            let tail_chain this.resolve_member_access(operand.result_type, tail_names, operand.loc)
             var all_props: bool false
             if tail_chain.length > 0
                 set all_props: true
@@ -18069,7 +18069,8 @@ define Planner
         procedure resolve_member_access(
             mutable this: Planner,
             mutable base_type: PlannedType,
-            mutable members: Vector[String]
+            mutable members: Vector[String],
+            at: Span
         ) returns Vector[PlannedMemberAccess]
         {
             var result Array[PlannedMemberAccess]()
@@ -18513,6 +18514,7 @@ define Planner
                     ; its one legitimate case.
                     if matched = false
                     {
+                        this.report_hidden_member(lookup_type.name, m, at)
                         var sb StringBuilder()
                         sb.append "member '"
                         sb.append m
@@ -18528,6 +18530,50 @@ define Planner
             }
 
             Vector[PlannedMemberAccess](result)
+        }
+
+        ; report_hidden_member#: a member hop that misses only because its
+        ; owner's concept is not `use`d in this file — `c.helpers.y` where the
+        ; helpers' type comes from another module. The planner recorded an
+        ; advisory miss and the EMITTER aborted, rc 16 `member not found`, with
+        ; no file and no line (tscaly lessons §3.5jf). Reported here, at the
+        ; access, with the `use` that fixes it.
+        procedure report_hidden_member(mutable this: Planner, owner: String, member: String, at: Span)
+        {
+            if owner.get_length() = 0
+                return
+            let hint this.use_vis_hint(owner)
+            if hint.get_length() = 0
+                return
+            let c this.lookup_concept_any(owner)
+            if c = null
+                return
+            var has: bool false
+            choose c.definition
+                when st: Structure
+                {
+                    var i: size_t 0
+                    while i < st.properties.length
+                    {
+                        let pp st.properties.get i
+                        if pp <> null
+                            if pp.name = member
+                                set has: true
+                        set i: i + 1
+                    }
+                }
+                else
+                    0
+            if has = false
+                return
+            var sb StringBuilder()
+            sb.append "member "
+            sb.append member
+            sb.append " of "
+            sb.append owner
+            sb.append ": the concept is not visible in this file"
+            sb.append hint
+            this.add_diagnostic(at, String^this(sb.to_string()))
         }
 
         ; fresh_type_var: allocate a new type variable as a PlannedType
@@ -20142,7 +20188,7 @@ define Planner
                             }
                         }
                         let access_chain this.resolve_member_access(
-                            base_for_chain, rest_vec
+                            base_for_chain, rest_vec, loc
                         )
                         var has_method: bool false
                         var ci: size_t 0
@@ -20311,7 +20357,7 @@ define Planner
                                     }
                                 }
                             }
-                            let gchain this.resolve_member_access(gbase_for_chain, grest_vec)
+                            let gchain this.resolve_member_access(gbase_for_chain, grest_vec, loc)
                             var g_has_method: bool false
                             var gci: size_t 0
                             while gci < gchain.length
@@ -20384,7 +20430,7 @@ define Planner
                                                 set k2: k2 + 1
                                             }
                                             var all_vec Vector[String](all_arr)
-                                            let chain2 this.resolve_member_access(inner2, all_vec)
+                                            let chain2 this.resolve_member_access(inner2, all_vec, loc)
                                             ; s87: skip removed (was `var has_method2 / while /
                                             ; if has_method2 = false` wrapper preserved through
                                             ; s83-s86). With s87's emit_variable struct/ptr-alloca
@@ -23622,7 +23668,7 @@ define Planner
                 return base
 
             let members (*ma)
-            let access_chain this.resolve_member_access(base.result_type, members)
+            let access_chain this.resolve_member_access(base.result_type, members, base.loc)
             var access_holder Vector[PlannedMemberAccess](access_chain)
             var final_type: PlannedType base.result_type
             if access_chain.length > 0

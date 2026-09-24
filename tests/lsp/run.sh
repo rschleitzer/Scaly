@@ -2765,7 +2765,9 @@ shutil.rmtree(ws, ignore_errors=True); os.makedirs(ws)
 path = ws + "/lsp_pasterror_invented.scaly"
 open(path, "w").write(src)
 d = diagnose("file://" + path, src) or []
-check(len(at(d, 0)) == 1, "invented-guard: the broken header is reported")
+# since 2026-09-24 an expected-token error names the token the parse stopped
+# at: here the `{` on line 1, where the header's `)` was due
+check(len(at(d, 0)) + len(at(d, 1)) == 1, "invented-guard: the broken header is reported")
 check(at(d, 7) == [],
       "invented-guard: the call to the name the repair BLANKED is not reported")
 sys.exit(1 if failures else 0)
@@ -4530,7 +4532,7 @@ import os as _os, shutil as _sh; _ws = "/tmp/lsp_ws/xpkg"; _sh.rmtree(_ws, ignor
 uri = "file://" + _ws + "/xpkg.scaly"
 doc = ("function f()\n"               # 0
        "{\n"                          # 1
-       "    var sb StringBuilder$()\n"# 2
+       "    var sb StringBuilder()\n" # 2
        "    sb.append(c)\n"           # 3
        "}\n")                         # 4
 
@@ -4864,7 +4866,7 @@ import os as _os, shutil as _sh; _ws = "/tmp/lsp_ws/xpkgmem"; _sh.rmtree(_ws, ig
 uri = "file://" + _ws + "/xpkgmem.scaly"
 doc = ("function f()\n"               # 0
        "{\n"                          # 1
-       "    var sb StringBuilder$()\n"# 2
+       "    var sb StringBuilder()\n" # 2
        "    sb.x\n"                    # 3
        "    String.x\n"               # 4
        "}\n")                         # 5

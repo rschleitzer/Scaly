@@ -691,7 +691,7 @@ define Parser
                 set parameters: success
 
         if ~lexer.parse_punctuation("]")
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected ']'"))
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected ']'"))
 
         let end lexer.position
 
@@ -886,7 +886,7 @@ define Parser
                 set members: success
 
         if ~lexer.parse_punctuation("}")
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected '}'"))
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected '}'"))
 
         let end lexer.position
 
@@ -927,7 +927,7 @@ define Parser
                 set declarations: success
 
         if ~lexer.parse_punctuation("}")
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected '}'"))
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected '}'"))
 
         let end lexer.position
 
@@ -944,7 +944,7 @@ define Parser
         lexer.parse_colon()
 
         if ~lexer.parse_punctuation("(")
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected '('"))
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected '('"))
 
         let variants_start lexer.position
         var variants: ref[Vector[VariantSyntax]]?
@@ -961,7 +961,7 @@ define Parser
                 set variants: success
 
         if ~lexer.parse_punctuation(")")
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected ')'"))
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected ')'"))
 
         lexer.parse_colon()
 
@@ -1169,7 +1169,7 @@ define Parser
                 set generics: success
 
         if ~lexer.parse_punctuation("]")
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected ']'"))
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected ']'"))
 
         let end lexer.position
 
@@ -1282,7 +1282,7 @@ define Parser
                 set items: success
 
         if ~lexer.parse_punctuation(")")
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected ')'"))
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected ')'"))
 
         let end lexer.position
 
@@ -1721,7 +1721,7 @@ define Parser
         lexer.parse_colon()
 
         if ~lexer.parse_punctuation("{")
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected '{'"))
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected '{'"))
 
         let uses_start lexer.position
         var uses: ref[Vector[UseSyntax]]? null
@@ -1750,7 +1750,7 @@ define Parser
                 set methods: success
 
         if ~lexer.parse_punctuation("}")
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected '}'"))
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected '}'"))
 
         let end lexer.position
 
@@ -1805,7 +1805,7 @@ define Parser
                 set attributes: success
 
         if ~lexer.parse_punctuation("{")
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected '{'"))
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected '{'"))
 
         let uses_start lexer.position
         var uses: ref[Vector[UseSyntax]]? null
@@ -1834,7 +1834,7 @@ define Parser
                 set functions: success
 
         if ~lexer.parse_punctuation("}")
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected '}'"))
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected '}'"))
 
         let end lexer.position
 
@@ -2717,7 +2717,7 @@ define Parser
                 set majorMinor: success
 
         if ~lexer.parse_punctuation(".")
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected '.'"))
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected '.'"))
 
         var patch: Literal
         choose parse_literal_token()
@@ -2753,7 +2753,7 @@ define Parser
                 set operands: success
 
         if ~lexer.parse_punctuation(")")
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected ')'"))
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected ')'"))
 
         let end lexer.position
 
@@ -3096,7 +3096,7 @@ define Parser
                 set components: success
 
         if ~lexer.parse_punctuation(")")
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected ')'"))
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected ')'"))
 
         let end lexer.position
 
@@ -3237,7 +3237,7 @@ define Parser
                 set elements: success
 
         if ~lexer.parse_punctuation("]")
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected ']'"))
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected ']'"))
 
         let lifetime_start lexer.position
         var lifetime: ref[LifetimeSyntax]? null
@@ -4337,7 +4337,7 @@ define Parser
                 set members: success
 
         if ~lexer.parse_punctuation("]")
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected ']'"))
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected ']'"))
 
         let end lexer.position
 
@@ -4365,7 +4365,7 @@ define Parser
                 set parts: success
 
         if ~lexer.parse_punctuation(")")
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected ')'"))
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected ')'"))
 
         let end lexer.position
 
@@ -4826,7 +4826,7 @@ define Parser
                 set annotation: TypeAnnotationSyntax(success.start, success.end, success.type)
 
         if ~lexer.parse_keyword("in")
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected 'in'"))
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected 'in'"))
 
         let operation_start lexer.position
         var operation: ref[Vector[OperandSyntax]]?
@@ -5094,7 +5094,7 @@ define Parser
                 set statements: success
 
         if ~lexer.parse_punctuation("}")
-            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected '}'"))
+            throw ParserError.Invalid(InvalidSyntax(lexer.previous_position, lexer.position, "expected '}'"))
 
         let end lexer.position
 

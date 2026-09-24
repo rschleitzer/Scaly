@@ -1,0 +1,7 @@
+use xfail_hidden_member_hop.helpers.EmitHelpers
+
+define Ctx
+(
+    name: int
+    helpers: EmitHelpers
+)

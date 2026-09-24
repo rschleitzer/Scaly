@@ -1,0 +1,17 @@
+; xfail: error: member y of EmitHelpers: the concept is not visible in this file
+;
+; args: -S --no-prelude
+;
+; Regression (2026-09-24): a field read two hops down a chain whose middle type
+; the module does not `use` — `c.helpers.y` with the record holding `helpers`
+; used and the helpers' own concept not. The planner recorded an advisory
+; miss, and the EMITTER aborted: rc 16, `Emitter: member not found:
+; EmitHelpers.y`, no file and no line (tscaly lessons §3.5jf). It is reported
+; at the access now, with the `use` that fixes it. A LIBRARY root, like
+; xfail_when_hidden_union: a library's modules are where the gate bites.
+define xfail_hidden_member_hop
+{
+    module helpers
+    module ctx
+    module user
+}

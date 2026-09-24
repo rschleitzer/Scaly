@@ -1,0 +1,22 @@
+; Regression (2026-09-24): a second statement added to a BRACELESS body. The
+; first line is the whole body, so the parser meets the second where the next
+; member should start and cannot go on. It reported `expected '}'` at the
+; OPENING brace of the enclosing define — in tscaly's checker thirty thousand
+; lines above the edit — because an expected-token error carried the span of
+; the construct it belonged to. It carries the token the parse stopped at now:
+; line 16, the stray statement. Brace a body of more than one statement.
+; xfail: xfail_braceless_body_statement.scaly:16:9: expected '}'
+define Calc
+{
+    function one() returns int
+        1
+
+    procedure two() returns int
+        print("probe")
+        1 + 1
+
+    function three() returns int
+        3
+}
+
+print("PASS")

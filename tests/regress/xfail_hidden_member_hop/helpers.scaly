@@ -1,0 +1,5 @@
+define EmitHelpers
+(
+    x: int
+    y: int
+)
