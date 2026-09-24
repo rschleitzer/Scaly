@@ -20914,10 +20914,144 @@ define Planner
                     0
         }
 
+        ; plan_condition_operands#: plan an `if` condition so that a null test
+        ; proves its name for the rest of an `and` chain, as a nested `if`
+        ; proves it for its body: `if e <> null and cs.excluded(e)` handed an
+        ; Option to a `ref` parameter (rc 4) where `if e <> null / if
+        ; cs.excluded(e)` compiled -- the one real reason the tree nested its
+        ; conditions (2026-09-24). The operands are split at every top-level
+        ; `and`; each segment is planned and collapsed on its own, under a
+        ; scope that carries the null tests of the segments before it; the
+        ; positive tests land in `facts` for the consequent. A chain with a
+        ; top-level `or` is planned as before -- `a and b or c` proves nothing
+        ; about c.
+        procedure plan_condition_operands(mutable this: Planner, mutable ops: Vector[Operand], mutable facts: ref[Array[String]]) returns Vector[PlannedOperand]
+        {
+            var n_and: size_t 0
+            var has_or: bool false
+            var i: size_t 0
+            while i < ops.length
+            {
+                let p ops.get i
+                if p <> null
+                {
+                    let w Planner.operand_word((*p))
+                    if w = "and" or w = "&&"
+                    {
+                        ; an `and` at either end, or two in a row: not ours
+                        if i = 0 or i + 1 = ops.length
+                            set has_or: true
+                        set n_and: n_and + 1
+                    }
+                    if w = "or" or w = "||"
+                        set has_or: true
+                }
+                set i: i + 1
+            }
+            if n_and = 0 or has_or
+                return this.plan_operands(ops)
+            var out Array[PlannedOperand]()
+            var scopes: size_t 0
+            var start: size_t 0
+            set i: 0
+            while i <= ops.length
+            {
+                var at_split: bool false
+                if i = ops.length
+                    set at_split: true
+                else
+                {
+                    let p ops.get i
+                    if p <> null
+                    {
+                        let w Planner.operand_word((*p))
+                        if w = "and" or w = "&&"
+                            set at_split: true
+                    }
+                }
+                if at_split
+                {
+                    var seg Vector[Operand](i - start)
+                    var k: size_t start
+                    while k < i
+                    {
+                        let sp ops.get k
+                        if sp <> null
+                            seg.put(k - start, (*sp))
+                        set k: k + 1
+                    }
+                    let planned this.plan_operands(seg)
+                    let collapsed this.collapse_operand_sequence(planned)
+                    out.add(collapsed)
+                    var nm String()
+                    var pos: bool false
+                    if this.narrow_null_test(collapsed, &nm, &pos)
+                        if pos
+                        {
+                            this.push_scope()
+                            if this.define_narrowed(nm)
+                            {
+                                set scopes: scopes + 1
+                                facts.add(String^this(nm))
+                            }
+                            else
+                                this.pop_scope()
+                        }
+                    if i < ops.length
+                    {
+                        var opv Vector[Operand](1)
+                        let op_ptr ops.get i
+                        if op_ptr <> null
+                            opv.put(0, (*op_ptr))
+                        let planned_op this.plan_operands(opv)
+                        var pi: size_t 0
+                        while pi < planned_op.length
+                        {
+                            let pp planned_op.get pi
+                            if pp <> null
+                                out.add((*pp))
+                            set pi: pi + 1
+                        }
+                    }
+                    set start: i + 1
+                }
+                set i: i + 1
+            }
+            while scopes > 0
+            {
+                this.pop_scope()
+                set scopes: scopes - 1
+            }
+            Vector[PlannedOperand](out)
+        }
+
+        ; operand_word#: the single-segment name an operand spells, or "".
+        function operand_word(op: Operand) returns String
+        {
+            if op.member_access <> null
+                return String("")
+            choose op.expression
+                when t: scalyc.compiler.Model.Type
+                {
+                    if t.generics = null and t.name.length = 1
+                    {
+                        let np t.name.get 0
+                        if np <> null
+                            return String((*np))
+                    }
+                }
+                else
+                    0
+            String("")
+        }
+
         procedure plan_if(mutable this: Planner, mutable f: If) returns PlannedIf
         {
             this.report_block_in_condition(f.condition, "if")
-            let planned_cond_flat this.plan_operands(f.condition)
+            ; `x <> null and f(x)`: each `and` segment is planned under the
+            ; null tests before it -- plan_condition_operands#
+            var and_facts Array[String]()
+            let planned_cond_flat this.plan_condition_operands(f.condition, &and_facts)
             ; A `ref[bool]` condition is the VALUE -- deref_ref_into_pointee#.
             ; `var`, not `let`: a `set` on a let-bound local is silently
             ; dropped, which is how the store-through rewrite spent a build.
@@ -20975,8 +21109,31 @@ define Planner
             if has_alt
                 this.collect_narrowed(join_snap)
 
+            ; ... and the consequent is proven by EVERY positive null test of
+            ; an `and` chain, as two nested `if`s would prove both
+            var and_pushed: bool false
+            if nb_has = false
+                if nb_phas = false
+                    if and_facts.length > 0
+                    {
+                        this.push_scope()
+                        var fi: size_t 0
+                        while fi < and_facts.length
+                        {
+                            let fp and_facts.get fi
+                            if fp <> null
+                                if this.define_narrowed((*fp))
+                                    set and_pushed: true
+                            set fi: fi + 1
+                        }
+                        if and_pushed = false
+                            this.pop_scope()
+                    }
+
             let planned_consequent this.plan_statement(f.consequent)
             if nb_pushed
+                this.pop_scope()
+            if and_pushed
                 this.pop_scope()
             if has_alt
             {

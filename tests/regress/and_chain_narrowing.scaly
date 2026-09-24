@@ -1,0 +1,55 @@
+; Regression (2026-09-24): a null test proves its name across an `and` chain,
+; as nested `if`s do. `if p <> null and j.seven(p)` was rc 4 (an Option into a
+; `ref` parameter) where `if p <> null / if j.seven(p)` compiled -- the one real
+; reason the tree nested its conditions -- and `if p <> null and q <> null`
+; proved neither name in its body. Planner.plan_condition_operands# plans each
+; `and` segment under the null tests before it and proves the consequent by
+; all of them. g1 is the nested control.
+; Expected: PASS
+define Box (var x: int)
+define Judge (var want: int)
+{
+    function seven(this, b: ref[Box]) returns bool
+        b.x = want
+    function both(this, b: ref[Box], c: ref[Box]) returns int
+        b.x + c.x
+}
+function f1(j: Judge, p: ref[Box]?) returns int
+{
+    if p <> null and j.seven(p)
+        return 1
+    0
+}
+function f2(j: Judge, p: ref[Box]?, q: ref[Box]?) returns int
+{
+    if p <> null and q <> null
+        return j.both(p, q)
+    0
+}
+function f3(j: Judge, p: ref[Box]?, n: int) returns int
+{
+    if n > 0 and p <> null and j.seven(p)
+        return 1
+    0
+}
+function g1(j: Judge, p: ref[Box]?) returns int
+{
+    if p <> null
+        if j.seven(p)
+            return 1
+    0
+}
+var bx Box(7)
+var by Box(3)
+let j Judge(7)
+let r1 f1(j, &bx)
+let r2 f1(j, null)
+let r3 f2(j, &bx, &by)
+let r4 f2(j, &bx, null)
+let r5 f3(j, &bx, 1)
+let r6 f3(j, null, 1)
+let r7 g1(j, &bx)
+if r1 = 1 and r2 = 0 and r3 = 10 and r4 = 0 and r5 = 1 and r6 = 0 and r7 = 1
+    print("PASS")
+else
+    print("FAIL")

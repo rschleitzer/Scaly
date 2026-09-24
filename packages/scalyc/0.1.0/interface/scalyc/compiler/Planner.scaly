@@ -20914,7 +20914,164 @@ define Planner
 
 
 
+        ; plan_condition_operands#: plan an `if` condition so that a null test
+        ; proves its name for the rest of an `and` chain, as a nested `if`
+        ; proves it for its body: `if e <> null and cs.excluded(e)` handed an
+        ; Option to a `ref` parameter (rc 4) where `if e <> null / if
+        ; cs.excluded(e)` compiled -- the one real reason the tree nested its
+        ; conditions (2026-09-24). The operands are split at every top-level
+        ; `and`; each segment is planned and collapsed on its own, under a
+        ; scope that carries the null tests of the segments before it; the
+        ; positive tests land in `facts` for the consequent. A chain with a
+        ; top-level `or` is planned as before -- `a and b or c` proves nothing
+        ; about c.
+        procedure plan_condition_operands(mutable this: Planner, mutable ops: Vector[Operand], mutable facts: ref[Array[String]]) @page true @direct true @ret_caller true @deep true @deep_this_2 true returns Vector[PlannedOperand] io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; operand_word#: the single-segment name an operand spells, or "".
+        function operand_word(op: Operand) @page true @direct true @ret_caller true @deep true returns String linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         procedure plan_if(mutable this: Planner, mutable f: If) @page true @direct true @ret_caller true @deep true @deep_this_2 true returns PlannedIf io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
