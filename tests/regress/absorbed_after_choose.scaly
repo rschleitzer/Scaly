@@ -1,0 +1,49 @@
+; Regression (2026-09-24): a braceless body ending in a `choose` or a `match`
+; took the NEXT LINE into its operand run. A `when`/`case` arm ended by
+; consuming the line break after its statement (a trailing optional separator
+; in the grammar), so after the last arm the enclosing statement found no end
+; and the `77` below became its operand: the function answered 0 at rc 0 when
+; the condition was false; a call on that line aborted the emitter (exit 14).
+; `when` and `case` read the separator IN FRONT of themselves now, as `else`
+; always did (scaly.sgm: When/Case `peek`, no trailing colon on When/Branch),
+; so the line break after the last arm ends the statement. The planner's
+; report_absorbed_after_control# stays as the net behind it.
+; Expected: PASS
+define Expr union
+(
+    Name: int
+    Other: int
+)
+
+function via_choose(gate: int, e: Expr) returns int
+{
+    if gate = 1
+        choose e
+            when n: Name
+                if n > 0
+                    return 10
+            else
+                0
+    77
+}
+
+function via_match(gate: int, k: int) returns int
+{
+    if gate = 1
+        match k
+            case 1: return 10
+            case 2: return 20
+    77
+}
+
+function one_line_arms(e: Expr) returns int
+{
+    choose e
+        when n: Name: return n: when o: Other: return o + 100
+    0
+}
+
+if via_choose(0, Expr.Name(5)) = 77 and via_choose(1, Expr.Name(5)) = 10 and via_choose(1, Expr.Other(1)) = 77 and via_match(0, 1) = 77 and via_match(1, 2) = 20 and via_match(1, 9) = 77 and one_line_arms(Expr.Name(4)) = 4 and one_line_arms(Expr.Other(4)) = 104
+    print "PASS"
+else
+    print "FAIL"

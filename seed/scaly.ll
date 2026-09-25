@@ -34527,41 +34527,47 @@ if.end3:                                          ; preds = %if.else, %if.then2
 
 define linkonce_odr i64 @_ZN4Tape8add_nodeEiiiiii(ptr %0, i64 %1, i64 %2, i64 %3, i64 %4, i64 %5, i64 %6) {
 entry:
+  %frame = alloca { ptr, ptr }, align 8
+  store ptr null, ptr %frame, align 8
+  %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
+  store ptr null, ptr %frame.parent, align 8
   %call = call ptr @_ZN4Page3getEPv(ptr %0)
-  %struct.init = alloca %_Z8TapeNode, align 8
-  call void @_ZN8TapeNodeC1Eiiiiii(ptr %struct.init, i64 %1, i64 %2, i64 %3, i64 %4, i64 %5, i64 %6)
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z8TapeNode, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z8TapeNode }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN8TapeNodeC1Eiiiiii(ptr %struct.region, i64 %1, i64 %2, i64 %3, i64 %4, i64 %5, i64 %6)
   %node = alloca ptr, align 8
-  store ptr %struct.init, ptr %node, align 1
+  store ptr %struct.region, ptr %node, align 1
   %wrapped_frame = alloca { ptr, ptr }, align 8
   store ptr %call, ptr %wrapped_frame, align 8
   %wrapped.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame, i32 0, i32 1
   store ptr null, ptr %wrapped.parent, align 8
-  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page, i64 ptrtoint (ptr getelementptr (%_Z6VectorIfE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorIfE }, ptr null, i64 0, i32 1) to i64))
+  %forced_page1 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame)
+  %struct.region2 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr (%_Z6VectorIfE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorIfE }, ptr null, i64 0, i32 1) to i64))
   %mul = mul i64 %5, %6
-  call void @_ZN6VectorIfEC1Em(ptr %struct.region, i64 %mul)
-  %wrapped_frame1 = alloca { ptr, ptr }, align 8
-  store ptr %call, ptr %wrapped_frame1, align 8
-  %wrapped.parent2 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame1, i32 0, i32 1
-  store ptr null, ptr %wrapped.parent2, align 8
-  %forced_page3 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame1)
-  %struct.region4 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page3, i64 ptrtoint (ptr getelementptr (%_Z6VectorIfE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorIfE }, ptr null, i64 0, i32 1) to i64))
-  %mul5 = mul i64 %5, %6
-  call void @_ZN6VectorIfEC1Em(ptr %struct.region4, i64 %mul5)
+  call void @_ZN6VectorIfEC1Em(ptr %struct.region2, i64 %mul)
+  %wrapped_frame3 = alloca { ptr, ptr }, align 8
+  store ptr %call, ptr %wrapped_frame3, align 8
+  %wrapped.parent4 = getelementptr inbounds nuw { ptr, ptr }, ptr %wrapped_frame3, i32 0, i32 1
+  store ptr null, ptr %wrapped.parent4, align 8
+  %forced_page5 = call ptr @_Z17scaly_force_frameP5Frame(ptr %wrapped_frame3)
+  %struct.region6 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page5, i64 ptrtoint (ptr getelementptr (%_Z6VectorIfE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6VectorIfE }, ptr null, i64 0, i32 1) to i64))
+  %mul7 = mul i64 %5, %6
+  call void @_ZN6VectorIfEC1Em(ptr %struct.region6, i64 %mul7)
   %ptr.load = load ptr, ptr %node, align 8
   %value = getelementptr inbounds nuw %_Z8TapeNode, ptr %ptr.load, i32 0, i32 9
-  %field.load = load %_Z6VectorIfE, ptr %struct.region, align 8
+  %field.load = load %_Z6VectorIfE, ptr %struct.region2, align 8
   store %_Z6VectorIfE %field.load, ptr %value, align 8
-  %ptr.load6 = load ptr, ptr %node, align 8
-  %grad = getelementptr inbounds nuw %_Z8TapeNode, ptr %ptr.load6, i32 0, i32 10
-  %field.load7 = load %_Z6VectorIfE, ptr %struct.region4, align 8
-  store %_Z6VectorIfE %field.load7, ptr %grad, align 8
+  %ptr.load8 = load ptr, ptr %node, align 8
+  %grad = getelementptr inbounds nuw %_Z8TapeNode, ptr %ptr.load8, i32 0, i32 10
+  %field.load9 = load %_Z6VectorIfE, ptr %struct.region6, align 8
+  store %_Z6VectorIfE %field.load9, ptr %grad, align 8
   %field.inplace = getelementptr inbounds nuw %_Z4Tape, ptr %0, i32 0, i32 0
-  %call8 = call i64 @_ZN5ArrayI8TapeNodeE10get_lengthEv(ptr %field.inplace)
-  %field.inplace9 = getelementptr inbounds nuw %_Z4Tape, ptr %0, i32 0, i32 0
-  %node10 = load ptr, ptr %node, align 8
-  call void @_ZN5ArrayI8TapeNodeE3addE8TapeNode(ptr %field.inplace9, ptr %node10)
-  ret i64 %call8
+  %call10 = call i64 @_ZN5ArrayI8TapeNodeE10get_lengthEv(ptr %field.inplace)
+  %field.inplace11 = getelementptr inbounds nuw %_Z4Tape, ptr %0, i32 0, i32 0
+  %node12 = load ptr, ptr %node, align 8
+  call void @_ZN5ArrayI8TapeNodeE3addE8TapeNode(ptr %field.inplace11, ptr %node12)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret i64 %call10
 }
 
 define linkonce_odr i64 @_ZN4Tape4leafEii(ptr %0, i64 %1, i64 %2) {

@@ -3551,8 +3551,6 @@ define Parser
             when success: Success
                 set consequent: success
 
-        lexer.parse_colon()
-
         let end lexer.position
 
         BranchSyntax(start, end, cases, consequent)
@@ -3590,9 +3588,14 @@ define Parser
     procedure parse_case(mutable this: Parser) returns CaseSyntax throws ParserError
     {
         let start lexer.previous_position
+        var snapshot lexer.save_state()
+        lexer.parse_colon()
 
         if ~lexer.parse_keyword("case")
+        {
+            lexer.restore_state(snapshot)
             throw ParserError.Different(DifferentSyntax())
+        }
 
         let condition_start lexer.position
         var condition: ref[Vector[OperandSyntax]]?
@@ -3851,9 +3854,14 @@ define Parser
     procedure parse_when(mutable this: Parser) returns WhenSyntax throws ParserError
     {
         let start lexer.previous_position
+        var snapshot lexer.save_state()
+        lexer.parse_colon()
 
         if ~lexer.parse_keyword("when")
+        {
+            lexer.restore_state(snapshot)
             throw ParserError.Different(DifferentSyntax())
+        }
 
         let name lexer.parse_identifier(keywords)
         if name.length() = 0
@@ -3891,8 +3899,6 @@ define Parser
             }
             when success: Success
                 set statement: success
-
-        lexer.parse_colon()
 
         let end lexer.position
 

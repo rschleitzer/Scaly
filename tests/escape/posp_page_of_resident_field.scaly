@@ -1,0 +1,25 @@
+; The page-of rule's exemption reaches through FIELDS (2026-09-25): `Box`
+; holds a String BY VALUE, and a String derives its page from its own
+; address, so `Box` is page-resident itself (Planner.structure_fields_need_residency#)
+; and `var b` is hosted on the frame's page. `Page.get(&b)` is that page and
+; the String built on it lives as long as `b`. This was
+; negp_page_of_frame_value until the residency fix; the rejected shape is
+; now a record without resident fields (negp_page_of_frame_value.scaly).
+; Accepted, and prints "filled" under SCALY_POISON=1.
+define Box (var s: String)
+
+procedure fill(mutable out: ref[Box])
+{
+    let pg Page.get(out)
+    set out.s: String^pg("filled")
+}
+
+procedure make()
+{
+    var b Box(String())
+    fill(&b)
+    print b.s
+}
+
+make()
+print "\n"

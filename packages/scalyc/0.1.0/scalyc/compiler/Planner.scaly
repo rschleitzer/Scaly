@@ -966,6 +966,9 @@ define Planner
         ; (ref_call_verdict#: -1 unknown, 0 not local, 1 local) — behind a
         ; reference for the Planner's page budget (see current_fn_local_filled)
         current_fn_bind_refv: ref[Array[int]]
+        ; names bound from a call whose LIFE is Local: an object built on this
+        ; frame (`var planner Planner.Planner(...)`), for reference_names_frame_local#
+        current_fn_frame_objects: ref[Array[String]]
 
         var escape_census: bool
         ; set by cli BEFORE planning under --host-report: the persist summary
@@ -1324,6 +1327,7 @@ define Planner
             set current_fn_local_filled: &Array[String]^this()
             set current_fn_bind_local: Array[size_t]^this()
             set current_fn_bind_refv: &Array[int]^this()
+            set current_fn_frame_objects: &Array[String]^this()
             set escape_census: false
             set host_report: false
             set census_names: Array[String]^this()
@@ -6452,10 +6456,72 @@ define Planner
                     set found: this.structure_init_has_this_alloc(s)
                     if found = false
                         set found: this.structure_members_have_this_alloc(s)
+                    if found = false
+                        set found: this.structure_fields_need_residency(s, 0)
                 }
                 else
                     0
             found
+        }
+
+        ; structure_fields_need_residency#: a record holding a page-resident
+        ; value BY VALUE (`define Bag (var items: Array[int])`) is resident
+        ; itself: the field's methods derive their page from the field's
+        ; address, which is inside the record. Built on the stack, `put(&bag,
+        ; 5)` grew the Array through Page.get of a stack address -- right by
+        ; luck, rc 139 under SCALY_POISON (2026-09-25). References, pointers
+        ; and options hold no value and are skipped.
+        procedure structure_fields_need_residency(mutable this: Planner, s: Structure, depth: size_t) returns bool
+        {
+            if depth > 4
+                return false
+            var i: size_t 0
+            while i < s.properties.length
+            {
+                let pp s.properties.get i
+                if pp <> null and (*pp).type <> null
+                {
+                    let pt (*(*pp).type)
+                    if pt.name.length > 0
+                    {
+                        let lp pt.name.get(pt.name.length - 1)
+                        if lp <> null
+                        {
+                            let fname (*lp)
+                            var holds_value true
+                            match fname
+                                case "pointer" case "ref" case "Option": set holds_value: false
+                            if holds_value and Planner.is_primitive_type_name(fname) = false
+                                if this.field_type_needs_residency(fname, depth + 1)
+                                    return true
+                        }
+                    }
+                }
+                set i: i + 1
+            }
+            false
+        }
+
+        procedure field_type_needs_residency(mutable this: Planner, name: String, depth: size_t) returns bool
+        {
+            let concept_ref this.lookup_concept(name)
+            if concept_ref = null
+                return false
+            let c (*concept_ref)
+            if Planner.attributes_have(c.attributes, "resident")
+                return true
+            choose c.definition
+                when s: Structure
+                {
+                    if this.structure_init_has_this_alloc(s)
+                        return true
+                    if this.structure_members_have_this_alloc(s)
+                        return true
+                    return this.structure_fields_need_residency(s, depth)
+                }
+                else
+                    0
+            false
         }
 
         function structure_members_have_this_alloc(this: Planner, s: Structure) returns bool
@@ -24516,7 +24582,9 @@ define Planner
         ; the function answered 0 at rc 0 when the condition was false -- and a
         ; call line (`this.fallback(pv)`) aborted the emitter with an empty
         ; operator name (2026-09-24; the s164 shape of `let X choose`, one
-        ; statement over). Reported at the absorbed operand.
+        ; statement over). Reported at the absorbed operand. Since 2026-09-25
+        ; the grammar no longer produces it (When/Case read their separator in
+        ; front, scaly.sgm); this stays as the net behind that.
         procedure report_absorbed_after_control(mutable this: Planner, ops: Vector[scalyc.compiler.Model.Operand])
         {
             if ops.length < 2
@@ -29798,6 +29866,48 @@ define Planner
             false
         }
 
+        ; reference_names_frame_local#: does a `^name` life name a page that
+        ; dies with this frame -- a local the judge itself recorded as built
+        ; here (a visible construction, or a bound call it judged local)? The
+        ; receiver, a parameter and any name it cannot place stay outliving:
+        ; a local may name a PARAMETER's page (`let host Page.get(this)`).
+        ; (2026-09-24: cli.run's `plan`, built on the frame-local `planner`,
+        ; read as outliving and made `jit_run(plan, program_name, ...)` an
+        ; escape.)
+        function reference_names_frame_local(this: Planner, name: String) returns bool
+        {
+            if name = "this" or this.escape_name_is_current_param(name)
+                return false
+            if this.array_contains_name(current_fn_ctor_locals, name)
+                return true
+            if this.array_contains_name(current_fn_frame_objects, name)
+                return true
+            let bidx this.bind_index_of(name)
+            if bidx < 0
+                return false
+            let lp current_fn_bind_local.get(bidx as size_t)
+            if lp = null
+                return false
+            (*lp) = 1
+        }
+
+        ; bound_ref_points_into_frame#: was `name` bound from a call whose
+        ; reference result the residence classes place on this frame?
+        function bound_ref_points_into_frame(this: Planner, name: String) returns bool
+        {
+            let bi this.bind_index_of(name)
+            if bi < 0
+                return false
+            let rp current_fn_bind_refv.get(bi as size_t)
+            if rp <> null and (*rp) = 1
+                return true
+            ; the judge's own verdict on the bound result: a page-taking call
+            ; in a routine without a page is handed THIS frame (cli.run's
+            ; `planner.plan_program(model)`)
+            let lp current_fn_bind_local.get(bi as size_t)
+            lp <> null and (*lp) = 1
+        }
+
         ; A destination arg outlives the (local-page) arg passed alongside it
         ; when it refers to memory living beyond the current frame: a parameter
         ; of the current function, or a #/^ allocated value, or a module
@@ -29812,18 +29922,28 @@ define Planner
                         return false
                     if this.escape_name_is_current_param(v.name)
                         return true
+                    ; CALL life is the caller page -- in a routine that HAS one;
+                    ; without, it falls back to this frame (s196) and dies with
+                    ; the argument (2026-09-24: cli.run's `plan` read as
+                    ; outliving and made `jit_run(plan, program_name, ...)` an
+                    ; escape once promotions were judged honestly)
+                    let has_page this.escape_fn_has_page()
                     choose op.result_type.life
                         when c: Call
-                            return true
+                            if has_page
+                                return true
                         when r: Reference
-                            return true
+                            if this.reference_names_frame_local(r.location) = false
+                                return true
                         else
                             0
                     choose v.variable_type.life
                         when c: Call
-                            return true
+                            if has_page
+                                return true
                         when r: Reference
-                            return true
+                            if this.reference_names_frame_local(r.location) = false
+                                return true
                         else
                             0
                     ; a REFERENCE-typed local whose value is not on this
@@ -29833,9 +29953,13 @@ define Planner
                     ; all, and read as "frame-local" here; eight sigils of
                     ; opensp read `local` past both oracles through this
                     ; (2026-09-22). A by-value local keeps the life test.
+                    ; ... unless the call that produced it answered a reference
+                    ; INTO this frame (ref_call_verdict# 1): cli.run's `plan`, on
+                    ; the page of the frame-local `planner`
                     if this.census_type_is_ref_like(v.variable_type)
-                        if this.region_of_operand(op) >= Planner.required_region_for_escape()
-                            return true
+                        if this.bound_ref_points_into_frame(v.name) = false
+                            if this.region_of_operand(op) >= Planner.required_region_for_escape()
+                                return true
                     return false
                 }
                 when g: GlobalRef
@@ -30531,7 +30655,10 @@ define Planner
                     ; as owning, dazzle's `f.tail_call(...)` read local here)
                     if this.census_type_is_ref_like(bv.variable_type)
                         return false
-                    if this.array_contains_name(promoted_binding_names, bv.name)
+                    ; promoted onto the CALLER page -- if there is one: without,
+                    ; the promotion falls back to this frame (s196) and the
+                    ; binding is as local as it looks
+                    if this.array_contains_name(promoted_binding_names, bv.name) and this.escape_fn_has_page()
                         return false
                     if this.array_contains_name(current_fn_ctor_locals, bv.name)
                         return this.fpt_any_local(arg)
@@ -31646,7 +31773,39 @@ define Planner
                                 let dp call.args.get(off + kd)
                                 if dp <> null
                                 {
-                                    if this.escape_dest_arg_outlives(dp.unwrap())
+                                    let d_out this.escape_dest_arg_outlives(dp.unwrap())
+                                    if gate_trace
+                                    {
+                                        scaly_eputs "gtrace   into pos "
+                                        scaly_eputi k
+                                        scaly_eputs " -> dest "
+                                        scaly_eputi kd
+                                        if d_out
+                                            scaly_eputs " outlives"
+                                        else
+                                            scaly_eputs " frame"
+                                        let dop dp.unwrap()
+                                        let efp instantiated_functions.get escape_fn_index
+                                        if efp <> null
+                                        {
+                                            scaly_eputs " in="
+                                            scaly_eputs(efp.mangled_name.to_c_string())
+                                        }
+                                        scaly_eputs " life="
+                                        scaly_eputs(Planner.lifetime_kind_name(dop.result_type.life).to_c_string())
+                                        choose dop.expr
+                                            when dv: Variable
+                                            {
+                                                scaly_eputs " var="
+                                                scaly_eputs(dv.name.to_c_string())
+                                                scaly_eputs " vlife="
+                                                scaly_eputs(Planner.lifetime_kind_name(dv.variable_type.life).to_c_string())
+                                            }
+                                            else
+                                                scaly_eputs " not-variable"
+                                        scaly_eputs "\n"
+                                    }
+                                    if d_out
                                         set judged: true
                                     else
                                         if escape_census
@@ -32362,6 +32521,8 @@ define Planner
                                                     set bvv: 1
                                                 current_fn_bind_local.add bvv
                                                 current_fn_bind_refv.add(this.ref_call_verdict(bcall))
+                                                if Planner.lifetime_is_local(bcall.life)
+                                                    current_fn_frame_objects.add(String^this((*binding.binding_item.name)))
                                             }
                                             ; a local bound from a VARIANT construction
                                             ; (`let m Msg.Text(s)`) lives where its PAYLOAD
@@ -33841,6 +34002,18 @@ define Planner
                     if this.region_of_operand(a) < Planner.required_region_for_escape()
                         return 1
                     return 0
+                }
+                ; on the page of (2) or handed back from (3) an object BUILT ON
+                ; THIS FRAME (`planner.plan_program(model)` with a local
+                ; `var planner Planner.Planner(...)`): local
+                if a.member_access = null
+                {
+                    choose a.expr
+                        when fov: Variable
+                            if this.array_contains_name(current_fn_frame_objects, fov.name)
+                                return 1
+                        else
+                            0
                 }
                 if cls = 2
                     return 0 - 1
@@ -40008,6 +40181,7 @@ define Planner
             set promoted_binding_names.length: 0
             set current_fn_bind_local.length: 0
             set current_fn_bind_refv.length: 0
+            set current_fn_frame_objects.length: 0
             set current_fn_fpt_fields.length: 0
             set current_fn_fpt_regions.length: 0
             choose func.impl

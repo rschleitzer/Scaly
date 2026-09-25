@@ -1,0 +1,54 @@
+; Regression (2026-09-25): a record holding an `Array` BY VALUE was built
+; on the STACK. `Array.add` finds its page through `Page.get(this)`, so
+; the record must be page-hosted like the Array itself; residency
+; inference asked the record's OWN methods only and never its fields, and
+; `Page.get` of a stack slot answered a "page" below the frame -- here
+; exit 19 (oversized page), rc 139 under SCALY_POISON=1 with fewer
+; elements, and a silent pass by luck with one. Residency now looks
+; through by-value fields (Planner.structure_fields_need_residency#).
+; Shapes: growth through a method of ANOTHER record, through a free
+; procedure, and a record nested one level deeper.
+; Expected: PASS
+define Bag (var items: Array[int])
+{
+    procedure keep(mutable this, mutable other: ref[Bag], v: int)
+        other.items.add(v)
+}
+
+define Outer (tag: int, var bag: Bag)
+
+procedure put(mutable b: ref[Bag], v: int)
+    b.items.add(v)
+
+procedure via_method() returns int
+{
+    var host_bag Bag(Array[int]())
+    var bag Bag(Array[int]())
+    for i in 300
+        host_bag.keep(&bag, i)
+    bag.items.length as int + bag.items[299]
+}
+
+procedure via_free() returns int
+{
+    var bag Bag(Array[int]())
+    for i in 300
+        put(&bag, i)
+    bag.items.length as int + bag.items[298]
+}
+
+procedure via_nested() returns int
+{
+    var o Outer(7, Bag(Array[int]()))
+    for i in 300
+        put(&o.bag, i)
+    o.tag + o.bag.items[297]
+}
+
+let a via_method()
+let b via_free()
+let c via_nested()
+if a = 599 and b = 598 and c = 304
+    print "PASS"
+else
+    print "FAIL `a` `b` `c`"

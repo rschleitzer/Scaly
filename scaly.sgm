@@ -410,9 +410,8 @@
     <content link = Case                  multiple          property = cases
     <content colon
     <content link = Statement                               property = consequent
-    <content colon                                 optional
 
-<syntax id = Case                         multiple
+<syntax id = Case                         multiple peek
     <content link = case
     <content link = Operand               multiple          property = condition
 
@@ -443,14 +442,13 @@
     <content link = Operation
     <content link = Let
 
-<syntax id = When                         multiple
+<syntax id = When                         multiple peek
     <content link = when
     <content identifier                                     property = name
     <content colon
     <content link = Name                                    property = variant
     <content colon                                 optional
     <content link = Statement                               property = statement
-    <content colon                                 optional
 
 <syntax id = Statement                    multiple abstract
     <content link = Empty

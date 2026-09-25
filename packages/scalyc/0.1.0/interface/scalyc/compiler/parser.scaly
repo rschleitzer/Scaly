@@ -3556,8 +3556,6 @@ define Parser
 
 
 
-
-
     procedure parse_case_list(mutable this: Parser) @page true @direct true @ret_caller true @deep true returns ref[Vector[CaseSyntax]]? throws ParserError linked
 
 
@@ -3588,6 +3586,11 @@ define Parser
 
 
     procedure parse_case(mutable this: Parser) @page true @direct true @deep true returns CaseSyntax throws ParserError linked
+
+
+
+
+
 
 
 
@@ -3849,6 +3852,9 @@ define Parser
 
 
     procedure parse_when(mutable this: Parser) @page true @direct true @deep true returns WhenSyntax throws ParserError linked
+
+
+
 
 
 

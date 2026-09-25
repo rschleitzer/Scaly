@@ -966,6 +966,9 @@ define Planner
         ; (ref_call_verdict#: -1 unknown, 0 not local, 1 local) — behind a
         ; reference for the Planner's page budget (see current_fn_local_filled)
         current_fn_bind_refv: ref[Array[int]]
+        ; names bound from a call whose LIFE is Local: an object built on this
+        ; frame (`var planner Planner.Planner(...)`), for reference_names_frame_local#
+        current_fn_frame_objects: ref[Array[String]]
 
         var escape_census: bool
         ; set by cli BEFORE planning under --host-report: the persist summary
@@ -1231,6 +1234,7 @@ define Planner
     )
     {
         init(filename: String) linked
+
 
 
 
@@ -6437,6 +6441,68 @@ define Planner
 
         procedure concept_needs_this_residency(mutable this: Planner, name: String) @ret_nonlocal true @deep true returns bool linked
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; structure_fields_need_residency#: a record holding a page-resident
+        ; value BY VALUE (`define Bag (var items: Array[int])`) is resident
+        ; itself: the field's methods derive their page from the field's
+        ; address, which is inside the record. Built on the stack, `put(&bag,
+        ; 5)` grew the Array through Page.get of a stack address -- right by
+        ; luck, rc 139 under SCALY_POISON (2026-09-25). References, pointers
+        ; and options hold no value and are skipped.
+        procedure structure_fields_need_residency(mutable this: Planner, s: Structure, depth: size_t) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure field_type_needs_residency(mutable this: Planner, name: String, depth: size_t) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -24516,7 +24582,9 @@ define Planner
         ; the function answered 0 at rc 0 when the condition was false -- and a
         ; call line (`this.fallback(pv)`) aborted the emitter with an empty
         ; operator name (2026-09-24; the s164 shape of `let X choose`, one
-        ; statement over). Reported at the absorbed operand.
+        ; statement over). Reported at the absorbed operand. Since 2026-09-25
+        ; the grammar no longer produces it (When/Case read their separator in
+        ; front, scaly.sgm); this stays as the net behind that.
         procedure report_absorbed_after_control(mutable this: Planner, ops: Vector[scalyc.compiler.Model.Operand]) @deep true linked
 
 
@@ -29798,12 +29866,68 @@ define Planner
 
 
 
+        ; reference_names_frame_local#: does a `^name` life name a page that
+        ; dies with this frame -- a local the judge itself recorded as built
+        ; here (a visible construction, or a bound call it judged local)? The
+        ; receiver, a parameter and any name it cannot place stay outliving:
+        ; a local may name a PARAMETER's page (`let host Page.get(this)`).
+        ; (2026-09-24: cli.run's `plan`, built on the frame-local `planner`,
+        ; read as outliving and made `jit_run(plan, program_name, ...)` an
+        ; escape.)
+        function reference_names_frame_local(this: Planner, name: String) @ret_param_0 true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; bound_ref_points_into_frame#: was `name` bound from a call whose
+        ; reference result the residence classes place on this frame?
+        function bound_ref_points_into_frame(this: Planner, name: String) @ret_param_0 true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         ; A destination arg outlives the (local-page) arg passed alongside it
         ; when it refers to memory living beyond the current frame: a parameter
         ; of the current function, or a #/^ allocated value, or a module
         ; global. A same-frame $/stack local dies WITH the arg -> safe.
         ; Mirrors Planner.cpp::escapeDestArgOutlives.
         function escape_dest_arg_outlives(this: Planner, op: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -30478,6 +30602,9 @@ define Planner
         ; construction on this frame — where its components point; a
         ; promoted binding — the caller page.
         function deep_by_value_local(this: Planner, arg: PlannedOperand) @ret_param_0 true @deep true returns bool linked
+
+
+
 
 
 
@@ -31841,6 +31968,38 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         function escape_record_exists(this: Planner, fn_index: size_t, param_index: size_t, dest_kind: size_t, dest_index: size_t, path_len: size_t, field0: size_t, field1: size_t) @ret_nonlocal true @deep true returns bool linked
 
 
@@ -32276,6 +32435,8 @@ define Planner
 
         ; Walk one statement by value. choose stmt mirrors emit_statement.
         procedure escape_walk_statement(mutable this: Planner, stmt: PlannedStatement) @deep true io linked
+
+
 
 
 
@@ -33778,6 +33939,18 @@ define Planner
         ; wherever that argument lives (judged); 1 and unknown answer -1 — the
         ; gate uses it only to LIFT a Local stamp, never to add one
         function ref_call_verdict(this: Planner, c: PlannedCall) @ret_nonlocal true @deep true returns int linked
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -39993,6 +40166,7 @@ define Planner
 
 
         procedure escape_walk_function_body(mutable this: Planner, func: PlannedFunction) @ret_nonlocal true @deep true io linked
+
 
 
 

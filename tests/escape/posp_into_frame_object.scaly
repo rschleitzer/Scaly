@@ -1,0 +1,29 @@
+; Control (2026-09-25): a String built in a routine WITHOUT a caller page, kept
+; by the callee INTO another argument that is itself an object of this frame --
+; the shape of cli.run's `jit_run(plan, program_name, ...)`. The String's
+; "promotion to the caller page" lands on this frame (no page to promote to),
+; and so does the object that keeps it: both die together, no escape. Judged
+; right only once a promotion and a Call-life destination count as this frame
+; in a pageless routine, and an object built here is a frame destination
+; (Planner.escape_fn_has_page#, reference_names_frame_local#).
+define Bag (var items: Array[String])
+{
+    procedure keep(mutable this, mutable other: ref[Bag], s: String)
+        other.items.add(s)
+    function count(this) returns int
+        items.length as int
+}
+
+procedure run() returns int
+{
+    var sb StringBuilder()
+    sb.append "kept-"
+    sb.append 7
+    let s sb.to_string()
+    var host_bag Bag(Array[String]())
+    var bag Bag(Array[String]())
+    host_bag.keep(&bag, s)
+    bag.count()
+}
+
+print "`run()`\n"
