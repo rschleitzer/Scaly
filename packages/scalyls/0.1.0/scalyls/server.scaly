@@ -721,11 +721,7 @@ define server
         let line json.as_i64(json.get(position, "line"))
         let character json.as_i64(json.get(position, "character"))
 
-        var pb StringBuilder()
-        pb.append(json.format_i64(line))
-        pb.append(" " as char)
-        pb.append(json.format_i64(character))
-        let packed pb.to_string()
+        let packed "`json.format_i64(line)` `json.format_i64(character)`"
 
         let text docstore.get uri
         ; PREFER the planner-resolved type (handles reassigned vars, generic
@@ -779,11 +775,7 @@ define server
         let line json.as_i64(json.get(position, "line"))
         let character json.as_i64(json.get(position, "character"))
 
-        var pb StringBuilder()
-        pb.append(json.format_i64(line))
-        pb.append(" " as char)
-        pb.append(json.format_i64(character))
-        let packed pb.to_string()
+        let packed "`json.format_i64(line)` `json.format_i64(character)`"
 
         let text docstore.get uri
         let result worker.definition(uri, text, packed)
@@ -802,11 +794,7 @@ define server
         let line json.as_i64(json.get(position, "line"))
         let character json.as_i64(json.get(position, "character"))
 
-        var pb StringBuilder()
-        pb.append(json.format_i64(line))
-        pb.append(" " as char)
-        pb.append(json.format_i64(character))
-        let packed pb.to_string()
+        let packed "`json.format_i64(line)` `json.format_i64(character)`"
 
         let text docstore.get uri
         let result worker.signature_help(uri, text, packed)
@@ -830,15 +818,7 @@ define server
         let el json.as_i64(json.get(end_, "line"))
         let ec json.as_i64(json.get(end_, "character"))
 
-        var pb StringBuilder()
-        pb.append(json.format_i64(sl))
-        pb.append(" " as char)
-        pb.append(json.format_i64(sc))
-        pb.append(" " as char)
-        pb.append(json.format_i64(el))
-        pb.append(" " as char)
-        pb.append(json.format_i64(ec))
-        let packed pb.to_string()
+        let packed "`json.format_i64(sl)` `json.format_i64(sc)` `json.format_i64(el)` `json.format_i64(ec)`"
 
         let text docstore.get uri
         let result worker.inlay_hints(uri, text, packed)
@@ -898,11 +878,7 @@ define server
         let line json.as_i64(json.get(position, "line"))
         let character json.as_i64(json.get(position, "character"))
 
-        var pb StringBuilder()
-        pb.append(json.format_i64(line))
-        pb.append(" " as char)
-        pb.append(json.format_i64(character))
-        let packed pb.to_string()
+        let packed "`json.format_i64(line)` `json.format_i64(character)`"
 
         let text docstore.get uri
         let result worker.highlights(uri, text, packed)
@@ -924,11 +900,7 @@ define server
         let line json.as_i64(json.get(position, "line"))
         let character json.as_i64(json.get(position, "character"))
 
-        var pb StringBuilder()
-        pb.append(json.format_i64(line))
-        pb.append(" " as char)
-        pb.append(json.format_i64(character))
-        let packed pb.to_string()
+        let packed "`json.format_i64(line)` `json.format_i64(character)`"
 
         let text docstore.get uri
         ; The CompletionItem[] array can be large (many names); reuse the
@@ -1025,11 +997,7 @@ define server
         let line json.as_i64(json.get(position, "line"))
         let character json.as_i64(json.get(position, "character"))
 
-        var pb StringBuilder()
-        pb.append(json.format_i64(line))
-        pb.append(" " as char)
-        pb.append(json.format_i64(character))
-        let packed pb.to_string()
+        let packed "`json.format_i64(line)` `json.format_i64(character)`"
 
         let text docstore.get uri
         let result worker.prepare_rename(uri, text, packed)

@@ -2994,10 +2994,7 @@ define Planner
             let dot_prefix psb.to_string()
             if origin.ends_with(dot_prefix)
                 return true
-            var fsb2 StringBuilder()
-            fsb2.append "."
-            fsb2.append full
-            let dot_full fsb2.to_string()
+            let dot_full ".`full`"
             origin.ends_with(dot_full)
         }
 
@@ -3064,11 +3061,7 @@ define Planner
                         ; put an allocation inside a loop that runs
                         ; clauses x concepts times — on packages/dazzle that
                         ; alone exhausted the default stack.
-                        var fsb StringBuilder()
-                        fsb.append prefix
-                        fsb.append "."
-                        fsb.append name
-                        let full_path fsb.to_string()
+                        let full_path "`prefix`.`name`"
 
                         var found: bool false
                         ; The clause may name a MODULE rather than a concept
@@ -5163,10 +5156,7 @@ define Planner
         {
             let step1 Path.join(base, name)
             let step2 Path.join(step1, version)
-            var file_sb StringBuilder()
-            file_sb.append name
-            file_sb.append ".scaly"
-            let file_part file_sb.to_string()
+            let file_part "`name`.scaly"
             Path.join(step2, file_part)
         }
 
@@ -5674,13 +5664,7 @@ define Planner
                         if prev <> null
                             if (*prev) >= 0
                             {
-                                var msb StringBuilder()
-                                msb.append "field "
-                                msb.append nm
-                                msb.append " of "
-                                msb.append struct_name
-                                msb.append " is given a value twice"
-                                let rmsg msb.to_string()
+                                let rmsg "field `nm` of `struct_name` is given a value twice"
                                 this.add_diagnostic(loc, String^this(rmsg))
                                 return null
                             }
@@ -17137,11 +17121,7 @@ define Planner
                 return uok
             }
 
-            var nsb StringBuilder()
-            nsb.append "fix_graph: cannot resolve the layout of type '"
-            nsb.append t.name
-            nsb.append "' in the message graph"
-            let nmsg nsb.to_string()
+            let nmsg "fix_graph: cannot resolve the layout of type '`t.name`' in the message graph"
             this.add_diagnostic(loc, String^this(nmsg))
             false
         }
@@ -17984,12 +17964,7 @@ define Planner
             ; planning completes). Keyed distinctly from the struct
             ; mangled so the s188 lazy-instantiation entries are not
             ; disturbed.
-            var guard_sb StringBuilder()
-            guard_sb.append "ix:"
-            guard_sb.append op_name
-            guard_sb.append ":"
-            guard_sb.append(Planner.mangle_structure(lookup_st.name, lookup_st.generics))
-            let guard_key guard_sb.to_string()
+            let guard_key "ix:`op_name`:`Planner.mangle_structure(lookup_st.name, lookup_st.generics)`"
             var gi_i: size_t 0
             while gi_i < instantiating_methods.length
             {
@@ -21006,10 +20981,7 @@ define Planner
             if this.qualified_ref_is_dangling(t)
             {
                 let dangling_name Planner.join_dotted_name(t.name)
-                var dsb StringBuilder()
-                dsb.append "not found: "
-                dsb.append dangling_name
-                this.add_diagnostic(loc, dsb.to_string())
+                this.add_diagnostic(loc, "not found: `dangling_name`")
             }
 
             let pt this.plan_type(t)
@@ -21029,6 +21001,75 @@ define Planner
         ; statement used as an expression. Covers the Action case (the
         ; common `if cond x else y` shape); non-value statements
         ; (Return/Throw/Break/Continue/Binding) return void.
+        ; block_tail_type#: the type a block's value carries -- that of the
+        ; last statement's value OPERAND, whose type holds the residence stamp
+        ; (a `Local` call result; the action's own result_type does not). An
+        ; interpolated string is such a block: without the stamp, handed to a
+        ; routine that keeps it (`add_diagnostic(loc, "...`x`...")`), it was
+        ; not promoted and the kept message dangled (2026-09-25).
+        function block_tail_type(s: PlannedStatement) returns PlannedType
+        {
+            choose s
+                when a: PlannedAction
+                {
+                    if a.target = null and a.source <> null
+                    {
+                        let src (*a.source)
+                        if src.length = 1
+                        {
+                            let s0 src.get 0
+                            if s0 <> null
+                            {
+                                let tt (*s0).result_type
+                                ; a page-owning value the block itself builds (a
+                                ; call or construction with no placement of its
+                                ; own) lives on the block's frame: say so, as the
+                                ; residence stamp of the same call outside a block
+                                ; would, so the persist promotion sees it
+                                if Planner.result_owns_page_guts(tt) and Planner.operand_is_unplaced_build((*s0))
+                                    return PlannedType(tt.loc, String(tt.name), String(tt.mangled_name), tt.generics, Lifetime.Local(scalyc.compiler.Model.Local(tt.loc)), tt.origin, String(tt.array_size), tt.variable)
+                                return tt
+                            }
+                        }
+                    }
+                    return a.result_type
+                }
+                else
+                    0
+            Planner.make_void_type()
+        }
+
+        ; a call or construction that carries no explicit placement
+        function operand_is_unplaced_build(op: PlannedOperand) returns bool
+        {
+            choose op.expr
+                when c: PlannedCall
+                {
+                    if c.is_operator or c.is_intrinsic
+                        return false
+                    choose c.life
+                        when u: Unspecified
+                            return true
+                        when l: Local
+                            return true
+                        else
+                            return false
+                }
+                when t: PlannedTuple
+                {
+                    choose t.life
+                        when u: Unspecified
+                            return true
+                        when l: Local
+                            return true
+                        else
+                            return false
+                }
+                else
+                    return false
+            false
+        }
+
         function statement_result_type(s: PlannedStatement) returns PlannedType
         {
             choose s
@@ -21993,11 +22034,7 @@ define Planner
 
             let lam_id next_lambda_id
             set next_lambda_id: lam_id + 1
-            var name_sb StringBuilder()
-            name_sb.append "_ZN6lambda"
-            name_sb.append(Planner.size_to_string lam_id)
-            name_sb.append "Ev"
-            let mangled name_sb.to_string()
+            let mangled "_ZN6lambda`Planner.size_to_string lam_id`Ev"
 
             var items_holder Vector[PlannedItem](planned_items)
             var captures_holder Vector[String](captures_arr)
@@ -22304,14 +22341,8 @@ define Planner
                     set ci: ci + 1
                 }
             }
-            var thunk_sb StringBuilder()
-            thunk_sb.append mono.mangled
-            thunk_sb.append "_thunk"
-            let thunk_name thunk_sb.to_string()
-            var clo_sb StringBuilder()
-            clo_sb.append "clo_"
-            clo_sb.append mono.mangled
-            let clo_type_name clo_sb.to_string()
+            let thunk_name "`mono.mangled`_thunk"
+            let clo_type_name "clo_`mono.mangled`"
             var cap_ops_holder Vector[PlannedOperand](cap_ops)
             var cap_tys_holder Vector[PlannedType](cap_tys)
             var dparams_holder Vector[PlannedType](dparams)
@@ -23274,10 +23305,7 @@ define Planner
                             let b3_vconc this.lookup_concept(variant_name)
                             if b3_vconc = null
                             {
-                                var uv_sb StringBuilder()
-                                uv_sb.append "unknown variant: "
-                                uv_sb.append variant_name
-                                this.add_diagnostic(w.span, uv_sb.to_string())
+                                this.add_diagnostic(w.span, "unknown variant: `variant_name`")
                             }
                         }
                     }
@@ -24103,6 +24131,25 @@ define Planner
                     set mc: mc + 1
                 }
             }
+            ; A parenless call: a NAMED head and its one argument, `(f x)` /
+            ; `(ns.f x)`. A method head (`(x.m y)`) collapses above; a named
+            ; one did not, and the grouping shortcut emitted the head alone --
+            ; `let v (N.enc name)` bound the empty result and the argument
+            ; vanished, rc 0 (2026-09-25). An interpolation embeds exactly this
+            ; shape (`"_Z`N.enc name`"` desugars to `append((N.enc name))`).
+            if should_collapse = false and planned_value.length = 2
+            {
+                let h_ptr planned_value.get 0
+                if h_ptr <> null and (*h_ptr).member_access = null
+                    choose (*h_ptr).expr
+                        when hty: PlannedType
+                        {
+                            if hty.name.get_length() > 0 and Planner.is_operator_name(hty.name) = false and this.is_operator(hty.name) = false
+                                set should_collapse: true
+                        }
+                        else
+                            0
+            }
             ; s184: generic-argument shape — a bare Type followed by a
             ; Matrix (`Option[int].None` as a lone argument). Collapse
             ; runs the s107 [Type, Matrix] merge; without it the raw
@@ -24329,7 +24376,7 @@ define Planner
                         {
                             let last_ptr stmts.get(stmts.length - 1)
                             if last_ptr <> null
-                                set block_type: Planner.statement_result_type((*last_ptr))
+                                set block_type: Planner.block_tail_type((*last_ptr))
                         }
                     }
                     PlannedOperand(op.span, PlannedExpression.Block pb, null, block_type)
@@ -34333,11 +34380,7 @@ define Planner
                     var dk: size_t 1
                     while dk < 16
                     {
-                        var psb StringBuilder()
-                        psb.append "deep_into_"
-                        psb.append dk
-                        psb.append "_"
-                        let pfx psb.to_string()
+                        let pfx "deep_into_`dk`_"
                         let iv Planner.deep_attr_mask(f, pfx.to_c_string())
                         if iv <> (0 as u64)
                             gate.deep_into_masks.put(dk, iv)
@@ -34651,11 +34694,7 @@ define Planner
                                     if owp <> null
                                         if (*owp).get_length() > 0
                                         {
-                                            var qsb StringBuilder()
-                                            qsb.append((*owp))
-                                            qsb.append "."
-                                            qsb.append((*fp).name)
-                                            let qn qsb.to_string()
+                                            let qn "`(*owp)`.`(*fp).name`"
                                             this.deep_by_name_merge(String^this(qn), union_mask, gate.deep_this_mask, gate.deep_persist_mask, gate.deep_whole_mask)
                                         }
                                     set changed: true
@@ -34673,11 +34712,7 @@ define Planner
                                         if rown2 <> null
                                             if (*rown2).get_length() > 0
                                             {
-                                                var rsb2 StringBuilder()
-                                                rsb2.append((*rown2))
-                                                rsb2.append "."
-                                                rsb2.append((*fp).name)
-                                                let rqn2 rsb2.to_string()
+                                                let rqn2 "`(*rown2)`.`(*fp).name`"
                                                 this.deep_returns_note(String^this(rqn2), rmask)
                                             }
                                         set changed: true
@@ -35979,11 +36014,7 @@ define Planner
             if rown <> null
                 if (*rown).get_length() > 0
                 {
-                    var sb StringBuilder()
-                    sb.append((*rown))
-                    sb.append "."
-                    sb.append name
-                    let qn sb.to_string()
+                    let qn "`(*rown)`.`name`"
                     if this.deep_returns_note_whole(qn, wm)
                         set grew: true
                 }
@@ -36094,11 +36125,7 @@ define Planner
                     return String("")
                 if residence.rr_owner.get_length() = 0
                     return String("")
-                var bsb StringBuilder()
-                bsb.append residence.rr_owner
-                bsb.append "."
-                bsb.append((*bp))
-                let bq bsb.to_string()
+                let bq "`residence.rr_owner`.`(*bp)`"
                 if (Planner.gi_find(gate.deep_idx.qualified, bq) >= 0)
                     return bq
                 return String("")
@@ -36877,11 +36904,7 @@ define Planner
                                 if owner_name.get_length() > 0
                                 {
                                     set owner_name_seen: owner_name
-                                    var qsb StringBuilder()
-                                    qsb.append owner_name
-                                    qsb.append "."
-                                    qsb.append((*lastp))
-                                    set qual: qsb.to_string()
+                                    set qual: "`owner_name`.`(*lastp)`"
                                 }
                             }
                         }
@@ -37700,11 +37723,7 @@ define Planner
                         if qo <> null
                             if (*qo).get_length() > 0
                             {
-                                var qsb StringBuilder()
-                                qsb.append((*qo))
-                                qsb.append "."
-                                qsb.append((*qf).name)
-                                let qn qsb.to_string()
+                                let qn "`(*qo)`.`(*qf).name`"
                                 gate.deep_qualified_all.add(String^this(qn))
                                 this.gi_note(gate.deep_idx.qualified, &gate.deep_qualified_all, gate.deep_qualified_all.length - 1, false)
                                 if Planner.persist_names_contain(gate.deep_scanned_owners, (*qo)) = false
@@ -41136,6 +41155,68 @@ define Planner
                     )
                     return PlannedOperand^this(op.loc, PlannedExpression.Tuple nt, op.member_access, op.result_type)
                 }
+                ; A BLOCK's value is its last statement's -- an interpolated
+                ; string is one: the Modeler desugars `"a`x`b"` to a block that
+                ; ends in `sb.to_string()`. Opaque to this re-stamp until
+                ; 2026-09-25, so every promotion that works for `let s
+                ; sb.to_string()` (a return, a store, a kept argument, a
+                ; promoted binding) passed an interpolated string by and left it
+                ; on the frame -- the compiler's own layout keys dangled the
+                ; moment its builders were rewritten as interpolations.
+                when blk: PlannedBlock
+                {
+                    if blk.statements = null
+                        return null
+                    let stmts (*blk.statements)
+                    if stmts.length = 0
+                        return null
+                    let lp stmts.get(stmts.length - 1)
+                    if lp = null
+                        return null
+                    var new_last: ref[PlannedStatement]? null
+                    choose (*lp)
+                        when la: PlannedAction
+                        {
+                            if la.target <> null or la.source = null
+                                return null
+                            let lsrc (*la.source)
+                            if lsrc.length <> 1
+                                return null
+                            let s0 lsrc.get 0
+                            if s0 = null
+                                return null
+                            let lpromoted this.restamp_operand_life((*s0), new_life)
+                            if lpromoted = null
+                                return null
+                            var srch Vector[PlannedOperand](1)
+                            srch.put(0, (*lpromoted))
+                            let na PlannedAction(la.loc, &srch, la.target, la.result_type)
+                            var lh Vector[PlannedStatement](1)
+                            lh.put(0, PlannedStatement.Action na)
+                            set new_last: lh.get(0)
+                        }
+                        else
+                            return null
+                    if new_last = null
+                        return null
+                    var out_stmts Vector[PlannedStatement](stmts.length)
+                    var bi: size_t 0
+                    while bi < stmts.length
+                    {
+                        let sp stmts.get bi
+                        if sp <> null
+                        {
+                            if bi = stmts.length - 1
+                                out_stmts.put(bi, (*new_last))
+                            else
+                                out_stmts.put(bi, (*sp))
+                        }
+                        set bi: bi + 1
+                    }
+                    var bh Vector[PlannedStatement](out_stmts)
+                    let nblk PlannedBlock(blk.loc, &bh)
+                    return PlannedOperand^this(op.loc, PlannedExpression.Block nblk, op.member_access, op.result_type)
+                }
                 else
                     return null
             null
@@ -41216,6 +41297,11 @@ define Planner
                             }
                         }
                         when t: PlannedTuple
+                            set is_ctor: true
+                        ; an interpolated string: a block whose value its
+                        ; builder produces -- restamp_operand_life# walks to
+                        ; the tail (2026-09-25)
+                        when bk: PlannedBlock
                             set is_ctor: true
                         else
                             0
@@ -42642,7 +42728,18 @@ define Planner
                     if already_promoted = false
                     {
                         let call_life Lifetime.Call(scalyc.compiler.Model.Call(r.span))
-                        let promoted this.restamp_operand_life(planned_collapsed, call_life)
+                        var promoted this.restamp_operand_life(planned_collapsed, call_life)
+                        ; a BLOCK value -- an interpolated string is one (the
+                        ; Modeler desugars it to its StringBuilder block) --
+                        ; promotes through its last statement, as the implicit
+                        ; tail already does (promote_tail_operand#); an explicit
+                        ; `return "...`x`..."` was refused before (2026-09-25)
+                        if promoted = null
+                            choose planned_collapsed.expr
+                                when rb: PlannedBlock
+                                    set promoted: this.promote_tail_operand(planned_collapsed, call_life)
+                                else
+                                    0
                         if promoted <> null
                             set planned_collapsed: (*promoted)
                         else
@@ -49940,10 +50037,7 @@ define Planner
     {
         let len name.length
         let len_str size_to_string len
-        let result StringBuilder()
-        result.append len_str
-        result.append name
-        result.to_string()
+        "`len_str``name`"
     }
 
     ; strip_package_prefix: "scaly.containers.String" -> "String".
@@ -50084,10 +50178,7 @@ define Planner
     function mangle_type(type_value: PlannedType) returns String
     {
         let encoded Planner.encode_type(type_value)
-        var sb StringBuilder()
-        sb.append "_Z"
-        sb.append encoded
-        sb.to_string()
+        "_Z`encoded`"
     }
 
     ; mangle_structure: "_Z" + name-with-length-prefix + optional "I...E" generic block.
@@ -50120,10 +50211,7 @@ define Planner
             }
         }
 
-        var sb StringBuilder()
-        sb.append "_Z"
-        sb.append(Planner.encode_name name)
-        sb.to_string()
+        "_Z`Planner.encode_name name`"
     }
 
     ; mangle_function: Itanium symbol for a function / method.
@@ -50312,10 +50400,7 @@ define Planner
             return "cl"
 
         ; Vendor extension for operators without a dedicated code.
-        var sb StringBuilder()
-        sb.append "v0"
-        sb.append(Planner.encode_name name)
-        sb.to_string()
+        "v0`Planner.encode_name name`"
     }
 
     ; mangle_operator: Itanium ABI symbol for an operator definition.
@@ -52490,10 +52575,7 @@ define Planner
                     if inner_ptr <> null
                     {
                         let inner (*inner_ptr)
-                        var sb StringBuilder()
-                        sb.append "R"
-                        sb.append inner.mangled_name
-                        set mangled: sb.to_string()
+                        set mangled: "R`inner.mangled_name`"
                     }
                 }
             }
@@ -55085,11 +55167,7 @@ define Planner
     ; R8's identity key: the name and the source offset of the declaration
     function store_key(f: Function) returns String
     {
-        var sb StringBuilder()
-        sb.append f.name
-        sb.append "@"
-        sb.append f.span.start
-        sb.to_string()
+        "`f.name`@`f.span.start`"
     }
 
     ; R8 helpers (build_store_page_set#). The NAME a call operand calls: the

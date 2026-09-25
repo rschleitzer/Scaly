@@ -1,0 +1,38 @@
+; Regression (2026-09-25): a GROUPED parenless call, `(f x)` / `(ns.f x)`,
+; evaluated to the head alone -- the argument vanished, rc 0. A method head
+; (`(x.m y)`) was collapsed in plan_component#, a named one was not, and the
+; grouping shortcut emitted operand 0. An interpolation embeds exactly this
+; shape (`"_Z`N.enc name`"` desugars to `append((N.enc name))`), so the
+; compiler's own mangled keys came out as a bare "_Z" when its builders were
+; rewritten as interpolated strings.
+; Expected: PASS
+define N
+{
+    function enc(s: String) returns String
+    {
+        var sb StringBuilder()
+        sb.append(s.get_length())
+        sb.append s
+        sb.to_string()
+    }
+}
+
+function twice(n: int) returns int
+    n * 2
+
+function grouped(name: String) returns String
+{
+    let v (N.enc name)
+    v
+}
+
+function interpolated(name: String) returns String
+    "_Z`N.enc name`"
+
+let a grouped(String("Box"))
+let b interpolated(String("Box"))
+let c (twice 21)
+if a.equals(String("3Box")) and b.equals(String("_Z3Box")) and c = 42
+    print "PASS"
+else
+    print "FAIL"

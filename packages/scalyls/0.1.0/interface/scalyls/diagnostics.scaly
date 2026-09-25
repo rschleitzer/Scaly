@@ -262,10 +262,7 @@ define diagnostics
     ; The depth bound is a loop guard, not a semantic limit: nesting in this
     ; tree is 2 (scalyc/compiler/Planner.scaly), and a symlink cycle in the
     ; path must not be able to spin the worker.
-    procedure package_root(mutable path: String) @page true @direct true @ret_caller true @deep true returns String io linked
-
-
-
+    procedure package_root(mutable path: String) @page true @direct true @deep true returns String io linked
 
 
 
@@ -539,9 +536,6 @@ define diagnostics
     ; handle_namespace# appends the namespace segment the same way — and it is
     ; the same one package_root# walks UP.
     function subtree_prefix(entry: String) @page true @direct true @ret_caller true @deep true returns String linked
-
-
-
 
 
 

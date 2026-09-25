@@ -672,7 +672,19 @@ define Modeler
                             src.append((buf[k]) as char)
                             set k: k + 1
                         }
-                        src.append("\")\n")
+                        ; ONE character (`/`, or one escape like `\n`) goes in
+                        ; through the char overload, as a hand-written builder
+                        ; spells it (`append("/" as char)`); the String overload
+                        ; is the slower one (2026-09-25)
+                        var one_char false
+                        if i - seg_start = 1 and buf[seg_start] <> 92
+                            set one_char: true
+                        if i - seg_start = 2 and buf[seg_start] = 92
+                            set one_char: true
+                        if one_char
+                            src.append("\" as char)\n")
+                        else
+                            src.append("\")\n")
                     }
                     set in_expr: true
                 }
@@ -2808,10 +2820,7 @@ define Modeler
         var home_str String(home)
         if home_str.get_length() = 0
             return ""
-        var sb StringBuilder()
-        sb.append home_str
-        sb.append("/" as char)
-        sb.to_string()
+        "`home_str`/"
     }
 
     ; Try `<base>/<name>/<version>/<name>.scaly`. Returns true and writes the
@@ -2823,16 +2832,8 @@ define Modeler
     ; package's archive -- what AOT compilation used from the sources anyway.
     procedure interface_or_source(pkg_path: String, pkg_name: String) returns String
     {
-        var sb StringBuilder()
-        sb.append pkg_path
-        sb.append "/interface"
-        let iface_dir sb.to_string()
-        var root StringBuilder()
-        root.append iface_dir
-        root.append("/" as char)
-        root.append pkg_name
-        root.append ".scaly"
-        var root_path root.to_string()
+        let iface_dir "`pkg_path`/interface"
+        var root_path "`iface_dir`/`pkg_name`.scaly"
         if File.exists(root_path)
             return iface_dir
         pkg_path
@@ -2846,13 +2847,7 @@ define Modeler
             set version_str: format_version(pkg_syntax.version.unwrap())
 
         ; Search path: <SCALY_HOME/>packages/<name>/<version>/
-        var sb StringBuilder()
-        sb.append(scaly_home_base())
-        sb.append "packages/"
-        sb.append pkg_name
-        sb.append("/" as char)
-        sb.append version_str
-        let pkg_path sb.to_string()
+        let pkg_path "`scaly_home_base()`packages/`pkg_name`/`version_str`"
 
         let loaded build_referenced_module(interface_or_source(pkg_path, pkg_name), pkg_name, false)
         ; A declared package whose root loaded to a fully empty stub was not
@@ -2940,15 +2935,7 @@ define Modeler
         }
         let line_str num_to_string(line)
         let col_str num_to_string(col)
-        var msg StringBuilder()
-        msg.append file_path
-        msg.append ":"
-        msg.append line_str
-        msg.append ":"
-        msg.append col_str
-        msg.append ": "
-        msg.append message
-        let msg_str msg.to_string()
+        let msg_str "`file_path`:`line_str`:`col_str`: `message`"
         Console.println(msg_str.to_c_string())
         set modeler_error_count: modeler_error_count + 1
     }
@@ -3141,10 +3128,7 @@ define Modeler
         var main_module: Module initial_module
         if enable_prelude
         {
-            var prelude_sb StringBuilder()
-            prelude_sb.append(scaly_home_base())
-            prelude_sb.append "packages/scaly/0.1.0/scaly"
-            let prelude_path prelude_sb.to_string()
+            let prelude_path "`scaly_home_base()`packages/scaly/0.1.0/scaly"
             let prelude_module build_referenced_module(prelude_path, "prelude", false)
 
             if prelude_module.members.length > 0
@@ -3205,10 +3189,7 @@ define Modeler
             }
             if has_scaly = false
             {
-                var std_sb StringBuilder()
-                std_sb.append(scaly_home_base())
-                std_sb.append "packages/scaly/0.1.0"
-                let std_path std_sb.to_string()
+                let std_path "`scaly_home_base()`packages/scaly/0.1.0"
                 let std_module build_referenced_module(interface_or_source(std_path, String("scaly")), "scaly", false)
                 if std_module.members.length > 0
                     packages.add std_module

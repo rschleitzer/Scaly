@@ -1,0 +1,53 @@
+; Regression (2026-09-25): an interpolated string is a BLOCK (the Modeler
+; desugars it to its StringBuilder), and the page machinery treated blocks as
+; opaque. An explicit `return "...`x`..."` was refused as an escape, and a
+; stored one was not promoted where `sb.to_string()` would have been
+; (Planner.restamp_operand_life# block arm, plan_return#'s fallback to
+; promote_tail_operand#). Run under SCALY_POISON.
+; Expected: PASS
+define Reg (var names: Array[String])
+{
+    procedure note(mutable this, a: String, b: String)
+        names.add("`a`-`b`")
+}
+
+function join(a: String, b: String) returns String
+{
+    if a.get_length() > 0
+    {
+        return "`a`/`b`"
+    }
+    "`b`!"
+}
+
+function churn() returns size_t
+{
+    var junk Array[String]()
+    var i: size_t 0
+    while i < 500
+    {
+        junk.add(String("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"))
+        set i: i + 1
+    }
+    junk.length
+}
+
+procedure run() returns bool
+{
+    let x join(String("dir"), String("name"))
+    let y join(String(""), String("tail"))
+    var r Reg(Array[String]())
+    r.note(String("left"), String("right"))
+    churn()
+    var stored: String ""
+    for s in r.names
+        set stored: s
+    x.equals(String("dir/name")) and y.equals(String("tail!")) and stored.equals(String("left-right"))
+}
+
+if getenv("SCALY_POISON") <> null
+    Page.enable_poison()
+if run()
+    print "PASS"
+else
+    print "FAIL"

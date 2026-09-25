@@ -412,17 +412,10 @@ define cli
             var home_str String(home)
             if home_str.get_length() > 0
             {
-                var hb StringBuilder()
-                hb.append home_str
-                hb.append "/lib"
-                hb.append leaf
-                return hb.to_string()
+                return "`home_str`/lib`leaf`"
             }
         }
-        var sb StringBuilder()
-        sb.append base
-        sb.append leaf
-        sb.to_string()
+        "`base``leaf`"
     }
 
     ; Resolve the C compiler used to link the final executable. Honors
@@ -949,11 +942,7 @@ define cli
         if opts.debug
             if link_rc = 0
             {
-                var dsym_builder StringBuilder()
-                dsym_builder.append "dsymutil "
-                dsym_builder.append opts.output_file
-                dsym_builder.append " 2>/dev/null"
-                let dsym_str dsym_builder.to_string()
+                let dsym_str "dsymutil `opts.output_file` 2>/dev/null"
                 let dsym_rc system(dsym_str.c_data())
             }
 
@@ -1008,11 +997,7 @@ define cli
                 let pkg (*pkg_ptr)
                 if pkg.name.equals("scaly") = false
                 {
-                    var objsb StringBuilder()
-                    objsb.append "/tmp/scalyc_jitdep_"
-                    objsb.append pkg.name
-                    objsb.append ".o"
-                    let obj_path objsb.to_string()
+                    let obj_path "/tmp/scalyc_jitdep_`pkg.name`.o"
                     if cli.compile_dep_package_to_object(pkg.file, obj_path, dep_syms) = false
                     {
                         Console.println "Error: could not compile dependency package for JIT"
@@ -1154,15 +1139,7 @@ define cli
                 set col: col + 1
             set off: off + 1
         }
-        var msg StringBuilder()
-        msg.append file_path
-        msg.append ":"
-        msg.append(cli.format_size(line))
-        msg.append ":"
-        msg.append(cli.format_size(col))
-        msg.append ": "
-        msg.append message
-        let msg_str msg.to_string()
+        let msg_str "`file_path`:`cli.format_size(line)`:`cli.format_size(col)`: `message`"
         Console.println(msg_str.to_c_string())
     }
 
@@ -1530,10 +1507,7 @@ define cli
             let part path.substring(i, k)
             if part.equals(needle)
             {
-                var sb StringBuilder()
-                sb.append(path.substring(0, i))
-                sb.append(path.substring(i + 10, n - i - 10))
-                return sb.to_string()
+                return "`path.substring(0, i)``path.substring(i + 10, n - i - 10)`"
             }
             set i: i + 1
         }

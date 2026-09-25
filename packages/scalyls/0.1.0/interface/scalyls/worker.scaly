@@ -680,15 +680,6 @@ define worker
 
 
 
-
-
-
-
-
-
-
-
-
     ; workspace/symbol: search every .scaly file under `root` for declarations
     ; matching `query`. `root` rides in the uri frame, `query` in the position
     ; frame; the text frame is unused. Returns SymbolInformation[]; `[]` if

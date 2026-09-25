@@ -883,10 +883,7 @@ define PointerCensus
                 if n_ptr > 0
                     if n_ref > 0
                     {
-                        var sb StringBuilder()
-                        sb.append "h-mixed-params "
-                        sb.append owner
-                        let text sb.to_string()
+                        let text "h-mixed-params `owner`"
                         let text_copy String^this(text)
                         this.record(owner_off, "h-mixed-params", text_copy)
                     }
@@ -1800,10 +1797,7 @@ define PointerCensus
                             return full
                         if first.get_length() = 0
                         {
-                            var qb StringBuilder()
-                            qb.append full
-                            qb.append "?"
-                            set first: qb.to_string()
+                            set first: "`full`?"
                         }
                     }
                 }
@@ -2535,10 +2529,7 @@ define PointerCensus
                         ; constructed type so the line reads `String.init`.
                         if call.name = "init"
                         {
-                            var nb StringBuilder()
-                            nb.append call.result_type.name
-                            nb.append ".init"
-                            set callee_name: nb.to_string()
+                            set callee_name: "`call.result_type.name`.init"
                         }
                     }
                 }

@@ -500,9 +500,6 @@ define TaskPlanner
 
 
 
-
-
-
         ; Is name bound inside the classified loop body? The loop variable
         ; itself counts: it is per-iteration state (each iteration sees a
         ; different element/index). An ALIASED name (see cls_aliased) is

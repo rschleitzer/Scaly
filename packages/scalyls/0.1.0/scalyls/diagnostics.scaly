@@ -273,10 +273,7 @@ define diagnostics
             if dir.get_length() = 0
                 return found
 
-            var sb StringBuilder()
-            sb.append dir
-            sb.append ".scaly"
-            let candidate sb.to_string()
+            let candidate "`dir`.scaly"
 
             if File.exists(candidate) = false
                 return found
@@ -551,10 +548,7 @@ define diagnostics
                 set cut: len - 6
         }
 
-        var sb StringBuilder()
-        sb.append(entry.substring(0, cut))
-        sb.append("/" as char)
-        sb.to_string()
+        "`entry.substring(0, cut)`/"
     }
 
     ; True when `file` belongs to the tree rooted at `entry`: the entry itself,

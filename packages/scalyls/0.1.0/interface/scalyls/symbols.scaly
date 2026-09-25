@@ -2966,43 +2966,7 @@ define symbols
     ; The lowercase primitive/builtin type names (uppercase types are caught
     ; lexically). Newline-bracketed, like names_from_items#. Built with byte
     ; appends (string-literal escapes are not decoded, so no "\n" literals).
-    function primitive_type_list() @page true @direct true @ret_caller true @deep true returns String linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    function primitive_type_list() @page true @direct true @ret_nonlocal true @deep true returns String linked
 
 
 
@@ -3142,20 +3106,8 @@ define symbols
 
 
 
-
-
-
-
-
-
-
     ; One field-declaration record "F\t<offset>\n".
     function f_record(off: size_t) @page true @direct true @ret_caller true @deep true returns String linked
-
-
-
-
-
 
 
 
@@ -3556,11 +3508,7 @@ define symbols
     ; routine starts later than its enclosing one). Used by the scope-aware
     ; references/rename/highlight scan to confine a local/parameter to its
     ; declaring routine.
-    function enclosing_routine(table: String, offset: size_t) @page true @direct true @ret_caller true @deep true returns String linked
-
-
-
-
+    function enclosing_routine(table: String, offset: size_t) @page true @direct true @deep true returns String linked
 
 
 
@@ -6264,10 +6212,6 @@ define symbols
 
 
 
-
-
-
-
     ; The `(width: int  height: int)` structure of a class: `property name: T`
     ; for the part the cursor is on, or "" when it is on none. `limit` is the
     ; first offset that is no longer the structure's (the body's `start`).
@@ -6465,8 +6409,6 @@ define symbols
 
 
 
-
-
     ; --------------------------------------------------------------------
     ; DOC COMMENTS — the `;` block written directly above a declaration
     ;
@@ -6505,22 +6447,9 @@ define symbols
 
 
 
-
-
-
-
-
-
-
-
-
     ; The three backticks of a markdown code fence. A backtick opens string
     ; interpolation, so it is written as the escaped character.
-    function fence() @page true @direct true @ret_caller true @deep true returns String linked
-
-
-
-
+    function fence() @page true @direct true @ret_nonlocal true @deep true returns String linked
 
 
 
@@ -6766,9 +6695,6 @@ define symbols
 
 
 
-
-
-
     ; `kind name[G](p: T, q: U) returns R throws E`, rebuilt from the tree's
     ; name/type fields. The receiver `this` is KEPT: this renders a DECLARATION,
     ; so the hover says what the line says (unlike signature_param_labels#,
@@ -6886,10 +6812,7 @@ define symbols
 
     ; `parameter name: Type` for the parameter the cursor is on (the bare type
     ; for an unnamed single-type parameter set), or "" when it is on none.
-    function hover_parameter_at(source: String, offset: size_t, parameters: ref[ParameterSetSyntax]?) @page true @direct true @ret_caller true @deep true returns String linked
-
-
-
+    function hover_parameter_at(source: String, offset: size_t, parameters: ref[ParameterSetSyntax]?) @page true @direct true @deep true returns String linked
 
 
 
@@ -7027,7 +6950,7 @@ define symbols
     ; The request frame packs the position as "<line> <character>" (same as
     ; hover). Parse it, find the identifier at that offset, and resolve it to a
     ; Location, or "" when there is no identifier / no matching declaration.
-    procedure definition_packed(mutable source: String, uri: String, packed: String) @page true @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure definition_packed(mutable source: String, uri: String, packed: String) @page true @direct true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -7120,7 +7043,7 @@ define symbols
 
     ; Parse the program and return the Location of the first declaration named
     ; `name`, or "" on no match / parse error.
-    procedure find_definition(mutable source: String, uri: String, name: String) @page true @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure find_definition(mutable source: String, uri: String, name: String) @page true @direct true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -7154,7 +7077,7 @@ define symbols
 
     ; One top-level declaration: a Location if it (or a nested member) is named
     ; `name`, else "".
-    procedure def_decl(source: String, uri: String, decl: DeclarationSyntax, name: String) @page true @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure def_decl(source: String, uri: String, decl: DeclarationSyntax, name: String) @page true @direct true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -7186,7 +7109,7 @@ define symbols
 
 
     ; A `private` declaration unwraps to its exported construct.
-    procedure def_export(source: String, uri: String, export_: ExportSyntax, name: String) @page true @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure def_export(source: String, uri: String, export_: ExportSyntax, name: String) @page true @direct true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -7205,7 +7128,7 @@ define symbols
 
     ; A `define X`: try its members/variants first (innermost), then its own
     ; name.
-    procedure def_definition(source: String, uri: String, def: DefinitionSyntax, name: String) @page true @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure def_definition(source: String, uri: String, def: DefinitionSyntax, name: String) @page true @direct true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -7260,7 +7183,7 @@ define symbols
 
 
     ; Members of a class body.
-    procedure def_body(source: String, uri: String, body: ref[BodySyntax]?, name: String) @page true @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure def_body(source: String, uri: String, body: ref[BodySyntax]?, name: String) @page true @direct true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -7289,7 +7212,7 @@ define symbols
 
 
     ; One class/union member.
-    procedure def_member(source: String, uri: String, member: MemberSyntax, name: String) @page true @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure def_member(source: String, uri: String, member: MemberSyntax, name: String) @page true @direct true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -7317,7 +7240,7 @@ define symbols
 
 
     ; Nested declarations of a namespace.
-    procedure def_namespace(source: String, uri: String, ns: NamespaceSyntax, name: String) @page true @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure def_namespace(source: String, uri: String, ns: NamespaceSyntax, name: String) @page true @direct true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -7342,7 +7265,7 @@ define symbols
 
 
     ; Variants of a union, then any body members.
-    procedure def_union(source: String, uri: String, un: UnionSyntax, name: String) @page true @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure def_union(source: String, uri: String, un: UnionSyntax, name: String) @page true @direct true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -7372,10 +7295,7 @@ define symbols
     ; first (def_in_module_file#). A plain Location always starts with "{", so the
     ; tag is unambiguous, and it never reaches the client
     ; (definition_workspace_packed# is the only exit and strips it).
-    procedure def_module_match(source: String, uri: String, candidate: String, name: String, start: size_t) @page true @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
-
-
-
+    procedure def_module_match(source: String, uri: String, candidate: String, name: String, start: size_t) @page true @direct true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -7475,7 +7395,7 @@ define symbols
 
 
     ; The Location of member `name` of concept `type_name`, or "".
-    procedure definition_scoped_by_type(mutable source: String, mutable uri: String, mutable type_name: String, name: String) @page true @direct true @ret_caller true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_fresh, prof_list, prof_read reads prof_list linked
+    procedure definition_scoped_by_type(mutable source: String, mutable uri: String, mutable type_name: String, name: String) @page true @direct true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_fresh, prof_list, prof_read reads prof_list linked
 
 
 
@@ -7496,7 +7416,7 @@ define symbols
     ; buffer first (member-scoped, exact), else the FILE that declares it, where
     ; the name is matched against that file's cached blob — no parse. "" when the
     ; concept is nowhere, or has no such member.
-    procedure definition_in_type(mutable source: String, mutable uri: String, mutable type_name: String, name: String) @page true @direct true @ret_caller true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_fresh, prof_list, prof_read reads prof_fresh linked
+    procedure definition_in_type(mutable source: String, mutable uri: String, mutable type_name: String, name: String) @page true @direct true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_fresh, prof_list, prof_read reads prof_fresh linked
 
 
 
@@ -7522,7 +7442,7 @@ define symbols
     ; THIS source (namespaces, unions and nested concepts included), or "".
     ; Reuses the def_* member walkers, so a hit is exactly what a definition jump
     ; answers — only scoped to one concept instead of to the whole file.
-    procedure member_definition(mutable source: String, uri: String, type_name: String, member_name: String) @page true @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure member_definition(mutable source: String, uri: String, type_name: String, member_name: String) @page true @direct true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -7554,7 +7474,7 @@ define symbols
 
 
 
-    procedure md_decl(source: String, uri: String, decl: DeclarationSyntax, type_name: String, member_name: String) @page true @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure md_decl(source: String, uri: String, decl: DeclarationSyntax, type_name: String, member_name: String) @page true @direct true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -7565,7 +7485,7 @@ define symbols
 
 
 
-    procedure md_export(source: String, uri: String, export_: ExportSyntax, type_name: String, member_name: String) @page true @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure md_export(source: String, uri: String, export_: ExportSyntax, type_name: String, member_name: String) @page true @direct true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -7577,7 +7497,7 @@ define symbols
     ; The concept named `type_name`: look `member_name` up among ITS members.
     ; Otherwise recurse into a namespace's nested declarations — every concept of
     ; a package module is declared inside `define <namespace>`.
-    procedure md_definition(source: String, uri: String, def: DefinitionSyntax, type_name: String, member_name: String) @page true @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure md_definition(source: String, uri: String, def: DefinitionSyntax, type_name: String, member_name: String) @page true @direct true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -7606,7 +7526,7 @@ define symbols
 
 
 
-    procedure md_namespace(source: String, uri: String, ns: NamespaceSyntax, type_name: String, member_name: String) @page true @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure md_namespace(source: String, uri: String, ns: NamespaceSyntax, type_name: String, member_name: String) @page true @direct true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -7652,7 +7572,7 @@ define symbols
 
     ; Try the current file first; on a miss, search sibling files. `source` is
     ; the in-memory current-file text; `uri` is its file:// uri.
-    procedure definition_workspace_packed(mutable source: String, mutable uri: String, packed: String) @page true @direct true @ret_caller true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_fresh, prof_list, prof_read reads prof_list linked
+    procedure definition_workspace_packed(mutable source: String, mutable uri: String, packed: String) @page true @direct true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_fresh, prof_list, prof_read reads prof_list linked
 
 
 
@@ -8162,11 +8082,6 @@ define symbols
 
 
 
-
-
-
-
-
     ; Find the first record in a cached ws blob whose name EXACTLY equals `name`
     ; AND whose DETAIL field is tagged `tag` ('S'/'M'), and return "Y" + the
     ; payload after the tag byte; "" when there is no such record. The leading
@@ -8355,11 +8270,6 @@ define symbols
     ; tagged_names_from_ws_blob#'s kind extraction + def_from_ws_blob#'s exact
     ; name match.
     function concept_in_ws_blob(blob: String, name: String) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
 
 
 
@@ -8733,11 +8643,6 @@ define symbols
     ; operators, modules) are skipped — they match the intra-file path, where
     ; only completion kinds 2/3 (fn) and 22/13 (type) feed the lists.
     function tagged_names_from_ws_blob(blob: String) @page true @direct true @ret_caller true @deep true returns String linked
-
-
-
-
-
 
 
 
@@ -11443,12 +11348,6 @@ define symbols
 
 
 
-
-
-
-
-
-
     ; True when `off` falls inside any shadow range of `shadow_packed` (the
     ; newline-terminated "<start> <end>" list from shadow_ranges#).
     function in_shadow(shadow_packed: String, off: size_t) @ret_nonlocal true @deep true returns bool linked
@@ -11928,7 +11827,7 @@ define symbols
     ; module/file-wide name or a cursor outside any routine, else the enclosing
     ; routine's "<start> <end>" (a local/parameter is confined to its routine,
     ; eliminating cross-routine false matches).
-    procedure scan_scope(source: String, scope_tbl: String, mutable comp_items: String, mutable uri: String, name: String, offset: size_t) @page true @direct true @ret_caller true @deep true returns String io mutable dir_slots, prof_list reads prof_list linked
+    procedure scan_scope(source: String, scope_tbl: String, mutable comp_items: String, mutable uri: String, name: String, offset: size_t) @page true @direct true @deep true returns String io mutable dir_slots, prof_list reads prof_list linked
 
 
 

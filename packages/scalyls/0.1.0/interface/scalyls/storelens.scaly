@@ -480,10 +480,6 @@ define storelens
 
 
 
-
-
-
-
     ; ====================================================================
     ; Does this type carry a region buffer BY VALUE?
     ;

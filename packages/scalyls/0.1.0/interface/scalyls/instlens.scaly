@@ -267,8 +267,6 @@ define instlens
 
 
 
-
-
     ; Is there at least ONE plan entry for the routine named `name` at `start`?
     ; Stops at the first hit, which is what makes the file-level pre-pass cheap
     ; for the ordinary file where everything is planned.

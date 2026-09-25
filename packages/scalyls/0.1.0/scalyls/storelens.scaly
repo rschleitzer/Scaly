@@ -445,11 +445,7 @@ define storelens
         choose expr
             when v: Variable
             {
-                var probe StringBuilder()
-                probe.append("\n" as char)
-                probe.append(v.name)
-                probe.append("\n" as char)
-                let key probe.to_string()
+                let key "\n`v.name`\n"
                 if params.contains key
                     return String(v.name)
                 return ""

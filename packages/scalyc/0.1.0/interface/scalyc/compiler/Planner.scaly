@@ -2998,9 +2998,6 @@ define Planner
 
 
 
-
-
-
         ; module_path_known: is `candidate` a module path, spelled absolutely
         ; or relatively (same tail rule as use_path_names_origin#)?
         function module_path_known(this: Planner, candidate: String) @ret_nonlocal true @deep true returns bool linked
@@ -3024,10 +3021,6 @@ define Planner
 
 
         procedure check_use_paths(mutable this: Planner) @deep true linked
-
-
-
-
 
 
 
@@ -3464,7 +3457,7 @@ define Planner
         ; the call was "function not found": the literal planned as its body's
         ; RESULT type and matched no delegate. Null when `a` is no lambda
         ; literal this planner recorded.
-        procedure closure_for_lambda_arg(mutable this: Planner, a: PlannedOperand, pt: PlannedType) @page true @direct true @stores true @ret_caller true @deep true returns ref[PlannedOperand]? io linked
+        procedure closure_for_lambda_arg(mutable this: Planner, a: PlannedOperand, pt: PlannedType) @page true @direct true @stores true @deep true returns ref[PlannedOperand]? io linked
 
 
 
@@ -5167,9 +5160,6 @@ define Planner
 
 
 
-
-
-
         ; register_loaded_package: pre-populate the package cache.
         ; Callers (cli.scaly, test harnesses) parse a package source
         ; file externally, build a Model.Module for it, then hand
@@ -5618,12 +5608,6 @@ define Planner
             pv: Vector[PlannedComponent],
             named: size_t
         ) @page true @direct true @ret_caller true @deep true returns ref[Vector[PlannedComponent]]? linked
-
-
-
-
-
-
 
 
 
@@ -17142,10 +17126,6 @@ define Planner
 
 
 
-
-
-
-
         ; resolve_fix_graph: synthesize the MethodMatch for the generated
         ; walker. Once the call SHAPE is right this always returns a match
         ; — closure violations are hard diagnostics that fail the compile
@@ -17909,11 +17889,6 @@ define Planner
             arg_ops: Vector[PlannedOperand],
             loc: Span
         ) @page true @direct true @stores true @deep true @deep_this_2 true returns ref[MethodMatch]? io linked
-
-
-
-
-
 
 
 
@@ -21018,9 +20993,6 @@ define Planner
 
 
 
-
-
-
         ; ================================================================
         ; Control-flow planners.
         ; ================================================================
@@ -21029,6 +21001,75 @@ define Planner
         ; statement used as an expression. Covers the Action case (the
         ; common `if cond x else y` shape); non-value statements
         ; (Return/Throw/Break/Continue/Binding) return void.
+        ; block_tail_type#: the type a block's value carries -- that of the
+        ; last statement's value OPERAND, whose type holds the residence stamp
+        ; (a `Local` call result; the action's own result_type does not). An
+        ; interpolated string is such a block: without the stamp, handed to a
+        ; routine that keeps it (`add_diagnostic(loc, "...`x`...")`), it was
+        ; not promoted and the kept message dangled (2026-09-25).
+        function block_tail_type(s: PlannedStatement) @page true @direct true @deep true returns PlannedType linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; a call or construction that carries no explicit placement
+        function operand_is_unplaced_build(op: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         function statement_result_type(s: PlannedStatement) @page true @direct true @deep true returns PlannedType linked
 
 
@@ -22011,10 +22052,6 @@ define Planner
 
 
 
-
-
-
-
         ; Phase-1 lambda monomorphization: given a lambda model and the
         ; call-site argument types, synthesize (and record, once) a concrete
         ; top-level function whose parameters take those arg types, plan its
@@ -22275,13 +22312,7 @@ define Planner
         ; record; the thunk bridges the uniform `R(ptr self, params)` call
         ; shape to `real(caps..., params)`. `life` is the record's allocation
         ; lifetime (local region, or `#` caller page when the closure escapes).
-        procedure make_closure(mutable this: Planner, base_name: String, mutable lam: Lambda, dparams: Vector[PlannedType], dret: PlannedType, del_pt: PlannedType, life: Lifetime) @page true @direct true @stores true @ret_caller true @deep true @deep_this_12 true returns PlannedClosure io linked
-
-
-
-
-
-
+        procedure make_closure(mutable this: Planner, base_name: String, mutable lam: Lambda, dparams: Vector[PlannedType], dret: PlannedType, del_pt: PlannedType, life: Lifetime) @page true @direct true @stores true @deep true @deep_this_12 true returns PlannedClosure io linked
 
 
 
@@ -23368,9 +23399,6 @@ define Planner
 
 
 
-
-
-
         ; plan_choose: Scaly's choose/when pattern match.
         ; Phase-5 class 2 helpers (choose-payload back-prop). True when ops
         ; is exactly one bare single-segment name equal to `name`.
@@ -23955,6 +23983,25 @@ define Planner
         ; comp.value[0], so without this collapse `(*p).field` would
         ; emit only the leading `Type("*")` operand and produce null.
         procedure plan_component(mutable this: Planner, mutable c: Component) @page true @direct true @stores true @ret_caller true @deep true @deep_this_2 true returns PlannedComponent io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -34495,10 +34542,6 @@ define Planner
 
 
 
-
-
-
-
         procedure persist_tail_carries(mutable this: Planner, ops: Vector[Operand]) @ret_nonlocal true @deep true returns bool linked
 
 
@@ -34533,14 +34576,6 @@ define Planner
         ; body that persists under the current deep_by_name; a body marked
         ; this round can make its callers persist in the next.
         procedure deep_persist_fixpoint(mutable this: Planner) @page true @stores true @deep true io linked
-
-
-
-
-
-
-
-
 
 
 
@@ -35986,10 +36021,6 @@ define Planner
 
 
 
-
-
-
-
         ; an entry of deep_returns_by_name not noted yet reads WHOLE (all ones)
         ; — until the first note replaces the default
         procedure deep_returns_note_whole(mutable this: Planner, name: String, whole: u64) @ret_nonlocal true @deep true returns bool linked
@@ -36083,11 +36114,7 @@ define Planner
 
         ; `Owner.f` (a capitalized head), `this.f`, `param.f`: the owner-qualified
         ; name when this root scanned the owner's body of that name — else ""
-        function persist_call_qualified(this: Planner, name: Vector[String]) @page true @direct true @ret_caller true @deep true returns String linked
-
-
-
-
+        function persist_call_qualified(this: Planner, name: Vector[String]) @page true @direct true @deep true returns String linked
 
 
 
@@ -37163,10 +37190,6 @@ define Planner
 
 
 
-
-
-
-
         ; the callee keeps position `bit` in parameter kd's guts (kd 1..15):
         ; OUR argument at kd is the destination — `this` or a field of it,
         ; a parameter (kept in that parameter), a local (tainted with the
@@ -37488,10 +37511,6 @@ define Planner
 
 
         procedure build_return_residence_set(mutable this: Planner) @page true @stores true @deep true io linked
-
-
-
-
 
 
 
@@ -41140,6 +41159,68 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         ; Recursively re-stamp the operands of a promoted construction's
         ; argument list / component values: each arg that is itself a defaulted
         ; page-owning construction is promoted to the SAME life (it becomes a
@@ -41184,6 +41265,11 @@ define Planner
         ; them — explicit-# is Call life, gated out — so this stays NEUTRAL on
         ; sigiled source).
         procedure restamp_putadd_constructions(mutable this: Planner, args: Vector[PlannedOperand], new_life: Lifetime) @page true @direct true @ret_caller true @deep true returns ref[Vector[PlannedOperand]]? linked
+
+
+
+
+
 
 
 
@@ -42412,6 +42498,17 @@ define Planner
 
 
         procedure plan_return(mutable this: Planner, mutable r: Return) @page true @direct true @stores true @ret_caller true @deep true @deep_this_2 true returns PlannedReturn io linked
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -49943,9 +50040,6 @@ define Planner
 
 
 
-
-
-
     ; strip_package_prefix: "scaly.containers.String" -> "String".
     ; Matches stripPackagePrefix in Planner.cpp: only strips when the full
     ; name begins with "scaly.". Anything else (e.g. "scalyc.compiler.Foo")
@@ -50087,15 +50181,9 @@ define Planner
 
 
 
-
-
-
     ; mangle_structure: "_Z" + name-with-length-prefix + optional "I...E" generic block.
     ; Used for symbol-mangling concrete struct / union / trait definitions.
     function mangle_structure(name: String, generic_args: ref[Vector[PlannedType]]?) @page true @direct true @ret_caller true @deep true returns String linked
-
-
-
 
 
 
@@ -50254,9 +50342,6 @@ define Planner
     ; code. Unknown operators fall back to the `v0` vendor extension,
     ; followed by the length-prefixed operator identifier.
     function operator_code(name: String) @page true @direct true @ret_caller true @deep true returns String linked
-
-
-
 
 
 
@@ -52435,10 +52520,7 @@ define Planner
     ;   - Concepts table lookup for user-defined types' mangled_name
     ;     (leaves mangled_name empty for non-intrinsic names; the caller
     ;     fills that in once the Concepts table is available)
-    function resolve_type_base(t: Type) @page true @direct true @ret_caller true @deep true returns PlannedType linked
-
-
-
+    function resolve_type_base(t: Type) @page true @direct true @deep true returns PlannedType linked
 
 
 
@@ -55084,10 +55166,6 @@ define Planner
 
     ; R8's identity key: the name and the source offset of the declaration
     function store_key(f: Function) @page true @direct true @ret_caller true @deep true returns String linked
-
-
-
-
 
 
 

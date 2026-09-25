@@ -247,9 +247,7 @@ define instlens
         {
             if has_diag
                 return ""
-            var nb StringBuilder()
-            nb.append "not emitted in this root"
-            return nb.to_string()
+            return "not emitted in this root"
         }
         if count < 2
             return ""

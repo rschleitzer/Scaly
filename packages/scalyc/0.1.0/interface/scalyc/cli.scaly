@@ -398,14 +398,7 @@ define cli
     ; ★Stage 7: on a COFF target the archive is `libscaly.lib` and the scratch
     ; directory is the one above. The suffix is not cosmetic — that is the name
     ; `llvm-ar` gives it there and the name the MSVC-driver link expects.
-    procedure runtime_archive_path(coff: bool) @page true @direct true @ret_caller true @deep true returns String io linked
-
-
-
-
-
-
-
+    procedure runtime_archive_path(coff: bool) @page true @direct true @deep true returns String io linked
 
 
 
@@ -446,10 +439,6 @@ define cli
     ; Run the compiler with parsed options
     ; Returns 0 on success, non-zero on error
     procedure run(mutable opts: Options) @ret_nonlocal true @deep true @deep_beyond_1 true returns int io mutable modeler_error_count reads modeler_error_count linked
-
-
-
-
 
 
 
@@ -1035,10 +1024,6 @@ define cli
 
 
 
-
-
-
-
     ; `<dir>/interface/<p>.scaly` -> `<dir>/<p>.scaly`; any other path as it is
     function source_root(file: String) @page true @direct true @deep true returns String linked
 
@@ -1134,14 +1119,6 @@ define cli
     ; mirroring print_diagnostics#'s offset→line/col walk (numeric LF
     ; compare — `"\n" as char` mis-compiles under stage-1).
     procedure print_parse_error(file_path: String, source: String, offset: size_t, message: String) @ret_nonlocal true @deep true io linked
-
-
-
-
-
-
-
-
 
 
 
@@ -1520,9 +1497,6 @@ define cli
     ; the usual origin of such a report, is even the same text), so the line
     ; and column computed from the interface are the source's.
     function display_path(path: String) @page true @direct true @deep true returns String linked
-
-
-
 
 
 

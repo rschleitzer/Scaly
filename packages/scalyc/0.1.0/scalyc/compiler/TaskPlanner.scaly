@@ -495,10 +495,7 @@ define TaskPlanner
         {
             if cls_blocked
                 return
-            var sb StringBuilder()
-            sb.append prefix
-            sb.append name
-            let msg sb.to_string()
+            let msg "`prefix``name`"
             set cls_blocked: true
             set cls_reason: String^this(msg)
         }

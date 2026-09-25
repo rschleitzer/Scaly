@@ -2968,43 +2968,7 @@ define symbols
     ; appends (string-literal escapes are not decoded, so no "\n" literals).
     function primitive_type_list() returns String
     {
-        var sb StringBuilder()
-        sb.append("\n" as char)
-        sb.append "int"
-        sb.append("\n" as char)
-        sb.append "bool"
-        sb.append("\n" as char)
-        sb.append "char"
-        sb.append("\n" as char)
-        sb.append "void"
-        sb.append("\n" as char)
-        sb.append "float"
-        sb.append("\n" as char)
-        sb.append "double"
-        sb.append("\n" as char)
-        sb.append "size_t"
-        sb.append("\n" as char)
-        sb.append "u8"
-        sb.append("\n" as char)
-        sb.append "u16"
-        sb.append("\n" as char)
-        sb.append "u32"
-        sb.append("\n" as char)
-        sb.append "u64"
-        sb.append("\n" as char)
-        sb.append "i8"
-        sb.append("\n" as char)
-        sb.append "i16"
-        sb.append("\n" as char)
-        sb.append "i32"
-        sb.append("\n" as char)
-        sb.append "i64"
-        sb.append("\n" as char)
-        sb.append "pointer"
-        sb.append("\n" as char)
-        sb.append "ref"
-        sb.append("\n" as char)
-        sb.to_string()
+        "\nint\nbool\nchar\nvoid\nfloat\ndouble\nsize_t\nu8\nu16\nu32\nu64\ni8\ni16\ni32\ni64\npointer\nref\n"
     }
 
     ; Byte-equality of a[astart,astart+len) and b[bstart,bstart+len).
@@ -3139,25 +3103,13 @@ define symbols
     ; is_field_decl_offset both skip unknown tags, so adding R is safe for them.
     function r_record(start: size_t, end: size_t) returns String
     {
-        var sb StringBuilder()
-        sb.append("R" as char)
-        sb.append("\t" as char)
-        sb.append(json.format_i64(start as i64))
-        sb.append("\t" as char)
-        sb.append(json.format_i64(end as i64))
-        sb.append("\n" as char)
-        sb.to_string()
+        "R\t`json.format_i64(start as i64)`\t`json.format_i64(end as i64)`\n"
     }
 
     ; One field-declaration record "F\t<offset>\n".
     function f_record(off: size_t) returns String
     {
-        var sb StringBuilder()
-        sb.append("F" as char)
-        sb.append("\t" as char)
-        sb.append(json.format_i64(off as i64))
-        sb.append("\n" as char)
-        sb.to_string()
+        "F\t`json.format_i64(off as i64)`\n"
     }
 
     ; The scope record for a routine target (named -> its routine; an anonymous
@@ -3617,11 +3569,7 @@ define symbols
         }
         if found
         {
-            var sb StringBuilder()
-            sb.append(json.format_i64(best_start as i64))
-            sb.append(" " as char)
-            sb.append(json.format_i64(best_end as i64))
-            return sb.to_string()
+            return "`json.format_i64(best_start as i64)` `json.format_i64(best_end as i64)`"
         }
         ""
     }
@@ -6258,11 +6206,7 @@ define symbols
                         set kind: "function"
                     when ic2: IntrinsicSyntax
                         set kind: "struct"
-                var sb StringBuilder()
-                sb.append kind
-                sb.append(" " as char)
-                sb.append def.name
-                return symbols.with_doc(source, def.start, sb.to_string())
+                return symbols.with_doc(source, def.start, "`kind` `def.name`")
             }
         }
         ""
@@ -6462,9 +6406,7 @@ define symbols
         let body_start symbols.implementation_start(dei.implementation, dei.end)
         if offset >= body_start
             return "in deinit"
-        var sb StringBuilder()
-        sb.append "deinit"
-        symbols.with_doc(source, dei.start, sb.to_string())
+        symbols.with_doc(source, dei.start, "deinit")
     }
 
     ; --------------------------------------------------------------------
@@ -6502,27 +6444,14 @@ define symbols
         if doc.get_length() = 0
             return text
 
-        var sb StringBuilder()
-        sb.append text
-        sb.append("\n" as char)
-        sb.append("\n" as char)
-        sb.append(symbols.fence())
-        sb.append("\n" as char)
-        sb.append doc
-        sb.append("\n" as char)
-        sb.append(symbols.fence())
-        sb.to_string()
+        "`text`\n\n`symbols.fence()`\n`doc`\n`symbols.fence()`"
     }
 
     ; The three backticks of a markdown code fence. A backtick opens string
     ; interpolation, so it is written as the escaped character.
     function fence() returns String
     {
-        var sb StringBuilder()
-        sb.append("\`" as char)
-        sb.append("\`" as char)
-        sb.append("\`" as char)
-        sb.to_string()
+        "\`\`\`"
     }
 
     ; The `;` comment block immediately above the declaration that begins at
@@ -6763,10 +6692,7 @@ define symbols
         let param symbols.hover_parameter_at(source, offset, ini.parameters)
         if param.get_length() > 0
             return param
-        var sb StringBuilder()
-        sb.append "init"
-        sb.append(symbols.parameter_set_text(source, ini.parameters))
-        symbols.with_doc(source, ini.start, sb.to_string())
+        symbols.with_doc(source, ini.start, "init`symbols.parameter_set_text(source, ini.parameters)`")
     }
 
     ; `kind name[G](p: T, q: U) returns R throws E`, rebuilt from the tree's
@@ -6907,10 +6833,7 @@ define symbols
                                 let it (*iptr)
                                 if offset >= it.start
                                 {
-                                    var sb StringBuilder()
-                                    sb.append "parameter "
-                                    sb.append(symbols.param_label(source, it))
-                                    set result: sb.to_string()
+                                    set result: "parameter `symbols.param_label(source, it)`"
                                 }
                             }
                             set i: i + 1
@@ -7377,10 +7300,7 @@ define symbols
         if candidate = name
         {
             let loc symbols.location_object(source, uri, start)
-            var sb StringBuilder()
-            sb.append("M" as char)
-            sb.append loc
-            return sb.to_string()
+            return "M`loc`"
         }
         ""
     }
@@ -8083,12 +8003,7 @@ define symbols
         let loc_needle needle.to_string()
         let ln loc_needle.get_length()
 
-        var knb StringBuilder()
-        knb.append("\"" as char)
-        knb.append "kind"
-        knb.append("\"" as char)
-        knb.append(":" as char)
-        let kind_needle knb.to_string()
+        let kind_needle "\"kind\":"
 
         let nm_len name.get_length()
         let n blob.get_length()
@@ -8356,12 +8271,7 @@ define symbols
     ; name match.
     function concept_in_ws_blob(blob: String, name: String) returns bool
     {
-        var needle StringBuilder()
-        needle.append("\"" as char)
-        needle.append "kind"
-        needle.append("\"" as char)
-        needle.append(":" as char)
-        let kind_needle needle.to_string()
+        let kind_needle "\"kind\":"
         let kn kind_needle.get_length()
 
         let nm_len name.get_length()
@@ -8735,12 +8645,7 @@ define symbols
     function tagged_names_from_ws_blob(blob: String) returns String
     {
         var sb StringBuilder()
-        var needle StringBuilder()
-        needle.append("\"" as char)
-        needle.append "kind"
-        needle.append("\"" as char)
-        needle.append(":" as char)
-        let kind_needle needle.to_string()
+        let kind_needle "\"kind\":"
 
         let n blob.get_length()
         var rec_start: size_t 0
@@ -11421,13 +11326,7 @@ define symbols
     ; The `uri` field of a Location JSON object, or "".
     function location_uri(loc: String) returns String
     {
-        var needle StringBuilder()
-        needle.append("\"" as char)
-        needle.append "uri"
-        needle.append("\"" as char)
-        needle.append(":" as char)
-        needle.append("\"" as char)
-        let nd needle.to_string()
+        let nd "\"uri\":\""
         let nn nd.get_length()
         let n loc.get_length()
         var i: size_t 0

@@ -3674,10 +3674,7 @@ define WriteCensus
                         var li: size_t 1
                         while li < cur_let_bad.length
                         {
-                            var nb StringBuilder()
-                            nb.append "note: and "
-                            nb.append(cur_let_bad[li])
-                            let ntext nb.to_string()
+                            let ntext "note: and `cur_let_bad[li]`"
                             this.record(cur_let_offsets[li], String^this(ntext))
                             set li: li + 1
                         }

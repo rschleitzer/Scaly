@@ -3810,9 +3810,6 @@ define WriteCensus
 
 
 
-
-
-
         ; ================================================================
         ; Summaries across roots: `<mangled>\t<mask>\t<inputs>` per line.
         ; A root reads what the roots before it wrote and appends its own

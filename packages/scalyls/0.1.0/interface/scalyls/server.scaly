@@ -737,10 +737,6 @@ define server
 
 
 
-
-
-
-
     ; Decode the worker's framed semantic-type reply ("1<name>" hit / "0" miss
     ; / "" crash) into an LSP hover object, or "" on a miss/crash so the
     ; caller falls back to the lexical hover.
@@ -786,18 +782,10 @@ define server
 
 
 
-
-
-
-
     ; signatureHelp: the request carries a uri + {line,character}. Pack the
     ; position as "<line> <char>" and ask the worker for the parameter list of
     ; the call enclosing the cursor. An empty worker reply -> result:null.
     procedure handle_signature_help(msg: JsonValue, id: i64) @ret_nonlocal true @deep true io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads doc_slots linked
-
-
-
-
 
 
 
@@ -818,14 +806,6 @@ define server
     ; in-range call site's parameter names. The result is an InlayHint[] array
     ; (can be large -> document_symbol_response# appends it byte-at-a-time).
     procedure handle_inlay_hint(msg: JsonValue, id: i64) @ret_nonlocal true @deep true io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads doc_slots linked
-
-
-
-
-
-
-
-
 
 
 
@@ -905,10 +885,6 @@ define server
 
 
 
-
-
-
-
     ; completion: when a `.` precedes the cursor and its receiver names a
     ; declared concept, return that concept's members; otherwise return every
     ; declared name as a flat CompletionItem[] (the editor prefix-filters).
@@ -916,10 +892,6 @@ define server
     ; member-access context. Like the other navigation requests, the in-memory
     ; text is passed so unsaved edits are reflected; empty -> worker reads disk.
     procedure handle_completion(msg: JsonValue, id: i64) @ret_nonlocal true @deep true io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads doc_slots linked
-
-
-
-
 
 
 
@@ -1017,10 +989,6 @@ define server
     ; renameable identifier under the cursor. An empty worker reply ->
     ; result:null (the editor then refuses the rename).
     procedure handle_prepare_rename(msg: JsonValue, id: i64) @ret_nonlocal true @deep true io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads doc_slots linked
-
-
-
-
 
 
 
