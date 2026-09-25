@@ -5,7 +5,7 @@ package scaly 0.1.0
 
 use scaly.containers.Vector
 
-function pick#(rp, x: int) returns ref[int]?
+function pick#(x: int) returns ref[int]?
 {
     var h Vector[int]#(1)
     h.put(0, x)

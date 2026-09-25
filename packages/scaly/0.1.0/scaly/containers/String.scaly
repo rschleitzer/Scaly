@@ -215,38 +215,16 @@ define String (data: pointer[u8](null))
     function c_data(this: String) returns pointer[const_char]
         get_buffer() as pointer[const_char]
 
-    function to_c_string(page, this: String) returns pointer[const_char]
+    ; A NUL-terminated copy on the CALLER's page. The copy init writes the
+    ; terminator (every content-writing init does), so its content bytes are
+    ; a C string; the caller page is implicit -- `String#(...)` is the whole
+    ; of it (2026-09-25; the routine declared a `page` parameter before).
+    function to_c_string(this: String) returns pointer[const_char]
     {
-        var length: size_t 0
-        var bit_count: size_t 0
-        var index: size_t 0
-        if data <> null
-        {
-            while true
-            {
-                if bit_count = (PACKED_SIZE * 7) as size_t
-                    scaly_panic_string("String.to_c_string", data as size_t)
-
-                var byte: u8 *(data + index)
-                set length: length | ((byte & 0x7F) as size_t) << bit_count
-                if (byte & 0x80) = 0
-                    break
-
-                set bit_count: bit_count + 7
-                set index: index + 1
-            }
-        }
-
-        var dest page.allocate(length + 1, 1)
-        if data <> null
-            memcpy(dest, data + index + 1, length)
-
-        ; NUL terminator at offset `length` (last byte of the length+1
-        ; allocation). The previous `+ index + length` form OOB-wrote past
-        ; the buffer when the source had a multi-byte varint header.
-        set *(dest as pointer[u8] + length): 0
-
-        dest as pointer[const_char]
+        if data = null
+            return ""
+        let copy String#(this)
+        copy.c_data()
     }
 
     function get_length(this: String) returns size_t

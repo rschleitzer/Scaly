@@ -1,6 +1,6 @@
 ; Regression: phase-5 class 3 (List-drain escape, 2026-07-04).
 ; The json parser idiom: values collected into a LOCAL List are drained
-; through an iterator into an rp-allocated buffer (`set *(buf + i): *m`).
+; through an iterator into a buffer on the caller page (`set *(buf + i): *m`).
 ; The shallow-copied element's String guts must outlive the frame, but a
 ; no-sigil `sb.to_string()` defaults them to the frame's local page.
 ; Three coordinated rules thread the escape backward: the deref-target
@@ -19,6 +19,7 @@ package scaly 0.1.0
 use scaly.containers.String
 use scaly.containers.StringBuilder
 use scaly.containers.List
+use scaly.containers.Vector
 use scaly.memory.Page
 
 define Packet(text: String)
@@ -29,7 +30,7 @@ define Bundle
     data: pointer[Packet]
 )
 
-function make_bundle(rp) returns Bundle
+function make_bundle() returns Bundle
 {
     var items List[Packet]()
     var count: size_t 0
@@ -41,7 +42,10 @@ function make_bundle(rp) returns Bundle
         items.add(Packet(text))
         set count: count + 1
     }
-    let buf rp.allocate(count * sizeof Packet, alignof Packet) as pointer[Packet]
+    ; the buffer on the caller's page: `#` gives this function that page
+    ; (the page used to be a declared `rp` parameter, 2026-09-25)
+    let store Vector[Packet]#(count)
+    let buf store.data
     var it items.get_iterator()
     var i count
     while let m it.next()

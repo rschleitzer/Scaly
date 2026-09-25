@@ -140,7 +140,7 @@ define storelens
 {
     ; The store lenses as a COMMA-JOINED FRAGMENT, or "". The plan is the
     ; caller's — codelens.scaly plans once for every plan-derived family.
-    procedure fragment(rp, plan: Plan, plan_text: String, anchor_text: String) @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure fragment(plan: Plan, plan_text: String, anchor_text: String) @page true @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -169,7 +169,7 @@ define storelens
     ; `declared_here` is the file filter without which the flat function vector
     ; draws other files' offsets into this one.
     ; ====================================================================
-    function collect(rp, plan: Plan, plan_text: String) @direct true @ret_caller true @deep true returns String linked
+    function collect(plan: Plan, plan_text: String) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -222,7 +222,7 @@ define storelens
     ; `PlannedType.name` for a pointer is the bare word "pointer" with the
     ; pointee in `generics[0]` (Planner.get_readable_name#), so this is an exact
     ; test and not a prefix match on a rendered name.
-    function pointer_params(rp, fn: PlannedFunction) @direct true @ret_caller true @deep true returns String linked
+    function pointer_params(fn: PlannedFunction) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -412,7 +412,7 @@ define storelens
     ; ROOT (which would mean modelling the deref operator's call shape); the only
     ; way it could differ is a pointer parameter used as a SUBSCRIPT, which is
     ; not a thing an index can be.
-    function target_param(rp, target: ref[Vector[PlannedOperand]]?, params: String) @direct true @ret_caller true @deep true returns String linked
+    function target_param(target: ref[Vector[PlannedOperand]]?, params: String) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -432,7 +432,7 @@ define storelens
 
 
 
-    function param_in_operand(rp, op: PlannedOperand, params: String) @direct true @ret_caller true @deep true returns String linked
+    function param_in_operand(op: PlannedOperand, params: String) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -440,7 +440,7 @@ define storelens
     ; Only the arms an lvalue chain can be built from are walked: a Variable is
     ; the answer, a Call is the deref/subscript operator (its receiver sits in
     ; the arguments), and an As is a cast. Everything else answers "".
-    function param_in_expr(rp, expr: PlannedExpression, params: String) @direct true @ret_caller true @deep true returns String linked
+    function param_in_expr(expr: PlannedExpression, params: String) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -493,7 +493,7 @@ define storelens
     ; value, but a truncated plan must not be able to spin the worker), and it
     ; also bounds the cost, since each level rescans plan.structures.
     ; ====================================================================
-    function carrier_of(rp, plan: Plan, ty: PlannedType, depth: int) @direct true @ret_nonlocal true @deep true returns String linked
+    function carrier_of(plan: Plan, ty: PlannedType, depth: int) @page true @direct true @ret_nonlocal true @deep true returns String linked
 
 
 
@@ -539,7 +539,7 @@ define storelens
 
 
 
-    function carrier_in_properties(rp, plan: Plan, st: PlannedStructure, depth: int) @direct true @ret_nonlocal true @deep true returns String linked
+    function carrier_in_properties(plan: Plan, st: PlannedStructure, depth: int) @page true @direct true @ret_nonlocal true @deep true returns String linked
 
 
 
@@ -778,7 +778,7 @@ define storelens
     ; is planned once per instantiation, so one source store is reached many
     ; times. Same shape and same reason as placehints.dedupe#, including why it
     ; is a second pass over a String rather than a set threaded through the walk.
-    function dedupe(rp, blob: String) @direct true @ret_caller true @deep true returns String linked
+    function dedupe(blob: String) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -849,7 +849,7 @@ define storelens
     ; Rendering: one lens per blob line, drawn at the BUFFER's `set` site of the
     ; same index as the plan text's.
     ; ====================================================================
-    procedure render(rp, blob: String, plan_text: String, anchor_text: String) @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure render(blob: String, plan_text: String, anchor_text: String) @page true @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -883,7 +883,7 @@ define storelens
 
 
 
-    procedure lens_for(rp, line: String, plan_text: String, anchor_text: String) @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure lens_for(line: String, plan_text: String, anchor_text: String) @page true @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -918,7 +918,7 @@ define storelens
 
 
     ; The n-th TAB-separated field of `line`, or "".
-    function field_at(rp, line: String, n: size_t) @direct true @ret_caller true @deep true returns String linked
+    function field_at(line: String, n: size_t) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 

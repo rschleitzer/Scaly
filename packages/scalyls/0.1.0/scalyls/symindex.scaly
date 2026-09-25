@@ -206,7 +206,7 @@ define symindex
     ; The cached blob for `path` (a fresh copy on the caller's page), or "" on a
     ; miss. Callers should gate on valid() first; an empty blob is a legitimate
     ; cached value (a file with no symbols).
-    procedure get_blob(rp, path: String) returns String
+    procedure get_blob(path: String) returns String
     {
         let idx symindex.find path
         if idx >= 0
@@ -362,7 +362,7 @@ define symindex
     }
 
     ; The listing cached for `dir` in this request ("" when there is none).
-    procedure get_listing(rp, dir: String) returns String
+    procedure get_listing(dir: String) returns String
     {
         let idx symindex.find_dir dir
         if idx < 0

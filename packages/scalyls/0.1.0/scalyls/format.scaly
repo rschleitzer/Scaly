@@ -237,7 +237,7 @@ define format
     ; state on entry. Bytes inside string literals, char literals, string
     ; identifiers and comments never count as brackets — that is the whole
     ; reason this is a scan and not a character count.
-    function scan_line(rp, source: String, start: size_t, end: size_t, in_block: bool) returns LineScan
+    function scan_line(source: String, start: size_t, end: size_t, in_block: bool) returns LineScan
     {
         var block in_block
         var opened: size_t 0
@@ -469,7 +469,7 @@ define format
     ; ---- the formatter ------------------------------------------------------
 
     ; `source` re-indented. The line count is preserved exactly.
-    function format_source(rp, source: String) returns String
+    function format_source(source: String) returns String
     {
         var sb StringBuilder()
         var stack Array[size_t]()
@@ -814,7 +814,7 @@ define format
     ; after the line's content — which in this tree routinely contains non-ASCII
     ; (an em dash in a comment) — so that offset goes through utf16_length#. An
     ; edit at a wrong character offset does not fail, it CORRUPTS the document.
-    function format_edits(rp, source: String) returns String
+    function format_edits(source: String) returns String
     {
         let formatted format.format_source source
         var sb StringBuilder()
@@ -926,7 +926,7 @@ define format
     }
 
     ; One TextEdit on `line`, replacing [from, to) (UTF-16 units) with `text`.
-    function edit(rp, line: size_t, from: size_t, to: size_t, text: String) returns String
+    function edit(line: size_t, from: size_t, to: size_t, text: String) returns String
     {
         var sb StringBuilder()
         sb.append("{" as char)
@@ -945,7 +945,7 @@ define format
         sb.to_string()
     }
 
-    function pos(rp, line: size_t, character: size_t) returns String
+    function pos(line: size_t, character: size_t) returns String
     {
         var sb StringBuilder()
         sb.append("{" as char)
@@ -958,7 +958,7 @@ define format
         sb.to_string()
     }
 
-    function key(rp, k: Slice[char]) returns String
+    function key(k: Slice[char]) returns String
     {
         var sb StringBuilder()
         sb.append("\"" as char)

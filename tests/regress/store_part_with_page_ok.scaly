@@ -1,11 +1,12 @@
-; Control for xfail_store_local_part / xfail_caller_page_sigil_without_page:
-; the two spellings the diagnostics suggest -- a declared caller page ('rp')
-; with '#', and a named page with '^host' -- both hand the caller a String that
-; survives the return (under SCALY_POISON too).
+; Control for xfail_store_local_part / caller_page_sigil_takes_page:
+; the two spellings the diagnostics suggest -- '#' (the routine then takes the
+; caller page; it was a declared 'rp' until 2026-09-25) and a named page with
+; '^host' -- both hand the caller a String that survives the return (under
+; SCALY_POISON too).
 ; Expected: PASS
 define Holder (var s: String)
 
-procedure fill_rp(rp, mutable out: ref[Holder], n: int)
+procedure fill_rp(mutable out: ref[Holder], n: int)
 {
     var sb StringBuilder()
     sb.append "hello-"

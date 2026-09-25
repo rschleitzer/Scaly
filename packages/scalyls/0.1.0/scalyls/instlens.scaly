@@ -81,7 +81,7 @@ define instlens
     ; family). `has_diag` suppresses the not-emitted claim: a root that produced
     ; hard diagnostics may have a truncated plan, and then "not emitted" would be
     ; a statement about the error rather than about demand.
-    procedure fragment(rp, plan: Plan, has_diag: bool, plan_text: String, anchor_text: String) returns String mutable lc_col, lc_line, lc_off
+    procedure fragment(plan: Plan, has_diag: bool, plan_text: String, anchor_text: String) returns String mutable lc_col, lc_line, lc_off
     {
         let sites instlens.count_routine_sites plan_text
         if sites = 0
@@ -176,7 +176,7 @@ define instlens
     ; that started that detour was MY GREP: `_ZN6VectorI…` demands a type-argument
     ; list right after the class name and so misses the bare form. The instrument
     ; was wrong, not the product.
-    function title_for(rp, plan: Plan, has_diag: bool, start: size_t, name: String) returns String
+    function title_for(plan: Plan, has_diag: bool, start: size_t, name: String) returns String
     {
         if plan.functions = null
             return ""
@@ -293,7 +293,7 @@ define instlens
     }
 
     ; The readable type of a planned routine's FIRST input item, or "".
-    function first_input_type(rp, fn: PlannedFunction) returns String
+    function first_input_type(fn: PlannedFunction) returns String
     {
         if fn.input = null
             return ""
@@ -411,7 +411,7 @@ define instlens
     ; The declared name that follows the keyword at `offset` ("" when the next
     ; token is not a plain identifier — a string-identifier target is rare and
     ; answering nothing for it is better than answering a wrong name).
-    function routine_name_at(rp, source: String, offset: size_t) returns String
+    function routine_name_at(source: String, offset: size_t) returns String
     {
         let n source.get_length()
         var k offset

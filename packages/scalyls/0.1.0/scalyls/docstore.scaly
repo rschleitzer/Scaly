@@ -87,7 +87,7 @@ define docstore
 
     ; The workspace root path (a fresh copy on the caller's page), or "" when
     ; initialize provided none.
-    procedure workspace_root(rp) returns String
+    procedure workspace_root() returns String
     {
         if ws_root_data <> null
             return String(ws_root_data as pointer[const_char], ws_root_len)
@@ -272,7 +272,7 @@ define docstore
 
     ; The uri of a live slot that still owes a diagnostics run (a fresh copy on
     ; the caller's page), or "" when none does.
-    procedure dirty_uri(rp) returns String
+    procedure dirty_uri() returns String
     {
         if doc_slots <> null
         {
@@ -290,7 +290,7 @@ define docstore
 
     ; The stored text for `uri` (a fresh copy on the caller's page), or an
     ; empty String on a miss. The worker treats empty as "read from disk".
-    procedure get(rp, uri: String) returns String
+    procedure get(uri: String) returns String
     {
         let idx docstore.find uri
         if idx >= 0

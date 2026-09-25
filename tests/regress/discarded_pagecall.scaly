@@ -35,7 +35,7 @@ define Reg
 
     ; The plan_namespace_module_one shape: explicit rp, page-requiring
     ; sibling call in non-last statement position, result discarded.
-    procedure drive(rp, mutable this: Reg, text: String)
+    procedure drive(mutable this: Reg, text: String)
     {
         this.plan_thing(text)
         let done 0

@@ -1,0 +1,22 @@
+; Regression (2026-09-25): R8's NET. `rename` keeps a value built on the page
+; it is given in its receiver; `poke` hands it `inner`, a field typed by the
+; generic parameter T, which the page rule cannot resolve at model level, so
+; `poke` gets no caller page and the String would land on its frame (251 read
+; back for 5, rc 0, before the net). The escape post-pass reports the call
+; (Planner.report_lost_store_page#).
+; xfail: hands state that outlives the routine to a callee that keeps values
+define Rec (var name: String)
+{
+    procedure rename(mutable this, t: String)
+        set name: String(t)
+}
+
+define Box[T] (var inner: T)
+{
+    procedure poke(mutable this, t: String)
+        inner.rename(t)
+}
+
+var b Box[Rec](Rec(String("a")))
+b.poke(String("hello"))
+print "`b.inner.name.get_length()`"

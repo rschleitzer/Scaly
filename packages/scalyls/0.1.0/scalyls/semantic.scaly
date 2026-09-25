@@ -72,7 +72,7 @@ define semantic
     ; HOVER entry: resolve the type at the packed "<line> <char>" position.
     ; Returns the resolved type name (e.g. "int", "Point",
     ; "scaly.containers.String"), or "" on a miss / parse error / unresolved.
-    procedure semantic_type_packed(rp, mutable source: String, mutable uri: String, packed: String) returns String mutable modeler_error_count
+    procedure semantic_type_packed(mutable source: String, mutable uri: String, packed: String) returns String mutable modeler_error_count
     {
         var line: size_t 0
         var character: size_t 0
@@ -120,7 +120,7 @@ define semantic
     ; MISS ("0") from a pipeline CRASH (empty frame). Without it, an empty
     ; reply on a legitimate miss would be read as a crash by worker.exchange#
     ; and respawn the worker on every hover. On a hit the reply is "1<name>".
-    procedure semantic_type_framed(rp, mutable source: String, mutable uri: String, packed: String) returns String mutable modeler_error_count
+    procedure semantic_type_framed(mutable source: String, mutable uri: String, packed: String) returns String mutable modeler_error_count
     {
         let ty semantic.semantic_type_packed(source, uri, packed)
         var sb StringBuilder()
@@ -137,7 +137,7 @@ define semantic
     ; COMPLETION entry (mode 2): the OWN type of the receiver expression at
     ; `offset` (the innermost variable's base type, NOT the enclosing member
     ; access). "" on a miss / unresolved.
-    procedure receiver_type_at_offset(rp, mutable source: String, mutable uri: String, offset: size_t) returns String mutable modeler_error_count
+    procedure receiver_type_at_offset(mutable source: String, mutable uri: String, offset: size_t) returns String mutable modeler_error_count
     {
         let path diagnostics.strip_uri uri
         semantic.resolve_at(source, path, 2, offset)
@@ -160,7 +160,7 @@ define semantic
     ; "function not found" (diagnostics.publish_diagnostics#) and is closed the
     ; same way; codelens.planned_fragment# routes through the root for the
     ; third time.
-    procedure resolve_at(rp, mutable source: String, mutable path: String, mode: size_t, offset: size_t) returns String mutable modeler_error_count
+    procedure resolve_at(mutable source: String, mutable path: String, mode: size_t, offset: size_t) returns String mutable modeler_error_count
     {
         ; WHICH LINK of a member chain the cursor is on. The plan cannot say:
         ; a PlannedMemberAccess carries a NAME and no span, and the operand's
@@ -232,7 +232,7 @@ define semantic
     ; costs what the diagnostics of the same root cost — 0.86 s for scalyls,
     ; ~1.9 s for opensp, 2.45 s for dazzle — against the 20 s budget kind "x"
     ; carries (worker.budget_for_kind#).
-    procedure resolve_through_root(rp, source: String, mutable path: String, mode: size_t, offset: size_t, file: FileSyntax) returns String mutable modeler_error_count
+    procedure resolve_through_root(source: String, mutable path: String, mode: size_t, offset: size_t, file: FileSyntax) returns String mutable modeler_error_count
     {
         let root diagnostics.package_root path
         if root.get_length() = 0
@@ -248,7 +248,7 @@ define semantic
     ; Plan `root` — the package root that owns `path` — and walk that plan for
     ; the type at `offset`. `file` is the parse of the DOCUMENT, so the walk's
     ; file identity is decided exactly as it is for the document plan.
-    procedure root_resolve(rp, mutable root: String, path: String, mode: size_t, offset: size_t, file: FileSyntax) returns String mutable modeler_error_count
+    procedure root_resolve(mutable root: String, path: String, mode: size_t, offset: size_t, file: FileSyntax) returns String mutable modeler_error_count
     {
         let root_text File.read_to_string(root)
         if root_text.get_length() = 0
@@ -303,7 +303,7 @@ define semantic
     ; 1 = the RECEIVER of a chain;  2 = a MIDDLE link (neither mode answers it);
     ; 3 = the LAST link, a plain field — mode 0's answer, but only from an
     ;     operand that actually HAS a member chain (see walk_operand#).
-    function chain_position(rp, source: String, offset: size_t) returns size_t
+    function chain_position(source: String, offset: size_t) returns size_t
     {
         let n source.get_length()
         if n = 0
@@ -436,7 +436,7 @@ define semantic
 
     ; Does this planned routine belong to the open document? Both halves are
     ; needed; the section header above has the reasoning for each.
-    function owns_routine(rp, file: FileSyntax, path: String, fn_file: String, start: size_t) returns bool
+    function owns_routine(file: FileSyntax, path: String, fn_file: String, start: size_t) returns bool
     {
         if fn_file = path
             return semantic.is_routine_start(file, start)
@@ -445,7 +445,7 @@ define semantic
 
     ; Does the document declare a routine (function / procedure / operator /
     ; init / deinit) or a module-level global starting exactly at `start`?
-    function is_routine_start(rp, file: FileSyntax, start: size_t) returns bool
+    function is_routine_start(file: FileSyntax, start: size_t) returns bool
     {
         if file.declarations = null
             return false
@@ -461,7 +461,7 @@ define semantic
         false
     }
 
-    function decl_has_start(rp, decl: DeclarationSyntax, start: size_t) returns bool
+    function decl_has_start(decl: DeclarationSyntax, start: size_t) returns bool
     {
         choose decl
             when f: FunctionSyntax
@@ -492,7 +492,7 @@ define semantic
                 return false
     }
 
-    function export_has_start(rp, export_: ExportSyntax, start: size_t) returns bool
+    function export_has_start(export_: ExportSyntax, start: size_t) returns bool
     {
         choose export_
             when f: FunctionSyntax
@@ -509,7 +509,7 @@ define semantic
                 return false
     }
 
-    function definition_has_start(rp, def: DefinitionSyntax, start: size_t) returns bool
+    function definition_has_start(def: DefinitionSyntax, start: size_t) returns bool
     {
         choose def.concept_
             when c: ClassSyntax
@@ -522,7 +522,7 @@ define semantic
                 return false
     }
 
-    function namespace_has_start(rp, ns: NamespaceSyntax, start: size_t) returns bool
+    function namespace_has_start(ns: NamespaceSyntax, start: size_t) returns bool
     {
         if ns.declarations = null
             return false
@@ -538,12 +538,12 @@ define semantic
         false
     }
 
-    function union_has_start(rp, un: UnionSyntax, start: size_t) returns bool
+    function union_has_start(un: UnionSyntax, start: size_t) returns bool
     {
         semantic.body_has_start(un.body, start)
     }
 
-    function body_has_start(rp, body: ref[BodySyntax]?, start: size_t) returns bool
+    function body_has_start(body: ref[BodySyntax]?, start: size_t) returns bool
     {
         if body = null
             return false
@@ -562,7 +562,7 @@ define semantic
         false
     }
 
-    function member_has_start(rp, member: MemberSyntax, start: size_t) returns bool
+    function member_has_start(member: MemberSyntax, start: size_t) returns bool
     {
         choose member
             when f: FunctionSyntax
@@ -592,7 +592,7 @@ define semantic
     ; 0-based (line, character) -> byte offset (self-contained copy of
     ; symbols.position_to_offset#, so this module does not depend on symbols —
     ; symbols depends on semantic for the Phase-2 prefer/fallback).
-    function position_to_offset(rp, source: String, line: size_t, character: size_t) returns size_t
+    function position_to_offset(source: String, line: size_t, character: size_t) returns size_t
     {
         let len source.get_length()
         var off: size_t 0
@@ -620,7 +620,7 @@ define semantic
         off
     }
 
-    function none(rp) returns ResolveResult
+    function none() returns ResolveResult
         ResolveResult(false, 0, "")
 
     ; Keep the TIGHTER of two candidates. With the containment prune gone
@@ -629,7 +629,7 @@ define semantic
     ; loop reached first rather than the one that actually sits under the
     ; cursor. On a tie the FIRST/outer one is kept, matching walk_operand#'s
     ; equal-width preference.
-    function tighter(rp, a: ResolveResult, b: ResolveResult) returns ResolveResult
+    function tighter(a: ResolveResult, b: ResolveResult) returns ResolveResult
     {
         if b.found = false
             return a
@@ -643,7 +643,7 @@ define semantic
     ; ====================================================================
     ; Plan walk — first FOUND match wins across non-overlapping siblings.
     ; ====================================================================
-    function walk_plan(rp, plan: Plan, mode: size_t, offset: size_t, file: FileSyntax, path: String) returns ResolveResult
+    function walk_plan(plan: Plan, mode: size_t, offset: size_t, file: FileSyntax, path: String) returns ResolveResult
     {
         var result semantic.none()
 
@@ -733,7 +733,7 @@ define semantic
         result
     }
 
-    function walk_structure(rp, st: PlannedStructure, mode: size_t, offset: size_t, file: FileSyntax, path: String) returns ResolveResult
+    function walk_structure(st: PlannedStructure, mode: size_t, offset: size_t, file: FileSyntax, path: String) returns ResolveResult
     {
         var result semantic.none()
 
@@ -800,7 +800,7 @@ define semantic
         result
     }
 
-    function walk_union(rp, un: PlannedUnion, mode: size_t, offset: size_t, file: FileSyntax, path: String) returns ResolveResult
+    function walk_union(un: PlannedUnion, mode: size_t, offset: size_t, file: FileSyntax, path: String) returns ResolveResult
     {
         var result semantic.none()
 
@@ -842,7 +842,7 @@ define semantic
         result
     }
 
-    function walk_impl(rp, impl: PlannedImplementation, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_impl(impl: PlannedImplementation, mode: size_t, offset: size_t) returns ResolveResult
     {
         choose impl
             when action: Action
@@ -855,7 +855,7 @@ define semantic
                 return semantic.none()
     }
 
-    function walk_action(rp, act: PlannedAction, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_action(act: PlannedAction, mode: size_t, offset: size_t) returns ResolveResult
     {
         var result semantic.none()
         if act.source <> null
@@ -871,7 +871,7 @@ define semantic
     ; ====================================================================
     ; Statements
     ; ====================================================================
-    function walk_statements(rp, stmts: Vector[PlannedStatement], mode: size_t, offset: size_t) returns ResolveResult
+    function walk_statements(stmts: Vector[PlannedStatement], mode: size_t, offset: size_t) returns ResolveResult
     {
         var result semantic.none()
         var i: size_t 0
@@ -888,7 +888,7 @@ define semantic
         result
     }
 
-    function walk_statement(rp, stmt: PlannedStatement, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_statement(stmt: PlannedStatement, mode: size_t, offset: size_t) returns ResolveResult
     {
         choose stmt
             when a: Action
@@ -905,7 +905,7 @@ define semantic
                 return semantic.none()
     }
 
-    function walk_binding(rp, bnd: PlannedBinding, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_binding(bnd: PlannedBinding, mode: size_t, offset: size_t) returns ResolveResult
     {
         var op_result semantic.none()
         if bnd.operation <> null
@@ -952,7 +952,7 @@ define semantic
     ; The type a binding's initializer produces: the LAST operand of the
     ; operation sequence, read through operand_final_type# so a member chain
     ; reports what the chain ends in rather than its receiver.
-    function operation_type(rp, bnd: PlannedBinding) returns String
+    function operation_type(bnd: PlannedBinding) returns String
     {
         if bnd.operation = null
             return ""
@@ -968,7 +968,7 @@ define semantic
     ; ====================================================================
     ; Operands / expressions
     ; ====================================================================
-    function walk_operands(rp, ops: Vector[PlannedOperand], mode: size_t, offset: size_t) returns ResolveResult
+    function walk_operands(ops: Vector[PlannedOperand], mode: size_t, offset: size_t) returns ResolveResult
     {
         var result semantic.none()
         var i: size_t 0
@@ -985,14 +985,14 @@ define semantic
         result
     }
 
-    function walk_operands_opt(rp, opt: ref[Vector[PlannedOperand]]?, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_operands_opt(opt: ref[Vector[PlannedOperand]]?, mode: size_t, offset: size_t) returns ResolveResult
     {
         if opt <> null
             return semantic.walk_operands(*opt, mode, offset)
         semantic.none()
     }
 
-    function walk_operand(rp, op: PlannedOperand, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_operand(op: PlannedOperand, mode: size_t, offset: size_t) returns ResolveResult
     {
         ; NO PRUNE. This used to return early unless the operand's own span
         ; contained the offset, on the premise that "children spans nest inside
@@ -1086,14 +1086,14 @@ define semantic
         semantic.none()
     }
 
-    function walk_operand_opt(rp, opt: ref[PlannedOperand]?, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_operand_opt(opt: ref[PlannedOperand]?, mode: size_t, offset: size_t) returns ResolveResult
     {
         if opt <> null
             return semantic.walk_operand(*opt, mode, offset)
         semantic.none()
     }
 
-    function walk_expr(rp, expr: PlannedExpression, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_expr(expr: PlannedExpression, mode: size_t, offset: size_t) returns ResolveResult
     {
         choose expr
             when k: Constant
@@ -1141,7 +1141,7 @@ define semantic
     }
 
     ; Is this expression a plain statement block? (see walk_operand#)
-    function is_block(rp, expr: PlannedExpression) returns bool
+    function is_block(expr: PlannedExpression) returns bool
     {
         choose expr
             when b: Block
@@ -1152,7 +1152,7 @@ define semantic
 
     ; Is this expression a call of an OPERATOR (`>`, `+`, …) rather than of a
     ; function or method? Breaks the equal-width tie in walk_operand#.
-    function is_operator_call(rp, expr: PlannedExpression) returns bool
+    function is_operator_call(expr: PlannedExpression) returns bool
     {
         choose expr
             when c: Call
@@ -1161,14 +1161,14 @@ define semantic
                 return false
     }
 
-    function walk_call(rp, c: PlannedCall, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_call(c: PlannedCall, mode: size_t, offset: size_t) returns ResolveResult
     {
         if c.args <> null
             return semantic.walk_operands(*c.args, mode, offset)
         semantic.none()
     }
 
-    function walk_tuple(rp, t: PlannedTuple, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_tuple(t: PlannedTuple, mode: size_t, offset: size_t) returns ResolveResult
     {
         var result semantic.none()
         if t.components <> null
@@ -1193,14 +1193,14 @@ define semantic
         result
     }
 
-    function walk_block(rp, b: PlannedBlock, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_block(b: PlannedBlock, mode: size_t, offset: size_t) returns ResolveResult
     {
         if b.statements <> null
             return semantic.walk_statements(*b.statements, mode, offset)
         semantic.none()
     }
 
-    function walk_if(rp, iff: PlannedIf, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_if(iff: PlannedIf, mode: size_t, offset: size_t) returns ResolveResult
     {
         var result semantic.none()
         if iff.condition <> null
@@ -1218,7 +1218,7 @@ define semantic
         result
     }
 
-    function walk_match(rp, m: PlannedMatch, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_match(m: PlannedMatch, mode: size_t, offset: size_t) returns ResolveResult
     {
         var result semantic.none()
         if m.condition <> null
@@ -1250,7 +1250,7 @@ define semantic
         result
     }
 
-    function walk_choose(rp, ch: PlannedChoose, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_choose(ch: PlannedChoose, mode: size_t, offset: size_t) returns ResolveResult
     {
         var result semantic.none()
         if ch.condition <> null
@@ -1282,7 +1282,7 @@ define semantic
         result
     }
 
-    function walk_for(rp, fr: PlannedFor, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_for(fr: PlannedFor, mode: size_t, offset: size_t) returns ResolveResult
     {
         var result semantic.none()
         if fr.expr <> null
@@ -1291,14 +1291,14 @@ define semantic
         semantic.tighter(result, body)
     }
 
-    function walk_while(rp, wh: PlannedWhile, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_while(wh: PlannedWhile, mode: size_t, offset: size_t) returns ResolveResult
     {
         let cond semantic.walk_binding(wh.cond, mode, offset)
         let body semantic.walk_action(wh.body, mode, offset)
         semantic.tighter(cond, body)
     }
 
-    function walk_try(rp, tr: PlannedTry, mode: size_t, offset: size_t) returns ResolveResult
+    function walk_try(tr: PlannedTry, mode: size_t, offset: size_t) returns ResolveResult
     {
         var result semantic.walk_binding(tr.cond, mode, offset)
         if tr.catches <> null
@@ -1339,7 +1339,7 @@ define semantic
     ; routine.implementation)` has a member chain too, and its span covers the
     ; argument, so it answered `size_t` for the field written inside it until
     ; this half excluded it.
-    function ends_in_field(rp, member_access: ref[Vector[PlannedMemberAccess]]?) returns bool
+    function ends_in_field(member_access: ref[Vector[PlannedMemberAccess]]?) returns bool
     {
         if member_access = null
             return false
@@ -1360,7 +1360,7 @@ define semantic
     ; BASE (b.get() reports the receiver), so prefer the post-access type: the
     ; LAST PlannedMemberAccess.result_type when a member chain is present (so
     ; a.f().b yields .b's type), else the expression's own typed field.
-    function operand_final_type(rp, op: PlannedOperand) returns String
+    function operand_final_type(op: PlannedOperand) returns String
     {
         if op.member_access <> null
         {
@@ -1377,7 +1377,7 @@ define semantic
 
     ; The expression's own resolved type field, falling back to `fallback`
     ; (the operand's result_type) for shapes without a cleaner field.
-    function expr_type(rp, expr: PlannedExpression, fallback: PlannedType) returns String
+    function expr_type(expr: PlannedExpression, fallback: PlannedType) returns String
     {
         choose expr
             when v: Variable
@@ -1397,7 +1397,7 @@ define semantic
     }
 
     ; True when offset is within [loc.start, loc.end).
-    function contains(rp, loc: Span, offset: size_t) returns bool
+    function contains(loc: Span, offset: size_t) returns bool
     {
         if offset < loc.start
             return false
@@ -1420,7 +1420,7 @@ define semantic
     ; compiler's own renderer for this (the DWARF type names go through it) and
     ; recurses into nested arguments; the emptiness tests stay on `pt.name`,
     ; which is what they were written against.
-    function type_name(rp, pt: PlannedType) returns String
+    function type_name(pt: PlannedType) returns String
     {
         if pt.variable <> null
             return ""

@@ -17,7 +17,7 @@ text surgery:
     and a caller depends on goes after its parameter list as attributes: the
     caller page R1..R7 inferred (`@page true`; part of the mangled name; an
     explicit `rp` in the source stays an `rp`), its memberships in the page
-    sets R6/R7 join through bodies (`@direct`, `@transitive`, `@returnpage`),
+    sets R6/R7/R8 join through bodies (`@direct`, `@transitive`, `@returnpage`, `@stores`),
     and whether it stores an argument beyond its frame (`@persists true`, the
     escape check's pass-to-storing callee). `reads g, h` names the changeable
     globals it reads and `io` says it reaches I/O -- both computed, a source
@@ -180,7 +180,7 @@ def transform(text, facts):
                 facts_attrs = ''
                 if a['page'] == '1' and a['explicit'] == '0':
                     facts_attrs += ' @page true'
-                for key in ('persists', 'direct', 'transitive', 'returnpage'):
+                for key in ('persists', 'direct', 'transitive', 'returnpage', 'stores'):
                     if a.get(key) == '1':
                         facts_attrs += ' @' + key + ' true'
                 if a.get('ret'):
@@ -257,8 +257,8 @@ def parse_facts(path):
     for line in open(path):
         p = line.rstrip('\n').split(' ')
         # D/T/P continue the F line before them: direct, transitive, returnpage
-        if p[0] in ('D', 'T', 'P') and last is not None:
-            last[6][{'D': 'direct', 'T': 'transitive', 'P': 'returnpage'}[p[0]]] = '1'
+        if p[0] in ('D', 'T', 'P', 'S') and last is not None:
+            last[6][{'D': 'direct', 'T': 'transitive', 'P': 'returnpage', 'S': 'stores'}[p[0]]] = '1'
             continue
         # V continues the F line before it: the return residence, class + arg
         if p[0] == 'V' and last is not None:

@@ -6295,12 +6295,14 @@ define Emitter
                         if page_name <> "_rp"
                             set bound_page: force_frame(page_value)
                         define_variable(page_name, bound_page)
-                        ; An explicit peel-param named `rp` IS the caller-page
-                        ; slot: alias the internal `_rp` name to the FRAME (never
-                        ; the forced page) so the call sites that forward a caller
-                        ; page keep forwarding a frame.
-                        if page_name = "rp"
-                            define_variable("_rp", page_value)
+                        ; The planner names the caller page `rp` wherever it
+                        ; promotes onto it (Lifetime.Reference("rp"), `&#v`); the
+                        ; slot is the implicit `_rp` since no routine declares an
+                        ; `rp` any more (2026-09-25), so alias the name to it --
+                        ; the FRAME, as `_rp` holds it. A parameter the author
+                        ; named `rp` is defined after this and wins.
+                        if page_name = "_rp"
+                            define_variable("rp", page_value)
                         ; This function's own frame chains onto the one it was
                         ; handed. Recorded here rather than looked up later: the
                         ; outlined parfor task function still sees this variable

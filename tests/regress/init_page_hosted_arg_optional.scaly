@@ -84,25 +84,25 @@ define Mk ()
     }
 }
 
-function probe(page: pointer[Page]) returns int
+function probe(host: pointer[Page]) returns int
 {
     var flags 0
     let junk Mk.scribble()
     if junk = (0 as u64)
         return 16
-    let n Mk.build_n(page)
+    let n Mk.build_n(host)
     if n.cursor <> 7
         set flags: flags + 1
     let junk2 Mk.scribble()
     if junk2 = (0 as u64)
         return 32
-    let o Mk.build_o(page)
+    let o Mk.build_o(host)
     if o.cursor <> 9
         set flags: flags + 2
     flags
 }
 
-let r probe()
+let r probe(Page.allocate_page())
 if r = 0
     print "PASS\n"
 if r <> 0

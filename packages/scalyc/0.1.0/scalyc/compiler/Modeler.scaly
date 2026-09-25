@@ -1856,121 +1856,24 @@ define Modeler
                 let life handle_lifetime named.routine.lifetime
                 let impl handle_implementation(named.routine.implementation)
 
-                ; Detect function# (Lifetime=Call). Two cases (mirror
-                ; Modeler.cpp:1445-1454):
-                ;   1. function(page, params...) — first param has name
-                ;      but no type → it's the explicit page parameter; peel off.
-                ;   2. function(param: Type, ...) — first param has a type →
-                ;      use implicit "_rp" as page name; leave input alone.
-                ;      (Leading `_` is not lexable as an identifier start, so
-                ;      the internal slot name can never collide with user code.)
+                ; function# (Lifetime=Call): the routine takes the caller's
+                ; page, IMPLICITLY -- the slot is `_rp` (a leading `_` cannot
+                ; start an identifier, so user code can never name it). The
+                ; caller page never interferes with the explicit parameters
+                ; (2026-09-25): a first parameter named `page`/`rp` is not
+                ; peeled any more, with the sigil or without it; a typeless one
+                ; is reported by the planner (report_declared_caller_page#).
                 var page_param: ref[String]? null
                 var final_input: Vector[Item] input
-                var is_call_life: bool false
                 choose life
                     when c: Call
-                        set is_call_life: true
-                    else
-                        0
-                if is_call_life
-                {
-                    var first_has_name_no_type: bool false
-                    if input.length > 0
-                    {
-                        let first_ptr input.get 0
-                        if first_ptr <> null
-                        {
-                            if first_ptr.name <> null
-                            {
-                                if first_ptr.type = null
-                                    set first_has_name_no_type: true
-                            }
-                        }
-                    }
-                    if first_has_name_no_type
-                    {
-                        let first_ptr input.get 0
-                        if first_ptr <> null
-                        {
-                            if first_ptr.name <> null
-                            {
-                                var holder Vector[String](1)
-                                holder.put(0, String((*first_ptr.name)))
-                                set page_param: holder.get(0)
-                            }
-                        }
-                        var rest Vector[Item](input.length - 1)
-                        var k: size_t 1
-                        while k < input.length
-                        {
-                            let ip input.get k
-                            if ip <> null
-                                rest.put(k - 1, (*ip))
-                            set k: k + 1
-                        }
-                        set final_input: rest
-                    }
-                    if first_has_name_no_type = false
                     {
                         var holder Vector[String](1)
                         holder.put(0, "_rp")
                         set page_param: holder.get(0)
                     }
-                }
-
-                ; Task 4: de-sigiled function(page/rp, ...) — peel a typeless or
-                ; pointer[Page]-typed first param named page/rp even without the
-                ; `#` (Call) sigil. Mirrors the handle_initializer peel. has_page is
-                ; driven by page_parameter (Planner.scaly:2480), so a de-sigiled
-                ; `function to_c_string(page, ...)` models identically to the `#`
-                ; form. Dormant on sigiled source (those keep is_call_life true).
-                if is_call_life = false
-                {
-                    if input.length > 0
-                    {
-                        let dfp0 input.get 0
-                        if dfp0 <> null
-                        {
-                            if dfp0.name <> null
-                            {
-                                let dpn0 (*dfp0.name)
-                                var d_name_is_page: bool false
-                                if dpn0 = "page"
-                                    set d_name_is_page: true
-                                if dpn0 = "rp"
-                                    set d_name_is_page: true
-                                if d_name_is_page
-                                {
-                                    var d_should_peel: bool false
-                                    if dfp0.type = null
-                                        set d_should_peel: true
-                                    if dfp0.type <> null
-                                    {
-                                        let dty0 (*dfp0.type)
-                                        if type_is_pointer_page(dty0)
-                                            set d_should_peel: true
-                                    }
-                                    if d_should_peel
-                                    {
-                                        var d_holder Vector[String](1)
-                                        d_holder.put(0, String(dpn0))
-                                        set page_param: d_holder.get(0)
-                                        var d_rest Vector[Item](input.length - 1)
-                                        var dk: size_t 1
-                                        while dk < input.length
-                                        {
-                                            let dip input.get dk
-                                            if dip <> null
-                                                d_rest.put(dk - 1, (*dip))
-                                            set dk: dk + 1
-                                        }
-                                        set final_input: d_rest
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                    else
+                        0
 
                 ; Extract generic parameter names from syntax.generics if
                 ; present. Each GenericArgument's TypeSyntax is a bare
@@ -2244,35 +2147,6 @@ define Modeler
     ; Initializer handling
     ; ============================================================================
 
-    ; True when `t` is exactly `pointer[Page]` (or `pointer[scaly.memory.Page]`),
-    ; the typed form of the implicit init page parameter. Used to peel a
-    ; de-sigiled `init(page: pointer[Page], ...)` exactly like `init#(page, ...)`.
-    function type_is_pointer_page(t: Type) returns bool
-    {
-        if t.name.length <> 1
-            return false
-        let outer_ptr t.name.get 0
-        if outer_ptr = null
-            return false
-        if (*outer_ptr) <> "pointer"
-            return false
-        if t.generics = null
-            return false
-        let gens (*t.generics)
-        if gens.length <> 1
-            return false
-        let inner_ptr gens.get 0
-        if inner_ptr = null
-            return false
-        let inner (*inner_ptr)
-        if inner.name.length = 0
-            return false
-        let last_seg inner.name.get(inner.name.length - 1)
-        if last_seg = null
-            return false
-        (*last_seg) = "Page"
-    }
-
     procedure handle_initializer(mutable syntax: InitSyntax, is_private: bool) returns Initializer mutable modeler_error_count
     {
         var input Vector[Item](0)
@@ -2282,87 +2156,22 @@ define Modeler
             set input: handle_parameter_set(params)
         }
 
-        ; Detect init# (Lifetime=Call) and peel off the implicit page
-        ; parameter. It's always the first parameter and its name is
-        ; recorded in page_parameter; subsequent parameters form the
-        ; user-visible input list.
+        ; init# (Lifetime=Call): the implicit caller page `_rp`, and no
+        ; parameter is peeled -- see handle_function's note (2026-09-25).
         var page_param: ref[String]? null
         var final_input: Vector[Item] input
-        ; Decide whether to peel an implicit page parameter. Two triggers:
-        ; (1) the `#` (Call) lifetime sigil — `init#(page, ...)`.
-        ; (2) Task 4 de-sigiled form — a first parameter named `page` or `rp` that
-        ;     is either TYPELESS (`init(page, length)` / `init(rp, builder)`) or
-        ;     typed exactly `pointer[Page]` (`init(page: pointer[Page], ...)`). The
-        ;     name+type pairing is unambiguous: a real user `pointer[Page]` param
-        ;     under any other name is NOT peeled, and `init(size: size_t)` keeps
-        ;     `size` as a user arg.
-        var should_peel: bool false
         if syntax.lifetime <> null
         {
             let lt_syn (*syntax.lifetime)
             choose lt_syn
                 when cs: CallSyntax
-                    set should_peel: true
+                {
+                    var holder Vector[String](1)
+                    holder.put(0, "_rp")
+                    set page_param: holder.get(0)
+                }
                 else
                     0
-        }
-        if should_peel = false
-        {
-            if input.length > 0
-            {
-                let fp0 input.get 0
-                if fp0 <> null
-                {
-                    if fp0.name <> null
-                    {
-                        let pn0 (*fp0.name)
-                        var name_is_page: bool false
-                        if pn0 = "page"
-                            set name_is_page: true
-                        if pn0 = "rp"
-                            set name_is_page: true
-                        if name_is_page
-                        {
-                            ; (2a) typeless page/rp param
-                            if fp0.type = null
-                                set should_peel: true
-                            ; (2b) typed pointer[Page] page/rp param
-                            if fp0.type <> null
-                            {
-                                let ty0 (*fp0.type)
-                                if type_is_pointer_page(ty0)
-                                    set should_peel: true
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        if should_peel
-        {
-            if input.length > 0
-            {
-                let first_ptr input.get 0
-                if first_ptr <> null
-                {
-                    if first_ptr.name <> null
-                    {
-                        var holder Vector[String](1)
-                        holder.put(0, String((*first_ptr.name)))
-                        set page_param: holder.get(0)
-                    }
-                }
-                var rest Vector[Item](input.length - 1)
-                var k: size_t 1
-                while k < input.length
-                {
-                    let ip input.get k
-                    if ip <> null
-                        rest.put(k - 1, (*ip))
-                    set k: k + 1
-                }
-                set final_input: rest
-            }
         }
 
         let impl handle_implementation(syntax.implementation)

@@ -24,11 +24,11 @@ define Container[T](data: pointer[T], length: size_t)
         set length: 0
     }
 
-    init#(page, size: size_t)
+    init(host: pointer[Page], size: size_t)
     {
         set length: size
         if size > 0
-            set data: page.allocate(size * sizeof T, alignof T) as pointer[T]
+            set data: host.allocate(size * sizeof T, alignof T) as pointer[T]
         else
             set data: null
     }
@@ -46,7 +46,7 @@ var page Page(buf, 0)
 let page_ptr &page
 
 ; Create Container[int] on page
-var container Container[int]^page_ptr(10)
+var container Container[int]^page_ptr(page_ptr, 10)
 container.set_item(0, 100)
 let result container.get(0)
 

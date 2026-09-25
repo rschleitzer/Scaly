@@ -112,7 +112,7 @@ define json
     }
 
     ; Returns a copy of the string payload, or an empty String otherwise.
-    function as_string(rp, this: JsonValue) returns String
+    function as_string(this: JsonValue) returns String
     {
         choose this
             when s: Str
@@ -187,13 +187,13 @@ define json
     ; Parsing
     ; ====================================================================
 
-    procedure parse(rp, mutable source: String) returns JsonValue
+    procedure parse(mutable source: String) returns JsonValue
     {
         var p JsonParser(source, 0, true)
         json.parse_value(&p)
     }
 
-    procedure parse_value(rp, mutable p: ref[JsonParser]) returns JsonValue
+    procedure parse_value(mutable p: ref[JsonParser]) returns JsonValue
     {
         json.skip_ws p
         let c json.peek p
@@ -228,7 +228,7 @@ define json
         json.null_value()
     }
 
-    procedure parse_object(rp, mutable p: ref[JsonParser]) returns JsonValue
+    procedure parse_object(mutable p: ref[JsonParser]) returns JsonValue
     {
         json.expect(p, 0x7B)         ; '{'
         json.skip_ws p
@@ -265,18 +265,19 @@ define json
         if count = 0
             return JsonValue.Object(JsonObject(null))
 
-        let buf allocate_slice[JsonMember](rp as ref[Page], count)
+        ; built on the caller's page, which the returned value carries on
+        var store Vector[JsonMember]#(count)
         var it members.get_iterator()
         var i: size_t 0
         while let m it.next()
         {
-            buf.put(i, *m)
+            store.put(i, *m)
             set i: i + 1
         }
-        JsonValue.Object(JsonObject(buf))
+        JsonValue.Object(JsonObject(store.as_slice()))
     }
 
-    procedure parse_array(rp, mutable p: ref[JsonParser]) returns JsonValue
+    procedure parse_array(mutable p: ref[JsonParser]) returns JsonValue
     {
         json.expect(p, 0x5B)         ; '['
         json.skip_ws p
@@ -308,18 +309,19 @@ define json
         if count = 0
             return JsonValue.Array(JsonArray(null))
 
-        let buf allocate_slice[JsonValue](rp as ref[Page], count)
+        ; built on the caller's page, which the returned value carries on
+        var store Vector[JsonValue]#(count)
         var it items.get_iterator()
         var i: size_t 0
         while let e it.next()
         {
-            buf.put(i, *e)
+            store.put(i, *e)
             set i: i + 1
         }
-        JsonValue.Array(JsonArray(buf))
+        JsonValue.Array(JsonArray(store.as_slice()))
     }
 
-    procedure parse_string(rp, mutable p: ref[JsonParser]) returns String
+    procedure parse_string(mutable p: ref[JsonParser]) returns String
     {
         if json.peek(p) <> 0x22   ; must open with '"'
         {
@@ -600,7 +602,7 @@ define json
     ; sibling arg-count match.
     ; ====================================================================
 
-    function stringify(rp, this: JsonValue) returns String
+    function stringify(this: JsonValue) returns String
     {
         ; Every arm uses an explicit `return`: in a choose that mixes
         ; explicit-return arms with bare-expression arms, the bare arms
@@ -658,7 +660,7 @@ define json
     }
 
     ; Quote and escape a string into a "..."-wrapped JSON string literal.
-    function quote_string(rp, s: String) returns String
+    function quote_string(s: String) returns String
     {
         var sb StringBuilder()
         sb.append("\"" as char)            ; opening '"'
@@ -712,7 +714,7 @@ define json
         sb.to_string()
     }
 
-    function format_i64(rp, n: i64) returns String
+    function format_i64(n: i64) returns String
     {
         if n = 0
             return "0"

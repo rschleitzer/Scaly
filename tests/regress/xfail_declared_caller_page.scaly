@@ -1,0 +1,13 @@
+; Regression (2026-09-25): the caller's page is implicit and cannot be
+; declared. An untyped first parameter `rp`/`page` used to BE the caller page
+; (peeled by the Modeler); it is refused at its declaration now, with the
+; spelling that replaces it (`T#(...)`; a routine that builds its result there
+; takes the page by itself).
+; xfail: the caller's page is implicit and cannot be declared
+define Box (v: int)
+
+function make(rp, v: int) returns Box
+    Box(v)
+
+let b make(5)
+print "`b.v`"

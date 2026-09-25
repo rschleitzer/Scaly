@@ -1,0 +1,25 @@
+; Regression (2026-09-25): `Bag#(...)` in a routine without a caller page. Bag
+; holds an Array by value, so its methods derive their page from the record's
+; address; the construction used to fall back to a STACK alloca (the s196
+; fallback) and `b.items.add(4)` died with exit 19 at run time, rc 0 at
+; compile time. A `#` in a body gives the routine the caller page now (R4), so
+; `Bag` lands on it. The emitter's exit 24 (report_lost_resident_page#) stays as
+; the last resort for a resident construction whose page is missing; since R4
+; covers every `#`, no known shape reaches it.
+; Expected: PASS
+define Bag (var items: Array[int])
+
+procedure count_on(b: ref[Bag]) returns int
+    b.items.length as int
+
+procedure run() returns int
+{
+    let b Bag#(Array[int]())
+    b.items.add(4)
+    count_on(&b)
+}
+
+if run() = 1
+    print "PASS"
+else
+    print "FAIL"

@@ -6632,6 +6632,8 @@ define Emitter
 
 
 
+
+
         ; ========================================================================
         ; Constant Emission
         ; ========================================================================
@@ -7776,7 +7778,7 @@ define Emitter
 
         ; Write native object file via host target machine.
         ; LLVMObjectFile codegen type = 1. Reloc=PIC(2), OptLevel=None(0).
-        procedure write_object_to_file(mutable this, mutable filename: String) @deep true returns bool io linked
+        procedure write_object_to_file(mutable this, mutable filename: String) @ret_caller true @deep true returns bool io linked
 
 
 

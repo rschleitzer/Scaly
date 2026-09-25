@@ -26,19 +26,19 @@ define Box (h: ref[Holder]?)
 function takes_plain(h: ref[Holder]) returns int
     h.k
 
-function maybe(rp) returns ref[Holder]?
+function maybe() returns ref[Holder]?
     Holder#(9)
 
-function via_bare(rp) returns int
+function via_bare() returns int
 {
     let x maybe()
     takes_plain(x as ref[Holder])
 }
 
-function via_call(rp) returns int
+function via_call() returns int
     takes_plain((maybe()) as ref[Holder])
 
-function via_member(rp) returns int
+function via_member() returns int
 {
     let b Box#(maybe())
     takes_plain(b.h as ref[Holder])

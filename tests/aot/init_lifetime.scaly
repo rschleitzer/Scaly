@@ -15,12 +15,14 @@ define Page(buffer: pointer[void], var offset: size_t)
     }
 }
 
-; Data type that uses init# to allocate on provided page
+; Data type whose init allocates on the page it is HANDED -- explicitly: the
+; caller page is implicit and never a parameter (2026-09-25), so a page an init
+; allocates on by name is an ordinary parameter
 define Data(ptr: pointer[int])
 {
-    init#(page, value: int)
+    init(host: pointer[Page], value: int)
     {
-        set ptr: page.allocate(sizeof int, alignof int) as pointer[int]
+        set ptr: host.allocate(sizeof int, alignof int) as pointer[int]
         set *ptr: value
     }
 
@@ -34,7 +36,7 @@ var page Page(buf, 0)
 let page_ptr &page
 
 ; Create Data using init# - allocates on 'page_ptr'
-let d Data^page_ptr(100)
+let d Data^page_ptr(page_ptr, 100)
 let result d.get_value()
 
 free(buf)

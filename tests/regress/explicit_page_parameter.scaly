@@ -1,0 +1,22 @@
+; Regression (2026-09-25): the caller's page is IMPLICIT and never an
+; explicit parameter. Until then a FIRST parameter named `page`/`rp` typed
+; `pointer[Page]` (or untyped) was peeled into it, so `make(rp, 5)` was one
+; argument too many ("function not found: make", later a pointed hint). Now
+; such a parameter is an ordinary one and the call means what it says; an
+; UNTYPED `rp`/`page` is refused at its declaration
+; (xfail_declared_caller_page).
+; Expected: PASS
+define Box (v: int)
+
+function make(page: pointer[Page], v: int) returns ref[Box]
+{
+    let b Box^page(v)
+    &b
+}
+
+let rp Page.allocate_root_page()
+let b make(rp, 5)
+if b.v = 5
+    print "PASS"
+else
+    print "FAIL"

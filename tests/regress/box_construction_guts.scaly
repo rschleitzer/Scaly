@@ -24,10 +24,10 @@ define Big(a: String, b: String, c: String, d: String)
 function lbl(s: String) returns String
     String(s)
 
-function via#(page, s: String) returns pointer[Big]
-    &^page Big(String(s), lbl(s), String(s), lbl(s))
+function via#(s: String) returns pointer[Big]
+    &# Big(String(s), lbl(s), String(s), lbl(s))
 
-function churn#(page) returns size_t
+function churn#() returns size_t
 {
     var acc: size_t 0
     var i: size_t 0

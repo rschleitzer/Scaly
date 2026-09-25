@@ -7,7 +7,7 @@
 
 define Leaf (v: int)
 
-function read_leaf(page, o: ref[Leaf]?) returns int
+function read_leaf(o: ref[Leaf]?) returns int
 {
     if o = null
         return 0 - 1

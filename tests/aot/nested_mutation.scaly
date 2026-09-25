@@ -4,7 +4,7 @@
 
 define Inner(var value: int)
 {
-    procedure set_42#(rp, mutable this)
+    procedure set_42#(mutable this)
     {
         set value: 42
     }

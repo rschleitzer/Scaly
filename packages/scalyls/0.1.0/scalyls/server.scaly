@@ -369,7 +369,7 @@ define server
     ; ONE BYTE AT A TIME (prefix, inserted text, suffix): a single
     ; StringBuilder.append of a large String hits the runtime's manual-grow
     ; crash (see symbols.scaly's STRING/JSON NOTE).
-    function apply_change(rp, text: String, change: JsonValue) returns String
+    function apply_change(text: String, change: JsonValue) returns String
     {
         let range json.get(change, "range")
         let new_text json.as_string(json.get(change, "text"))
@@ -489,7 +489,7 @@ define server
     ; A message cannot contain an LF (the planner writes none, and a diagnostic
     ; is one line), but one is replaced by a space rather than trusted — the line
     ; IS the framing here.
-    function diagnostics_packed(rp, context: JsonValue) returns String
+    function diagnostics_packed(context: JsonValue) returns String
     {
         var sb StringBuilder()
         let diags json.get(context, "diagnostics")
@@ -744,7 +744,7 @@ define server
     ; Decode the worker's framed semantic-type reply ("1<name>" hit / "0" miss
     ; / "" crash) into an LSP hover object, or "" on a miss/crash so the
     ; caller falls back to the lexical hover.
-    function semantic_hover_from_framed(rp, framed: String) returns String
+    function semantic_hover_from_framed(framed: String) returns String
     {
         if framed.get_length() = 0
             return ""
@@ -984,7 +984,7 @@ define server
     ; `serialized` (a JSON object) with `"documentation":<doc>` spliced in before
     ; its closing brace. Byte-at-a-time: a doc block in this tree runs to
     ; hundreds of bytes and this runs in the PARENT, with no crash isolation.
-    function with_documentation(rp, serialized: String, doc: String) returns String
+    function with_documentation(serialized: String, doc: String) returns String
     {
         let n serialized.get_length()
         if n < 2
@@ -1224,7 +1224,7 @@ define server
     ; {"jsonrpc":"2.0","id":<id>,"result":{"capabilities":
     ;   {"textDocumentSync":1},"serverInfo":{"name":"scalyls",
     ;   "version":"0.1.0"}}}
-    function initialize_response(rp, id: i64) returns String
+    function initialize_response(id: i64) returns String
     {
         var sb StringBuilder()
         sb.append("{" as char)
@@ -1409,7 +1409,7 @@ define server
     }
 
     ; {"jsonrpc":"2.0","id":<id>,"result":null}
-    function null_result_response(rp, id: i64) returns String
+    function null_result_response(id: i64) returns String
     {
         var sb StringBuilder()
         sb.append("{" as char)
@@ -1435,7 +1435,7 @@ define server
     ; exclusive page. This runs in the PARENT (no crash isolation), so the
     ; byte-at-a-time form is what keeps a large outline from killing the
     ; server. See symbols.scaly's STRING/JSON NOTE.
-    function document_symbol_response(rp, id: i64, result: String) returns String
+    function document_symbol_response(id: i64, result: String) returns String
     {
         var sb StringBuilder()
         sb.append("{" as char)
@@ -1460,7 +1460,7 @@ define server
     ; {"jsonrpc":"2.0","id":<id>,"result":<result>}  where <result> is the
     ; pre-serialized hover object, or null when empty (no symbol at cursor).
     ; Hover payloads are small, so a single append is fine here.
-    function hover_response(rp, id: i64, result: String) returns String
+    function hover_response(id: i64, result: String) returns String
     {
         var sb StringBuilder()
         sb.append("{" as char)
@@ -1483,7 +1483,7 @@ define server
     ; pre-serialized Location object, or null when empty (no declaration found
     ; for the identifier under the cursor). A single Location is small, so a
     ; single append is fine here.
-    function definition_response(rp, id: i64, result: String) returns String
+    function definition_response(id: i64, result: String) returns String
     {
         var sb StringBuilder()
         sb.append("{" as char)
@@ -1503,7 +1503,7 @@ define server
     }
 
     ; `"key":`  (quoted key followed by a colon)
-    function key(rp, k: Slice[char]) returns String
+    function key(k: Slice[char]) returns String
     {
         var sb StringBuilder()
         sb.append("\"" as char)
@@ -1514,7 +1514,7 @@ define server
     }
 
     ; `"s"`  (quoted string literal; no escaping — fixed ASCII only)
-    function quoted(rp, s: Slice[char]) returns String
+    function quoted(s: Slice[char]) returns String
     {
         var sb StringBuilder()
         sb.append("\"" as char)

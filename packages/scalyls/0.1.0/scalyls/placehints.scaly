@@ -87,7 +87,7 @@ define placehints
 {
     ; The placement hints for the packed "<sl> <sc> <el> <ec>" range as a
     ; COMMA-JOINED FRAGMENT of InlayHint objects, or "".
-    procedure fragment(rp, mutable uri: String, mutable text: String, packed: String) returns String mutable lc_col, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used
+    procedure fragment(mutable uri: String, mutable text: String, packed: String) returns String mutable lc_col, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used
     {
         let path diagnostics.strip_uri uri
         if path.get_length() = 0
@@ -127,7 +127,7 @@ define placehints
     ; load-bearing file in this server for a cosmetic gain. The shape it answers
     ; is known exactly — `[]` or `[...]` — so `[]` becomes `[mine]` and anything
     ; else takes `,mine` before its final byte.
-    procedure merged(rp, mutable repaired: String, mutable source: String, mutable uri: String, packed: String) returns String mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig
+    procedure merged(mutable repaired: String, mutable source: String, mutable uri: String, packed: String) returns String mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig
     {
         let base symbols.inlay_hints_packed(repaired, uri, packed)
         let mine placehints.fragment(uri, source, packed)
@@ -161,7 +161,7 @@ define placehints
     ; ends after the callee name and its arguments are outside. The start is the
     ; one end of it that reliably sits on the construction's first token.
     ; ====================================================================
-    procedure build(rp, mutable path: String, mutable text: String) returns String mutable modeler_error_count
+    procedure build(mutable path: String, mutable text: String) returns String mutable modeler_error_count
     {
         var sb StringBuilder()
 
@@ -632,7 +632,7 @@ define placehints
     ; A constructor call: "C1E" in the mangled name is the discriminator
     ; Emitter.scaly:9598 routes on. Region for Local / Call / Reference, stack
     ; for anything else (emit_constructor_call_into#).
-    function label_for_call(rp, c: PlannedCall, has_page: bool) returns String
+    function label_for_call(c: PlannedCall, has_page: bool) returns String
     {
         if c.mangled_name.contains("C1E") = false
             return ""
@@ -649,7 +649,7 @@ define placehints
     ; while a grouping tuple carries whatever its expression yields, which for
     ; every case seen is a PRIMITIVE (symbols.is_primitive_type_name#, the same
     ; list the type hints suppress). An unnamed type answers nothing either.
-    function label_for_tuple(rp, t: PlannedTuple, has_page: bool) returns String
+    function label_for_tuple(t: PlannedTuple, has_page: bool) returns String
     {
         let tn t.tuple_type.name
         if tn.get_length() = 0
@@ -676,7 +676,7 @@ define placehints
     ; PlannedInitializer carries `page_parameter`, and an operator, a `deinit`, a
     ; global initializer and the program's top-level statements have none — so a
     ; `#` construction there reads as `stack`, which is what the emitter does.
-    function label_for_life(rp, life: Lifetime, on_region: bool, has_page: bool) returns String
+    function label_for_life(life: Lifetime, on_region: bool, has_page: bool) returns String
     {
         var sb StringBuilder()
         if on_region = false
@@ -748,7 +748,7 @@ define placehints
     ; shown. Every site of this tree with more than one copy agrees (checked on
     ; Vector.scaly, where all 20 copies label both of its sites identically), and
     ; they should — same source, same escape analysis.
-    function dedupe(rp, blob: String) returns String
+    function dedupe(blob: String) returns String
     {
         var out StringBuilder()
         let bn blob.get_length()
@@ -835,7 +835,7 @@ define placehints
     ; ====================================================================
     ; Rendering: filter the blob by the requested range, one InlayHint each.
     ; ====================================================================
-    procedure render(rp, blob: String, source: String, packed: String) returns String mutable lc_col, lc_line, lc_off
+    procedure render(blob: String, source: String, packed: String) returns String mutable lc_col, lc_line, lc_off
     {
         ; The packed range is "<start_line> <start_char> <end_line> <end_char>",
         ; 0-based, exactly as symbols.inlay_hints_packed# reads it.
@@ -945,7 +945,7 @@ define placehints
         true
     }
 
-    procedure cached_blob(rp) returns String
+    procedure cached_blob() returns String
     {
         if ph_used = false
             return ""

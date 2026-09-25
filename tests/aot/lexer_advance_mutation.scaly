@@ -7,7 +7,7 @@ define Lexer
     var current: pointer[char]
 )
 {
-    procedure advance#(rp, mutable this)
+    procedure advance#(mutable this)
         set current: null
 
     function is_done(this) returns bool
@@ -19,10 +19,10 @@ define Parser
     lexer: Lexer
 )
 {
-    procedure do_scan#(rp, mutable this)
+    procedure do_scan#(mutable this)
         advance_lexer#()
 
-    procedure advance_lexer#(rp, mutable this)
+    procedure advance_lexer#(mutable this)
         lexer.advance#()
 
     function is_at_end(this) returns bool

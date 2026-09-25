@@ -369,7 +369,7 @@ define server
     ; ONE BYTE AT A TIME (prefix, inserted text, suffix): a single
     ; StringBuilder.append of a large String hits the runtime's manual-grow
     ; crash (see symbols.scaly's STRING/JSON NOTE).
-    function apply_change(rp, text: String, change: JsonValue) @direct true @ret_caller true @deep true returns String linked
+    function apply_change(text: String, change: JsonValue) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -489,7 +489,7 @@ define server
     ; A message cannot contain an LF (the planner writes none, and a diagnostic
     ; is one line), but one is replaced by a space rather than trusted — the line
     ; IS the framing here.
-    function diagnostics_packed(rp, context: JsonValue) @direct true @ret_caller true @deep true returns String linked
+    function diagnostics_packed(context: JsonValue) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -744,7 +744,7 @@ define server
     ; Decode the worker's framed semantic-type reply ("1<name>" hit / "0" miss
     ; / "" crash) into an LSP hover object, or "" on a miss/crash so the
     ; caller falls back to the lexical hover.
-    function semantic_hover_from_framed(rp, framed: String) @direct true @ret_caller true @deep true returns String linked
+    function semantic_hover_from_framed(framed: String) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -984,7 +984,7 @@ define server
     ; `serialized` (a JSON object) with `"documentation":<doc>` spliced in before
     ; its closing brace. Byte-at-a-time: a doc block in this tree runs to
     ; hundreds of bytes and this runs in the PARENT, with no crash isolation.
-    function with_documentation(rp, serialized: String, doc: String) @direct true @deep true returns String linked
+    function with_documentation(serialized: String, doc: String) @page true @direct true @deep true returns String linked
 
 
 
@@ -1224,7 +1224,7 @@ define server
     ; {"jsonrpc":"2.0","id":<id>,"result":{"capabilities":
     ;   {"textDocumentSync":1},"serverInfo":{"name":"scalyls",
     ;   "version":"0.1.0"}}}
-    function initialize_response(rp, id: i64) @direct true @ret_caller true @deep true returns String linked
+    function initialize_response(id: i64) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -1409,7 +1409,7 @@ define server
 
 
     ; {"jsonrpc":"2.0","id":<id>,"result":null}
-    function null_result_response(rp, id: i64) @direct true @ret_caller true @deep true returns String linked
+    function null_result_response(id: i64) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -1435,7 +1435,7 @@ define server
     ; exclusive page. This runs in the PARENT (no crash isolation), so the
     ; byte-at-a-time form is what keeps a large outline from killing the
     ; server. See symbols.scaly's STRING/JSON NOTE.
-    function document_symbol_response(rp, id: i64, result: String) @direct true @ret_caller true @deep true returns String linked
+    function document_symbol_response(id: i64, result: String) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -1460,7 +1460,7 @@ define server
     ; {"jsonrpc":"2.0","id":<id>,"result":<result>}  where <result> is the
     ; pre-serialized hover object, or null when empty (no symbol at cursor).
     ; Hover payloads are small, so a single append is fine here.
-    function hover_response(rp, id: i64, result: String) @direct true @ret_caller true @deep true returns String linked
+    function hover_response(id: i64, result: String) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -1483,7 +1483,7 @@ define server
     ; pre-serialized Location object, or null when empty (no declaration found
     ; for the identifier under the cursor). A single Location is small, so a
     ; single append is fine here.
-    function definition_response(rp, id: i64, result: String) @direct true @ret_caller true @deep true returns String linked
+    function definition_response(id: i64, result: String) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -1503,7 +1503,7 @@ define server
 
 
     ; `"key":`  (quoted key followed by a colon)
-    function key(rp, k: Slice[char]) @direct true @ret_caller true @deep true returns String linked
+    function key(k: Slice[char]) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -1514,7 +1514,7 @@ define server
 
 
     ; `"s"`  (quoted string literal; no escaping — fixed ASCII only)
-    function quoted(rp, s: Slice[char]) @direct true @ret_caller true @deep true returns String linked
+    function quoted(s: Slice[char]) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 

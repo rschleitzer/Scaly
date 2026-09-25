@@ -1,0 +1,44 @@
+; Regression (2026-09-24, turned 2026-09-25): `#` names the CALLER's page. `fill`
+; returns nothing, and until 2026-09-25 the page rules gave such a routine no
+; caller page: the emitter took its own frame -- released on return -- and the
+; String handed to the caller dangled (rejected since 2026-09-24,
+; operand_is_pageless_caller_construction#). A `#` in a body gives the routine
+; the caller page now (R4 without its reference-return gate), so the spelling
+; means what it says; run under SCALY_POISON.
+; Expected: PASS
+define Holder (var s: String)
+
+procedure fill(mutable out: ref[Holder], n: int)
+{
+    var sb StringBuilder()
+    sb.append "hello-"
+    sb.append n
+    set out: Holder(String#(sb.to_string()))
+}
+
+procedure churn() returns int
+{
+    var t: int 0
+    var i: int 0
+    while i < 200
+    {
+        let x String("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
+        set t: t + (x.get_length() as int)
+        set i: i + 1
+    }
+    t
+}
+
+procedure run()
+{
+    if getenv("SCALY_POISON") <> null
+        Page.enable_poison()
+    var h Holder(String(""))
+    fill(&h, 7)
+    churn()
+    if h.s.equals(String("hello-7"))
+        print("PASS")
+    else
+        print("FAIL")
+}
+run()

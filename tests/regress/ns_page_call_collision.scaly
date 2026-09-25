@@ -28,10 +28,10 @@ define fancy
 {
     ; Page-taking (#) sibling — the `#` gives it an implicit `rp` page param
     ; that MUST appear in its mangled symbol.
-    function is_special#(rp, name: int) returns bool
+    function is_special#(name: int) returns bool
         name = 42
 
-    function run#(rp) returns bool
+    function run#() returns bool
         fancy.is_special#(42)
 }
 

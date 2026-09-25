@@ -24,7 +24,7 @@ function as_optional_ref(p: pointer[Alpha]) returns ref[Alpha]?
 
 ; (2) a REGION CONSTRUCTION: `T^page(...)` yields a pointer while its type
 ;     names the object. The single largest class in the raw run.
-function build(rp) returns ref[Alpha]?
+function build() returns ref[Alpha]?
 {
     let a Alpha^rp(5)
     a

@@ -19,7 +19,7 @@ define Box (var host: ref[Page]  var kept: String)
             set i: i + 1
         }
     }
-    procedure work(rp: pointer[Page], mutable this)
+    procedure work(mutable this)
     {
         var sb StringBuilder()
         sb.append "hello-from-work"

@@ -14,11 +14,11 @@ use scaly.containers.String
 
 define Item(name: ref[String]?)
 
-function bl#(page, t: pointer[const_char]) returns String
+function bl#(t: pointer[const_char]) returns String
     String#(t)
 
-function make_item#(page, a: pointer[const_char]) returns Item
-    Item(&^page bl#(a))
+function make_item#(a: pointer[const_char]) returns Item
+    Item(&# bl#(a))
 
 let it make_item#("foo")
 if it.name <> null

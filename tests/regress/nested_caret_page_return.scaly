@@ -13,9 +13,9 @@ package scaly 0.1.0
 
 use scaly.containers.String
 
-function pick#(page, flag: bool, text: pointer[const_char]) returns String
+function pick#(flag: bool, text: pointer[const_char]) returns String
 {
-    let name String^page(text)
+    let name String#(text)
     if flag
         return name
     return name

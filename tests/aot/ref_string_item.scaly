@@ -1,16 +1,17 @@
+; AOT Test: a ref[String]? built on the caller page (^rp) and handed back
+; Expected: PASS
+
 package scaly 0.1.0
 
 use scaly.containers.String
 use scaly.containers.Vector
-
-function exit(code: int) extern
 
 define MyItem
 (
     name: ref[String]?
 )
 
-function copy_name#(rp, i: MyItem) returns ref[String]?
+function copy_name#(i: MyItem) returns ref[String]?
 {
     var result: ref[String]? null
     if i.name <> null
@@ -23,7 +24,7 @@ function copy_name#(rp, i: MyItem) returns ref[String]?
     result
 }
 
-function main() returns int
+function check() returns int
 {
     let item MyItem(&(String("x")))
     let copied copy_name(item)
@@ -34,4 +35,7 @@ function main() returns int
     0
 }
 
-exit(main())
+if check() = 0
+    print("PASS")
+else
+    print("FAIL")

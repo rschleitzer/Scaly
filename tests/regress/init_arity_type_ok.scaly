@@ -70,13 +70,13 @@ function build(maybe: ref[Leaf]?, host: pointer[Page]) returns int
 ; made this test fail about 40 % of runs (2 of 5, ASLR-dependent, and PASS
 ; every time when run by hand), which is the shape a page-get on a non-hosted
 ; object always has.
-function check(page: pointer[Page]) returns int
+function check(host: pointer[Page]) returns int
 {
     var anchor Leaf(1)
-    build(&anchor, page)
+    build(&anchor, host)
 }
 
-let rc check()
+let rc check(Page.allocate_page())
 if rc = 0
     print "PASS"
 if rc <> 0

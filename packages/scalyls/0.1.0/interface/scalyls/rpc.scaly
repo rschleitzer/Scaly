@@ -67,7 +67,7 @@ define rpc
 
     ; Read one framed message. Returns the JSON body as a String on the
     ; caller's page, or an empty String at EOF / on a malformed frame.
-    procedure read_message(rp) @direct true @ret_caller true @deep true returns String io linked
+    procedure read_message() @page true @direct true @ret_caller true @deep true returns String io linked
 
 
 
@@ -181,7 +181,7 @@ define rpc
 
 
 
-    function format_size(rp, n: size_t) @direct true @ret_caller true @deep true returns String linked
+    function format_size(n: size_t) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -250,7 +250,7 @@ define rpc
 
 
 
-    procedure read_message_fd(rp, fd: int) @direct true @ret_caller true @deep true returns String io linked
+    procedure read_message_fd(fd: int) @page true @direct true @ret_caller true @deep true returns String io linked
 
 
 

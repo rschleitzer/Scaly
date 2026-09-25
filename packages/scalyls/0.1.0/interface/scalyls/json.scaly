@@ -112,7 +112,7 @@ define json
 
 
     ; Returns a copy of the string payload, or an empty String otherwise.
-    function as_string(rp, this: JsonValue) @direct true @ret_caller true @deep true returns String linked
+    function as_string(this: JsonValue) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -187,13 +187,13 @@ define json
     ; Parsing
     ; ====================================================================
 
-    procedure parse(rp, mutable source: String) @direct true @deep true returns JsonValue linked
+    procedure parse(mutable source: String) @page true @direct true @deep true returns JsonValue linked
 
 
 
 
 
-    procedure parse_value(rp, mutable p: ref[JsonParser]) @direct true @deep true returns JsonValue linked
+    procedure parse_value(mutable p: ref[JsonParser]) @page true @direct true @deep true returns JsonValue linked
 
 
 
@@ -228,7 +228,7 @@ define json
 
 
 
-    procedure parse_object(rp, mutable p: ref[JsonParser]) @direct true @ret_caller true @deep true returns JsonValue linked
+    procedure parse_object(mutable p: ref[JsonParser]) @page true @direct true @ret_caller true @deep true returns JsonValue linked
 
 
 
@@ -276,8 +276,8 @@ define json
 
 
 
-    procedure parse_array(rp, mutable p: ref[JsonParser]) @direct true @ret_caller true @deep true returns JsonValue linked
 
+    procedure parse_array(mutable p: ref[JsonParser]) @page true @direct true @ret_caller true @deep true returns JsonValue linked
 
 
 
@@ -319,7 +319,9 @@ define json
 
 
 
-    procedure parse_string(rp, mutable p: ref[JsonParser]) @direct true @ret_caller true @deep true returns String linked
+
+
+    procedure parse_string(mutable p: ref[JsonParser]) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -600,7 +602,7 @@ define json
     ; sibling arg-count match.
     ; ====================================================================
 
-    function stringify(rp, this: JsonValue) @direct true @ret_caller true @deep true returns String linked
+    function stringify(this: JsonValue) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -658,7 +660,7 @@ define json
 
 
     ; Quote and escape a string into a "..."-wrapped JSON string literal.
-    function quote_string(rp, s: String) @direct true @ret_caller true @deep true returns String linked
+    function quote_string(s: String) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -712,7 +714,7 @@ define json
 
 
 
-    function format_i64(rp, n: i64) @direct true @ret_caller true @deep true returns String linked
+    function format_i64(n: i64) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 

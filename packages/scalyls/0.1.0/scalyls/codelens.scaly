@@ -69,7 +69,7 @@ define codelens
 {
     ; The whole CodeLens[] array for `uri`. `text` is the source the worker
     ; resolved (the parent's buffer, or the file from disk when it had none).
-    procedure lenses(rp, mutable uri: String, mutable text: String) returns String mutable lc_col, lc_line, lc_off, modeler_error_count
+    procedure lenses(mutable uri: String, mutable text: String) returns String mutable lc_col, lc_line, lc_off, modeler_error_count
     {
         let path diagnostics.strip_uri uri
 
@@ -127,7 +127,7 @@ define codelens
     ; planned as itself. `plan_text` is the text whose offsets the plan carries —
     ; the file ON DISK for a member, because the modeler reads from disk.
     ; ====================================================================
-    procedure planned_fragment(rp, mutable path: String, mutable text: String) returns String mutable lc_col, lc_line, lc_off, modeler_error_count
+    procedure planned_fragment(mutable path: String, mutable text: String) returns String mutable lc_col, lc_line, lc_off, modeler_error_count
     {
         let root diagnostics.package_root path
         if root.get_length() > 0
@@ -135,7 +135,7 @@ define codelens
         codelens.document_planned_fragment(path, text)
     }
 
-    procedure root_planned_fragment(rp, mutable root: String, path: String, text: String) returns String mutable lc_col, lc_line, lc_off, modeler_error_count
+    procedure root_planned_fragment(mutable root: String, path: String, text: String) returns String mutable lc_col, lc_line, lc_off, modeler_error_count
     {
         let plan_text File.read_to_string(path)
         if plan_text.get_length() = 0
@@ -169,7 +169,7 @@ define codelens
         result
     }
 
-    procedure document_planned_fragment(rp, mutable path: String, mutable text: String) returns String mutable lc_col, lc_line, lc_off, modeler_error_count
+    procedure document_planned_fragment(mutable path: String, mutable text: String) returns String mutable lc_col, lc_line, lc_off, modeler_error_count
     {
         if text.get_length() = 0
             return ""
@@ -198,7 +198,7 @@ define codelens
     }
 
     ; Join every plan-derived family over the one plan.
-    procedure families(rp, plan: Plan, has_diag: bool, entry_file: String, path: String, plan_text: String, anchor_text: String) returns String mutable lc_col, lc_line, lc_off
+    procedure families(plan: Plan, has_diag: bool, entry_file: String, path: String, plan_text: String, anchor_text: String) returns String mutable lc_col, lc_line, lc_off
     {
         var sb StringBuilder()
         var first true
@@ -242,7 +242,7 @@ define codelens
     ; walk over the statement union. Two lenses at one position are what an
     ; editor shows side by side, which is the conventional look for this.
     ; ====================================================================
-    procedure head_fragment(rp, path: String, mutable text: String) returns String mutable lc_col, lc_line, lc_off
+    procedure head_fragment(path: String, mutable text: String) returns String mutable lc_col, lc_line, lc_off
     {
         var sb StringBuilder()
         var first true
@@ -302,7 +302,7 @@ define codelens
     ; generator sits in the same directory branch as its output ("controlflow.sgm"
     ; for tests/controlflow.sgm, since the document is tests/selfhosted/…).
     ; ====================================================================
-    procedure generated_banner(rp, text: String, path: String) returns String mutable lc_col, lc_line, lc_off
+    procedure generated_banner(text: String, path: String) returns String mutable lc_col, lc_line, lc_off
     {
         ; The three compiler-side DSSSL outputs (mkp's `gen codegen/scaly.dsl`).
         let parser_out "/packages/scalyc/0.1.0/scalyc/compiler/parser.scaly"
@@ -362,7 +362,7 @@ define codelens
 
     ; The banner lens itself: the title names the generator RELATIVE to the
     ; checkout (what a reader can act on), the click opens it absolutely.
-    procedure banner_lens(rp, text: String, root: String, rel: String) returns String mutable lc_col, lc_line, lc_off
+    procedure banner_lens(text: String, root: String, rel: String) returns String mutable lc_col, lc_line, lc_off
     {
         let target codelens.join(root, rel)
         var title StringBuilder()
@@ -395,7 +395,7 @@ define codelens
     ; `base` below is that search directory, threaded exactly as the Modeler
     ; threads it; `dir` is the document's own directory, used only for display.
     ; ====================================================================
-    procedure declaration_fragment(rp, mutable text: String, mutable path: String) returns String mutable lc_col, lc_line, lc_off
+    procedure declaration_fragment(mutable text: String, mutable path: String) returns String mutable lc_col, lc_line, lc_off
     {
         let dir codelens.directory_of path
         var p parser.Parser(text)
@@ -411,7 +411,7 @@ define codelens
         result
     }
 
-    procedure declarations_fragment(rp, text: String, mutable path: String, mutable base: String, dir: String, decls: ref[Vector[DeclarationSyntax]]?) returns String mutable lc_col, lc_line, lc_off
+    procedure declarations_fragment(text: String, mutable path: String, mutable base: String, dir: String, decls: ref[Vector[DeclarationSyntax]]?) returns String mutable lc_col, lc_line, lc_off
     {
         var sb StringBuilder()
         if decls = null
@@ -441,7 +441,7 @@ define codelens
 
     ; One declaration: a lens for `package` / `module`, a recursion for a
     ; namespace, nothing for the rest.
-    procedure declaration_lens(rp, text: String, mutable path: String, mutable base: String, dir: String, decl: DeclarationSyntax) returns String mutable lc_col, lc_line, lc_off
+    procedure declaration_lens(text: String, mutable path: String, mutable base: String, dir: String, decl: DeclarationSyntax) returns String mutable lc_col, lc_line, lc_off
     {
         choose decl
             when pkg: PackageSyntax
@@ -558,7 +558,7 @@ define codelens
     ; Not clickable (the empty command id), for tasklens.scaly's reason: the
     ; sentence is the whole message. ASCII only in the titles.
     ; ====================================================================
-    procedure storage_lens(rp, text: String, offset: size_t, keyword: String, annotation: ref[BindingAnnotationSyntax]?, title: String) returns String mutable lc_col, lc_line, lc_off
+    procedure storage_lens(text: String, offset: size_t, keyword: String, annotation: ref[BindingAnnotationSyntax]?, title: String) returns String mutable lc_col, lc_line, lc_off
     {
         let width keyword.get_length()
         if codelens.declares_a_type annotation
@@ -597,7 +597,7 @@ define codelens
     ; Literals of VersionSyntax: a syntax node's `end` runs to the start of the
     ; next token, so a span would carry trailing trivia — while "digits and
     ; dots from version.start" is exactly a version and nothing else.
-    procedure package_lens(rp, text: String, mutable path: String, pkg: PackageSyntax) returns String mutable lc_col, lc_line, lc_off
+    procedure package_lens(text: String, mutable path: String, pkg: PackageSyntax) returns String mutable lc_col, lc_line, lc_off
     {
         if pkg.version = null
             return ""
@@ -649,7 +649,7 @@ define codelens
     ; the Modeler would use (see the section comment above). Shown relative to
     ; the document's own directory, so a sibling reads "lexer.scaly" and a
     ; namespace child reads "scalyls/json.scaly".
-    procedure module_lens(rp, text: String, mutable base: String, dir: String, m: ModuleSyntax) returns String mutable lc_col, lc_line, lc_off
+    procedure module_lens(text: String, mutable base: String, dir: String, m: ModuleSyntax) returns String mutable lc_col, lc_line, lc_off
     {
         var t StringBuilder()
         t.append(m.name)
@@ -674,7 +674,7 @@ define codelens
     }
 
     ; The digits-and-dots run starting at `offset` ("0.1.0").
-    function version_text(rp, text: String, offset: size_t) returns String
+    function version_text(text: String, offset: size_t) returns String
     {
         let n text.get_length()
         var k offset
@@ -706,7 +706,7 @@ define codelens
     ; `packages` directory is the checkout the compiler would be invoked from,
     ; which is the same answer for every real in-repo case and no answer at all
     ; outside one.
-    procedure resolution_base(rp, mutable path: String) returns String
+    procedure resolution_base(mutable path: String) returns String
     {
         let home getenv "SCALY_HOME"
         if home <> null
@@ -743,7 +743,7 @@ define codelens
     ; <path minus suffix>, or "" when path does not end in suffix (or would be
     ; left empty — a suffix that IS the whole path answers nothing rather than
     ; a bare relative name).
-    function strip_suffix(rp, path: String, suffix: String) returns String
+    function strip_suffix(path: String, suffix: String) returns String
     {
         if path.ends_with(suffix) = false
             return ""
@@ -754,7 +754,7 @@ define codelens
         path.substring(0, plen - slen)
     }
 
-    function join(rp, left: String, right: String) returns String
+    function join(left: String, right: String) returns String
     {
         var sb StringBuilder()
         sb.append left
@@ -764,7 +764,7 @@ define codelens
     }
 
     ; Everything before the last "/" ("." when there is none).
-    function directory_of(rp, path: String) returns String
+    function directory_of(path: String) returns String
     {
         let at path.last_index_of("/" as u8)
         if at <= 0
@@ -773,7 +773,7 @@ define codelens
     }
 
     ; Everything after the last "/".
-    function file_name(rp, path: String) returns String
+    function file_name(path: String) returns String
     {
         let at path.last_index_of("/" as u8)
         if at < 0
@@ -788,7 +788,7 @@ define codelens
     ; `target` with a leading "<dir>/" removed, or `target` unchanged when it
     ; does not live under `dir`. What the reader wants to see for a resolved
     ; module: "lexer.scaly" for a sibling, "scalyls/json.scaly" for a child.
-    function relative_to(rp, target: String, dir: String) returns String
+    function relative_to(target: String, dir: String) returns String
     {
         let prefix codelens.join(dir, "")
         if target.starts_with(prefix) = false

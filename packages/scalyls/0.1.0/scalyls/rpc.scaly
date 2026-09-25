@@ -67,7 +67,7 @@ define rpc
 
     ; Read one framed message. Returns the JSON body as a String on the
     ; caller's page, or an empty String at EOF / on a malformed frame.
-    procedure read_message(rp) returns String
+    procedure read_message() returns String
     {
         var content_length: size_t 0
 
@@ -181,7 +181,7 @@ define rpc
         }
     }
 
-    function format_size(rp, n: size_t) returns String
+    function format_size(n: size_t) returns String
     {
         if n = 0
             return "0"
@@ -250,7 +250,7 @@ define rpc
         }
     }
 
-    procedure read_message_fd(rp, fd: int) returns String
+    procedure read_message_fd(fd: int) returns String
     {
         var content_length: size_t 0
 

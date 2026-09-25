@@ -103,7 +103,7 @@ define tasklens
     ;
     ; "" whenever nothing can be said: no `for` loop at all, or a buffer whose
     ; `for` structure no longer matches the saved text.
-    procedure fragment(rp, plan: Plan, has_diag: bool, entry_file: String, path: String, plan_text: String, anchor_text: String) @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure fragment(plan: Plan, has_diag: bool, entry_file: String, path: String, plan_text: String, anchor_text: String) @page true @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -120,7 +120,7 @@ define tasklens
     ; The CodeLens[] array itself: walk the `for` sites of both texts in
     ; lockstep (the counts were proved equal by code_lenses#), take the
     ; verdict from the plan text's offset and draw it at the buffer's.
-    procedure lenses_body(rp, tp: ref[TaskPlanner.TaskPlanner], has_diag: bool, path: String, plan_text: String, anchor_text: String) @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure lenses_body(tp: ref[TaskPlanner.TaskPlanner], has_diag: bool, path: String, plan_text: String, anchor_text: String) @page true @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
 
 
@@ -171,7 +171,7 @@ define tasklens
     ; The answer SHARES the report's buffer (a String struct copy, no
     ; allocation): every caller consumes it while `tp` is still alive, which
     ; is what makes that safe.
-    function verdict_at(rp, tp: ref[TaskPlanner.TaskPlanner], path: String, offset: size_t) @direct true @ret_caller true @deep true returns String linked
+    function verdict_at(tp: ref[TaskPlanner.TaskPlanner], path: String, offset: size_t) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -219,7 +219,7 @@ define tasklens
     ; TaskPlanner spells a blocked verdict "blocked: <reason>"; the reason is
     ; kept verbatim, since it names the first blocking construct and that is
     ; the actionable half.
-    function title_for(rp, verdict: String) @direct true @ret_caller true @deep true returns String linked
+    function title_for(verdict: String) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 

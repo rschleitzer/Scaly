@@ -4,7 +4,7 @@
 ; `var H Vector[X]^rp(1); H.put(0, v); H.get(0)`. Self-hosted-only.
 ;
 ;   box_point#(page, p) returns &^page p          ; box a by-value param
-;   box_big#(page)      returns &^page make_big() ; box an sret call RESULT
+;   box_big#(page)      returns &# make_big() ; box an sret call RESULT
 ; The second case exercises the struct-by-ref load: make_big returns a wide
 ; struct via sret, so emit_operand yields the result-slot pointer — emit_box
 ; must LOAD the struct before copying, else only the 8-byte pointer is stored.
@@ -20,14 +20,14 @@ define Point(x: int, y: int)
 
 define Big(a: int, b: int, c: int, d: int, e: int, f: int)
 
-function box_point#(page, p: Point) returns pointer[Point]
-    &^page p
+function box_point#(p: Point) returns pointer[Point]
+    &# p
 
 function make_big() returns Big
     Big(10, 20, 30, 40, 50, 60)
 
-function box_big#(page) returns pointer[Big]
-    &^page make_big()
+function box_big#() returns pointer[Big]
+    &# make_big()
 
 let src Point(3, 4)
 let bp box_point#(src)

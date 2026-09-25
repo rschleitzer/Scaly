@@ -495,7 +495,7 @@ src = ("; A file banner that must NOT reach any hover.\n"        # 0
        "{\n    return 2\n}\n"                                   # 34-36
        "\n"                                                     # 37
        "; the doc of first\n"                                   # 38
-       "function first(rp) returns int  1: function second(rp) returns int  2\n")  # 39
+       "function first() returns int  1: function second() returns int  2\n")  # 39
 path = ws + "/lsp_hover_doc.scaly"
 open(path, "w").write(src)
 
@@ -516,7 +516,7 @@ inp += hov(7, 21, 15)   # the method name
 inp += hov(8, 27, 10)   # an UNDOCUMENTED routine -> byte-identical to before
 inp += hov(9, 33, 10)   # a routine under a `;*` block comment
 inp += hov(10, 39, 10)  # `first`  -> owns the block above
-inp += hov(11, 39, 45)  # `second` -> same line, does NOT
+inp += hov(11, 39, 43)  # `second` -> same line, does NOT
 inp += frame({"jsonrpc":"2.0","id":99,"method":"shutdown"})
 inp += frame({"jsonrpc":"2.0","method":"exit"})
 out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
@@ -559,7 +559,7 @@ check(val(8) == "function undocumented() returns int",
 check(val(9) == "function blocky() returns int",
       "a `;*` BLOCK comment is not a doc comment")
 check("the doc of first" in (val(10) or ""), "the routine that STARTS the line owns the block")
-check(val(11) == "function second(rp) returns int",
+check(val(11) == "function second() returns int",
       "a second routine on the same line does not")
 sys.exit(1 if failures else 0)
 PY
@@ -2884,14 +2884,14 @@ open(ws + "/app.scaly", "w").write(
     "\n"
     "let v faulty.boom()\n")
 BROKEN = ("define faulty\n{\n"
-          "    function boom(rp) returns int\n"
+          "    function boom() returns int\n"
           "    {\n"
           "        let x no_such_name_here + 1\n"      # line 4 of bad.scaly
           "        x\n"
           "    }\n}\n")
 open(ws + "/app/bad.scaly", "w").write(BROKEN)
 open(ws + "/app/good.scaly", "w").write(
-    "define fine\n{\n    function ok(rp) returns int\n        7\n}\n")
+    "define fine\n{\n    function ok() returns int\n        7\n}\n")
 
 ROOT = "file://" + ws + "/app.scaly"
 BAD  = "file://" + ws + "/app/bad.scaly"
@@ -2941,7 +2941,7 @@ shutil.rmtree(ws2, ignore_errors=True); os.makedirs(ws2 + "/app")
 open(ws2 + "/app.scaly", "w").write(
     "define app\n{\n    module good\n}\n\nuse app.good.fine\n\nlet v fine.ok()\n")
 open(ws2 + "/app/good.scaly", "w").write(
-    "define fine\n{\n    function ok(rp) returns int\n        7\n}\n")
+    "define fine\n{\n    function ok() returns int\n        7\n}\n")
 OPEN_SIB = "file://" + ws2 + "/app/good.scaly"
 
 s = Session()
@@ -5832,9 +5832,9 @@ os.makedirs(ws)
 # page, so a dangling buffer shows as the recycled bytes rather than by luck.
 BODY = ("define Holder (name: String)\n"
         "\n"
-        "procedure fill(%s) returns bool\n"
+        "procedure fill(mutable out: pointer[Holder], n: int) returns bool\n"
         "{\n"
-        "    let s String(\"hello\")\n"
+        "    let s String%s(\"hello\")\n"
         "    set *out: Holder(s)\n"                      # 6 - the store
         "    true\n"
         "}\n"
@@ -5859,8 +5859,9 @@ BODY = ("define Holder (name: String)\n"
         "    if noise > 0\n"
         "        scaly.os.Console.print(h.name.to_c_string())\n"
         "}\n")
-bad_src  = BODY % "mutable out: pointer[Holder], n: int"        # no page parameter
-good_src = BODY % "rp, mutable out: pointer[Holder], n: int"    # can pin on the caller
+bad_src  = BODY % ""     # built on its own frame: no page to pin on
+good_src = BODY % "#"    # built on the caller page -- `#` gives the routine
+                         # that page (it was a declared `rp` until 2026-09-25)
 open(ws + "/bad.scaly", "w").write(bad_src)
 open(ws + "/good.scaly", "w").write(good_src)
 
@@ -5989,7 +5990,9 @@ for f in sweep:
             wrong.append((f, ln, "param %s is not a parameter here" % param, head.strip()[:60])); continue
         if re.match(r"\s*(function|procedure)\s+[A-Za-z_0-9]+\(\s*rp\b", head):
             wrong.append((f, ln, "routine HAS a page parameter", head.strip()[:50]))
-check(total > 10, "the sweep marked a real number of stores (%d)" % total)
+# a real number, not a zero: R8 (2026-09-25) gave several of the marked
+# routines their caller page, which took the count down to 10
+check(total > 5, "the sweep marked a real number of stores (%d)" % total)
 check(not wrong, "every mark is attributed to a parameter of its OWN routine")
 for w in wrong[:5]: print("      ", w)
 sys.exit(1 if failures else 0)
@@ -6077,13 +6080,13 @@ src = ("define Point\n"
        "    p.x\n"
        "}\n"
        "\n"
-       "function on_caller_sigil(rp, n: int) returns int\n"
+       "function on_caller_sigil(n: int) returns int\n"
        "{\n"
        "    let p Point#(n, n)\n"                    # 15 — the `#` sigil
        "    p.x\n"
        "}\n"
        "\n"
-       "function on_own_region(rp, n: int) returns String\n"
+       "function on_own_region(n: int) returns String\n"
        "{\n"
        "    var sb StringBuilder()\n"                # 21 — its own frame
        "    sb.append \"x\"\n"
@@ -6813,7 +6816,7 @@ open(ws + "/app/util.scaly", "w").write(
     "        return 7\n"
     "    }\n"
     "\n"
-    "    function txt(rp) returns String\n"
+    "    function txt() returns String\n"
     "    {\n"
     "        return String(\"x\")\n"
     "    }\n"

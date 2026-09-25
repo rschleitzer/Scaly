@@ -1,0 +1,57 @@
+; Regression (2026-09-25): a `case X:` whose statement stands on the NEXT line
+; ran that statement for EVERY value, rc 0. The colon and the line feed after
+; it were two separators; the arm took the empty statement between them and
+; the next line fell out of the match. The lexer folds a colon that ends its
+; line into the line feed (lexer.scaly, the ':' branch), as it folds
+; consecutive line feeds. Shapes: a braced arm, a plain statement, two cases
+; in one arm, the one-line and the colon-free spellings as controls.
+; Expected: PASS
+function braced(n: int) returns int
+{
+    var r 0
+    match n
+        case 1:
+        {
+            set r: 7
+        }
+    r
+}
+function plain(n: int) returns int
+{
+    var r 0
+    match n
+        case 1:
+            set r: 7
+    r
+}
+function two(n: int) returns int
+{
+    var r 0
+    match n
+        case 1 case 2:
+        {
+            set r: 7
+        }
+    r
+}
+function one_line(n: int) returns int
+{
+    var r 0
+    match n
+        case 1: set r: 7
+    r
+}
+function no_colon(n: int) returns int
+{
+    var r 0
+    match n
+        case 1
+        {
+            set r: 7
+        }
+    r
+}
+if braced(5) = 0 and braced(1) = 7 and plain(5) = 0 and plain(1) = 7 and two(5) = 0 and two(2) = 7 and one_line(5) = 0 and one_line(1) = 7 and no_colon(5) = 0 and no_colon(1) = 7
+    print "PASS"
+else
+    print "FAIL"

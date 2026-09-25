@@ -215,33 +215,11 @@ define String @resident true (data: pointer[u8](null))
     function c_data(this: String) @ret_param_0 true @deep true returns pointer[const_char] linked
 
 
-    function to_c_string(page, this: String) @ret_param_0 true @deep true returns pointer[const_char] linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    ; A NUL-terminated copy on the CALLER's page. The copy init writes the
+    ; terminator (every content-writing init does), so its content bytes are
+    ; a C string; the caller page is implicit -- `String#(...)` is the whole
+    ; of it (2026-09-25; the routine declared a `page` parameter before).
+    function to_c_string(this: String) @page true @direct true @ret_caller true @deep true returns pointer[const_char] linked
 
 
 

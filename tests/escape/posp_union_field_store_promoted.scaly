@@ -1,7 +1,7 @@
 ; Control for negp_union_field_store_by_value.scaly: the same union with a
-; String built here, kept by the callee, in a routine that DECLARES a caller
-; page -- the persist promotion moves the String there, and the run reads it
-; back intact under SCALY_POISON.
+; String built here, kept by the callee -- on the CALLER's page (`#`), which
+; gives the routine that page by itself (the page used to be a declared `rp`
+; parameter, 2026-09-25); the run reads it back intact under SCALY_POISON.
 define Msg union
 (
     Text: String
@@ -23,11 +23,11 @@ define Box (var host: ref[Page]  var kept: Msg)
             set i: i + 1
         }
     }
-    procedure work(rp: pointer[Page], mutable this)
+    procedure work(mutable this)
     {
         var sb StringBuilder()
         sb.append "hello-from-work"
-        let s sb.to_string()
+        let s String#(sb.to_string())
         let m Msg.Text(s)
         this.keep(m)
     }

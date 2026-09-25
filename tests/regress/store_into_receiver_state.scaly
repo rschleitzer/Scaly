@@ -1,0 +1,77 @@
+; Regression (2026-09-25): a method that puts a value it BUILDS into its
+; receiver's state -- `names.add(String(t))`, `set name: String(t)` -- built
+; it on its own frame when it had no caller page, and the receiver kept a
+; dangling copy: 753 read back for 15, 251 for 6, rc 0, under every earlier
+; compiler. R8 (Planner.build_store_page_set#) gives such a routine the caller
+; page, and every routine that hands it its receiver, a field or a parameter
+; (`note_twice`, `rename_twice`); the store is promoted onto that page
+; (Planner.resident_store_promotion# for the `set`). Run under SCALY_POISON.
+; Expected: PASS
+define Reg (var names: Array[String])
+{
+    procedure note(mutable this, t: String)
+        names.add(String(t))
+    procedure note_twice(mutable this, t: String)
+    {
+        this.note(t)
+        this.note(t)
+    }
+}
+
+define Rec (var name: String, var n: int)
+{
+    procedure rename(mutable this, t: String)
+        set name: String(t)
+    procedure rename_explicit(mutable this, t: String)
+        set this.name: String(t)
+    procedure rename_twice(mutable this, t: String)
+    {
+        this.rename(t)
+        set n: n + 1
+    }
+}
+
+function churn() returns size_t
+{
+    var junk Array[String]()
+    var i: size_t 0
+    while i < 500
+    {
+        junk.add(String("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"))
+        set i: i + 1
+    }
+    junk.length
+}
+
+procedure run_reg() returns size_t
+{
+    var r Reg(Array[String]())
+    r.note(String("hello"))
+    r.note_twice(String("world"))
+    churn()
+    var total: size_t 0
+    for s in r.names
+        set total: total + s.get_length()
+    total
+}
+
+procedure run_rec() returns size_t
+{
+    var r Rec(String("a"), 0)
+    r.rename(String("hello"))
+    r.rename_twice(String("world!"))
+    churn()
+    let a r.name.get_length()
+    r.rename_explicit(String("abc"))
+    churn()
+    a * 10 + r.name.get_length()
+}
+
+if getenv("SCALY_POISON") <> null
+    Page.enable_poison()
+let a run_reg()
+let b run_rec()
+if a = 15 and b = 63
+    print "PASS"
+else
+    print "FAIL `a` `b`"

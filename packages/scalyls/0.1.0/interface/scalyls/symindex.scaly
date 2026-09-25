@@ -206,7 +206,7 @@ define symindex
     ; The cached blob for `path` (a fresh copy on the caller's page), or "" on a
     ; miss. Callers should gate on valid() first; an empty blob is a legitimate
     ; cached value (a file with no symbols).
-    procedure get_blob(rp, path: String) @direct true @ret_caller true @deep true returns String reads idx_slots linked
+    procedure get_blob(path: String) @page true @direct true @ret_caller true @deep true returns String reads idx_slots linked
 
 
 
@@ -362,7 +362,7 @@ define symindex
 
 
     ; The listing cached for `dir` in this request ("" when there is none).
-    procedure get_listing(rp, dir: String) @direct true @ret_caller true @deep true returns String reads dir_slots linked
+    procedure get_listing(dir: String) @page true @direct true @ret_caller true @deep true returns String reads dir_slots linked
 
 
 

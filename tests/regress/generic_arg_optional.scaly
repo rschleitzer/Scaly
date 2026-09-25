@@ -46,15 +46,15 @@ define Mk ()
     }
 }
 
-function probe(page: pointer[Page]) returns int
+function probe(host: pointer[Page]) returns int
 {
     ; the sugar, in construction position: this is what used to be `expected ']'`
-    let a Array[ref[Leaf]?]^page()
+    let a Array[ref[Leaf]?]^host()
 
     var k 0
     while k < 3
     {
-        let g page.allocate(sizeof Leaf, alignof Leaf) as ref[Leaf]
+        let g host.allocate(sizeof Leaf, alignof Leaf) as ref[Leaf]
         set g: Leaf(((k + 1) * 10))
         a.add(g)
         set k: k + 1
@@ -82,7 +82,7 @@ function probe(page: pointer[Page]) returns int
     flags
 }
 
-let r probe()
+let r probe(Page.allocate_page())
 if r = 0
     print "PASS\n"
 if r <> 0

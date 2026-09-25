@@ -542,37 +542,37 @@ define worker
     ; payload, or an empty-diagnostics clear payload if the worker is
     ; unavailable / crashed / hung (and respawns it next time). The text is
     ; the editor's latest buffer (the position frame is unused for diagnostics).
-    procedure analyze(rp, uri: String, text: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure analyze(uri: String, text: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
         worker.exchange("d", uri, text, "", diagnostics.clear_diagnostics(uri))
 
     ; Build the documentSymbol result for `uri` in the worker. `text` is the
     ; in-memory document copy (empty -> worker reads disk). Returns the JSON
     ; array; an empty array `[]` if the worker is unavailable/crashed/hung.
-    procedure symbols(rp, uri: String, text: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure symbols(uri: String, text: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
         worker.exchange("s", uri, text, "", "[]")
 
     ; Hover for `uri` at the packed "<line> <char>" position. `text` is the
     ; in-memory document copy (empty -> worker reads disk). Returns the LSP
     ; hover object, or "" (empty) if unavailable / no symbol at the cursor.
-    procedure hover(rp, uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure hover(uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
         worker.exchange("h", uri, text, packed, "")
 
     ; Go-to-definition for `uri` at the packed "<line> <char>" position.
     ; `text` is the in-memory copy (empty -> worker reads disk). Returns the
     ; LSP Location object, or "" if unavailable / no matching declaration.
-    procedure definition(rp, uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure definition(uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
         worker.exchange("g", uri, text, packed, "")
 
     ; Find-all-references for `uri` at the packed "<line> <char>" position.
     ; `text` is the in-memory copy (empty -> worker reads disk). Returns the
     ; LSP Location[] array; `[]` if unavailable / crashed / hung / no identifier.
-    procedure references(rp, uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure references(uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
         worker.exchange("r", uri, text, packed, "[]")
 
     ; documentHighlight for `uri` at the packed "<line> <char>" position.
     ; `text` is the in-memory copy (empty -> worker reads disk). Returns the
     ; LSP DocumentHighlight[] array (ranges only); `[]` if unavailable / none.
-    procedure highlights(rp, uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure highlights(uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
         worker.exchange("l", uri, text, packed, "[]")
 
     ; Completion for `uri` at the packed "<line> <char>" position. `text` is
@@ -580,7 +580,7 @@ define worker
     ; the `.`-qualified receiver under the cursor when it names a declared
     ; concept, else a CompletionItem[] of every declared name; `[]` if
     ; unavailable.
-    procedure completion(rp, uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure completion(uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
         worker.exchange("c", uri, text, packed, "[]")
 
     ; completionItem/resolve: the doc block of ONE entry. `uri` is the entry's
@@ -589,41 +589,41 @@ define worker
     ; resolves from disk, which is the same rule every other request follows.
     ; `packed` is the entry's label. Returns the MarkupContent object, or ""
     ; when the declaration carries no doc block / the worker is unavailable.
-    procedure completion_resolve(rp, uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure completion_resolve(uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
         worker.exchange("v", uri, text, packed, "")
 
     ; Rename for `uri`. `packed` is "<line> <char> <newName>". `text` is the
     ; in-memory copy (empty -> worker reads disk). Returns the LSP
     ; WorkspaceEdit, or "" if unavailable / no identifier at the cursor.
-    procedure rename(rp, uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure rename(uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
         worker.exchange("n", uri, text, packed, "")
 
     ; prepareRename for `uri` at the packed "<line> <char>" position. `text`
     ; is the in-memory copy (empty -> worker reads disk). Returns the LSP Range
     ; of the renameable identifier, or "" if unavailable / not renameable.
-    procedure prepare_rename(rp, uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure prepare_rename(uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
         worker.exchange("p", uri, text, packed, "")
 
     ; signatureHelp for `uri` at the packed "<line> <char>" position. `text`
     ; is the in-memory copy (empty -> worker reads disk). Returns the LSP
     ; SignatureHelp, or "" if unavailable / cursor not inside a known call.
-    procedure signature_help(rp, uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure signature_help(uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
         worker.exchange("f", uri, text, packed, "")
 
     ; inlayHint for `uri` over the packed "<sl> <sc> <el> <ec>" range. `text` is
     ; the in-memory copy (empty -> worker reads disk). Returns the LSP
     ; InlayHint[] array; `[]` if unavailable / crashed / hung.
-    procedure inlay_hints(rp, uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure inlay_hints(uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
         worker.exchange("y", uri, text, packed, "[]")
 
     ; foldingRange for `uri` (uri-only, no position). `text` is the in-memory
     ; copy (empty -> worker reads disk). Returns the LSP FoldingRange[] array;
     ; `[]` if unavailable / crashed / hung.
-    procedure folding(rp, uri: String, text: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure folding(uri: String, text: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
         worker.exchange("o", uri, text, "", "[]")
 
     ; formatting: the TextEdit[] that re-indents the open document.
-    procedure formatting(rp, uri: String, text: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure formatting(uri: String, text: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
         worker.exchange("m", uri, text, "", "[]")
 
     ; codeLens for `uri` (uri-only, no position). `text` is the in-memory copy
@@ -635,47 +635,47 @@ define worker
     ; reaches it through budget_for_kind#'s fallthrough — measured 0.45 s for
     ; the scaly root and 2.45 s for dazzle, the largest in this tree, against
     ; a 30 s budget.
-    procedure code_lenses(rp, uri: String, text: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure code_lenses(uri: String, text: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
         worker.exchange("z", uri, text, "", "[]")
 
     ; typeDefinition at the packed "<line> <char>" position.
-    procedure type_definition(rp, uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure type_definition(uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
         worker.exchange("u", uri, text, packed, "")
 
     ; prepareCallHierarchy at the packed "<line> <char>" position.
-    procedure prepare_call_hierarchy(rp, uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure prepare_call_hierarchy(uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
         worker.exchange("k", uri, text, packed, "[]")
 
     ; incomingCalls for "<root>\n<name>".
-    procedure incoming_calls(rp, uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure incoming_calls(uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
         worker.exchange("i", uri, text, packed, "[]")
 
     ; outgoingCalls for the item declared at the packed "<line> <char>".
-    procedure outgoing_calls(rp, uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure outgoing_calls(uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
         worker.exchange("j", uri, text, packed, "[]")
 
     ; selectionRange for the packed cursor positions (one per line).
-    procedure selection_ranges(rp, uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure selection_ranges(uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
         worker.exchange("e", uri, text, packed, "[]")
 
     ; codeAction for `uri`. `packed` is the newline-separated list of `use`
     ; paths the parent read out of the request's diagnostics. Returns the LSP
     ; CodeAction[] array.
-    procedure code_actions(rp, uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure code_actions(uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
         worker.exchange("a", uri, text, packed, "[]")
 
     ; Semantic type at the packed "<line> <char>" position. `text` is the
     ; in-memory copy (empty -> worker reads disk). Returns the framed reply
     ; "1<name>" on a hit, "0" on a miss, or "" if unavailable / crashed / hung
     ; (the server decodes the tag and falls back to the lexical hover).
-    procedure semantic_type(rp, uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure semantic_type(uri: String, text: String, packed: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
         worker.exchange("x", uri, text, packed, "")
 
     ; semanticTokens for `uri` (uri-only, no position). `text` is the in-memory
     ; copy (empty -> worker reads disk). Returns the LSP {"data":[...]} object;
     ; an empty-data object if unavailable / crashed / hung. The fallback is
     ; built with quote BYTES (string-literal escapes are not decoded).
-    procedure semantic_tokens(rp, uri: String, text: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure semantic_tokens(uri: String, text: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
         var fb StringBuilder()
         fb.append("{" as char)
@@ -693,7 +693,7 @@ define worker
     ; matching `query`. `root` rides in the uri frame, `query` in the position
     ; frame; the text frame is unused. Returns SymbolInformation[]; `[]` if
     ; unavailable / no root / no match.
-    procedure workspace_symbols(rp, root: String, query: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure workspace_symbols(root: String, query: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
         worker.exchange("w", root, "", query, "[]")
 
     ; Send one (kind,uri,text,position) request to the worker and return its
@@ -818,7 +818,7 @@ define worker
         ANALYZE_TIMEOUT_MS
     }
 
-    procedure exchange(rp, kind: Slice[char], uri: String, text: String, position: String, fallback: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
+    procedure exchange(kind: Slice[char], uri: String, text: String, position: String, fallback: String) returns String mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
         var attempts: int 0
         while attempts < 2

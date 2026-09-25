@@ -168,7 +168,16 @@ define lexer
             if c = 58  ; ':'
             {
                 read_character()
-                set token: Token.Colon(ColonToken())
+                ; A colon that ENDS its line and the line feed after it are
+                ; ONE separator, as consecutive line feeds are (2026-09-25).
+                ; As two, `case 1:` with its statement on the next line took
+                ; the empty statement before the line feed as the arm and ran
+                ; the next line unconditionally -- rc 0, every value matched.
+                skip_whitespace false
+                if current <> null and *current = 10
+                    set token: scan_line_feed()
+                else
+                    set token: Token.Colon(ColonToken())
                 skip_whitespace false
                 return
             }
