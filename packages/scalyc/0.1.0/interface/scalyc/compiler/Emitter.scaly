@@ -12090,6 +12090,16 @@ define Emitter
 
 
 
+
+
+
+
+
+
+
+
+
+
         ; Emit an intrinsic function call
         procedure emit_intrinsic_function(mutable this, mutable call: PlannedCall) @direct true @deep true returns LLVMValueRef linked
 

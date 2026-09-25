@@ -12085,6 +12085,16 @@ define Emitter
             scaly_eputs "Emitter: unknown binary operator: "
             let bopc op_name.to_c_string()
             scaly_eputs bopc
+            ; name the function being emitted: the abort has no source
+            ; position, and without it the only lead was bisecting the tree
+            ; (2026-09-24, an empty operator name out of a braceless if)
+            if current_function <> null
+            {
+                var fn_len: size_t 0
+                let fn_name LLVMGetValueName2(current_function, &fn_len as pointer[size_t])
+                scaly_eputs " in "
+                scaly_eputs(fn_name as pointer[const_char])
+            }
             scaly_eputs "\n"
             exit 14
             null

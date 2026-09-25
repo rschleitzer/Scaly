@@ -24508,11 +24508,57 @@ define Planner
             )
         }
 
+        ; report_absorbed_after_control#: a `choose`, `match`, `if` or `try`
+        ; followed by more operands in ONE operand run. The parser ends such a
+        ; construct at its last arm's newline and then keeps collecting for the
+        ; enclosing statement, so the NEXT LINE joins it: in a braceless `if`
+        ; body `choose e ... else 0` took the `77` that followed the `if` --
+        ; the function answered 0 at rc 0 when the condition was false -- and a
+        ; call line (`this.fallback(pv)`) aborted the emitter with an empty
+        ; operator name (2026-09-24; the s164 shape of `let X choose`, one
+        ; statement over). Reported at the absorbed operand.
+        procedure report_absorbed_after_control(mutable this: Planner, ops: Vector[scalyc.compiler.Model.Operand])
+        {
+            if ops.length < 2
+                return
+            var i: size_t 0
+            while i + 1 < ops.length
+            {
+                let op_ptr ops.get i
+                if op_ptr <> null
+                {
+                    var control false
+                    choose (*op_ptr).expression
+                        when c: Choose
+                            set control: true
+                        when m: Match
+                            set control: true
+                        when f: If
+                            set control: true
+                        when tr: Try
+                            set control: true
+                        else
+                            0
+                    if control
+                    {
+                        let next_ptr ops.get(i + 1)
+                        if next_ptr <> null
+                        {
+                            this.add_diagnostic((*next_ptr).span, String^this("this joined the choose/match/if/try before it: the construct ends at its last arm and the enclosing statement keeps collecting - brace the body that holds it, or bind the construct to a name"))
+                            return
+                        }
+                    }
+                }
+                set i: i + 1
+            }
+        }
+
         procedure plan_operands(
             mutable this: Planner,
             mutable ops: Vector[scalyc.compiler.Model.Operand]
         ) returns Vector[PlannedOperand]
         {
+            this.report_absorbed_after_control(ops)
             var result Vector[PlannedOperand](ops.length)
             var i: size_t 0
             while i < ops.length
@@ -30373,6 +30419,57 @@ define Planner
             this.deep_by_value_local(a)
         }
 
+        ; variant_payload_local#: is a variant construction's payload local to
+        ; this frame -- a reference into it, or a by-value payload whose buffer
+        ; lives here (deep_by_value_local#)?
+        function variant_payload_local(this: Planner, vc: PlannedVariantConstruction) returns bool
+        {
+            if vc.value = null
+                return false
+            let pv (*vc.value)
+            if this.census_type_is_ref_like(pv.result_type)
+                return this.region_of_operand(pv) < Planner.required_region_for_escape()
+            ; a payload "promoted" onto the caller page in a routine that HAS
+            ; none sits on this routine's own frame (s196's fallback), however
+            ; the list reads -- deep_by_value_local# trusts the list, and doing
+            ; the same here let a String built here escape inside a union
+            ; (negp_union_field_store_by_value without `rp`). ★Not asked in
+            ; deep_by_value_local# itself: there it re-read cli.run's
+            ; `jit_run(plan, program_name, ...)` as local, and the gate does not
+            ; judge whether a kept-INTO destination is frame-local (open).
+            if this.payload_promoted_without_page(pv)
+                return true
+            this.deep_by_value_local(pv)
+        }
+
+        function payload_promoted_without_page(this: Planner, pv: PlannedOperand) returns bool
+        {
+            if pv.member_access <> null
+                return false
+            if this.escape_fn_has_page()
+                return false
+            var promoted false
+            choose pv.expr
+                when pvv: Variable
+                {
+                    if this.array_contains_name(promoted_binding_names, pvv.name)
+                        set promoted: true
+                }
+                else
+                    0
+            promoted
+        }
+
+        ; escape_fn_has_page#: does the function the escape post-pass is walking
+        ; take a caller page (explicit `rp`/`page`, or the inferred one)?
+        function escape_fn_has_page(this: Planner) returns bool
+        {
+            let fp instantiated_functions.get escape_fn_index
+            if fp = null
+                return false
+            fp.page_parameter <> null
+        }
+
         ; a record handed BY VALUE is copied into the callee's keep — its
         ; BUFFER is not. Where that buffer lives: a parameter's or a field's
         ; with the caller (never local); a local bound from a visible
@@ -30425,6 +30522,14 @@ define Planner
                     if has_member
                         return false
                     if this.escape_name_is_current_param(bv.name)
+                        return false
+                    ; a name BOUND to a reference (`let f vm.stack_ref(...)`,
+                    ; ref[ELObj]?) holds no object of this frame: the operand
+                    ; reads as the pointee only because a receiver is
+                    ; dereferenced. Where the reference points is the
+                    ; reference rules' question (2026-09-24: once unions counted
+                    ; as owning, dazzle's `f.tail_call(...)` read local here)
+                    if this.census_type_is_ref_like(bv.variable_type)
                         return false
                     if this.array_contains_name(promoted_binding_names, bv.name)
                         return false
@@ -30721,6 +30826,23 @@ define Planner
                         set qi: qi + 1
                     }
                 }
+                ; a UNION owns what any of its variants owns (2026-09-24:
+                ; before, every union read as buffer-free and the by-value rule
+                ; never judged one)
+                when un: scalyc.compiler.Model.Union
+                {
+                    var vi: size_t 0
+                    while vi < un.variants.length
+                    {
+                        let vp un.variants.get vi
+                        if vp <> null and (*vp).type <> null
+                        {
+                            if this.model_type_owns_buffer((*(*vp).type), depth + 1)
+                                return true
+                        }
+                        set vi: vi + 1
+                    }
+                }
                 else
                     0
             false
@@ -30767,6 +30889,20 @@ define Planner
                                     return true
                             }
                         set qi: qi + 1
+                    }
+                }
+                when un: scalyc.compiler.Model.Union
+                {
+                    var vi: size_t 0
+                    while vi < un.variants.length
+                    {
+                        let vp un.variants.get vi
+                        if vp <> null and (*vp).type <> null
+                        {
+                            if this.model_type_owns_buffer((*(*vp).type), depth + 1)
+                                return true
+                        }
+                        set vi: vi + 1
                     }
                 }
                 else
@@ -32226,6 +32362,23 @@ define Planner
                                                     set bvv: 1
                                                 current_fn_bind_local.add bvv
                                                 current_fn_bind_refv.add(this.ref_call_verdict(bcall))
+                                            }
+                                            ; a local bound from a VARIANT construction
+                                            ; (`let m Msg.Text(s)`) lives where its PAYLOAD
+                                            ; does. It fell into the `else` below and was
+                                            ; recorded nowhere, and an unrecorded name reads
+                                            ; not-local: a String built here went into a
+                                            ; keeping callee inside a union, rc 0 (2026-09-24,
+                                            ; negp_union_field_store_by_value)
+                                            when bvc: VariantConstruction
+                                            {
+                                                let vverdict this.variant_payload_local(bvc)
+                                                current_fn_bind_names.add(String^this((*binding.binding_item.name)))
+                                                var vbv: size_t 0
+                                                if vverdict
+                                                    set vbv: 1
+                                                current_fn_bind_local.add vbv
+                                                current_fn_bind_refv.add(0 - 1)
                                             }
                                             else
                                                 0

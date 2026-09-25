@@ -24508,10 +24508,56 @@ define Planner
 
 
 
+        ; report_absorbed_after_control#: a `choose`, `match`, `if` or `try`
+        ; followed by more operands in ONE operand run. The parser ends such a
+        ; construct at its last arm's newline and then keeps collecting for the
+        ; enclosing statement, so the NEXT LINE joins it: in a braceless `if`
+        ; body `choose e ... else 0` took the `77` that followed the `if` --
+        ; the function answered 0 at rc 0 when the condition was false -- and a
+        ; call line (`this.fallback(pv)`) aborted the emitter with an empty
+        ; operator name (2026-09-24; the s164 shape of `let X choose`, one
+        ; statement over). Reported at the absorbed operand.
+        procedure report_absorbed_after_control(mutable this: Planner, ops: Vector[scalyc.compiler.Model.Operand]) @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         procedure plan_operands(
             mutable this: Planner,
             mutable ops: Vector[scalyc.compiler.Model.Operand]
         ) @page true @direct true @ret_caller true @deep true returns Vector[PlannedOperand] io linked
+
 
 
 
@@ -30373,6 +30419,57 @@ define Planner
 
 
 
+        ; variant_payload_local#: is a variant construction's payload local to
+        ; this frame -- a reference into it, or a by-value payload whose buffer
+        ; lives here (deep_by_value_local#)?
+        function variant_payload_local(this: Planner, vc: PlannedVariantConstruction) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function payload_promoted_without_page(this: Planner, pv: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; escape_fn_has_page#: does the function the escape post-pass is walking
+        ; take a caller page (explicit `rp`/`page`, or the inferred one)?
+        function escape_fn_has_page(this: Planner) @ret_param_0 true @deep true returns bool linked
+
+
+
+
+
+
+
         ; a record handed BY VALUE is copied into the callee's keep — its
         ; BUFFER is not. Where that buffer lives: a parameter's or a field's
         ; with the caller (never local); a local bound from a visible
@@ -30381,6 +30478,14 @@ define Planner
         ; construction on this frame — where its components point; a
         ; promoted binding — the caller page.
         function deep_by_value_local(this: Planner, arg: PlannedOperand) @ret_param_0 true @deep true returns bool linked
+
+
+
+
+
+
+
+
 
 
 
@@ -30726,7 +30831,38 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         function model_type_owns_buffer(this: Planner, t: scalyc.compiler.Model.Type, depth: size_t) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -32140,6 +32276,23 @@ define Planner
 
         ; Walk one statement by value. choose stmt mirrors emit_statement.
         procedure escape_walk_statement(mutable this: Planner, stmt: PlannedStatement) @deep true io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

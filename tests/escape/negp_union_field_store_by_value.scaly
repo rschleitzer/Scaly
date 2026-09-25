@@ -1,0 +1,53 @@
+; Was ACCEPTED at rc 0 until 2026-09-24, unsound: the by-value field store of
+; negp_field_store_by_value.scaly with a UNION around the String, in a routine
+; WITHOUT a caller page. Three holes on the way: type_owns_buffer# read every
+; union as owning nothing; a local bound from a VARIANT construction was
+; recorded nowhere by the judge (an unrecorded name reads not-local); and the
+; String under it read "promoted onto the caller page" in a routine that has
+; none, where the promotion lands on the frame (variant_payload_local#).
+; Control: posp_union_field_store_promoted.scaly (with a caller page).
+define Msg union
+(
+    Text: String
+    Code: int
+)
+define Box (var host: ref[Page]  var kept: Msg)
+{
+    procedure keep(mutable this, m: Msg)
+        set kept: m
+    ; reuse the released frame page so the dangling read is visible even
+    ; without SCALY_POISON
+    procedure churn(mutable this)
+    {
+        var junk Array[String]()
+        var i 0
+        while i < 2000
+        {
+            junk.add(String("yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"))
+            set i: i + 1
+        }
+    }
+    procedure work(mutable this)
+    {
+        var sb StringBuilder()
+        sb.append "hello-from-work"
+        let s sb.to_string()
+        let m Msg.Text(s)
+        this.keep(m)
+    }
+}
+if getenv("SCALY_POISON") <> null
+    Page.enable_poison()
+let root_anchor String("probe")
+let host Page.get(root_anchor.get_buffer() as pointer[void])
+var b Box(host, Msg.Code(0))
+b.work()
+b.churn()
+choose b.kept
+    when t: Text
+        print t
+    when c: Code
+        print "code"
+    else
+        print "none"
+print "\n"
