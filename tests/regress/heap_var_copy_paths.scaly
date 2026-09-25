@@ -1,0 +1,130 @@
+; Regression (2026-09-24), companion of heap_var_value_uses.scaly: the other
+; copy paths of a heap-slot `var` -- `let w v`, `set w: v`, a component of a
+; construction, a variant payload and a box `&^host v` -- for a plain record, a
+; one-pointer record and a union.
+; Expected: PASS
+define Payload (a: int, b: int, c: int)
+define Impl union
+(
+    Act: Payload
+    Ext: int
+)
+define Single (p: pointer[int])
+define Wrap (x: int, s: Single, q: Payload)
+define Box1 union
+(
+    One: Single
+    Two: int
+)
+
+function pay_sum(p: Payload) returns int
+    p.a + p.b + p.c
+
+function box1_val(b: Box1) returns int
+{
+    choose b
+        when s: One
+            *s.p
+        when t: Two
+            t
+        else
+            0 - 1
+}
+
+function impl_val(u: Impl) returns int
+{
+    choose u
+        when p: Act
+            p.a + p.b + p.c
+        when e: Ext
+            e + 1000
+        else
+            0 - 1
+}
+
+define Maker (var n: int, cell: pointer[int])
+{
+    procedure payload(mutable this, k: int) returns Payload
+    {
+        set this.n: this.n + 1
+        Payload(k, k + 1, k + 2)
+    }
+    procedure single(mutable this) returns Single
+    {
+        set this.n: this.n + 1
+        Single(cell)
+    }
+    procedure impl(mutable this, k: int) returns Impl
+    {
+        set this.n: this.n + 1
+        Impl.Act(Payload(k, k + 1, k + 2))
+    }
+    procedure no_payload(mutable this) returns ref[Payload]?
+        null
+    procedure no_single(mutable this) returns ref[Single]?
+        null
+    procedure no_impl(mutable this) returns ref[Impl]?
+        null
+
+    ; let / set copies
+    procedure copies(mutable this) returns int
+    {
+        var p this.payload(1)
+        var s this.single()
+        var u this.impl(2)
+        let rp this.no_payload()
+        if rp <> null
+            set p: *rp
+        let rs this.no_single()
+        if rs <> null
+            set s: *rs
+        let ru this.no_impl()
+        if ru <> null
+            set u: *ru
+        let p2 p
+        let s2 s
+        let u2 u
+        var p3 this.payload(0)
+        var s3 this.single()
+        var u3 this.impl(0)
+        set p3: p
+        set s3: s
+        set u3: u
+        ; 6 + 77 + 9 + 6 + 77 + 9 = 184
+        pay_sum(p2) + *s2.p + impl_val(u2) + pay_sum(p3) + *s3.p + impl_val(u3)
+    }
+
+    ; construction component, variant payload, box
+    procedure builds(mutable this, host: ref[Page]) returns int
+    {
+        var p this.payload(10)
+        var s this.single()
+        let rp this.no_payload()
+        if rp <> null
+            set p: *rp
+        let rs this.no_single()
+        if rs <> null
+            set s: *rs
+        let w Wrap(5, s, p)
+        let v Impl.Act(p)
+        let b Box1.One(s)
+        let bp &^host p
+        let bs &^host s
+        ; 5 + 77 + 33 + 33 + 77 + 33 + 77 = 335
+        w.x + *w.s.p + pay_sum(w.q) + impl_val(v) + box1_val(b) + pay_sum(bp) + *bs.p
+    }
+}
+
+procedure run(host: ref[Page])
+{
+    let cell host.allocate(8, 8) as pointer[int]
+    set *cell: 77
+    var m Maker^host(0, cell)
+    if m.copies() = 184 and m.builds(host) = 335
+        print "PASS"
+    else
+        print "FAIL"
+}
+
+let rp Page.allocate_root_page()
+run(rp as ref[Page])

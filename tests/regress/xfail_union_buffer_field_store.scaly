@@ -1,0 +1,26 @@
+; Regression (2026-09-24): a PLAIN union returned by a page-taking method may be
+; stored into a parameter's field (Planner.value_is_plain#), but one that
+; carries a String built on this routine's page may not -- the exemption asks
+; for nothing pointer-like anywhere inside, not merely for no owned buffer.
+; xfail: reference into a local page escapes via store
+define Payload (a: int, name: String)
+define Impl union
+(
+    Act: Payload
+    Ext: int
+)
+define Holder (var impl: Impl)
+define Maker (var n: int)
+{
+    procedure impl(mutable this, k: int) returns Impl
+    {
+        set this.n: this.n + 1
+        Impl.Act(Payload(k, String("abc")))
+    }
+    procedure store(mutable this, mutable h: ref[Holder])
+    {
+        let v this.impl(3)
+        set h.impl: v
+    }
+}
+print "x"

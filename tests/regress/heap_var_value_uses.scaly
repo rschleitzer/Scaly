@@ -1,0 +1,195 @@
+; Regression (2026-09-24): a `var` bound to a heap-hosted call result (a method
+; of a page record) and reassigned somewhere lives in a POINTER slot. Every way
+; such a value is used must read the object, not the slot: passed by value,
+; returned, stored into a field, read field by field, and `choose`d -- the one
+; that read the slot (choose_heap_var_union.scaly). Three shapes: a two-number
+; record, a record with ONE pointer field (the `{ ptr }` LLVM shape
+; copy_struct_value# exempts for handle wrappers), and a union. The union's
+; field store was refused as an escape until the same day: a plain value
+; cannot dangle (Planner.value_is_plain#).
+; Expected: PASS
+define Payload (a: int, b: int, c: int)
+define Impl union
+(
+    Act: Payload
+    Ext: int
+)
+define Pair (a: int, b: int)
+define Single (p: pointer[int])
+define Holder (var pair: Pair, var single: Single, var impl: Impl)
+
+function sum_pair(p: Pair) returns int
+    p.a + p.b
+
+function read_single(s: Single) returns int
+    *s.p
+
+function impl_val(u: Impl) returns int
+{
+    choose u
+        when p: Act
+            p.a + p.b + p.c
+        when e: Ext
+            e + 1000
+        else
+            0 - 1
+}
+
+define Maker (var n: int, cell: pointer[int])
+{
+    procedure pair(mutable this, k: int) returns Pair
+    {
+        set this.n: this.n + 1
+        Pair(k, k + 1)
+    }
+    procedure single(mutable this) returns Single
+    {
+        set this.n: this.n + 1
+        Single(cell)
+    }
+    procedure impl(mutable this, k: int) returns Impl
+    {
+        set this.n: this.n + 1
+        Impl.Act(Payload(k, k + 1, k + 2))
+    }
+    procedure no_pair(mutable this) returns ref[Pair]?
+        null
+    procedure no_single(mutable this) returns ref[Single]?
+        null
+    procedure no_impl(mutable this) returns ref[Impl]?
+        null
+
+    ; ---- Pair: pass, return, field store, read
+    procedure pair_pass(mutable this) returns int
+    {
+        var v this.pair(10)
+        let r this.no_pair()
+        if r <> null
+            set v: *r
+        sum_pair(v)
+    }
+    procedure pair_ret(mutable this) returns Pair
+    {
+        var v this.pair(20)
+        let r this.no_pair()
+        if r <> null
+            set v: *r
+        v
+    }
+    procedure pair_store(mutable this, mutable h: ref[Holder]) returns int
+    {
+        var v this.pair(30)
+        let r this.no_pair()
+        if r <> null
+            set v: *r
+        set h.pair: v
+        h.pair.a + h.pair.b
+    }
+    procedure pair_read(mutable this) returns int
+    {
+        var v this.pair(40)
+        let r this.no_pair()
+        if r <> null
+            set v: *r
+        v.a + v.b
+    }
+
+    ; ---- Single (one pointer field): pass, return, store, read
+    procedure single_pass(mutable this) returns int
+    {
+        var v this.single()
+        let r this.no_single()
+        if r <> null
+            set v: *r
+        read_single(v)
+    }
+    procedure single_ret(mutable this) returns Single
+    {
+        var v this.single()
+        let r this.no_single()
+        if r <> null
+            set v: *r
+        v
+    }
+    procedure single_store(mutable this, mutable h: ref[Holder]) returns int
+    {
+        var v this.single()
+        let r this.no_single()
+        if r <> null
+            set v: *r
+        set h.single: v
+        *h.single.p
+    }
+    procedure single_read(mutable this) returns int
+    {
+        var v this.single()
+        let r this.no_single()
+        if r <> null
+            set v: *r
+        *v.p
+    }
+
+    ; ---- Impl (union): pass, return, store, choose, match on tag via choose
+    procedure impl_pass(mutable this) returns int
+    {
+        var v this.impl(1)
+        let r this.no_impl()
+        if r <> null
+            set v: *r
+        impl_val(v)
+    }
+    procedure impl_ret(mutable this) returns Impl
+    {
+        var v this.impl(2)
+        let r this.no_impl()
+        if r <> null
+            set v: *r
+        v
+    }
+    procedure impl_store(mutable this, mutable h: ref[Holder]) returns int
+    {
+        var v this.impl(3)
+        let r this.no_impl()
+        if r <> null
+            set v: *r
+        set h.impl: v
+        impl_val(h.impl)
+    }
+    procedure impl_choose(mutable this) returns int
+    {
+        var v this.impl(4)
+        let r this.no_impl()
+        if r <> null
+            set v: *r
+        choose v
+            when p: Act
+                p.a + p.b + p.c
+            when e: Ext
+                e + 1000
+            else
+                0 - 1
+    }
+}
+
+procedure run(host: ref[Page])
+{
+    let cell host.allocate(8, 8) as pointer[int]
+    set *cell: 77
+    var m Maker^host(0, cell)
+    var h Holder^host(Pair(0, 0), Single(cell), Impl.Ext(0))
+    let pr m.pair_ret()
+    let sr m.single_ret()
+    let ir m.impl_ret()
+    var ok m.pair_pass() = 21 and sum_pair(pr) = 41 and m.pair_store(&h) = 61 and m.pair_read() = 81
+    if m.single_pass() <> 77 or read_single(sr) <> 77 or m.single_store(&h) <> 77 or m.single_read() <> 77
+        set ok: false
+    if m.impl_pass() <> 6 or impl_val(ir) <> 9 or m.impl_store(&h) <> 12 or m.impl_choose() <> 15
+        set ok: false
+    if ok
+        print "PASS"
+    else
+        print "FAIL"
+}
+
+let rp Page.allocate_root_page()
+run(rp as ref[Page])

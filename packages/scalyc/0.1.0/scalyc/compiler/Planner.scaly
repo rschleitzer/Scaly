@@ -28388,6 +28388,19 @@ define Planner
                 set store_src_escapes: true
             if this.operand_reads_tainted_local_field(planned_source_collapsed)
                 set store_src_escapes: true
+            ; A PLAIN value -- nothing pointer-like anywhere inside it, fields
+            ; and union variants included (value_is_plain#) -- is copied whole
+            ; and cannot dangle, whatever life its type is stamped with. Until
+            ; 2026-09-24 a union of plain numbers returned by a page-taking
+            ; method and stored into a parameter's field was refused here: the
+            ; Local stamp of the call result read as a reference. ★Owning no
+            ; BUFFER is not enough: a record holding a REFERENCE (opensp's
+            ; `Location`, `origin: ref[Origin]?`) may point into this frame, and
+            ; exempting it removed the promotion onto the receiver's page that
+            ; kept `set this.ref_loc: Origin.pin_location(host, loc)` alive.
+            if store_src_escapes
+                if this.value_is_plain(planned_source_collapsed.result_type)
+                    set store_src_escapes: false
             ; A VALUE construction is copied into the target, but a PART of it
             ; built on this frame's page is not -- operand_carries_local_guts#.
             var src_escapes_by_part false
@@ -30584,6 +30597,79 @@ define Planner
         ; does a by-value record own a heap buffer — a `pointer[…]` field
         ; anywhere inside it (String, StringC, Array, Vector, List, Text)?
         ; A record of `ref[T]` borrows owns nothing (tscaly's IterationTypes).
+        ; value_is_plain#: a value type with NOTHING pointer-like inside --
+        ; no pointer, ref, Option, generic instantiation (a container) or
+        ; unknown type, through every field of a record and every variant of
+        ; a union. Such a value is copied whole and cannot dangle. Stricter
+        ; than type_owns_buffer#, which lets a borrowed REFERENCE pass.
+        function value_is_plain(this: Planner, t: PlannedType) returns bool
+        {
+            if t.generics <> null and (*t.generics).length > 0
+                return false
+            this.name_is_plain(t.name, 0)
+        }
+
+        function model_value_is_plain(this: Planner, t: scalyc.compiler.Model.Type, depth: size_t) returns bool
+        {
+            if t.generics <> null and (*t.generics).length > 0
+                return false
+            if t.name.length = 0
+                return false
+            let lp t.name.get(t.name.length - 1)
+            if lp = null
+                return false
+            this.name_is_plain((*lp), depth)
+        }
+
+        function name_is_plain(this: Planner, n: String, depth: size_t) returns bool
+        {
+            match n
+                case "pointer" case "ref" case "Option" case "String" case "StringC": return false
+            if Planner.is_primitive_type_name(n)
+                return true
+            if depth > 4
+                return false
+            let idx concept_index.lookup(n)
+            if idx < 0
+                return false
+            let kvp concepts.get(idx as size_t)
+            if kvp = null
+                return false
+            choose (*kvp).value.definition
+                when st: Structure
+                {
+                    var qi: size_t 0
+                    while qi < st.properties.length
+                    {
+                        let prp st.properties.get qi
+                        if prp = null or (*prp).type = null
+                            return false
+                        if this.model_value_is_plain((*(*prp).type), depth + 1) = false
+                            return false
+                        set qi: qi + 1
+                    }
+                    return true
+                }
+                when un: scalyc.compiler.Model.Union
+                {
+                    var vi: size_t 0
+                    while vi < un.variants.length
+                    {
+                        let vp un.variants.get vi
+                        if vp <> null and (*vp).type <> null
+                        {
+                            if this.model_value_is_plain((*(*vp).type), depth + 1) = false
+                                return false
+                        }
+                        set vi: vi + 1
+                    }
+                    return true
+                }
+                else
+                    0
+            false
+        }
+
         function type_owns_buffer(this: Planner, t: PlannedType, depth: size_t) returns bool
         {
             if Planner.is_reference_like(t)
