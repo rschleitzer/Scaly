@@ -1,24 +1,26 @@
-; The page-of rule's exemption reaches through FIELDS (2026-09-25): `Box`
-; holds a String BY VALUE, and a String derives its page from its own
-; address, so `Box` is page-resident itself (Planner.structure_fields_need_residency#)
-; and `var b` is hosted on the frame's page. `Page.get(&b)` is that page and
-; the String built on it lives as long as `b`. This was
-; negp_page_of_frame_value until the residency fix; the rejected shape is
-; now a record without resident fields (negp_page_of_frame_value.scaly).
-; Accepted, and prints "filled" under SCALY_POISON=1.
-define Box (var s: String)
+; The page-of rule's exemption reaches through FIELDS (2026-09-25): `Bag`
+; holds an Array BY VALUE, and Array.add derives its page from the Array's
+; own address after construction (`@inplace`), so `Bag` is page-resident
+; itself (Planner.structure_fields_need_residency#) and `var b` is hosted on
+; the frame's page. `Page.get(&b)` is that page and what `fill` builds on it
+; lives as long as `b`. A String field does NOT do this -- its Page.get(this)
+; is in its inits alone (negp_page_of_frame_value.scaly stays rejected).
+; Accepted, and prints "2 filled" under SCALY_POISON=1.
+define Bag (var items: Array[int], var note: String)
 
-procedure fill(mutable out: ref[Box])
+procedure fill(mutable out: ref[Bag])
 {
     let pg Page.get(out)
-    set out.s: String^pg("filled")
+    set out.note: String^pg("filled")
+    out.items.add(1)
+    out.items.add(2)
 }
 
 procedure make()
 {
-    var b Box(String())
+    var b Bag(Array[int](), String())
     fill(&b)
-    print b.s
+    print "`b.items.length` `b.note`"
 }
 
 make()

@@ -89,7 +89,7 @@ procedure scaly_mgpu_enc_attn_bwd(q: i32, k: i32, v: i32, dout: i32, aux: i32, d
 procedure scaly_mgpu_enc_adam(p: i32, g: i32, mv: i32, total: i32, lr: float, b1: float, b2: float, eps: float, bc1: float, bc2: float) extern
 
 define GpuTape
-(
+@resident true @inplace true (
     tape: Tape
     loss: int
     var use_msl: int

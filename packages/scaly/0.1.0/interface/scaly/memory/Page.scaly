@@ -60,7 +60,7 @@ shared page_poison: bool linked
 ; offsets that Region.deserialize's header swizzle and the emitter's
 ; literal Page layout (synthesize_literal_struct) name by number.
 define Page
-(
+@resident true @inplace true (
     var next_object: pointer[void]
     var current_page: pointer[Page]
     var next_page: pointer[Page]

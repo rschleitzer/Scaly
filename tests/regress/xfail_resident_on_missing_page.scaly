@@ -1,0 +1,24 @@
+; Regression (2026-09-25): a construction told to use the caller page (`#`)
+; in a routine that has none fell back to a STACK alloca without a word
+; (Emitter.region_alloc_life# answered null, the tuple path took acquire_temp
+; -- the s196 fallback). Right for a value, and the tree has 603 such sites,
+; all Slices and plain records. `Bag` holds an Array by value, so its methods
+; derive their page from the record's address: on the stack `b.items.add(4)`
+; asked Page.get of a stack slot -- exit 19 at run time, rc 0 at compile time.
+; The Emitter stops now (exit 24, report_lost_resident_page#), naming the
+; type, the page and the function. The fix at the source: drop the `#` (the
+; planner then hosts it on this frame) or declare the page (`rp`).
+; xfail: which this routine does not have
+define Bag (var items: Array[int])
+
+procedure count_on(b: ref[Bag]) returns int
+    b.items.length as int
+
+procedure run() returns int
+{
+    let b Bag#(Array[int]())
+    b.items.add(4)
+    count_on(&b)
+}
+
+print "`run()`\n"

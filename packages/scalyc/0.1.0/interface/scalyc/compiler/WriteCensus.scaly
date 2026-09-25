@@ -61,7 +61,7 @@ define WC_PARAMS u64 0x5FFFFFFFFFFFFFFF
 define WriteCensus
 {
     define WriteCensus
-    @resident true (
+    @resident true @inplace true (
         report_files: Array[String]
         report_offsets: Array[size_t]
         report_texts: Array[String]

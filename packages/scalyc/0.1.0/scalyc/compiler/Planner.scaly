@@ -6121,8 +6121,10 @@ define Planner
         ; (The former concept_is_heap_backed NAME ALLOWLIST lived here. It is
         ; gone: residency is now DERIVED from the concept's own bodies by
         ; concept_needs_this_residency below — see its comment. Vector and
-        ; String still classify as stack-safe values by construction: their
-        ; bodies contain no `^this` and no `Page.get(this)`.)
+        ; String are resident too now: their inits derive the buffer's page
+        ; from the value's own address. Neither mutates through it after
+        ; construction, so a record holding one by value stays a stack value
+        ; -- structure_fields_need_residency#.)
 
         ; concept_needs_this_residency: true iff the named concept derives a
         ; page from its own address anywhere in its bodies — a `^this`
@@ -6364,15 +6366,17 @@ define Planner
                     ; asked of the structure itself, not by name: at the end of
                     ; planning a name lookup does not reach into namespaces
                     var resident false
+                    var inplace false
                     if g = false
                     {
-                        set resident: this.structure_init_has_this_alloc(s)
-                        if resident = false
-                            set resident: this.structure_members_have_this_alloc(s)
+                        set inplace: this.structure_inplace_residency(s, 0)
+                        set resident: inplace or this.structure_init_has_this_alloc(s)
                     }
                     ; a concept line reuses the routine layout: resident rides
-                    ; in the `page` column, the generator reads it as such
-                    sb.append(Planner.facts_line(String("C"), file, c.span, String("concept"), c.name, g, resident, false, false))
+                    ; in the `page` column, inplace (a record holding it BY
+                    ; VALUE must be resident too) in the `explicit` column;
+                    ; the generator reads them as such
+                    sb.append(Planner.facts_line(String("C"), file, c.span, String("concept"), c.name, g, resident, inplace, false))
                     sb.append(this.facts_members(file, s.members, g))
                     var ii: size_t 0
                     while ii < s.initializers.length
@@ -6470,7 +6474,13 @@ define Planner
         ; address, which is inside the record. Built on the stack, `put(&bag,
         ; 5)` grew the Array through Page.get of a stack address -- right by
         ; luck, rc 139 under SCALY_POISON (2026-09-25). References, pointers
-        ; and options hold no value and are skipped.
+        ; and options hold no value and are skipped. ONLY a field type whose
+        ; NON-init members allocate through `this` counts (Array.add,
+        ; StringBuilder.append): an init runs on the value's own storage and
+        ; the field receives a copy, so a String field -- whose Page.get(this)
+        ; sits in its inits alone -- leaves the record a stack value. Counting
+        ; the inits too put every PlannedType on the frame page and cost the
+        ; compiler +19 % peak (measured 2026-09-25).
         procedure structure_fields_need_residency(mutable this: Planner, s: Structure, depth: size_t) returns bool
         {
             if depth > 4
@@ -6502,6 +6512,30 @@ define Planner
             false
         }
 
+        ; structure_is_resident#: carried into the plan as
+        ; PlannedStructure.resident, so the Emitter can refuse to put such a
+        ; construction on the stack when the page it was told to use does not
+        ; exist in the routine (region_alloc_life#).
+        procedure structure_is_resident(mutable this: Planner, s: Structure, name: String) returns bool
+        {
+            if this.concept_needs_this_residency(name)
+                return true
+            if this.structure_init_has_this_alloc(s)
+                return true
+            this.structure_inplace_residency(s, 0)
+        }
+
+        ; structure_inplace_residency#: the concept allocates through its OWN
+        ; address after construction -- a member body does, or a field held
+        ; by value does -- so whatever holds it by value must be resident.
+        ; The interface states it as `@inplace` (bodies are linked there).
+        procedure structure_inplace_residency(mutable this: Planner, s: Structure, depth: size_t) returns bool
+        {
+            if this.structure_members_have_this_alloc(s)
+                return true
+            this.structure_fields_need_residency(s, depth)
+        }
+
         procedure field_type_needs_residency(mutable this: Planner, name: String, depth: size_t) returns bool
         {
             let concept_ref this.lookup_concept(name)
@@ -6509,16 +6543,10 @@ define Planner
                 return false
             let c (*concept_ref)
             if Planner.attributes_have(c.attributes, "resident")
-                return true
+                return Planner.attributes_have(c.attributes, "inplace")
             choose c.definition
                 when s: Structure
-                {
-                    if this.structure_init_has_this_alloc(s)
-                        return true
-                    if this.structure_members_have_this_alloc(s)
-                        return true
-                    return this.structure_fields_need_residency(s, depth)
-                }
+                    return this.structure_inplace_residency(s, depth)
                 else
                     0
             false
@@ -46970,7 +46998,8 @@ define Planner
                 &ops_holder,
                 total_size,
                 total_align,
-                null
+                null,
+                this.structure_is_resident(s, name)
             )
             this.record_structure(result)
             result
@@ -47106,7 +47135,8 @@ define Planner
                 &ops_holder,
                 total_size,
                 total_align,
-                null
+                null,
+                this.structure_is_resident(s, name)
             )
             this.record_structure(result)
             result

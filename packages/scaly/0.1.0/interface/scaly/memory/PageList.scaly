@@ -5,7 +5,7 @@
 ; allocator core, and shift the Page layout (seed refresh). Keep it concrete
 ; and auditable.
 define PageList
-@resident true (
+@resident true @inplace true (
     var head: pointer[PageNode] (null)
 )
 {

@@ -334,7 +334,7 @@ define TapeNode
 }
 
 define Tape
-@resident true (
+@resident true @inplace true (
     nodes: Array[TapeNode]
 )
 {

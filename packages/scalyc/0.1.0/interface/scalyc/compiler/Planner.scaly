@@ -265,7 +265,7 @@ define Planner
     ; gate tables by name and by mangled name, and the indexes over them.
     ; Held by the Planner behind `gate`; allocated on its page in its init.
     define DeepGateState
-    @resident true (
+    @resident true @inplace true (
         var deep_persist_mask: u64
         var deep_this_mask: u64
         var deep_whole_mask: u64
@@ -392,7 +392,7 @@ define Planner
     ; built on — the per-function buckets, locals, parameters and classes.
     ; Held by the Planner behind `residence`; allocated on its page in its init.
     define ResidenceState
-    @resident true (
+    @resident true @inplace true (
         rr_self: ref[RrSelf]
         ; Return residence (build_return_residence_set#): per function, keyed
         ; like return_page_names, rr_fns the Model functions in the same
@@ -487,7 +487,7 @@ define Planner
     ; the deep gate and the promotion read.
     ; Held by the Planner behind `persistence`; allocated on its page in its init.
     define PersistState
-    @resident true (
+    @resident true @inplace true (
         ; --host-report census (host_census#): the named-page constructions
         ; (`T^host(...)`, `T^this(...)`, any `^name`) whose value never leaves
         ; the routine that builds them. escape_census switches the checker's
@@ -569,7 +569,7 @@ define Planner
     }
 
     define Planner
-    @resident true (
+    @resident true @inplace true (
         var file: String
 
         ; Scope stack — stored as one flat Array of bindings with a
@@ -6121,8 +6121,10 @@ define Planner
         ; (The former concept_is_heap_backed NAME ALLOWLIST lived here. It is
         ; gone: residency is now DERIVED from the concept's own bodies by
         ; concept_needs_this_residency below — see its comment. Vector and
-        ; String still classify as stack-safe values by construction: their
-        ; bodies contain no `^this` and no `Page.get(this)`.)
+        ; String are resident too now: their inits derive the buffer's page
+        ; from the value's own address. Neither mutates through it after
+        ; construction, so a record holding one by value stays a stack value
+        ; -- structure_fields_need_residency#.)
 
         ; concept_needs_this_residency: true iff the named concept derives a
         ; page from its own address anywhere in its bodies — a `^this`
@@ -6439,6 +6441,8 @@ define Planner
 
 
 
+
+
         procedure concept_needs_this_residency(mutable this: Planner, name: String) @ret_nonlocal true @deep true returns bool linked
 
 
@@ -6470,7 +6474,13 @@ define Planner
         ; address, which is inside the record. Built on the stack, `put(&bag,
         ; 5)` grew the Array through Page.get of a stack address -- right by
         ; luck, rc 139 under SCALY_POISON (2026-09-25). References, pointers
-        ; and options hold no value and are skipped.
+        ; and options hold no value and are skipped. ONLY a field type whose
+        ; NON-init members allocate through `this` counts (Array.add,
+        ; StringBuilder.append): an init runs on the value's own storage and
+        ; the field receives a copy, so a String field -- whose Page.get(this)
+        ; sits in its inits alone -- leaves the record a stack value. Counting
+        ; the inits too put every PlannedType on the frame page and cost the
+        ; compiler +19 % peak (measured 2026-09-25).
         procedure structure_fields_need_residency(mutable this: Planner, s: Structure, depth: size_t) @ret_nonlocal true @deep true returns bool linked
 
 
@@ -6502,13 +6512,31 @@ define Planner
 
 
 
+        ; structure_is_resident#: carried into the plan as
+        ; PlannedStructure.resident, so the Emitter can refuse to put such a
+        ; construction on the stack when the page it was told to use does not
+        ; exist in the routine (region_alloc_life#).
+        procedure structure_is_resident(mutable this: Planner, s: Structure, name: String) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+        ; structure_inplace_residency#: the concept allocates through its OWN
+        ; address after construction -- a member body does, or a field held
+        ; by value does -- so whatever holds it by value must be resident.
+        ; The interface states it as `@inplace` (bodies are linked there).
+        procedure structure_inplace_residency(mutable this: Planner, s: Structure, depth: size_t) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
         procedure field_type_needs_residency(mutable this: Planner, name: String, depth: size_t) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
 
 
 
@@ -46976,6 +47004,7 @@ define Planner
 
 
 
+
         ; plan_structure_layout#: register a Structure's layout (properties,
         ; offsets, size, alignment) into instantiated_structures WITHOUT
         ; planning its methods, operators, initializers, or deinitializer.
@@ -47003,6 +47032,7 @@ define Planner
         ; link). With plan_inits=false the struct stays declare-only here
         ; and the real body is resolved cross-unit at link time.
         procedure plan_structure_layout_opt(mutable this: Planner, mutable s: Structure, name: String, plan_inits: bool) @page true @direct true @ret_caller true @deep true @deep_this_2 true returns PlannedStructure io linked
+
 
 
 

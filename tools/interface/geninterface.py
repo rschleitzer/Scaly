@@ -23,7 +23,9 @@ text surgery:
     globals it reads and `io` says it reaches I/O -- both computed, a source
     declares neither;
   * a concept whose initializers or methods place data on its own page says
-    `@resident true` (a construction of it must be page-hosted);
+    `@resident true` (a construction of it must be page-hosted), plus
+    `@inplace true` when it allocates through its own address AFTER
+    construction, so a record holding it by value must be hosted too;
   * a `mutable`/`shared` global declares `linked` instead of its initializer;
   * generic concepts and routines keep their bodies (they are monomorphized at
     the caller), and so do constants, type aliases, externs and comments.
@@ -224,7 +226,7 @@ def transform(text, facts):
                 k = m.end()
                 while k < len(text) and text[k] in ' \t\n':
                     k += 1
-                edits.append((k, k, '@resident true '))
+                edits.append((k, k, '@resident true @inplace true ' if a.get('inplace') == '1' else '@resident true '))
         elif tag == 'G':
             _, _, s, e, name = f
             if inside_generic(s):
@@ -289,6 +291,7 @@ def parse_facts(path):
             by_file[fil].append(last)
         elif tag == 'C':
             attrs['resident'] = attrs.get('page', '0')
+            attrs['inplace'] = attrs.get('explicit', '0')
             by_file[fil].append(('C', fil, start, end, name, attrs))
         else:
             by_file[fil].append(('G', fil, start, end, name))

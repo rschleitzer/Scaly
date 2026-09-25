@@ -51,7 +51,7 @@ module parser
 ; ============================================================================
 
 define Options
-(
+@resident true @inplace true (
     input_file: String
     output_file: String
     verbose: bool

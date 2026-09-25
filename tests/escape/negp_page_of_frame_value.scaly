@@ -2,26 +2,22 @@
 ; (`Page.get(out)`) and allocates on it. Handed the address of a frame value,
 ; that page is garbage — the address is on the stack, not on a page (opensp's
 ; parse_literal was the witness, 2026-09-22). The checker before the armed
-; deep gate accepted this; it must be rejected. Control: posp_page_of_host_value.scaly.
-; A variable of a PAGE-RESIDENT concept (`var a Array[T]()`, and since
-; 2026-09-25 a record holding one by value — posp_page_of_resident_field.scaly)
-; is exempt: the emitter hosts it on a page, so Page.get of it is valid.
-; `Box` here holds only an int and a pointer, so it stays on the stack.
-define Box (var n: int, var p: pointer[int])
+; deep gate accepted this; it must be rejected. Control: posp_page_of_host_value.scaly. A variable
+; of a PAGE-RESIDENT concept (`var a Array[T]()`) is exempt: the emitter hosts
+; it on a page, so Page.get of it is valid.
+define Box (var s: String)
 
 procedure fill(mutable out: ref[Box])
 {
     let pg Page.get(out)
-    let cell pg.allocate(8, 8) as pointer[int]
-    set *cell: 42
-    set out.p: cell
+    set out.s: String^pg("filled")
 }
 
 procedure make()
 {
-    var b Box(1, null)
+    var b Box(String())
     fill(&b)
-    print *b.p
+    print b.s
 }
 
 make()

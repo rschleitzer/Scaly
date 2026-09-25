@@ -119,7 +119,7 @@ define DD_CAP int 262144
 define PointerCensus
 {
     define PointerCensus
-    @resident true (
+    @resident true @inplace true (
         ; One slot per reported site, in walk order: the owning file, the
         ; site's byte offset in that file, and the `<class> <detail>` text.
         report_files: Array[String]

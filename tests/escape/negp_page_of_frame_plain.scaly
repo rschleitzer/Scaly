@@ -1,0 +1,27 @@
+; The deep gate's page-of rule: the callee takes the PAGE of its argument
+; (`Page.get(out)`) and allocates on it. Handed the address of a frame value,
+; that page is garbage — the address is on the stack, not on a page (opensp's
+; parse_literal was the witness, 2026-09-22). The checker before the armed
+; deep gate accepted this; it must be rejected. Control: posp_page_of_host_value.scaly.
+; The twin of negp_page_of_frame_value with no String inside: `Box` holds an
+; int and a pointer and stays on the stack. A record holding an Array BY
+; VALUE is hosted on a page instead (posp_page_of_resident_field.scaly).
+define Box (var n: int, var p: pointer[int])
+
+procedure fill(mutable out: ref[Box])
+{
+    let pg Page.get(out)
+    let cell pg.allocate(8, 8) as pointer[int]
+    set *cell: 42
+    set out.p: cell
+}
+
+procedure make()
+{
+    var b Box(1, null)
+    fill(&b)
+    print *b.p
+}
+
+make()
+print "\n"

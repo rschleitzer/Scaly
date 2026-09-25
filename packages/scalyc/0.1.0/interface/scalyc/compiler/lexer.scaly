@@ -52,7 +52,7 @@ define lexer
     ; ========================================================================
 
     define Lexer
-    @resident true (
+    @resident true @inplace true (
         source: String
         var current: pointer[char]
         end: pointer[char]

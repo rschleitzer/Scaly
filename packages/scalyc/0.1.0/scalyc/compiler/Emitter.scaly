@@ -12270,6 +12270,36 @@ define Emitter
         ; `Thing.Alpha^host(...)` carries its sigil on `union_type.life` and
         ; used to land on a stack `alloca` with the sigil dropped in silence —
         ; the same class as the 2026-08-29 tuple-path fix, one bahn over.
+        ; report_lost_resident_page#: exit 24 when a construction of a
+        ; page-resident record (PlannedStructure.resident) is about to fall
+        ; back to the stack because the page it names does not exist here.
+        procedure report_lost_resident_page(mutable this, mutable struct_type: LLVMTypeRef, page_var_name: String)
+        {
+            if LLVMGetTypeKind(struct_type) <> LLVMTypeKind.Struct()
+                return
+            let name_c LLVMGetStructName(struct_type)
+            if name_c = null
+                return
+            let sname String(name_c)
+            let ps find_planned_structure(sname, String())
+            if ps = null or ps.resident = false
+                return
+            scaly_eputs "Emitter: a construction of "
+            scaly_eputs name_c
+            scaly_eputs " (it derives its page from its own address) names the page '"
+            scaly_eputs(page_var_name.to_c_string())
+            scaly_eputs "', which this routine does not have; it would land on the stack"
+            if current_function <> null
+            {
+                var fn_len: size_t 0
+                let fn_name LLVMGetValueName2(current_function, &fn_len as pointer[size_t])
+                scaly_eputs " in "
+                scaly_eputs(fn_name as pointer[const_char])
+            }
+            scaly_eputs "\n"
+            exit 24
+        }
+
         procedure region_alloc_tuple(mutable this, tuple: PlannedTuple, mutable struct_type: LLVMTypeRef) returns LLVMValueRef
             this.region_alloc_life(tuple.is_region_alloc, tuple.life, struct_type)
 
@@ -12316,6 +12346,16 @@ define Emitter
                 ; this is emission-neutral for the self-compile.
                 if page_val_raw = null
                     set page_val_raw: resolve_reference_page(page_var_name)
+                ; No such page in this routine: the caller falls back to a
+                ; stack `alloca`. Right for a value (603 such sites in the tree,
+                ; all Slices and plain records, 2026-09-25); for a type that
+                ; derives its page from its own address it is Page.get of the
+                ; stack -- the s196 fallback, silent until now. The planner
+                ; keeps its own promotions off this path
+                ; (Planner.residency_stays_local#); what reaches it here is a
+                ; plan the planner did not expect, so the compile stops.
+                if page_val_raw = null
+                    report_lost_resident_page(struct_type, page_var_name)
                 if page_val_raw <> null
                 {
                     var page_val page_val_raw

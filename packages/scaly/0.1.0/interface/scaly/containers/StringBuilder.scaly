@@ -2,7 +2,7 @@ use scaly.memory.Page
 use scaly.memory.runtime
 
 define StringBuilder
-@resident true (
+@resident true @inplace true (
     buffer: Array[char]
 )
 {

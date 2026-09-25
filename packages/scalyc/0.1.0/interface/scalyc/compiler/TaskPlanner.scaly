@@ -48,7 +48,7 @@ define TaskPlanner
     ; ========================================================================
 
     define TaskPlanner
-    @resident true (
+    @resident true @inplace true (
         report_files: Array[String]
         report_offsets: Array[size_t]
         report_verdicts: Array[String]

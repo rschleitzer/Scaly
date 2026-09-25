@@ -148,7 +148,7 @@ define Emitter
     ; ============================================================================
 
     define Emitter
-    @resident true (
+    @resident true @inplace true (
         config: EmitterConfig
         ; LLVM handles
         var context: LLVMContextRef
@@ -12270,10 +12270,50 @@ define Emitter
         ; `Thing.Alpha^host(...)` carries its sigil on `union_type.life` and
         ; used to land on a stack `alloca` with the sigil dropped in silence —
         ; the same class as the 2026-08-29 tuple-path fix, one bahn over.
+        ; report_lost_resident_page#: exit 24 when a construction of a
+        ; page-resident record (PlannedStructure.resident) is about to fall
+        ; back to the stack because the page it names does not exist here.
+        procedure report_lost_resident_page(mutable this, mutable struct_type: LLVMTypeRef, page_var_name: String) @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         procedure region_alloc_tuple(mutable this, tuple: PlannedTuple, mutable struct_type: LLVMTypeRef) @direct true @deep true returns LLVMValueRef linked
 
 
         procedure region_alloc_life(mutable this, is_region: bool, life: Lifetime, mutable struct_type: LLVMTypeRef) @direct true @deep true returns LLVMValueRef linked
+
+
+
+
+
+
+
+
+
+
 
 
 
