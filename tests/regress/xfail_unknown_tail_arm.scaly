@@ -1,0 +1,14 @@
+; Regression (2026-09-25): an unknown identifier that is the value of an
+; if/else ARM in tail position. Before, rc 0 and garbage (8365825064 in the
+; probe) -- the arm's leaf was never judged, only the operand reaching `ret`.
+; xfail: error: unknown identifier: NotHere
+
+function c(x: int) returns int
+{
+    if x > 0
+        NotHere
+    else
+        4
+}
+
+let e c(1)

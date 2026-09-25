@@ -58,7 +58,31 @@ run_one() {
         if [ -z "$LLVM_LIBDIR" ]; then source tools/llvm-env.sh >/dev/null; fi
         extra=(-L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME")
       fi
-      if grep -q '^; expect-rc: ' "$f"; then
+      if grep -q '^; expect-ir: ' "$f"; then
+        # IR gate: the fixture must COMPILE (to LLVM IR, `-S`) and the IR must
+        # contain every `; expect-ir:` line. It exists for a fixture that needs
+        # its own SCALY_HOME (a second package the root does not walk) and so
+        # cannot link -- such a home has no runtime archive -- and for a defect
+        # whose whole evidence is a LAYOUT (a struct type), not a printed value.
+        # `; env:` and `; args:` work as in the xfail branch.
+        env_args=()
+        while IFS= read -r kv; do [ -n "$kv" ] && env_args+=("$kv"); done < <(sed -n 's/^; env: //p' "$f")
+        arg_args=()
+        while IFS= read -r a; do [ -n "$a" ] && arg_args+=($a); done < <(sed -n 's/^; args: //p' "$f")
+        err=$(env "${env_args[@]}" "$STAGE" -S "${arg_args[@]}" -o "$bin.ll" "$f" 2>&1); crc=$?
+        missing=""
+        if [ $crc -eq 0 ]; then
+          while IFS= read -r w; do
+            [ -n "$w" ] && ! grep -qF -- "$w" "$bin.ll" && missing="$w"
+          done < <(sed -n 's/^; expect-ir: //p' "$f")
+        fi
+        if [ $crc -eq 0 ] && [ -z "$missing" ]; then
+          echo "PASS $t"
+        else
+          report_fail "$t: rc=$crc missing='$missing' '$err'"
+        fi
+        rm -f "$bin.ll"
+      elif grep -q '^; expect-rc: ' "$f"; then
         # RUNTIME-TRAP gate: the fixture must COMPILE cleanly and then abort
         # with the given exit code. It exists because a hard trap cannot live
         # in the PASS branch above — the program never reaches a print — so

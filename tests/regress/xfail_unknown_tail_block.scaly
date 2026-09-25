@@ -1,0 +1,16 @@
+; Regression (2026-09-25): an unknown identifier that is the LAST statement of a
+; BLOCK in tail position -- the value the block yields. The unknown-name rule
+; judged only the operand that reaches `ret`, so a leaf inside a block was out
+; of its reach: rc 0, the function answered 0 for every input. Judged for every
+; action without a target now (Planner.plan_action#).
+; xfail: error: unknown identifier: NoSuchThing
+
+function h(x: int) returns int
+{
+    {
+        let y x
+        NoSuchThing
+    }
+}
+
+let b h(2)

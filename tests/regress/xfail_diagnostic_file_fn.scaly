@@ -1,0 +1,21 @@
+; xfail: fnbug/pick.scaly:7:9: error: null assigned to a non-optional reference
+;
+; env: SCALY_HOME=tests/regress/xfail_diagnostic_file_fn_home
+; args: --no-prelude
+;
+; Regression (2026-09-25): the FREE-function twin of xfail_diagnostic_file. A
+; generic free function is instantiated lazily from its call site, outside the
+; module walk that maintains the planner's current file, and a `Model.Function`
+; carries no file -- so a diagnostic raised in its body was rendered against
+; the CALLER's file at the callee's offsets (this compile answered
+; `xfail_diagnostic_file_fn.scaly:7:76`, a position in THIS file's comment).
+; `register_function#` records the file now (`function_origin_files`) and
+; `instantiate_generic_function#` installs it around the body, as
+; `instantiate_generic#` does for a concept.
+
+package fnbug 0.1.0
+
+define Thing (v: int)
+
+var t Thing(7)
+let r first_of[Thing](&t as pointer[Thing], 0)

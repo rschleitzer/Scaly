@@ -1239,6 +1239,9 @@ define Planner
         ; of ("" for a free function) -- lookup_functions_preferring#
         function_namespaces: ref[Array[String]]
         var registering_namespace: String
+        ; parallel to the registry as well: the source FILE a function was
+        ; registered from ("" outside a module walk) -- function_origin_file#
+        function_origin_files: ref[Array[String]]
 
         ; Stack guard (check_nesting_stack#). stack_base is the SHALLOWEST
         ; plan_operand frame address seen so far, i.e. the top of the recursive
@@ -1253,6 +1256,7 @@ define Planner
     )
     {
         init(filename: String) linked
+
 
 
 
@@ -5241,6 +5245,27 @@ define Planner
 
 
 
+
+        ; function_origin_file: the file the registered function `f` (the same
+        ; name AND the same span) was declared in, or "" when unknown. A span
+        ; carries only offsets, so the name is needed to tell two files apart.
+        function function_origin_file(this: Planner, f: Function) @page true @direct true @ret_caller true @deep true returns String linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         procedure register_operator(mutable this: Planner, o: Operator) @persists true @ret_nonlocal true @deep true @deep_this_2 true @deep_whole_2 true linked
 
 
@@ -7738,6 +7763,15 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
         ; ================================================================
         ; instantiate_generic: monomorphise a generic Concept against a
         ; concrete type-argument list. Binds each GenericParameter name
@@ -7756,6 +7790,15 @@ define Planner
             mutable args: Vector[PlannedType],
             loc: Span
         ) @page true @direct true @ret_caller true @deep true @deep_this_4 true returns PlannedType io linked
+
+
+
+
+
+
+
+
+
 
 
 
@@ -24834,7 +24877,36 @@ define Planner
             mutable this: Planner,
             t: Type,
             loc: Span
-        ) @page true @direct true @deep true returns ref[PlannedOperand]? linked
+        ) @page true @direct true @ret_caller true @deep true returns ref[PlannedOperand]? linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -25779,6 +25851,45 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; unit_variant_owner: the ONE non-generic union that declares a
+        ; payload-less variant of this name, or "" when none or several do
+        ; (try_plan_unit_variant#). A generic union is left out: its unit
+        ; variant has no type arguments to construct with.
+        procedure unit_variant_owner(mutable this: Planner, name: String) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -28510,6 +28621,8 @@ define Planner
 
 
         procedure plan_action(mutable this: Planner, mutable a: Action) @page true @direct true @stores true @deep true @deep_this_2 true returns PlannedAction io linked
+
+
 
 
 
@@ -48065,6 +48178,25 @@ define Planner
         procedure ensure_type_layout(mutable this: Planner, mutable t: PlannedType) @ret_nonlocal true @deep true io linked
 
 
+        ; ensure_field_layouts: lay out the type of every by-value field of an
+        ; instantiated generic structure (see instantiate_generic#). A pointer,
+        ; ref, primitive or generic field type is a guarded no-op in
+        ; ensure_layout_by_name#.
+        procedure ensure_field_layouts(mutable this: Planner, mutable pl: PlannedStructure) @deep true io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         ; By-name twin of ensure_type_layout#: lay out whichever kind (struct
         ; or union) the named concept is. Each underlying helper is a guarded
         ; no-op when the concept is not its kind / already instantiated / opaque
@@ -51798,9 +51930,6 @@ define Planner
 
 
 
-
-
-
     ; apply_substitution: replace every type variable in `t` with its binding
     ; in `subst`, recursing to handle chains (T0 -> T1 -> int). Concrete
     ; types get rebuilt with substituted generic arguments; everything
@@ -51937,9 +52066,6 @@ define Planner
         subst: Vector[KeyValuePair[String, PlannedType]],
         name: String
     ) @ret_param_0 true @deep true returns ref[PlannedType]? linked
-
-
-
 
 
 
@@ -52927,9 +53053,6 @@ define Planner
 
 
 
-
-
-
     ; lookup_local_in_stack: searches innermost (top of the stack) to
     ; outermost — matches the reverse iteration in Planner.cpp's
     ; lookupLocal. A name shadowed in a newer scope hides the older
@@ -52937,11 +53060,7 @@ define Planner
     function lookup_local_in_stack(
         scopes: Vector[Vector[KeyValuePair[String, LocalBinding]]],
         name: String
-    ) @ret_nonlocal true @deep true returns ref[LocalBinding]? linked
-
-
-
-
+    ) @ret_param_0 true @deep true returns ref[LocalBinding]? linked
 
 
 

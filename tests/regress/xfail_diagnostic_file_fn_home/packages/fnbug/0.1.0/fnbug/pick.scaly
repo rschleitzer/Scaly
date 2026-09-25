@@ -1,0 +1,9 @@
+; A generic FREE function that LIES: it declares a non-optional reference and
+; returns null. Its body is instantiated outside the module walk that maintains
+; the planner's current file (tests/regress/xfail_diagnostic_file_fn.scaly).
+function first_of[T](p: pointer[T], i: size_t) returns ref[T]
+{
+    if i > 0
+        return null
+    p
+}

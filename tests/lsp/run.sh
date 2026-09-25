@@ -6000,6 +6000,50 @@ PYSTORE
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp codeLens unpinnable store"; else bad "lsp codeLens unpinnable store"; fi
 
+# ---- the answer does not depend on the stack the CLIENT gave the server ----
+# The worker plans the whole package a document belongs to, and the planner's
+# nesting guard is sized from the stack it runs on. Before 2026-09-25 the
+# request loop ran on the worker's main thread: at `ulimit -s 2048` a codeLens
+# request on dazzle/Style.scaly tripped the guard in TeXFOTBuilder.scaly, the
+# worker exited 17, and the client got a SUCCESSFUL, EMPTY answer (0 lenses for
+# 15) with the reason on a stderr no editor shows. worker.serve_on_worker_stack#
+# runs the loop on a thread of its own size now. The check asks the same
+# question at 1 MB and at the suite's own stack and wants the same answer.
+python3 - <<'PYSTACK'
+import json, os, subprocess, sys
+def frame(o):
+    b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
+def lens_count(path, stack_kb):
+    uri = "file://" + os.path.abspath(path)
+    inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+    inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+    inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{
+                  "textDocument":{"uri":uri,"languageId":"scaly","version":1,"text":open(path).read()}}})
+    inp += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/codeLens",
+                  "params":{"textDocument":{"uri":uri}}})
+    inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+    inp += frame({"jsonrpc":"2.0","method":"exit"})
+    cmd = ["/tmp/scalyls"] if stack_kb is None else ["sh", "-c", "ulimit -s %d && exec /tmp/scalyls" % stack_kb]
+    out = subprocess.run(cmd, input=inp, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).stdout
+    frames, d = [], out
+    while d:
+        i = d.find(b"\r\n\r\n")
+        if i < 0: break
+        n = int(d[:i].decode().split(":")[1].strip())
+        frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+    r = next((f for f in frames if f.get("id") == 2), None)
+    res = (r or {}).get("result")
+    return len(res) if isinstance(res, list) else -1
+f = "packages/dazzle/0.1.0/dazzle/Style.scaly"
+big = lens_count(f, None)
+small = lens_count(f, 1024)
+ok = big > 0 and small == big
+print(("PASS  " if ok else "FAIL  ") + "codeLens on %s: %d lenses at 1 MB, %d at the suite's stack" % (f, small, big))
+sys.exit(0 if ok else 1)
+PYSTACK
+rc=$?
+if [ $rc -eq 0 ]; then ok "lsp answer independent of the client stack"; else bad "lsp answer independent of the client stack"; fi
+
 # ---- inlayHint: where each construction is ALLOCATED ----
 # scalyls/placehints.scaly labels every construction with the placement the
 # EMITTER will give it: `stack`, `region` (this function's own frame),

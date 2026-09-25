@@ -1,0 +1,12 @@
+; Regression (2026-09-25): an unknown identifier that is the value of a `match`
+; CASE in tail position. Before, rc 0 and 0 for every input.
+; xfail: error: unknown identifier: Nope
+
+function m(x: int) returns int
+{
+    match x
+        case 1: Nope
+        else 3
+}
+
+let d m(1)

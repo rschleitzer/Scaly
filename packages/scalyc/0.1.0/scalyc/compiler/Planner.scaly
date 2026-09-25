@@ -1239,6 +1239,9 @@ define Planner
         ; of ("" for a free function) -- lookup_functions_preferring#
         function_namespaces: ref[Array[String]]
         var registering_namespace: String
+        ; parallel to the registry as well: the source FILE a function was
+        ; registered from ("" outside a module walk) -- function_origin_file#
+        function_origin_files: ref[Array[String]]
 
         ; Stack guard (check_nesting_stack#). stack_base is the SHALLOWEST
         ; plan_operand frame address seen so far, i.e. the top of the recursive
@@ -1394,6 +1397,7 @@ define Planner
             set module_paths: Array[String]^this()
             set function_origin_paths: Array[String]^this()
             set function_namespaces: &Array[String]^this()
+            set function_origin_files: &Array[String]^this()
             set registering_namespace: String^this("")
             set registering_file: String^this("")
             set registering_path: String^this("")
@@ -5239,6 +5243,27 @@ define Planner
             model_function_index.insert(f.name, model_functions.length - 1)
             function_origin_paths.add(String^this(registering_path))
             function_namespaces.add(String^this(registering_namespace))
+            function_origin_files.add(String^this(registering_file))
+        }
+
+        ; function_origin_file: the file the registered function `f` (the same
+        ; name AND the same span) was declared in, or "" when unknown. A span
+        ; carries only offsets, so the name is needed to tell two files apart.
+        function function_origin_file(this: Planner, f: Function) returns String
+        {
+            var cur model_function_index.lookup_head f.name
+            while cur <> (0 - 1) as i64
+            {
+                let kvp_ptr model_functions.get(cur as size_t)
+                if kvp_ptr <> null and kvp_ptr.value.span.start = f.span.start and kvp_ptr.value.span.end = f.span.end
+                {
+                    let fof function_origin_files.get(cur as size_t)
+                    if fof <> null
+                        return String((*fof))
+                }
+                set cur: model_function_index.next_of(cur as size_t)
+            }
+            String("")
         }
 
         procedure register_operator(mutable this: Planner, o: Operator)
@@ -7733,7 +7758,16 @@ define Planner
                 set i: i + 1
             }
 
+            ; The body is planned outside the module walk that maintains
+            ; `file`, so a diagnostic raised in it named the CALLER's file at
+            ; the callee's offsets (2026-09-25) -- instantiate_generic# has
+            ; done the same for a concept's body since 2026-08-24.
+            let saved_ffile this.file
+            let ffile this.function_origin_file(f)
+            if ffile.get_length() > 0
+                set this.file: String^this(ffile)
             let result this.plan_function(f, null)
+            set this.file: saved_ffile
             set type_substitutions.length: saved_len
             result
         }
@@ -7910,6 +7944,15 @@ define Planner
                     when s: Structure
                     {
                         let pl this.plan_structure^this(s, concept_name)
+                        ; ★A BY-VALUE field of the instantiation whose type
+                        ; comes from a package this root does not walk had no
+                        ; layout (2026-09-25): dazzle_cli's NamedTable[ELObj]
+                        ; was `{ ptr }` where the library has `{ NameTable }`,
+                        ; 8 bytes for 24. ensure_member_layout# recurses into
+                        ; the field types of a NON-generic dependency struct;
+                        ; an instantiation needs the same, on the substituted
+                        ; property types.
+                        this.ensure_field_layouts(pl)
                         0
                     }
                     when u: scalyc.compiler.Model.Union
@@ -24836,18 +24879,47 @@ define Planner
             loc: Span
         ) returns ref[PlannedOperand]?
         {
-            if t.name.length <> 2
-                return null
-            let u_ptr t.name.get 0
-            let v_ptr t.name.get 1
-            if u_ptr = null
-                return null
-            if v_ptr = null
-                return null
-            let union_name (*u_ptr)
-            let variant_name (*v_ptr)
-            if this.lookup_local_binding(union_name) <> null
-                return null
+            var union_name ""
+            var variant_name ""
+            ; ★A BARE unit variant (`Blue` after `define Shade union (Red,
+            ; Green: int, Blue)`) is a value too -- tests/definitions.sgm's
+            ; `None` -- and until 2026-09-25 it planned as nothing at all: the
+            ; statement answered a zeroed union, i.e. the FIRST variant, at
+            ; rc 0 (`Blue` read back as `Red`). It resolves here when exactly
+            ; one non-generic union declares it and the name means nothing
+            ; else; an ambiguous or generic one stays unresolved and is
+            ; reported as an unknown identifier -- write `Union.Variant`.
+            if t.name.length = 1
+            {
+                let n_ptr t.name.get 0
+                if n_ptr = null
+                    return null
+                let bare (*n_ptr)
+                if this.lookup_local_binding(bare) <> null or this.lookup_global(bare) <> null
+                    return null
+                if this.lookup_concept(bare) <> null or this.is_function(bare)
+                    return null
+                let owner this.unit_variant_owner(bare)
+                if owner.get_length() = 0
+                    return null
+                set union_name: String(owner)
+                set variant_name: String(bare)
+            }
+            else
+            {
+                if t.name.length <> 2
+                    return null
+                let u_ptr t.name.get 0
+                let v_ptr t.name.get 1
+                if u_ptr = null
+                    return null
+                if v_ptr = null
+                    return null
+                set union_name: String((*u_ptr))
+                set variant_name: String((*v_ptr))
+                if this.lookup_local_binding(union_name) <> null
+                    return null
+            }
             let uconc_ref this.lookup_concept(union_name)
             if uconc_ref = null
                 return null
@@ -25811,6 +25883,45 @@ define Planner
                 else
                     return ""
             ""
+        }
+
+        ; unit_variant_owner: the ONE non-generic union that declares a
+        ; payload-less variant of this name, or "" when none or several do
+        ; (try_plan_unit_variant#). A generic union is left out: its unit
+        ; variant has no type arguments to construct with.
+        procedure unit_variant_owner(mutable this: Planner, name: String) returns String
+        {
+            var owner ""
+            var count: int 0
+            var i: size_t 0
+            while i < concepts.length
+            {
+                let kv concepts.get i
+                if kv <> null and kv.value.parameters.length = 0
+                {
+                    choose kv.value.definition
+                        when u: scalyc.compiler.Model.Union
+                        {
+                            var vi: size_t 0
+                            while vi < u.variants.length
+                            {
+                                let v_ptr u.variants.get vi
+                                if v_ptr <> null and v_ptr.name = name and v_ptr.type = null and owner <> kv.key
+                                {
+                                    set owner: String(kv.key)
+                                    set count: count + 1
+                                }
+                                set vi: vi + 1
+                            }
+                        }
+                        else
+                            0
+                }
+                set i: i + 1
+            }
+            if count <> 1
+                return String("")
+            owner
         }
 
         ; The exemption battery of unknown_identifier_name#, as its own
@@ -28688,11 +28799,13 @@ define Planner
             ; ★★★And the same name as the IMPLICIT return: `function f()
             ; returns int` whose whole body is `NoSuchConstant` compiled at
             ; rc 0 and answered 0, with the CALLER silent as well, so nothing
-            ; anywhere named the identifier. ★It judges the operand that
-            ; reaches `ret`, so a leaf inside a BLOCK or an arm is out of its
-            ; reach -- the same limit convert_tail_literal# documents one
-            ; paragraph down, and the explicit `return` covers that shape.
-            if do_tail_check and a.target.length = 0
+            ; anywhere named the identifier. ★Judged for EVERY action without
+            ; a target, not only the body's outermost one (2026-09-25): a leaf
+            ; that is the last statement of a BLOCK or of an if/match/choose
+            ; arm is the value that block or arm yields, and it answered 0 or
+            ; garbage at rc 0 the same way. A bare name that resolves to
+            ; nothing is wrong in any statement position.
+            if a.target.length = 0
                 this.report_unknown_identifier(planned_source_collapsed)
 
             var tail_leaves_converted: bool false
@@ -48065,6 +48178,25 @@ define Planner
         procedure ensure_type_layout(mutable this: Planner, mutable t: PlannedType)
             this.ensure_layout_by_name(t.name)
 
+        ; ensure_field_layouts: lay out the type of every by-value field of an
+        ; instantiated generic structure (see instantiate_generic#). A pointer,
+        ; ref, primitive or generic field type is a guarded no-op in
+        ; ensure_layout_by_name#.
+        procedure ensure_field_layouts(mutable this: Planner, mutable pl: PlannedStructure)
+        {
+            if pl.properties = null
+                return
+            let props (*pl.properties)
+            var i: size_t 0
+            while i < props.length
+            {
+                let pp props.get i
+                if pp <> null
+                    this.ensure_layout_by_name(Planner.last_name_segment(pp.prop_type.name))
+                set i: i + 1
+            }
+        }
+
         ; By-name twin of ensure_type_layout#: lay out whichever kind (struct
         ; or union) the named concept is. Each underlying helper is a guarded
         ; no-op when the concept is not its kind / already instantiated / opaque
@@ -51790,12 +51922,9 @@ define Planner
         var i: size_t 0
         while i < subst.length
         {
-            let kvp_ptr subst.get_ptr i
-            if kvp_ptr <> null
-            {
-                if kvp_ptr.key = id
-                    return &kvp_ptr.value
-            }
+            let kvp subst.at i
+            if kvp.key = id
+                return &kvp.value
             set i: i + 1
         }
         null
@@ -51941,12 +52070,9 @@ define Planner
         var i: size_t 0
         while i < subst.length
         {
-            let kvp_ptr subst.get_ptr i
-            if kvp_ptr <> null
-            {
-                if kvp_ptr.key = name
-                    return &kvp_ptr.value
-            }
+            let kvp subst.at i
+            if kvp.key = name
+                return &kvp.value
             set i: i + 1
         }
         null
@@ -52919,12 +53045,9 @@ define Planner
         var i: size_t 0
         while i < scope.length
         {
-            let kvp_ptr scope.get_ptr i
-            if kvp_ptr <> null
-            {
-                if kvp_ptr.key = name
-                    return &kvp_ptr.value
-            }
+            let kvp scope.at i
+            if kvp.key = name
+                return &kvp.value
             set i: i + 1
         }
         null
@@ -52946,13 +53069,9 @@ define Planner
         while i > 0
         {
             set i: i - 1
-            let scope_ptr scopes.get_ptr i
-            if scope_ptr <> null
-            {
-                let found Planner.lookup_local_in_scope(*scope_ptr, name)
-                if found <> null
-                    return found
-            }
+            let found Planner.lookup_local_in_scope(scopes.at(i), name)
+            if found <> null
+                return found
         }
         null
     }

@@ -34,7 +34,7 @@ define HashSetBuilder[T]
                 {
                     let hash_code item.hash_code
                     let slot_number hash_code % new_slots.length
-                    let slot_list new_slots.get_ptr slot_number
+                    let slot_list new_slots.at slot_number
                     slot_list.add_on(slots_page, *item)
                 }
             }
@@ -56,7 +56,7 @@ define HashSetBuilder[T]
     {
         let hash_code value.hash()
         let slot_number hash_code % slots.length
-        let slot_list slots.get_ptr slot_number
+        let slot_list slots.at slot_number
         var iterator slot_list.get_iterator()
         while let item iterator.next()
         {
@@ -79,7 +79,7 @@ define HashSetBuilder[T]
 
         let hash value.hash()
         let slot_number hash % slots.length
-        let slot slots.get_ptr slot_number
+        let slot slots.at slot_number
         var iterator slot.get_iterator()
         while let item iterator.next()
         {

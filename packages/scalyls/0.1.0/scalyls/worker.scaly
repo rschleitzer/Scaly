@@ -63,12 +63,29 @@ function kill(pid: int, sig: int) returns i32 extern
 ; with the upper half undefined.
 function poll(fds: pointer[pollfd], nfds: u64, timeout: i32) returns i32 extern
 function signal(sig: int, handler: pointer[void]) returns pointer[void] extern
+function setenv(name: pointer[const_char], value: pointer[const_char], overwrite: i32) returns i32 extern
 
 ; `pollfd` itself is declared in the PRELUDE (scaly/fiber.scaly), which also
 ; declares poll: a top-level `define` mangles without its module, so a second
 ; one here would collide with it silently in the whole-stack link.
 
 define POLLIN i16 1
+
+; The worker's stack, independent of the stack the CLIENT started the server
+; with (2026-09-25). The pipeline plans the whole package a document belongs
+; to, and the planner's nesting guard is sized from the stack it runs on: at
+; `ulimit -s 2048` a codeLens request on dazzle/Style.scaly tripped the guard in
+; TeXFOTBuilder.scaly, the worker exited 17, and the client got a successful,
+; EMPTY answer -- 0 lenses where there are 15, with the reason on a stderr no
+; editor shows. The request loop therefore runs on a thread of this size, and
+; the guard's budget is 80 % of it (Planner.stack_budget_bytes#, the same
+; ratio), handed over through the planner's own override. 64 MiB is the macOS
+; maximum and the size the tree's own tools run at (`ulimit -s 65520`); the
+; reservation is virtual, a stack costs the pages it touches.
+define WORKER_STACK_BYTES size_t 67108864
+
+; The two pipe ends the request loop serves, handed to its thread.
+define WorkerFds (in_fd: int  out_fd: int)
 define SIGKILL int 9
 define SIGPIPE int 13
 
@@ -145,6 +162,14 @@ mutable worker_pid: int 0
 mutable worker_in:  int 0      ; parent -> worker  (write end)
 mutable worker_out: int 0      ; worker -> parent  (read end)
 
+; The request loop's thread (serve_on_worker_stack#).
+procedure worker_thread_entry(mutable arg: pointer[void]) returns pointer[void] mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig
+{
+    let fds arg as ref[WorkerFds]
+    worker.serve(fds.in_fd, fds.out_fd)
+    null
+}
+
 define worker
 {
     ; True when the CLIENT has already sent more input: a poll of stdin with a
@@ -193,6 +218,19 @@ define worker
         var keep_going true
         while keep_going
             set keep_going: worker.serve_one(in_fd, out_fd)
+        0
+    }
+
+    ; Run the request loop on a thread with WORKER_STACK_BYTES of stack and
+    ; the planner's guard budget to match (see WORKER_STACK_BYTES). The child
+    ; waits for the loop; its own main thread plans nothing.
+    procedure serve_on_worker_stack(in_fd: int, out_fd: int) returns int
+    {
+        ; 80 % of WORKER_STACK_BYTES, spelled out: a module constant cannot be a string
+        setenv("SCALYC_STACK_BUDGET", "53687091", 1 as i32)
+        var fds WorkerFds(in_fd, out_fd)
+        let t Thread.spawn_sized(&worker_thread_entry, &fds as pointer[void], WORKER_STACK_BYTES)
+        Thread.join(t)
         0
     }
 
@@ -489,7 +527,7 @@ define worker
             close 1
             close(*(p2c + 1))
             close(*(c2p + 0))
-            let rc worker.serve(*(p2c + 0), *(c2p + 1))
+            let rc worker.serve_on_worker_stack(*(p2c + 0), *(c2p + 1))
             exit rc
             return
         }

@@ -1,0 +1,16 @@
+; xfail: error: unknown identifier: Blue
+;
+; Regression (2026-09-25): a bare unit variant that TWO unions declare cannot
+; be resolved -- write `Union.Variant`. It is reported rather than planned as
+; the zeroed first variant (bare_unit_variant.scaly has the account). A
+; CONTROL, not a witness: the old compiler reported this shape too (the whole
+; body is the name); it pins that resolving bare variants did not make the
+; ambiguous case quiet.
+
+define Shade union (Red, Blue)
+define Mood union (Calm, Blue)
+
+function pick() returns Shade
+    Blue
+
+let s pick()

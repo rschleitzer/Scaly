@@ -1,0 +1,44 @@
+; Regression (2026-09-25): a BARE unit variant is a value (tests/definitions.sgm:
+; `None` after `define Option union(Some: int, None)`), and until today it
+; planned as nothing: the statement yielded a zeroed union -- the FIRST
+; variant -- at rc 0, so `Blue` read back as `Red`. `Shade.Blue` was always
+; right. Planner.try_plan_unit_variant# resolves the one-segment name when
+; exactly one non-generic union declares it and the name means nothing else;
+; an ambiguous one is reported (xfail_bare_unit_variant_ambiguous).
+; Expected: PASS
+
+define Shade union (Red, Green: int, Blue)
+
+function pick(x: int) returns Shade
+{
+    if x > 0
+        Blue
+    else
+        Red
+}
+
+function tag(s: Shade) returns int
+{
+    choose s
+        when r: Red
+            1
+        when g: Green
+            2
+        when b: Blue
+            3
+        else
+            0
+}
+
+var ok true
+if tag(pick(1)) <> 3
+    set ok: false
+if tag(pick(0)) <> 1
+    set ok: false
+let direct Blue
+if tag(direct) <> 3
+    set ok: false
+if ok
+    print "PASS"
+else
+    print "FAIL"

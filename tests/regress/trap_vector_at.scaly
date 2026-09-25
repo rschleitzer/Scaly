@@ -1,0 +1,13 @@
+; Tor: Vector.at -- die geborgte Referenz (seit 2026-09-25).
+; expect-rc: 15
+; expect-out: Vector.at: index out of bounds
+
+function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var arr Array[int]()
+    arr.add(10)
+    arr.add(11)
+    let v Vector[int](arr)
+    let r v.at((argc as size_t) + 1)
+    r
+}

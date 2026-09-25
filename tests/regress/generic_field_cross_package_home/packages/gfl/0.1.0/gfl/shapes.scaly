@@ -1,0 +1,4 @@
+; The package half of tests/regress/generic_field_cross_package.scaly: a generic
+; record holding a NON-generic record of the same package by value.
+define Inner (a: int  b: int  c: int)
+define Wrap[T] (tag: T  inner: Inner)

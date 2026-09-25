@@ -132,6 +132,18 @@ define Vector[T]
         data + i
     }
 
+    ; The element in place, as Array.at and Slice.at answer it: a borrowed,
+    ; NON-optional reference, and an index at or past length traps -- where
+    ; the index is in range by construction (`hash % length`, `i < length`)
+    ; there is nothing for a caller to test.
+    function at(this: Vector[T], i: size_t) returns ref[T]
+    {
+        if i >= length
+            scaly_panic_oob("Vector.at", i, length)
+
+        data + i
+    }
+
     ; Internal helper returning raw pointer for container implementations
     function get_ptr(this: Vector[T], i: size_t) returns pointer[T]
     {

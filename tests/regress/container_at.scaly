@@ -1,4 +1,5 @@
-; Regression: Array.at / Slice.at hand out a BORROWED REFERENCE to element i.
+; Regression: Array.at / Slice.at / Vector.at hand out a BORROWED REFERENCE to
+; element i (Vector's since 2026-09-25).
 ;
 ; The third member of a family whose other two were there from the start:
 ; `[]` answers the element BY VALUE and traps, `put(i, v)` writes it and traps,
@@ -70,6 +71,19 @@ set t0.b: 77
 let e1b arr[1]
 if e1b.b <> 77
     exit 36
+
+; Vector.at: a write through the reference lands in the Vector's own buffer
+var va Array[Rec]()
+va.add(Rec(8, 9))
+va.add(Rec(10, 11))
+let vec Vector[Rec](va)
+let v1 vec.at(1)
+if v1.a <> 10
+    exit 37
+set v1.b: 55
+let ve1 vec[1]
+if ve1.b <> 55
+    exit 38
 
 print "PASS"
 exit 0
