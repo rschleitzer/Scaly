@@ -2784,6 +2784,15 @@ define Emitter
             }
         }
 
+        ; struct_is_pointer_handle#: `{ ptr }` -- a one-field struct whose field
+        ; is a pointer, the shape of the LLVM-C handle wrappers.
+        procedure struct_is_pointer_handle(this, mutable t: LLVMTypeRef) returns bool
+        {
+            if LLVMCountStructElementTypes(t) <> 1
+                return false
+            LLVMGetTypeKind(LLVMStructGetTypeAtIndex(t, 0)) = LLVMTypeKind.Pointer()
+        }
+
         ; s178: copy a struct value into `dst` without materializing the
         ; whole struct as an SSA value. Big-aggregate load+store pairs
         ; make the backend allocate a spill slot per loaded value —
@@ -2824,6 +2833,20 @@ define Emitter
                 let st0 LLVMBuildStore(builder, sv, d)
                 LLVMSetAlignment(st0, 1)
                 return st0
+            }
+            ; A POINTER where a laid-out struct is copied is the struct's
+            ; ADDRESS -- a heap-bound `var` of struct type loads its slot to a
+            ; pointer. Storing it wrote eight address bytes into the struct,
+            ; and the load peel below took the SLOT for the struct: `choose
+            ; planned_impl` over such a var read its tag out of the slot and
+            ; copied past it (the stage built from a Planner with `var
+            ; planned_impl` + a `set` of it died in memmove, 2026-09-24). A
+            ; one-pointer handle struct (`{ ptr }`, the LLVM-C wrappers) keeps
+            ; the store: there the pointer IS the value.
+            if LLVMGetTypeKind(LLVMTypeOf(sv)) = LLVMTypeKind.Pointer() and this.struct_is_pointer_handle(t) = false
+            {
+                let cp_size LLVMSizeOf(t)
+                return LLVMBuildMemCpy(builder, d, 1, sv, 1, cp_size)
             }
             let ld LLVMIsALoadInst(sv)
             if ld = null

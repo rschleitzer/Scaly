@@ -1,0 +1,46 @@
+; Regression (2026-09-24): `choose` over a `var` of union type that is bound to
+; a heap-hosted call result and reassigned somewhere. Such a var lives in a
+; POINTER slot, and copy_struct_value# -- which copies the subject into the
+; choose's union slot -- took the load of that slot for a load of the union and
+; copied from the SLOT: the tag came out of an address, every call took the
+; else arm (-1 here), rc 0; in the compiler's own plan_function the overread
+; died in memmove. A pointer source is the struct's address now
+; (Emitter.copy_struct_value#). No root in the tree held the shape.
+; Expected: PASS
+define Payload (a: int, name: String)
+define Impl union
+(
+    Act: Payload
+    Ext: int
+)
+define Maker (var n: int)
+{
+    procedure make(mutable this, k: int) returns Impl
+    {
+        set this.n: this.n + 1
+        Impl.Act(Payload(k, String("abc")))
+    }
+    procedure alt(mutable this, k: int) returns ref[Impl]?
+        null
+    procedure run(mutable this, k: int) returns int
+    {
+        var u this.make(k)
+        let r this.alt(k)
+        if r <> null
+            set u: *r
+        choose u
+            when p: Act
+                p.a + (p.name.get_length() as int)
+            when e: Ext
+                e + 1000
+            else
+                0 - 1
+    }
+}
+let rp Page.allocate_root_page()
+let host rp as ref[Page]
+var m Maker^host(0)
+if m.run(1) = 4 and m.run(10) = 13
+    print "PASS"
+else
+    print "FAIL"

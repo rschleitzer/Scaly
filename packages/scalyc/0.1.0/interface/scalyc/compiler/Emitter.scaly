@@ -2784,6 +2784,15 @@ define Emitter
 
 
 
+        ; struct_is_pointer_handle#: `{ ptr }` -- a one-field struct whose field
+        ; is a pointer, the shape of the LLVM-C handle wrappers.
+        procedure struct_is_pointer_handle(this, mutable t: LLVMTypeRef) @ret_caller true @deep true returns bool linked
+
+
+
+
+
+
         ; s178: copy a struct value into `dst` without materializing the
         ; whole struct as an SSA value. Big-aggregate load+store pairs
         ; make the backend allocate a spill slot per loaded value —
@@ -2799,6 +2808,20 @@ define Emitter
         ; emit_action) keep their exact observable behavior at null
         ; checks and PHI void-gates.
         procedure copy_struct_value(mutable this, mutable dst: LLVMValueRef, mutable src_value: LLVMValueRef, mutable ty: LLVMTypeRef) @direct true @deep true returns LLVMValueRef linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
