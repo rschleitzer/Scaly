@@ -1,0 +1,32 @@
+; Regression (2026-09-25): a bare-name call binds to the PROGRAM's own free
+; function, not to a same-named member of a namespace. A namespace member is
+; visible by its bare name inside its namespace (a sibling) or through a `use`
+; alias; from anywhere else it came out mangled as a FREE function -- a symbol
+; nothing defines -- and linked to the free function of that name only because
+; both mangled `_Z3runv`. Once the free `run` took a caller page the call was a
+; link failure (tests/lsp/echo.scaly against scalyls' `server.run`); had both
+; symbols existed it would have run the wrong routine. The author's rule: the
+; program wins (Planner.lookup_functions_preferring#).
+; Expected: PASS
+define util
+{
+    procedure run() returns int
+        1
+
+    procedure sibling() returns int
+        run()
+}
+
+procedure run() returns int
+{
+    let s String#("paged")
+    s.get_length() as int + 10
+}
+
+let a run()
+let b util.sibling()
+let c util.run()
+if a = 15 and b = 1 and c = 1
+    print "PASS"
+else
+    print "FAIL `a` `b` `c`"

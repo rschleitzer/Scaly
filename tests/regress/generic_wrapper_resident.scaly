@@ -1,0 +1,29 @@
+; Regression (2026-09-25): a generic record holding a page-deriving `T` by
+; value. `Box[Reg]` with `Reg` holding an Array: the field residency walk saw
+; only `T` at model level, so the Box was laid on the stack and
+; `b.inner.note(...)` grew the Array through Page.get of a stack slot -- exit 19
+; (HEAD and earlier). Planner.instantiated_type_needs_residency# asks each
+; field typed by a type parameter about its argument, at construction and in
+; residency_stays_local#. Run under SCALY_POISON.
+; Expected: PASS
+define Reg (var names: Array[String])
+{
+    procedure note(mutable this, t: String)
+        names.add(String(t))
+}
+define Box[T] (var inner: T)
+procedure run() returns size_t
+{
+    var b Box[Reg](Reg(Array[String]()))
+    var i: size_t 0
+    while i < 300
+    {
+        b.inner.note(String("x"))
+        set i: i + 1
+    }
+    b.inner.names.length
+}
+if run() = 300
+    print "PASS"
+else
+    print "FAIL"

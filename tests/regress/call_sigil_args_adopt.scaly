@@ -1,0 +1,49 @@
+; Regression (2026-09-25): the inline arguments of a `#` construction did not
+; adopt its page. `&Leaf#(v, String("x"))` put the Leaf on the caller's page
+; and the String on this routine's frame, released at the return -- a field of
+; the caller-page aggregate pointing into a dead frame (HEAD and earlier; the
+; `^name` form adopted its arguments since step D). Planner, step-D adoption,
+; now for `Call` life as well. Run under SCALY_POISON.
+; Expected: PASS
+define Leaf (v: int, tag: String)
+
+function mk(v: int) returns ref[Leaf]
+    &Leaf#(v, String("node"))
+
+function find(n: int) returns ref[Leaf]?
+{
+    var i 0
+    while i < n
+    {
+        if i = 3
+            return mk(i)
+        set i: i + 1
+    }
+    null
+}
+
+function churn() returns size_t
+{
+    var junk Array[String]()
+    var i: size_t 0
+    while i < 500
+    {
+        junk.add(String("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"))
+        set i: i + 1
+    }
+    junk.length
+}
+
+procedure run() returns bool
+{
+    let f find(10)
+    churn()
+    f <> null and f.v = 3 and f.tag.get_length() = 4
+}
+
+if getenv("SCALY_POISON") <> null
+    Page.enable_poison()
+if run()
+    print "PASS"
+else
+    print "FAIL"

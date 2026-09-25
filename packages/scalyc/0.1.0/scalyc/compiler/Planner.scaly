@@ -1060,9 +1060,12 @@ define Planner
         ; receiver's state, bit k its k-th parameter -- and the accumulator
         ; the walk of one body fills
         store_page_masks: ref[Array[u64]]
-        ; the MANGLED names of planned routines that store into their receiver
-        ; (bit 0 of their mask) -- what R8's net asks at a call
+        ; the MANGLED names of planned routines with a nonzero R8 mask, the
+        ; mask, and whether argument 0 is the receiver -- what R8's net asks
+        ; at a call
         store_mangled_recv: ref[Array[String]]
+        store_mangled_masks: ref[Array[u64]]
+        store_mangled_this: ref[Array[bool]]
         var store_acc: u64
         ; ★A SEPARATE set for the return-position rule, and separate on purpose:
         ; impl_mentions_set propagates out of transitive_page_names by NAME
@@ -1232,6 +1235,10 @@ define Planner
         ; scaly.memory.runtime.system`), and only its origin can tell an
         ; honest such clause from one naming a path nothing lives at.
         function_origin_paths: Array[String]
+        ; parallel to the registry too: the NAMESPACE a function is a member
+        ; of ("" for a free function) -- lookup_functions_preferring#
+        function_namespaces: ref[Array[String]]
+        var registering_namespace: String
 
         ; Stack guard (check_nesting_stack#). stack_base is the SHALLOWEST
         ; plan_operand frame address seen so far, i.e. the top of the recursive
@@ -1368,6 +1375,8 @@ define Planner
             set store_page_names: &Array[String]^this()
             set store_page_masks: &Array[u64]^this()
             set store_mangled_recv: &Array[String]^this()
+            set store_mangled_masks: &Array[u64]^this()
+            set store_mangled_this: &Array[bool]^this()
             set store_acc: 0
             set return_page_names: Array[String]^this()
             set return_page_starts: Array[size_t]^this()
@@ -1384,6 +1393,8 @@ define Planner
             set use_vis_starts: Array[size_t]^this()
             set module_paths: Array[String]^this()
             set function_origin_paths: Array[String]^this()
+            set function_namespaces: &Array[String]^this()
+            set registering_namespace: String^this("")
             set registering_file: String^this("")
             set registering_path: String^this("")
             set use_vis_files: Array[String]^this()
@@ -5227,6 +5238,7 @@ define Planner
             model_functions.add(KeyValuePair[String, Function](f.name, f))
             model_function_index.insert(f.name, model_functions.length - 1)
             function_origin_paths.add(String^this(registering_path))
+            function_namespaces.add(String^this(registering_namespace))
         }
 
         procedure register_operator(mutable this: Planner, o: Operator)
@@ -5250,6 +5262,45 @@ define Planner
                 set cur: model_function_index.next_of(cur as size_t)
             }
             Vector[Function](matches)
+        }
+
+        ; lookup_functions_preferring#: the candidates for a BARE-name call, the
+        ; ones the call can mean first. A member of a namespace is visible by
+        ; its bare name inside that namespace (a sibling) or through a `use`
+        ; alias; from anywhere else it is mangled as a FREE function, a symbol
+        ; nothing defines. So when such a call also has a visible candidate --
+        ; a free function, the program's own included -- the namespace members
+        ; of other namespaces drop out: a program's `run()` binds to its own
+        ; `run`, not to a package's `util.run` (2026-09-25; it bound to
+        ; `util.run` and linked to the program's `run` only because both came
+        ; out `_Z3runv`). With no visible candidate the list is unchanged.
+        function lookup_functions_preferring(this: Planner, name: String) returns Vector[Function]
+        {
+            var here: String ""
+            if current_namespace_name <> null
+                set here: (*current_namespace_name)
+            let aliased this.lookup_use_alias_namespace(name)
+            var visible Array[Function]()
+            var total: size_t 0
+            var cur model_function_index.lookup_head name
+            while cur <> (0 - 1) as i64
+            {
+                let kvp_ptr model_functions.get(cur as size_t)
+                if kvp_ptr <> null
+                {
+                    set total: total + 1
+                    var ns: String ""
+                    let nsp function_namespaces.get(cur as size_t)
+                    if nsp <> null
+                        set ns: (*nsp)
+                    if ns.get_length() = 0 or ns = here or (aliased.get_length() > 0 and ns = aliased)
+                        visible.add kvp_ptr.value
+                }
+                set cur: model_function_index.next_of(cur as size_t)
+            }
+            if visible.length = 0 or visible.length = total
+                return this.lookup_functions(name)
+            Vector[Function](visible)
         }
 
         function lookup_operators(this: Planner, name: String) returns Vector[Operator]
@@ -6408,6 +6459,197 @@ define Planner
             sb.to_string()
         }
 
+        ; structure_init_stores_build#: an `init` that puts a value it BUILDS
+        ; into a field of the object under construction (`set name: String(t)`)
+        ; puts it on the page of that object -- plan_action#'s store rule 3
+        ; places it with `^this`, the init having no caller page -- so the
+        ; object must live on a page (2026-09-25; on the stack Page.get(this)
+        ; answered a page below the frame). A zero-argument construction
+        ; builds nothing and does not count (ops_build_page_value#).
+        procedure structure_init_stores_build(mutable this: Planner, s: Structure) returns bool
+        {
+            var fields Array[String]()
+            var qi: size_t 0
+            while qi < s.properties.length
+            {
+                let pp s.properties.get qi
+                if pp <> null
+                    fields.add(String((*pp).name))
+                set qi: qi + 1
+            }
+            var none Array[String]()
+            none.add(String("this"))
+            var ii: size_t 0
+            while ii < s.initializers.length
+            {
+                let ip s.initializers.get ii
+                if ip <> null
+                    choose (*ip).implementation
+                        when a: Action
+                        {
+                            if this.action_stores_build_into(a, fields, none)
+                                return true
+                        }
+                        else
+                            0
+                set ii: ii + 1
+            }
+            false
+        }
+
+        ; a `set <field>: <build>` anywhere in this action: in a block, an arm
+        ; of if/choose/match, a loop body
+        procedure action_stores_build_into(mutable this: Planner, a: Action, fields: Array[String], params: Array[String]) returns bool
+        {
+            if a.target.length > 0 and this.ops_build_page_value(a.source, 0)
+                if Planner.root_bit(Planner.ops_root_name(a.target, false), fields, params) = 1
+                    return true
+            this.ops_store_build_into(a.source, fields, params)
+        }
+
+        procedure stmt_stores_build_into(mutable this: Planner, st: Statement, fields: Array[String], params: Array[String]) returns bool
+        {
+            choose st
+                when a: Action
+                    return this.action_stores_build_into(a, fields, params)
+                else
+                    0
+            false
+        }
+
+        procedure ops_store_build_into(mutable this: Planner, ops: Vector[Operand], fields: Array[String], params: Array[String]) returns bool
+        {
+            var i: size_t 0
+            while i < ops.length
+            {
+                let op_ptr ops.get i
+                if op_ptr <> null
+                    choose (*op_ptr).expression
+                        when bl: Block
+                        {
+                            var j: size_t 0
+                            while j < bl.statements.length
+                            {
+                                let sp bl.statements.get j
+                                if sp <> null and this.stmt_stores_build_into(sp.unwrap(), fields, params)
+                                    return true
+                                set j: j + 1
+                            }
+                        }
+                        when iff: scalyc.compiler.Model.If
+                        {
+                            if this.stmt_stores_build_into(iff.consequent, fields, params)
+                                return true
+                            if iff.alternative <> null and this.stmt_stores_build_into((*iff.alternative), fields, params)
+                                return true
+                        }
+                        when ch: Choose
+                        {
+                            var ci: size_t 0
+                            while ci < ch.cases.length
+                            {
+                                let wp ch.cases.get ci
+                                if wp <> null and this.stmt_stores_build_into((*wp).consequent, fields, params)
+                                    return true
+                                set ci: ci + 1
+                            }
+                            if ch.alternative <> null and this.stmt_stores_build_into((*ch.alternative), fields, params)
+                                return true
+                        }
+                        when m: Match
+                        {
+                            var mi: size_t 0
+                            while mi < m.branches.length
+                            {
+                                let bp m.branches.get mi
+                                if bp <> null and this.stmt_stores_build_into((*bp).consequent, fields, params)
+                                    return true
+                                set mi: mi + 1
+                            }
+                            if m.alternative <> null and this.stmt_stores_build_into((*m.alternative), fields, params)
+                                return true
+                        }
+                        when w: While
+                        {
+                            if this.action_stores_build_into(w.action, fields, params)
+                                return true
+                        }
+                        when fr: For
+                        {
+                            if this.action_stores_build_into(fr.action, fields, params)
+                                return true
+                        }
+                        when rpt: Repeat
+                        {
+                            if this.action_stores_build_into(rpt.action, fields, params)
+                                return true
+                        }
+                        else
+                            0
+                set i: i + 1
+            }
+            false
+        }
+
+        ; instantiated_type_needs_residency#: concept_needs_this_residency for a
+        ; construction whose TYPE ARGUMENTS are known. A generic record holding
+        ; a `T` by value is resident when its `T` is one that allocates through
+        ; its own address -- `Box[Reg]` with `Reg` holding an Array: the field
+        ; residency walk sees only `T` at model level, so the Box was laid on
+        ; the stack and `b.inner.names.add(...)` asked Page.get of a stack slot
+        ; (exit 19, 2026-09-25). Each field typed by a type parameter is asked
+        ; about its argument.
+        procedure instantiated_type_needs_residency(mutable this: Planner, name: String, t: PlannedType) returns bool
+        {
+            if this.concept_needs_this_residency(name)
+                return true
+            if t.generics = null
+                return false
+            let gens (*t.generics)
+            let cref this.lookup_concept_any(name)
+            if cref = null
+                return false
+            let c (*cref)
+            if c.parameters.length = 0 or c.parameters.length <> gens.length
+                return false
+            choose c.definition
+                when st: Structure
+                {
+                    var qi: size_t 0
+                    while qi < st.properties.length
+                    {
+                        let pp st.properties.get qi
+                        if pp <> null and (*pp).type <> null
+                        {
+                            let pt (*(*pp).type)
+                            if pt.name.length = 1 and pt.generics = null
+                            {
+                                let fnp pt.name.get 0
+                                if fnp <> null
+                                {
+                                    var gi: size_t 0
+                                    while gi < c.parameters.length
+                                    {
+                                        let gp c.parameters.get gi
+                                        let ga gens.get gi
+                                        if gp <> null and ga <> null and (*gp).name = (*fnp)
+                                        {
+                                            if this.field_type_needs_residency(Planner.last_name_segment((*ga).name), 1)
+                                                return true
+                                        }
+                                        set gi: gi + 1
+                                    }
+                                }
+                            }
+                        }
+                        set qi: qi + 1
+                    }
+                }
+                else
+                    0
+            false
+        }
+
         procedure concept_needs_this_residency(mutable this: Planner, name: String) returns bool
         {
             let concept_ref this.lookup_concept(name)
@@ -6427,6 +6669,8 @@ define Planner
                         set found: this.structure_members_have_this_alloc(s)
                     if found = false
                         set found: this.structure_fields_need_residency(s, 0)
+                    if found = false
+                        set found: this.structure_init_stores_build(s)
                 }
                 else
                     0
@@ -8985,7 +9229,7 @@ define Planner
             explicit_generics: ref[Vector[PlannedType]]?
         ) returns ref[MethodMatch]?
         {
-            let candidates this.lookup_functions(name)
+            let candidates this.lookup_functions_preferring(name)
             if candidates.length = 0
             {
                 var sb StringBuilder()
@@ -12670,7 +12914,7 @@ define Planner
                                     ; rule 1. Only fires for Unspecified life, so
                                     ; explicit #/^ constructions are unchanged.
                                     var ctor_heap_default: bool has_page_param
-                                    if has_page_param = false and this.concept_needs_this_residency(fn_name)
+                                    if has_page_param = false and this.instantiated_type_needs_residency(fn_name, ctor_struct_type)
                                         set ctor_heap_default: true
                                     var eff_ctor_life: Lifetime ctor_struct_type.life
                                     if ctor_heap_default
@@ -12701,6 +12945,17 @@ define Planner
                                             let adopted this.restamp_args(ctor_args_vec, eff_ctor_life)
                                             if adopted <> null
                                                 set ctor_args_ref: adopted
+                                        }
+                                        ; `T#(...)` the same: its inline args
+                                        ; become fields of the caller-page
+                                        ; aggregate (2026-09-25; `&Leaf#(v,
+                                        ; String("x"))` left the String on
+                                        ; the released frame)
+                                        when adopt_c: Call
+                                        {
+                                            let adopted_c this.restamp_args(ctor_args_vec, eff_ctor_life)
+                                            if adopted_c <> null
+                                                set ctor_args_ref: adopted_c
                                         }
                                         else
                                             0
@@ -12851,7 +13106,7 @@ define Planner
                             var reshape_life: Lifetime ctor_struct_type.life
                             choose ctor_struct_type.life
                                 when u: Unspecified
-                                    if this.concept_needs_this_residency(fn_name)
+                                    if this.instantiated_type_needs_residency(fn_name, ctor_struct_type)
                                         set reshape_life: Lifetime.Local(scalyc.compiler.Model.Local(second.loc))
                                 else
                                     0
@@ -12871,6 +13126,16 @@ define Planner
                                         let adopted_comps this.restamp_components((*components_holder), reshape_life)
                                         if adopted_comps <> null
                                             set components_holder: adopted_comps
+                                    }
+                                }
+                                ; `T#(...)`: the caller page, the same way
+                                when adopt_c2: Call
+                                {
+                                    if components_holder <> null
+                                    {
+                                        let adopted_comps_c this.restamp_components((*components_holder), reshape_life)
+                                        if adopted_comps_c <> null
+                                            set components_holder: adopted_comps_c
                                     }
                                 }
                                 else
@@ -40328,9 +40593,10 @@ define Planner
         }
 
         ; report_lost_store_page#: R8's NET (2026-09-25). The callee keeps
-        ; values built on the page it is given in its RECEIVER's state (bit 0 of
-        ; its R8 mask), it is called on state of ours -- `this`, a field of it,
-        ; a parameter -- and this routine has no caller page: R8 could not
+        ; values built on the page it is given in its receiver's or a
+        ; parameter's state (its R8 mask), it is handed state of ours at such a
+        ; position -- `this`, a field of it, a parameter -- and this routine has
+        ; no caller page: R8 could not
         ; follow this call (a receiver typed by a generic parameter, say), so
         ; the values would land on this frame and the receiver would keep them
         ; dangling. Reported here, in the escape post-pass, because every
@@ -40345,53 +40611,82 @@ define Planner
                     return
                 else
                     0
-            if this.array_contains_name(store_mangled_recv, call.mangled_name) = false
+            var entry: size_t 0
+            var found false
+            while entry < store_mangled_recv.length and found = false
+            {
+                let ep store_mangled_recv.get entry
+                if ep <> null and (*ep) = call.mangled_name
+                    set found: true
+                else
+                    set entry: entry + 1
+            }
+            if found = false
                 return
+            let mp store_mangled_masks.get entry
+            let tp store_mangled_this.get entry
+            if mp = null or tp = null
+                return
+            let mask (*mp)
+            let takes_this (*tp)
             let args (*call.args)
-            if args.length = 0
-                return
-            let a0 args.get 0
-            if a0 = null
-                return
+            ; argument k is mask position k for a routine with a receiver
+            ; (argument 0 IS the receiver, bit 0), position k + 1 otherwise
+            var k: size_t 0
+            while k < args.length and k < 62
+            {
+                var bit: u64 (1 as u64) << (k as u64)
+                if takes_this = false
+                    set bit: (1 as u64) << ((k + 1) as u64)
+                if (mask & bit) <> 0
+                {
+                    let ap args.get k
+                    if ap <> null and this.operand_root_is_own_state((*ap))
+                    {
+                        var msg StringBuilder()
+                        msg.append "the call of "
+                        msg.append call.name
+                        let cfp instantiated_functions.get escape_fn_index
+                        if cfp <> null
+                        {
+                            msg.append " in "
+                            msg.append cfp.name
+                        }
+                        msg.append " hands state that outlives the routine to a callee that keeps values built on the page it is given in it - but the routine has no caller page to give (the automatic page rule could not follow the call), so they would land on this frame; call it on the receiver itself, a field of it or a parameter, or build what the callee keeps on the receiver's own page ('^this')"
+                        let text msg.to_string()
+                        this.add_diagnostic(call.loc, String^this(text))
+                        return
+                    }
+                }
+                set k: k + 1
+            }
+        }
+
+        ; the root of an argument is state that outlives this routine: `this`
+        ; or one of its parameters (a Variable, whatever member chain follows)
+        procedure operand_root_is_own_state(mutable this: Planner, op: PlannedOperand) returns bool
+        {
             var root: String ""
-            choose (*a0).expr
+            choose op.expr
                 when v: Variable
                     set root: v.name
                 else
-                    return
-            var is_state false
+                    return false
             if root = "this"
-                set is_state: true
-            else
+                return true
+            let fp instantiated_functions.get escape_fn_index
+            if fp = null or fp.input = null
+                return false
+            let ins (*fp.input)
+            var i: size_t 0
+            while i < ins.length
             {
-                let fp instantiated_functions.get escape_fn_index
-                if fp <> null and fp.input <> null
-                {
-                    let ins (*fp.input)
-                    var i: size_t 0
-                    while i < ins.length
-                    {
-                        let ip ins.get i
-                        if ip <> null and ip.name <> null and (*ip.name) = root
-                            set is_state: true
-                        set i: i + 1
-                    }
-                }
+                let ip ins.get i
+                if ip <> null and ip.name <> null and (*ip.name) = root
+                    return true
+                set i: i + 1
             }
-            if is_state = false
-                return
-            var msg StringBuilder()
-            msg.append "the call of "
-            msg.append call.name
-            let cfp instantiated_functions.get escape_fn_index
-            if cfp <> null
-            {
-                msg.append " in "
-                msg.append cfp.name
-            }
-            msg.append " hands state that outlives the routine to a callee that keeps values built on the page it is given in it - but the routine has no caller page to give (the automatic page rule could not follow the call), so they would land on this frame; call it on the receiver itself, a field of it or a parameter, or build what the callee keeps on the receiver's own page ('^this')"
-            let text msg.to_string()
-            this.add_diagnostic(call.loc, String^this(text))
+            false
         }
 
         procedure escape_walk_function_body(mutable this: Planner, func: PlannedFunction)
@@ -41070,14 +41365,16 @@ define Planner
         ; on the routine's own frame, which is where the promotion would have
         ; ended up anyway had it asked. A plain value struct is not judged: its
         ; stack slot is correct and cheaper (a frame page per loop iteration).
-        procedure residency_stays_local(mutable this: Planner, type_name: String, new_life: Lifetime) returns bool
+        procedure residency_stays_local(mutable this: Planner, t: PlannedType, new_life: Lifetime) returns bool
         {
             choose new_life
                 when c: Call
                 {
                     if this.lookup_local_binding("_rp") <> null
                         return false
-                    return this.concept_needs_this_residency(type_name)
+                    ; the instantiated type: `Box[Reg]` is resident through its
+                    ; `T` (2026-09-25)
+                    return this.instantiated_type_needs_residency(Planner.last_name_segment(t.name), t)
                 }
                 else
                     return false
@@ -41141,7 +41438,7 @@ define Planner
                             0
                     if t_local = false
                         return null
-                    if this.residency_stays_local(t.tuple_type.name, new_life)
+                    if this.residency_stays_local(t.tuple_type, new_life)
                         return null
                     ; Recursively promote the tuple's component values (struct
                     ; field constructions) to the same page — same reasoning as
@@ -41410,7 +41707,7 @@ define Planner
                     }
                     var out_life t.life
                     var out_region t.is_region_alloc
-                    let stays_local this.residency_stays_local(t.tuple_type.name, new_life)
+                    let stays_local this.residency_stays_local(t.tuple_type, new_life)
                     choose t.life
                         when l: Local
                         {
@@ -46216,8 +46513,20 @@ define Planner
                 &^this f.writes
             )
             this.record_function(result)
-            if (this.store_mask_of(Planner.store_key(f)) & 1) <> 0
+            let smask this.store_mask_of(Planner.store_key(f))
+            if smask <> 0
+            {
                 store_mangled_recv.add(String^this(mangled))
+                store_mangled_masks.add(smask)
+                var takes_this false
+                if f.input.length > 0
+                {
+                    let fi0 f.input.get 0
+                    if fi0 <> null and fi0.name <> null and (*fi0.name) = "this"
+                        set takes_this: true
+                }
+                store_mangled_this.add(takes_this)
+            }
             if host_report
             {
                 gate.deep_fns.add f
@@ -48264,6 +48573,8 @@ define Planner
                 when ns: Namespace
                 {
                     set this.registering_path: String^this(inner_reg_path)
+                    let saved_reg_ns this.registering_namespace
+                    set this.registering_namespace: String^this(c.name)
                     var i: size_t 0
                     while i < ns.members.length
                     {
@@ -48293,6 +48604,10 @@ define Planner
                         set i: i + 1
                     }
 
+                    ; a sub-module's functions are FREE (they mangle without
+                    ; the namespace), so they are not the namespace's members
+                    ; for lookup_functions_preferring# either
+                    set this.registering_namespace: saved_reg_ns
                     ; Sub-modules of a namespace (`define ns { module foo }`)
                     ; flatten just like top-level `module foo` decls so
                     ; nested function names resolve under the namespace
@@ -48308,6 +48623,7 @@ define Planner
                         }
                         set mi: mi + 1
                     }
+                    set this.registering_namespace: saved_reg_ns
                     set this.registering_path: saved_reg_path
                     0
                 }
@@ -55148,6 +55464,21 @@ define Planner
                 0
         true
     }
+    ; the last dotted segment of a planned type name
+    function last_name_segment(n: String) returns String
+    {
+        let len n.get_length()
+        var start: size_t 0
+        var i: size_t 0
+        while i < len
+        {
+            if n.get(i) = ("." as char)
+                set start: i + 1
+            set i: i + 1
+        }
+        n.substring(start, len - start)
+    }
+
     ; an Itanium complete-object constructor symbol (`_ZN6StringC1E6String`)
     function mangled_is_constructor(m: String) returns bool
     {
@@ -57018,12 +57349,12 @@ define Planner
             }
             when a: Action
             {
-                if Planner.ret_page_ops_returns(pl, owner, func, a.source, depth)
+                if Planner.ret_page_ops_returns(pl, owner, func, a.source, scope, depth)
                     return true
             }
             when bd: Binding
             {
-                if Planner.ret_page_ops_returns(pl, owner, func, bd.operation, depth)
+                if Planner.ret_page_ops_returns(pl, owner, func, bd.operation, scope, depth)
                     return true
             }
             else
@@ -57031,7 +57362,11 @@ define Planner
         false
     }
 
-    procedure ret_page_ops_returns(mutable pl: Planner, mutable owner: ref[String]?, mutable func: Function, mutable ops: Vector[Operand], depth: int) returns bool
+    ; `scope` is the enclosing block's statements: a `return x` in an arm
+    ; resolves the local `x` through the binding that block holds (2026-09-25;
+    ; the arms were handed an empty scope, so `let child this.mk(i)` ...
+    ; `return child` inside a loop never reached R7)
+    procedure ret_page_ops_returns(mutable pl: Planner, mutable owner: ref[String]?, mutable func: Function, mutable ops: Vector[Operand], mutable scope: Vector[Statement], depth: int) returns bool
     {
         var i: size_t 0
         while i < ops.length
@@ -57048,10 +57383,10 @@ define Planner
                     }
                     when iff: scalyc.compiler.Model.If
                     {
-                        if Planner.ret_page_stmt_returns(pl, owner, func, iff.consequent, Vector[Statement](), depth)
+                        if Planner.ret_page_stmt_returns(pl, owner, func, iff.consequent, scope, depth)
                             return true
                         if iff.alternative <> null
-                            if Planner.ret_page_stmt_returns(pl, owner, func, (*iff.alternative), Vector[Statement](), depth)
+                            if Planner.ret_page_stmt_returns(pl, owner, func, (*iff.alternative), scope, depth)
                                 return true
                     }
                     when ch: Choose
@@ -57061,12 +57396,12 @@ define Planner
                         {
                             let wp ch.cases.get ci
                             if wp <> null
-                                if Planner.ret_page_stmt_returns(pl, owner, func, (*wp).consequent, Vector[Statement](), depth)
+                                if Planner.ret_page_stmt_returns(pl, owner, func, (*wp).consequent, scope, depth)
                                     return true
                             set ci: ci + 1
                         }
                         if ch.alternative <> null
-                            if Planner.ret_page_stmt_returns(pl, owner, func, (*ch.alternative), Vector[Statement](), depth)
+                            if Planner.ret_page_stmt_returns(pl, owner, func, (*ch.alternative), scope, depth)
                                 return true
                     }
                     when m: Match
@@ -57076,13 +57411,32 @@ define Planner
                         {
                             let bp m.branches.get mi
                             if bp <> null
-                                if Planner.ret_page_stmt_returns(pl, owner, func, (*bp).consequent, Vector[Statement](), depth)
+                                if Planner.ret_page_stmt_returns(pl, owner, func, (*bp).consequent, scope, depth)
                                     return true
                             set mi: mi + 1
                         }
                         if m.alternative <> null
-                            if Planner.ret_page_stmt_returns(pl, owner, func, (*m.alternative), Vector[Statement](), depth)
+                            if Planner.ret_page_stmt_returns(pl, owner, func, (*m.alternative), scope, depth)
                                 return true
+                    }
+                    ; a `return` inside a loop body is a return position too
+                    ; (2026-09-25; the walk stopped at the loop before, so a
+                    ; routine returning a page-needing call's result from a
+                    ; `while`/`for`/`repeat` got no caller page)
+                    when w: While
+                    {
+                        if Planner.ret_page_ops_returns(pl, owner, func, w.action.source, scope, depth)
+                            return true
+                    }
+                    when fr: For
+                    {
+                        if Planner.ret_page_ops_returns(pl, owner, func, fr.action.source, scope, depth)
+                            return true
+                    }
+                    when rpt: Repeat
+                    {
+                        if Planner.ret_page_ops_returns(pl, owner, func, rpt.action.source, scope, depth)
+                            return true
                     }
                     else
                         0

@@ -1060,9 +1060,12 @@ define Planner
         ; receiver's state, bit k its k-th parameter -- and the accumulator
         ; the walk of one body fills
         store_page_masks: ref[Array[u64]]
-        ; the MANGLED names of planned routines that store into their receiver
-        ; (bit 0 of their mask) -- what R8's net asks at a call
+        ; the MANGLED names of planned routines with a nonzero R8 mask, the
+        ; mask, and whether argument 0 is the receiver -- what R8's net asks
+        ; at a call
         store_mangled_recv: ref[Array[String]]
+        store_mangled_masks: ref[Array[u64]]
+        store_mangled_this: ref[Array[bool]]
         var store_acc: u64
         ; ★A SEPARATE set for the return-position rule, and separate on purpose:
         ; impl_mentions_set propagates out of transitive_page_names by NAME
@@ -1232,6 +1235,10 @@ define Planner
         ; scaly.memory.runtime.system`), and only its origin can tell an
         ; honest such clause from one naming a path nothing lives at.
         function_origin_paths: Array[String]
+        ; parallel to the registry too: the NAMESPACE a function is a member
+        ; of ("" for a free function) -- lookup_functions_preferring#
+        function_namespaces: ref[Array[String]]
+        var registering_namespace: String
 
         ; Stack guard (check_nesting_stack#). stack_base is the SHALLOWEST
         ; plan_operand frame address seen so far, i.e. the top of the recursive
@@ -1246,6 +1253,10 @@ define Planner
     )
     {
         init(filename: String) linked
+
+
+
+
 
 
 
@@ -5229,6 +5240,7 @@ define Planner
 
 
 
+
         procedure register_operator(mutable this: Planner, o: Operator) @persists true @ret_nonlocal true @deep true @deep_this_2 true @deep_whole_2 true linked
 
 
@@ -5239,6 +5251,45 @@ define Planner
         ; name matches. Overloads are preserved — the caller picks by
         ; argument-type compatibility.
         function lookup_functions(this: Planner, name: String) @page true @direct true @ret_caller true @deep true returns Vector[Function] linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; lookup_functions_preferring#: the candidates for a BARE-name call, the
+        ; ones the call can mean first. A member of a namespace is visible by
+        ; its bare name inside that namespace (a sibling) or through a `use`
+        ; alias; from anywhere else it is mangled as a FREE function, a symbol
+        ; nothing defines. So when such a call also has a visible candidate --
+        ; a free function, the program's own included -- the namespace members
+        ; of other namespaces drop out: a program's `run()` binds to its own
+        ; `run`, not to a package's `util.run` (2026-09-25; it bound to
+        ; `util.run` and linked to the program's `run` only because both came
+        ; out `_Z3runv`). With no visible candidate the list is unchanged.
+        function lookup_functions_preferring(this: Planner, name: String) @page true @direct true @ret_caller true @deep true returns Vector[Function] linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -6408,7 +6459,200 @@ define Planner
 
 
 
+        ; structure_init_stores_build#: an `init` that puts a value it BUILDS
+        ; into a field of the object under construction (`set name: String(t)`)
+        ; puts it on the page of that object -- plan_action#'s store rule 3
+        ; places it with `^this`, the init having no caller page -- so the
+        ; object must live on a page (2026-09-25; on the stack Page.get(this)
+        ; answered a page below the frame). A zero-argument construction
+        ; builds nothing and does not count (ops_build_page_value#).
+        procedure structure_init_stores_build(mutable this: Planner, s: Structure) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; a `set <field>: <build>` anywhere in this action: in a block, an arm
+        ; of if/choose/match, a loop body
+        procedure action_stores_build_into(mutable this: Planner, a: Action, fields: Array[String], params: Array[String]) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+        procedure stmt_stores_build_into(mutable this: Planner, st: Statement, fields: Array[String], params: Array[String]) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+        procedure ops_store_build_into(mutable this: Planner, ops: Vector[Operand], fields: Array[String], params: Array[String]) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; instantiated_type_needs_residency#: concept_needs_this_residency for a
+        ; construction whose TYPE ARGUMENTS are known. A generic record holding
+        ; a `T` by value is resident when its `T` is one that allocates through
+        ; its own address -- `Box[Reg]` with `Reg` holding an Array: the field
+        ; residency walk sees only `T` at model level, so the Box was laid on
+        ; the stack and `b.inner.names.add(...)` asked Page.get of a stack slot
+        ; (exit 19, 2026-09-25). Each field typed by a type parameter is asked
+        ; about its argument.
+        procedure instantiated_type_needs_residency(mutable this: Planner, name: String, t: PlannedType) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         procedure concept_needs_this_residency(mutable this: Planner, name: String) @ret_nonlocal true @deep true returns bool linked
+
+
 
 
 
@@ -10116,6 +10360,27 @@ define Planner
             mutable this: Planner,
             mutable ops: Vector[PlannedOperand]
         ) @page true @direct true @stores true @deep true @deep_this_2 true returns PlannedOperand io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -40328,9 +40593,10 @@ define Planner
 
 
         ; report_lost_store_page#: R8's NET (2026-09-25). The callee keeps
-        ; values built on the page it is given in its RECEIVER's state (bit 0 of
-        ; its R8 mask), it is called on state of ours -- `this`, a field of it,
-        ; a parameter -- and this routine has no caller page: R8 could not
+        ; values built on the page it is given in its receiver's or a
+        ; parameter's state (its R8 mask), it is handed state of ours at such a
+        ; position -- `this`, a field of it, a parameter -- and this routine has
+        ; no caller page: R8 could not
         ; follow this call (a receiver typed by a generic parameter, say), so
         ; the values would land on this frame and the receiver would keep them
         ; dangling. Reported here, in the escape post-pass, because every
@@ -40370,6 +40636,35 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; the root of an argument is state that outlives this routine: `this`
+        ; or one of its parameters (a Variable, whatever member chain follows)
+        procedure operand_root_is_own_state(mutable this: Planner, op: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -41070,7 +41365,9 @@ define Planner
         ; on the routine's own frame, which is where the promotion would have
         ; ended up anyway had it asked. A plain value struct is not judged: its
         ; stack slot is correct and cheaper (a frame page per loop iteration).
-        procedure residency_stays_local(mutable this: Planner, type_name: String, new_life: Lifetime) @ret_nonlocal true @deep true returns bool linked
+        procedure residency_stays_local(mutable this: Planner, t: PlannedType, new_life: Lifetime) @ret_nonlocal true @deep true returns bool linked
+
+
 
 
 
@@ -46351,6 +46648,18 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
         ; ================================================================
         ; WP8 — constructor completeness.
         ;
@@ -48252,6 +48561,13 @@ define Planner
         ; Concepts / Functions / Operators are all visible by
         ; unqualified name during later planning.
         procedure register_concept_recursive(mutable this: Planner, c: Concept) @ret_nonlocal true @deep true @deep_this_2 true @deep_whole_2 true linked
+
+
+
+
+
+
+
 
 
 
@@ -55148,6 +55464,21 @@ define Planner
 
 
 
+    ; the last dotted segment of a planned type name
+    function last_name_segment(n: String) @page true @direct true @ret_caller true @deep true returns String linked
+
+
+
+
+
+
+
+
+
+
+
+
+
     ; an Itanium complete-object constructor symbol (`_ZN6StringC1E6String`)
     function mangled_is_constructor(m: String) @ret_nonlocal true @deep true returns bool linked
 
@@ -57031,7 +57362,30 @@ define Planner
 
 
 
-    procedure ret_page_ops_returns(mutable pl: Planner, mutable owner: ref[String]?, mutable func: Function, mutable ops: Vector[Operand], depth: int) @ret_nonlocal true @deep true returns bool io linked
+    ; `scope` is the enclosing block's statements: a `return x` in an arm
+    ; resolves the local `x` through the binding that block holds (2026-09-25;
+    ; the arms were handed an empty scope, so `let child this.mk(i)` ...
+    ; `return child` inside a loop never reached R7)
+    procedure ret_page_ops_returns(mutable pl: Planner, mutable owner: ref[String]?, mutable func: Function, mutable ops: Vector[Operand], mutable scope: Vector[Statement], depth: int) @ret_nonlocal true @deep true returns bool io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

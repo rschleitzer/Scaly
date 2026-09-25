@@ -1,0 +1,61 @@
+; Regression (2026-09-25): a `return` INSIDE A LOOP was invisible to the page
+; rule R7 (ret_page_ops_returns# stopped at while/for/repeat). `scan` returns,
+; from inside its `repeat`, a local bound to a page-needing call's result and
+; otherwise null, so no other rule gives it a caller page: `mk` got scan's own
+; frame and the returned Leaf lived on a released page. Four tscaly functions
+; had this shape (parse_child_parameter_or_property_tag among them); dazzle's
+; Insn::execute gains a page too, measured free (DocBook styling 0.37 s against
+; 0.38 s, output identical). Run under SCALY_POISON.
+; Expected: PASS
+define Leaf (v: int)
+
+define Maker (var n: int)
+{
+    procedure mk(mutable this, v: int) returns ref[Leaf]
+    {
+        set n: n + 1
+        &Leaf#(v)
+    }
+
+    procedure scan(mutable this, stop: int) returns ref[Leaf]?
+    {
+        var i 0
+        repeat
+        {
+            let child this.mk(i)
+            if i = stop
+                return child
+            set i: i + 1
+            if i > 100
+                break
+        }
+        null
+    }
+}
+
+function churn() returns size_t
+{
+    var junk Array[String]()
+    var i: size_t 0
+    while i < 500
+    {
+        junk.add(String("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"))
+        set i: i + 1
+    }
+    junk.length
+}
+
+procedure run() returns bool
+{
+    var m Maker(0)
+    let f m.scan(7)
+    churn()
+    f <> null and f.v = 7
+}
+
+if getenv("SCALY_POISON") <> null
+    Page.enable_poison()
+if run()
+    print "PASS"
+else
+    print "FAIL"

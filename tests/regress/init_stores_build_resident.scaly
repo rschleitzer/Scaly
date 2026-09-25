@@ -1,0 +1,37 @@
+; Regression (2026-09-25): an `init` that puts a value it BUILDS into a field
+; of the object under construction (`set name: String(t)`). The init has no
+; caller page, so plan_action#'s store rule places the String with `^this` --
+; the object's own page -- but nothing made the object live on one: a local
+; `var r Rec(String("hello"))` sat on the stack and the name read 251 for 5
+; under poison, rc 0 (HEAD and earlier). Planner.structure_init_stores_build#
+; makes such a type page-resident. Run under SCALY_POISON.
+; Expected: PASS
+define Rec (var name: String, var n: int)
+{
+    init(t: String)
+    {
+        set name: String(t)
+        set n: 1
+    }
+}
+function churn() returns size_t
+{
+    var junk Array[String]()
+    var i: size_t 0
+    while i < 500
+    {
+        junk.add(String("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"))
+        set i: i + 1
+    }
+    junk.length
+}
+procedure run() returns size_t
+{
+    var r Rec(String("hello"))
+    churn()
+    r.name.get_length()
+}
+if run() = 5
+    print "PASS"
+else
+    print "FAIL"
