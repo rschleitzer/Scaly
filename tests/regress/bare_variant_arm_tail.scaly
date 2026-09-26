@@ -1,0 +1,69 @@
+; Regression (2026-09-26): a bare variant as the value of an ARM or a block's
+; LAST statement inside an implicit return takes the return type's union, as a
+; direct return does (bare_variant_target.scaly). Before, `None` there was an
+; `unknown identifier` -- the arm's own action was judged before the return
+; reached its leaf (Planner.in_tail_value, set while the implicit return's
+; value is planned, cleared for every statement but a block's last).
+; Expected: PASS
+
+define Shape union (Circle: int, Square: int)
+
+function opt_of(s: Shape) returns Option[int]
+{
+    let k 1
+    choose s
+        when c: Circle
+            Some(c + k)
+        else
+            None
+}
+
+function by_match(x: int) returns Option[int]
+{
+    match x
+        case 0: None
+        else Some(x * 2)
+}
+
+function nested(x: int) returns Option[int]
+{
+    if x > 10
+    {
+        let y x - 10
+        if y > 5
+            None
+        else
+            Some(y)
+    }
+    else
+        None
+}
+
+function v(o: Option[int]) returns int
+{
+    choose o
+        when s: Some
+            s
+        else
+            0 - 1
+}
+
+var ok true
+if v(opt_of(Shape.Circle(4))) <> 5
+    set ok: false
+if v(opt_of(Shape.Square(4))) <> 0 - 1
+    set ok: false
+if v(by_match(0)) <> 0 - 1
+    set ok: false
+if v(by_match(3)) <> 6
+    set ok: false
+if v(nested(13)) <> 3
+    set ok: false
+if v(nested(20)) <> 0 - 1
+    set ok: false
+if v(nested(2)) <> 0 - 1
+    set ok: false
+if ok
+    print "PASS"
+else
+    print "FAIL"

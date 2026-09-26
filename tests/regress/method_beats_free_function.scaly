@@ -1,0 +1,49 @@
+; Regression (2026-09-26): a METHOD call on a value receiver bound to a free
+; function of the same name. `b.tag(5)` reached the resolver as `tag` with the
+; receiver split off, the free `tag(r: int)` matched the arguments WITHOUT the
+; receiver and won: the method never ran and the receiver was dropped -- 5 for
+; 105, rc 0, in a function body, through a parameter and at the top level
+; alike (Planner.resolve_free_call#). A namespace qualifier is a type, not a
+; value, and still reaches its free member (`ns.helper(2)` below).
+; Expected: PASS
+
+define Box (v: int)
+{
+    function tag(this, r: int) returns int
+        r + v
+}
+
+function tag(r: int) returns int
+    r
+
+define util
+{
+    function helper(x: int) returns int
+        x * 10
+}
+
+function use_it() returns int
+{
+    let b Box(100)
+    b.tag(5)
+}
+
+function use_param(b: Box) returns int
+    b.tag(5)
+
+var ok true
+if use_it() <> 105
+    set ok: false
+let b Box(100)
+if use_param(b) <> 105
+    set ok: false
+if b.tag(5) <> 105
+    set ok: false
+if tag(6) <> 6
+    set ok: false
+if util.helper(2) <> 20
+    set ok: false
+if ok
+    print "PASS"
+else
+    print "FAIL"

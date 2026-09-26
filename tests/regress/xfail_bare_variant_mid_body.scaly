@@ -1,0 +1,15 @@
+; xfail: error: unknown identifier: None
+;
+; Regression (2026-09-26): only the value a block YIELDS is a return position.
+; A bare `None` as an earlier statement of the body does nothing and names
+; nothing -- it stays an unknown identifier (the control for
+; bare_variant_arm_tail.scaly: the tail state is cleared for every statement
+; but a block's last).
+
+function w(x: int) returns Option[int]
+{
+    None
+    Some(x)
+}
+
+let q w(1)

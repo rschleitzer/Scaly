@@ -1,0 +1,75 @@
+; Regression (2026-09-26): a variant written by its bare name as a call
+; ARGUMENT takes the union of the parameter -- a free function (every candidate
+; of the name and arity agrees on one union: Planner.retarget_bare_arg#), a
+; method (the argument gate exempts it, arg_is_bare_variant_of#) and the
+; argument fold after resolution (fold_string_args_to_char#). Before, the
+; payload rescue built the FIRST registered union declaring the variant and
+; the call found no function; `opt(None)` was an unknown identifier. `Reply`
+; carries a record payload so its layout differs from `Other`'s.
+; Expected: PASS
+
+define Big (a: int  b: int  c: int  d: int)
+define Other union (Nope: int, Hit: int)
+define Reply union (Hit: int, Fail: Big)
+define Shade union (Red, Blue)
+define Mood union (Calm, Blue)
+
+define Box (v: int)
+{
+    function tag(this, r: Reply) returns int
+    {
+        choose r
+            when h: Hit
+                h + v
+            else
+                0
+    }
+}
+
+function tag(r: Reply) returns int
+{
+    choose r
+        when h: Hit
+            h
+        when f: Fail
+            f.d
+        else
+            0
+}
+
+function opt(o: Option[int]) returns int
+{
+    choose o
+        when s: Some
+            s
+        else
+            0 - 1
+}
+
+function is_blue(s: Shade) returns bool
+{
+    choose s
+        when b: Blue
+            true
+        else
+            false
+}
+
+var ok true
+if tag(Hit(6)) <> 6
+    set ok: false
+if tag(Fail(Big(1, 2, 3, 4))) <> 4
+    set ok: false
+if opt(None) <> 0 - 1
+    set ok: false
+if opt(Some(8)) <> 8
+    set ok: false
+if is_blue(Blue) = false
+    set ok: false
+let b Box(100)
+if b.tag(Hit(5)) <> 105
+    set ok: false
+if ok
+    print "PASS"
+else
+    print "FAIL"

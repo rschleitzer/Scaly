@@ -749,6 +749,10 @@ define Planner
         ; expression as a body tail (`{ ...; &result }`, unify) compiled
         ; clean and dangled.
         var check_tail_escape: bool
+        ; true while the VALUE of a function's implicit return is planned --
+        ; the if/choose/match arms and block tails inside it are return
+        ; positions too (retarget_bare_variant#)
+        var in_tail_value: bool
         instantiated_functions: Array[PlannedFunction]
         ; O(1) membership index over instantiated_functions' mangled names,
         ; maintained in lockstep at the single record_function add site.
@@ -1260,6 +1264,7 @@ define Planner
     )
     {
         init(filename: String) linked
+
 
 
 
@@ -9269,6 +9274,28 @@ define Planner
         ; `generics` — measured — so it is threaded down here and bound by
         ; POSITION, exactly as instantiate_generic_function binds an inferred
         ; one. Inference still runs first for everything it can reach.
+        ; resolve_free_call: the FREE-function resolution of a call -- skipped
+        ; when the call is a method of a value receiver (2026-09-26). `b.tag(5)`
+        ; arrived here as `tag` with the receiver split off, and a free
+        ; `tag(r: int)` beside the method `Box.tag(this, r: int)` matched the
+        ; arguments without the receiver and won: the method never ran and the
+        ; receiver was dropped, rc 0 (105 read back as 5). The method paths
+        ; below resolve such a call; a namespace qualifier (`cli.main`) is a
+        ; type, not a value, and still reaches its free member here.
+        procedure resolve_free_call(
+            mutable this: Planner,
+            value_method_hop: bool,
+            mutable name: String,
+            mutable arg_types: Vector[PlannedType],
+            arg_ops: Vector[PlannedOperand],
+            explicit_generics: ref[Vector[PlannedType]]?
+        ) @page true @returnpage true @stores true @deep true @deep_this_40 true returns ref[MethodMatch]? io linked
+
+
+
+
+
+
         procedure resolve_function_call_generic(
             mutable this: Planner,
             mutable name: String,
@@ -10284,6 +10311,17 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
         ; If `op` is a Phase-1 lambda binding name used as a callable head (a
         ; bare PlannedType with no generics, or an unresolved Variable, with no
         ; member-access chain), return that lambda name; otherwise the empty
@@ -10408,6 +10446,18 @@ define Planner
             mutable this: Planner,
             mutable ops: Vector[PlannedOperand]
         ) @page true @direct true @stores true @deep true @deep_this_2 true returns PlannedOperand io linked
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -26036,6 +26086,89 @@ define Planner
 
 
 
+        ; retarget_bare_arg: a variant written by its bare name as the index-th
+        ; of count call ARGUMENTS takes the union of that parameter -- when
+        ; every non-generic candidate of the name with that arity that declares
+        ; the variant there agrees on ONE union (2026-09-26). Before, the
+        ; payload rescue built the first registered union declaring it and the
+        ; call found no function; `f(None)` was an unknown identifier. A
+        ; disagreement leaves the argument as it was, and `function not found`
+        ; names the bare variant (bare_variant_arg_hint#).
+        procedure retarget_bare_arg(mutable this: Planner, fn_name: String, index: size_t, count: size_t, op: PlannedOperand) @page true @direct true @deep true returns PlannedOperand io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; arg_is_bare_variant_of: the j-th argument is a variant written by its
+        ; bare name that the parameter's union declares (the method gate's
+        ; exemption; the argument fold then builds it on that union).
+        procedure arg_is_bare_variant_of(mutable this: Planner, arg_ops: Vector[PlannedOperand], j: size_t, param: PlannedType) @ret_param_0 true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         function is_bare_variant_start(this: Planner, start: size_t) @ret_nonlocal true @deep true returns bool linked
 
 
@@ -28460,6 +28593,10 @@ define Planner
 
 
 
+
+
+
+
         ; report_variant_arg_arity: a union ARM carries at most ONE payload, so
         ; a variant construction takes at most one argument — and until
         ; 2026-08-18 both planner paths that build one took component 0 and
@@ -28784,6 +28921,13 @@ define Planner
 
 
         procedure plan_action(mutable this: Planner, mutable a: Action) @page true @direct true @stores true @deep true @deep_this_2 true returns PlannedAction io linked
+
+
+
+
+
+
+
 
 
 
@@ -44070,6 +44214,12 @@ define Planner
 
 
 
+
+
+
+
+
+
         ; ================================================================
         ; plan_block: push a fresh scope, plan every statement, pop.
         ; ================================================================
@@ -46337,6 +46487,9 @@ define Planner
             mutable f: Function,
             parent: ref[PlannedType]?
         ) @page true @direct true @stores true @deep true @deep_this_6 true @deep_whole_6 true returns PlannedFunction io linked
+
+
+
 
 
 

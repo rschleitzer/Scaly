@@ -749,6 +749,10 @@ define Planner
         ; expression as a body tail (`{ ...; &result }`, unify) compiled
         ; clean and dangled.
         var check_tail_escape: bool
+        ; true while the VALUE of a function's implicit return is planned --
+        ; the if/choose/match arms and block tails inside it are return
+        ; positions too (retarget_bare_variant#)
+        var in_tail_value: bool
         instantiated_functions: Array[PlannedFunction]
         ; O(1) membership index over instantiated_functions' mangled names,
         ; maintained in lockstep at the single record_function add site.
@@ -1305,6 +1309,7 @@ define Planner
             set getref_arg_base: 0
             set promote_tail_return: false
             set check_tail_escape: false
+            set in_tail_value: false
             set instantiated_functions: Array[PlannedFunction]^this()
             set function_name_index: ConceptIndex.create(262144)
             set instantiated_globals: Array[PlannedGlobal]^this()
@@ -9269,6 +9274,28 @@ define Planner
         ; `generics` — measured — so it is threaded down here and bound by
         ; POSITION, exactly as instantiate_generic_function binds an inferred
         ; one. Inference still runs first for everything it can reach.
+        ; resolve_free_call: the FREE-function resolution of a call -- skipped
+        ; when the call is a method of a value receiver (2026-09-26). `b.tag(5)`
+        ; arrived here as `tag` with the receiver split off, and a free
+        ; `tag(r: int)` beside the method `Box.tag(this, r: int)` matched the
+        ; arguments without the receiver and won: the method never ran and the
+        ; receiver was dropped, rc 0 (105 read back as 5). The method paths
+        ; below resolve such a call; a namespace qualifier (`cli.main`) is a
+        ; type, not a value, and still reaches its free member here.
+        procedure resolve_free_call(
+            mutable this: Planner,
+            value_method_hop: bool,
+            mutable name: String,
+            mutable arg_types: Vector[PlannedType],
+            arg_ops: Vector[PlannedOperand],
+            explicit_generics: ref[Vector[PlannedType]]?
+        ) returns ref[MethodMatch]?
+        {
+            if value_method_hop
+                return null
+            this.resolve_function_call_generic(name, arg_types, arg_ops, explicit_generics)
+        }
+
         procedure resolve_function_call_generic(
             mutable this: Planner,
             mutable name: String,
@@ -10180,6 +10207,17 @@ define Planner
                                     out.add(this.fold_string_operand_to_char(a, pt))
                                     set folded: true
                                 }
+                            ; A bare variant into a union parameter is built on
+                            ; that union (retarget_bare_variant#).
+                            if folded = false
+                            {
+                                let moved this.retarget_bare_variant(pt, a)
+                                if moved.result_type.mangled_name <> a.result_type.mangled_name
+                                {
+                                    out.add(moved)
+                                    set folded: true
+                                }
+                            }
                             ; A lambda literal into a delegate parameter becomes
                             ; the closure a delegate-typed binding would hold.
                             if folded = false and this.is_delegate_type(pt.name)
@@ -12553,6 +12591,9 @@ define Planner
                     let second (*second_ptr)
                     var is_call: bool false
                     var fn_name: String ""
+                    ; The call is a METHOD of a VALUE receiver (`b.tag(5)` with
+                    ; `b` a local, a parameter, a field), not of a namespace.
+                    var value_method_hop: bool false
 
                     ; Method-call branch FIRST: a PlannedType operand
                     ; carrying a method member_access (e.g. `cli.main`,
@@ -12584,6 +12625,11 @@ define Planner
                                     {
                                         set is_call: true
                                         set fn_name: last_ma.name
+                                        choose result.expr
+                                            when rty: PlannedType
+                                                0
+                                            else
+                                                set value_method_hop: true
                                     }
                                 }
                             }
@@ -13348,7 +13394,11 @@ define Planner
                                                 let v_s90 (*c_s90.value)
                                                 if v_s90.length > 0
                                                 {
-                                                    let collapsed_s90 this.collapse_operand_sequence(v_s90)
+                                                    var collapsed_s90 this.collapse_operand_sequence(v_s90)
+                                                    ; A bare variant takes the union
+                                                    ; of the parameter it is passed
+                                                    ; to -- retarget_bare_arg#.
+                                                    set collapsed_s90: this.retarget_bare_arg(fn_name, ai_s90, comps_s90.length, collapsed_s90)
                                                     ; An argument that names nothing
                                                     ; reachable — see
                                                     ; report_unknown_identifier#.
@@ -13381,7 +13431,7 @@ define Planner
                                     set call_generics: cgt.generics
                                 else
                                     0
-                        var match_ref this.resolve_function_call_generic(fn_name, arg_types, arg_ops, call_generics)
+                        var match_ref this.resolve_free_call(value_method_hop, fn_name, arg_types, arg_ops, call_generics)
                         if match_ref = null and static_on_type
                         {
                             let sm_ref this.lookup_method(static_type, fn_name, arg_types, arg_ops)
@@ -26036,6 +26086,89 @@ define Planner
             count
         }
 
+        ; retarget_bare_arg: a variant written by its bare name as the index-th
+        ; of count call ARGUMENTS takes the union of that parameter -- when
+        ; every non-generic candidate of the name with that arity that declares
+        ; the variant there agrees on ONE union (2026-09-26). Before, the
+        ; payload rescue built the first registered union declaring it and the
+        ; call found no function; `f(None)` was an unknown identifier. A
+        ; disagreement leaves the argument as it was, and `function not found`
+        ; names the bare variant (bare_variant_arg_hint#).
+        procedure retarget_bare_arg(mutable this: Planner, fn_name: String, index: size_t, count: size_t, op: PlannedOperand) returns PlannedOperand
+        {
+            var vname ""
+            choose op.expr
+                when vc: PlannedVariantConstruction
+                {
+                    if this.is_bare_variant_start(vc.loc.start) = false
+                        return op
+                    set vname: String(vc.variant_name)
+                }
+                when ty: PlannedType
+                {
+                    if ty.name.index_of(46) >= 0 or op.member_access <> null
+                        return op
+                    if this.lookup_local_binding(ty.name) <> null or this.lookup_global(ty.name) <> null
+                        return op
+                    set vname: String(ty.name)
+                }
+                else
+                    return op
+            let cands this.lookup_functions_preferring(fn_name)
+            var target: PlannedType Planner.make_void_type()
+            var found false
+            var i: size_t 0
+            while i < cands.length
+            {
+                let fp cands.get i
+                if fp <> null and fp.parameters.length = 0 and fp.input.length = count
+                {
+                    let ip fp.input.get index
+                    if ip <> null and ip.type <> null
+                    {
+                        var mt (*ip.type)
+                        let pt this.plan_type(mt)
+                        if this.lookup_variant_tag_by_name(pt.name, vname) >= 0
+                        {
+                            if found and target.mangled_name <> pt.mangled_name
+                            {
+                                ; Overloads that take different unions declaring
+                                ; the variant: the call is ambiguous -- it went
+                                ; to whichever union was registered first.
+                                this.add_diagnostic(op.loc, String^this("the bare variant `vname` fits `target.name` and `pt.name` in the overloads of `fn_name`: write the union (Union.`vname`)"))
+                                return op
+                            }
+                            set target: pt
+                            set found: true
+                        }
+                    }
+                }
+                set i: i + 1
+            }
+            if found = false
+                return op
+            this.retarget_bare_variant(target, op)
+        }
+
+        ; arg_is_bare_variant_of: the j-th argument is a variant written by its
+        ; bare name that the parameter's union declares (the method gate's
+        ; exemption; the argument fold then builds it on that union).
+        procedure arg_is_bare_variant_of(mutable this: Planner, arg_ops: Vector[PlannedOperand], j: size_t, param: PlannedType) returns bool
+        {
+            let ap arg_ops.get j
+            if ap = null
+                return false
+            choose ap.expr
+                when vc: PlannedVariantConstruction
+                {
+                    if this.is_bare_variant_start(vc.loc.start)
+                        return this.lookup_variant_tag_by_name(param.name, vc.variant_name) >= 0
+                }
+                else
+                    0
+            false
+        }
+
         function is_bare_variant_start(this: Planner, start: size_t) returns bool
         {
             var i: size_t 0
@@ -28413,6 +28546,10 @@ define Planner
                                 if ok = false
                                     if Planner.type_is_float_like(planned_p) and this.arg_is_foldable_float(arg_ops, j)
                                         set ok: true
+                                ; A bare variant the parameter's union declares:
+                                ; the argument fold builds it on that union.
+                                if ok = false and this.arg_is_bare_variant_of(arg_ops, j, planned_p)
+                                    set ok: true
                                 ; A string literal materialising into a
                                 ; Slice[char] parameter. This exemption is not
                                 ; optional: method_params_match# now RESOLVES
@@ -28795,8 +28932,15 @@ define Planner
             let do_tail_check this.check_tail_escape
             set this.check_tail_escape: false
 
+            ; The arms and block tails inside the implicit return's value are
+            ; return positions too; an action planned inside it sees that.
+            let inside_tail_value this.in_tail_value
+            let saved_itv2 this.in_tail_value
+            if do_tail_check and a.target.length = 0
+                set this.in_tail_value: true
             let planned_source_flat this.plan_operands(a.source)
             var planned_source_collapsed this.collapse_operand_sequence(planned_source_flat)
+            set this.in_tail_value: saved_itv2
 
             let planned_target_flat this.plan_operands(a.target)
             let planned_target_grouped this.collapse_operand_sequence(planned_target_flat)
@@ -28970,7 +29114,7 @@ define Planner
             ; arm is the value that block or arm yields, and it answered 0 or
             ; garbage at rc 0 the same way. A bare name that resolves to
             ; nothing is wrong in any statement position.
-            if do_tail_check and a.target.length = 0 and this.current_return_type <> null
+            if (do_tail_check or inside_tail_value) and a.target.length = 0 and this.current_return_type <> null
                 set planned_source_collapsed: this.retarget_bare_variant((*this.current_return_type), planned_source_collapsed)
             if a.target.length = 0
                 this.report_unknown_identifier(planned_source_collapsed)
@@ -44039,7 +44183,13 @@ define Planner
                 if s_ptr <> null
                 {
                     let s (*s_ptr)
+                    ; Only the LAST statement carries a block's value, so only it
+                    ; is a return position inside an implicit return's value.
+                    let itv this.in_tail_value
+                    if i + 1 < stmts.length
+                        set this.in_tail_value: false
                     var pl this.plan_statement(s)
+                    set this.in_tail_value: itv
                     ; Discarded-result page-call promotion (non-last only;
                     ; see promote_discarded_pagecall above).
                     if i + 1 < stmts.length
@@ -46615,6 +46765,8 @@ define Planner
             ; (unify returns ref[Vector[...]]? — needs_implicit_return_page is
             ; false there, yet its tail `&result` is a return position).
             let saved_cte this.check_tail_escape
+            let saved_itv this.in_tail_value
+            set this.in_tail_value: false
             var f_has_return false
             if f.returns_ <> null
                 set f_has_return: true
@@ -46622,6 +46774,7 @@ define Planner
             let planned_impl this.plan_implementation(f.implementation)
             set this.promote_tail_return: saved_ptr
             set this.check_tail_escape: saved_cte
+            set this.in_tail_value: saved_itv
             set escaping_return_locals.length: saved_erl
             set view_receiver_locals.length: saved_vrl
             set view_alias_locals.length: saved_val

@@ -1,0 +1,17 @@
+; xfail: error: the bare variant Hit fits Reply and Other in the overloads of t2
+;
+; Regression (2026-09-26): two overloads taking different unions that both
+; declare the variant make a bare-variant argument ambiguous. It compiled at
+; rc 0 before and went to whichever union was registered FIRST
+; (Planner.retarget_bare_arg#).
+
+define Other union (Nope: int, Hit: int)
+define Reply union (Hit: int, Fail: int)
+
+function t2(r: Reply) returns int
+    1
+
+function t2(r: Other) returns int
+    2
+
+let x t2(Hit(5))
