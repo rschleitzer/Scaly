@@ -117,7 +117,12 @@ run)
     want_err=$(sed -n 's/^; ExpectedErr: //p' "$src")
 
     exe="$OUT/$base.exe"
-    if ! clang --target="$TRIPLE" "$o" "$ARCHIVE" -lws2_32 -o "$exe" > "$OUT/$base.link" 2>&1; then
+    # The stack reserve is the one tools/win-link.sh gives every program the
+    # compiler links (64 MB): without it the corpus ran on the 1 MB PE default,
+    # and fiber__thread_deep_stack -- a thread spawned with its SPAWNER's stack,
+    # 12 000 frames deep -- overflowed at 1 MB, a limit no scalyc-linked
+    # program has (2026-09-26).
+    if ! clang --target="$TRIPLE" "$o" "$ARCHIVE" -lws2_32 -Xlinker -stack:67108864,1048576 -o "$exe" > "$OUT/$base.link" 2>&1; then
       fail=$((fail+1)); failures="$failures $base(link)"
       # The first error line of every failed link, collected for the distinct
       # summary below. Aggregating SYMBOLS alone was not enough: it reported two
