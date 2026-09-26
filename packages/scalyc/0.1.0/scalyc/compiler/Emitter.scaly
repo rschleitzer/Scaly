@@ -16256,6 +16256,16 @@ define Emitter
             let c_noise LLVMConstInt(i64_ty, 4096, 0)
             let c_fork LLVMConstInt(i64_ty, 131072, 0)
             let c_iterfork LLVMConstInt(i64_ty, 65536, 0)
+            ; A DECISIVE window (2026-09-26): one iteration measured at 50 ms or
+            ; more forks at once, without the confirming second window. 50 ms is
+            ; several scheduler quanta, so no stall inside a cheap body reaches
+            ; it -- the two-window guard below exists for exactly that stall --
+            ; while a coarse loop (nine 0.3 s iterations) no longer runs four of
+            ; them inline before it splits (tests/selfscale: binary-trees 1.8x,
+            ; fannkuch 2.2x). Such a fork does NOT publish its cost to the site
+            ; (parfor.quiet): a wrong one cannot promote a hot site for good.
+            ; Per-iteration cost is compared <<10, as p1k is kept.
+            let c_decisive LLVMConstInt(i64_ty, 51200000000, 0)
             let c_minchunk LLVMConstInt(i64_ty, 16777216, 0)
             let c_oversub LLVMConstInt(i64_ty, 4, 0)
             ; 4.3 HotSpot per-site constants: promotion volume threshold
@@ -16344,12 +16354,14 @@ define Emitter
             ; checkpoint); it still promotes through the exit path after
             ; 512 accumulated iterations.
             let armed_slot entry_alloca(i64_ty, "parfor.armed")
+            let quiet_slot entry_alloca(i64_ty, "parfor.quiet")
             LLVMBuildStore(builder, c0, iv_drv)
             LLVMBuildStore(builder, check0_const, nc_slot)
             LLVMBuildStore(builder, c0, t0_slot)
             LLVMBuildStore(builder, c0, i0_slot)
             LLVMBuildStore(builder, c0, tentry_slot)
             LLVMBuildStore(builder, c0, armed_slot)
+            LLVMBuildStore(builder, c0, quiet_slot)
             let buf_null LLVMConstNull(ptr_ty)
             LLVMBuildStore(builder, buf_null, buf_slot)
 
@@ -16415,6 +16427,11 @@ define Emitter
                 LLVMBuildCondBr(builder, eg_fits, rg_prom_fork, rg_prom_seq)
 
                 LLVMPositionBuilderAtEnd(builder, rg_prom_fork)
+                let hs_ncpu LLVMBuildCall2(builder, np_ty, np_fn, null as pointer[LLVMValueRef], 0, "parfor.ncpu.chk")
+                let hs_one LLVMBuildICmp(builder, LLVMIntPredicate.SLE(), hs_ncpu, c1, "parfor.oneworker")
+                let rg_prom_go create_block("pfor.gate.headfork.go")
+                LLVMBuildCondBr(builder, hs_one, rg_prom_seq, rg_prom_go)
+                LLVMPositionBuilderAtEnd(builder, rg_prom_go)
                 let hf_group LLVMBuildCall2(builder, gc_ty, gc_fn, null as pointer[LLVMValueRef], 0, "parfor.group")
                 var hf_pget_args Vector[LLVMValueRef](1)
                 hf_pget_args.put(0, hf_group)
@@ -16431,6 +16448,17 @@ define Emitter
                 LLVMBuildBr(builder, il_cond)
 
                 LLVMPositionBuilderAtEnd(builder, rg_cold)
+                ; A heavy body (static weight puts the first checkpoint at
+                ; i = 1) takes its clock base HERE, so the checkpoint at i = 1
+                ; already measures iteration 0 instead of only recording a
+                ; base: one clock read per execution, nothing next to a body
+                ; that heavy.
+                if check0 = 1
+                {
+                    let eb_t LLVMBuildCall2(builder, now_ty, now_fn, null as pointer[LLVMValueRef], 0, "parfor.tbase")
+                    LLVMBuildStore(builder, eb_t, t0_slot)
+                    LLVMBuildStore(builder, c0, i0_slot)
+                }
                 let eg_vol LLVMBuildLoad2(builder, i64_ty, site_vol, "parfor.volv")
                 let eg_ishot LLVMBuildICmp(builder, LLVMIntPredicate.SGE(), eg_vol, c_hotvol, "parfor.gate.ishot")
                 LLVMBuildCondBr(builder, eg_ishot, rg_hot, il_cond)
@@ -16524,6 +16552,17 @@ define Emitter
                 LLVMBuildCondBr(builder, rc_forknow, rc_fork, rc_notyet)
 
                 LLVMPositionBuilderAtEnd(builder, rc_notyet)
+                let rc_heavy LLVMBuildICmp(builder, LLVMIntPredicate.SGE(), rc_p1k, c_decisive, "parfor.heavy")
+                let rc_decisive LLVMBuildAnd(builder, rc_dofork, rc_heavy, "parfor.decisive")
+                let rc_quiet create_block("parfor.quiet")
+                let rc_notyet2 create_block("parfor.notyet2")
+                LLVMBuildCondBr(builder, rc_decisive, rc_quiet, rc_notyet2)
+
+                LLVMPositionBuilderAtEnd(builder, rc_quiet)
+                LLVMBuildStore(builder, c1, quiet_slot)
+                LLVMBuildBr(builder, rc_fork)
+
+                LLVMPositionBuilderAtEnd(builder, rc_notyet2)
                 LLVMBuildCondBr(builder, rc_dofork, rc_arm, rc_later)
 
                 LLVMPositionBuilderAtEnd(builder, rc_arm)
@@ -16539,8 +16578,28 @@ define Emitter
                 ; iteration is submitted. The measured cost is published to
                 ; the site cell first — one fork promotes the site for every
                 ; later execution on any thread (4.3).
+                ; ONE worker (SCALY_WORKERS=1, a one-core box): nothing to win
+                ; and the whole remainder handed to a single other thread --
+                ; run on inline instead, the checkpoints parked at n. Asked
+                ; only here, where a fork was decided: rare, and cheap next
+                ; to the fork it replaces.
                 LLVMPositionBuilderAtEnd(builder, rc_fork)
-                LLVMBuildStore(builder, rc_p1k, site_p1k)
+                let rs_ncpu LLVMBuildCall2(builder, np_ty, np_fn, null as pointer[LLVMValueRef], 0, "parfor.ncpu.chk")
+                let rs_one LLVMBuildICmp(builder, LLVMIntPredicate.SLE(), rs_ncpu, c1, "parfor.oneworker")
+                let rc_single create_block("parfor.single")
+                let rc_fork_go create_block("parfor.fork.go")
+                LLVMBuildCondBr(builder, rs_one, rc_single, rc_fork_go)
+
+                LLVMPositionBuilderAtEnd(builder, rc_single)
+                LLVMBuildStore(builder, n64, nc_slot)
+                LLVMBuildBr(builder, il_body)
+
+                LLVMPositionBuilderAtEnd(builder, rc_fork_go)
+                let rf_q LLVMBuildLoad2(builder, i64_ty, quiet_slot, "parfor.quietv")
+                let rf_isq LLVMBuildICmp(builder, LLVMIntPredicate.NE(), rf_q, c0, "parfor.isquiet")
+                let rf_cur LLVMBuildLoad2(builder, i64_ty, site_p1k, "parfor.sitecur")
+                let rf_pub LLVMBuildSelect(builder, rf_isq, rf_cur, rc_p1k, "parfor.publish")
+                LLVMBuildStore(builder, rf_pub, site_p1k)
                 let rf_group LLVMBuildCall2(builder, gc_ty, gc_fn, null as pointer[LLVMValueRef], 0, "parfor.group")
                 var rf_pget_args Vector[LLVMValueRef](1)
                 rf_pget_args.put(0, rf_group)
@@ -16632,6 +16691,12 @@ define Emitter
                 LLVMBuildBr(builder, it_cond)
 
                 LLVMPositionBuilderAtEnd(builder, ig_cold)
+                if check0 = 1
+                {
+                    let ieb_t LLVMBuildCall2(builder, now_ty, now_fn, null as pointer[LLVMValueRef], 0, "parfor.tbase")
+                    LLVMBuildStore(builder, ieb_t, t0_slot)
+                    LLVMBuildStore(builder, c0, i0_slot)
+                }
                 let ig_vol LLVMBuildLoad2(builder, i64_ty, site_vol, "parfor.volv")
                 let ig_ishot LLVMBuildICmp(builder, LLVMIntPredicate.SGE(), ig_vol, c_hotvol, "parfor.gate.ishot")
                 LLVMBuildCondBr(builder, ig_ishot, ig_hot, it_cond)
@@ -16717,6 +16782,21 @@ define Emitter
                 LLVMBuildCondBr(builder, ic_forknow, ic_forkm, ic_notyet)
 
                 LLVMPositionBuilderAtEnd(builder, ic_notyet)
+                let icn_i0 LLVMBuildLoad2(builder, i64_ty, i0_slot, "parfor.i0n")
+                let icn_iters LLVMBuildSub(builder, it_i, icn_i0, "parfor.itersn")
+                let icn_e10 LLVMBuildShl(builder, ic_elapsed, c10, "parfor.e10n")
+                let icn_p1k LLVMBuildSDiv(builder, icn_e10, icn_iters, "parfor.p1kn")
+                let ic_heavy LLVMBuildICmp(builder, LLVMIntPredicate.SGE(), icn_p1k, c_decisive, "parfor.heavy")
+                let ic_decisive LLVMBuildAnd(builder, ic_dofork, ic_heavy, "parfor.decisive")
+                let ic_quiet create_block("parfor.quiet")
+                let ic_notyet2 create_block("parfor.notyet2")
+                LLVMBuildCondBr(builder, ic_decisive, ic_quiet, ic_notyet2)
+
+                LLVMPositionBuilderAtEnd(builder, ic_quiet)
+                LLVMBuildStore(builder, c1, quiet_slot)
+                LLVMBuildBr(builder, ic_forkm)
+
+                LLVMPositionBuilderAtEnd(builder, ic_notyet2)
                 LLVMBuildCondBr(builder, ic_dofork, ic_arm, ic_later)
 
                 LLVMPositionBuilderAtEnd(builder, ic_arm)
@@ -16754,8 +16834,24 @@ define Emitter
                 ; the site cell promotes the site (a promoted re-publish
                 ; stores the same value back — harmless).
                 LLVMPositionBuilderAtEnd(builder, ic_fork)
+                let is_ncpu LLVMBuildCall2(builder, np_ty, np_fn, null as pointer[LLVMValueRef], 0, "parfor.ncpu.chk")
+                let is_one LLVMBuildICmp(builder, LLVMIntPredicate.SLE(), is_ncpu, c1, "parfor.oneworker")
+                let ic_single create_block("parfor.single")
+                let ic_fork_go create_block("parfor.fork.go")
+                LLVMBuildCondBr(builder, is_one, ic_single, ic_fork_go)
+
+                ; one worker: run on inline, the checkpoint parked out of reach
+                LLVMPositionBuilderAtEnd(builder, ic_single)
+                LLVMBuildStore(builder, LLVMConstInt(i64_ty, 0x7FFFFFFFFFFFFFFF, 0), nc_slot)
+                LLVMBuildBr(builder, it_body)
+
+                LLVMPositionBuilderAtEnd(builder, ic_fork_go)
                 let if_fp LLVMBuildLoad2(builder, i64_ty, fp1k_slot, "parfor.fp1kv")
-                LLVMBuildStore(builder, if_fp, site_p1k)
+                let if_q LLVMBuildLoad2(builder, i64_ty, quiet_slot, "parfor.quietv")
+                let if_isq LLVMBuildICmp(builder, LLVMIntPredicate.NE(), if_q, c0, "parfor.isquiet")
+                let if_cur LLVMBuildLoad2(builder, i64_ty, site_p1k, "parfor.sitecur")
+                let if_pub LLVMBuildSelect(builder, if_isq, if_cur, if_fp, "parfor.publish")
+                LLVMBuildStore(builder, if_pub, site_p1k)
                 let if_group LLVMBuildCall2(builder, gc_ty, gc_fn, null as pointer[LLVMValueRef], 0, "parfor.group")
                 var if_pget_args Vector[LLVMValueRef](1)
                 if_pget_args.put(0, if_group)

@@ -11,6 +11,11 @@
 # clock and CPU of each side, the speedup, peak RSS, and whether both sides
 # printed the same line. A measurement, not a gate: the exit status is 1 only
 # when a program fails to build or the two sides disagree.
+#
+# ★The runtime archive must be the OPTIMIZED one (tools/build-from-seed.sh
+# builds /tmp/libscaly.a through opt -O2; tools/bootstrap.sh does not): the
+# allocator's bodies run at the archive's level, and under bootstrap's archive
+# binary-trees and fannkuch run a third slower on BOTH sides (2026-09-26).
 cd "$(dirname "$0")/../.." || exit 1
 BIN=${1:-scalyc/build/scalyc}
 ROUNDS=${2:-3}
