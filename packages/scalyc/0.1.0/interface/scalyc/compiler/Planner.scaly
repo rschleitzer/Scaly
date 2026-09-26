@@ -169,6 +169,59 @@ define EscapeAccess
 ; The table doubles past half load and is refilled from the array it mirrors.
 define GrowIndex (var table: ConceptIndex  var count: size_t)
 
+; unit_variant_owner#'s index: payload-less variant name -> the position in
+; `concepts` of the ONE non-generic union declaring it, or UV_AMBIGUOUS when
+; two differently named unions do. `indexed` is how much of `concepts` it has
+; seen: the registry only grows, so each ask first enters what arrived since.
+; Before it, every bare-name lookup scanned every union and every variant --
+; 31 % of the tscaly root's plan time (2026-09-26, `sample`).
+define UnitVariantIndex (var table: ConceptIndex  var count: size_t  var indexed: size_t)
+define UV_AMBIGUOUS size_t 0x4000000000000000
+
+; A name -> FIRST position table over a list that only grows, entered at the
+; list's one insertion site (`keys`/`poss` in entry order, for the rebuild
+; past half load). It answers what the linear scan it replaces answered: the
+; first entry of that name.
+define NameIndex
+@resident true @inplace true (
+    var table: ConceptIndex
+    keys: Array[String]
+    poss: Array[size_t]
+)
+
+; Method tables per member list (collect_methods_in#, member_list_store_mask#):
+; a list is known by its buffer's address -> `map_keys`/`map_vals` (open
+; addressing, 0 = empty) -> its table number; table k maps a method name to
+; the first member position (+1) of that name, `next[bases[k] + pos]` to the
+; next (+1, 0 ends), in MEMBER ORDER. Built at a list's first ask; the Model's
+; member lists never change. Both scans compared every member's name per ask
+; -- ~16 % of the tscaly root's plan time, whose Checker alone carries
+; thousands of methods (2026-09-26, `sample`).
+define MemberIndex
+@resident true @inplace true (
+    var cap: size_t
+    var used: size_t
+    map_keys: Array[u64]
+    map_vals: Array[size_t]
+    tables: Array[ConceptIndex]
+    bases: Array[size_t]
+    next: Array[size_t]
+)
+
+; The escape summary by callee: mangled name -> a chain of positions in
+; `escape_records`, in insertion order (`heads`/`tails` per chain, `next` per
+; record, positions stored +1 so 0 ends a chain; `names` per chain for the
+; rebuild past half load). Every call used to test EVERY record's callee
+; name -- ~15 % of the tscaly root's plan time (2026-09-26, `sample`).
+define EscIndex
+@resident true @inplace true (
+    var table: ConceptIndex
+    names: Array[String]
+    heads: Array[size_t]
+    tails: Array[size_t]
+    next: Array[size_t]
+)
+
 ; the residence table's two lookups (return_residence_index#: name and span;
 ; return_residence_static#: owner's last segment and name, `dup` marking a key
 ; two functions share — the linear scan answered 0 for those), built once
@@ -611,6 +664,7 @@ define Planner
         ; not pointers, because `concepts` reallocates as it grows. Concrete,
         ; malloc'd, open-addressing — sidesteps the s188 RBMM-HashMap bug.
         concept_index: ConceptIndex
+        unit_variants: ref[UnitVariantIndex]
 
         ; Instantiation caches. Every PlannedStructure / PlannedUnion /
         ; PlannedFunction / PlannedGlobal a call into the planner
@@ -915,6 +969,13 @@ define Planner
         ; which corrupt — s34); escape_found short-circuits once a violation
         ; has been reported.
         escape_records: Array[EscapeRecord]
+        esc_index: ref[EscIndex]
+        ; lookup_global#: name -> first position in instantiated_globals
+        global_index: ref[NameIndex]
+        ; is_concept_parameter_name#: every generic parameter name of every
+        ; registered concept (the position is unused)
+        concept_param_index: ref[NameIndex]
+        member_index: ref[MemberIndex]
         var escape_checking: bool
         var escape_found: bool
         ; SCALYC_GATE_ALL: keep walking after a finding (a measurement of
@@ -1264,6 +1325,11 @@ define Planner
     )
     {
         init(filename: String) linked
+
+
+
+
+
 
 
 
@@ -2148,6 +2214,14 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
         procedure lookup_concept(mutable this: Planner, name: String) @ret_param_0 true @deep true returns ref[Concept]? linked
 
 
@@ -2648,6 +2722,33 @@ define Planner
 
 
 
+
+
+        ; Enter `name` at `pos` unless it is already there (first entry wins);
+        ; past half load the table doubles and every key is entered again.
+        procedure name_index_put(mutable this: Planner, mutable ix: ref[NameIndex], name: String, pos: size_t) @deep true @deep_into_1_2 true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         ; lookup_global: locate a previously planned PlannedGlobal by name.
         ; Used by plan_type_operand#'s constant-folding path so a bare
         ; identifier like F_OK / SEEK_END resolves to its define value
@@ -2698,14 +2799,6 @@ define Planner
 
 
         function lookup_global(this: Planner, name: String) @ret_param_0 true @deep true returns ref[PlannedGlobal]? linked
-
-
-
-
-
-
-
-
 
 
 
@@ -5492,11 +5585,11 @@ define Planner
         ; Method / initializer / property lookup on user types.
         ; ================================================================
 
-        ; collect_methods_in: linear scan of a members Vector, appending
-        ; every Function whose name matches. Shared by lookup_methods
-        ; across Structure and Union variants.
+        ; collect_methods_in: append every Function of the members Vector whose
+        ; name matches, in member order. Shared by lookup_methods across
+        ; Structure and Union variants; answered from the list's method table.
         procedure collect_methods_in(
-            this: Planner,
+            mutable this: Planner,
             members: Vector[Member],
             method_name: String,
             mutable acc: ref[Array[Function]]
@@ -5511,6 +5604,128 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+        ; The method table of a member list (MemberIndex), built at its first
+        ; ask; its number, or -1 for an empty list.
+        procedure member_table(mutable this: Planner, members: Vector[Member]) @ret_param_0 true @deep true returns i64 linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; Enter a list address -> table number; past half load the map doubles.
+        procedure member_map_put(mutable this: Planner, key: u64, id: size_t) @ret_nonlocal true @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure member_map_insert(mutable this: Planner, key: u64, id: size_t) @deep true linked
 
 
 
@@ -19534,29 +19749,10 @@ define Planner
         ; report, and the set it suppresses is the set of parameter names, which
         ; in this tree is T/K/V.
         ;
-        ; Only reached from the unknown-name exit of plan_type#, so the scan is
-        ; not on any hot path.
-        function is_concept_parameter_name(this: Planner, name: String) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        ; ★It WAS hot: 10 % of the tscaly root's plan time as a scan over every
+        ; concept's parameters (2026-09-26, `sample`) -- an index entered at
+        ; register_concept# since.
+        function is_concept_parameter_name(this: Planner, name: String) @ret_param_0 true @deep true returns bool linked
 
 
         ; unknown_type_name: `t` names nothing that could be a type — return that
@@ -26199,8 +26395,94 @@ define Planner
 
 
 
+        ; Enter the unit variants of every union registered since the last
+        ; ask. Counted first, so a table past half load is rebuilt from the
+        ; whole registry before anything is entered.
+        procedure index_unit_variants(mutable this: Planner) @deep true linked
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; how many payload-less variants concepts[ci] declares when it is a
+        ; non-generic union, else 0
+        function unit_variant_count(this: Planner, ci: size_t) @ret_nonlocal true @deep true returns size_t linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; One more union at concepts[ci] declares `vname`: the first owner is
+        ; entered, a differently NAMED second one makes the name ambiguous (a
+        ; union registered twice under one name is one owner, as the scan's
+        ; `owner <> kv.key` test had it).
+        procedure note_unit_variant(mutable this: Planner, vname: String, ci: size_t) @deep true linked
 
 
 
@@ -32449,7 +32731,7 @@ define Planner
         ; The record itself: destination kind 1 is "frame-external" (what a
         ; global or a deref store uses), which is exactly what a page-hosted
         ; object is from the callee's point of view.
-        procedure escape_record_param_into_region(mutable this: Planner, v: PlannedOperand, dest_kind: size_t) @persists true @deep true io linked
+        procedure escape_record_param_into_region(mutable this: Planner, v: PlannedOperand, dest_kind: size_t) @deep true io linked
 
 
 
@@ -32899,11 +33181,92 @@ define Planner
 
 
 
+
+
+
+
+        ; the whole-table form, for a record whose callee index resolves to
+        ; nothing (its records sit on the "" chain)
+        function escape_record_exists_scan(this: Planner, fn_index: size_t, param_index: size_t, dest_kind: size_t, dest_index: size_t, path_len: size_t, field0: size_t, field1: size_t) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; Enter a record into the summary and onto its callee's chain.
+        procedure add_escape_record(mutable this: Planner, rec: EscapeRecord) @persists true @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; the first record position (+1) on the chain of `name`, 0 for none
+        function esc_chain_head(this: Planner, name: String) @ret_param_0 true @deep true returns size_t linked
+
+
+
+
+
+
+
         ; Forwarding fixpoint (pass 0.5): a call may forward several params into
         ; several persisting callee slots; test the current summary against each
         ; matching record. Snapshot the length so records added during this call
         ; are not re-processed here (the outer fixpoint loop propagates them).
         procedure escape_forward_call(mutable this: Planner, call: PlannedCall) @ret_nonlocal true @deep true linked
+
+
+
 
 
 
@@ -50509,6 +50872,13 @@ define Planner
 
 
         procedure member_list_store_mask(mutable this: Planner, members: Vector[Member], method: String, argc: size_t) @ret_nonlocal true @deep true returns u64 linked
+
+
+
+
+
+
+
 
 
 

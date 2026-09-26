@@ -83,7 +83,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z5Lexer = type { { ptr }, ptr, ptr, i64, i64, %_Z5Token }
 %_Z5Token = type { i8, [9 x i8] }
 %_Z11ParserError = type { i8, [24 x i8] }
-%_Z7Planner = type { { ptr }, %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, %_Z5ArrayImE, %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, i64, %_Z5ArrayI14TypeConstraintE, %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, %_Z5ArrayI12KeyValuePairI6String7ConceptEE, %_Z12ConceptIndex, %_Z5ArrayI16PlannedStructureE, %_Z5ArrayI12PlannedUnionE, %_Z5ArrayI6StringE, i1, i64, ptr, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6LambdaE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i64, i64, i1, i1, i1, %_Z5ArrayI15PlannedFunctionE, %_Z12ConceptIndex, %_Z5ArrayI13PlannedGlobalE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI12KeyValuePairI6String8FunctionEE, %_Z5ArrayI12KeyValuePairI6String6LambdaEE, %_Z13FunctionIndex, %_Z5ArrayI12KeyValuePairI6String8OperatorEE, %_Z13FunctionIndex, i1, %_Z6VectorI11PlannedTypeE, %_Z5ArrayI12KeyValuePairI6String6ModuleEE, %_Z5ArrayI12KeyValuePairI6String6ModuleEE, %_Z5ArrayI6StringE, %_Z5ArrayI17PlannerDiagnosticE, %_Z5ArrayI7ProgramE, ptr, ptr, ptr, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i64, %_Z5ArrayI12EscapeRecordE, i1, i1, i1, i64, i1, i1, ptr, ptr, ptr, %_Z5ArrayI6StringE, ptr, ptr, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i1, i1, %_Z5ArrayI6StringE, ptr, %_Z5ArrayImE, ptr, ptr, i1, i1, %_Z5ArrayI6StringE, i64, i1, i1, i64, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i64, i64, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, ptr, ptr, ptr, ptr, ptr, i64, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, { ptr }, { ptr }, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, i64, i64, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayImE, i1, %_Z12ConceptIndex, %_Z5ArrayI6StringE, i1, i64, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, ptr, { ptr }, ptr, ptr, i64, i64 }
+%_Z7Planner = type { { ptr }, %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, %_Z5ArrayImE, %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, i64, %_Z5ArrayI14TypeConstraintE, %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, %_Z5ArrayI12KeyValuePairI6String7ConceptEE, %_Z12ConceptIndex, ptr, %_Z5ArrayI16PlannedStructureE, %_Z5ArrayI12PlannedUnionE, %_Z5ArrayI6StringE, i1, i64, ptr, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6LambdaE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i64, i64, i1, i1, i1, %_Z5ArrayI15PlannedFunctionE, %_Z12ConceptIndex, %_Z5ArrayI13PlannedGlobalE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI12KeyValuePairI6String8FunctionEE, %_Z5ArrayI12KeyValuePairI6String6LambdaEE, %_Z13FunctionIndex, %_Z5ArrayI12KeyValuePairI6String8OperatorEE, %_Z13FunctionIndex, i1, %_Z6VectorI11PlannedTypeE, %_Z5ArrayI12KeyValuePairI6String6ModuleEE, %_Z5ArrayI12KeyValuePairI6String6ModuleEE, %_Z5ArrayI6StringE, %_Z5ArrayI17PlannerDiagnosticE, %_Z5ArrayI7ProgramE, ptr, ptr, ptr, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i64, %_Z5ArrayI12EscapeRecordE, ptr, ptr, ptr, ptr, i1, i1, i1, i64, i1, i1, ptr, ptr, ptr, %_Z5ArrayI6StringE, ptr, ptr, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i1, i1, %_Z5ArrayI6StringE, ptr, %_Z5ArrayImE, ptr, ptr, i1, i1, %_Z5ArrayI6StringE, i64, i1, i1, i64, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i64, i64, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, ptr, ptr, ptr, ptr, ptr, i64, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, { ptr }, { ptr }, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, i64, i64, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayImE, i1, %_Z12ConceptIndex, %_Z5ArrayI6StringE, i1, i64, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, ptr, { ptr }, ptr, ptr, i64, i64 }
 %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE = type { i64, i64, ptr }
 %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE = type { i64, i64, ptr }
 %_Z5ArrayI14TypeConstraintE = type { i64, i64, ptr }
@@ -13229,14 +13229,14 @@ while.cond:                                       ; preds = %if.end28, %choose.w
   %di23 = load i64, ptr %di, align 8
   %planner24 = load ptr, ptr %planner, align 8
   %load.struct = load %_Z7Planner, ptr %planner24, align 8
-  %diagnostics = extractvalue %_Z7Planner %load.struct, 51
+  %diagnostics = extractvalue %_Z7Planner %load.struct, 52
   %length = extractvalue %_Z5ArrayI17PlannerDiagnosticE %diagnostics, 0
   %lt = icmp ult i64 %di23, %length
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
   %base.deref = load ptr, ptr %planner, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z7Planner, ptr %base.deref, i32 0, i32 51
+  %field.inplace = getelementptr inbounds nuw %_Z7Planner, ptr %base.deref, i32 0, i32 52
   %di25 = load i64, ptr %di, align 8
   %call26 = call ptr @_ZN5ArrayI17PlannerDiagnosticE3getEm(ptr %field.inplace, i64 %di25)
   %ne = icmp ne ptr %call26, null
@@ -13518,14 +13518,14 @@ while.cond:                                       ; preds = %if.end26, %choose.w
   %di21 = load i64, ptr %di, align 8
   %planner22 = load ptr, ptr %planner, align 8
   %load.struct = load %_Z7Planner, ptr %planner22, align 8
-  %diagnostics = extractvalue %_Z7Planner %load.struct, 51
+  %diagnostics = extractvalue %_Z7Planner %load.struct, 52
   %length = extractvalue %_Z5ArrayI17PlannerDiagnosticE %diagnostics, 0
   %lt = icmp ult i64 %di21, %length
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
   %base.deref = load ptr, ptr %planner, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z7Planner, ptr %base.deref, i32 0, i32 51
+  %field.inplace = getelementptr inbounds nuw %_Z7Planner, ptr %base.deref, i32 0, i32 52
   %di23 = load i64, ptr %di, align 8
   %call24 = call ptr @_ZN5ArrayI17PlannerDiagnosticE3getEm(ptr %field.inplace, i64 %di23)
   %ne = icmp ne ptr %call24, null
@@ -66535,14 +66535,14 @@ while.cond:                                       ; preds = %if.end114, %if.then
   %di109 = load i64, ptr %di, align 8
   %planner110 = load ptr, ptr %planner, align 8
   %load.struct = load %_Z7Planner, ptr %planner110, align 8
-  %diagnostics = extractvalue %_Z7Planner %load.struct, 51
+  %diagnostics = extractvalue %_Z7Planner %load.struct, 52
   %length = extractvalue %_Z5ArrayI17PlannerDiagnosticE %diagnostics, 0
   %lt = icmp ult i64 %di109, %length
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
   %base.deref = load ptr, ptr %planner, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z7Planner, ptr %base.deref, i32 0, i32 51
+  %field.inplace = getelementptr inbounds nuw %_Z7Planner, ptr %base.deref, i32 0, i32 52
   %di111 = load i64, ptr %di, align 8
   %call112 = call ptr @_ZN5ArrayI17PlannerDiagnosticE3getEm(ptr %field.inplace, i64 %di111)
   %ne = icmp ne ptr %call112, null
@@ -66972,13 +66972,13 @@ entry:
 while.cond:                                       ; preds = %if.end, %entry
   %di1 = load i64, ptr %di, align 8
   %load.struct = load %_Z7Planner, ptr %3, align 8
-  %diagnostics = extractvalue %_Z7Planner %load.struct, 51
+  %diagnostics = extractvalue %_Z7Planner %load.struct, 52
   %length = extractvalue %_Z5ArrayI17PlannerDiagnosticE %diagnostics, 0
   %lt = icmp ult i64 %di1, %length
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %field.inplace = getelementptr inbounds nuw %_Z7Planner, ptr %3, i32 0, i32 51
+  %field.inplace = getelementptr inbounds nuw %_Z7Planner, ptr %3, i32 0, i32 52
   %di2 = load i64, ptr %di, align 8
   %call = call ptr @_ZN5ArrayI17PlannerDiagnosticE3getEm(ptr %field.inplace, i64 %di2)
   %ne = icmp ne ptr %call, null
@@ -67048,13 +67048,13 @@ if.end15:                                         ; preds = %if.then11
 while.cond18:                                     ; preds = %if.end31, %if.end15
   %dj21 = load i64, ptr %dj, align 8
   %load.struct22 = load %_Z7Planner, ptr %3, align 8
-  %diagnostics23 = extractvalue %_Z7Planner %load.struct22, 51
+  %diagnostics23 = extractvalue %_Z7Planner %load.struct22, 52
   %length24 = extractvalue %_Z5ArrayI17PlannerDiagnosticE %diagnostics23, 0
   %lt25 = icmp ult i64 %dj21, %length24
   br i1 %lt25, label %while.body19, label %while.exit20
 
 while.body19:                                     ; preds = %while.cond18
-  %field.inplace26 = getelementptr inbounds nuw %_Z7Planner, ptr %3, i32 0, i32 51
+  %field.inplace26 = getelementptr inbounds nuw %_Z7Planner, ptr %3, i32 0, i32 52
   %dj27 = load i64, ptr %dj, align 8
   %call28 = call ptr @_ZN5ArrayI17PlannerDiagnosticE3getEm(ptr %field.inplace26, i64 %dj27)
   %ne29 = icmp ne ptr %call28, null

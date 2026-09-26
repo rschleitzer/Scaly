@@ -169,6 +169,59 @@ define EscapeAccess
 ; The table doubles past half load and is refilled from the array it mirrors.
 define GrowIndex (var table: ConceptIndex  var count: size_t)
 
+; unit_variant_owner#'s index: payload-less variant name -> the position in
+; `concepts` of the ONE non-generic union declaring it, or UV_AMBIGUOUS when
+; two differently named unions do. `indexed` is how much of `concepts` it has
+; seen: the registry only grows, so each ask first enters what arrived since.
+; Before it, every bare-name lookup scanned every union and every variant --
+; 31 % of the tscaly root's plan time (2026-09-26, `sample`).
+define UnitVariantIndex (var table: ConceptIndex  var count: size_t  var indexed: size_t)
+define UV_AMBIGUOUS size_t 0x4000000000000000
+
+; A name -> FIRST position table over a list that only grows, entered at the
+; list's one insertion site (`keys`/`poss` in entry order, for the rebuild
+; past half load). It answers what the linear scan it replaces answered: the
+; first entry of that name.
+define NameIndex
+(
+    var table: ConceptIndex
+    keys: Array[String]
+    poss: Array[size_t]
+)
+
+; Method tables per member list (collect_methods_in#, member_list_store_mask#):
+; a list is known by its buffer's address -> `map_keys`/`map_vals` (open
+; addressing, 0 = empty) -> its table number; table k maps a method name to
+; the first member position (+1) of that name, `next[bases[k] + pos]` to the
+; next (+1, 0 ends), in MEMBER ORDER. Built at a list's first ask; the Model's
+; member lists never change. Both scans compared every member's name per ask
+; -- ~16 % of the tscaly root's plan time, whose Checker alone carries
+; thousands of methods (2026-09-26, `sample`).
+define MemberIndex
+(
+    var cap: size_t
+    var used: size_t
+    map_keys: Array[u64]
+    map_vals: Array[size_t]
+    tables: Array[ConceptIndex]
+    bases: Array[size_t]
+    next: Array[size_t]
+)
+
+; The escape summary by callee: mangled name -> a chain of positions in
+; `escape_records`, in insertion order (`heads`/`tails` per chain, `next` per
+; record, positions stored +1 so 0 ends a chain; `names` per chain for the
+; rebuild past half load). Every call used to test EVERY record's callee
+; name -- ~15 % of the tscaly root's plan time (2026-09-26, `sample`).
+define EscIndex
+(
+    var table: ConceptIndex
+    names: Array[String]
+    heads: Array[size_t]
+    tails: Array[size_t]
+    next: Array[size_t]
+)
+
 ; the residence table's two lookups (return_residence_index#: name and span;
 ; return_residence_static#: owner's last segment and name, `dup` marking a key
 ; two functions share — the linear scan answered 0 for those), built once
@@ -611,6 +664,7 @@ define Planner
         ; not pointers, because `concepts` reallocates as it grows. Concrete,
         ; malloc'd, open-addressing — sidesteps the s188 RBMM-HashMap bug.
         concept_index: ConceptIndex
+        unit_variants: ref[UnitVariantIndex]
 
         ; Instantiation caches. Every PlannedStructure / PlannedUnion /
         ; PlannedFunction / PlannedGlobal a call into the planner
@@ -915,6 +969,13 @@ define Planner
         ; which corrupt — s34); escape_found short-circuits once a violation
         ; has been reported.
         escape_records: Array[EscapeRecord]
+        esc_index: ref[EscIndex]
+        ; lookup_global#: name -> first position in instantiated_globals
+        global_index: ref[NameIndex]
+        ; is_concept_parameter_name#: every generic parameter name of every
+        ; registered concept (the position is unused)
+        concept_param_index: ref[NameIndex]
+        member_index: ref[MemberIndex]
         var escape_checking: bool
         var escape_found: bool
         ; SCALYC_GATE_ALL: keep walking after a finding (a measurement of
@@ -1283,6 +1344,7 @@ define Planner
             set solution: Array[KeyValuePair[size_t, PlannedType]]^this()
             set concepts: Array[KeyValuePair[String, Concept]]^this()
             set concept_index: ConceptIndex.create(65536)
+            set unit_variants: &UnitVariantIndex^this(ConceptIndex(), 0, 0)
             set instantiated_structures: Array[PlannedStructure]^this()
             set instantiated_unions: Array[scalyc.compiler.Plan.PlannedUnion]^this()
             set delegate_names: Array[String]^this()
@@ -1335,6 +1397,10 @@ define Planner
             set program_use_namespaces: Array[String]^this()
             set next_lambda_id: 0
             set escape_records: Array[EscapeRecord]^this()
+            set esc_index: &EscIndex^this(ConceptIndex(), Array[String]^this(), Array[size_t]^this(), Array[size_t]^this(), Array[size_t]^this())
+            set global_index: &NameIndex^this(ConceptIndex(), Array[String]^this(), Array[size_t]^this())
+            set concept_param_index: &NameIndex^this(ConceptIndex(), Array[String]^this(), Array[size_t]^this())
+            set member_index: &MemberIndex^this(0, 0, Array[u64]^this(), Array[size_t]^this(), Array[ConceptIndex]^this(), Array[size_t]^this(), Array[size_t]^this())
             set escape_checking: false
             set escape_found: false
             set gate_all: false
@@ -2131,6 +2197,14 @@ define Planner
                 this.check_concept_member_names(c, registering_file)
 
             concepts.add(KeyValuePair[String, Concept](c.name, c))
+            var cpi: size_t 0
+            while cpi < c.parameters.length
+            {
+                let cp_ptr c.parameters.get cpi
+                if cp_ptr <> null
+                    this.name_index_put(concept_param_index, cp_ptr.name, 0)
+                set cpi: cpi + 1
+            }
             let origin_file String^this(registering_file)
             concept_origin_files.add origin_file
             concept_origin_paths.add origin_path
@@ -2645,7 +2719,34 @@ define Planner
 
         procedure record_global(mutable this: Planner, g: PlannedGlobal)
         {
+            let pos instantiated_globals.length
             instantiated_globals.add g
+            this.name_index_put(global_index, g.name, pos)
+        }
+
+        ; Enter `name` at `pos` unless it is already there (first entry wins);
+        ; past half load the table doubles and every key is entered again.
+        procedure name_index_put(mutable this: Planner, mutable ix: ref[NameIndex], name: String, pos: size_t)
+        {
+            if ix.table.lookup(name) >= 0
+                return
+            if (ix.keys.length + 1) * 2 > ix.table.cap
+            {
+                var ncap: size_t 1024
+                while ncap < (ix.keys.length + 1) * 4
+                    set ncap: ncap * 2
+                set ix.table: ConceptIndex.create(ncap)
+                var k: size_t 0
+                while k < ix.keys.length
+                {
+                    ix.table.insert_if_absent(ix.keys[k], ix.poss[k])
+                    set k: k + 1
+                }
+            }
+            let key String^this(name)
+            ix.keys.add key
+            ix.poss.add pos
+            ix.table.insert_if_absent(key, pos)
         }
 
         ; lookup_global: locate a previously planned PlannedGlobal by name.
@@ -2699,18 +2800,10 @@ define Planner
 
         function lookup_global(this: Planner, name: String) returns ref[PlannedGlobal]?
         {
-            var i: size_t 0
-            while i < instantiated_globals.length
-            {
-                let g_ptr instantiated_globals.get i
-                if g_ptr <> null
-                {
-                    if g_ptr.name = name
-                        return g_ptr
-                }
-                set i: i + 1
-            }
-            null
+            let at global_index.table.lookup(name)
+            if at < 0
+                return null
+            instantiated_globals.get(at as size_t)
         }
 
         ; ================================================================
@@ -5492,35 +5585,157 @@ define Planner
         ; Method / initializer / property lookup on user types.
         ; ================================================================
 
-        ; collect_methods_in: linear scan of a members Vector, appending
-        ; every Function whose name matches. Shared by lookup_methods
-        ; across Structure and Union variants.
+        ; collect_methods_in: append every Function of the members Vector whose
+        ; name matches, in member order. Shared by lookup_methods across
+        ; Structure and Union variants; answered from the list's method table.
         procedure collect_methods_in(
-            this: Planner,
+            mutable this: Planner,
             members: Vector[Member],
             method_name: String,
             mutable acc: ref[Array[Function]]
         )
         {
+            let id this.member_table(members)
+            if id < 0
+                return
+            let mx member_index
+            let base mx.bases[id as size_t]
+            let t mx.tables[id as size_t]
+            var p t.lookup(method_name)
+            while p > 0
+            {
+                let pos (p - 1) as size_t
+                let m_ptr members.get pos
+                if m_ptr <> null
+                    choose (*m_ptr)
+                        when f: Function
+                            acc.add f
+                        else
+                            0
+                set p: mx.next[base + pos] as i64
+            }
+        }
+
+        ; The method table of a member list (MemberIndex), built at its first
+        ; ask; its number, or -1 for an empty list.
+        procedure member_table(mutable this: Planner, members: Vector[Member]) returns i64
+        {
+            if members.length = 0
+                return 0 - 1
+            let key (members.data as size_t) as u64
+            let mx member_index
+            if mx.cap > 0
+            {
+                let mask mx.cap - 1
+                let h (key >> 4) xor (key >> 20)
+                var slot (h as size_t) & mask
+                repeat
+                {
+                    let k mx.map_keys[slot]
+                    if k = 0
+                        break
+                    if k = key
+                        return mx.map_vals[slot] as i64
+                    set slot: (slot + 1) & mask
+                }
+            }
+            ; build: a chain per name, entered back to front so it runs forward
+            let id mx.tables.length
+            var n_fn: size_t 0
             var i: size_t 0
             while i < members.length
             {
+                mx.next.add(0)
                 let m_ptr members.get i
                 if m_ptr <> null
-                {
-                    let mem (*m_ptr)
-                    choose mem
+                    choose (*m_ptr)
+                        when f: Function
+                            set n_fn: n_fn + 1
+                        else
+                            0
+                set i: i + 1
+            }
+            let base mx.next.length - members.length
+            var tcap: size_t 8
+            while tcap < (n_fn + 1) * 2
+                set tcap: tcap * 2
+            var table ConceptIndex.create(tcap)
+            var j members.length
+            while j > 0
+            {
+                set j: j - 1
+                let m_ptr members.get j
+                if m_ptr <> null
+                    choose (*m_ptr)
                         when f: Function
                         {
-                            if f.name = method_name
-                                acc.add f
-                            0
+                            let head table.lookup(f.name)
+                            if head > 0
+                                mx.next.put(base + j, head as size_t)
+                            table.insert(f.name, j + 1)
                         }
                         else
                             0
-                }
-                set i: i + 1
             }
+            mx.tables.add table
+            mx.bases.add base
+            this.member_map_put(key, id)
+            id as i64
+        }
+
+        ; Enter a list address -> table number; past half load the map doubles.
+        procedure member_map_put(mutable this: Planner, key: u64, id: size_t)
+        {
+            let mx member_index
+            if (mx.used + 1) * 2 > mx.cap
+            {
+                var old_keys Array[u64]()
+                var old_vals Array[size_t]()
+                var k: size_t 0
+                while k < mx.cap
+                {
+                    if mx.map_keys[k] <> 0
+                    {
+                        old_keys.add(mx.map_keys[k])
+                        old_vals.add(mx.map_vals[k])
+                    }
+                    set k: k + 1
+                }
+                var ncap: size_t 64
+                while ncap < (mx.used + 1) * 4
+                    set ncap: ncap * 2
+                mx.map_keys.clear()
+                mx.map_vals.clear()
+                set k: 0
+                while k < ncap
+                {
+                    mx.map_keys.add(0)
+                    mx.map_vals.add(0)
+                    set k: k + 1
+                }
+                set mx.cap: ncap
+                set mx.used: 0
+                set k: 0
+                while k < old_keys.length
+                {
+                    this.member_map_insert(old_keys[k], old_vals[k])
+                    set k: k + 1
+                }
+            }
+            this.member_map_insert(key, id)
+        }
+
+        procedure member_map_insert(mutable this: Planner, key: u64, id: size_t)
+        {
+            let mx member_index
+            let mask mx.cap - 1
+            let h (key >> 4) xor (key >> 20)
+            var slot (h as size_t) & mask
+            while mx.map_keys[slot] <> 0
+                set slot: (slot + 1) & mask
+            mx.map_keys.put(slot, key)
+            mx.map_vals.put(slot, id)
+            set mx.used: mx.used + 1
         }
 
         procedure lookup_methods(
@@ -19534,30 +19749,11 @@ define Planner
         ; report, and the set it suppresses is the set of parameter names, which
         ; in this tree is T/K/V.
         ;
-        ; Only reached from the unknown-name exit of plan_type#, so the scan is
-        ; not on any hot path.
+        ; ★It WAS hot: 10 % of the tscaly root's plan time as a scan over every
+        ; concept's parameters (2026-09-26, `sample`) -- an index entered at
+        ; register_concept# since.
         function is_concept_parameter_name(this: Planner, name: String) returns bool
-        {
-            var ci: size_t 0
-            while ci < concepts.length
-            {
-                let c_ptr concepts.get ci
-                if c_ptr <> null
-                {
-                    let c c_ptr.value
-                    var pi: size_t 0
-                    while pi < c.parameters.length
-                    {
-                        let p_ptr c.parameters.get pi
-                        if p_ptr <> null and p_ptr.name = name
-                            return true
-                        set pi: pi + 1
-                    }
-                }
-                set ci: ci + 1
-            }
-            false
-        }
+            concept_param_index.table.lookup(name) >= 0
 
         ; unknown_type_name: `t` names nothing that could be a type — return that
         ; name, otherwise "". The type-annotation counterpart of
@@ -26187,12 +26383,53 @@ define Planner
         ; variant has no type arguments to construct with.
         procedure unit_variant_owner(mutable this: Planner, name: String) returns String
         {
-            var owner ""
-            var count: int 0
-            var i: size_t 0
+            this.index_unit_variants()
+            let at unit_variants.table.lookup(name)
+            if at < 0
+                return String("")
+            if (at as size_t) >= UV_AMBIGUOUS
+                return String("")
+            let kv concepts.get(at as size_t)
+            if kv = null
+                return String("")
+            String(kv.key)
+        }
+
+        ; Enter the unit variants of every union registered since the last
+        ; ask. Counted first, so a table past half load is rebuilt from the
+        ; whole registry before anything is entered.
+        procedure index_unit_variants(mutable this: Planner)
+        {
+            let ux unit_variants
+            if ux.indexed >= concepts.length
+                return
+            var fresh: size_t 0
+            var i ux.indexed
             while i < concepts.length
             {
-                let kv concepts.get i
+                set fresh: fresh + this.unit_variant_count(i)
+                set i: i + 1
+            }
+            if (ux.count + fresh + 1) * 2 > ux.table.cap
+            {
+                var total: size_t 0
+                set i: 0
+                while i < concepts.length
+                {
+                    set total: total + this.unit_variant_count(i)
+                    set i: i + 1
+                }
+                var ncap: size_t 1024
+                while ncap < (total + 1) * 4
+                    set ncap: ncap * 2
+                set ux.table: ConceptIndex.create(ncap)
+                set ux.count: 0
+                set ux.indexed: 0
+            }
+            while ux.indexed < concepts.length
+            {
+                let ci ux.indexed
+                let kv concepts.get ci
                 if kv <> null and kv.value.parameters.length = 0
                 {
                     choose kv.value.definition
@@ -26202,22 +26439,67 @@ define Planner
                             while vi < u.variants.length
                             {
                                 let v_ptr u.variants.get vi
-                                if v_ptr <> null and v_ptr.name = name and v_ptr.type = null and owner <> kv.key
-                                {
-                                    set owner: String(kv.key)
-                                    set count: count + 1
-                                }
+                                if v_ptr <> null and v_ptr.type = null
+                                    this.note_unit_variant(v_ptr.name, ci)
                                 set vi: vi + 1
                             }
                         }
                         else
                             0
                 }
-                set i: i + 1
+                set ux.indexed: ci + 1
             }
-            if count <> 1
-                return String("")
-            owner
+        }
+
+        ; how many payload-less variants concepts[ci] declares when it is a
+        ; non-generic union, else 0
+        function unit_variant_count(this: Planner, ci: size_t) returns size_t
+        {
+            let kv concepts.get ci
+            if kv = null
+                return 0
+            if kv.value.parameters.length <> 0
+                return 0
+            var n: size_t 0
+            choose kv.value.definition
+                when u: scalyc.compiler.Model.Union
+                {
+                    var vi: size_t 0
+                    while vi < u.variants.length
+                    {
+                        let v_ptr u.variants.get vi
+                        if v_ptr <> null and v_ptr.type = null
+                            set n: n + 1
+                        set vi: vi + 1
+                    }
+                }
+                else
+                    0
+            n
+        }
+
+        ; One more union at concepts[ci] declares `vname`: the first owner is
+        ; entered, a differently NAMED second one makes the name ambiguous (a
+        ; union registered twice under one name is one owner, as the scan's
+        ; `owner <> kv.key` test had it).
+        procedure note_unit_variant(mutable this: Planner, vname: String, ci: size_t)
+        {
+            let ux unit_variants
+            let at ux.table.lookup(vname)
+            if at < 0
+            {
+                ux.table.insert(vname, ci)
+                set ux.count: ux.count + 1
+                return
+            }
+            if (at as size_t) >= UV_AMBIGUOUS
+                return
+            let prev concepts.get(at as size_t)
+            let cur concepts.get ci
+            if prev = null or cur = null
+                return
+            if prev.key <> cur.key
+                ux.table.insert(vname, UV_AMBIGUOUS)
         }
 
         ; The exemption battery of unknown_identifier_name#, as its own
@@ -31290,7 +31572,7 @@ define Planner
                 return
 
             let cpc this.escape_current_param_count()
-            escape_records.add(EscapeRecord(
+            this.add_escape_record(EscapeRecord(
                 escape_fn_index,
                 cpc,
                 (stored_param_index as size_t),
@@ -32469,7 +32751,7 @@ define Planner
                     scaly_eputs "\n"
                 }
             }
-            escape_records.add(EscapeRecord(
+            this.add_escape_record(EscapeRecord(
                 escape_fn_index,
                 cpc,
                 (root as size_t),
@@ -32499,15 +32781,15 @@ define Planner
             }
             if escape_checking = false
                 return
-            var ri: size_t 0
-            while ri < escape_records.length
+            var pos this.esc_chain_head(call.mangled_name)
+            while pos > 0
             {
                 if escape_found
                     return
-                let rec_ptr escape_records.get ri
+                let rec_ptr escape_records.get(pos - 1)
                 if rec_ptr <> null
                     this.escape_check_call_record(call, (*rec_ptr))
-                set ri: ri + 1
+                set pos: esc_index.next[pos - 1]
             }
             if gate.deep_gate
                 this.escape_check_deep(call)
@@ -32879,6 +33161,34 @@ define Planner
 
         function escape_record_exists(this: Planner, fn_index: size_t, param_index: size_t, dest_kind: size_t, dest_index: size_t, path_len: size_t, field0: size_t, field1: size_t) returns bool
         {
+            ; a record for fn_index sits on the chain of fn_index's name
+            let callee instantiated_functions.get fn_index
+            if callee = null
+                return this.escape_record_exists_scan(fn_index, param_index, dest_kind, dest_index, path_len, field0, field1)
+            var pos this.esc_chain_head(callee.mangled_name)
+            while pos > 0
+            {
+                let rec_ptr escape_records.get(pos - 1)
+                if rec_ptr <> null
+                {
+                    let rec (*rec_ptr)
+                    if rec.callee_fn_index = fn_index
+                        if rec.param_index = param_index
+                            if rec.dest_kind = dest_kind
+                                if rec.dest_index = dest_index
+                                    if rec.src_path_len = path_len
+                                        if rec.src_field0 = field0 and rec.src_field1 = field1
+                                            return true
+                }
+                set pos: esc_index.next[pos - 1]
+            }
+            false
+        }
+
+        ; the whole-table form, for a record whose callee index resolves to
+        ; nothing (its records sit on the "" chain)
+        function escape_record_exists_scan(this: Planner, fn_index: size_t, param_index: size_t, dest_kind: size_t, dest_index: size_t, path_len: size_t, field0: size_t, field1: size_t) returns bool
+        {
             var ri: size_t 0
             while ri < escape_records.length
             {
@@ -32899,20 +33209,73 @@ define Planner
             false
         }
 
+        ; Enter a record into the summary and onto its callee's chain.
+        procedure add_escape_record(mutable this: Planner, rec: EscapeRecord)
+        {
+            let pos escape_records.length
+            escape_records.add(rec)
+            let ix esc_index
+            ix.next.add(0)
+            var name String("")
+            let callee instantiated_functions.get rec.callee_fn_index
+            if callee <> null
+                set name: callee.mangled_name
+            let at ix.table.lookup(name)
+            if at >= 0
+            {
+                let id at as size_t
+                let tail ix.tails[id]
+                ix.next.put(tail - 1, pos + 1)
+                ix.tails.put(id, pos + 1)
+                return
+            }
+            let id ix.heads.length
+            if (id + 1) * 2 > ix.table.cap
+            {
+                var ncap: size_t 1024
+                while ncap < (id + 1) * 4
+                    set ncap: ncap * 2
+                set ix.table: ConceptIndex.create(ncap)
+                var k: size_t 0
+                while k < ix.names.length
+                {
+                    ix.table.insert(ix.names[k], k)
+                    set k: k + 1
+                }
+            }
+            let name_copy String^this(name)
+            ix.names.add name_copy
+            ix.heads.add(pos + 1)
+            ix.tails.add(pos + 1)
+            ix.table.insert(name_copy, id)
+        }
+
+        ; the first record position (+1) on the chain of `name`, 0 for none
+        function esc_chain_head(this: Planner, name: String) returns size_t
+        {
+            let at esc_index.table.lookup(name)
+            if at < 0
+                return 0
+            esc_index.heads[at as size_t]
+        }
+
         ; Forwarding fixpoint (pass 0.5): a call may forward several params into
         ; several persisting callee slots; test the current summary against each
         ; matching record. Snapshot the length so records added during this call
         ; are not re-processed here (the outer fixpoint loop propagates them).
         procedure escape_forward_call(mutable this: Planner, call: PlannedCall)
         {
+            ; Only records whose callee carries this call's name can match, in
+            ; the order they were entered, and only those that existed before
+            ; this call (it may add more).
             let n escape_records.length
-            var ri: size_t 0
-            while ri < n
+            var pos this.esc_chain_head(call.mangled_name)
+            while pos > 0 and pos - 1 < n
             {
-                let rec_ptr escape_records.get ri
+                let rec_ptr escape_records.get(pos - 1)
                 if rec_ptr <> null
                     this.escape_forward_call_record(call, (*rec_ptr))
-                set ri: ri + 1
+                set pos: esc_index.next[pos - 1]
             }
             ; An indirect call carries no summary entry to forward against, so
             ; the loop above never fires for it. Treat the unknown callee as one
@@ -32952,7 +33315,7 @@ define Planner
                         {
                             let cpc this.escape_current_param_count()
                             if this.escape_record_exists(escape_fn_index, (fwd_param_index as size_t), 1, 0, 0, 0, 0) = false
-                                escape_records.add(EscapeRecord(
+                                this.add_escape_record(EscapeRecord(
                                     escape_fn_index,
                                     cpc,
                                     (fwd_param_index as size_t),
@@ -33092,7 +33455,7 @@ define Planner
             let cpc this.escape_current_param_count()
             if this.escape_record_exists(escape_fn_index, (fwd_param_index as size_t), (new_dest_kind as size_t), (new_dest_index as size_t), cplen, cf0, cf1)
                 return
-            escape_records.add(EscapeRecord(
+            this.add_escape_record(EscapeRecord(
                 escape_fn_index,
                 cpc,
                 (fwd_param_index as size_t),
@@ -50511,20 +50874,27 @@ define Planner
         procedure member_list_store_mask(mutable this: Planner, members: Vector[Member], method: String, argc: size_t) returns u64
         {
             var m: u64 0
-            var i: size_t 0
-            while i < members.length
+            let id this.member_table(members)
+            if id < 0
+                return m
+            let mx member_index
+            let base mx.bases[id as size_t]
+            let t mx.tables[id as size_t]
+            var p t.lookup(method)
+            while p > 0
             {
-                let mp members.get i
+                let pos (p - 1) as size_t
+                let mp members.get pos
                 if mp <> null
                     choose (*mp)
                         when mf: Function
                         {
-                            if mf.name = method and Planner.ret_page_arity_ok(mf, argc)
+                            if Planner.ret_page_arity_ok(mf, argc)
                                 set m: m | this.store_mask_of(Planner.store_key(mf))
                         }
                         else
                             0
-                set i: i + 1
+                set p: mx.next[base + pos] as i64
             }
             m
         }
