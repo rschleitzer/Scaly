@@ -100,12 +100,18 @@ emit_roots() {
   waitall "${pids[@]}"
 }
 # llc_objs <name>...: $OUT/<name>.ll -> $OUT/<name>.o.
+# ★-O0 (2026-09-26): these objects only build the CHECK binaries -- the seed
+# compiler that must link clean, run hello and the AOT corpus and reproduce
+# itself, and the scalyls smoke. Default codegen spent 63 s on one core for
+# scalyc.ll alone, -O0 3 s; the -O0 compiler re-emits in 17 s instead of 8 and
+# reproduces the seed byte for byte. The compiler the suites run is built by
+# tools/build-from-seed.sh (opt -O2 + llc), untouched.
 llc_objs() {
   local f pids=()
   for f in "$@"; do
     # -relocation-model=pic: x86-64 Linux PIE rejects llc's default R_X86_64_32
     # abs relocations; PIC is the Mach-O default, so this is a no-op on macOS.
-    "$LLC" -relocation-model=pic -filetype=obj "$OUT/$f.ll" -o "$OUT/$f.o" & pids+=($!)
+    "$LLC" -O0 -relocation-model=pic -filetype=obj "$OUT/$f.ll" -o "$OUT/$f.o" & pids+=($!)
   done
   waitall "${pids[@]}"
 }
