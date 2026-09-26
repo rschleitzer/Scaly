@@ -110,7 +110,9 @@ lane_lsp() {
   # `definition` over the whole tree exceeded it and answered empty (a red that
   # is the machine, not the server). The budget tests set or remove the variable
   # themselves, so the lane only moves the ceiling.
-  step lsp env SCALYLS_BUDGET_MS=300000 tests/lsp/run.sh "$BIN"
+  # SCALYLS_PREBUILT: the server phase 1's build step made from the same fresh
+  # seed (opt -O2); the suite then skips its own -O2 build of the four roots.
+  step lsp env SCALYLS_BUDGET_MS=300000 SCALYLS_PREBUILT="$ROOT/scalyc/build/scalyls" tests/lsp/run.sh "$BIN"
 }
 
 dazzle_all() {

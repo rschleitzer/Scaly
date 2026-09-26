@@ -40,6 +40,22 @@ pass=0
 fail=0
 ok()   { echo "PASS  $1"; pass=$((pass+1)); }
 bad()  { echo "FAIL  $1"; fail=$((fail+1)); }
+# The slowest checks (a server planning a whole package per request) run in
+# the background beside the rest and are collected before the summary
+# (2026-09-26): each has its own work directory under /tmp/lsp_ws and only
+# reads /tmp/scalyls. Measured alone the suite spent 122 of its 156 test
+# seconds in these six, one after the other. ★A background block may hold NO
+# ok/bad of its own: those would count in the subshell and vanish.
+BGDIR="$(mktemp -d)"
+BG_PIDS=(); BG_NAMES=(); BG_OUTS=()
+bg_add() { BG_PIDS+=("$1"); BG_NAMES+=("$2"); BG_OUTS+=("$3"); }
+bg_collect() {
+    local i
+    for i in "${!BG_PIDS[@]}"; do
+        if wait "${BG_PIDS[$i]}"; then cat "${BG_OUTS[$i]}"; ok "${BG_NAMES[$i]}"
+        else cat "${BG_OUTS[$i]}"; bad "${BG_NAMES[$i]}"; fi
+    done
+}
 
 # ---- scalyls build backend (cpp single-binary | selfhosted 4-root) --------
 LSO=""        # dir holding the shared .o objects (selfhosted only)
@@ -50,10 +66,17 @@ if [ "$MODE" = selfhosted ]; then
     LSO="$(mktemp -d)"
     trap 'rm -rf "$LSO"' EXIT
     # The four roots are independent: emit and llc each one in its own job.
+    # ★SCALYLS_PREBUILT=<server> (tools/bar.sh passes scalyc/build/scalyls,
+    # which its build step made from the SAME fresh seed with opt -O2): the
+    # server is that binary, and the objects only link the small test programs
+    # (json_test, echo, format_test), so llc runs at -O0 -- 3 s instead of the
+    # 63 s default codegen spends on scalyc.ll alone (2026-09-26).
+    LLC_LEVEL=()
+    [ -n "${SCALYLS_PREBUILT:-}" ] && LLC_LEVEL=(-O0)
     lsp_root() {
         ( ulimit -s 65520; "$SCALYC" -S --no-tests -o "$LSO/$1.ll" "$2" ) \
             || { echo "FAIL  selfhosted scalyls emission ($1)"; return 1; }
-        "$LLC" -relocation-model=pic -filetype=obj "$LSO/$1.ll" -o "$LSO/$1.o" \
+        "$LLC" ${LLC_LEVEL[@]+"${LLC_LEVEL[@]}"} -relocation-model=pic -filetype=obj "$LSO/$1.ll" -o "$LSO/$1.o" \
             || { echo "FAIL  llc $1"; return 1; }
     }
     pids=()
@@ -84,7 +107,10 @@ lsp_build_prog() {
 
 # Build the scalyls SERVER (main.scaly): $1=out-binary.
 lsp_build_server() {
-    if [ "$MODE" = selfhosted ]; then
+    if [ -n "${SCALYLS_PREBUILT:-}" ]; then
+        [ -x "$SCALYLS_PREBUILT" ] || return 1
+        cp "$SCALYLS_PREBUILT" "$1"
+    elif [ "$MODE" = selfhosted ]; then
         clang "$LSO/scalyls_main.o" "$LSO/scalyls.o" "$LSO/scalyc.o" "$LSO/scaly.o" "$LSO/fcontext.o" "$LSO/eio.o" "$LSO/ctime.o" "$LSO/panic.o" "${LINK[@]}" -o "$1" 2>/dev/null
     else
         "$SCALYC" -o "$1" packages/scalyls/0.1.0/main.scaly "${LINK[@]}" 2>/dev/null
@@ -1447,7 +1473,7 @@ if [ $rc -eq 0 ]; then ok "lsp codeAction use quickfix"; else bad "lsp codeActio
 # the parentheses would swallow, a name occurring twice on the line (which one
 # is the typo?), and a genuine dead expression, where parenthesizing `c + b`
 # would produce `c(+ b)`.
-SCALY_HOME="$(pwd)" python3 - <<'PY'
+{ SCALY_HOME="$(pwd)" python3 - <<'PY'
 import sys, json, subprocess, os, select, time, shutil
 
 def frame(o):
@@ -1627,8 +1653,8 @@ for label, src, marker in [
 s.close()
 sys.exit(1 if failures else 0)
 PY
-rc=$?
-if [ $rc -eq 0 ]; then ok "lsp codeAction gate fixes"; else bad "lsp codeAction gate fixes"; fi
+} > "$BGDIR/lsp_codeaction_gate_fixes.out" 2>&1 &
+bg_add $! "lsp codeAction gate fixes" "$BGDIR/lsp_codeaction_gate_fixes.out"
 
 # ---- callHierarchy: prepare / incoming / outgoing ----
 # prepare must resolve from a CALL SITE, not just from a declaration — that is
@@ -2799,7 +2825,7 @@ if [ $rc -eq 0 ]; then ok "lsp diagnostics past a parse error"; else bad "lsp di
 #   BOTH ROUTES the package-member route (planned via package_root#) and the
 #               program-root route (planned directly) reach the fan-out through
 #               different code and are checked separately.
-SCALY_HOME="$(pwd)" python3 - <<'PY'
+{ SCALY_HOME="$(pwd)" python3 - <<'PY'
 import sys, json, subprocess, os, select, time, shutil
 
 def frame(o):
@@ -2959,8 +2985,8 @@ check(OPEN_SIB not in d,
 s.close()
 sys.exit(1 if failures else 0)
 PY
-rc=$?
-if [ $rc -eq 0 ]; then ok "lsp package-root diagnostics"; else bad "lsp package-root diagnostics"; fi
+} > "$BGDIR/lsp_package_root_diagnostics.out" 2>&1 &
+bg_add $! "lsp package-root diagnostics" "$BGDIR/lsp_package_root_diagnostics.out"
 
 # ---- formatter: THE TREE IS THE CORPUS ------------------------------------
 # A formatter is only worth having if it agrees with the code that already
@@ -3002,7 +3028,7 @@ if [ $rc -eq 0 ]; then ok "lsp package-root diagnostics"; else bad "lsp package-
 # is reformatted into the house form, its line here must go -- which the last
 # check below enforces, so the list cannot rot into a list of excuses.
 lsp_build_prog tests/lsp/format_test.scaly /tmp/scalyls_format_test
-python3 - <<'PY'
+{ python3 - <<'PY'
 import sys, glob, os, subprocess
 
 BIN = "/tmp/scalyls_format_test"
@@ -3048,8 +3074,8 @@ check(not still_clean, "no allow-list entry is stale (a fixed file must be remov
       + ("" if not still_clean else " -- %s" % still_clean))
 sys.exit(1 if failures else 0)
 PY
-rc=$?
-if [ $rc -eq 0 ]; then ok "lsp formatter corpus"; else bad "lsp formatter corpus"; fi
+} > "$BGDIR/lsp_formatter_corpus.out" 2>&1 &
+bg_add $! "lsp formatter corpus" "$BGDIR/lsp_formatter_corpus.out"
 
 # ---- formatter over the LSP: capability, edits, and what it must NOT do ----
 # The last check is the load-bearing one. In Scaly a line break is SEMANTIC --
@@ -5263,7 +5289,7 @@ if [ $rc -eq 0 ]; then ok "lsp codeLens"; else bad "lsp codeLens"; fi
 #     Modeler.handle_namespace#) — the first draft used the second rule for both
 #   * a package lens with no absolute base must NOT be clickable (a relative path
 #     handed to vscode.Uri.file resolves against nothing)
-python3 - <<'PY'
+{ python3 - <<'PY'
 import sys, json, subprocess, os, shutil
 failures = 0
 def check(cond, label):
@@ -5416,8 +5442,8 @@ check(len(tree_pkg) == 2 and all(r[2] == "scaly.openPath" and os.path.isabs(r[3]
       "in a checkout the package lens resolves absolutely and is clickable")
 sys.exit(1 if failures else 0)
 PY
-rc=$?
-if [ $rc -eq 0 ]; then ok "lsp codeLens plan-free"; else bad "lsp codeLens plan-free"; fi
+} > "$BGDIR/lsp_codelens_plan_free.out" 2>&1 &
+bg_add $! "lsp codeLens plan-free" "$BGDIR/lsp_codelens_plan_free.out"
 
 # ---- codeLens: definitions emitted per routine (monomorphisation) ----
 # scalyls/instlens.scaly counts, per `function` / `procedure` declaration, how
@@ -5790,7 +5816,7 @@ if [ $rc -eq 0 ]; then ok "lsp codeLens storage"; else bad "lsp codeLens storage
 # COMPILED AND RUN, and the dangling one must actually print recycled bytes
 # while the pinned one prints its string. So the lens is judged against the
 # defect itself, not against a description of it.
-python3 - "$SCALYC" <<'PYSTORE'
+{ python3 - "$SCALYC" <<'PYSTORE'
 import sys, json, subprocess, os, shutil, re
 scalyc = sys.argv[1]
 failures = 0
@@ -6002,8 +6028,8 @@ check(not wrong, "every mark is attributed to a parameter of its OWN routine")
 for w in wrong[:5]: print("      ", w)
 sys.exit(1 if failures else 0)
 PYSTORE
-rc=$?
-if [ $rc -eq 0 ]; then ok "lsp codeLens unpinnable store"; else bad "lsp codeLens unpinnable store"; fi
+} > "$BGDIR/lsp_codelens_unpinnable_store.out" 2>&1 &
+bg_add $! "lsp codeLens unpinnable store" "$BGDIR/lsp_codelens_unpinnable_store.out"
 
 # ---- the answer does not depend on the stack the CLIENT gave the server ----
 # The worker plans the whole package a document belongs to, and the planner's
@@ -6014,7 +6040,7 @@ if [ $rc -eq 0 ]; then ok "lsp codeLens unpinnable store"; else bad "lsp codeLen
 # 15) with the reason on a stderr no editor shows. worker.serve_on_worker_stack#
 # runs the loop on a thread of its own size now. The check asks the same
 # question at 1 MB and at the suite's own stack and wants the same answer.
-python3 - <<'PYSTACK'
+{ python3 - <<'PYSTACK'
 import json, os, subprocess, sys
 def frame(o):
     b=json.dumps(o).encode(); return ("Content-Length: %d\r\n\r\n"%len(b)).encode()+b
@@ -6046,8 +6072,8 @@ ok = big > 0 and small == big
 print(("PASS  " if ok else "FAIL  ") + "codeLens on %s: %d lenses at 1 MB, %d at the suite's stack" % (f, small, big))
 sys.exit(0 if ok else 1)
 PYSTACK
-rc=$?
-if [ $rc -eq 0 ]; then ok "lsp answer independent of the client stack"; else bad "lsp answer independent of the client stack"; fi
+} > "$BGDIR/lsp_answer_independent_of_the_client_stack.out" 2>&1 &
+bg_add $! "lsp answer independent of the client stack" "$BGDIR/lsp_answer_independent_of_the_client_stack.out"
 
 # ---- inlayHint: where each construction is ALLOCATED ----
 # scalyls/placehints.scaly labels every construction with the placement the
@@ -7212,6 +7238,7 @@ PY
 rc=$?
 if [ $rc -eq 0 ]; then ok "lsp semantic completion"; else bad "lsp semantic completion"; fi
 
+bg_collect
 echo "-----"
 echo "PASS: $pass  FAIL: $fail"
 [ $fail -eq 0 ]

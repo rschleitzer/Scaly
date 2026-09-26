@@ -232,6 +232,15 @@ ${CLANG:-clang} "${LINKARGS[@]}" "${SCALYC_OBJS[@]}" "$WORK/fcontext.o" "$WORK/e
 
 echo "build-from-seed: OK — $OUT (from seed/, no C++)"
 
+# This compiler IS the bootstrap ROOT for the seed it was built from
+# (tools/seed-root-key.sh): cache it, so the next tools/bootstrap.sh reuses it
+# instead of building the same compiler a second time. Copied then renamed, so a
+# bootstrap never sees half a binary; the key is written last.
+if [ "$OUT" != /tmp/scalyc_seed_root ]; then
+    cp "$OUT" /tmp/scalyc_seed_root.$$ && mv /tmp/scalyc_seed_root.$$ /tmp/scalyc_seed_root \
+        && tools/seed-root-key.sh > /tmp/scalyc_seed_root.key
+fi
+
 # Build the runtime archive the self-hosted compiler links every program
 # against (/tmp/libscaly.a — the path is fixed in cli.scaly). It supplies the
 # RBMM runtime; --no-prelude keeps print/println out of it to avoid duplicate

@@ -52,7 +52,7 @@ link_stage() {
 # bootstrap). A reused ROOT still gets a runtime archive of its OWN before it
 # links stage1 — the archive in /tmp may come from any other compiler — the way
 # tools/cycle.sh does it. The Windows box always rebuilds.
-root_key() { cat seed/main.ll seed/scalyc.ll seed/scaly.ll tools/build-from-seed.sh 2>/dev/null | shasum -a 256 | cut -c1-64; }
+root_key() { tools/seed-root-key.sh; }
 if [ "$SCALY_COFF" != 1 ] && [ -f seed/scalyc.ll ] && [ -x /tmp/scalyc_seed_root ] \
      && [ "$(cat /tmp/scalyc_seed_root.key 2>/dev/null)" = "$(root_key)" ]; then
   echo "bootstrap: ROOT = seed-built compiler -> /tmp/scalyc_seed_root (reused, seed unchanged)"
