@@ -1,0 +1,59 @@
+; binary-trees — allocate and walk many perfect binary trees; the classic
+; benchmark for a memory manager. Every tree lives on the page of the call
+; that walks it and is gone when that call returns (RBMM, no collector). The
+; depths are independent: a plain `for` over them, each a pure function
+; returning a count (ROADMAP 4.8, route 1).
+
+define Tree (left: ref[Tree]?  right: ref[Tree]?)
+
+function make(depth: int) returns ref[Tree]
+{
+    if depth <= 0
+        return &Tree#(null, null)
+    &Tree#(make(depth - 1), make(depth - 1))
+}
+
+function check(t: ref[Tree]) returns int
+{
+    var n 1
+    let l t.left
+    if l <> null
+        set n: n + check(l)
+    let r t.right
+    if r <> null
+        set n: n + check(r)
+    n
+}
+
+; one tree, built and walked; its page goes when this returns
+function check_one(depth: int) returns int
+    check(make(depth))
+
+function depth_total(depth: int, iterations: int) returns int
+{
+    var total 0
+    var i 0
+    while i < iterations
+    {
+        set total: total + check_one(depth)
+        set i: i + 1
+    }
+    total
+}
+
+let max_depth 21
+let stretch check_one(max_depth + 1)
+let long_lived make(max_depth)
+
+let n_depths (max_depth - 4) / 2 + 1
+var totals Vector[int](n_depths as size_t)
+for k in n_depths
+{
+    let d 4 + 2 * k
+    totals.put(k as size_t, depth_total(d, 1 << (max_depth - d + 4)))
+}
+
+var sum stretch
+for t in totals
+    set sum: sum + t
+print("binary-trees `max_depth`: `sum` nodes checked, long-lived `check(long_lived)`")

@@ -1,0 +1,81 @@
+; spectral-norm — the largest singular value of the infinite matrix
+; A(i, j) = 1 / ((i + j)(i + j + 1) / 2 + i + 1), by power iteration.
+; Each matrix-vector product is a plain `for` over the rows, every row a pure
+; function of the input vector (ROADMAP 4.8, route 1).
+
+function sqrt(x: double) returns double extern
+
+function eval_a(i: int, j: int) returns double
+    1.0 / ((((i + j) * (i + j + 1)) / 2 + i + 1) as double)
+
+function av_row(i: int, v: Vector[double], n: int) returns double
+{
+    var sum: double 0.0
+    var j 0
+    while j < n
+    {
+        set sum: sum + eval_a(i, j) * v[j as size_t]
+        set j: j + 1
+    }
+    sum
+}
+
+function atv_row(i: int, v: Vector[double], n: int) returns double
+{
+    var sum: double 0.0
+    var j 0
+    while j < n
+    {
+        set sum: sum + eval_a(j, i) * v[j as size_t]
+        set j: j + 1
+    }
+    sum
+}
+
+procedure mul_av(v: Vector[double], mutable out: Vector[double], n: int)
+{
+    for i in n
+        out.put(i as size_t, av_row(i, v, n))
+}
+
+procedure mul_atv(v: Vector[double], mutable out: Vector[double], n: int)
+{
+    for i in n
+        out.put(i as size_t, atv_row(i, v, n))
+}
+
+procedure mul_atav(v: Vector[double], mutable out: Vector[double], mutable tmp: Vector[double], n: int)
+{
+    mul_av(v, tmp, n)
+    mul_atv(tmp, out, n)
+}
+
+let n 10000
+var u Vector[double](n as size_t)
+var v Vector[double](n as size_t)
+var tmp Vector[double](n as size_t)
+var k 0
+while k < n
+{
+    u.put(k as size_t, 1.0)
+    set k: k + 1
+}
+var step 0
+while step < 10
+{
+    mul_atav(u, v, tmp, n)
+    mul_atav(v, u, tmp, n)
+    set step: step + 1
+}
+var vbv: double 0.0
+var vv: double 0.0
+set k: 0
+while k < n
+{
+    set vbv: vbv + u[k as size_t] * v[k as size_t]
+    set vv: vv + v[k as size_t] * v[k as size_t]
+    set k: k + 1
+}
+let norm sqrt(vbv / vv)
+let scaled (norm * 1000000000.0) as i64
+print("spectral-norm `n`: `scaled` (x 1e-9)")

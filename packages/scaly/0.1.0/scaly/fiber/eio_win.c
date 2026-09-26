@@ -745,6 +745,13 @@ int scaly_guard_install(int (*classify)(void*))
 
 int scaly_eio_ncpu(void)
 {
+    /* SCALY_WORKERS=<n> caps the default pool, as in eio.c */
+    const char *w = getenv("SCALY_WORKERS");
+    if (w != NULL && *w != '\0') {
+        long k = strtol(w, NULL, 10);
+        if (k >= 1)
+            return (int)k;
+    }
     SYSTEM_INFO si;
     GetSystemInfo(&si);
     return (int)si.dwNumberOfProcessors;

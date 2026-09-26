@@ -47,6 +47,7 @@
 #include <netinet/in.h>
 #include <signal.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <time.h>
@@ -572,6 +573,15 @@ int scaly_eio_accept(int fd)
  * all targets. Never less than 1. */
 int scaly_eio_ncpu(void)
 {
+    /* SCALY_WORKERS=<n> caps the default pool (the OMP_NUM_THREADS idea):
+     * SCALY_WORKERS=1 is the sequential baseline a self-scaling measurement
+     * compares against, without touching the program (tests/selfscale). */
+    const char *w = getenv("SCALY_WORKERS");
+    if (w != NULL && *w != '\0') {
+        long k = strtol(w, NULL, 10);
+        if (k >= 1)
+            return (int)k;
+    }
     long n = sysconf(_SC_NPROCESSORS_ONLN);
     if (n < 1)
         return 1;

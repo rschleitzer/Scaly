@@ -1,0 +1,42 @@
+; mandelbrot — how many points of an n x n grid lie in the Mandelbrot set.
+; Written the way a Scaly author would: a pure function per row, each row's
+; count kept in a vector, summed at the end. No annotation anywhere; whether
+; the row loop runs in parallel is the engine's call (ROADMAP 4.8, route 1).
+
+function row_count(y: int, n: int) returns int
+{
+    let ci (2.0 * (y as double) / (n as double)) - 1.0
+    var count 0
+    var x 0
+    while x < n
+    {
+        let cr (2.0 * (x as double) / (n as double)) - 1.5
+        var zr: double 0.0
+        var zi: double 0.0
+        var i 0
+        var inside true
+        while i < 50 and inside
+        {
+            let tr zr * zr - zi * zi + cr
+            set zi: 2.0 * zr * zi + ci
+            set zr: tr
+            if zr * zr + zi * zi > 4.0
+                set inside: false
+            set i: i + 1
+        }
+        if inside
+            set count: count + 1
+        set x: x + 1
+    }
+    count
+}
+
+let n 8000
+var counts Vector[int](n as size_t)
+for y in n
+    counts.put(y as size_t, row_count(y, n))
+
+var total 0
+for c in counts
+    set total: total + c
+print("mandelbrot `n`: `total` points inside")
