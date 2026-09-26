@@ -5094,7 +5094,6 @@ define Planner
 
 
 
-        procedure check_file_glob_ambiguities(mutable this: Planner, f: String) @deep true linked
 
 
 
@@ -5118,6 +5117,19 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure check_file_glob_ambiguities(mutable this: Planner, f: String, heads: ref[Array[size_t]], next: ref[Array[size_t]]) @deep true linked
 
 
 
@@ -49730,6 +49742,10 @@ define Planner
 
 
 
+
+
+
+
         ; plan_concept: wrap a Model.Concept (definition + generics) into
         ; PlannedConcept. Generic parameters are not instantiated here —
         ; that's the job of the separate instantiate-generic pass (TODO).
@@ -50148,7 +50164,31 @@ define Planner
         ; are left null — the per-kind planned data lives inside the
         ; PlannedModule tree for now. The separate caches come online
         ; once the instantiate-generic pass is ported.
+        ; SCALYC_PHASE_TIMES=1: one stderr line per compile phase, `phase <name>
+        ; <monotonic ns>` -- plan_program#'s steps, the first plan_module#'s
+        ; page fixpoints, cli.run's purity gate and emission. The differences
+        ; are the phase times (2026-09-26: planning bodies is ~40 % of a
+        ; compile in every package, which is what a parallel planner could
+        ; win at most; ROADMAP 4.8). Off, it costs one getenv per mark.
+        procedure phase_mark(this: Planner, phase_name: pointer[const_char]) @deep true io linked
+
+
+
+
+
+
+
+
+
+
         procedure plan_program(mutable this: Planner, mutable prog: Program) @page true @direct true @stores true @ret_caller true @deep true returns ref[Plan]? io linked
+
+
+
+
+
+
+
 
 
 

@@ -5056,6 +5056,41 @@ define Planner
             if use_vis_enforce = false
                 return
 
+            ; The registry grouped by name, once for every file: groups in the
+            ; order their name first occurs, a group's positions ascending --
+            ; the order of the two scans it replaces (a dedup against every
+            ; name seen, then every concept again per new name; 1.3 s of the
+            ; tscaly root, 2026-09-26, SCALYC_PHASE_TIMES).
+            var cap: size_t 1024
+            while cap < (concepts.length + 1) * 2
+                set cap: cap * 2
+            var by_name ConceptIndex.create(cap)
+            var heads Array[size_t]()
+            var tails Array[size_t]()
+            var next Array[size_t]()
+            var ci: size_t 0
+            while ci < concepts.length
+            {
+                next.add(0)
+                let kp concepts.get ci
+                if kp <> null
+                {
+                    let g by_name.lookup(kp.key)
+                    if g < 0
+                    {
+                        by_name.insert(kp.key, heads.length)
+                        heads.add ci
+                        tails.add ci
+                    }
+                    else
+                    {
+                        next.put(tails[g as size_t], ci + 1)
+                        tails.put(g as size_t, ci)
+                    }
+                }
+                set ci: ci + 1
+            }
+
             var seen_files Array[String]()
             var fi: size_t 0
             while fi < use_vis_files.length
@@ -5085,7 +5120,7 @@ define Planner
                             {
                                 let cf_copy String(cur_file)
                                 seen_files.add cf_copy
-                                this.check_file_glob_ambiguities(cur_file)
+                                this.check_file_glob_ambiguities(cur_file, &heads, &next)
                             }
                         }
                     }
@@ -5094,116 +5129,93 @@ define Planner
             }
         }
 
-        procedure check_file_glob_ambiguities(mutable this: Planner, f: String)
+        procedure check_file_glob_ambiguities(mutable this: Planner, f: String, heads: ref[Array[size_t]], next: ref[Array[size_t]])
         {
-            var seen_names Array[String]()
-            var ci: size_t 0
-            while ci < concepts.length
+            var g: size_t 0
+            while g < heads.length
             {
-                let kp concepts.get ci
+                let first heads[g]
+                let kp concepts.get first
                 if kp <> null
                 {
                     let name kp.key
-                    var dup false
-                    var di: size_t 0
-                    while di < seen_names.length
+                    if this.use_vis_file_has_explicit(f, name) = false
                     {
-                        let sp seen_names.get di
-                        if sp <> null
+                        var origins Array[String]()
+                        var p: size_t first + 1
+                        while p > 0
                         {
-                            if sp = name
-                                set dup: true
-                        }
-                        set di: di + 1
-                    }
-                    if dup = false
-                    {
-                        let nm_copy String(name)
-                        seen_names.add nm_copy
-                        if this.use_vis_file_has_explicit(f, name) = false
-                        {
-                            var origins Array[String]()
-                            var cj: size_t 0
-                            while cj < concepts.length
+                            let cj p - 1
+                            let of_ptr concept_origin_files.get cj
+                            let op_ptr concept_origin_paths.get cj
+                            if of_ptr <> null
                             {
-                                let kp2 concepts.get cj
-                                if kp2 <> null
+                                if op_ptr <> null
                                 {
-                                    if kp2.key = name
+                                    var counts false
+                                    if (*of_ptr) <> f
                                     {
-                                        let of_ptr concept_origin_files.get cj
-                                        let op_ptr concept_origin_paths.get cj
-                                        if of_ptr <> null
+                                        if this.use_vis_origin_is_prelude(*op_ptr, *of_ptr) = false
                                         {
-                                            if op_ptr <> null
+                                            if this.use_vis_file_glob_supplies(f, name, *op_ptr)
+                                                set counts: true
+                                        }
+                                    }
+                                    if counts
+                                    {
+                                        var have false
+                                        var oi: size_t 0
+                                        while oi < origins.length
+                                        {
+                                            let ep origins.get oi
+                                            if ep <> null
                                             {
-                                                var counts false
-                                                if (*of_ptr) <> f
-                                                {
-                                                    if this.use_vis_origin_is_prelude(*op_ptr, *of_ptr) = false
-                                                    {
-                                                        if this.use_vis_file_glob_supplies(f, name, *op_ptr)
-                                                            set counts: true
-                                                    }
-                                                }
-                                                if counts
-                                                {
-                                                    var have false
-                                                    var oi: size_t 0
-                                                    while oi < origins.length
-                                                    {
-                                                        let ep origins.get oi
-                                                        if ep <> null
-                                                        {
-                                                            if ep = (*op_ptr)
-                                                                set have: true
-                                                        }
-                                                        set oi: oi + 1
-                                                    }
-                                                    if have = false
-                                                    {
-                                                        let og_copy String((*op_ptr))
-                                                        origins.add og_copy
-                                                    }
-                                                }
+                                                if ep = (*op_ptr)
+                                                    set have: true
                                             }
+                                            set oi: oi + 1
+                                        }
+                                        if have = false
+                                        {
+                                            let og_copy String((*op_ptr))
+                                            origins.add og_copy
                                         }
                                     }
                                 }
-                                set cj: cj + 1
                             }
-                            if origins.length >= 2
+                            set p: next[cj]
+                        }
+                        if origins.length >= 2
+                        {
+                            var sb StringBuilder()
+                            sb.append "ambiguous glob import in "
+                            sb.append f
+                            sb.append ": "
+                            sb.append name
+                            sb.append " is supplied by "
+                            sb.append(Planner.size_to_string(origins.length))
+                            sb.append " globbed modules ("
+                            var mi: size_t 0
+                            while mi < origins.length
                             {
-                                var sb StringBuilder()
-                                sb.append "ambiguous glob import in "
-                                sb.append f
-                                sb.append ": "
-                                sb.append name
-                                sb.append " is supplied by "
-                                sb.append(Planner.size_to_string(origins.length))
-                                sb.append " globbed modules ("
-                                var mi: size_t 0
-                                while mi < origins.length
-                                {
-                                    if mi > 0
-                                        sb.append ", "
-                                    let ep origins.get mi
-                                    if ep <> null
-                                        sb.append((*ep))
-                                    set mi: mi + 1
-                                }
-                                sb.append "); add an explicit use to disambiguate"
-                                ; The message is stored in this.diagnostics
-                                ; beyond this frame, so allocate it on this's
-                                ; region (this function takes no caller page).
-                                let amb_local sb.to_string()
-                                let amb_msg String^this(amb_local)
-                                this.add_diagnostic(Span(0, 0), amb_msg)
+                                if mi > 0
+                                    sb.append ", "
+                                let ep origins.get mi
+                                if ep <> null
+                                    sb.append((*ep))
+                                set mi: mi + 1
                             }
+                            sb.append "); add an explicit use to disambiguate"
+                            ; The message is stored in this.diagnostics
+                            ; beyond this frame, so allocate it on this's
+                            ; region (this function takes no caller page).
+                            let amb_local sb.to_string()
+                            let amb_msg String^this(amb_local)
+                            this.add_diagnostic(Span(0, 0), amb_msg)
                         }
                     }
                 }
-                set ci: ci + 1
+                set g: g + 1
             }
         }
 
@@ -49648,6 +49660,8 @@ define Planner
             }
 
             this.register_module_concepts(m)
+            if transitive_page_built = false
+                this.phase_mark("B0-module-concepts-registered")
 
             ; Build the transitive page-need set once, after the first (top-
             ; level) module's whole tree is registered (siblings were seeded
@@ -49658,7 +49672,9 @@ define Planner
             if transitive_page_built = false
             {
                 this.build_transitive_page_set()
+                this.phase_mark("B1-transitive-page-set")
                 this.build_return_residence_set()
+                this.phase_mark("B2-return-residence-set")
                 set transitive_page_built: true
             }
 
@@ -50148,8 +50164,26 @@ define Planner
         ; are left null — the per-kind planned data lives inside the
         ; PlannedModule tree for now. The separate caches come online
         ; once the instantiate-generic pass is ported.
+        ; SCALYC_PHASE_TIMES=1: one stderr line per compile phase, `phase <name>
+        ; <monotonic ns>` -- plan_program#'s steps, the first plan_module#'s
+        ; page fixpoints, cli.run's purity gate and emission. The differences
+        ; are the phase times (2026-09-26: planning bodies is ~40 % of a
+        ; compile in every package, which is what a parallel planner could
+        ; win at most; ROADMAP 4.8). Off, it costs one getenv per mark.
+        procedure phase_mark(this: Planner, phase_name: pointer[const_char])
+        {
+            if getenv("SCALYC_PHASE_TIMES") = null
+                return
+            scaly_eputs "phase "
+            scaly_eputs phase_name
+            scaly_eputs " "
+            scaly_eputi(scaly_eio_now_ns())
+            scaly_eputnl()
+        }
+
         procedure plan_program(mutable this: Planner, mutable prog: Program) returns ref[Plan]?
         {
+            this.phase_mark("A0-plan-start")
             ; Stash the program's main-module Use aliases up front
             ; so the dotted-call extern-decl gate can consult them
             ; while planning loaded-package namespace bodies.
@@ -50161,6 +50195,7 @@ define Planner
             ; references (main.scaly -> cli.scaly etc.) before it
             ; starts planning the primary module's members.
             this.register_sibling_programs()
+            this.phase_mark("A1-siblings-registered")
 
             ; NOTE: a pre-pass planning all module globals here (so bodies
             ; could read LATER-planned modules' globals) was tried and
@@ -50197,7 +50232,9 @@ define Planner
             ; cli.run::register_packages).
 
             let planned_main this.plan_module(prog.module_)
+            this.phase_mark("C1-module-bodies-planned")
             let planned_stmts this.plan_statements(prog.statements)
+            this.phase_mark("C2-statements-planned")
 
             ; --jit only (jit_dep_bodies): plan the bodies of non-prelude loaded
             ; packages so their functions are emitted into the JIT module and
@@ -50210,11 +50247,13 @@ define Planner
             ; supplying the same concept name into one file). Registration
             ; and the use tables are complete by here.
             this.check_glob_ambiguities()
+            this.phase_mark("D1-glob-check")
 
             ; Escape checker (RBMM blocker C), Vector 3: pass-to-storing-callee.
             ; Runs once instantiated_functions is fully populated; appends a
             ; hard diagnostic (failed at cli.run) on a detected escape.
             this.check_interprocedural_escapes()
+            this.phase_mark("D2-interprocedural-escapes")
 
             ; Channel move checker (milestone 1.4): a use of a channel-sent
             ; message binding after its Channel.send is a hard diagnostic
@@ -50225,6 +50264,7 @@ define Planner
             ; diagnostic (2026-08-04) — it used to be silent, and so was the
             ; mis-emitted call it was meant to make visible.
             this.check_use_paths()
+            this.phase_mark("D3-moves-and-use-paths")
 
             var stmts_holder Vector[PlannedStatement](planned_stmts)
             var structs_holder Vector[PlannedStructure](instantiated_structures)

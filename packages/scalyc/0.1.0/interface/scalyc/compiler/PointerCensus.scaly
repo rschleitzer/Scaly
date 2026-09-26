@@ -109,6 +109,7 @@ use scalyc.compiler.Model.*
 use scalyc.compiler.Plan.*
 use scalyc.compiler.Planner.*
 use scaly.os.File
+use scalyc.compiler.ConceptIndex.ConceptIndex
 
 ; Dedupe table size: a power of two (the probe mask is DD_CAP - 1). The table
 ; stops admitting new keys at half load and every later site is recorded
@@ -190,6 +191,9 @@ define PointerCensus
         ; root's plan.functions, so `memcpy` from the stdlib would otherwise
         ; read as unresolved.
         extern_names: Array[String]
+        ; is_extern_name#'s set over extern_names (it scanned them all per
+        ; ask, from every write-census walk; 2026-09-26)
+        var extern_set: ConceptIndex
         var n_arg_extern: size_t
         var n_arg_unresolved: size_t
         var n_h_ptr_ref: size_t
@@ -222,6 +226,7 @@ define PointerCensus
     )
     {
         init() linked
+
 
 
 
@@ -721,13 +726,7 @@ define PointerCensus
 
 
 
-        procedure remember_extern(mutable this: PointerCensus, name: String) @ret_nonlocal true @deep true linked
-
-
-
-
-
-        function is_extern_name(this: PointerCensus, name: String) @ret_nonlocal true @deep true returns bool linked
+        procedure remember_extern(mutable this: PointerCensus, name: String) @deep true linked
 
 
 
@@ -738,6 +737,17 @@ define PointerCensus
 
 
 
+
+
+
+
+
+
+
+
+
+
+        function is_extern_name(this: PointerCensus, name: String) @ret_param_0 true @deep true returns bool linked
 
 
         ; Dependency packages: only their extern NAMES are wanted.

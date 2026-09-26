@@ -45,6 +45,7 @@ use scalyc.compiler.Model.*
 use scalyc.compiler.Plan.*
 use scalyc.compiler.Planner.*
 use scalyc.compiler.PointerCensus.PointerCensus
+use scalyc.compiler.ConceptIndex.ConceptIndex
 use scaly.os.File
 
 define WC_GLOBAL u64 0x8000000000000000
@@ -70,6 +71,13 @@ define WriteCensus
         var plan_functions: ref[Vector[PlannedFunction]]?
         ; the plan's records, for a written FIELD's declaration (R2: `var`)
         var plan_structures: ref[Vector[PlannedStructure]]?
+        ; field_is_var#'s lookup of a hop's record: the FIRST structure of a
+        ; mangled name / of a plain name, entered once in analyze#. It scanned
+        ; every planned structure per field store, per round -- and read two
+        ; environment variables each time (let_probe holds SCALYC_LET_PROBE).
+        var struct_by_mangled: ConceptIndex
+        var struct_by_name: ConceptIndex
+        var let_probe: bool
         ; R2: stores into a `let` field of an object that is already published
         var n_let_sites: size_t
         let_offsets: Array[size_t]
@@ -237,6 +245,9 @@ define WriteCensus
             set pc: null
             set plan_functions: null
             set plan_structures: null
+            set struct_by_mangled: ConceptIndex()
+            set struct_by_name: ConceptIndex()
+            set let_probe: false
             set n_let_sites: 0
             set let_offsets: Array[size_t]^this()
             set let_texts: Array[String]^this()
@@ -356,6 +367,7 @@ define WriteCensus
             census.index_functions()
             set plan_functions: plan.functions
             set plan_structures: plan.structures
+            this.index_structures()
             if plan.functions = null
                 return
             if check_mode
@@ -3475,8 +3487,20 @@ define WriteCensus
 
         ; one walk of every function body; a violation is a write outside the
         ; page parameters
+        procedure wc_mark(this: WriteCensus, phase_name: pointer[const_char])
+        {
+            if getenv("SCALYC_PHASE_TIMES") = null
+                return
+            scaly_eputs "phase "
+            scaly_eputs phase_name
+            scaly_eputs " "
+            scaly_eputi(scaly_eio_now_ns())
+            scaly_eputnl()
+        }
+
         procedure run_check(mutable this: WriteCensus, model: ref[Program])
         {
+            this.wc_mark("E0a-run-check-start")
             this.collect_ambient_module(model.module_, false)
             var ai: size_t 0
             while ai < model.packages.length
@@ -3495,10 +3519,14 @@ define WriteCensus
                     this.collect_purity_module((*pkg))
                 set pi: pi + 1
             }
+            this.wc_mark("E0b-collected-ambient-purity")
             this.learn_returned_params()
+            this.wc_mark("E0c-learn-returned-params")
             this.learn_returned_globals()
+            this.wc_mark("E0d-learn-returned-globals")
             let fns plan_functions as ref[Vector[PlannedFunction]]
             this.learn_reads(fns)
+            this.wc_mark("E0e-learn-reads")
             set reporting: true
             var i: size_t 0
             while i < fns.length
@@ -4518,6 +4546,33 @@ define WriteCensus
         ; of the hop's parent record in the plan, found by mangled name and
         ; field index (by name where the index does not line up).
         ; (a procedure while it carries the SCALYC_LET_PROBE print: a function performs no I/O)
+        ; Enter every planned structure under its mangled and its plain name,
+        ; the first of each winning (field_is_var#'s scan stopped at the first).
+        procedure index_structures(mutable this: WriteCensus)
+        {
+            set let_probe: getenv("SCALYC_LET_PROBE") <> null
+            if plan_structures = null
+                return
+            let structs plan_structures
+            var cap: size_t 1024
+            while cap < (structs.length + 1) * 2
+                set cap: cap * 2
+            set struct_by_mangled: ConceptIndex.create(cap)
+            set struct_by_name: ConceptIndex.create(cap)
+            var i: size_t 0
+            while i < structs.length
+            {
+                let sp structs.get i
+                if sp <> null
+                {
+                    if sp.mangled_name.get_length() > 0
+                        struct_by_mangled.insert_if_absent(sp.mangled_name, i)
+                    struct_by_name.insert_if_absent(sp.name, i)
+                }
+                set i: i + 1
+            }
+        }
+
         procedure field_is_var(this: WriteCensus, hop: PlannedMemberAccess) returns bool
         {
             if plan_structures = null
@@ -4548,7 +4603,7 @@ define WriteCensus
                     }
             }
             let structs plan_structures
-            if getenv("SCALYC_LET_PROBE") <> null
+            if let_probe
             {
                 scaly_eputs "let-probe: field "
                 scaly_eputs(hop.name.to_c_string())
@@ -4568,71 +4623,57 @@ define WriteCensus
             ; (`SchedTask /` in the probe; a generic instantiation carries
             ; `_Z5ArrayIiE`), so the mangled comparison alone found only the
             ; generics -- the name decides where the mangled name is empty.
-            var i: size_t 0
-            while i < structs.length
+            var at: i64 0 - 1
+            if record.mangled_name.get_length() > 0
+                set at: struct_by_mangled.lookup(record.mangled_name)
+            else
+                set at: struct_by_name.lookup(record.name)
+            if at < 0
+                return false
+            let sp structs.get(at as size_t)
+            if sp = null
+                return false
+            if sp.properties = null
+                return false
+            let props sp.properties
+            var j: size_t 0
+            while j < props.length
             {
-                let sp structs.get i
-                if sp <> null
-                {
-                    var same false
-                    if record.mangled_name.get_length() > 0
+                let pp props.get j
+                if pp <> null
+                    if pp.name = hop.name
                     {
-                        if sp.mangled_name = record.mangled_name
-                            set same: true
-                    }
-                    else
-                    {
-                        if sp.name = record.name
-                            set same: true
-                    }
-                    if same
-                    {
-                        if sp.properties = null
-                            return false
-                        let props sp.properties
-                        var j: size_t 0
-                        while j < props.length
+                        if let_probe
                         {
-                            let pp props.get j
-                            if pp <> null
-                                if pp.name = hop.name
+                            scaly_eputs "let-probe:   matched "
+                            scaly_eputs(sp.name.to_c_string())
+                            scaly_eputs " props "
+                            scaly_eputi(props.length as i64)
+                            scaly_eputs " field "
+                            scaly_eputs(pp.name.to_c_string())
+                            scaly_eputs " attrs "
+                            if pp.attributes = null
+                                scaly_eputs "null"
+                            else
+                            {
+                                let al pp.attributes as ref[Vector[PlannedAttribute]]
+                                var q: size_t 0
+                                while q < al.length
                                 {
-                                    if getenv("SCALYC_LET_PROBE") <> null
+                                    let aq al.get q
+                                    if aq <> null
                                     {
-                                        scaly_eputs "let-probe:   matched "
-                                        scaly_eputs(sp.name.to_c_string())
-                                        scaly_eputs " props "
-                                        scaly_eputi(props.length as i64)
-                                        scaly_eputs " field "
-                                        scaly_eputs(pp.name.to_c_string())
-                                        scaly_eputs " attrs "
-                                        if pp.attributes = null
-                                            scaly_eputs "null"
-                                        else
-                                        {
-                                            let al pp.attributes as ref[Vector[PlannedAttribute]]
-                                            var q: size_t 0
-                                            while q < al.length
-                                            {
-                                                let aq al.get q
-                                                if aq <> null
-                                                {
-                                                    scaly_eputs(aq.name.to_c_string())
-                                                    scaly_eputs ","
-                                                }
-                                                set q: q + 1
-                                            }
-                                        }
-                                        scaly_eputs "\n"
+                                        scaly_eputs(aq.name.to_c_string())
+                                        scaly_eputs ","
                                     }
-                                    return WriteCensus.attributes_have_var(pp.attributes)
+                                    set q: q + 1
                                 }
-                            set j: j + 1
+                            }
+                            scaly_eputs "\n"
                         }
-                        return false
+                        return WriteCensus.attributes_have_var(pp.attributes)
                     }
-                }
-                set i: i + 1
+                set j: j + 1
             }
             false
         }

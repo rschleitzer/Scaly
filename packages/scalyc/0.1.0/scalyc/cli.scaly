@@ -658,13 +658,16 @@ define cli
                 var purity_gate WriteCensus.WriteCensus()
                 set purity_gate.check_mode: true
                 set purity_gate.diagnostics: true
+                planner.phase_mark("E0-before-purity-gate")
                 purity_gate.analyze(plan, &model, &gate_census)
+                planner.phase_mark("E0z-purity-analyze-done")
                 if purity_gate.n_violations > 0
                 {
                     cli.print_located("", &purity_gate.report_files, &purity_gate.report_offsets, &purity_gate.report_texts)
                     return 4
                 }
                 purity_gate.mark_stub_purity(plan)
+                planner.phase_mark("E1-purity-gate")
                 if opts.interface_facts
                 {
                     let facts planner.interface_facts(model.module_)
@@ -776,6 +779,7 @@ define cli
         if opts.debug
             emitter.set_debug_source(opts.input_file, source)
         let emit_result emitter.emit(plan, program_name)
+        planner.phase_mark("E2-emitted")
 
         if emit_result = false
         {

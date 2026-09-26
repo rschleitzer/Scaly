@@ -45,6 +45,7 @@ use scalyc.compiler.Model.*
 use scalyc.compiler.Plan.*
 use scalyc.compiler.Planner.*
 use scalyc.compiler.PointerCensus.PointerCensus
+use scalyc.compiler.ConceptIndex.ConceptIndex
 use scaly.os.File
 
 define WC_GLOBAL u64 0x8000000000000000
@@ -70,6 +71,13 @@ define WriteCensus
         var plan_functions: ref[Vector[PlannedFunction]]?
         ; the plan's records, for a written FIELD's declaration (R2: `var`)
         var plan_structures: ref[Vector[PlannedStructure]]?
+        ; field_is_var#'s lookup of a hop's record: the FIRST structure of a
+        ; mangled name / of a plain name, entered once in analyze#. It scanned
+        ; every planned structure per field store, per round -- and read two
+        ; environment variables each time (let_probe holds SCALYC_LET_PROBE).
+        var struct_by_mangled: ConceptIndex
+        var struct_by_name: ConceptIndex
+        var let_probe: bool
         ; R2: stores into a `let` field of an object that is already published
         var n_let_sites: size_t
         let_offsets: Array[size_t]
@@ -334,10 +342,14 @@ define WriteCensus
 
 
 
+
+
+
         ; ================================================================
         ; Entry point: the pointer census's tables, the fixpoint, the report.
         ; ================================================================
         procedure analyze(mutable this: WriteCensus, plan: Plan, model: ref[Program], mutable census: ref[PointerCensus]) @deep true @deep_this_10 true @deep_whole_8 true @deep_into_3_2 true io linked
+
 
 
 
@@ -3475,7 +3487,23 @@ define WriteCensus
 
         ; one walk of every function body; a violation is a write outside the
         ; page parameters
+        procedure wc_mark(this: WriteCensus, phase_name: pointer[const_char]) @deep true io linked
+
+
+
+
+
+
+
+
+
+
         procedure run_check(mutable this: WriteCensus, model: ref[Program]) @deep true io linked
+
+
+
+
+
 
 
 
@@ -4518,7 +4546,9 @@ define WriteCensus
         ; of the hop's parent record in the plan, found by mangled name and
         ; field index (by name where the index does not line up).
         ; (a procedure while it carries the SCALYC_LET_PROBE print: a function performs no I/O)
-        procedure field_is_var(this: WriteCensus, hop: PlannedMemberAccess) @ret_nonlocal true @deep true returns bool io linked
+        ; Enter every planned structure under its mangled and its plain name,
+        ; the first of each winning (field_is_var#'s scan stopped at the first).
+        procedure index_structures(mutable this: WriteCensus) @deep true io linked
 
 
 
@@ -4533,6 +4563,17 @@ define WriteCensus
 
 
 
+
+
+
+
+
+
+
+
+
+
+        procedure field_is_var(this: WriteCensus, hop: PlannedMemberAccess) @ret_nonlocal true @deep true returns bool linked
 
 
 

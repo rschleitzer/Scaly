@@ -970,6 +970,10 @@ define cli
 
 
 
+
+
+
+
     ; Extract program name from file path
     ; e.g., "/path/to/hello.scaly" -> "hello"
     ; Pre-register packages from the model into the planner's cache so
