@@ -1,6 +1,17 @@
 #!/bin/bash
 # Clean bootstrap from a fresh checkout to a working self-hosted stage-2.
 #   tools/bootstrap.sh            -> /tmp/scalyc_stage2 (+ stage1)
+#   tools/bootstrap.sh --stage1   -> /tmp/scalyc_stage1 only, for the inner loop
+#
+# --stage1 stops once stage1 and the runtime archive it builds are ready (~9 s
+# instead of ~20). stage1 IS the new compiler — the ROOT built it from the tree —
+# and it runs as fast as stage2 (both are compiled without IR optimization), so
+# a targeted suite loses nothing: pass it explicitly (`tests/regress/run.sh
+# /tmp/scalyc_stage1`). What it does not show is that the new compiler compiles
+# ITSELF: stage2, tools/seed.sh and the bar still owe that before a commit.
+# /tmp/scalyc_stage2 is REMOVED in this mode — it no longer matches the tree,
+# and every suite takes it by default: a stale one would test the OLD compiler
+# without a word (the stale-stage2 trap).
 #
 # Steps: build the bootstrap ROOT, then
 #   ROOT   -> stage1 (compiles the scalyc package),
@@ -18,6 +29,8 @@
 #   C++ stage-0 fallback (no committed seed).
 set -e
 cd "$(dirname "$0")/.."
+STAGE1_ONLY=0
+[ "${1:-}" = "--stage1" ] && STAGE1_ONLY=1
 source tools/llvm-env.sh
 [ "$llvm_env_ok" = "1" ] || { echo "bootstrap: FAIL — LLVM 20 not found"; exit 1; }
 
@@ -73,14 +86,39 @@ else
 fi
 
 echo "bootstrap: ROOT -> stage1"
+# The exit status of the block below is lost in its filter pipe, so nothing a
+# previous run left may survive into this one: a compile error in the tree used
+# to leave the OLD /tmp/sc0.o in place, the archive took it, and a freshly
+# linked stage1 was the old compiler, rc 0 (found 2026-09-26 with --stage1,
+# where no second compile catches it). Both products are checked below.
+rm -f "/tmp/scalyc_stage1${SCALY_EXE:-}" /tmp/sc0.o
 # The self-hosted ROOT compiling main.scaly emits only main + external refs to
 # the compiler package; the package must be compiled to an archive and linked
 # (the same two-step as stage1 -> stage2).
 ( ulimit -s 65520
-  "$ROOT" -c -o /tmp/sc0.o packages/scalyc/0.1.0/scalyc.scaly
+  "$ROOT" -c -o /tmp/sc0.o packages/scalyc/0.1.0/scalyc.scaly || exit 1
   rm -f /tmp/libscalyc0.a; ar rcs /tmp/libscalyc0.a /tmp/sc0.o
   link_stage "$ROOT" /tmp/scalyc_stage1 /tmp/libscalyc0.a
 ) 2>&1 | grep -v 'ld: warning' || true
+[ -f /tmp/sc0.o ] && [ -x "/tmp/scalyc_stage1${SCALY_EXE:-}" ] \
+  || { echo "bootstrap: FAIL — the ROOT could not build stage1 from the tree (errors above)"; exit 1; }
+
+if [ "$STAGE1_ONLY" = 1 ]; then
+  rm -f "/tmp/scalyc_stage2${SCALY_EXE:-}"
+  if [ "$SCALY_COFF" = 1 ]; then
+    tools/win-archive.sh /tmp/scalyc_stage1 > /dev/null
+  else
+    echo "bootstrap: stage1 -> /tmp/libscaly.a (runtime archive)"
+    ( ulimit -s 65520; /tmp/scalyc_stage1 -c --no-prelude --no-tests -o /tmp/libscaly.o packages/scaly/0.1.0/scaly.scaly )
+    tools/fcontext.sh /tmp/fcontext.o
+    tools/eio.sh /tmp/eio.o
+    tools/ctime.sh /tmp/ctime.o
+    tools/panic.sh /tmp/panic.o
+    rm -f /tmp/libscaly.a; ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o /tmp/ctime.o /tmp/panic.o
+  fi
+  echo "bootstrap: OK -> /tmp/scalyc_stage1 (stage 1 only; /tmp/scalyc_stage2 removed — pass the binary to the suites)"
+  exit 0
+fi
 
 # Rebuild the scaly-package runtime archive with stage1 so stage2's -o link
 # (cli.run appends /tmp/libscaly.a) picks up a fix-consistent runtime. A STALE
