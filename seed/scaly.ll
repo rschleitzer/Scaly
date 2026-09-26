@@ -2655,6 +2655,90 @@ if.end:                                           ; preds = %entry
   ret void
 }
 
+define linkonce_odr void @_Z23scaly_region_adopt_pushP3u64R4Page(ptr %0, ptr %1) {
+entry:
+  %as.ptrtoint = ptrtoint ptr %1 to i64
+  %add = add i64 %as.ptrtoint, ptrtoint (ptr getelementptr (%_Z4Page, ptr null, i32 1) to i64)
+  %as.inttoptr = inttoptr i64 %add to ptr
+  %load.struct = load %_Z4Page, ptr %1, align 8
+  %next_object = extractvalue %_Z4Page %load.struct, 0
+  %eq = icmp eq ptr %next_object, %as.inttoptr
+  br i1 %eq, label %land.rhs1, label %if.end
+
+if.then:                                          ; preds = %land.rhs
+  call void @_ZN4Page12release_pageER4Page(ptr %1)
+  ret void
+
+if.end:                                           ; preds = %land.rhs, %land.rhs1, %entry
+  %call = call ptr @_ZN4Page8allocateEmm(ptr %1, i64 16, i64 8)
+  %as.ptrtoint6 = ptrtoint ptr %1 to i64
+  %ptr.add = getelementptr inbounds i64, ptr %call, i64 1
+  store i64 %as.ptrtoint6, ptr %ptr.add, align 8
+  br label %repeat.body
+
+land.rhs:                                         ; preds = %land.rhs1
+  %load.struct4 = load %_Z4Page, ptr %1, align 8
+  %exclusive_pages = extractvalue %_Z4Page %load.struct4, 3
+  %head = extractvalue %_Z8PageList %exclusive_pages, 0
+  %eq5 = icmp eq ptr %head, null
+  br i1 %eq5, label %if.then, label %if.end
+
+land.rhs1:                                        ; preds = %entry
+  %load.struct2 = load %_Z4Page, ptr %1, align 8
+  %next_page = extractvalue %_Z4Page %load.struct2, 2
+  %eq3 = icmp eq ptr %next_page, null
+  br i1 %eq3, label %land.rhs, label %if.end
+
+repeat.body:                                      ; preds = %if.end10, %if.end
+  %atomic.load = load atomic i64, ptr %0 seq_cst, align 8
+  store i64 %atomic.load, ptr %call, align 8
+  %as.ptrtoint7 = ptrtoint ptr %call to i64
+  %2 = cmpxchg ptr %0, i64 %atomic.load, i64 %as.ptrtoint7 seq_cst seq_cst, align 8
+  %cas.old = extractvalue { i64, i1 } %2, 0
+  %eq8 = icmp eq i64 %cas.old, %atomic.load
+  br i1 %eq8, label %if.then9, label %if.end10
+
+repeat.exit:                                      ; preds = %if.then9
+  ret void
+
+if.then9:                                         ; preds = %repeat.body
+  br label %repeat.exit
+
+if.end10:                                         ; preds = %repeat.body
+  br label %repeat.body
+}
+
+define linkonce_odr void @_Z24scaly_region_adopt_drainR4PageP3u64(ptr %0, ptr %1) {
+entry:
+  %deref = load i64, ptr %1, align 8
+  %as.inttoptr = inttoptr i64 %deref to ptr
+  %node = alloca ptr, align 8
+  store ptr %as.inttoptr, ptr %node, align 1
+  store i64 0, ptr %1, align 8
+  br label %while.cond
+
+while.cond:                                       ; preds = %while.body, %entry
+  %node1 = load ptr, ptr %node, align 8
+  %ne = icmp ne ptr %node1, null
+  br i1 %ne, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %node2 = load ptr, ptr %node, align 8
+  %deref3 = load i64, ptr %node2, align 8
+  %as.inttoptr4 = inttoptr i64 %deref3 to ptr
+  %node5 = load ptr, ptr %node, align 8
+  %ptr.add = getelementptr inbounds i64, ptr %node5, i64 1
+  %deref6 = load i64, ptr %ptr.add, align 8
+  %as.inttoptr7 = inttoptr i64 %deref6 to ptr
+  %field.inplace = getelementptr inbounds nuw %_Z4Page, ptr %0, i32 0, i32 3
+  call void @_ZN8PageList3addER4Page(ptr %field.inplace, ptr %as.inttoptr7)
+  store ptr %as.inttoptr4, ptr %node, align 1
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
+  ret void
+}
+
 define linkonce_odr ptr @_Z16scaly_panic_markv() {
 entry:
   %global.load = load ptr, ptr @stack_top, align 8

@@ -137,6 +137,14 @@ define TaskPlanner
         var cls_counter_steps: size_t
         var cls_step_first: bool
         var cls_continue_skips: bool
+        ; The body KEEPS a value it may have built: a non-scalar `put` into
+        ; a loop-external vector. The Emitter then runs the wave's chunks on
+        ; heap pages it adopts after the barrier (root_pages.scaly,
+        ; scaly_region_adopt_push/_drain). cls_takes_address: a unary `&`
+        ; anywhere in the body -- a kept value could then point at a slot of
+        ; the chunk's own stack frame, which no adoption can keep.
+        var cls_keeps: bool
+        var cls_takes_address: bool
     )
     {
         init()
@@ -178,6 +186,8 @@ define TaskPlanner
             set cls_counter_steps: 0
             set cls_step_first: false
             set cls_continue_skips: false
+            set cls_keeps: false
+            set cls_takes_address: false
         }
 
         ; ================================================================
@@ -481,10 +491,21 @@ define TaskPlanner
             set cls_reason: String^this("")
             set cls_loop_var: String^this(fr.identifier)
             set cls_depth: 0
+            set cls_keeps: false
+            set cls_takes_address: false
             if file_is_foundation(current_file)
                 this.block("engine foundation module")
             if cls_blocked = false
                 this.cls_action(fr.body)
+            this.check_kept_values()
+        }
+
+        ; A kept value next to a unary `&`: the value may point into the
+        ; chunk's stack frame, which dies with the chunk.
+        procedure check_kept_values(mutable this: TaskPlanner)
+        {
+            if cls_keeps and cls_takes_address
+                this.block("keeps a value in a body that takes an address")
         }
 
         ; ================================================================
@@ -541,11 +562,14 @@ define TaskPlanner
             set cls_counter_writes: 0
             set cls_counter_steps: 0
             set cls_continue_skips: false
+            set cls_keeps: false
+            set cls_takes_address: false
             if file_is_foundation(current_file)
                 this.block("engine foundation module")
             this.cls_operands(wh.cond.operation)
             if cls_blocked = false
                 this.cls_action(wh.body)
+            this.check_kept_values()
             set cls_counter_mode: false
             if cls_counter_writes > cls_counter_steps
                 this.block("counter written besides its step")
@@ -1972,6 +1996,8 @@ define TaskPlanner
                 this.block("indirect call")
                 return
             }
+            if call.is_operator and call.name = "&" and call.args <> null and call.args.length = 1
+                set cls_takes_address: true
             if call.is_intrinsic
                 return
             if call.is_operator
@@ -2030,7 +2056,7 @@ define TaskPlanner
         }
 
         ; put(receiver, index, element): receiver = args[0], index = args[1].
-        function put_is_disjoint(this: TaskPlanner, call: PlannedCall) returns bool
+        procedure put_is_disjoint(mutable this: TaskPlanner, call: PlannedCall) returns bool
         {
             if call.args = null
                 return false
@@ -2071,9 +2097,31 @@ define TaskPlanner
             let val_ptr call.args.get 2
             if val_ptr = null
                 return false
-            if this.value_can_alias(val_ptr.unwrap().result_type)
+            let vt val_ptr.unwrap().result_type
+            if this.value_can_alias(vt) = false
+                return true
+            ; A kept value: admitted when it is a VALUE (a String, a record),
+            ; its allocations then adopted with the chunk's region -- never a
+            ; reference, which could point anywhere, the chunk's stack included.
+            if TaskPlanner.type_is_reference_shaped(vt)
                 return false
+            set cls_keeps: true
             true
+        }
+
+        ; ref / pointer / an Option over one / a delegate or function pointer
+        function type_is_reference_shaped(t: PlannedType) returns bool
+        {
+            let nm t.name
+            match nm
+                case "ref" case "pointer": return true
+            if t.name = "Option" and t.generics <> null and t.generics.length = 1
+            {
+                let g_ptr t.generics.get 0
+                if g_ptr <> null
+                    return TaskPlanner.type_is_reference_shaped(g_ptr.unwrap())
+            }
+            false
         }
 
         ; ================================================================

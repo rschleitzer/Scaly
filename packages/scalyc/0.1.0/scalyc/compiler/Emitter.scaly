@@ -10733,7 +10733,7 @@ define Emitter
                                                         if first_ptr <> null
                                                         {
                                                             let first_acc (*first_ptr)
-                                                            var current_struct_ty map_type first_acc.parent_type
+                                                            var current_struct_ty this.chain_struct_type(first_acc.parent_type)
                                                             if LLVMGetTypeKind(current_struct_ty) = LLVMTypeKind.Struct()
                                                             {
                                                                 var current_ptr var_ptr
@@ -15781,6 +15781,11 @@ define Emitter
 
         procedure emit_parallel_for(mutable this, mutable for_expr: PlannedFor) returns LLVMValueRef
         {
+            ; A KEEPING wave (the classifier admitted a non-scalar `put` into a
+            ; loop-external vector): its chunks run on heap pages the submitter
+            ; adopts after the barrier (root_pages.scaly, region adoption).
+            ; Read before anything below can re-classify a nested loop.
+            let keeps parfor_checker.cls_keeps
             ; ---- Collect the captures (plan-side scan, no IR). Copy the
             ; result out of the scratch right away: emitting the body below
             ; may meet a NESTED promoted for, which rescans.
@@ -15865,7 +15870,12 @@ define Emitter
             ; null). It rides the cell rather than being fetched per chunk so
             ; the thunk needs no call, and it sits LAST so every capture keeps
             ; its index `base_fields + ci`.
-            var cell_field_tys Vector[LLVMTypeRef](base_fields + cap_count + 1)
+            ; A keeping wave appends one more: the address of the submitter's
+            ; adopt-list head, after the cancel word.
+            var n_tail: size_t 1
+            if keeps
+                set n_tail: 2
+            var cell_field_tys Vector[LLVMTypeRef](base_fields + cap_count + n_tail)
             if for_expr.is_iterator_loop
             {
                 cell_field_tys.put(0, ptr_ty)
@@ -15887,7 +15897,9 @@ define Emitter
                 set ci: ci + 1
             }
             cell_field_tys.put(base_fields + cap_count, ptr_ty)
-            let cell_ty LLVMStructTypeInContext(context, cell_field_tys.data, (base_fields + cap_count + 1) as int, 0)
+            if keeps
+                cell_field_tys.put(base_fields + cap_count + 1, ptr_ty)
+            let cell_ty LLVMStructTypeInContext(context, cell_field_tys.data, (base_fields + cap_count + n_tail) as int, 0)
 
             ; ---- Outline the body into a private task function ptr(ptr).
             ; Private linkage: llvm-link renames on collision, so the
@@ -15994,6 +16006,21 @@ define Emitter
             ; null test below costs a register compare that LLVM hoists.
             let cw_gep LLVMBuildStructGEP2(builder, cell_ty, cell_arg, (base_fields + cap_count) as int, "parfor.cancel.ptr")
             let cancel_ptr LLVMBuildLoad2(builder, ptr_ty, cw_gep, "parfor.cancel")
+            ; A keeping chunk: its frame is a HEAP page from the start, never a
+            ; stack-bucket root (that one is LIFO on this worker and could not
+            ; be handed to the submitter).
+            var adopt_head: LLVMValueRef null
+            var keep_frame: LLVMValueRef null
+            if keeps
+            {
+                let ah_gep LLVMBuildStructGEP2(builder, cell_ty, cell_arg, (base_fields + cap_count + 1) as int, "parfor.adopt.ptr")
+                set adopt_head: LLVMBuildLoad2(builder, ptr_ty, ah_gep, "parfor.adopt")
+                set keep_frame: get_local_frame()
+                let ap_ty LLVMFunctionType(ptr_ty, null as pointer[LLVMTypeRef], 0, 0)
+                let ap_fn get_parfor_runtime_fn("_ZN4Page13allocate_pageEv", ap_ty)
+                let kpage LLVMBuildCall2(builder, ap_ty, ap_fn, null as pointer[LLVMValueRef], 0, "parfor.keep.page")
+                LLVMBuildStore(builder, kpage, keep_frame)
+            }
 
             ; The chunk loop: i in [lo,hi) — the 4.1 rewrite. The loop
             ; variable rebinds per iteration; `continue` targets the
@@ -16084,6 +16111,23 @@ define Emitter
             ; Epilogue: release the task's local region (one region per
             ; CHUNK — no-op when the body never allocated), return null.
             LLVMPositionBuilderAtEnd(builder, pf_ret_block)
+            if keeps
+            {
+                ; Hand the chunk's region to the wave instead of releasing it;
+                ; the frame's page slot is cleared so the release below is the
+                ; no-op it is for a frame nobody forced.
+                let kp LLVMBuildLoad2(builder, ptr_ty, keep_frame, "parfor.keep.done")
+                var push_tys Vector[LLVMTypeRef](2)
+                push_tys.put(0, ptr_ty)
+                push_tys.put(1, ptr_ty)
+                let push_ty LLVMFunctionType(void_ty, push_tys.data, 2, 0)
+                let push_fn get_parfor_runtime_fn("_Z23scaly_region_adopt_pushP3u64R4Page", push_ty)
+                var push_args Vector[LLVMValueRef](2)
+                push_args.put(0, adopt_head)
+                push_args.put(1, kp)
+                LLVMBuildCall2(builder, push_ty, push_fn, push_args.data, 2, "")
+                LLVMBuildStore(builder, LLVMConstNull(ptr_ty), keep_frame)
+            }
             emit_release_local_page()
             let pf_null LLVMConstNull(ptr_ty)
             LLVMBuildRet(builder, pf_null)
@@ -16883,6 +16927,12 @@ define Emitter
             let ds_grp LLVMBuildLoad2(builder, ptr_ty, grp_slot, "parfor.d.grp")
             let ds_gpage LLVMBuildLoad2(builder, ptr_ty, gpage_slot, "parfor.d.gpage")
             let ds_buf LLVMBuildLoad2(builder, ptr_ty, buf_slot, "parfor.d.buf")
+            var adopt_slot: LLVMValueRef null
+            if keeps
+            {
+                set adopt_slot: entry_alloca(i64_ty, "parfor.adopt.head")
+                LLVMBuildStore(builder, LLVMConstInt(i64_ty, 0, 0), adopt_slot)
+            }
             ; chunk = max(1, MIN_CHUNK<<10 / per1k, remaining / (4*ncpu)).
             let ds_p1kpos LLVMBuildICmp(builder, LLVMIntPredicate.SGT(), ds_p1k0, c0, "parfor.d.p1kpos")
             let ds_p1k LLVMBuildSelect(builder, ds_p1kpos, ds_p1k0, c1, "parfor.d.p1k")
@@ -16942,6 +16992,11 @@ define Emitter
             let sb_cw LLVMBuildCall2(builder, cw_ty, cw_fn, sb_cw_args.data, 1, "parfor.cw")
             let sb_cw_gep LLVMBuildStructGEP2(builder, cell_ty, sb_cell, (base_fields + cap_count) as int, "parfor.cell.cancel")
             LLVMBuildStore(builder, sb_cw, sb_cw_gep)
+            if keeps
+            {
+                let sb_ah_gep LLVMBuildStructGEP2(builder, cell_ty, sb_cell, (base_fields + cap_count + 1) as int, "parfor.cell.adopt")
+                LLVMBuildStore(builder, adopt_slot, sb_ah_gep)
+            }
             var sb_sub_args Vector[LLVMValueRef](4)
             sb_sub_args.put(0, ds_pool)
             sb_sub_args.put(1, task_fn)
@@ -16957,6 +17012,22 @@ define Emitter
             var gw_args Vector[LLVMValueRef](1)
             gw_args.put(0, ds_grp)
             LLVMBuildCall2(builder, gv_ty, gw_fn, gw_args.data, 1, "")
+            if keeps
+            {
+                ; Every chunk has finished: the kept values' regions become
+                ; exclusive pages of this function's own local page -- the
+                ; page they would have lived on sequentially.
+                let host_page get_or_create_local_page()
+                var dr_tys Vector[LLVMTypeRef](2)
+                dr_tys.put(0, ptr_ty)
+                dr_tys.put(1, ptr_ty)
+                let dr_ty LLVMFunctionType(void_ty, dr_tys.data, 2, 0)
+                let dr_fn get_parfor_runtime_fn("_Z24scaly_region_adopt_drainR4PageP3u64", dr_ty)
+                var dr_args Vector[LLVMValueRef](2)
+                dr_args.put(0, host_page)
+                dr_args.put(1, adopt_slot)
+                LLVMBuildCall2(builder, dr_ty, dr_fn, dr_args.data, 2, "")
+            }
             var gd_args Vector[LLVMValueRef](1)
             gd_args.put(0, ds_grp)
             LLVMBuildCall2(builder, gv_ty, gd_fn, gd_args.data, 1, "")
@@ -19151,7 +19222,7 @@ define Emitter
                         set current_ptr: LLVMBuildStructGEP2(builder, current_struct_ty, current_ptr, acc.field_index as u32, "field.inplace")
                         if ci + 1 < chain.length
                         {
-                            set current_struct_ty: map_type(acc.result_type)
+                            set current_struct_ty: this.chain_struct_type(acc.result_type)
                             ; A middle hop through a `ref`/`pointer`
                             ; FIELD: load the reference and go on in
                             ; its pointee. Without this the next hop
@@ -19210,6 +19281,25 @@ define Emitter
                 return current_ptr
             }
             null
+        }
+
+        ; chain_struct_type#: the struct type an in-place receiver chain GEPs
+        ; through. map_type answers a bare `ptr` for the runtime structs it keeps
+        ; opaque outside their package (Page, PageList, ...), and the chain then
+        ; bailed to load + extractvalue + a temporary: `p.exclusive_pages.add(q)`
+        ; on a `ref[Page]` ran PageList.add on a COPY, the node was lost and
+        ; Page.get(this) answered a stack address (rc 138, 2026-09-26). The
+        ; field-access path already falls back to the literal layout; so does
+        ; this one now.
+        procedure chain_struct_type(mutable this, t: PlannedType) returns LLVMTypeRef
+        {
+            let mapped map_type(t)
+            if LLVMGetTypeKind(mapped) = LLVMTypeKind.Struct()
+                return mapped
+            let literal this.synthesize_literal_struct(t.name)
+            if literal <> null and LLVMGetTypeKind(literal) = LLVMTypeKind.Struct()
+                return literal
+            mapped
         }
 
         ; reference_pointee_struct#: the LLVM struct a `ref[T]`/`pointer[T]`

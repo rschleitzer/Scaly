@@ -1050,6 +1050,65 @@ procedure scaly_release_frame(mutable f: pointer[Frame]) @deep true @deep_beyond
 
 
 ; --------------------------------------------------------------------------
+; Kept values of a parallel wave: region adoption
+; --------------------------------------------------------------------------
+;
+; A promoted `for` whose body keeps a value it built -- `out.put(i, mk(i))`
+; with a String result -- cannot run its chunks on stack-bucket frames: the
+; value would live on the chunk's frame, released when the chunk ends, while
+; `out` outlives the wave. Sequentially the value lives on the enclosing
+; function's local page. So a KEEPING wave runs every chunk on a HEAP page of
+; its own (the emitter seeds the chunk frame with Page.allocate_page()), and
+; at the chunk's end, instead of releasing it, pushes it onto the wave's
+; adopt list. After TaskGroup.wait the submitter drains the list into its own
+; local page as exclusive pages: the kept values then live exactly as long as
+; they would have sequentially, and deallocate_extensions frees each chunk
+; region with the host. Cross-thread is safe: a heap page may be released by
+; any thread (ROADMAP 2.3), and a page outliving its worker thread is drained
+; from a dead bucket (2.3b).
+;
+; ★★★Both mangled names are written out in the Emitter (emit_parallel_for):
+; re-signing either routine breaks the link, not the compile.
+
+; A chunk's end: push its region onto the wave's list, or give it back at once
+; when nothing was allocated on it. The node rides the region itself and is
+; adopted with it. Lock-free (a Treiber push): every chunk of the wave may
+; finish at the same moment.
+procedure scaly_region_adopt_push(mutable head: pointer[u64], region: ref[Page]) @deep true @deep_beyond_2 true @deep_whole_2 true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+; After the wave's barrier (no chunk runs any more): every pushed region
+; becomes an exclusive page of the submitter's local page.
+procedure scaly_region_adopt_drain(mutable host: ref[Page], mutable head: pointer[u64]) @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+; --------------------------------------------------------------------------
 ; Panic unwinding: giving the region stack back when control LEAVES by a jump
 ; (TRAPS.md 0 and 5). Nothing calls this yet -- the catch point that will is
 ; still to be built -- but the two halves it needs exist, and they are here

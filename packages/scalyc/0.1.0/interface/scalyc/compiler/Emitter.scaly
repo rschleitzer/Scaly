@@ -16967,6 +16967,77 @@ define Emitter
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         ; Emit a while loop
         procedure emit_while(mutable this, mutable while_expr: PlannedWhile) @direct true @ret_nonlocal true @deep true @deep_beyond_2 true returns LLVMValueRef linked
 
@@ -19202,6 +19273,25 @@ define Emitter
 
 
 
+
+
+
+
+
+
+
+
+
+
+        ; chain_struct_type#: the struct type an in-place receiver chain GEPs
+        ; through. map_type answers a bare `ptr` for the runtime structs it keeps
+        ; opaque outside their package (Page, PageList, ...), and the chain then
+        ; bailed to load + extractvalue + a temporary: `p.exclusive_pages.add(q)`
+        ; on a `ref[Page]` ran PageList.add on a COPY, the node was lost and
+        ; Page.get(this) answered a stack address (rc 138, 2026-09-26). The
+        ; field-access path already falls back to the literal layout; so does
+        ; this one now.
+        procedure chain_struct_type(mutable this, t: PlannedType) @direct true @deep true returns LLVMTypeRef linked
 
 
 

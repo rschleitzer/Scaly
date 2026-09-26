@@ -1,19 +1,22 @@
-; Two holes in the classifier that turned an unsafe body into "parallel"
-; (found by the while census, 2026-09-26). Each negative wave carries a
-; body heavy enough (~10µs × 64 iterations >> the 131µs fork gate) that
-; a mis-classification WOULD fork -- the submit counter staying at zero
-; proves the loop was blocked, and the value checks prove sequential
-; semantics.
-; Wave A: a namespace-qualified procedure call (`Sink.put(acc, v)`) was
-; read as a CONSTRUCTION because its name begins with a capital -- the
-; qualifier's -- and passed as a frame-local allocation while it wrote
-; the shared acc.
-; Wave B: a disjoint `put` whose VALUE carries this iteration's
-; allocations -- a String built per iteration and kept in a loop-external
-; vector lived on the task region, released at the end of its chunk:
-; 306 of 400 slots overwritten at rc 0.
-; Wave C: positive control -- the same site shape with a scalar value
-; MUST still fork.
+; Kept values in a promoted `for` (region adoption, 2026-09-26). A body that
+; keeps a value it built -- `out.put(i, label_of(i))` with a String result --
+; runs every chunk on a heap page the submitter adopts after the barrier, so
+; the Strings live exactly as long as they would sequentially. Each negative
+; wave carries a body heavy enough (~10µs × 64 iterations >> the 131µs fork
+; gate) that a mis-classification WOULD fork; the submit counter proves
+; which way the loop went, the value checks prove the result.
+; Wave A: a namespace-qualified procedure call (`Sink.put(acc, v)`) was read
+; as a CONSTRUCTION because its name begins with a capital -- the
+; qualifier's -- and passed as a frame-local allocation while it wrote the
+; shared acc. Must NOT fork.
+; Wave B: a kept String in a disjoint slot, top-level code. Before adoption
+; the String lived on the chunk's frame, released at the chunk's end (306 of
+; 400 slots overwritten at rc 0). Must fork, every value right.
+; Wave K: the same inside a procedure, thirty times over: the adopted
+; regions go with the procedure's own page -- bytes held stay flat.
+; Wave D: a keeping body that takes an address -- the kept value could
+; point into the chunk's stack frame. Must NOT fork.
+; Wave C: positive control, scalar value -- must fork.
 ;
 ; Expected: parallel-kept-value-ok done
 
@@ -60,6 +63,36 @@ procedure wave_control(mutable r: Vector[i64], n: int)
     }
 }
 
+procedure keep_wave(n: int) returns int
+{
+    var out Vector[String](n as size_t)
+    for i in n
+        out.put(i as size_t, label_of(i))
+    var bad 0
+    var j 0
+    while j < n
+    {
+        let want label_of(j)
+        let got out[j as size_t]
+        if got.equals(want) = false
+            set bad: bad + 1
+        set j: j + 1
+    }
+    bad
+}
+
+procedure address_wave(n: int) returns int
+{
+    var out Vector[String](n as size_t)
+    for i in n
+    {
+        var k i
+        let r &k
+        out.put(i as size_t, label_of(r))
+    }
+    out.length as int
+}
+
 function lsum(l: List[i64]) returns i64
 {
     var s 0 as i64
@@ -87,16 +120,14 @@ if TaskPool.submit_count(pool) <> (0 as u64)
     exit 1
 }
 
-; ---- Wave B: a kept String in a disjoint slot.
-; Top-level code: inside a procedure the escape checker already refuses
-; the store (the String would outlive the procedure's frame); the
-; program's own statements are where it compiled.
+; ---- Wave B: a kept String in a disjoint slot, top-level code.
+let before_b TaskPool.submit_count(pool)
 var rb Vector[String](64)
 for i in 64
     rb.put(i as size_t, label_of(i))
-if TaskPool.submit_count(pool) <> (0 as u64)
+if TaskPool.submit_count(pool) = before_b
 {
-    Console.println "waveB-forked"
+    Console.println "waveB-did-not-fork"
     exit 1
 }
 var bad 0
@@ -115,10 +146,55 @@ if bad <> 0
     exit 1
 }
 
+; ---- Wave K: kept Strings in a procedure, thirty waves; bytes held flat.
+Page.enable_statistics()
+let before_k TaskPool.submit_count(pool)
+if keep_wave(64) <> 0
+{
+    Console.println "waveK-values-bad"
+    exit 1
+}
+let held_warm Page.bytes_held()
+var w 0
+while w < 30
+{
+    if keep_wave(64) <> 0
+    {
+        Console.println "waveK-values-bad"
+        exit 1
+    }
+    set w: w + 1
+}
+if TaskPool.submit_count(pool) = before_k
+{
+    Console.println "waveK-did-not-fork"
+    exit 1
+}
+let held_after Page.bytes_held()
+if held_after > held_warm + (262144 as i64)
+{
+    Console.println "waveK-leaks `held_warm` -> `held_after`"
+    exit 1
+}
+
+; ---- Wave D: a keeping body that takes an address -- must not fork.
+let before_d TaskPool.submit_count(pool)
+if address_wave(64) <> 64
+{
+    Console.println "waveD-values-bad"
+    exit 1
+}
+if TaskPool.submit_count(pool) <> before_d
+{
+    Console.println "waveD-forked"
+    exit 1
+}
+
 ; ---- Wave C: positive control, scalar value -- must fork.
+let before_c TaskPool.submit_count(pool)
 var rc Vector[i64](64)
 wave_control(rc, 64)
-if TaskPool.submit_count(pool) = (0 as u64)
+if TaskPool.submit_count(pool) = before_c
 {
     Console.println "waveC-did-not-fork"
     exit 1
