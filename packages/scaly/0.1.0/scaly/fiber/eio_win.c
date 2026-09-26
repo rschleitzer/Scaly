@@ -55,6 +55,10 @@
 
 #ifdef _WIN32
 
+/* getenv (scaly_eio_ncpu's SCALY_WORKERS) is standard C that MSVC deprecates;
+ * the same define as posixcompat.c and ctime.c, not the _s form, which would
+ * make this target differ from the other three. Before any CRT header. */
+#define _CRT_SECURE_NO_WARNINGS 1
 #include <winsock2.h>   /* before windows.h — it owns the socket API */
 #include <ws2tcpip.h>
 #include <mswsock.h>    /* AcceptEx, SO_UPDATE_ACCEPT_CONTEXT */
