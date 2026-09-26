@@ -1,0 +1,127 @@
+; Two holes in the classifier that turned an unsafe body into "parallel"
+; (found by the while census, 2026-09-26). Each negative wave carries a
+; body heavy enough (~10µs × 64 iterations >> the 131µs fork gate) that
+; a mis-classification WOULD fork -- the submit counter staying at zero
+; proves the loop was blocked, and the value checks prove sequential
+; semantics.
+; Wave A: a namespace-qualified procedure call (`Sink.put(acc, v)`) was
+; read as a CONSTRUCTION because its name begins with a capital -- the
+; qualifier's -- and passed as a frame-local allocation while it wrote
+; the shared acc.
+; Wave B: a disjoint `put` whose VALUE carries this iteration's
+; allocations -- a String built per iteration and kept in a loop-external
+; vector lived on the task region, released at the end of its chunk:
+; 306 of 400 slots overwritten at rc 0.
+; Wave C: positive control -- the same site shape with a scalar value
+; MUST still fork.
+;
+; Expected: parallel-kept-value-ok done
+
+; Pure leaf, ~10µs scale. spin_big(seed) = seed + 799980000.
+function spin_big(seed: i64) returns i64
+{
+    var acc seed
+    var k 0 as i64
+    while k < (40000 as i64)
+    {
+        set acc: acc + k
+        set k: k + (1 as i64)
+    }
+    acc
+}
+
+function label_of(i: int) returns String
+{
+    let v spin_big(i as i64)
+    "item-`v % (7 as i64)`-`i`"
+}
+
+define Sink
+{
+    procedure put(mutable acc: ref[List[i64]], v: i64)
+        acc.add(v)
+
+    procedure wave_qualified(mutable acc: ref[List[i64]])
+    {
+        for i in 64
+        {
+            let v spin_big(i as i64)
+            Sink.put(acc, v)
+        }
+    }
+}
+
+procedure wave_control(mutable r: Vector[i64], n: int)
+{
+    for i in n
+    {
+        let v spin_big(i as i64)
+        r.put(i, v)
+    }
+}
+
+function lsum(l: List[i64]) returns i64
+{
+    var s 0 as i64
+    for x in l
+        set s: s + x
+    s
+}
+
+let pool TaskPool.default_pool()
+
+; sum over i in 0..63 of (i + 799980000) = 64*799980000 + 2016
+let want_sum 51198722016 as i64
+
+; ---- Wave A: namespace-qualified mutating call.
+var la List[i64]()
+Sink.wave_qualified(&la)
+if lsum(la) <> want_sum
+{
+    Console.println "waveA-sum-bad"
+    exit 1
+}
+if TaskPool.submit_count(pool) <> (0 as u64)
+{
+    Console.println "waveA-forked"
+    exit 1
+}
+
+; ---- Wave B: a kept String in a disjoint slot.
+; Top-level code: inside a procedure the escape checker already refuses
+; the store (the String would outlive the procedure's frame); the
+; program's own statements are where it compiled.
+var rb Vector[String](64)
+for i in 64
+    rb.put(i as size_t, label_of(i))
+if TaskPool.submit_count(pool) <> (0 as u64)
+{
+    Console.println "waveB-forked"
+    exit 1
+}
+var bad 0
+var j 0
+while j < 64
+{
+    let want label_of(j)
+    let got rb[j as size_t]
+    if got.equals(want) = false
+        set bad: bad + 1
+    set j: j + 1
+}
+if bad <> 0
+{
+    Console.println "waveB-values-bad"
+    exit 1
+}
+
+; ---- Wave C: positive control, scalar value -- must fork.
+var rc Vector[i64](64)
+wave_control(rc, 64)
+if TaskPool.submit_count(pool) = (0 as u64)
+{
+    Console.println "waveC-did-not-fork"
+    exit 1
+}
+
+print "parallel-kept-value-ok done"

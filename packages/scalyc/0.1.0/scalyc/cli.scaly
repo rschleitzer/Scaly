@@ -67,6 +67,7 @@ define Options
     use_vis: bool           ; --use-vis: advisory use-visibility measurement
     no_use_vis: bool        ; --no-use-vis: disable strict use visibility
     task_plan: bool         ; --task-plan: stage-3 parallelizability report
+    loop_census: bool       ; --loop-census: counted `while` loops the engine could reach
     pointer_report: bool    ; --pointer-report: raw-pointer census off the Plan
     write_report: bool      ; --write-report: writes through parameters, off the Plan
     host_report: bool       ; --host-report: named-page constructions that never leave their routine
@@ -101,6 +102,7 @@ define Options
         set use_vis: false
         set no_use_vis: false
         set task_plan: false
+        set loop_census: false
         set pointer_report: false
         set write_report: false
         set host_report: false
@@ -202,6 +204,10 @@ define cli
                 else if arg = "--task-plan"
                 {
                     set opts.task_plan: true
+                }
+                else if arg = "--loop-census"
+                {
+                    set opts.loop_census: true
                 }
                 else if arg = "--pointer-report"
                 {
@@ -352,6 +358,7 @@ define cli
         Console.println "  --no-prelude   Skip auto-loading prelude module"
         Console.println("  --no-tests     Omit test/test_* functions (seed build)")
         Console.println("  --task-plan    Report the parallelizability verdict of every for loop")
+        Console.println("  --loop-census  Report which while loops are counted and could run in parallel")
         Console.println("  --pointer-report  Report every raw-pointer site, classified off the Plan")
         Console.println("  --write-report  Report every write through a parameter, off the Plan")
         Console.println("  --purity-check  Report every function that writes what its parameters reach")
@@ -674,11 +681,17 @@ define cli
         ; is the only surface where parallelization is observable: a
         ; "parallel" verdict means the Emitter dispatches that loop
         ; through the adaptive engine; a blocked one runs sequentially.
-        if opts.task_plan
+        ; --loop-census rides the same walk and prints its own lines, so
+        ; the --task-plan output the suites parse stays as it is.
+        if opts.task_plan or opts.loop_census
         {
             var task_planner TaskPlanner.TaskPlanner()
+            set task_planner.census_while: opts.loop_census
             task_planner.analyze(plan, opts.input_file)
-            cli.print_task_plan(&task_planner)
+            if opts.task_plan
+                cli.print_task_plan(&task_planner)
+            if opts.loop_census
+                cli.print_loop_census(&task_planner)
         }
 
         if opts.verbose
@@ -1268,6 +1281,16 @@ define cli
         let head_str head.to_string()
         Console.println(head_str.to_c_string())
         cli.print_located("task-plan: ", &tp.report_files, &tp.report_offsets, &tp.report_verdicts)
+    }
+
+    ; --loop-census: the head line counts the `while` loops, the counted
+    ; ones and those whose body would pass the `for` classifier, then one
+    ; located line per `while` (TaskPlanner.classify_while).
+    procedure print_loop_census(tp: ref[TaskPlanner.TaskPlanner])
+    {
+        let head "loop-census: `cli.format_size(tp.whiles_total)` while-loops, `cli.format_size(tp.whiles_counted)` counted, `cli.format_size(tp.whiles_parallel)` parallelizable"
+        Console.println(head.to_c_string())
+        cli.print_located("loop-census: ", &tp.while_files, &tp.while_offsets, &tp.while_verdicts)
     }
 
     ; --host-report: the head line counts the candidates and the LOCAL

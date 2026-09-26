@@ -115,9 +115,43 @@ define TaskPlanner
         wr_names: Array[String]
         wr_masks: Array[size_t]
         var wr_base: size_t
+
+        ; While census (--loop-census, report only; see classify_while).
+        ; Off unless the cli asks: the Emitter and the codeLens never see
+        ; a `while` verdict.
+        var census_while: bool
+        while_files: Array[String]
+        while_offsets: Array[size_t]
+        while_verdicts: Array[String]
+        var whiles_total: size_t
+        var whiles_counted: size_t
+        var whiles_parallel: size_t
+        ; While a counted loop's body is classified: count the writes of
+        ; the counter and how many of them are steps (a write that is not
+        ; a step blocks), whether the top-level step is the body's first
+        ; statement (a `continue` cannot skip it), and whether a
+        ; `continue` met could skip it -- judged only after the rest of
+        ; the body, so the verdict names the blocker a `for` would keep.
+        var cls_counter_mode: bool
+        var cls_counter_writes: size_t
+        var cls_counter_steps: size_t
+        var cls_step_first: bool
+        var cls_continue_skips: bool
     )
     {
         init() linked
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -401,6 +435,8 @@ define TaskPlanner
 
 
 
+
+
         ; ================================================================
         ; Classifier: walk ONE loop body; the first blocking construct
         ; records a reason and short-circuits the rest of the walk (the
@@ -438,6 +474,343 @@ define TaskPlanner
         ; cls_reason carry the verdict. Shared by the report walk and
         ; the Emitter's per-site promotion query.
         procedure classify_body(mutable this: TaskPlanner, fr: PlannedFor) @ret_nonlocal true @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; ================================================================
+        ; While census (--loop-census; report only, emission untouched).
+        ; Is a `while` a COUNTED loop -- the condition compares a plain
+        ; variable, and the body steps that variable by a constant or a
+        ; name exactly once, as one of its TOP-LEVEL statements -- and
+        ; would its body then pass the `for` classifier with the counter
+        ; as the loop variable? Nothing consumes the verdict but the
+        ; report: it measures how much of a tree written with `while`
+        ; the adaptive engine could reach, before anyone teaches the
+        ; Emitter to drive a `while`.
+        ; ================================================================
+
+        procedure classify_while(mutable this: TaskPlanner, wh: PlannedWhile) @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; The `for` classifier over a counted loop's body, with the counter
+        ; as the loop variable (find_counter set cls_loop_var). The
+        ; condition is walked too: the bound is read every iteration.
+        procedure classify_counted_body(mutable this: TaskPlanner, wh: PlannedWhile) @ret_nonlocal true @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; A write of the counter that is itself a step (`set i: i + 1`
+        ; before a `continue`) is not a second write of the counter.
+        procedure note_counter_step(mutable this: TaskPlanner, act: PlannedAction) @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure not_counted(mutable this: TaskPlanner, reason: String) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+        ; Recognize the counted shape. On success cls_loop_var names the
+        ; counter and cls_step_first says whether its step is the body's
+        ; first statement; on failure cls_reason names the missing part.
+        procedure find_counter(mutable this: TaskPlanner, wh: PlannedWhile) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; A comparison call with two operands (`<`, `<=`, `>`, `>=`, `<>`).
+        function is_comparison(this: TaskPlanner, op: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; The bare variable at argument position `index` of a comparison
+        ; call, or "".
+        function comparison_side(this: TaskPlanner, op: PlannedOperand, index: size_t) @page true @direct true @deep true returns String linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; The name of a bare variable operand (no member hop), or "".
+        function bare_variable_name(this: TaskPlanner, op: PlannedOperand) @page true @direct true @ret_param_1 true @deep true returns String linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; The top-level statements of a braced loop body, or null.
+        function body_statements(this: TaskPlanner, body: PlannedAction) @deep true returns ref[Vector[PlannedStatement]]? linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; How the top-level statements write `name`: 1 = exactly one step
+        ; (`set name: name +/- K`, K a constant or a name) and no other
+        ; top-level write, 2 = one write that is not such a step, 3 = more
+        ; than one top-level write, 0 = none. Sets cls_step_first.
+        procedure counter_steps(mutable this: TaskPlanner, stmts: ref[Vector[PlannedStatement]]?, name: String) @ret_nonlocal true @deep true returns int linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; 1 = stmt is a step of name, 2 = another write of name, 0 = neither.
+        function step_kind(this: TaskPlanner, stmt: PlannedStatement, name: String) @ret_nonlocal true @deep true returns int linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; Is src `name + K` or `name - K`, K a constant or a variable?
+        function is_step_of(this: TaskPlanner, src: ref[Vector[PlannedOperand]]?, name: String) @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -779,6 +1152,8 @@ define TaskPlanner
 
 
 
+
+
         procedure retaint_write_target(mutable this: TaskPlanner, t: Vector[PlannedOperand], src: ref[Vector[PlannedOperand]]?) @deep true linked
 
 
@@ -827,7 +1202,17 @@ define TaskPlanner
 
 
 
+
+
         procedure cls_statement(mutable this: TaskPlanner, stmt: PlannedStatement) @deep true linked
+
+
+
+
+
+
+
+
 
 
 
@@ -1618,7 +2003,21 @@ define TaskPlanner
 
 
 
+        ; A namespace-qualified call carries its qualifier in the name
+        ; (`Esis.put`), so the capital that marks a construction is judged
+        ; on the LAST segment: `Sink.put(acc, b)` is a procedure call that
+        ; writes acc, and read as a construction it passed as a
+        ; frame-local allocation -- a false "parallel" the Emitter acted on.
         function is_construction_name(this: TaskPlanner, name: String) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1632,6 +2031,19 @@ define TaskPlanner
 
         ; put(receiver, index, element): receiver = args[0], index = args[1].
         function put_is_disjoint(this: TaskPlanner, call: PlannedCall) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

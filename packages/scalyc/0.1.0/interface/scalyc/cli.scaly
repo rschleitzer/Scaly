@@ -67,6 +67,7 @@ define Options
     use_vis: bool           ; --use-vis: advisory use-visibility measurement
     no_use_vis: bool        ; --no-use-vis: disable strict use visibility
     task_plan: bool         ; --task-plan: stage-3 parallelizability report
+    loop_census: bool       ; --loop-census: counted `while` loops the engine could reach
     pointer_report: bool    ; --pointer-report: raw-pointer census off the Plan
     write_report: bool      ; --write-report: writes through parameters, off the Plan
     host_report: bool       ; --host-report: named-page constructions that never leave their routine
@@ -85,6 +86,7 @@ define Options
 )
 {
     init() linked
+
 
 
 
@@ -331,8 +333,13 @@ define cli
 
 
 
+
+
+
+
     ; Print usage information
     procedure print_usage() @ret_nonlocal true @deep true io linked
+
 
 
 
@@ -439,6 +446,12 @@ define cli
     ; Run the compiler with parsed options
     ; Returns 0 on success, non-zero on error
     procedure run(mutable opts: Options) @ret_nonlocal true @deep true @deep_beyond_1 true returns int io mutable modeler_error_count reads modeler_error_count linked
+
+
+
+
+
+
 
 
 
@@ -1264,6 +1277,16 @@ define cli
 
 
 
+
+
+
+
+
+
+    ; --loop-census: the head line counts the `while` loops, the counted
+    ; ones and those whose body would pass the `for` classifier, then one
+    ; located line per `while` (TaskPlanner.classify_while).
+    procedure print_loop_census(tp: ref[TaskPlanner.TaskPlanner]) @ret_nonlocal true @deep true io linked
 
 
 

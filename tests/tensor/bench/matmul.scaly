@@ -11,9 +11,9 @@
 ;     classifies parallel, the adaptive driver forks when profitable.
 ;   - matmul_seq: identical, plus one loop-invariant put into an
 ;     external sink per row — deliberately blocked (the classifier's
-;     "put with loop-invariant index into an external vector"), so it
-;     runs sequentially. The put costs nanoseconds against a
-;     milliseconds row; it is the sequential baseline.
+;     "put into an external vector: loop-invariant index or non-scalar
+;     value"), so it runs sequentially. The put costs nanoseconds
+;     against a milliseconds row; it is the sequential baseline.
 ;
 ; Each parallel size runs twice: run 1 exercises the cold deferred
 ; driver (inline warmup, mid-loop fork), run 2 the promoted head-fork.

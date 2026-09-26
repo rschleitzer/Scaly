@@ -115,6 +115,28 @@ define TaskPlanner
         wr_names: Array[String]
         wr_masks: Array[size_t]
         var wr_base: size_t
+
+        ; While census (--loop-census, report only; see classify_while).
+        ; Off unless the cli asks: the Emitter and the codeLens never see
+        ; a `while` verdict.
+        var census_while: bool
+        while_files: Array[String]
+        while_offsets: Array[size_t]
+        while_verdicts: Array[String]
+        var whiles_total: size_t
+        var whiles_counted: size_t
+        var whiles_parallel: size_t
+        ; While a counted loop's body is classified: count the writes of
+        ; the counter and how many of them are steps (a write that is not
+        ; a step blocks), whether the top-level step is the body's first
+        ; statement (a `continue` cannot skip it), and whether a
+        ; `continue` met could skip it -- judged only after the rest of
+        ; the body, so the verdict names the blocker a `for` would keep.
+        var cls_counter_mode: bool
+        var cls_counter_writes: size_t
+        var cls_counter_steps: size_t
+        var cls_step_first: bool
+        var cls_continue_skips: bool
     )
     {
         init()
@@ -144,6 +166,18 @@ define TaskPlanner
             set wr_names: Array[String]^this()
             set wr_masks: Array[size_t]^this()
             set wr_base: 0
+            set census_while: false
+            set while_files: Array[String]^this()
+            set while_offsets: Array[size_t]^this()
+            set while_verdicts: Array[String]^this()
+            set whiles_total: 0
+            set whiles_counted: 0
+            set whiles_parallel: 0
+            set cls_counter_mode: false
+            set cls_counter_writes: 0
+            set cls_counter_steps: 0
+            set cls_step_first: false
+            set cls_continue_skips: false
         }
 
         ; ================================================================
@@ -328,6 +362,8 @@ define TaskPlanner
                 when wh: While
                 {
                     this.find_operands(wh.cond.operation)
+                    if census_while
+                        this.classify_while(wh)
                     this.find_action(wh.body)
                 }
                 when rp: Repeat
@@ -449,6 +485,343 @@ define TaskPlanner
                 this.block("engine foundation module")
             if cls_blocked = false
                 this.cls_action(fr.body)
+        }
+
+        ; ================================================================
+        ; While census (--loop-census; report only, emission untouched).
+        ; Is a `while` a COUNTED loop -- the condition compares a plain
+        ; variable, and the body steps that variable by a constant or a
+        ; name exactly once, as one of its TOP-LEVEL statements -- and
+        ; would its body then pass the `for` classifier with the counter
+        ; as the loop variable? Nothing consumes the verdict but the
+        ; report: it measures how much of a tree written with `while`
+        ; the adaptive engine could reach, before anyone teaches the
+        ; Emitter to drive a `while`.
+        ; ================================================================
+
+        procedure classify_while(mutable this: TaskPlanner, wh: PlannedWhile)
+        {
+            set whiles_total: whiles_total + 1
+            let file_copy String^this(current_file)
+            while_files.add file_copy
+            while_offsets.add(wh.loc.start)
+            set cls_step_first: false
+            if this.find_counter(wh) = false
+            {
+                let nc "not counted: `cls_reason`"
+                let nc_copy String^this(nc)
+                while_verdicts.add nc_copy
+                return
+            }
+            set whiles_counted: whiles_counted + 1
+            this.classify_counted_body(wh)
+            if cls_blocked
+            {
+                let bl "blocked: `cls_reason`"
+                let bl_copy String^this(bl)
+                while_verdicts.add bl_copy
+                return
+            }
+            set whiles_parallel: whiles_parallel + 1
+            let par_copy String^this("parallel")
+            while_verdicts.add par_copy
+        }
+
+        ; The `for` classifier over a counted loop's body, with the counter
+        ; as the loop variable (find_counter set cls_loop_var). The
+        ; condition is walked too: the bound is read every iteration.
+        procedure classify_counted_body(mutable this: TaskPlanner, wh: PlannedWhile)
+        {
+            set cls_locals.length: 0
+            set cls_aliased.length: 0
+            set cls_blocked: false
+            set cls_reason: String^this("")
+            set cls_depth: 0
+            set cls_counter_mode: true
+            set cls_counter_writes: 0
+            set cls_counter_steps: 0
+            set cls_continue_skips: false
+            if file_is_foundation(current_file)
+                this.block("engine foundation module")
+            this.cls_operands(wh.cond.operation)
+            if cls_blocked = false
+                this.cls_action(wh.body)
+            set cls_counter_mode: false
+            if cls_counter_writes > cls_counter_steps
+                this.block("counter written besides its step")
+            if cls_continue_skips
+            {
+                ; `set i: i + 1` + `continue` is the hand-written form of a
+                ; `for`'s continue; a bare `continue` past the step is not
+                if cls_counter_steps > 1
+                    this.block("continue after its own step (a for would take it)")
+                this.block("continue skips the counter step")
+            }
+        }
+
+        ; A write of the counter that is itself a step (`set i: i + 1`
+        ; before a `continue`) is not a second write of the counter.
+        procedure note_counter_step(mutable this: TaskPlanner, act: PlannedAction)
+        {
+            if act.target = null
+                return
+            let t (*act.target)
+            if t.length <> 1
+                return
+            let tp_ t.get 0
+            if tp_ = null
+                return
+            let tname this.bare_variable_name(tp_.unwrap())
+            if tname <> cls_loop_var
+                return
+            if this.is_step_of(act.source, cls_loop_var)
+                set cls_counter_steps: cls_counter_steps + 1
+        }
+
+        procedure not_counted(mutable this: TaskPlanner, reason: String) returns bool
+        {
+            set cls_reason: String^this(reason)
+            false
+        }
+
+        ; Recognize the counted shape. On success cls_loop_var names the
+        ; counter and cls_step_first says whether its step is the body's
+        ; first statement; on failure cls_reason names the missing part.
+        procedure find_counter(mutable this: TaskPlanner, wh: PlannedWhile) returns bool
+        {
+            if wh.cond.binding_item.name <> null
+                return this.not_counted("condition binds a name")
+            let ops wh.cond.operation
+            if ops = null
+                return this.not_counted("empty condition")
+            if ops.length <> 1
+                return this.not_counted("condition is not one comparison")
+            let op_ptr ops.get 0
+            if op_ptr = null
+                return this.not_counted("empty condition")
+            let op op_ptr.unwrap()
+            if this.is_comparison(op) = false
+                return this.not_counted("condition is not a comparison")
+            let stmts this.body_statements(wh.body)
+            if stmts = null
+                return this.not_counted("body is not a block")
+            let lname this.comparison_side(op, 0)
+            let rname this.comparison_side(op, 1)
+            if lname.get_length() = 0 and rname.get_length() = 0
+                return this.not_counted("comparison names no plain variable")
+            let lk this.counter_steps(stmts, lname)
+            if lk = 1
+            {
+                set cls_loop_var: String^this(lname)
+                return true
+            }
+            let rk this.counter_steps(stmts, rname)
+            if rk = 1
+            {
+                set cls_loop_var: String^this(rname)
+                return true
+            }
+            if lk = 3 or rk = 3
+                return this.not_counted("counter stepped twice at the top level")
+            if lk = 2 or rk = 2
+                return this.not_counted("counter step is not +/- a constant or name")
+            this.not_counted("no top-level step of the compared variable")
+        }
+
+        ; A comparison call with two operands (`<`, `<=`, `>`, `>=`, `<>`).
+        function is_comparison(this: TaskPlanner, op: PlannedOperand) returns bool
+        {
+            choose op.expr
+                when call: Call
+                {
+                    if call.args = null
+                        return false
+                    let args (*call.args)
+                    if args.length <> 2
+                        return false
+                    let nm call.name
+                    match nm
+                        case "<" case "<=" case ">" case ">=" case "<>": return true
+                    return false
+                }
+                else
+                    0
+            false
+        }
+
+        ; The bare variable at argument position `index` of a comparison
+        ; call, or "".
+        function comparison_side(this: TaskPlanner, op: PlannedOperand, index: size_t) returns String
+        {
+            choose op.expr
+                when call: Call
+                {
+                    if call.args = null
+                        return ""
+                    let args (*call.args)
+                    if index >= args.length
+                        return ""
+                    let a_ptr args.get index
+                    if a_ptr = null
+                        return ""
+                    return this.bare_variable_name(a_ptr.unwrap())
+                }
+                else
+                    0
+            ""
+        }
+
+        ; The name of a bare variable operand (no member hop), or "".
+        function bare_variable_name(this: TaskPlanner, op: PlannedOperand) returns String
+        {
+            if op.member_access <> null
+            {
+                let ma (*op.member_access)
+                if ma.length > 0
+                    return ""
+            }
+            choose op.expr
+                when v: Variable
+                    return v.name
+                else
+                    0
+            ""
+        }
+
+        ; The top-level statements of a braced loop body, or null.
+        function body_statements(this: TaskPlanner, body: PlannedAction) returns ref[Vector[PlannedStatement]]?
+        {
+            if body.target <> null
+                return null
+            let src body.source
+            if src = null
+                return null
+            if src.length <> 1
+                return null
+            let op_ptr src.get 0
+            if op_ptr = null
+                return null
+            let op op_ptr.unwrap()
+            choose op.expr
+                when blk: Block
+                    return blk.statements
+                else
+                    0
+            null
+        }
+
+        ; How the top-level statements write `name`: 1 = exactly one step
+        ; (`set name: name +/- K`, K a constant or a name) and no other
+        ; top-level write, 2 = one write that is not such a step, 3 = more
+        ; than one top-level write, 0 = none. Sets cls_step_first.
+        procedure counter_steps(mutable this: TaskPlanner, stmts: ref[Vector[PlannedStatement]]?, name: String) returns int
+        {
+            if stmts = null
+                return 0
+            if name.get_length() = 0
+                return 0
+            var steps 0
+            var others 0
+            var first false
+            var i: size_t 0
+            while i < stmts.length
+            {
+                let s_ptr stmts.get i
+                if s_ptr <> null
+                {
+                    let k this.step_kind(s_ptr.unwrap(), name)
+                    if k = 1
+                    {
+                        set steps: steps + 1
+                        if i = 0
+                            set first: true
+                    }
+                    if k = 2
+                        set others: others + 1
+                }
+                set i: i + 1
+            }
+            if steps + others > 1
+                return 3
+            if steps = 1
+            {
+                set cls_step_first: first
+                return 1
+            }
+            if others = 1
+                return 2
+            0
+        }
+
+        ; 1 = stmt is a step of name, 2 = another write of name, 0 = neither.
+        function step_kind(this: TaskPlanner, stmt: PlannedStatement, name: String) returns int
+        {
+            choose stmt
+                when action: Action
+                {
+                    if action.target = null
+                        return 0
+                    let t (*action.target)
+                    if t.length <> 1
+                        return 0
+                    let tp_ t.get 0
+                    if tp_ = null
+                        return 0
+                    let tname this.bare_variable_name(tp_.unwrap())
+                    if tname <> name
+                        return 0
+                    if this.is_step_of(action.source, name)
+                        return 1
+                    return 2
+                }
+                else
+                    0
+            0
+        }
+
+        ; Is src `name + K` or `name - K`, K a constant or a variable?
+        function is_step_of(this: TaskPlanner, src: ref[Vector[PlannedOperand]]?, name: String) returns bool
+        {
+            if src = null
+                return false
+            if src.length <> 1
+                return false
+            let op_ptr src.get 0
+            if op_ptr = null
+                return false
+            let op op_ptr.unwrap()
+            choose op.expr
+                when call: Call
+                {
+                    if call.name <> "+" and call.name <> "-"
+                        return false
+                    if call.args = null
+                        return false
+                    let args (*call.args)
+                    if args.length <> 2
+                        return false
+                    let a0 args.get 0
+                    if a0 = null
+                        return false
+                    let a1 args.get 1
+                    if a1 = null
+                        return false
+                    let lhs this.bare_variable_name(a0.unwrap())
+                    if lhs <> name
+                        return false
+                    let rhs a1.unwrap()
+                    choose rhs.expr
+                        when k: Constant
+                            return true
+                        when v: Variable
+                            return v.name <> name
+                        else
+                            0
+                    return false
+                }
+                else
+                    0
+            false
         }
 
         ; Milestone 4.4 entry point: the Emitter asks per `for` site
@@ -768,6 +1141,8 @@ define TaskPlanner
                 return
             if act.target <> null
             {
+                if cls_counter_mode
+                    this.note_counter_step(act)
                 this.cls_write_target((*act.target))
                 if cls_blocked
                     return
@@ -818,6 +1193,8 @@ define TaskPlanner
             choose top.expr
                 when v: Variable
                 {
+                    if cls_counter_mode and v.name = cls_loop_var
+                        set cls_counter_writes: cls_counter_writes + 1
                     if this.is_local(v.name) = false
                         this.block_named("writes loop-external ", v.name)
                 }
@@ -862,7 +1239,15 @@ define TaskPlanner
                     this.cls_operands(brk.result)
                 }
                 when cont: Continue
-                    0
+                {
+                    if cls_counter_mode and cls_step_first = false
+                    {
+                        if cls_depth = 0
+                            set cls_continue_skips: true
+                        if cont.loop_label.get_length() > 0
+                            set cls_continue_skips: true
+                    }
+                }
         }
 
         procedure cls_operand(mutable this: TaskPlanner, op: PlannedOperand)
@@ -1612,19 +1997,33 @@ define TaskPlanner
             {
                 if this.put_is_disjoint(call)
                     return
-                this.block("put with loop-invariant index into an external vector")
+                this.block("put into an external vector: loop-invariant index or non-scalar value")
                 return
             }
             this.callee_verdict(call)
         }
 
+        ; A namespace-qualified call carries its qualifier in the name
+        ; (`Esis.put`), so the capital that marks a construction is judged
+        ; on the LAST segment: `Sink.put(acc, b)` is a procedure call that
+        ; writes acc, and read as a construction it passed as a
+        ; frame-local allocation -- a false "parallel" the Emitter acted on.
         function is_construction_name(this: TaskPlanner, name: String) returns bool
         {
             if name = "init"
                 return true
-            if name.get_length() = 0
+            let n name.get_length()
+            var start: size_t 0
+            var i: size_t 0
+            while i < n
+            {
+                if name.get(i) = ("." as char)
+                    set start: i + 1
+                set i: i + 1
+            }
+            if start >= n
                 return false
-            let c name.get(0)
+            let c name.get(start)
             if c >= ("A" as char) and c <= ("Z" as char)
                 return true
             false
@@ -1659,9 +2058,22 @@ define TaskPlanner
                             0
             }
             let idx_ptr call.args.get 1
-            if idx_ptr <> null and this.operand_reads_name(idx_ptr.unwrap(), cls_loop_var)
-                return true
-            false
+            if idx_ptr = null
+                return false
+            if this.operand_reads_name(idx_ptr.unwrap(), cls_loop_var) = false
+                return false
+            ; The slot is disjoint; the VALUE must not carry this
+            ; iteration's allocations out of it. A promoted body runs on a
+            ; task region released at the end of its chunk, so a String
+            ; built by `mk(i)` and kept in `out.put(i, mk(i))` dangled --
+            ; 306 of 400 slots overwritten at rc 0. Only a value that
+            ; cannot point anywhere is admitted into a loop-external vector.
+            let val_ptr call.args.get 2
+            if val_ptr = null
+                return false
+            if this.value_can_alias(val_ptr.unwrap().result_type)
+                return false
+            true
         }
 
         ; ================================================================
