@@ -167,6 +167,14 @@ define PointerCensus
         ; Measured before this: 7081 of scalyc's 9289 sites were LLVM handles.
         handle_pointees: Array[String]
         var n_handle: size_t
+        ; A fixed-size STACK ARRAY (`var buf u8[64]`) and every walk over one
+        ; written as a SUBSCRIPT (`buf[i]`, fused to `*(buf + i)` by the
+        ; planner): planned as a pointer, but nothing in the source is one --
+        ; the author wrote an array and an index. Counted here and never listed
+        ; (2026-09-25; the union had carried 52 such `local` sites and some 460
+        ; walks). An EXPLICIT `*(buf + i)` stays a listed walk: that one is
+        ; written as pointer arithmetic.
+        var n_stack_array: size_t
 
         ; Step 3: callee resolution. Open addressing over DD_CAP slots holding
         ; index + 1 into plan.functions, keyed by the mangled name's hash.
@@ -214,6 +222,7 @@ define PointerCensus
     )
     {
         init() linked
+
 
 
 
@@ -1242,7 +1251,7 @@ define PointerCensus
 
 
         ; Walk the children of the slot pointer under `*q` / `*(q + i)`.
-        procedure walk_below_deref(mutable this: PointerCensus, op: PlannedOperand) @deep true linked
+        procedure walk_below_deref(mutable this: PointerCensus, op: PlannedOperand) @deep true io linked
 
 
 
@@ -1445,7 +1454,7 @@ define PointerCensus
         ; off each operand before its children are walked.
         ; ================================================================
 
-        procedure find_operands(mutable this: PointerCensus, ops: ref[Vector[PlannedOperand]]?) @deep true linked
+        procedure find_operands(mutable this: PointerCensus, ops: ref[Vector[PlannedOperand]]?) @deep true io linked
 
 
 
@@ -1459,7 +1468,7 @@ define PointerCensus
 
 
 
-        procedure find_statement_ref(mutable this: PointerCensus, stmt: ref[PlannedStatement]?) @ret_nonlocal true @deep true linked
+        procedure find_statement_ref(mutable this: PointerCensus, stmt: ref[PlannedStatement]?) @ret_nonlocal true @deep true io linked
 
 
 
@@ -1470,7 +1479,7 @@ define PointerCensus
 
         ; A `set` whose target is a deref is a store THROUGH a pointer --
         ; the side of a `set` no text scan could tell apart.
-        procedure find_action(mutable this: PointerCensus, act: PlannedAction) @deep true linked
+        procedure find_action(mutable this: PointerCensus, act: PlannedAction) @deep true io linked
 
 
 
@@ -1491,7 +1500,7 @@ define PointerCensus
 
         ; Answers true when the target head is a store through a pointer and
         ; has been reported (and its children walked) here.
-        procedure note_store_target(mutable this: PointerCensus, head: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
+        procedure note_store_target(mutable this: PointerCensus, head: PlannedOperand) @ret_nonlocal true @deep true returns bool io linked
 
 
 
@@ -1546,7 +1555,7 @@ define PointerCensus
 
 
 
-        procedure find_statement(mutable this: PointerCensus, stmt: PlannedStatement) @ret_nonlocal true @deep true linked
+        procedure find_statement(mutable this: PointerCensus, stmt: PlannedStatement) @ret_nonlocal true @deep true io linked
 
 
 
@@ -1570,6 +1579,7 @@ define PointerCensus
         ; where `let p allocate(...) as pointer[X]` surfaces -- the cast that
         ; is a declaration without a colon.
         procedure note_binding(mutable this: PointerCensus, binding: PlannedBinding) @deep true linked
+
 
 
 
@@ -2024,7 +2034,66 @@ define PointerCensus
 
 
         ; A buffer-walk site: class, type, then provenance.
-        procedure record_walk(mutable this: PointerCensus, offset: size_t, cls: String, base: PlannedOperand) @deep true linked
+        procedure record_walk(mutable this: PointerCensus, offset: size_t, cls: String, base: PlannedOperand) @deep true io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; A SUBSCRIPT walk over a local STACK ARRAY (see n_stack_array): the
+        ; base is a stack-array local and the source reads `[` right after its
+        ; name.
+        procedure base_is_stack_array(mutable this: PointerCensus, base: PlannedOperand) @ret_nonlocal true @deep true returns bool io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; Does the current file read `name` followed by `[` (past blanks)
+        ; within the operand's span? A `set` target's span begins at the `set`.
+        procedure subscript_follows(mutable this: PointerCensus, name: String, start: size_t, end: size_t) @ret_nonlocal true @deep true returns bool io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2147,7 +2216,7 @@ define PointerCensus
 
 
 
-        procedure find_operand(mutable this: PointerCensus, op: PlannedOperand) @deep true linked
+        procedure find_operand(mutable this: PointerCensus, op: PlannedOperand) @deep true io linked
 
 
 
@@ -2369,7 +2438,7 @@ define PointerCensus
 
         ; The call-shaped sites: deref, arithmetic, null comparison, and a
         ; pointer handed to a callee.
-        procedure note_call(mutable this: PointerCensus, op: PlannedOperand, call: PlannedCall) @ret_nonlocal true @deep true returns bool linked
+        procedure note_call(mutable this: PointerCensus, op: PlannedOperand, call: PlannedCall) @ret_nonlocal true @deep true returns bool io linked
 
 
 

@@ -1242,6 +1242,10 @@ define Planner
         ; parallel to the registry as well: the source FILE a function was
         ; registered from ("" outside a module walk) -- function_origin_file#
         function_origin_files: ref[Array[String]]
+        ; the start offsets of variant constructions made from a BARE name
+        ; (`Hit(5)`, `Blue`) -- retarget_bare_variant# may move them onto the
+        ; union a declared target type names
+        bare_variant_starts: ref[Array[size_t]]
 
         ; Stack guard (check_nesting_stack#). stack_base is the SHALLOWEST
         ; plan_operand frame address seen so far, i.e. the top of the recursive
@@ -1256,6 +1260,7 @@ define Planner
     )
     {
         init(filename: String) linked
+
 
 
 
@@ -16601,6 +16606,8 @@ define Planner
 
 
 
+
+
         ; check_operator_match: test a single Operator candidate against
         ; argument types. Same shape as check_function_match.
         procedure check_operator_match(
@@ -24976,6 +24983,7 @@ define Planner
 
 
 
+
         ; report_absorbed_after_control#: a `choose`, `match`, `if` or `try`
         ; followed by more operands in ONE operand run. The parser ends such a
         ; construct at its last arm's newline and then keeps collecting for the
@@ -25784,6 +25792,10 @@ define Planner
 
 
 
+
+
+
+
         ; ================================================================
         ; plan_action / plan_return / plan_break / plan_throw.
         ;
@@ -25874,6 +25886,157 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+        ; retarget_bare_variant: a variant written by its BARE name is built on
+        ; the union the declared TARGET type names (2026-09-25). The payload
+        ; rescue for `Hit(5)` took the FIRST registered union declaring `Hit`,
+        ; so beside a second such union the construction was of the wrong type
+        ; and every position reported that (`Other where Reply is declared`,
+        ; `function not found`); and `None` for a `returns Option[int]` was an
+        ; unknown identifier because a generic union's unit variant has no type
+        ; arguments without a target. Called at the declared-type positions --
+        ; an explicit and an implicit return, a typed binding, a `set` -- ahead
+        ; of their unknown-name and conformance reports. A qualified
+        ; `Union.Variant` is never moved, nor is an Option of a reference (its
+        ; empty case is `null`).
+        procedure retarget_bare_variant(mutable this: Planner, target: PlannedType, op: PlannedOperand) @page true @direct true @deep true returns PlannedOperand linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; bare_variant_arg_hint: the reason a call with a bare-variant ARGUMENT
+        ; found no function -- an argument is not a declared-type position
+        ; retarget_bare_variant# serves, so `tag(Hit(6))` beside two unions
+        ; declaring `Hit` built the first one and matched nothing.
+        procedure bare_variant_arg_hint(mutable this: Planner, args: Vector[PlannedOperand]) @page true @direct true @ret_caller true @deep true returns String linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; report_ambiguous_bare_variant: an UNTYPED binding of a variant written
+        ; by its bare name that more than one union declares -- nothing says
+        ; which union is meant, and the payload rescue built the first one.
+        procedure report_ambiguous_bare_variant(mutable this: Planner, op: PlannedOperand) @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; unions_declaring: how many registered unions declare a variant of
+        ; this name (bare_variant_arg_hint#).
+        procedure unions_declaring(mutable this: Planner, name: String) @ret_nonlocal true @deep true returns int linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function is_bare_variant_start(this: Planner, start: size_t) @ret_nonlocal true @deep true returns bool linked
 
 
 
@@ -28621,6 +28784,10 @@ define Planner
 
 
         procedure plan_action(mutable this: Planner, mutable a: Action) @page true @direct true @stores true @deep true @deep_this_2 true returns PlannedAction io linked
+
+
+
+
 
 
 
@@ -42703,6 +42870,11 @@ define Planner
 
 
 
+
+
+
+
+
         ; The statement half of convert_tail_literal#. Only an Action with no
         ; store target carries an implicit value; a Return is plan_return#'s.
         procedure convert_tail_literal_statement(mutable this: Planner, stmt: PlannedStatement, rt: PlannedType) @page true @direct true @ret_caller true @deep true returns ref[PlannedStatement]? linked
@@ -42908,6 +43080,8 @@ define Planner
 
 
         procedure plan_return(mutable this: Planner, mutable r: Return) @page true @direct true @stores true @ret_caller true @deep true @deep_this_2 true returns PlannedReturn io linked
+
+
 
 
 

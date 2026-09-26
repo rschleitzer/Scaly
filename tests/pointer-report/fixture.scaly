@@ -157,3 +157,11 @@ procedure fallbacks(n: size_t, src: pointer[u8]) returns int
     set *(stack_buf + 1): *(src + 0)                ; store-arith base=local(stack_buf<-stack[4]); deref-arith base=param(src) len=n?
     *(stack_buf + 1) as int
 }
+; A stack array INDEXED is no pointer site at all: the declaration and both
+; subscript walks are counted under `stack arrays (not listed)` (2026-09-25).
+procedure indexed(n: size_t) returns int
+{
+    var idx_buf u8[8]
+    set idx_buf[1]: 7 as u8
+    idx_buf[1] as int
+}

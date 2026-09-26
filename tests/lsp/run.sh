@@ -5990,9 +5990,14 @@ for f in sweep:
             wrong.append((f, ln, "param %s is not a parameter here" % param, head.strip()[:60])); continue
         if re.match(r"\s*(function|procedure)\s+[A-Za-z_0-9]+\(\s*rp\b", head):
             wrong.append((f, ln, "routine HAS a page parameter", head.strip()[:50]))
-# a real number, not a zero: R8 (2026-09-25) gave several of the marked
-# routines their caller page, which took the count down to 10
-check(total > 5, "the sweep marked a real number of stores (%d)" % total)
+# a real number, not a zero. ★The threshold was lowered to `> 5` on 2026-09-25
+# when the total read 10 (attributed then to R8 giving marked routines their
+# page -- not re-established). The same day the server's silent truncation was
+# found and closed (Style.scaly answered 0 of its 15 marks on a short stack;
+# worker.serve_on_worker_stack#), and the sweep reads 25 since (Style 15, Parser
+# 8, ParserState 2, Primitive 0). So the rule above holds again: more corpus,
+# never a lower threshold.
+check(total > 10, "the sweep marked a real number of stores (%d)" % total)
 check(not wrong, "every mark is attributed to a parameter of its OWN routine")
 for w in wrong[:5]: print("      ", w)
 sys.exit(1 if failures else 0)

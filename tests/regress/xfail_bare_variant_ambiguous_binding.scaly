@@ -1,0 +1,12 @@
+; xfail: error: the bare variant Hit is declared by more than one union
+;
+; Regression (2026-09-25): a bare variant WITH a payload that two unions
+; declare, bound without a type. The rescue for `Hit(5)` builds the FIRST
+; union that declares it, so the binding silently took whichever union was
+; registered first; a later use then failed far away (`function not found`).
+; Reported at the binding now (Planner.report_ambiguous_bare_variant#).
+
+define Other union (Nope: int, Hit: int)
+define Reply union (Hit: int, Fail: int)
+
+let r Hit(5)

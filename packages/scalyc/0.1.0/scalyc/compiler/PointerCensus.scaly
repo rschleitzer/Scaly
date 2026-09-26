@@ -167,6 +167,14 @@ define PointerCensus
         ; Measured before this: 7081 of scalyc's 9289 sites were LLVM handles.
         handle_pointees: Array[String]
         var n_handle: size_t
+        ; A fixed-size STACK ARRAY (`var buf u8[64]`) and every walk over one
+        ; written as a SUBSCRIPT (`buf[i]`, fused to `*(buf + i)` by the
+        ; planner): planned as a pointer, but nothing in the source is one --
+        ; the author wrote an array and an index. Counted here and never listed
+        ; (2026-09-25; the union had carried 52 such `local` sites and some 460
+        ; walks). An EXPLICIT `*(buf + i)` stays a listed walk: that one is
+        ; written as pointer arithmetic.
+        var n_stack_array: size_t
 
         ; Step 3: callee resolution. Open addressing over DD_CAP slots holding
         ; index + 1 into plan.functions, keyed by the mangled name's hash.
@@ -240,6 +248,7 @@ define PointerCensus
             set src_loaded: Array[size_t]^this()
             set handle_pointees: Array[String]^this()
             set n_handle: 0
+            set n_stack_array: 0
             set plan_functions: null
             set fn_slots: Vector[size_t]^this(DD_CAP)
             set plan_structures: null
@@ -1614,9 +1623,10 @@ define PointerCensus
                 kb.append "]"
                 loc_names.add(String^this(pname))
                 loc_kinds.add(String^this(kb.to_string()))
+                set n_stack_array: n_stack_array + 1
+                return
             }
-            else
-                this.note_local(pname, binding.operation)
+            this.note_local(pname, binding.operation)
             this.record_named(binding.loc.start, "local", t, pname)
         }
 
@@ -2032,6 +2042,11 @@ define PointerCensus
                 set n_handle: n_handle + 1
                 return
             }
+            if this.base_is_stack_array(base)
+            {
+                set n_stack_array: n_stack_array + 1
+                return
+            }
             var sb StringBuilder()
             sb.append cls
             sb.append " "
@@ -2040,6 +2055,60 @@ define PointerCensus
             let text sb.to_string()
             let text_copy String^this(text)
             this.record(offset, cls, text_copy)
+        }
+
+        ; A SUBSCRIPT walk over a local STACK ARRAY (see n_stack_array): the
+        ; base is a stack-array local and the source reads `[` right after its
+        ; name.
+        procedure base_is_stack_array(mutable this: PointerCensus, base: PlannedOperand) returns bool
+        {
+            if base.member_access <> null and base.member_access.length > 0
+                return false
+            choose base.expr
+                when v: Variable
+                {
+                    if this.param_index(v.name) >= 0
+                        return false
+                    if this.local_kind(v.name).starts_with("stack[") = false
+                        return false
+                    return this.subscript_follows(v.name, base.loc.start, base.loc.end)
+                }
+                else
+                    return false
+            false
+        }
+
+        ; Does the current file read `name` followed by `[` (past blanks)
+        ; within the operand's span? A `set` target's span begins at the `set`.
+        procedure subscript_follows(mutable this: PointerCensus, name: String, start: size_t, end: size_t) returns bool
+        {
+            var fi: size_t 0
+            while fi < src_files.length
+            {
+                let f src_files.get fi
+                if f <> null and (*f) = current_file
+                {
+                    let src_ref this.source_of(fi)
+                    if src_ref = null
+                        return false
+                    let src (*src_ref)
+                    var at start
+                    while at <= end
+                    {
+                        if PointerCensus.text_at(src, at, name)
+                        {
+                            var o at + name.get_length()
+                            while o < src.get_length() and (src.get(o) = " " as char or src.get(o) = "\t" as char)
+                                set o: o + 1
+                            return o < src.get_length() and src.get(o) = "[" as char
+                        }
+                        set at: at + 1
+                    }
+                    return false
+                }
+                set fi: fi + 1
+            }
+            false
         }
 
         ; The pointer under `p + i` / `p - i`, or null when `op` is not that.

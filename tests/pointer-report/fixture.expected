@@ -1,4 +1,4 @@
-pointer-report: 138 sites; extern 4, param 19, return 1, field 4, variant 1, local 12, deref 5, deref-arith 7, arith 13, cast 19, null-cast 1, null-test 8, store 11, arg 2, arg-extern 21, arg-unresolved 0, h-pointer-into-ref 2, h-slice-into-pointer 1, h-mixed-params 5, h-store-through-ref-slot 2; optional-ref derefs (not listed) 1, bodies unfiled 0, alias handles (not listed) 3
+pointer-report: 137 sites; extern 4, param 19, return 1, field 4, variant 1, local 11, deref 5, deref-arith 7, arith 13, cast 19, null-cast 1, null-test 8, store 11, arg 2, arg-extern 21, arg-unresolved 0, h-pointer-into-ref 2, h-slice-into-pointer 1, h-mixed-params 5, h-store-through-ref-slot 2; optional-ref derefs (not listed) 1, bodies unfiled 0, alias handles (not listed) 3, stack arrays (not listed) 4
 pointer-report: tests/pointer-report/fixture.scaly:8:16: extern-param pointer[void] memcpy(dst)
 pointer-report: tests/pointer-report/fixture.scaly:8:37: extern-param pointer[void] memcpy(src)
 pointer-report: tests/pointer-report/fixture.scaly:8:68: extern-return pointer[void] memcpy
@@ -128,7 +128,6 @@ pointer-report: tests/pointer-report/fixture.scaly:147:5: local pointer[u8] view
 pointer-report: tests/pointer-report/fixture.scaly:148:11: deref-arith pointer[u8] base=local(view<-call(get_buffer))
 pointer-report: tests/pointer-report/fixture.scaly:149:16: deref-arith pointer[u8] base=call(get_buffer) recv=Array len=Array.length
 pointer-report: tests/pointer-report/fixture.scaly:150:5: deref pointer[u8]
-pointer-report: tests/pointer-report/fixture.scaly:156:5: local pointer[u8] stack_buf
 pointer-report: tests/pointer-report/fixture.scaly:157:25: deref-arith pointer[u8] base=param(src) len=n?
 pointer-report: tests/pointer-report/fixture.scaly:157:5: store-arith pointer[u8] base=local(stack_buf<-stack[4])
 pointer-report: tests/pointer-report/fixture.scaly:158:5: deref-arith pointer[u8] base=local(stack_buf<-stack[4])

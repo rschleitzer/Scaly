@@ -1,0 +1,85 @@
+; Regression (2026-09-25): a variant written by its BARE name is built on the
+; union the declared TARGET type names -- a return, an implicit return, a
+; typed binding, a `set` (Planner.retarget_bare_variant#). Before, the payload
+; rescue for `Hit(x)` took the FIRST registered union declaring `Hit` and every
+; such position reported `Other where Reply is declared`; `None` for a
+; `returns Option[int]` was an unknown identifier (a generic union's unit
+; variant has no type arguments without a target); and `Blue` beside two
+; unions declaring it could not be resolved at all.
+; Expected: PASS
+
+define Other union (Nope: int, Hit: int)
+define Reply union (Hit: int, Fail: int)
+define Shade union (Red, Blue)
+define Mood union (Calm, Blue)
+
+function reply(x: int) returns Reply
+{
+    if x > 100
+        return Fail(x)
+    Hit(x)
+}
+
+function reply_tag(r: Reply) returns int
+{
+    choose r
+        when h: Hit
+            h
+        when f: Fail
+            0 - f
+        else
+            0
+}
+
+function shade() returns Shade
+    Blue
+
+function is_blue(s: Shade) returns bool
+{
+    choose s
+        when b: Blue
+            true
+        else
+            false
+}
+
+function maybe(x: int) returns Option[int]
+{
+    if x > 0
+        return None
+    Some(x)
+}
+
+function or_minus(o: Option[int]) returns int
+{
+    choose o
+        when s: Some
+            s
+        else
+            0 - 1
+}
+
+var ok true
+if reply_tag(reply(7)) <> 7
+    set ok: false
+if reply_tag(reply(200)) <> 0 - 200
+    set ok: false
+if is_blue(shade()) = false
+    set ok: false
+if or_minus(maybe(1)) <> 0 - 1
+    set ok: false
+if or_minus(maybe(0)) <> 0
+    set ok: false
+let t: Reply Hit(9)
+if reply_tag(t) <> 9
+    set ok: false
+var o: Option[int] None
+if or_minus(o) <> 0 - 1
+    set ok: false
+set o: Some(41)
+if or_minus(o) <> 41
+    set ok: false
+if ok
+    print "PASS"
+else
+    print "FAIL"

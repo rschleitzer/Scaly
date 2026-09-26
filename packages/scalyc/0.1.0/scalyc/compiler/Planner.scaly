@@ -1242,6 +1242,10 @@ define Planner
         ; parallel to the registry as well: the source FILE a function was
         ; registered from ("" outside a module walk) -- function_origin_file#
         function_origin_files: ref[Array[String]]
+        ; the start offsets of variant constructions made from a BARE name
+        ; (`Hit(5)`, `Blue`) -- retarget_bare_variant# may move them onto the
+        ; union a declared target type names
+        bare_variant_starts: ref[Array[size_t]]
 
         ; Stack guard (check_nesting_stack#). stack_base is the SHALLOWEST
         ; plan_operand frame address seen so far, i.e. the top of the recursive
@@ -1398,6 +1402,7 @@ define Planner
             set function_origin_paths: Array[String]^this()
             set function_namespaces: &Array[String]^this()
             set function_origin_files: &Array[String]^this()
+            set bare_variant_starts: &Array[size_t]^this()
             set registering_namespace: String^this("")
             set registering_file: String^this("")
             set registering_path: String^this("")
@@ -14924,6 +14929,7 @@ define Planner
                                             bv_tag,
                                             bv_payload
                                         )
+                                        bare_variant_starts.add(result.loc.start)
                                         ; Keep a trailing member chain on the
                                         ; construction result and early-return,
                                         ; mirroring the gate's variant-ctor
@@ -14961,6 +14967,7 @@ define Planner
                                 let vis_hint this.use_vis_hint(fn_name)
                                 if vis_hint.get_length() > 0
                                     dsb.append vis_hint
+                                dsb.append(this.bare_variant_arg_hint(call_args_holder))
                                 this.add_diagnostic(result.loc, dsb.to_string())
                             }
                         }
@@ -24904,6 +24911,7 @@ define Planner
                     return null
                 set union_name: String(owner)
                 set variant_name: String(bare)
+                bare_variant_starts.add(loc.start)
             }
             else
             {
@@ -25612,6 +25620,10 @@ define Planner
             ; (a legitimate lone PlannedType) is exempt above.
             if rest_arr.length > 0
             {
+                if is_stack_array_decl = false and orig_item.item_type <> null
+                    set collapsed: this.retarget_bare_variant((*orig_item.item_type), collapsed)
+                if is_stack_array_decl = false and orig_item.item_type = null
+                    this.report_ambiguous_bare_variant(collapsed)
                 if is_stack_array_decl = false
                 {
                     let init_unknown this.unknown_identifier_name(collapsed)
@@ -25883,6 +25895,157 @@ define Planner
                 else
                     return ""
             ""
+        }
+
+        ; retarget_bare_variant: a variant written by its BARE name is built on
+        ; the union the declared TARGET type names (2026-09-25). The payload
+        ; rescue for `Hit(5)` took the FIRST registered union declaring `Hit`,
+        ; so beside a second such union the construction was of the wrong type
+        ; and every position reported that (`Other where Reply is declared`,
+        ; `function not found`); and `None` for a `returns Option[int]` was an
+        ; unknown identifier because a generic union's unit variant has no type
+        ; arguments without a target. Called at the declared-type positions --
+        ; an explicit and an implicit return, a typed binding, a `set` -- ahead
+        ; of their unknown-name and conformance reports. A qualified
+        ; `Union.Variant` is never moved, nor is an Option of a reference (its
+        ; empty case is `null`).
+        procedure retarget_bare_variant(mutable this: Planner, target: PlannedType, op: PlannedOperand) returns PlannedOperand
+        {
+            if target.name = "Option" and target.generics <> null
+            {
+                let tg (*target.generics)
+                if tg.length > 0
+                {
+                    let g0 tg.get 0
+                    if g0 <> null and (g0.name = "ref" or g0.name = "pointer")
+                        return op
+                }
+            }
+            if op.member_access <> null and op.member_access.length > 0
+                return op
+            var vname ""
+            var payload: ref[PlannedOperand]? null
+            choose op.expr
+                when vc: PlannedVariantConstruction
+                {
+                    if this.is_bare_variant_start(vc.loc.start) = false
+                        return op
+                    if vc.union_type.mangled_name = target.mangled_name
+                        return op
+                    set vname: String(vc.variant_name)
+                    set payload: vc.value
+                }
+                when ty: PlannedType
+                {
+                    if ty.name.index_of(46) >= 0
+                        return op
+                    if this.lookup_local_binding(ty.name) <> null or this.lookup_global(ty.name) <> null
+                        return op
+                    set vname: String(ty.name)
+                }
+                else
+                    return op
+            let tag this.lookup_variant_tag_by_name(target.name, vname)
+            if tag < 0
+                return op
+            ; the payload must be there exactly when the variant declares one
+            let concept_ref this.lookup_concept(target.name)
+            if concept_ref = null
+                return op
+            var has_payload false
+            choose concept_ref.definition
+                when u: scalyc.compiler.Model.Union
+                {
+                    let vp u.variants.get(tag as size_t)
+                    if vp <> null and vp.type <> null
+                        set has_payload: true
+                }
+                else
+                    return op
+            if has_payload <> (payload <> null)
+                return op
+            let vc2 PlannedVariantConstruction(op.loc, target, vname, tag as size_t, payload)
+            PlannedOperand^this(op.loc, PlannedExpression.VariantConstruction vc2, null, target)
+        }
+
+        ; bare_variant_arg_hint: the reason a call with a bare-variant ARGUMENT
+        ; found no function -- an argument is not a declared-type position
+        ; retarget_bare_variant# serves, so `tag(Hit(6))` beside two unions
+        ; declaring `Hit` built the first one and matched nothing.
+        procedure bare_variant_arg_hint(mutable this: Planner, args: Vector[PlannedOperand]) returns String
+        {
+            var i: size_t 0
+            while i < args.length
+            {
+                let ap args.get i
+                if ap <> null
+                {
+                    choose ap.expr
+                        when vc: PlannedVariantConstruction
+                        {
+                            if this.is_bare_variant_start(vc.loc.start) and this.unions_declaring(vc.variant_name) > 1
+                                return String#(" - the bare variant `vc.variant_name` is declared by more than one union and was built as `vc.union_type.name`; write the union: Union.`vc.variant_name`")
+                        }
+                        else
+                            0
+                }
+                set i: i + 1
+            }
+            String#("")
+        }
+
+        ; report_ambiguous_bare_variant: an UNTYPED binding of a variant written
+        ; by its bare name that more than one union declares -- nothing says
+        ; which union is meant, and the payload rescue built the first one.
+        procedure report_ambiguous_bare_variant(mutable this: Planner, op: PlannedOperand)
+        {
+            if op.member_access <> null and op.member_access.length > 0
+                return
+            choose op.expr
+                when vc: PlannedVariantConstruction
+                {
+                    if this.is_bare_variant_start(vc.loc.start) and this.unions_declaring(vc.variant_name) > 1
+                        this.add_diagnostic(op.loc, String^this("the bare variant `vc.variant_name` is declared by more than one union: write the union (Union.`vc.variant_name`) or give the binding its type"))
+                }
+                else
+                    0
+        }
+
+        ; unions_declaring: how many registered unions declare a variant of
+        ; this name (bare_variant_arg_hint#).
+        procedure unions_declaring(mutable this: Planner, name: String) returns int
+        {
+            var count: int 0
+            var i: size_t 0
+            while i < concepts.length
+            {
+                let kv concepts.get i
+                if kv <> null
+                {
+                    choose kv.value.definition
+                        when u: scalyc.compiler.Model.Union
+                        {
+                            if this.lookup_variant_tag_by_name(kv.key, name) >= 0
+                                set count: count + 1
+                        }
+                        else
+                            0
+                }
+                set i: i + 1
+            }
+            count
+        }
+
+        function is_bare_variant_start(this: Planner, start: size_t) returns bool
+        {
+            var i: size_t 0
+            while i < bare_variant_starts.length
+            {
+                if bare_variant_starts[i] = start
+                    return true
+                set i: i + 1
+            }
+            false
         }
 
         ; unit_variant_owner: the ONE non-generic union that declares a
@@ -28771,6 +28934,8 @@ define Planner
             ; dropped SILENTLY (the S30 opensp bare-const-array-as-RHS
             ; null). Same loud diagnostic + use hint as the binary check.
             if a.target.length > 0
+                set planned_source_collapsed: this.retarget_bare_variant(planned_target_collapsed.result_type, planned_source_collapsed)
+            if a.target.length > 0
             {
                 let src_unknown this.unknown_identifier_name(planned_source_collapsed)
                 if src_unknown.get_length() > 0
@@ -28805,6 +28970,8 @@ define Planner
             ; arm is the value that block or arm yields, and it answered 0 or
             ; garbage at rc 0 the same way. A bare name that resolves to
             ; nothing is wrong in any statement position.
+            if do_tail_check and a.target.length = 0 and this.current_return_type <> null
+                set planned_source_collapsed: this.retarget_bare_variant((*this.current_return_type), planned_source_collapsed)
             if a.target.length = 0
                 this.report_unknown_identifier(planned_source_collapsed)
 
@@ -42543,6 +42710,11 @@ define Planner
                     let sliced this.materialize_string_operand_to_slice(op, rt)
                     return PlannedOperand^this(sliced.loc, sliced.expr, sliced.member_access, sliced.result_type)
                 }
+            ; A variant written by its bare name at the end of a block or an arm
+            ; takes the union of the return type -- retarget_bare_variant#.
+            let moved this.retarget_bare_variant(rt, op)
+            if moved.result_type.mangled_name <> op.result_type.mangled_name
+                return PlannedOperand^this(moved.loc, moved.expr, moved.member_access, moved.result_type)
 
             choose op.expr
                 when ch: PlannedChoose
@@ -42980,6 +43152,8 @@ define Planner
 
             let planned_flat this.plan_operands(r.result)
             var planned_collapsed this.collapse_operand_sequence(planned_flat)
+            if this.current_return_type <> null
+                set planned_collapsed: this.retarget_bare_variant((*this.current_return_type), planned_collapsed)
 
             ; ★★★An UNKNOWN IDENTIFIER that is the WHOLE of a return compiled at
             ; rc 0 and answered 0 (2026-09-20). The unknown-name rule covered

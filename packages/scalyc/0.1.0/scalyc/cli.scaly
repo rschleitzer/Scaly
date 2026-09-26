@@ -1344,6 +1344,8 @@ define cli
         head.append(cli.format_size(pc.n_unfiled))
         head.append ", alias handles (not listed) "
         head.append(cli.format_size(pc.n_handle))
+        head.append ", stack arrays (not listed) "
+        head.append(cli.format_size(pc.n_stack_array))
         let head_str head.to_string()
         Console.println(head_str.to_c_string())
         cli.print_located("pointer-report: ", &pc.report_files, &pc.report_offsets, &pc.report_texts)

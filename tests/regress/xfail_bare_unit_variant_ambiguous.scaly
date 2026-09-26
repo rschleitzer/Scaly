@@ -1,16 +1,12 @@
 ; xfail: error: unknown identifier: Blue
 ;
-; Regression (2026-09-25): a bare unit variant that TWO unions declare cannot
-; be resolved -- write `Union.Variant`. It is reported rather than planned as
-; the zeroed first variant (bare_unit_variant.scaly has the account). A
-; CONTROL, not a witness: the old compiler reported this shape too (the whole
-; body is the name); it pins that resolving bare variants did not make the
-; ambiguous case quiet.
+; Regression (2026-09-25): a bare unit variant that TWO unions declare, where
+; nothing names the union -- an untyped binding. It is reported rather than
+; planned as the zeroed first variant (bare_unit_variant.scaly has the
+; account). With a declared target type the same name resolves
+; (bare_variant_target.scaly).
 
 define Shade union (Red, Blue)
 define Mood union (Calm, Blue)
 
-function pick() returns Shade
-    Blue
-
-let s pick()
+let s Blue
