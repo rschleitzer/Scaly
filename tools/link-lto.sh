@@ -54,8 +54,14 @@ sed 's/^define linkonce_odr /define linkonce_odr hidden /' "$WORK/whole.ll" > "$
 # LTO_LLC_FLAGS: extra llc flags for a profiling build (e.g. -frame-pointer=all,
 # so that a stack-logging allocator can walk the stacks); empty by default
 # shellcheck disable=SC2086
-"$LLC" ${LTO_LLC_FLAGS:-} -relocation-model=pic -O2 -filetype=obj "$WORK/whole.bc" -o "$WORK/whole.o" \
+# LTO_SPLIT=<n|auto>: codegen in n parallel parts (tools/llc-split.sh). OFF by
+# default: the parts cost 1-2 % run time (tscaly bench), and the binaries this
+# script builds are measured -- the tsgo comparison above all.
+"$ROOT/tools/llc-split.sh" "${LTO_SPLIT:-1}" "$WORK/whole.bc" "$WORK/whole" \
+  ${LTO_LLC_FLAGS:-} -relocation-model=pic -O2 -filetype=obj > "$WORK/objs.txt" \
   || { echo "link-lto: FAIL (llc)" >&2; exit 1; }
+OBJS=()
+while IFS= read -r o; do OBJS+=("$o"); done < "$WORK/objs.txt"
 
 # The fiber context-switch primitives, the evented-I/O shim and the civil-time
 # shim — built here rather than reused from /tmp so the binary never depends on
@@ -87,5 +93,5 @@ if [ -n "${LINK_EXTRA:-}" ]; then
   # shellcheck disable=SC2206
   EXTRA=(${LINK_EXTRA})
 fi
-${CLANG:-clang} ${LINKARGS[@]+"${LINKARGS[@]}"} "$WORK/whole.o" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" "$WORK/panic.o" ${EXTRA[@]+"${EXTRA[@]}"} -lm -o "$OUT" \
+${CLANG:-clang} ${LINKARGS[@]+"${LINKARGS[@]}"} "${OBJS[@]}" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" "$WORK/panic.o" ${EXTRA[@]+"${EXTRA[@]}"} -lm -o "$OUT" \
   || { echo "link-lto: FAIL (link)" >&2; exit 1; }

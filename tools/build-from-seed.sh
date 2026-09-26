@@ -146,8 +146,10 @@ build_scalyls() {
         "$LLVM_LINK" "$SEED/scalyls_main.ll" "$SEED/scalyls.ll" \
             "$SEED/scalyc.ll" "$SEED/scaly.ll" -o "$WORK/scalyls_linked.bc"
         "$OPT" -O2 "$WORK/scalyls_linked.bc" -o "$WORK/scalyls_opt.bc"
-        "$LLC" -relocation-model=pic -filetype=obj "$WORK/scalyls_opt.bc" -o "$WORK/scalyls_all.o"
-        SCALYLS_OBJS=("$WORK/scalyls_all.o")
+        tools/llc-split.sh "${SCALYC_LLC_SPLIT:-auto}" "$WORK/scalyls_opt.bc" "$WORK/scalyls_all" \
+            -relocation-model=pic -filetype=obj > "$WORK/scalyls_objs.txt"
+        SCALYLS_OBJS=()
+        while IFS= read -r o; do SCALYLS_OBJS+=("$o"); done < "$WORK/scalyls_objs.txt"
     else
         for f in scalyls_main scalyls; do
             "$LLC" -relocation-model=pic -filetype=obj "$SEED/$f.ll" -o "$WORK/$f.o"
@@ -210,8 +212,14 @@ if [ "$use_opt" = "1" ]; then
     # -relocation-model=pic: x86-64 Linux links executables as PIE, which rejects
     # llc's default (static) R_X86_64_32 absolute relocations. PIC is the default
     # on Mach-O, so this is a no-op on macOS and harmless on aarch64.
-    "$LLC" -relocation-model=pic -filetype=obj "$WORK/scalyc_export.ll" -o "$WORK/scalyc_all.o"
-    SCALYC_OBJS=("$WORK/scalyc_all.o")
+    # Codegen in parallel parts (tools/llc-split.sh): llc was half of this
+    # step, 19.6 s for the compiler alone; the parts cost the compiler ~1-2 %
+    # run time, which a build that is not measured against anything can pay.
+    # SCALYC_LLC_SPLIT=1 restores the single llc.
+    tools/llc-split.sh "${SCALYC_LLC_SPLIT:-auto}" "$WORK/scalyc_export.ll" "$WORK/scalyc_all" \
+        -relocation-model=pic -filetype=obj > "$WORK/scalyc_objs.txt"
+    SCALYC_OBJS=()
+    while IFS= read -r o; do SCALYC_OBJS+=("$o"); done < "$WORK/scalyc_objs.txt"
     echo "build-from-seed: whole-program opt -O2 applied (runtime kept JIT-visible)"
 else
     for f in main scalyc scaly; do

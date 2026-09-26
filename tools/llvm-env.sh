@@ -97,9 +97,19 @@ if [ -z "${LLVM_LINK:-}" ]; then
   done
 fi
 
+# 3c. llvm-split (optional — tools/llc-split.sh's parallel codegen; absent,
+#     one llc runs over the whole module as before). Not on the Windows box:
+#     its llc is a clang stand-in.
+if [ -z "${LLVM_SPLIT:-}" ] && [ "$SCALY_COFF" != "1" ]; then
+  for cand in "$LLVM_PREFIX/bin/llvm-split" "$LLVM_PREFIX/bin/llvm-split-20" llvm-split-20; do
+    if [ -n "$cand" ] && command -v "$cand" >/dev/null 2>&1; then LLVM_SPLIT="$cand"; break; fi
+  done
+fi
+
 LLC=${LLC:-}
 OPT=${OPT:-}
 LLVM_LINK=${LLVM_LINK:-}
+LLVM_SPLIT=${LLVM_SPLIT:-}
 
 # 4. report / validate
 llvm_env_ok=1
@@ -108,4 +118,4 @@ llvm_env_ok=1
 if [ "$llvm_env_ok" = "1" ]; then
   echo "llvm-env: prefix=$LLVM_PREFIX  llc=$LLC  lib=$LLVM_LIBDIR (-l$LLVM_LIBNAME)"
 fi
-export LLVM_PREFIX LLC LLVM_LIBDIR LLVM_LIBNAME OPT LLVM_LINK SCALY_COFF
+export LLVM_PREFIX LLC LLVM_LIBDIR LLVM_LIBNAME OPT LLVM_LINK LLVM_SPLIT SCALY_COFF
