@@ -1,0 +1,50 @@
+; Regression (2026-09-27): a subscript followed by a member chain, `a[0].x`.
+; The parser hangs `.x` on the index matrix (`a` and `[0].x`), and the
+; subscript pre-pass refused to fuse a matrix that carries a chain: the pair
+; failed as "unexpected operand" at rc 4, so the tree always bound the element
+; first. The pre-pass fuses now and resolves the chain again against the
+; element (Planner.fused_chain_onto#). Fields, a method with arguments, two
+; hops, and an Array, a Vector and a pointer receiver.
+; Expected: PASS
+define Inner (w: int)
+define P (x: int  y: int  inner: Inner)
+{
+    function sum(this, k: int) returns int
+        x + y + k
+}
+
+procedure check() returns int
+{
+    var a Array[P]()
+    a.add(P(1, 2, Inner(30)))
+    a.add(P(5, 6, Inner(70)))
+    if a[0].x <> 1 or a[1].y <> 6
+        return 1
+    if a[1].inner.w <> 70
+        return 2
+    if a[0].sum(10) <> 13
+        return 3
+    var v Vector[P](2)
+    v.put(0, P(7, 8, Inner(9)))
+    if v[0].y + v[0].inner.w <> 17
+        return 4
+    var buf Vector[String](1)
+    buf.put(0, String("hello"))
+    if buf[0].get_length() <> 5
+        return 5
+    let host Page.allocate_page()
+    let p host.allocate(2 * sizeof P, alignof P) as pointer[P]
+    set *p: P(11, 12, Inner(13))
+    set *(p + 1): P(21, 22, Inner(23))
+    let total p[1].x + p[0].inner.w
+    Page.release_page(host)
+    if total <> 34
+        return 6
+    42
+}
+
+let rc check()
+if rc = 42
+    print("PASS")
+else
+    print("FAIL `rc`")

@@ -11923,7 +11923,11 @@ define Planner
                                     0
                             if base_is_value
                             {
-                                if sx_op.member_access = null
+                                ; ★The index matrix may carry a member chain:
+                                ; `a[0].x` parses as `a` and `[0].x` (the chain
+                                ; belongs to the last primary). It is moved onto
+                                ; the fused element below (fused_chain_onto#).
+                                if true
                                 {
                                     choose sx_op.expr
                                         when smx: scalyc.compiler.Plan.PlannedMatrix
@@ -12084,6 +12088,8 @@ define Planner
                     }
                     if fused
                     {
+                        let fused_last sub_arr[sub_arr.length - 1]
+                        sub_arr.put(sub_arr.length - 1, this.fused_chain_onto(fused_last, ops, si + 1))
                         set si: si + 2
                         continue
                     }
@@ -18928,6 +18934,32 @@ define Planner
         ; result_type when every hop resolves as a property — the same
         ; rule as the s175 call-branch fix. Returns the operand
         ; unchanged when the chain is absent or not all-property.
+        ; A subscript followed by a member chain, `a[0].x` / `a[i].m(y)`: the
+        ; parser hangs `.x` on the index MATRIX, so the pre-pass fused `a`
+        ; and `[0]` and would lose the chain -- until 2026-09-27 it refused
+        ; to fuse at all and the pair failed as "unexpected operand". The
+        ; chain is resolved again against the ELEMENT (rebind_trailing_chain#)
+        ; and hung on the fused operand.
+        procedure fused_chain_onto(mutable this: Planner, mutable fused_op: PlannedOperand, ops: Vector[PlannedOperand], at: size_t) returns PlannedOperand
+        {
+            let ix_ptr ops.get at
+            if ix_ptr = null
+                return fused_op
+            let chain (*ix_ptr).member_access
+            if chain = null
+                return fused_op
+            ; a copy, so the rebinding writes nothing the caller's operands hold
+            let hops (*chain)
+            let copy Vector[PlannedMemberAccess]^this(hops.length)
+            var k: size_t 0
+            while k < hops.length
+            {
+                copy.put(k, hops[k])
+                set k: k + 1
+            }
+            this.rebind_trailing_chain(PlannedOperand(fused_op.loc, fused_op.expr, &copy, fused_op.result_type))
+        }
+
         procedure rebind_trailing_chain(
             mutable this: Planner,
             mutable operand: PlannedOperand
