@@ -121,9 +121,24 @@ connection with one scheduler (the retry before parking), 1.06 with two,
 `sample` shows the `accept` calls' time up 67 % from one scheduler to five
 (more empty calls, five threads on one listen queue). Context switches do
 not explain the rest: `time -l` counts fewer for Scaly than for tokio at
-five threads (4.7 against 5.2 per connection). The candidate that addresses
-the whole difference is ONE acceptor that hands connections to the other
-schedulers, as tokio and Go do; not built.
+five threads (4.7 against 5.2 per connection).
+
+**The fix, measured the same afternoon:** ONE acceptor (scheduler 0) hands
+the connections round-robin to every scheduler through a Channel each, as
+tokio and Go accept once and distribute. Against the shared-listener build,
+alternating, 32 clients, a connection per request:
+
+| server threads | Scaly, one acceptor | Scaly, shared listener | tokio | Go raw |
+|---|---|---|---|---|
+| 1 | 15 243/s, 22.3 µs | 15 085/s, 21.9 µs | 15 008/s, 27.6 µs | 15 589/s, 33.0 µs |
+| 2 | 14 955/s, 25.3 µs | 14 865/s, 27.6 µs | 14 944/s, 31.7 µs | 14 945/s, 40.4 µs |
+| 5 | **14 970/s, 26.1 µs** | 14 366/s, 49.1 µs | 14 893/s, 33.3 µs | 14 848/s, 45.8 µs |
+
+(µs = server CPU per connection.) At five threads the CPU per connection
+halves and the rate is level with tokio and Go again, with the least CPU of
+the three at every thread count. Keep-alive does not suffer from the
+round-robin: 524k/481k req/s against 498k/473k for the shared listener in
+two rounds (tokio 468k/452k, Go 460k/448k).
 
 Measured on arm64 (10 CPUs, M-series) 2026-09-27, requests per second:
 
