@@ -5147,14 +5147,14 @@ open(doc, "w").write(
     "function total(n: int) returns int\n"
     "{\n"
     "    var t 0\n"
-    "    for x in n\n"                                  # 10: writes t
-    "        set t: t + x\n"
+    "    for x in n\n"                                  # 10: writes t (the LAST x --
+    "        set t: x\n"                                #   a sum would be a reduction)
     "    t\n"
     "}\n"
     "\n"
     "var results Vector[int](4)\n"
     "double_all(4, results)\n"
-    "if total(4) <> 6\n"
+    "if total(4) <> 3\n"
     "    exit 1\n"
     "print \"PASS\"\n")
 caps, ls = lenses(doc)
@@ -5188,11 +5188,11 @@ open(nc, "w").write(
     "    let text_for \"for a in b\"\n"
     "    var t 0\n"
     "    for i in n\n"                                  # 8: the only real one
-    "        set t: t + i\n"
+    "        set t: i\n"
     "    t\n"
     "}\n"
     "\n"
-    "if only_one(3) <> 3\n"
+    "if only_one(3) <> 2\n"
     "    exit 1\n"
     "print \"PASS\"\n")
 caps, ls = lenses(nc)
@@ -5209,7 +5209,7 @@ body = ("define a\n"
         "    {\n"
         "        var t 0\n"
         "        for i in n\n"                           # 6
-        "            set t: t + i\n"
+        "            set t: i\n"
         "        t\n"
         "    }\n"
         "}\n")

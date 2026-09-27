@@ -1,0 +1,147 @@
+; Reductions in a promoted `for` (ROADMAP 4.8, route 2): a loop-external
+; integer written only as `set v: v OP e` or `if e > v  set v: e` runs in
+; parallel, every chunk on its own copy from the identity, the partials
+; combined into the variable with one atomicrmw per chunk. Each wave's body is
+; heavy enough to fork (the submit counter proves it did), and each result is
+; compared with the same fold done by a plain `while` loop, which never
+; promotes: integer folds are exact, so the two must agree to the bit.
+; Wave N: the reduced variable is also READ elsewhere in the body -- a chunk
+; would see its partial there -- so that loop must stay sequential.
+;
+; Expected: parallel-reduce-ok done
+
+; Pure leaf, ~10us scale; a value that varies with its seed.
+function spin(seed: i64) returns i64
+{
+    var acc seed
+    var k 0 as i64
+    while k < (40000 as i64)
+    {
+        set acc: (acc * (31 as i64) + k) % (1000003 as i64)
+        set k: k + (1 as i64)
+    }
+    acc
+}
+
+procedure check(name: pointer[const_char], got: i64, want: i64)
+{
+    if got <> want
+    {
+        scaly_eputs name
+        scaly_eputs " differs\n"
+        exit 1
+    }
+}
+
+let pool TaskPool.default_pool()
+let n 96
+
+; the sequential reference values
+var r_sum 0 as i64
+var r_sub 100 as i64
+var r_max 0 - (1 as i64)
+var r_min 1000003 as i64
+var r_xor 0 as i64
+var r_and 0 - (1 as i64)
+var r_or 0 as i64
+var r_umax 0 as u64
+var j 0
+while j < n
+{
+    let v spin(j as i64)
+    set r_sum: r_sum + v
+    set r_sub: r_sub - v
+    if v > r_max
+        set r_max: v
+    if v < r_min
+        set r_min: v
+    set r_xor: r_xor xor v
+    set r_and: r_and & (v | (0x10000 as i64))
+    set r_or: r_or | v
+    if (v as u64) > r_umax
+        set r_umax: v as u64
+    set j: j + 1
+}
+
+var before TaskPool.submit_count(pool)
+var sum 0 as i64
+for i in n
+    set sum: sum + spin(i as i64)
+check("sum", sum, r_sum)
+if TaskPool.submit_count(pool) = before
+{
+    Console.println "sum-did-not-fork"
+    exit 1
+}
+
+set before: TaskPool.submit_count(pool)
+var sub 100 as i64
+for i in n
+    set sub: sub - spin(i as i64)
+check("sub", sub, r_sub)
+
+var max 0 - (1 as i64)
+for i in n
+{
+    let v spin(i as i64)
+    if v > max
+        set max: v
+}
+check("max", max, r_max)
+
+var min 1000003 as i64
+for i in n
+{
+    let v spin(i as i64)
+    if min > v
+        set min: v
+}
+check("min", min, r_min)
+
+var x 0 as i64
+for i in n
+    set x: x xor spin(i as i64)
+check("xor", x, r_xor)
+
+var a 0 - (1 as i64)
+for i in n
+    set a: a & (spin(i as i64) | (0x10000 as i64))
+check("and", a, r_and)
+
+var o 0 as i64
+for i in n
+    set o: o | spin(i as i64)
+check("or", o, r_or)
+
+var umax 0 as u64
+for i in n
+{
+    let v spin(i as i64) as u64
+    if v > umax
+        set umax: v
+}
+check("umax", umax as i64, r_umax as i64)
+if TaskPool.submit_count(pool) = before
+{
+    Console.println "reductions-did-not-fork"
+    exit 1
+}
+
+; ---- Wave N: the accumulator is also read -- must stay sequential.
+set before: TaskPool.submit_count(pool)
+var seen 0 as i64
+var trace 0 as i64
+for i in n
+{
+    set seen: seen + spin(i as i64)
+    if seen > (0 as i64)
+        set trace: trace + (1 as i64)
+}
+check("read-sum", seen, r_sum)
+if TaskPool.submit_count(pool) <> before
+{
+    Console.println "waveN-forked"
+    exit 1
+}
+
+print "parallel-reduce-ok done"

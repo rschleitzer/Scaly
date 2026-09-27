@@ -145,6 +145,25 @@ define TaskPlanner
         ; the chunk's own stack frame, which no adoption can keep.
         var cls_keeps: bool
         var cls_takes_address: bool
+        ; REDUCTIONS of the classified body (ROADMAP 4.8, route 2): a
+        ; loop-external INTEGER variable the body writes only as
+        ; `set v: v OP e` (OP + - | & xor, e not reading v) or as
+        ; `if e > v  set v: e` (max; < for min). Parallel lists: the name,
+        ; the LLVM atomicrmw operation that combines a chunk's partial into
+        ; it (Add 1, And 3, Or 5, Xor 6, Max 7, Min 8, UMax 9, UMin 10), and
+        ; how many of the name's occurrences those updates account for --
+        ; check_reductions# demands that they are ALL of them.
+        red_names: Array[String]
+        red_ops: Array[int]
+        red_counts: Array[size_t]
+        ; The labels a `continue loop L` may name without leaving the body:
+        ; the classified loop's own and every loop nested in the body. Any
+        ; other label jumps OUT of the body -- in an outlined task function
+        ; to a label that does not exist there (the Emitter aborted on
+        ; tests/controlflow.sgm's continue-labeled-outer once a reduction
+        ; had made the inner loop promotable, 2026-09-26).
+        var cls_own_label: String
+        cls_inner_labels: Array[String]
     )
     {
         init()
@@ -188,6 +207,11 @@ define TaskPlanner
             set cls_continue_skips: false
             set cls_keeps: false
             set cls_takes_address: false
+            set red_names: Array[String]^this()
+            set red_ops: Array[int]^this()
+            set red_counts: Array[size_t]^this()
+            set cls_own_label: String^this("")
+            set cls_inner_labels: Array[String]^this()
         }
 
         ; ================================================================
@@ -490,14 +514,569 @@ define TaskPlanner
             set cls_blocked: false
             set cls_reason: String^this("")
             set cls_loop_var: String^this(fr.identifier)
+            set cls_own_label: String^this(fr.loop_label)
+            set cls_inner_labels.length: 0
             set cls_depth: 0
             set cls_keeps: false
             set cls_takes_address: false
+            this.reset_reductions()
             if file_is_foundation(current_file)
                 this.block("engine foundation module")
             if cls_blocked = false
                 this.cls_action(fr.body)
             this.check_kept_values()
+            this.check_reductions(fr.body, null)
+        }
+
+        ; ================================================================
+        ; Reductions (ROADMAP 4.8, route 2). A chunk of a promoted loop runs
+        ; the update on its OWN copy started at the operation's identity and
+        ; combines the partial into the submitter's variable with one
+        ; atomicrmw at its end (Emitter.emit_parallel_for#); the inline
+        ; iterations before the fork update the variable itself. Integer
+        ; operations only: + - | & xor max min are associative and
+        ; commutative on integers, so the result is the sequential one BIT
+        ; FOR BIT; floating point is not (the stage-5 determinism question).
+        ; ================================================================
+
+        procedure note_inner_label(mutable this: TaskPlanner, label_name: String)
+        {
+            if label_name.get_length() = 0
+                return
+            let copy String^this(label_name)
+            cls_inner_labels.add copy
+        }
+
+        ; a `continue loop <label_name>` that leaves the classified body
+        function label_leaves_body(this: TaskPlanner, label_name: String) returns bool
+        {
+            if label_name.get_length() = 0
+                return false
+            if label_name = cls_own_label
+                return false
+            var i: size_t 0
+            while i < cls_inner_labels.length
+            {
+                if cls_inner_labels[i] = label_name
+                    return false
+                set i: i + 1
+            }
+            true
+        }
+
+        procedure reset_reductions(mutable this: TaskPlanner)
+        {
+            set red_names.length: 0
+            set red_ops.length: 0
+            set red_counts.length: 0
+        }
+
+        ; 1 = a signed integer type, 2 = an unsigned one, 0 = anything else
+        function red_int_kind(t: PlannedType) returns int
+        {
+            let nm t.name
+            match nm
+                case "int" case "i8" case "i16" case "i32" case "i64": return 1
+                case "u8" case "u16" case "u32" case "u64" case "size_t": return 2
+            0
+        }
+
+        ; Record one update of `name` by `op`, accounting for `uses`
+        ; occurrences of the name. The same variable reduced two ways blocks.
+        procedure note_reduction(mutable this: TaskPlanner, name: String, op: int, uses: size_t)
+        {
+            var i: size_t 0
+            while i < red_names.length
+            {
+                if red_names[i] = name
+                {
+                    if red_ops[i] <> op
+                    {
+                        this.block_named("reduces two ways: ", name)
+                        return
+                    }
+                    red_counts.put(i, red_counts[i] + uses)
+                    return
+                }
+                set i: i + 1
+            }
+            let n_copy String^this(name)
+            red_names.add n_copy
+            red_ops.add op
+            red_counts.add uses
+        }
+
+        ; `set v: v OP e` / `set v: e OP v` on a loop-external integer v
+        procedure try_reduction_action(mutable this: TaskPlanner, act: PlannedAction) returns bool
+        {
+            if act.target = null
+                return false
+            let t (*act.target)
+            if t.length <> 1
+                return false
+            let tp_ t.get 0
+            if tp_ = null
+                return false
+            let top tp_.unwrap()
+            let v this.bare_variable_name(top)
+            if v.get_length() = 0
+                return false
+            if this.is_local(v)
+                return false
+            if TaskPlanner.red_int_kind(top.result_type) = 0
+                return false
+            let src act.source
+            if src = null
+                return false
+            if src.length <> 1
+                return false
+            let sp src.get 0
+            if sp = null
+                return false
+            let so sp.unwrap()
+            choose so.expr
+                when call: Call
+                {
+                    if call.is_intrinsic = false and call.is_operator = false
+                        return false
+                    if call.args = null
+                        return false
+                    let args (*call.args)
+                    if args.length <> 2
+                        return false
+                    var op 0
+                    let nm call.name
+                    match nm
+                        case "+" case "-": set op: 1
+                        case "&": set op: 3
+                        case "|": set op: 5
+                        case "xor": set op: 6
+                    if op = 0
+                        return false
+                    let a0 args.get 0
+                    let a1 args.get 1
+                    if a0 = null
+                        return false
+                    if a1 = null
+                        return false
+                    let n0 this.bare_variable_name(a0.unwrap())
+                    let n1 this.bare_variable_name(a1.unwrap())
+                    if n0 = v
+                    {
+                        this.cls_operand(a1.unwrap())
+                        this.note_reduction(v, op, 2)
+                        return true
+                    }
+                    if n1 = v and nm <> "-"
+                    {
+                        this.cls_operand(a0.unwrap())
+                        this.note_reduction(v, op, 2)
+                        return true
+                    }
+                    return false
+                }
+                else
+                    0
+            false
+        }
+
+        ; `if e > v  set v: e` (max) / `if e < v  set v: e` (min), either
+        ; orientation of the comparison, v a loop-external integer
+        procedure try_reduction_if(mutable this: TaskPlanner, iff: PlannedIf) returns bool
+        {
+            if iff.alternative <> null
+                return false
+            if iff.prop <> null
+                return false
+            let cond iff.condition
+            if cond = null
+                return false
+            if cond.length <> 1
+                return false
+            let cp cond.get 0
+            if cp = null
+                return false
+            let co cp.unwrap()
+            let cs iff.consequent
+            if cs = null
+                return false
+            var target: String ""
+            var value: ref[Vector[PlannedOperand]]? null
+            var t_kind 0
+            choose (*cs)
+                when a: Action
+                {
+                    if a.target <> null
+                    {
+                        let tt (*a.target)
+                        if tt.length = 1
+                        {
+                            let tp_ tt.get 0
+                            if tp_ <> null
+                            {
+                                set target: this.bare_variable_name(tp_.unwrap())
+                                set t_kind: TaskPlanner.red_int_kind(tp_.unwrap().result_type)
+                                set value: a.source
+                            }
+                        }
+                    }
+                }
+                else
+                    0
+            if target.get_length() = 0 or t_kind = 0
+                return false
+            if this.is_local(target)
+                return false
+            if value = null
+                return false
+            if value.length <> 1
+                return false
+            let vp value.get 0
+            if vp = null
+                return false
+            choose co.expr
+                when call: Call
+                {
+                    if call.args = null
+                        return false
+                    let args (*call.args)
+                    if args.length <> 2
+                        return false
+                    let x_ptr args.get 0
+                    let y_ptr args.get 1
+                    if x_ptr = null
+                        return false
+                    if y_ptr = null
+                        return false
+                    let x x_ptr.unwrap()
+                    let y y_ptr.unwrap()
+                    let nm call.name
+                    var greater 0
+                    match nm
+                        case ">" case ">=": set greater: 1
+                        case "<" case "<=": set greater: 2
+                    if greater = 0
+                        return false
+                    ; which side is v, which is e -- and is the stored value e?
+                    var is_max false
+                    var e_ptr: ref[PlannedOperand]? null
+                    if this.bare_variable_name(y) = target
+                    {
+                        set is_max: greater = 1
+                        set e_ptr: x_ptr
+                    }
+                    else
+                    {
+                        if this.bare_variable_name(x) = target
+                        {
+                            set is_max: greater = 2
+                            set e_ptr: y_ptr
+                        }
+                    }
+                    if e_ptr = null
+                        return false
+                    let e e_ptr.unwrap()
+                    if TaskPlanner.same_access(e, vp.unwrap()) = false
+                        return false
+                    var op 8
+                    if is_max
+                        set op: 7
+                    if t_kind = 2
+                        set op: op + 2
+                    this.cls_operand(e)
+                    this.note_reduction(target, op, 2)
+                    return true
+                }
+                else
+                    0
+            false
+        }
+
+        ; the same variable, through the same member hops
+        function same_access(a: PlannedOperand, b: PlannedOperand) returns bool
+        {
+            var an ""
+            var bn ""
+            choose a.expr
+                when v: Variable
+                    set an: v.name
+                else
+                    return false
+            choose b.expr
+                when w: Variable
+                    set bn: w.name
+                else
+                    return false
+            if an <> bn
+                return false
+            var al: size_t 0
+            if a.member_access <> null
+                set al: a.member_access.length
+            var bl: size_t 0
+            if b.member_access <> null
+                set bl: b.member_access.length
+            if al <> bl
+                return false
+            if al = 0
+                return true
+            let am (*a.member_access)
+            let bm (*b.member_access)
+            var i: size_t 0
+            while i < al
+            {
+                let ah am.get i
+                let bh bm.get i
+                if ah = null
+                    return false
+                if bh = null
+                    return false
+                if ah.name <> bh.name
+                    return false
+                if ah.is_method or bh.is_method
+                    return false
+                set i: i + 1
+            }
+            true
+        }
+
+        ; Every occurrence of a reduced name must be one its updates account
+        ; for: any other read would see a chunk's PARTIAL, any other write
+        ; would be lost. Counted over the whole body (and a while loop's
+        ; condition), every construct -- the net under the pattern matchers.
+        procedure check_reductions(mutable this: TaskPlanner, body: PlannedAction, cond: ref[Vector[PlannedOperand]]?)
+        {
+            if cls_blocked
+                return
+            var i: size_t 0
+            while i < red_names.length
+            {
+                let nm red_names[i]
+                var seen this.count_in_action(body, nm)
+                set seen: seen + this.count_in_ops(cond, nm)
+                if seen <> red_counts[i]
+                {
+                    this.block_named("reduction variable used outside its update: ", nm)
+                    return
+                }
+                set i: i + 1
+            }
+        }
+
+        function count_in_action(this: TaskPlanner, act: PlannedAction, name: String) returns size_t
+            this.count_in_ops(act.source, name) + this.count_in_ops(act.target, name)
+
+        function count_in_ops(this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?, name: String) returns size_t
+        {
+            if ops = null
+                return 0
+            var n: size_t 0
+            var i: size_t 0
+            while i < ops.length
+            {
+                let op_ptr ops.get i
+                if op_ptr <> null
+                    set n: n + this.count_in_op(op_ptr.unwrap(), name)
+                set i: i + 1
+            }
+            n
+        }
+
+        function count_in_stmt_ref(this: TaskPlanner, stmt: ref[PlannedStatement]?, name: String) returns size_t
+        {
+            if stmt = null
+                return 0
+            let st stmt
+            this.count_in_stmt((*st), name)
+        }
+
+        function count_in_stmt(this: TaskPlanner, stmt: PlannedStatement, name: String) returns size_t
+        {
+            choose stmt
+                when action: Action
+                    return this.count_in_action(action, name)
+                when binding: Binding
+                    return this.count_in_ops(binding.operation, name)
+                when ret: Return
+                    return this.count_in_ops(ret.result, name)
+                when throw_stmt: Throw
+                    return this.count_in_ops(throw_stmt.result, name)
+                when brk: Break
+                    return this.count_in_ops(brk.result, name)
+                when cont: Continue
+                    return 0
+            0
+        }
+
+        ; Unknown shapes count as a use -- conservative: the check then
+        ; blocks rather than trusting a read it could not see.
+        function count_in_op(this: TaskPlanner, op: PlannedOperand, name: String) returns size_t
+        {
+            choose op.expr
+                when v: Variable
+                {
+                    if v.name = name
+                        return 1
+                    return 0
+                }
+                when k: Constant
+                    return 0
+                when ty: Type
+                    return 0
+                when g: GlobalRef
+                    return 0
+                when so: SizeOf
+                    return 0
+                when ao: AlignOf
+                    return 0
+                when fr_: FunctionRef
+                    return 0
+                when call: Call
+                    return this.count_in_ops(call.args, name)
+                when tp: Tuple
+                {
+                    var n: size_t 0
+                    if tp.components <> null
+                    {
+                        var i: size_t 0
+                        while i < tp.components.length
+                        {
+                            let c_ptr tp.components.get i
+                            if c_ptr <> null
+                                set n: n + this.count_in_ops(c_ptr.value, name)
+                            set i: i + 1
+                        }
+                    }
+                    return n
+                }
+                when mx: Matrix
+                {
+                    var n: size_t 0
+                    if mx.operations <> null
+                    {
+                        var i: size_t 0
+                        while i < mx.operations.length
+                        {
+                            let row_ptr mx.operations.get i
+                            if row_ptr <> null
+                                set n: n + this.count_in_ops(row_ptr, name)
+                            set i: i + 1
+                        }
+                    }
+                    return n
+                }
+                when blk: Block
+                {
+                    var n: size_t 0
+                    if blk.statements <> null
+                    {
+                        var i: size_t 0
+                        while i < blk.statements.length
+                        {
+                            let s_ptr blk.statements.get i
+                            if s_ptr <> null
+                                set n: n + this.count_in_stmt(s_ptr.unwrap(), name)
+                            set i: i + 1
+                        }
+                    }
+                    return n
+                }
+                when iff: If
+                    return this.count_in_ops(iff.condition, name) + this.count_in_stmt_ref(iff.consequent, name) + this.count_in_stmt_ref(iff.alternative, name)
+                when mt: Match
+                {
+                    var n this.count_in_ops(mt.condition, name)
+                    if mt.branches <> null
+                    {
+                        var i: size_t 0
+                        while i < mt.branches.length
+                        {
+                            let br_ptr mt.branches.get i
+                            if br_ptr <> null
+                            {
+                                let br (*br_ptr)
+                                if br.cases <> null
+                                {
+                                    var ci: size_t 0
+                                    while ci < br.cases.length
+                                    {
+                                        let cs_ptr br.cases.get ci
+                                        if cs_ptr <> null
+                                            set n: n + this.count_in_ops((*cs_ptr).condition, name)
+                                        set ci: ci + 1
+                                    }
+                                }
+                                set n: n + this.count_in_stmt_ref(br.consequent, name)
+                            }
+                            set i: i + 1
+                        }
+                    }
+                    return n + this.count_in_stmt_ref(mt.alternative, name)
+                }
+                when ch: Choose
+                {
+                    var n this.count_in_ops(ch.condition, name)
+                    if ch.cases <> null
+                    {
+                        var i: size_t 0
+                        while i < ch.cases.length
+                        {
+                            let w_ptr ch.cases.get i
+                            if w_ptr <> null
+                                set n: n + this.count_in_stmt_ref((*w_ptr).consequent, name)
+                            set i: i + 1
+                        }
+                    }
+                    return n + this.count_in_stmt_ref(ch.alternative, name)
+                }
+                when fr: For
+                    return this.count_in_ops(fr.expr, name) + this.count_in_action(fr.body, name)
+                when wh: While
+                    return this.count_in_ops(wh.cond.operation, name) + this.count_in_action(wh.body, name)
+                when rp: Repeat
+                    return this.count_in_action(rp.body, name)
+                when tr: Try
+                {
+                    var n this.count_in_ops(tr.cond.operation, name)
+                    if tr.catches <> null
+                    {
+                        var i: size_t 0
+                        while i < tr.catches.length
+                        {
+                            let w_ptr tr.catches.get i
+                            if w_ptr <> null
+                                set n: n + this.count_in_stmt_ref((*w_ptr).consequent, name)
+                            set i: i + 1
+                        }
+                    }
+                    return n + this.count_in_stmt_ref(tr.alternative, name)
+                }
+                when is_expr: Is
+                {
+                    if is_expr.value <> null
+                        return this.count_in_op((*is_expr.value), name)
+                    return 0
+                }
+                when as_expr: As
+                {
+                    if as_expr.value <> null
+                        return this.count_in_op((*as_expr.value), name)
+                    return 0
+                }
+                when vc: VariantConstruction
+                {
+                    if vc.value <> null
+                        return this.count_in_op((*vc.value), name)
+                    return 0
+                }
+                when bx: Box
+                {
+                    if bx.value <> null
+                        return this.count_in_op((*bx.value), name)
+                    return 0
+                }
+                else
+                    0
+            1
         }
 
         ; A kept value next to a unary `&`: the value may point into the
@@ -562,14 +1141,18 @@ define TaskPlanner
             set cls_counter_writes: 0
             set cls_counter_steps: 0
             set cls_continue_skips: false
+            set cls_own_label: String^this(wh.loop_label)
+            set cls_inner_labels.length: 0
             set cls_keeps: false
             set cls_takes_address: false
+            this.reset_reductions()
             if file_is_foundation(current_file)
                 this.block("engine foundation module")
             this.cls_operands(wh.cond.operation)
             if cls_blocked = false
                 this.cls_action(wh.body)
             this.check_kept_values()
+            this.check_reductions(wh.body, wh.cond.operation)
             set cls_counter_mode: false
             if cls_counter_writes > cls_counter_steps
                 this.block("counter written besides its step")
@@ -1160,6 +1743,8 @@ define TaskPlanner
         {
             if cls_blocked
                 return
+            if this.try_reduction_action(act)
+                return
             this.cls_operands(act.source)
             if cls_blocked
                 return
@@ -1264,6 +1849,11 @@ define TaskPlanner
                 }
                 when cont: Continue
                 {
+                    if this.label_leaves_body(cont.loop_label)
+                    {
+                        this.block("early exit (labeled continue)")
+                        return
+                    }
                     if cls_counter_mode and cls_step_first = false
                     {
                         if cls_depth = 0
@@ -1316,6 +1906,8 @@ define TaskPlanner
                 }
                 when iff: If
                 {
+                    if this.try_reduction_if(iff)
+                        return
                     this.cls_operands(iff.condition)
                     if iff.prop <> null
                     {
@@ -1391,6 +1983,7 @@ define TaskPlanner
                     ; shared across workers.
                     let fe_alias this.ops_alias_external(fr.expr)
                     this.add_body_name(fr.identifier, fe_alias)
+                    this.note_inner_label(fr.loop_label)
                     set cls_depth: cls_depth + 1
                     this.cls_action(fr.body)
                     set cls_depth: cls_depth - 1
@@ -1403,12 +1996,14 @@ define TaskPlanner
                         let wc_alias this.ops_alias_external(wh.cond.operation)
                         this.add_body_name((*wh.cond.binding_item.name), wc_alias)
                     }
+                    this.note_inner_label(wh.loop_label)
                     set cls_depth: cls_depth + 1
                     this.cls_action(wh.body)
                     set cls_depth: cls_depth - 1
                 }
                 when rp: Repeat
                 {
+                    this.note_inner_label(rp.loop_label)
                     set cls_depth: cls_depth + 1
                     this.cls_action(rp.body)
                     set cls_depth: cls_depth - 1

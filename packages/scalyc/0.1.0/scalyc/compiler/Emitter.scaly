@@ -15779,6 +15779,20 @@ define Emitter
             1 as size_t
         }
 
+        ; The identity of a reduction's atomicrmw operation at an integer type:
+        ; 0 for Add/Or/Xor/UMax, all ones for And/UMin, the signed extremes
+        ; for Max (the minimum) and Min (the maximum).
+        procedure red_identity(mutable this, op: int, mutable ty: LLVMTypeRef) returns LLVMValueRef
+        {
+            let w LLVMGetIntTypeWidth(ty) as u64
+            let top (1 as u64) << (w - (1 as u64))
+            match op
+                case 3 case 10: return LLVMConstInt(ty, 0xFFFFFFFFFFFFFFFF, 0)
+                case 7: return LLVMConstInt(ty, top, 0)
+                case 8: return LLVMConstInt(ty, top - (1 as u64), 0)
+            LLVMConstInt(ty, 0, 0)
+        }
+
         procedure emit_parallel_for(mutable this, mutable for_expr: PlannedFor) returns LLVMValueRef
         {
             ; A KEEPING wave (the classifier admitted a non-scalar `put` into a
@@ -15786,6 +15800,42 @@ define Emitter
             ; adopts after the barrier (root_pages.scaly, region adoption).
             ; Read before anything below can re-classify a nested loop.
             let keeps parfor_checker.cls_keeps
+            ; REDUCTIONS (ROADMAP 4.8, route 2), copied out for the same reason:
+            ; every chunk runs the update on its own copy started at the
+            ; operation's identity and combines the partial into the
+            ; submitter's variable with one atomicrmw at its end. The variable
+            ; must be an integer STACK SLOT of this function (its address rides
+            ; the cell); anything else runs the loop sequentially.
+            var red_names Array[String]()
+            var red_ops Array[int]()
+            var red_slots Array[LLVMValueRef]()
+            var rk: size_t 0
+            while rk < parfor_checker.red_names.length
+            {
+                red_names.add(parfor_checker.red_names[rk])
+                red_ops.add(parfor_checker.red_ops[rk])
+                set rk: rk + 1
+            }
+            set rk: 0
+            while rk < red_names.length
+            {
+                let rv lookup_variable(red_names[rk])
+                var slot_ok false
+                if rv <> null and LLVMIsAAllocaInst(rv) <> null
+                {
+                    if LLVMGetTypeKind(LLVMGetAllocatedType(rv)) = LLVMTypeKind.Integer()
+                        set slot_ok: true
+                }
+                if slot_ok = false
+                {
+                    if for_expr.is_iterator_loop
+                        return emit_for_iterator for_expr
+                    return emit_for_integer_range for_expr
+                }
+                red_slots.add rv
+                set rk: rk + 1
+            }
+            let n_red red_names.length
             ; ---- Collect the captures (plan-side scan, no IR). Copy the
             ; result out of the scratch right away: emitting the body below
             ; may meet a NESTED promoted for, which rescans.
@@ -15875,7 +15925,7 @@ define Emitter
             var n_tail: size_t 1
             if keeps
                 set n_tail: 2
-            var cell_field_tys Vector[LLVMTypeRef](base_fields + cap_count + n_tail)
+            var cell_field_tys Vector[LLVMTypeRef](base_fields + cap_count + n_tail + n_red)
             if for_expr.is_iterator_loop
             {
                 cell_field_tys.put(0, ptr_ty)
@@ -15899,7 +15949,14 @@ define Emitter
             cell_field_tys.put(base_fields + cap_count, ptr_ty)
             if keeps
                 cell_field_tys.put(base_fields + cap_count + 1, ptr_ty)
-            let cell_ty LLVMStructTypeInContext(context, cell_field_tys.data, (base_fields + cap_count + n_tail) as int, 0)
+            ; one more field per reduction: the address of the submitter's variable
+            set rk: 0
+            while rk < n_red
+            {
+                cell_field_tys.put(base_fields + cap_count + n_tail + rk, ptr_ty)
+                set rk: rk + 1
+            }
+            let cell_ty LLVMStructTypeInContext(context, cell_field_tys.data, (base_fields + cap_count + n_tail + n_red) as int, 0)
 
             ; ---- Outline the body into a private task function ptr(ptr).
             ; Private linkage: llvm-link renames on collision, so the
@@ -16021,6 +16078,20 @@ define Emitter
                 let kpage LLVMBuildCall2(builder, ap_ty, ap_fn, null as pointer[LLVMValueRef], 0, "parfor.keep.page")
                 LLVMBuildStore(builder, kpage, keep_frame)
             }
+            ; A reduced variable's capture is this chunk's PARTIAL: it starts
+            ; at the identity, not at the value the submitter held.
+            var red_task_slots Array[LLVMValueRef]()
+            var red_sub_ptrs Array[LLVMValueRef]()
+            set rk: 0
+            while rk < n_red
+            {
+                let rp_gep LLVMBuildStructGEP2(builder, cell_ty, cell_arg, (base_fields + cap_count + n_tail + rk) as int, "parfor.red.ptr")
+                red_sub_ptrs.add(LLVMBuildLoad2(builder, ptr_ty, rp_gep, "parfor.red.sub"))
+                let ts lookup_variable(red_names[rk])
+                red_task_slots.add ts
+                LLVMBuildStore(builder, this.red_identity(red_ops[rk], LLVMGetAllocatedType(ts)), ts)
+                set rk: rk + 1
+            }
 
             ; The chunk loop: i in [lo,hi) — the 4.1 rewrite. The loop
             ; variable rebinds per iteration; `continue` targets the
@@ -16111,6 +16182,16 @@ define Emitter
             ; Epilogue: release the task's local region (one region per
             ; CHUNK — no-op when the body never allocated), return null.
             LLVMPositionBuilderAtEnd(builder, pf_ret_block)
+            ; the chunk's partials into the submitter's variables (it is parked
+            ; in TaskGroup.wait; atomic because the chunks end at any moment)
+            set rk: 0
+            while rk < n_red
+            {
+                let rts red_task_slots[rk]
+                let partial LLVMBuildLoad2(builder, LLVMGetAllocatedType(rts), rts, "parfor.red.partial")
+                LLVMBuildAtomicRMW(builder, red_ops[rk] as i32, red_sub_ptrs[rk], partial, 7, 0)
+                set rk: rk + 1
+            }
             if keeps
             {
                 ; Hand the chunk's region to the wave instead of releasing it;
@@ -17092,6 +17173,13 @@ define Emitter
             {
                 let sb_ah_gep LLVMBuildStructGEP2(builder, cell_ty, sb_cell, (base_fields + cap_count + 1) as int, "parfor.cell.adopt")
                 LLVMBuildStore(builder, adopt_slot, sb_ah_gep)
+            }
+            set rk: 0
+            while rk < n_red
+            {
+                let sr_gep LLVMBuildStructGEP2(builder, cell_ty, sb_cell, (base_fields + cap_count + n_tail + rk) as int, "parfor.cell.red")
+                LLVMBuildStore(builder, red_slots[rk], sr_gep)
+                set rk: rk + 1
             }
             var sb_sub_args Vector[LLVMValueRef](4)
             sb_sub_args.put(0, ds_pool)
