@@ -24057,6 +24057,8 @@ declare i64 @scaly_eio_tcp_write(i32, ptr, i64)
 
 declare i32 @scaly_eio_tcp_nodelay(i32, i32)
 
+declare i32 @scaly_eio_tcp_listen_host(ptr, i32)
+
 declare i32 @scaly_guard_install(ptr)
 
 declare i32 @scaly_stack_guard(ptr, i64)
@@ -25902,6 +25904,12 @@ while.exit:                                       ; preds = %while.cond
 define linkonce_odr i32 @_ZN2Io10listen_anyE3i32(i32 %0) {
 entry:
   %call = call i32 @scaly_eio_tcp_listen_any(i32 %0)
+  ret i32 %call
+}
+
+define linkonce_odr i32 @_ZN2Io11listen_hostEP10const_char3i32(ptr %0, i32 %1) {
+entry:
+  %call = call i32 @scaly_eio_tcp_listen_host(ptr %0, i32 %1)
   ret i32 %call
 }
 
@@ -29840,6 +29848,19 @@ entry:
   %tuple = alloca %_Z11TcpListener, align 8
   %tuple.field = getelementptr inbounds nuw %_Z11TcpListener, ptr %tuple, i32 0, i32 0
   store i32 %call, ptr %tuple.field, align 1
+  %tuple.val = load %_Z11TcpListener, ptr %tuple, align 4
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z11TcpListener, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN11TcpListener9listen_onEPN4scaly6memory4PageE6Stringi(ptr noalias sret(%_Z11TcpListener) %0, ptr %1, ptr noalias %2, i64 %3) {
+entry:
+  %call = call ptr @_ZN6String11to_c_stringEPN4scaly6memory4PageE(ptr %1, ptr %2)
+  %as.trunc = trunc i64 %3 to i32
+  %call1 = call i32 @_ZN2Io11listen_hostEP10const_char3i32(ptr %call, i32 %as.trunc)
+  %tuple = alloca %_Z11TcpListener, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z11TcpListener, ptr %tuple, i32 0, i32 0
+  store i32 %call1, ptr %tuple.field, align 1
   %tuple.val = load %_Z11TcpListener, ptr %tuple, align 4
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z11TcpListener, ptr null, i32 1) to i64), i1 false)
   ret void

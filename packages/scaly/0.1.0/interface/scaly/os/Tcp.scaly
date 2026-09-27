@@ -25,7 +25,12 @@ use scaly.fiber.Channel
 ; must leave at once (request/response protocols with small messages, as Go
 ; does by default).
 ;
-; Limits, named: IPv4 only (the shim's listen/connect); at most one task
+; Both families: connect resolves a name to IPv6 and IPv4 addresses and
+; takes the first that answers ("localhost" is ::1 and 127.0.0.1);
+; listen_on binds a numeric address of either family, and "::" — as
+; listen_any — is dual-stack, taking IPv4 connections as mapped addresses.
+;
+; Limits, named: at most one task
 ; parked per socket at a time (the poller keeps one entry per fd), so a
 ; stream is read and written by ONE task, not a reader and a writer in
 ; parallel; the value records are handles — a copy names the same socket,
@@ -340,8 +345,14 @@ define TcpListener(var fd: i32)
     procedure listen(port: int) @page true @direct true @ret_nonlocal true @deep true returns TcpListener io linked
 
 
-    ; Listen on all interfaces (INADDR_ANY).
+    ; Listen on all interfaces, IPv6 and IPv4 (the dual-stack "::"; IPv4
+    ; alone on a host without IPv6).
     procedure listen_any(port: int) @page true @direct true @ret_nonlocal true @deep true returns TcpListener io linked
+
+
+    ; Listen on a numeric address of either family: "::1" (IPv6 loopback),
+    ; "::" (every interface, dual-stack), "127.0.0.1", "0.0.0.0".
+    procedure listen_on(mutable host: String, port: int) @page true @direct true @ret_nonlocal true @deep true returns TcpListener io linked
 
 
     function is_open(this) @ret_param_0 true @deep true returns bool linked
