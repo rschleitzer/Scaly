@@ -1,0 +1,8 @@
+; xfail: error: f64x4.load takes a Slice, Vector or Array of double and an index
+;
+; A vector load reads lanes of its own element type: an f64x4 out of a
+; Vector[int] is refused, never reinterpreted (ROADMAP-simd.md phase 2).
+
+var xs Vector[int](8)
+let v f64x4.load(xs, 0)
+print "unreachable"

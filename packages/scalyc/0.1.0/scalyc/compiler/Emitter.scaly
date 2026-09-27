@@ -12841,10 +12841,20 @@ define Emitter
             acc
         }
 
+        ; unsigned lanes, or an unsigned SCALAR (a broadcast source): an
+        ; `int` is signed -- simd_element_name answers "bool" for a name that
+        ; is not a vector, which read every scalar `int` as unsigned
         function simd_unsigned(t: PlannedType) returns bool
         {
-            let e Planner.simd_element_name(t.name)
-            e = "u8" or e = "u32" or e = "bool"
+            let tn t.name
+            if Planner.is_simd_type_name(tn)
+            {
+                let e Planner.simd_element_name(tn)
+                return e = "u8" or e = "u32" or e = "bool"
+            }
+            match tn
+                case "u8" case "u16" case "u32" case "u64" case "size_t" case "char" case "bool": return true
+            false
         }
 
         procedure emit_simd_binary(mutable this, op: String, mutable left: LLVMValueRef, mutable right: LLVMValueRef, lt: PlannedType, rt: PlannedType) returns LLVMValueRef
@@ -13001,12 +13011,16 @@ define Emitter
             p3.put(0, ptr_ty)
             p3.put(1, i64_ty)
             p3.put(2, i64_ty)
-            let oob_fn this.get_parfor_runtime_fn("_Z15scaly_panic_oobP10const_charmm", LLVMFunctionType(LLVMVoidTypeInContext(context), p3.data, 3, 0))
+            ; call through THIS type: the module may already declare the
+            ; helper `(...)` (a free procedure of another package), and a
+            ; varargs call passes its arguments on the stack on arm64
+            let oob_ty LLVMFunctionType(LLVMVoidTypeInContext(context), p3.data, 3, 0)
+            let oob_fn this.get_parfor_runtime_fn("_Z15scaly_panic_oobP10const_charmm", oob_ty)
             var a3 Vector[LLVMValueRef](3)
             a3.put(0, LLVMBuildGlobalStringPtr(builder, "SIMD lane", ".simd.lane"))
             a3.put(1, ix)
             a3.put(2, n)
-            LLVMBuildCall2(builder, LLVMGlobalGetValueType(oob_fn), oob_fn, a3.data, 3, "")
+            LLVMBuildCall2(builder, oob_ty, oob_fn, a3.data, 3, "")
             LLVMBuildUnreachable(builder)
             LLVMPositionBuilderAtEnd(builder, good_bb)
             ix
@@ -13017,6 +13031,147 @@ define Emitter
             var ps Vector[LLVMTypeRef](1)
             ps.put(0, arg)
             this.get_parfor_runtime_fn(name, LLVMFunctionType(ret, ps.data, 1, 0))
+        }
+
+        ; a declared intrinsic with any number of parameters
+        procedure simd_intrinsic_n(mutable this, mutable name: String, mutable ret: LLVMTypeRef, mutable params: Vector[LLVMTypeRef]) returns LLVMValueRef
+            this.get_parfor_runtime_fn(name, LLVMFunctionType(ret, params.data, params.length as u32, 0))
+
+        ; the LLVM overload suffix of a vector type: v4f64, v8f32, v16i8, ...
+        procedure simd_suffix(mutable vt: LLVMTypeRef) returns String
+        {
+            let n LLVMGetVectorSize(vt) as size_t
+            let et LLVMGetElementType(vt)
+            let k LLVMGetTypeKind(et)
+            if k = LLVMTypeKind.Double()
+                return String("v`n`f64")
+            if k = LLVMTypeKind.Float()
+                return String("v`n`f32")
+            let w LLVMGetIntTypeWidth(et) as size_t
+            String("v`n`i`w`")
+        }
+
+        ; bytes of one lane: the alignment of an element-wise vector access
+        procedure simd_lane_bytes(mutable vt: LLVMTypeRef) returns u32
+        {
+            let et LLVMGetElementType(vt)
+            let k LLVMGetTypeKind(et)
+            if k = LLVMTypeKind.Double()
+                return 8
+            if k = LLVMTypeKind.Float()
+                return 4
+            LLVMGetIntTypeWidth(et) / 8
+        }
+
+        ; call an intrinsic on one to three values of the same vector type
+        procedure simd_call(mutable this, mutable fname: String, mutable ret: LLVMTypeRef, mutable args: Vector[LLVMValueRef]) returns LLVMValueRef
+        {
+            var ps Vector[LLVMTypeRef](args.length)
+            var i: size_t 0
+            while i < args.length
+            {
+                ps.put(i, LLVMTypeOf(args[i]))
+                set i: i + 1
+            }
+            let f this.simd_intrinsic_n(fname, ret, ps)
+            LLVMBuildCall2(builder, LLVMGlobalGetValueType(f), f, args.data, args.length as u32, "simd.call")
+        }
+
+        ; field `which` of a Slice/Vector/Array: 0 the length, 1 the data
+        ; pointer (the LAST field -- an Array carries its capacity between).
+        ; The container arrives as a struct value or as its address.
+        procedure simd_container_field(mutable this, mutable v: LLVMValueRef, pt: PlannedType, which: int) returns LLVMValueRef
+        {
+            let vt LLVMTypeOf(v)
+            if LLVMGetTypeKind(vt) = LLVMTypeKind.Struct()
+            {
+                var idx: u32 0
+                if which = 1
+                    set idx: LLVMCountStructElementTypes(vt) - 1
+                return LLVMBuildExtractValue(builder, v, idx, "simd.cont")
+            }
+            var cur pt
+            while cur.name = "ref" or cur.name = "pointer" or cur.name = "Option"
+            {
+                if cur.generics = null
+                    break
+                let gs cur.generics as ref[Vector[PlannedType]]
+                if gs.length = 0
+                    break
+                set cur: gs[0]
+            }
+            let st this.map_type(cur)
+            var idx: u32 0
+            if which = 1
+                set idx: LLVMCountStructElementTypes(st) - 1
+            let fp LLVMBuildStructGEP2(builder, st, v, idx, "simd.cont")
+            if which = 1
+                return LLVMBuildLoad2(builder, LLVMPointerTypeInContext(context, 0), fp, "simd.data")
+            LLVMBuildLoad2(builder, LLVMInt64TypeInContext(context), fp, "simd.len")
+        }
+
+        ; lanes [i, i + n) of a container of length len: ONE check for the
+        ; whole vector (n <= len and i <= len - n), exit 15 through the
+        ; bounds trap; answers the address of lane 0
+        procedure simd_checked_address(mutable this, mutable data: LLVMValueRef, mutable len: LLVMValueRef, mutable idx: LLVMValueRef, mutable vt: LLVMTypeRef, mutable what: String) returns LLVMValueRef
+        {
+            let i64_ty LLVMInt64TypeInContext(context)
+            var ix idx
+            if LLVMGetIntTypeWidth(LLVMTypeOf(ix)) <> 64
+                set ix: LLVMBuildIntCast2(builder, ix, i64_ty, 1, "simd.idx")
+            let n LLVMConstInt(i64_ty, LLVMGetVectorSize(vt) as size_t, 0)
+            let fits LLVMBuildICmp(builder, LLVMIntPredicate.UGE() as i32, len, n, "simd.fits")
+            let room LLVMBuildSub(builder, len, n, "simd.room")
+            let within LLVMBuildICmp(builder, LLVMIntPredicate.ULE() as i32, ix, room, "simd.within")
+            let ok LLVMBuildAnd(builder, fits, within, "simd.inrange")
+            let fn_now current_function
+            let bad_bb LLVMAppendBasicBlockInContext(context, fn_now, "simd.mem.oob")
+            let good_bb LLVMAppendBasicBlockInContext(context, fn_now, "simd.mem.ok")
+            LLVMBuildCondBr(builder, ok, good_bb, bad_bb)
+            LLVMPositionBuilderAtEnd(builder, bad_bb)
+            let ptr_ty LLVMPointerTypeInContext(context, 0)
+            var p3 Vector[LLVMTypeRef](3)
+            p3.put(0, ptr_ty)
+            p3.put(1, i64_ty)
+            p3.put(2, i64_ty)
+            ; call through THIS type: the module may already declare the
+            ; helper `(...)` (a free procedure of another package), and a
+            ; varargs call passes its arguments on the stack on arm64
+            let oob_ty LLVMFunctionType(LLVMVoidTypeInContext(context), p3.data, 3, 0)
+            let oob_fn this.get_parfor_runtime_fn("_Z15scaly_panic_oobP10const_charmm", oob_ty)
+            var a3 Vector[LLVMValueRef](3)
+            a3.put(0, LLVMBuildGlobalStringPtr(builder, what.to_c_string(), ".simd.mem"))
+            a3.put(1, ix)
+            a3.put(2, len)
+            LLVMBuildCall2(builder, oob_ty, oob_fn, a3.data, 3, "")
+            LLVMBuildUnreachable(builder)
+            LLVMPositionBuilderAtEnd(builder, good_bb)
+            var gi Vector[LLVMValueRef](1)
+            gi.put(0, ix)
+            LLVMBuildInBoundsGEP2(builder, LLVMGetElementType(vt), data, gi.data, 1, "simd.addr")
+        }
+
+        ; a vector load/store at element alignment (a Slice promises no more)
+        procedure simd_load_at(mutable this, mutable addr: LLVMValueRef, mutable vt: LLVMTypeRef) returns LLVMValueRef
+        {
+            let l LLVMBuildLoad2(builder, vt, addr, "simd.load")
+            LLVMSetAlignment(l, Emitter.simd_lane_bytes(vt))
+            l
+        }
+
+        procedure simd_store_at(mutable this, mutable v: LLVMValueRef, mutable addr: LLVMValueRef) returns LLVMValueRef
+        {
+            let st LLVMBuildStore(builder, v, addr)
+            LLVMSetAlignment(st, Emitter.simd_lane_bytes(LLVMTypeOf(v)))
+            st
+        }
+
+        ; a vector operand, or a scalar broadcast into the receiver's type
+        procedure simd_as_vector(mutable this, mutable v: LLVMValueRef, mutable vt: LLVMTypeRef, t: PlannedType) returns LLVMValueRef
+        {
+            if LLVMGetTypeKind(LLVMTypeOf(v)) = LLVMTypeKind.VectorKind()
+                return v
+            this.simd_splat(v, vt, Emitter.simd_unsigned(t) = false)
         }
 
         ; the planned intrinsic calls `simd.*` (Planner.plan_simd_call#)
@@ -13120,6 +13275,130 @@ define Emitter
                     a1.put(0, bits)
                     let c LLVMBuildCall2(builder, LLVMGlobalGetValueType(f), f, a1.data, 1, "simd.count")
                     return LLVMBuildZExt(builder, c, i64_ty, "simd.count")
+                }
+                case "simd.load":
+                {
+                    let len this.simd_container_field(vals[0], types[0], 0)
+                    let data this.simd_container_field(vals[0], types[0], 1)
+                    let addr this.simd_checked_address(data, len, vals[1], rty, String("SIMD load"))
+                    return this.simd_load_at(addr, rty)
+                }
+                case "simd.load_ptr": return this.simd_load_at(vals[0], rty)
+                case "simd.store":
+                {
+                    let vt LLVMTypeOf(vals[0])
+                    let len this.simd_container_field(vals[1], types[1], 0)
+                    let data this.simd_container_field(vals[1], types[1], 1)
+                    let addr this.simd_checked_address(data, len, vals[2], vt, String("SIMD store"))
+                    return this.simd_store_at(vals[0], addr)
+                }
+                case "simd.store_ptr": return this.simd_store_at(vals[0], vals[1])
+                case "simd.sqrt" case "simd.floor":
+                {
+                    let vt LLVMTypeOf(vals[0])
+                    var op "sqrt"
+                    if name = "simd.floor"
+                        set op: "floor"
+                    var a1 Vector[LLVMValueRef](1)
+                    a1.put(0, vals[0])
+                    return this.simd_call("llvm.`op`.`Emitter.simd_suffix(vt)`", vt, a1)
+                }
+                case "simd.abs":
+                {
+                    let vt LLVMTypeOf(vals[0])
+                    let ek LLVMGetTypeKind(LLVMGetElementType(vt))
+                    if ek = LLVMTypeKind.Double() or ek = LLVMTypeKind.Float()
+                    {
+                        var a1 Vector[LLVMValueRef](1)
+                        a1.put(0, vals[0])
+                        return this.simd_call("llvm.fabs.`Emitter.simd_suffix(vt)`", vt, a1)
+                    }
+                    ; llvm.abs: the minimum value stays itself (not poison), as a wrap
+                    var a2 Vector[LLVMValueRef](2)
+                    a2.put(0, vals[0])
+                    a2.put(1, LLVMConstInt(LLVMInt1TypeInContext(context), 0, 0))
+                    return this.simd_call("llvm.abs.`Emitter.simd_suffix(vt)`", vt, a2)
+                }
+                case "simd.min" case "simd.max":
+                {
+                    let vt LLVMTypeOf(vals[0])
+                    let other this.simd_as_vector(vals[1], vt, types[1])
+                    let ek LLVMGetTypeKind(LLVMGetElementType(vt))
+                    var op "minnum"
+                    if ek = LLVMTypeKind.Double() or ek = LLVMTypeKind.Float()
+                    {
+                        if name = "simd.max"
+                            set op: "maxnum"
+                    }
+                    else
+                    {
+                        let u Emitter.simd_unsigned(types[0])
+                        if name = "simd.min" and u
+                            set op: "umin"
+                        else if name = "simd.min"
+                            set op: "smin"
+                        else if u
+                            set op: "umax"
+                        else
+                            set op: "smax"
+                    }
+                    var a2 Vector[LLVMValueRef](2)
+                    a2.put(0, vals[0])
+                    a2.put(1, other)
+                    return this.simd_call("llvm.`op`.`Emitter.simd_suffix(vt)`", vt, a2)
+                }
+                case "simd.fma":
+                {
+                    let vt LLVMTypeOf(vals[0])
+                    var a3 Vector[LLVMValueRef](3)
+                    a3.put(0, vals[0])
+                    a3.put(1, this.simd_as_vector(vals[1], vt, types[1]))
+                    a3.put(2, this.simd_as_vector(vals[2], vt, types[2]))
+                    return this.simd_call("llvm.fma.`Emitter.simd_suffix(vt)`", vt, a3)
+                }
+                case "simd.sum" case "simd.product" case "simd.min_lane" case "simd.max_lane":
+                {
+                    let vt LLVMTypeOf(vals[0])
+                    let et LLVMGetElementType(vt)
+                    let ek LLVMGetTypeKind(et)
+                    let fl ek = LLVMTypeKind.Double() or ek = LLVMTypeKind.Float()
+                    let sfx Emitter.simd_suffix(vt)
+                    if fl and (name = "simd.sum" or name = "simd.product")
+                    {
+                        ; ORDERED: without reassociation flags the reduction
+                        ; runs lane 0 first, the digits of a scalar loop; the
+                        ; start is the identity (-0.0 keeps a lone -0.0 lane)
+                        var op "fadd"
+                        var start LLVMConstReal(et, 1.0)
+                        if name = "simd.sum"
+                            set start: LLVMBuildFNeg(builder, LLVMConstReal(et, 0.0), "simd.negzero")
+                        else
+                            set op: "fmul"
+                        var a2 Vector[LLVMValueRef](2)
+                        a2.put(0, start)
+                        a2.put(1, vals[0])
+                        return this.simd_call("llvm.vector.reduce.`op`.`sfx`", et, a2)
+                    }
+                    var op "add"
+                    if name = "simd.product"
+                        set op: "mul"
+                    else if fl and name = "simd.min_lane"
+                        set op: "fmin"
+                    else if fl and name = "simd.max_lane"
+                        set op: "fmax"
+                    else if name <> "simd.sum"
+                    {
+                        var pre "s"
+                        if Emitter.simd_unsigned(types[0])
+                            set pre: "u"
+                        if name = "simd.min_lane"
+                            set op: "`pre`min"
+                        else
+                            set op: "`pre`max"
+                    }
+                    var a1 Vector[LLVMValueRef](1)
+                    a1.put(0, vals[0])
+                    return this.simd_call("llvm.vector.reduce.`op`.`sfx`", et, a1)
                 }
             scaly_eputs "Emitter: unknown SIMD intrinsic "
             scaly_eputs(name.to_c_string())

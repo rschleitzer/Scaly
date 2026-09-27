@@ -2,7 +2,7 @@
 ; scaly_panic_oob), for a read and for `with`; the index is computed so the
 ; compiler cannot fold the check away (ROADMAP-simd.md).
 ; expect-rc: 15
-; expect-out: SIMD lane: index out of bounds
+; expect-out: SIMD lane: index out of bounds (index 4, length 4)
 
 function main(argc: int, argv: pointer[pointer[const_char]]) returns int
 {

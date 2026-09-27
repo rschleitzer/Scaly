@@ -2411,6 +2411,12 @@ define TaskPlanner
                 set pw_impure: true
                 return
             }
+            ; a SIMD store writes through its container: not effect-free
+            if call.is_intrinsic and TaskPlanner.is_simd_store(call.name)
+            {
+                set pw_impure: true
+                return
+            }
             if call.is_intrinsic
                 return
             if call.is_operator
@@ -2617,6 +2623,12 @@ define TaskPlanner
             }
             if call.is_operator and call.name = "&" and call.args <> null and call.args.length = 1
                 set cls_takes_address: true
+            ; a SIMD store's lanes are not proven disjoint across iterations
+            if call.is_intrinsic and TaskPlanner.is_simd_store(call.name)
+            {
+                this.block("SIMD store")
+                return
+            }
             if call.is_intrinsic
                 return
             if call.is_operator
@@ -3262,12 +3274,28 @@ define TaskPlanner
                     0
         }
 
+        ; a SIMD vector store writes its argument 1 (ROADMAP-simd.md phase 2;
+        ; WriteCensus.is_simd_store is the same list)
+        function is_simd_store(name: String) returns bool
+        {
+            match name
+                case "simd.store" case "simd.store_ptr": return true
+            false
+        }
+
         procedure wr_call(mutable this: TaskPlanner, call: PlannedCall)
         {
             this.wr_operands(call.args)
             if call.is_indirect
             {
                 set wr_mask: wm_all()
+                return
+            }
+            if call.is_intrinsic and TaskPlanner.is_simd_store(call.name) and call.args <> null and call.args.length > 1
+            {
+                let sp call.args.get 1
+                if sp <> null
+                    set wr_mask: (wr_mask | this.wr_mask_of_op(sp.unwrap()))
                 return
             }
             if call.is_intrinsic

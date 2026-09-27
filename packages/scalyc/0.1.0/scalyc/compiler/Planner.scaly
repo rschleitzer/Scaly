@@ -19705,17 +19705,51 @@ define Planner
             this.plan_simd_method(arg_ops[0], String("select"), rest, second)
         }
 
+        ; `load`/`store` on a container: a Slice, Vector or Array of the lane type
+        procedure check_simd_memory(mutable this: Planner, t: String, m: String, container: PlannedOperand, loc: Span)
+        {
+            let lane Planner.simd_element_name(t)
+            let held Planner.simd_container_element(container.result_type)
+            if Planner.simd_lane_name_matches(lane, held) = false
+                this.add_diagnostic(loc, String^this("`t`.`m` takes a Slice, Vector or Array of `lane` and an index; `container.result_type.name` is not one - the unchecked form over a pointer is `m`_ptr"))
+        }
+
+        ; `load_ptr`/`store_ptr`: a pointer to the lane type
+        procedure check_simd_pointer(mutable this: Planner, t: String, m: String, p: PlannedOperand, loc: Span)
+        {
+            let lane Planner.simd_element_name(t)
+            if Planner.simd_lane_name_matches(lane, Planner.simd_pointee_name(p.result_type)) = false
+                this.add_diagnostic(loc, String^this("`t`.`m` takes a pointer to `lane`"))
+        }
+
+        ; `min`/`max`/`fma`: vectors of the receiver's type, or scalars (broadcast)
+        procedure check_simd_same_type(mutable this: Planner, t: String, m: String, args: Vector[PlannedOperand], loc: Span)
+        {
+            var i: size_t 0
+            while i < args.length
+            {
+                let a args[i]
+                if Planner.is_simd_type_name(a.result_type.name) and a.result_type.name <> t
+                    this.add_diagnostic(loc, String^this("`t`.`m` takes vectors of `t` or scalars, not `a.result_type.name`"))
+                set i: i + 1
+            }
+        }
+
         procedure plan_simd_static(mutable this: Planner, t: String, m: String, arg_ops: Vector[PlannedOperand], second: PlannedOperand) returns PlannedOperand
         {
             var want: size_t 0
             match m
-                case "splat": set want: 1
-                case "iota": set want: 2
+                case "splat" case "load_ptr": set want: 1
+                case "iota" case "load": set want: 2
             let rn Planner.simd_static_result(t, m)
             if rn.get_length() = 0
-                this.add_diagnostic(second.loc, String^this("`t` has no static `m` - a vector type offers splat and iota, a mask all_set and none_set"))
+                this.add_diagnostic(second.loc, String^this("`t` has no static `m` - a vector type offers splat, iota, load and load_ptr, a mask all_set and none_set"))
             else if arg_ops.length <> want
                 this.add_diagnostic(second.loc, String^this("`t`.`m` takes `want` argument(s)"))
+            else if m = "load"
+                this.check_simd_memory(t, m, arg_ops[0], second.loc)
+            else if m = "load_ptr"
+                this.check_simd_pointer(t, m, arg_ops[0], second.loc)
             this.simd_operand(second.loc, "simd.`m`", arg_ops, Planner.simd_type(t), second.member_access)
         }
 
@@ -19726,14 +19760,25 @@ define Planner
             var want: size_t 0
             var rt: PlannedType recv.result_type
             match m
-                case "with": set want: 2
-                case "select": set want: 2
+                case "with" case "select" case "fma" case "store": set want: 2
+                case "min" case "max" case "store_ptr": set want: 1
             if rn.get_length() = 0
                 this.add_diagnostic(second.loc, String^this("`t` has no method `m`"))
             else if arg_ops.length <> want
                 this.add_diagnostic(second.loc, String^this("`t`.`m` takes `want` argument(s)"))
+            else if rn = "elem"
+                set rt: Planner.simd_element_type(t)
+            else if rn = "void"
+                set rt: Planner.make_void_type()
             else if rn <> "?"
                 set rt: Planner.simd_result_type(rn)
+            if rn.get_length() > 0 and arg_ops.length = want
+            {
+                match m
+                    case "store": this.check_simd_memory(t, m, arg_ops[0], second.loc)
+                    case "store_ptr": this.check_simd_pointer(t, m, arg_ops[0], second.loc)
+                    case "min" case "max" case "fma": this.check_simd_same_type(t, m, arg_ops, second.loc)
+            }
             if m = "select" and arg_ops.length = 2
             {
                 let a0 arg_ops[0]
@@ -52840,7 +52885,7 @@ define Planner
     }
 
     ; The result type NAME of method `m` on a value of vector type `t`
-    ; ("" when `t` has no such method). Phase 1: lanes, masks.
+    ; ("" when `t` has no such method; "elem" is the lane type, "void" none).
     function simd_method_result(t: String, m: String) returns String
     {
         if Planner.is_simd_type_name(t) = false
@@ -52851,9 +52896,81 @@ define Planner
                 case "any" case "all": return String("bool")
                 case "count": return String("int")
                 case "select": return String("?")
+            return String()
         }
+        let e Planner.simd_element_name(t)
+        let fl e = "double" or e = "float"
         match m
-            case "with": return t
+            case "with" case "min" case "max": return t
+            case "sum" case "product" case "min_lane" case "max_lane": return String("elem")
+            case "store" case "store_ptr": return String("void")
+        if fl
+        {
+            match m
+                case "sqrt" case "floor" case "abs" case "fma": return t
+        }
+        if m = "abs" and (e = "int" or e = "i32")
+            return t
+        String()
+    }
+
+    ; the lane type written as a container's element type: `f64` and
+    ; `double` are one type, as are `f32`/`float` and `i64`/`int`
+    function simd_lane_name_matches(lane: String, written: String) returns bool
+    {
+        if lane = written
+            return true
+        match lane
+            case "double": return written = "f64"
+            case "float": return written = "f32"
+            case "int": return written = "i64"
+        false
+    }
+
+    ; The element type NAME a `load`/`store` container holds, "" if the type is
+    ; not a Slice, Vector or Array (through a `ref`, `pointer` or Option).
+    function simd_container_element(t: PlannedType) returns String
+    {
+        var cur t
+        while cur.name = "ref" or cur.name = "pointer" or cur.name = "Option"
+        {
+            if cur.generics = null
+                return String()
+            let gs cur.generics as ref[Vector[PlannedType]]
+            if gs.length = 0
+                return String()
+            set cur: gs[0]
+        }
+        let cn cur.name
+        match cn
+            case "Slice" case "Vector" case "Array":
+            {
+                if cur.generics = null
+                    return String()
+                let es cur.generics as ref[Vector[PlannedType]]
+                if es.length = 0
+                    return String()
+                let g es[0]
+                return g.name
+            }
+        String()
+    }
+
+    ; The pointee type NAME of `pointer[T]` / `ref[T]`, "" otherwise.
+    function simd_pointee_name(t: PlannedType) returns String
+    {
+        if t.generics = null
+            return String()
+        let gs t.generics as ref[Vector[PlannedType]]
+        if gs.length = 0
+            return String()
+        let tn t.name
+        match tn
+            case "pointer" case "ref":
+            {
+                let g gs[0]
+                return g.name
+            }
         String()
     }
 
@@ -52867,7 +52984,7 @@ define Planner
             return String()
         }
         match m
-            case "splat" case "iota": return t
+            case "splat" case "iota" case "load" case "load_ptr": return t
         String()
     }
 

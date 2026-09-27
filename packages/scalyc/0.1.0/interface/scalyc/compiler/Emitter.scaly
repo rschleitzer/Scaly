@@ -12841,7 +12841,17 @@ define Emitter
 
 
 
+        ; unsigned lanes, or an unsigned SCALAR (a broadcast source): an
+        ; `int` is signed -- simd_element_name answers "bool" for a name that
+        ; is not a vector, which read every scalar `int` as unsigned
         function simd_unsigned(t: PlannedType) @ret_caller true @deep true returns bool linked
+
+
+
+
+
+
+
 
 
 
@@ -13012,7 +13022,152 @@ define Emitter
 
 
 
+
+
+
+
         procedure simd_intrinsic(mutable this, mutable name: String, mutable ret: LLVMTypeRef, mutable arg: LLVMTypeRef) @direct true @deep true returns LLVMValueRef linked
+
+
+
+
+
+
+        ; a declared intrinsic with any number of parameters
+        procedure simd_intrinsic_n(mutable this, mutable name: String, mutable ret: LLVMTypeRef, mutable params: Vector[LLVMTypeRef]) @direct true @deep true returns LLVMValueRef linked
+
+
+        ; the LLVM overload suffix of a vector type: v4f64, v8f32, v16i8, ...
+        procedure simd_suffix(mutable vt: LLVMTypeRef) @page true @direct true @ret_caller true @deep true returns String linked
+
+
+
+
+
+
+
+
+
+
+
+
+        ; bytes of one lane: the alignment of an element-wise vector access
+        procedure simd_lane_bytes(mutable vt: LLVMTypeRef) @ret_caller true @deep true returns u32 linked
+
+
+
+
+
+
+
+
+
+
+        ; call an intrinsic on one to three values of the same vector type
+        procedure simd_call(mutable this, mutable fname: String, mutable ret: LLVMTypeRef, mutable args: Vector[LLVMValueRef]) @direct true @deep true returns LLVMValueRef linked
+
+
+
+
+
+
+
+
+
+
+
+
+        ; field `which` of a Slice/Vector/Array: 0 the length, 1 the data
+        ; pointer (the LAST field -- an Array carries its capacity between).
+        ; The container arrives as a struct value or as its address.
+        procedure simd_container_field(mutable this, mutable v: LLVMValueRef, pt: PlannedType, which: int) @direct true @deep true returns LLVMValueRef linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; lanes [i, i + n) of a container of length len: ONE check for the
+        ; whole vector (n <= len and i <= len - n), exit 15 through the
+        ; bounds trap; answers the address of lane 0
+        procedure simd_checked_address(mutable this, mutable data: LLVMValueRef, mutable len: LLVMValueRef, mutable idx: LLVMValueRef, mutable vt: LLVMTypeRef, mutable what: String) @direct true @ret_caller true @deep true returns LLVMValueRef linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; a vector load/store at element alignment (a Slice promises no more)
+        procedure simd_load_at(mutable this, mutable addr: LLVMValueRef, mutable vt: LLVMTypeRef) @direct true @ret_caller true @deep true returns LLVMValueRef linked
+
+
+
+
+
+
+        procedure simd_store_at(mutable this, mutable v: LLVMValueRef, mutable addr: LLVMValueRef) @direct true @ret_caller true @deep true returns LLVMValueRef linked
+
+
+
+
+
+
+        ; a vector operand, or a scalar broadcast into the receiver's type
+        procedure simd_as_vector(mutable this, mutable v: LLVMValueRef, mutable vt: LLVMTypeRef, t: PlannedType) @direct true @deep true returns LLVMValueRef linked
 
 
 
@@ -13021,6 +13176,130 @@ define Emitter
 
         ; the planned intrinsic calls `simd.*` (Planner.plan_simd_call#)
         procedure emit_simd(mutable this, mutable call: PlannedCall) @direct true @deep true returns LLVMValueRef linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

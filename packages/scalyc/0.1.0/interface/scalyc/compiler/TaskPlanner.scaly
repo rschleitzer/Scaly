@@ -2421,6 +2421,12 @@ define TaskPlanner
 
 
 
+
+
+
+
+
+
         procedure pw_operand(mutable this: TaskPlanner, op: PlannedOperand) @deep true linked
 
 
@@ -2604,6 +2610,12 @@ define TaskPlanner
 
 
         procedure cls_call(mutable this: TaskPlanner, call: PlannedCall) @deep true linked
+
+
+
+
+
+
 
 
 
@@ -3262,7 +3274,23 @@ define TaskPlanner
 
 
 
+        ; a SIMD vector store writes its argument 1 (ROADMAP-simd.md phase 2;
+        ; WriteCensus.is_simd_store is the same list)
+        function is_simd_store(name: String) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
         procedure wr_call(mutable this: TaskPlanner, call: PlannedCall) @deep true linked
+
+
+
+
+
+
+
 
 
 

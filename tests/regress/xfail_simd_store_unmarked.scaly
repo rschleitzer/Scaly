@@ -1,0 +1,14 @@
+; xfail: error: procedure halve writes out:Slice[double], which its signature does not declare `mutable`
+;
+; A SIMD store writes the container it is handed, so a procedure that stores
+; into a parameter declares it `mutable` like any other write (R1; the write
+; census sees simd.store as a write of its argument 1).
+
+procedure halve(out: Slice[double])
+{
+    (f64x4.load(out, 0) * 0.5).store(out, 0)
+}
+
+var xs Vector[double](4)
+halve(xs.as_slice())
+print "unreachable"

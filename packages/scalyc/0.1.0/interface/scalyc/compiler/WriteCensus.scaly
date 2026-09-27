@@ -1906,6 +1906,10 @@ define WriteCensus
 
 
 
+
+
+
+
         ; The written parameters of a callee, mapped onto this call's arguments.
         procedure apply_callee(mutable this: WriteCensus, op: PlannedOperand, call: PlannedCall, callee_mask: u64, callee_name: String, n_in: size_t, slot: size_t) @deep true linked
 
@@ -3209,6 +3213,10 @@ define WriteCensus
 
 
 
+
+
+
+
         ; A local held BY VALUE (not a reference) is the body's own memory: a
         ; procedure handed it, `it.next()` on an iterator, writes the copy. The
         ; ASSUMPTION, stated: such a procedure does not write through the
@@ -4250,7 +4258,18 @@ define WriteCensus
         ; The argument positions a C function writes, from its documented
         ; contract; every extern NOT named here writes all of them (the LLVM-C
         ; API mutates through every handle it is given).
+        ; a SIMD vector stored into a container or through a pointer: the
+        ; intrinsic writes its argument 1 (ROADMAP-simd.md phase 2)
+        function is_simd_store(name: String) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
         function extern_writes(name: String) @ret_nonlocal true @deep true returns u64 linked
+
+
 
 
 

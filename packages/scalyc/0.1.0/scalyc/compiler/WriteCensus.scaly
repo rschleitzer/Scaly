@@ -1883,7 +1883,11 @@ define WriteCensus
                 }
             }
             if call.is_intrinsic
+            {
+                if WriteCensus.is_simd_store(call.name)
+                    this.note_extern_call(op, call)
                 return
+            }
             if call.is_operator
                 return
             let census pc as ref[PointerCensus]
@@ -3095,7 +3099,11 @@ define WriteCensus
         procedure check_call(mutable this: WriteCensus, op: PlannedOperand, call: PlannedCall, slot: size_t)
         {
             if call.is_intrinsic
+            {
+                if WriteCensus.is_simd_store(call.name)
+                    this.note_extern_call(op, call)
                 return
+            }
             if call.is_operator
                 return
             ; a construction writes its NEW object
@@ -4250,8 +4258,19 @@ define WriteCensus
         ; The argument positions a C function writes, from its documented
         ; contract; every extern NOT named here writes all of them (the LLVM-C
         ; API mutates through every handle it is given).
+        ; a SIMD vector stored into a container or through a pointer: the
+        ; intrinsic writes its argument 1 (ROADMAP-simd.md phase 2)
+        function is_simd_store(name: String) returns bool
+        {
+            match name
+                case "simd.store" case "simd.store_ptr": return true
+            false
+        }
+
         function extern_writes(name: String) returns u64
         {
+            if WriteCensus.is_simd_store(name)
+                return 2
             if name = "memcpy"
                 return 1
             if name = "memmove"

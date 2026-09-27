@@ -19705,6 +19705,36 @@ define Planner
 
 
 
+        ; `load`/`store` on a container: a Slice, Vector or Array of the lane type
+        procedure check_simd_memory(mutable this: Planner, t: String, m: String, container: PlannedOperand, loc: Span) @ret_nonlocal true @deep true linked
+
+
+
+
+
+
+
+        ; `load_ptr`/`store_ptr`: a pointer to the lane type
+        procedure check_simd_pointer(mutable this: Planner, t: String, m: String, p: PlannedOperand, loc: Span) @ret_nonlocal true @deep true linked
+
+
+
+
+
+
+        ; `min`/`max`/`fma`: vectors of the receiver's type, or scalars (broadcast)
+        procedure check_simd_same_type(mutable this: Planner, t: String, m: String, args: Vector[PlannedOperand], loc: Span) @deep true linked
+
+
+
+
+
+
+
+
+
+
+
         procedure plan_simd_static(mutable this: Planner, t: String, m: String, arg_ops: Vector[PlannedOperand], second: PlannedOperand) @page true @direct true @deep true returns PlannedOperand linked
 
 
@@ -19719,7 +19749,22 @@ define Planner
 
 
 
+
+
+
+
         procedure plan_simd_method(mutable this: Planner, recv: PlannedOperand, m: String, arg_ops: Vector[PlannedOperand], second: PlannedOperand) @page true @direct true @deep true @deep_into_1_8 true returns PlannedOperand linked
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -52840,8 +52885,80 @@ define Planner
 
 
     ; The result type NAME of method `m` on a value of vector type `t`
-    ; ("" when `t` has no such method). Phase 1: lanes, masks.
+    ; ("" when `t` has no such method; "elem" is the lane type, "void" none).
     function simd_method_result(t: String, m: String) @page true @direct true @deep true returns String linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ; the lane type written as a container's element type: `f64` and
+    ; `double` are one type, as are `f32`/`float` and `i64`/`int`
+    function simd_lane_name_matches(lane: String, written: String) @ret_param_1 true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+    ; The element type NAME a `load`/`store` container holds, "" if the type is
+    ; not a Slice, Vector or Array (through a `ref`, `pointer` or Option).
+    function simd_container_element(t: PlannedType) @page true @direct true @ret_param_0 true @deep true returns String linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ; The pointee type NAME of `pointer[T]` / `ref[T]`, "" otherwise.
+    function simd_pointee_name(t: PlannedType) @page true @direct true @ret_param_0 true @deep true returns String linked
+
 
 
 
