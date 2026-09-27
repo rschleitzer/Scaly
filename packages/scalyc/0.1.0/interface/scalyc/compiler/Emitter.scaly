@@ -13,6 +13,7 @@ use scaly.os.File
 use scalyc.compiler.Modeler
 use scalyc.compiler.ConceptIndex.ConceptIndex
 use scalyc.compiler.TaskPlanner.TaskPlanner
+use scalyc.compiler.StoreEffects.StoreEffects
 use scalyc.compiler.Model.*
 use scalyc.compiler.Plan.*
 use scalyc.compiler.LLVM.*
@@ -390,9 +391,13 @@ define Emitter
         ; a value emit_binding takes instead of evaluating its initializer
         ; (the left binding of a fork-join `let` pair)
         var fj_preset: LLVMValueRef
+        ; the aliasing rule's payoff: which parameters may be `noalias`
+        ; (StoreEffects.scaly, analyzed once per plan in emit#)
+        store_effects: StoreEffects
     )
     {
         init(cfg: EmitterConfig) linked
+
 
 
 
@@ -3806,6 +3811,46 @@ define Emitter
 
 
 
+        ; A parameter handing over a deeply immutable record (by value, which
+        ; is a pointer here, or through a `ref`) is `noalias` when the routine
+        ; and everything it calls never store that type as a whole -- the
+        ; aliasing rule makes that the only way its bytes can change
+        ; (StoreEffects.scaly, tools/aliasing/README.md). The implicit page and
+        ; the sret slot sit before `offset` and are not judged.
+        procedure mark_noalias_params(mutable this, mutable func: PlannedFunction, mutable llvm_func: LLVMValueRef, offset: size_t) @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         ; s89: Cached sret kind id (lazily looked up). 0 = uninitialized.
         function sret_kind_id(this) @ret_caller true @deep true returns u32 linked
 
@@ -5000,6 +5045,9 @@ define Emitter
 
         ; Emit function declaration (signature only)
         procedure emit_function_decl(mutable this, mutable func: PlannedFunction) @direct true @deep true returns LLVMValueRef linked
+
+
+
 
 
 
@@ -7393,6 +7441,7 @@ define Emitter
 
 
         procedure emit(mutable this, mutable plan: Plan, mutable module_name: String) @ret_nonlocal true @deep true @deep_this_2 true @deep_whole_2 true returns bool io linked
+
 
 
 

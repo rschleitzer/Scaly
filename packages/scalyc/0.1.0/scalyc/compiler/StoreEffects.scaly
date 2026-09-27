@@ -1,0 +1,711 @@
+; StoreEffects.scaly - which record types a routine may overwrite AS A WHOLE,
+; so that the Emitter can mark a parameter `noalias` (ROADMAP 4.9, the n-body
+; gap; the aliasing rule, tools/aliasing/README.md).
+;
+; A DEEPLY IMMUTABLE record is one whose fields are all `let` and whose
+; by-value record fields are deeply immutable in turn (Vector: a length and a
+; data pointer). After construction its bytes change only when a value of its
+; type -- or of a record or union that embeds it -- is stored over it as a
+; whole: R2 forbids the field writes, and the aliasing rule forbids reaching
+; the bytes through a pointer of another type. So if a routine, together with
+; everything it calls, never stores such a value, nothing changes a
+; deeply-immutable record while the routine runs, and every parameter of that
+; type (by value, which is a pointer at the LLVM level, or a `ref`) is
+; `noalias` in LLVM's sense. What that buys is the container header: without
+; it every element store in a loop may have changed `length` and `data`, so
+; both are reloaded and the bounds check that reads them is repeated.
+;
+; The facts per routine are a mask over the CANDIDATE types (the deeply
+; immutable records that occur as parameters, at most 63) plus a WILD bit for
+; what cannot be followed:
+;   - a `set` whose target is a record or union: the candidates it embeds
+;   - a scalar store: nothing (a candidate has no field it could write)
+;   - a call with a body in the plan: an edge, folded in a fixpoint
+;   - a construction: its initializer's body if the plan has one, else nothing
+;     (a positional construction writes fresh memory)
+;   - a C extern: WILD for the byte copiers (memcpy, memmove, memset -- the
+;     rule's own exemption), nothing for every other
+;   - a stub of another package: nothing for a `function` (R1), nothing for
+;     the runtime substrate (scaly/memory, scaly/fiber, scaly/cluster: it
+;     never hands live memory over under another type), WILD for any other
+;     procedure (the generated interface does not carry this fact yet)
+;   - a trap helper (scaly_panic_*): nothing -- it never returns to the body
+;   - an indirect call, a lambda, a closure, a function reference: WILD
+use scalyc.compiler.Model.*
+use scalyc.compiler.Plan.*
+use scalyc.compiler.ConceptIndex.ConceptIndex
+use scalyc.compiler.Planner.*
+
+define SE_WILD u64 0x8000000000000000
+define SE_MAX_CANDIDATES size_t 63
+
+define StoreEffects
+{
+    define StoreEffects
+    (
+        var plan_functions: ref[Vector[PlannedFunction]]?
+        var plan_structures: ref[Vector[PlannedStructure]]?
+        var plan_unions: ref[Vector[PlannedUnion]]?
+        var struct_index: ConceptIndex
+        var union_index: ConceptIndex
+        var slot_index: ConceptIndex
+        var cand_index: ConceptIndex
+        var embed_index: ConceptIndex
+        var immut_index: ConceptIndex
+        cand_names: Array[String]
+        slot_names: Array[String]
+        slot_mask: Array[u64]
+        slot_body: Array[PlannedAction]
+        slot_has_body: Array[bool]
+        slot_is_init: Array[bool]
+        edge_from: Array[size_t]
+        edge_to: Array[size_t]
+        embed_vals: Array[u64]
+        immut_vals: Array[bool]
+        var cur: size_t
+        var ready: bool
+        ; SCALYC_SE_PROBE=1: one line per first reason a body turns wild
+        var probe: bool
+    )
+    {
+        init()
+        {
+            set plan_functions: null
+            set plan_structures: null
+            set plan_unions: null
+            set struct_index: ConceptIndex()
+            set union_index: ConceptIndex()
+            set slot_index: ConceptIndex()
+            set cand_index: ConceptIndex()
+            set embed_index: ConceptIndex()
+            set immut_index: ConceptIndex()
+            set cand_names: Array[String]^this()
+            set slot_names: Array[String]^this()
+            set slot_mask: Array[u64]^this()
+            set slot_body: Array[PlannedAction]^this()
+            set slot_has_body: Array[bool]^this()
+            set slot_is_init: Array[bool]^this()
+            set edge_from: Array[size_t]^this()
+            set edge_to: Array[size_t]^this()
+            set embed_vals: Array[u64]^this()
+            set immut_vals: Array[bool]^this()
+            set cur: 0
+            set ready: false
+            set probe: false
+        }
+
+        ; ------------------------------------------------------------------
+        ; types
+        ; ------------------------------------------------------------------
+
+        function is_scalar_name(n: String) returns bool
+        {
+            match n
+                case "int" case "i8" case "i16" case "i32" case "i64": return true
+                case "u8" case "u16" case "u32" case "u64" case "size_t": return true
+                case "char" case "bool" case "float" case "double": return true
+                case "const_char" case "void" case "pointer" case "ref": return true
+            false
+        }
+
+        ; a pointer-shaped type: its bytes are an address, never a record
+        function is_address(t: PlannedType) returns bool
+        {
+            if StoreEffects.is_scalar_name(t.name)
+                return true
+            if t.name = "Option" and t.generics <> null
+            {
+                let g (*t.generics)
+                if g.length = 1
+                {
+                    let g0 g.get 0
+                    if g0 <> null
+                        return (*g0).name = "ref" or (*g0).name = "pointer"
+                }
+            }
+            false
+        }
+
+        function key_of(t: PlannedType) returns String
+        {
+            if t.mangled_name.get_length() > 0
+                return t.mangled_name
+            t.name
+        }
+
+        function struct_at(this, t: PlannedType) returns ref[PlannedStructure]?
+        {
+            if plan_structures = null
+                return null
+            let at struct_index.lookup(StoreEffects.key_of(t))
+            if at < 0
+                return null
+            let sp (*plan_structures).get(at as size_t)
+            if sp = null
+                return null
+            sp
+        }
+
+        function union_at(this, t: PlannedType) returns ref[PlannedUnion]?
+        {
+            if plan_unions = null
+                return null
+            let at union_index.lookup(StoreEffects.key_of(t))
+            if at < 0
+                return null
+            let up (*plan_unions).get(at as size_t)
+            if up = null
+                return null
+            up
+        }
+
+        function prop_is_var(pp: PlannedProperty) returns bool
+        {
+            if pp.attributes = null
+                return false
+            for a in pp.attributes
+            {
+                if a.name = "var"
+                    return true
+            }
+            false
+        }
+
+        ; all fields `let`, every by-value record field deeply immutable too
+        procedure deeply_immutable(mutable this, t: PlannedType, depth: size_t) returns bool
+        {
+            if depth > 16
+                return false
+            let key StoreEffects.key_of(t)
+            let memo immut_index.lookup(key)
+            if memo >= 0
+                return immut_vals[memo as size_t]
+            let sp this.struct_at(t)
+            if sp = null
+                return false
+            let s (*sp)
+            if s.is_generic_placeholder
+                return false
+            var ok true
+            if s.properties <> null
+            {
+                for pp in s.properties
+                {
+                    if ok
+                    {
+                        if StoreEffects.prop_is_var(pp)
+                            set ok: false
+                        else if StoreEffects.is_address(pp.prop_type) = false
+                        {
+                            if this.deeply_immutable(pp.prop_type, depth + 1) = false
+                                set ok: false
+                        }
+                    }
+                }
+            }
+            immut_index.insert(String^this(key), immut_vals.length)
+            immut_vals.add ok
+            ok
+        }
+
+        ; the candidate bits a stored value of type t overwrites; an unknown
+        ; type overwrites everything
+        procedure embed_mask(mutable this, t: PlannedType, depth: size_t) returns u64
+        {
+            if StoreEffects.is_address(t)
+                return 0
+            if depth > 16
+                return SE_WILD - 1
+            let key StoreEffects.key_of(t)
+            let memo embed_index.lookup(key)
+            if memo >= 0
+                return embed_vals[memo as size_t]
+            var m: u64 0
+            let bit cand_index.lookup(key)
+            if bit >= 0
+                set m: (1 as u64) << (bit as u64)
+            let sp this.struct_at(t)
+            if sp <> null
+            {
+                let s (*sp)
+                if s.properties <> null
+                {
+                    for pp in s.properties
+                        set m: m | this.embed_mask(pp.prop_type, depth + 1)
+                }
+            }
+            else
+            {
+                let up this.union_at(t)
+                if up <> null
+                {
+                    let u (*up)
+                    if u.variants <> null
+                    {
+                        for v in u.variants
+                        {
+                            if v.var_type <> null
+                                set m: m | this.embed_mask(v.var_type.unwrap(), depth + 1)
+                        }
+                    }
+                }
+                else if t.name <> "Option"
+                    set m: SE_WILD - 1
+                else if t.generics <> null
+                {
+                    for g in t.generics
+                        set m: m | this.embed_mask(g, depth + 1)
+                }
+            }
+            embed_index.insert(String^this(key), embed_vals.length)
+            embed_vals.add m
+            m
+        }
+
+        ; the record a parameter of type t hands over: the type itself, or
+        ; what a `ref` points to
+        function param_record(t: PlannedType) returns PlannedType
+        {
+            if (t.name = "ref") and t.generics <> null
+            {
+                let g (*t.generics)
+                if g.length = 1
+                {
+                    let g0 g.get 0
+                    if g0 <> null
+                        return (*g0)
+                }
+            }
+            t
+        }
+
+        procedure note_candidate(mutable this, t: PlannedType)
+        {
+            let r StoreEffects.param_record(t)
+            if StoreEffects.is_address(r)
+                return
+            let key StoreEffects.key_of(r)
+            if key.get_length() = 0 or cand_index.lookup(key) >= 0
+                return
+            if cand_names.length >= SE_MAX_CANDIDATES
+                return
+            if this.deeply_immutable(r, 0) = false
+                return
+            let kc String^this(key)
+            cand_index.insert(kc, cand_names.length)
+            cand_names.add kc
+        }
+
+        ; ------------------------------------------------------------------
+        ; the analysis
+        ; ------------------------------------------------------------------
+
+        procedure add_slot(mutable this, name: String, has_body: bool, is_init: bool, body: PlannedAction, mask: u64)
+        {
+            if slot_index.lookup(name) >= 0
+                return
+            let nc String^this(name)
+            slot_index.insert(nc, slot_names.length)
+            slot_names.add nc
+            slot_has_body.add has_body
+            ; an initializer can reach the plan as a function too; its
+            ; Itanium name says what it is (`C1E`, the complete constructor)
+            slot_is_init.add(is_init or name.contains("C1E"))
+            slot_body.add body
+            slot_mask.add mask
+        }
+
+        procedure analyze(mutable this, plan: Plan)
+        {
+            set probe: getenv("SCALYC_SE_PROBE") <> null
+            set plan_functions: plan.functions
+            set plan_structures: plan.structures
+            set plan_unions: plan.unions
+            set struct_index: ConceptIndex.create(131072)
+            set union_index: ConceptIndex.create(32768)
+            set slot_index: ConceptIndex.create(262144)
+            set cand_index: ConceptIndex.create(256)
+            set embed_index: ConceptIndex.create(131072)
+            set immut_index: ConceptIndex.create(131072)
+            if plan.structures <> null
+            {
+                var i: size_t 0
+                for s in plan.structures
+                {
+                    struct_index.insert_if_absent(StoreEffects.key_of_struct(s), i)
+                    set i: i + 1
+                }
+            }
+            if plan.unions <> null
+            {
+                var i: size_t 0
+                for u in plan.unions
+                {
+                    if u.mangled_name.get_length() > 0
+                        union_index.insert_if_absent(u.mangled_name, i)
+                    else
+                        union_index.insert_if_absent(u.name, i)
+                    set i: i + 1
+                }
+            }
+            if plan.functions = null
+                return
+            ; the candidates: deeply immutable records handed to a body
+            for f in plan.functions
+            {
+                choose f.impl
+                    when a: Action
+                    {
+                        if f.input <> null
+                        {
+                            for item in f.input
+                            {
+                                if item.item_type <> null
+                                    this.note_candidate(item.item_type.unwrap())
+                            }
+                        }
+                    }
+                    else
+                        0
+            }
+            if cand_names.length = 0
+                return
+            ; one slot per body (a body wins over a declaration of the same
+            ; name), then the initializers, then the declarations
+            for f in plan.functions
+            {
+                choose f.impl
+                    when a: Action
+                        this.add_slot(f.mangled_name, true, false, a, 0)
+                    else
+                        0
+            }
+            if plan.structures <> null
+            {
+                for s in plan.structures
+                {
+                    if s.initializers <> null
+                    {
+                        for ini in s.initializers
+                        {
+                            choose ini.impl
+                                when a: Action
+                                    this.add_slot(ini.mangled_name, true, true, a, 0)
+                                else
+                                    0
+                        }
+                    }
+                }
+            }
+            for f in plan.functions
+            {
+                if slot_index.lookup(f.mangled_name) < 0
+                {
+                    let empty PlannedAction(f.loc, null, null, Planner.make_void_type())
+                    this.add_slot(f.mangled_name, false, false, empty, this.declaration_mask(f))
+                }
+            }
+            ; the direct facts of every body
+            var k: size_t 0
+            while k < slot_names.length
+            {
+                if slot_has_body[k]
+                {
+                    set cur: k
+                    let body slot_body[k]
+                    this.se_action(body)
+                }
+                set k: k + 1
+            }
+            ; fold the callees in until nothing moves
+            var changed true
+            while changed
+            {
+                set changed: false
+                var e: size_t 0
+                while e < edge_from.length
+                {
+                    let from edge_from[e]
+                    let to edge_to[e]
+                    let m slot_mask[from] | slot_mask[to]
+                    if m <> slot_mask[from]
+                    {
+                        slot_mask.put(from, m)
+                        set changed: true
+                    }
+                    set e: e + 1
+                }
+            }
+            set ready: true
+        }
+
+        function key_of_struct(s: PlannedStructure) returns String
+        {
+            if s.mangled_name.get_length() > 0
+                return s.mangled_name
+            s.name
+        }
+
+        ; a C function: only the byte copiers can overwrite a record (the
+        ; rule's own exemption); every other writes, if at all, through a
+        ; pointer of its own type
+        function c_mask(cname: String) returns u64
+        {
+            match cname
+                case "memcpy" case "memmove" case "memset": return SE_WILD
+            0
+        }
+
+        ; a declaration without a body: a C extern or a stub of another package
+        function declaration_mask(this, f: PlannedFunction) returns u64
+        {
+            if f.mangled_name.starts_with(String("_Z")) = false
+                return StoreEffects.c_mask(f.name)
+            if f.pure
+                return 0
+            if f.file.contains("scaly/memory") or f.file.contains("scaly/fiber") or f.file.contains("scaly/cluster")
+                return 0
+            SE_WILD
+        }
+
+        ; noalias for a parameter of type t of the routine `mangled`?
+        function param_noalias(this, mangled: String, t: PlannedType) returns bool
+        {
+            if ready = false
+                return false
+            let r StoreEffects.param_record(t)
+            let bit cand_index.lookup(StoreEffects.key_of(r))
+            if bit < 0
+                return false
+            let at slot_index.lookup(mangled)
+            if at < 0
+                return false
+            let m slot_mask[at as size_t]
+            if (m & SE_WILD) <> 0
+                return false
+            (m & ((1 as u64) << (bit as u64))) = 0
+        }
+
+        ; ------------------------------------------------------------------
+        ; the body walk
+        ; ------------------------------------------------------------------
+
+        procedure mark(mutable this, m: u64)
+        {
+            let c slot_mask[cur]
+            slot_mask.put(cur, c | m)
+        }
+
+        procedure why(mutable this, m: u64, what: String)
+        {
+            if probe and m <> 0 and (slot_mask[cur] & m) <> m
+            {
+                let nm slot_names[cur]
+                scaly_eputs "se-probe: "
+                scaly_eputs(nm.to_c_string())
+                scaly_eputs " <- "
+                scaly_eputs(what.to_c_string())
+                scaly_eputs "\n"
+            }
+            this.mark(m)
+        }
+
+        procedure se_call(mutable this, call: PlannedCall)
+        {
+            this.se_operands(call.args)
+            if call.is_indirect
+            {
+                this.why(SE_WILD, String("indirect call"))
+                return
+            }
+            if call.is_intrinsic or call.is_operator
+                return
+            let at slot_index.lookup(call.mangled_name)
+            if at < 0
+            {
+                ; a construction with no initializer body writes fresh memory;
+                ; anything else unknown is followed nowhere
+                let c0 call.name.get(0)
+                if c0 >= ("A" as char) and c0 <= ("Z" as char)
+                    return
+                ; the trap helpers (scaly_panic_oob, _null, ...) never return
+                ; into the routine: they abort or jump to a catch point
+                if call.name.starts_with(String("scaly_panic_"))
+                    return
+                ; a C function the plan does not declare here
+                if call.mangled_name.starts_with(String("_Z")) = false
+                {
+                    ; an initializer's byte copies go into the object it builds
+                    ; and the buffers it allocates
+                    if slot_is_init[cur] = false
+                        this.why(StoreEffects.c_mask(call.name), call.name)
+                    return
+                }
+                this.why(SE_WILD, call.mangled_name)
+                return
+            }
+            if slot_is_init[cur] and slot_has_body[at as size_t] = false and call.mangled_name.starts_with(String("_Z")) = false
+                return
+            edge_from.add cur
+            edge_to.add(at as size_t)
+        }
+
+        procedure se_operands(mutable this, ops: ref[Vector[PlannedOperand]]?)
+        {
+            if ops = null
+                return
+            for op in ops
+                this.se_operand(op)
+        }
+
+        procedure se_statement_ref(mutable this, stmt: ref[PlannedStatement]?)
+        {
+            if stmt <> null
+                this.se_statement(*stmt)
+        }
+
+        procedure se_action(mutable this, act: PlannedAction)
+        {
+            this.se_operands(act.source)
+            if act.target <> null
+            {
+                for t in act.target
+                {
+                    this.why(this.embed_mask(t.result_type, 0), StoreEffects.key_of(t.result_type))
+                    this.se_operand(t)
+                }
+            }
+        }
+
+        procedure se_statement(mutable this, stmt: PlannedStatement)
+        {
+            choose stmt
+                when action: Action
+                    this.se_action(action)
+                when binding: Binding
+                    this.se_operands(binding.operation)
+                when ret: Return
+                    this.se_operands(ret.result)
+                when throw_stmt: Throw
+                    this.se_operands(throw_stmt.result)
+                when brk: Break
+                    this.se_operands(brk.result)
+                when cont: Continue
+                    0
+        }
+
+        procedure se_operand(mutable this, op: PlannedOperand)
+        {
+            choose op.expr
+                when call: Call
+                    this.se_call(call)
+                when tp: Tuple
+                {
+                    if tp.components <> null
+                    {
+                        for c in tp.components
+                            this.se_operands(c.value)
+                    }
+                }
+                when blk: Block
+                {
+                    if blk.statements <> null
+                    {
+                        for s in blk.statements
+                            this.se_statement(s)
+                    }
+                }
+                when iff: If
+                {
+                    this.se_operands(iff.condition)
+                    this.se_statement_ref(iff.consequent)
+                    this.se_statement_ref(iff.alternative)
+                }
+                when mt: Match
+                {
+                    this.se_operands(mt.condition)
+                    if mt.branches <> null
+                    {
+                        for br in mt.branches
+                        {
+                            if br.cases <> null
+                            {
+                                for cs in br.cases
+                                    this.se_operands(cs.condition)
+                            }
+                            this.se_statement_ref(br.consequent)
+                        }
+                    }
+                    this.se_statement_ref(mt.alternative)
+                }
+                when ch: Choose
+                {
+                    this.se_operands(ch.condition)
+                    if ch.cases <> null
+                    {
+                        for w in ch.cases
+                            this.se_statement_ref(w.consequent)
+                    }
+                    this.se_statement_ref(ch.alternative)
+                }
+                when fr: For
+                {
+                    this.se_operands(fr.expr)
+                    this.se_action(fr.body)
+                }
+                when wh: While
+                {
+                    this.se_operands(wh.cond.operation)
+                    this.se_action(wh.body)
+                }
+                when rp: Repeat
+                    this.se_action(rp.body)
+                when tr: Try
+                {
+                    this.se_operands(tr.cond.operation)
+                    if tr.catches <> null
+                    {
+                        for w in tr.catches
+                            this.se_statement_ref(w.consequent)
+                    }
+                    this.se_statement_ref(tr.alternative)
+                }
+                when is_expr: Is
+                {
+                    if is_expr.value <> null
+                        this.se_operand(*is_expr.value)
+                }
+                when as_expr: As
+                {
+                    if as_expr.value <> null
+                        this.se_operand(*as_expr.value)
+                }
+                when vc: VariantConstruction
+                {
+                    if vc.value <> null
+                        this.se_operand(*vc.value)
+                }
+                when mx: Matrix
+                {
+                    if mx.operations <> null
+                    {
+                        for row in mx.operations
+                            this.se_operands(row)
+                    }
+                }
+                when lm: Lambda
+                    this.mark(SE_WILD)
+                when cl: Closure
+                    this.mark(SE_WILD)
+                when fref: FunctionRef
+                    this.mark(SE_WILD)
+                when bx: Box
+                {
+                    if bx.value <> null
+                        this.se_operand(*bx.value)
+                }
+                else
+                    0
+        }
+    }
+}

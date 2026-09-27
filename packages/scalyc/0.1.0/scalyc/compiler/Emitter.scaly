@@ -13,6 +13,7 @@ use scaly.os.File
 use scalyc.compiler.Modeler
 use scalyc.compiler.ConceptIndex.ConceptIndex
 use scalyc.compiler.TaskPlanner.TaskPlanner
+use scalyc.compiler.StoreEffects.StoreEffects
 use scalyc.compiler.Model.*
 use scalyc.compiler.Plan.*
 use scalyc.compiler.LLVM.*
@@ -390,6 +391,9 @@ define Emitter
         ; a value emit_binding takes instead of evaluating its initializer
         ; (the left binding of a fork-join `let` pair)
         var fj_preset: LLVMValueRef
+        ; the aliasing rule's payoff: which parameters may be `noalias`
+        ; (StoreEffects.scaly, analyzed once per plan in emit#)
+        store_effects: StoreEffects
     )
     {
         init(cfg: EmitterConfig)
@@ -464,6 +468,7 @@ define Emitter
             set fj_depth: null
             set fj_ctx: null
             set fj_preset: null
+            set store_effects: StoreEffects^this()
             set weight_memo_names: Array[String]^this()
             set weight_memo_vals: Array[size_t]^this()
             set weight_stack: Array[String]^this()
@@ -3806,6 +3811,46 @@ define Emitter
             null
         }
 
+        ; A parameter handing over a deeply immutable record (by value, which
+        ; is a pointer here, or through a `ref`) is `noalias` when the routine
+        ; and everything it calls never store that type as a whole -- the
+        ; aliasing rule makes that the only way its bytes can change
+        ; (StoreEffects.scaly, tools/aliasing/README.md). The implicit page and
+        ; the sret slot sit before `offset` and are not judged.
+        procedure mark_noalias_params(mutable this, mutable func: PlannedFunction, mutable llvm_func: LLVMValueRef, offset: size_t)
+        {
+            if func.input = null
+                return
+            var is_action false
+            choose func.impl
+                when fa: Action
+                    set is_action: true
+                else
+                    0
+            if is_action = false
+                return
+            let fty LLVMGlobalGetValueType(llvm_func)
+            let n LLVMCountParamTypes(fty) as size_t
+            if n = 0
+                return
+            var ptys Vector[LLVMTypeRef](n)
+            LLVMGetParamTypes(fty, ptys.data)
+            let inp func.input.unwrap()
+            var i: size_t 0
+            while i < inp.length
+            {
+                let idx i + offset
+                let item_ptr inp.get i
+                if idx < n and item_ptr <> null and (*item_ptr).item_type <> null
+                {
+                    let it: PlannedType (*item_ptr).item_type.unwrap()
+                    if LLVMGetTypeKind(ptys[idx]) = LLVMTypeKind.Pointer() and store_effects.param_noalias(func.mangled_name, it)
+                        LLVMAddAttributeAtIndex(llvm_func, (idx + 1) as u32, LLVMCreateEnumAttribute(context, this.noalias_kind_id(), 0))
+                }
+                set i: i + 1
+            }
+        }
+
         ; s89: Cached sret kind id (lazily looked up). 0 = uninitialized.
         function sret_kind_id(this) returns u32
         {
@@ -5263,6 +5308,9 @@ define Emitter
                     LLVMAddAttributeAtIndex(llvm_func, 1, noalias_attr)
                 }
             }
+
+            if is_extern = false
+                this.mark_noalias_params(func, llvm_func, page_offset + sret_offset)
 
             ; Set linkage. s127: non-private functions WITH BODIES get
             ; LinkOnceODR so stdlib generic instantiations emitted by stage-1
@@ -7396,6 +7444,7 @@ define Emitter
         {
             initialize(module_name)
             set current_plan: plan
+            store_effects.analyze(plan)
 
             ; s159: Pre-declare the extern C runtime functions memcpy/memset
             ; up front, before any function body is emitted. Container methods

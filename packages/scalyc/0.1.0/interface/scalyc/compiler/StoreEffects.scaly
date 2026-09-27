@@ -1,0 +1,711 @@
+; StoreEffects.scaly - which record types a routine may overwrite AS A WHOLE,
+; so that the Emitter can mark a parameter `noalias` (ROADMAP 4.9, the n-body
+; gap; the aliasing rule, tools/aliasing/README.md).
+;
+; A DEEPLY IMMUTABLE record is one whose fields are all `let` and whose
+; by-value record fields are deeply immutable in turn (Vector: a length and a
+; data pointer). After construction its bytes change only when a value of its
+; type -- or of a record or union that embeds it -- is stored over it as a
+; whole: R2 forbids the field writes, and the aliasing rule forbids reaching
+; the bytes through a pointer of another type. So if a routine, together with
+; everything it calls, never stores such a value, nothing changes a
+; deeply-immutable record while the routine runs, and every parameter of that
+; type (by value, which is a pointer at the LLVM level, or a `ref`) is
+; `noalias` in LLVM's sense. What that buys is the container header: without
+; it every element store in a loop may have changed `length` and `data`, so
+; both are reloaded and the bounds check that reads them is repeated.
+;
+; The facts per routine are a mask over the CANDIDATE types (the deeply
+; immutable records that occur as parameters, at most 63) plus a WILD bit for
+; what cannot be followed:
+;   - a `set` whose target is a record or union: the candidates it embeds
+;   - a scalar store: nothing (a candidate has no field it could write)
+;   - a call with a body in the plan: an edge, folded in a fixpoint
+;   - a construction: its initializer's body if the plan has one, else nothing
+;     (a positional construction writes fresh memory)
+;   - a C extern: WILD for the byte copiers (memcpy, memmove, memset -- the
+;     rule's own exemption), nothing for every other
+;   - a stub of another package: nothing for a `function` (R1), nothing for
+;     the runtime substrate (scaly/memory, scaly/fiber, scaly/cluster: it
+;     never hands live memory over under another type), WILD for any other
+;     procedure (the generated interface does not carry this fact yet)
+;   - a trap helper (scaly_panic_*): nothing -- it never returns to the body
+;   - an indirect call, a lambda, a closure, a function reference: WILD
+use scalyc.compiler.Model.*
+use scalyc.compiler.Plan.*
+use scalyc.compiler.ConceptIndex.ConceptIndex
+use scalyc.compiler.Planner.*
+
+define SE_WILD u64 0x8000000000000000
+define SE_MAX_CANDIDATES size_t 63
+
+define StoreEffects
+{
+    define StoreEffects
+    @resident true @inplace true (
+        var plan_functions: ref[Vector[PlannedFunction]]?
+        var plan_structures: ref[Vector[PlannedStructure]]?
+        var plan_unions: ref[Vector[PlannedUnion]]?
+        var struct_index: ConceptIndex
+        var union_index: ConceptIndex
+        var slot_index: ConceptIndex
+        var cand_index: ConceptIndex
+        var embed_index: ConceptIndex
+        var immut_index: ConceptIndex
+        cand_names: Array[String]
+        slot_names: Array[String]
+        slot_mask: Array[u64]
+        slot_body: Array[PlannedAction]
+        slot_has_body: Array[bool]
+        slot_is_init: Array[bool]
+        edge_from: Array[size_t]
+        edge_to: Array[size_t]
+        embed_vals: Array[u64]
+        immut_vals: Array[bool]
+        var cur: size_t
+        var ready: bool
+        ; SCALYC_SE_PROBE=1: one line per first reason a body turns wild
+        var probe: bool
+    )
+    {
+        init() linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; ------------------------------------------------------------------
+        ; types
+        ; ------------------------------------------------------------------
+
+        function is_scalar_name(n: String) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+        ; a pointer-shaped type: its bytes are an address, never a record
+        function is_address(t: PlannedType) @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function key_of(t: PlannedType) @page true @direct true @ret_param_0 true @deep true returns String linked
+
+
+
+
+
+
+        function struct_at(this, t: PlannedType) @ret_param_0 true @deep true returns ref[PlannedStructure]? linked
+
+
+
+
+
+
+
+
+
+
+
+
+        function union_at(this, t: PlannedType) @ret_param_0 true @deep true returns ref[PlannedUnion]? linked
+
+
+
+
+
+
+
+
+
+
+
+
+        function prop_is_var(pp: PlannedProperty) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+        ; all fields `let`, every by-value record field deeply immutable too
+        procedure deeply_immutable(mutable this, t: PlannedType, depth: size_t) @ret_param_0 true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; the candidate bits a stored value of type t overwrites; an unknown
+        ; type overwrites everything
+        procedure embed_mask(mutable this, t: PlannedType, depth: size_t) @deep true returns u64 linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; the record a parameter of type t hands over: the type itself, or
+        ; what a `ref` points to
+        function param_record(t: PlannedType) @page true @direct true @deep true returns PlannedType linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure note_candidate(mutable this, t: PlannedType) @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; ------------------------------------------------------------------
+        ; the analysis
+        ; ------------------------------------------------------------------
+
+        procedure add_slot(mutable this, name: String, has_body: bool, is_init: bool, body: PlannedAction, mask: u64) @persists true @deep true @deep_this_16 true @deep_whole_16 true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure analyze(mutable this, plan: Plan) @deep true @deep_this_2 true io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function key_of_struct(s: PlannedStructure) @page true @direct true @ret_param_0 true @deep true returns String linked
+
+
+
+
+
+
+        ; a C function: only the byte copiers can overwrite a record (the
+        ; rule's own exemption); every other writes, if at all, through a
+        ; pointer of its own type
+        function c_mask(cname: String) @deep true returns u64 linked
+
+
+
+
+
+
+        ; a declaration without a body: a C extern or a stub of another package
+        function declaration_mask(this, f: PlannedFunction) @deep true returns u64 linked
+
+
+
+
+
+
+
+
+
+
+        ; noalias for a parameter of type t of the routine `mangled`?
+        function param_noalias(this, mangled: String, t: PlannedType) @ret_param_0 true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; ------------------------------------------------------------------
+        ; the body walk
+        ; ------------------------------------------------------------------
+
+        procedure mark(mutable this, m: u64) @persists true @ret_nonlocal true @deep true linked
+
+
+
+
+
+        procedure why(mutable this, m: u64, what: String) @ret_nonlocal true @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure se_call(mutable this, call: PlannedCall) @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure se_operands(mutable this, ops: ref[Vector[PlannedOperand]]?) @deep true linked
+
+
+
+
+
+
+
+        procedure se_statement_ref(mutable this, stmt: ref[PlannedStatement]?) @ret_nonlocal true @deep true linked
+
+
+
+
+
+        procedure se_action(mutable this, act: PlannedAction) @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure se_statement(mutable this, stmt: PlannedStatement) @ret_nonlocal true @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure se_operand(mutable this, op: PlannedOperand) @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    }
+}
