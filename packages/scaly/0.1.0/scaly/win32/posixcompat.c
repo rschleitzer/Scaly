@@ -84,7 +84,7 @@
  * returned and a size of 0; both callers pass the original base, so that
  * holds. The `length` argument is therefore ignored, as MEM_RELEASE demands.
  *
- * ★★★AND ONE EXTRA PAGE IS RESERVED BELOW WHAT THIS RETURNS — the emergency
+ * ★★★AND AN EXTRA BAND IS RESERVED BELOW WHAT THIS RETURNS — the emergency
  * band for the stack-overflow handler (2026-08-10). Read this together with the
  * guard-page note in eio_win.c; the two halves only make sense as a pair.
  *
@@ -116,11 +116,41 @@
  * The caller's `length` still spans exactly what it asked for, from the address
  * it was given, so nothing it computes from base and size changes.
  */
+/* ★★★THE BAND IS SIZED FROM THE MACHINE'S CONTEXT RECORD, NOT ONE PAGE
+ * (2026-09-27). One page was measured on the dev box, whose dispatch spent
+ * ~2600 bytes; CI's runner (Windows Server 2025) failed `guard_overflow` with
+ * exit 127 and NO message — the handler never ran — on a run whose rerun with
+ * the same objects passed: the landing position decides, and the margin was
+ * gone. What the dispatch spills is the CONTEXT with its XSAVE area, and that
+ * area grows with the CPU's enabled state components (AVX-512 alone adds
+ * ~2 KB), so a machine with them needs more than the one it was measured on.
+ * InitializeContext answers the record's size for THIS machine, extended
+ * state included; the band is twice that plus a page for ntdll's own frames,
+ * rounded up to pages, computed once. Committed like the page before it: a
+ * fiber stack of 128 KB pays two or three pages. */
+static size_t sc_band_cache = 0;
+
 static size_t sc_band_bytes(void)
 {
+    size_t band = sc_band_cache;
+    if (band != 0)
+        return band;
     SYSTEM_INFO si;
     GetSystemInfo(&si);
-    return si.dwPageSize;
+    size_t page = si.dwPageSize;
+    DWORD len = 0;
+    DWORD flags = CONTEXT_ALL | CONTEXT_XSTATE;
+    if (!InitializeContext(NULL, flags, NULL, &len) && GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
+        len = 0;
+        flags = CONTEXT_ALL;
+        if (!InitializeContext(NULL, flags, NULL, &len) && GetLastError() != ERROR_INSUFFICIENT_BUFFER)
+            len = 0;
+    }
+    if (len == 0)
+        len = 8192;   /* cannot tell: assume a large extended state */
+    band = (2 * (size_t)len + page + page - 1) / page * page;
+    sc_band_cache = band;
+    return band;
 }
 #define SC_PROT_NONE  0
 #define SC_PROT_READ  1

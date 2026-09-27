@@ -631,7 +631,8 @@ int scaly_eio_accept(int fd)
  * arm that actually fires. Do not prune it to the "obvious" one. */
 /* ★★★DO NOT MOVE THIS GUARD. The room the handler needs is BELOW it, and it is
  * already there — bought by the mmap shim in win32/posixcompat.c, which reserves
- * one extra page under every mapping it returns. Read that note with this one.
+ * a band under every mapping it returns (sized from this machine's CONTEXT record
+ * since 2026-09-27). Read that note with this one.
  *
  * ★Why the band is not arranged here, where it would seem to belong: this file
  * owns the QUESTION "where is this stack's overflow guard", so it can place the

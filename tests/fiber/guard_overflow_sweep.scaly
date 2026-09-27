@@ -1,0 +1,58 @@
+; The overflow report, with the landing position moved (Windows' emergency
+; band, win32/posixcompat.c). Whether the Windows handler gets to run depends on
+; where the recursion first enters the guard page: the exception dispatch
+; spills its CONTEXT record below that point, and the band has to hold it.
+; Argument k: k small frames before the half-KB recursion, which shifts the
+; landing position by k times the small frame; CI runs k = 0..95 (rung 5b).
+; Without an argument (the suites) it is guard_overflow with k = 0.
+; ExpectedExit: 108
+; ExpectedErr: fiber stack overflow
+
+mutable shift: int 0
+
+procedure burn(depth: int) returns int
+{
+    var pad u8[512]
+    set *(pad + 0): (depth as u8)
+    if depth > 1000000
+        return depth
+    let r burn(depth + 1)
+    r + (*(pad + 0) as int)
+}
+
+procedure nudge(k: int) returns int
+{
+    if k <= 0
+        return burn(0)
+    let r nudge(k - 1)
+    r + 1
+}
+
+procedure worker()
+{
+    let d nudge(shift)
+    Console.print "unreachable "
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutable shift
+{
+    if argc > 1
+    {
+        let digits (*(argv + 1)) as pointer[u8]
+        var k 0
+        var i 0
+        while *(digits + i) >= 48 and *(digits + i) <= 57
+        {
+            set k: k * 10 + ((*(digits + i)) as int) - 48
+            set i: i + 1
+        }
+        set shift: k
+    }
+    let page Page.allocate_page()
+    let sched Scheduler.create(page)
+    Scheduler.spawn(&worker)
+    Scheduler.run()
+    Console.print "unreachable "
+    Page.release_page(page)
+    0
+}

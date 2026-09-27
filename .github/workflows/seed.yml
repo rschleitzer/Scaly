@@ -550,6 +550,30 @@ jobs:
         shell: bash
         run: tests/win32/corpus.sh run winobj libscaly.lib
 
+      # Rung 5b — the overflow report across landing positions. Whether the
+      # Windows handler runs at all depends on where the recursion first enters
+      # the guard page: the dispatch spills its CONTEXT record (XSAVE area
+      # included, so it grows with the runner's CPU) below that point, into the
+      # band posixcompat.c's mmap reserves. One program at one layout lands in
+      # one place, which is why guard_overflow was a flake that a rerun on
+      # another runner "fixed" (2026-09-26). The sweep moves the landing point
+      # through k = 0..95 small frames; every one must report and exit 108.
+      - name: Sweep the stack-overflow report (rung 5b)
+        shell: bash
+        run: |
+          exe=winobj/fiber__guard_overflow_sweep.exe
+          ok=0; bad=""
+          for k in $(seq 0 95); do
+            rc=0; timeout 20 "$exe" "$k" > sweep.out 2> sweep.err || rc=$?
+            if [ "$rc" = 108 ] && grep -qF "fiber stack overflow" sweep.err && [ ! -s sweep.out ]; then
+              ok=$((ok+1))
+            else
+              bad="$bad k=$k:rc=$rc"
+            fi
+          done
+          echo "guard sweep: $ok of 96 reported${bad:+ — failed:$bad}"
+          [ "$ok" = 96 ]
+
       # Rung 6 — the 10k demo, and the unknown it adds is LOAD. Rung 5 ran 90
       # programs, but each one drives the poller with a handful of fds; this is
       # 10,000 connections through one single-threaded scheduler, so it is the
