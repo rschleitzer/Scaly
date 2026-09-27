@@ -99,6 +99,9 @@ on one thread, then on half the CPUs, with the client on the other half.
 Scaly and tokio leave Nagle on — with pipelining that alone halved Go's
 throughput (every response its own packet). `go-raw` therefore switches
 Nagle back on; `go-http` stays the standard library as shipped.
+`NODELAY=1 tools/bench/net/race.sh` runs the Scaly, go-raw and tokio servers
+with `TCP_NODELAY` instead (`TcpStream.set_nodelay`, the servers' second
+argument `nodelay`).
 
 A connection per request (`load -k=false`, not in `race.sh`) measures the
 accept path. The client closes with `SO_LINGER 0`: without it its ~16 000
@@ -117,3 +120,14 @@ Measured on arm64 (10 CPUs, M-series) 2026-09-27, requests per second:
 | Rust tokio | 221 394 | 459 774 | 28.9 s |
 | Go, goroutine per connection | 219 846 | 446 568 | 29.3 s |
 | Go net/http | 75 238 | 112 454 | 21.5 s |
+
+With `TCP_NODELAY` (the same day, 6 s per run), every response leaves as its
+own packet and all three fall to the same level — the option acts, and none
+of the servers is the limit any more:
+
+| server | 1 thread | 5 threads | server CPU at 5 threads |
+|---|---|---|---|
+| Scaly | 105 829 | **133 747** | 6.9 s |
+| Rust tokio | 105 243 | 130 701 | 7.3 s |
+| Go, goroutine per connection | 105 000 | 128 120 | 7.8 s |
+| Go net/http (always) | 75 456 | 110 461 | 16.2 s |

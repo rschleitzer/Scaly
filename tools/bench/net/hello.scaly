@@ -4,9 +4,13 @@
 ; handle reads until the end of each request header and answers with a fixed
 ; response — the same algorithm as the Go and Rust servers beside it.
 ;
-;   hello [port]      (default 8084)
+;   hello [port [nodelay]]      (default 8084; nodelay sets TCP_NODELAY)
 
 define BUF_SIZE: size_t 4096
+
+; set once in main, before serve starts a thread (a `shared` global: an
+; ordinary one is thread-local, and the handlers run on the serve threads)
+shared nodelay: bool false
 
 ; the offset just past the first "\r\n\r\n" in buf[0 .. have), 0 if none yet
 function header_end(buf: Slice[u8], have: size_t) returns size_t
@@ -24,6 +28,8 @@ function header_end(buf: Slice[u8], have: size_t) returns size_t
 procedure handle()
 {
     var c TcpStream.of_task()
+    if nodelay
+        c.set_nodelay(true)
     var raw u8[4096]
     let buf Slice[u8](BUF_SIZE, &raw[0])
     var have: size_t 0
@@ -63,8 +69,10 @@ procedure handle()
     c.close()
 }
 
-procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutable nodelay
 {
+    if argc > 2
+        set nodelay: true
     var port 8084
     if argc > 1
     {

@@ -24051,6 +24051,8 @@ declare i32 @scaly_eio_tcp_connect_host(ptr, i32)
 
 declare i64 @scaly_eio_tcp_write(i32, ptr, i64)
 
+declare i32 @scaly_eio_tcp_nodelay(i32, i32)
+
 declare i32 @scaly_guard_install(ptr)
 
 declare i32 @scaly_stack_guard(ptr, i64)
@@ -25926,6 +25928,23 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %r3 = load i64, ptr %r, align 8
   ret i64 %r3
+}
+
+define linkonce_odr i1 @_ZN2Io11set_nodelayE3i32b(i32 %0, i1 %1) {
+entry:
+  %v = alloca i32, align 4
+  store i32 0, ptr %v, align 1
+  br i1 %1, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  store i32 1, ptr %v, align 1
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  %v1 = load i32, ptr %v, align 4
+  %call = call i32 @scaly_eio_tcp_nodelay(i32 %0, i32 %v1)
+  %eq = icmp eq i32 %call, 0
+  ret i1 %eq
 }
 
 define linkonce_odr i1 @_ZN2Io13tcp_write_allE3i32Pvm(i32 %0, ptr %1, i64 %2) {
@@ -29523,6 +29542,23 @@ if.end:                                           ; preds = %entry
   %field.inplace2 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %1, i32 0, i32 0
   %field.val3 = load i64, ptr %field.inplace2, align 8
   %call = call i1 @_ZN2Io13tcp_write_allE3i32Pvm(i32 %field.val, ptr %data, i64 %field.val3)
+  ret i1 %call
+}
+
+define linkonce_odr i1 @_ZN9TcpStream11set_nodelayEb(ptr %0, i1 %1) {
+entry:
+  %load.struct = load %_Z9TcpStream, ptr %0, align 4
+  %fd = extractvalue %_Z9TcpStream %load.struct, 0
+  %lt = icmp slt i32 %fd, 0
+  br i1 %lt, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i1 false
+
+if.end:                                           ; preds = %entry
+  %field.inplace = getelementptr inbounds nuw %_Z9TcpStream, ptr %0, i32 0, i32 0
+  %field.val = load i32, ptr %field.inplace, align 4
+  %call = call i1 @_ZN2Io11set_nodelayE3i32b(i32 %field.val, i1 %1)
   ret i1 %call
 }
 

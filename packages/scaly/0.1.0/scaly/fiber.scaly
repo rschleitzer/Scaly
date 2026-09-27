@@ -389,6 +389,7 @@ procedure scaly_eio_accept(fd: i32) returns i32 extern
 procedure scaly_eio_tcp_listen_any(port: i32) returns i32 extern
 procedure scaly_eio_tcp_connect_host(host: pointer[const_char], port: i32) returns i32 extern
 procedure scaly_eio_tcp_write(fd: i32, buf: pointer[void], count: size_t) returns i64 extern
+procedure scaly_eio_tcp_nodelay(fd: i32, on: i32) returns i32 extern
 
 ; Guard-page overflow diagnostics (shim-owned: struct sigaction and
 ; stack_t layouts are OS-specific). Installs a SIGSEGV/SIGBUS handler on
@@ -1653,6 +1654,16 @@ define Io
             set r: scaly_eio_tcp_write(fd, buf, count)
         }
         r
+    }
+
+    ; TCP_NODELAY on (true: every write leaves at once) or off (false:
+    ; Nagle coalesces small writes, the default). False on an error.
+    procedure set_nodelay(fd: i32, on: bool) returns bool
+    {
+        var v: i32 0
+        if on
+            set v: 1
+        scaly_eio_tcp_nodelay(fd, v) = 0
     }
 
     ; Whole-buffer variant of tcp_write (the Node frame writer). False

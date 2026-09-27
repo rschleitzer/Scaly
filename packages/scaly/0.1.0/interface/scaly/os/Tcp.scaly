@@ -19,6 +19,11 @@ use scaly.fiber.TaskPool
 ; therefore goes to the Io worker pool, exactly as File's reads do, and the
 ; task parks; elsewhere it runs in place.
 ;
+; Nagle stays on (the operating system's default): small writes may wait
+; to be coalesced. set_nodelay(true) turns it off for a stream whose writes
+; must leave at once (request/response protocols with small messages, as Go
+; does by default).
+;
 ; Limits, named: IPv4 only (the shim's listen/connect); at most one task
 ; parked per socket at a time (the poller keeps one entry per fd), so a
 ; stream is read and written by ONE task, not a reader and a writer in
@@ -174,6 +179,15 @@ define TcpStream(var fd: i32)
     ; Write ALL of data, looping over partial writes; false on an error
     ; (a peer that went away is an error return, never a SIGPIPE).
     procedure write(this, data: Slice[u8]) @ret_nonlocal true @deep true returns bool io linked
+
+
+
+
+
+
+    ; TCP_NODELAY: true sends every write at once, false (the default) lets
+    ; Nagle coalesce small writes. False on an error or a closed stream.
+    procedure set_nodelay(this, on: bool) @ret_nonlocal true @deep true returns bool io linked
 
 
 

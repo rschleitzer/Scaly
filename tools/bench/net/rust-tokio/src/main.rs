@@ -12,12 +12,17 @@ fn find(h: &[u8]) -> Option<usize> {
 #[tokio::main]
 async fn main() {
     let port = std::env::args().nth(1).unwrap_or_else(|| "8083".to_string());
+    // a second argument "nodelay" sets TCP_NODELAY
+    let nodelay = std::env::args().nth(2).is_some();
     let l = TcpListener::bind(format!("127.0.0.1:{}", port)).await.unwrap();
     loop {
         let (mut s, _) = match l.accept().await {
             Ok(x) => x,
             Err(_) => continue,
         };
+        if nodelay {
+            let _ = s.set_nodelay(true);
+        }
         tokio::spawn(async move {
             let mut buf = vec![0u8; 4096];
             let mut have = 0;

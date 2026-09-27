@@ -435,6 +435,17 @@ long long scaly_eio_tcp_write(int fd, const void* buf, size_t count)
     return scaly_eio_write(fd, buf, count);
 }
 
+/* TCP_NODELAY on or off (1/0) — the eio.c twin; the SOCKET is a kernel
+ * handle and the option value a char pointer here. 0 on success, -1 on an
+ * error (a descriptor that is not a socket). */
+int scaly_eio_tcp_nodelay(int fd, int on)
+{
+    SOCKET s = (SOCKET)(intptr_t)fd;
+    int v = on ? 1 : 0;
+    scaly_ws_start();
+    return setsockopt(s, IPPROTO_TCP, TCP_NODELAY, (const char*)&v, (int)sizeof v) == 0 ? 0 : -1;
+}
+
 /* ★A WSA ERROR AND A C errno ARE UNRELATED NUMBERINGS, and preferring the
  * former mislabelled every file diagnostic in the product. This used to answer
  * `WSAGetLastError()` when that was non-zero — but on Windows WSAGetLastError

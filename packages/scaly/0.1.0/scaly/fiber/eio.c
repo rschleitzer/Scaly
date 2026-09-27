@@ -45,6 +45,7 @@
 #include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -483,6 +484,16 @@ long long scaly_eio_tcp_write(int fd, const void* buf, size_t count)
     if (r < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
         return -2;
     return r;
+}
+
+/* TCP_NODELAY on or off (1/0): Nagle's coalescing of small writes. Shim
+ * rule (a): the option's level and name come from <netinet/tcp.h>, and the
+ * Windows twin passes a SOCKET, which is not an int there. 0 on success, -1
+ * on an error (a descriptor that is not a TCP socket). */
+int scaly_eio_tcp_nodelay(int fd, int on)
+{
+    int v = on ? 1 : 0;
+    return setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &v, sizeof v) == 0 ? 0 : -1;
 }
 
 /* Fiber guard-page overflow diagnostics (shim-owned per containment rule

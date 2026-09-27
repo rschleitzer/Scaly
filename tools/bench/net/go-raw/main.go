@@ -3,6 +3,7 @@
 // Nagle stays ON, as it is in the Scaly and tokio servers: Go sets TCP_NODELAY
 // by default, and with pipelined requests that alone halved its throughput
 // (every response its own packet) — measured 2026-09-27, see ../README.md.
+// A second argument "nodelay" sets TCP_NODELAY as Go's default would.
 package main
 
 import (
@@ -11,10 +12,12 @@ import (
 	"os"
 )
 
+var nodelay bool
+
 var resp = []byte("HTTP/1.1 200 OK\r\nContent-Length: 13\r\nContent-Type: text/plain\r\n\r\nHello, World!")
 
 func handle(c net.Conn) {
-	c.(*net.TCPConn).SetNoDelay(false)
+	c.(*net.TCPConn).SetNoDelay(nodelay)
 	defer c.Close()
 	buf := make([]byte, 4096)
 	have := 0
@@ -46,6 +49,7 @@ func main() {
 	if len(os.Args) > 1 {
 		port = os.Args[1]
 	}
+	nodelay = len(os.Args) > 2
 	l, err := net.Listen("tcp", "127.0.0.1:"+port)
 	if err != nil {
 		panic(err)
