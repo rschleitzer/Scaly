@@ -77,3 +77,43 @@ programs expect: `memalign` and `sched_getaffinity`.
 
 The measured results on arm64 are in ROADMAP-simd.md (phase 4) and in the
 memory `benchmarks-game-c-race`.
+
+## net/ — an HTTP server against Go and Rust
+
+```bash
+tools/bench/net/build.sh          # Scaly, Go (raw, net/http), Rust/tokio, the load generator
+tools/bench/net/race.sh [threads] [seconds]
+```
+
+The same "Hello, World!" over HTTP/1.1 keep-alive from four servers, each
+reading up to the end of a request header and writing a fixed response:
+`hello.scaly` (`TcpListener.serve`, a scheduler per core), `go-raw` (a
+goroutine per connection), `go-http` (the standard `net/http`) and
+`rust-tokio` (a tokio task per connection). The load generator (`load/`, Go)
+keeps 128 connections and pipelines 16 requests per round trip — the shape of
+TechEmpower's plaintext test; without pipelining its own cost per request is
+higher than any server's and every run measures the client. Each server runs
+on one thread, then on half the CPUs, with the client on the other half.
+
+★Socket options are part of the comparison: Go sets `TCP_NODELAY` by default,
+Scaly and tokio leave Nagle on — with pipelining that alone halved Go's
+throughput (every response its own packet). `go-raw` therefore switches
+Nagle back on; `go-http` stays the standard library as shipped.
+
+A connection per request (`load -k=false`, not in `race.sh`) measures the
+accept path. The client closes with `SO_LINGER 0`: without it its ~16 000
+ephemeral ports sat in TIME_WAIT within seconds and every server showed
+thousands of errors. Measured with it (5 server threads, 32 clients, 5 s):
+Scaly 14 276, tokio 14 906, Go raw 15 040, Go net/http 15 049 req/s, no
+errors — the kernel's connection setup is the limit for all four; Scaly's
+5 % behind is where every poller wakes for a connection only one of them
+gets (the shared listener), a plausible cause not yet measured.
+
+Measured on arm64 (10 CPUs, M-series) 2026-09-27, requests per second:
+
+| server | 1 thread | 5 threads | server CPU at 5 threads |
+|---|---|---|---|
+| Scaly | 221 882 | **485 426** | 26.7 s |
+| Rust tokio | 221 394 | 459 774 | 28.9 s |
+| Go, goroutine per connection | 219 846 | 446 568 | 29.3 s |
+| Go net/http | 75 238 | 112 454 | 21.5 s |

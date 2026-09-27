@@ -1,0 +1,62 @@
+; TcpListener.serve over all cores (scaly.os.Tcp): a server thread serves
+; the listener with one scheduler per core (SCALY_WORKERS caps the count),
+; the handler a plain task procedure that takes its connection with
+; TcpStream.of_task(); main is the client, 200 connections in a row, each
+; "ping" answered by "pong". serve does not return (see its header), so the
+; program ends with main while the serving threads still wait.
+; Expected: 200 pongs
+
+procedure handle()
+{
+    var c TcpStream.of_task()
+    var buf u8[16]
+    let view Slice[u8](16, &buf[0])
+    var got: size_t 0
+    while got < 4
+    {
+        let n c.read(view.slice_from(got))
+        if n <= 0
+            break
+        set got: got + (n as size_t)
+    }
+    if got = 4
+        c.write("pong")
+    c.close()
+}
+
+procedure server_entry(arg: pointer[void]) returns pointer[void]
+{
+    let l TcpListener((arg as size_t) as i32)
+    l.serve(&handle)
+    null
+}
+
+var l TcpListener.listen(0)
+if l.is_open() = false
+    exit 1
+let port l.port()
+Thread.spawn(&server_entry, (l.fd as size_t) as pointer[void])
+var pongs 0
+var k 0
+while k < 200
+{
+    var s TcpStream.connect("127.0.0.1", port)
+    if s.is_open() = false
+        exit 2
+    s.write("ping")
+    var buf u8[8]
+    let view Slice[u8](8, &buf[0])
+    var got: size_t 0
+    while got < 4
+    {
+        let n s.read(view.slice_from(got))
+        if n <= 0
+            break
+        set got: got + (n as size_t)
+    }
+    if got = 4 and buf[0] = 112 and buf[1] = 111 and buf[3] = 103
+        set pongs: pongs + 1
+    s.close()
+    set k: k + 1
+}
+print "`pongs` pongs"

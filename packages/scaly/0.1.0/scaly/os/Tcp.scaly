@@ -2,6 +2,9 @@ use scaly.containers.String
 use scaly.memory.runtime
 use scaly.memory.Page
 use scaly.fiber.Io
+use scaly.fiber.Scheduler
+use scaly.fiber.Thread
+use scaly.fiber.TaskPool
 
 ; TCP sockets, colorless like File and Console (milestone 2.5): the same
 ; call blocks without a scheduler, drives the dispatcher from the main
@@ -28,6 +31,26 @@ use scaly.fiber.Io
 ;   c.write("hello")                           ; a literal is a Slice[u8]
 ;   var buf u8[64]
 ;   let n c.read(Slice[u8](64, &buf[0]))       ; bytes; 0 = EOF, -1 = error
+;
+; A server over all cores (self-scaling I/O): serve runs one scheduler per
+; core (TaskPool.ncpu(), which SCALY_WORKERS caps), the calling thread one
+; of them, all accepting on the SAME listener — each scheduler's poller arms
+; the listening socket, one accept wins, the others park again — and every
+; connection becomes a task of the scheduler that accepted it. The handler
+; is a zero-argument task procedure; it takes its connection with
+; TcpStream.of_task() and closes it (serve cannot: once closed, the number
+; may already name the next connection). serve runs until the process ends,
+; as Go's ListenAndServe does: closing the listener from elsewhere does not
+; wake the accept loops parked on it (kqueue and epoll drop a closed
+; descriptor silently), so a graceful shutdown is not part of v1.
+;
+;   procedure handle()
+;   {
+;       var c TcpStream.of_task()
+;       ...
+;       c.close()
+;   }
+;   TcpListener.listen_any(8080).serve(&handle)
 
 ; The blocking connect shipped to an Io worker (the task path of
 ; TcpStream.connect). arg is a {host, port, fd} cell of three i64 in the
@@ -48,6 +71,52 @@ procedure tcp_connect_worker(mutable arg: pointer[void]) returns pointer[void]
 procedure tcp_close_fd(fd: i32)
 {
     close(fd as int)
+}
+
+; Accept on lfd, each connection a task of the
+; running scheduler that runs handler with the connection's fd as its task
+; argument. An accept error on a listener that still has its port is
+; transient (a connection reset before it was taken, a descriptor limit
+; hit for a moment): the loop yields and goes on.
+procedure tcp_accept_into_tasks(lfd: i32, mutable handler: pointer[void])
+{
+    repeat
+    {
+        let c Io.accept(lfd)
+        if c >= 0
+        {
+            Io.set_nonblocking(c)
+            Scheduler.spawn_arg(handler, (c as size_t) as pointer[void])
+        }
+        else
+        {
+            if Io.local_port(lfd) < 0
+                return
+            Scheduler.yield()
+        }
+    }
+}
+
+; The task every serving scheduler starts with: its argument is the serve
+; cell {listener fd, handler} of two i64.
+procedure tcp_serve_loop()
+{
+    let cell Scheduler.task_arg() as pointer[i64]
+    let lfd (*cell) as i32
+    let handler (*(((cell as size_t) + 8) as pointer[i64])) as pointer[void]
+    tcp_accept_into_tasks(lfd, handler)
+}
+
+; One serving thread: a scheduler of its own, the accept loop as its first
+; task. Runs until the process ends (see serve).
+procedure tcp_serve_thread(mutable arg: pointer[void]) returns pointer[void]
+{
+    let page Page.allocate_page()
+    let sched Scheduler.create(page)
+    Scheduler.spawn_arg(&tcp_serve_loop, arg)
+    Scheduler.run()
+    Page.release_page(page)
+    null
 }
 
 ; A connected TCP stream. fd < 0 is a stream that is not (or no longer)
@@ -78,6 +147,16 @@ define TcpStream(var fd: i32)
         if fd >= 0
             Io.set_nonblocking(fd)
         TcpStream(fd)
+    }
+
+    ; The connection a task started by TcpListener.serve serves (its task
+    ; argument); not is_open() outside such a task.
+    procedure of_task() returns TcpStream
+    {
+        let a Scheduler.task_arg()
+        if a = null
+            return TcpStream(0 - 1)
+        TcpStream((a as size_t) as i32)
     }
 
     function is_open(this) returns bool
@@ -138,6 +217,38 @@ define TcpListener(var fd: i32)
         if fd < 0
             return 0 - 1
         Io.local_port(fd) as int
+    }
+
+    ; Serve every connection with handler, over all cores: one scheduler
+    ; per core, this thread one of them, all accepting here (see the module
+    ; header). Does not return while the process runs (see there). Inside a
+    ; task there is a scheduler already: the connections become tasks of
+    ; that one.
+    procedure serve(this, mutable handler: pointer[void])
+    {
+        if fd < 0
+            return
+        if Io.in_task()
+        {
+            tcp_accept_into_tasks(fd, handler)
+            return
+        }
+        let p Page.allocate_page()
+        let cell p.allocate(16, 8) as pointer[i64]
+        set *cell: fd as i64
+        set *(((cell as size_t) + 8) as pointer[i64]): handler as i64
+        let n TaskPool.ncpu()
+        var threads Array[size_t]()
+        var i: i64 1
+        while i < n
+        {
+            threads.add(Thread.spawn(&tcp_serve_thread, cell as pointer[void]))
+            set i: i + 1
+        }
+        tcp_serve_thread(cell as pointer[void])
+        for t in threads
+            Thread.join(t)
+        Page.release_page(p)
     }
 
     ; Wait for a connection colorlessly and return it as a nonblocking

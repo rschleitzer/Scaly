@@ -1,0 +1,88 @@
+; hello — the Scaly side of tools/bench/net: an HTTP/1.1 keep-alive
+; "Hello, World!" server over all cores. TcpListener.serve runs one scheduler
+; per core (SCALY_WORKERS caps it), every connection a task running handle;
+; handle reads until the end of each request header and answers with a fixed
+; response — the same algorithm as the Go and Rust servers beside it.
+;
+;   hello [port]      (default 8084)
+
+define BUF_SIZE: size_t 4096
+
+; the offset just past the first "\r\n\r\n" in buf[0 .. have), 0 if none yet
+function header_end(buf: Slice[u8], have: size_t) returns size_t
+{
+    var i: size_t 3
+    while i < have
+    {
+        if buf[i] = 10 and buf[i - 1] = 13 and buf[i - 2] = 10 and buf[i - 3] = 13
+            return i + 1
+        set i: i + 1
+    }
+    0
+}
+
+procedure handle()
+{
+    var c TcpStream.of_task()
+    var raw u8[4096]
+    let buf Slice[u8](BUF_SIZE, &raw[0])
+    var have: size_t 0
+    repeat
+    {
+        let n c.read(buf.slice_from(have))
+        if n <= 0
+            break
+        set have: have + (n as size_t)
+        ; answer every complete request in the buffer, then keep the rest
+        var done: size_t 0
+        repeat
+        {
+            let e header_end(buf.slice_from(done), have - done)
+            if e = 0
+                break
+            if c.write("HTTP/1.1 200 OK\r\nContent-Length: 13\r\nContent-Type: text/plain\r\n\r\nHello, World!") = false
+            {
+                c.close()
+                return
+            }
+            set done: done + e
+        }
+        if done > 0
+        {
+            var k: size_t 0
+            while done + k < have
+            {
+                buf.put(k, buf[done + k])
+                set k: k + 1
+            }
+            set have: have - done
+        }
+        if have = BUF_SIZE
+            break
+    }
+    c.close()
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var port 8084
+    if argc > 1
+    {
+        let digits (*(argv + 1)) as pointer[u8]
+        set port: 0
+        var i 0
+        while *(digits + i) >= 48 and *(digits + i) <= 57
+        {
+            set port: port * 10 + ((*(digits + i)) as int) - 48
+            set i: i + 1
+        }
+    }
+    var l TcpListener.listen(port)
+    if l.is_open() = false
+    {
+        print "hello: cannot listen"
+        return 1
+    }
+    l.serve(&handle)
+    0
+}

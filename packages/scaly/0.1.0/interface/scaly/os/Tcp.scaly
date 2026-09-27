@@ -2,6 +2,9 @@ use scaly.containers.String
 use scaly.memory.runtime
 use scaly.memory.Page
 use scaly.fiber.Io
+use scaly.fiber.Scheduler
+use scaly.fiber.Thread
+use scaly.fiber.TaskPool
 
 ; TCP sockets, colorless like File and Console (milestone 2.5): the same
 ; call blocks without a scheduler, drives the dispatcher from the main
@@ -28,6 +31,26 @@ use scaly.fiber.Io
 ;   c.write("hello")                           ; a literal is a Slice[u8]
 ;   var buf u8[64]
 ;   let n c.read(Slice[u8](64, &buf[0]))       ; bytes; 0 = EOF, -1 = error
+;
+; A server over all cores (self-scaling I/O): serve runs one scheduler per
+; core (TaskPool.ncpu(), which SCALY_WORKERS caps), the calling thread one
+; of them, all accepting on the SAME listener — each scheduler's poller arms
+; the listening socket, one accept wins, the others park again — and every
+; connection becomes a task of the scheduler that accepted it. The handler
+; is a zero-argument task procedure; it takes its connection with
+; TcpStream.of_task() and closes it (serve cannot: once closed, the number
+; may already name the next connection). serve runs until the process ends,
+; as Go's ListenAndServe does: closing the listener from elsewhere does not
+; wake the accept loops parked on it (kqueue and epoll drop a closed
+; descriptor silently), so a graceful shutdown is not part of v1.
+;
+;   procedure handle()
+;   {
+;       var c TcpStream.of_task()
+;       ...
+;       c.close()
+;   }
+;   TcpListener.listen_any(8080).serve(&handle)
 
 ; The blocking connect shipped to an Io worker (the task path of
 ; TcpStream.connect). arg is a {host, port, fd} cell of three i64 in the
@@ -46,6 +69,52 @@ procedure tcp_connect_worker(mutable arg: pointer[void]) @ret_nonlocal true @dee
 ; below never meet the extern by name (on Windows, posixcompat's close tells
 ; a SOCKET from a CRT descriptor).
 procedure tcp_close_fd(fd: i32) @ret_nonlocal true @deep true io linked
+
+
+
+
+; Accept on lfd, each connection a task of the
+; running scheduler that runs handler with the connection's fd as its task
+; argument. An accept error on a listener that still has its port is
+; transient (a connection reset before it was taken, a descriptor limit
+; hit for a moment): the loop yields and goes on.
+procedure tcp_accept_into_tasks(lfd: i32, mutable handler: pointer[void]) @deep true io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+; The task every serving scheduler starts with: its argument is the serve
+; cell {listener fd, handler} of two i64.
+procedure tcp_serve_loop() @ret_nonlocal true @deep true io linked
+
+
+
+
+
+
+
+; One serving thread: a scheduler of its own, the accept loop as its first
+; task. Runs until the process ends (see serve).
+procedure tcp_serve_thread(mutable arg: pointer[void]) @ret_nonlocal true @deep true returns pointer[void] io linked
+
+
+
+
+
 
 
 
@@ -73,6 +142,16 @@ define TcpStream(var fd: i32)
 
 
 
+
+
+
+
+
+
+
+    ; The connection a task started by TcpListener.serve serves (its task
+    ; argument); not is_open() outside such a task.
+    procedure of_task() @page true @direct true @ret_nonlocal true @deep true returns TcpStream linked
 
 
 
@@ -134,6 +213,38 @@ define TcpListener(var fd: i32)
 
     ; The port the listener is bound to, -1 when it is not open.
     procedure port(this) @ret_nonlocal true @deep true returns int io linked
+
+
+
+
+
+
+    ; Serve every connection with handler, over all cores: one scheduler
+    ; per core, this thread one of them, all accepting here (see the module
+    ; header). Does not return while the process runs (see there). Inside a
+    ; task there is a scheduler already: the connections become tasks of
+    ; that one.
+    procedure serve(this, mutable handler: pointer[void]) @deep true io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
