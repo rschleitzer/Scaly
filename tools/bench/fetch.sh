@@ -9,6 +9,8 @@
 #
 # Nothing third-party is kept in the tree; this script is the recipe.
 set -e
+cd "$(dirname "$0")/../.."
+. tests/platform.sh
 W=${BENCH_WORK:-/tmp/scaly-bench}
 mkdir -p "$W"
 if [ ! -f "$W/src.zip" ]; then
@@ -16,7 +18,15 @@ if [ ! -f "$W/src.zip" ]; then
 fi
 rm -rf "$W/src"
 mkdir -p "$W/src"
-unzip -q "$W/src.zip" -d "$W/src"
+if command -v unzip >/dev/null 2>&1; then
+  unzip -q "$W/src.zip" -d "$W/src"
+else
+  # Git Bash may come without unzip; its python (tools/win-env.sh) unpacks the
+  # archive, handed the Windows spelling of the paths
+  zp=$W/src.zip; dp=$W/src
+  if [ "$SCALY_COFF" = 1 ]; then zp=$(cygpath -w "$zp"); dp=$(cygpath -w "$dp"); fi
+  python3 -c 'import sys, zipfile; zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])' "$zp" "$dp"
+fi
 echo "fetch: sources in $W/src"
 
 if [ "$(uname -m)" = arm64 ] || [ "$(uname -m)" = aarch64 ]; then

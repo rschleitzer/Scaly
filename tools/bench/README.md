@@ -7,9 +7,9 @@ a benchmarks-game counterpart against the fastest C programs of that game.
 ```bash
 tools/bench/fetch.sh              # the game's source archive (+ sse2neon on arm64)
 tools/bench/build.sh              # Scaly (generic and -mcpu=native) and C into $BENCH_WORK/bin
-tools/bench/race.py               # all cores, median of 3 interleaved rounds
-tools/bench/race.py --one-core    # SCALY_WORKERS=1 / OMP_NUM_THREADS=1
-tools/bench/race.py --only mandelbrot,spectral --rounds 5
+tools/bench/race.sh               # all cores, median of 3 interleaved rounds
+tools/bench/race.sh --one-core    # SCALY_WORKERS=1 / OMP_NUM_THREADS=1
+tools/bench/race.sh --only mandelbrot,spectral --rounds 5
 ```
 
 `BENCH_WORK` (default `/tmp/scaly-bench`) holds the download, the shims and the
@@ -38,6 +38,28 @@ x86-64; `-mcpu=native` plus sse2neon on arm64, which translates their SSE
 intrinsics to NEON) and OpenMP through libomp (`brew install libomp` on
 macOS). On Darwin two small shims in `shim/` supply what the Linux-written
 programs expect: `memalign` and `sched_getaffinity`.
+
+## Per host
+
+- **macOS**: LLVM 20 and libomp from Homebrew (`llvm@20`, `libomp`). On arm64
+  the C side goes through sse2neon; `fetch.sh` downloads it.
+- **Linux** (x86-64, e.g. Ubuntu 24.04): the platform CI builds on, and the
+  one where every C program builds as its authors wrote it — glibc has
+  `memalign`, `sched_getaffinity` and pthreads, so no shim is involved. Needs
+  LLVM 20 with clang, lld and libomp (apt.llvm.org: `clang-20`, `lld-20`,
+  `libomp-20-dev`; CLAUDE-tooling.md has the rest of the list).
+- **Windows** (the box of tests/win32/WINDOWS-BOX.md: Git Bash, the standalone
+  LLVM 20 install, the MSVC runtime): the scripts take their environment from
+  `tests/platform.sh`, binaries carry `.exe`, and a Scaly program links against
+  `/tmp/libscaly.lib` (`tools/win-archive.sh`). The C programs get three small
+  POSIX headers from `shim-win/` (`unistd.h` for mandelbrot #6's `write`,
+  `malloc.h` for spectral-norm #5's 16-byte `memalign`, `sched.h` for
+  spectral-norm #4's CPU count) and libomp from the LLVM install. fannkuch #6
+  and binary-trees #5 are written on pthreads, which the MSVC runtime lacks —
+  `build.sh` says so and `race.sh` runs without them. ★Measure the box before
+  the programs: the antimalware scanner can make every process start cost
+  seconds (WINDOWS-BOX.md §4b), and that lands in every row. The Windows path
+  was written without a Windows machine at hand; its first run is its test.
 
 ## Reading the numbers
 

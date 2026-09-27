@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 """tools/bench/race.py — time Scaly against the benchmarks-game C champions.
 
-Usage: tools/bench/race.py [--rounds N] [--one-core] [--only mandelbrot,nbody,...]
+Usage: tools/bench/race.sh [--rounds N] [--one-core] [--only mandelbrot,nbody,...]
+(race.sh finds python3 and the work directory on the Windows box, too; on a
+POSIX host race.py can be run directly.)
 
 Runs the binaries tools/bench/build.sh left in BENCH_WORK/bin (default
 /tmp/scaly-bench/bin). The rounds are INTERLEAVED — every program once per
 round — so a machine that throttles as it warms up slows all of them alike
 instead of whichever happens to run last; the table reports the median wall
-time per program. Every run gets `ulimit -s 65520`, C included.
+time per program. On POSIX every run gets `ulimit -s 65520`, C included; on
+Windows the stack is fixed at link time and the binaries (`.exe`) start
+directly — a bare `bash` there may resolve to WSL's.
 
 --one-core sets SCALY_WORKERS=1 and OMP_NUM_THREADS=1 and SKIPS, by name, the
 C programs that choose their own thread count (spectral #4 from the CPU
@@ -27,6 +31,8 @@ import time
 
 W = os.environ.get("BENCH_WORK", "/tmp/scaly-bench")
 B = os.path.join(W, "bin")
+WINDOWS = os.name == "nt"
+EXE = ".exe" if WINDOWS else ""
 
 # (problem, label, binary, args, threads settable by OMP_NUM_THREADS/SCALY_WORKERS)
 PROGRAMS = [
@@ -57,7 +63,10 @@ PROGRAMS = [
 
 
 def run(path, args, env):
-    cmd = ["bash", "-c", 'ulimit -s 65520 2>/dev/null; exec "$0" "$@"', path] + args
+    if WINDOWS:
+        cmd = [path] + args
+    else:
+        cmd = ["bash", "-c", 'ulimit -s 65520 2>/dev/null; exec "$0" "$@"', path] + args
     t0 = time.perf_counter()
     p = subprocess.run(cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
     return time.perf_counter() - t0, p.returncode, p.stdout
@@ -97,7 +106,7 @@ def main():
     for prob, label, binary, args, settable in PROGRAMS:
         if only and prob not in only:
             continue
-        path = os.path.join(B, binary)
+        path = os.path.join(B, binary + EXE)
         if not os.path.exists(path):
             print(f"skip {prob} {label}: {path} not built")
             continue
