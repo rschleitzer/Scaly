@@ -1,0 +1,511 @@
+; StackVectors.scaly - which local Vectors of a routine may live on the
+; machine stack instead of its frame page (ROADMAP 4.9, the fannkuch gap).
+;
+; A `Vector[T](n)` bound to a local lands on the routine's frame page: the
+; record because Vector's init derives its page from the record's address
+; (Page.get(this)), the buffer because the init allocates it there. For a
+; small scratch vector in a routine called forty million times that is most
+; of the routine: forcing the frame, two Page.allocate calls, Page.get, and
+; on the way out the extension walk and the page given back to the bucket
+; (measured 2026-09-27: fannkuch's flips_of spent 0.63 s of 2.25 on it).
+;
+; The frame page lives exactly as long as the machine stack frame, so what the
+; escape checker admits there may live on the stack instead -- with ONE
+; exception: a page derived from an ADDRESS (Page.get) answers garbage for a
+; stack address. Vector derives one in its inits alone, and the lowering
+; replaces the init. So a construction qualifies when nothing else can reach
+; the vector's address:
+;   - it is the whole initializer of a `let`/`var` binding (`_ZN6VectorI...C1Em`,
+;     one argument), outside every loop -- a construction that runs once per
+;     activation, so one stack slot serves it (in a loop, a vector kept from
+;     an earlier round would share the slot with a later one);
+;   - the routine has no self tail call (the tail loop re-runs the body in
+;     the same frame, the same argument);
+;   - its name is bound nowhere else in the routine (no shadowing to track),
+;     and every other occurrence is the receiver of Vector's `put` or `[]`,
+;     or a read of `.length` -- nothing that hands out the record's or the
+;     buffer's address (not `at`/`get`/`get_ptr`/`data`, not an argument, not
+;     a capture, not a `set` target).
+; The Emitter then builds the record in an alloca and the buffer in a fixed
+; SV_MAX_BYTES stack slot when n * sizeof T fits, else on the frame page as
+; before (Emitter.emit_stack_vector#).
+use scalyc.compiler.Model.*
+use scalyc.compiler.Plan.*
+
+define SV_MAX_BYTES size_t 256
+
+define StackVectors
+{
+    define StackVectors
+    @resident true @inplace true (
+        cand_names: Array[String]
+        cand_locs: Array[size_t]
+        locs: Array[size_t]
+        var self_name: String
+        var tail_call: bool
+        var cur: String
+        var total: size_t
+        var allowed: size_t
+        var binds: size_t
+        var opaque: bool
+    )
+    {
+        init() linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; does the construction at `start` qualify?
+        function has(this, start: size_t) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+        ; `_ZN6VectorI<T>EC1Em`: the stdlib Vector's sized init
+        function is_sized_ctor(call: PlannedCall) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+        ; Vector's put and operator []: they write or read one element
+        ; through the record and hand out no address
+        function is_element_access(call: PlannedCall) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+        procedure scan(mutable this, func: PlannedFunction) @deep true @deep_this_2 true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; ------------------------------------------------------------------
+        ; the candidates: sized Vector bindings outside every loop
+        ; ------------------------------------------------------------------
+
+        procedure find_action(mutable this, act: PlannedAction, depth: size_t) @ret_nonlocal true @deep true linked
+
+
+
+
+
+        procedure find_ops(mutable this, ops: ref[Vector[PlannedOperand]]?, depth: size_t) @deep true linked
+
+
+
+
+
+
+
+        procedure find_stmt_ref(mutable this, stmt: ref[PlannedStatement]?, depth: size_t) @ret_nonlocal true @deep true linked
+
+
+
+
+
+        procedure find_stmt(mutable this, stmt: PlannedStatement, depth: size_t) @ret_nonlocal true @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure find_op(mutable this, op: PlannedOperand, depth: size_t) @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; ------------------------------------------------------------------
+        ; the uses of one candidate `cur`
+        ; ------------------------------------------------------------------
+
+        procedure bind_name(mutable this, name: String) @deep true linked
+
+
+
+
+
+        procedure use_action(mutable this, act: PlannedAction) @ret_nonlocal true @deep true linked
+
+
+
+
+
+        procedure use_ops(mutable this, ops: ref[Vector[PlannedOperand]]?) @deep true linked
+
+
+
+
+
+
+
+        procedure use_stmt_ref(mutable this, stmt: ref[PlannedStatement]?) @ret_nonlocal true @deep true linked
+
+
+
+
+
+        procedure use_binding(mutable this, binding: PlannedBinding) @ret_nonlocal true @deep true linked
+
+
+
+
+
+
+        procedure use_stmt(mutable this, stmt: PlannedStatement) @ret_nonlocal true @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; a bare `cur` as the receiver of put / []
+        function is_receiver(this, call: PlannedCall) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure use_op(mutable this, op: PlannedOperand) @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    }
+}

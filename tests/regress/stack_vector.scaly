@@ -1,0 +1,180 @@
+; Regression (2026-09-27): a local `Vector[T](n)` reached only through put,
+; [] and .length lives on the machine stack (StackVectors.scaly,
+; Emitter.emit_stack_vector#): the record in an alloca, the buffer in a
+; 256-byte stack slot when n * sizeof T fits, on the frame page when it does
+; not. Each shape here must answer exactly as the frame-page version did:
+; small and large buffers, an empty one, elements zeroed, one activation's
+; buffer untouched by a recursive one, a tail-recursive routine (never
+; lowered: its loop reruns the body in one frame), a vector in a loop (never
+; lowered), and one handed to a callee (never lowered: the callee may ask for
+; its page). stack_vector_ir pins that the lowering happens at all.
+; Expected: PASS
+
+define Pt(x: int, y: int)
+
+function small(n: int) returns int
+{
+    var v Vector[int](n as size_t)
+    var i 0
+    while i < n
+    {
+        v.put(i as size_t, i * i)
+        set i: i + 1
+    }
+    var s 0
+    set i: 0
+    while i < n
+    {
+        set s: s + v[i as size_t]
+        set i: i + 1
+    }
+    s + (v.length as int)
+}
+
+; 100 ints = 800 bytes: the frame page
+function large(n: int) returns int
+    small(n)
+
+function empty() returns int
+{
+    let v Vector[int](0)
+    v.length as int
+}
+
+function zeroed(n: int) returns int
+{
+    let v Vector[int](n as size_t)
+    var s 0
+    var i: size_t 0
+    while i < v.length
+    {
+        set s: s + v[i]
+        set i: i + 1
+    }
+    s
+}
+
+; the records: 16 bytes each, 12 of them fit
+function records(n: int) returns int
+{
+    var v Vector[Pt](n as size_t)
+    var i 0
+    while i < n
+    {
+        v.put(i as size_t, Pt(i, 2 * i))
+        set i: i + 1
+    }
+    var s 0
+    set i: 0
+    while i < n
+    {
+        let p v[i as size_t]
+        set s: s + p.x + p.y
+        set i: i + 1
+    }
+    s
+}
+
+; every level keeps its own buffer across the recursive call
+function nested(d: int) returns int
+{
+    var v Vector[int](4)
+    v.put(0, d)
+    v.put(3, d * 10)
+    var inner 0
+    if d > 0
+        set inner: nested(d - 1)
+    v[0] + v[3] + inner
+}
+
+procedure tail(k: int, acc: int) returns int
+{
+    var v Vector[int](2)
+    v.put(0, acc)
+    v.put(1, k)
+    if k = 0
+        return v[0]
+    return tail(k - 1, v[0] + v[1])
+}
+
+function in_loop(n: int) returns int
+{
+    var s 0
+    var i 0
+    while i < n
+    {
+        var v Vector[int](3)
+        v.put(1, i)
+        set s: s + v[1] + v[0]
+        set i: i + 1
+    }
+    s
+}
+
+function sum_of(v: Vector[int]) returns int
+{
+    var s 0
+    var i: size_t 0
+    while i < v.length
+    {
+        set s: s + v[i]
+        set i: i + 1
+    }
+    s
+}
+
+function handed(n: int) returns int
+{
+    var v Vector[int](n as size_t)
+    v.put(0, 7)
+    sum_of(v)
+}
+
+var ok true
+if small(10) <> 295
+{
+    print("FAIL small `small(10)`")
+    set ok: false
+}
+if large(100) <> 328450
+{
+    print("FAIL large `large(100)`")
+    set ok: false
+}
+if empty() <> 0
+{
+    print("FAIL empty")
+    set ok: false
+}
+if zeroed(32) <> 0 or zeroed(40) <> 0
+{
+    print("FAIL zeroed")
+    set ok: false
+}
+if records(12) <> 198 or records(20) <> 570
+{
+    print("FAIL records `records(12)` `records(20)`")
+    set ok: false
+}
+if nested(5) <> 165
+{
+    print("FAIL nested `nested(5)`")
+    set ok: false
+}
+if tail(10, 0) <> 55
+{
+    print("FAIL tail `tail(10, 0)`")
+    set ok: false
+}
+if in_loop(10) <> 45
+{
+    print("FAIL in_loop")
+    set ok: false
+}
+if handed(5) <> 7
+{
+    print("FAIL handed")
+    set ok: false
+}
+if ok
+    print("PASS")

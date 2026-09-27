@@ -14,6 +14,7 @@ define compiler
     module Planner
     module TaskPlanner  ; Stage-3 Plan analysis pass (parallelizability), runs after Planner
     module StoreEffects ; which record types a routine overwrites whole -> noalias parameters (the aliasing rule)
+    module StackVectors ; which local Vectors may live on the machine stack instead of the frame page
     module PointerCensus ; --pointer-report: raw-pointer census off the Plan (reads Planner statics)
     module WriteCensus ; --write-report: writes through parameters off the Plan (reuses PointerCensus)
     module LLVM

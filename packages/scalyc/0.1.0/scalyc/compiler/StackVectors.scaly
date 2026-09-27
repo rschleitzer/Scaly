@@ -1,0 +1,511 @@
+; StackVectors.scaly - which local Vectors of a routine may live on the
+; machine stack instead of its frame page (ROADMAP 4.9, the fannkuch gap).
+;
+; A `Vector[T](n)` bound to a local lands on the routine's frame page: the
+; record because Vector's init derives its page from the record's address
+; (Page.get(this)), the buffer because the init allocates it there. For a
+; small scratch vector in a routine called forty million times that is most
+; of the routine: forcing the frame, two Page.allocate calls, Page.get, and
+; on the way out the extension walk and the page given back to the bucket
+; (measured 2026-09-27: fannkuch's flips_of spent 0.63 s of 2.25 on it).
+;
+; The frame page lives exactly as long as the machine stack frame, so what the
+; escape checker admits there may live on the stack instead -- with ONE
+; exception: a page derived from an ADDRESS (Page.get) answers garbage for a
+; stack address. Vector derives one in its inits alone, and the lowering
+; replaces the init. So a construction qualifies when nothing else can reach
+; the vector's address:
+;   - it is the whole initializer of a `let`/`var` binding (`_ZN6VectorI...C1Em`,
+;     one argument), outside every loop -- a construction that runs once per
+;     activation, so one stack slot serves it (in a loop, a vector kept from
+;     an earlier round would share the slot with a later one);
+;   - the routine has no self tail call (the tail loop re-runs the body in
+;     the same frame, the same argument);
+;   - its name is bound nowhere else in the routine (no shadowing to track),
+;     and every other occurrence is the receiver of Vector's `put` or `[]`,
+;     or a read of `.length` -- nothing that hands out the record's or the
+;     buffer's address (not `at`/`get`/`get_ptr`/`data`, not an argument, not
+;     a capture, not a `set` target).
+; The Emitter then builds the record in an alloca and the buffer in a fixed
+; SV_MAX_BYTES stack slot when n * sizeof T fits, else on the frame page as
+; before (Emitter.emit_stack_vector#).
+use scalyc.compiler.Model.*
+use scalyc.compiler.Plan.*
+
+define SV_MAX_BYTES size_t 256
+
+define StackVectors
+{
+    define StackVectors
+    (
+        cand_names: Array[String]
+        cand_locs: Array[size_t]
+        locs: Array[size_t]
+        var self_name: String
+        var tail_call: bool
+        var cur: String
+        var total: size_t
+        var allowed: size_t
+        var binds: size_t
+        var opaque: bool
+    )
+    {
+        init()
+        {
+            set cand_names: Array[String]^this()
+            set cand_locs: Array[size_t]^this()
+            set locs: Array[size_t]^this()
+            set self_name: String()
+            set tail_call: false
+            set cur: String()
+            set total: 0
+            set allowed: 0
+            set binds: 0
+            set opaque: false
+        }
+
+        ; does the construction at `start` qualify?
+        function has(this, start: size_t) returns bool
+        {
+            var i: size_t 0
+            while i < locs.length
+            {
+                if locs[i] = start
+                    return true
+                set i: i + 1
+            }
+            false
+        }
+
+        ; `_ZN6VectorI<T>EC1Em`: the stdlib Vector's sized init
+        function is_sized_ctor(call: PlannedCall) returns bool
+        {
+            if call.args = null or call.args.length <> 1
+                return false
+            call.mangled_name.starts_with(String("_ZN6VectorI")) and call.mangled_name.ends_with(String("EC1Em"))
+        }
+
+        ; Vector's put and operator []: they write or read one element
+        ; through the record and hand out no address
+        function is_element_access(call: PlannedCall) returns bool
+        {
+            if call.mangled_name.starts_with(String("_ZN6VectorI")) = false
+                return false
+            call.mangled_name.contains("E3putEm") or call.mangled_name.contains("EixEm")
+        }
+
+        procedure scan(mutable this, func: PlannedFunction)
+        {
+            set cand_names.length: 0
+            set cand_locs.length: 0
+            set locs.length: 0
+            set self_name: func.mangled_name
+            set tail_call: false
+            choose func.impl
+                when a: Action
+                {
+                    this.find_action(a, 0)
+                    if tail_call or cand_names.length = 0
+                        return
+                    var i: size_t 0
+                    while i < cand_names.length
+                    {
+                        set cur: cand_names[i]
+                        set total: 0
+                        set allowed: 0
+                        set binds: 0
+                        set opaque: false
+                        if func.input <> null
+                        {
+                            for item in func.input
+                            {
+                                if item.name <> null and item.name.unwrap().equals(cur)
+                                    set binds: binds + 1
+                            }
+                        }
+                        this.use_action(a)
+                        if binds = 1 and total = allowed and opaque = false
+                            locs.add(cand_locs[i])
+                        set i: i + 1
+                    }
+                }
+                else
+                    0
+        }
+
+        ; ------------------------------------------------------------------
+        ; the candidates: sized Vector bindings outside every loop
+        ; ------------------------------------------------------------------
+
+        procedure find_action(mutable this, act: PlannedAction, depth: size_t)
+        {
+            this.find_ops(act.source, depth)
+            this.find_ops(act.target, depth)
+        }
+
+        procedure find_ops(mutable this, ops: ref[Vector[PlannedOperand]]?, depth: size_t)
+        {
+            if ops = null
+                return
+            for op in ops
+                this.find_op(op, depth)
+        }
+
+        procedure find_stmt_ref(mutable this, stmt: ref[PlannedStatement]?, depth: size_t)
+        {
+            if stmt <> null
+                this.find_stmt(*stmt, depth)
+        }
+
+        procedure find_stmt(mutable this, stmt: PlannedStatement, depth: size_t)
+        {
+            choose stmt
+                when action: Action
+                    this.find_action(action, depth)
+                when binding: Binding
+                {
+                    if depth = 0 and binding.operation <> null and binding.operation.length = 1 and binding.binding_item.name <> null
+                    {
+                        let op binding.operation.at(0)
+                        if op.member_access = null or op.member_access.length = 0
+                        {
+                            choose op.expr
+                                when call: Call
+                                {
+                                    if StackVectors.is_sized_ctor(call)
+                                    {
+                                        cand_names.add(binding.binding_item.name.unwrap())
+                                        cand_locs.add(call.loc.start)
+                                    }
+                                }
+                                else
+                                    0
+                        }
+                    }
+                    this.find_ops(binding.operation, depth)
+                }
+                when ret: Return
+                {
+                    if ret.result <> null and ret.result.length = 1
+                    {
+                        choose ret.result.at(0).expr
+                            when call: Call
+                            {
+                                if call.mangled_name.equals(self_name)
+                                    set tail_call: true
+                            }
+                            else
+                                0
+                    }
+                    this.find_ops(ret.result, depth)
+                }
+                when throw_stmt: Throw
+                    this.find_ops(throw_stmt.result, depth)
+                when brk: Break
+                    this.find_ops(brk.result, depth)
+                when cont: Continue
+                    0
+        }
+
+        procedure find_op(mutable this, op: PlannedOperand, depth: size_t)
+        {
+            choose op.expr
+                when call: Call
+                    this.find_ops(call.args, depth)
+                when tp: Tuple
+                {
+                    if tp.components <> null
+                    {
+                        for c in tp.components
+                            this.find_ops(c.value, depth)
+                    }
+                }
+                when blk: Block
+                {
+                    if blk.statements <> null
+                    {
+                        for s in blk.statements
+                            this.find_stmt(s, depth)
+                    }
+                }
+                when iff: If
+                {
+                    this.find_ops(iff.condition, depth)
+                    this.find_stmt_ref(iff.consequent, depth)
+                    this.find_stmt_ref(iff.alternative, depth)
+                }
+                when mt: Match
+                {
+                    this.find_ops(mt.condition, depth)
+                    if mt.branches <> null
+                    {
+                        for br in mt.branches
+                            this.find_stmt_ref(br.consequent, depth)
+                    }
+                    this.find_stmt_ref(mt.alternative, depth)
+                }
+                when ch: Choose
+                {
+                    this.find_ops(ch.condition, depth)
+                    if ch.cases <> null
+                    {
+                        for w in ch.cases
+                            this.find_stmt_ref(w.consequent, depth)
+                    }
+                    this.find_stmt_ref(ch.alternative, depth)
+                }
+                when fr: For
+                    this.find_action(fr.body, depth + 1)
+                when wh: While
+                {
+                    this.find_ops(wh.cond.operation, depth + 1)
+                    this.find_action(wh.body, depth + 1)
+                }
+                when rp: Repeat
+                    this.find_action(rp.body, depth + 1)
+                when tr: Try
+                {
+                    this.find_ops(tr.cond.operation, depth)
+                    if tr.catches <> null
+                    {
+                        for w in tr.catches
+                            this.find_stmt_ref(w.consequent, depth)
+                    }
+                    this.find_stmt_ref(tr.alternative, depth)
+                }
+                else
+                    0
+        }
+
+        ; ------------------------------------------------------------------
+        ; the uses of one candidate `cur`
+        ; ------------------------------------------------------------------
+
+        procedure bind_name(mutable this, name: String)
+        {
+            if name.equals(cur)
+                set binds: binds + 1
+        }
+
+        procedure use_action(mutable this, act: PlannedAction)
+        {
+            this.use_ops(act.source)
+            this.use_ops(act.target)
+        }
+
+        procedure use_ops(mutable this, ops: ref[Vector[PlannedOperand]]?)
+        {
+            if ops = null
+                return
+            for op in ops
+                this.use_op(op)
+        }
+
+        procedure use_stmt_ref(mutable this, stmt: ref[PlannedStatement]?)
+        {
+            if stmt <> null
+                this.use_stmt(*stmt)
+        }
+
+        procedure use_binding(mutable this, binding: PlannedBinding)
+        {
+            if binding.binding_item.name <> null
+                this.bind_name(binding.binding_item.name.unwrap())
+            this.use_ops(binding.operation)
+        }
+
+        procedure use_stmt(mutable this, stmt: PlannedStatement)
+        {
+            choose stmt
+                when action: Action
+                    this.use_action(action)
+                when binding: Binding
+                    this.use_binding(binding)
+                when ret: Return
+                    this.use_ops(ret.result)
+                when throw_stmt: Throw
+                    this.use_ops(throw_stmt.result)
+                when brk: Break
+                    this.use_ops(brk.result)
+                when cont: Continue
+                    0
+        }
+
+        ; a bare `cur` as the receiver of put / []
+        function is_receiver(this, call: PlannedCall) returns bool
+        {
+            if StackVectors.is_element_access(call) = false
+                return false
+            if call.args = null or call.args.length = 0
+                return false
+            let recv call.args.at(0)
+            if recv.member_access <> null and recv.member_access.length > 0
+                return false
+            choose recv.expr
+                when v: Variable
+                    return v.name.equals(cur)
+                else
+                    0
+            false
+        }
+
+        procedure use_op(mutable this, op: PlannedOperand)
+        {
+            choose op.expr
+                when v: Variable
+                {
+                    if v.name.equals(cur)
+                    {
+                        set total: total + 1
+                        ; `cur.length`, and nothing chained after it
+                        if op.member_access <> null and op.member_access.length = 1
+                        {
+                            let acc op.member_access.at(0)
+                            if acc.is_method = false and acc.name = "length"
+                                set allowed: allowed + 1
+                        }
+                    }
+                }
+                when call: Call
+                {
+                    if this.is_receiver(call)
+                        set allowed: allowed + 1
+                    this.use_ops(call.args)
+                }
+                when tp: Tuple
+                {
+                    if tp.components <> null
+                    {
+                        for c in tp.components
+                            this.use_ops(c.value)
+                    }
+                }
+                when mx: Matrix
+                {
+                    if mx.operations <> null
+                    {
+                        for row in mx.operations
+                            this.use_ops(row)
+                    }
+                }
+                when blk: Block
+                {
+                    if blk.statements <> null
+                    {
+                        for s in blk.statements
+                            this.use_stmt(s)
+                    }
+                }
+                when iff: If
+                {
+                    if iff.prop <> null
+                        this.bind_name(iff.prop.name)
+                    this.use_ops(iff.condition)
+                    this.use_stmt_ref(iff.consequent)
+                    this.use_stmt_ref(iff.alternative)
+                }
+                when mt: Match
+                {
+                    this.use_ops(mt.condition)
+                    if mt.branches <> null
+                    {
+                        for br in mt.branches
+                        {
+                            if br.cases <> null
+                            {
+                                for cs in br.cases
+                                    this.use_ops(cs.condition)
+                            }
+                            this.use_stmt_ref(br.consequent)
+                        }
+                    }
+                    this.use_stmt_ref(mt.alternative)
+                }
+                when ch: Choose
+                {
+                    this.use_ops(ch.condition)
+                    if ch.cases <> null
+                    {
+                        for w in ch.cases
+                        {
+                            this.bind_name(w.name)
+                            this.use_stmt_ref(w.consequent)
+                        }
+                    }
+                    this.use_stmt_ref(ch.alternative)
+                }
+                when fr: For
+                {
+                    this.bind_name(fr.identifier)
+                    this.use_ops(fr.expr)
+                    this.use_action(fr.body)
+                }
+                when wh: While
+                {
+                    this.use_binding(wh.cond)
+                    this.use_action(wh.body)
+                }
+                when rp: Repeat
+                    this.use_action(rp.body)
+                when tr: Try
+                {
+                    this.use_binding(tr.cond)
+                    if tr.catches <> null
+                    {
+                        for w in tr.catches
+                        {
+                            this.bind_name(w.name)
+                            this.use_stmt_ref(w.consequent)
+                        }
+                    }
+                    this.use_stmt_ref(tr.alternative)
+                }
+                when is_expr: Is
+                {
+                    if is_expr.value <> null
+                        this.use_op(*is_expr.value)
+                }
+                when as_expr: As
+                {
+                    if as_expr.value <> null
+                        this.use_op(*as_expr.value)
+                }
+                when vc: VariantConstruction
+                {
+                    if vc.value <> null
+                        this.use_op(*vc.value)
+                }
+                when bx: Box
+                {
+                    if bx.value <> null
+                        this.use_op(*bx.value)
+                }
+                when cl: Closure
+                    this.use_ops(cl.captures)
+                ; a lambda captures by name: the whole thing is opaque when
+                ; it names `cur` at all
+                when lm: Lambda
+                {
+                    if lm.captures <> null
+                    {
+                        for c in lm.captures
+                        {
+                            if c.equals(cur)
+                                set opaque: true
+                        }
+                    }
+                    if lm.input <> null
+                    {
+                        for item in lm.input
+                        {
+                            if item.name <> null
+                                this.bind_name(item.name.unwrap())
+                        }
+                    }
+                    this.use_action(lm.body)
+                }
+                else
+                    0
+        }
+    }
+}
