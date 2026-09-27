@@ -2165,6 +2165,28 @@ define TaskPlanner
         ; state, process control beyond abort) does.
         ; ================================================================
 
+        ; The stdlib's READ primitives (ROADMAP 4.5): they reach the world
+        ; outside the program only to READ it, so independent iterations may
+        ; run them in any order and at once — a parallel `for` body may call
+        ; them, and they overlap on the pool's worker threads (which have no
+        ; scheduler: File takes its plain blocking path there). Treated like
+        ; the stub of a `function`: nothing written but the page the result
+        ; lands on. A LIST, by the mangled name's owner and routine: the
+        ; interfaces carry one `io` bit for reading and writing alike, and the
+        ; externs cannot tell them apart (fopen reads or truncates by its
+        ; mode). Every writer — Console, File.write_from_string, a socket —
+        ; still blocks the loop: its order is the program's output.
+        function is_read_primitive(mangled: String) returns bool
+        {
+            if mangled.starts_with("_ZN4File14read_to_stringE")
+                return true
+            if mangled.starts_with("_ZN4File6existsE")
+                return true
+            if mangled.starts_with("_ZN9Directory6existsE")
+                return true
+            mangled.starts_with("_ZN9Directory12is_directoryE")
+        }
+
         function extern_is_benign(this: TaskPlanner, name: String) returns bool
         {
             if name.starts_with("scaly_atomic_")
@@ -2254,8 +2276,9 @@ define TaskPlanner
                 {
                     ; a `function` is pure BY RULE since 2026-09-19 (the
                     ; compiler checks it: no write, no global either way, no
-                    ; I/O) -- trusted without walking its body
-                    if func.pure
+                    ; I/O) -- trusted without walking its body; a read
+                    ; primitive counts as one (is_read_primitive)
+                    if func.pure or TaskPlanner.is_read_primitive(mangled)
                     {
                         this.memo_purity(mangled, true)
                         return true
@@ -3357,8 +3380,9 @@ define TaskPlanner
                     ; a STUB of another package's `function` is pure by rule
                     ; like a body (WriteCensus.mark_stub_purity carries its
                     ; keyword): it writes only its page, if it takes one --
-                    ; and two iterations allocating on one page still race
-                    if func.pure
+                    ; and two iterations allocating on one page still race.
+                    ; A read primitive is judged the same way.
+                    if func.pure or TaskPlanner.is_read_primitive(func.mangled_name)
                     {
                         var stub_fn false
                         choose func.impl

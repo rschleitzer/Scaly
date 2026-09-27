@@ -1,0 +1,85 @@
+; wordcount — the words in 256 files of ~256 KB each: every file read and
+; scanned in a plain `for`, which self-scales since reading no longer blocks
+; the TaskPlanner (ROADMAP 4.5, 2026-09-27): the reads overlap on the pool's
+; worker threads together with the scanning. The files are written once, on
+; the first run (sequentially — writing keeps its order), under
+; /tmp/scaly_wordcount_<i>.txt, and read on every run after.
+
+define FILES: int 256
+
+function path_of(i: int) returns String
+    "/tmp/scaly_wordcount_`i`.txt"
+
+; ~256 KB of words of 1 to 9 letters, a different mix per file
+function content_of(i: int) returns String
+{
+    var sb StringBuilder()
+    var x: u64 (i as u64) * (2654435761 as u64) + (1 as u64)
+    var bytes 0
+    while bytes < 262144
+    {
+        set x: x * (6364136223846793005 as u64) + (1442695040888963407 as u64)
+        let len ((x >> (60 as u64)) % (9 as u64)) as int + 1
+        var k 0
+        while k < len
+        {
+            sb.append "w"
+            set k: k + 1
+        }
+        if ((x >> (40 as u64)) % (12 as u64)) = (0 as u64)
+            sb.append "\n"
+        else
+            sb.append " "
+        set bytes: bytes + len + 1
+    }
+    sb.to_string()
+}
+
+function count_words(s: String) returns int
+{
+    var n 0
+    var in_word false
+    var i: size_t 0
+    let len s.get_length()
+    while i < len
+    {
+        let c s.get(i)
+        if c = 32 or c = 10
+            set in_word: false
+        else if in_word = false
+        {
+            set in_word: true
+            set n: n + 1
+        }
+        set i: i + 1
+    }
+    n
+}
+
+procedure ensure_files()
+{
+    if File.exists(path_of(FILES - 1))
+        return
+    var i 0
+    while i < FILES
+    {
+        File.write_from_string(path_of(i), content_of(i))
+        set i: i + 1
+    }
+}
+
+ensure_files()
+var paths Vector[String](FILES as size_t)
+var j 0
+while j < FILES
+{
+    paths.put(j as size_t, path_of(j))
+    set j: j + 1
+}
+var counts Vector[int](FILES as size_t)
+for i in FILES
+    counts.put(i as size_t, count_words(File.read_to_string(paths[i as size_t])))
+var total 0
+for c in counts
+    set total: total + c
+print("wordcount: `total` words in `FILES` files")
