@@ -2,33 +2,44 @@
 ; the yardstick: every step reads and writes all five bodies, so nothing here
 ; is independent and nothing may run in parallel. What it measures is that the
 ; engine leaves such a program alone and costs it nothing (ROADMAP 4.8).
+;
+; The bodies are an array of records, as in the C programs: one body's
+; position, velocity and mass lie together, and `at(i)` hands out the record
+; in place (2026-09-27; the seven parallel Vectors it replaced cost 1.97 s
+; against 1.65 s single-core, the pairs loop reading seven buffers).
 
 function sqrt(x: double) returns double extern
 
 define SOLAR_MASS: double 39.47841760435743
 define DAYS_PER_YEAR: double 365.24
 
-procedure advance(mutable x: Vector[double], mutable y: Vector[double], mutable z: Vector[double], mutable vx: Vector[double], mutable vy: Vector[double], mutable vz: Vector[double], m: Vector[double], dt: double)
+define Body(var x: double, var y: double, var z: double, var vx: double, var vy: double, var vz: double, mass: double)
+
+procedure advance(mutable bodies: Vector[Body], dt: double)
 {
-    let nb x.length
+    let nb bodies.length
     var i: size_t 0
     while i < nb
     {
+        let bi bodies.at(i)
         var j: size_t i + 1
         while j < nb
         {
-            let dx x[i] - x[j]
-            let dy y[i] - y[j]
-            let dz z[i] - z[j]
+            let bj bodies.at(j)
+            let dx bi.x - bj.x
+            let dy bi.y - bj.y
+            let dz bi.z - bj.z
             let d2 dx * dx + dy * dy + dz * dz
             let d sqrt(d2)
             let mag dt / (d2 * d)
-            vx.put(i, vx[i] - dx * m[j] * mag)
-            vy.put(i, vy[i] - dy * m[j] * mag)
-            vz.put(i, vz[i] - dz * m[j] * mag)
-            vx.put(j, vx[j] + dx * m[i] * mag)
-            vy.put(j, vy[j] + dy * m[i] * mag)
-            vz.put(j, vz[j] + dz * m[i] * mag)
+            let mj bj.mass * mag
+            let mi bi.mass * mag
+            set bi.vx: bi.vx - dx * mj
+            set bi.vy: bi.vy - dy * mj
+            set bi.vz: bi.vz - dz * mj
+            set bj.vx: bj.vx + dx * mi
+            set bj.vy: bj.vy + dy * mi
+            set bj.vz: bj.vz + dz * mi
             set j: j + 1
         }
         set i: i + 1
@@ -36,28 +47,31 @@ procedure advance(mutable x: Vector[double], mutable y: Vector[double], mutable 
     set i: 0
     while i < nb
     {
-        x.put(i, x[i] + dt * vx[i])
-        y.put(i, y[i] + dt * vy[i])
-        z.put(i, z[i] + dt * vz[i])
+        let b bodies.at(i)
+        set b.x: b.x + dt * b.vx
+        set b.y: b.y + dt * b.vy
+        set b.z: b.z + dt * b.vz
         set i: i + 1
     }
 }
 
-function energy(x: Vector[double], y: Vector[double], z: Vector[double], vx: Vector[double], vy: Vector[double], vz: Vector[double], m: Vector[double]) returns double
+function energy(bodies: Vector[Body]) returns double
 {
     var e: double 0.0
-    let nb x.length
+    let nb bodies.length
     var i: size_t 0
     while i < nb
     {
-        set e: e + 0.5 * m[i] * (vx[i] * vx[i] + vy[i] * vy[i] + vz[i] * vz[i])
+        let bi bodies[i]
+        set e: e + 0.5 * bi.mass * (bi.vx * bi.vx + bi.vy * bi.vy + bi.vz * bi.vz)
         var j: size_t i + 1
         while j < nb
         {
-            let dx x[i] - x[j]
-            let dy y[i] - y[j]
-            let dz z[i] - z[j]
-            set e: e - (m[i] * m[j]) / sqrt(dx * dx + dy * dy + dz * dz)
+            let bj bodies[j]
+            let dx bi.x - bj.x
+            let dy bi.y - bj.y
+            let dz bi.z - bj.z
+            set e: e - (bi.mass * bj.mass) / sqrt(dx * dx + dy * dy + dz * dz)
             set j: j + 1
         }
         set i: i + 1
@@ -65,66 +79,37 @@ function energy(x: Vector[double], y: Vector[double], z: Vector[double], vx: Vec
     e
 }
 
-; sun, jupiter, saturn, uranus, neptune (the benchmark's own data)
-var x Vector[double](5)
-var y Vector[double](5)
-var z Vector[double](5)
-var vx Vector[double](5)
-var vy Vector[double](5)
-var vz Vector[double](5)
-var m Vector[double](5)
-m.put(0, SOLAR_MASS)
-x.put(1, 4.84143144246472090)
-y.put(1, 0.0 - 1.16032004402742839)
-z.put(1, 0.0 - 0.103622044471123109)
-vx.put(1, 0.00166007664274403694 * DAYS_PER_YEAR)
-vy.put(1, 0.00769901118419740425 * DAYS_PER_YEAR)
-vz.put(1, (0.0 - 0.0000690460016972063023) * DAYS_PER_YEAR)
-m.put(1, 0.000954791938424326609 * SOLAR_MASS)
-x.put(2, 8.34336671824457987)
-y.put(2, 4.12479856412430479)
-z.put(2, 0.0 - 0.403523417114321381)
-vx.put(2, (0.0 - 0.00276742510726862411) * DAYS_PER_YEAR)
-vy.put(2, 0.00499852801234917238 * DAYS_PER_YEAR)
-vz.put(2, 0.0000230417297573763929 * DAYS_PER_YEAR)
-m.put(2, 0.000285885980666130812 * SOLAR_MASS)
-x.put(3, 12.8943695621391310)
-y.put(3, 0.0 - 15.1111514016986312)
-z.put(3, 0.0 - 0.223307578892655734)
-vx.put(3, 0.00296460137564761618 * DAYS_PER_YEAR)
-vy.put(3, 0.00237847173959480950 * DAYS_PER_YEAR)
-vz.put(3, (0.0 - 0.0000296589568540237556) * DAYS_PER_YEAR)
-m.put(3, 0.0000436624404335156298 * SOLAR_MASS)
-x.put(4, 15.3796971148509165)
-y.put(4, 0.0 - 25.9193146099879641)
-z.put(4, 0.179258772950371181)
-vx.put(4, 0.00268067772490389322 * DAYS_PER_YEAR)
-vy.put(4, 0.00162824170038242295 * DAYS_PER_YEAR)
-vz.put(4, (0.0 - 0.0000951592254519715870) * DAYS_PER_YEAR)
-m.put(4, 0.0000515138902046611451 * SOLAR_MASS)
+var bodies Vector[Body](5)
+bodies.put(0, Body(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, SOLAR_MASS))
+bodies.put(1, Body(4.84143144246472090, 0.0 - 1.16032004402742839, 0.0 - 0.103622044471123109, 0.00166007664274403694 * DAYS_PER_YEAR, 0.00769901118419740425 * DAYS_PER_YEAR, (0.0 - 0.0000690460016972063023) * DAYS_PER_YEAR, 0.000954791938424326609 * SOLAR_MASS))
+bodies.put(2, Body(8.34336671824457987, 4.12479856412430479, 0.0 - 0.403523417114321381, (0.0 - 0.00276742510726862411) * DAYS_PER_YEAR, 0.00499852801234917238 * DAYS_PER_YEAR, 0.0000230417297573763929 * DAYS_PER_YEAR, 0.000285885980666130812 * SOLAR_MASS))
+bodies.put(3, Body(12.8943695621391310, 0.0 - 15.1111514016986312, 0.0 - 0.223307578892655734, 0.00296460137564761618 * DAYS_PER_YEAR, 0.00237847173959480950 * DAYS_PER_YEAR, (0.0 - 0.0000296589568540237556) * DAYS_PER_YEAR, 0.0000436624404335156298 * SOLAR_MASS))
+bodies.put(4, Body(15.3796971148509165, 0.0 - 25.9193146099879641, 0.179258772950371181, 0.00268067772490389322 * DAYS_PER_YEAR, 0.00162824170038242295 * DAYS_PER_YEAR, (0.0 - 0.0000951592254519715870) * DAYS_PER_YEAR, 0.0000515138902046611451 * SOLAR_MASS))
 
 ; offset the sun's momentum
 var px: double 0.0
 var py: double 0.0
 var pz: double 0.0
-var b: size_t 0
-while b < 5
+var k: size_t 0
+while k < 5
 {
-    set px: px + vx[b] * m[b]
-    set py: py + vy[b] * m[b]
-    set pz: pz + vz[b] * m[b]
-    set b: b + 1
+    let b bodies[k]
+    set px: px + b.vx * b.mass
+    set py: py + b.vy * b.mass
+    set pz: pz + b.vz * b.mass
+    set k: k + 1
 }
-vx.put(0, (0.0 - px) / SOLAR_MASS)
-vy.put(0, (0.0 - py) / SOLAR_MASS)
-vz.put(0, (0.0 - pz) / SOLAR_MASS)
+let sun bodies.at(0)
+set sun.vx: (0.0 - px) / SOLAR_MASS
+set sun.vy: (0.0 - py) / SOLAR_MASS
+set sun.vz: (0.0 - pz) / SOLAR_MASS
 
-let e0 energy(x, y, z, vx, vy, vz, m)
+let e0 energy(bodies)
 var step 0
 while step < 50000000
 {
-    advance(x, y, z, vx, vy, vz, m, 0.01)
+    advance(bodies, 0.01)
     set step: step + 1
 }
-let e1 energy(x, y, z, vx, vy, vz, m)
+let e1 energy(bodies)
 print("n-body: `(e0 * 1000000000.0) as i64` -> `(e1 * 1000000000.0) as i64` (x 1e-9)")
