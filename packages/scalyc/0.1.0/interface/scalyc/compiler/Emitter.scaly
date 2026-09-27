@@ -373,9 +373,35 @@ define Emitter
         ; pointer[Page] FIELD of the receiver, as in opensp's Parser) by loading
         ; this.<field>. scaly/scalyc never use `^field`, so this stays neutral.
         var current_receiver_concept: String
+        ; Route 3 (ROADMAP 4.8): fork-join of calls. fj_self is the mangled
+        ; name of the function being emitted when it qualifies
+        ; (fork_join_eligible#); fj_mode says which body is being emitted:
+        ; 0 the ordinary one (a fork pair only sets fj_seen), 1 the plain
+        ; clone, 2 the forking clone, whose depth and context are fj_depth and
+        ; fj_ctx. See emit_fork_join_function#.
+        var fj_mode: i64
+        var fj_self: String
+        var fj_seen: bool
+        var fj_seq_fn: LLVMValueRef
+        var fj_fj_fn: LLVMValueRef
+        var fj_task_fn: LLVMValueRef
+        var fj_depth: LLVMValueRef
+        var fj_ctx: LLVMValueRef
+        ; a value emit_binding takes instead of evaluating its initializer
+        ; (the left binding of a fork-join `let` pair)
+        var fj_preset: LLVMValueRef
     )
     {
         init(cfg: EmitterConfig) linked
+
+
+
+
+
+
+
+
+
 
 
 
@@ -6158,7 +6184,545 @@ define Emitter
 
 
         ; Emit function body (implementation)
-        procedure emit_function_body(mutable this, mutable func: PlannedFunction) @ret_nonlocal true @deep true @deep_beyond_2 true @deep_this_2 true @deep_into_1_2 true returns bool linked
+        ; ------------------------------------------------------------------
+        ; Route 3 (ROADMAP 4.8): fork-join of calls. A pure free function f
+        ; whose parameters and result are scalars and whose body contains a
+        ; FORK PAIR — `f(a) OP f(b)`, OP any binary operator but a short-
+        ; circuiting one — is emitted in four pieces:
+        ;   f         the entry: ForkJoin.begin, then f.fj at depth 0, or
+        ;             f.fjseq when fork-join is off (one worker, a catch point)
+        ;   f.fjseq   the plain body; its self calls call itself
+        ;   f.fj      the forking body, (params, depth, ctx): from depth
+        ;             FJ_DEPTH_LIMIT on it hands over to f.fjseq; a fork pair
+        ;             records the left call latently, runs the right one,
+        ;             then takes the left back or joins it (fiber.scaly's
+        ;             ForkJoin carries the protocol)
+        ;   f.fjtask  a stolen left call: unpacks the cell, runs f.fj
+        ; A function without a fork pair is emitted exactly as before: the
+        ; ordinary emission is the detection pass, and only a pair it met
+        ; replaces the body. -g keeps the plain function (one subprogram per
+        ; body).
+        ; ------------------------------------------------------------------
+
+        procedure fork_join_eligible(mutable this, mutable func: PlannedFunction, mutable llvm_func: LLVMValueRef) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; A direct call of the function being emitted, nothing selected from it.
+        function fj_self_call(this, op: PlannedOperand) @ret_param_1 true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function fj_pair(this, lhs: PlannedOperand, rhs: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
+
+
+        procedure fj_runtime(mutable this, mutable mangled: String, mutable ret: LLVMTypeRef, mutable params: Vector[LLVMTypeRef]) @direct true @deep true returns LLVMValueRef linked
+
+
+
+
+
+        procedure fj_ptr(mutable this) @direct true @ret_caller true @deep true returns LLVMTypeRef linked
+
+
+        procedure fj_i64(mutable this) @direct true @ret_caller true @deep true returns LLVMTypeRef linked
+
+
+        ; The cell a fork pair hands the left call through: its arguments,
+        ; then its result.
+        procedure fj_cell_type(mutable this, mutable fty: LLVMTypeRef) @direct true @ret_caller true @deep true returns LLVMTypeRef linked
+
+
+
+
+
+
+
+
+
+        ; Emit a call's arguments, each at its parameter's type.
+        procedure fj_args(mutable this, mutable call: PlannedCall, mutable fty: LLVMTypeRef, extra: size_t) @page true @direct true @ret_caller true @deep true returns Vector[LLVMValueRef] linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure fj_next_depth(mutable this) @direct true @ret_caller true @deep true returns LLVMValueRef linked
+
+
+        ; A self call inside a clone: the plain clone calls itself, the forking
+        ; clone one level deeper.
+        procedure emit_fj_self_call(mutable this, mutable call: PlannedCall) @direct true @ret_caller true @deep true returns LLVMValueRef linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; The forking clone's entry: from the depth limit on, the plain clone.
+        procedure emit_fj_prologue(mutable this, mutable llvm_func: LLVMValueRef, n: size_t) @ret_caller true @deep true @deep_this_2 true @deep_whole_2 true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; `f(a) OP f(b)` in the forking clone.
+        procedure emit_fj_pair(mutable this, mutable call: PlannedCall, mutable lhs: PlannedOperand, mutable rhs: PlannedOperand) @direct true @deep true returns LLVMValueRef linked
+
+
+
+
+
+
+
+
+        ; `let a f(x)` + `let b f(y)` in the forking clone.
+        procedure emit_fj_let_pair(mutable this, mutable s1: PlannedStatement, mutable s2: PlannedStatement) @ret_nonlocal true @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; Is s1, s2 a pair of `let`s each bound to a self call, the second's
+        ; arguments free of the first's name?
+        function fj_let_pair(this, s1: PlannedStatement, s2: PlannedStatement) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; Does op (a self call's arguments) possibly read name? Unknown shapes
+        ; answer yes.
+        function fj_mentions(op: PlannedOperand, name: String) @ret_param_0 true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; The heart of a fork pair: the left call's arguments go into a cell,
+        ; the call is recorded latently, the right side runs inline (an
+        ; operand, or a binding), then the left call is taken back and run
+        ; here or joined from its thief. Answers the left call's value.
+        procedure emit_fj_fork(mutable this, mutable lhs: PlannedOperand, mutable rhs_op: ref[PlannedOperand]?, mutable rhs_bind: ref[PlannedBinding]?, mutable right_out: ref[LLVMValueRef]) @direct true @ret_caller true @deep true returns LLVMValueRef linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; Replace func's ordinary body by the fork-join trio (see above).
+        procedure emit_fork_join_function(mutable this, mutable func: PlannedFunction, mutable llvm_func: LLVMValueRef) @ret_nonlocal true @deep true @deep_this_4 true @deep_whole_4 true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; f.fjtask(slot): the left call of a pair, on the thread that stole it.
+        procedure emit_fj_task(mutable this, mutable fty: LLVMTypeRef, mutable fj_ty: LLVMTypeRef) @ret_caller true @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; f itself: the entry of a fork-capable execution.
+        procedure emit_fj_entry(mutable this, mutable llvm_func: LLVMValueRef, mutable fty: LLVMTypeRef, mutable fj_ty: LLVMTypeRef) @ret_caller true @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure emit_function_body(mutable this, mutable func: PlannedFunction) @ret_nonlocal true @deep true @deep_this_2 true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; The body of func into llvm_func: its own symbol, or one of the
+        ; fork-join clones (fj_mode 1, 2).
+        procedure emit_function_body_into(mutable this, mutable func: PlannedFunction, mutable llvm_func: LLVMValueRef) @ret_nonlocal true @deep true @deep_beyond_4 true @deep_this_6 true @deep_whole_4 true @deep_into_1_4 true returns bool linked
+
 
 
 
@@ -11164,12 +11728,25 @@ define Emitter
 
 
 
+
+
+
+
+
         ; ========================================================================
         ; Intrinsic Operator Emission
         ; ========================================================================
 
         ; Emit an intrinsic operator call
         procedure emit_intrinsic_operator(mutable this, mutable call: PlannedCall) @direct true @deep true returns LLVMValueRef linked
+
+
+
+
+
+
+
+
 
 
 
@@ -13119,6 +13696,25 @@ define Emitter
 
         ; Emit a block
         procedure emit_block(mutable this, mutable block: PlannedBlock) @direct true @deep true returns LLVMValueRef linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -20040,6 +20636,12 @@ define Emitter
 
 
         procedure emit_binding(mutable this, mutable binding: PlannedBinding) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
 
 
 

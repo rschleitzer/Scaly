@@ -761,6 +761,31 @@ int scaly_eio_ncpu(void)
     return (int)si.dwNumberOfProcessors;
 }
 
+/* Sleep for us microseconds — the fork-join ticker's pace, as in eio.c.
+ * Sleep() rounds to the system tick (1-15.6 ms), so a high-resolution
+ * waitable timer (Windows 10 1803+) carries it, one per thread; Sleep(1)
+ * stays the fallback where the flag is refused. */
+#ifndef CREATE_WAITABLE_TIMER_HIGH_RESOLUTION
+#define CREATE_WAITABLE_TIMER_HIGH_RESOLUTION 0x00000002
+#endif
+void scaly_eio_sleep_us(unsigned int us)
+{
+    static __declspec(thread) HANDLE timer = NULL;
+    if (timer == NULL)
+        timer = CreateWaitableTimerExW(NULL, NULL, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
+    if (timer == NULL) {
+        Sleep(1);
+        return;
+    }
+    LARGE_INTEGER due;
+    due.QuadPart = -(LONGLONG)us * 10;   /* relative, 100 ns units */
+    if (!SetWaitableTimer(timer, &due, 0, NULL, NULL, FALSE)) {
+        Sleep(1);
+        return;
+    }
+    WaitForSingleObject(timer, INFINITE);
+}
+
 long long scaly_eio_now_ns(void)
 {
     LARGE_INTEGER f, c;

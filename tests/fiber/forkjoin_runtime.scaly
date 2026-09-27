@@ -1,0 +1,101 @@
+; Fork-join runtime (ROADMAP 4.8, route 3), driven by hand the way the
+; Emitter drives it for `f(l) + f(r)`: a range sum split in halves, the left
+; half recorded latently (ForkJoin.push), the right half run inline, the left
+; taken back (pop) or waited for (join). The heavy sum must be stolen at least
+; once (the beat promotes, an idle worker steals) and agree with the plain
+; recursion; a stream of small sums must agree too.
+;
+; Expected: forkjoin-runtime-ok done
+
+define LIMIT: i64 12
+
+function w(p: pointer[u64], i: i64) returns pointer[u64]
+    ((p as size_t) + ((i * 8) as size_t)) as pointer[u64]
+
+function leaf(lo: i64, hi: i64) returns i64
+{
+    var acc: i64 0
+    var i lo
+    while i < hi
+    {
+        set acc: acc + (i * i) % 1000003
+        set i: i + 1
+    }
+    acc
+}
+
+function rsum(lo: i64, hi: i64) returns i64
+{
+    if hi - lo <= 2048
+        return leaf(lo, hi)
+    let mid lo + (hi - lo) / 2
+    rsum(lo, mid) + rsum(mid, hi)
+}
+
+; the stolen half, on the thief: cell words 0 lo, 1 hi, 2 result
+procedure rsum_task(mutable slot: pointer[void]) returns pointer[void]
+{
+    let cell ForkJoin.slot_cell(slot) as pointer[u64]
+    var ctx u64[2]
+    let c ctx as pointer[u64]
+    ForkJoin.begin_task(c)
+    set *w(cell, 2): rsum_fj((*w(cell, 0)) as i64, (*w(cell, 1)) as i64, ForkJoin.slot_depth(slot), c) as u64
+    null
+}
+
+procedure rsum_fj(lo: i64, hi: i64, depth: i64, mutable ctx: pointer[u64]) returns i64
+{
+    if depth >= LIMIT
+        return rsum(lo, hi)
+    if hi - lo <= 2048
+        return leaf(lo, hi)
+    let mid lo + (hi - lo) / 2
+    ForkJoin.beat(ctx)
+    var cell u64[3]
+    let cp cell as pointer[u64]
+    set *w(cp, 0): lo as u64
+    set *w(cp, 1): mid as u64
+    let idx ForkJoin.push(ctx, &rsum_task, cp as pointer[void], depth + 1)
+    if idx < 0
+        return rsum_fj(lo, mid, depth + 1, ctx) + rsum_fj(mid, hi, depth + 1, ctx)
+    let b rsum_fj(mid, hi, depth + 1, ctx)
+    if ForkJoin.pop(ctx, idx)
+        return rsum_fj(lo, mid, depth + 1, ctx) + b
+    ForkJoin.join(ctx, idx)
+    ((*w(cp, 2)) as i64) + b
+}
+
+procedure prsum(lo: i64, hi: i64) returns i64
+{
+    var ctx u64[2]
+    let c ctx as pointer[u64]
+    if ForkJoin.begin(c) = false
+        return rsum(lo, hi)
+    rsum_fj(lo, hi, 0, c)
+}
+
+let big: i64 200000000
+let seq rsum(0, big)
+let before ForkJoin.steal_count()
+let par prsum(0, big)
+if par <> seq
+{
+    Console.println "heavy sum differs"
+    exit 1
+}
+if TaskPool.ncpu() > 1 and ForkJoin.steal_count() = before
+{
+    Console.println "heavy sum was never stolen"
+    exit 1
+}
+var j 0
+while j < 2000
+{
+    if prsum(0, 20000 + j) <> rsum(0, 20000 + j)
+    {
+        Console.println "small sum differs"
+        exit 1
+    }
+    set j: j + 1
+}
+print "forkjoin-runtime-ok done"

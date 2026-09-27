@@ -1,0 +1,14 @@
+; fib — the classic fork-join demonstration and the worst case for it: two
+; recursive calls and no work of their own per node. `fib(n - 1) + fib(n - 2)`
+; is the plain pattern; the engine runs the two calls in parallel near the top
+; of the recursion and leaves the deep levels to a plain copy of the function
+; (ROADMAP 4.8, route 3).
+
+function fib(n: int) returns int
+{
+    if n < 2
+        return n
+    fib(n - 1) + fib(n - 2)
+}
+
+print("fib 42: `fib(42)`")

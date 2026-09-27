@@ -2774,44 +2774,39 @@ define TaskPool
         scaly_eio_write(pl.pipe_write, one as pointer[void], 1 as size_t)
     }
 
-    ; Take one item: own deque first, then steal round-robin from the
-    ; others. Only called after a pipe byte was consumed, so at least
-    ; one item exists SOMEWHERE — a scan pass can still race a push in
-    ; flight, hence the outer retry loop (bounded by that push's
-    ; completion).
-    procedure take(mutable pl: pointer[TaskPool], start: i64) returns ref[TaskItem]
+    ; One scan for an item, own deque first: null when none is queued (the
+    ; byte a worker consumed may have been a fork-join wake instead).
+    procedure try_take(mutable pl: pointer[TaskPool], start: i64) returns ref[TaskItem]?
     {
-        repeat
+        var k: i64 0
+        while k < pl.nworkers
         {
-            var k: i64 0
-            while k < pl.nworkers
+            var idx start + k
+            if idx >= pl.nworkers
+                set idx: idx - pl.nworkers
+            let d TaskPool.deque_at(pl, idx)
+            TaskDeque.acquire(d)
+            var w d.head
+            if w <> null
             {
-                var idx start + k
-                if idx >= pl.nworkers
-                    set idx: idx - pl.nworkers
-                let d TaskPool.deque_at(pl, idx)
-                TaskDeque.acquire(d)
-                var w d.head
-                if w <> null
-                {
-                    set d.head: w.next
-                    if d.head = null
-                        set d.tail: null
-                    set w.next: null
-                }
-                TaskDeque.release(d)
-                if w <> null
-                {
-                    if k > 0
-                    {
-                        let sp &pl.stolen
-                        let old scaly_atomic_add_u64(sp, 1 as u64)
-                    }
-                    return w as ref[TaskItem]
-                }
-                set k: k + 1
+                set d.head: w.next
+                if d.head = null
+                    set d.tail: null
+                set w.next: null
             }
+            TaskDeque.release(d)
+            if w <> null
+            {
+                if k > 0
+                {
+                    let sp &pl.stolen
+                    let old scaly_atomic_add_u64(sp, 1 as u64)
+                }
+                return w
+            }
+            set k: k + 1
         }
+        null
     }
 
     ; Shut the pool down: closing the pipe's write end lets the workers
@@ -2866,6 +2861,7 @@ define TaskPool
         {
             let pl task_default_pool as ref[TaskPool]
             set task_default_pool: null
+            ForkJoin.retire(pl)
             TaskPool.shutdown(pl)
         }
     }
@@ -2885,28 +2881,517 @@ procedure task_worker(arg: pointer[void]) returns pointer[void]
     let me ((*(((cell as size_t) + 8) as pointer[size_t])) as i64)
     repeat
     {
+        ; A worker of the fork-join pool counts as idle (the ticker beats
+        ; for it) and as blocked (a promotion wakes it) while it waits.
+        let forks ForkJoin.serves(pl)
+        if forks
+            ForkJoin.note_blocked(1 as u64)
         var byte u8[1]
         let n scaly_eio_read(pl.pipe_read, byte as pointer[void], 1 as size_t)
+        if forks
+            ForkJoin.note_blocked((0 - 1) as u64)
         if n <> 1
             return null
-        let w TaskPool.take(pl, me)
-        let g w.group
-        if TaskGroup.is_guarded(g)
+        ; The byte vouches for a wave item or for a fork-join wake credit
+        ; (ForkJoin.wake). A scan can miss an item whose push is still in
+        ; flight, so try both until one answers.
+        repeat
         {
-            ; The submitter stood in a try: catch the iteration's fault HERE
-            ; (a jump may not cross stacks) and record it for the wait to
-            ; raise again on the submitting thread.
-            var caught: i32 0
-            let res Region.run_guarded(w.fn, w.arg, &caught)
-            if caught <> 0
-                TaskGroup.record_fault(g)
+            let wo TaskPool.try_take(pl, me)
+            if wo <> null
+            {
+                let w wo as ref[TaskItem]
+                let g w.group
+                if TaskGroup.is_guarded(g)
+                {
+                    ; The submitter stood in a try: catch the iteration's fault HERE
+                    ; (a jump may not cross stacks) and record it for the wait to
+                    ; raise again on the submitting thread.
+                    var caught: i32 0
+                    let res Region.run_guarded(w.fn, w.arg, &caught)
+                    if caught <> 0
+                        TaskGroup.record_fault(g)
+                }
+                else
+                {
+                    ; Nobody is catching: leave the fault its normal course, with the
+                    ; message and the exit code it always had.
+                    let res scaly_call_ptr(w.fn, w.arg)
+                }
+                TaskGroup.finish_one(g)
+                break
+            }
+            if ForkJoin.claim_credit()
+            {
+                ForkJoin.work()
+                break
+            }
+        }
+    }
+}
+
+; ---- Fork-join of calls (ROADMAP 4.8, route 3) ----
+;
+; A pure function that calls itself twice in one expression (`f(l) + f(r)`)
+; is emitted in three bodies (Emitter.emit_fork_join_function): the entry
+; under the function's own name, a PLAIN clone for the deep levels, and a
+; FORKING clone that carries its depth and a context. At a fork point the
+; forking clone records its FIRST call latently on the thread's own deque
+; (push: plain stores, invisible to thieves), runs the SECOND inline, and
+; takes the first back (pop) unless it was stolen meanwhile (join). A ticker
+; bumps fj_beat every FJ_TICK_US while fork points run; a fork point that
+; sees a new beat while a worker is idle PUBLISHES the oldest latent entry of
+; its deque — the shallowest frame, the biggest pending call — and wakes a
+; worker (heartbeat scheduling, Acar et al. PLDI 2018). Promotions therefore
+; happen only when somebody can take them, and the cost of a fork point that
+; nobody steals is a few stores. The spike behind the numbers is in ROADMAP.
+;
+; Deque discipline, per thread: slots [top, pub) are published and
+; stealable, [pub, bottom) latent and the owner's alone. The owner pushes and
+; pops at the bottom without a lock while the slot is latent; publishing,
+; stealing and taking back a published slot go through the deque's spinlock.
+; A slot's state is 0 until a thief takes it (1) and finishes it (2).
+;
+; The context an emitted body carries is two words: this thread's deque and
+; the last beat it saw. ★The Emitter pins the mangled names of begin,
+; begin_task, push, beat, pop, join, slot_cell and slot_depth: grep for them
+; before re-signing any.
+;
+; Wakes share the pool's pipe with wave items. A byte is written per wave
+; item and per fork-join wake; a woken worker takes a wave item if it finds
+; one, else it claims a wake CREDIT (fj_credit, bumped before the byte) and
+; goes stealing. Invariant: bytes in the pipe + workers holding a byte =
+; queued wave items + credits, so a wave item is never left without a byte.
+
+define FJ_SLOTS: i64 64
+define FJ_REGISTRY: i64 256
+define FJ_TICK_US: u32 100
+; ticks without a fork point before the ticker stops (10 ms)
+define FJ_QUIET_TICKS: i64 100
+; empty registry scans before a stealing worker blocks again
+define FJ_SPIN: i64 2000
+
+define ForkSlot
+(
+    var fn: pointer[void]
+    var cell: pointer[void]
+    var depth: i64
+    var state: u64
+    var thief: i64
+)
+
+define ForkDeque
+(
+    var lock: u64
+    var top: u64
+    var pub: u64
+    var bottom: u64
+    slots: pointer[ForkSlot]
+    index: i64
+)
+
+; 0 not set up, 1 setting up, 2 ready, 3 off (one worker, or the pool is gone)
+shared atomic fj_state: u64 0
+shared fj_registry: pointer[u64] null
+shared fj_pool: pointer[TaskPool] null
+shared atomic fj_count: u64 0
+shared atomic fj_beat: u64 0
+shared atomic fj_idle: u64 0
+shared atomic fj_blocked: u64 0
+shared atomic fj_credit: u64 0
+shared atomic fj_demand: u64 0
+shared atomic fj_ticker: u64 0
+shared atomic fj_steals: u64 0
+shared atomic fj_promotions: u64 0
+; this thread's deque (registered on first use)
+mutable fj_deque: pointer[ForkDeque] null
+
+; Sleep for a number of microseconds — the fork-join ticker's pace. Shim
+; rule (a): nanosleep and the Windows waitable timer are OS-specific.
+procedure scaly_eio_sleep_us(us: u32) extern
+
+define ForkJoin
+{
+    ; Set up once, on the first fork-capable entry. False when fork-join is
+    ; off: a pool of one worker (SCALY_WORKERS=1, a one-core box) never forks.
+    procedure ready() returns bool
+    {
+        let st scaly_atomic_load_u64(&fj_state)
+        if st = 2
+            return true
+        if st <> 0
+            return false
+        if scaly_atomic_cas_u64(&fj_state, 0 as u64, 1 as u64) <> 0
+            return false
+        if TaskPool.ncpu() < 2
+        {
+            scaly_atomic_store_u64(&fj_state, 3 as u64)
+            return false
+        }
+        let pl TaskPool.default_pool()
+        let p Page.allocate_page_traced("ForkJoin.registry")
+        let reg p.allocate(((FJ_REGISTRY * 8) as size_t), 8) as pointer[u64]
+        var i: i64 0
+        while i < FJ_REGISTRY
+        {
+            set *(((reg as size_t) + ((i * 8) as size_t)) as pointer[u64]): 0 as u64
+            set i: i + 1
+        }
+        set fj_registry: reg
+        set fj_pool: pl as pointer[TaskPool]
+        scaly_atomic_store_u64(&fj_state, 2 as u64)
+        true
+    }
+
+    ; Does this pool serve fork-join steals?
+    procedure serves(pl: pointer[TaskPool]) returns bool
+    {
+        if scaly_atomic_load_u64(&fj_state) <> 2
+            return false
+        (fj_pool as size_t) = (pl as size_t)
+    }
+
+    ; The pool is going away: fork-join stops for good.
+    procedure retire(pl: pointer[TaskPool])
+    {
+        if (fj_pool as size_t) = (pl as size_t)
+            scaly_atomic_store_u64(&fj_state, 3 as u64)
+    }
+
+    procedure note_blocked(delta: u64)
+    {
+        scaly_atomic_add_u64(&fj_blocked, delta)
+        scaly_atomic_add_u64(&fj_idle, delta)
+    }
+
+    ; The registry's k-th deque, null while its thread is still entering it.
+    procedure registered(k: i64) returns pointer[ForkDeque]
+        (scaly_atomic_load_u64(((fj_registry as size_t) + ((k * 8) as size_t)) as pointer[u64])) as pointer[ForkDeque]
+
+    ; This thread's deque, registered on first use; null when the registry
+    ; is full (the thread then runs its fork points inline).
+    procedure own_deque() returns pointer[ForkDeque]
+    {
+        if fj_deque <> null
+            return fj_deque
+        let k scaly_atomic_add_u64(&fj_count, 1 as u64) as i64
+        if k >= FJ_REGISTRY
+            return null
+        let p Page.allocate_page_traced("ForkJoin.deque")
+        let d p.allocate(sizeof ForkDeque, alignof ForkDeque) as pointer[ForkDeque]
+        set d.lock: 0
+        set d.top: 0
+        set d.pub: 0
+        set d.bottom: 0
+        set d.slots: p.allocate(((FJ_SLOTS as size_t) * sizeof ForkSlot), 8) as pointer[ForkSlot]
+        set d.index: k
+        scaly_atomic_store_u64(((fj_registry as size_t) + ((k * 8) as size_t)) as pointer[u64], d as u64)
+        set fj_deque: d
+        d
+    }
+
+    function slot_at(d: pointer[ForkDeque], idx: i64) returns pointer[ForkSlot]
+        ((d.slots as size_t) + ((idx as size_t) * sizeof ForkSlot)) as pointer[ForkSlot]
+
+    procedure lock(d: pointer[ForkDeque])
+    {
+        let lp &d.lock
+        repeat
+        {
+            if scaly_atomic_cas_u64(lp, 0 as u64, 1 as u64) = 0
+                break
+        }
+    }
+
+    procedure unlock(d: pointer[ForkDeque])
+    {
+        let lp &d.lock
+        scaly_atomic_store_u64(lp, 0 as u64)
+    }
+
+    ; Keep the ticker running while fork points run.
+    procedure demand()
+    {
+        if scaly_atomic_load_u64(&fj_demand) = 0
+            scaly_atomic_store_u64(&fj_demand, 1 as u64)
+        if scaly_atomic_load_u64(&fj_ticker) = 0
+        {
+            if scaly_atomic_cas_u64(&fj_ticker, 0 as u64, 1 as u64) = 0
+                Thread.spawn(&fork_ticker, null)
+        }
+    }
+
+    ; The entry of a fork-capable execution: fill the context and answer
+    ; whether its calls may fork. Not under a catch point (a fault in a stolen
+    ; call could not reach it), not without a second worker.
+    procedure begin(mutable ctx: pointer[u64]) returns bool
+    {
+        if ForkJoin.ready() = false
+            return false
+        if Region.catch_active()
+            return false
+        let d ForkJoin.own_deque()
+        if d = null
+            return false
+        set *ctx: d as u64
+        set *(((ctx as size_t) + 8) as pointer[u64]): scaly_atomic_load_u64(&fj_beat)
+        ForkJoin.demand()
+        true
+    }
+
+    ; The context of a stolen call, on the thread that runs it.
+    procedure begin_task(mutable ctx: pointer[u64])
+    {
+        set *ctx: ForkJoin.own_deque() as u64
+        set *(((ctx as size_t) + 8) as pointer[u64]): scaly_atomic_load_u64(&fj_beat)
+    }
+
+    ; Record fn(cell) latently: its slot index, or -1 when the deque is full
+    ; (the fork point then runs both calls inline).
+    procedure push(ctx: pointer[u64], fn: pointer[void], cell: pointer[void], depth: i64) returns i64
+    {
+        let d (*ctx) as pointer[ForkDeque]
+        let b d.bottom as i64
+        if b >= FJ_SLOTS
+            return 0 - 1
+        let s ForkJoin.slot_at(d, b)
+        set s.fn: fn
+        set s.cell: cell
+        set s.depth: depth
+        set s.state: 0
+        set s.thief: 0
+        set d.bottom: (b + 1) as u64
+        b
+    }
+
+    ; A fork point's heartbeat check: on a new beat, keep the ticker alive
+    ; and, if a worker is idle, publish this deque's oldest latent slot.
+    procedure beat(mutable ctx: pointer[u64])
+    {
+        let seen_p ((ctx as size_t) + 8) as pointer[u64]
+        let b scaly_atomic_load_u64(&fj_beat)
+        if b = *seen_p
+        {
+            if scaly_atomic_load_u64(&fj_ticker) = 0
+                ForkJoin.demand()
+            return
+        }
+        set *seen_p: b
+        if scaly_atomic_load_u64(&fj_demand) = 0
+            scaly_atomic_store_u64(&fj_demand, 1 as u64)
+        if scaly_atomic_load_u64(&fj_idle) = 0
+            return
+        let d (*ctx) as pointer[ForkDeque]
+        if d.pub >= d.bottom
+            return
+        ForkJoin.lock(d)
+        set d.pub: d.pub + 1
+        ForkJoin.unlock(d)
+        scaly_atomic_add_u64(&fj_promotions, 1 as u64)
+        ForkJoin.wake()
+    }
+
+    ; Wake a blocked worker of the pool, if there is one.
+    procedure wake()
+    {
+        if scaly_atomic_load_u64(&fj_blocked) = 0
+            return
+        scaly_atomic_add_u64(&fj_credit, 1 as u64)
+        var one u8[1]
+        set *(one as pointer[u8]): 1
+        scaly_eio_write(fj_pool.pipe_write, one as pointer[void], 1 as size_t)
+    }
+
+    ; A woken worker that found no wave item: take a wake credit.
+    procedure claim_credit() returns bool
+    {
+        repeat
+        {
+            let c scaly_atomic_load_u64(&fj_credit)
+            if c = 0
+                return false
+            if scaly_atomic_cas_u64(&fj_credit, c, c - 1) = c
+                return true
+        }
+        false
+    }
+
+    ; Take slot idx back (true: run the call inline) or learn that a thief
+    ; has it (false: join).
+    procedure pop(ctx: pointer[u64], idx: i64) returns bool
+    {
+        let d (*ctx) as pointer[ForkDeque]
+        if (idx as u64) >= d.pub
+        {
+            set d.bottom: idx as u64
+            return true
+        }
+        ForkJoin.lock(d)
+        if d.top <= (idx as u64)
+        {
+            set d.bottom: idx as u64
+            set d.pub: idx as u64
+            ForkJoin.unlock(d)
+            return true
+        }
+        ForkJoin.unlock(d)
+        false
+    }
+
+    ; Steal the oldest published slot of d for the thread whose deque index
+    ; is me; null when there is none.
+    procedure steal(mutable d: pointer[ForkDeque], me: i64) returns pointer[ForkSlot]
+    {
+        if d.top >= d.pub
+            return null
+        ForkJoin.lock(d)
+        let t d.top
+        if t >= d.pub
+        {
+            ForkJoin.unlock(d)
+            return null
+        }
+        let s ForkJoin.slot_at(d, t as i64)
+        set s.thief: me
+        scaly_atomic_store_u64(&s.state, 1 as u64)
+        set d.top: t + 1
+        ForkJoin.unlock(d)
+        scaly_atomic_add_u64(&fj_steals, 1 as u64)
+        s
+    }
+
+    ; Run a stolen slot: the emitted task stores the call's result into the
+    ; owner's cell, then the slot is done.
+    procedure run(mutable s: pointer[ForkSlot])
+    {
+        let r scaly_call_ptr(s.fn, s as pointer[void])
+        scaly_atomic_store_u64(&s.state, 2 as u64)
+    }
+
+    ; What a stolen slot carries, for the emitted task.
+    procedure slot_cell(s: pointer[void]) returns pointer[void]
+        (s as pointer[ForkSlot]).cell
+
+    procedure slot_depth(s: pointer[void]) returns i64
+        (s as pointer[ForkSlot]).depth
+
+    ; Wait for slot idx, which a thief took. The joiner helps from the
+    ; thief's deque — the work it waits for — and counts as idle meanwhile,
+    ; so the beat goes on and the thief keeps publishing.
+    procedure join(ctx: pointer[u64], idx: i64)
+    {
+        let d (*ctx) as pointer[ForkDeque]
+        let s ForkJoin.slot_at(d, idx)
+        scaly_atomic_add_u64(&fj_idle, 1 as u64)
+        while scaly_atomic_load_u64(&s.state) <> 2
+        {
+            let victim ForkJoin.registered(s.thief)
+            if victim <> null
+            {
+                let h ForkJoin.steal(victim, d.index)
+                if h <> null
+                {
+                    scaly_atomic_add_u64(&fj_idle, (0 - 1) as u64)
+                    ForkJoin.run(h)
+                    scaly_atomic_add_u64(&fj_idle, 1 as u64)
+                }
+            }
+        }
+        scaly_atomic_add_u64(&fj_idle, (0 - 1) as u64)
+        ForkJoin.lock(d)
+        set d.top: idx as u64
+        set d.pub: idx as u64
+        set d.bottom: idx as u64
+        ForkJoin.unlock(d)
+    }
+
+    ; A worker holding a wake credit: steal from every registered deque
+    ; until nothing turns up for a while, then go back to blocking.
+    procedure work()
+    {
+        let mine ForkJoin.own_deque()
+        if mine = null
+            return
+        scaly_atomic_add_u64(&fj_idle, 1 as u64)
+        var misses: i64 0
+        var k mine.index
+        while misses < FJ_SPIN
+        {
+            let n scaly_atomic_load_u64(&fj_count) as i64
+            var lim n
+            if lim > FJ_REGISTRY
+                set lim: FJ_REGISTRY
+            var found false
+            var j: i64 0
+            while j < lim and found = false
+            {
+                set k: k + 1
+                if k >= lim
+                    set k: 0
+                if k <> mine.index
+                {
+                    let victim ForkJoin.registered(k)
+                    if victim <> null
+                    {
+                        let h ForkJoin.steal(victim, mine.index)
+                        if h <> null
+                        {
+                            scaly_atomic_add_u64(&fj_idle, (0 - 1) as u64)
+                            ForkJoin.run(h)
+                            scaly_atomic_add_u64(&fj_idle, 1 as u64)
+                            set found: true
+                        }
+                    }
+                }
+                set j: j + 1
+            }
+            if found
+                set misses: 0
+            else
+                set misses: misses + 1
+        }
+        scaly_atomic_add_u64(&fj_idle, (0 - 1) as u64)
+    }
+
+    ; Observability for tests: steals and promotions so far.
+    procedure steal_count() returns u64
+        scaly_atomic_load_u64(&fj_steals)
+
+    procedure promotion_count() returns u64
+        scaly_atomic_load_u64(&fj_promotions)
+}
+
+; The fork-join ticker: a beat every FJ_TICK_US while fork points run; it
+; stops after FJ_QUIET_TICKS without one (ForkJoin.demand starts it again).
+procedure fork_ticker(arg: pointer[void]) returns pointer[void]
+{
+    var quiet: i64 0
+    repeat
+    {
+        scaly_eio_sleep_us(FJ_TICK_US)
+        if scaly_atomic_load_u64(&fj_state) <> 2
+        {
+            scaly_atomic_store_u64(&fj_ticker, 0 as u64)
+            return null
+        }
+        if scaly_atomic_load_u64(&fj_demand) <> 0
+        {
+            scaly_atomic_store_u64(&fj_demand, 0 as u64)
+            scaly_atomic_add_u64(&fj_beat, 1 as u64)
+            set quiet: 0
         }
         else
         {
-            ; Nobody is catching: leave the fault its normal course, with the
-            ; message and the exit code it always had.
-            let res scaly_call_ptr(w.fn, w.arg)
+            set quiet: quiet + 1
+            if quiet >= FJ_QUIET_TICKS
+            {
+                scaly_atomic_store_u64(&fj_ticker, 0 as u64)
+                if scaly_atomic_load_u64(&fj_demand) = 0
+                    return null
+                if scaly_atomic_cas_u64(&fj_ticker, 0 as u64, 1 as u64) <> 0
+                    return null
+                set quiet: 0
+            }
         }
-        TaskGroup.finish_one(g)
     }
 }

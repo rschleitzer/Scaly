@@ -499,7 +499,7 @@ procedure deadlock_event() @deep true linked
 ; dead, freed by their last release_page from any thread). Outside the
 ; user entry this frame must stay allocation-free — after the reclaim
 ; there is no allocator left to allocate from.
-procedure scaly_thread_start(mutable raw: pointer[void]) @ret_nonlocal true @deep true returns pointer[void] io linked
+procedure scaly_thread_start(mutable raw: pointer[void]) @ret_nonlocal true @deep true returns pointer[void] io reads fj_state linked
 
 
 
@@ -2774,14 +2774,9 @@ define TaskPool
 
 
 
-    ; Take one item: own deque first, then steal round-robin from the
-    ; others. Only called after a pipe byte was consumed, so at least
-    ; one item exists SOMEWHERE — a scan pass can still race a push in
-    ; flight, hence the outer retry loop (bounded by that push's
-    ; completion).
-    procedure take(mutable pl: pointer[TaskPool], start: i64) @ret_param_0 true @deep true returns ref[TaskItem] linked
-
-
+    ; One scan for an item, own deque first: null when none is queued (the
+    ; byte a worker consumed may have been a fork-join wake instead).
+    procedure try_take(mutable pl: pointer[TaskPool], start: i64) @page true @direct true @ret_param_0 true @deep true returns ref[TaskItem]? linked
 
 
 
@@ -2860,7 +2855,8 @@ define TaskPool
     ; the workers and frees the pool page). Safe there: every `parallel
     ; for` waits on its group before continuing, so nothing is in flight
     ; when the thread's entry has returned.
-    procedure drain_default() @ret_nonlocal true @deep true io linked
+    procedure drain_default() @ret_nonlocal true @deep true io reads fj_state linked
+
 
 
 
@@ -2878,7 +2874,496 @@ define TaskPool
 ; per task; results the task keeps go into caller-owned disjoint slots
 ; (see the module header). Runs on its own OS thread: everything it
 ; touches arrives through the spawn cell.
-procedure task_worker(arg: pointer[void]) @ret_nonlocal true @deep true returns pointer[void] io linked
+procedure task_worker(arg: pointer[void]) @ret_nonlocal true @deep true returns pointer[void] io reads fj_state linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+; ---- Fork-join of calls (ROADMAP 4.8, route 3) ----
+;
+; A pure function that calls itself twice in one expression (`f(l) + f(r)`)
+; is emitted in three bodies (Emitter.emit_fork_join_function): the entry
+; under the function's own name, a PLAIN clone for the deep levels, and a
+; FORKING clone that carries its depth and a context. At a fork point the
+; forking clone records its FIRST call latently on the thread's own deque
+; (push: plain stores, invisible to thieves), runs the SECOND inline, and
+; takes the first back (pop) unless it was stolen meanwhile (join). A ticker
+; bumps fj_beat every FJ_TICK_US while fork points run; a fork point that
+; sees a new beat while a worker is idle PUBLISHES the oldest latent entry of
+; its deque — the shallowest frame, the biggest pending call — and wakes a
+; worker (heartbeat scheduling, Acar et al. PLDI 2018). Promotions therefore
+; happen only when somebody can take them, and the cost of a fork point that
+; nobody steals is a few stores. The spike behind the numbers is in ROADMAP.
+;
+; Deque discipline, per thread: slots [top, pub) are published and
+; stealable, [pub, bottom) latent and the owner's alone. The owner pushes and
+; pops at the bottom without a lock while the slot is latent; publishing,
+; stealing and taking back a published slot go through the deque's spinlock.
+; A slot's state is 0 until a thief takes it (1) and finishes it (2).
+;
+; The context an emitted body carries is two words: this thread's deque and
+; the last beat it saw. ★The Emitter pins the mangled names of begin,
+; begin_task, push, beat, pop, join, slot_cell and slot_depth: grep for them
+; before re-signing any.
+;
+; Wakes share the pool's pipe with wave items. A byte is written per wave
+; item and per fork-join wake; a woken worker takes a wave item if it finds
+; one, else it claims a wake CREDIT (fj_credit, bumped before the byte) and
+; goes stealing. Invariant: bytes in the pipe + workers holding a byte =
+; queued wave items + credits, so a wave item is never left without a byte.
+
+define FJ_SLOTS: i64 64
+define FJ_REGISTRY: i64 256
+define FJ_TICK_US: u32 100
+; ticks without a fork point before the ticker stops (10 ms)
+define FJ_QUIET_TICKS: i64 100
+; empty registry scans before a stealing worker blocks again
+define FJ_SPIN: i64 2000
+
+define ForkSlot
+(
+    var fn: pointer[void]
+    var cell: pointer[void]
+    var depth: i64
+    var state: u64
+    var thief: i64
+)
+
+define ForkDeque
+(
+    var lock: u64
+    var top: u64
+    var pub: u64
+    var bottom: u64
+    slots: pointer[ForkSlot]
+    index: i64
+)
+
+; 0 not set up, 1 setting up, 2 ready, 3 off (one worker, or the pool is gone)
+shared atomic fj_state: u64 linked
+shared fj_registry: pointer[u64] linked
+shared fj_pool: pointer[TaskPool] linked
+shared atomic fj_count: u64 linked
+shared atomic fj_beat: u64 linked
+shared atomic fj_idle: u64 linked
+shared atomic fj_blocked: u64 linked
+shared atomic fj_credit: u64 linked
+shared atomic fj_demand: u64 linked
+shared atomic fj_ticker: u64 linked
+shared atomic fj_steals: u64 linked
+shared atomic fj_promotions: u64 linked
+; this thread's deque (registered on first use)
+mutable fj_deque: pointer[ForkDeque] linked
+
+; Sleep for a number of microseconds — the fork-join ticker's pace. Shim
+; rule (a): nanosleep and the Windows waitable timer are OS-specific.
+procedure scaly_eio_sleep_us(us: u32) extern
+
+define ForkJoin
+{
+    ; Set up once, on the first fork-capable entry. False when fork-join is
+    ; off: a pool of one worker (SCALY_WORKERS=1, a one-core box) never forks.
+    procedure ready() @ret_nonlocal true @deep true returns bool io reads fj_state linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ; Does this pool serve fork-join steals?
+    procedure serves(pl: pointer[TaskPool]) @ret_nonlocal true @deep true returns bool reads fj_state linked
+
+
+
+
+
+
+    ; The pool is going away: fork-join stops for good.
+    procedure retire(pl: pointer[TaskPool]) @ret_nonlocal true @deep true reads fj_state linked
+
+
+
+
+
+    procedure note_blocked(delta: u64) @ret_nonlocal true @deep true reads fj_blocked linked
+
+
+
+
+
+    ; The registry's k-th deque, null while its thread is still entering it.
+    procedure registered(k: i64) @ret_nonlocal true @deep true returns pointer[ForkDeque] linked
+
+
+    ; This thread's deque, registered on first use; null when the registry
+    ; is full (the thread then runs its fork points inline).
+    procedure own_deque() @ret_nonlocal true @deep true returns pointer[ForkDeque] reads fj_count linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    function slot_at(d: pointer[ForkDeque], idx: i64) @ret_param_0 true @deep true returns pointer[ForkSlot] linked
+
+
+    procedure lock(d: pointer[ForkDeque]) @deep true linked
+
+
+
+
+
+
+
+
+
+    procedure unlock(d: pointer[ForkDeque]) @ret_nonlocal true @deep true linked
+
+
+
+
+
+    ; Keep the ticker running while fork points run.
+    procedure demand() @ret_nonlocal true @deep true reads fj_demand linked
+
+
+
+
+
+
+
+
+
+
+    ; The entry of a fork-capable execution: fill the context and answer
+    ; whether its calls may fork. Not under a catch point (a fault in a stolen
+    ; call could not reach it), not without a second worker.
+    procedure begin(mutable ctx: pointer[u64]) @ret_nonlocal true @deep true returns bool io reads fj_beat linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ; The context of a stolen call, on the thread that runs it.
+    procedure begin_task(mutable ctx: pointer[u64]) @deep true reads fj_beat linked
+
+
+
+
+
+    ; Record fn(cell) latently: its slot index, or -1 when the deque is full
+    ; (the fork point then runs both calls inline).
+    procedure push(ctx: pointer[u64], fn: pointer[void], cell: pointer[void], depth: i64) @ret_nonlocal true @deep true returns i64 linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ; A fork point's heartbeat check: on a new beat, keep the ticker alive
+    ; and, if a worker is idle, publish this deque's oldest latent slot.
+    procedure beat(mutable ctx: pointer[u64]) @deep true io reads fj_beat linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ; Wake a blocked worker of the pool, if there is one.
+    procedure wake() @deep true io reads fj_blocked linked
+
+
+
+
+
+
+
+
+
+    ; A woken worker that found no wave item: take a wake credit.
+    procedure claim_credit() @ret_nonlocal true @deep true returns bool reads fj_credit linked
+
+
+
+
+
+
+
+
+
+
+
+
+    ; Take slot idx back (true: run the call inline) or learn that a thief
+    ; has it (false: join).
+    procedure pop(ctx: pointer[u64], idx: i64) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ; Steal the oldest published slot of d for the thread whose deque index
+    ; is me; null when there is none.
+    procedure steal(mutable d: pointer[ForkDeque], me: i64) @ret_param_0 true @deep true returns pointer[ForkSlot] reads fj_steals linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ; Run a stolen slot: the emitted task stores the call's result into the
+    ; owner's cell, then the slot is done.
+    procedure run(mutable s: pointer[ForkSlot]) @ret_nonlocal true @deep true io linked
+
+
+
+
+
+    ; What a stolen slot carries, for the emitted task.
+    procedure slot_cell(s: pointer[void]) @ret_param_0 true @deep true returns pointer[void] linked
+
+
+    procedure slot_depth(s: pointer[void]) @ret_param_0 true @deep true returns i64 linked
+
+
+    ; Wait for slot idx, which a thief took. The joiner helps from the
+    ; thief's deque — the work it waits for — and counts as idle meanwhile,
+    ; so the beat goes on and the thief keeps publishing.
+    procedure join(ctx: pointer[u64], idx: i64) @ret_nonlocal true @deep true io reads fj_idle linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ; A worker holding a wake credit: steal from every registered deque
+    ; until nothing turns up for a while, then go back to blocking.
+    procedure work() @deep true io reads fj_idle linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ; Observability for tests: steals and promotions so far.
+    procedure steal_count() @ret_nonlocal true @deep true returns u64 reads fj_steals linked
+
+
+    procedure promotion_count() @ret_nonlocal true @deep true returns u64 reads fj_promotions linked
+
+}
+
+; The fork-join ticker: a beat every FJ_TICK_US while fork points run; it
+; stops after FJ_QUIET_TICKS without one (ForkJoin.demand starts it again).
+procedure fork_ticker(arg: pointer[void]) @ret_nonlocal true @deep true returns pointer[void] io reads fj_state linked
 
 
 

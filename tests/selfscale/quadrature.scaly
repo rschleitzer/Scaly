@@ -1,0 +1,47 @@
+; quadrature — adaptive Simpson integration of a function with sharp peaks:
+; the recursion splits an interval in halves until the estimate is good
+; enough, so the call tree is deep where the function bends and shallow where
+; it is flat. `adapt(a, m, …) + adapt(m, b, …)` is the plain pattern: the
+; engine runs the two calls in parallel once the recursion proves long, and
+; adds them in the same order either way, so the digits are those of the
+; sequential run (ROADMAP 4.8, route 3).
+
+function g(x: double) returns double
+{
+    ; two hundred narrow peaks of varying width on a slow ramp
+    var y x * 0.1
+    var k 0
+    while k < 200
+    {
+        let c (k as double) * 0.01461 + 0.05
+        let d x - c
+        set y: y + 1.0 / (d * d + 0.00001 * ((k % 7 + 1) as double))
+        set k: k + 1
+    }
+    y
+}
+
+function simpson(a: double, b: double) returns double
+    (b - a) / 6.0 * (g(a) + 4.0 * g((a + b) * 0.5) + g(b))
+
+function adapt(a: double, b: double, whole: double, eps: double, depth: int) returns double
+{
+    let m (a + b) * 0.5
+    let l simpson(a, m)
+    let r simpson(m, b)
+    let diff l + r - whole
+    if depth = 0 or (diff < 15.0 * eps and diff > 0.0 - 15.0 * eps)
+        return l + r + diff / 15.0
+    adapt(a, m, l, eps * 0.5, depth - 1) + adapt(m, b, r, eps * 0.5, depth - 1)
+}
+
+var total: double 0.0
+var k 0
+while k < 12
+{
+    let lo (k as double) * 0.25
+    set total: total + adapt(lo, lo + 0.25, simpson(lo, lo + 0.25), 0.000000000001, 60)
+    set k: k + 1
+}
+let scaled (total * 1000000.0) as i64
+print("quadrature: `scaled` (x 1e-6)")

@@ -373,6 +373,23 @@ define Emitter
         ; pointer[Page] FIELD of the receiver, as in opensp's Parser) by loading
         ; this.<field>. scaly/scalyc never use `^field`, so this stays neutral.
         var current_receiver_concept: String
+        ; Route 3 (ROADMAP 4.8): fork-join of calls. fj_self is the mangled
+        ; name of the function being emitted when it qualifies
+        ; (fork_join_eligible#); fj_mode says which body is being emitted:
+        ; 0 the ordinary one (a fork pair only sets fj_seen), 1 the plain
+        ; clone, 2 the forking clone, whose depth and context are fj_depth and
+        ; fj_ctx. See emit_fork_join_function#.
+        var fj_mode: i64
+        var fj_self: String
+        var fj_seen: bool
+        var fj_seq_fn: LLVMValueRef
+        var fj_fj_fn: LLVMValueRef
+        var fj_task_fn: LLVMValueRef
+        var fj_depth: LLVMValueRef
+        var fj_ctx: LLVMValueRef
+        ; a value emit_binding takes instead of evaluating its initializer
+        ; (the left binding of a fork-join `let` pair)
+        var fj_preset: LLVMValueRef
     )
     {
         init(cfg: EmitterConfig)
@@ -438,6 +455,15 @@ define Emitter
             set parfor_locals: Array[String]^this()
             set region_walkers: Array[String]^this()
             set parfor_captures: Array[String]^this()
+            set fj_mode: 0
+            set fj_self: String()
+            set fj_seen: false
+            set fj_seq_fn: null
+            set fj_fj_fn: null
+            set fj_task_fn: null
+            set fj_depth: null
+            set fj_ctx: null
+            set fj_preset: null
             set weight_memo_names: Array[String]^this()
             set weight_memo_vals: Array[size_t]^this()
             set weight_stack: Array[String]^this()
@@ -6158,12 +6184,545 @@ define Emitter
         }
 
         ; Emit function body (implementation)
+        ; ------------------------------------------------------------------
+        ; Route 3 (ROADMAP 4.8): fork-join of calls. A pure free function f
+        ; whose parameters and result are scalars and whose body contains a
+        ; FORK PAIR — `f(a) OP f(b)`, OP any binary operator but a short-
+        ; circuiting one — is emitted in four pieces:
+        ;   f         the entry: ForkJoin.begin, then f.fj at depth 0, or
+        ;             f.fjseq when fork-join is off (one worker, a catch point)
+        ;   f.fjseq   the plain body; its self calls call itself
+        ;   f.fj      the forking body, (params, depth, ctx): from depth
+        ;             FJ_DEPTH_LIMIT on it hands over to f.fjseq; a fork pair
+        ;             records the left call latently, runs the right one,
+        ;             then takes the left back or joins it (fiber.scaly's
+        ;             ForkJoin carries the protocol)
+        ;   f.fjtask  a stolen left call: unpacks the cell, runs f.fj
+        ; A function without a fork pair is emitted exactly as before: the
+        ; ordinary emission is the detection pass, and only a pair it met
+        ; replaces the body. -g keeps the plain function (one subprogram per
+        ; body).
+        ; ------------------------------------------------------------------
+
+        procedure fork_join_eligible(mutable this, mutable func: PlannedFunction, mutable llvm_func: LLVMValueRef) returns bool
+        {
+            if func.pure = false or func.can_throw or func.page_parameter <> null
+                return false
+            if config.emit_debug_info
+                return false
+            if func.file.contains("scaly/memory/") or func.file.contains("scaly/fiber")
+                return false
+            var is_action false
+            choose func.impl
+                when fa: Action
+                    set is_action: true
+                else
+                    0
+            if is_action = false
+                return false
+            var user_count: size_t 0
+            if func.input <> null
+            {
+                let inp func.input.unwrap()
+                set user_count: inp.length
+                if user_count > 0
+                {
+                    let first inp.get 0
+                    if first <> null and (*first).name <> null
+                    {
+                        let pname: String (*first).name.unwrap()
+                        if pname = "this"
+                            return false
+                    }
+                }
+            }
+            let fty LLVMGlobalGetValueType(llvm_func)
+            let rk LLVMGetTypeKind(LLVMGetReturnType(fty))
+            if rk <> LLVMTypeKind.Integer() and rk <> LLVMTypeKind.Float() and rk <> LLVMTypeKind.Double()
+                return false
+            let n LLVMCountParamTypes(fty) as size_t
+            if n <> user_count
+                return false
+            var ptys Vector[LLVMTypeRef](n)
+            if n > 0
+                LLVMGetParamTypes(fty, ptys.data)
+            var i: size_t 0
+            while i < n
+            {
+                let k LLVMGetTypeKind(ptys[i])
+                if k <> LLVMTypeKind.Integer() and k <> LLVMTypeKind.Float() and k <> LLVMTypeKind.Double() and k <> LLVMTypeKind.Pointer()
+                    return false
+                set i: i + 1
+            }
+            true
+        }
+
+        ; A direct call of the function being emitted, nothing selected from it.
+        function fj_self_call(this, op: PlannedOperand) returns bool
+        {
+            if op.member_access <> null
+                return false
+            choose op.expr
+                when c: Call
+                {
+                    if c.is_intrinsic or c.is_indirect
+                        return false
+                    return c.mangled_name = fj_self
+                }
+                else
+                    return false
+            false
+        }
+
+        function fj_pair(this, lhs: PlannedOperand, rhs: PlannedOperand) returns bool
+            fj_self.get_length() > 0 and this.fj_self_call(lhs) and this.fj_self_call(rhs)
+
+        procedure fj_runtime(mutable this, mutable mangled: String, mutable ret: LLVMTypeRef, mutable params: Vector[LLVMTypeRef]) returns LLVMValueRef
+        {
+            let fty LLVMFunctionType(ret, params.data, params.length as u32, 0)
+            this.get_parfor_runtime_fn(mangled, fty)
+        }
+
+        procedure fj_ptr(mutable this) returns LLVMTypeRef
+            LLVMPointerTypeInContext(context, 0)
+
+        procedure fj_i64(mutable this) returns LLVMTypeRef
+            LLVMInt64TypeInContext(context)
+
+        ; The cell a fork pair hands the left call through: its arguments,
+        ; then its result.
+        procedure fj_cell_type(mutable this, mutable fty: LLVMTypeRef) returns LLVMTypeRef
+        {
+            let n LLVMCountParamTypes(fty) as size_t
+            var tys Vector[LLVMTypeRef](n + 1)
+            if n > 0
+                LLVMGetParamTypes(fty, tys.data)
+            tys.put(n, LLVMGetReturnType(fty))
+            LLVMStructTypeInContext(context, tys.data, (n + 1) as u32, 0)
+        }
+
+        ; Emit a call's arguments, each at its parameter's type.
+        procedure fj_args(mutable this, mutable call: PlannedCall, mutable fty: LLVMTypeRef, extra: size_t) returns Vector[LLVMValueRef]
+        {
+            let n LLVMCountParamTypes(fty) as size_t
+            var ptys Vector[LLVMTypeRef](n)
+            if n > 0
+                LLVMGetParamTypes(fty, ptys.data)
+            var vals Vector[LLVMValueRef](n + extra)
+            if call.args <> null
+            {
+                let args (*call.args)
+                var i: size_t 0
+                while i < args.length and i < n
+                {
+                    let ap args.get i
+                    if ap <> null
+                    {
+                        var v emit_operand(*ap)
+                        let want ptys[i]
+                        if LLVMGetTypeKind(want) = LLVMTypeKind.Integer() and LLVMGetTypeKind(LLVMTypeOf v) = LLVMTypeKind.Integer()
+                        {
+                            if LLVMGetIntTypeWidth(want) <> LLVMGetIntTypeWidth(LLVMTypeOf v)
+                                set v: LLVMBuildIntCast2(builder, v, want, 1, "fj.arg")
+                        }
+                        vals.put(i, v)
+                    }
+                    set i: i + 1
+                }
+            }
+            vals
+        }
+
+        procedure fj_next_depth(mutable this) returns LLVMValueRef
+            LLVMBuildAdd(builder, fj_depth, LLVMConstInt(LLVMInt64TypeInContext(context), 1, 0), "fj.depth")
+
+        ; A self call inside a clone: the plain clone calls itself, the forking
+        ; clone one level deeper.
+        procedure emit_fj_self_call(mutable this, mutable call: PlannedCall) returns LLVMValueRef
+        {
+            if fj_mode = 1
+            {
+                let sty LLVMGlobalGetValueType(fj_seq_fn)
+                var sargs this.fj_args(call, sty, 0)
+                return LLVMBuildCall2(builder, sty, fj_seq_fn, sargs.data, sargs.length as u32, "fj.seq")
+            }
+            let seq_ty LLVMGlobalGetValueType(fj_seq_fn)
+            let fty LLVMGlobalGetValueType(fj_fj_fn)
+            let n LLVMCountParamTypes(seq_ty) as size_t
+            var args this.fj_args(call, seq_ty, 2)
+            args.put(n, this.fj_next_depth())
+            args.put(n + 1, fj_ctx)
+            LLVMBuildCall2(builder, fty, fj_fj_fn, args.data, args.length as u32, "fj.call")
+        }
+
+        ; The forking clone's entry: from the depth limit on, the plain clone.
+        procedure emit_fj_prologue(mutable this, mutable llvm_func: LLVMValueRef, n: size_t)
+        {
+            set fj_depth: LLVMGetParam(llvm_func, n as u32)
+            set fj_ctx: LLVMGetParam(llvm_func, (n + 1) as u32)
+            ; FJ_DEPTH_LIMIT: 12 levels of fork points above the plain clone
+            ; (ROADMAP 4.8, route 3: the spike's trade between a pathological
+            ; node without work and the parallelism of a deep recursion)
+            let limit LLVMConstInt(this.fj_i64(), 12, 0)
+            let deep LLVMBuildICmp(builder, LLVMIntPredicate.SGE(), fj_depth, limit, "fj.deep")
+            let deep_bb LLVMAppendBasicBlockInContext(context, llvm_func, "fj.plain")
+            let body_bb LLVMAppendBasicBlockInContext(context, llvm_func, "fj.body")
+            LLVMBuildCondBr(builder, deep, deep_bb, body_bb)
+            LLVMPositionBuilderAtEnd(builder, deep_bb)
+            let sty LLVMGlobalGetValueType(fj_seq_fn)
+            var vals Vector[LLVMValueRef](n)
+            var i: size_t 0
+            while i < n
+            {
+                var v LLVMGetParam(llvm_func, i as u32)
+                if tail_loop_block <> null
+                {
+                    let phi_ptr tail_loop_phis.get i
+                    if phi_ptr <> null
+                        set v: (*phi_ptr)
+                }
+                vals.put(i, v)
+                set i: i + 1
+            }
+            let r LLVMBuildCall2(builder, sty, fj_seq_fn, vals.data, n as u32, "fj.plain")
+            LLVMBuildRet(builder, r)
+            LLVMPositionBuilderAtEnd(builder, body_bb)
+        }
+
+        ; `f(a) OP f(b)` in the forking clone.
+        procedure emit_fj_pair(mutable this, mutable call: PlannedCall, mutable lhs: PlannedOperand, mutable rhs: PlannedOperand) returns LLVMValueRef
+        {
+            var right: LLVMValueRef null
+            let left this.emit_fj_fork(lhs, &rhs, null, &right)
+            if left = null
+                return null
+            emit_intrinsic_binary_op(call.name, left, right, call.result_type, lhs.result_type, rhs.result_type)
+        }
+
+        ; `let a f(x)` + `let b f(y)` in the forking clone.
+        procedure emit_fj_let_pair(mutable this, mutable s1: PlannedStatement, mutable s2: PlannedStatement)
+        {
+            choose s1
+                when b1: Binding
+                {
+                    choose s2
+                        when b2: Binding
+                        {
+                            let op1 (*b1.operation)[0]
+                            var right: LLVMValueRef null
+                            var second b2
+                            let left this.emit_fj_fork(op1, null, &second, &right)
+                            set fj_preset: left
+                            var first b1
+                            emit_binding first
+                        }
+                        else
+                            0
+                }
+                else
+                    0
+        }
+
+        ; Is s1, s2 a pair of `let`s each bound to a self call, the second's
+        ; arguments free of the first's name?
+        function fj_let_pair(this, s1: PlannedStatement, s2: PlannedStatement) returns bool
+        {
+            choose s1
+                when b1: Binding
+                {
+                    if b1.binding_type = "var" or b1.binding_item.name = null or b1.operation = null
+                        return false
+                    let ops1 (*b1.operation)
+                    if ops1.length <> 1 or this.fj_self_call(ops1[0]) = false
+                        return false
+                    let name: String b1.binding_item.name.unwrap()
+                    choose s2
+                        when b2: Binding
+                        {
+                            if b2.operation = null
+                                return false
+                            let ops2 (*b2.operation)
+                            if ops2.length <> 1 or this.fj_self_call(ops2[0]) = false
+                                return false
+                            return Emitter.fj_mentions(ops2[0], name) = false
+                        }
+                        else
+                            return false
+                }
+                else
+                    return false
+            false
+        }
+
+        ; Does op (a self call's arguments) possibly read name? Unknown shapes
+        ; answer yes.
+        function fj_mentions(op: PlannedOperand, name: String) returns bool
+        {
+            choose op.expr
+                when v: Variable
+                    return v.name = name
+                when k: Constant
+                    return false
+                when c: Call
+                {
+                    if c.args = null
+                        return false
+                    for a in c.args
+                    {
+                        if Emitter.fj_mentions(a, name)
+                            return true
+                    }
+                    return false
+                }
+                else
+                    return true
+            true
+        }
+
+        ; The heart of a fork pair: the left call's arguments go into a cell,
+        ; the call is recorded latently, the right side runs inline (an
+        ; operand, or a binding), then the left call is taken back and run
+        ; here or joined from its thief. Answers the left call's value.
+        procedure emit_fj_fork(mutable this, mutable lhs: PlannedOperand, mutable rhs_op: ref[PlannedOperand]?, mutable rhs_bind: ref[PlannedBinding]?, mutable right_out: ref[LLVMValueRef]) returns LLVMValueRef
+        {
+            var lcall: ref[PlannedCall]? null
+            choose lhs.expr
+                when c: Call
+                    set lcall: &c
+                else
+                    0
+            if lcall = null
+                return null
+            let seq_ty LLVMGlobalGetValueType(fj_seq_fn)
+            let fty LLVMGlobalGetValueType(fj_fj_fn)
+            let rty LLVMGetReturnType(seq_ty)
+            let n LLVMCountParamTypes(seq_ty) as size_t
+            let cell_ty this.fj_cell_type(seq_ty)
+            let cell this.entry_alloca(cell_ty, "fj.cell")
+            var args this.fj_args(*lcall, seq_ty, 2)
+            var i: size_t 0
+            while i < n
+            {
+                LLVMBuildStore(builder, args[i], LLVMBuildStructGEP2(builder, cell_ty, cell, i as u32, "fj.arg.slot"))
+                set i: i + 1
+            }
+            let ptr_ty this.fj_ptr()
+            let i64_ty this.fj_i64()
+            let void_ty LLVMVoidTypeInContext(context)
+            let i1_ty LLVMInt1TypeInContext(context)
+            var p1 Vector[LLVMTypeRef](1)
+            p1.put(0, ptr_ty)
+            var beat_args Vector[LLVMValueRef](1)
+            beat_args.put(0, fj_ctx)
+            let beat_fn this.fj_runtime("_ZN8ForkJoin4beatEP3u64", void_ty, p1)
+            LLVMBuildCall2(builder, LLVMGlobalGetValueType(beat_fn), beat_fn, beat_args.data, 1, "")
+            let depth1 this.fj_next_depth()
+            var p4 Vector[LLVMTypeRef](4)
+            p4.put(0, ptr_ty)
+            p4.put(1, ptr_ty)
+            p4.put(2, ptr_ty)
+            p4.put(3, i64_ty)
+            let push_fn this.fj_runtime("_ZN8ForkJoin4pushEP3u64PvPv3i64", i64_ty, p4)
+            var push_args Vector[LLVMValueRef](4)
+            push_args.put(0, fj_ctx)
+            push_args.put(1, fj_task_fn)
+            push_args.put(2, cell)
+            push_args.put(3, depth1)
+            let idx LLVMBuildCall2(builder, LLVMGlobalGetValueType(push_fn), push_fn, push_args.data, 4, "fj.idx")
+            ; the right side, inline (its self call goes one level deeper)
+            if rhs_op <> null
+                set right_out: emit_operand(*rhs_op)
+            if rhs_bind <> null
+                emit_binding(*rhs_bind)
+            let fn_now current_function
+            let inline_bb LLVMAppendBasicBlockInContext(context, fn_now, "fj.inline")
+            let try_bb LLVMAppendBasicBlockInContext(context, fn_now, "fj.pop")
+            let join_bb LLVMAppendBasicBlockInContext(context, fn_now, "fj.join")
+            let done_bb LLVMAppendBasicBlockInContext(context, fn_now, "fj.done")
+            let full LLVMBuildICmp(builder, LLVMIntPredicate.SLT(), idx, LLVMConstInt(i64_ty, 0, 0), "fj.full")
+            LLVMBuildCondBr(builder, full, inline_bb, try_bb)
+            LLVMPositionBuilderAtEnd(builder, try_bb)
+            var p2 Vector[LLVMTypeRef](2)
+            p2.put(0, ptr_ty)
+            p2.put(1, i64_ty)
+            var ci Vector[LLVMValueRef](2)
+            ci.put(0, fj_ctx)
+            ci.put(1, idx)
+            let pop_fn this.fj_runtime("_ZN8ForkJoin3popEP3u643i64", i1_ty, p2)
+            let popped LLVMBuildCall2(builder, LLVMGlobalGetValueType(pop_fn), pop_fn, ci.data, 2, "fj.popped")
+            LLVMBuildCondBr(builder, popped, inline_bb, join_bb)
+            ; taken back: the left call here
+            LLVMPositionBuilderAtEnd(builder, inline_bb)
+            args.put(n, depth1)
+            args.put(n + 1, fj_ctx)
+            let left_inline LLVMBuildCall2(builder, fty, fj_fj_fn, args.data, args.length as u32, "fj.left")
+            LLVMBuildBr(builder, done_bb)
+            ; stolen: wait for the thief, read its result out of the cell
+            LLVMPositionBuilderAtEnd(builder, join_bb)
+            let join_fn this.fj_runtime("_ZN8ForkJoin4joinEP3u643i64", void_ty, p2)
+            LLVMBuildCall2(builder, LLVMGlobalGetValueType(join_fn), join_fn, ci.data, 2, "")
+            let left_joined LLVMBuildLoad2(builder, rty, LLVMBuildStructGEP2(builder, cell_ty, cell, n as u32, "fj.res.slot"), "fj.res")
+            LLVMBuildBr(builder, done_bb)
+            LLVMPositionBuilderAtEnd(builder, done_bb)
+            let phi LLVMBuildPhi(builder, rty, "fj.left")
+            var pv Vector[LLVMValueRef](2)
+            var pb Vector[LLVMBasicBlockRef](2)
+            pv.put(0, left_inline)
+            pb.put(0, inline_bb)
+            pv.put(1, left_joined)
+            pb.put(1, join_bb)
+            LLVMAddIncoming(phi, pv.data, pb.data, 2)
+            phi
+        }
+
+        ; Replace func's ordinary body by the fork-join trio (see above).
+        procedure emit_fork_join_function(mutable this, mutable func: PlannedFunction, mutable llvm_func: LLVMValueRef)
+        {
+            var bb LLVMGetFirstBasicBlock(llvm_func)
+            while bb <> null
+            {
+                LLVMDeleteBasicBlock(bb)
+                set bb: LLVMGetFirstBasicBlock(llvm_func)
+            }
+            let fty LLVMGlobalGetValueType(llvm_func)
+            let n LLVMCountParamTypes(fty) as size_t
+            let rty LLVMGetReturnType(fty)
+            let ptr_ty this.fj_ptr()
+            let i64_ty this.fj_i64()
+            var fj_params Vector[LLVMTypeRef](n + 2)
+            if n > 0
+                LLVMGetParamTypes(fty, fj_params.data)
+            fj_params.put(n, i64_ty)
+            fj_params.put(n + 1, ptr_ty)
+            let fj_ty LLVMFunctionType(rty, fj_params.data, (n + 2) as u32, 0)
+            var tp Vector[LLVMTypeRef](1)
+            tp.put(0, ptr_ty)
+            let task_ty LLVMFunctionType(ptr_ty, tp.data, 1, 0)
+            let seq_name "`func.mangled_name`.fjseq"
+            let fj_name "`func.mangled_name`.fj"
+            let task_name "`func.mangled_name`.fjtask"
+            set fj_seq_fn: LLVMAddFunction(llvm_module, seq_name.to_c_string(), fty)
+            LLVMSetLinkage(fj_seq_fn, LLVMLinkage.Internal())
+            set fj_fj_fn: LLVMAddFunction(llvm_module, fj_name.to_c_string(), fj_ty)
+            LLVMSetLinkage(fj_fj_fn, LLVMLinkage.Internal())
+            set fj_task_fn: LLVMAddFunction(llvm_module, task_name.to_c_string(), task_ty)
+            LLVMSetLinkage(fj_task_fn, LLVMLinkage.Internal())
+            set fj_mode: 1
+            this.emit_function_body_into(func, fj_seq_fn)
+            set fj_mode: 2
+            this.emit_function_body_into(func, fj_fj_fn)
+            set fj_mode: 0
+            set current_function: null
+            this.emit_fj_task(fty, fj_ty)
+            this.emit_fj_entry(llvm_func, fty, fj_ty)
+        }
+
+        ; f.fjtask(slot): the left call of a pair, on the thread that stole it.
+        procedure emit_fj_task(mutable this, mutable fty: LLVMTypeRef, mutable fj_ty: LLVMTypeRef)
+        {
+            let n LLVMCountParamTypes(fty) as size_t
+            let rty LLVMGetReturnType(fty)
+            let ptr_ty this.fj_ptr()
+            let i64_ty this.fj_i64()
+            let void_ty LLVMVoidTypeInContext(context)
+            let entry LLVMAppendBasicBlockInContext(context, fj_task_fn, "entry")
+            LLVMPositionBuilderAtEnd(builder, entry)
+            clear_debug_location()
+            let slot LLVMGetParam(fj_task_fn, 0)
+            var p1 Vector[LLVMTypeRef](1)
+            p1.put(0, ptr_ty)
+            var a1 Vector[LLVMValueRef](1)
+            a1.put(0, slot)
+            let cell_fn this.fj_runtime("_ZN8ForkJoin9slot_cellEPv", ptr_ty, p1)
+            let cell LLVMBuildCall2(builder, LLVMGlobalGetValueType(cell_fn), cell_fn, a1.data, 1, "fj.cell")
+            let depth_fn this.fj_runtime("_ZN8ForkJoin10slot_depthEPv", i64_ty, p1)
+            let depth LLVMBuildCall2(builder, LLVMGlobalGetValueType(depth_fn), depth_fn, a1.data, 1, "fj.depth")
+            let ctx LLVMBuildAlloca(builder, LLVMArrayType(i64_ty, 2), "fj.ctx")
+            var a2 Vector[LLVMValueRef](1)
+            a2.put(0, ctx)
+            let bt_fn this.fj_runtime("_ZN8ForkJoin10begin_taskEP3u64", void_ty, p1)
+            LLVMBuildCall2(builder, LLVMGlobalGetValueType(bt_fn), bt_fn, a2.data, 1, "")
+            let cell_ty this.fj_cell_type(fty)
+            var ptys Vector[LLVMTypeRef](n)
+            if n > 0
+                LLVMGetParamTypes(fty, ptys.data)
+            var args Vector[LLVMValueRef](n + 2)
+            var i: size_t 0
+            while i < n
+            {
+                args.put(i, LLVMBuildLoad2(builder, ptys[i], LLVMBuildStructGEP2(builder, cell_ty, cell, i as u32, "fj.arg.slot"), "fj.arg"))
+                set i: i + 1
+            }
+            args.put(n, depth)
+            args.put(n + 1, ctx)
+            let r LLVMBuildCall2(builder, fj_ty, fj_fj_fn, args.data, (n + 2) as u32, "fj.r")
+            LLVMBuildStore(builder, r, LLVMBuildStructGEP2(builder, cell_ty, cell, n as u32, "fj.res.slot"))
+            LLVMBuildRet(builder, LLVMConstNull(ptr_ty))
+        }
+
+        ; f itself: the entry of a fork-capable execution.
+        procedure emit_fj_entry(mutable this, mutable llvm_func: LLVMValueRef, mutable fty: LLVMTypeRef, mutable fj_ty: LLVMTypeRef)
+        {
+            let n LLVMCountParamTypes(fty) as size_t
+            let ptr_ty this.fj_ptr()
+            let i64_ty this.fj_i64()
+            let i1_ty LLVMInt1TypeInContext(context)
+            let entry LLVMAppendBasicBlockInContext(context, llvm_func, "entry")
+            LLVMPositionBuilderAtEnd(builder, entry)
+            clear_debug_location()
+            let ctx LLVMBuildAlloca(builder, LLVMArrayType(i64_ty, 2), "fj.ctx")
+            var p1 Vector[LLVMTypeRef](1)
+            p1.put(0, ptr_ty)
+            var a1 Vector[LLVMValueRef](1)
+            a1.put(0, ctx)
+            let begin_fn this.fj_runtime("_ZN8ForkJoin5beginEP3u64", i1_ty, p1)
+            let ok LLVMBuildCall2(builder, LLVMGlobalGetValueType(begin_fn), begin_fn, a1.data, 1, "fj.ok")
+            let par_bb LLVMAppendBasicBlockInContext(context, llvm_func, "fj.fork")
+            let seq_bb LLVMAppendBasicBlockInContext(context, llvm_func, "fj.plain")
+            LLVMBuildCondBr(builder, ok, par_bb, seq_bb)
+            var args Vector[LLVMValueRef](n + 2)
+            var i: size_t 0
+            while i < n
+            {
+                args.put(i, LLVMGetParam(llvm_func, i as u32))
+                set i: i + 1
+            }
+            LLVMPositionBuilderAtEnd(builder, seq_bb)
+            let rs LLVMBuildCall2(builder, fty, fj_seq_fn, args.data, n as u32, "fj.r")
+            LLVMBuildRet(builder, rs)
+            LLVMPositionBuilderAtEnd(builder, par_bb)
+            args.put(n, LLVMConstInt(i64_ty, 0, 0))
+            args.put(n + 1, ctx)
+            let rp LLVMBuildCall2(builder, fj_ty, fj_fj_fn, args.data, (n + 2) as u32, "fj.r")
+            LLVMBuildRet(builder, rp)
+        }
+
         procedure emit_function_body(mutable this, mutable func: PlannedFunction) returns bool
         {
             ; Get the LLVM function (should already be declared)
             let llvm_func lookup_function_cache func.mangled_name
             if llvm_func = null
                 return false
+            ; Route 3: a qualifying function is emitted as usual first; a fork
+            ; pair met on the way (fj_seen) turns it into the fork-join trio.
+            set fj_mode: 0
+            set fj_seen: false
+            set fj_self: String()
+            if this.fork_join_eligible(func, llvm_func)
+                set fj_self: func.mangled_name
+            let ok this.emit_function_body_into(func, llvm_func)
+            if fj_seen
+                this.emit_fork_join_function(func, llvm_func)
+            set fj_self: String()
+            set fj_seen: false
+            set fj_mode: 0
+            ok
+        }
+
+        ; The body of func into llvm_func: its own symbol, or one of the
+        ; fork-join clones (fj_mode 1, 2).
+        procedure emit_function_body_into(mutable this, mutable func: PlannedFunction, mutable llvm_func: LLVMValueRef) returns bool
+        {
 
             ; s196: a fresh function starts with no local root page; its slot is
             ; reserved lazily by get_or_create_local_page, the page itself is
@@ -6375,6 +6934,11 @@ define Emitter
                             set i: i + 1
                         }
                     }
+
+                    ; Route 3: the forking clone hands the deep levels to the
+                    ; plain clone.
+                    if fj_mode = 2
+                        this.emit_fj_prologue(llvm_func, user_param_count)
 
                     ; Emit the action (function body)
                     let result emit_action action
@@ -10326,6 +10890,11 @@ define Emitter
                 return null
             }
 
+            ; Route 3: in a fork-join clone a call of the function itself goes
+            ; to the clone.
+            if fj_mode <> 0 and call.is_intrinsic = false and fj_self.get_length() > 0 and call.mangled_name = fj_self
+                return this.emit_fj_self_call(call)
+
             ; Check if this is an intrinsic operator
             if call.is_intrinsic
             {
@@ -11517,8 +12086,16 @@ define Emitter
                 }
 
                 let lhs_op left_arg.unwrap()
-                let left emit_operand(lhs_op)
                 let rhs_op right_arg.unwrap()
+                ; Route 3: `f(l) OP f(r)` inside f is a fork pair.
+                if this.fj_pair(lhs_op, rhs_op)
+                {
+                    if fj_mode = 2
+                        return this.emit_fj_pair(call, lhs_op, rhs_op)
+                    if fj_mode = 0
+                        set fj_seen: true
+                }
+                let left emit_operand(lhs_op)
                 let right emit_operand(rhs_op)
                 return emit_intrinsic_binary_op(call.name, left, right, call.result_type, lhs_op.result_type, rhs_op.result_type)
             }
@@ -13124,8 +13701,27 @@ define Emitter
 
             if block.statements <> null
             {
-                for stmt in block.statements
+                let stmts (*block.statements)
+                var si: size_t 0
+                while si < stmts.length
                 {
+                    let stmt stmts[si]
+                    set si: si + 1
+                    ; Route 3: `let a f(x)` followed by `let b f(y)` inside f.
+                    if fj_self.get_length() > 0 and si < stmts.length
+                    {
+                        if this.fj_let_pair(stmt, stmts[si])
+                        {
+                            if fj_mode = 0
+                                set fj_seen: true
+                            if fj_mode = 2
+                            {
+                                this.emit_fj_let_pair(stmt, stmts[si])
+                                set si: si + 1
+                                continue
+                            }
+                        }
+                    }
                     choose stmt
                         when action: Action
                         {
@@ -20043,8 +20639,14 @@ define Emitter
         {
             var value: LLVMValueRef null
 
+            ; Route 3: the left binding of a fork-join pair arrives computed.
+            if fj_preset <> null
+            {
+                set value: fj_preset
+                set fj_preset: null
+            }
             ; Emit initialization expression if present
-            if binding.operation <> null
+            else if binding.operation <> null
             {
                 if binding.operation.length > 0
                 {

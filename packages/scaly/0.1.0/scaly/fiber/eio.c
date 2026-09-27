@@ -588,6 +588,17 @@ int scaly_eio_ncpu(void)
     return (int)n;
 }
 
+/* Sleep for us microseconds — the fork-join ticker's pace (ROADMAP 4.8,
+ * route 3). Shim rule (a): struct timespec and nanosleep are POSIX, the
+ * Windows twin is a high-resolution waitable timer. */
+void scaly_eio_sleep_us(unsigned int us)
+{
+    struct timespec ts;
+    ts.tv_sec = us / 1000000u;
+    ts.tv_nsec = (long)(us % 1000000u) * 1000L;
+    nanosleep(&ts, NULL);
+}
+
 /* Monotonic nanosecond clock — the deferred parallel-for driver's
  * calibration source (stage-4 milestone 4.2). Shim rule (a): the
  * CLOCK_MONOTONIC clockid VALUE is OS-specific (glibc 1, darwin 6),

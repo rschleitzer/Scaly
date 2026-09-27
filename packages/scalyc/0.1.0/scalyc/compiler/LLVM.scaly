@@ -256,6 +256,8 @@ function LLVMGetTypeKind(type: LLVMTypeRef) returns i32 extern
 function LLVMTypeIsSized(type: LLVMTypeRef) returns i32 extern
 function LLVMGetElementType(type: LLVMTypeRef) returns LLVMTypeRef extern
 function LLVMGetReturnType(func_type: LLVMTypeRef) returns LLVMTypeRef extern
+function LLVMCountParamTypes(function_type: LLVMTypeRef) returns u32 extern
+procedure LLVMGetParamTypes(function_type: LLVMTypeRef, dest: pointer[LLVMTypeRef]) extern
 function LLVMCountStructElementTypes(struct_type: LLVMTypeRef) returns u32 extern
 function LLVMGetStructElementTypes(struct_type: LLVMTypeRef, dest: pointer[LLVMTypeRef]) extern
 function LLVMStructGetTypeAtIndex(struct_type: LLVMTypeRef, index: u32) returns LLVMTypeRef extern
@@ -320,6 +322,7 @@ function LLVMGetBasicBlockTerminator(block: LLVMBasicBlockRef) returns LLVMValue
 
 ; Walk the basic blocks of a function
 function LLVMGetFirstBasicBlock(func: LLVMValueRef) returns LLVMBasicBlockRef extern
+procedure LLVMDeleteBasicBlock(block: LLVMBasicBlockRef) extern
 function LLVMGetNextBasicBlock(block: LLVMBasicBlockRef) returns LLVMBasicBlockRef extern
 
 ; Value-cast: returns the value if it is a ReturnInst, else null. Used by
@@ -421,6 +424,7 @@ function LLVMIsGlobalConstant(global_var: LLVMValueRef) returns i32 extern
 
 ; Integer arithmetic
 function LLVMBuildAdd(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildIntCast2(builder: LLVMBuilderRef, val: LLVMValueRef, dest_ty: LLVMTypeRef, is_signed: i32, name: pointer[const_char]) returns LLVMValueRef extern
 function LLVMBuildNSWAdd(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
 function LLVMBuildNUWAdd(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
 function LLVMBuildSub(builder: LLVMBuilderRef, lhs: LLVMValueRef, rhs: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
