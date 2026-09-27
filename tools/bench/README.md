@@ -108,9 +108,22 @@ accept path. The client closes with `SO_LINGER 0`: without it its ~16 000
 ephemeral ports sat in TIME_WAIT within seconds and every server showed
 thousands of errors. Measured with it (5 server threads, 32 clients, 5 s):
 Scaly 14 276, tokio 14 906, Go raw 15 040, Go net/http 15 049 req/s, no
-errors — the kernel's connection setup is the limit for all four; Scaly's
-5 % behind is where every poller wakes for a connection only one of them
-gets (the shared listener), a plausible cause not yet measured.
+errors — the kernel's connection setup is the limit for all four.
+
+**Where Scaly's few percent go (measured the same day).** With ONE thread
+Scaly is the cheapest of the three (15 097 conn/s, 22 µs of server CPU per
+connection; tokio 28, Go 35). With five its CPU per connection rises to
+49 µs (tokio 33, Go 46) and its rate falls 3 % behind (14 444 against
+14 921). The shared listener's herd is real but small: counted in an
+instrumented build (not kept), accepts that found nothing were 0.85 per
+connection with one scheduler (the retry before parking), 1.06 with two,
+1.47 with five, 2.37 with ten — not the N − 1 a full herd would cost — and
+`sample` shows the `accept` calls' time up 67 % from one scheduler to five
+(more empty calls, five threads on one listen queue). Context switches do
+not explain the rest: `time -l` counts fewer for Scaly than for tokio at
+five threads (4.7 against 5.2 per connection). The candidate that addresses
+the whole difference is ONE acceptor that hands connections to the other
+schedulers, as tokio and Go do; not built.
 
 Measured on arm64 (10 CPUs, M-series) 2026-09-27, requests per second:
 
