@@ -139,6 +139,7 @@ tools/panic.sh "$WORK/panic.o"
 # per-object route reuses the compiler's objects and runs after them.
 build_scalyls() {
     LSOUT="$(dirname "$OUT")/scalyls"
+    mkdir -p "$(dirname "$LSOUT")"   # runs beside the compiler chain, before its mkdir
     if [ "$use_opt" = "1" ] && grep -q '^define i64 @main(' "$SEED/scalyls_main.ll"; then
         # Same whole-program shape as the compiler: scalyls' own two roots
         # plus the scalyc + scaly package bodies (the compiler's main.ll is

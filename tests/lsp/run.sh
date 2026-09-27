@@ -25,8 +25,8 @@ export SCALYLS_MODE="$MODE"   # available to python blocks (no self-hosted gaps 
 
 # Resolve the LLVM-20 lib dir (Homebrew / apt). The diagnostics pipeline
 # pulls in the LLVM-backed Emitter, so every link below needs it.
-LIBDIR=""
-if command -v brew >/dev/null 2>&1; then
+LIBDIR="${LLVM20:+$LLVM20/lib}"   # the override tools/llvm-env.sh honors
+if [ -z "$LIBDIR" ] && command -v brew >/dev/null 2>&1; then
     LIBDIR="$(brew --prefix llvm@20 2>/dev/null)/lib"
 fi
 [ -d "$LIBDIR" ] || LIBDIR="/usr/lib/llvm-20/lib"
