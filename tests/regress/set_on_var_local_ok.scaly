@@ -1,0 +1,31 @@
+; Control for xfail_set_on_let_or_param: the same three shapes spelled with a
+; var local assign and answer the new value.
+; Expected: PASS
+define Pt (x: int  y: int)
+
+procedure bump(n: int) returns int
+{
+    var m n
+    set m: m + 10
+    m
+}
+
+procedure move(p: Pt) returns int
+{
+    var q p
+    set q: Pt(100, 200)
+    q.x
+}
+
+procedure keep() returns int
+{
+    var x 5
+    set x: 6
+    x
+}
+
+let a Pt(1, 2)
+if bump(1) = 11 and move(a) = 100 and keep() = 6 and a.x = 1
+    print("PASS")
+else
+    print("FAIL")

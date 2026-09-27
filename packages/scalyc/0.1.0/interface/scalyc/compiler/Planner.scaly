@@ -27978,6 +27978,26 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         procedure deref_ref_into_pointee(
             mutable this: Planner,
             mutable target_type: PlannedType,

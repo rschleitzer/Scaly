@@ -1,0 +1,33 @@
+; xfail: error: cannot assign to n: it is a let binding or a parameter
+;
+; Regression (2026-09-27): a `set` on a name that is not a var local. The
+; emitter's Variable arm stores only into a var, so the statement did nothing
+; at rc 0 -- for a let binding (`let x 5  set x: 6` answered 5), for an int
+; parameter (`set n: n + 10` answered n), and for a record or Vector parameter,
+; mutable or not (`set v: Vector[int](3)` built the new vector and dropped it,
+; while the old one stayed in use). A reference target stores through its
+; pointee and was already reported when it could not; every other type is
+; refused now. The spelling that works: `var m n` and assign m.
+define Pt (x: int  y: int)
+
+procedure bump(n: int) returns int
+{
+    set n: n + 10
+    n
+}
+
+procedure move(mutable p: Pt) returns int
+{
+    set p: Pt(100, 200)
+    p.x
+}
+
+procedure keep() returns int
+{
+    let x 5
+    set x: 6
+    x
+}
+
+var a Pt(1, 2)
+print("`bump(1)` `move(a)` `keep()`")

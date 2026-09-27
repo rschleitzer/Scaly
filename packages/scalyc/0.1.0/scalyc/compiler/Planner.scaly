@@ -27955,18 +27955,38 @@ define Planner
                 set target_is_borrow: true
             if target.result_type.name = "pointer"
                 set target_is_borrow: true
-            if target_is_borrow = false
-                return
             if Planner.operand_is_mutable_variable(target)
                 return
             var is_var: bool false
+            var var_name: String String()
             choose target.expr
                 when v: Variable
+                {
                     set is_var: true
+                    set var_name: v.name
+                }
                 else
                     0
             if is_var = false
                 return
+            ; ★★★CLOSED 2026-09-27: the same drop for EVERY type. A `let` binding
+            ; or a parameter -- an int, a record, a Vector, `mutable` or not -- is
+            ; not a var local, the emitter's Variable arm stores nothing, and
+            ; `let x 5  set x: 6` answered 5 at rc 0 (`set n: n + 10` on an int
+            ; parameter, `set v: Vector[int](3)` on a mutable one: the new value
+            ; went nowhere while the old one stayed in use). Only a reference
+            ; could store through its pointee; everything else is refused here.
+            if target_is_borrow = false
+            {
+                var nsb StringBuilder()
+                nsb.append "cannot assign to "
+                nsb.append var_name
+                nsb.append ": it is a let binding or a parameter, and neither can be rebound - "
+                nsb.append "declare a var local (var name2 name) and assign that"
+                let nmsg nsb.to_string()
+                this.add_diagnostic(loc, String^this(nmsg))
+                return
+            }
 
             var sb StringBuilder()
             ; NO backticks in these literals -- see report_ref_arithmetic#.
