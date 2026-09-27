@@ -223,6 +223,8 @@ function LLVMInt16TypeInContext(context: LLVMContextRef) returns LLVMTypeRef ext
 function LLVMInt32TypeInContext(context: LLVMContextRef) returns LLVMTypeRef extern
 function LLVMInt64TypeInContext(context: LLVMContextRef) returns LLVMTypeRef extern
 function LLVMIntTypeInContext(context: LLVMContextRef, num_bits: u32) returns LLVMTypeRef extern
+function LLVMVectorType(element_type: LLVMTypeRef, element_count: u32) returns LLVMTypeRef extern
+function LLVMGetVectorSize(vector_type: LLVMTypeRef) returns u32 extern
 function LLVMGetIntTypeWidth(int_type: LLVMTypeRef) returns u32 extern
 
 ; Floating point types
@@ -375,6 +377,7 @@ function LLVMConstArray2(element_type: LLVMTypeRef, constant_vals: pointer[LLVMV
 
 ; Undefined value
 function LLVMGetUndef(type: LLVMTypeRef) returns LLVMValueRef extern
+function LLVMConstAllOnes(type: LLVMTypeRef) returns LLVMValueRef extern
 
 ; ============================================================================
 ; Global Variable Functions
@@ -521,6 +524,8 @@ function LLVMBuildCall2(builder: LLVMBuilderRef, func_type: LLVMTypeRef, func: L
 function LLVMBuildPhi(builder: LLVMBuilderRef, type: LLVMTypeRef, name: pointer[const_char]) returns LLVMValueRef extern
 procedure LLVMAddIncoming(phi: LLVMValueRef, incoming_values: pointer[LLVMValueRef], incoming_blocks: pointer[LLVMBasicBlockRef], count: u32) extern
 function LLVMBuildSelect(builder: LLVMBuilderRef, cond: LLVMValueRef, then_val: LLVMValueRef, else_val: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildExtractElement(builder: LLVMBuilderRef, vec: LLVMValueRef, index: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
+function LLVMBuildInsertElement(builder: LLVMBuilderRef, vec: LLVMValueRef, element: LLVMValueRef, index: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
 function LLVMBuildExtractValue(builder: LLVMBuilderRef, agg_val: LLVMValueRef, index: u32, name: pointer[const_char]) returns LLVMValueRef extern
 function LLVMBuildInsertValue(builder: LLVMBuilderRef, agg_val: LLVMValueRef, elt_val: LLVMValueRef, index: u32, name: pointer[const_char]) returns LLVMValueRef extern
 

@@ -4550,6 +4550,9 @@ define Emitter
         ; should fall back to map_type for struct/pointer/ref handling.
         procedure map_intrinsic_type_by_name(mutable this, name: String) returns LLVMTypeRef
         {
+            ; SIMD vectors (ROADMAP-simd.md): <lanes x element>
+            if Planner.is_simd_type_name(name)
+                return LLVMVectorType(this.map_intrinsic_type_by_name(Planner.simd_element_name(name)), Planner.simd_lanes(name) as u32)
             if name = "void"
                 return LLVMVoidTypeInContext context
             if name = "bool"
@@ -4742,7 +4745,7 @@ define Emitter
             if kind = LLVMTypeKind.Metadata()
                 return false
             if kind = LLVMTypeKind.VectorKind()
-                return false
+                return true
             if kind = LLVMTypeKind.ArrayKind()
                 return llvm_type_sizable(LLVMGetElementType t)
             if kind = LLVMTypeKind.Struct()
@@ -4774,6 +4777,8 @@ define Emitter
             ; s34 root fix: plain copy of the by-ptr struct param.
             var t ty
             let kind LLVMGetTypeKind(t)
+            if kind = LLVMTypeKind.VectorKind()
+                return this.vector_bytes(t)
             if kind = LLVMTypeKind.Integer()
             {
                 let w LLVMGetIntTypeWidth(t)
@@ -4822,6 +4827,8 @@ define Emitter
             ; s34 root fix: plain copy of the by-ptr struct param.
             var t ty
             let kind LLVMGetTypeKind(t)
+            if kind = LLVMTypeKind.VectorKind()
+                return this.vector_bytes(t)
             if kind = LLVMTypeKind.Integer()
             {
                 let w LLVMGetIntTypeWidth(t)
@@ -12103,6 +12110,9 @@ define Emitter
                     set is_logical: true
                 if call.name = "and"
                     set is_logical: true
+                ; on SIMD masks `and`/`or` are lane-wise, both sides evaluated
+                if Planner.is_simd_type_name(call.result_type.name)
+                    set is_logical: false
                 if is_logical
                 {
                     var is_or: bool false
@@ -12195,7 +12205,13 @@ define Emitter
                 return null
 
             let ty map_type result_type
-            let is_float is_floating_point_type result_type
+            var is_float is_floating_point_type result_type
+            ; a vector negates by its element (ROADMAP-simd.md)
+            if Planner.is_simd_type_name(result_type.name)
+            {
+                let el Planner.simd_element_name(result_type.name)
+                set is_float: el = "double" or el = "float"
+            }
 
             ; Negation
             if op_name = "-"
@@ -12335,6 +12351,9 @@ define Emitter
         ; Emit an intrinsic binary operator
         procedure emit_intrinsic_binary_op(mutable this, op_name: String, mutable left: LLVMValueRef, mutable right: LLVMValueRef, mutable result_type: PlannedType, left_operand_type: PlannedType, right_operand_type: PlannedType) returns LLVMValueRef
         {
+            ; SIMD vectors: lane by lane, a scalar side broadcast (emit_simd_binary#)
+            if Planner.is_simd_type_name(left_operand_type.name) or Planner.is_simd_type_name(right_operand_type.name)
+                return this.emit_simd_binary(op_name, left, right, left_operand_type, right_operand_type)
             ; s34 root fix: plain copies of the by-ptr struct params (emitBinding
             ; now copies single-ptr-field struct params correctly).
             var l left
@@ -12757,10 +12776,363 @@ define Emitter
         }
 
         ; Emit an intrinsic function call
+        ; ---- SIMD vectors (ROADMAP-simd.md) -------------------------------
+
+        procedure vector_bytes(this, mutable t: LLVMTypeRef) returns size_t
+        {
+            let lanes LLVMGetVectorSize(t) as size_t
+            let et LLVMGetElementType(t)
+            var bits: size_t 64
+            let k LLVMGetTypeKind(et)
+            if k = LLVMTypeKind.Integer()
+                set bits: LLVMGetIntTypeWidth(et) as size_t
+            if k = LLVMTypeKind.Float()
+                set bits: 32
+            let total lanes * bits
+            if total < 8
+                return 1
+            total / 8
+        }
+
+        ; a scalar converted to a lane's type
+        procedure simd_scalar_to(mutable this, mutable v: LLVMValueRef, mutable et: LLVMTypeRef, signed_src: bool) returns LLVMValueRef
+        {
+            let st LLVMTypeOf(v)
+            if st = et
+                return v
+            let sk LLVMGetTypeKind(st)
+            let ek LLVMGetTypeKind(et)
+            let s_float sk = LLVMTypeKind.Double() or sk = LLVMTypeKind.Float()
+            let e_float ek = LLVMTypeKind.Double() or ek = LLVMTypeKind.Float()
+            if s_float and e_float
+            {
+                if sk = LLVMTypeKind.Double()
+                    return LLVMBuildFPTrunc(builder, v, et, "simd.fptrunc")
+                return LLVMBuildFPExt(builder, v, et, "simd.fpext")
+            }
+            if s_float = false and e_float
+            {
+                if signed_src
+                    return LLVMBuildSIToFP(builder, v, et, "simd.sitofp")
+                return LLVMBuildUIToFP(builder, v, et, "simd.uitofp")
+            }
+            if s_float and e_float = false
+                return LLVMBuildFPToSI(builder, v, et, "simd.fptosi")
+            var sgn: i32 0
+            if signed_src
+                set sgn: 1
+            LLVMBuildIntCast2(builder, v, et, sgn, "simd.intcast")
+        }
+
+        ; every lane `v`
+        procedure simd_splat(mutable this, mutable v: LLVMValueRef, mutable vt: LLVMTypeRef, signed_src: bool) returns LLVMValueRef
+        {
+            let et LLVMGetElementType(vt)
+            let x this.simd_scalar_to(v, et, signed_src)
+            let n LLVMGetVectorSize(vt) as size_t
+            let i64_ty LLVMInt64TypeInContext(context)
+            var acc LLVMGetUndef(vt)
+            var i: size_t 0
+            while i < n
+            {
+                set acc: LLVMBuildInsertElement(builder, acc, x, LLVMConstInt(i64_ty, i, 0), "simd.splat")
+                set i: i + 1
+            }
+            acc
+        }
+
+        function simd_unsigned(t: PlannedType) returns bool
+        {
+            let e Planner.simd_element_name(t.name)
+            e = "u8" or e = "u32" or e = "bool"
+        }
+
+        procedure emit_simd_binary(mutable this, op: String, mutable left: LLVMValueRef, mutable right: LLVMValueRef, lt: PlannedType, rt: PlannedType) returns LLVMValueRef
+        {
+            if left = null or right = null
+                return null
+            var vty lt
+            if Planner.is_simd_type_name(lt.name) = false
+                set vty: rt
+            let vt this.map_intrinsic_type_by_name(vty.name)
+            var l left
+            var r right
+            if Planner.is_simd_type_name(lt.name) = false
+                set l: this.simd_splat(l, vt, Emitter.simd_unsigned(lt) = false)
+            if Planner.is_simd_type_name(rt.name) = false
+                set r: this.simd_splat(r, vt, Emitter.simd_unsigned(rt) = false)
+            let ek LLVMGetTypeKind(LLVMGetElementType(vt))
+            let is_float ek = LLVMTypeKind.Double() or ek = LLVMTypeKind.Float()
+            let unsigned Emitter.simd_unsigned(vty)
+            if is_float
+            {
+                match op
+                    case "+": return LLVMBuildFAdd(builder, l, r, "simd.add")
+                    case "-": return LLVMBuildFSub(builder, l, r, "simd.sub")
+                    case "*": return LLVMBuildFMul(builder, l, r, "simd.mul")
+            }
+            else
+            {
+                match op
+                    case "+": return LLVMBuildAdd(builder, l, r, "simd.add")
+                    case "-": return LLVMBuildSub(builder, l, r, "simd.sub")
+                    case "*": return LLVMBuildMul(builder, l, r, "simd.mul")
+            }
+            match op
+                case "/" case "div":
+                {
+                    if is_float
+                        return LLVMBuildFDiv(builder, l, r, "simd.div")
+                    if unsigned
+                        return LLVMBuildUDiv(builder, l, r, "simd.div")
+                    return LLVMBuildSDiv(builder, l, r, "simd.div")
+                }
+                case "%" case "mod":
+                {
+                    if is_float
+                        return LLVMBuildFRem(builder, l, r, "simd.rem")
+                    if unsigned
+                        return LLVMBuildURem(builder, l, r, "simd.rem")
+                    return LLVMBuildSRem(builder, l, r, "simd.rem")
+                }
+                case "&" case "and": return LLVMBuildAnd(builder, l, r, "simd.and")
+                case "|" case "or": return LLVMBuildOr(builder, l, r, "simd.or")
+                case "^" case "xor": return LLVMBuildXor(builder, l, r, "simd.xor")
+                case "<<": return LLVMBuildShl(builder, l, r, "simd.shl")
+                case ">>":
+                {
+                    if unsigned
+                        return LLVMBuildLShr(builder, l, r, "simd.shr")
+                    return LLVMBuildAShr(builder, l, r, "simd.shr")
+                }
+            if is_float
+            {
+                var fp: i32 0
+                match op
+                    case "=": set fp: LLVMRealPredicate.OEQ() as i32
+                    case "<>": set fp: LLVMRealPredicate.UNE() as i32
+                    case "<": set fp: LLVMRealPredicate.OLT() as i32
+                    case "<=": set fp: LLVMRealPredicate.OLE() as i32
+                    case ">": set fp: LLVMRealPredicate.OGT() as i32
+                    case ">=": set fp: LLVMRealPredicate.OGE() as i32
+                if fp <> 0
+                    return LLVMBuildFCmp(builder, fp, l, r, "simd.cmp")
+            }
+            else
+            {
+                var ip: i32 0
+                match op
+                    case "=": set ip: LLVMIntPredicate.EQ() as i32
+                    case "<>": set ip: LLVMIntPredicate.NE() as i32
+                    case "<": set ip: LLVMIntPredicate.SLT() as i32
+                    case "<=": set ip: LLVMIntPredicate.SLE() as i32
+                    case ">": set ip: LLVMIntPredicate.SGT() as i32
+                    case ">=": set ip: LLVMIntPredicate.SGE() as i32
+                ; the unsigned element types compare unsigned
+                if unsigned
+                {
+                    match op
+                        case "<": set ip: LLVMIntPredicate.ULT() as i32
+                        case "<=": set ip: LLVMIntPredicate.ULE() as i32
+                        case ">": set ip: LLVMIntPredicate.UGT() as i32
+                        case ">=": set ip: LLVMIntPredicate.UGE() as i32
+                }
+                if ip <> 0
+                    return LLVMBuildICmp(builder, ip, l, r, "simd.cmp")
+            }
+            scaly_eputs "Emitter: operator "
+            scaly_eputs(op.to_c_string())
+            scaly_eputs " is not defined on SIMD vectors\n"
+            exit 14
+        }
+
+        ; `v as T` between vectors of one lane count, element by element
+        procedure emit_simd_cast(mutable this, mutable v: LLVMValueRef, mutable dst: LLVMTypeRef, from: PlannedType, to: PlannedType) returns LLVMValueRef
+        {
+            let st LLVMTypeOf(v)
+            if LLVMGetTypeKind(st) <> LLVMTypeKind.VectorKind() or LLVMGetTypeKind(dst) <> LLVMTypeKind.VectorKind()
+            {
+                scaly_eputs "Emitter: a SIMD vector casts only to another SIMD vector\n"
+                exit 14
+            }
+            let sk LLVMGetTypeKind(LLVMGetElementType(st))
+            let dk LLVMGetTypeKind(LLVMGetElementType(dst))
+            let s_float sk = LLVMTypeKind.Double() or sk = LLVMTypeKind.Float()
+            let d_float dk = LLVMTypeKind.Double() or dk = LLVMTypeKind.Float()
+            let s_signed Emitter.simd_unsigned(from) = false
+            if s_float and d_float
+            {
+                if sk = dk
+                    return v
+                if sk = LLVMTypeKind.Double()
+                    return LLVMBuildFPTrunc(builder, v, dst, "simd.fptrunc")
+                return LLVMBuildFPExt(builder, v, dst, "simd.fpext")
+            }
+            if s_float = false and d_float
+            {
+                if s_signed
+                    return LLVMBuildSIToFP(builder, v, dst, "simd.itof")
+                return LLVMBuildUIToFP(builder, v, dst, "simd.itof")
+            }
+            if s_float and d_float = false
+                return LLVMBuildFPToSI(builder, v, dst, "simd.ftoi")
+            var sgn: i32 0
+            if s_signed
+                set sgn: 1
+            LLVMBuildIntCast2(builder, v, dst, sgn, "simd.icast")
+        }
+
+        ; a lane index checked against the lane count: exit 15, the bounds trap
+        procedure simd_lane_index(mutable this, mutable idx: LLVMValueRef, lanes: size_t) returns LLVMValueRef
+        {
+            let i64_ty LLVMInt64TypeInContext(context)
+            var ix idx
+            if LLVMGetTypeKind(LLVMTypeOf(ix)) = LLVMTypeKind.Integer() and LLVMGetIntTypeWidth(LLVMTypeOf(ix)) <> 64
+                set ix: LLVMBuildIntCast2(builder, ix, i64_ty, 1, "simd.idx")
+            let n LLVMConstInt(i64_ty, lanes, 0)
+            let ok LLVMBuildICmp(builder, LLVMIntPredicate.ULT() as i32, ix, n, "simd.inrange")
+            let fn_now current_function
+            let bad_bb LLVMAppendBasicBlockInContext(context, fn_now, "simd.lane.oob")
+            let good_bb LLVMAppendBasicBlockInContext(context, fn_now, "simd.lane.ok")
+            LLVMBuildCondBr(builder, ok, good_bb, bad_bb)
+            LLVMPositionBuilderAtEnd(builder, bad_bb)
+            let ptr_ty LLVMPointerTypeInContext(context, 0)
+            var p3 Vector[LLVMTypeRef](3)
+            p3.put(0, ptr_ty)
+            p3.put(1, i64_ty)
+            p3.put(2, i64_ty)
+            let oob_fn this.get_parfor_runtime_fn("_Z15scaly_panic_oobP10const_charmm", LLVMFunctionType(LLVMVoidTypeInContext(context), p3.data, 3, 0))
+            var a3 Vector[LLVMValueRef](3)
+            a3.put(0, LLVMBuildGlobalStringPtr(builder, "SIMD lane", ".simd.lane"))
+            a3.put(1, ix)
+            a3.put(2, n)
+            LLVMBuildCall2(builder, LLVMGlobalGetValueType(oob_fn), oob_fn, a3.data, 3, "")
+            LLVMBuildUnreachable(builder)
+            LLVMPositionBuilderAtEnd(builder, good_bb)
+            ix
+        }
+
+        procedure simd_intrinsic(mutable this, mutable name: String, mutable ret: LLVMTypeRef, mutable arg: LLVMTypeRef) returns LLVMValueRef
+        {
+            var ps Vector[LLVMTypeRef](1)
+            ps.put(0, arg)
+            this.get_parfor_runtime_fn(name, LLVMFunctionType(ret, ps.data, 1, 0))
+        }
+
+        ; the planned intrinsic calls `simd.*` (Planner.plan_simd_call#)
+        procedure emit_simd(mutable this, mutable call: PlannedCall) returns LLVMValueRef
+        {
+            let name call.name
+            var vals Array[LLVMValueRef]()
+            var types Array[PlannedType]()
+            if call.args <> null
+            {
+                for a in call.args
+                {
+                    vals.add(emit_operand(a))
+                    types.add a.result_type
+                }
+            }
+            for v in vals
+            {
+                if v = null
+                    return null
+            }
+            let rty this.map_intrinsic_type_by_name(call.result_type.name)
+            let i64_ty LLVMInt64TypeInContext(context)
+            match name
+                case "simd.make":
+                {
+                    let et LLVMGetElementType(rty)
+                    var acc LLVMGetUndef(rty)
+                    var i: size_t 0
+                    while i < vals.length
+                    {
+                        let x this.simd_scalar_to(vals[i], et, Emitter.simd_unsigned(types[i]) = false)
+                        set acc: LLVMBuildInsertElement(builder, acc, x, LLVMConstInt(i64_ty, i, 0), "simd.make")
+                        set i: i + 1
+                    }
+                    return acc
+                }
+                case "simd.splat": return this.simd_splat(vals[0], rty, Emitter.simd_unsigned(types[0]) = false)
+                case "simd.iota":
+                {
+                    let et LLVMGetElementType(rty)
+                    let n LLVMGetVectorSize(rty) as size_t
+                    let ek LLVMGetTypeKind(et)
+                    let e_float ek = LLVMTypeKind.Double() or ek = LLVMTypeKind.Float()
+                    var lanes LLVMGetUndef(rty)
+                    var i: size_t 0
+                    while i < n
+                    {
+                        var c: LLVMValueRef null
+                        if e_float
+                            set c: LLVMConstReal(et, i as double)
+                        else
+                            set c: LLVMConstInt(et, i, 0)
+                        set lanes: LLVMBuildInsertElement(builder, lanes, c, LLVMConstInt(i64_ty, i, 0), "simd.iota")
+                        set i: i + 1
+                    }
+                    let base this.simd_splat(vals[0], rty, Emitter.simd_unsigned(types[0]) = false)
+                    let step this.simd_splat(vals[1], rty, Emitter.simd_unsigned(types[1]) = false)
+                    if e_float
+                        return LLVMBuildFAdd(builder, base, LLVMBuildFMul(builder, step, lanes, "simd.iota"), "simd.iota")
+                    return LLVMBuildAdd(builder, base, LLVMBuildMul(builder, step, lanes, "simd.iota"), "simd.iota")
+                }
+                case "simd.all_set": return LLVMConstAllOnes(rty)
+                case "simd.none_set": return LLVMConstNull(rty)
+                case "simd.lane":
+                {
+                    let vt LLVMTypeOf(vals[0])
+                    let ix this.simd_lane_index(vals[1], LLVMGetVectorSize(vt) as size_t)
+                    return LLVMBuildExtractElement(builder, vals[0], ix, "simd.lane")
+                }
+                case "simd.with":
+                {
+                    let vt LLVMTypeOf(vals[0])
+                    let ix this.simd_lane_index(vals[1], LLVMGetVectorSize(vt) as size_t)
+                    let x this.simd_scalar_to(vals[2], LLVMGetElementType(vt), Emitter.simd_unsigned(types[2]) = false)
+                    return LLVMBuildInsertElement(builder, vals[0], x, ix, "simd.with")
+                }
+                case "simd.select": return LLVMBuildSelect(builder, vals[0], vals[1], vals[2], "simd.select")
+                case "simd.any" case "simd.all":
+                {
+                    let mt LLVMTypeOf(vals[0])
+                    let n LLVMGetVectorSize(mt) as size_t
+                    var op "or"
+                    if name = "simd.all"
+                        set op: "and"
+                    let fname "llvm.vector.reduce.`op`.v`n`i1"
+                    let f this.simd_intrinsic(fname, LLVMInt1TypeInContext(context), mt)
+                    var a1 Vector[LLVMValueRef](1)
+                    a1.put(0, vals[0])
+                    return LLVMBuildCall2(builder, LLVMGlobalGetValueType(f), f, a1.data, 1, "simd.reduce")
+                }
+                case "simd.count":
+                {
+                    let mt LLVMTypeOf(vals[0])
+                    let n LLVMGetVectorSize(mt) as size_t
+                    let it LLVMIntTypeInContext(context, n as u32)
+                    let bits LLVMBuildBitCast(builder, vals[0], it, "simd.bits")
+                    let fname "llvm.ctpop.i`n`"
+                    let f this.simd_intrinsic(fname, it, it)
+                    var a1 Vector[LLVMValueRef](1)
+                    a1.put(0, bits)
+                    let c LLVMBuildCall2(builder, LLVMGlobalGetValueType(f), f, a1.data, 1, "simd.count")
+                    return LLVMBuildZExt(builder, c, i64_ty, "simd.count")
+                }
+            scaly_eputs "Emitter: unknown SIMD intrinsic "
+            scaly_eputs(name.to_c_string())
+            scaly_eputs "\n"
+            exit 14
+        }
+
         procedure emit_intrinsic_function(mutable this, mutable call: PlannedCall) returns LLVMValueRef
         {
             ; Get the function name
             let name call.name
+            if name.starts_with(String("simd."))
+                return this.emit_simd(call)
 
             ; Handle Option::unwrap - extract payload from union
             if name = "unwrap"
@@ -18850,6 +19222,9 @@ define Emitter
             ; Check type kinds
             let src_kind LLVMGetTypeKind(src_type)
             let dst_kind LLVMGetTypeKind(dst_type)
+            ; between SIMD vectors of one lane count (ROADMAP-simd.md)
+            if src_kind = LLVMTypeKind.VectorKind() or dst_kind = LLVMTypeKind.VectorKind()
+                return this.emit_simd_cast(src_value, dst_type, as_inner.result_type, as_expr.target_type)
 
             let ptr_kind LLVMTypeKind.Pointer()
             let int_kind LLVMTypeKind.Integer()

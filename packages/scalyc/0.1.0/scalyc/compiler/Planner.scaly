@@ -12035,6 +12035,17 @@ define Planner
                                                                         }
                                                                     }
                                                                 }
+                                                                ; a SIMD lane `v[i]` (ROADMAP-simd.md)
+                                                                if ptr_fused = false and Planner.is_simd_type_name(recv_op.result_type.name)
+                                                                {
+                                                                    let lidx_op this.collapse_operand_sequence(row)
+                                                                    var lane_args Vector[PlannedOperand](2)
+                                                                    lane_args.put(0, recv_op)
+                                                                    lane_args.put(1, lidx_op)
+                                                                    sub_arr.add(this.simd_operand(s_op.loc, "simd.lane", lane_args, Planner.simd_element_type(recv_op.result_type.name), null))
+                                                                    set fused: true
+                                                                    set ptr_fused: true
+                                                                }
                                                                 var sm_ref: ref[MethodMatch]? null
                                                                 if ptr_fused = false
                                                                 {
@@ -12336,7 +12347,8 @@ define Planner
                         {
                             if prefix_name = "!"
                                 set rt: Planner.make_bool_type()
-                            if prefix_name = "not"
+                            ; `not` on a SIMD mask is lane-wise and stays a mask
+                            if prefix_name = "not" and Planner.is_simd_mask_name(rest_result.result_type.name) = false
                                 set rt: Planner.make_bool_type()
                             if prefix_name = "*"
                             {
@@ -13652,6 +13664,29 @@ define Planner
                             }
                         let arg_types Vector[PlannedType](arg_types_arr_s90)
                         let arg_ops Vector[PlannedOperand](arg_ops_arr_s90)
+                        ; SIMD vectors: construction, statics, methods, select
+                        ; -- intrinsics without a declaration (plan_simd_call#)
+                        let simd_kind this.simd_call_kind(result, fn_name, value_method_hop, arg_ops)
+                        if simd_kind <> 0
+                        {
+                            set result: this.rebind_trailing_chain(this.plan_simd_call(simd_kind, result, second, fn_name, arg_ops))
+                            if ops.length > 2
+                            {
+                                var simd_rest Array[PlannedOperand]()
+                                simd_rest.add result
+                                var sr: size_t 2
+                                while sr < ops.length
+                                {
+                                    let sp_ptr ops.get sr
+                                    if sp_ptr <> null
+                                        simd_rest.add((*sp_ptr))
+                                    set sr: sr + 1
+                                }
+                                var simd_rest_vec Vector[PlannedOperand](simd_rest)
+                                return this.collapse_operand_sequence(simd_rest_vec)
+                            }
+                            return result
+                        }
                         ; ★The explicit type-argument list of `f[u64](...)` rides
                         ; operand 0: the s107 pre-pass folded `name + Matrix` into
                         ; a PlannedType whose `generics` hold it, and only the NAME
@@ -16806,6 +16841,11 @@ define Planner
                                     set combined_type: result.result_type
                             }
                         }
+
+                        ; SIMD vectors: lane by lane, a scalar side broadcast,
+                        ; a comparison answers a mask (plan_simd_binary#)
+                        if Planner.is_simd_type_name(result.result_type.name) or Planner.is_simd_type_name(rhs.result_type.name)
+                            set combined_type: this.plan_simd_binary(op_name, result.result_type, rhs.result_type, result.loc)
                     }
 
                     ; Char/float literal fold for a user operator: when the
@@ -19510,6 +19550,21 @@ define Planner
                     ; A base that genuinely did not resolve still has an empty
                     ; name here (lookup_type = current), so the recovery keeps
                     ; its one legitimate case.
+                    ; A method of a SIMD vector (ROADMAP-simd.md): no concept
+                    ; carries it, the call is an intrinsic (plan_simd_call#).
+                    if matched = false
+                    {
+                        let simd_res Planner.simd_method_result(lookup_type.name, m)
+                        if simd_res.get_length() > 0
+                        {
+                            set matched: true
+                            var mrt: PlannedType lookup_type
+                            if simd_res <> "?"
+                                set mrt: Planner.simd_result_type(simd_res)
+                            result.add(PlannedMemberAccess(m, 0, true, false, lookup_type, mrt))
+                            set current: mrt
+                        }
+                    }
                     if matched = false
                     {
                         this.report_hidden_member(lookup_type.name, m, at)
@@ -19528,6 +19583,174 @@ define Planner
             }
 
             Vector[PlannedMemberAccess](result)
+        }
+
+        ; ---- SIMD vector types: the planned intrinsic calls (ROADMAP-simd.md)
+
+        ; the result of `a OP b` where one side is a vector: the vector type,
+        ; a mask for a comparison; two vectors must be the same type, a
+        ; scalar side is broadcast into the element type by the Emitter
+        procedure plan_simd_binary(mutable this: Planner, op: String, lt: PlannedType, rt: PlannedType, loc: Span) returns PlannedType
+        {
+            var vt lt
+            if Planner.is_simd_type_name(lt.name) = false
+                set vt: rt
+            if Planner.is_simd_type_name(lt.name) and Planner.is_simd_type_name(rt.name) and lt.name <> rt.name
+            {
+                this.add_diagnostic(loc, String^this("operator `op` between `lt.name` and `rt.name`: a vector operation takes two vectors of ONE type, or a vector and a scalar"))
+                return vt
+            }
+            match op
+                case "=" case "<>" case "<" case "<=" case ">" case ">=": return Planner.simd_mask_type(Planner.simd_lanes(vt.name))
+            vt
+        }
+
+        ; an intrinsic call operand the Emitter lowers by name (emit_simd#)
+        procedure simd_operand(mutable this: Planner, loc: Span, name: String, args: Vector[PlannedOperand], rt: PlannedType, trailing: ref[Vector[PlannedMemberAccess]]?) returns PlannedOperand
+        {
+            ; the arguments live as long as the plan: on the Planner's page
+            let call_args Vector[PlannedOperand]^this(args.length)
+            var i: size_t 0
+            while i < args.length
+            {
+                call_args.put(i, args[i])
+                set i: i + 1
+            }
+            let call PlannedCall(loc, String^this(name), String(""), true, false, false, false, &call_args, rt, Lifetime.Unspecified(Unspecified()), null, false)
+            PlannedOperand(loc, PlannedExpression.Call call, trailing, rt)
+        }
+
+        ; What kind of SIMD call `fn_name(...)` is (plan_simd_call#): 0 none,
+        ; 1 a method through a member hop (`(a or b).any()`), 2 a static
+        ; (`f64x4.splat`), 3 a method on a local (`v.any`), 4 a construction
+        ; (`f64x4(a, b, c, d)`), 5 `select(m, a, b)`
+        function simd_call_kind(this: Planner, result: PlannedOperand, fn_name: String, value_method_hop: bool, arg_ops: Vector[PlannedOperand]) returns int
+        {
+            if value_method_hop and result.member_access <> null
+            {
+                let ma (*result.member_access)
+                if ma.length > 0
+                {
+                    let lh ma[ma.length - 1]
+                    if Planner.is_simd_type_name(lh.parent_type.name)
+                        return 1
+                }
+            }
+            let dot fn_name.last_index_of(46)
+            if dot > 0
+            {
+                let dp dot as size_t
+                let prefix fn_name.substring(0, dp)
+                if Planner.is_simd_type_name(prefix)
+                    return 2
+                let local_ref this.lookup_local_binding(prefix)
+                if local_ref <> null and Planner.is_simd_type_name((*local_ref).binding_type.name)
+                    return 3
+                return 0
+            }
+            if Planner.is_simd_type_name(fn_name) and result.member_access = null
+                return 4
+            if fn_name = "select" and arg_ops.length = 3
+            {
+                let a0 arg_ops[0]
+                if Planner.is_simd_mask_name(a0.result_type.name)
+                    return 5
+            }
+            0
+        }
+
+        ; the call simd_call_kind# recognized, planned
+        procedure plan_simd_call(mutable this: Planner, kind: int, result: PlannedOperand, second: PlannedOperand, fn_name: String, arg_ops: Vector[PlannedOperand]) returns PlannedOperand
+        {
+            if kind = 1
+            {
+                let ma (*result.member_access)
+                let last ma[ma.length - 1]
+                var chain: ref[Vector[PlannedMemberAccess]]? null
+                if ma.length > 1
+                {
+                    let hops Vector[PlannedMemberAccess]^this(ma.length - 1)
+                    var k: size_t 0
+                    while k + 1 < ma.length
+                    {
+                        hops.put(k, ma[k])
+                        set k: k + 1
+                    }
+                    set chain: &hops
+                }
+                let recv PlannedOperand(result.loc, result.expr, chain, last.parent_type)
+                return this.plan_simd_method(recv, fn_name, arg_ops, second)
+            }
+            if kind = 2 or kind = 3
+            {
+                let dp fn_name.last_index_of(46) as size_t
+                let prefix fn_name.substring(0, dp)
+                let suffix fn_name.substring(dp + 1, fn_name.get_length() - dp - 1)
+                if kind = 2
+                    return this.plan_simd_static(prefix, suffix, arg_ops, second)
+                let local (*this.lookup_local_binding(prefix))
+                let recv PlannedOperand(result.loc, PlannedExpression.Variable(PlannedVariable(result.loc, String^this(prefix), local.binding_type, local.is_mutable)), null, local.binding_type)
+                return this.plan_simd_method(recv, suffix, arg_ops, second)
+            }
+            if kind = 4
+            {
+                let lanes Planner.simd_lanes(fn_name)
+                if arg_ops.length <> lanes
+                    this.add_diagnostic(second.loc, String^this("`fn_name` takes `lanes` lanes, one argument each; `fn_name`.splat(x) puts one value into every lane"))
+                return this.simd_operand(second.loc, "simd.make", arg_ops, Planner.simd_type(fn_name), second.member_access)
+            }
+            var rest Vector[PlannedOperand](2)
+            rest.put(0, arg_ops[1])
+            rest.put(1, arg_ops[2])
+            this.plan_simd_method(arg_ops[0], String("select"), rest, second)
+        }
+
+        procedure plan_simd_static(mutable this: Planner, t: String, m: String, arg_ops: Vector[PlannedOperand], second: PlannedOperand) returns PlannedOperand
+        {
+            var want: size_t 0
+            match m
+                case "splat": set want: 1
+                case "iota": set want: 2
+            let rn Planner.simd_static_result(t, m)
+            if rn.get_length() = 0
+                this.add_diagnostic(second.loc, String^this("`t` has no static `m` - a vector type offers splat and iota, a mask all_set and none_set"))
+            else if arg_ops.length <> want
+                this.add_diagnostic(second.loc, String^this("`t`.`m` takes `want` argument(s)"))
+            this.simd_operand(second.loc, "simd.`m`", arg_ops, Planner.simd_type(t), second.member_access)
+        }
+
+        procedure plan_simd_method(mutable this: Planner, recv: PlannedOperand, m: String, arg_ops: Vector[PlannedOperand], second: PlannedOperand) returns PlannedOperand
+        {
+            let t recv.result_type.name
+            let rn Planner.simd_method_result(t, m)
+            var want: size_t 0
+            var rt: PlannedType recv.result_type
+            match m
+                case "with": set want: 2
+                case "select": set want: 2
+            if rn.get_length() = 0
+                this.add_diagnostic(second.loc, String^this("`t` has no method `m`"))
+            else if arg_ops.length <> want
+                this.add_diagnostic(second.loc, String^this("`t`.`m` takes `want` argument(s)"))
+            else if rn <> "?"
+                set rt: Planner.simd_result_type(rn)
+            if m = "select" and arg_ops.length = 2
+            {
+                let a0 arg_ops[0]
+                let a1 arg_ops[1]
+                set rt: a0.result_type
+                if a0.result_type.name <> a1.result_type.name or Planner.simd_lanes(a0.result_type.name) <> Planner.simd_lanes(t)
+                    this.add_diagnostic(second.loc, String^this("select on `t` takes two vectors of one type with the mask's lane count"))
+            }
+            var all Vector[PlannedOperand](arg_ops.length + 1)
+            all.put(0, recv)
+            var i: size_t 0
+            while i < arg_ops.length
+            {
+                all.put(i + 1, arg_ops[i])
+                set i: i + 1
+            }
+            this.simd_operand(second.loc, "simd.`m`", all, rt, second.member_access)
         }
 
         ; report_hidden_member#: a member hop that misses only because its
@@ -52523,8 +52746,135 @@ define Planner
         Planner.is_primitive_type_name(name)
     }
 
+    ; ---- SIMD vector types (ROADMAP-simd.md) ------------------------------
+    ; Built-in VALUE types named by element and lane count, lowered to LLVM
+    ; vectors. A name is all the compiler needs: no grammar, no concept.
+
+    function simd_lanes(name: String) returns size_t
+    {
+        match name
+            case "f64x2" case "i64x2" case "mask2": return 2
+            case "f64x4" case "f32x4" case "i64x4" case "i32x4" case "u32x4" case "mask4": return 4
+            case "f64x8" case "f32x8" case "i32x8" case "u32x8" case "mask8": return 8
+            case "f32x16" case "u8x16" case "mask16": return 16
+            case "u8x32" case "mask32": return 32
+        0
+    }
+
+    function is_simd_type_name(name: String) returns bool
+        Planner.simd_lanes(name) > 0
+
+    function is_simd_mask_name(name: String) returns bool
+        Planner.simd_lanes(name) > 0 and name.starts_with(String("mask"))
+
+    ; the scalar type of one lane (a mask's lane is a bool)
+    function simd_element_name(name: String) returns String
+    {
+        if name.starts_with(String("f64"))
+            return String("double")
+        if name.starts_with(String("f32"))
+            return String("float")
+        if name.starts_with(String("i64"))
+            return String("int")
+        if name.starts_with(String("i32"))
+            return String("i32")
+        if name.starts_with(String("u8"))
+            return String("u8")
+        if name.starts_with(String("u32"))
+            return String("u32")
+        String("bool")
+    }
+
+    ; bytes of one value; a mask packs its lanes into bits
+    function simd_size(name: String) returns size_t
+    {
+        let n Planner.simd_lanes(name)
+        if Planner.is_simd_mask_name(name)
+        {
+            if n <= 8
+                return 1
+            return n / 8
+        }
+        n * Planner.get_primitive_alignment(Planner.simd_element_name(name))
+    }
+
+    function simd_type(name: String) returns PlannedType
+    {
+        ; the Itanium vendor form of a vector: Dv<lanes>_<element>
+        let e Planner.simd_element_name(name)
+        var code "d"
+        match e
+            case "float": set code: "f"
+            case "int": set code: "l"
+            case "i32": set code: "i"
+            case "u8": set code: "h"
+            case "u32": set code: "j"
+            case "bool": set code: "b"
+        let mangled "Dv`Planner.simd_lanes(name)`_`code`"
+        Planner.make_primitive_type(name.as_slice(), mangled.as_slice())
+    }
+
+    function simd_mask_type(lanes: size_t) returns PlannedType
+        Planner.simd_type("mask`lanes`")
+
+    function simd_result_type(name: String) returns PlannedType
+    {
+        if Planner.is_simd_type_name(name)
+            return Planner.simd_type(name)
+        if name = "int"
+            return Planner.make_int_type()
+        Planner.make_bool_type()
+    }
+
+    function simd_element_type(name: String) returns PlannedType
+    {
+        let e Planner.simd_element_name(name)
+        match e
+            case "double": return Planner.make_primitive_type("double", "d")
+            case "float": return Planner.make_primitive_type("float", "f")
+            case "int": return Planner.make_primitive_type("int", "i")
+            case "i32": return Planner.make_primitive_type("i32", "3i32")
+            case "u8": return Planner.make_primitive_type("u8", "2u8")
+            case "u32": return Planner.make_primitive_type("u32", "3u32")
+        Planner.make_bool_type()
+    }
+
+    ; The result type NAME of method `m` on a value of vector type `t`
+    ; ("" when `t` has no such method). Phase 1: lanes, masks.
+    function simd_method_result(t: String, m: String) returns String
+    {
+        if Planner.is_simd_type_name(t) = false
+            return String()
+        if Planner.is_simd_mask_name(t)
+        {
+            match m
+                case "any" case "all": return String("bool")
+                case "count": return String("int")
+                case "select": return String("?")
+        }
+        match m
+            case "with": return t
+        String()
+    }
+
+    ; The result type of a static `T.m(...)` on vector type `t`, "" if none.
+    function simd_static_result(t: String, m: String) returns String
+    {
+        if Planner.is_simd_mask_name(t)
+        {
+            match m
+                case "all_set" case "none_set": return t
+            return String()
+        }
+        match m
+            case "splat" case "iota": return t
+        String()
+    }
+
     function is_primitive_type_name(name: String) returns bool
     {
+        if Planner.is_simd_type_name(name)
+            return true
         match name
             case "void" case "bool" case "int" case "uint" case "char" case "i8" case "i16": return true
             case "i32" case "i64" case "u8" case "u16" case "u32" case "u64" case "f32" case "f64": return true
@@ -52539,6 +52889,9 @@ define Planner
     ; or non-primitive types default to 8-byte alignment.
     function get_primitive_alignment(type_name: String) returns size_t
     {
+        ; a vector is aligned to its size, as LLVM lays it out
+        if Planner.is_simd_type_name(type_name)
+            return Planner.simd_size(type_name)
         if type_name = "bool"
             return 1
         if type_name = "char"

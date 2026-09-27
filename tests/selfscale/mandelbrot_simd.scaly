@@ -1,0 +1,55 @@
+; mandelbrot_simd — the same count as mandelbrot.scaly, written with the SIMD
+; vector types (ROADMAP-simd.md): eight points at once, as two independent
+; f64x4 so the floating-point latency is hidden, the escape test as a mask.
+; The row loop around it self-scales as in the scalar program; this one
+; measures the language, the scalar one the engine.
+
+function count8(x: int, y: int, n: int) returns int
+{
+    let step 2.0 / (n as double)
+    let ci f64x4.splat(step * (y as double) - 1.0)
+    let cr0 f64x4.iota(step * (x as double) - 1.5, step)
+    let cr1 cr0 + 4.0 * step
+    var zr0 f64x4.splat(0.0)
+    var zi0 f64x4.splat(0.0)
+    var zr1 zr0
+    var zi1 zi0
+    var inside0 mask4.all_set()
+    var inside1 inside0
+    var i 0
+    while i < 50 and (inside0 or inside1).any()
+    {
+        let t0 zr0 * zr0 - zi0 * zi0 + cr0
+        set zi0: 2.0 * zr0 * zi0 + ci
+        set zr0: t0
+        let t1 zr1 * zr1 - zi1 * zi1 + cr1
+        set zi1: 2.0 * zr1 * zi1 + ci
+        set zr1: t1
+        set inside0: inside0 and (zr0 * zr0 + zi0 * zi0 <= 4.0)
+        set inside1: inside1 and (zr1 * zr1 + zi1 * zi1 <= 4.0)
+        set i: i + 1
+    }
+    inside0.count() + inside1.count()
+}
+
+function row_count(y: int, n: int) returns int
+{
+    var count 0
+    var x 0
+    while x < n
+    {
+        set count: count + count8(x, y, n)
+        set x: x + 8
+    }
+    count
+}
+
+let n 8000
+var counts Vector[int](n as size_t)
+for y in n
+    counts.put(y as size_t, row_count(y, n))
+
+var total 0
+for c in counts
+    set total: total + c
+print("mandelbrot `n`: `total` points inside")

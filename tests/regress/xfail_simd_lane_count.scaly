@@ -1,0 +1,6 @@
+; xfail: error: f64x4 takes 4 lanes, one argument each
+;
+; A vector construction names every lane; one value for all lanes is
+; `f64x4.splat(x)` (ROADMAP-simd.md).
+let a f64x4(1.0, 2.0)
+print "unreachable"

@@ -1,0 +1,12 @@
+; A SIMD lane index out of range traps like every bounds violation (exit 15,
+; scaly_panic_oob), for a read and for `with`; the index is computed so the
+; compiler cannot fold the check away (ROADMAP-simd.md).
+; expect-rc: 15
+; expect-out: SIMD lane: index out of bounds
+
+function main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    let v f64x4(1.0, 2.0, 3.0, 4.0)
+    let x v[argc + 3]
+    x as int
+}

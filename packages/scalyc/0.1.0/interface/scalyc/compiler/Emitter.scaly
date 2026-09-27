@@ -4599,6 +4599,9 @@ define Emitter
 
 
 
+
+
+
         ; Check if a type name is an intrinsic type
         function is_intrinsic_type(this, name: String) @ret_nonlocal true @deep true returns bool linked
 
@@ -4812,12 +4815,16 @@ define Emitter
 
 
 
+
+
         ; s179: ABI alloc size of an LLVM type, walked structurally.
         ; Mirrors stage-0's getTypeSize (DataLayout::getTypeAllocSize,
         ; Emitter.cpp:6637) without touching DataLayout — see the s149/
         ; s97 cautions on llvm_type_abi_align. Check llvm_type_sizable
         ; first; unsizeable kinds return 0 here.
         procedure llvm_type_abi_size(this, mutable ty: LLVMTypeRef) @ret_caller true @deep true returns size_t linked
+
+
 
 
 
@@ -12180,8 +12187,17 @@ define Emitter
 
 
 
+
+
+
         ; Emit an intrinsic unary operator
         procedure emit_intrinsic_unary_op(mutable this, op_name: String, mutable operand: LLVMValueRef, mutable result_type: PlannedType) @direct true @deep true returns LLVMValueRef linked
+
+
+
+
+
+
 
 
 
@@ -12756,8 +12772,364 @@ define Emitter
 
 
 
+
+
+
         ; Emit an intrinsic function call
+        ; ---- SIMD vectors (ROADMAP-simd.md) -------------------------------
+
+        procedure vector_bytes(this, mutable t: LLVMTypeRef) @ret_caller true @deep true returns size_t linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; a scalar converted to a lane's type
+        procedure simd_scalar_to(mutable this, mutable v: LLVMValueRef, mutable et: LLVMTypeRef, signed_src: bool) @direct true @deep true returns LLVMValueRef linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; every lane `v`
+        procedure simd_splat(mutable this, mutable v: LLVMValueRef, mutable vt: LLVMTypeRef, signed_src: bool) @direct true @deep true returns LLVMValueRef linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        function simd_unsigned(t: PlannedType) @ret_caller true @deep true returns bool linked
+
+
+
+
+
+        procedure emit_simd_binary(mutable this, op: String, mutable left: LLVMValueRef, mutable right: LLVMValueRef, lt: PlannedType, rt: PlannedType) @direct true @deep true returns LLVMValueRef linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; `v as T` between vectors of one lane count, element by element
+        procedure emit_simd_cast(mutable this, mutable v: LLVMValueRef, mutable dst: LLVMTypeRef, from: PlannedType, to: PlannedType) @direct true @deep true returns LLVMValueRef linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; a lane index checked against the lane count: exit 15, the bounds trap
+        procedure simd_lane_index(mutable this, mutable idx: LLVMValueRef, lanes: size_t) @direct true @deep true returns LLVMValueRef linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure simd_intrinsic(mutable this, mutable name: String, mutable ret: LLVMTypeRef, mutable arg: LLVMTypeRef) @direct true @deep true returns LLVMValueRef linked
+
+
+
+
+
+
+        ; the planned intrinsic calls `simd.*` (Planner.plan_simd_call#)
+        procedure emit_simd(mutable this, mutable call: PlannedCall) @direct true @deep true returns LLVMValueRef linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         procedure emit_intrinsic_function(mutable this, mutable call: PlannedCall) @direct true @deep true returns LLVMValueRef linked
+
+
 
 
 
@@ -18798,6 +19170,9 @@ define Emitter
 
         ; Emit as expression (type cast)
         procedure emit_as(mutable this, mutable as_expr: PlannedAs) @direct true @deep true returns LLVMValueRef linked
+
+
+
 
 
 

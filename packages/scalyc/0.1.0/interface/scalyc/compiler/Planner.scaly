@@ -16891,6 +16891,46 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         ; check_operator_match: test a single Operator candidate against
         ; argument types. Same shape as check_function_match.
         procedure check_operator_match(
@@ -19497,6 +19537,189 @@ define Planner
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; ---- SIMD vector types: the planned intrinsic calls (ROADMAP-simd.md)
+
+        ; the result of `a OP b` where one side is a vector: the vector type,
+        ; a mask for a comparison; two vectors must be the same type, a
+        ; scalar side is broadcast into the element type by the Emitter
+        procedure plan_simd_binary(mutable this: Planner, op: String, lt: PlannedType, rt: PlannedType, loc: Span) @page true @direct true @deep true returns PlannedType linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; an intrinsic call operand the Emitter lowers by name (emit_simd#)
+        procedure simd_operand(mutable this: Planner, loc: Span, name: String, args: Vector[PlannedOperand], rt: PlannedType, trailing: ref[Vector[PlannedMemberAccess]]?) @page true @direct true @deep true returns PlannedOperand linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; What kind of SIMD call `fn_name(...)` is (plan_simd_call#): 0 none,
+        ; 1 a method through a member hop (`(a or b).any()`), 2 a static
+        ; (`f64x4.splat`), 3 a method on a local (`v.any`), 4 a construction
+        ; (`f64x4(a, b, c, d)`), 5 `select(m, a, b)`
+        function simd_call_kind(this: Planner, result: PlannedOperand, fn_name: String, value_method_hop: bool, arg_ops: Vector[PlannedOperand]) @ret_nonlocal true @deep true returns int linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; the call simd_call_kind# recognized, planned
+        procedure plan_simd_call(mutable this: Planner, kind: int, result: PlannedOperand, second: PlannedOperand, fn_name: String, arg_ops: Vector[PlannedOperand]) @page true @direct true @deep true returns PlannedOperand linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure plan_simd_static(mutable this: Planner, t: String, m: String, arg_ops: Vector[PlannedOperand], second: PlannedOperand) @page true @direct true @deep true returns PlannedOperand linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+        procedure plan_simd_method(mutable this: Planner, recv: PlannedOperand, m: String, arg_ops: Vector[PlannedOperand], second: PlannedOperand) @page true @direct true @deep true @deep_into_1_8 true returns PlannedOperand linked
 
 
 
@@ -52523,7 +52746,134 @@ define Planner
 
 
 
+    ; ---- SIMD vector types (ROADMAP-simd.md) ------------------------------
+    ; Built-in VALUE types named by element and lane count, lowered to LLVM
+    ; vectors. A name is all the compiler needs: no grammar, no concept.
+
+    function simd_lanes(name: String) @ret_nonlocal true @deep true returns size_t linked
+
+
+
+
+
+
+
+
+
+
+    function is_simd_type_name(name: String) @ret_nonlocal true @deep true returns bool linked
+
+
+    function is_simd_mask_name(name: String) @ret_nonlocal true @deep true returns bool linked
+
+
+    ; the scalar type of one lane (a mask's lane is a bool)
+    function simd_element_name(name: String) @page true @direct true @ret_caller true @deep true returns String linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ; bytes of one value; a mask packs its lanes into bits
+    function simd_size(name: String) @ret_nonlocal true @deep true returns size_t linked
+
+
+
+
+
+
+
+
+
+
+
+    function simd_type(name: String) @page true @direct true @ret_caller true @deep true returns PlannedType linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    function simd_mask_type(lanes: size_t) @page true @direct true @ret_caller true @deep true returns PlannedType linked
+
+
+    function simd_result_type(name: String) @page true @direct true @ret_caller true @deep true returns PlannedType linked
+
+
+
+
+
+
+
+
+    function simd_element_type(name: String) @page true @direct true @ret_caller true @deep true returns PlannedType linked
+
+
+
+
+
+
+
+
+
+
+
+
+    ; The result type NAME of method `m` on a value of vector type `t`
+    ; ("" when `t` has no such method). Phase 1: lanes, masks.
+    function simd_method_result(t: String, m: String) @page true @direct true @deep true returns String linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ; The result type of a static `T.m(...)` on vector type `t`, "" if none.
+    function simd_static_result(t: String, m: String) @page true @direct true @ret_param_0 true @deep true returns String linked
+
+
+
+
+
+
+
+
+
+
+
+
     function is_primitive_type_name(name: String) @ret_nonlocal true @deep true returns bool linked
+
+
 
 
 
@@ -52538,6 +52888,9 @@ define Planner
     ; fields), which is good enough for Phase-2 layout decisions. Unknown
     ; or non-primitive types default to 8-byte alignment.
     function get_primitive_alignment(type_name: String) @ret_nonlocal true @deep true returns size_t linked
+
+
+
 
 
 
