@@ -21771,6 +21771,44 @@ define Planner
 
 
 
+        ; The operand of a PREFIX operator on the right side of a binary one is
+        ; a call when a tuple follows it (`6 <= *w(b, 0)`, `5 - -f(3)`): the
+        ; call binds tighter than the prefix, so it is folded first. The prefix
+        ; branch took the NAME alone and left the tuple behind; the comparison
+        ; and the `if` around it vanished, an arithmetic right side was
+        ; garbage, rc 0 (2026-09-27, found writing the route-3 spike).
+        ; `extra` counts the operands consumed past the prefix's operand.
+        procedure fold_prefix_call(mutable this: Planner, operand: PlannedOperand, ops: Vector[PlannedOperand], at: size_t, mutable extra: ref[size_t]) @page true @direct true @stores true @deep true @deep_this_6 true returns PlannedOperand io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         function operand_is_tuple(op: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
 
 

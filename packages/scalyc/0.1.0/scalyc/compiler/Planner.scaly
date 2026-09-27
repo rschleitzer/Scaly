@@ -15974,7 +15974,7 @@ define Planner
                             {
                                 var pfx_arr Array[PlannedOperand]()
                                 pfx_arr.add rhs
-                                pfx_arr.add((*pfx_operand_ptr))
+                                pfx_arr.add(this.fold_prefix_call((*pfx_operand_ptr), ops, i + 2, &rhs_extra))
                                 var pfx_vec Vector[PlannedOperand](pfx_arr)
                                 set rhs: this.collapse_operand_sequence(pfx_vec)
                                 set rhs_call_consumed: true
@@ -21769,6 +21769,44 @@ define Planner
             set extra: n
             var vec Vector[PlannedOperand](arr)
             this.collapse_operand_sequence(vec)
+        }
+
+        ; The operand of a PREFIX operator on the right side of a binary one is
+        ; a call when a tuple follows it (`6 <= *w(b, 0)`, `5 - -f(3)`): the
+        ; call binds tighter than the prefix, so it is folded first. The prefix
+        ; branch took the NAME alone and left the tuple behind; the comparison
+        ; and the `if` around it vanished, an arithmetic right side was
+        ; garbage, rc 0 (2026-09-27, found writing the route-3 spike).
+        ; `extra` counts the operands consumed past the prefix's operand.
+        procedure fold_prefix_call(mutable this: Planner, operand: PlannedOperand, ops: Vector[PlannedOperand], at: size_t, mutable extra: ref[size_t]) returns PlannedOperand
+        {
+            if at + 1 >= ops.length
+                return operand
+            let np ops.get(at + 1)
+            if np = null or Planner.operand_is_tuple((*np)) = false
+                return operand
+            var callable false
+            choose operand.expr
+                when ty: PlannedType
+                    set callable: Planner.is_operator_name(ty.name) = false
+                else
+                    0
+            if callable = false and operand.member_access <> null
+            {
+                let ma (*operand.member_access)
+                if ma.length > 0
+                {
+                    let last ma.get(ma.length - 1)
+                    if last <> null and (*last).is_method
+                        set callable: true
+                }
+            }
+            if callable = false
+                return operand
+            var more: size_t 0
+            let call this.fold_rhs_call(operand, ops, at + 1, &more)
+            set extra: more + 1
+            call
         }
 
         function operand_is_tuple(op: PlannedOperand) returns bool
