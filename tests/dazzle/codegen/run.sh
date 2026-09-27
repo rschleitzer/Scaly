@@ -26,22 +26,29 @@ if ! tests/dazzle/build-cli.sh "$DZ" "$BIN" > "$SNAP/build.log" 2>&1; then
 fi
 
 # (spec.dsl, doc.sgm, generated-files...) — the ./mkp openjade lines.
+# ★The engine writes its `file` flow objects relative to its WORKING
+# DIRECTORY, so each case runs in a scratch directory of its own and the
+# outputs are compared there with the committed files. It used to run in the
+# tree: every generated file was overwritten in place and the golden copied
+# back afterwards — and in tools/bar.sh this suite runs BESIDE the compiler
+# lane, whose selfhosted suite then read a file the engine had just truncated
+# ("Error: Could not read input file", one test in one bar, 2026-09-27); a run
+# stopped inside the window left the tree changed. The tree is read only now.
 run_case() {
   local spec="$1" doc="$2"; shift 2
-  local targets=("$@")
-  # snapshot the committed goldens
-  local i=0
-  for f in "${targets[@]}"; do cp "$f" "$SNAP/g$i"; i=$((i+1)); done
-  if ! SCALY_HOME="$ROOT" "$DZ" -t sgml -d "$spec" "$doc" > "$SNAP/stdout" 2>"$SNAP/stderr"; then
-    echo "dazzle-codegen: FAIL ($spec rc=$?)"; cat "$SNAP/stderr"; return 1
+  local out; out=$(mktemp -d "$SNAP/case.XXXXXX")
+  local f
+  for f in "$@"; do mkdir -p "$out/$(dirname "$f")"; done
+  if ! (cd "$out" && SCALY_HOME="$ROOT" "$DZ" -t sgml -d "$ROOT/$spec" "$ROOT/$doc" > "$SNAP/stdout" 2>"$SNAP/stderr"); then
+    echo "dazzle-codegen: FAIL ($spec)"; cat "$SNAP/stderr"; return 1
   fi
-  # diff each regenerated file against its golden, then restore the golden
-  local rc=0; i=0
-  for f in "${targets[@]}"; do
-    if ! diff -q "$SNAP/g$i" "$f" >/dev/null 2>&1; then
-      echo "dazzle-codegen: FAIL — $f differs from openjade golden"; diff "$SNAP/g$i" "$f" | head -6; rc=1
+  local rc=0
+  for f in "$@"; do
+    if [ ! -f "$out/$f" ]; then
+      echo "dazzle-codegen: FAIL — $f was not generated"; rc=1
+    elif ! diff -q "$f" "$out/$f" >/dev/null 2>&1; then
+      echo "dazzle-codegen: FAIL — $f differs from openjade golden"; diff "$f" "$out/$f" | head -6; rc=1
     fi
-    cp "$SNAP/g$i" "$f"; i=$((i+1))
   done
   return $rc
 }

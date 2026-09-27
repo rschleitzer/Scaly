@@ -28114,6 +28114,9 @@ declare void @scaly_eio_sleep_us(i32)
 
 define linkonce_odr i1 @_ZN8ForkJoin5readyEv() {
 entry:
+  %one21 = alloca ptr, align 8
+  %one = alloca [1 x i8], align 1
+  %w = alloca i64, align 8
   %i = alloca i64, align 8
   %atomic.load = load atomic i64, ptr @fj_state seq_cst, align 8
   %eq = icmp eq i64 %atomic.load, 2
@@ -28175,6 +28178,32 @@ while.exit:                                       ; preds = %while.cond
   store ptr %call10, ptr @fj_registry, align 8
   store ptr %call8, ptr @fj_pool, align 8
   store atomic i64 2, ptr @fj_state seq_cst, align 8
+  store i64 0, ptr %w, align 1
+  br label %while.cond16
+
+while.cond16:                                     ; preds = %while.body17, %while.exit
+  %w19 = load i64, ptr %w, align 8
+  %load.struct = load %_Z8TaskPool, ptr %call8, align 8
+  %nworkers = extractvalue %_Z8TaskPool %load.struct, 1
+  %lt20 = icmp slt i64 %w19, %nworkers
+  br i1 %lt20, label %while.body17, label %while.exit18
+
+while.body17:                                     ; preds = %while.cond16
+  %1 = atomicrmw add ptr @fj_credit, i64 1 seq_cst, align 8
+  %arr.ptr = getelementptr inbounds [1 x i8], ptr %one, i64 0, i64 0
+  store ptr %arr.ptr, ptr %one21, align 8
+  %one22 = load ptr, ptr %one21, align 8
+  store i8 1, ptr %one22, align 1
+  %field.inplace = getelementptr inbounds nuw %_Z8TaskPool, ptr %call8, i32 0, i32 6
+  %field.val = load i32, ptr %field.inplace, align 4
+  %one23 = load ptr, ptr %one21, align 8
+  %call24 = call i64 @scaly_eio_write(i32 %field.val, ptr %one23, i64 1)
+  %w25 = load i64, ptr %w, align 8
+  %add26 = add i64 %w25, 1
+  store i64 %add26, ptr %w, align 1
+  br label %while.cond16
+
+while.exit18:                                     ; preds = %while.cond16
   ret i1 true
 }
 

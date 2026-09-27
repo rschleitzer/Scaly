@@ -3063,6 +3063,24 @@ define ForkJoin
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     ; Does this pool serve fork-join steals?
     procedure serves(pl: pointer[TaskPool]) @ret_nonlocal true @deep true returns bool reads fj_state linked
 

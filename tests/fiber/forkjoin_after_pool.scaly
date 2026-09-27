@@ -1,0 +1,68 @@
+; Fork-join after the pool already exists (ROADMAP 4.8, route 3; 2026-09-27).
+; A pool worker counts itself idle for fork-join only while it blocks, and it
+; decided whether to count BEFORE blocking — so a worker that blocked before
+; fork-join was set up (here: after a parallel `for` created the pool) was
+; never counted: the heartbeat found no idle worker, published nothing, and no
+; call was ever stolen. It also raced fork-join's own setup (both workers of a
+; two-worker pool faster than ready(): forkjoin_emit failed 1 in 60 on Linux
+; CI). ready() now wakes every worker once, and each re-blocks counted.
+; Expected: forkjoin-after-pool-ok done
+
+function spin(seed: int) returns int
+{
+    var acc seed
+    var k 0
+    while k < 40000
+    {
+        set acc: acc + k % 7
+        set k: k + 1
+    }
+    acc
+}
+
+function leaf(lo: int, hi: int) returns int
+{
+    var acc 0
+    var i lo
+    while i < hi
+    {
+        set acc: acc + (i * i) % 1000003
+        set i: i + 1
+    }
+    acc
+}
+
+function rsum(lo: int, hi: int) returns int
+{
+    if hi - lo <= 2048
+        return leaf(lo, hi)
+    let mid lo + (hi - lo) / 2
+    rsum(lo, mid) + rsum(mid, hi)
+}
+
+; a parallel loop first: it creates the pool, its workers block afterwards
+var warm Vector[int](64)
+for i in 64
+    warm.put(i as size_t, spin(i))
+
+let two TaskPool.ncpu() > 1
+let before ForkJoin.steal_count()
+let big 100000000
+var want 0
+var j 0
+while j < big
+{
+    set want: want + (j * j) % 1000003
+    set j: j + 1
+}
+if rsum(0, big) <> want
+{
+    scaly_eputs "rsum wrong\n"
+    exit 1
+}
+if two and ForkJoin.steal_count() = before
+{
+    scaly_eputs "rsum never stolen\n"
+    exit 1
+}
+print "forkjoin-after-pool-ok done"

@@ -3060,6 +3060,24 @@ define ForkJoin
         set fj_registry: reg
         set fj_pool: pl as pointer[TaskPool]
         scaly_atomic_store_u64(&fj_state, 2 as u64)
+        ; A worker counts itself idle for fork-join only while it blocks, and
+        ; decides whether to BEFORE blocking (task_worker): every worker that
+        ; blocked before this point — all of them when a parallel `for` made
+        ; the pool, any that outran this setup otherwise — is uncounted, and
+        ; with no idle worker the heartbeat publishes nothing and no call is
+        ; ever stolen (tests/fiber/forkjoin_after_pool: never, 10 of 10;
+        ; forkjoin_emit: 1 in 60 on a two-worker pool). So wake each worker
+        ; once, with a credit: it looks for a steal (work), finds none, and
+        ; blocks again — counted now.
+        var w: i64 0
+        while w < pl.nworkers
+        {
+            scaly_atomic_add_u64(&fj_credit, 1 as u64)
+            var one u8[1]
+            set *(one as pointer[u8]): 1
+            scaly_eio_write(pl.pipe_write, one as pointer[void], 1 as size_t)
+            set w: w + 1
+        }
         true
     }
 

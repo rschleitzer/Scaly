@@ -10,6 +10,10 @@
 ; Wave K: keep the Strings read (region adoption) — must fork, every one right.
 ; Wave E: File.exists per slot — must fork, every answer right.
 ; Wave W: write files — must NOT fork.
+; The files live in the CURRENT DIRECTORY and are removed at the end, as in
+; file_read: on Windows an absolute "/tmp/..." resolves against the drive
+; root, the writes failed without a word and every read wave came back wrong
+; (the first Windows CI run, 2026-09-27).
 ; Expected: read-forked read-ok kept-ok exists-ok write-sequential done
 
 define FILES: int 64
@@ -29,7 +33,7 @@ function count_lines(s: String) returns int
 }
 
 function path_of(i: int) returns String
-    "/tmp/scaly_parallel_read_`i`.txt"
+    "scaly_parallel_read_`i`.tmp"
 
 ; file i holds 400 + i lines of 40 bytes: 16 KB and more
 function content_of(i: int) returns String
@@ -111,7 +115,7 @@ while j < FILES
     if j % 2 = 0
         names.put(j as size_t, path_of(j))
     else
-        names.put(j as size_t, "/tmp/scaly_parallel_read_missing_`j`.txt")
+        names.put(j as size_t, "scaly_parallel_read_missing_`j`.tmp")
     set j: j + 1
 }
 var there Vector[bool](FILES as size_t)
@@ -133,4 +137,10 @@ let before_w TaskPool.submit_count(pool)
 write_wave(FILES)
 if TaskPool.submit_count(pool) = before_w
     Console.print "write-sequential "
+set j: 0
+while j < FILES
+{
+    unlink(path_of(j).to_c_string())
+    set j: j + 1
+}
 Console.println "done"
