@@ -44,10 +44,28 @@ use scaly.fiber.TaskPool
 ; connection becomes a task of the scheduler that accepted it. The handler
 ; is a zero-argument task procedure; it takes its connection with
 ; TcpStream.of_task() and closes it (serve cannot: once closed, the number
-; may already name the next connection). serve runs until the process ends,
-; as Go's ListenAndServe does: closing the listener from elsewhere does not
-; wake the accept loops parked on it (kqueue and epoll drop a closed
-; descriptor silently), so a graceful shutdown is not part of v1.
+; may already name the next connection). serve runs until a handler shuts
+; the server down (TcpServer.current().shutdown(), below) — else, as Go's
+; ListenAndServe, until the process ends.
+;
+; A server that must stop is started instead: start returns a TcpServer at
+; once (its threads serve; the calling thread does not), shutdown stops the
+; accepting, wait returns when every connection has ended. Closing the
+; listener could not do it — kqueue and epoll drop a closed descriptor
+; silently and the accept loops parked on it would never wake — so shutdown
+; sets a stop flag and makes ONE local connection per accept loop: each loop
+; checks the flag after every accept, drops that connection and ends, and a
+; loop that has ended no longer waits on the listener, so every wake
+; connection reaches a different loop. shutdown waits for nothing (a handler
+; may call it); the connections in flight run to their end, and a handler
+; that keeps a connection alive asks TcpServer.current().stopping() between
+; two requests.
+;
+;   let server l.start(&handle)
+;   ...
+;   server.shutdown()
+;   server.wait()               ; every connection ended; the handle is spent
+;   l.close()
 ;
 ;   procedure handle()
 ;   {
@@ -78,16 +96,27 @@ procedure tcp_close_fd(fd: i32)
     close(fd as int)
 }
 
+; The serve cell of the thread running this code (TcpServer.current):
+; thread-local like every mutable global, set by tcp_serve_thread.
+mutable tcp_current_serve: pointer[i64] null
+
 ; Accept on lfd, each connection a task of the
 ; running scheduler that runs handler with the connection's fd as its task
-; argument. An accept error on a listener that still has its port is
-; transient (a connection reset before it was taken, a descriptor limit
-; hit for a moment): the loop yields and goes on.
-procedure tcp_accept_into_tasks(lfd: i32, mutable handler: pointer[void])
+; argument, until *stop is set (checked after every accept: the connection
+; that woke the loop is dropped). An accept error on a listener that still
+; has its port is transient (a connection reset before it was taken, a
+; descriptor limit hit for a moment): the loop yields and goes on.
+procedure tcp_accept_into_tasks(lfd: i32, mutable handler: pointer[void], mutable stop: pointer[u64])
 {
     repeat
     {
         let c Io.accept(lfd)
+        if scaly_atomic_load_u64(stop) <> 0
+        {
+            if c >= 0
+                tcp_close_fd(c)
+            return
+        }
         if c >= 0
         {
             Io.set_nonblocking(c)
@@ -102,20 +131,22 @@ procedure tcp_accept_into_tasks(lfd: i32, mutable handler: pointer[void])
     }
 }
 
-; The task every serving scheduler starts with: its argument is the serve
-; cell {listener fd, handler} of two i64.
+; The serve cell, i64 words: [0] listener fd, [1] handler, [2] stop flag,
+; [3] thread count, [4 ..] the threads' handles (TcpListener.start).
 procedure tcp_serve_loop()
 {
     let cell Scheduler.task_arg() as pointer[i64]
     let lfd (*cell) as i32
     let handler (*(((cell as size_t) + 8) as pointer[i64])) as pointer[void]
-    tcp_accept_into_tasks(lfd, handler)
+    tcp_accept_into_tasks(lfd, handler, ((cell as size_t) + 16) as pointer[u64])
 }
 
 ; One serving thread: a scheduler of its own, the accept loop as its first
-; task. Runs until the process ends (see serve).
-procedure tcp_serve_thread(mutable arg: pointer[void]) returns pointer[void]
+; task. Returns when the accept loop has stopped and the last connection has
+; ended (never, under serve).
+procedure tcp_serve_thread(mutable arg: pointer[void]) returns pointer[void] mutable tcp_current_serve
 {
+    set tcp_current_serve: arg as pointer[i64]
     let page Page.allocate_page()
     let sched Scheduler.create(page)
     Scheduler.spawn_arg(&tcp_serve_loop, arg)
@@ -235,23 +266,28 @@ define TcpListener(var fd: i32)
 
     ; Serve every connection with handler, over all cores: one scheduler
     ; per core, this thread one of them, all accepting here (see the module
-    ; header). Does not return while the process runs (see there). Inside a
-    ; task there is a scheduler already: the connections become tasks of
-    ; that one.
+    ; header). Runs until a handler calls TcpServer.current().shutdown()
+    ; and the last connection has ended — else for as long as the process.
+    ; Inside a task there is a scheduler already: the connections become
+    ; tasks of that one.
     procedure serve(this, mutable handler: pointer[void])
     {
         if fd < 0
             return
-        if Io.in_task()
-        {
-            tcp_accept_into_tasks(fd, handler)
-            return
-        }
         let p Page.allocate_page()
-        let cell p.allocate(16, 8) as pointer[i64]
+        let cell p.allocate(32, 8) as pointer[i64]
         set *cell: fd as i64
         set *(((cell as size_t) + 8) as pointer[i64]): handler as i64
+        set *(((cell as size_t) + 16) as pointer[i64]): 0
+        if Io.in_task()
+        {
+            set *(((cell as size_t) + 24) as pointer[i64]): 1
+            tcp_accept_into_tasks(fd, handler, ((cell as size_t) + 16) as pointer[u64])
+            Page.release_page(p)
+            return
+        }
         let n TaskPool.ncpu()
+        set *(((cell as size_t) + 24) as pointer[i64]): n
         var threads Array[size_t]()
         var i: i64 1
         while i < n
@@ -263,6 +299,31 @@ define TcpListener(var fd: i32)
         for t in threads
             Thread.join(t)
         Page.release_page(p)
+    }
+
+    ; Serve like serve, but return at once with a TcpServer that can stop:
+    ; one thread per core serves (the calling thread does not), shutdown
+    ; stops the accepting, wait returns when every connection has ended (see
+    ; the module header). Not running when the listener is not open.
+    procedure start(this, mutable handler: pointer[void]) returns TcpServer
+    {
+        if fd < 0
+            return TcpServer(null as pointer[i64])
+        let n TaskPool.ncpu()
+        let p Page.allocate_page()
+        let cell p.allocate(((4 + n) * 8) as size_t, 8) as pointer[i64]
+        set *cell: fd as i64
+        set *(((cell as size_t) + 8) as pointer[i64]): handler as i64
+        set *(((cell as size_t) + 16) as pointer[i64]): 0
+        set *(((cell as size_t) + 24) as pointer[i64]): n
+        var i: i64 0
+        while i < n
+        {
+            let h Thread.spawn(&tcp_serve_thread, cell as pointer[void])
+            set *(((cell as size_t) + ((4 + i) * 8) as size_t) as pointer[i64]): h as i64
+            set i: i + 1
+        }
+        TcpServer(cell)
     }
 
     ; Wait for a connection colorlessly and return it as a nonblocking
@@ -284,5 +345,69 @@ define TcpListener(var fd: i32)
             tcp_close_fd(fd)
             set fd: 0 - 1
         }
+    }
+}
+
+; A running server (TcpListener.start): a handle on the serve cell. A copy
+; names the same server; after wait the handle is spent.
+define TcpServer(cell: pointer[i64])
+{
+    ; The server whose thread runs the calling task (not running elsewhere):
+    ; how a handler reaches its server without a global of its own.
+    procedure current() returns TcpServer
+        TcpServer(tcp_current_serve)
+
+    function is_running(this) returns bool
+        cell <> null
+
+    ; Has shutdown been called? A handler that keeps a connection alive asks
+    ; between two requests and ends the connection when it answers true.
+    procedure stopping(this) returns bool
+    {
+        if cell = null
+            return false
+        scaly_atomic_load_u64(((cell as size_t) + 16) as pointer[u64]) <> 0
+    }
+
+    ; Stop accepting: set the stop flag, then one local connection per accept
+    ; loop to wake it (the module header has why). Waits for nothing; from
+    ; any thread or task, more than once is harmless. The connections in
+    ; flight go on.
+    procedure shutdown(this)
+    {
+        if cell = null
+            return
+        let stop ((cell as size_t) + 16) as pointer[u64]
+        if scaly_atomic_load_u64(stop) <> 0
+            return
+        scaly_atomic_store_u64(stop, 1 as u64)
+        let port Io.local_port((*cell) as i32)
+        let n *(((cell as size_t) + 24) as pointer[i64])
+        var i: i64 0
+        while i < n
+        {
+            let s Io.connect(port)
+            if s >= 0
+                tcp_close_fd(s)
+            set i: i + 1
+        }
+    }
+
+    ; Return when every serving thread has ended: shutdown was called and the
+    ; last connection is done. Call it outside the server's own threads (a
+    ; handler waiting for its own thread never returns). The handle is spent
+    ; afterwards; the listener stays open until its owner closes it.
+    procedure wait(this)
+    {
+        if cell = null
+            return
+        let n *(((cell as size_t) + 24) as pointer[i64])
+        var i: i64 0
+        while i < n
+        {
+            Thread.join((*(((cell as size_t) + ((4 + i) * 8) as size_t) as pointer[i64])) as size_t)
+            set i: i + 1
+        }
+        Page.release_page(Page.get(cell))
     }
 }

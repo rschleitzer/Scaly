@@ -204,6 +204,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z4NodeImE = type { i64, ptr }
 %_Z12ListIteratorImE = type { ptr }
 %_Z13ArrayIteratorImE = type { ptr, i64 }
+%_Z9TcpServer = type { ptr }
 %_Z8NodePeer = type { i64, i32, i1, i64, ptr, ptr, i64, ptr, i64, i64, i64, i64, i64 }
 %_Z8NodeDown = type { i64 }
 %_Z6VectorIfE = type { i64, ptr }
@@ -314,6 +315,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 @"8SEEK_END" = internal constant i64 2
 @"4F_OK" = internal constant i64 0
 @"4F_OK.1" = internal constant i64 0
+@tcp_current_serve = thread_local global ptr null
 @"15NODE_WIRE_MAGIC" = internal constant i64 4922239063177642835
 @"18NODE_PROTO_VERSION" = internal constant i64 1
 @"15NODE_FRAME_DATA" = internal constant i64 1
@@ -29348,39 +29350,55 @@ entry:
   ret void
 }
 
-define linkonce_odr void @_Z21tcp_accept_into_tasks3i32Pv(i32 %0, ptr %1) {
+define linkonce_odr void @_Z21tcp_accept_into_tasks3i32PvP3u64(i32 %0, ptr %1, ptr %2) {
 entry:
   br label %repeat.body
 
-repeat.body:                                      ; preds = %if.end, %entry
+repeat.body:                                      ; preds = %if.end5, %entry
   %call = call i32 @_ZN2Io6acceptE3i32(i32 %0)
-  %ge = icmp sge i32 %call, 0
-  br i1 %ge, label %if.then, label %if.else
+  %atomic.load = load atomic i64, ptr %2 seq_cst, align 8
+  %ne = icmp ne i64 %atomic.load, 0
+  br i1 %ne, label %if.then, label %if.end
 
 repeat.exit:                                      ; No predecessors!
   ret void
 
 if.then:                                          ; preds = %repeat.body
+  %ge = icmp sge i32 %call, 0
+  br i1 %ge, label %if.then1, label %if.end2
+
+if.end:                                           ; preds = %repeat.body
+  %ge3 = icmp sge i32 %call, 0
+  br i1 %ge3, label %if.then4, label %if.else
+
+if.then1:                                         ; preds = %if.then
+  call void @_Z12tcp_close_fd3i32(i32 %call)
+  br label %if.end2
+
+if.end2:                                          ; preds = %if.then1, %if.then
+  ret void
+
+if.then4:                                         ; preds = %if.end
   call void @_ZN2Io15set_nonblockingE3i32(i32 %call)
   %as.sext = sext i32 %call to i64
   %as.inttoptr = inttoptr i64 %as.sext to ptr
-  %call1 = call ptr @_ZN9Scheduler9spawn_argEPvPv(ptr %1, ptr %as.inttoptr)
-  br label %if.end
+  %call6 = call ptr @_ZN9Scheduler9spawn_argEPvPv(ptr %1, ptr %as.inttoptr)
+  br label %if.end5
 
-if.else:                                          ; preds = %repeat.body
-  %call2 = call i32 @_ZN2Io10local_portE3i32(i32 %0)
-  %lt = icmp slt i32 %call2, 0
-  br i1 %lt, label %if.then3, label %if.end4
+if.else:                                          ; preds = %if.end
+  %call7 = call i32 @_ZN2Io10local_portE3i32(i32 %0)
+  %lt = icmp slt i32 %call7, 0
+  br i1 %lt, label %if.then8, label %if.end9
 
-if.end:                                           ; preds = %if.end4, %if.then
+if.end5:                                          ; preds = %if.end9, %if.then4
   br label %repeat.body
 
-if.then3:                                         ; preds = %if.else
+if.then8:                                         ; preds = %if.else
   ret void
 
-if.end4:                                          ; preds = %if.else
+if.end9:                                          ; preds = %if.else
   call void @_ZN9Scheduler5yieldEv()
-  br label %if.end
+  br label %if.end5
 }
 
 define linkonce_odr void @_Z14tcp_serve_loopv() {
@@ -29393,12 +29411,16 @@ entry:
   %as.inttoptr = inttoptr i64 %add to ptr
   %deref1 = load i64, ptr %as.inttoptr, align 8
   %as.inttoptr2 = inttoptr i64 %deref1 to ptr
-  call void @_Z21tcp_accept_into_tasks3i32Pv(i32 %as.trunc, ptr %as.inttoptr2)
+  %as.ptrtoint3 = ptrtoint ptr %call to i64
+  %add4 = add i64 %as.ptrtoint3, 16
+  %as.inttoptr5 = inttoptr i64 %add4 to ptr
+  call void @_Z21tcp_accept_into_tasks3i32PvP3u64(i32 %as.trunc, ptr %as.inttoptr2, ptr %as.inttoptr5)
   ret void
 }
 
 define linkonce_odr ptr @_Z16tcp_serve_threadPv(ptr %0) {
 entry:
+  store ptr %0, ptr @tcp_current_serve, align 8
   %call = call ptr @_ZN4Page13allocate_pageEv()
   %call1 = call ptr @_ZN9Scheduler6createER4Page(ptr %call)
   %call2 = call ptr @_ZN9Scheduler9spawn_argEPvPv(ptr @_Z14tcp_serve_loopv, ptr %0)
@@ -30906,68 +30928,84 @@ if.then:                                          ; preds = %entry
   ret void
 
 if.end:                                           ; preds = %entry
-  %call = call i1 @_ZN2Io7in_taskEv()
-  br i1 %call, label %if.then1, label %if.end2
+  %call = call ptr @_ZN4Page13allocate_pageEv()
+  %call1 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 32, i64 8)
+  %load.struct2 = load %_Z11TcpListener, ptr %0, align 4
+  %fd3 = extractvalue %_Z11TcpListener %load.struct2, 0
+  %as.sext = sext i32 %fd3 to i64
+  store i64 %as.sext, ptr %call1, align 8
+  %as.ptrtoint = ptrtoint ptr %1 to i64
+  %as.ptrtoint4 = ptrtoint ptr %call1 to i64
+  %add = add i64 %as.ptrtoint4, 8
+  %as.inttoptr = inttoptr i64 %add to ptr
+  store i64 %as.ptrtoint, ptr %as.inttoptr, align 8
+  %as.ptrtoint5 = ptrtoint ptr %call1 to i64
+  %add6 = add i64 %as.ptrtoint5, 16
+  %as.inttoptr7 = inttoptr i64 %add6 to ptr
+  store i64 0, ptr %as.inttoptr7, align 8
+  %call8 = call i1 @_ZN2Io7in_taskEv()
+  br i1 %call8, label %if.then9, label %if.end10
 
-if.then1:                                         ; preds = %if.end
+if.then9:                                         ; preds = %if.end
+  %as.ptrtoint11 = ptrtoint ptr %call1 to i64
+  %add12 = add i64 %as.ptrtoint11, 24
+  %as.inttoptr13 = inttoptr i64 %add12 to ptr
+  store i64 1, ptr %as.inttoptr13, align 8
   %field.inplace = getelementptr inbounds nuw %_Z11TcpListener, ptr %0, i32 0, i32 0
   %field.val = load i32, ptr %field.inplace, align 4
-  call void @_Z21tcp_accept_into_tasks3i32Pv(i32 %field.val, ptr %1)
+  %as.ptrtoint14 = ptrtoint ptr %call1 to i64
+  %add15 = add i64 %as.ptrtoint14, 16
+  %as.inttoptr16 = inttoptr i64 %add15 to ptr
+  call void @_Z21tcp_accept_into_tasks3i32PvP3u64(i32 %field.val, ptr %1, ptr %as.inttoptr16)
+  call void @_ZN4Page12release_pageER4Page(ptr %call)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
-if.end2:                                          ; preds = %if.end
-  %call3 = call ptr @_ZN4Page13allocate_pageEv()
-  %call4 = call ptr @_ZN4Page8allocateEmm(ptr %call3, i64 16, i64 8)
-  %load.struct5 = load %_Z11TcpListener, ptr %0, align 4
-  %fd6 = extractvalue %_Z11TcpListener %load.struct5, 0
-  %as.sext = sext i32 %fd6 to i64
-  store i64 %as.sext, ptr %call4, align 8
-  %as.ptrtoint = ptrtoint ptr %1 to i64
-  %as.ptrtoint7 = ptrtoint ptr %call4 to i64
-  %add = add i64 %as.ptrtoint7, 8
-  %as.inttoptr = inttoptr i64 %add to ptr
-  store i64 %as.ptrtoint, ptr %as.inttoptr, align 8
-  %call8 = call i64 @_ZN8TaskPool4ncpuEv()
+if.end10:                                         ; preds = %if.end
+  %call17 = call i64 @_ZN8TaskPool4ncpuEv()
+  %as.ptrtoint18 = ptrtoint ptr %call1 to i64
+  %add19 = add i64 %as.ptrtoint18, 24
+  %as.inttoptr20 = inttoptr i64 %add19 to ptr
+  store i64 %call17, ptr %as.inttoptr20, align 8
   %frame.page = load ptr, ptr %frame, align 8
   %frame.has_page = icmp ne ptr %frame.page, null
   br i1 %frame.has_page, label %frame.forced, label %frame.force
 
-frame.force:                                      ; preds = %if.end2
+frame.force:                                      ; preds = %if.end10
   %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
   br label %frame.forced
 
-frame.forced:                                     ; preds = %frame.force, %if.end2
-  %forced_page9 = phi ptr [ %frame.page, %if.end2 ], [ %forced_page, %frame.force ]
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page9, i64 ptrtoint (ptr getelementptr (%_Z5ArrayImE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayImE }, ptr null, i64 0, i32 1) to i64))
+frame.forced:                                     ; preds = %frame.force, %if.end10
+  %forced_page21 = phi ptr [ %frame.page, %if.end10 ], [ %forced_page, %frame.force ]
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page21, i64 ptrtoint (ptr getelementptr (%_Z5ArrayImE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5ArrayImE }, ptr null, i64 0, i32 1) to i64))
   %tuple.field = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region, i32 0, i32 0
   store i64 0, ptr %tuple.field, align 8
-  %tuple.field10 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region, i32 0, i32 1
-  store i64 0, ptr %tuple.field10, align 8
-  %tuple.field11 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region, i32 0, i32 2
-  store ptr null, ptr %tuple.field11, align 8
+  %tuple.field22 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region, i32 0, i32 1
+  store i64 0, ptr %tuple.field22, align 8
+  %tuple.field23 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %struct.region, i32 0, i32 2
+  store ptr null, ptr %tuple.field23, align 8
   store ptr %struct.region, ptr %threads, align 1
   store i64 1, ptr %i, align 1
   br label %while.cond
 
 while.cond:                                       ; preds = %while.body, %frame.forced
-  %i12 = load i64, ptr %i, align 8
-  %lt13 = icmp slt i64 %i12, %call8
-  br i1 %lt13, label %while.body, label %while.exit
+  %i24 = load i64, ptr %i, align 8
+  %lt25 = icmp slt i64 %i24, %call17
+  br i1 %lt25, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %threads14 = load ptr, ptr %threads, align 8
-  %call15 = call i64 @_ZN6Thread5spawnEPvPv(ptr @_Z16tcp_serve_threadPv, ptr %call4)
-  call void @_ZN5ArrayImE3addEm(ptr %threads14, i64 %call15)
-  %i16 = load i64, ptr %i, align 8
-  %add17 = add i64 %i16, 1
-  store i64 %add17, ptr %i, align 1
+  %threads26 = load ptr, ptr %threads, align 8
+  %call27 = call i64 @_ZN6Thread5spawnEPvPv(ptr @_Z16tcp_serve_threadPv, ptr %call1)
+  call void @_ZN5ArrayImE3addEm(ptr %threads26, i64 %call27)
+  %i28 = load i64, ptr %i, align 8
+  %add29 = add i64 %i28, 1
+  store i64 %add29, ptr %i, align 1
   br label %while.cond
 
 while.exit:                                       ; preds = %while.cond
-  %call18 = call ptr @_Z16tcp_serve_threadPv(ptr %call4)
-  %threads19 = load ptr, ptr %threads, align 8
-  call void @_ZN5ArrayImE12get_iteratorEPN4scaly6memory4PageE(ptr %iter.alloca, ptr null, ptr %threads19)
+  %call30 = call ptr @_Z16tcp_serve_threadPv(ptr %call1)
+  %threads31 = load ptr, ptr %threads, align 8
+  call void @_ZN5ArrayImE12get_iteratorEPN4scaly6memory4PageE(ptr %iter.alloca, ptr null, ptr %threads31)
   br label %for.cond
 
 for.cond:                                         ; preds = %for.body, %while.exit
@@ -30981,8 +31019,77 @@ for.body:                                         ; preds = %for.cond
   br label %for.cond
 
 for.exit:                                         ; preds = %for.cond
-  call void @_ZN4Page12release_pageER4Page(ptr %call3)
+  call void @_ZN4Page12release_pageER4Page(ptr %call)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret void
+}
+
+define linkonce_odr void @_ZN11TcpListener5startEPN4scaly6memory4PageEPv(ptr noalias sret(%_Z9TcpServer) %0, ptr %1, ptr %2, ptr %3) {
+entry:
+  %i = alloca i64, align 8
+  %tuple = alloca %_Z9TcpServer, align 8
+  %load.struct = load %_Z11TcpListener, ptr %2, align 4
+  %fd = extractvalue %_Z11TcpListener %load.struct, 0
+  %lt = icmp slt i32 %fd, 0
+  br i1 %lt, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %tuple.field = getelementptr inbounds nuw %_Z9TcpServer, ptr %tuple, i32 0, i32 0
+  store ptr null, ptr %tuple.field, align 1
+  %tuple.val = load %_Z9TcpServer, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z9TcpServer, ptr null, i32 1) to i64), i1 false)
+  ret void
+
+if.end:                                           ; preds = %entry
+  %call = call i64 @_ZN8TaskPool4ncpuEv()
+  %call1 = call ptr @_ZN4Page13allocate_pageEv()
+  %add = add i64 4, %call
+  %mul = mul i64 %add, 8
+  %call2 = call ptr @_ZN4Page8allocateEmm(ptr %call1, i64 %mul, i64 8)
+  %load.struct3 = load %_Z11TcpListener, ptr %2, align 4
+  %fd4 = extractvalue %_Z11TcpListener %load.struct3, 0
+  %as.sext = sext i32 %fd4 to i64
+  store i64 %as.sext, ptr %call2, align 8
+  %as.ptrtoint = ptrtoint ptr %3 to i64
+  %as.ptrtoint5 = ptrtoint ptr %call2 to i64
+  %add6 = add i64 %as.ptrtoint5, 8
+  %as.inttoptr = inttoptr i64 %add6 to ptr
+  store i64 %as.ptrtoint, ptr %as.inttoptr, align 8
+  %as.ptrtoint7 = ptrtoint ptr %call2 to i64
+  %add8 = add i64 %as.ptrtoint7, 16
+  %as.inttoptr9 = inttoptr i64 %add8 to ptr
+  store i64 0, ptr %as.inttoptr9, align 8
+  %as.ptrtoint10 = ptrtoint ptr %call2 to i64
+  %add11 = add i64 %as.ptrtoint10, 24
+  %as.inttoptr12 = inttoptr i64 %add11 to ptr
+  store i64 %call, ptr %as.inttoptr12, align 8
+  store i64 0, ptr %i, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %while.body, %if.end
+  %i13 = load i64, ptr %i, align 8
+  %lt14 = icmp slt i64 %i13, %call
+  br i1 %lt14, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %call15 = call i64 @_ZN6Thread5spawnEPvPv(ptr @_Z16tcp_serve_threadPv, ptr %call2)
+  %as.ptrtoint16 = ptrtoint ptr %call2 to i64
+  %i17 = load i64, ptr %i, align 8
+  %add18 = add i64 4, %i17
+  %mul19 = mul i64 %add18, 8
+  %add20 = add i64 %as.ptrtoint16, %mul19
+  %as.inttoptr21 = inttoptr i64 %add20 to ptr
+  store i64 %call15, ptr %as.inttoptr21, align 8
+  %i22 = load i64, ptr %i, align 8
+  %add23 = add i64 %i22, 1
+  store i64 %add23, ptr %i, align 1
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
+  %tuple.field24 = getelementptr inbounds nuw %_Z9TcpServer, ptr %tuple, i32 0, i32 0
+  store ptr %call2, ptr %tuple.field24, align 1
+  %tuple.val25 = load %_Z9TcpServer, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z9TcpServer, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -31036,6 +31143,160 @@ if.then:                                          ; preds = %entry
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
+  ret void
+}
+
+define linkonce_odr void @_ZN9TcpServer7currentEPN4scaly6memory4PageE(ptr noalias sret(%_Z9TcpServer) %0, ptr %1) {
+entry:
+  %global.load = load ptr, ptr @tcp_current_serve, align 8
+  %tuple = alloca %_Z9TcpServer, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z9TcpServer, ptr %tuple, i32 0, i32 0
+  store ptr %global.load, ptr %tuple.field, align 1
+  %tuple.val = load %_Z9TcpServer, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z9TcpServer, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr i1 @_ZN9TcpServer10is_runningEv(ptr noalias %0) {
+entry:
+  %load.struct = load %_Z9TcpServer, ptr %0, align 8
+  %cell = extractvalue %_Z9TcpServer %load.struct, 0
+  %ne = icmp ne ptr %cell, null
+  ret i1 %ne
+}
+
+define linkonce_odr i1 @_ZN9TcpServer8stoppingEv(ptr noalias %0) {
+entry:
+  %load.struct = load %_Z9TcpServer, ptr %0, align 8
+  %cell = extractvalue %_Z9TcpServer %load.struct, 0
+  %eq = icmp eq ptr %cell, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i1 false
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z9TcpServer, ptr %0, align 8
+  %cell2 = extractvalue %_Z9TcpServer %load.struct1, 0
+  %as.ptrtoint = ptrtoint ptr %cell2 to i64
+  %add = add i64 %as.ptrtoint, 16
+  %as.inttoptr = inttoptr i64 %add to ptr
+  %atomic.load = load atomic i64, ptr %as.inttoptr seq_cst, align 8
+  %ne = icmp ne i64 %atomic.load, 0
+  ret i1 %ne
+}
+
+define linkonce_odr void @_ZN9TcpServer8shutdownEv(ptr noalias %0) {
+entry:
+  %i = alloca i64, align 8
+  %load.struct = load %_Z9TcpServer, ptr %0, align 8
+  %cell = extractvalue %_Z9TcpServer %load.struct, 0
+  %eq = icmp eq ptr %cell, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret void
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z9TcpServer, ptr %0, align 8
+  %cell2 = extractvalue %_Z9TcpServer %load.struct1, 0
+  %as.ptrtoint = ptrtoint ptr %cell2 to i64
+  %add = add i64 %as.ptrtoint, 16
+  %as.inttoptr = inttoptr i64 %add to ptr
+  %atomic.load = load atomic i64, ptr %as.inttoptr seq_cst, align 8
+  %ne = icmp ne i64 %atomic.load, 0
+  br i1 %ne, label %if.then3, label %if.end4
+
+if.then3:                                         ; preds = %if.end
+  ret void
+
+if.end4:                                          ; preds = %if.end
+  store atomic i64 1, ptr %as.inttoptr seq_cst, align 8
+  %load.struct5 = load %_Z9TcpServer, ptr %0, align 8
+  %cell6 = extractvalue %_Z9TcpServer %load.struct5, 0
+  %deref = load i64, ptr %cell6, align 8
+  %as.trunc = trunc i64 %deref to i32
+  %call = call i32 @_ZN2Io10local_portE3i32(i32 %as.trunc)
+  %load.struct7 = load %_Z9TcpServer, ptr %0, align 8
+  %cell8 = extractvalue %_Z9TcpServer %load.struct7, 0
+  %as.ptrtoint9 = ptrtoint ptr %cell8 to i64
+  %add10 = add i64 %as.ptrtoint9, 24
+  %as.inttoptr11 = inttoptr i64 %add10 to ptr
+  %deref12 = load i64, ptr %as.inttoptr11, align 8
+  store i64 0, ptr %i, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %if.end16, %if.end4
+  %i13 = load i64, ptr %i, align 8
+  %lt = icmp slt i64 %i13, %deref12
+  br i1 %lt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %call14 = call i32 @_ZN2Io7connectE3i32(i32 %call)
+  %ge = icmp sge i32 %call14, 0
+  br i1 %ge, label %if.then15, label %if.end16
+
+while.exit:                                       ; preds = %while.cond
+  ret void
+
+if.then15:                                        ; preds = %while.body
+  call void @_Z12tcp_close_fd3i32(i32 %call14)
+  br label %if.end16
+
+if.end16:                                         ; preds = %if.then15, %while.body
+  %i17 = load i64, ptr %i, align 8
+  %add18 = add i64 %i17, 1
+  store i64 %add18, ptr %i, align 1
+  br label %while.cond
+}
+
+define linkonce_odr void @_ZN9TcpServer4waitEv(ptr %0) {
+entry:
+  %i = alloca i64, align 8
+  %load.struct = load %_Z9TcpServer, ptr %0, align 8
+  %cell = extractvalue %_Z9TcpServer %load.struct, 0
+  %eq = icmp eq ptr %cell, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret void
+
+if.end:                                           ; preds = %entry
+  %load.struct1 = load %_Z9TcpServer, ptr %0, align 8
+  %cell2 = extractvalue %_Z9TcpServer %load.struct1, 0
+  %as.ptrtoint = ptrtoint ptr %cell2 to i64
+  %add = add i64 %as.ptrtoint, 24
+  %as.inttoptr = inttoptr i64 %add to ptr
+  %deref = load i64, ptr %as.inttoptr, align 8
+  store i64 0, ptr %i, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %while.body, %if.end
+  %i3 = load i64, ptr %i, align 8
+  %lt = icmp slt i64 %i3, %deref
+  br i1 %lt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %load.struct4 = load %_Z9TcpServer, ptr %0, align 8
+  %cell5 = extractvalue %_Z9TcpServer %load.struct4, 0
+  %as.ptrtoint6 = ptrtoint ptr %cell5 to i64
+  %i7 = load i64, ptr %i, align 8
+  %add8 = add i64 4, %i7
+  %mul = mul i64 %add8, 8
+  %add9 = add i64 %as.ptrtoint6, %mul
+  %as.inttoptr10 = inttoptr i64 %add9 to ptr
+  %deref11 = load i64, ptr %as.inttoptr10, align 8
+  call void @_ZN6Thread4joinEm(i64 %deref11)
+  %i12 = load i64, ptr %i, align 8
+  %add13 = add i64 %i12, 1
+  store i64 %add13, ptr %i, align 1
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
+  %field.inplace = getelementptr inbounds nuw %_Z9TcpServer, ptr %0, i32 0, i32 0
+  %deref.recv = load ptr, ptr %field.inplace, align 8
+  %call = call ptr @_ZN4Page3getEPv(ptr %deref.recv)
+  call void @_ZN4Page12release_pageER4Page(ptr %call)
   ret void
 }
 

@@ -44,10 +44,28 @@ use scaly.fiber.TaskPool
 ; connection becomes a task of the scheduler that accepted it. The handler
 ; is a zero-argument task procedure; it takes its connection with
 ; TcpStream.of_task() and closes it (serve cannot: once closed, the number
-; may already name the next connection). serve runs until the process ends,
-; as Go's ListenAndServe does: closing the listener from elsewhere does not
-; wake the accept loops parked on it (kqueue and epoll drop a closed
-; descriptor silently), so a graceful shutdown is not part of v1.
+; may already name the next connection). serve runs until a handler shuts
+; the server down (TcpServer.current().shutdown(), below) — else, as Go's
+; ListenAndServe, until the process ends.
+;
+; A server that must stop is started instead: start returns a TcpServer at
+; once (its threads serve; the calling thread does not), shutdown stops the
+; accepting, wait returns when every connection has ended. Closing the
+; listener could not do it — kqueue and epoll drop a closed descriptor
+; silently and the accept loops parked on it would never wake — so shutdown
+; sets a stop flag and makes ONE local connection per accept loop: each loop
+; checks the flag after every accept, drops that connection and ends, and a
+; loop that has ended no longer waits on the listener, so every wake
+; connection reaches a different loop. shutdown waits for nothing (a handler
+; may call it); the connections in flight run to their end, and a handler
+; that keeps a connection alive asks TcpServer.current().stopping() between
+; two requests.
+;
+;   let server l.start(&handle)
+;   ...
+;   server.shutdown()
+;   server.wait()               ; every connection ended; the handle is spent
+;   l.close()
 ;
 ;   procedure handle()
 ;   {
@@ -78,12 +96,17 @@ procedure tcp_close_fd(fd: i32) @ret_nonlocal true @deep true io linked
 
 
 
+; The serve cell of the thread running this code (TcpServer.current):
+; thread-local like every mutable global, set by tcp_serve_thread.
+mutable tcp_current_serve: pointer[i64] linked
+
 ; Accept on lfd, each connection a task of the
 ; running scheduler that runs handler with the connection's fd as its task
-; argument. An accept error on a listener that still has its port is
-; transient (a connection reset before it was taken, a descriptor limit
-; hit for a moment): the loop yields and goes on.
-procedure tcp_accept_into_tasks(lfd: i32, mutable handler: pointer[void]) @deep true io linked
+; argument, until *stop is set (checked after every accept: the connection
+; that woke the loop is dropped). An accept error on a listener that still
+; has its port is transient (a connection reset before it was taken, a
+; descriptor limit hit for a moment): the loop yields and goes on.
+procedure tcp_accept_into_tasks(lfd: i32, mutable handler: pointer[void], mutable stop: pointer[u64]) @deep true io linked
 
 
 
@@ -102,8 +125,14 @@ procedure tcp_accept_into_tasks(lfd: i32, mutable handler: pointer[void]) @deep 
 
 
 
-; The task every serving scheduler starts with: its argument is the serve
-; cell {listener fd, handler} of two i64.
+
+
+
+
+
+
+; The serve cell, i64 words: [0] listener fd, [1] handler, [2] stop flag,
+; [3] thread count, [4 ..] the threads' handles (TcpListener.start).
 procedure tcp_serve_loop() @ret_nonlocal true @deep true io linked
 
 
@@ -113,8 +142,10 @@ procedure tcp_serve_loop() @ret_nonlocal true @deep true io linked
 
 
 ; One serving thread: a scheduler of its own, the accept loop as its first
-; task. Runs until the process ends (see serve).
-procedure tcp_serve_thread(mutable arg: pointer[void]) @ret_nonlocal true @deep true returns pointer[void] io linked
+; task. Returns when the accept loop has stopped and the last connection has
+; ended (never, under serve).
+procedure tcp_serve_thread(mutable arg: pointer[void]) @ret_nonlocal true @deep true returns pointer[void] io mutable tcp_current_serve linked
+
 
 
 
@@ -235,9 +266,10 @@ define TcpListener(var fd: i32)
 
     ; Serve every connection with handler, over all cores: one scheduler
     ; per core, this thread one of them, all accepting here (see the module
-    ; header). Does not return while the process runs (see there). Inside a
-    ; task there is a scheduler already: the connections become tasks of
-    ; that one.
+    ; header). Runs until a handler calls TcpServer.current().shutdown()
+    ; and the last connection has ended — else for as long as the process.
+    ; Inside a task there is a scheduler already: the connections become
+    ; tasks of that one.
     procedure serve(this, mutable handler: pointer[void]) @deep true io linked
 
 
@@ -245,6 +277,35 @@ define TcpListener(var fd: i32)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ; Serve like serve, but return at once with a TcpServer that can stop:
+    ; one thread per core serves (the calling thread does not), shutdown
+    ; stops the accepting, wait returns when every connection has ended (see
+    ; the module header). Not running when the listener is not open.
+    procedure start(this, mutable handler: pointer[void]) @page true @direct true @ret_nonlocal true @deep true returns TcpServer linked
 
 
 
@@ -278,6 +339,70 @@ define TcpListener(var fd: i32)
 
 
     procedure close(mutable this) @deep true io linked
+
+
+
+
+
+
+
+}
+
+; A running server (TcpListener.start): a handle on the serve cell. A copy
+; names the same server; after wait the handle is spent.
+define TcpServer(cell: pointer[i64])
+{
+    ; The server whose thread runs the calling task (not running elsewhere):
+    ; how a handler reaches its server without a global of its own.
+    procedure current() @page true @direct true @ret_nonlocal true @deep true returns TcpServer linked
+
+
+    function is_running(this) @ret_param_0 true @deep true returns bool linked
+
+
+    ; Has shutdown been called? A handler that keeps a connection alive asks
+    ; between two requests and ends the connection when it answers true.
+    procedure stopping(this) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+    ; Stop accepting: set the stop flag, then one local connection per accept
+    ; loop to wake it (the module header has why). Waits for nothing; from
+    ; any thread or task, more than once is harmless. The connections in
+    ; flight go on.
+    procedure shutdown(this) @deep true io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ; Return when every serving thread has ended: shutdown was called and the
+    ; last connection is done. Call it outside the server's own threads (a
+    ; handler waiting for its own thread never returns). The handle is spent
+    ; afterwards; the listener stays open until its owner closes it.
+    procedure wait(this) @deep true linked
+
+
+
+
+
 
 
 
