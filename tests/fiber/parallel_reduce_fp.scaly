@@ -1,0 +1,115 @@
+; Floating-point reductions in a promoted `for` (ROADMAP 4.8, route 2): the
+; variable takes each iteration's partial IN INDEX ORDER, forked or not, so
+; the result never depends on timing or the worker count. With one
+; contribution per iteration that is the naive left-to-right fold bit for bit
+; -- checked against a `while` loop, which never promotes, over addends spread
+; across twelve orders of magnitude, where any other association would show in
+; the last bits. With several contributions per iteration the iteration sums
+; them first; checked against that fold written out. Every wave must fork.
+;
+; Expected: parallel-reduce-fp-ok done
+
+; Pure leaf, ~10us scale.
+function spin(seed: i64) returns i64
+{
+    var acc seed
+    var k 0 as i64
+    while k < (40000 as i64)
+    {
+        set acc: (acc * (31 as i64) + k) % (1000003 as i64)
+        set k: k + (1 as i64)
+    }
+    acc
+}
+
+; an addend whose magnitude depends on i: 1e-6 .. 1e6
+function term(i: int) returns double
+{
+    let v spin(i as i64) as double
+    var scale: double 0.000001
+    var k 0
+    while k < i % 13
+    {
+        set scale: scale * 10.0
+        set k: k + 1
+    }
+    v * scale
+}
+
+procedure check(name: pointer[const_char], got: double, want: double)
+{
+    if got <> want
+    {
+        scaly_eputs name
+        scaly_eputs " differs\n"
+        exit 1
+    }
+}
+
+let pool TaskPool.default_pool()
+let n 96
+
+; the naive folds, never promoted
+var r_sum: double 0.25
+var r_sub: double 1000.0
+var r_prod: double 1.0
+var r_multi: double 0.0
+var r_f32: float 0.5
+var j 0
+while j < n
+{
+    set r_sum: r_sum + term(j)
+    set r_sub: r_sub - term(j)
+    set r_prod: r_prod * (1.0 + term(j) * 0.0000001)
+    ; the per-iteration fold, written out: three contributions summed first
+    var part: double 0.0 * (0.0 - 1.0)
+    set part: part + term(j)
+    set part: part + term(j + 1) * 0.5
+    set part: part - term(j + 2) * 0.25
+    set r_multi: r_multi + part
+    set r_f32: r_f32 + (term(j) as float)
+    set j: j + 1
+}
+
+var before TaskPool.submit_count(pool)
+var sum: double 0.25
+for i in n
+    set sum: sum + term(i)
+check("sum", sum, r_sum)
+if TaskPool.submit_count(pool) = before
+{
+    Console.println "sum-did-not-fork"
+    exit 1
+}
+
+set before: TaskPool.submit_count(pool)
+var sub: double 1000.0
+for i in n
+    set sub: sub - term(i)
+check("sub", sub, r_sub)
+
+var prod: double 1.0
+for i in n
+    set prod: prod * (1.0 + term(i) * 0.0000001)
+check("prod", prod, r_prod)
+
+var multi: double 0.0
+for i in n
+{
+    set multi: multi + term(i)
+    set multi: multi + term(i + 1) * 0.5
+    set multi: multi - term(i + 2) * 0.25
+}
+check("multi", multi, r_multi)
+
+var f: float 0.5
+for i in n
+    set f: f + (term(i) as float)
+check("f32", f as double, r_f32 as double)
+if TaskPool.submit_count(pool) = before
+{
+    Console.println "fp-reductions-did-not-fork"
+    exit 1
+}
+
+print "parallel-reduce-fp-ok done"

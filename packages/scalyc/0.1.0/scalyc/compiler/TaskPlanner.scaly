@@ -150,7 +150,10 @@ define TaskPlanner
         ; `set v: v OP e` (OP + - | & xor, e not reading v) or as
         ; `if e > v  set v: e` (max; < for min). Parallel lists: the name,
         ; the LLVM atomicrmw operation that combines a chunk's partial into
-        ; it (Add 1, And 3, Or 5, Xor 6, Max 7, Min 8, UMax 9, UMin 10), and
+        ; it (Add 1, And 3, Or 5, Xor 6, Max 7, Min 8, UMax 9, UMin 10) --
+        ; or, for a FLOATING-POINT variable, 20 (`+`/`-`, combined by fadd)
+        ; and 21 (`*`, fmul), which the Emitter combines per ITERATION in
+        ; index order instead (Emitter.emit_parallel_for#), and
         ; how many of the name's occurrences those updates account for --
         ; check_reductions# demands that they are ALL of them.
         red_names: Array[String]
@@ -571,6 +574,15 @@ define TaskPlanner
             set red_counts.length: 0
         }
 
+        ; float / double
+        function red_is_float(t: PlannedType) returns bool
+        {
+            let nm t.name
+            match nm
+                case "float" case "double" case "f32" case "f64": return true
+            false
+        }
+
         ; 1 = a signed integer type, 2 = an unsigned one, 0 = anything else
         function red_int_kind(t: PlannedType) returns int
         {
@@ -623,7 +635,8 @@ define TaskPlanner
                 return false
             if this.is_local(v)
                 return false
-            if TaskPlanner.red_int_kind(top.result_type) = 0
+            let is_float TaskPlanner.red_is_float(top.result_type)
+            if TaskPlanner.red_int_kind(top.result_type) = 0 and is_float = false
                 return false
             let src act.source
             if src = null
@@ -646,11 +659,22 @@ define TaskPlanner
                         return false
                     var op 0
                     let nm call.name
-                    match nm
-                        case "+" case "-": set op: 1
-                        case "&": set op: 3
-                        case "|": set op: 5
-                        case "xor": set op: 6
+                    if is_float
+                    {
+                        ; floating point: a sum (with differences) or a product;
+                        ; the order is fixed per iteration by the Emitter
+                        match nm
+                            case "+" case "-": set op: 20
+                            case "*": set op: 21
+                    }
+                    else
+                    {
+                        match nm
+                            case "+" case "-": set op: 1
+                            case "&": set op: 3
+                            case "|": set op: 5
+                            case "xor": set op: 6
+                    }
                     if op = 0
                         return false
                     let a0 args.get 0

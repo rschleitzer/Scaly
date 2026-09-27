@@ -15793,7 +15793,204 @@ define Emitter
 
 
 
+        ; The identity of a floating-point reduction: -0.0 for a sum (the one
+        ; addend that leaves every value unchanged, -0.0 included), 1.0 for a
+        ; product.
+        procedure fp_identity(mutable this, op: int, mutable ty: LLVMTypeRef) @direct true @ret_caller true @deep true returns LLVMValueRef linked
+
+
+
+
+
+
+
+        procedure fp_combine(mutable this, op: int, mutable acc: LLVMValueRef, mutable part: LLVMValueRef) @direct true @ret_caller true @deep true returns LLVMValueRef linked
+
+
+
+
+
+
+        ; Inline iteration start: every floating-point reduction's name now
+        ; means this iteration's partial, set to the identity. Answers the
+        ; partial slots (null for the integer reductions, which update the
+        ; variable itself).
+        procedure fp_iteration_partials(mutable this, names: Array[String], ops: Array[int], mutable slots: Array[LLVMValueRef]) @page true @direct true @ret_nonlocal true @deep true returns Array[LLVMValueRef] linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ; Inline iteration end: fold each partial into its variable, in order.
+        procedure fp_fold_partials(mutable this, ops: Array[int], mutable slots: Array[LLVMValueRef], mutable parts: Array[LLVMValueRef]) @deep true linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         procedure emit_parallel_for(mutable this, mutable for_expr: PlannedFor) @direct true @ret_nonlocal true @deep true @deep_beyond_2 true returns LLVMValueRef linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -150,7 +150,10 @@ define TaskPlanner
         ; `set v: v OP e` (OP + - | & xor, e not reading v) or as
         ; `if e > v  set v: e` (max; < for min). Parallel lists: the name,
         ; the LLVM atomicrmw operation that combines a chunk's partial into
-        ; it (Add 1, And 3, Or 5, Xor 6, Max 7, Min 8, UMax 9, UMin 10), and
+        ; it (Add 1, And 3, Or 5, Xor 6, Max 7, Min 8, UMax 9, UMin 10) --
+        ; or, for a FLOATING-POINT variable, 20 (`+`/`-`, combined by fadd)
+        ; and 21 (`*`, fmul), which the Emitter combines per ITERATION in
+        ; index order instead (Emitter.emit_parallel_for#), and
         ; how many of the name's occurrences those updates account for --
         ; check_reductions# demands that they are ALL of them.
         red_names: Array[String]
@@ -571,6 +574,15 @@ define TaskPlanner
 
 
 
+        ; float / double
+        function red_is_float(t: PlannedType) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
         ; 1 = a signed integer type, 2 = an unsigned one, 0 = anything else
         function red_int_kind(t: PlannedType) @ret_nonlocal true @deep true returns int linked
 
@@ -608,6 +620,18 @@ define TaskPlanner
 
         ; `set v: v OP e` / `set v: e OP v` on a loop-external integer v
         procedure try_reduction_action(mutable this: TaskPlanner, act: PlannedAction) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

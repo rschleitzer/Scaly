@@ -1,0 +1,27 @@
+; series — a floating-point reduction over heavy iterations: for every i, a
+; long partial sum of the Leibniz series for pi/4, and the partial sums added
+; up. `set total: total + leibniz(i)` is the plain pattern: the engine runs the
+; iterations in parallel and folds their results into `total` in index order,
+; so the printed digits are those of the sequential loop, bit for bit
+; (ROADMAP 4.8, route 2).
+
+function leibniz(terms: int) returns double
+{
+    var sum: double 0.0
+    var sign: double 1.0
+    var k 0
+    while k < terms
+    {
+        set sum: sum + sign / ((2 * k + 1) as double)
+        set sign: 0.0 - sign
+        set k: k + 1
+    }
+    sum
+}
+
+let n 8000
+var total: double 0.0
+for i in n
+    set total: total + leibniz(400000 + i)
+let scaled (total * 1000000.0) as i64
+print("series `n`: `scaled` (x 1e-6)")

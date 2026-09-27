@@ -15793,6 +15793,66 @@ define Emitter
             LLVMConstInt(ty, 0, 0)
         }
 
+        ; The identity of a floating-point reduction: -0.0 for a sum (the one
+        ; addend that leaves every value unchanged, -0.0 included), 1.0 for a
+        ; product.
+        procedure fp_identity(mutable this, op: int, mutable ty: LLVMTypeRef) returns LLVMValueRef
+        {
+            if op = 21
+                return LLVMConstReal(ty, 1.0)
+            let neg_zero: double 0.0 * (0.0 - 1.0)
+            LLVMConstReal(ty, neg_zero)
+        }
+
+        procedure fp_combine(mutable this, op: int, mutable acc: LLVMValueRef, mutable part: LLVMValueRef) returns LLVMValueRef
+        {
+            if op = 21
+                return LLVMBuildFMul(builder, acc, part, "parfor.fp.mul")
+            LLVMBuildFAdd(builder, acc, part, "parfor.fp.add")
+        }
+
+        ; Inline iteration start: every floating-point reduction's name now
+        ; means this iteration's partial, set to the identity. Answers the
+        ; partial slots (null for the integer reductions, which update the
+        ; variable itself).
+        procedure fp_iteration_partials(mutable this, names: Array[String], ops: Array[int], mutable slots: Array[LLVMValueRef]) returns Array[LLVMValueRef]
+        {
+            var parts Array[LLVMValueRef]()
+            var i: size_t 0
+            while i < names.length
+            {
+                if ops[i] >= 20
+                {
+                    let ty LLVMGetAllocatedType(slots[i])
+                    let part entry_alloca(ty, "parfor.fp.it")
+                    LLVMBuildStore(builder, this.fp_identity(ops[i], ty), part)
+                    define_variable(names[i], part)
+                    parts.add part
+                }
+                else
+                    parts.add(LLVMConstNull(LLVMPointerTypeInContext(context, 0)))
+                set i: i + 1
+            }
+            parts
+        }
+
+        ; Inline iteration end: fold each partial into its variable, in order.
+        procedure fp_fold_partials(mutable this, ops: Array[int], mutable slots: Array[LLVMValueRef], mutable parts: Array[LLVMValueRef])
+        {
+            var i: size_t 0
+            while i < ops.length
+            {
+                if ops[i] >= 20
+                {
+                    let ty LLVMGetAllocatedType(slots[i])
+                    let cur LLVMBuildLoad2(builder, ty, slots[i], "parfor.fp.cur")
+                    let part LLVMBuildLoad2(builder, ty, parts[i], "parfor.fp.part")
+                    LLVMBuildStore(builder, this.fp_combine(ops[i], cur, part), slots[i])
+                }
+                set i: i + 1
+            }
+        }
+
         procedure emit_parallel_for(mutable this, mutable for_expr: PlannedFor) returns LLVMValueRef
         {
             ; A KEEPING wave (the classifier admitted a non-scalar `put` into a
@@ -15823,8 +15883,17 @@ define Emitter
                 var slot_ok false
                 if rv <> null and LLVMIsAAllocaInst(rv) <> null
                 {
-                    if LLVMGetTypeKind(LLVMGetAllocatedType(rv)) = LLVMTypeKind.Integer()
-                        set slot_ok: true
+                    let rkind LLVMGetTypeKind(LLVMGetAllocatedType(rv))
+                    if red_ops[rk] < 20
+                    {
+                        if rkind = LLVMTypeKind.Integer()
+                            set slot_ok: true
+                    }
+                    else
+                    {
+                        if rkind = LLVMTypeKind.Float() or rkind = LLVMTypeKind.Double()
+                            set slot_ok: true
+                    }
                 }
                 if slot_ok = false
                 {
@@ -15836,6 +15905,24 @@ define Emitter
                 set rk: rk + 1
             }
             let n_red red_names.length
+            ; FLOATING-POINT reductions (codes 20 fadd, 21 fmul) are combined
+            ; PER ITERATION IN INDEX ORDER, parallel or not: in the body the
+            ; name means that iteration's partial, started at the identity
+            ; (-0.0, the one addend that leaves every value, -0.0 included,
+            ; unchanged; 1.0 for a product), and the variable takes the
+            ; partials one by one, in order -- inline right after each
+            ; iteration, forked through a buffer the submitter folds after the
+            ; barrier. One contribution per iteration makes that the naive
+            ; left-to-right fold BIT FOR BIT; the result never depends on
+            ; timing, the worker count or the machine (ROADMAP 4.8, route 2).
+            var n_fp: size_t 0
+            set rk: 0
+            while rk < n_red
+            {
+                if red_ops[rk] >= 20
+                    set n_fp: n_fp + 1
+                set rk: rk + 1
+            }
             ; ---- Collect the captures (plan-side scan, no IR). Copy the
             ; result out of the scratch right away: emitting the body below
             ; may meet a NESTED promoted for, which rescans.
@@ -16089,7 +16176,8 @@ define Emitter
                 red_sub_ptrs.add(LLVMBuildLoad2(builder, ptr_ty, rp_gep, "parfor.red.sub"))
                 let ts lookup_variable(red_names[rk])
                 red_task_slots.add ts
-                LLVMBuildStore(builder, this.red_identity(red_ops[rk], LLVMGetAllocatedType(ts)), ts)
+                if red_ops[rk] < 20
+                    LLVMBuildStore(builder, this.red_identity(red_ops[rk], LLVMGetAllocatedType(ts)), ts)
                 set rk: rk + 1
             }
 
@@ -16164,6 +16252,16 @@ define Emitter
                     set pf_loop_bind: LLVMBuildTrunc(builder, iv, index_ty, for_expr.identifier.c_data())
             }
             define_variable(for_expr.identifier, pf_loop_bind)
+            set rk: 0
+            while rk < n_red
+            {
+                if red_ops[rk] >= 20
+                {
+                    let fts red_task_slots[rk]
+                    LLVMBuildStore(builder, this.fp_identity(red_ops[rk], LLVMGetAllocatedType(fts)), fts)
+                }
+                set rk: rk + 1
+            }
             push_loop(pf_ret_block, ck_inc, for_expr.loop_label, null as LLVMValueRef)
             emit_action for_expr.body
             let pf_body_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
@@ -16174,6 +16272,22 @@ define Emitter
 
             LLVMPositionBuilderAtEnd(builder, ck_inc)
             let iv_cur LLVMBuildLoad2(builder, i64_ty, iv_slot, "parfor.iv.cur")
+            ; this iteration's floating-point partials into the wave's buffers
+            set rk: 0
+            while rk < n_red
+            {
+                if red_ops[rk] >= 20
+                {
+                    let fts red_task_slots[rk]
+                    let fty LLVMGetAllocatedType(fts)
+                    let fpart LLVMBuildLoad2(builder, fty, fts, "parfor.fp.part")
+                    var fidx Vector[LLVMValueRef](1)
+                    fidx.put(0, iv_cur)
+                    let fdst LLVMBuildGEP2(builder, fty, red_sub_ptrs[rk], fidx.data, 1, "parfor.fp.slot")
+                    LLVMBuildStore(builder, fpart, fdst)
+                }
+                set rk: rk + 1
+            }
             let iv_one LLVMConstInt(i64_ty, 1, 0)
             let iv_next LLVMBuildAdd(builder, iv_cur, iv_one, "parfor.iv.next")
             LLVMBuildStore(builder, iv_next, iv_slot)
@@ -16187,9 +16301,12 @@ define Emitter
             set rk: 0
             while rk < n_red
             {
-                let rts red_task_slots[rk]
-                let partial LLVMBuildLoad2(builder, LLVMGetAllocatedType(rts), rts, "parfor.red.partial")
-                LLVMBuildAtomicRMW(builder, red_ops[rk] as i32, red_sub_ptrs[rk], partial, 7, 0)
+                if red_ops[rk] < 20
+                {
+                    let rts red_task_slots[rk]
+                    let partial LLVMBuildLoad2(builder, LLVMGetAllocatedType(rts), rts, "parfor.red.partial")
+                    LLVMBuildAtomicRMW(builder, red_ops[rk] as i32, red_sub_ptrs[rk], partial, 7, 0)
+                }
                 set rk: rk + 1
             }
             if keeps
@@ -16509,7 +16626,12 @@ define Emitter
 
                 LLVMPositionBuilderAtEnd(builder, rg_prom_fork)
                 let hs_ncpu LLVMBuildCall2(builder, np_ty, np_fn, null as pointer[LLVMValueRef], 0, "parfor.ncpu.chk")
-                let hs_one LLVMBuildICmp(builder, LLVMIntPredicate.SLE(), hs_ncpu, c1, "parfor.oneworker")
+                var hs_one LLVMBuildICmp(builder, LLVMIntPredicate.SLE(), hs_ncpu, c1, "parfor.oneworker")
+                if n_fp > 0
+                {
+                    let hs_big LLVMBuildICmp(builder, LLVMIntPredicate.SGT(), n64, LLVMConstInt(i64_ty, 33554432, 0), "parfor.fp.big")
+                    set hs_one: LLVMBuildOr(builder, hs_one, hs_big, "parfor.nofork")
+                }
                 let rg_prom_go create_block("pfor.gate.headfork.go")
                 LLVMBuildCondBr(builder, hs_one, rg_prom_seq, rg_prom_go)
                 LLVMPositionBuilderAtEnd(builder, rg_prom_go)
@@ -16568,6 +16690,7 @@ define Emitter
                 if nw < 64
                     set il_bind: LLVMBuildTrunc(builder, ib_i, index_ty, for_expr.identifier.c_data())
                 define_variable(for_expr.identifier, il_bind)
+                let il_parts this.fp_iteration_partials(red_names, red_ops, red_slots)
                 push_loop(done_block, il_inc, for_expr.loop_label, null as LLVMValueRef)
                 emit_action for_expr.body
                 let il_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
@@ -16577,6 +16700,7 @@ define Emitter
                 exit_scope()
 
                 LLVMPositionBuilderAtEnd(builder, il_inc)
+                this.fp_fold_partials(red_ops, red_slots, il_parts)
                 let il_iinc LLVMBuildLoad2(builder, i64_ty, iv_drv, "parfor.i.inc")
                 let il_next LLVMBuildAdd(builder, il_iinc, c1, "parfor.i.next")
                 LLVMBuildStore(builder, il_next, iv_drv)
@@ -16666,7 +16790,15 @@ define Emitter
                 ; to the fork it replaces.
                 LLVMPositionBuilderAtEnd(builder, rc_fork)
                 let rs_ncpu LLVMBuildCall2(builder, np_ty, np_fn, null as pointer[LLVMValueRef], 0, "parfor.ncpu.chk")
-                let rs_one LLVMBuildICmp(builder, LLVMIntPredicate.SLE(), rs_ncpu, c1, "parfor.oneworker")
+                var rs_one LLVMBuildICmp(builder, LLVMIntPredicate.SLE(), rs_ncpu, c1, "parfor.oneworker")
+                if n_fp > 0
+                {
+                    ; the partial buffers hold one value per forked iteration:
+                    ; past FP_BUFFER_CAP remaining iterations run on inline
+                    let rs_rem LLVMBuildSub(builder, n64, il_i, "parfor.fp.rem")
+                    let rs_big LLVMBuildICmp(builder, LLVMIntPredicate.SGT(), rs_rem, LLVMConstInt(i64_ty, 33554432, 0), "parfor.fp.big")
+                    set rs_one: LLVMBuildOr(builder, rs_one, rs_big, "parfor.nofork")
+                }
                 let rc_single create_block("parfor.single")
                 let rc_fork_go create_block("parfor.fork.go")
                 LLVMBuildCondBr(builder, rs_one, rc_single, rc_fork_go)
@@ -16809,6 +16941,7 @@ define Emitter
                     set it_bind: LLVMBuildLoad2(builder, it_sc_ty, it_e, for_expr.identifier.c_data())
                 }
                 define_variable(for_expr.identifier, it_bind)
+                let it_parts this.fp_iteration_partials(red_names, red_ops, red_slots)
                 push_loop(done_block, it_inc, for_expr.loop_label, null as LLVMValueRef)
                 emit_action for_expr.body
                 let it_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
@@ -16818,6 +16951,7 @@ define Emitter
                 exit_scope()
 
                 LLVMPositionBuilderAtEnd(builder, it_inc)
+                this.fp_fold_partials(red_ops, red_slots, it_parts)
                 let it_iinc LLVMBuildLoad2(builder, i64_ty, iv_drv, "parfor.i.inc")
                 let it_next2 LLVMBuildAdd(builder, it_iinc, c1, "parfor.i.next")
                 LLVMBuildStore(builder, it_next2, iv_drv)
@@ -17104,6 +17238,32 @@ define Emitter
             let ds_grp LLVMBuildLoad2(builder, ptr_ty, grp_slot, "parfor.d.grp")
             let ds_gpage LLVMBuildLoad2(builder, ptr_ty, gpage_slot, "parfor.d.gpage")
             let ds_buf LLVMBuildLoad2(builder, ptr_ty, buf_slot, "parfor.d.buf")
+            ; one partial buffer per floating-point reduction, on the group
+            ; page, based so that the ABSOLUTE index addresses it
+            var fp_bases Array[LLVMValueRef]()
+            set rk: 0
+            while rk < n_red
+            {
+                if red_ops[rk] >= 20
+                {
+                    let fty LLVMGetAllocatedType(red_slots[rk])
+                    let fsz LLVMConstInt(i64_ty, llvm_type_abi_size(fty) as u64, 0)
+                    let fcount LLVMBuildSub(builder, ds_n, ds_lo0, "parfor.fp.count")
+                    let fbytes LLVMBuildMul(builder, fcount, fsz, "parfor.fp.bytes")
+                    var fa_args Vector[LLVMValueRef](3)
+                    fa_args.put(0, ds_gpage)
+                    fa_args.put(1, fbytes)
+                    fa_args.put(2, LLVMConstInt(i64_ty, 8, 0))
+                    let fbuf LLVMBuildCall2(builder, alloc_ty, alloc_fn, fa_args.data, 3, "parfor.fp.buf")
+                    let fneg LLVMBuildSub(builder, c0, ds_lo0, "parfor.fp.neg")
+                    var fb_idx Vector[LLVMValueRef](1)
+                    fb_idx.put(0, fneg)
+                    fp_bases.add(LLVMBuildGEP2(builder, fty, fbuf, fb_idx.data, 1, "parfor.fp.base"))
+                }
+                else
+                    fp_bases.add(LLVMConstNull(ptr_ty))
+                set rk: rk + 1
+            }
             var adopt_slot: LLVMValueRef null
             if keeps
             {
@@ -17178,7 +17338,10 @@ define Emitter
             while rk < n_red
             {
                 let sr_gep LLVMBuildStructGEP2(builder, cell_ty, sb_cell, (base_fields + cap_count + n_tail + rk) as int, "parfor.cell.red")
-                LLVMBuildStore(builder, red_slots[rk], sr_gep)
+                if red_ops[rk] >= 20
+                    LLVMBuildStore(builder, fp_bases[rk], sr_gep)
+                else
+                    LLVMBuildStore(builder, red_slots[rk], sr_gep)
                 set rk: rk + 1
             }
             var sb_sub_args Vector[LLVMValueRef](4)
@@ -17196,6 +17359,40 @@ define Emitter
             var gw_args Vector[LLVMValueRef](1)
             gw_args.put(0, ds_grp)
             LLVMBuildCall2(builder, gv_ty, gw_fn, gw_args.data, 1, "")
+            ; the forked iterations' floating-point partials, in index order
+            if n_fp > 0
+            {
+                let fk_slot entry_alloca(i64_ty, "parfor.fp.k")
+                LLVMBuildStore(builder, ds_lo0, fk_slot)
+                let fk_cond create_block("parfor.fp.cond")
+                let fk_body create_block("parfor.fp.body")
+                let fk_done create_block("parfor.fp.done")
+                LLVMBuildBr(builder, fk_cond)
+                LLVMPositionBuilderAtEnd(builder, fk_cond)
+                let fk LLVMBuildLoad2(builder, i64_ty, fk_slot, "parfor.fp.kv")
+                let fk_more LLVMBuildICmp(builder, LLVMIntPredicate.SLT(), fk, ds_n, "parfor.fp.more")
+                LLVMBuildCondBr(builder, fk_more, fk_body, fk_done)
+                LLVMPositionBuilderAtEnd(builder, fk_body)
+                set rk: 0
+                while rk < n_red
+                {
+                    if red_ops[rk] >= 20
+                    {
+                        let fslot red_slots[rk]
+                        let fty LLVMGetAllocatedType(fslot)
+                        var fk_idx Vector[LLVMValueRef](1)
+                        fk_idx.put(0, fk)
+                        let fsrc LLVMBuildGEP2(builder, fty, fp_bases[rk], fk_idx.data, 1, "parfor.fp.src")
+                        let fpart LLVMBuildLoad2(builder, fty, fsrc, "parfor.fp.part")
+                        let fcur LLVMBuildLoad2(builder, fty, fslot, "parfor.fp.cur")
+                        LLVMBuildStore(builder, this.fp_combine(red_ops[rk], fcur, fpart), fslot)
+                    }
+                    set rk: rk + 1
+                }
+                LLVMBuildStore(builder, LLVMBuildAdd(builder, fk, c1, "parfor.fp.knext"), fk_slot)
+                LLVMBuildBr(builder, fk_cond)
+                LLVMPositionBuilderAtEnd(builder, fk_done)
+            }
             if keeps
             {
                 ; Every chunk has finished: the kept values' regions become
