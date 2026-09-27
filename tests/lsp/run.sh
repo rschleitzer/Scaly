@@ -6206,8 +6206,17 @@ if os.path.exists(ir):
         if not m: return "?"
         page = m.group(1)
         d = re.search(re.escape(page) + r" = call ptr @_Z17scaly_force_frameP5Frame\(ptr (%[A-Za-z0-9_.]+)\)", b)
-        if not d: return "?"
-        src = d.group(1)
+        if d:
+            src = d.group(1)
+        else:
+            # Since 2026-09-27 the fast path is inline (Emitter.force_frame#):
+            # the page is a phi whose first incoming value is the frame's first
+            # word, `load ptr, ptr <frame>`.
+            ph = re.search(re.escape(page) + r" = phi ptr \[ (%[A-Za-z0-9_.]+),", b)
+            if not ph: return "?"
+            ld = re.search(re.escape(ph.group(1)) + r" = load ptr, ptr (%[A-Za-z0-9_.]+)", b)
+            if not ld: return "?"
+            src = ld.group(1)
         if src == "%0": return "region #"
         if src.startswith("%frame"): return "region"
         return "?"

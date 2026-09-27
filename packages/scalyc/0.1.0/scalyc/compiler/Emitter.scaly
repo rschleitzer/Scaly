@@ -1710,6 +1710,12 @@ define Emitter
         }
 
         ; Emit `scaly_force_frame(frame)` at the current position.
+        ; The fast path is inline (2026-09-27): a frame whose page was forced
+        ; before answers it from its first word -- the Frame layout {page,
+        ; parent} is the Emitter's own (frame_struct_type#) -- and only an
+        ; unforced frame calls scaly_force_frame. A program links the runtime
+        ; from an archive, so the call could not be inlined: binary-trees spent
+        ; a fifth of its time in it and its stub, one call per node.
         procedure force_frame(mutable this, frame_val: LLVMValueRef) returns LLVMValueRef
         {
             if frame_val = null
@@ -1721,7 +1727,29 @@ define Emitter
             let fty LLVMFunctionType(ptr_ty, tys.data, 1, 0)
             var args Vector[LLVMValueRef](1)
             args.put(0, frame_val)
-            LLVMBuildCall2(builder, fty, fn, args.data, 1, "forced_page")
+            if current_function = null
+                return LLVMBuildCall2(builder, fty, fn, args.data, 1, "forced_page")
+            let here LLVMGetInsertBlock(builder)
+            let fv args[0]
+            let known LLVMBuildLoad2(builder, ptr_ty, fv, "frame.page")
+            let has LLVMBuildICmp(builder, LLVMIntPredicate.NE(), known, LLVMConstNull(ptr_ty), "frame.has_page")
+            let slow_bb LLVMAppendBasicBlockInContext(context, current_function, "frame.force")
+            let done_bb LLVMAppendBasicBlockInContext(context, current_function, "frame.forced")
+            LLVMBuildCondBr(builder, has, done_bb, slow_bb)
+            LLVMPositionBuilderAtEnd(builder, slow_bb)
+            let made LLVMBuildCall2(builder, fty, fn, args.data, 1, "forced_page")
+            let slow_end LLVMGetInsertBlock(builder)
+            LLVMBuildBr(builder, done_bb)
+            LLVMPositionBuilderAtEnd(builder, done_bb)
+            let phi LLVMBuildPhi(builder, ptr_ty, "forced_page")
+            var pv Vector[LLVMValueRef](2)
+            var pb Vector[LLVMBasicBlockRef](2)
+            pv.put(0, known)
+            pb.put(0, here)
+            pv.put(1, made)
+            pb.put(1, slow_end)
+            LLVMAddIncoming(phi, pv.data, pb.data, 2)
+            phi
         }
 
         ; Wrap an ALREADY REAL page in a throw-away frame so it can travel as a

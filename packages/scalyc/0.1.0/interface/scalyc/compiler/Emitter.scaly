@@ -1710,7 +1710,35 @@ define Emitter
 
 
         ; Emit `scaly_force_frame(frame)` at the current position.
+        ; The fast path is inline (2026-09-27): a frame whose page was forced
+        ; before answers it from its first word -- the Frame layout {page,
+        ; parent} is the Emitter's own (frame_struct_type#) -- and only an
+        ; unforced frame calls scaly_force_frame. A program links the runtime
+        ; from an archive, so the call could not be inlined: binary-trees spent
+        ; a fifth of its time in it and its stub, one call per node.
         procedure force_frame(mutable this, frame_val: LLVMValueRef) @direct true @deep true returns LLVMValueRef linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
