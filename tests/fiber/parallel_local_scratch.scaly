@@ -1,0 +1,92 @@
+; A procedure that writes only its OWN local data is pure to the TaskPlanner
+; (2026-09-27). The bounds check in `Vector.put` calls scaly_panic_oob, a
+; substrate procedure that bumps a trap counter on its way to the catch point
+; or exit; the purity walk counted that as the procedure's effect, and every
+; loop over a routine that `put`s into its own scratch Vector ran
+; sequentially — the parallel fannkuch was refused for exactly this. The
+; abort helpers never come back into the body, and the write census and
+; StoreEffects already left them out.
+; Wave S: a scratch Vector per call, filled and reversed in place — must fork,
+;         every value right.
+; Wave G: the same body, but it also bumps a global — must NOT fork.
+; Expected: scratch-forked scratch-ok global-sequential done
+
+define N: int 64
+
+mutable calls: int 0
+
+; fills a scratch vector with 0..len-1 rotated by `seed`, then reverses
+; its prefix repeatedly (a fannkuch-like flip) and returns a checksum
+procedure churn(seed: int) returns int
+{
+    let len: size_t 12
+    var v Vector[int](len)
+    var i: size_t 0
+    while i < len
+    {
+        v.put(i, ((i as int) + seed) % 12)
+        set i: i + 1
+    }
+    var sum 0
+    var round 0
+    while round < 20000
+    {
+        let k (v[0] as size_t) + 1
+        var lo: size_t 0
+        var hi: size_t k - 1
+        while lo < hi
+        {
+            let t v[lo]
+            v.put(lo, v[hi])
+            v.put(hi, t)
+            set lo: lo + 1
+            set hi: hi - 1
+        }
+        set sum: (sum + v[0] + v[11]) % 1000003
+        set round: round + 1
+    }
+    sum
+}
+
+procedure churn_counted(seed: int) returns int mutable calls
+{
+    set calls: calls + 1
+    churn(seed)
+}
+
+let pool TaskPool.default_pool()
+
+var want Vector[int](N as size_t)
+var j 0
+while j < N
+{
+    want.put(j as size_t, churn(j))
+    set j: j + 1
+}
+
+; S
+let before_s TaskPool.submit_count(pool)
+var got Vector[int](N as size_t)
+for i in N
+    got.put(i as size_t, churn(i))
+if TaskPool.submit_count(pool) > before_s
+    Console.print "scratch-forked "
+var bad 0
+set j: 0
+while j < N
+{
+    if got[j as size_t] <> want[j as size_t]
+        set bad: bad + 1
+    set j: j + 1
+}
+if bad = 0
+    Console.print "scratch-ok "
+
+; G
+let before_g TaskPool.submit_count(pool)
+var got2 Vector[int](N as size_t)
+for i in N
+    got2.put(i as size_t, churn_counted(i))
+if TaskPool.submit_count(pool) = before_g and calls = N
+    Console.print "global-sequential "
+Console.println "done"

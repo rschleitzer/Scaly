@@ -2446,6 +2446,16 @@ define TaskPlanner
                 return
             if this.is_construction_name(call.name)
                 return
+            ; The bounds and null traps (scaly_panic_*) never come back into
+            ; the body: they jump to a catch point or exit. What they write on
+            ; the way — a trap counter — is not an effect of the iteration, as
+            ; the write census (the abort path) and StoreEffects already hold.
+            ; Walked, they made every procedure that calls `put` on its own
+            ; local Vector "transitively impure" (Vector.put checks its index
+            ; through scaly_panic_oob), and a loop over such a procedure ran
+            ; sequentially (2026-09-27, the fannkuch gap analysis).
+            if call.name.starts_with("scaly_panic_")
+                return
             if this.effectively_pure(call.mangled_name) = false
                 set pw_impure: true
         }
