@@ -56,7 +56,11 @@ for f in tests/fiber/*.scaly; do
   if [ "$ok" = "1" ]; then
     pass=$((pass+1))
   else
-    fail=$((fail+1)); failures+=("$t: rc=$rc '$out'")
+    # the first stderr line too: a CI log shows only this summary, and a
+    # test that exits through a failed check names the check on stderr
+    # (forkjoin_emit failed once on Linux CI with nothing else to go on)
+    err1=$(head -1 "/tmp/fiber_$t.err" 2>/dev/null)
+    fail=$((fail+1)); failures+=("$t: rc=$rc '$out'${err1:+ stderr: '$err1'}")
   fi
 done
 echo "fiber: $pass PASS, $fail FAIL ${failures[*]}"

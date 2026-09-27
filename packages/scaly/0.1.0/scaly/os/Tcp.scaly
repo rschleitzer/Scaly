@@ -69,7 +69,9 @@ use scaly.fiber.Channel
 ; ends, and every scheduler runs out when its last connection is done.
 ; shutdown waits for nothing (a handler may call it); the connections in
 ; flight run to their end, and a handler that keeps a connection alive asks
-; TcpServer.current().stopping() between two requests.
+; TcpServer.current().stopping() right after READING a request, answers it,
+; and ends the connection when the answer was true — asked after the answer
+; instead, the question races a client that shuts down on seeing it.
 ;
 ;   let server l.start(&handle)
 ;   ...
@@ -453,7 +455,8 @@ define TcpServer(cell: pointer[i64])
         cell <> null
 
     ; Has shutdown been called? A handler that keeps a connection alive asks
-    ; between two requests and ends the connection when it answers true.
+    ; right after reading a request, answers it, and ends the connection
+    ; when this answered true (see the module header for why not after).
     procedure stopping(this) returns bool
     {
         if cell = null

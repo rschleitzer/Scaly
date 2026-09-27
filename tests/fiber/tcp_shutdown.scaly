@@ -2,8 +2,12 @@
 ;   1. TcpListener.start serves on its own threads and returns a TcpServer;
 ;      main is the client. A keep-alive connection pings; main calls
 ;      shutdown; the same connection pings once more and is still answered,
-;      then its handler sees TcpServer.current().stopping() and ends it;
-;      wait returns once every connection is done.
+;      then its handler ends it — it asks TcpServer.current().stopping()
+;      right after READING a request, answers it, and ends when the answer
+;      was true; wait returns once every connection is done. (Asked after
+;      the answer instead, the question races the client: main could read
+;      the first pong and shut down before the handler asked — Linux CI
+;      lost the second pong that way, 2026-09-27.)
 ;   2. serve on a thread of its own, stopped from INSIDE: the handler of a
 ;      "stop" request calls TcpServer.current().shutdown(), and serve returns.
 ;   3. the listener closed afterwards refuses a new connection.
@@ -30,11 +34,12 @@ procedure handle()
         }
         if got < 4
             break
+        let last TcpServer.current().stopping()
         if buf[0] = 115
             TcpServer.current().shutdown()
         else
             c.write("pong")
-        if TcpServer.current().stopping()
+        if last or buf[0] = 115
             break
     }
     c.close()
