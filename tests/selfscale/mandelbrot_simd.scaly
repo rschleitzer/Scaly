@@ -1,35 +1,69 @@
 ; mandelbrot_simd — the same count as mandelbrot.scaly, written with the SIMD
 ; vector types (ROADMAP-simd.md): eight points at once, as two independent
-; f64x4 so the floating-point latency is hidden, the escape test as a mask.
+; f64x4 so the floating-point latency is hidden, the escape test every eight
+; iterations.
 ; The row loop around it self-scales as in the scalar program; this one
 ; measures the language, the scalar one the engine.
 
+; eight points, as two f64x4 (four NEON chains); the escape test runs every
+; eight iterations instead of every one, and a point is inside when its |z|^2
+; after exactly 50 iterations is at most 4 -- an escaped point has diverged
+; to inf or NaN by then, and NaN compares false (the fastest C program's
+; scheme, which answers the same count as a test after every iteration)
 function count8(x: int, y: int, n: int) returns int
 {
     let step 2.0 / (n as double)
     let ci f64x4.splat(step * (y as double) - 1.0)
     let cr0 f64x4.iota(step * (x as double) - 1.5, step)
     let cr1 cr0 + 4.0 * step
-    var zr0 f64x4.splat(0.0)
-    var zi0 f64x4.splat(0.0)
-    var zr1 zr0
-    var zi1 zi0
-    var inside0 mask4.all_set()
-    var inside1 inside0
-    var i 0
-    while i < 50 and (inside0 or inside1).any()
+    var zr0 cr0
+    var zi0 ci
+    var zr1 cr1
+    var zi1 ci
+    var s0 f64x4.splat(0.0)
+    var s1 s0
+    var block 0
+    while block < 6
     {
-        let t0 zr0 * zr0 - zi0 * zi0 + cr0
-        set zi0: 2.0 * zr0 * zi0 + ci
-        set zr0: t0
-        let t1 zr1 * zr1 - zi1 * zi1 + cr1
-        set zi1: 2.0 * zr1 * zi1 + ci
-        set zr1: t1
-        set inside0: inside0 and (zr0 * zr0 + zi0 * zi0 <= 4.0)
-        set inside1: inside1 and (zr1 * zr1 + zi1 * zi1 <= 4.0)
-        set i: i + 1
+        var k 0
+        while k < 8
+        {
+            let r0 zr0 * zr0
+            let i0 zi0 * zi0
+            let ri0 zr0 * zi0
+            set s0: r0 + i0
+            set zr0: r0 - i0 + cr0
+            set zi0: ri0 + ri0 + ci
+            let r1 zr1 * zr1
+            let i1 zi1 * zi1
+            let ri1 zr1 * zi1
+            set s1: r1 + i1
+            set zr1: r1 - i1 + cr1
+            set zi1: ri1 + ri1 + ci
+            set k: k + 1
+        }
+        if ((s0 <= 4.0) or (s1 <= 4.0)).any() = false
+            return 0
+        set block: block + 1
     }
-    inside0.count() + inside1.count()
+    var k 0
+    while k < 2
+    {
+        let r0 zr0 * zr0
+        let i0 zi0 * zi0
+        let ri0 zr0 * zi0
+        set s0: r0 + i0
+        set zr0: r0 - i0 + cr0
+        set zi0: ri0 + ri0 + ci
+        let r1 zr1 * zr1
+        let i1 zi1 * zi1
+        let ri1 zr1 * zi1
+        set s1: r1 + i1
+        set zr1: r1 - i1 + cr1
+        set zi1: ri1 + ri1 + ci
+        set k: k + 1
+    }
+    (s0 <= 4.0).count() + (s1 <= 4.0).count()
 }
 
 function row_count(y: int, n: int) returns int
