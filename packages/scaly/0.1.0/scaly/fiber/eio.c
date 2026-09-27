@@ -45,6 +45,7 @@
 #include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -382,21 +383,85 @@ int scaly_eio_tcp_listen(int port)
     return scaly_eio_tcp_listen_at(INADDR_LOOPBACK, port);
 }
 
-/* Like scaly_eio_tcp_listen but bound to INADDR_ANY — a cluster node
- * accepting real remote peers (stage 7, milestone 7.3). */
+/* Is this the unspecified IPv6 address "::"? Byte by byte: the IN6_ macros
+ * and in6addr_any are spelled differently on each platform. */
+static int scaly_eio_in6_any(const struct sockaddr* sa)
+{
+    const unsigned char* b = (const unsigned char*)&((const struct sockaddr_in6*)sa)->sin6_addr;
+    int i;
+    for (i = 0; i < 16; i++)
+        if (b[i] != 0)
+            return 0;
+    return 1;
+}
+
+/* Listen on host:port, host a NUMERIC address of either family ("::1",
+ * "::", "127.0.0.1", "0.0.0.0" — a name would bind whichever family the
+ * resolver lists first). "::" is dual-stack: IPV6_V6ONLY is switched off
+ * explicitly (its default differs between systems), so the socket takes IPv4
+ * connections too, as mapped addresses. Shim rule (a): struct addrinfo, the
+ * AI_/AF_ constants and the IPV6_V6ONLY option are OS-specific. Returns the
+ * fd, -1 on failure (a malformed address, a family the host lacks, a port in
+ * use). */
+int scaly_eio_tcp_listen_host(const char* host, int port)
+{
+    struct addrinfo hints;
+    struct addrinfo* res = 0;
+    struct addrinfo* ai;
+    char portbuf[16];
+    int fd = -1;
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = AI_PASSIVE | AI_NUMERICHOST;
+    snprintf(portbuf, sizeof portbuf, "%d", port);
+    if (getaddrinfo(host, portbuf, &hints, &res) != 0)
+        return -1;
+    for (ai = res; ai; ai = ai->ai_next)
+    {
+        int one = 1;
+        fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+        if (fd < 0)
+            continue;
+        setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof one);
+        if (ai->ai_family == AF_INET6)
+        {
+            int v6only = scaly_eio_in6_any(ai->ai_addr) ? 0 : 1;
+            setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &v6only, sizeof v6only);
+        }
+        scaly_eio_sock_init(fd);
+        if (bind(fd, ai->ai_addr, (socklen_t)ai->ai_addrlen) == 0
+            && listen(fd, 64) == 0
+            && scaly_eio_set_nonblocking(fd) == 0)
+            break;
+        close(fd);
+        fd = -1;
+    }
+    freeaddrinfo(res);
+    return fd;
+}
+
+/* Listen on every interface of BOTH families — the dual-stack "::" — or on
+ * IPv4's INADDR_ANY where the host has no IPv6 (a cluster node accepting
+ * real remote peers, stage 7, milestone 7.3). */
 int scaly_eio_tcp_listen_any(int port)
 {
+    int fd = scaly_eio_tcp_listen_host("::", port);
+    if (fd >= 0)
+        return fd;
     return scaly_eio_tcp_listen_at(INADDR_ANY, port);
 }
 
-/* The local port a bound socket ended up on, -1 on failure. */
+/* The local port a bound socket ended up on, -1 on failure; either family. */
 int scaly_eio_tcp_port(int fd)
 {
-    struct sockaddr_in addr;
+    struct sockaddr_storage addr;
     socklen_t len = sizeof addr;
     if (getsockname(fd, (struct sockaddr*)&addr, &len) < 0)
         return -1;
-    return ntohs(addr.sin_port);
+    if (addr.ss_family == AF_INET6)
+        return ntohs(((struct sockaddr_in6*)&addr)->sin6_port);
+    return ntohs(((struct sockaddr_in*)&addr)->sin_port);
 }
 
 /* Connect to 127.0.0.1:port with a blocking handshake (instant against a
@@ -439,7 +504,9 @@ int scaly_eio_tcp_connect_host(const char* host, int port)
     char portbuf[16];
     int fd = -1;
     memset(&hints, 0, sizeof hints);
-    hints.ai_family = AF_INET;
+    /* either family, in the resolver's order ("localhost" is ::1 and
+     * 127.0.0.1): the first address that connects wins */
+    hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     snprintf(portbuf, sizeof portbuf, "%d", port);
     if (getaddrinfo(host, portbuf, &hints, &res) != 0)
@@ -483,6 +550,16 @@ long long scaly_eio_tcp_write(int fd, const void* buf, size_t count)
     if (r < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
         return -2;
     return r;
+}
+
+/* TCP_NODELAY on or off (1/0): Nagle's coalescing of small writes. Shim
+ * rule (a): the option's level and name come from <netinet/tcp.h>, and the
+ * Windows twin passes a SOCKET, which is not an int there. 0 on success, -1
+ * on an error (a descriptor that is not a TCP socket). */
+int scaly_eio_tcp_nodelay(int fd, int on)
+{
+    int v = on ? 1 : 0;
+    return setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &v, sizeof v) == 0 ? 0 : -1;
 }
 
 /* Fiber guard-page overflow diagnostics (shim-owned per containment rule

@@ -1,0 +1,146 @@
+; Reading in a promoted `for` (ROADMAP 4.5, 2026-09-27): the stdlib's READ
+; primitives (File.read_to_string, File.exists, Directory.exists/
+; is_directory) no longer block the TaskPlanner — independent iterations may
+; read in any order and at once, on the pool's worker threads. Writers still
+; block: their order is the program's output. Each wave's body is heavy
+; enough (a 16 KB file read and scanned) that a promoted loop forks; the
+; pool's submit counter proves which way each loop went, the values prove
+; the result.
+; Wave R: read and count lines — must fork, every count right.
+; Wave K: keep the Strings read (region adoption) — must fork, every one right.
+; Wave E: File.exists per slot — must fork, every answer right.
+; Wave W: write files — must NOT fork.
+; The files live in the CURRENT DIRECTORY and are removed at the end, as in
+; file_read: on Windows an absolute "/tmp/..." resolves against the drive
+; root, the writes failed without a word and every read wave came back wrong
+; (the first Windows CI run, 2026-09-27).
+; Expected: read-forked read-ok kept-ok exists-ok write-sequential done
+
+define FILES: int 64
+
+function count_lines(s: String) returns int
+{
+    var n 0
+    var i: size_t 0
+    let len s.get_length()
+    while i < len
+    {
+        if s.get(i) = 10
+            set n: n + 1
+        set i: i + 1
+    }
+    n
+}
+
+function path_of(i: int) returns String
+    "scaly_parallel_read_`i`.tmp"
+
+; file i holds 400 + i lines of 40 bytes: 16 KB and more
+function content_of(i: int) returns String
+{
+    var sb StringBuilder()
+    var k 0
+    while k < 400 + i
+    {
+        sb.append "line of forty bytes, give or take: ..\n"
+        set k: k + 1
+    }
+    sb.to_string()
+}
+
+procedure write_all(n: int)
+{
+    var i 0
+    while i < n
+    {
+        File.write_from_string(path_of(i), content_of(i))
+        set i: i + 1
+    }
+}
+
+procedure write_wave(n: int)
+{
+    for i in n
+        File.write_from_string(path_of(i), content_of(i))
+}
+
+let pool TaskPool.default_pool()
+write_all(FILES)
+var paths Vector[String](FILES as size_t)
+var j 0
+while j < FILES
+{
+    paths.put(j as size_t, path_of(j))
+    set j: j + 1
+}
+
+; R
+let before_r TaskPool.submit_count(pool)
+var counts Vector[int](FILES as size_t)
+for i in FILES
+    counts.put(i as size_t, count_lines(File.read_to_string(paths[i as size_t])))
+if TaskPool.submit_count(pool) > before_r
+    Console.print "read-forked "
+var bad 0
+set j: 0
+while j < FILES
+{
+    if counts[j as size_t] <> 400 + j
+        set bad: bad + 1
+    set j: j + 1
+}
+if bad = 0
+    Console.print "read-ok "
+
+; K
+var texts Vector[String](FILES as size_t)
+for i in FILES
+    texts.put(i as size_t, File.read_to_string(paths[i as size_t]))
+set bad: 0
+set j: 0
+while j < FILES
+{
+    if texts[j as size_t].equals(content_of(j)) = false
+        set bad: bad + 1
+    set j: j + 1
+}
+if bad = 0
+    Console.print "kept-ok "
+
+; E: even slots name a file, odd slots a name that does not exist
+var names Vector[String](FILES as size_t)
+set j: 0
+while j < FILES
+{
+    if j % 2 = 0
+        names.put(j as size_t, path_of(j))
+    else
+        names.put(j as size_t, "scaly_parallel_read_missing_`j`.tmp")
+    set j: j + 1
+}
+var there Vector[bool](FILES as size_t)
+for i in FILES
+    there.put(i as size_t, File.exists(names[i as size_t]))
+set bad: 0
+set j: 0
+while j < FILES
+{
+    if there[j as size_t] <> (j % 2 = 0)
+        set bad: bad + 1
+    set j: j + 1
+}
+if bad = 0
+    Console.print "exists-ok "
+
+; W
+let before_w TaskPool.submit_count(pool)
+write_wave(FILES)
+if TaskPool.submit_count(pool) = before_w
+    Console.print "write-sequential "
+set j: 0
+while j < FILES
+{
+    unlink(path_of(j).to_c_string())
+    set j: j + 1
+}
+Console.println "done"

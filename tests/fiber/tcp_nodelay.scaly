@@ -1,0 +1,26 @@
+; TcpStream.set_nodelay (scaly.os.Tcp over the eio shims' scaly_eio_tcp_nodelay):
+; on and off succeed on a connected socket, both ends; a closed stream and a
+; descriptor that is not a socket (stdout) answer false. That the option acts
+; is measured by tools/bench/net (pipelined responses leave one per packet).
+; Expected: on off accepted closed notsock
+
+var l TcpListener.listen(0)
+if l.is_open() = false
+    exit 1
+var s TcpStream.connect("127.0.0.1", l.port())
+var c l.accept()
+if s.set_nodelay(true)
+    Console.print "on "
+if s.set_nodelay(false)
+    Console.print "off "
+if c.set_nodelay(true)
+    Console.print "accepted "
+s.close()
+if s.set_nodelay(true) = false
+    Console.print "closed "
+let out TcpStream(1)
+if out.set_nodelay(true) = false
+    Console.print "notsock"
+Console.println ""
+c.close()
+l.close()

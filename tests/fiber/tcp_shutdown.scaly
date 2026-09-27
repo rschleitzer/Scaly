@@ -1,0 +1,110 @@
+; Shutting a TCP server down in order (scaly.os.Tcp):
+;   1. TcpListener.start serves on its own threads and returns a TcpServer;
+;      main is the client. A keep-alive connection pings; main calls
+;      shutdown; the same connection pings once more and is still answered,
+;      then its handler ends it — it asks TcpServer.current().stopping()
+;      right after READING a request, answers it, and ends when the answer
+;      was true; wait returns once every connection is done. (Asked after
+;      the answer instead, the question races the client: main could read
+;      the first pong and shut down before the handler asked — Linux CI
+;      lost the second pong that way, 2026-09-27.)
+;   2. serve on a thread of its own, stopped from INSIDE: the handler of a
+;      "stop" request calls TcpServer.current().shutdown(), and serve returns.
+;   3. the listener closed afterwards refuses a new connection.
+; Expected: pong pong drained stopped served refused
+
+shared served_done: bool false
+
+; answer "ping" with "pong" until the peer goes or the server stops; a
+; request "stop" shuts the server down from inside
+procedure handle()
+{
+    var c TcpStream.of_task()
+    var buf u8[8]
+    let view Slice[u8](8, &buf[0])
+    repeat
+    {
+        var got: size_t 0
+        while got < 4
+        {
+            let n c.read(view.slice_from(got))
+            if n <= 0
+                break
+            set got: got + (n as size_t)
+        }
+        if got < 4
+            break
+        let last TcpServer.current().stopping()
+        if buf[0] = 115
+            TcpServer.current().shutdown()
+        else
+            c.write("pong")
+        if last or buf[0] = 115
+            break
+    }
+    c.close()
+}
+
+procedure ping(s: TcpStream) returns bool
+{
+    s.write("ping")
+    var buf u8[8]
+    let view Slice[u8](8, &buf[0])
+    var got: size_t 0
+    while got < 4
+    {
+        let n s.read(view.slice_from(got))
+        if n <= 0
+            return false
+        set got: got + (n as size_t)
+    }
+    buf[1] = 111
+}
+
+procedure serve_entry(arg: pointer[void]) returns pointer[void] mutable served_done
+{
+    let l TcpListener((arg as size_t) as i32)
+    l.serve(&handle)
+    set served_done: true
+    null
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    ; 1. start / shutdown / wait from outside
+    var l TcpListener.listen(0)
+    let port l.port()
+    let server l.start(&handle)
+    var s TcpStream.connect("127.0.0.1", port)
+    if ping(s)
+        Console.print "pong "
+    server.shutdown()
+    if ping(s)
+        Console.print "pong "
+    var one u8[1]
+    if s.read(Slice[u8](1, &one[0])) = 0
+        Console.print "drained "
+    s.close()
+    server.wait()
+    Console.print "stopped "
+    l.close()
+
+    ; 2. serve, shut down from inside by a handler
+    var l2 TcpListener.listen(0)
+    let port2 l2.port()
+    let t Thread.spawn(&serve_entry, (l2.fd as size_t) as pointer[void])
+    var s2 TcpStream.connect("127.0.0.1", port2)
+    s2.write("stop")
+    s2.close()
+    Thread.join(t)
+    if served_done
+        Console.print "served "
+    l2.close()
+
+    ; 3. a closed listener refuses
+    let late TcpStream.connect("127.0.0.1", port)
+    if late.is_open() = false
+        Console.print "refused"
+    Console.println ""
+    0
+}

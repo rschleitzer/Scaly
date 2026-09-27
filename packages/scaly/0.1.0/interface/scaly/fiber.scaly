@@ -389,6 +389,8 @@ procedure scaly_eio_accept(fd: i32) returns i32 extern
 procedure scaly_eio_tcp_listen_any(port: i32) returns i32 extern
 procedure scaly_eio_tcp_connect_host(host: pointer[const_char], port: i32) returns i32 extern
 procedure scaly_eio_tcp_write(fd: i32, buf: pointer[void], count: size_t) returns i64 extern
+procedure scaly_eio_tcp_nodelay(fd: i32, on: i32) returns i32 extern
+procedure scaly_eio_tcp_listen_host(host: pointer[const_char], port: i32) returns i32 extern
 
 ; Guard-page overflow diagnostics (shim-owned: struct sigaction and
 ; stack_t layouts are OS-specific). Installs a SIGSEGV/SIGBUS handler on
@@ -1628,10 +1630,18 @@ define Io
 
 
 
-    ; Listen on ALL interfaces (INADDR_ANY) — a cluster node accepting
-    ; real remote peers (stage 7, milestone 7.3). Same contract as
-    ; Io.listen otherwise.
+    ; Listen on ALL interfaces of both families (the dual-stack "::",
+    ; IPv4's INADDR_ANY where the host has no IPv6) — a cluster node
+    ; accepting real remote peers (stage 7, milestone 7.3). Same contract
+    ; as Io.listen otherwise.
     procedure listen_any(port: i32) @ret_nonlocal true @deep true returns i32 io linked
+
+
+    ; Listen on host:port, host a NUMERIC address of either family ("::1",
+    ; "::" — dual-stack —, "127.0.0.1", "0.0.0.0"; NUL-terminated). Same
+    ; contract as Io.listen otherwise; -1 for a malformed address or a
+    ; family the host lacks.
+    procedure listen_host(mutable host: pointer[const_char], port: i32) @ret_nonlocal true @deep true returns i32 io linked
 
 
     ; Resolve host by NAME (getaddrinfo in the shim, rule a) and
@@ -1648,6 +1658,16 @@ define Io
 
 
 
+
+
+
+
+
+
+
+    ; TCP_NODELAY on (true: every write leaves at once) or off (false:
+    ; Nagle coalesces small writes, the default). False on an error.
+    procedure set_nodelay(fd: i32, on: bool) @ret_nonlocal true @deep true returns bool io linked
 
 
 
@@ -3015,6 +3035,24 @@ define ForkJoin
     ; Set up once, on the first fork-capable entry. False when fork-join is
     ; off: a pool of one worker (SCALY_WORKERS=1, a one-core box) never forks.
     procedure ready() @ret_nonlocal true @deep true returns bool io reads fj_state linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

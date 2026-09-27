@@ -1,0 +1,147 @@
+; The colorless TCP layer (scaly.os.Tcp): the SAME TcpListener/TcpStream
+; calls in all three contexts, and no Io.set_nonblocking anywhere.
+;   1. no scheduler: main accepts and reads while a client THREAD (no
+;      scheduler either) connects and writes — the waits are poll(2);
+;   2. tasks: a server task and a client task on one scheduler; the client's
+;      connect is offloaded to the Io pool (offload_count proves it) and the
+;      conversation parks both fibers in turn — the order of the prints is
+;      the proof of suspension;
+;   3. the main context under a scheduler: main's accept drives the
+;      dispatcher until the client task's connect lands.
+; Expected: 1:hi 2:s1 2:c1 2:s2 2:c2 2:pool 2:eof 3:yo done
+
+mutable port2: int 0
+mutable listener_fd2: int 0
+mutable port3: int 0
+
+procedure client1(arg: pointer[void]) returns pointer[void]
+{
+    let port (arg as size_t) as int
+    var s TcpStream.connect("127.0.0.1", port)
+    if s.is_open() = false
+        exit 11
+    s.write("hi")
+    s.close()
+    null
+}
+
+procedure read_exact(s: TcpStream, mutable buf: Slice[u8], want: size_t) returns bool
+{
+    var got: size_t 0
+    while got < want
+    {
+        let n s.read(buf.slice_from(got))
+        if n <= 0
+            return false
+        set got: got + (n as size_t)
+    }
+    true
+}
+
+procedure server2()
+{
+    let listener TcpListener(listener_fd2 as i32)
+    var c listener.accept()
+    if c.is_open() = false
+        exit 21
+    var buf u8[16]
+    let view Slice[u8](16, &buf[0])
+    var round 1
+    repeat
+    {
+        let n c.read(view)
+        if n = 0
+        {
+            Console.print "2:eof "
+            break
+        }
+        if n < 0
+            exit 22
+        if round = 1
+            Console.print "2:s1 "
+        else
+            Console.print "2:s2 "
+        c.write(view.subslice(0, n as size_t))
+        set round: round + 1
+    }
+    c.close()
+}
+
+procedure client2()
+{
+    let before Io.offload_count()
+    var s TcpStream.connect("localhost", port2)
+    if s.is_open() = false
+        exit 23
+    var buf u8[16]
+    let view Slice[u8](16, &buf[0])
+    s.write("ab")
+    if read_exact(s, view, 2) = false
+        exit 24
+    Console.print "2:c1 "
+    s.write("cd")
+    if read_exact(s, view, 2) = false
+        exit 25
+    Console.print "2:c2 "
+    s.close()
+    if Io.offload_count() > before
+        Console.print "2:pool "
+}
+
+procedure client3()
+{
+    var s TcpStream.connect("127.0.0.1", port3)
+    if s.is_open() = false
+        exit 31
+    s.write("yo")
+    s.close()
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutable port2, listener_fd2, port3
+{
+    ; 1. no scheduler anywhere
+    var l1 TcpListener.listen(0)
+    if l1.is_open() = false
+        exit 1
+    let t Thread.spawn(&client1, (l1.port() as size_t) as pointer[void])
+    var c1 l1.accept()
+    var buf u8[16]
+    let view Slice[u8](16, &buf[0])
+    if read_exact(c1, view, 2) = false
+        exit 2
+    if buf[0] = 104 and buf[1] = 105
+        Console.print "1:hi "
+    Thread.join(t)
+    c1.close()
+    l1.close()
+
+    ; 2. both sides in tasks
+    let page Page.allocate_page()
+    let sched Scheduler.create(page)
+    var l2 TcpListener.listen(0)
+    set listener_fd2: l2.fd as int
+    set port2: l2.port()
+    let ts Scheduler.spawn(&server2)
+    let tc Scheduler.spawn(&client2)
+    Scheduler.run()
+    Scheduler.join(ts)
+    Scheduler.join(tc)
+    l2.close()
+
+    ; 3. the main context under a scheduler
+    var l3 TcpListener.listen(0)
+    set port3: l3.port()
+    let t3 Scheduler.spawn(&client3)
+    var c3 l3.accept()
+    if read_exact(c3, view, 2) = false
+        exit 3
+    if buf[0] = 121 and buf[1] = 111
+        Console.print "3:yo "
+    Scheduler.run()
+    Scheduler.join(t3)
+    c3.close()
+    l3.close()
+    Console.println "done"
+    Page.release_page(page)
+    0
+}

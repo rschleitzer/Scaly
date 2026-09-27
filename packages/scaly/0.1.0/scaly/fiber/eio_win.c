@@ -222,7 +222,18 @@ int scaly_eio_arm(int q, int fd, int for_write, void* tag)
         DWORD recvd = 0;
         a->kind = SC_ARM_ACCEPT;
         if (ax == NULL) { free(a); return -1; }
-        a->accepted = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+        /* AcceptEx takes the connection into a socket made in ADVANCE, and
+         * that socket must be of the LISTENER's family — an AF_INET one
+         * under an IPv6 listener fails. The address buffers below are sized
+         * for sockaddr_in6 already. */
+        {
+            struct sockaddr_storage ls;
+            int llen = (int)sizeof ls;
+            int fam = AF_INET;
+            if (getsockname(s, (struct sockaddr*)&ls, &llen) != SOCKET_ERROR)
+                fam = ls.ss_family;
+            a->accepted = socket(fam, SOCK_STREAM, IPPROTO_TCP);
+        }
         if (a->accepted == INVALID_SOCKET) { free(a); return -1; }
         /* Zero receive length: complete on connection, not on first byte —
          * that is what keeps this a READINESS report and not a read. */
@@ -435,6 +446,17 @@ long long scaly_eio_tcp_write(int fd, const void* buf, size_t count)
     return scaly_eio_write(fd, buf, count);
 }
 
+/* TCP_NODELAY on or off (1/0) — the eio.c twin; the SOCKET is a kernel
+ * handle and the option value a char pointer here. 0 on success, -1 on an
+ * error (a descriptor that is not a socket). */
+int scaly_eio_tcp_nodelay(int fd, int on)
+{
+    SOCKET s = (SOCKET)(intptr_t)fd;
+    int v = on ? 1 : 0;
+    scaly_ws_start();
+    return setsockopt(s, IPPROTO_TCP, TCP_NODELAY, (const char*)&v, (int)sizeof v) == 0 ? 0 : -1;
+}
+
 /* ★A WSA ERROR AND A C errno ARE UNRELATED NUMBERINGS, and preferring the
  * former mislabelled every file diagnostic in the product. This used to answer
  * `WSAGetLastError()` when that was non-zero — but on Windows WSAGetLastError
@@ -501,15 +523,74 @@ static int sc_listen_at(unsigned int ip_host_order, int port)
 }
 
 int scaly_eio_tcp_listen(int port)      { return sc_listen_at(INADDR_LOOPBACK, port); }
-int scaly_eio_tcp_listen_any(int port)  { return sc_listen_at(INADDR_ANY, port); }
+
+/* Is this the unspecified IPv6 address "::"? Byte by byte, as in eio.c. */
+static int sc_in6_any(const struct sockaddr* sa)
+{
+    const unsigned char* b = (const unsigned char*)&((const struct sockaddr_in6*)sa)->sin6_addr;
+    int i;
+    for (i = 0; i < 16; i++)
+        if (b[i] != 0)
+            return 0;
+    return 1;
+}
+
+/* The eio.c twin: listen on a NUMERIC host of either family; "::" is
+ * dual-stack. IPV6_V6ONLY defaults to ON here (unlike Linux), so switching
+ * it off explicitly is what makes "::" take IPv4 connections at all. */
+int scaly_eio_tcp_listen_host(const char* host, int port)
+{
+    struct addrinfo hints, *res = NULL, *p;
+    char portstr[16];
+    SOCKET s = INVALID_SOCKET;
+    BOOL yes = TRUE;
+    scaly_ws_start();
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = AI_PASSIVE | AI_NUMERICHOST;
+    snprintf(portstr, sizeof portstr, "%d", port);
+    if (getaddrinfo(host, portstr, &hints, &res) != 0)
+        return -1;
+    for (p = res; p != NULL; p = p->ai_next) {
+        s = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+        if (s == INVALID_SOCKET)
+            continue;
+        setsockopt(s, SOL_SOCKET, SO_EXCLUSIVEADDRUSE, (char*)&yes, sizeof yes);
+        if (p->ai_family == AF_INET6) {
+            DWORD v6only = sc_in6_any(p->ai_addr) ? 0 : 1;
+            setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, (char*)&v6only, sizeof v6only);
+        }
+        if (bind(s, p->ai_addr, (int)p->ai_addrlen) != SOCKET_ERROR
+            && listen(s, SOMAXCONN) != SOCKET_ERROR
+            && scaly_eio_set_nonblocking((int)(intptr_t)s) == 0)
+            break;
+        closesocket(s);
+        s = INVALID_SOCKET;
+    }
+    freeaddrinfo(res);
+    return s == INVALID_SOCKET ? -1 : (int)(intptr_t)s;
+}
+
+/* Every interface of both families (the dual-stack "::"), IPv4's
+ * INADDR_ANY where the host has no IPv6 — as eio.c. */
+int scaly_eio_tcp_listen_any(int port)
+{
+    int fd = scaly_eio_tcp_listen_host("::", port);
+    if (fd >= 0)
+        return fd;
+    return sc_listen_at(INADDR_ANY, port);
+}
 
 int scaly_eio_tcp_port(int fd)
 {
-    struct sockaddr_in a;
+    struct sockaddr_storage a;
     int len = (int)sizeof a;
     if (getsockname((SOCKET)(intptr_t)fd, (struct sockaddr*)&a, &len) == SOCKET_ERROR)
         return -1;
-    return ntohs(a.sin_port);
+    if (a.ss_family == AF_INET6)
+        return ntohs(((struct sockaddr_in6*)&a)->sin6_port);
+    return ntohs(((struct sockaddr_in*)&a)->sin_port);
 }
 
 int scaly_eio_tcp_connect(int port)

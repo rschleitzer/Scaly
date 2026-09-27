@@ -1,0 +1,21 @@
+; A call into ANOTHER package's method whose name is also a C extern
+; (TcpStream.read / libc read, TcpStream.write / libc write) is judged by the
+; method's declaration, not as the extern: the write census asked
+; is_extern_name by the bare NAME, took the stub for libc's read -- which writes
+; every argument -- and refused `s.read(buf)` for writing the stream `s`
+; (2026-09-27; the question is asked by the SYMBOL now, as the pointer census
+; always did: a C extern's symbol is its unmangled name).
+; Expected: PASS
+
+procedure pull(s: TcpStream, mutable buf: Slice[u8]) returns int
+    s.read(buf)
+
+procedure push(s: TcpStream, data: Slice[u8]) returns bool
+    s.write(data)
+
+let closed TcpStream(0 - 1)
+var b u8[4]
+if pull(closed, Slice[u8](4, &b[0])) = 0 - 1 and push(closed, Slice[u8](4, &b[0])) = false
+    print "PASS"
+else
+    print "FAIL"

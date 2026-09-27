@@ -77,3 +77,85 @@ programs expect: `memalign` and `sched_getaffinity`.
 
 The measured results on arm64 are in ROADMAP-simd.md (phase 4) and in the
 memory `benchmarks-game-c-race`.
+
+## net/ — an HTTP server against Go and Rust
+
+```bash
+tools/bench/net/build.sh          # Scaly, Go (raw, net/http), Rust/tokio, the load generator
+tools/bench/net/race.sh [threads] [seconds]
+```
+
+The same "Hello, World!" over HTTP/1.1 keep-alive from four servers, each
+reading up to the end of a request header and writing a fixed response:
+`hello.scaly` (`TcpListener.serve`, a scheduler per core), `go-raw` (a
+goroutine per connection), `go-http` (the standard `net/http`) and
+`rust-tokio` (a tokio task per connection). The load generator (`load/`, Go)
+keeps 128 connections and pipelines 16 requests per round trip — the shape of
+TechEmpower's plaintext test; without pipelining its own cost per request is
+higher than any server's and every run measures the client. Each server runs
+on one thread, then on half the CPUs, with the client on the other half.
+
+★Socket options are part of the comparison: Go sets `TCP_NODELAY` by default,
+Scaly and tokio leave Nagle on — with pipelining that alone halved Go's
+throughput (every response its own packet). `go-raw` therefore switches
+Nagle back on; `go-http` stays the standard library as shipped.
+`NODELAY=1 tools/bench/net/race.sh` runs the Scaly, go-raw and tokio servers
+with `TCP_NODELAY` instead (`TcpStream.set_nodelay`, the servers' second
+argument `nodelay`).
+
+A connection per request (`load -k=false`, not in `race.sh`) measures the
+accept path. The client closes with `SO_LINGER 0`: without it its ~16 000
+ephemeral ports sat in TIME_WAIT within seconds and every server showed
+thousands of errors. Measured with it (5 server threads, 32 clients, 5 s):
+Scaly 14 276, tokio 14 906, Go raw 15 040, Go net/http 15 049 req/s, no
+errors — the kernel's connection setup is the limit for all four.
+
+**Where Scaly's few percent go (measured the same day).** With ONE thread
+Scaly is the cheapest of the three (15 097 conn/s, 22 µs of server CPU per
+connection; tokio 28, Go 35). With five its CPU per connection rises to
+49 µs (tokio 33, Go 46) and its rate falls 3 % behind (14 444 against
+14 921). The shared listener's herd is real but small: counted in an
+instrumented build (not kept), accepts that found nothing were 0.85 per
+connection with one scheduler (the retry before parking), 1.06 with two,
+1.47 with five, 2.37 with ten — not the N − 1 a full herd would cost — and
+`sample` shows the `accept` calls' time up 67 % from one scheduler to five
+(more empty calls, five threads on one listen queue). Context switches do
+not explain the rest: `time -l` counts fewer for Scaly than for tokio at
+five threads (4.7 against 5.2 per connection).
+
+**The fix, measured the same afternoon:** ONE acceptor (scheduler 0) hands
+the connections round-robin to every scheduler through a Channel each, as
+tokio and Go accept once and distribute. Against the shared-listener build,
+alternating, 32 clients, a connection per request:
+
+| server threads | Scaly, one acceptor | Scaly, shared listener | tokio | Go raw |
+|---|---|---|---|---|
+| 1 | 15 243/s, 22.3 µs | 15 085/s, 21.9 µs | 15 008/s, 27.6 µs | 15 589/s, 33.0 µs |
+| 2 | 14 955/s, 25.3 µs | 14 865/s, 27.6 µs | 14 944/s, 31.7 µs | 14 945/s, 40.4 µs |
+| 5 | **14 970/s, 26.1 µs** | 14 366/s, 49.1 µs | 14 893/s, 33.3 µs | 14 848/s, 45.8 µs |
+
+(µs = server CPU per connection.) At five threads the CPU per connection
+halves and the rate is level with tokio and Go again, with the least CPU of
+the three at every thread count. Keep-alive does not suffer from the
+round-robin: 524k/481k req/s against 498k/473k for the shared listener in
+two rounds (tokio 468k/452k, Go 460k/448k).
+
+Measured on arm64 (10 CPUs, M-series) 2026-09-27, requests per second:
+
+| server | 1 thread | 5 threads | server CPU at 5 threads |
+|---|---|---|---|
+| Scaly | 221 882 | **485 426** | 26.7 s |
+| Rust tokio | 221 394 | 459 774 | 28.9 s |
+| Go, goroutine per connection | 219 846 | 446 568 | 29.3 s |
+| Go net/http | 75 238 | 112 454 | 21.5 s |
+
+With `TCP_NODELAY` (the same day, 6 s per run), every response leaves as its
+own packet and all three fall to the same level — the option acts, and none
+of the servers is the limit any more:
+
+| server | 1 thread | 5 threads | server CPU at 5 threads |
+|---|---|---|---|
+| Scaly | 105 829 | **133 747** | 6.9 s |
+| Rust tokio | 105 243 | 130 701 | 7.3 s |
+| Go, goroutine per connection | 105 000 | 128 120 | 7.8 s |
+| Go net/http (always) | 75 456 | 110 461 | 16.2 s |

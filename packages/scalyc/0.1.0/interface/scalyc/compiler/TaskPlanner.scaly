@@ -2165,6 +2165,28 @@ define TaskPlanner
         ; state, process control beyond abort) does.
         ; ================================================================
 
+        ; The stdlib's READ primitives (ROADMAP 4.5): they reach the world
+        ; outside the program only to READ it, so independent iterations may
+        ; run them in any order and at once — a parallel `for` body may call
+        ; them, and they overlap on the pool's worker threads (which have no
+        ; scheduler: File takes its plain blocking path there). Treated like
+        ; the stub of a `function`: nothing written but the page the result
+        ; lands on. A LIST, by the mangled name's owner and routine: the
+        ; interfaces carry one `io` bit for reading and writing alike, and the
+        ; externs cannot tell them apart (fopen reads or truncates by its
+        ; mode). Every writer — Console, File.write_from_string, a socket —
+        ; still blocks the loop: its order is the program's output.
+        function is_read_primitive(mangled: String) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+
+
+
+
+
+
         function extern_is_benign(this: TaskPlanner, name: String) @ret_nonlocal true @deep true returns bool linked
 
 
@@ -2216,6 +2238,7 @@ define TaskPlanner
 
 
         procedure effectively_pure(mutable this: TaskPlanner, mangled: String) @ret_param_0 true @deep true returns bool linked
+
 
 
 
@@ -3338,6 +3361,7 @@ define TaskPlanner
         ; `local_sb.append external_str` while blocking `outer_list.add
         ; x` (List.add writes this — order-dependent).
         procedure callee_verdict(mutable this: TaskPlanner, call: PlannedCall) @deep true linked
+
 
 
 

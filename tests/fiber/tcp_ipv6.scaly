@@ -1,0 +1,66 @@
+; IPv6 in scaly.os.Tcp: a listener on the IPv6 loopback answers a client that
+; connects to "::1"; "::" is dual-stack and takes an IPv4 and an IPv6 client
+; alike; "localhost" (::1 and 127.0.0.1) reaches an IPv4-only listener through
+; the resolver's second address; a malformed address is refused; listen_any
+; (dual-stack) binds. No scheduler: connect completes against the listen
+; backlog, accept takes it afterwards.
+; Expected: v6 dual4 dual6 fallback malformed any
+
+; one round trip through listener l for a client connected to host
+procedure echo_once(l: TcpListener, mutable host: String) returns bool
+{
+    var s TcpStream.connect(host, l.port())
+    if s.is_open() = false
+        return false
+    var c l.accept()
+    s.write("ping")
+    var buf u8[8]
+    var got: size_t 0
+    while got < 4
+    {
+        let n c.read(Slice[u8](8 - got, &buf[got]))
+        if n <= 0
+            break
+        set got: got + (n as size_t)
+    }
+    c.write(Slice[u8](got, &buf[0]))
+    var back u8[8]
+    var have: size_t 0
+    while have < got
+    {
+        let n s.read(Slice[u8](8 - have, &back[have]))
+        if n <= 0
+            break
+        set have: have + (n as size_t)
+    }
+    c.close()
+    s.close()
+    have = 4 and back[0] = 112 and back[3] = 103
+}
+
+var l6 TcpListener.listen_on("::1", 0)
+if l6.is_open() and echo_once(l6, "::1")
+    Console.print "v6 "
+l6.close()
+
+var ld TcpListener.listen_on("::", 0)
+if ld.is_open() and echo_once(ld, "127.0.0.1")
+    Console.print "dual4 "
+if ld.is_open() and echo_once(ld, "::1")
+    Console.print "dual6 "
+ld.close()
+
+var l4 TcpListener.listen(0)
+if echo_once(l4, "localhost")
+    Console.print "fallback "
+l4.close()
+
+let bad TcpListener.listen_on("no:such::address", 0)
+if bad.is_open() = false
+    Console.print "malformed "
+
+var la TcpListener.listen_any(0)
+if la.is_open() and la.port() > 0
+    Console.print "any"
+la.close()
+Console.println ""

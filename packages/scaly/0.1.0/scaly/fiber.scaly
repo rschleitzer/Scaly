@@ -389,6 +389,8 @@ procedure scaly_eio_accept(fd: i32) returns i32 extern
 procedure scaly_eio_tcp_listen_any(port: i32) returns i32 extern
 procedure scaly_eio_tcp_connect_host(host: pointer[const_char], port: i32) returns i32 extern
 procedure scaly_eio_tcp_write(fd: i32, buf: pointer[void], count: size_t) returns i64 extern
+procedure scaly_eio_tcp_nodelay(fd: i32, on: i32) returns i32 extern
+procedure scaly_eio_tcp_listen_host(host: pointer[const_char], port: i32) returns i32 extern
 
 ; Guard-page overflow diagnostics (shim-owned: struct sigaction and
 ; stack_t layouts are OS-specific). Installs a SIGSEGV/SIGBUS handler on
@@ -1628,11 +1630,19 @@ define Io
         r
     }
 
-    ; Listen on ALL interfaces (INADDR_ANY) — a cluster node accepting
-    ; real remote peers (stage 7, milestone 7.3). Same contract as
-    ; Io.listen otherwise.
+    ; Listen on ALL interfaces of both families (the dual-stack "::",
+    ; IPv4's INADDR_ANY where the host has no IPv6) — a cluster node
+    ; accepting real remote peers (stage 7, milestone 7.3). Same contract
+    ; as Io.listen otherwise.
     procedure listen_any(port: i32) returns i32
         scaly_eio_tcp_listen_any(port)
+
+    ; Listen on host:port, host a NUMERIC address of either family ("::1",
+    ; "::" — dual-stack —, "127.0.0.1", "0.0.0.0"; NUL-terminated). Same
+    ; contract as Io.listen otherwise; -1 for a malformed address or a
+    ; family the host lacks.
+    procedure listen_host(mutable host: pointer[const_char], port: i32) returns i32
+        scaly_eio_tcp_listen_host(host, port)
 
     ; Resolve host by NAME (getaddrinfo in the shim, rule a) and
     ; connect — blocking handshake like Io.connect. host must be
@@ -1653,6 +1663,16 @@ define Io
             set r: scaly_eio_tcp_write(fd, buf, count)
         }
         r
+    }
+
+    ; TCP_NODELAY on (true: every write leaves at once) or off (false:
+    ; Nagle coalesces small writes, the default). False on an error.
+    procedure set_nodelay(fd: i32, on: bool) returns bool
+    {
+        var v: i32 0
+        if on
+            set v: 1
+        scaly_eio_tcp_nodelay(fd, v) = 0
     }
 
     ; Whole-buffer variant of tcp_write (the Node frame writer). False
@@ -3040,6 +3060,24 @@ define ForkJoin
         set fj_registry: reg
         set fj_pool: pl as pointer[TaskPool]
         scaly_atomic_store_u64(&fj_state, 2 as u64)
+        ; A worker counts itself idle for fork-join only while it blocks, and
+        ; decides whether to BEFORE blocking (task_worker): every worker that
+        ; blocked before this point — all of them when a parallel `for` made
+        ; the pool, any that outran this setup otherwise — is uncounted, and
+        ; with no idle worker the heartbeat publishes nothing and no call is
+        ; ever stolen (tests/fiber/forkjoin_after_pool: never, 10 of 10;
+        ; forkjoin_emit: 1 in 60 on a two-worker pool). So wake each worker
+        ; once, with a credit: it looks for a steal (work), finds none, and
+        ; blocks again — counted now.
+        var w: i64 0
+        while w < pl.nworkers
+        {
+            scaly_atomic_add_u64(&fj_credit, 1 as u64)
+            var one u8[1]
+            set *(one as pointer[u8]): 1
+            scaly_eio_write(pl.pipe_write, one as pointer[void], 1 as size_t)
+            set w: w + 1
+        }
         true
     }
 
