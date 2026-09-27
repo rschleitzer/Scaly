@@ -634,6 +634,11 @@ procedure LLVMInitializeX86AsmPrinter() extern
 ; Get default target triple for the host
 function LLVMGetDefaultTargetTriple() returns pointer[char] extern
 
+; The host's CPU name and its feature string (-mcpu=native; dispose both
+; with LLVMDisposeMessage)
+function LLVMGetHostCPUName() returns pointer[char] extern
+function LLVMGetHostCPUFeatures() returns pointer[char] extern
+
 ; Get target from triple
 function LLVMGetTargetFromTriple(triple: pointer[const_char], target: pointer[LLVMTargetRef], error_message: pointer[pointer[char]]) returns i32 extern
 

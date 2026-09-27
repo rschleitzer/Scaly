@@ -82,10 +82,12 @@ define Options
     libraries: Array[String]        ; -l<name> entries (no leading -l)
     extra_objects: Array[String]    ; positional .a / .o paths
     target_triple: String           ; --target <triple>: cross-emit object (empty = host)
+    target_cpu: String              ; -mcpu=<name>|native: the CPU codegen tunes for (empty = generic)
     opt_level: int                  ; -O0..-O3: LLVM pipeline for object emission (default 0)
 )
 {
     init() linked
+
 
 
 
@@ -136,7 +138,21 @@ define cli
     ; Parse command-line arguments
     ; argc: argument count
     ; argv: argument vector (C-style array of char pointers)
-    function parse_args(argc: int, argv: pointer[pointer[char]]) @page true @direct true @ret_caller true @deep true returns Options linked
+    function parse_args(argc: int, argv: pointer[pointer[char]]) @page true @direct true @deep true returns Options linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -339,6 +355,7 @@ define cli
 
     ; Print usage information
     procedure print_usage() @ret_nonlocal true @deep true io linked
+
 
 
 

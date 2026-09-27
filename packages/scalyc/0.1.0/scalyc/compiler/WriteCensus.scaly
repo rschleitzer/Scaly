@@ -4207,6 +4207,7 @@ define WriteCensus
                 match name
                     case "LLVMCreateMemoryBufferWithContentsOfFile": return true
                     case "LLVMGetDefaultTargetTriple" case "LLVMPrintModuleToFile": return true
+                    case "LLVMGetHostCPUName" case "LLVMGetHostCPUFeatures": return true
                     case "LLVMTargetMachineEmitToFile" case "LLVMWriteBitcodeToFile": return true
                 return false
             }

@@ -1,0 +1,5 @@
+; tests/target/run.sh's -mcpu check: one f64x4 multiply-add, cross-emitted for
+; x86-64. The generic CPU is SSE2 (two xmm operations per vector); haswell has
+; AVX, one ymm operation (ROADMAP-simd.md phase 3).
+function axpy(a: f64x4, x: f64x4, y: f64x4) returns f64x4
+    a * x + y

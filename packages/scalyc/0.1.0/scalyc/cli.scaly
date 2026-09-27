@@ -82,6 +82,7 @@ define Options
     libraries: Array[String]        ; -l<name> entries (no leading -l)
     extra_objects: Array[String]    ; positional .a / .o paths
     target_triple: String           ; --target <triple>: cross-emit object (empty = host)
+    target_cpu: String              ; -mcpu=<name>|native: the CPU codegen tunes for (empty = generic)
     opt_level: int                  ; -O0..-O3: LLVM pipeline for object emission (default 0)
 )
 {
@@ -117,6 +118,7 @@ define Options
         set libraries: Array[String]()
         set extra_objects: Array[String]()
         set target_triple: String()
+        set target_cpu: String()
         set opt_level: 0
     }
 
@@ -295,6 +297,18 @@ define cli
                         set opts.error_message: "--target requires a triple"
                     }
                 }
+                else if arg.starts_with("-mcpu=")
+                {
+                    ; The CPU the object code is generated and optimized for
+                    ; (ROADMAP-simd.md phase 3): a name the target's backend
+                    ; knows, or `native` for this machine's CPU and features.
+                    ; The IR does not change -- the seed stays generic.
+                    let cpu arg.substring(6, arg.get_length() - 6)
+                    if cpu.get_length() = 0
+                        set opts.error_message: "-mcpu= requires a CPU name, or native"
+                    else
+                        set opts.target_cpu: cpu
+                }
                 else if arg.starts_with("-L") & arg.get_length() > 2
                 {
                     ; Library search path: -L<path> (prefix-form, like clang).
@@ -309,8 +323,7 @@ define cli
                 else
                 {
                     ; Unknown option
-                    set opts.error_message: "Unknown option: "
-                    ; TODO: append arg to error message
+                    set opts.error_message: "Unknown option: `arg`"
                 }
             }
             else
@@ -334,6 +347,9 @@ define cli
             set i: i + 1
         }
 
+        ; `native` names THIS machine: a cross target needs its CPU named
+        if opts.target_cpu = "native" and opts.target_triple.get_length() > 0 and opts.has_error() = false
+            set opts.error_message: "-mcpu=native describes this machine; with --target, name the target's CPU"
         opts
     }
 
@@ -365,6 +381,7 @@ define cli
         Console.println "  --run <fn>     JIT-compile and run <fn> in-process"
         Console.println "  --jit          JIT-compile and run the whole program"
         Console.println "  --target <t>   Cross-emit object for triple <t> (use with -c)"
+        Console.println "  -mcpu=<cpu>    Generate code for <cpu>, or native for this machine (default generic)"
     }
 
     ; The directory for the compiler's own scratch object. POSIX has /tmp;
@@ -455,8 +472,7 @@ define cli
 
         if opts.has_error()
         {
-            Console.println "Error: "
-            ; TODO: print error message
+            Console.println("Error: `opts.error_message`")
             return 1
         }
 
@@ -772,6 +788,7 @@ define cli
         set config.emit_debug_info: opts.debug
         set config.skip_tests: opts.no_tests
         set config.target_triple: opts.target_triple
+        set config.target_cpu: opts.target_cpu
         set config.opt_level: opts.opt_level
         set config.page_size: planner.page_size_constant()
 

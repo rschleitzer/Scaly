@@ -69,5 +69,34 @@ check arm64-apple-darwin  Mach-O  arm64    arm64mac
 check_coff x86_64-pc-windows-msvc  6486  x86win
 check_coff aarch64-pc-windows-msvc 64aa  arm64win
 
+# -mcpu reaches codegen (ROADMAP-simd.md phase 3): the same f64x4 function for
+# x86-64 is SSE (xmm only) for the generic CPU and AVX (ymm) for haswell. The
+# check reads the disassembly, so it needs llvm-objdump; without one (the
+# Windows box) it says SKIP by name.
+. tools/llvm-env.sh >/dev/null 2>&1 || true
+OBJDUMP=
+for cand in "$(dirname "${LLC:-/nonexistent/llc}")/llvm-objdump" "${LLVM_PREFIX:-/nonexistent}/bin/llvm-objdump" llvm-objdump-20; do
+  if command -v "$cand" >/dev/null 2>&1; then OBJDUMP=$cand; break; fi
+done
+check_cpu() {
+  local cpu_flag=$1 want_ymm=$2 obj=/tmp/target_cpu_$$.o
+  rm -f "$obj"
+  "$STAGE" -c --no-prelude --target x86_64-linux-gnu $cpu_flag -o "$obj" tests/target/simd_cpu.scaly >/dev/null 2>&1
+  local ymm; ymm=$("$OBJDUMP" -d "$obj" 2>/dev/null | grep -c ymm)
+  local xmm; xmm=$("$OBJDUMP" -d "$obj" 2>/dev/null | grep -c xmm)
+  rm -f "$obj"
+  if { [ "$want_ymm" = 1 ] && [ "$ymm" -gt 0 ]; } || { [ "$want_ymm" = 0 ] && [ "$ymm" -eq 0 ] && [ "$xmm" -gt 0 ]; }; then
+    pass=$((pass+1))
+  else
+    fail=$((fail+1)); failures+=("-mcpu '${cpu_flag:-generic}': ymm $ymm, xmm $xmm")
+  fi
+}
+if [ -n "$OBJDUMP" ]; then
+  check_cpu "" 0
+  check_cpu "-mcpu=haswell" 1
+else
+  echo "target: SKIP -mcpu check (no llvm-objdump)"
+fi
+
 echo "target: $pass PASS, $fail FAIL ${failures[*]}"
 [ $fail -eq 0 ]
