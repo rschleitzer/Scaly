@@ -7,6 +7,7 @@ define os
     module File
     module Directory
     module Path
+    module Tcp
 
     procedure test_direct() @ret_nonlocal true @deep true returns int io linked
 

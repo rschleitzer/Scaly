@@ -1499,7 +1499,7 @@ define WriteCensus
                         return this.is_of(a_ptr.unwrap()) | marks
                     }
                     let census pc as ref[PointerCensus]
-                    if census.is_extern_name(c.name)
+                    if census.is_extern_name(c.mangled_name)
                         return marks
                     return (this.call_alias_mask(c, true) & (0 - (WC_FROZEN + (1 as u64)))) | marks
                 }
@@ -1663,7 +1663,7 @@ define WriteCensus
                         return this.mask_of_operands(c.args)
                     ; what C hands back is C's, not an alias of an argument
                     let census pc as ref[PointerCensus]
-                    if census.is_extern_name(c.name)
+                    if census.is_extern_name(c.mangled_name)
                         return 0
                     if WriteCensus.is_scalar(op.result_type) and op.member_access = null
                         return 0
@@ -1891,7 +1891,7 @@ define WriteCensus
             if call.is_operator
                 return
             let census pc as ref[PointerCensus]
-            if census.is_extern_name(call.name)
+            if census.is_extern_name(call.mangled_name)
             {
                 this.note_extern_call(op, call)
                 return
@@ -3145,7 +3145,7 @@ define WriteCensus
             }
             if known = false
             {
-                if census.is_extern_name(call.name)
+                if census.is_extern_name(call.mangled_name)
                 {
                     this.note_extern_call(op, call)
                     return
@@ -4065,7 +4065,7 @@ define WriteCensus
                 }
             }
             let census pc as ref[PointerCensus]
-            if census.is_extern_name(call.name) and WriteCensus.extern_is_io(call.name)
+            if census.is_extern_name(call.mangled_name) and WriteCensus.extern_is_io(call.name)
                 this.note_io(op.loc.start, call.name)
         }
 

@@ -1,0 +1,163 @@
+use scaly.containers.String
+use scaly.memory.runtime
+use scaly.memory.Page
+use scaly.fiber.Io
+
+; TCP sockets, colorless like File and Console (milestone 2.5): the same
+; call blocks without a scheduler, drives the dispatcher from the main
+; context, and parks the running fiber inside a task — suspension is a
+; runtime property, not a type color and not a flag the caller manages.
+; Every socket this layer hands out is NONBLOCKING from the start (Io.read,
+; Io.accept and Io.tcp_write retry on would-block and park or poll), so the
+; raw layer's one manual step, Io.set_nonblocking, never reaches a caller.
+;
+; connect is the one operation that blocks in the kernel whatever the fd's
+; mode: name resolution (getaddrinfo) and the handshake. Inside a task it
+; therefore goes to the Io worker pool, exactly as File's reads do, and the
+; task parks; elsewhere it runs in place.
+;
+; Limits, named: IPv4 only (the shim's listen/connect); at most one task
+; parked per socket at a time (the poller keeps one entry per fd), so a
+; stream is read and written by ONE task, not a reader and a writer in
+; parallel; the value records are handles — a copy names the same socket,
+; and close on one copy closes it for all.
+;
+;   let l TcpListener.listen(0)                ; 127.0.0.1, ephemeral port
+;   let s TcpStream.connect("localhost", l.port())
+;   let c l.accept()
+;   c.write("hello")                           ; a literal is a Slice[u8]
+;   var buf u8[64]
+;   let n c.read(Slice[u8](64, &buf[0]))       ; bytes; 0 = EOF, -1 = error
+
+; The blocking connect shipped to an Io worker (the task path of
+; TcpStream.connect). arg is a {host, port, fd} cell of three i64 in the
+; requester's care (alive while it parks); the worker writes the fd back.
+procedure tcp_connect_worker(mutable arg: pointer[void]) @ret_nonlocal true @deep true returns pointer[void] io linked
+
+
+
+
+
+
+
+
+
+; close(2) on a socket — a free procedure so that the methods named close
+; below never meet the extern by name (on Windows, posixcompat's close tells
+; a SOCKET from a CRT descriptor).
+procedure tcp_close_fd(fd: i32) @ret_nonlocal true @deep true io linked
+
+
+
+
+; A connected TCP stream. fd < 0 is a stream that is not (or no longer)
+; open: every operation on it fails instead of touching a descriptor.
+define TcpStream(var fd: i32)
+{
+    ; Connect to host:port (a name or a dotted address). Returns a stream
+    ; that is_open() or not; inside a task the blocking resolution and
+    ; handshake run on an Io worker while the task parks.
+    procedure connect(mutable host: String, port: int) @page true @direct true @deep true returns TcpStream io linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    function is_open(this) @ret_param_0 true @deep true returns bool linked
+
+
+    ; Read up to buf.length bytes into buf: the count, 0 at end of stream,
+    ; -1 on an error (or a closed stream). Waits for data colorlessly.
+    procedure read(this, mutable buf: Slice[u8]) @ret_nonlocal true @deep true returns int io linked
+
+
+
+
+
+
+    ; Write ALL of data, looping over partial writes; false on an error
+    ; (a peer that went away is an error return, never a SIGPIPE).
+    procedure write(this, data: Slice[u8]) @ret_nonlocal true @deep true returns bool io linked
+
+
+
+
+
+
+    procedure write_string(this, s: String) @ret_nonlocal true @deep true returns bool io linked
+
+
+
+
+
+
+    procedure close(mutable this) @deep true io linked
+
+
+
+
+
+
+
+}
+
+; A listening TCP socket.
+define TcpListener(var fd: i32)
+{
+    ; Listen on 127.0.0.1:port (0 = an ephemeral port, read it with port()).
+    procedure listen(port: int) @page true @direct true @ret_nonlocal true @deep true returns TcpListener io linked
+
+
+    ; Listen on all interfaces (INADDR_ANY).
+    procedure listen_any(port: int) @page true @direct true @ret_nonlocal true @deep true returns TcpListener io linked
+
+
+    function is_open(this) @ret_param_0 true @deep true returns bool linked
+
+
+    ; The port the listener is bound to, -1 when it is not open.
+    procedure port(this) @ret_nonlocal true @deep true returns int io linked
+
+
+
+
+
+
+    ; Wait for a connection colorlessly and return it as a nonblocking
+    ; stream (not is_open() on an error).
+    procedure accept(this) @page true @direct true @ret_nonlocal true @deep true returns TcpStream io linked
+
+
+
+
+
+
+
+
+
+    procedure close(mutable this) @deep true io linked
+
+
+
+
+
+
+
+}
