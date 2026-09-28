@@ -159,7 +159,7 @@ procedure tcp_accept_into_tasks(lfd: i32, mutable handler: pointer[void], mutabl
         if c >= 0
         {
             Io.set_nonblocking(c)
-            Scheduler.spawn_arg(handler, (c as size_t) as pointer[void])
+            Scheduler.spawn_detached(handler, (c as size_t) as pointer[void])
         }
         else
         {
@@ -230,7 +230,7 @@ procedure tcp_dispatch()
             break
         let fd (*(msg as pointer[i64])) as i32
         Page.release_page(Page.get(msg))
-        Scheduler.spawn_arg(handler, (fd as size_t) as pointer[void])
+        Scheduler.spawn_detached(handler, (fd as size_t) as pointer[void])
     }
     Channel.dispose(chp as ref[Channel])
 }

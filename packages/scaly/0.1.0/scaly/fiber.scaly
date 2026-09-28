@@ -753,6 +753,15 @@ define Fiber
     procedure create_sized(host: ref[Page], mutable fn: pointer[void], size: size_t) returns ref[Fiber]
     {
         let f host.allocate(sizeof Fiber, alignof Fiber) as pointer[Fiber]
+        Fiber.prepare(f as ref[Fiber], fn, size)
+        f
+    }
+
+    ; Give f a stack (a pooled one when the size is the default) and a fresh
+    ; context that runs fn: a new fiber's first preparation, or a disposed
+    ; fiber record's next one (Scheduler.spawn_detached reuses its records).
+    procedure prepare(mutable f: ref[Fiber], mutable fn: pointer[void], size: size_t)
+    {
         let guard_size getpagesize() as size_t
         set guard_page_size: guard_size
         if not guard_installed
@@ -784,7 +793,6 @@ define Fiber
         set f.saved_top: null     ; creates its own bucket chain
         set f.saved_catch: null   ; and no catch point of its own yet
         set f.done: false
-        f
     }
 
     procedure create(host: ref[Page], mutable fn: pointer[void]) returns ref[Fiber]
@@ -930,20 +938,23 @@ function fiber_guard_hit(addr: pointer[void]) returns i32
 ; join (a task is never both).
 define SchedTask
 (
-    entry: pointer[void]         ; the task's zero-argument procedure
+    var entry: pointer[void]     ; the task's zero-argument procedure
     fiber: ref[Fiber]
     var next: ref[SchedTask]?
     var waiter: ref[SchedTask]?   ; tasks blocked joining this one
     var done: bool
     var disposed: bool
-    arg: pointer[void]           ; spawn_arg's argument (task_arg reads it)
+    var arg: pointer[void]       ; spawn_arg's argument (task_arg reads it)
     ; home: the spawning scheduler (milestone 2.4) — a remote channel
     ; sender routes wakes through it.
-    home: pointer[void]
+    var home: pointer[void]
     ; Scheduler.sleep: the monotonic deadline (scaly_eio_now_ns) and the
     ; link in the scheduler's deadline-ordered timer list.
     var wake_at: i64
     var timer_next: ref[SchedTask]?
+    ; spawn_detached: nobody holds this record, so once the task has
+    ; finished it goes on its scheduler's free list.
+    var detached: bool
 )
 
 ; The calling shape of a task record viewed as a delegate value: the
@@ -978,6 +989,7 @@ define Scheduler
     var timers: ref[SchedTask]?      ; sleeping tasks, earliest deadline first
     var timers_tail: ref[SchedTask]?
     var sleeping: int                ; tasks parked in Scheduler.sleep
+    var free_tasks: ref[SchedTask]?  ; finished detached tasks, for reuse
 )
 {
     ; Create the scheduler on the given page and make it current. All
@@ -985,7 +997,7 @@ define Scheduler
     ; so they survive any spawning fiber's region teardown.
     procedure create(host: ref[Page]) returns ref[Scheduler]
     {
-        let s &Scheduler^host(host, null, null, 0, (0 - 1) as i32, 0, (0 - 1) as i32, 0, 0, null, null, 0)
+        let s &Scheduler^host(host, null, null, 0, (0 - 1) as i32, 0, (0 - 1) as i32, 0, 0, null, null, 0, null)
         set current_scheduler: s as pointer[void]
         s
     }
@@ -1031,7 +1043,7 @@ define Scheduler
     {
         let s current_scheduler as ref[Scheduler]
         let host s.host
-        let t &SchedTask^host(fn, Fiber.create_sized(host, &scheduler_entry, size), null, null, false, false, arg, s as pointer[void], 0, null)
+        let t &SchedTask^host(fn, Fiber.create_sized(host, &scheduler_entry, size), null, null, false, false, arg, s as pointer[void], 0, null, false)
         Scheduler.enqueue(t)
         t
     }
@@ -1046,6 +1058,38 @@ define Scheduler
     ; spawn_arg without an argument.
     procedure spawn(mutable fn: pointer[void]) returns ref[SchedTask]
         Scheduler.spawn_arg(fn, null)
+
+    ; spawn_arg for a task nobody joins or holds — a server's connection.
+    ; Nothing is returned, and once the task has finished, its record and
+    ; its fiber record go on this scheduler's free list for the next
+    ; spawn_detached instead of staying on the scheduler's page for good:
+    ; a server spawns a task per connection for as long as it runs, and
+    ; the records alone grew it by ~120 bytes per connection, a gigabyte
+    ; under HttpArena's limited-conn profile (2026-09-28).
+    procedure spawn_detached(mutable fn: pointer[void], mutable arg: pointer[void])
+    {
+        let s current_scheduler as ref[Scheduler]
+        let t s.free_tasks
+        if t = null
+        {
+            let n Scheduler.spawn_arg(fn, arg)
+            set n.detached: true
+            return
+        }
+        set s.free_tasks: t.next
+        let size FIBER_STACK_SIZE
+        Fiber.prepare(t.fiber, &scheduler_entry, size)
+        set t.entry: fn
+        set t.next: null
+        set t.waiter: null
+        set t.done: false
+        set t.disposed: false
+        set t.arg: arg
+        set t.home: s as pointer[void]
+        set t.wake_at: 0
+        set t.timer_next: null
+        Scheduler.enqueue(t)
+    }
 
     ; The running task's spawn_arg argument (null on the main context).
     procedure task_arg() returns pointer[void]
@@ -1292,6 +1336,11 @@ define Scheduler
             set t.done: true
             Scheduler.wake_waiters(t)
             Scheduler.reap(t)
+            if t.detached
+            {
+                set t.next: sc.free_tasks
+                set sc.free_tasks: t
+            }
         }
         true
     }

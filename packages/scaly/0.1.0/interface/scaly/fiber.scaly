@@ -660,9 +660,14 @@ define Fiber
     ; and allocates into its own region. The first create installs the
     ; guard-page overflow handler (best-effort diagnostic — a failed
     ; install just keeps the plain-crash behavior).
-    procedure create_sized(host: ref[Page], mutable fn: pointer[void], size: size_t) @ret_args_3 true @deep true returns ref[Fiber] linked
+    procedure create_sized(host: ref[Page], mutable fn: pointer[void], size: size_t) @ret_explicit_0 true @deep true returns ref[Fiber] linked
 
-    procedure create(host: ref[Page], mutable fn: pointer[void]) @ret_args_3 true @deep true returns ref[Fiber] linked
+    ; Give f a stack (a pooled one when the size is the default) and a fresh
+    ; context that runs fn: a new fiber's first preparation, or a disposed
+    ; fiber record's next one (Scheduler.spawn_detached reuses its records).
+    procedure prepare(mutable f: ref[Fiber], mutable fn: pointer[void], size: size_t) @deep true linked
+
+    procedure create(host: ref[Page], mutable fn: pointer[void]) @ret_explicit_0 true @deep true returns ref[Fiber] linked
 
     ; Run the fiber until it yields or finishes. Returns true when the
     ; fiber can be resumed again, false once it finished (or was done).
@@ -706,20 +711,23 @@ function fiber_guard_hit(addr: pointer[void]) @ret_nonlocal true @deep true retu
 ; join (a task is never both).
 define SchedTask
 (
-    entry: pointer[void]         ; the task's zero-argument procedure
+    var entry: pointer[void]     ; the task's zero-argument procedure
     fiber: ref[Fiber]
     var next: ref[SchedTask]?
     var waiter: ref[SchedTask]?   ; tasks blocked joining this one
     var done: bool
     var disposed: bool
-    arg: pointer[void]           ; spawn_arg's argument (task_arg reads it)
+    var arg: pointer[void]       ; spawn_arg's argument (task_arg reads it)
     ; home: the spawning scheduler (milestone 2.4) — a remote channel
     ; sender routes wakes through it.
-    home: pointer[void]
+    var home: pointer[void]
     ; Scheduler.sleep: the monotonic deadline (scaly_eio_now_ns) and the
     ; link in the scheduler's deadline-ordered timer list.
     var wake_at: i64
     var timer_next: ref[SchedTask]?
+    ; spawn_detached: nobody holds this record, so once the task has
+    ; finished it goes on its scheduler's free list.
+    var detached: bool
 )
 
 ; The calling shape of a task record viewed as a delegate value: the
@@ -748,6 +756,7 @@ define Scheduler
     var timers: ref[SchedTask]?      ; sleeping tasks, earliest deadline first
     var timers_tail: ref[SchedTask]?
     var sleeping: int                ; tasks parked in Scheduler.sleep
+    var free_tasks: ref[SchedTask]?  ; finished detached tasks, for reuse
 )
 {
     ; Create the scheduler on the given page and make it current. All
@@ -774,6 +783,15 @@ define Scheduler
 
     ; spawn_arg without an argument.
     procedure spawn(mutable fn: pointer[void]) @deep true returns ref[SchedTask] linked
+
+    ; spawn_arg for a task nobody joins or holds — a server's connection.
+    ; Nothing is returned, and once the task has finished, its record and
+    ; its fiber record go on this scheduler's free list for the next
+    ; spawn_detached instead of staying on the scheduler's page for good:
+    ; a server spawns a task per connection for as long as it runs, and
+    ; the records alone grew it by ~120 bytes per connection, a gigabyte
+    ; under HttpArena's limited-conn profile (2026-09-28).
+    procedure spawn_detached(mutable fn: pointer[void], mutable arg: pointer[void]) @deep true linked
 
     ; The running task's spawn_arg argument (null on the main context).
     procedure task_arg() @ret_nonlocal true @deep true returns pointer[void] linked

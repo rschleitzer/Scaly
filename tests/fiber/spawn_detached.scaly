@@ -1,0 +1,88 @@
+; Scheduler.spawn_detached (2026-09-28): a task nobody holds; once it has
+; finished, its record and fiber record go on the scheduler's free list and
+; the next detached task runs in them. The proof is the scheduler's PAGE:
+; two probe allocations on it, taken before and after, come out adjacent —
+; nothing was allocated on the page in between — across a second detached
+; task and across a hundred thousand more, a hundred at a time. spawn_arg
+; leaves every record on the page for good, and a server with a task per
+; connection grew without bound (the refuter: the same program with
+; spawn_arg fails at the first check). A detached task still sleeps, yields
+; and allocates like any other, and spawn_arg keeps its handle.
+; Expected: reused bounded mixed done
+
+mutable ran: int 0
+
+procedure note() mutable ran
+    set ran: ran + 1
+
+procedure busy() mutable ran
+{
+    let s String("a region-allocated string, dying with the task")
+    Scheduler.yield()
+    Scheduler.sleep(1)
+    if s.length > 0
+        set ran: ran + 1
+}
+
+; The next free address on page, by allocating a word there.
+procedure probe(page: ref[Page]) returns size_t
+    page.allocate(8, 8) as size_t
+
+let page Page.allocate_page()
+let sched Scheduler.create(page)
+
+Scheduler.spawn_detached(&note, null)
+Scheduler.run()
+let a0 probe(page)
+Scheduler.spawn_detached(&note, null)
+Scheduler.run()
+let a1 probe(page)
+if a1 - a0 <> 8
+    exit 1
+Console.print "reused "
+
+; a hundred thousand detached tasks, a hundred at a time: after the first
+; hundred records, nothing more on the page
+var k 0
+while k < 100
+{
+    Scheduler.spawn_detached(&note, null)
+    set k: k + 1
+}
+Scheduler.run()
+let b0 probe(page)
+var round 0
+while round < 1000
+{
+    set k: 0
+    while k < 100
+    {
+        Scheduler.spawn_detached(&note, null)
+        set k: k + 1
+    }
+    Scheduler.run()
+    set round: round + 1
+}
+let b1 probe(page)
+if ran <> 100102
+    exit 2
+if b1 - b0 <> 8
+    exit 3
+Console.print "bounded "
+
+; detached tasks that yield, sleep and allocate, beside a joined one
+set ran: 0
+var i 0
+while i < 50
+{
+    Scheduler.spawn_detached(&busy, null)
+    set i: i + 1
+}
+let joined Scheduler.spawn(&busy)
+Scheduler.join(joined)
+Scheduler.run()
+if ran <> 51
+    exit 4
+Console.print "mixed "
+
+Console.print "done"
