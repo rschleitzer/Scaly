@@ -302,7 +302,7 @@ define TcpStream(var fd: i32)
     {
         if fd < 0 or buf.length = 0
             return 0 - 1
-        Io.read(fd, buf.data as pointer[void], buf.length) as int
+        Io.read_stream(fd, buf.data as pointer[void], buf.length) as int
     }
 
     ; Write ALL of data, looping over partial writes; false on an error
@@ -311,7 +311,7 @@ define TcpStream(var fd: i32)
     {
         if fd < 0
             return false
-        Io.tcp_write_all(fd, data.data as pointer[void], data.length)
+        Io.write_stream_all(fd, data.data as pointer[void], data.length)
     }
 
     ; TCP_NODELAY: true sends every write at once, false (the default) lets
@@ -327,13 +327,14 @@ define TcpStream(var fd: i32)
     {
         if fd < 0
             return false
-        Io.tcp_write_all(fd, s.get_buffer(), s.get_length())
+        Io.write_stream_all(fd, s.get_buffer(), s.get_length())
     }
 
     procedure close(mutable this)
     {
         if fd >= 0
         {
+            Io.forget_watch(fd)
             tcp_close_fd(fd)
             set fd: 0 - 1
         }

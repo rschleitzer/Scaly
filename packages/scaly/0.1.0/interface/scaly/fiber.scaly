@@ -320,6 +320,10 @@ procedure scaly_catch_top_set(top: pointer[void]) extern
 ; handed to arm). read/write return -2 for would-block, -1 for hard errors.
 function scaly_eio_create() returns i32 extern
 function scaly_eio_arm(q: i32, fd: i32, for_write: i32, tag: pointer[void]) returns i32 extern
+; Watch fd for good, edge-triggered in both directions (Io.watch_stream):
+; its events come back as tag|4 with bit 0 (readable) and bit 1 (writable).
+; -2 where the backend cannot (the Windows readiness emulation).
+function scaly_eio_watch(q: i32, fd: i32, tag: pointer[void]) returns i32 extern
 function scaly_eio_wait(q: i32, tags: pointer[pointer[void]], max: i32) returns i32 extern
 ; Like scaly_eio_wait but returns 0 if ms elapses before any event (the
 ; bounded wait behind cross-thread deadlock detection, M2.4 residual).
@@ -584,6 +588,10 @@ mutable io_offloads: i64 linked
 mutable io_poller_fd: int linked
 mutable io_wake_fd: int linked
 
+; Set on a thread whose poller refused scaly_eio_watch (Windows): its
+; streams stay on the oneshot scaly_eio_arm.
+mutable io_watch_unsupported: bool linked
+
 ; This thread's default task pool (milestone 3.3, pointer[TaskPool];
 ; null until the first TaskPool.default_pool call — the promoted-for
 ; dispatch target). Thread-local like the I/O pool: the pool pointer
@@ -704,6 +712,27 @@ define Fiber
 ; falls through to the default action.
 function fiber_guard_hit(addr: pointer[void]) @ret_nonlocal true @deep true returns i32 linked
 
+; A descriptor a TcpStream reads and writes, watched by its scheduler's
+; poller ONCE for the stream's life, edge-triggered in both directions
+; (2026-09-28, ROADMAP-http.md stage A). Io.park's oneshot arm costs an
+; epoll_ctl for every wait on linux: the profile of a server against tokio
+; put ~5 % of its CPU there. Edge-triggered, a direction's readiness is
+; REMEMBERED here: an edge sets it (and wakes the task waiting on that
+; direction), a read or write that would block clears it, and a task parks
+; only on a cleared direction. A short read does NOT clear it — a FIN that
+; arrived with the data raises no second edge, and a stream parked on it
+; would wait for good. The record belongs to the fd NUMBER on its
+; scheduler and serves the next descriptor of that number; TcpStream.close
+; forgets the registration, as the kernel drops a closed descriptor.
+define IoWatch
+(
+    var watched: bool
+    var readable: bool
+    var writable: bool
+    var reader: ref[SchedTask]?
+    var writer: ref[SchedTask]?
+)
+
 ; A scheduled task. The entry function pointer MUST stay the FIRST field:
 ; the record doubles as the delegate closure record scheduler_entry calls
 ; through (slot 0 = thunk). The next link serves double duty — ready-queue
@@ -757,6 +786,8 @@ define Scheduler
     var timers_tail: ref[SchedTask]?
     var sleeping: int                ; tasks parked in Scheduler.sleep
     var free_tasks: ref[SchedTask]?  ; finished detached tasks, for reuse
+    var watches: pointer[size_t]     ; IoWatch record addresses, by fd
+    var watch_cap: size_t
 )
 {
     ; Create the scheduler on the given page and make it current. All
@@ -857,6 +888,12 @@ define Scheduler
 
     ; Move every task blocked on t back to the ready queue.
     procedure wake_waiters(mutable t: ref[SchedTask]) @deep true linked
+
+    ; A watched stream's edge (IoWatch; the tag is the record | 4 with bit
+    ; 0 readable, bit 1 writable): remember the direction and wake the task
+    ; parked on it. An edge for a record whose descriptor was closed and
+    ; reused meanwhile only wakes a task that finds EAGAIN and parks again.
+    procedure deliver_watch_event(raw: size_t) @deep true linked
 
     ; Block in the poller until at least one armed fd fires, then wake
     ; every parked task whose readiness arrived (requeue, unblock).
@@ -996,6 +1033,33 @@ define Io
     ; running ready tasks first (mirrors a main-context join). Without
     ; any scheduler (milestone 2.5) the wait is a plain poll(2).
     procedure park(fd: i32, for_write: bool) @deep true io linked
+
+    ; The IoWatch record of fd on the current scheduler, made on first use
+    ; (the table grows by doubling on the scheduler's page; records are
+    ; reused for the next descriptor of the same number).
+    procedure watch_of(fd: i32) @ret_nonlocal true @deep true returns ref[IoWatch] linked
+
+    ; fd's IoWatch, registered with the poller — or null where a stream is
+    ; not watched: outside a task (the main context and a thread without a
+    ; scheduler keep the oneshot path) and on a backend that cannot.
+    procedure watch_stream(fd: i32) @page true @direct true @ret_nonlocal true @deep true returns ref[IoWatch]? io linked
+
+    ; fd's registration is no longer this scheduler's: the descriptor is
+    ; being closed (the kernel drops it from the poller), or the oneshot
+    ; path is about to re-arm it (Io.park replaces the watch). The next
+    ; watch_stream registers afresh.
+    procedure forget_watch(fd: i32) @deep true linked
+
+    ; Park the running task on one direction of a watched stream; the edge
+    ; wakes it (Scheduler.deliver_watch_event).
+    procedure park_watch(mutable w: ref[IoWatch], for_write: bool) @ret_nonlocal true @deep true linked
+
+    ; Io.read for a TcpStream: inside a task the descriptor is watched
+    ; (IoWatch) and a wait costs no system call; elsewhere Io.read.
+    procedure read_stream(fd: i32, mutable buf: pointer[void], count: size_t) @ret_nonlocal true @deep true returns i64 io linked
+
+    ; Io.tcp_write_all for a TcpStream, watched like read_stream.
+    procedure write_stream_all(fd: i32, buf: pointer[void], count: size_t) @ret_nonlocal true @deep true returns bool io linked
 
     ; Read up to count bytes; suspends while the fd has nothing to
     ; offer. Returns the byte count, 0 at EOF, -1 on a hard error.

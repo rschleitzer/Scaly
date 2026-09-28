@@ -72,6 +72,15 @@
  * one every ten requests) drops SYNs against a queue that short. */
 #define SCALY_EIO_LISTEN_BACKLOG 65535
 
+/* A WATCHED descriptor's event (scaly_eio_watch) comes back as its tag —
+ * a record aligned to 8 — with bit 2 set and bits 0/1 naming the
+ * directions that fired. The other tags keep their low bits clear (task
+ * records) or are the sentinels 0 (the main context) and 1 (the wake
+ * handle), so the Scaly side (Scheduler.poll_io_by) tells them apart. */
+#define SCALY_EIO_WATCH       4u
+#define SCALY_EIO_WATCH_READ  1u
+#define SCALY_EIO_WATCH_WRITE 2u
+
 #ifdef __APPLE__
 
 #include <sys/event.h>
@@ -106,7 +115,7 @@ static int scaly_eio_flush(int q)
     return rc < 0 ? -1 : 0;
 }
 
-int scaly_eio_arm(int q, int fd, int for_write, void* tag)
+static int scaly_eio_arm_raw(int q, int fd, short filter, unsigned short flags, void* tag)
 {
     if (scaly_eio_changes_q != q)
     {
@@ -117,11 +126,35 @@ int scaly_eio_arm(int q, int fd, int for_write, void* tag)
     }
     if (scaly_eio_nchanges == SCALY_EIO_MAX_CHANGES && scaly_eio_flush(q) < 0)
         return -1;
-    EV_SET(&scaly_eio_changes[scaly_eio_nchanges], fd,
-           for_write ? EVFILT_WRITE : EVFILT_READ,
-           EV_ADD | EV_ONESHOT, 0, 0, tag);
+    EV_SET(&scaly_eio_changes[scaly_eio_nchanges], fd, filter, flags, 0, 0, tag);
     scaly_eio_nchanges++;
     return 0;
+}
+
+int scaly_eio_arm(int q, int fd, int for_write, void* tag)
+{
+    return scaly_eio_arm_raw(q, fd, for_write ? EVFILT_WRITE : EVFILT_READ,
+                             EV_ADD | EV_ONESHOT, tag);
+}
+
+/* Watch fd for its whole life, edge-triggered in both directions
+ * (EV_CLEAR, not oneshot): no re-arm per wait. The two filters report
+ * tag|5 (readable) and tag|6 (writable) — see SCALY_EIO_WATCH above.
+ * Submitted AT ONCE, not buffered like an arm: a watched stream may be
+ * served and closed before the next wait, and a buffered change for a
+ * descriptor closed meanwhile comes back as EV_ERROR (EBADF) and fails
+ * that wait — an arm is only ever made by a task about to park on a live
+ * descriptor, a watch by a task about to READ one. One kevent per
+ * stream, where the oneshot path costs one change per wait. */
+int scaly_eio_watch(int q, int fd, void* tag)
+{
+    size_t t = (size_t)tag;
+    struct kevent ch[2];
+    EV_SET(&ch[0], fd, EVFILT_READ, EV_ADD | EV_CLEAR, 0, 0,
+           (void*)(t | SCALY_EIO_WATCH | SCALY_EIO_WATCH_READ));
+    EV_SET(&ch[1], fd, EVFILT_WRITE, EV_ADD | EV_CLEAR, 0, 0,
+           (void*)(t | SCALY_EIO_WATCH | SCALY_EIO_WATCH_WRITE));
+    return kevent(q, ch, 2, 0, 0, 0) < 0 ? -1 : 0;
 }
 
 /* ms < 0 blocks until an event fires; ms >= 0 returns 0 if the timeout
@@ -220,6 +253,21 @@ int scaly_eio_create(void)
     return epoll_create1(0);
 }
 
+/* Watch fd for its whole life, edge-triggered in both directions
+ * (EPOLLET, not oneshot): no epoll_ctl per wait. The event reports
+ * tag|4 plus the directions that fired (the wait below decodes them). */
+int scaly_eio_watch(int q, int fd, void* tag)
+{
+    struct epoll_event ev;
+    int rc;
+    ev.events = EPOLLIN | EPOLLOUT | EPOLLRDHUP | EPOLLET;
+    ev.data.u64 = (unsigned long long)(size_t)tag | SCALY_EIO_WATCH;
+    rc = epoll_ctl(q, EPOLL_CTL_ADD, fd, &ev);
+    if (rc < 0 && errno == EEXIST)
+        rc = epoll_ctl(q, EPOLL_CTL_MOD, fd, &ev);
+    return rc;
+}
+
 int scaly_eio_arm(int q, int fd, int for_write, void* tag)
 {
     struct epoll_event ev;
@@ -244,7 +292,18 @@ static int scaly_eio_wait_ms(int q, void** tags, int max, int ms)
         n = epoll_wait(q, evs, max, ms);
     while (n < 0 && errno == EINTR);
     for (i = 0; i < n; i++)
-        tags[i] = evs[i].data.ptr;
+    {
+        size_t t = (size_t)evs[i].data.u64;
+        if (t & SCALY_EIO_WATCH)
+        {
+            unsigned int e = evs[i].events;
+            if (e & (EPOLLIN | EPOLLRDHUP | EPOLLHUP | EPOLLERR))
+                t |= SCALY_EIO_WATCH_READ;
+            if (e & (EPOLLOUT | EPOLLHUP | EPOLLERR))
+                t |= SCALY_EIO_WATCH_WRITE;
+        }
+        tags[i] = (void*)t;
+    }
     return n;
 }
 

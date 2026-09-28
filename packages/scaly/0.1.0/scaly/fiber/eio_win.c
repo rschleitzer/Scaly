@@ -198,6 +198,17 @@ static int sc_associate(HANDLE port, SOCKET s)
     return GetLastError() == ERROR_INVALID_PARAMETER ? 0 : -1;
 }
 
+/* Edge-triggered watching (eio.c) has no counterpart in this readiness
+ * emulation — a zero-byte WSARecv/WSASend is by nature one completion per
+ * arm. -2 says "not here", and the Scaly side stays on scaly_eio_arm. */
+int scaly_eio_watch(int q, int fd, void* tag)
+{
+    (void)q;
+    (void)fd;
+    (void)tag;
+    return -2;
+}
+
 int scaly_eio_arm(int q, int fd, int for_write, void* tag)
 {
     HANDLE port = (HANDLE)(intptr_t)q;
