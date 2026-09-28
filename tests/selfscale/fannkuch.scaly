@@ -1,9 +1,15 @@
 ; fannkuch-redux — for every permutation of 0..n-1, flip the prefix the first
-; element names until 0 leads, and keep the largest flip count. The natural
-; split is by the FIRST element: each is an independent pure function of n and
-; that element, returning a small record (a kept value — ROADMAP 4.7). The
+; element names until 0 leads, and keep the largest flip count. The split is
+; by the first TWO elements: each pair is an independent pure function of n
+; and the pair, returning a small record (a kept value — ROADMAP 4.7). The
 ; checksum here is the plain sum of all flip counts, independent of order,
 ; not the benchmark's alternating one.
+;
+; Why two (2026-09-28): split by the first element alone, the loop had eleven
+; tasks of 120-140 ms, and on a machine of 4 performance and 6 efficiency
+; cores the tasks that landed on the slower cores set the wall time — 0.29 s
+; where C #5, which cuts the permutations into many blocks, takes 0.22. With
+; 110 tasks of ~12 ms the pool balances them: 0.17 s, one core unchanged.
 ;
 ; The flips follow the C programs (2026-09-27): one scratch buffer per task,
 ; handed to every flips_of instead of a fresh Vector per permutation, and
@@ -55,24 +61,27 @@ procedure flips_of(perm: Vector[int], mutable work: Vector[int], n: int) returns
     flips
 }
 
-; every permutation of 0..n-1 that starts with `first` (Heap's algorithm
-; over the other positions)
-function with_first(n: int, first: int) returns FlipResult
+; every permutation of 0..n-1 that starts with `first`, `second` (Heap's
+; algorithm over the other positions); nothing when the two coincide
+function with_prefix(n: int, first: int, second: int) returns FlipResult
 {
+    if first = second
+        return FlipResult(0, 0)
     var perm Vector[int](n as size_t)
     perm.put(0, first)
-    var p 1
+    perm.put(1, second)
+    var p 2
     var v 0
     while v < n
     {
-        if v <> first
+        if v <> first and v <> second
         {
             perm.put(p as size_t, v)
             set p: p + 1
         }
         set v: v + 1
     }
-    let k n - 1
+    let k n - 2
     var c Vector[int](n as size_t)
     var work Vector[int](n as size_t)
     var best flips_of(perm, work, n)
@@ -82,10 +91,10 @@ function with_first(n: int, first: int) returns FlipResult
     {
         if c[i as size_t] < i
         {
-            var a 1
+            var a 2
             if i % 2 = 1
-                set a: 1 + c[i as size_t]
-            let b 1 + i
+                set a: 2 + c[i as size_t]
+            let b 2 + i
             let t perm[a as size_t]
             perm.put(a as size_t, perm[b as size_t])
             perm.put(b as size_t, t)
@@ -106,9 +115,9 @@ function with_first(n: int, first: int) returns FlipResult
 }
 
 let n 11
-var results Vector[FlipResult](n as size_t)
-for first in n
-    results.put(first as size_t, with_first(n, first))
+var results Vector[FlipResult]((n * n) as size_t)
+for t in n * n
+    results.put(t as size_t, with_prefix(n, t / n, t % n))
 
 var max_flips 0
 var total 0
