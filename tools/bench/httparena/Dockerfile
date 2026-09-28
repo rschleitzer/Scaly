@@ -19,14 +19,22 @@ WORKDIR /scaly
 COPY . .
 # the compiler (no language server) and /tmp/libscaly.a, both from the seed
 RUN SCALYC_SEED_NO_SCALYLS=1 tools/build-from-seed.sh
-# the http package's archive, then the program at -O2 against it
+# Everything the server runs is code-generated for the build host's CPU, as
+# the Rust entries do with -C target-cpu=native: the runtime archive's Scaly
+# half again (build-from-seed made it generic), the http package, the program.
+# The image is therefore built on the machine that runs it.
 RUN . tools/llvm-env.sh \
+ && scalyc/build/scalyc -S --no-prelude --no-tests -o /tmp/libscaly.ll packages/scaly/0.1.0/scaly.scaly \
+ && sed 's/^define linkonce_odr /define weak_odr /' /tmp/libscaly.ll > /tmp/libscaly_weak.ll \
+ && "$OPT" -O2 /tmp/libscaly_weak.ll -o /tmp/libscaly_opt.bc \
+ && "$LLC" -mcpu=native -relocation-model=pic -O2 -filetype=obj /tmp/libscaly_opt.bc -o /tmp/libscaly.o \
+ && ar rcs /tmp/libscaly.a /tmp/libscaly.o \
  && scalyc/build/scalyc -S --no-prelude -o /tmp/http.ll packages/http/0.1.0/http.scaly \
  && sed 's/^define linkonce_odr /define weak_odr /' /tmp/http.ll > /tmp/http_weak.ll \
  && "$OPT" -O2 /tmp/http_weak.ll -o /tmp/http_opt.bc \
- && "$LLC" -relocation-model=pic -O2 -filetype=obj /tmp/http_opt.bc -o /tmp/http.o \
+ && "$LLC" -mcpu=native -relocation-model=pic -O2 -filetype=obj /tmp/http_opt.bc -o /tmp/http.o \
  && ar rcs /tmp/libhttp.a /tmp/http.o \
- && scalyc/build/scalyc -O2 -o /arena tools/bench/http/arena.scaly /tmp/libhttp.a
+ && scalyc/build/scalyc -O2 -mcpu=native -o /arena tools/bench/http/arena.scaly /tmp/libhttp.a
 
 FROM ubuntu:24.04
 COPY --from=build /arena /arena
