@@ -46,6 +46,7 @@ use scalyc.compiler.Plan.*
 use scalyc.compiler.Planner.*
 use scalyc.compiler.PointerCensus.PointerCensus
 use scalyc.compiler.ConceptIndex.ConceptIndex
+use scalyc.compiler.Interface.InterfaceFact
 use scaly.os.File
 
 define WC_GLOBAL u64 0x8000000000000000
@@ -3319,13 +3320,13 @@ define WriteCensus
             }
         }
 
-        ; --interface-facts: the first changeable global each planned body of the
-        ; root reads (the check's pre-pass), keyed like the planner's facts
-        function interface_reads(this: WriteCensus) returns String
+        ; --emit-interface: the first changeable global each planned body of the
+        ; root reads (the check's pre-pass), and whether it reaches I/O, keyed
+        ; like the planner's facts (Planner.interface_facts#)
+        procedure interface_facts(this: WriteCensus, mutable facts: ref[Array[InterfaceFact]])
         {
-            var sb StringBuilder()
             if plan_functions = null
-                return sb.to_string()
+                return
             let fns plan_functions as ref[Vector[PlannedFunction]]
             var i: size_t 0
             while i < fns.length
@@ -3350,13 +3351,7 @@ define WriteCensus
                         0
                 if body = false
                     continue
-                sb.append "R "
-                sb.append f.file
-                sb.append " "
-                sb.append f.loc.start
-                sb.append " "
-                sb.append r
-                sb.append "\n"
+                facts.add(WriteCensus.fact("R" as char, f.file, f.loc.start, r))
             }
             ; and whether it reaches I/O
             set i: 0
@@ -3382,14 +3377,12 @@ define WriteCensus
                         0
                 if gbody = false
                     continue
-                sb.append "I "
-                sb.append g.file
-                sb.append " "
-                sb.append g.loc.start
-                sb.append "\n"
+                facts.add(WriteCensus.fact("I" as char, g.file, g.loc.start, String()))
             }
-            sb.to_string()
         }
+
+        function fact(tag: char, file: String, start: size_t, text: String) returns InterfaceFact
+            InterfaceFact(tag, file, start, start, " " as char, String(), false, false, false, text)
 
         ; does a stub's declaration (its package's interface) say `io`?
         function stub_declares_io(this: WriteCensus, f: PlannedFunction) returns bool

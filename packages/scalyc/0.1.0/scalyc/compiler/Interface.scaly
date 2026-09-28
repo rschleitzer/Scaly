@@ -1,0 +1,721 @@
+; Interface.scaly - a package's generated INTERFACE (scalyc --emit-interface)
+;
+; The interface is the package's module tree with every non-generic body
+; replaced by `linked`: the package as a caller sees it, the bodies being in
+; the package's archive. The loader reads a package through its interface
+; whenever it has one (Modeler.interface_or_source), so a dependent root
+; compiled against it must emit exactly what it emits against the sources
+; (tools/interface/roundtrip.sh). It therefore carries, besides the source
+; text of every declaration, what the planner derives from bodies and a caller
+; depends on -- the FACTS (Planner.interface_facts#, WriteCensus.interface_facts#).
+; This module does the text surgery:
+;
+;   * a non-generic routine (function, procedure, operator, init, deinit)
+;     keeps its header and ends in ` linked`. Its facts go after its
+;     parameter list as attributes: the caller page R1..R7 inferred
+;     (`@page true`; part of the mangled name; an explicit page parameter in
+;     the source stays one), its memberships in the page sets R6/R7/R8 that
+;     join through bodies (`@direct`, `@transitive`, `@returnpage`, `@stores`),
+;     whether it stores an argument beyond its frame (`@persists true`, the
+;     escape check's pass-to-storing callee), the return residence (`@ret_*`)
+;     and the deep persist masks (`@deep*`). `reads g` names the changeable
+;     global it reads and `io` says it reaches I/O -- both computed, a source
+;     declares neither;
+;   * a concept whose initializers or methods place data on its own page says
+;     `@resident true` (a construction of it must be page-hosted), plus
+;     `@inplace true` when it allocates through its own address AFTER
+;     construction, so a record holding it by value must be hosted too;
+;   * a `mutable`/`shared` global declares `linked` instead of its initializer;
+;   * generic concepts and routines keep their bodies (they are monomorphized
+;     at the caller), and so do constants, type aliases, externs and comments.
+;
+; LINE-PRESERVING: whatever a replacement removes, its line breaks stay, so
+; every line that remains is on the line it has in the source. A diagnostic
+; from a generic body (kept verbatim), a DWARF line and a scalyls location
+; computed from the interface are then the source's -- cli.display_path and
+; scalyls' symbols.at_interface_dir only rewrite the PATH.
+;
+; Offsets are BYTES, and the text is handled as bytes, so UTF-8 passes
+; through unchanged. Replaces tools/interface/geninterface.py (2026-09-28),
+; byte for byte on all seven package interfaces.
+
+use scaly.os.File
+use scaly.os.Directory
+use scaly.os.Console
+
+; One fact of the root package, keyed by its file and a byte offset into it.
+define InterfaceFact
+(
+    tag: char           ; M module file, F routine, C concept, G global, R reads, I io
+    file: String
+    start: size_t
+    end: size_t
+    kind: char          ; F: f function or procedure, o operator, i init, d deinit
+    name: String        ; C: the concept's name; G: the global's
+    generic: bool       ; F, C: generic, or inside a generic concept
+    resident: bool      ; C: a construction of it must be page-hosted
+    inplace: bool       ; C: it allocates through its own address after construction
+    text: String        ; F: its attributes, each after a blank; R: the global it reads
+)
+
+; Where a routine's header ends, and the offset of its parameter list's
+; closing paren (has_close false: the header has no parameter list).
+define InterfaceHeader
+(
+    end: size_t
+    close: size_t
+    has_close: bool
+)
+
+; Replace the bytes [start, end) of a file's text by `text`.
+define InterfaceEdit
+(
+    start: size_t
+    end: size_t
+    text: String
+)
+
+define Interface
+(
+    pkg_dir: String     ; the package directory: the root file's
+    out_dir: String     ; where the interface goes
+)
+{
+    ; Writes the interface of the root `root_file` from its facts: every module
+    ; file of the root (the M facts), facts or not -- a file of only constants,
+    ; externs or generics is written as it is. Answers the number of files
+    ; written, or -1 after printing why one could not be.
+    procedure write(this, root_file: String, facts: ref[Array[InterfaceFact]]) returns int
+    {
+        ; each fact's file as an index into `files`, so a file's transform
+        ; looks at integers instead of comparing paths
+        var files Array[String]()
+        var file_of Array[size_t]()
+        var last: size_t 0
+        var i: size_t 0
+        while i < facts.length
+        {
+            let f facts.at i
+            if files.length > 0 and files[last].equals(f.file)
+                file_of.add(last)
+            else
+            {
+                var k: size_t 0
+                while k < files.length and files[k].equals(f.file) = false
+                    set k: k + 1
+                if k = files.length
+                    files.add(f.file)
+                set last: k
+                file_of.add(k)
+            }
+            set i: i + 1
+        }
+        let prefix "`pkg_dir`/"
+        var written 0
+        var fi: size_t 0
+        while fi < files.length
+        {
+            let file files[fi]
+            ; a file outside the package is none of the interface's business,
+            ; and a `module x` without its file loads nothing: the interface
+            ; keeps the declaration and so loads nothing either
+            var probe String(file)
+            if file.starts_with(prefix) and File.exists(probe)
+            {
+                let rel file.substring(prefix.get_length(), file.get_length() - prefix.get_length())
+                let text File.read_to_string file
+                let out Interface.transform(text, facts, &file_of, fi)
+                if out.get_length() = 0 and text.get_length() > 0
+                    return 0 - 1
+                if this.write_file(rel, out) = false
+                    return 0 - 1
+                set written: written + 1
+            }
+            set fi: fi + 1
+        }
+        ; the prelude is not a module of the stdlib's root: the modeler hangs it
+        ; under every PROGRAM's main module, where its bodies are planned and
+        ; emitted -- so it goes into the interface as it is, bodies and all
+        if root_file.ends_with("/scaly.scaly") or root_file.equals("scaly.scaly")
+        {
+            var prelude "`pkg_dir`/scaly/prelude.scaly"
+            if File.exists(prelude)
+            {
+                if this.write_file(String("scaly/prelude.scaly"), File.read_to_string(prelude)) = false
+                    return 0 - 1
+                set written: written + 1
+            }
+        }
+        written
+    }
+
+    ; Writes `contents` to out_dir/rel, creating the directories on the way.
+    procedure write_file(this, rel: String, contents: String) returns bool
+    {
+        let path "`out_dir`/`rel`"
+        let n path.get_length()
+        var i: size_t 1
+        while i < n
+        {
+            if path.get(i) = 0x2F       ; /
+            {
+                var dir path.substring(0, i)
+                if Directory.exists(dir) = false
+                    Directory.create dir
+            }
+            set i: i + 1
+        }
+        if File.write_from_string(path, contents)
+            return true
+        Console.println "error: cannot write `path`"
+        false
+    }
+
+    ; The interface text of the file with index `fi`: its facts applied to the
+    ; source text. Answers an empty String after printing why it cannot.
+    procedure transform(text: String, facts: ref[Array[InterfaceFact]], file_of: ref[Array[size_t]], fi: size_t) returns String
+    {
+        var edits Array[InterfaceEdit]()
+        var i: size_t 0
+        while i < facts.length
+        {
+            if file_of[i] = fi
+            {
+                let f facts.at i
+                if f.tag = "F" as char
+                {
+                    if f.generic = false and Interface.inside_generic(facts, file_of, fi, f.start) = false
+                        edits.add(Interface.routine_edit(text, facts, file_of, fi, f))
+                }
+                else if f.tag = "C" as char
+                {
+                    if f.generic = false and f.resident
+                    {
+                        ; right before the record's `(`: after the name an
+                        ; optional separator takes a line break, after an
+                        ; attribute nothing does
+                        let m Interface.match_define(text, f.start, f.name)
+                        if m > 0
+                        {
+                            var k m
+                            while Interface.is_ws_nl(text.get(k))
+                                set k: k + 1
+                            if f.inplace
+                                edits.add(InterfaceEdit(k, k, String("@resident true @inplace true ")))
+                            else
+                                edits.add(InterfaceEdit(k, k, String("@resident true ")))
+                        }
+                    }
+                }
+                else if f.tag = "G" as char
+                {
+                    if Interface.inside_generic(facts, file_of, fi, f.start) = false
+                    {
+                        let m Interface.match_global(text, f.start, f.name)
+                        if m > 0
+                            edits.add(InterfaceEdit(Interface.skip_type(text, m), Interface.body_end(text, f.end), String(" linked")))
+                    }
+                }
+            }
+            set i: i + 1
+        }
+        ; the edits in text order (the facts come nearly in it, so an insertion
+        ; sort is nearly linear); they never overlap -- a method inside an
+        ; edited concept header is no body edit -- and that is checked below
+        var order Array[size_t]()
+        var e: size_t 0
+        while e < edits.length
+        {
+            order.add(e)
+            var j e
+            while j > 0 and Interface.edit_before(edits.at(e), edits.at(order[j - 1]))
+            {
+                order.put(j, order[j - 1])
+                set j: j - 1
+            }
+            order.put(j, e)
+            set e: e + 1
+        }
+        ; LINE-PRESERVING: whatever a replacement removes, its line breaks stay
+        var sb StringBuilder()
+        var pos: size_t 0
+        var o: size_t 0
+        while o < order.length
+        {
+            let ed edits.at(order[o])
+            if ed.start < pos
+            {
+                Console.println "error: interface: overlapping edits at byte `ed.start`"
+                return String()
+            }
+            sb.append(text.substring(pos, ed.start - pos))
+            sb.append(ed.text)
+            var removed Interface.count_newlines(text, ed.start, ed.end)
+            let kept Interface.count_newlines(ed.text, 0, ed.text.get_length())
+            while removed > kept
+            {
+                sb.append("\n" as char)
+                set removed: removed - 1
+            }
+            set pos: ed.end
+            set o: o + 1
+        }
+        sb.append(text.substring(pos, text.get_length() - pos))
+        sb.to_string()
+    }
+
+    ; A routine keeps its header, its facts after the parameter list, and ends
+    ; in ` linked`.
+    function routine_edit(text: String, facts: ref[Array[InterfaceFact]], file_of: ref[Array[size_t]], fi: size_t, f: ref[InterfaceFact]) returns InterfaceEdit
+    {
+        let s f.start
+        let h Interface.header(text, s, f.kind)
+        var head text.substring(s, h.end - s)
+        if h.has_close
+        {
+            ; the body-derived facts as routine attributes, right after the
+            ; parameter list (the grammar's place for them)
+            let rel h.close + 1 - s
+            set head: "`head.substring(0, rel)``f.text``head.substring(rel, head.get_length() - rel)`"
+        }
+        var off: size_t 0
+        if h.has_close
+            set off: h.close - s
+        ; I/O and reads are computed, never written in a source: `io` before
+        ; a `mutable` clause, else at the end of the header
+        if Interface.has_fact(facts, file_of, fi, "I" as char, s) and Interface.says_io(head) = false
+        {
+            let at Interface.find_mutable_clause(head, off)
+            if at >= 0
+            {
+                let a at as size_t
+                set head: "`head.substring(0, a)` io`head.substring(a, head.get_length() - a)`"
+            }
+            else
+                set head: "`Interface.rstrip(head)` io"
+        }
+        let global_read Interface.reads_of(facts, file_of, fi, s)
+        if global_read.get_length() > 0
+            set head: "`Interface.rstrip(head)` reads `global_read`"
+        InterfaceEdit(s, Interface.body_end(text, f.end), "`Interface.rstrip(head)` linked")
+    }
+
+    ; Does `a` come before `b` in text order (start, then end)?
+    function edit_before(a: ref[InterfaceEdit], b: ref[InterfaceEdit]) returns bool
+    {
+        if a.start <> b.start
+            return a.start < b.start
+        a.end < b.end
+    }
+
+    ; Is `s` inside a generic concept of the file?
+    function inside_generic(facts: ref[Array[InterfaceFact]], file_of: ref[Array[size_t]], fi: size_t, s: size_t) returns bool
+    {
+        var i: size_t 0
+        while i < facts.length
+        {
+            if file_of[i] = fi
+            {
+                let f facts.at i
+                if f.tag = "C" as char and f.generic and f.start <= s and s < f.end
+                    return true
+            }
+            set i: i + 1
+        }
+        false
+    }
+
+    ; Is there a fact of `tag` for the routine at `s`?
+    function has_fact(facts: ref[Array[InterfaceFact]], file_of: ref[Array[size_t]], fi: size_t, tag: char, s: size_t) returns bool
+    {
+        var i: size_t 0
+        while i < facts.length
+        {
+            if file_of[i] = fi
+            {
+                let f facts.at i
+                if f.tag = tag and f.start = s
+                    return true
+            }
+            set i: i + 1
+        }
+        false
+    }
+
+    ; The changeable global the routine at `s` reads (the last R fact), or "".
+    function reads_of(facts: ref[Array[InterfaceFact]], file_of: ref[Array[size_t]], fi: size_t, s: size_t) returns String
+    {
+        var found String()
+        var i: size_t 0
+        while i < facts.length
+        {
+            if file_of[i] = fi
+            {
+                let f facts.at i
+                if f.tag = "R" as char and f.start = s
+                    set found: f.text
+            }
+            set i: i + 1
+        }
+        found
+    }
+
+    ; ------------------------------------------------------------------
+    ; Scanning the source text. A read past the end answers 0 (String.get),
+    ; which none of the scanners takes for anything.
+    ; ------------------------------------------------------------------
+
+    ; a blank: space or tab
+    function is_blank(c: u8) returns bool
+        c = 0x20 or c = 0x09
+
+    ; a blank or a line break
+    function is_ws_nl(c: u8) returns bool
+        c = 0x20 or c = 0x09 or c = 0x0A
+
+    ; white space: space, tab, line feed, vertical tab, form feed, return
+    function is_space(c: u8) returns bool
+        c = 0x20 or (c >= 0x09 and c <= 0x0D)
+
+    function is_word_start(c: u8) returns bool
+        (c >= 0x41 and c <= 0x5A) or (c >= 0x61 and c <= 0x7A) or c = 0x5F
+
+    function is_word_char(c: u8) returns bool
+        Interface.is_word_start(c) or (c >= 0x30 and c <= 0x39)
+
+    function skip_blanks(t: String, i: size_t) returns size_t
+    {
+        var k i
+        while k < t.get_length() and Interface.is_blank(t.get(k))
+            set k: k + 1
+        k
+    }
+
+    function skip_spaces(t: String, i: size_t) returns size_t
+    {
+        var k i
+        while k < t.get_length() and Interface.is_space(t.get(k))
+            set k: k + 1
+        k
+    }
+
+    ; the end of the word at i (i itself when none starts there)
+    function skip_word(t: String, i: size_t) returns size_t
+    {
+        if Interface.is_word_start(t.get(i)) = false
+            return i
+        var k i + 1
+        while Interface.is_word_char(t.get(k))
+            set k: k + 1
+        k
+    }
+
+    ; Do the bytes of `word` stand at i of t?
+    function bytes_at(t: String, i: size_t, word: Slice[u8]) returns bool
+    {
+        let n word.length
+        if i + n > t.get_length()
+            return false
+        var k: size_t 0
+        while k < n
+        {
+            if t.get(i + k) <> word[k]
+                return false
+            set k: k + 1
+        }
+        true
+    }
+
+    ; Does the whole word `word` stand at i of t (no word character after it)?
+    function word_at(t: String, i: size_t, word: Slice[u8]) returns bool
+        Interface.bytes_at(t, i, word) and Interface.is_word_char(t.get(i + word.length)) = false
+
+    ; The end of one type token at i (brackets balanced, `?` included).
+    function skip_type(t: String, i: size_t) returns size_t
+    {
+        var depth 0
+        var k i
+        while k < t.get_length()
+        {
+            let c t.get(k)
+            if c = 0x5B                 ; [
+                set depth: depth + 1
+            else if c = 0x5D            ; ]
+                set depth: depth - 1
+            else if depth = 0 and (Interface.is_ws_nl(c) or c = 0x3B)
+                break
+            set k: k + 1
+        }
+        k
+    }
+
+    ; t[i] is `open`; answers the offset after the matching `close`, skipping
+    ; string literals and comments.
+    function skip_balanced(t: String, i: size_t, open: u8, close: u8) returns size_t
+    {
+        let n t.get_length()
+        var depth 0
+        var k i
+        while k < n
+        {
+            let c t.get(k)
+            if c = 0x22                 ; " -- to the closing quote
+            {
+                set k: k + 1
+                while k < n and t.get(k) <> 0x22
+                    set k: k + 1
+            }
+            else if c = 0x3B            ; ; -- to the end of the line
+            {
+                while k < n and t.get(k) <> 0x0A
+                    set k: k + 1
+                set k: k - 1
+            }
+            else if c = open
+                set depth: depth + 1
+            else if c = close
+            {
+                set depth: depth - 1
+                if depth = 0
+                    return k + 1
+            }
+            set k: k + 1
+        }
+        n
+    }
+
+    ; Where the header of the routine at `start` ends: its keyword, a name
+    ; (operator symbols included), generic parameters, the parameter list,
+    ; and the clauses after it -- attributes, `returns`/`throws` with a type,
+    ; `io`, `mutable`/`reads` with a name list -- each of which may continue
+    ; on the next line.
+    function header(t: String, start: size_t, kind: char) returns InterfaceHeader
+    {
+        let n t.get_length()
+        var i Interface.skip_blanks(t, Interface.skip_word(t, start))
+        if kind = "f" as char or kind = "o" as char
+        {
+            if t.get(i) <> 0x28             ; ( -- a name, maybe operator symbols
+            {
+                while i < n and Interface.is_name_end(t.get(i)) = false
+                    set i: i + 1
+                set i: Interface.skip_blanks(t, i)
+            }
+            if t.get(i) = 0x5B              ; [
+                set i: Interface.skip_blanks(t, Interface.skip_balanced(t, i, 0x5B, 0x5D))
+        }
+        if kind = "i" as char and t.get(i) = 0x23       ; #
+            set i: Interface.skip_blanks(t, i + 1)
+        var close: size_t 0
+        var has_close false
+        if t.get(i) = 0x28                  ; (
+        {
+            set i: Interface.skip_balanced(t, i, 0x28, 0x29)
+            set close: i - 1
+            set has_close: true
+        }
+        while true
+        {
+            var j Interface.skip_blanks(t, i)
+            if t.get(j) = 0x0A
+            {
+                ; a clause may continue on the next line
+                let k Interface.skip_blanks(t, j + 1)
+                if Interface.clause_at(t, k) = false
+                    return InterfaceHeader(i, close, has_close)
+                set j: k
+            }
+            let c t.get(j)
+            if c = 0x40                     ; @ -- an attribute and its value
+                set i: Interface.skip_type(t, Interface.skip_blanks(t, Interface.skip_word(t, j + 1)))
+            else if Interface.word_at(t, j, "returns")
+                set i: Interface.skip_type(t, Interface.skip_blanks(t, j + 7))
+            else if Interface.word_at(t, j, "throws")
+                set i: Interface.skip_type(t, Interface.skip_blanks(t, j + 6))
+            else if Interface.word_at(t, j, "io")
+                set i: j + 2
+            else
+            {
+                let list Interface.name_list_end(t, j)
+                if list > 0
+                    set i: list
+                else if c = 0x3A            ; :
+                    set i: j + 1
+                else
+                    return InterfaceHeader(i, close, has_close)
+            }
+        }
+        InterfaceHeader(i, close, has_close)
+    }
+
+    ; the end of a routine's name: a blank, `(`, `[` or a line break
+    function is_name_end(c: u8) returns bool
+        Interface.is_ws_nl(c) or c = 0x28 or c = 0x5B
+
+    ; a clause word that continues a header on its next line
+    function clause_at(t: String, k: size_t) returns bool
+    {
+        Interface.word_at(t, k, "returns") or Interface.word_at(t, k, "throws") or Interface.word_at(t, k, "io") or Interface.word_at(t, k, "mutable") or Interface.word_at(t, k, "reads")
+    }
+
+    ; `mutable a, b` or `reads a, b` at j: the end of the name list, or 0.
+    function name_list_end(t: String, j: size_t) returns size_t
+    {
+        var k: size_t 0
+        if Interface.bytes_at(t, j, "mutable")
+            set k: j + 7
+        else if Interface.bytes_at(t, j, "reads")
+            set k: j + 5
+        else
+            return 0
+        if Interface.is_space(t.get(k)) = false
+            return 0
+        set k: Interface.skip_spaces(t, k)
+        if Interface.is_word_start(t.get(k)) = false
+            return 0
+        set k: Interface.skip_word(t, k)
+        while true
+        {
+            let comma Interface.skip_spaces(t, k)
+            if t.get(comma) <> 0x2C         ; ,
+                return k
+            let next Interface.skip_spaces(t, comma + 1)
+            if Interface.is_word_start(t.get(next)) = false
+                return k
+            set k: Interface.skip_word(t, next)
+        }
+        k
+    }
+
+    ; A body's span ends where the NEXT declaration's first token begins, so
+    ; it takes that declaration's leading comment along; back up over trailing
+    ; blank lines and whole-line comments to the end of this body.
+    function body_end(t: String, e: size_t) returns size_t
+    {
+        var end e
+        while true
+        {
+            var k end
+            while k > 0 and Interface.is_ws_nl(t.get(k - 1))
+                set k: k - 1
+            var line_start k
+            while line_start > 0 and t.get(line_start - 1) <> 0x0A
+                set line_start: line_start - 1
+            var c line_start
+            while c < k and Interface.is_space(t.get(c))
+                set c: c + 1
+            if c < k and t.get(c) = 0x3B    ; ; -- a whole-line comment
+                set end: line_start
+            else
+                return k
+        }
+        end
+    }
+
+    ; `define NAME` at s: the offset after the name, or 0.
+    function match_define(t: String, s: size_t, name: String) returns size_t
+    {
+        if Interface.bytes_at(t, s, "define") = false or Interface.is_space(t.get(s + 6)) = false
+            return 0
+        let k Interface.skip_spaces(t, s + 6)
+        if Interface.bytes_at(t, k, name.as_slice()) = false
+            return 0
+        k + name.get_length()
+    }
+
+    ; `mutable NAME: `, `shared NAME: ` or `shared atomic NAME: ` at s: the
+    ; offset of the type, or 0.
+    function match_global(t: String, s: size_t, name: String) returns size_t
+    {
+        if Interface.bytes_at(t, s, "mutable")
+            return Interface.match_global_name(t, s + 7, name)
+        if Interface.bytes_at(t, s, "shared") = false
+            return 0
+        if Interface.is_space(t.get(s + 6))
+        {
+            let a Interface.skip_spaces(t, s + 6)
+            if Interface.bytes_at(t, a, "atomic")
+            {
+                let m Interface.match_global_name(t, a + 6, name)
+                if m > 0
+                    return m
+            }
+        }
+        Interface.match_global_name(t, s + 6, name)
+    }
+
+    ; blanks, NAME, `:` and blanks at k: the offset after them, or 0
+    function match_global_name(t: String, k: size_t, name: String) returns size_t
+    {
+        if Interface.is_space(t.get(k)) = false
+            return 0
+        let at Interface.skip_spaces(t, k)
+        if Interface.bytes_at(t, at, name.as_slice()) = false
+            return 0
+        let colon Interface.skip_spaces(t, at + name.get_length())
+        if t.get(colon) <> 0x3A
+            return 0
+        Interface.skip_spaces(t, colon + 1)
+    }
+
+    ; Does a header already say `io` after its parameter list (a `)`, then
+    ; no `;` before the word)?
+    function says_io(head: String) returns bool
+    {
+        let n head.get_length()
+        var after_paren false
+        var i: size_t 0
+        while i < n
+        {
+            let c head.get(i)
+            if c = 0x29                     ; )
+                set after_paren: true
+            else if c = 0x3B                ; ;
+                set after_paren: false
+            else if after_paren and Interface.word_at(head, i, "io")
+            {
+                if i = 0 or Interface.is_word_char(head.get(i - 1)) = false
+                    return true
+            }
+            set i: i + 1
+        }
+        false
+    }
+
+    ; The offset of the white space before a ` mutable ` clause at or after
+    ; `from`, or -1.
+    function find_mutable_clause(head: String, from: size_t) returns int
+    {
+        let n head.get_length()
+        var i from
+        while i + 8 < n
+        {
+            if Interface.is_space(head.get(i)) and Interface.bytes_at(head, i + 1, "mutable") and Interface.is_space(head.get(i + 8))
+                return i as int
+            set i: i + 1
+        }
+        0 - 1
+    }
+
+    ; t without its trailing white space
+    function rstrip(t: String) returns String
+    {
+        var n t.get_length()
+        while n > 0 and Interface.is_space(t.get(n - 1))
+            set n: n - 1
+        t.substring(0, n)
+    }
+
+    function count_newlines(t: String, from: size_t, to: size_t) returns size_t
+    {
+        var count: size_t 0
+        var i from
+        while i < to
+        {
+            if t.get(i) = 0x0A
+                set count: count + 1
+            set i: i + 1
+        }
+        count
+    }
+}

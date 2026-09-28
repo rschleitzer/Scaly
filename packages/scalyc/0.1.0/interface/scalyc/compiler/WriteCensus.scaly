@@ -46,6 +46,7 @@ use scalyc.compiler.Plan.*
 use scalyc.compiler.Planner.*
 use scalyc.compiler.PointerCensus.PointerCensus
 use scalyc.compiler.ConceptIndex.ConceptIndex
+use scalyc.compiler.Interface.InterfaceFact
 use scaly.os.File
 
 define WC_GLOBAL u64 0x8000000000000000
@@ -3319,9 +3320,10 @@ define WriteCensus
 
 
 
-        ; --interface-facts: the first changeable global each planned body of the
-        ; root reads (the check's pre-pass), keyed like the planner's facts
-        function interface_reads(this: WriteCensus) @page true @direct true @ret_caller true @deep true returns String linked
+        ; --emit-interface: the first changeable global each planned body of the
+        ; root reads (the check's pre-pass), and whether it reaches I/O, keyed
+        ; like the planner's facts (Planner.interface_facts#)
+        procedure interface_facts(this: WriteCensus, mutable facts: ref[Array[InterfaceFact]]) @page true @direct true @deep true linked
 
 
 
@@ -3379,16 +3381,7 @@ define WriteCensus
 
 
 
-
-
-
-
-
-
-
-
-
-
+        function fact(tag: char, file: String, start: size_t, text: String) @page true @direct true @deep true returns InterfaceFact linked
 
 
         ; does a stub's declaration (its package's interface) say `io`?

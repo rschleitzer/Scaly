@@ -8,6 +8,7 @@ use scaly.containers.StringBuilder
 use scaly.containers.Vector
 use scaly.os.File
 use scaly.os.Console
+use scaly.os.Path
 use scaly.memory.runtime.system
 use scaly.memory.runtime.unlink
 use scaly.memory.root_pages.getenv
@@ -29,6 +30,8 @@ use scalyc.compiler.Planner
 use scalyc.compiler.TaskPlanner
 use scalyc.compiler.PointerCensus
 use scalyc.compiler.WriteCensus
+use scalyc.compiler.Interface.Interface
+use scalyc.compiler.Interface.InterfaceFact
 use scalyc.compiler.Plan.Plan
 use scalyc.compiler.Emitter
 use scalyc.compiler.Emitter.EmitterConfig
@@ -72,7 +75,7 @@ define Options
     write_report: bool      ; --write-report: writes through parameters, off the Plan
     host_report: bool       ; --host-report: named-page constructions that never leave their routine
     purity_check: bool      ; --purity-check: a function may not write what its parameters reach
-    interface_facts: bool   ; --interface-facts: body-derived facts for tools/interface/geninterface.py
+    emit_interface: bool    ; --emit-interface: write the package's interface (compiler/Interface.scaly)
     debug: bool             ; -g: emit DWARF debug info
     run_mode: bool          ; --run <fn>: JIT-compile and execute <fn> in-process
     run_function: String    ; the function name to JIT-run
@@ -384,6 +387,7 @@ define cli
 
 
 
+
     ; The directory for the compiler's own scratch object. POSIX has /tmp;
     ; Windows has no such directory and a native binary resolves the string
     ; "/tmp/..." against the CURRENT DRIVE root (C:\tmp\...), which does not
@@ -463,12 +467,6 @@ define cli
     ; Run the compiler with parsed options
     ; Returns 0 on success, non-zero on error
     procedure run(mutable opts: Options) @ret_nonlocal true @deep true @deep_beyond_1 true returns int io mutable modeler_error_count reads modeler_error_count linked
-
-
-
-
-
-
 
 
 
@@ -1521,6 +1519,26 @@ define cli
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ; --emit-interface: the package's interface (compiler/Interface.scaly),
+    ; written to <root dir>/interface or to the directory -o names.
+    procedure emit_interface(root: String, output: String, mutable planner: ref[Planner.Planner], model: ref[Program], purity_gate: ref[WriteCensus.WriteCensus]) @ret_nonlocal true @deep true returns int io linked
 
 
 

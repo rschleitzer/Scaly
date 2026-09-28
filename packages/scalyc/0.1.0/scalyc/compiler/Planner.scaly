@@ -22,6 +22,7 @@ use scaly.os.Path
 
 use scalyc.compiler.ConceptIndex.ConceptIndex
 use scalyc.compiler.FunctionIndex.FunctionIndex
+use scalyc.compiler.Interface.InterfaceFact
 use scalyc.compiler.Model.*
 use scalyc.compiler.Plan.*
 
@@ -344,7 +345,7 @@ define Planner
         ; the owners of the bodies this root plans; a known owner that is NOT
         ; among them lives in another package (its body linked)
         deep_scanned_owners: ref[Array[String]]
-        ; --interface-facts: run the deep pre-pass without judging, so a
+        ; --emit-interface: run the deep pre-pass without judging, so a
         ; package's interface can state each routine's deep masks (`@deep`)
         var deep_facts: bool
         deep_state_this: Array[size_t]
@@ -6417,65 +6418,41 @@ define Planner
         ; construction paths (Unspecified life) in collapse_operand_sequence;
         ; explicit #/^ constructions never reach it.
         ; ================================================================
-        ; --interface-facts (tools/interface/geninterface.py): per routine of
-        ; the ROOT package what a bodyless declaration must say that the
-        ; planner derives from its body -- the caller page (R1..R7, part of
-        ; the mangled name) and whether it stores an argument beyond its frame
-        ; -- and per concept whether a construction of it must be page-resident.
-        ; One line per fact, keyed by file and source offset; the generator
-        ; does the text surgery.
+        ; --emit-interface (Interface.scaly): per routine of the ROOT package
+        ; what a bodyless declaration must say that the planner derives from
+        ; its body -- the caller page (R1..R7, part of the mangled name),
+        ; whether it stores an argument beyond its frame, the page sets it
+        ; joins, its return residence and its deep persist masks, rendered
+        ; here as the attributes the interface writes after its parameter
+        ; list -- and per concept whether a construction of it must be
+        ; page-resident. One fact per declaration, keyed by file and source
+        ; offset; Interface does the text surgery.
         ; ================================================================
 
-        procedure interface_facts(mutable this: Planner, m: Module) returns String
-            this.facts_module(m, false)
-
-        procedure facts_module(mutable this: Planner, m: Module, generic: bool) returns String
+        procedure interface_facts(mutable this: Planner, m: Module, mutable facts: ref[Array[InterfaceFact]])
         {
-            var sb StringBuilder()
-            sb.append "M "
-            sb.append m.file
-            sb.append "\n"
-            sb.append(this.facts_members(m.file, m.members, generic))
+            this.facts_module(m, false, facts)
+        }
+
+        procedure facts_module(mutable this: Planner, m: Module, generic: bool, mutable facts: ref[Array[InterfaceFact]])
+        {
+            facts.add(Planner.fact("M" as char, m.file, 0, 0, " " as char, String(), generic, false, false, String()))
+            this.facts_members(m.file, m.members, generic, facts)
             var i: size_t 0
             while i < m.modules.length
             {
                 let sub m.modules.get i
                 if sub <> null
-                    sb.append(this.facts_module((*sub), generic))
+                    this.facts_module((*sub), generic, facts)
                 set i: i + 1
             }
-            sb.to_string()
         }
 
-        function facts_line(tag: String, file: String, span: Span, kind: String, name: String, generic: bool, page: bool, explicit: bool, persists: bool) returns String
-        {
-            var sb StringBuilder()
-            sb.append tag
-            sb.append " "
-            sb.append file
-            sb.append " "
-            sb.append span.start
-            sb.append " "
-            sb.append span.end
-            sb.append " "
-            sb.append kind
-            sb.append " "
-            sb.append name
-            sb.append " generic="
-            sb.append generic
-            sb.append " page="
-            sb.append page
-            sb.append " explicit="
-            sb.append explicit
-            sb.append " persists="
-            sb.append persists
-            sb.append "\n"
-            sb.to_string()
-        }
+        function fact(tag: char, file: String, start: size_t, end: size_t, kind: char, name: String, generic: bool, resident: bool, inplace: bool, text: String) returns InterfaceFact
+            InterfaceFact(tag, file, start, end, kind, name, generic, resident, inplace, text)
 
-        procedure facts_members(mutable this: Planner, file: String, members: Vector[Member], generic: bool) returns String
+        procedure facts_members(mutable this: Planner, file: String, members: Vector[Member], generic: bool, mutable facts: ref[Array[InterfaceFact]])
         {
-            var sb StringBuilder()
             var i: size_t 0
             while i < members.length
             {
@@ -6485,7 +6462,7 @@ define Planner
                     continue
                 choose (*m_ptr)
                     when f: Function
-                        sb.append(this.facts_function(file, f, generic))
+                        this.facts_function(file, f, generic, facts)
                     when op: Operator
                     {
                         var op_body false
@@ -6495,17 +6472,16 @@ define Planner
                             else
                                 0
                         if op_body
-                            sb.append(Planner.facts_line(String("F"), file, op.span, String("op"), op.name, generic, false, false, false))
+                            facts.add(Planner.fact("F" as char, file, op.span.start, op.span.end, "o" as char, op.name, generic, false, false, String()))
                     }
                     when c: Concept
-                        sb.append(this.facts_concept(file, c, generic))
+                        this.facts_concept(file, c, generic, facts)
                     else
                         0
             }
-            sb.to_string()
         }
 
-        procedure facts_function(mutable this: Planner, file: String, f: Function, generic: bool) returns String
+        procedure facts_function(mutable this: Planner, file: String, f: Function, generic: bool, mutable facts: ref[Array[InterfaceFact]])
         {
             var body false
             choose f.implementation
@@ -6514,7 +6490,7 @@ define Planner
                 else
                     0
             if body = false
-                return String("")
+                return
             var g generic
             if f.parameters.length > 0
                 set g: true
@@ -6547,40 +6523,51 @@ define Planner
                 set transitive: this.array_contains_name(transitive_page_names, f.name)
                 set returnpage: Planner.static_func_in_set(return_page_names, return_page_starts, return_page_ends, f)
             }
+            ; the attributes, in the order a linked caller reads them; the
+            ; caller page only where the source does not name its page
             var sb StringBuilder()
-            sb.append(Planner.facts_line(String("F"), file, f.span, String("fn"), f.name, g, page, explicit, persists))
+            if page and explicit = false
+                sb.append " @page true"
+            if persists
+                sb.append " @persists true"
             if direct
-                sb.append "D\n"
+                sb.append " @direct true"
             if transitive
-                sb.append "T\n"
+                sb.append " @transitive true"
             if returnpage
-                sb.append "P\n"
+                sb.append " @returnpage true"
             if g = false and this.array_contains_name(store_page_names, Planner.store_key(f))
-                sb.append "S\n"
+                sb.append " @stores true"
             let rr_c this.return_residence_class(f)
-            if rr_c <> 0
-            {
-                sb.append "V "
-                sb.append(rr_c)
-                sb.append " "
-                sb.append(this.return_residence_arg(f))
-                sb.append "\n"
-            }
+            let rr_a this.return_residence_arg(f)
+            if rr_c = 1
+                sb.append " @ret_caller true"
+            if rr_c = 2
+                sb.append(" @ret_explicit_`rr_a` true")
+            if rr_c = 3
+                sb.append(" @ret_param_`rr_a` true")
+            if rr_c = 4
+                sb.append " @ret_nonlocal true"
+            if rr_c = 5
+                sb.append(" @ret_args_`rr_a` true")
             if g = false and gate.deep_facts
-                sb.append(this.facts_deep_line(f))
-            sb.to_string()
+                sb.append(this.facts_deep_attributes(f))
+            ; the text lives as long as the facts do: on their page
+            let host Page.get(facts)
+            let attributes String^host(sb.to_string())
+            facts.add(Planner.fact("F" as char, file, f.span.start, f.span.end, "f" as char, f.name, g, false, false, attributes))
         }
 
-        ; `X beyond this whole pageof into1 … into15`: the deep persist masks
-        ; of a body (bit 0 is `this`), for a linked caller's deep gate
-        procedure facts_deep_line(mutable this: Planner, f: Function) returns String
+        ; `@deep true` and the deep persist masks of a body that are not zero
+        ; -- beyond, this, whole, pageof and the fifteen into-parameter slots
+        ; (bit 0 is `this`) -- for a linked caller's deep gate; a missing mask
+        ; is zero
+        procedure facts_deep_attributes(mutable this: Planner, f: Function) returns String
         {
             let di this.return_residence_index(f)
             if di < 0
                 return String("")
             let d di as size_t
-            var sb StringBuilder()
-            sb.append "X"
             var st: size_t 0
             let sp gate.deep_state.get d
             if sp <> null
@@ -6609,14 +6596,16 @@ define Planner
                 set who: 0
                 set pgo: 0
             }
-            sb.append " "
-            sb.append bey
-            sb.append " "
-            sb.append thm
-            sb.append " "
-            sb.append who
-            sb.append " "
-            sb.append pgo
+            var sb StringBuilder()
+            sb.append " @deep true"
+            if bey <> 0
+                sb.append(" @deep_beyond_`bey` true")
+            if thm <> 0
+                sb.append(" @deep_this_`thm` true")
+            if who <> 0
+                sb.append(" @deep_whole_`who` true")
+            if pgo <> 0
+                sb.append(" @deep_pageof_`pgo` true")
             var k: size_t 1
             while k < 16
             {
@@ -6624,17 +6613,15 @@ define Planner
                 let ip gate.deep_state_into.get(d * 16 + k)
                 if ip <> null
                     set iv: (*ip)
-                sb.append " "
-                sb.append iv
+                if iv <> 0
+                    sb.append(" @deep_into_`k`_`iv` true")
                 set k: k + 1
             }
-            sb.append "\n"
             sb.to_string()
         }
 
-        procedure facts_concept(mutable this: Planner, file: String, c: Concept, generic: bool) returns String
+        procedure facts_concept(mutable this: Planner, file: String, c: Concept, generic: bool, mutable facts: ref[Array[InterfaceFact]])
         {
-            var sb StringBuilder()
             var g generic
             if c.parameters.length > 0
                 set g: true
@@ -6650,12 +6637,9 @@ define Planner
                         set inplace: this.structure_inplace_residency(s, 0)
                         set resident: inplace or this.structure_init_has_this_alloc(s)
                     }
-                    ; a concept line reuses the routine layout: resident rides
-                    ; in the `page` column, inplace (a record holding it BY
-                    ; VALUE must be resident too) in the `explicit` column;
-                    ; the generator reads them as such
-                    sb.append(Planner.facts_line(String("C"), file, c.span, String("concept"), c.name, g, resident, inplace, false))
-                    sb.append(this.facts_members(file, s.members, g))
+                    ; inplace: a record holding it BY VALUE must be resident too
+                    facts.add(Planner.fact("C" as char, file, c.span.start, c.span.end, "c" as char, c.name, g, resident, inplace, String()))
+                    this.facts_members(file, s.members, g, facts)
                     var ii: size_t 0
                     while ii < s.initializers.length
                     {
@@ -6671,7 +6655,7 @@ define Planner
                             else
                                 0
                         if ibody
-                            sb.append(Planner.facts_line(String("F"), file, ini.span, String("init"), String("init"), g, false, false, false))
+                            facts.add(Planner.fact("F" as char, file, ini.span.start, ini.span.end, "i" as char, String(), g, false, false, String()))
                     }
                     if s.deinitializer <> null
                     {
@@ -6683,42 +6667,41 @@ define Planner
                             else
                                 0
                         if dbody
-                            sb.append(Planner.facts_line(String("F"), file, dei.span, String("deinit"), String("deinit"), g, false, false, false))
+                            facts.add(Planner.fact("F" as char, file, dei.span.start, dei.span.end, "d" as char, String(), g, false, false, String()))
                     }
                     var mi: size_t 0
                     while mi < s.modules.length
                     {
                         let sub s.modules.get mi
                         if sub <> null
-                            sb.append(this.facts_module((*sub), g))
+                            this.facts_module((*sub), g, facts)
                         set mi: mi + 1
                     }
                 }
                 when ns: Namespace
                 {
-                    sb.append(this.facts_members(file, ns.members, g))
+                    this.facts_members(file, ns.members, g, facts)
                     var mi: size_t 0
                     while mi < ns.modules.length
                     {
                         let sub ns.modules.get mi
                         if sub <> null
-                            sb.append(this.facts_module((*sub), g))
+                            this.facts_module((*sub), g, facts)
                         set mi: mi + 1
                     }
                 }
                 when un: Union
                 {
-                    sb.append(Planner.facts_line(String("C"), file, c.span, String("concept"), c.name, g, false, false, false))
-                    sb.append(this.facts_members(file, un.members, g))
+                    facts.add(Planner.fact("C" as char, file, c.span.start, c.span.end, "c" as char, c.name, g, false, false, String()))
+                    this.facts_members(file, un.members, g, facts)
                 }
                 when gl: Global
                 {
                     if gl.is_mutable
-                        sb.append(Planner.facts_line(String("G"), file, gl.span, String("global"), c.name, g, false, false, false))
+                        facts.add(Planner.fact("G" as char, file, gl.span.start, gl.span.end, "g" as char, c.name, g, false, false, String()))
                 }
                 else
                     0
-            sb.to_string()
         }
 
         ; structure_init_stores_build#: an `init` that puts a value it BUILDS

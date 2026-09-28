@@ -11,6 +11,7 @@ define compiler
     module Plan
     module ConceptIndex  ; O(1) concept-name -> registry-index map (used by Planner)
     module FunctionIndex ; O(1) name -> ordered registry-index chain (used by Planner)
+    module Interface     ; --emit-interface: a package's generated interface (facts from Planner + WriteCensus)
     module Planner
     module TaskPlanner  ; Stage-3 Plan analysis pass (parallelizability), runs after Planner
     module StoreEffects ; which record types a routine overwrites whole -> noalias parameters (the aliasing rule)

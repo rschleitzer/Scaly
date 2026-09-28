@@ -22,6 +22,7 @@ use scaly.os.Path
 
 use scalyc.compiler.ConceptIndex.ConceptIndex
 use scalyc.compiler.FunctionIndex.FunctionIndex
+use scalyc.compiler.Interface.InterfaceFact
 use scalyc.compiler.Model.*
 use scalyc.compiler.Plan.*
 
@@ -344,7 +345,7 @@ define Planner
         ; the owners of the bodies this root plans; a known owner that is NOT
         ; among them lives in another package (its body linked)
         deep_scanned_owners: ref[Array[String]]
-        ; --interface-facts: run the deep pre-pass without judging, so a
+        ; --emit-interface: run the deep pre-pass without judging, so a
         ; package's interface can state each routine's deep masks (`@deep`)
         var deep_facts: bool
         deep_state_this: Array[size_t]
@@ -6417,21 +6418,23 @@ define Planner
         ; construction paths (Unspecified life) in collapse_operand_sequence;
         ; explicit #/^ constructions never reach it.
         ; ================================================================
-        ; --interface-facts (tools/interface/geninterface.py): per routine of
-        ; the ROOT package what a bodyless declaration must say that the
-        ; planner derives from its body -- the caller page (R1..R7, part of
-        ; the mangled name) and whether it stores an argument beyond its frame
-        ; -- and per concept whether a construction of it must be page-resident.
-        ; One line per fact, keyed by file and source offset; the generator
-        ; does the text surgery.
+        ; --emit-interface (Interface.scaly): per routine of the ROOT package
+        ; what a bodyless declaration must say that the planner derives from
+        ; its body -- the caller page (R1..R7, part of the mangled name),
+        ; whether it stores an argument beyond its frame, the page sets it
+        ; joins, its return residence and its deep persist masks, rendered
+        ; here as the attributes the interface writes after its parameter
+        ; list -- and per concept whether a construction of it must be
+        ; page-resident. One fact per declaration, keyed by file and source
+        ; offset; Interface does the text surgery.
         ; ================================================================
 
-        procedure interface_facts(mutable this: Planner, m: Module) @page true @direct true @ret_caller true @deep true returns String io linked
+        procedure interface_facts(mutable this: Planner, m: Module, mutable facts: ref[Array[InterfaceFact]]) @ret_nonlocal true @deep true @deep_pageof_4 true io linked
 
 
-        procedure facts_module(mutable this: Planner, m: Module, generic: bool) @page true @direct true @ret_caller true @deep true returns String io linked
 
 
+        procedure facts_module(mutable this: Planner, m: Module, generic: bool, mutable facts: ref[Array[InterfaceFact]]) @page true @direct true @deep true @deep_pageof_8 true @deep_into_3_2 true io linked
 
 
 
@@ -6445,9 +6448,10 @@ define Planner
 
 
 
+        function fact(tag: char, file: String, start: size_t, end: size_t, kind: char, name: String, generic: bool, resident: bool, inplace: bool, text: String) @page true @direct true @deep true returns InterfaceFact linked
 
 
-        function facts_line(tag: String, file: String, span: Span, kind: String, name: String, generic: bool, page: bool, explicit: bool, persists: bool) @page true @direct true @ret_caller true @deep true returns String linked
+        procedure facts_members(mutable this: Planner, file: String, members: Vector[Member], generic: bool, mutable facts: ref[Array[InterfaceFact]]) @page true @direct true @deep true @deep_whole_2 true @deep_pageof_16 true @deep_into_4_2 true io linked
 
 
 
@@ -6473,11 +6477,11 @@ define Planner
 
 
 
-        procedure facts_members(mutable this: Planner, file: String, members: Vector[Member], generic: bool) @page true @direct true @ret_caller true @deep true returns String io linked
 
 
 
 
+        procedure facts_function(mutable this: Planner, file: String, f: Function, generic: bool, mutable facts: ref[Array[InterfaceFact]]) @page true @direct true @deep true @deep_whole_2 true @deep_pageof_16 true @deep_into_4_6 true io linked
 
 
 
@@ -6505,7 +6509,6 @@ define Planner
 
 
 
-        procedure facts_function(mutable this: Planner, file: String, f: Function, generic: bool) @page true @direct true @ret_caller true @deep true returns String io linked
 
 
 
@@ -6555,6 +6558,11 @@ define Planner
 
 
 
+        ; `@deep true` and the deep persist masks of a body that are not zero
+        ; -- beyond, this, whole, pageof and the fifteen into-parameter slots
+        ; (bit 0 is `this`) -- for a linked caller's deep gate; a missing mask
+        ; is zero
+        procedure facts_deep_attributes(mutable this: Planner, f: Function) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -6571,9 +6579,6 @@ define Planner
 
 
 
-        ; `X beyond this whole pageof into1 … into15`: the deep persist masks
-        ; of a body (bit 0 is `this`), for a linked caller's deep gate
-        procedure facts_deep_line(mutable this: Planner, f: Function) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -6615,29 +6620,7 @@ define Planner
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        procedure facts_concept(mutable this: Planner, file: String, c: Concept, generic: bool) @page true @direct true @ret_caller true @deep true returns String io linked
-
-
-
-
-
+        procedure facts_concept(mutable this: Planner, file: String, c: Concept, generic: bool, mutable facts: ref[Array[InterfaceFact]]) @page true @direct true @deep true @deep_whole_2 true @deep_pageof_16 true @deep_into_4_6 true io linked
 
 
 

@@ -8,6 +8,7 @@ use scaly.containers.StringBuilder
 use scaly.containers.Vector
 use scaly.os.File
 use scaly.os.Console
+use scaly.os.Path
 use scaly.memory.runtime.system
 use scaly.memory.runtime.unlink
 use scaly.memory.root_pages.getenv
@@ -29,6 +30,8 @@ use scalyc.compiler.Planner
 use scalyc.compiler.TaskPlanner
 use scalyc.compiler.PointerCensus
 use scalyc.compiler.WriteCensus
+use scalyc.compiler.Interface.Interface
+use scalyc.compiler.Interface.InterfaceFact
 use scalyc.compiler.Plan.Plan
 use scalyc.compiler.Emitter
 use scalyc.compiler.Emitter.EmitterConfig
@@ -72,7 +75,7 @@ define Options
     write_report: bool      ; --write-report: writes through parameters, off the Plan
     host_report: bool       ; --host-report: named-page constructions that never leave their routine
     purity_check: bool      ; --purity-check: a function may not write what its parameters reach
-    interface_facts: bool   ; --interface-facts: body-derived facts for tools/interface/geninterface.py
+    emit_interface: bool    ; --emit-interface: write the package's interface (compiler/Interface.scaly)
     debug: bool             ; -g: emit DWARF debug info
     run_mode: bool          ; --run <fn>: JIT-compile and execute <fn> in-process
     run_function: String    ; the function name to JIT-run
@@ -108,7 +111,7 @@ define Options
         set write_report: false
         set host_report: false
         set purity_check: false
-        set interface_facts: false
+        set emit_interface: false
         set debug: false
         set run_mode: false
         set run_function: String()
@@ -227,9 +230,9 @@ define cli
                 {
                     set opts.purity_check: true
                 }
-                else if arg = "--interface-facts"
+                else if arg = "--emit-interface"
                 {
-                    set opts.interface_facts: true
+                    set opts.emit_interface: true
                 }
                 else if arg = "-O0"
                 {
@@ -378,6 +381,7 @@ define cli
         Console.println("  --pointer-report  Report every raw-pointer site, classified off the Plan")
         Console.println("  --write-report  Report every write through a parameter, off the Plan")
         Console.println("  --purity-check  Report every function that writes what its parameters reach")
+        Console.println("  --emit-interface  Write the package's interface to <dir>/interface, or to -o <dir>")
         Console.println "  --run <fn>     JIT-compile and run <fn> in-process"
         Console.println "  --jit          JIT-compile and run the whole program"
         Console.println "  --target <t>   Cross-emit object for triple <t> (use with -c)"
@@ -583,7 +587,7 @@ define cli
         var planner Planner.Planner(opts.input_file)
         if opts.host_report
             set planner.host_report: true
-        if opts.interface_facts
+        if opts.emit_interface
             set planner.gate.deep_facts: true
         if opts.use_vis
             set planner.use_vis_measure: true
@@ -684,14 +688,8 @@ define cli
                 }
                 purity_gate.mark_stub_purity(plan)
                 planner.phase_mark("E1-purity-gate")
-                if opts.interface_facts
-                {
-                    let facts planner.interface_facts(model.module_)
-                    Console.print(facts.to_c_string())
-                    let rfacts purity_gate.interface_reads()
-                    Console.print(rfacts.to_c_string())
-                    return 0
-                }
+                if opts.emit_interface
+                    return cli.emit_interface(opts.input_file, opts.output_file, &planner, &model, &purity_gate)
             }
         }
 
@@ -1536,6 +1534,26 @@ define cli
             }
             set i: i + 1
         }
+    }
+
+    ; --emit-interface: the package's interface (compiler/Interface.scaly),
+    ; written to <root dir>/interface or to the directory -o names.
+    procedure emit_interface(root: String, output: String, mutable planner: ref[Planner.Planner], model: ref[Program], purity_gate: ref[WriteCensus.WriteCensus]) returns int
+    {
+        var facts Array[InterfaceFact]()
+        planner.interface_facts(model.module_, &facts)
+        purity_gate.interface_facts(&facts)
+        var root_path root
+        let pkg_dir Path.get_directory_name(root_path)
+        var out_dir output
+        if out_dir.get_length() = 0
+            set out_dir: "`pkg_dir`/interface"
+        let writer Interface(pkg_dir, out_dir)
+        let n writer.write(root, &facts)
+        if n < 0
+            return 1
+        Console.println "interface: `n` files -> `out_dir`"
+        0
     }
 
     ; A file of a generated package interface is shown as its SOURCE file:
