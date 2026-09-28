@@ -184,7 +184,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z5Fiber = type { ptr, ptr, i64, ptr, ptr, ptr, i1 }
 %_Z9Scheduler = type { ptr, ptr, ptr, i64, i32, i64, i32, i64, i64, ptr, ptr, i64, ptr, ptr, i64 }
 %_Z9SchedTask = type { ptr, ptr, ptr, ptr, i1, i1, ptr, ptr, i64, ptr, i1 }
-%_Z7IoWatch = type { i1, i1, i1, ptr, ptr }
+%_Z7IoWatch = type { i64, i64, i1, i1, i1, ptr, ptr }
 %_Z6IoWork = type { ptr, ptr, ptr, ptr, ptr }
 %_Z7Channel = type { i64, i64, i1, ptr, ptr, ptr, ptr, ptr, i64, i64, ptr, ptr }
 %_Z11ChannelNode = type { ptr, ptr }
@@ -292,6 +292,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 @io_poller_fd = thread_local global i64 0
 @io_wake_fd = thread_local global i64 0
 @io_watch_unsupported = thread_local global i1 false
+@io_completions = thread_local global i1 false
 @task_default_pool = thread_local global ptr null
 @guard_installed = thread_local global i1 false
 @guard_page_size = thread_local global i64 0
@@ -24153,6 +24154,12 @@ declare i32 @scaly_eio_arm(i32, i32, i32, ptr)
 
 declare i32 @scaly_eio_watch(i32, i32, ptr)
 
+declare i32 @scaly_eio_submit_recv(i32, i32, ptr, i64, ptr)
+
+declare i32 @scaly_eio_submit_send(i32, i32, ptr, i64, ptr)
+
+declare i32 @scaly_eio_completions(i32)
+
 declare i32 @scaly_eio_wait(i32, ptr, i32)
 
 declare i32 @scaly_eio_wait_timeout(i32, ptr, i32, i32)
@@ -25577,7 +25584,7 @@ if.then69:                                        ; preds = %if.else66
   br label %if.end71
 
 if.else70:                                        ; preds = %if.else66
-  %and = and i64 %deref, 4
+  %and = and i64 %deref, 7
   %ne72 = icmp ne i64 %and, 0
   br i1 %ne72, label %if.then73, label %if.else74
 
@@ -25956,7 +25963,7 @@ unwrap.trap:                                      ; preds = %entry
   unreachable
 
 unwrap.ok:                                        ; preds = %entry
-  %and = and i64 %0, 7
+  %and = and i64 %0, 15
   %sub = sub i64 %0, %and
   %as.inttoptr = inttoptr i64 %sub to ptr
   %and1 = and i64 %0, 1
@@ -25964,10 +25971,10 @@ unwrap.ok:                                        ; preds = %entry
   br i1 %ne, label %if.then, label %if.end
 
 if.then:                                          ; preds = %unwrap.ok
-  %readable = getelementptr inbounds nuw %_Z7IoWatch, ptr %as.inttoptr, i32 0, i32 1
+  %readable = getelementptr inbounds nuw %_Z7IoWatch, ptr %as.inttoptr, i32 0, i32 3
   store i1 true, ptr %readable, align 1
   %load.struct = load %_Z7IoWatch, ptr %as.inttoptr, align 8
-  %reader = extractvalue %_Z7IoWatch %load.struct, 3
+  %reader = extractvalue %_Z7IoWatch %load.struct, 5
   %ne2 = icmp ne ptr %reader, null
   br i1 %ne2, label %if.then3, label %if.end4
 
@@ -25977,7 +25984,7 @@ if.end:                                           ; preds = %if.end4, %unwrap.ok
   br i1 %ne13, label %if.then14, label %if.end15
 
 if.then3:                                         ; preds = %if.then
-  %reader5 = getelementptr inbounds nuw %_Z7IoWatch, ptr %as.inttoptr, i32 0, i32 3
+  %reader5 = getelementptr inbounds nuw %_Z7IoWatch, ptr %as.inttoptr, i32 0, i32 5
   store ptr null, ptr %reader5, align 8
   call void @_ZN9Scheduler7enqueueER9SchedTask(ptr %reader)
   %load.struct6 = load %_Z9Scheduler, ptr %global.load, align 8
@@ -25996,10 +26003,10 @@ if.end4:                                          ; preds = %if.then3, %if.then
   br label %if.end
 
 if.then14:                                        ; preds = %if.end
-  %writable = getelementptr inbounds nuw %_Z7IoWatch, ptr %as.inttoptr, i32 0, i32 2
+  %writable = getelementptr inbounds nuw %_Z7IoWatch, ptr %as.inttoptr, i32 0, i32 4
   store i1 true, ptr %writable, align 1
   %load.struct16 = load %_Z7IoWatch, ptr %as.inttoptr, align 8
-  %writer = extractvalue %_Z7IoWatch %load.struct16, 4
+  %writer = extractvalue %_Z7IoWatch %load.struct16, 6
   %ne17 = icmp ne ptr %writer, null
   br i1 %ne17, label %if.then18, label %if.end19
 
@@ -26007,7 +26014,7 @@ if.end15:                                         ; preds = %if.end19, %if.end
   ret void
 
 if.then18:                                        ; preds = %if.then14
-  %writer20 = getelementptr inbounds nuw %_Z7IoWatch, ptr %as.inttoptr, i32 0, i32 4
+  %writer20 = getelementptr inbounds nuw %_Z7IoWatch, ptr %as.inttoptr, i32 0, i32 6
   store ptr null, ptr %writer20, align 8
   call void @_ZN9Scheduler7enqueueER9SchedTask(ptr %writer)
   %load.struct21 = load %_Z9Scheduler, ptr %global.load, align 8
@@ -26060,8 +26067,8 @@ if.then:                                          ; preds = %unwrap.ok
   br i1 %eq3, label %if.then4, label %if.end5
 
 if.end:                                           ; preds = %if.end5, %unwrap.ok
-  %q9 = load i32, ptr %q, align 4
-  ret i32 %q9
+  %q12 = load i32, ptr %q, align 4
+  ret i32 %q12
 
 if.then4:                                         ; preds = %if.then
   call void @exit(i64 107)
@@ -26075,6 +26082,10 @@ if.end5:                                          ; preds = %if.then4, %if.then
   %as.sext = sext i32 %q8 to i64
   %add = add i64 %as.sext, 1
   store i64 %add, ptr @io_poller_fd, align 8
+  %q9 = load i32, ptr %q, align 4
+  %call10 = call i32 @scaly_eio_completions(i32 %q9)
+  %eq11 = icmp eq i32 %call10, 1
+  store i1 %eq11, ptr @io_completions, align 1
   br label %if.end
 }
 
@@ -26474,15 +26485,15 @@ if.then5:                                         ; preds = %if.end2
 
 if.end6:                                          ; preds = %if.end2
   %as.inttoptr7 = inttoptr i64 %deref to ptr
-  %watched = getelementptr inbounds nuw %_Z7IoWatch, ptr %as.inttoptr7, i32 0, i32 0
+  %watched = getelementptr inbounds nuw %_Z7IoWatch, ptr %as.inttoptr7, i32 0, i32 2
   store i1 false, ptr %watched, align 1
-  %readable = getelementptr inbounds nuw %_Z7IoWatch, ptr %as.inttoptr7, i32 0, i32 1
+  %readable = getelementptr inbounds nuw %_Z7IoWatch, ptr %as.inttoptr7, i32 0, i32 3
   store i1 true, ptr %readable, align 1
-  %writable = getelementptr inbounds nuw %_Z7IoWatch, ptr %as.inttoptr7, i32 0, i32 2
+  %writable = getelementptr inbounds nuw %_Z7IoWatch, ptr %as.inttoptr7, i32 0, i32 4
   store i1 true, ptr %writable, align 1
-  %reader = getelementptr inbounds nuw %_Z7IoWatch, ptr %as.inttoptr7, i32 0, i32 3
+  %reader = getelementptr inbounds nuw %_Z7IoWatch, ptr %as.inttoptr7, i32 0, i32 5
   store ptr null, ptr %reader, align 8
-  %writer = getelementptr inbounds nuw %_Z7IoWatch, ptr %as.inttoptr7, i32 0, i32 4
+  %writer = getelementptr inbounds nuw %_Z7IoWatch, ptr %as.inttoptr7, i32 0, i32 6
   store ptr null, ptr %writer, align 8
   ret void
 }
@@ -26690,16 +26701,20 @@ if.end18:                                         ; preds = %if.then17, %while.e
 if.then30:                                        ; preds = %if.end
   %load.struct32 = load %_Z9Scheduler, ptr %global.load, align 8
   %host33 = extractvalue %_Z9Scheduler %load.struct32, 0
-  %call34 = call ptr @_ZN4Page8allocateEmm(ptr %host33, i64 ptrtoint (ptr getelementptr (%_Z7IoWatch, ptr null, i32 1) to i64), i64 8)
-  %watched = getelementptr inbounds nuw %_Z7IoWatch, ptr %call34, i32 0, i32 0
+  %call34 = call ptr @_ZN4Page8allocateEmm(ptr %host33, i64 ptrtoint (ptr getelementptr (%_Z7IoWatch, ptr null, i32 1) to i64), i64 16)
+  %recv_result = getelementptr inbounds nuw %_Z7IoWatch, ptr %call34, i32 0, i32 0
+  store i64 0, ptr %recv_result, align 8
+  %send_result = getelementptr inbounds nuw %_Z7IoWatch, ptr %call34, i32 0, i32 1
+  store i64 0, ptr %send_result, align 8
+  %watched = getelementptr inbounds nuw %_Z7IoWatch, ptr %call34, i32 0, i32 2
   store i1 false, ptr %watched, align 1
-  %readable = getelementptr inbounds nuw %_Z7IoWatch, ptr %call34, i32 0, i32 1
+  %readable = getelementptr inbounds nuw %_Z7IoWatch, ptr %call34, i32 0, i32 3
   store i1 true, ptr %readable, align 1
-  %writable = getelementptr inbounds nuw %_Z7IoWatch, ptr %call34, i32 0, i32 2
+  %writable = getelementptr inbounds nuw %_Z7IoWatch, ptr %call34, i32 0, i32 4
   store i1 true, ptr %writable, align 1
-  %reader = getelementptr inbounds nuw %_Z7IoWatch, ptr %call34, i32 0, i32 3
+  %reader = getelementptr inbounds nuw %_Z7IoWatch, ptr %call34, i32 0, i32 5
   store ptr null, ptr %reader, align 8
-  %writer = getelementptr inbounds nuw %_Z7IoWatch, ptr %call34, i32 0, i32 4
+  %writer = getelementptr inbounds nuw %_Z7IoWatch, ptr %call34, i32 0, i32 6
   store ptr null, ptr %writer, align 8
   %as.ptrtoint35 = ptrtoint ptr %call34 to i64
   store i64 %as.ptrtoint35, ptr %as.inttoptr, align 8
@@ -26709,6 +26724,37 @@ if.end31:                                         ; preds = %if.then30, %if.end
   %deref36 = load i64, ptr %as.inttoptr, align 8
   %as.inttoptr37 = inttoptr i64 %deref36 to ptr
   ret ptr %as.inttoptr37
+}
+
+define linkonce_odr ptr @_ZN2Io17completion_streamE3i32(i32 %0) {
+entry:
+  %global.load = load ptr, ptr @current_scheduler, align 8
+  %eq = icmp eq ptr %global.load, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret ptr null
+
+if.end:                                           ; preds = %entry
+  %global.load1 = load ptr, ptr @current_task, align 8
+  %eq2 = icmp eq ptr %global.load1, null
+  br i1 %eq2, label %if.then3, label %if.end4
+
+if.then3:                                         ; preds = %if.end
+  ret ptr null
+
+if.end4:                                          ; preds = %if.end
+  %call = call i32 @_ZN2Io11ensure_pollEv()
+  %global.load5 = load i1, ptr @io_completions, align 1
+  %eq6 = icmp eq i1 %global.load5, false
+  br i1 %eq6, label %if.then7, label %if.end8
+
+if.then7:                                         ; preds = %if.end4
+  ret ptr null
+
+if.end8:                                          ; preds = %if.end4
+  %call9 = call ptr @_ZN2Io8watch_ofE3i32(i32 %0)
+  ret ptr %call9
 }
 
 define linkonce_odr ptr @_ZN2Io12watch_streamEPN4scaly6memory4PageE3i32(ptr %0, i32 %1) {
@@ -26735,7 +26781,7 @@ if.then4:                                         ; preds = %if.end
 if.end5:                                          ; preds = %if.end
   %call = call ptr @_ZN2Io8watch_ofE3i32(i32 %1)
   %load.struct = load %_Z7IoWatch, ptr %call, align 8
-  %watched = extractvalue %_Z7IoWatch %load.struct, 0
+  %watched = extractvalue %_Z7IoWatch %load.struct, 2
   %eq6 = icmp eq i1 %watched, false
   br i1 %eq6, label %if.then7, label %if.end8
 
@@ -26761,11 +26807,11 @@ if.then14:                                        ; preds = %if.end13
   br label %if.end15
 
 if.end15:                                         ; preds = %if.then14, %if.end13
-  %watched16 = getelementptr inbounds nuw %_Z7IoWatch, ptr %call, i32 0, i32 0
+  %watched16 = getelementptr inbounds nuw %_Z7IoWatch, ptr %call, i32 0, i32 2
   store i1 true, ptr %watched16, align 1
-  %readable = getelementptr inbounds nuw %_Z7IoWatch, ptr %call, i32 0, i32 1
+  %readable = getelementptr inbounds nuw %_Z7IoWatch, ptr %call, i32 0, i32 3
   store i1 true, ptr %readable, align 1
-  %writable = getelementptr inbounds nuw %_Z7IoWatch, ptr %call, i32 0, i32 2
+  %writable = getelementptr inbounds nuw %_Z7IoWatch, ptr %call, i32 0, i32 4
   store i1 true, ptr %writable, align 1
   br label %if.end8
 }
@@ -26784,12 +26830,12 @@ unwrap.ok:                                        ; preds = %entry
   br i1 %1, label %if.then, label %if.else
 
 if.then:                                          ; preds = %unwrap.ok
-  %writer = getelementptr inbounds nuw %_Z7IoWatch, ptr %0, i32 0, i32 4
+  %writer = getelementptr inbounds nuw %_Z7IoWatch, ptr %0, i32 0, i32 6
   store ptr %global.load, ptr %writer, align 8
   br label %if.end
 
 if.else:                                          ; preds = %unwrap.ok
-  %reader = getelementptr inbounds nuw %_Z7IoWatch, ptr %0, i32 0, i32 3
+  %reader = getelementptr inbounds nuw %_Z7IoWatch, ptr %0, i32 0, i32 5
   store ptr %global.load, ptr %reader, align 8
   br label %if.end
 
@@ -26843,41 +26889,69 @@ while.exit:                                       ; preds = %while.cond
 
 define linkonce_odr i64 @_ZN2Io11read_streamE3i32Pvm(i32 %0, ptr %1, i64 %2) {
 entry:
-  %call = call ptr @_ZN2Io12watch_streamEPN4scaly6memory4PageE3i32(ptr null, i32 %0)
-  %eq = icmp eq ptr %call, null
-  br i1 %eq, label %if.then, label %if.end
+  %call = call ptr @_ZN2Io17completion_streamE3i32(i32 %0)
+  %ne = icmp ne ptr %call, null
+  br i1 %ne, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %call1 = call i64 @_ZN2Io4readE3i32Pvm(i32 %0, ptr %1, i64 %2)
-  ret i64 %call1
+  %call1 = call i32 @_ZN2Io11ensure_pollEv()
+  %call2 = call i32 @scaly_eio_submit_recv(i32 %call1, i32 %0, ptr %1, i64 %2, ptr %call)
+  %ne3 = icmp ne i32 %call2, 0
+  br i1 %ne3, label %if.then4, label %if.end5
 
 if.end:                                           ; preds = %entry
+  %call8 = call ptr @_ZN2Io12watch_streamEPN4scaly6memory4PageE3i32(ptr null, i32 %0)
+  %eq = icmp eq ptr %call8, null
+  br i1 %eq, label %if.then9, label %if.end10
+
+if.then4:                                         ; preds = %if.then
+  call void @exit(i64 107)
+  br label %if.end5
+
+if.end5:                                          ; preds = %if.then4, %if.then
+  call void @_ZN2Io10park_watchER7IoWatchb(ptr %call, i1 false)
+  %load.struct = load %_Z7IoWatch, ptr %call, align 8
+  %recv_result = extractvalue %_Z7IoWatch %load.struct, 0
+  %lt = icmp slt i64 %recv_result, 0
+  br i1 %lt, label %if.then6, label %if.end7
+
+if.then6:                                         ; preds = %if.end5
+  ret i64 -1
+
+if.end7:                                          ; preds = %if.end5
+  ret i64 %recv_result
+
+if.then9:                                         ; preds = %if.end
+  %call11 = call i64 @_ZN2Io4readE3i32Pvm(i32 %0, ptr %1, i64 %2)
+  ret i64 %call11
+
+if.end10:                                         ; preds = %if.end
   br label %repeat.body
 
-repeat.body:                                      ; preds = %if.end3, %if.end
-  %load.struct = load %_Z7IoWatch, ptr %call, align 8
-  %readable = extractvalue %_Z7IoWatch %load.struct, 1
-  br i1 %readable, label %if.then2, label %if.end3
+repeat.body:                                      ; preds = %if.end14, %if.end10
+  %load.struct12 = load %_Z7IoWatch, ptr %call8, align 8
+  %readable = extractvalue %_Z7IoWatch %load.struct12, 3
+  br i1 %readable, label %if.then13, label %if.end14
 
 repeat.exit:                                      ; No predecessors!
   ret i64 0
 
-if.then2:                                         ; preds = %repeat.body
-  %call4 = call i64 @scaly_eio_read(i32 %0, ptr %1, i64 %2)
-  %ne = icmp ne i64 %call4, -2
-  br i1 %ne, label %if.then5, label %if.end6
+if.then13:                                        ; preds = %repeat.body
+  %call15 = call i64 @scaly_eio_read(i32 %0, ptr %1, i64 %2)
+  %ne16 = icmp ne i64 %call15, -2
+  br i1 %ne16, label %if.then17, label %if.end18
 
-if.end3:                                          ; preds = %if.end6, %repeat.body
-  call void @_ZN2Io10park_watchER7IoWatchb(ptr %call, i1 false)
+if.end14:                                         ; preds = %if.end18, %repeat.body
+  call void @_ZN2Io10park_watchER7IoWatchb(ptr %call8, i1 false)
   br label %repeat.body
 
-if.then5:                                         ; preds = %if.then2
-  ret i64 %call4
+if.then17:                                        ; preds = %if.then13
+  ret i64 %call15
 
-if.end6:                                          ; preds = %if.then2
-  %readable7 = getelementptr inbounds nuw %_Z7IoWatch, ptr %call, i32 0, i32 1
-  store i1 false, ptr %readable7, align 1
-  br label %if.end3
+if.end18:                                         ; preds = %if.then13
+  %readable19 = getelementptr inbounds nuw %_Z7IoWatch, ptr %call8, i32 0, i32 3
+  store i1 false, ptr %readable19, align 1
+  br label %if.end14
 }
 
 define linkonce_odr i1 @_ZN2Io13tcp_write_allE3i32Pvm(i32 %0, ptr %1, i64 %2) {
@@ -26917,71 +26991,120 @@ if.end:                                           ; preds = %while.body
 
 define linkonce_odr i1 @_ZN2Io16write_stream_allE3i32Pvm(i32 %0, ptr %1, i64 %2) {
 entry:
-  %done = alloca i64, align 8
-  %call = call ptr @_ZN2Io12watch_streamEPN4scaly6memory4PageE3i32(ptr null, i32 %0)
-  %eq = icmp eq ptr %call, null
-  br i1 %eq, label %if.then, label %if.end
+  %sent = alloca i64, align 8
+  %call = call ptr @_ZN2Io17completion_streamE3i32(i32 %0)
+  %ne = icmp ne ptr %call, null
+  br i1 %ne, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %call1 = call i1 @_ZN2Io13tcp_write_allE3i32Pvm(i32 %0, ptr %1, i64 %2)
-  ret i1 %call1
-
-if.end:                                           ; preds = %entry
-  store i64 0, ptr %done, align 1
+  %call1 = call i32 @_ZN2Io11ensure_pollEv()
+  store i64 0, ptr %sent, align 1
   br label %while.cond
 
-while.cond:                                       ; preds = %if.end5, %if.end
-  %done2 = load i64, ptr %done, align 8
-  %lt = icmp ult i64 %done2, %2
+if.end:                                           ; preds = %entry
+  %call13 = call ptr @_ZN2Io12watch_streamEPN4scaly6memory4PageE3i32(ptr null, i32 %0)
+  %eq = icmp eq ptr %call13, null
+  br i1 %eq, label %if.then14, label %if.end15
+
+while.cond:                                       ; preds = %if.end10, %if.then
+  %sent2 = load i64, ptr %sent, align 8
+  %lt = icmp ult i64 %sent2, %2
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %load.struct = load %_Z7IoWatch, ptr %call, align 8
-  %writable = extractvalue %_Z7IoWatch %load.struct, 2
-  %eq3 = icmp eq i1 %writable, false
-  br i1 %eq3, label %if.then4, label %if.else
+  %as.ptrtoint = ptrtoint ptr %1 to i64
+  %sent3 = load i64, ptr %sent, align 8
+  %add = add i64 %as.ptrtoint, %sent3
+  %as.inttoptr = inttoptr i64 %add to ptr
+  %sent4 = load i64, ptr %sent, align 8
+  %sub = sub i64 %2, %sent4
+  %call5 = call i32 @scaly_eio_submit_send(i32 %call1, i32 %0, ptr %as.inttoptr, i64 %sub, ptr %call)
+  %ne6 = icmp ne i32 %call5, 0
+  br i1 %ne6, label %if.then7, label %if.end8
 
 while.exit:                                       ; preds = %while.cond
   ret i1 true
 
-if.then4:                                         ; preds = %while.body
+if.then7:                                         ; preds = %while.body
+  call void @exit(i64 107)
+  br label %if.end8
+
+if.end8:                                          ; preds = %if.then7, %while.body
   call void @_ZN2Io10park_watchER7IoWatchb(ptr %call, i1 true)
-  br label %if.end5
+  %load.struct = load %_Z7IoWatch, ptr %call, align 8
+  %send_result = extractvalue %_Z7IoWatch %load.struct, 1
+  %le = icmp sle i64 %send_result, 0
+  br i1 %le, label %if.then9, label %if.end10
 
-if.else:                                          ; preds = %while.body
-  %as.ptrtoint = ptrtoint ptr %1 to i64
-  %done6 = load i64, ptr %done, align 8
-  %add = add i64 %as.ptrtoint, %done6
-  %as.inttoptr = inttoptr i64 %add to ptr
-  %done7 = load i64, ptr %done, align 8
-  %sub = sub i64 %2, %done7
-  %call8 = call i64 @scaly_eio_tcp_write(i32 %0, ptr %as.inttoptr, i64 %sub)
-  %eq9 = icmp eq i64 %call8, -2
-  br i1 %eq9, label %if.then10, label %if.else11
-
-if.end5:                                          ; preds = %if.end12, %if.then4
-  br label %while.cond
-
-if.then10:                                        ; preds = %if.else
-  %writable13 = getelementptr inbounds nuw %_Z7IoWatch, ptr %call, i32 0, i32 2
-  store i1 false, ptr %writable13, align 1
-  br label %if.end12
-
-if.else11:                                        ; preds = %if.else
-  %le = icmp sle i64 %call8, 0
-  br i1 %le, label %if.then14, label %if.end15
-
-if.end12:                                         ; preds = %if.end15, %if.then10
-  br label %if.end5
-
-if.then14:                                        ; preds = %if.else11
+if.then9:                                         ; preds = %if.end8
   ret i1 false
 
-if.end15:                                         ; preds = %if.else11
-  %done16 = load i64, ptr %done, align 8
-  %add17 = add i64 %done16, %call8
-  store i64 %add17, ptr %done, align 1
-  br label %if.end12
+if.end10:                                         ; preds = %if.end8
+  %sent11 = load i64, ptr %sent, align 8
+  %add12 = add i64 %sent11, %send_result
+  store i64 %add12, ptr %sent, align 1
+  br label %while.cond
+
+if.then14:                                        ; preds = %if.end
+  %call16 = call i1 @_ZN2Io13tcp_write_allE3i32Pvm(i32 %0, ptr %1, i64 %2)
+  ret i1 %call16
+
+if.end15:                                         ; preds = %if.end
+  store i64 0, ptr %sent, align 1
+  br label %while.cond17
+
+while.cond17:                                     ; preds = %if.end24, %if.end15
+  %done = load i64, ptr %sent, align 8
+  %lt20 = icmp ult i64 %done, %2
+  br i1 %lt20, label %while.body18, label %while.exit19
+
+while.body18:                                     ; preds = %while.cond17
+  %load.struct21 = load %_Z7IoWatch, ptr %call13, align 8
+  %writable = extractvalue %_Z7IoWatch %load.struct21, 4
+  %eq22 = icmp eq i1 %writable, false
+  br i1 %eq22, label %if.then23, label %if.else
+
+while.exit19:                                     ; preds = %while.cond17
+  ret i1 true
+
+if.then23:                                        ; preds = %while.body18
+  call void @_ZN2Io10park_watchER7IoWatchb(ptr %call13, i1 true)
+  br label %if.end24
+
+if.else:                                          ; preds = %while.body18
+  %as.ptrtoint25 = ptrtoint ptr %1 to i64
+  %done26 = load i64, ptr %sent, align 8
+  %add27 = add i64 %as.ptrtoint25, %done26
+  %as.inttoptr28 = inttoptr i64 %add27 to ptr
+  %done29 = load i64, ptr %sent, align 8
+  %sub30 = sub i64 %2, %done29
+  %call31 = call i64 @scaly_eio_tcp_write(i32 %0, ptr %as.inttoptr28, i64 %sub30)
+  %eq32 = icmp eq i64 %call31, -2
+  br i1 %eq32, label %if.then33, label %if.else34
+
+if.end24:                                         ; preds = %if.end35, %if.then23
+  br label %while.cond17
+
+if.then33:                                        ; preds = %if.else
+  %writable36 = getelementptr inbounds nuw %_Z7IoWatch, ptr %call13, i32 0, i32 4
+  store i1 false, ptr %writable36, align 1
+  br label %if.end35
+
+if.else34:                                        ; preds = %if.else
+  %le37 = icmp sle i64 %call31, 0
+  br i1 %le37, label %if.then38, label %if.end39
+
+if.end35:                                         ; preds = %if.end39, %if.then33
+  br label %if.end24
+
+if.then38:                                        ; preds = %if.else34
+  ret i1 false
+
+if.end39:                                         ; preds = %if.else34
+  %done40 = load i64, ptr %sent, align 8
+  %add41 = add i64 %done40, %call31
+  store i64 %add41, ptr %sent, align 1
+  br label %if.end35
 }
 
 define linkonce_odr i64 @_ZN2Io5writeE3i32Pvm(i32 %0, ptr %1, i64 %2) {
@@ -28073,28 +28196,28 @@ while.body:                                       ; preds = %while.cond
   %add = add i64 %as.ptrtoint, %mul
   %as.inttoptr = inttoptr i64 %add to ptr
   %deref = load i64, ptr %as.inttoptr, align 8
-  %and = and i64 %deref, 4
-  %ne = icmp ne i64 %and, 0
-  br i1 %ne, label %if.then6, label %if.else
+  %gt = icmp ugt i64 %deref, 1
+  br i1 %gt, label %if.then6, label %if.end7
 
 while.exit:                                       ; preds = %while.cond
   ret void
 
 if.then6:                                         ; preds = %while.body
-  call void @_ZN9Scheduler19deliver_watch_eventEm(i64 %deref)
-  br label %if.end7
+  %and = and i64 %deref, 7
+  %ne = icmp ne i64 %and, 0
+  br i1 %ne, label %if.then8, label %if.else
 
-if.else:                                          ; preds = %while.body
-  %gt = icmp ugt i64 %deref, 1
-  br i1 %gt, label %if.then8, label %if.end9
-
-if.end7:                                          ; preds = %if.end9, %if.then6
+if.end7:                                          ; preds = %if.end9, %while.body
   %i15 = load i64, ptr %i, align 8
   %add16 = add i64 %i15, 1
   store i64 %add16, ptr %i, align 1
   br label %while.cond
 
-if.then8:                                         ; preds = %if.else
+if.then8:                                         ; preds = %if.then6
+  call void @_ZN9Scheduler19deliver_watch_eventEm(i64 %deref)
+  br label %if.end9
+
+if.else:                                          ; preds = %if.then6
   %as.inttoptr10 = inttoptr i64 %deref to ptr
   call void @_ZN9Scheduler7enqueueER9SchedTask(ptr %as.inttoptr10)
   %load.struct = load %_Z9Scheduler, ptr %global.load, align 8
@@ -28109,7 +28232,7 @@ if.then8:                                         ; preds = %if.else
   store i64 %sub13, ptr %io_waiting14, align 8
   br label %if.end9
 
-if.end9:                                          ; preds = %if.then8, %if.else
+if.end9:                                          ; preds = %if.else, %if.then8
   br label %if.end7
 }
 

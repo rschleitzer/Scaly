@@ -209,6 +209,26 @@ int scaly_eio_watch(int q, int fd, void* tag)
     return -2;
 }
 
+/* The completion path (io_uring, linux): not in this emulation either —
+ * IOCP is completion-based, but the runtime above speaks readiness here. */
+int scaly_eio_submit_recv(int q, int fd, void* buf, size_t count, void* tag)
+{
+    (void)q; (void)fd; (void)buf; (void)count; (void)tag;
+    return -2;
+}
+
+int scaly_eio_submit_send(int q, int fd, void* buf, size_t count, void* tag)
+{
+    (void)q; (void)fd; (void)buf; (void)count; (void)tag;
+    return -2;
+}
+
+int scaly_eio_completions(int q)
+{
+    (void)q;
+    return 0;
+}
+
 int scaly_eio_arm(int q, int fd, int for_write, void* tag)
 {
     HANDLE port = (HANDLE)(intptr_t)q;

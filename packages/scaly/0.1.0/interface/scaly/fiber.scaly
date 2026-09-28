@@ -324,6 +324,13 @@ function scaly_eio_arm(q: i32, fd: i32, for_write: i32, tag: pointer[void]) retu
 ; its events come back as tag|4 with bit 0 (readable) and bit 1 (writable).
 ; -2 where the backend cannot (the Windows readiness emulation).
 function scaly_eio_watch(q: i32, fd: i32, tag: pointer[void]) returns i32 extern
+; The completion path of an io_uring poller (linux): queue a receive or a
+; send on fd; it comes back as tag|9 / tag|10 with the result stored at
+; tag+0 / tag+8 (an IoWatch's recv_result / send_result). -2 where the
+; poller is not a ring. scaly_eio_completions: 1 when it is.
+function scaly_eio_submit_recv(q: i32, fd: i32, buf: pointer[void], count: size_t, tag: pointer[void]) returns i32 extern
+function scaly_eio_submit_send(q: i32, fd: i32, buf: pointer[void], count: size_t, tag: pointer[void]) returns i32 extern
+function scaly_eio_completions(q: i32) returns i32 extern
 function scaly_eio_wait(q: i32, tags: pointer[pointer[void]], max: i32) returns i32 extern
 ; Like scaly_eio_wait but returns 0 if ms elapses before any event (the
 ; bounded wait behind cross-thread deadlock detection, M2.4 residual).
@@ -592,6 +599,10 @@ mutable io_wake_fd: int linked
 ; streams stay on the oneshot scaly_eio_arm.
 mutable io_watch_unsupported: bool linked
 
+; Set when this thread's poller is an io_uring (Io.ensure_poll): its
+; streams queue their receives and sends (Io.read_stream).
+mutable io_completions: bool linked
+
 ; This thread's default task pool (milestone 3.3, pointer[TaskPool];
 ; null until the first TaskPool.default_pool call — the promoted-for
 ; dispatch target). Thread-local like the I/O pool: the pool pointer
@@ -724,8 +735,16 @@ function fiber_guard_hit(addr: pointer[void]) @ret_nonlocal true @deep true retu
 ; would wait for good. The record belongs to the fd NUMBER on its
 ; scheduler and serves the next descriptor of that number; TcpStream.close
 ; forgets the registration, as the kernel drops a closed descriptor.
+;
+; On an io_uring poller the same record carries the COMPLETION path: the
+; stream's receive or send is queued with the record as its tag, the task
+; parks, and the shim stores the result in the first two words — which is
+; why they come first, and why the record is aligned to 16 (bit 3 marks a
+; completion's tag, bits 0/1 its direction).
 define IoWatch
 (
+    var recv_result: i64
+    var send_result: i64
     var watched: bool
     var readable: bool
     var writable: bool
@@ -889,10 +908,13 @@ define Scheduler
     ; Move every task blocked on t back to the ready queue.
     procedure wake_waiters(mutable t: ref[SchedTask]) @deep true linked
 
-    ; A watched stream's edge (IoWatch; the tag is the record | 4 with bit
-    ; 0 readable, bit 1 writable): remember the direction and wake the task
-    ; parked on it. An edge for a record whose descriptor was closed and
-    ; reused meanwhile only wakes a task that finds EAGAIN and parks again.
+    ; A watched stream's edge or a stream's completion (IoWatch; the tag is
+    ; the record | 4 for an edge, | 8 for a completion, with bit 0 for the
+    ; read direction and bit 1 for the write direction): remember the
+    ; direction and wake the task parked on it. An edge for a record whose
+    ; descriptor was closed and reused meanwhile only wakes a task that
+    ; finds EAGAIN and parks again; a completion's result is already in the
+    ; record (the shim stored it).
     procedure deliver_watch_event(raw: size_t) @deep true linked
 
     ; Block in the poller until at least one armed fd fires, then wake
@@ -1038,6 +1060,10 @@ define Io
     ; (the table grows by doubling on the scheduler's page; records are
     ; reused for the next descriptor of the same number).
     procedure watch_of(fd: i32) @ret_nonlocal true @deep true returns ref[IoWatch] linked
+
+    ; fd's IoWatch for the completion path — or null unless this is a task
+    ; on a scheduler whose poller is an io_uring.
+    procedure completion_stream(fd: i32) @ret_nonlocal true @deep true returns ref[IoWatch]? io linked
 
     ; fd's IoWatch, registered with the poller — or null where a stream is
     ; not watched: outside a task (the main context and a thread without a

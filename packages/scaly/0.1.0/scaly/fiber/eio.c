@@ -244,22 +244,365 @@ int scaly_eio_wake_close(int q, int w)
     return kevent(q, &ev, 1, 0, 0, 0) < 0 ? -1 : 0;
 }
 
+/* The completion path (io_uring, linux): not on kqueue. */
+int scaly_eio_submit_recv(int q, int fd, void* buf, size_t count, void* tag)
+{
+    (void)q; (void)fd; (void)buf; (void)count; (void)tag;
+    return -2;
+}
+
+int scaly_eio_submit_send(int q, int fd, void* buf, size_t count, void* tag)
+{
+    (void)q; (void)fd; (void)buf; (void)count; (void)tag;
+    return -2;
+}
+
+int scaly_eio_completions(int q)
+{
+    (void)q;
+    return 0;
+}
+
 #else
 
+#include <linux/io_uring.h>
+#include <poll.h>
 #include <sys/epoll.h>
+#include <sys/eventfd.h>
+#include <sys/mman.h>
+#include <sys/syscall.h>
+
+/* ---- io_uring (2026-09-28, ROADMAP-http.md) ------------------------------
+ *
+ * The poller is an io_uring when the kernel offers one this shim can use
+ * (IORING_FEAT_EXT_ARG, 5.11: a wait with a timeout; NODROP; SINGLE_MMAP)
+ * and nothing refuses it (a container's default seccomp profile does:
+ * io_uring_setup fails with EPERM) — else, and with SCALY_IO_URING=0,
+ * epoll as before. Raw system calls, no liburing: one C file stays one C
+ * file.
+ *
+ * The contract of the functions below does not change: arm is a oneshot
+ * IORING_OP_POLL_ADD reporting its tag, wait is ONE io_uring_enter that
+ * submits every queued entry and waits for completions, the wake handle
+ * is an eventfd polled by the ring. What the ring adds is the COMPLETION
+ * model a stream uses (scaly_eio_submit_recv/_send, Io.read_stream): the
+ * receive or send itself is queued, the task parks, and the result lands
+ * in the tag's record — so every connection of a scheduler shares one
+ * system call per round, where epoll costs a read and a write each.
+ *
+ * A completion's tag is a record aligned to 16 whose first two words take
+ * the result (recv at +0, send at +8); it comes back with bit 3 set AND
+ * bit 0 (recv) or bit 1 (send) — a task record's low three bits are clear
+ * but bit 3 may be set, so bit 3 alone marks nothing. The wake poll uses
+ * the reserved user_data SCALY_RING_WAKE (7), which no other tag can have
+ * (the sentinels are 0 and 1, a completion is at least 16 + 9). */
+
+#define SCALY_EIO_COMPLETION 8u
+#define SCALY_RING_WAKE 7ull
+#define SCALY_RING_ENTRIES 4096u
+#define SCALY_RING_MAX 65536
+
+struct scaly_ring
+{
+    int fd;
+    unsigned entries;
+    unsigned *sq_head, *sq_tail, *sq_mask, *sq_array;
+    unsigned *cq_head, *cq_tail, *cq_mask;
+    struct io_uring_sqe* sqes;
+    struct io_uring_cqe* cqes;
+    void* ring_ptr;
+    size_t ring_sz, sqes_sz;
+    unsigned to_submit;
+    int wake_fd;
+    void* wake_tag;
+};
+
+/* One slot per ring descriptor. A ring is created, used and closed by ONE
+ * thread (its scheduler's); cross-thread wakes write the eventfd and never
+ * touch the ring, so a slot is never read by another thread. */
+static struct scaly_ring* scaly_rings[SCALY_RING_MAX];
+
+static struct scaly_ring* scaly_ring_of(int q)
+{
+    return (q >= 0 && q < SCALY_RING_MAX) ? scaly_rings[q] : 0;
+}
+
+static int scaly_ring_create(void)
+{
+    struct io_uring_params p;
+    struct scaly_ring* r;
+    const char* env = getenv("SCALY_IO_URING");
+    char* base;
+    int fd;
+    if (env != NULL && env[0] == '0')
+        return -1;
+    /* One thread submits and waits (a scheduler's): completions are then
+     * run in a batch when it waits (DEFER_TASKRUN, 6.1) instead of
+     * interrupting it one by one. A kernel without the flags refuses
+     * them with EINVAL; the ring is then made without. */
+    memset(&p, 0, sizeof p);
+    p.flags = IORING_SETUP_SINGLE_ISSUER | IORING_SETUP_DEFER_TASKRUN;
+    fd = (int)syscall(__NR_io_uring_setup, SCALY_RING_ENTRIES, &p);
+    if (fd < 0 && errno == EINVAL)
+    {
+        memset(&p, 0, sizeof p);
+        fd = (int)syscall(__NR_io_uring_setup, SCALY_RING_ENTRIES, &p);
+    }
+    if (fd < 0)
+        return -1;
+    if (fd >= SCALY_RING_MAX
+        || !(p.features & IORING_FEAT_EXT_ARG)
+        || !(p.features & IORING_FEAT_NODROP)
+        || !(p.features & IORING_FEAT_SINGLE_MMAP))
+    {
+        close(fd);
+        return -1;
+    }
+    r = (struct scaly_ring*)calloc(1, sizeof *r);
+    if (r == NULL)
+    {
+        close(fd);
+        return -1;
+    }
+    r->ring_sz = p.sq_off.array + p.sq_entries * sizeof(unsigned);
+    if (p.cq_off.cqes + p.cq_entries * sizeof(struct io_uring_cqe) > r->ring_sz)
+        r->ring_sz = p.cq_off.cqes + p.cq_entries * sizeof(struct io_uring_cqe);
+    r->ring_ptr = mmap(0, r->ring_sz, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_POPULATE,
+                       fd, IORING_OFF_SQ_RING);
+    r->sqes_sz = p.sq_entries * sizeof(struct io_uring_sqe);
+    r->sqes = (struct io_uring_sqe*)mmap(0, r->sqes_sz, PROT_READ | PROT_WRITE,
+                                         MAP_SHARED | MAP_POPULATE, fd, IORING_OFF_SQES);
+    if (r->ring_ptr == MAP_FAILED || (void*)r->sqes == MAP_FAILED)
+    {
+        if (r->ring_ptr != MAP_FAILED)
+            munmap(r->ring_ptr, r->ring_sz);
+        if ((void*)r->sqes != MAP_FAILED)
+            munmap(r->sqes, r->sqes_sz);
+        free(r);
+        close(fd);
+        return -1;
+    }
+    base = (char*)r->ring_ptr;
+    r->fd = fd;
+    r->entries = p.sq_entries;
+    r->sq_head = (unsigned*)(base + p.sq_off.head);
+    r->sq_tail = (unsigned*)(base + p.sq_off.tail);
+    r->sq_mask = (unsigned*)(base + p.sq_off.ring_mask);
+    r->sq_array = (unsigned*)(base + p.sq_off.array);
+    r->cq_head = (unsigned*)(base + p.cq_off.head);
+    r->cq_tail = (unsigned*)(base + p.cq_off.tail);
+    r->cq_mask = (unsigned*)(base + p.cq_off.ring_mask);
+    r->cqes = (struct io_uring_cqe*)(base + p.cq_off.cqes);
+    r->wake_fd = -1;
+    scaly_rings[fd] = r;
+    return fd;
+}
+
+/* Submit what is queued; with wait, also wait for min_complete
+ * completions, at most ms milliseconds (ms < 0: no bound). 0 on success
+ * and on an expired timeout, -1 on a hard error. */
+static int scaly_ring_enter(struct scaly_ring* r, unsigned min_complete, int wait, int ms)
+{
+    struct io_uring_getevents_arg arg;
+    struct __kernel_timespec ts;
+    unsigned flags = 0;
+    void* argp = 0;
+    size_t argsz = 0;
+    int rc;
+    if (wait)
+    {
+        flags |= IORING_ENTER_GETEVENTS;
+        if (ms >= 0)
+        {
+            ts.tv_sec = ms / 1000;
+            ts.tv_nsec = (long long)(ms % 1000) * 1000000LL;
+            memset(&arg, 0, sizeof arg);
+            arg.ts = (unsigned long long)(size_t)&ts;
+            flags |= IORING_ENTER_EXT_ARG;
+            argp = &arg;
+            argsz = sizeof arg;
+        }
+    }
+    for (;;)
+    {
+        rc = (int)syscall(__NR_io_uring_enter, r->fd, r->to_submit, wait ? min_complete : 0,
+                          flags, argp, argsz);
+        if (rc >= 0)
+        {
+            r->to_submit -= (unsigned)rc;
+            return 0;
+        }
+        if (errno == EINTR)
+            continue;
+        /* the timeout expired; the completion queue is backed up (NODROP:
+         * nothing is lost, the caller reaps and comes back) */
+        if (errno == ETIME || errno == EBUSY || errno == EAGAIN)
+            return 0;
+        return -1;
+    }
+}
+
+static struct io_uring_sqe* scaly_ring_sqe(struct scaly_ring* r)
+{
+    unsigned tail = *r->sq_tail;
+    unsigned head = __atomic_load_n(r->sq_head, __ATOMIC_ACQUIRE);
+    unsigned idx;
+    struct io_uring_sqe* sqe;
+    if (tail - head >= r->entries)
+    {
+        if (scaly_ring_enter(r, 0, 0, 0) < 0)
+            return 0;
+        head = __atomic_load_n(r->sq_head, __ATOMIC_ACQUIRE);
+        if (tail - head >= r->entries)
+            return 0;
+    }
+    idx = tail & *r->sq_mask;
+    sqe = &r->sqes[idx];
+    memset(sqe, 0, sizeof *sqe);
+    r->sq_array[idx] = idx;
+    return sqe;
+}
+
+static void scaly_ring_commit(struct scaly_ring* r)
+{
+    __atomic_store_n(r->sq_tail, *r->sq_tail + 1, __ATOMIC_RELEASE);
+    r->to_submit++;
+}
+
+static int scaly_ring_poll(struct scaly_ring* r, int fd, unsigned events, unsigned long long ud)
+{
+    struct io_uring_sqe* sqe = scaly_ring_sqe(r);
+    if (sqe == 0)
+        return -1;
+    sqe->opcode = IORING_OP_POLL_ADD;
+    sqe->fd = fd;
+    sqe->poll32_events = events;
+    sqe->user_data = ud;
+    scaly_ring_commit(r);
+    return 0;
+}
+
+static int scaly_ring_wait(struct scaly_ring* r, void** tags, int max, int ms)
+{
+    unsigned head = *r->cq_head;
+    unsigned tail = __atomic_load_n(r->cq_tail, __ATOMIC_ACQUIRE);
+    int out = 0;
+    if (head == tail)
+    {
+        if (scaly_ring_enter(r, 1, 1, ms) < 0)
+            return -1;
+        tail = __atomic_load_n(r->cq_tail, __ATOMIC_ACQUIRE);
+    }
+    else if (r->to_submit > 0 && scaly_ring_enter(r, 0, 1, 0) < 0)
+        return -1;
+    while (head != tail && out < max)
+    {
+        struct io_uring_cqe* c = &r->cqes[head & *r->cq_mask];
+        unsigned long long ud = c->user_data;
+        int res = c->res;
+        head++;
+        if (ud == SCALY_RING_WAKE)
+        {
+            /* the wake eventfd: reset its counter, poll it again */
+            unsigned long long v;
+            if (r->wake_fd >= 0)
+            {
+                while (read(r->wake_fd, &v, sizeof v) > 0)
+                {
+                }
+                scaly_ring_poll(r, r->wake_fd, POLLIN, SCALY_RING_WAKE);
+                tags[out++] = r->wake_tag;
+            }
+        }
+        else if ((ud & SCALY_EIO_COMPLETION) && (ud & (SCALY_EIO_WATCH_READ | SCALY_EIO_WATCH_WRITE)))
+        {
+            /* A completion: bit 3 AND a direction bit. Bit 3 alone is no
+             * mark — a task record (a poll's tag) is only 8-aligned and
+             * may have it set; taking one for a completion wrote the
+             * result 8 bytes into a neighbour on the scheduler's page. */
+            long long* cell = (long long*)(size_t)(ud & ~15ull);
+            cell[(ud & SCALY_EIO_WATCH_WRITE) ? 1 : 0] = res;
+            tags[out++] = (void*)(size_t)ud;
+        }
+        else
+            tags[out++] = (void*)(size_t)ud;
+    }
+    __atomic_store_n(r->cq_head, head, __ATOMIC_RELEASE);
+    return out;
+}
+
+static int scaly_ring_submit_io(int q, int opcode, int fd, void* buf, size_t count, void* tag,
+                                unsigned direction)
+{
+    struct scaly_ring* r = scaly_ring_of(q);
+    struct io_uring_sqe* sqe;
+    if (r == 0)
+        return -2;
+    sqe = scaly_ring_sqe(r);
+    if (sqe == 0)
+        return -1;
+    sqe->opcode = (unsigned char)opcode;
+    sqe->fd = fd;
+    sqe->addr = (unsigned long long)(size_t)buf;
+    sqe->len = (unsigned)(count > 0x7FFFFFFFu ? 0x7FFFFFFFu : count);
+    sqe->msg_flags = opcode == IORING_OP_SEND ? MSG_NOSIGNAL : 0;
+    sqe->user_data = (unsigned long long)(size_t)tag | SCALY_EIO_COMPLETION | direction;
+    scaly_ring_commit(r);
+    return 0;
+}
+
+/* Queue a receive of up to count bytes into buf, reported as tag|9 with the
+ * byte count (0 at end of stream, -errno on an error) at tag+0. -2 when
+ * the poller is not a ring. */
+int scaly_eio_submit_recv(int q, int fd, void* buf, size_t count, void* tag)
+{
+    return scaly_ring_submit_io(q, IORING_OP_RECV, fd, buf, count, tag, SCALY_EIO_WATCH_READ);
+}
+
+/* Queue a send of count bytes, reported as tag|10 with the count sent
+ * (-errno on an error) at tag+8. -2 when the poller is not a ring. */
+int scaly_eio_submit_send(int q, int fd, void* buf, size_t count, void* tag)
+{
+    return scaly_ring_submit_io(q, IORING_OP_SEND, fd, buf, count, tag, SCALY_EIO_WATCH_WRITE);
+}
+
+/* Does the poller take receives and sends (a ring)? 1 or 0. */
+int scaly_eio_completions(int q)
+{
+    return scaly_ring_of(q) != 0;
+}
+
+static void scaly_ring_close(int q)
+{
+    struct scaly_ring* r = scaly_ring_of(q);
+    if (r == 0)
+        return;
+    scaly_rings[q] = 0;
+    munmap(r->sqes, r->sqes_sz);
+    munmap(r->ring_ptr, r->ring_sz);
+    free(r);
+}
+
+/* ---- the poller: a ring, else epoll -------------------------------------- */
 
 int scaly_eio_create(void)
 {
+    int fd = scaly_ring_create();
+    if (fd >= 0)
+        return fd;
     return epoll_create1(0);
 }
 
 /* Watch fd for its whole life, edge-triggered in both directions
  * (EPOLLET, not oneshot): no epoll_ctl per wait. The event reports
- * tag|4 plus the directions that fired (the wait below decodes them). */
+ * tag|4 plus the directions that fired (the wait below decodes them).
+ * -2 on a ring, whose streams take the completion path instead. */
 int scaly_eio_watch(int q, int fd, void* tag)
 {
     struct epoll_event ev;
     int rc;
+    if (scaly_ring_of(q) != 0)
+        return -2;
     ev.events = EPOLLIN | EPOLLOUT | EPOLLRDHUP | EPOLLET;
     ev.data.u64 = (unsigned long long)(size_t)tag | SCALY_EIO_WATCH;
     rc = epoll_ctl(q, EPOLL_CTL_ADD, fd, &ev);
@@ -271,7 +614,10 @@ int scaly_eio_watch(int q, int fd, void* tag)
 int scaly_eio_arm(int q, int fd, int for_write, void* tag)
 {
     struct epoll_event ev;
+    struct scaly_ring* r = scaly_ring_of(q);
     int rc;
+    if (r != 0)
+        return scaly_ring_poll(r, fd, for_write ? POLLOUT : POLLIN, (unsigned long long)(size_t)tag);
     ev.events = (for_write ? EPOLLOUT : EPOLLIN) | EPOLLONESHOT;
     ev.data.ptr = tag;
     rc = epoll_ctl(q, EPOLL_CTL_ADD, fd, &ev);
@@ -285,9 +631,12 @@ int scaly_eio_arm(int q, int fd, int for_write, void* tag)
 static int scaly_eio_wait_ms(int q, void** tags, int max, int ms)
 {
     struct epoll_event evs[SCALY_EIO_MAX_EVENTS];
+    struct scaly_ring* r = scaly_ring_of(q);
     int n, i;
     if (max > SCALY_EIO_MAX_EVENTS)
         max = SCALY_EIO_MAX_EVENTS;
+    if (r != 0)
+        return scaly_ring_wait(r, tags, max, ms);
     do
         n = epoll_wait(q, evs, max, ms);
     while (n < 0 && errno == EINTR);
@@ -317,21 +666,33 @@ int scaly_eio_wait_timeout(int q, void** tags, int max, int ms)
     return scaly_eio_wait_ms(q, tags, max, ms);
 }
 
-/* Cross-thread wake channel (milestone 2.4): an eventfd registered
- * edge-triggered (EPOLLET, NOT oneshot) reporting `tag`. Edge-triggered
- * means each write is reported exactly once and the counter never needs
- * a reset read — a write before or during an epoll_wait completes that
- * wait, writes between waits coalesce into one report. Returns the
- * eventfd (the wake handle scaly_eio_wake writes to), -1 on failure.
+/* Cross-thread wake channel (milestone 2.4): an eventfd reporting `tag`.
+ * Under epoll it is registered edge-triggered (EPOLLET, NOT oneshot): each
+ * write is reported exactly once and the counter never needs a reset read.
+ * On a ring it is polled (POLL_ADD, re-armed and drained at every report,
+ * see scaly_ring_wait). A write before or during a wait completes that
+ * wait, writes between waits coalesce into one report. Returns the eventfd
+ * (the wake handle scaly_eio_wake writes to), -1 on failure.
  * scaly_eio_wake may be called from ANY thread. */
-#include <sys/eventfd.h>
-
 int scaly_eio_wake_create(int q, void* tag)
 {
     struct epoll_event ev;
+    struct scaly_ring* r = scaly_ring_of(q);
     int fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
     if (fd < 0)
         return -1;
+    if (r != 0)
+    {
+        r->wake_fd = fd;
+        r->wake_tag = tag;
+        if (scaly_ring_poll(r, fd, POLLIN, SCALY_RING_WAKE) < 0)
+        {
+            r->wake_fd = -1;
+            close(fd);
+            return -1;
+        }
+        return fd;
+    }
     ev.events = EPOLLIN | EPOLLET;
     ev.data.ptr = tag;
     if (epoll_ctl(q, EPOLL_CTL_ADD, fd, &ev) < 0)
@@ -355,10 +716,15 @@ int scaly_eio_wake(int q, int w)
 
 /* Close the wake channel (milestone 2.5 residual). Shim-owned (rule a):
  * the handle is a real eventfd here — deregister and close it; on
- * darwin it is only a kqueue ident. */
+ * darwin it is only a kqueue ident. A ring's pending poll of it ends
+ * with the ring. */
 int scaly_eio_wake_close(int q, int w)
 {
-    epoll_ctl(q, EPOLL_CTL_DEL, w, 0);
+    struct scaly_ring* r = scaly_ring_of(q);
+    if (r != 0)
+        r->wake_fd = -1;
+    else
+        epoll_ctl(q, EPOLL_CTL_DEL, w, 0);
     return close(w);
 }
 
@@ -371,6 +737,9 @@ int scaly_eio_wake_close(int q, int w)
  * about. The caller (Io.close_poller) must not have to know which. */
 int scaly_eio_close(int q)
 {
+#if !defined(__APPLE__)
+    scaly_ring_close(q);
+#endif
     return close(q);
 }
 

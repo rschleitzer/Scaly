@@ -324,6 +324,13 @@ function scaly_eio_arm(q: i32, fd: i32, for_write: i32, tag: pointer[void]) retu
 ; its events come back as tag|4 with bit 0 (readable) and bit 1 (writable).
 ; -2 where the backend cannot (the Windows readiness emulation).
 function scaly_eio_watch(q: i32, fd: i32, tag: pointer[void]) returns i32 extern
+; The completion path of an io_uring poller (linux): queue a receive or a
+; send on fd; it comes back as tag|9 / tag|10 with the result stored at
+; tag+0 / tag+8 (an IoWatch's recv_result / send_result). -2 where the
+; poller is not a ring. scaly_eio_completions: 1 when it is.
+function scaly_eio_submit_recv(q: i32, fd: i32, buf: pointer[void], count: size_t, tag: pointer[void]) returns i32 extern
+function scaly_eio_submit_send(q: i32, fd: i32, buf: pointer[void], count: size_t, tag: pointer[void]) returns i32 extern
+function scaly_eio_completions(q: i32) returns i32 extern
 function scaly_eio_wait(q: i32, tags: pointer[pointer[void]], max: i32) returns i32 extern
 ; Like scaly_eio_wait but returns 0 if ms elapses before any event (the
 ; bounded wait behind cross-thread deadlock detection, M2.4 residual).
@@ -636,6 +643,10 @@ mutable io_wake_fd: int 0
 ; Set on a thread whose poller refused scaly_eio_watch (Windows): its
 ; streams stay on the oneshot scaly_eio_arm.
 mutable io_watch_unsupported: bool false
+
+; Set when this thread's poller is an io_uring (Io.ensure_poll): its
+; streams queue their receives and sends (Io.read_stream).
+mutable io_completions: bool false
 
 ; This thread's default task pool (milestone 3.3, pointer[TaskPool];
 ; null until the first TaskPool.default_pool call — the promoted-for
@@ -951,8 +962,16 @@ function fiber_guard_hit(addr: pointer[void]) returns i32
 ; would wait for good. The record belongs to the fd NUMBER on its
 ; scheduler and serves the next descriptor of that number; TcpStream.close
 ; forgets the registration, as the kernel drops a closed descriptor.
+;
+; On an io_uring poller the same record carries the COMPLETION path: the
+; stream's receive or send is queued with the record as its tag, the task
+; parks, and the shim stores the result in the first two words — which is
+; why they come first, and why the record is aligned to 16 (bit 3 marks a
+; completion's tag, bits 0/1 its direction).
 define IoWatch
 (
+    var recv_result: i64
+    var send_result: i64
     var watched: bool
     var readable: bool
     var writable: bool
@@ -1391,14 +1410,17 @@ define Scheduler
         set t.waiter: null
     }
 
-    ; A watched stream's edge (IoWatch; the tag is the record | 4 with bit
-    ; 0 readable, bit 1 writable): remember the direction and wake the task
-    ; parked on it. An edge for a record whose descriptor was closed and
-    ; reused meanwhile only wakes a task that finds EAGAIN and parks again.
+    ; A watched stream's edge or a stream's completion (IoWatch; the tag is
+    ; the record | 4 for an edge, | 8 for a completion, with bit 0 for the
+    ; read direction and bit 1 for the write direction): remember the
+    ; direction and wake the task parked on it. An edge for a record whose
+    ; descriptor was closed and reused meanwhile only wakes a task that
+    ; finds EAGAIN and parks again; a completion's result is already in the
+    ; record (the shim stored it).
     procedure deliver_watch_event(raw: size_t)
     {
         let s current_scheduler as ref[Scheduler]
-        let w (raw - (raw & 7)) as pointer[IoWatch]
+        let w (raw - (raw & 15)) as pointer[IoWatch]
         if (raw & 1) <> 0
         {
             set w.readable: true
@@ -1524,7 +1546,9 @@ define Scheduler
                 }
                 else
                 {
-                    if (raw & 4) <> 0
+                    ; a task record is 8-aligned (low 3 bits clear); an
+                    ; IoWatch edge or completion always carries bits 0-2
+                    if (raw & 7) <> 0
                         Scheduler.deliver_watch_event(raw)
                     else
                     {
@@ -1756,6 +1780,7 @@ define Io
                 exit 107
             set s.eio: q
             set io_poller_fd: (q as int) + 1
+            set io_completions: scaly_eio_completions(q) = 1
         }
         q
     }
@@ -1893,7 +1918,9 @@ define Io
         if *slot = 0
         {
             let h s.host
-            let w h.allocate(sizeof IoWatch, 8) as pointer[IoWatch]
+            let w h.allocate(sizeof IoWatch, 16) as pointer[IoWatch]
+            set w.recv_result: 0
+            set w.send_result: 0
             set w.watched: false
             set w.readable: true
             set w.writable: true
@@ -1902,6 +1929,21 @@ define Io
             set *slot: w as size_t
         }
         (*slot) as pointer[IoWatch]
+    }
+
+    ; fd's IoWatch for the completion path — or null unless this is a task
+    ; on a scheduler whose poller is an io_uring.
+    procedure completion_stream(fd: i32) returns ref[IoWatch]?
+    {
+        if current_scheduler = null
+            return null
+        let me current_task as ref[SchedTask]?
+        if me = null
+            return null
+        Io.ensure_poll()
+        if io_completions = false
+            return null
+        Io.watch_of(fd)
     }
 
     ; fd's IoWatch, registered with the poller — or null where a stream is
@@ -1975,6 +2017,18 @@ define Io
     ; (IoWatch) and a wait costs no system call; elsewhere Io.read.
     procedure read_stream(fd: i32, mutable buf: pointer[void], count: size_t) returns i64
     {
+        let c Io.completion_stream(fd)
+        if c <> null
+        {
+            let q Io.ensure_poll()
+            if scaly_eio_submit_recv(q, fd, buf, count, c as pointer[void]) <> 0
+                exit 107
+            Io.park_watch(c, false)
+            let got c.recv_result
+            if got < 0
+                return 0 - 1
+            return got
+        }
         let w Io.watch_stream(fd)
         if w = null
             return Io.read(fd, buf, count)
@@ -1994,6 +2048,24 @@ define Io
     ; Io.tcp_write_all for a TcpStream, watched like read_stream.
     procedure write_stream_all(fd: i32, buf: pointer[void], count: size_t) returns bool
     {
+        let c Io.completion_stream(fd)
+        if c <> null
+        {
+            let q Io.ensure_poll()
+            var sent: size_t 0
+            while sent < count
+            {
+                let p ((buf as size_t) + sent) as pointer[void]
+                if scaly_eio_submit_send(q, fd, p, count - sent, c as pointer[void]) <> 0
+                    exit 107
+                Io.park_watch(c, true)
+                let r c.send_result
+                if r <= 0
+                    return false
+                set sent: sent + (r as size_t)
+            }
+            return true
+        }
         let w Io.watch_stream(fd)
         if w = null
             return Io.tcp_write_all(fd, buf, count)
@@ -2766,13 +2838,15 @@ define Channel
         {
             let raw *(((tagbuf as size_t) + ((i * 8) as size_t)) as pointer[size_t])
             ; 0 = main-context own-event tag, 1 = wake sentinel (the
-            ; caller re-checks its queue on return); bit 2 = a watched
-            ; stream's edge; > 1 otherwise = an Io-parked task's record.
-            if (raw & 4) <> 0
-                Scheduler.deliver_watch_event(raw)
-            else
+            ; caller re-checks its queue on return) — both BEFORE the
+            ; low-bit test, which the sentinel 1 would pass; then an
+            ; IoWatch edge or completion (low bits set), else an
+            ; Io-parked task's record.
+            if raw > 1
             {
-                if raw > 1
+                if (raw & 7) <> 0
+                    Scheduler.deliver_watch_event(raw)
+                else
                 {
                     let t raw as pointer[SchedTask]
                     Scheduler.enqueue(t)
