@@ -1,0 +1,29 @@
+; Regression: `&name` takes the program's own procedure over a stdlib EXTERN
+; of the same name (2026-09-28).
+;
+; The address took the first function registered under the name, and the
+; stdlib's externs are registered before a program's code: here `&read` was
+; libc's read(2) — `f(40, 2)` read from descriptor 40 at rc 0, while the
+; direct call `read(1, 2)` reached the procedure. Found by an HTTP router
+; whose `read` handler was registered by address.
+;
+; Expected: PASS
+
+mutable hit: int 0
+
+procedure read(a: int, b: int) mutable hit
+    set hit: a + b
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutable hit
+{
+    read(1, 2)
+    if hit <> 3
+        return 1
+    set hit: 0
+    let f &read
+    f(40, 2)
+    if hit <> 42
+        return 2
+    print "PASS"
+    0
+}

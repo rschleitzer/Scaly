@@ -12563,10 +12563,10 @@ define Planner
                             }
                             if fref_found
                             {
-                                let fref_cands this.lookup_functions(fref_name)
-                                if fref_cands.length > 0
+                                let fref_pick this.function_ref_candidate(fref_name, result.loc)
+                                if fref_pick <> null
                                 {
-                                    let fc_ptr fref_cands.get 0
+                                    let fc_ptr fref_pick
                                     if fc_ptr <> null
                                     {
                                         ; Any arity (2026-08-06): only the ADDRESS
@@ -26953,6 +26953,67 @@ define Planner
         ; return falls through to body_may_allocate#, so splitting a cold
         ; reporting half into its own function is usually all it takes.
         ; ====================================================================
+        ; function_ref_candidate#: the function `&name` takes the address of
+        ; (2026-09-28). The reference took the FIRST function registered under
+        ; the name, and the stdlib's externs are registered before a program's
+        ; own code: `&read` in a program with `procedure read(req, res)` was
+        ; libc's read, at rc 0 — an HTTP router called read(2) with a request
+        ; and a response. A call chooses by its arguments and by
+        ; lookup_functions_preferring#; an address has no arguments, so: the
+        ; candidates a bare call can mean, a Scaly function over an extern of
+        ; the same name, and when two Scaly functions remain, rc 4 — an
+        ; address names ONE function (fn_ptr_nary: no overloads).
+        procedure function_ref_candidate(mutable this: Planner, name: String, loc: Span) returns ref[Function]?
+        {
+            let cands this.lookup_functions_preferring(name)
+            if cands.length = 0
+                return null
+            var first: ref[Function]? null
+            var own: ref[Function]? null
+            var owns: size_t 0
+            var i: size_t 0
+            while i < cands.length
+            {
+                let c cands.get i
+                if c <> null
+                {
+                    if first = null
+                        set first: c
+                    if Planner.is_extern_impl(c.implementation) = false
+                    {
+                        ; a definition loaded along two paths is registered
+                        ; twice: count DEFINITIONS, told apart by where they
+                        ; stand and their arity
+                        if own = null
+                        {
+                            set own: c
+                            set owns: 1
+                        }
+                        else
+                        {
+                            if c.span.start <> own.span.start or c.input.length <> own.input.length
+                                set owns: owns + 1
+                        }
+                    }
+                }
+                set i: i + 1
+            }
+            if owns > 1
+            {
+                var sb StringBuilder()
+                sb.append "cannot take the address of "
+                sb.append name
+                sb.append ": "
+                sb.append owns
+                sb.append " functions have this name, and an address names one - rename the one meant"
+                let msg_local sb.to_string()
+                this.add_diagnostic(loc, String^this(msg_local))
+            }
+            if own <> null
+                return own
+            first
+        }
+
         procedure report_address_of_page_function(mutable this: Planner, mutable f: Function, loc: Span)
         {
             if f.page_parameter <> null

@@ -4422,6 +4422,18 @@ define Planner
         ; return falls through to body_may_allocate#, so splitting a cold
         ; reporting half into its own function is usually all it takes.
         ; ====================================================================
+        ; function_ref_candidate#: the function `&name` takes the address of
+        ; (2026-09-28). The reference took the FIRST function registered under
+        ; the name, and the stdlib's externs are registered before a program's
+        ; own code: `&read` in a program with `procedure read(req, res)` was
+        ; libc's read, at rc 0 — an HTTP router called read(2) with a request
+        ; and a response. A call chooses by its arguments and by
+        ; lookup_functions_preferring#; an address has no arguments, so: the
+        ; candidates a bare call can mean, a Scaly function over an extern of
+        ; the same name, and when two Scaly functions remain, rc 4 — an
+        ; address names ONE function (fn_ptr_nary: no overloads).
+        procedure function_ref_candidate(mutable this: Planner, name: String, loc: Span) @page true @direct true @ret_caller true @deep true returns ref[Function]? linked
+
         procedure report_address_of_page_function(mutable this: Planner, mutable f: Function, loc: Span) @deep true io linked
 
         ; report_unknown_identifier: the same message the four inline

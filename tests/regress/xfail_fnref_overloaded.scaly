@@ -1,0 +1,14 @@
+; Regression: the address of a name two Scaly functions share is refused
+; (2026-09-28). An address names ONE function and there are no arguments to
+; choose by; the reference silently took the first registered.
+; xfail: cannot take the address of twice: 2 functions have this name
+
+function twice(a: int) returns int
+    a * 2
+
+function twice(a: int, b: int) returns int
+    (a + b) * 2
+
+let f &twice
+let r f(3)
+print "unreachable `r`"
