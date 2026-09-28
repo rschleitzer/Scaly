@@ -4274,6 +4274,13 @@ define WriteCensus
                 return 1
             if name = "fread"
                 return 9
+            ; the io_uring completion path (fiber/eio.c): a send READS its
+            ; buffer, and the result lands in the tag record (argument 4); a
+            ; receive fills its buffer (argument 2) and the tag record
+            if name = "scaly_eio_submit_send"
+                return 16
+            if name = "scaly_eio_submit_recv"
+                return 20
             if name = "fwrite"
                 return 8
             if name = "memcmp"
