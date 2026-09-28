@@ -23758,7 +23758,12 @@ define Planner
             let planned_body this.plan_action(f.action)
             this.pop_scope()
 
-            var expr_holder Vector[PlannedOperand](planned_expr)
+            ; The COLLAPSED sequence goes into the plan: every reader of
+            ; PlannedFor.expr (emit_operands, the TaskPlanner, the parallel
+            ; driver) takes its first operand, so the raw run `[n, *, n]` of
+            ; `for t in n * n` ran the loop n times, rc 0 (2026-09-28).
+            var expr_holder Vector[PlannedOperand](1)
+            expr_holder.put(0, collapsed_expr)
             PlannedFor(
                 f.span,
                 f.identifier,

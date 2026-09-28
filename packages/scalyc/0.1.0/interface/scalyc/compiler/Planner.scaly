@@ -23775,6 +23775,11 @@ define Planner
 
 
 
+
+
+
+
+
         ; try_condition_can_throw#: does ANY operand of a try's condition throw?
         ;
         ; plan_try below reads only the LAST operand, because that is where the
