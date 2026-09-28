@@ -51,8 +51,16 @@ define HeapBucketHeader
     var next: ref[HeapBucketHeader]?
     var bitmap: u64
     lock: u64
-    var dead: u64                      ; owner thread exited; free on last drain
+    ; The thread whose chain the bucket is in (heap_owner_token), or
+    ; BUCKET_DEAD once that thread exited with live pages in it: then the
+    ; last drain frees it. One word, reused: the Emitter spells this record's
+    ; layout out by position (Emitter.scaly, "HeapBucketHeader").
+    var owner: u64
 )
+
+; HeapBucketHeader.owner of a bucket whose thread exited (2.3b). A real
+; owner token is the address of a thread-local word, never 1.
+define BUCKET_DEAD u64 1
 
 ; The per-thread allocator state (stack_head, stack_top, heap_head —
 ; thread_local like every mutable global since milestone 2.2)
@@ -473,6 +481,26 @@ procedure bucket_unlock(b: pointer[HeapBucketHeader]) @ret_nonlocal true @deep t
 ; order (Page is planned first — reading the constant from there is a
 ; hard "unknown identifier" diagnostic).
 procedure drain_dead_bucket(mutable b: pointer[HeapBucketHeader]) @ret_nonlocal true @deep true returns bool linked
+
+; This thread's owner token for heap buckets: the address of one of its
+; thread-local words, so it differs between live threads and needs no
+; global of its own (a new global written by release_page would be one
+; the TaskPlanner does not sanction: TaskPlanner.global_is_sanctioned).
+function heap_owner_token() @ret_nonlocal true @deep true returns u64 linked
+
+procedure count_bucket_freed() @ret_nonlocal true @deep true linked
+
+; Called by Page.release_page UNDER THE BUCKET LOCK after setting the
+; freed bit (was_full false), after drain_dead_bucket: a bucket of THIS
+; thread's chain whose last live page this free returned goes back to the
+; system, unless it is the chain's only bucket. Without it an empty bucket
+; stayed in its chain for good, and a thread that frees pages another
+; thread allocates — a server's acceptor hands every connection over on a
+; page of its own — adopted bucket after bucket and grew without bound
+; (2026-09-28: 0.6 GiB per 5 s of HttpArena's limited-conn, ROADMAP-http.md).
+; Safe without further locking: an all-free bucket has no live page for
+; another thread to free, and only the owner allocates from its chain.
+procedure release_idle_bucket(mutable b: pointer[HeapBucketHeader]) @ret_nonlocal true @deep true @deep_beyond_1 true returns bool linked
 
 ; Reclaim a dying thread's allocator buckets (milestone 2.3b). Called by
 ; the thread trampoline (fiber.scaly scaly_thread_start) AFTER the user

@@ -51,8 +51,16 @@ define HeapBucketHeader
     var next: ref[HeapBucketHeader]?
     var bitmap: u64
     lock: u64
-    var dead: u64                      ; owner thread exited; free on last drain
+    ; The thread whose chain the bucket is in (heap_owner_token), or
+    ; BUCKET_DEAD once that thread exited with live pages in it: then the
+    ; last drain frees it. One word, reused: the Emitter spells this record's
+    ; layout out by position (Emitter.scaly, "HeapBucketHeader").
+    var owner: u64
 )
+
+; HeapBucketHeader.owner of a bucket whose thread exited (2.3b). A real
+; owner token is the address of a thread-local word, never 1.
+define BUCKET_DEAD u64 1
 
 ; The per-thread allocator state (stack_head, stack_top, heap_head —
 ; thread_local like every mutable global since milestone 2.2)
@@ -697,12 +705,59 @@ procedure bucket_unlock(b: pointer[HeapBucketHeader])
 ; hard "unknown identifier" diagnostic).
 procedure drain_dead_bucket(mutable b: pointer[HeapBucketHeader]) returns bool
 {
-    if b.dead = 0
+    if b.owner <> BUCKET_DEAD
         return false
     if b.bitmap <> BITMAP_ALL_FREE
         return false
     bucket_unlock b
     set dead_buckets_reclaimed: dead_buckets_reclaimed + 1
+    count_bucket_freed()
+    scaly_aligned_free(b as pointer[void])
+    true
+}
+
+; This thread's owner token for heap buckets: the address of one of its
+; thread-local words, so it differs between live threads and needs no
+; global of its own (a new global written by release_page would be one
+; the TaskPlanner does not sanction: TaskPlanner.global_is_sanctioned).
+function heap_owner_token() returns u64
+    &dead_buckets_reclaimed as u64
+
+procedure count_bucket_freed()
+{
+    let st page_statistics
+    if st <> null
+        scaly_atomic_add_u64(&st.buckets, (0 as u64) - (1 as u64))
+}
+
+; Called by Page.release_page UNDER THE BUCKET LOCK after setting the
+; freed bit (was_full false), after drain_dead_bucket: a bucket of THIS
+; thread's chain whose last live page this free returned goes back to the
+; system, unless it is the chain's only bucket. Without it an empty bucket
+; stayed in its chain for good, and a thread that frees pages another
+; thread allocates — a server's acceptor hands every connection over on a
+; page of its own — adopted bucket after bucket and grew without bound
+; (2026-09-28: 0.6 GiB per 5 s of HttpArena's limited-conn, ROADMAP-http.md).
+; Safe without further locking: an all-free bucket has no live page for
+; another thread to free, and only the owner allocates from its chain.
+procedure release_idle_bucket(mutable b: pointer[HeapBucketHeader]) returns bool
+{
+    if b.bitmap <> BITMAP_ALL_FREE
+        return false
+    if b.owner <> heap_owner_token()
+        return false
+    let p b.prev
+    let n b.next
+    if p = null and n = null
+        return false
+    if p = null
+        set heap_head: n as pointer[HeapBucketHeader]
+    else
+        set p.next: n
+    if n <> null
+        set n.prev: p
+    bucket_unlock b
+    count_bucket_freed()
     scaly_aligned_free(b as pointer[void])
     true
 }
@@ -741,13 +796,16 @@ procedure scaly_thread_release_buckets()
         let empty hb.bitmap = BITMAP_ALL_FREE
         if empty = false
         {
-            set hb.dead: 1
+            set hb.owner: BUCKET_DEAD
             set hb.next: null
             set hb.prev: null
         }
         bucket_unlock hb
         if empty
+        {
+            count_bucket_freed()
             scaly_aligned_free(hb as pointer[void])
+        }
         set hb: nxt
     }
     set heap_head: null
@@ -811,7 +869,10 @@ function create_heap_bucket() returns ref[HeapBucketHeader]
     set hb.next: null
     set hb.bitmap: BITMAP_ALL_FREE
     set hb.lock: 0
-    set hb.dead: 0
+    set hb.owner: heap_owner_token()
+    let st page_statistics
+    if st <> null
+        scaly_atomic_add_u64(&st.buckets, 1 as u64)
     hb
 }
 

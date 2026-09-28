@@ -1,0 +1,103 @@
+; Pages allocated on one thread and released on another (2026-09-28): a
+; worker allocates 40 000 pages, one per message; main takes them in waves
+; of a thousand and releases each wave at once, while the worker already
+; allocates the next — so the worker's buckets FILL (as a server acceptor's
+; do with hundreds of connections in flight) and every full one is adopted
+; into main's chain by the free that finds it full. Before, an adopted
+; bucket stayed in main's chain after its last page came back: the process
+; kept a bucket per 63 pages ever handed over — the ~0.6 GiB per 5 s a
+; server's acceptor cost under HttpArena's limited-conn (ROADMAP-http.md).
+; Now a bucket of the freeing thread's own chain that becomes empty goes
+; back to the system, and a handful stay alive (the refuter: without
+; release_idle_bucket the count ends in the hundreds). The owner token that
+; decides "own chain" must differ between threads: it is the address of a
+; thread-local word, checked here on two threads first.
+; Expected: tokens bounded done
+
+define Msg
+(
+    value: int
+)
+
+shared worker_token: u64 0
+
+procedure token_of_worker(mutable arg: pointer[void]) returns pointer[void] mutable worker_token
+{
+    set worker_token: heap_owner_token()
+    null
+}
+
+procedure sender(mutable arg: pointer[void]) returns pointer[void]
+{
+    let c arg as pointer[Channel]
+    var i 0
+    while i < 40000
+    {
+        let mp Page.allocate_page()
+        let m mp.allocate(sizeof Msg, alignof Msg) as pointer[Msg]
+        set m.value: 1
+        Channel.send(c, m as pointer[void])
+        set i: i + 1
+    }
+    Channel.close_sender(c)
+    null
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    let t0 Thread.spawn(&token_of_worker, null)
+    Thread.join(t0)
+    let mine heap_owner_token()
+    if worker_token = 0 or worker_token = mine or mine <= 1
+        return 1
+    Console.print "tokens "
+
+    Page.enable_statistics()
+    let page Page.allocate_page()
+    let sched Scheduler.create(page)
+    let ch Channel.create()
+    Channel.add_sender(ch)
+    Channel.close_sender(ch)
+    let th Thread.spawn(&sender, ch as pointer[void])
+    var wave Vector[size_t](1000)
+    var got 0
+    var open true
+    while open
+    {
+        var n: size_t 0
+        while n < 1000
+        {
+            let raw Channel.receive(ch)
+            if raw = null
+            {
+                set open: false
+                break
+            }
+            wave.put(n, raw as size_t)
+            set n: n + 1
+        }
+        var k: size_t 0
+        while k < n
+        {
+            let raw wave[k] as pointer[void]
+            let m raw as pointer[Msg]
+            set got: got + m.value
+            let mp Page.get(raw)
+            mp.deallocate_extensions()
+            Page.release_page(mp)
+            set k: k + 1
+        }
+    }
+    Thread.join(th)
+    if got <> 40000
+        return 2
+    let buckets Page.heap_bucket_count()
+    if buckets > 16
+    {
+        print "buckets alive: `buckets`"
+        return 3
+    }
+    Console.print "bounded "
+    Console.print "done"
+    0
+}

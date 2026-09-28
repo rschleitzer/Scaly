@@ -36,7 +36,7 @@ mutable dead_buckets_reclaimed: i64 linked
 ; released after takes its whole used part out — which is why a driver enables
 ; them before its compile starts (tscaly: `--diagnostics`, `--extendedDiagnostics`).
 ; Read via Page.bytes_held(), Page.allocation_count() and Page.live_bytes().
-define PageStatistics (bytes_held: u64  allocations: u64  live: u64)
+define PageStatistics (bytes_held: u64  allocations: u64  live: u64  buckets: u64)
 shared page_statistics: pointer[PageStatistics] linked
 
 ; Poison mode (Page.enable_poison(), SCALY_POISON in the drivers): every page
@@ -101,6 +101,10 @@ define Page
     function allocation_count() @ret_nonlocal true @deep true returns i64 linked
 
     function live_bytes() @ret_nonlocal true @deep true returns i64 linked
+
+    ; Heap buckets created minus heap buckets freed since enable_statistics(),
+    ; over all threads (a bucket freed that existed before counts -1).
+    function heap_bucket_count() @ret_nonlocal true @deep true returns i64 linked
 
     ; Turns the three counts on (once; later calls do nothing). Call it while the
     ; process is single-threaded, before the work to be measured.

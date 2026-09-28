@@ -36,7 +36,7 @@ mutable dead_buckets_reclaimed: i64 0
 ; released after takes its whole used part out — which is why a driver enables
 ; them before its compile starts (tscaly: `--diagnostics`, `--extendedDiagnostics`).
 ; Read via Page.bytes_held(), Page.allocation_count() and Page.live_bytes().
-define PageStatistics (bytes_held: u64  allocations: u64  live: u64)
+define PageStatistics (bytes_held: u64  allocations: u64  live: u64  buckets: u64)
 shared page_statistics: pointer[PageStatistics] null
 
 ; Poison mode (Page.enable_poison(), SCALY_POISON in the drivers): every page
@@ -161,6 +161,7 @@ define Page
                 set heap_head.prev: b
 
             set heap_head: b
+            set b.owner: heap_owner_token()
         }
         if was_full = false
         {
@@ -173,6 +174,8 @@ define Page
             ; (drain_dead_bucket) — BITMAP_ALL_FREE is not resolvable
             ; from this earlier-planned module (hard diagnostic).
             if drain_dead_bucket(b)
+                return
+            if release_idle_bucket(b)
                 return
         }
         bucket_unlock b
@@ -233,6 +236,16 @@ define Page
         scaly_atomic_load_u64(&st.live) as i64
     }
 
+    ; Heap buckets created minus heap buckets freed since enable_statistics(),
+    ; over all threads (a bucket freed that existed before counts -1).
+    function heap_bucket_count() returns i64
+    {
+        let st page_statistics
+        if st = null
+            return 0
+        scaly_atomic_load_u64(&st.buckets) as i64
+    }
+
     ; Turns the three counts on (once; later calls do nothing). Call it while the
     ; process is single-threaded, before the work to be measured.
     ; Poison mode (see page_poison). Call it while the process is
@@ -251,6 +264,7 @@ define Page
         set st.bytes_held: 0
         set st.allocations: 0
         set st.live: 0
+        set st.buckets: 0
         set page_statistics: st
     }
 
