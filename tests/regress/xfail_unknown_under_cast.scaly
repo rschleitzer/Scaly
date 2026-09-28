@@ -1,0 +1,27 @@
+; Regression: a name that resolves to nothing, under a CAST (2026-09-28).
+;
+; `unknown_identifier_name#` judged a bare Type operand and answered "" for
+; everything else, and a cast is a PlannedAs around the operand — so the
+; operand under an `as` was never judged. Three shapes compiled at rc 0:
+;
+;   set seen: nosuchname as i64        the whole statement was DROPPED
+;   print "`nosuchname as i64`"        printed an empty line
+;   set x: current_task as size_t      a stdlib `mutable` global, which a
+;                                      program cannot see: dropped too
+;
+; The third is how it was found: a scheduler test compared two such reads,
+; both 0, and passed without measuring anything (ROADMAP-http.md, the
+; spawn_detached gate). The first shape is pinned here; the neighbouring
+; spellings `let p nosuchname` and `set seen: nosuchname` were loud already.
+; xfail: unknown identifier: nosuchname
+
+mutable seen: i64 7
+
+procedure probe() mutable seen
+{
+    set seen: nosuchname as i64
+    print "inside"
+}
+
+probe()
+print "seen `seen`"

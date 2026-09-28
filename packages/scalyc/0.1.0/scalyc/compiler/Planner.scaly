@@ -26480,6 +26480,65 @@ define Planner
                         return ""
                     return name
                 }
+                when pas: PlannedAs
+                {
+                    ; ★★★A CAST names nothing and resolves nothing: judge the
+                    ; operand UNDER it (2026-09-28). `set seen: nosuchname as
+                    ; i64` planned the cast around a Type named after the typo,
+                    ; this test saw a PlannedAs and answered "", and the whole
+                    ; statement was dropped at rc 0; so was an interpolation
+                    ; `"`nosuchname as i64`"` (empty text) and a read of a
+                    ; stdlib `mutable` global a program cannot see
+                    ; (`current_task as size_t`, which made a scheduler test
+                    ; vacuous). The trailing `as` hid the operand from the page
+                    ; walkers in the same way once (CLAUDE.md, *Lifetimes*).
+                    if pas.value = null
+                        return ""
+                    let inner pas.value
+                    return this.unknown_identifier_name((*inner))
+                }
+                when tup: PlannedTuple
+                {
+                    ; ★★★And a PARENTHESIS hides it the same way (2026-09-28):
+                    ; `set s: (nosuchname)` planned a one-component tuple, was
+                    ; judged "" and dropped at rc 0 — which is the shape string
+                    ; interpolation writes (`'isb$'.append((expr))`), so
+                    ; "`nosuchname as i64`" printed nothing. The arguments of a
+                    ; construction are components too: `Slice[u8](nosuchname as
+                    ; size_t, null)` passed the component TYPE check (the cast
+                    ; supplies the type) and built a garbage view. Every
+                    ; component's operands are judged; the first typo names it.
+                    if tup.components = null
+                        return ""
+                    let comps (*tup.components)
+                    var ci: size_t 0
+                    while ci < comps.length
+                    {
+                        let cp comps.get ci
+                        if cp <> null
+                        {
+                            let c (*cp)
+                            if c.value <> null
+                            {
+                                let vals (*c.value)
+                                var vi: size_t 0
+                                while vi < vals.length
+                                {
+                                    let vp vals.get vi
+                                    if vp <> null
+                                    {
+                                        let n this.unknown_identifier_name((*vp))
+                                        if n.get_length() > 0
+                                            return n
+                                    }
+                                    set vi: vi + 1
+                                }
+                            }
+                        }
+                        set ci: ci + 1
+                    }
+                    return ""
+                }
                 else
                     return ""
             ""
