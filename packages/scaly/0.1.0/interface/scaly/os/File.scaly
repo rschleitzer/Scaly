@@ -18,18 +18,6 @@ define F_OK: int 0
 ; be opened; a non-null sentinel otherwise — no result page.
 procedure file_open_worker(mutable arg: pointer[void]) @ret_nonlocal true @deep true returns pointer[void] io linked
 
-
-
-
-
-
-
-
-
-
-
-
-
 ; The blocking read+close (the second leg): freads the whole file
 ; straight into the requester's String buffer named in the cell — the
 ; requester is parked, its region quiescent, so the cross-thread write
@@ -37,24 +25,9 @@ procedure file_open_worker(mutable arg: pointer[void]) @ret_nonlocal true @deep 
 ; like the blocking path's single unchecked fread. Always closes.
 procedure file_read_close_worker(arg: pointer[void]) @ret_nonlocal true @deep true returns pointer[void] io linked
 
-
-
-
-
-
-
-
-
-
-
 ; The blocking existence probe (milestone 2.5 residual): access(2) on a
 ; worker; sentinel result, no pages.
 procedure file_access_worker(arg: pointer[void]) @ret_nonlocal true @deep true returns pointer[void] io linked
-
-
-
-
-
 
 ; The blocking write shipped to a worker thread (milestone 2.5). arg is
 ; a {path, buffer, length} request cell in the requester's care; the
@@ -62,55 +35,17 @@ procedure file_access_worker(arg: pointer[void]) @ret_nonlocal true @deep true r
 ; free — no result page).
 procedure file_write_worker(arg: pointer[void]) @ret_nonlocal true @deep true returns pointer[void] io linked
 
-
-
-
-
-
-
-
-
-
-
-
-
 define File
 {
     ; Colorless like the rest (milestone 2.5 residual): the access(2)
     ; probe blocks on disk metadata just like a read does.
     procedure exists(mutable path: String) @deep true returns bool io linked
 
-
-
-
-
-
-
-
-
-
-
     ; Colorless (milestone 2.5): inside a task the blocking read runs
     ; on a worker thread while the task parks; on the main context (or
     ; without a scheduler) it blocks right here — same call, same
     ; result.
     procedure read_to_string(path: String) @page true @direct true @ret_caller true @deep true returns String io linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; The task path of read_to_string: two offloads — open+measure,
     ; then fread straight into the String's own buffer (allocated here
@@ -119,58 +54,12 @@ define File
     ; in/out block.
     procedure read_to_string_offloaded(path: String) @page true @direct true @ret_caller true @deep true returns String io linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; Colorless like read_to_string: offloads inside a task, blocks
     ; otherwise.
     procedure write_from_string(path: String, contents: String) @ret_nonlocal true @deep true returns bool io linked
-
-
-
-
-
-
-
-
-
-
-
 
     ; The task path of write_from_string: pack a {path, buffer, length}
     ; request cell on its own heap page (path and buffer point into the
     ; requester's region — alive while parked), offload, free the cell.
     procedure write_from_string_offloaded(path: String, contents: String) @deep true returns bool io linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }

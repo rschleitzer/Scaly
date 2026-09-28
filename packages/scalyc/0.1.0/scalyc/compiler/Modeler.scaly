@@ -2989,7 +2989,21 @@ define Modeler
         if contents.get_length() = 0
             return empty_module
 
+        ; A file of a generated package interface is read, but the module
+        ; carries its SOURCE file: the lexer takes the source's positions from
+        ; the package's interface/positions (compiler/Interface.scaly), so every
+        ; span is an offset into the source and a location computed from it
+        ; names the source's line and column.
+        var module_file file_path
+        let source_file interface_source_file(file_path)
         var p Parser(contents)
+        var pairs Array[size_t]()
+        if source_file.get_length() > 0
+        {
+            set module_file: source_file
+            interface_positions(file_path, &pairs)
+            p.lexer.use_positions(pairs.as_slice())
+        }
         var syntax: ProgramSyntax
         choose p.parse_program()
             when err: Error
@@ -2997,11 +3011,14 @@ define Modeler
                 ; Don't swallow the real syntax error: report it against the
                 ; sub-module's own file:line:col, then continue with an empty stub
                 ; so downstream modeling doesn't crash. cli.run fails the compile.
+                var error_text contents
+                if source_file.get_length() > 0
+                    set error_text: File.read_to_string(source_file)
                 choose err
                     when inv: Invalid
-                        report_module_error(file_path, contents, inv.start, inv.message)
+                        report_module_error(module_file, error_text, inv.start, inv.message)
                     when d: Different
-                        report_module_error(file_path, contents, 0, "parse error")
+                        report_module_error(module_file, error_text, 0, "parse error")
                 return empty_module
             }
             when prog: Success
@@ -3017,7 +3034,87 @@ define Modeler
         sub_sb.append name
         let sub_path sub_sb.to_string()
 
-        build_module(sub_path, file_path, name, syntax.file, is_private)
+        build_module(sub_path, module_file, name, syntax.file, is_private)
+    }
+
+    ; Where `/interface/` starts in the path of a file of a generated package
+    ; interface, or -1 for any other path.
+    function interface_dir_at(path: String) returns int
+    {
+        let needle String("/interface/")
+        let k needle.get_length()
+        let n path.get_length()
+        var i: size_t 0
+        while i + k <= n
+        {
+            if path.substring(i, k).equals(needle)
+                return i as int
+            set i: i + 1
+        }
+        0 - 1
+    }
+
+    ; `<dir>/interface/<rest>` -> `<dir>/<rest>` for a file of a generated
+    ; package interface; "" for any other path
+    function interface_source_file(path: String) returns String
+    {
+        let at interface_dir_at(path)
+        if at < 0
+            return String()
+        let i at as size_t
+        let n path.get_length()
+        "`path.substring(0, i)``path.substring(i + 10, n - i - 10)`"
+    }
+
+    ; The position pairs of an interface file: its section of the package's
+    ; `<dir>/interface/positions` -- the line `<rest>`, then one line
+    ; `<interface byte> <source byte>` per pair (compiler/Interface.scaly).
+    ; A file without replacements has no section and gets no pairs.
+    procedure interface_positions(path: String, mutable pairs: ref[Array[size_t]])
+    {
+        let i interface_dir_at(path) as size_t
+        let n path.get_length()
+        let table File.read_to_string("`path.substring(0, i + 10)`/positions")
+        let rel path.substring(i + 11, n - i - 11)
+        let m table.get_length()
+        var in_section false
+        var start: size_t 0
+        while start < m
+        {
+            var stop start
+            while stop < m and table.get(stop) <> 10
+                set stop: stop + 1
+            let first table.get(start)
+            if first >= 48 and first <= 57
+            {
+                if in_section
+                {
+                    var k start
+                    var a: size_t 0
+                    while k < stop and table.get(k) <> 32
+                    {
+                        set a: a * 10 + ((table.get(k) - 48) as size_t)
+                        set k: k + 1
+                    }
+                    set k: k + 1
+                    var b: size_t 0
+                    while k < stop
+                    {
+                        set b: b * 10 + ((table.get(k) - 48) as size_t)
+                        set k: k + 1
+                    }
+                    pairs.add a
+                    pairs.add b
+                }
+            }
+            else if first <> 59     ; not a comment: a file's path
+            {
+                if in_section
+                    return
+                set in_section: table.substring(start, stop - start).equals(rel)
+            }
+            set start: stop + 1
+        }
     }
 
     procedure build_module(mutable path: String, file_name: String, name: String, mutable syntax: FileSyntax, is_private: bool) returns Module mutable modeler_error_count

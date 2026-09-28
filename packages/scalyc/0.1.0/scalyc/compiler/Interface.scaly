@@ -29,15 +29,30 @@
 ;   * generic concepts and routines keep their bodies (they are monomorphized
 ;     at the caller), and so do constants, type aliases, externs and comments.
 ;
-; LINE-PRESERVING: whatever a replacement removes, its line breaks stay, so
-; every line that remains is on the line it has in the source. A diagnostic
-; from a generic body (kept verbatim), a DWARF line and a scalyls location
-; computed from the interface are then the source's -- cli.display_path and
-; scalyls' symbols.at_interface_dir only rewrite the PATH.
+; POSITIONS: a removed body leaves no lines behind, and the interface stays
+; plain Scaly -- where its lines stand in the sources is written beside it,
+; into the package's `interface/positions`:
+;
+;     ; ...comment lines...
+;     scaly/containers/String.scaly
+;     582 659
+;     ...
+;
+; After a file's path (relative to the interface directory), one pair per
+; line: the interface line that starts at the first byte is the source's line
+; that starts at the second. There is a pair after every replacement, for the
+; line after its own; a file without replacements has no section. The loader
+; hands a file's pairs to the lexer, which takes the source's position when
+; it reaches such a line (lexer.use_positions#), and keeps the SOURCE file as
+; the module's file (Modeler.build_referenced_module): every span of an
+; interface declaration is a source offset, so a diagnostic inside a generic
+; body, a definition scalyls answers and a census line name the source's
+; file, line and column. Only the tokens after an attribute inserted into a
+; header line sit that many bytes further on.
 ;
 ; Offsets are BYTES, and the text is handled as bytes, so UTF-8 passes
 ; through unchanged. Replaces tools/interface/geninterface.py (2026-09-28),
-; byte for byte on all seven package interfaces.
+; which kept a removed body's line breaks instead of marking the jump.
 
 use scaly.os.File
 use scaly.os.Directory
@@ -111,6 +126,10 @@ define Interface
             set i: i + 1
         }
         let prefix "`pkg_dir`/"
+        var positions StringBuilder()
+        positions.append "; where the lines of this interface stand in the package's sources,\n"
+        positions.append "; written by compiler/Interface.scaly: after a file's path, the interface\n"
+        positions.append "; line starting at the first byte is the source's line starting at the second\n"
         var written 0
         var fi: size_t 0
         while fi < files.length
@@ -124,9 +143,16 @@ define Interface
             {
                 let rel file.substring(prefix.get_length(), file.get_length() - prefix.get_length())
                 let text File.read_to_string file
-                let out Interface.transform(text, facts, &file_of, fi)
+                var pairs StringBuilder()
+                let out Interface.transform(text, facts, &file_of, fi, &pairs)
                 if out.get_length() = 0 and text.get_length() > 0
                     return 0 - 1
+                if pairs.get_length() > 0
+                {
+                    positions.append rel
+                    positions.append("\n" as char)
+                    positions.append(pairs.to_string())
+                }
                 if this.write_file(rel, out) = false
                     return 0 - 1
                 set written: written + 1
@@ -146,6 +172,8 @@ define Interface
                 set written: written + 1
             }
         }
+        if this.write_file(String("positions"), positions.to_string()) = false
+            return 0 - 1
         written
     }
 
@@ -173,7 +201,7 @@ define Interface
 
     ; The interface text of the file with index `fi`: its facts applied to the
     ; source text. Answers an empty String after printing why it cannot.
-    procedure transform(text: String, facts: ref[Array[InterfaceFact]], file_of: ref[Array[size_t]], fi: size_t) returns String
+    procedure transform(text: String, facts: ref[Array[InterfaceFact]], file_of: ref[Array[size_t]], fi: size_t, mutable pairs: ref[StringBuilder]) returns String
     {
         var edits Array[InterfaceEdit]()
         var i: size_t 0
@@ -236,7 +264,9 @@ define Interface
             order.put(j, e)
             set e: e + 1
         }
-        ; LINE-PRESERVING: whatever a replacement removes, its line breaks stay
+        ; after each replacement the rest of its line, and a position pair
+        ; for the line after it (see the head of this file)
+        let n text.get_length()
         var sb StringBuilder()
         var pos: size_t 0
         var o: size_t 0
@@ -250,14 +280,21 @@ define Interface
             }
             sb.append(text.substring(pos, ed.start - pos))
             sb.append(ed.text)
-            var removed Interface.count_newlines(text, ed.start, ed.end)
-            let kept Interface.count_newlines(ed.text, 0, ed.text.get_length())
-            while removed > kept
-            {
-                sb.append("\n" as char)
-                set removed: removed - 1
-            }
             set pos: ed.end
+            var eol ed.end
+            while eol < n and text.get(eol) <> 0x0A
+                set eol: eol + 1
+            ; a replacement that shares its line with the next one gets its
+            ; pair after that one
+            var next_start n
+            if o + 1 < order.length
+                set next_start: edits.at(order[o + 1]).start
+            if eol + 1 < n and eol < next_start
+            {
+                sb.append(text.substring(ed.end, eol + 1 - ed.end))
+                set pos: eol + 1
+                pairs.append("`sb.get_length()` `pos`\n")
+            }
             set o: o + 1
         }
         sb.append(text.substring(pos, text.get_length() - pos))

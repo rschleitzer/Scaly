@@ -13,51 +13,21 @@ define StringBuilder
 
     init () linked
 
-
-
-
     init (size: size_t) linked
-
-
-
 
     init (character: char) linked
 
-
-
-
-
     init (string: String) linked
-
-
-
-
 
     init (c_string: pointer[const_char]) linked
 
-
-
-
-
     procedure append(mutable this: StringBuilder, character: char) @persists true @ret_nonlocal true @deep true linked
-
 
     procedure append(mutable this: StringBuilder, string: String) @ret_nonlocal true @deep true linked
 
-
     procedure append(mutable this: StringBuilder, c_string: pointer[const_char]) @persists true @deep true linked
 
-
-
-
-
-
-
-
     procedure append(mutable this: StringBuilder, start: pointer[char], length: size_t) @persists true @ret_nonlocal true @deep true linked
-
-
-
 
     ; Decimal formatting overloads — string interpolation desugars an
     ; embedded expression to a plain `append`, so the numeric conversions
@@ -65,52 +35,11 @@ define StringBuilder
     ; (mirrors the compiler's size_to_string).
     procedure append(mutable this: StringBuilder, value: size_t) @deep true linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     procedure append(mutable this: StringBuilder, value: int) @ret_nonlocal true @deep true linked
-
-
-
-
-
-
-
-
-
 
     procedure append(mutable this: StringBuilder, value: bool) @ret_nonlocal true @deep true linked
 
-
-
-
-
-
-
     function get_length(this: StringBuilder) @ret_param_0 true @deep true returns size_t linked
-
 
     ; ★DIE LETZTE (Zeiger, Laenge)-PAARSTELLE DES BAUMES, und sie bleibt
     ; absichtlich stehen.  Die anderen 131 sind kollabiert (`tools/pairslice.py`):
@@ -126,5 +55,4 @@ define StringBuilder
     ; niemand ausser dieser Zeile danach fragt, ist das Paar hier billiger als
     ; ein sechstes 1-Argument-`init` auf `String`.
     function to_string(this: StringBuilder) @page true @direct true @ret_caller true @deep true returns String linked
-
 }

@@ -52,86 +52,17 @@ define StackVectors
     {
         init() linked
 
-
-
-
-
-
-
-
-
-
-
-
-
         ; does the construction at `start` qualify?
         function has(this, start: size_t) @ret_nonlocal true @deep true returns bool linked
 
-
-
-
-
-
-
-
-
-
-
         ; `_ZN6VectorI<T>EC1Em`: the stdlib Vector's sized init
         function is_sized_ctor(call: PlannedCall) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
 
         ; Vector's put and operator []: they write or read one element
         ; through the record and hand out no address
         function is_element_access(call: PlannedCall) @ret_nonlocal true @deep true returns bool linked
 
-
-
-
-
-
         procedure scan(mutable this, func: PlannedFunction) @deep true @deep_this_2 true linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         ; ------------------------------------------------------------------
         ; the candidates: sized Vector bindings outside every loop
@@ -139,143 +70,13 @@ define StackVectors
 
         procedure find_action(mutable this, act: PlannedAction, depth: size_t) @ret_nonlocal true @deep true linked
 
-
-
-
-
         procedure find_ops(mutable this, ops: ref[Vector[PlannedOperand]]?, depth: size_t) @deep true linked
-
-
-
-
-
-
 
         procedure find_stmt_ref(mutable this, stmt: ref[PlannedStatement]?, depth: size_t) @ret_nonlocal true @deep true linked
 
-
-
-
-
         procedure find_stmt(mutable this, stmt: PlannedStatement, depth: size_t) @ret_nonlocal true @deep true linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         procedure find_op(mutable this, op: PlannedOperand, depth: size_t) @deep true linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         ; ------------------------------------------------------------------
         ; the uses of one candidate `cur`
@@ -283,229 +84,19 @@ define StackVectors
 
         procedure bind_name(mutable this, name: String) @deep true linked
 
-
-
-
-
         procedure use_action(mutable this, act: PlannedAction) @ret_nonlocal true @deep true linked
-
-
-
-
 
         procedure use_ops(mutable this, ops: ref[Vector[PlannedOperand]]?) @deep true linked
 
-
-
-
-
-
-
         procedure use_stmt_ref(mutable this, stmt: ref[PlannedStatement]?) @ret_nonlocal true @deep true linked
-
-
-
-
 
         procedure use_binding(mutable this, binding: PlannedBinding) @ret_nonlocal true @deep true linked
 
-
-
-
-
-
         procedure use_stmt(mutable this, stmt: PlannedStatement) @ret_nonlocal true @deep true linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         ; a bare `cur` as the receiver of put / []
         function is_receiver(this, call: PlannedCall) @ret_nonlocal true @deep true returns bool linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         procedure use_op(mutable this, op: PlannedOperand) @deep true linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     }
 }

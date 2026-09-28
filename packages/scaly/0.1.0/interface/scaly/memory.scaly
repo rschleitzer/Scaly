@@ -10,94 +10,11 @@ define memory
 
     function test_page_allocate() @ret_nonlocal true @deep true returns int linked
 
-
-
-
-
-
-
-
-
-
     function test_page_allocate_int() @ret_nonlocal true @deep true returns int linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     function test_page_multiple_allocs() @ret_nonlocal true @deep true returns int linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     function test_page_get() @ret_nonlocal true @deep true returns int linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     function test() @ret_nonlocal true @deep true returns int linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }

@@ -11,34 +11,7 @@ define PageList
 {
     procedure add(mutable this: PageList, element: ref[Page]) @deep true @deep_this_2 true @deep_whole_2 true @deep_pageof_1 true linked
 
-
-
-
-
-
     procedure remove(mutable this: PageList, element: ref[Page]) @ret_nonlocal true @deep true returns bool linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     function get_iterator(this: PageList) @page true @direct true @deep true returns PageListIterator linked
-
 }

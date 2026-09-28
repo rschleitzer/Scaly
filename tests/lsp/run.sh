@@ -3048,8 +3048,8 @@ def check(cond, label):
     if not cond: failures += 1
 
 # the generated package interfaces are machine output (tools/interfaces.sh),
-# not source a formatter owns: a removed body leaves its line breaks behind so
-# that every line keeps its number
+# not source a formatter owns: their lines stand where interface/positions
+# says, not where the text alone would put them
 files = sorted(f for f in glob.glob("packages/**/*.scaly", recursive=True)
                if "/interface/" not in f)
 not_idem, unexpected, still_clean = [], [], []

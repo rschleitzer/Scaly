@@ -1220,7 +1220,7 @@ define cli
                     set off: off + 1
                 }
                 var msg StringBuilder()
-                msg.append(cli.display_path(dpath))
+                msg.append(dpath)
                 msg.append ":"
                 msg.append(cli.format_size(line))
                 msg.append ":"
@@ -1521,7 +1521,7 @@ define cli
                 }
                 var msg StringBuilder()
                 msg.append prefix
-                msg.append(cli.display_path((*fp)))
+                msg.append((*fp))
                 msg.append ":"
                 msg.append(cli.format_size(line))
                 msg.append ":"
@@ -1554,28 +1554,6 @@ define cli
             return 1
         Console.println "interface: `n` files -> `out_dir`"
         0
-    }
-
-    ; A file of a generated package interface is shown as its SOURCE file:
-    ; the interface keeps every line where the source has it (a generic body,
-    ; the usual origin of such a report, is even the same text), so the line
-    ; and column computed from the interface are the source's.
-    function display_path(path: String) returns String
-    {
-        let needle String("/interface/")
-        let n path.get_length()
-        let k needle.get_length()
-        var i: size_t 0
-        while i + k <= n
-        {
-            let part path.substring(i, k)
-            if part.equals(needle)
-            {
-                return "`path.substring(0, i)``path.substring(i + 10, n - i - 10)`"
-            }
-            set i: i + 1
-        }
-        path
     }
 
     ; Decimal formatting for diagnostics. Local mirror of

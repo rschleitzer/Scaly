@@ -40,40 +40,9 @@ define ReceivedRegion
     ; so 4K masking cannot find the owner.
     function map(this: ReceivedRegion, address: size_t) @ret_param_0 true @deep true returns size_t linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; Swizzle one pointer slot in place. Null stays null; a nonnull value
     ; outside the region means the region was NOT closed — fail loud.
     procedure fix(this: ReceivedRegion, mutable slot: pointer[void]) @deep true linked
-
-
-
-
-
-
-
-
-
-
-
 
     ; Map one pointer VALUE instead of a slot — the 7.2 compiler-generated
     ; walkers load and store their slots themselves (a union payload sits at
@@ -81,15 +50,6 @@ define ReceivedRegion
     ; assumes natural alignment). Null stays null; a nonnull value outside
     ; the region means the region was NOT closed — fail loud.
     function fix_value(this: ReceivedRegion, old: size_t) @ret_param_0 true @deep true returns size_t linked
-
-
-
-
-
-
-
-
-
 
     ; Swizzle a slot DURING deserialize, where this record still owns every
     ; page it has allocated and nobody else can free them yet.
@@ -102,20 +62,6 @@ define ReceivedRegion
     ; so this half frees first and then raises.
     procedure fix_owned(this: ReceivedRegion, mutable slot: pointer[void]) @deep true linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; Give back every page this record allocated, through the TABLE.
     ;
     ; ★★★Through the table and NOT through the page links: while the header
@@ -127,24 +73,8 @@ define ReceivedRegion
     ; copied bytes preserve.
     procedure release_pages(this: ReceivedRegion) @deep true linked
 
-
-
-
-
-
-
-
-
-
-
-
     ; Free the received region through the normal lifecycle.
     procedure release(mutable this: ReceivedRegion) @ret_nonlocal true @deep true linked
-
-
-
-
-
 }
 
 define Region
@@ -153,127 +83,21 @@ define Region
 
     function count_exclusives(p: ref[Page]) @ret_nonlocal true @deep true returns size_t linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     function count_pages(region: ref[Page]) @ret_nonlocal true @deep true returns size_t linked
-
-
-
-
-
-
-
-
-
-
 
     ; Fill the interleaved (base, length) table; index counts SLOTS
     ; (two per page); returns the index after the last slot written.
     procedure fill_exclusives(p: ref[Page], mutable table: pointer[size_t], index: size_t) @ret_nonlocal true @deep true returns size_t linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     procedure fill_pages(region: ref[Page], mutable table: pointer[size_t], index: size_t) @ret_nonlocal true @deep true returns size_t linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; --- sender: build the frame on the host page ---
 
     function serialize(region: ref[Page], root: pointer[void], host: ref[Page]) @ret_explicit_2 true @deep true returns pointer[u8] linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; Total frame length in bytes, read back from a frame (or from just
     ; its 32-byte header) — for socket readers that need the rest count.
     function frame_length(frame: pointer[u8]) @ret_param_0 true @deep true returns size_t linked
-
-
-
-
-
 
     ; --- receiver: materialize + header swizzle + map ---
 
@@ -282,138 +106,6 @@ define Region
     ; Structural pointer violations inside accepted pages fail loud in
     ; fix() instead: by then the frame claims to be a closed region.
     function deserialize(frame: pointer[u8], host: ref[Page]) @page true @direct true @ret_args_3 true @deep true returns ref[ReceivedRegion]? linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; --- catching a panic (TRAPS.md 0) --------------------------------------
     ;
@@ -438,19 +130,15 @@ define Region
     ; already pay that price).
     procedure run_guarded(mutable body: pointer[void], mutable arg: pointer[void], mutable caught: pointer[i32]) @ret_nonlocal true @deep true returns i64 linked
 
-
     ; What the panic said, once run_guarded reported one. Allocation-free by
     ; construction: the regions between the trap and the catch point are gone
     ; by the time this can be asked, so the detail travels as scalars and a
     ; static string.
     function panic_what() @ret_nonlocal true @deep true returns pointer[const_char] linked
 
-
     function panic_index() @ret_nonlocal true @deep true returns i64 linked
 
-
     function panic_length() @ret_nonlocal true @deep true returns i64 linked
-
 
     ; How many traps this thread has raised, caught and fatal alike, one
     ; reader per KIND. Each counter sits at its kind's ONE panic site
@@ -467,32 +155,23 @@ define Region
     ; keep.
     function panic_oob_count() @ret_nonlocal true @deep true returns i64 linked
 
-
     function panic_null_count() @ret_nonlocal true @deep true returns i64 linked
-
 
     function panic_region_count() @ret_nonlocal true @deep true returns i64 linked
 
-
     function panic_size_count() @ret_nonlocal true @deep true returns i64 linked
-
 
     function panic_string_count() @ret_nonlocal true @deep true returns i64 linked
 
-
     function panic_oom_count() @ret_nonlocal true @deep true returns i64 linked
-
 
     function panic_resource_count() @ret_nonlocal true @deep true returns i64 linked
 
-
     function panic_deadlock_count() @ret_nonlocal true @deep true returns i64 linked
-
 
     ; Is a catch point installed on this thread's stack? The panic helper asks
     ; the shim the same question implicitly; this is for a caller that wants to
     ; know whether a trap would end the process.
     function catch_active() @ret_nonlocal true @deep true returns bool linked
-
 
 }

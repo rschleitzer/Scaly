@@ -80,174 +80,11 @@ define diagnostics
     ; Build a publishDiagnostics notification for `uri` from `text`.
     procedure publish_diagnostics(mutable uri: String, mutable text: String) @page true @direct true @ret_caller true @deep true @deep_beyond_1 true returns String io mutable modeler_error_count reads modeler_error_count linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; Build a publishDiagnostics notification with an EMPTY diagnostics
     ; array for `uri` — used on textDocument/didClose to clear any
     ; diagnostics the editor is still showing for a now-closed document.
     ; Same envelope as publish_diagnostics#, minus the compiler pipeline.
     function clear_diagnostics(uri: String) @page true @direct true @ret_caller true @deep true returns String linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; The package root file that owns `path` as a (possibly nested) module,
     ; or "" when `path` is not a package member.
@@ -264,27 +101,6 @@ define diagnostics
     ; path must not be able to spin the worker.
     procedure package_root(mutable path: String) @page true @direct true @deep true returns String io linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; The program name the compiler would use for `root`: its file name minus
     ; the .scaly extension (mirrors cli.extract_program_name#).
     ;
@@ -296,26 +112,6 @@ define diagnostics
     ; match a path with a foreign root segment. The false positives change
     ; wording and stay.
     procedure root_program_name(mutable root: String) @page true @direct true @ret_caller true @deep true returns String linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; Planner diagnostics for the whole package root `root`, obtained by planning
     ; it once so that sibling modules resolve.
@@ -337,76 +133,6 @@ define diagnostics
     ; diagnostics# still takes those from the live buffer.
     procedure package_report(mutable root: String, path: String) @page true @direct true @ret_caller true @deep true @deep_beyond_1 true returns String io mutable modeler_error_count reads modeler_error_count linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; One LF-terminated publishDiagnostics notification per module file of `m`'s
     ; tree EXCEPT `path` — the answer the plan already holds for every file but
     ; the one that was asked about.
@@ -425,34 +151,6 @@ define diagnostics
     ; the first version reported.
     procedure sibling_notifications(m: ref[Module], entry: String, path: String, planner: ref[Planner.Planner]) @page true @direct true @ret_caller true @deep true returns String io linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; The publishDiagnostics notification for one sibling module `file`, followed
     ; by its LF, read out of the planner that has already run.
     ;
@@ -463,72 +161,9 @@ define diagnostics
     ; have, the same bargain the head half makes.
     procedure sibling_notification(file: String, planner: ref[Planner.Planner]) @page true @direct true @ret_caller true @deep true returns String io linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; The publishDiagnostics envelope for `uri` around an already-assembled,
     ; comma-separated `body` of diagnostic objects ("" = none).
     function notification(uri: String, body: String) @page true @direct true @ret_caller true @deep true returns String linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; The directory an entry file owns its modules under: "<dir>/<name>/". The
     ; convention is the modeler's own — build_referenced_module# resolves
@@ -537,28 +172,9 @@ define diagnostics
     ; the same one package_root# walks UP.
     function subtree_prefix(entry: String) @page true @direct true @ret_caller true @deep true returns String linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; True when `file` belongs to the tree rooted at `entry`: the entry itself,
     ; or anything under the directory it owns.
     function owns_file(entry: String, prefix: String, file: String) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
 
     ; Every module FILE reachable from `m`, one per line (a path cannot contain
     ; an LF). Depth-first, `m` itself first.
@@ -575,112 +191,24 @@ define diagnostics
     ; all: a diagnostic there belongs to that package's own root.
     function module_files(m: ref[Module]) @page true @direct true @ret_caller true @deep true returns String linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; The module files nested inside one member — i.e. inside a namespace, the
     ; only member kind that can declare modules.
     function member_module_files(mem: ref[Member]) @page true @direct true @ret_caller true @deep true returns String linked
-
-
-
-
-
-
-
-
-
-
-
 
     ; The module files of a namespace definition, recursing through nested
     ; namespaces (`define a { define b { module c } }`).
     function definition_module_files(d: ref[Definition]) @page true @direct true @ret_caller true @deep true returns String linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; The head of a report (everything before the first LF) — the diagnostic
     ; objects belonging to the document that was asked about.
     function report_head(report: String) @page true @direct true @ret_caller true @deep true returns String linked
-
-
-
-
 
     ; The tail of a report (everything after the first LF) — the sibling
     ; notifications, or "" when there are none.
     function report_tail(report: String) @page true @direct true @ret_caller true @deep true returns String linked
 
-
-
-
-
-
-
-
-
     ; Offset of the first LF in `s`, or its length when there is none.
     function first_lf(s: String) @ret_nonlocal true @deep true returns size_t linked
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; The SEMANTIC diagnostics of a document whose buffer does NOT parse — the
     ; body publish_diagnostics# appends after the parse error itself.
@@ -711,189 +239,24 @@ define diagnostics
     ; certain syntax errors in a broken buffer stays one.
     procedure broken_buffer_report(mutable path: String, mutable text: String) @page true @direct true @ret_caller true @deep true @deep_beyond_1 true returns String io mutable modeler_error_count reads modeler_error_count linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; Register every loaded package's concepts with the planner
     ; (inlined mirror of cli.register_packages).
     procedure register_packages(mutable planner: ref[Planner.Planner], model: ref[Program]) @deep true @deep_this_2 true linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; One LSP diagnostic object at the given byte offset.
     function diag_object(source: String, offset: size_t, message: String) @page true @direct true @ret_caller true @deep true returns String linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; {"line":L,"character":C}
     function pos(line: size_t, character: size_t) @page true @direct true @ret_caller true @deep true returns String linked
-
-
-
-
-
-
-
-
-
-
-
 
     ; Strip a `file://` scheme prefix from a document URI, leaving a
     ; filesystem path the modeler can resolve sibling modules against.
     ; Non-file URIs are returned unchanged.
     function strip_uri(uri: String) @page true @direct true @deep true returns String linked
 
-
-
-
-
-
-
-
-
-
-
-
     ; `"key":`
     function key(k: Slice[char]) @page true @direct true @ret_caller true @deep true returns String linked
 
-
-
-
-
-
-
-
-
     ; `"s"`
     function quoted(s: Slice[char]) @page true @direct true @ret_caller true @deep true returns String linked
-
-
-
-
-
-
-
 }

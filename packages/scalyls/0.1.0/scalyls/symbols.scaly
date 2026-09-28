@@ -9075,6 +9075,12 @@ define symbols
         cmd.append("'" as char)
         cmd.append "*.scaly"
         cmd.append("'" as char)
+        ; a package's generated interface restates its sources in fewer lines
+        ; (compiler/Interface.scaly): the sources beside it are the files
+        cmd.append " -not -path "
+        cmd.append("'" as char)
+        cmd.append "*/interface/*"
+        cmd.append("'" as char)
         cmd.append " 2>/dev/null"
         let cmd_str cmd.to_string()
 
@@ -9120,42 +9126,9 @@ define symbols
         uri
     }
 
-    ; Wrap a filesystem path back into a "file://" uri. A file of a generated
-    ; package interface (a dependency is loaded through it) is answered as its
-    ; SOURCE file: the interface keeps every line where the source has it, so
-    ; a definition's line and column are the source's.
+    ; Wrap a filesystem path back into a "file://" uri.
     function path_to_uri(path: String) returns String
-    {
-        var sb StringBuilder()
-        sb.append "file://"
-        var i: size_t 0
-        let n path.get_length()
-        while i < n
-        {
-            if symbols.at_interface_dir(path, i)
-                set i: i + 10
-            sb.append(path.get(i) as char)
-            set i: i + 1
-        }
-        sb.to_string()
-    }
-
-    ; does `/interface/` start at byte i of path?
-    function at_interface_dir(path: String, i: size_t) returns bool
-    {
-        let needle String("/interface/")
-        let k needle.get_length()
-        if i + k > path.get_length()
-            return false
-        var j: size_t 0
-        while j < k
-        {
-            if path.get(i + j) <> needle.get(j)
-                return false
-            set j: j + 1
-        }
-        true
-    }
+        "file://`path`"
 
     ; The directory portion of `path` (everything before the last '/'), or "".
     function dir_of(path: String) returns String

@@ -8,20 +8,5 @@ define Console
 {
     procedure print(message: pointer[const_char]) @ret_nonlocal true @deep true io linked
 
-
-
-
-
     procedure println(message: pointer[const_char]) @ret_nonlocal true @deep true io linked
-
-
-
-
-
-
-
-
-
-
-
 }

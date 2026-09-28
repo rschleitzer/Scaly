@@ -5,7 +5,4 @@ define scalyc {
     module cli
 
     procedure test() @ret_nonlocal true @deep true returns int io mutable modeler_error_count reads modeler_error_count linked
-
-
-
 }

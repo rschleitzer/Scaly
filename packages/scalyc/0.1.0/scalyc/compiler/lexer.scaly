@@ -45,6 +45,7 @@ define lexer
         position: size_t
         previous_position: size_t
         token: Token
+        mark: size_t
     )
 
     ; ========================================================================
@@ -59,6 +60,16 @@ define lexer
         var position: size_t
         var previous_position: size_t
         var token: Token
+        ; A file of a generated package interface is read with the positions
+        ; of its lines in the source (compiler/Interface.scaly writes them into
+        ; the package's interface/positions; the Modeler hands a file's pairs
+        ; over, use_positions#): (interface byte, source byte), ascending. When
+        ; the scan reaches the interface byte of a pair, the position becomes
+        ; its source byte, so every span of the file is a source offset. No
+        ; pairs for any other file.
+        var marks: Slice[size_t]
+        var mark: size_t            ; the next pair
+        var mark_at: pointer[char]  ; where it starts in the text, or null
     )
     {
         init (src: String)
@@ -68,6 +79,10 @@ define lexer
             set end: null
             set position: 0
             set previous_position: 0
+            set marks.data: null
+            set marks.length: 0
+            set mark: 0
+            set mark_at: null
             set token: Token.Empty(EmptyToken())
             ; s157: stage-1 drops the original two-armed `if src.length = 0
             ; {...} else {...}` block entirely (current/end never stored →
@@ -91,7 +106,39 @@ define lexer
             set position: position + 1
             if current >= end
                 set current: null
+            else if current = mark_at
+                this.take_mark()
+        }
 
+        ; The position pairs of an interface file (see `marks`); a pair at or
+        ; before the cursor is behind the scan already.
+        procedure use_positions(mutable this, pairs: Slice[size_t])
+        {
+            set marks: pairs
+            set mark: 0
+            if current <> null
+            {
+                let at (current as size_t) - (source.get_buffer() as size_t)
+                while mark * 2 + 1 < marks.length and marks[mark * 2] < at
+                    set mark: mark + 1
+            }
+            set mark_at: this.mark_pointer()
+        }
+
+        ; The scan reached the next pair's line: take the source's position.
+        procedure take_mark(mutable this)
+        {
+            set position: marks[mark * 2 + 1]
+            set mark: mark + 1
+            set mark_at: this.mark_pointer()
+        }
+
+        ; Where the next pair's line starts in the text, or null.
+        function mark_pointer(this) returns pointer[char]
+        {
+            if mark * 2 + 1 >= marks.length
+                return null
+            (source.get_buffer() as pointer[char]) + marks[mark * 2]
         }
 
         procedure empty(mutable this)
@@ -904,7 +951,7 @@ define lexer
         ; Used by the parser's speculative else-lookahead so a separator colon
         ; can be un-consumed when no else follows (no-else if).
         procedure save_state(this) returns LexerState
-            LexerState(current, position, previous_position, token)
+            LexerState(current, position, previous_position, token, mark)
 
         procedure restore_state(mutable this, s: LexerState)
         {
@@ -912,6 +959,8 @@ define lexer
             set position: s.position
             set previous_position: s.previous_position
             set token: s.token
+            set mark: s.mark
+            set mark_at: this.mark_pointer()
         }
     }
 

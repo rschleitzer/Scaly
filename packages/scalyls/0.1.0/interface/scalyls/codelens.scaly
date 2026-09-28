@@ -71,45 +71,6 @@ define codelens
     ; resolved (the parent's buffer, or the file from disk when it had none).
     procedure lenses(mutable uri: String, mutable text: String) @page true @direct true @ret_caller true @deep true returns String io mutable lc_col, lc_line, lc_off, modeler_error_count reads lc_line linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; ====================================================================
     ; THE SHARED PLAN.
     ;
@@ -129,110 +90,12 @@ define codelens
     ; ====================================================================
     procedure planned_fragment(mutable path: String, mutable text: String) @page true @direct true @ret_caller true @deep true returns String io mutable lc_col, lc_line, lc_off, modeler_error_count reads modeler_error_count linked
 
-
-
-
-
-
-
     procedure root_planned_fragment(mutable root: String, path: String, text: String) @page true @direct true @ret_caller true @deep true @deep_beyond_1 true returns String io mutable lc_col, lc_line, lc_off, modeler_error_count reads modeler_error_count linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     procedure document_planned_fragment(mutable path: String, mutable text: String) @page true @direct true @ret_caller true @deep true @deep_beyond_1 true returns String io mutable lc_col, lc_line, lc_off, modeler_error_count reads modeler_error_count linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; Join every plan-derived family over the one plan.
     procedure families(plan: Plan, has_diag: bool, entry_file: String, path: String, plan_text: String, anchor_text: String) @page true @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; ====================================================================
     ; The file-level lenses, both at offset 0.
@@ -244,48 +107,12 @@ define codelens
     ; ====================================================================
     procedure head_fragment(path: String, mutable text: String) @page true @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; True when the document is a PROGRAM: it parses and carries at least one
     ; top-level statement. A library root (`define X { module a }`) carries
     ; none, so it gets no Run lens — which is the whole distinction the CLI
     ; makes too. A buffer that does not parse gets none either: `--jit` on it
     ; would print a diagnostic the editor is already showing.
     procedure has_top_level_statements(mutable text: String) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; ====================================================================
     ; GENERATED FILES — the table, mirroring ./mkp.
@@ -304,74 +131,9 @@ define codelens
     ; ====================================================================
     procedure generated_banner(text: String, path: String) @page true @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; The banner lens itself: the title names the generator RELATIVE to the
     ; checkout (what a reader can act on), the click opens it absolutely.
     procedure banner_lens(text: String, root: String, rel: String) @page true @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
-
-
-
-
-
-
-
-
-
 
     ; ====================================================================
     ; PACKAGE / MODULE declarations.
@@ -397,102 +159,11 @@ define codelens
     ; ====================================================================
     procedure declaration_fragment(mutable text: String, mutable path: String) @page true @direct true @ret_caller true @deep true returns String io mutable lc_col, lc_line, lc_off reads lc_line linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     procedure declarations_fragment(text: String, mutable path: String, mutable base: String, dir: String, decls: ref[Vector[DeclarationSyntax]]?) @page true @direct true @ret_caller true @deep true returns String io mutable lc_col, lc_line, lc_off reads lc_line linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; One declaration: a lens for `package` / `module`, a recursion for a
     ; namespace, nothing for the rest.
     procedure declaration_lens(text: String, mutable path: String, mutable base: String, dir: String, decl: DeclarationSyntax) @page true @direct true @ret_caller true @deep true returns String io mutable lc_col, lc_line, lc_off reads lc_line linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; ====================================================================
     ; MUTABLE / SHARED module globals.
@@ -560,34 +231,10 @@ define codelens
     ; ====================================================================
     procedure storage_lens(text: String, offset: size_t, keyword: String, annotation: ref[BindingAnnotationSyntax]?, title: String) @page true @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
-
-
-
-
-
-
-
-
-
-
-
-
     ; Exactly Modeler.handle_binding_annotation#'s condition: an annotation is
     ; present AND its spec is a TypeSyntax. Anything else models to null, and a
     ; null type is what makes the Modeler drop the whole declaration.
     function declares_a_type(annotation: ref[BindingAnnotationSyntax]?) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; `package NAME VERSION` -> packages/NAME/VERSION/NAME.scaly under the ONE
     ; resolution base the compiler uses: $SCALY_HOME when set, else the current
@@ -599,102 +246,14 @@ define codelens
     ; dots from version.start" is exactly a version and nothing else.
     procedure package_lens(text: String, mutable path: String, pkg: PackageSyntax) @page true @direct true @ret_caller true @deep true returns String io mutable lc_col, lc_line, lc_off reads lc_line linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; `module NAME` -> <base>/NAME.scaly, where `base` is the search directory
     ; the Modeler would use (see the section comment above). Shown relative to
     ; the document's own directory, so a sibling reads "lexer.scaly" and a
     ; namespace child reads "scalyls/json.scaly".
     procedure module_lens(text: String, mutable base: String, dir: String, m: ModuleSyntax) @page true @direct true @ret_caller true @deep true returns String io mutable lc_col, lc_line, lc_off reads lc_line linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; The digits-and-dots run starting at `offset` ("0.1.0").
     function version_text(text: String, offset: size_t) @page true @direct true @ret_caller true @deep true returns String linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; The base a `package` declaration resolves against, ABSOLUTE, or "".
     ;
@@ -708,34 +267,6 @@ define codelens
     ; outside one.
     procedure resolution_base(mutable path: String) @page true @direct true @ret_caller true @deep true returns String io linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; ====================================================================
     ; Path arithmetic.
     ; ====================================================================
@@ -745,59 +276,17 @@ define codelens
     ; a bare relative name).
     function strip_suffix(path: String, suffix: String) @page true @direct true @ret_caller true @deep true returns String linked
 
-
-
-
-
-
-
-
-
-
     function join(left: String, right: String) @page true @direct true @ret_caller true @deep true returns String linked
-
-
-
-
-
-
-
 
     ; Everything before the last "/" ("." when there is none).
     function directory_of(path: String) @page true @direct true @ret_caller true @deep true returns String linked
 
-
-
-
-
-
-
     ; Everything after the last "/".
     function file_name(path: String) @page true @direct true @deep true returns String linked
-
-
-
-
-
-
-
-
-
-
 
     ; `target` with a leading "<dir>/" removed, or `target` unchanged when it
     ; does not live under `dir`. What the reader wants to see for a resolved
     ; module: "lexer.scaly" for a sibling, "scalyls/json.scaly" for a child.
     function relative_to(target: String, dir: String) @page true @direct true @deep true returns String linked
-
-
-
-
-
-
-
-
-
-
 
 }

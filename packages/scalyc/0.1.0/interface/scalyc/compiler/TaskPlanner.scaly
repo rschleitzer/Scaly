@@ -171,79 +171,11 @@ define TaskPlanner
     {
         init() linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         ; ================================================================
         ; Entry point: walk every planned function body plus the program's
         ; top-level statements and record one verdict per `for` loop.
         ; ================================================================
         procedure analyze(mutable this: TaskPlanner, plan: Plan, entry_file: String) @deep true @deep_this_2 true linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         ; ================================================================
         ; Finder: recurse over every statement/operand; each `for` met is
@@ -255,224 +187,13 @@ define TaskPlanner
 
         procedure find_operands(mutable this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?) @deep true linked
 
-
-
-
-
-
-
-
-
-
-
-
-
         procedure find_statement_ref(mutable this: TaskPlanner, stmt: ref[PlannedStatement]?) @ret_nonlocal true @deep true linked
-
-
-
-
-
-
-
 
         procedure find_action(mutable this: TaskPlanner, act: PlannedAction) @ret_nonlocal true @deep true linked
 
-
-
-
-
         procedure find_statement(mutable this: TaskPlanner, stmt: PlannedStatement) @ret_nonlocal true @deep true linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         procedure find_operand(mutable this: TaskPlanner, op: PlannedOperand) @deep true linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         ; ================================================================
         ; Classifier: walk ONE loop body; the first blocking construct
@@ -482,54 +203,10 @@ define TaskPlanner
 
         procedure classify_for(mutable this: TaskPlanner, fr: PlannedFor) @ret_nonlocal true @deep true linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         ; Reset the per-loop scratch and walk one body; cls_blocked /
         ; cls_reason carry the verdict. Shared by the report walk and
         ; the Emitter's per-site promotion query.
         procedure classify_body(mutable this: TaskPlanner, fr: PlannedFor) @ret_nonlocal true @deep true linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         ; ================================================================
         ; Reductions (ROADMAP 4.8, route 2). A chunk of a promoted loop runs
@@ -544,324 +221,30 @@ define TaskPlanner
 
         procedure note_inner_label(mutable this: TaskPlanner, label_name: String) @deep true linked
 
-
-
-
-
-
-
         ; a `continue loop <label_name>` that leaves the classified body
         function label_leaves_body(this: TaskPlanner, label_name: String) @ret_nonlocal true @deep true returns bool linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         procedure reset_reductions(mutable this: TaskPlanner) @deep true linked
-
-
-
-
-
 
         ; float / double
         function red_is_float(t: PlannedType) @ret_nonlocal true @deep true returns bool linked
 
-
-
-
-
-
-
         ; 1 = a signed integer type, 2 = an unsigned one, 0 = anything else
         function red_int_kind(t: PlannedType) @ret_nonlocal true @deep true returns int linked
-
-
-
-
-
-
-
 
         ; Record one update of `name` by `op`, accounting for `uses`
         ; occurrences of the name. The same variable reduced two ways blocks.
         procedure note_reduction(mutable this: TaskPlanner, name: String, op: int, uses: size_t) @persists true @deep true linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         ; `set v: v OP e` / `set v: e OP v` on a loop-external integer v
         procedure try_reduction_action(mutable this: TaskPlanner, act: PlannedAction) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         ; `if e > v  set v: e` (max) / `if e < v  set v: e` (min), either
         ; orientation of the comparison, v a loop-external integer
         procedure try_reduction_if(mutable this: TaskPlanner, iff: PlannedIf) @ret_nonlocal true @deep true returns bool linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         ; the same variable, through the same member hops
         function same_access(a: PlannedOperand, b: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         ; Every occurrence of a reduced name must be one its updates account
         ; for: any other read would see a chunk's PARTIAL, any other write
@@ -869,247 +252,21 @@ define TaskPlanner
         ; condition), every construct -- the net under the pattern matchers.
         procedure check_reductions(mutable this: TaskPlanner, body: PlannedAction, cond: ref[Vector[PlannedOperand]]?) @deep true linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         function count_in_action(this: TaskPlanner, act: PlannedAction, name: String) @ret_nonlocal true @deep true returns size_t linked
-
 
         function count_in_ops(this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?, name: String) @ret_nonlocal true @deep true returns size_t linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         function count_in_stmt_ref(this: TaskPlanner, stmt: ref[PlannedStatement]?, name: String) @ret_nonlocal true @deep true returns size_t linked
 
-
-
-
-
-
-
         function count_in_stmt(this: TaskPlanner, stmt: PlannedStatement, name: String) @ret_nonlocal true @deep true returns size_t linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         ; Unknown shapes count as a use -- conservative: the check then
         ; blocks rather than trusting a read it could not see.
         function count_in_op(this: TaskPlanner, op: PlannedOperand, name: String) @ret_nonlocal true @deep true returns size_t linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         ; A kept value next to a unary `&`: the value may point into the
         ; chunk's stack frame, which dies with the chunk.
         procedure check_kept_values(mutable this: TaskPlanner) @ret_nonlocal true @deep true linked
-
-
-
-
 
         ; ================================================================
         ; While census (--loop-census; report only, emission untouched).
@@ -1125,221 +282,34 @@ define TaskPlanner
 
         procedure classify_while(mutable this: TaskPlanner, wh: PlannedWhile) @deep true linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         ; The `for` classifier over a counted loop's body, with the counter
         ; as the loop variable (find_counter set cls_loop_var). The
         ; condition is walked too: the bound is read every iteration.
         procedure classify_counted_body(mutable this: TaskPlanner, wh: PlannedWhile) @ret_nonlocal true @deep true linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         ; A write of the counter that is itself a step (`set i: i + 1`
         ; before a `continue`) is not a second write of the counter.
         procedure note_counter_step(mutable this: TaskPlanner, act: PlannedAction) @deep true linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         procedure not_counted(mutable this: TaskPlanner, reason: String) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
 
         ; Recognize the counted shape. On success cls_loop_var names the
         ; counter and cls_step_first says whether its step is the body's
         ; first statement; on failure cls_reason names the missing part.
         procedure find_counter(mutable this: TaskPlanner, wh: PlannedWhile) @ret_nonlocal true @deep true returns bool linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         ; A comparison call with two operands (`<`, `<=`, `>`, `>=`, `<>`).
         function is_comparison(this: TaskPlanner, op: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         ; The bare variable at argument position `index` of a comparison
         ; call, or "".
         function comparison_side(this: TaskPlanner, op: PlannedOperand, index: size_t) @page true @direct true @deep true returns String linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         ; The name of a bare variable operand (no member hop), or "".
         function bare_variable_name(this: TaskPlanner, op: PlannedOperand) @page true @direct true @ret_param_1 true @deep true returns String linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         ; The top-level statements of a braced loop body, or null.
         function body_statements(this: TaskPlanner, body: PlannedAction) @deep true returns ref[Vector[PlannedStatement]]? linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         ; How the top-level statements write `name`: 1 = exactly one step
         ; (`set name: name +/- K`, K a constant or a name) and no other
@@ -1347,113 +317,11 @@ define TaskPlanner
         ; than one top-level write, 0 = none. Sets cls_step_first.
         procedure counter_steps(mutable this: TaskPlanner, stmts: ref[Vector[PlannedStatement]]?, name: String) @ret_nonlocal true @deep true returns int linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         ; 1 = stmt is a step of name, 2 = another write of name, 0 = neither.
         function step_kind(this: TaskPlanner, stmt: PlannedStatement, name: String) @ret_nonlocal true @deep true returns int linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         ; Is src `name + K` or `name - K`, K a constant or a variable?
         function is_step_of(this: TaskPlanner, src: ref[Vector[PlannedOperand]]?, name: String) @deep true returns bool linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         ; Milestone 4.4 entry point: the Emitter asks per `for` site
         ; whether the body verifies parallelizable — plain `for` drives
@@ -1461,15 +329,6 @@ define TaskPlanner
         ; conservatism as the report; the purity memo persists across
         ; sites on one instance.
         procedure loop_promotable(mutable this: TaskPlanner, plan: Plan, file: String, fr: PlannedFor) @ret_nonlocal true @deep true @deep_this_2 true returns bool linked
-
-
-
-
-
-
-
-
-
 
         ; Milestone 4.4: the adaptive engine never drives loops inside
         ; its own foundation. A fork allocates TaskGroup pages and may
@@ -1481,28 +340,10 @@ define TaskPlanner
         ; and fiber modules stay sequential by rule, not by verdict.
         function file_is_foundation(file: String) @ret_nonlocal true @deep true returns bool linked
 
-
-
-
-
-
         ; Record the first blocker. Later calls are no-ops.
         procedure block(mutable this: TaskPlanner, reason: String) @deep true linked
 
-
-
-
-
-
-
         procedure block_named(mutable this: TaskPlanner, prefix: String, name: String) @deep true linked
-
-
-
-
-
-
-
 
         ; Is name bound inside the classified loop body? The loop variable
         ; itself counts: it is per-iteration state (each iteration sees a
@@ -1511,27 +352,6 @@ define TaskPlanner
         ; local binding (conservative under the flat never-popped scratch).
         function is_local(this: TaskPlanner, name: String) @ret_nonlocal true @deep true returns bool linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         ; Record a body-introduced name (binding, if-prop, choose-when,
         ; while/try condition binding, inner-for element): a name whose
         ; initializer / scrutinee / sequence can hand it a reference into
@@ -1539,15 +359,6 @@ define TaskPlanner
         ; mutating calls through it must block exactly like the external
         ; itself (the laundering counterexample: `let r outer` + `r.add i`).
         procedure add_body_name(mutable this: TaskPlanner, name: String, aliases_external: bool) @deep true linked
-
-
-
-
-
-
-
-
-
 
         ; Can the value produced by ops carry a reference into
         ; loop-external state? Per operand: a SCALAR result never can
@@ -1562,101 +373,13 @@ define TaskPlanner
         ; "parallel").
         function ops_alias_external(this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?) @ret_nonlocal true @deep true returns bool linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
         function op_aliases_external(this: TaskPlanner, op: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         ; A copied SCALAR value cannot carry a reference into its source;
         ; records, unions, String (shares its buffer until reallocation)
         ; and pointer/ref (which ARE references) all can. Mirrors
         ; Planner.is_scalar_value_type_name's list.
         function value_can_alias(this: TaskPlanner, t: PlannedType) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         ; Does the operand tree read the given name? Used to accept a
         ; Vector.put whose index is derived from the loop variable
@@ -1665,473 +388,29 @@ define TaskPlanner
         ; blocker (never a false "parallel").
         function operands_read_name(this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?, name: String) @ret_nonlocal true @deep true returns bool linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
         function operand_reads_name(this: TaskPlanner, op: PlannedOperand, name: String) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         procedure cls_operands(mutable this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?) @deep true linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         procedure cls_statement_ref(mutable this: TaskPlanner, stmt: ref[PlannedStatement]?) @deep true linked
-
-
-
-
-
-
-
-
-
 
         ; Walk one action: reads first, then the write target. A bare `set
         ; name:` into a body-local binding is fine; anything whose root
         ; lives outside the loop is a cross-iteration conflict.
         procedure cls_action(mutable this: TaskPlanner, act: PlannedAction) @deep true linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         procedure retaint_write_target(mutable this: TaskPlanner, t: Vector[PlannedOperand], src: ref[Vector[PlannedOperand]]?) @deep true linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         procedure cls_write_target(mutable this: TaskPlanner, t: Vector[PlannedOperand]) @deep true linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         procedure cls_statement(mutable this: TaskPlanner, stmt: PlannedStatement) @deep true linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         procedure cls_operand(mutable this: TaskPlanner, op: PlannedOperand) @deep true linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         ; A frame-local allocation (Local/Unspecified life) stays inside
         ; the iteration; a Call life (caller page) or Reference life
         ; (^this / ^named page) escapes the loop frame.
         procedure check_life(mutable this: TaskPlanner, life: Lifetime) @deep true linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         ; Reading a MUTABLE module global blocks: since M2.2 every mutable
         ; global (except `shared` declarations) is thread-local, so a task
@@ -2140,21 +419,6 @@ define TaskPlanner
         ; allocator's own state cells are sanctioned — RBMM allocation is
         ; per-task by design (one region per task).
         procedure check_global_read(mutable this: TaskPlanner, g: PlannedGlobalRef) @deep true linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         ; ================================================================
         ; Sanctioned effects. A task allocates in its OWN region, so the
@@ -2178,40 +442,9 @@ define TaskPlanner
         ; still blocks the loop: its order is the program's output.
         function is_read_primitive(mangled: String) @ret_nonlocal true @deep true returns bool linked
 
-
-
-
-
-
-
-
-
-
         function extern_is_benign(this: TaskPlanner, name: String) @ret_nonlocal true @deep true returns bool linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         function global_is_sanctioned(this: TaskPlanner, name: String) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
-
 
         ; ================================================================
         ; Transitive purity. `pure` on a PlannedFunction is a DECLARATION
@@ -2229,469 +462,28 @@ define TaskPlanner
 
         procedure memo_purity(mutable this: TaskPlanner, mangled: String, is_pure: bool) @ret_nonlocal true @deep true linked
 
-
-
-
-
-
-
-
-
         procedure effectively_pure(mutable this: TaskPlanner, mangled: String) @ret_param_0 true @deep true returns bool linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         ; The purity walk: recurse over a callee body looking for effect
         ; violations. Same arm coverage as the finder; only calls and
         ; global touches carry logic.
         procedure pw_operands(mutable this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?) @deep true linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         procedure pw_statement_ref(mutable this: TaskPlanner, stmt: ref[PlannedStatement]?) @deep true linked
-
-
-
-
-
-
-
-
-
 
         ; Writes to LOCAL state are what procedures are for — only a
         ; global store is an observable effect here.
         procedure pw_action(mutable this: TaskPlanner, act: PlannedAction) @deep true linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         procedure pw_statement(mutable this: TaskPlanner, stmt: PlannedStatement) @deep true linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         procedure pw_global(mutable this: TaskPlanner, g: PlannedGlobalRef) @deep true linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         procedure pw_call(mutable this: TaskPlanner, call: PlannedCall) @deep true linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         procedure pw_operand(mutable this: TaskPlanner, op: PlannedOperand) @deep true linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         procedure cls_call(mutable this: TaskPlanner, call: PlannedCall) @deep true linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         ; A namespace-qualified call carries its qualifier in the name
         ; (`Esis.put`), so the capital that marks a construction is judged
@@ -2700,93 +492,11 @@ define TaskPlanner
         ; frame-local allocation -- a false "parallel" the Emitter acted on.
         function is_construction_name(this: TaskPlanner, name: String) @ret_nonlocal true @deep true returns bool linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         ; put(receiver, index, element): receiver = args[0], index = args[1].
         procedure put_is_disjoint(mutable this: TaskPlanner, call: PlannedCall) @ret_nonlocal true @deep true returns bool linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         ; ref / pointer / an Option over one / a delegate or function pointer
         function type_is_reference_shaped(t: PlannedType) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
-
-
-
-
-
-
 
         ; ================================================================
         ; Written-params analysis (wm_/wr_): which of a callee's input
@@ -2807,127 +517,9 @@ define TaskPlanner
 
         function wm_all() @ret_nonlocal true @deep true returns size_t linked
 
-
-
-
         procedure memo_written(mutable this: TaskPlanner, mangled: String, mask: size_t) @persists true @ret_nonlocal true @deep true linked
 
-
-
-
-
-
         procedure written_mask(mutable this: TaskPlanner, mangled: String) @ret_param_0 true @deep true returns size_t linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         ; Hard-coded masks for the benign-extern whitelist (the writers
         ; write through arg 0; realloc/free consume arg 0). Anything not
@@ -2935,78 +527,9 @@ define TaskPlanner
         ; a mask decision here.
         function extern_written_mask(this: TaskPlanner, name: String) @ret_nonlocal true @deep true returns size_t linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         ; ---- the per-callee body walk ----
 
         procedure wr_add_name(mutable this: TaskPlanner, name: String, mask: size_t) @persists true @ret_nonlocal true @deep true linked
-
-
-
-
-
 
         ; Latest entry wins (backward scan): a re-taint appends a wider
         ; mask that shadows the original. Unknown names are conservative
@@ -3014,353 +537,28 @@ define TaskPlanner
         ; is a shape this walk does not model).
         function wr_lookup(this: TaskPlanner, name: String) @ret_param_0 true @deep true returns size_t linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         ; Reach-mask of the value an operand produces: which params can
         ; it alias? Scalars reach nothing; a call result reaches at most
         ; what its arguments reach; unknown shapes reach everything.
         function wr_mask_of_ops(this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?) @ret_nonlocal true @deep true returns size_t linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         function wr_mask_of_op(this: TaskPlanner, op: PlannedOperand) @ret_param_0 true @deep true returns size_t linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         procedure wr_operands(mutable this: TaskPlanner, ops: ref[Vector[PlannedOperand]]?) @deep true linked
 
-
-
-
-
-
-
-
-
-
-
-
-
         procedure wr_statement_ref(mutable this: TaskPlanner, stmt: ref[PlannedStatement]?) @ret_nonlocal true @deep true linked
-
-
-
-
-
-
-
 
         procedure wr_action(mutable this: TaskPlanner, act: PlannedAction) @deep true linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         procedure wr_statement(mutable this: TaskPlanner, stmt: PlannedStatement) @ret_nonlocal true @deep true linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         procedure wr_operand(mutable this: TaskPlanner, op: PlannedOperand) @deep true linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         ; a SIMD vector store writes its argument 1 (ROADMAP-simd.md phase 2;
         ; WriteCensus.is_simd_store is the same list)
         function is_simd_store(name: String) @ret_nonlocal true @deep true returns bool linked
 
-
-
-
-
-
         procedure wr_call(mutable this: TaskPlanner, call: PlannedCall) @deep true linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         ; A direct callee must be transitively effect-free
         ; (effectively_pure — the function keyword alone is a claim).
@@ -3372,166 +570,11 @@ define TaskPlanner
         ; x` (List.add writes this — order-dependent).
         procedure callee_verdict(mutable this: TaskPlanner, call: PlannedCall) @deep true linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         ; The positions a callee's declaration may write: its `mutable`
         ; parameters (none for a function) and every page parameter.
         function declared_mask(this: TaskPlanner, func: PlannedFunction) @ret_nonlocal true @deep true returns size_t linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         function is_page_type(t: PlannedType) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         ; Every argument position the mask marks written must be
         ; per-iteration state; the rest are free (read-only positions
@@ -3539,72 +582,6 @@ define TaskPlanner
         ; recurse to the named root inside.
         function masked_args_local(this: TaskPlanner, call: PlannedCall, mask: size_t) @ret_nonlocal true @deep true returns bool linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         function arg_root_local(this: TaskPlanner, op: PlannedOperand) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     }
 }

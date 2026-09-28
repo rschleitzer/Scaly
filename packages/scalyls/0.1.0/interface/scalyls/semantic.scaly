@@ -74,74 +74,16 @@ define semantic
     ; "scaly.containers.String"), or "" on a miss / parse error / unresolved.
     procedure semantic_type_packed(mutable source: String, mutable uri: String, packed: String) @page true @direct true @ret_caller true @deep true @deep_beyond_1 true returns String io mutable modeler_error_count reads modeler_error_count linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; Worker reply wrapper: a leading status byte distinguishes a genuine
     ; MISS ("0") from a pipeline CRASH (empty frame). Without it, an empty
     ; reply on a legitimate miss would be read as a crash by worker.exchange#
     ; and respawn the worker on every hover. On a hit the reply is "1<name>".
     procedure semantic_type_framed(mutable source: String, mutable uri: String, packed: String) @page true @direct true @ret_caller true @deep true returns String io mutable modeler_error_count reads modeler_error_count linked
 
-
-
-
-
-
-
-
-
-
-
-
-
     ; COMPLETION entry (mode 2): the OWN type of the receiver expression at
     ; `offset` (the innermost variable's base type, NOT the enclosing member
     ; access). "" on a miss / unresolved.
     procedure receiver_type_at_offset(mutable source: String, mutable uri: String, offset: size_t) @page true @direct true @ret_caller true @deep true @deep_beyond_1 true returns String io mutable modeler_error_count reads modeler_error_count linked
-
-
-
-
 
     ; Run the full pipeline and walk the Plan for the type at `offset`.
     ;
@@ -161,57 +103,6 @@ define semantic
     ; same way; codelens.planned_fragment# routes through the root for the
     ; third time.
     procedure resolve_at(mutable source: String, mutable path: String, mode: size_t, offset: size_t) @page true @direct true @ret_caller true @deep true @deep_beyond_2 true returns String io mutable modeler_error_count reads modeler_error_count linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; The document plan had no answer. If this file is a module of a package,
     ; plan the package ROOT and ask the same question of that plan.
@@ -234,51 +125,10 @@ define semantic
     ; carries (worker.budget_for_kind#).
     procedure resolve_through_root(source: String, mutable path: String, mode: size_t, offset: size_t, file: FileSyntax) @page true @direct true @ret_caller true @deep true returns String io mutable modeler_error_count reads modeler_error_count linked
 
-
-
-
-
-
-
-
-
-
-
-
     ; Plan `root` — the package root that owns `path` — and walk that plan for
     ; the type at `offset`. `file` is the parse of the DOCUMENT, so the walk's
     ; file identity is decided exactly as it is for the document plan.
     procedure root_resolve(mutable root: String, path: String, mode: size_t, offset: size_t, file: FileSyntax) @page true @direct true @ret_caller true @deep true @deep_beyond_1 true returns String io mutable modeler_error_count reads modeler_error_count linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; ====================================================================
     ; WHERE IN A MEMBER CHAIN THE CURSOR IS
@@ -305,85 +155,10 @@ define semantic
     ;     operand that actually HAS a member chain (see walk_operand#).
     function chain_position(source: String, offset: size_t) @ret_nonlocal true @deep true returns size_t linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; Letters, digits and `_` — the bytes an identifier is made of. A private
     ; copy for the same reason position_to_offset# is one: this module does not
     ; depend on symbols.
     function is_ident_byte(c: u8) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
 
     ; ====================================================================
     ; FILE IDENTITY for planner spans.
@@ -438,190 +213,30 @@ define semantic
     ; needed; the section header above has the reasoning for each.
     function owns_routine(file: FileSyntax, path: String, fn_file: String, start: size_t) @ret_nonlocal true @deep true returns bool linked
 
-
-
-
-
-
     ; Does the document declare a routine (function / procedure / operator /
     ; init / deinit) or a module-level global starting exactly at `start`?
     function is_routine_start(file: FileSyntax, start: size_t) @ret_nonlocal true @deep true returns bool linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     function decl_has_start(decl: DeclarationSyntax, start: size_t) @ret_param_0 true @deep true returns bool linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     function export_has_start(export_: ExportSyntax, start: size_t) @ret_param_0 true @deep true returns bool linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     function definition_has_start(def: DefinitionSyntax, start: size_t) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
-
-
-
-
-
 
     function namespace_has_start(ns: NamespaceSyntax, start: size_t) @ret_nonlocal true @deep true returns bool linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     function union_has_start(un: UnionSyntax, start: size_t) @ret_nonlocal true @deep true returns bool linked
-
-
-
 
     function body_has_start(body: ref[BodySyntax]?, start: size_t) @ret_nonlocal true @deep true returns bool linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     function member_has_start(member: MemberSyntax, start: size_t) @ret_param_0 true @deep true returns bool linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; 0-based (line, character) -> byte offset (self-contained copy of
     ; symbols.position_to_offset#, so this module does not depend on symbols —
     ; symbols depends on semantic for the Phase-2 prefer/fallback).
     function position_to_offset(source: String, line: size_t, character: size_t) @ret_nonlocal true @deep true returns size_t linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     function none() @page true @direct true @ret_nonlocal true @deep true returns ResolveResult linked
-
 
     ; Keep the TIGHTER of two candidates. With the containment prune gone
     ; (walk_operand#), sibling subtrees are all traversed and more than one can
@@ -631,702 +246,70 @@ define semantic
     ; equal-width preference.
     function tighter(a: ResolveResult, b: ResolveResult) @page true @direct true @ret_args_3 true @deep true returns ResolveResult linked
 
-
-
-
-
-
-
-
-
-
     ; ====================================================================
     ; Plan walk — first FOUND match wins across non-overlapping siblings.
     ; ====================================================================
     function walk_plan(plan: Plan, mode: size_t, offset: size_t, file: FileSyntax, path: String) @page true @direct true @ret_nonlocal true @deep true returns ResolveResult linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     function walk_structure(st: PlannedStructure, mode: size_t, offset: size_t, file: FileSyntax, path: String) @page true @direct true @ret_nonlocal true @deep true returns ResolveResult linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     function walk_union(un: PlannedUnion, mode: size_t, offset: size_t, file: FileSyntax, path: String) @page true @direct true @ret_nonlocal true @deep true returns ResolveResult linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     function walk_impl(impl: PlannedImplementation, mode: size_t, offset: size_t) @page true @direct true @ret_nonlocal true @deep true returns ResolveResult linked
 
-
-
-
-
-
-
-
-
-
-
-
     function walk_action(act: PlannedAction, mode: size_t, offset: size_t) @page true @direct true @ret_nonlocal true @deep true returns ResolveResult linked
-
-
-
-
-
-
-
-
-
-
-
 
     ; ====================================================================
     ; Statements
     ; ====================================================================
     function walk_statements(stmts: Vector[PlannedStatement], mode: size_t, offset: size_t) @page true @direct true @ret_nonlocal true @deep true returns ResolveResult linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     function walk_statement(stmt: PlannedStatement, mode: size_t, offset: size_t) @page true @direct true @ret_caller true @deep true returns ResolveResult linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     function walk_binding(bnd: PlannedBinding, mode: size_t, offset: size_t) @page true @direct true @ret_caller true @deep true returns ResolveResult linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; The type a binding's initializer produces: the LAST operand of the
     ; operation sequence, read through operand_final_type# so a member chain
     ; reports what the chain ends in rather than its receiver.
     function operation_type(bnd: PlannedBinding) @page true @direct true @ret_caller true @deep true returns String linked
 
-
-
-
-
-
-
-
-
-
-
-
     ; ====================================================================
     ; Operands / expressions
     ; ====================================================================
     function walk_operands(ops: Vector[PlannedOperand], mode: size_t, offset: size_t) @page true @direct true @ret_nonlocal true @deep true returns ResolveResult linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     function walk_operands_opt(opt: ref[Vector[PlannedOperand]]?, mode: size_t, offset: size_t) @page true @direct true @ret_nonlocal true @deep true returns ResolveResult linked
-
-
-
-
-
 
     function walk_operand(op: PlannedOperand, mode: size_t, offset: size_t) @page true @direct true @ret_caller true @deep true returns ResolveResult linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     function walk_operand_opt(opt: ref[PlannedOperand]?, mode: size_t, offset: size_t) @page true @direct true @ret_caller true @deep true returns ResolveResult linked
-
-
-
-
-
 
     function walk_expr(expr: PlannedExpression, mode: size_t, offset: size_t) @page true @direct true @ret_caller true @deep true returns ResolveResult linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; Is this expression a plain statement block? (see walk_operand#)
     function is_block(expr: PlannedExpression) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
-
 
     ; Is this expression a call of an OPERATOR (`>`, `+`, …) rather than of a
     ; function or method? Breaks the equal-width tie in walk_operand#.
     function is_operator_call(expr: PlannedExpression) @ret_param_0 true @deep true returns bool linked
 
-
-
-
-
-
-
-
     function walk_call(c: PlannedCall, mode: size_t, offset: size_t) @page true @direct true @ret_nonlocal true @deep true returns ResolveResult linked
-
-
-
-
-
 
     function walk_tuple(t: PlannedTuple, mode: size_t, offset: size_t) @page true @direct true @ret_nonlocal true @deep true returns ResolveResult linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     function walk_block(b: PlannedBlock, mode: size_t, offset: size_t) @page true @direct true @ret_nonlocal true @deep true returns ResolveResult linked
-
-
-
-
-
 
     function walk_if(iff: PlannedIf, mode: size_t, offset: size_t) @page true @direct true @ret_nonlocal true @deep true returns ResolveResult linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     function walk_match(m: PlannedMatch, mode: size_t, offset: size_t) @page true @direct true @ret_nonlocal true @deep true returns ResolveResult linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     function walk_choose(ch: PlannedChoose, mode: size_t, offset: size_t) @page true @direct true @ret_nonlocal true @deep true returns ResolveResult linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     function walk_for(fr: PlannedFor, mode: size_t, offset: size_t) @page true @direct true @ret_nonlocal true @deep true returns ResolveResult linked
-
-
-
-
-
-
-
 
     function walk_while(wh: PlannedWhile, mode: size_t, offset: size_t) @page true @direct true @ret_caller true @deep true returns ResolveResult linked
 
-
-
-
-
-
     function walk_try(tr: PlannedTry, mode: size_t, offset: size_t) @page true @direct true @ret_caller true @deep true returns ResolveResult linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; ====================================================================
     ; Type extraction
@@ -1341,20 +324,6 @@ define semantic
     ; this half excluded it.
     function ends_in_field(member_access: ref[Vector[PlannedMemberAccess]]?) @ret_nonlocal true @deep true returns bool linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; The clean source type of an operand. PlannedOperand.result_type is often
     ; ABI-lowered (an lvalue variable reads back as `pointer`) or the chain
     ; BASE (b.get() reports the receiver), so prefer the post-access type: the
@@ -1362,49 +331,12 @@ define semantic
     ; a.f().b yields .b's type), else the expression's own typed field.
     function operand_final_type(op: PlannedOperand) @page true @direct true @ret_caller true @deep true returns String linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; The expression's own resolved type field, falling back to `fallback`
     ; (the operand's result_type) for shapes without a cleaner field.
     function expr_type(expr: PlannedExpression, fallback: PlannedType) @page true @direct true @ret_caller true @deep true returns String linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; True when offset is within [loc.start, loc.end).
     function contains(loc: Span, offset: size_t) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
-
 
     ; The readable type name, or "" when empty / "void" / an unresolved type
     ; variable. Suppressing "void" matters: an offset on no typed sub-expr (a
@@ -1421,13 +353,4 @@ define semantic
     ; recurses into nested arguments; the emptiness tests stay on `pt.name`,
     ; which is what they were written against.
     function type_name(pt: PlannedType) @page true @direct true @ret_caller true @deep true returns String linked
-
-
-
-
-
-
-
-
-
 }

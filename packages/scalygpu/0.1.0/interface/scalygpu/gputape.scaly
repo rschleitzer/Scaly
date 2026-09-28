@@ -111,110 +111,6 @@ define GpuTape
     ; page lives as long as the process, like the MTLBuffers it maps.
     procedure attach(mutable t: Tape, params: Vector[int], loss_id: int, msl: int) @deep true returns ref[GpuTape] io linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; Forward-only alias attach: a SECOND graph beside the primary
     ; GpuTape (the single-window generation graph). Slots come from a
     ; reserved block appended to the registry - the primary is never
@@ -225,198 +121,28 @@ define GpuTape
     ; step_adam and encode_bwd on the result are loud fatal errors.
     procedure attach_gen(mutable t: Tape, leaves: Vector[int], primary: ref[GpuTape], primary_leaves: Vector[int], msl: int) @deep true returns ref[GpuTape] io linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; 1 when a Metal device exists - the portable SKIP check.
     procedure available() @ret_nonlocal true @deep true returns i32 io linked
-
 
     ; GPU-busy accounting (sums command-buffer GPU time).
     procedure ms_reset() @ret_nonlocal true @deep true io linked
 
-
     procedure ms_sum() @ret_nonlocal true @deep true returns double io linked
-
 
     ; Switch the matmul lowering: 0 = MPS GEMM (the hybrid default),
     ; 1 = the package's own MSL 4x4 kernels (single-encoder variant).
     procedure set_msl(mutable this: GpuTape, v: int) @deep true linked
 
-
-
-
     ; Open a command buffer for manual encoding (per-op-sync mode).
     procedure begin(this: GpuTape) @ret_nonlocal true @deep true io linked
 
-
-
-
     ; Commit + wait; 0 on completion.
     procedure commit_wait(this: GpuTape) @ret_nonlocal true @deep true returns int io linked
-
 
     ; Encode one node's forward op (kind codes are the tape ABI).
     ; Slot ids are base-relative: the primary's base is 0, an
     ; attach_gen graph lives in its reserved block.
     procedure encode_fwd(this: GpuTape, id: int) @deep true io linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; Encode one node's backward op. The CPU-blocked backwards each
     ; have an explicit race-free GPU form (column-disjoint embedding
@@ -424,211 +150,34 @@ define GpuTape
     ; never silent racing.
     procedure encode_bwd(this: GpuTape, id: int) @deep true io linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; Encode forward + grad-zero + loss seed + backward over the whole
     ; tape (no begin/commit - the parity test brackets it itself).
     procedure encode_step(this: GpuTape) @deep true io linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; Encode the forward walk only (autoregressive generation).
     procedure encode_fwd_all(this: GpuTape) @deep true io linked
-
-
-
-
-
-
-
-
 
     ; Encode one Adam update per parameter (bias corrections are
     ; CPU-precomputed floats - powf per step, not per element).
     procedure encode_adam(this: GpuTape, lr: float, b1: float, b2: float, eps: float, bc1: float, bc2: float) @deep true io linked
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; ONE training step = ONE command buffer: forward, grad zeroing,
     ; loss seed, backward, Adam - one commit, one wait. A failed
     ; command buffer is fatal (no silent partial step).
     procedure step(this: GpuTape, lr: float, b1: float, b2: float, eps: float, stepn: int) @ret_nonlocal true @deep true io linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; Adam only, as its own command buffer (parity testing against the
     ; CPU tape op; grads must already be in the redirected buffers).
     procedure step_adam(this: GpuTape, lr: float, b1: float, b2: float, eps: float, stepn: int) @ret_nonlocal true @deep true io linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; Forward pass as one command buffer (generation; sampling stays
     ; on the CPU through unified memory).
     procedure fwd(this: GpuTape) @ret_nonlocal true @deep true io linked
 
-
-
-
-
-
-
-
-
-
-
     ; Save the parameter values (cfg ints as the header, then raw f32
     ; per parameter in params order). 1 when written, 0 when the file
     ; could not be opened.
     procedure save(this: GpuTape, path: pointer[const_char], cfg: Vector[i32]) @ret_nonlocal true @deep true returns int io linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; Load a checkpoint written by save. 0 when the file does not
     ; exist (train instead); a config-header mismatch is FATAL - a
@@ -636,40 +185,4 @@ define GpuTape
     ; exists to rule out. Writes go through the redirected pointers
     ; straight into the MTLBuffers.
     procedure load(mutable this: GpuTape, path: pointer[const_char], cfg: Vector[i32]) @ret_nonlocal true @deep true returns int io linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }

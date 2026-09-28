@@ -142,20 +142,6 @@ define storelens
     ; caller's — codelens.scaly plans once for every plan-derived family.
     procedure fragment(plan: Plan, plan_text: String, anchor_text: String) @page true @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; ====================================================================
     ; The walk. One blob line per flagged store:
     ;     <offset>\t<parameter>\t<stored type>\t<carrier>\n
@@ -171,47 +157,7 @@ define storelens
     ; ====================================================================
     function collect(plan: Plan, plan_text: String) @page true @direct true @ret_caller true @deep true returns String linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     function declared_here(plan_text: String, fn: PlannedFunction) @ret_caller true @deep true returns bool linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; The routine's pointer/ref parameters as "\n<name>\n" runs, so membership is
     ; one `contains` and no container has to be threaded through the walk. (An
@@ -224,76 +170,12 @@ define storelens
     ; test and not a prefix match on a rendered name.
     function pointer_params(fn: PlannedFunction) @page true @direct true @ret_caller true @deep true returns String linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     procedure collect_impl(mutable sb: ref[StringBuilder], plan: Plan, params: String, impl: PlannedImplementation) @ret_nonlocal true @deep true linked
-
-
-
-
-
-
-
-
-
-
-
 
     ; The one place that decides. A function BODY is also a PlannedAction, and
     ; so is a for/while/repeat body — all of them target-less, which is what
     ; keeps them out of here without a special case.
     procedure collect_action(mutable sb: ref[StringBuilder], plan: Plan, params: String, act: PlannedAction) @ret_nonlocal true @deep true linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; True when the store needs no marking because the SOURCE settles the
     ; question on the line itself. Three cases, all exact and all measured:
@@ -324,85 +206,7 @@ define storelens
     ; able to spin the worker.
     function source_settled(source: ref[Vector[PlannedOperand]]?) @ret_nonlocal true @deep true returns bool linked
 
-
-
-
-
-
-
-
-
-
-
-
-
     function operand_settled(op: PlannedOperand, depth: int) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; The pointer parameter this store writes THROUGH, or "".
     ;
@@ -414,71 +218,12 @@ define storelens
     ; not a thing an index can be.
     function target_param(target: ref[Vector[PlannedOperand]]?, params: String) @page true @direct true @ret_caller true @deep true returns String linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     function param_in_operand(op: PlannedOperand, params: String) @page true @direct true @ret_caller true @deep true returns String linked
-
-
-
 
     ; Only the arms an lvalue chain can be built from are walked: a Variable is
     ; the answer, a Call is the deref/subscript operator (its receiver sits in
     ; the arguments), and an As is a cast. Everything else answers "".
     function param_in_expr(expr: PlannedExpression, params: String) @page true @direct true @ret_caller true @deep true returns String linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; ====================================================================
     ; Does this type carry a region buffer BY VALUE?
@@ -491,70 +236,12 @@ define storelens
     ; ====================================================================
     function carrier_of(plan: Plan, ty: PlannedType, depth: int) @page true @direct true @ret_nonlocal true @deep true returns String linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; The mangled name is the precise key (it distinguishes two instantiations of
     ; one generic); the readable name is the fallback for a type planned without
     ; one.
     function structure_matches(st: PlannedStructure, ty: PlannedType) @ret_param_0 true @deep true returns bool linked
 
-
-
-
-
-
     function carrier_in_properties(plan: Plan, st: PlannedStructure, depth: int) @page true @direct true @ret_nonlocal true @deep true returns String linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; ====================================================================
     ; The rest of the walk — the arms that only recurse.
@@ -562,197 +249,13 @@ define storelens
 
     procedure collect_statement(mutable sb: ref[StringBuilder], plan: Plan, params: String, stmt: PlannedStatement) @ret_nonlocal true @deep true linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     procedure collect_statement_opt(mutable sb: ref[StringBuilder], plan: Plan, params: String, opt: ref[PlannedStatement]?) @ret_nonlocal true @deep true linked
-
-
-
-
-
-
-
 
     procedure collect_operands_opt(mutable sb: ref[StringBuilder], plan: Plan, params: String, opt: ref[Vector[PlannedOperand]]?) @deep true linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     procedure collect_operand_opt(mutable sb: ref[StringBuilder], plan: Plan, params: String, opt: ref[PlannedOperand]?) @ret_nonlocal true @deep true linked
 
-
-
-
-
-
-
-
-
     procedure collect_expr(mutable sb: ref[StringBuilder], plan: Plan, params: String, expr: PlannedExpression) @deep true linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; ====================================================================
     ; The blob.
@@ -760,86 +263,14 @@ define storelens
 
     procedure emit_site(mutable sb: ref[StringBuilder], offset: size_t, param: String, stored: String, carrier: String) @ret_nonlocal true @deep true linked
 
-
-
-
-
-
-
-
-
-
-
     ; DEDUPE BY OFFSET, as a second pass over the finished blob — a generic body
     ; is planned once per instantiation, so one source store is reached many
     ; times. Same shape and same reason as placehints.dedupe#, including why it
     ; is a second pass over a String rather than a set threaded through the walk.
     function dedupe(blob: String) @page true @direct true @ret_caller true @deep true returns String linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; Is a line with the same leading OFFSET field already kept?
     function has_line(kept: String, line: String) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; ====================================================================
     ; Rendering: one lens per blob line, drawn at the BUFFER's `set` site of the
@@ -847,122 +278,12 @@ define storelens
     ; ====================================================================
     procedure render(blob: String, plan_text: String, anchor_text: String) @page true @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     procedure lens_for(line: String, plan_text: String, anchor_text: String) @page true @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; The n-th TAB-separated field of `line`, or "".
     function field_at(line: String, n: size_t) @page true @direct true @ret_caller true @deep true returns String linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     function parse_size(digits: String) @ret_nonlocal true @deep true returns size_t linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; ====================================================================
     ; The `set`-site scanner. `set` is a keyword with exactly one use in the
@@ -976,103 +297,15 @@ define storelens
 
     function next_set_site(source: String, from: size_t) @ret_nonlocal true @deep true returns size_t linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     function count_set_sites(source: String) @ret_nonlocal true @deep true returns size_t linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; The index of the `set` site at or before `offset`, or -1 when the offset
     ; precedes every one of them.
     function set_index_at(source: String, offset: size_t) @ret_nonlocal true @deep true returns int linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     function set_site_at_index(source: String, idx: int) @ret_nonlocal true @deep true returns size_t linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     ; Is source[k..] the keyword `set` on both token boundaries? A bare `set` at
     ; EOF is not an assignment (it needs a target), so k+3 must exist.
     function is_set_token(source: String, k: size_t, len: size_t) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }

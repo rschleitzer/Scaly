@@ -1,14 +1,4 @@
 define PageListIterator(var current: pointer[PageNode])
 {
     procedure next(mutable this: PageListIterator) @ret_param_0 true @deep true returns pointer[pointer[Page]] linked
-
-
-
-
-
-
-
-
-
-
 }

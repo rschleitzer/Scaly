@@ -92,21 +92,10 @@ use scaly.fiber.Channel
 ; requester's care (alive while it parks); the worker writes the fd back.
 procedure tcp_connect_worker(mutable arg: pointer[void]) @ret_nonlocal true @deep true returns pointer[void] io linked
 
-
-
-
-
-
-
-
-
 ; close(2) on a socket — a free procedure so that the methods named close
 ; below never meet the extern by name (on Windows, posixcompat's close tells
 ; a SOCKET from a CRT descriptor).
 procedure tcp_close_fd(fd: i32) @ret_nonlocal true @deep true io linked
-
-
-
 
 ; The serve cell of the thread running this code (TcpServer.current):
 ; thread-local like every mutable global, set by tcp_serve_thread.
@@ -118,25 +107,7 @@ mutable tcp_current_serve: pointer[i64] linked
 ; Channel, [5+n .. 5+2n) the threads' handles (TcpListener.start only).
 function tcp_word(cell: pointer[i64], k: i64) @ret_param_0 true @deep true returns pointer[i64] linked
 
-
 procedure tcp_make_cell(fd: i32, mutable handler: pointer[void], n: i64) @ret_nonlocal true @deep true returns pointer[i64] linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ; Accept on lfd, each connection a task of the
 ; running scheduler that runs handler with the connection's fd as its task
@@ -147,29 +118,6 @@ procedure tcp_make_cell(fd: i32, mutable handler: pointer[void], n: i64) @ret_no
 ; accepting of serve inside a task, where there is one scheduler.
 procedure tcp_accept_into_tasks(lfd: i32, mutable handler: pointer[void], mutable stop: pointer[u64]) @deep true io linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ; The acceptor, a task of scheduler 0: accept, and hand each connection to
 ; the next scheduler round-robin — its fd in a message on a page of its own,
 ; which is what a Channel carries. On the stop flag (or a listener gone) it
@@ -177,81 +125,14 @@ procedure tcp_accept_into_tasks(lfd: i32, mutable handler: pointer[void], mutabl
 ; have drained.
 procedure tcp_acceptor() @deep true io linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ; Every scheduler's dispatcher: receive a connection, free its message page,
 ; start the handler on it as a task of this scheduler; end at the close.
 procedure tcp_dispatch() @ret_nonlocal true @deep true io linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ; One serving thread: a scheduler of its own with its dispatcher, and the
 ; acceptor too on the thread that draws index 0. Returns when the accepting
 ; has stopped and the last connection of this scheduler has ended.
 procedure tcp_serve_thread(mutable arg: pointer[void]) @ret_nonlocal true @deep true returns pointer[void] io mutable tcp_current_serve linked
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ; A connected TCP stream. fd < 0 is a stream that is not (or no longer)
 ; open: every operation on it fails instead of touching a descriptor.
@@ -262,82 +143,27 @@ define TcpStream(var fd: i32)
     ; handshake run on an Io worker while the task parks.
     procedure connect(mutable host: String, port: int) @page true @direct true @deep true returns TcpStream io linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; The connection a task started by TcpListener.serve serves (its task
     ; argument); not is_open() outside such a task.
     procedure of_task() @page true @direct true @ret_nonlocal true @deep true returns TcpStream linked
 
-
-
-
-
-
-
     function is_open(this) @ret_param_0 true @deep true returns bool linked
-
 
     ; Read up to buf.length bytes into buf: the count, 0 at end of stream,
     ; -1 on an error (or a closed stream). Waits for data colorlessly.
     procedure read(this, mutable buf: Slice[u8]) @ret_nonlocal true @deep true returns int io linked
 
-
-
-
-
-
     ; Write ALL of data, looping over partial writes; false on an error
     ; (a peer that went away is an error return, never a SIGPIPE).
     procedure write(this, data: Slice[u8]) @ret_nonlocal true @deep true returns bool io linked
-
-
-
-
-
 
     ; TCP_NODELAY: true sends every write at once, false (the default) lets
     ; Nagle coalesce small writes. False on an error or a closed stream.
     procedure set_nodelay(this, on: bool) @ret_nonlocal true @deep true returns bool io linked
 
-
-
-
-
-
     procedure write_string(this, s: String) @ret_nonlocal true @deep true returns bool io linked
 
-
-
-
-
-
     procedure close(mutable this) @deep true io linked
-
-
-
-
-
-
-
 }
 
 ; A listening TCP socket.
@@ -346,27 +172,18 @@ define TcpListener(var fd: i32)
     ; Listen on 127.0.0.1:port (0 = an ephemeral port, read it with port()).
     procedure listen(port: int) @page true @direct true @ret_nonlocal true @deep true returns TcpListener io linked
 
-
     ; Listen on all interfaces, IPv6 and IPv4 (the dual-stack "::"; IPv4
     ; alone on a host without IPv6).
     procedure listen_any(port: int) @page true @direct true @ret_nonlocal true @deep true returns TcpListener io linked
-
 
     ; Listen on a numeric address of either family: "::1" (IPv6 loopback),
     ; "::" (every interface, dual-stack), "127.0.0.1", "0.0.0.0".
     procedure listen_on(mutable host: String, port: int) @page true @direct true @ret_nonlocal true @deep true returns TcpListener io linked
 
-
     function is_open(this) @ret_param_0 true @deep true returns bool linked
-
 
     ; The port the listener is bound to, -1 when it is not open.
     procedure port(this) @ret_nonlocal true @deep true returns int io linked
-
-
-
-
-
 
     ; Serve every connection with handler, over all cores: one scheduler
     ; per core, this thread one of them, all accepting here (see the module
@@ -376,70 +193,17 @@ define TcpListener(var fd: i32)
     ; tasks of that one.
     procedure serve(this, mutable handler: pointer[void]) @deep true io linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; Serve like serve, but return at once with a TcpServer that can stop:
     ; one thread per core serves (the calling thread does not), shutdown
     ; stops the accepting, wait returns when every connection has ended (see
     ; the module header). Not running when the listener is not open.
     procedure start(this, mutable handler: pointer[void]) @page true @direct true @ret_nonlocal true @deep true returns TcpServer linked
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ; Wait for a connection colorlessly and return it as a nonblocking
     ; stream (not is_open() on an error).
     procedure accept(this) @page true @direct true @ret_nonlocal true @deep true returns TcpStream io linked
 
-
-
-
-
-
-
-
-
     procedure close(mutable this) @deep true io linked
-
-
-
-
-
-
-
 }
 
 ; A running server (TcpListener.start): a handle on the serve cell. A copy
@@ -450,19 +214,12 @@ define TcpServer(cell: pointer[i64])
     ; how a handler reaches its server without a global of its own.
     procedure current() @page true @direct true @ret_nonlocal true @deep true returns TcpServer linked
 
-
     function is_running(this) @ret_param_0 true @deep true returns bool linked
-
 
     ; Has shutdown been called? A handler that keeps a connection alive asks
     ; right after reading a request, answers it, and ends the connection
     ; when this answered true (see the module header for why not after).
     procedure stopping(this) @ret_nonlocal true @deep true returns bool linked
-
-
-
-
-
 
     ; Stop accepting: set the stop flag, then one local connection to wake
     ; the acceptor (the module header has why). Waits for nothing; from any
@@ -470,32 +227,9 @@ define TcpServer(cell: pointer[i64])
     ; go on.
     procedure shutdown(this) @deep true io linked
 
-
-
-
-
-
-
-
-
-
-
-
     ; Return when every serving thread has ended: shutdown was called and the
     ; last connection is done. Call it outside the server's own threads (a
     ; handler waiting for its own thread never returns). The handle is spent
     ; afterwards; the listener stays open until its owner closes it.
     procedure wait(this) @deep true linked
-
-
-
-
-
-
-
-
-
-
-
-
 }

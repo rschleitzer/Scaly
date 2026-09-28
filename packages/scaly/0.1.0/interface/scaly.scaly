@@ -12,19 +12,4 @@ define scaly
 
     ; Test entry point that calls all module tests
     procedure test() @ret_nonlocal true @deep true returns int io linked
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }

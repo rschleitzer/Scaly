@@ -7,21 +7,6 @@ define StringIterator
 
 init(string: String) linked
 
-
-
-
-
-
 procedure next(mutable this: StringIterator) @ret_param_0 true @deep true returns pointer[char] linked
-
-
-
-
-
-
-
-
-
-
 
 }
