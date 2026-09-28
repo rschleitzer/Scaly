@@ -331,6 +331,8 @@ function scaly_eio_watch(q: i32, fd: i32, tag: pointer[void]) returns i32 extern
 function scaly_eio_submit_recv(q: i32, fd: i32, buf: pointer[void], count: size_t, tag: pointer[void]) returns i32 extern
 function scaly_eio_submit_send(q: i32, fd: i32, buf: pointer[void], count: size_t, tag: pointer[void]) returns i32 extern
 function scaly_eio_completions(q: i32) returns i32 extern
+; The poller's backend: 1 epoll, 2 kqueue, 3 io_uring, 4 IOCP (Io.backend).
+function scaly_eio_backend(q: i32) returns i32 extern
 function scaly_eio_wait(q: i32, tags: pointer[pointer[void]], max: i32) returns i32 extern
 ; Like scaly_eio_wait but returns 0 if ms elapses before any event (the
 ; bounded wait behind cross-thread deadlock detection, M2.4 residual).
@@ -1060,6 +1062,12 @@ define Io
     ; (the table grows by doubling on the scheduler's page; records are
     ; reused for the next descriptor of the same number).
     procedure watch_of(fd: i32) @ret_nonlocal true @deep true returns ref[IoWatch] linked
+
+    ; Which backend this scheduler's poller is: 1 epoll, 2 kqueue, 3 io_uring,
+    ; 4 IOCP — the one question a program cannot answer from outside (on
+    ; linux a ring is chosen at run time, and seccomp may refuse it).
+    ; Needs a scheduler; 0 without one.
+    procedure backend() @ret_nonlocal true @deep true returns int io linked
 
     ; fd's IoWatch for the completion path — or null unless this is a task
     ; on a scheduler whose poller is an io_uring.

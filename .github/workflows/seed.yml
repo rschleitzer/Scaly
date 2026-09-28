@@ -248,6 +248,14 @@ jobs:
       - name: Fiber suite (context-switch ping-pong, milestone 1.1)
         run: tests/fiber/run.sh dist/seed/scalyc_seed
 
+      # The linux poller is an io_uring where the runner's kernel offers one
+      # and seccomp allows it, epoll otherwise (ROADMAP-http.md) — this step
+      # names the one the suites above ran on, and insists on io_uring.
+      - name: Which I/O backend (io_uring expected)
+        run: |
+          dist/seed/scalyc_seed -o /tmp/io_backend tests/fiber/io_backend.scaly
+          SCALY_EXPECT_BACKEND=io_uring /tmp/io_backend
+
       - name: The 10k demo (fiber-per-connection HTTP, milestone 1.6)
         run: tests/fiber/bench/run.sh dist/seed/scalyc_seed
 

@@ -263,6 +263,13 @@ int scaly_eio_completions(int q)
     return 0;
 }
 
+/* Which backend the poller is (see the linux twin): kqueue. */
+int scaly_eio_backend(int q)
+{
+    (void)q;
+    return 2;
+}
+
 #else
 
 #include <linux/io_uring.h>
@@ -570,6 +577,13 @@ int scaly_eio_submit_send(int q, int fd, void* buf, size_t count, void* tag)
 int scaly_eio_completions(int q)
 {
     return scaly_ring_of(q) != 0;
+}
+
+/* Which backend the poller is: 1 epoll, 2 kqueue, 3 io_uring, 4 IOCP
+ * (Io.backend; tests/fiber/io_backend.scaly names it). */
+int scaly_eio_backend(int q)
+{
+    return scaly_ring_of(q) != 0 ? 3 : 1;
 }
 
 static void scaly_ring_close(int q)

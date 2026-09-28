@@ -24160,6 +24160,8 @@ declare i32 @scaly_eio_submit_send(i32, i32, ptr, i64, ptr)
 
 declare i32 @scaly_eio_completions(i32)
 
+declare i32 @scaly_eio_backend(i32)
+
 declare i32 @scaly_eio_wait(i32, ptr, i32)
 
 declare i32 @scaly_eio_wait_timeout(i32, ptr, i32, i32)
@@ -26724,6 +26726,22 @@ if.end31:                                         ; preds = %if.then30, %if.end
   %deref36 = load i64, ptr %as.inttoptr, align 8
   %as.inttoptr37 = inttoptr i64 %deref36 to ptr
   ret ptr %as.inttoptr37
+}
+
+define linkonce_odr i64 @_ZN2Io7backendEv() {
+entry:
+  %global.load = load ptr, ptr @current_scheduler, align 8
+  %eq = icmp eq ptr %global.load, null
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i64 0
+
+if.end:                                           ; preds = %entry
+  %call = call i32 @_ZN2Io11ensure_pollEv()
+  %call1 = call i32 @scaly_eio_backend(i32 %call)
+  %as.sext = sext i32 %call1 to i64
+  ret i64 %as.sext
 }
 
 define linkonce_odr ptr @_ZN2Io17completion_streamE3i32(i32 %0) {

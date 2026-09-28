@@ -1,0 +1,43 @@
+; Which I/O backend the runtime chose (2026-09-28, ROADMAP-http.md): on
+; linux the poller is an io_uring where the kernel offers one and seccomp
+; allows it, epoll otherwise — decided at run time, invisible from outside.
+; The name goes to stderr, so a CI log shows it; stdout is the same on every
+; platform. With SCALY_EXPECT_BACKEND set (epoll, kqueue, io_uring, iocp)
+; any other backend fails the test: CI's linux job asks for io_uring.
+; Expected: backend ok
+
+function backend_name(b: int) returns String
+{
+    match b
+        case 1: return String("epoll")
+        case 2: return String("kqueue")
+        case 3: return String("io_uring")
+        case 4: return String("iocp")
+    String("none")
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    let page Page.allocate_page()
+    let sched Scheduler.create(page)
+    let b Io.backend()
+    let name backend_name(b)
+    scaly_eputs("io backend: ")
+    scaly_eputs(name.to_c_string())
+    scaly_eputs("\n")
+    if b < 1 or b > 4
+        return 2
+    let want getenv("SCALY_EXPECT_BACKEND")
+    if want <> null
+    {
+        if name.equals(String(want)) = false
+        {
+            scaly_eputs("io backend: expected ")
+            scaly_eputs(want)
+            scaly_eputs("\n")
+            return 3
+        }
+    }
+    Console.print "backend ok"
+    0
+}

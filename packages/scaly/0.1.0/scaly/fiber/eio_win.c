@@ -229,6 +229,13 @@ int scaly_eio_completions(int q)
     return 0;
 }
 
+/* Which backend the poller is (see eio.c): the IOCP readiness emulation. */
+int scaly_eio_backend(int q)
+{
+    (void)q;
+    return 4;
+}
+
 int scaly_eio_arm(int q, int fd, int for_write, void* tag)
 {
     HANDLE port = (HANDLE)(intptr_t)q;
