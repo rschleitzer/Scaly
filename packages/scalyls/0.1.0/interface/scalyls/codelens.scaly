@@ -69,7 +69,7 @@ define codelens
 {
     ; The whole CodeLens[] array for `uri`. `text` is the source the worker
     ; resolved (the parent's buffer, or the file from disk when it had none).
-    procedure lenses(mutable uri: String, mutable text: String) @page true @direct true @ret_caller true @deep true returns String io mutable lc_col, lc_line, lc_off, modeler_error_count reads lc_line linked
+    procedure lenses(mutable uri: String, mutable text: String) @page true @direct true @stores true @ret_caller true @deep true returns String io mutable lc_col, lc_line, lc_off, modeler_error_count reads lc_line linked
 
     ; ====================================================================
     ; THE SHARED PLAN.
@@ -88,14 +88,14 @@ define codelens
     ; planned as itself. `plan_text` is the text whose offsets the plan carries —
     ; the file ON DISK for a member, because the modeler reads from disk.
     ; ====================================================================
-    procedure planned_fragment(mutable path: String, mutable text: String) @page true @direct true @ret_caller true @deep true returns String io mutable lc_col, lc_line, lc_off, modeler_error_count reads modeler_error_count linked
+    procedure planned_fragment(mutable path: String, mutable text: String) @page true @direct true @stores true @ret_caller true @deep true returns String io mutable lc_col, lc_line, lc_off, modeler_error_count reads modeler_error_count linked
 
-    procedure root_planned_fragment(mutable root: String, path: String, text: String) @page true @direct true @ret_caller true @deep true @deep_beyond_1 true returns String io mutable lc_col, lc_line, lc_off, modeler_error_count reads modeler_error_count linked
+    procedure root_planned_fragment(mutable root: String, path: String, text: String) @page true @direct true @stores true @ret_caller true @deep true @deep_beyond_1 true returns String io mutable lc_col, lc_line, lc_off, modeler_error_count reads modeler_error_count linked
 
-    procedure document_planned_fragment(mutable path: String, mutable text: String) @page true @direct true @ret_caller true @deep true @deep_beyond_1 true returns String io mutable lc_col, lc_line, lc_off, modeler_error_count reads modeler_error_count linked
+    procedure document_planned_fragment(mutable path: String, mutable text: String) @page true @direct true @stores true @ret_caller true @deep true @deep_beyond_1 true returns String io mutable lc_col, lc_line, lc_off, modeler_error_count reads modeler_error_count linked
 
     ; Join every plan-derived family over the one plan.
-    procedure families(plan: Plan, has_diag: bool, entry_file: String, path: String, plan_text: String, anchor_text: String) @page true @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure families(plan: Plan, has_diag: bool, entry_file: String, path: String, plan_text: String, anchor_text: String) @page true @direct true @stores true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
     ; ====================================================================
     ; The file-level lenses, both at offset 0.

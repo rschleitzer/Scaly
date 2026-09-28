@@ -137,7 +137,7 @@ define placehints
     ; load-bearing file in this server for a cosmetic gain. The shape it answers
     ; is known exactly — `[]` or `[...]` — so `[]` becomes `[mine]` and anything
     ; else takes `,mine` before its final byte.
-    procedure merged(mutable repaired: String, mutable source: String, mutable uri: String, packed: String) @page true @direct true @ret_caller true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig reads lc_line linked
+    procedure merged(mutable repaired: String, mutable source: String, mutable uri: String, packed: String) @page true @direct true @stores true @ret_caller true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig reads lc_line linked
 
     ; ====================================================================
     ; Building the blob: one line per construction, "<offset>\t<label>".

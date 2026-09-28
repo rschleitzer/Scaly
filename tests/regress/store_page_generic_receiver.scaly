@@ -1,0 +1,43 @@
+; Regression (2026-09-25, turned 2026-09-28): R8 across a receiver typed by a
+; generic parameter. `rename` keeps a value built on the page it is given in
+; its receiver; `poke` hands it `inner`, a field typed by T, which the page rule
+; cannot type at model level. Until 2026-09-25 `poke` got no caller page and
+; the String landed on its frame (251 read back for 5, rc 0); then R8's net
+; refused the call (rc 4, Planner.report_lost_store_page#, this file was
+; `xfail_lost_store_page`). Since 2026-09-28 an untyped receiver takes the masks
+; of every routine of that name (store_callee_mask#, store_key_names#), so
+; `poke` gets the page and the program runs. Run under SCALY_POISON.
+; Expected: PASS
+define Rec (var name: String)
+{
+    procedure rename(mutable this, t: String)
+        set name: String(t)
+}
+
+define Box[T] (var inner: T)
+{
+    procedure poke(mutable this, t: String)
+        inner.rename(t)
+}
+
+function churn() returns size_t
+{
+    var junk Array[String]()
+    var i: size_t 0
+    while i < 500
+    {
+        junk.add(String("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"))
+        set i: i + 1
+    }
+    junk.length
+}
+
+if getenv("SCALY_POISON") <> null
+    Page.enable_poison()
+var b Box[Rec](Rec(String("a")))
+b.poke(String("hello"))
+churn()
+if b.inner.name.equals("hello")
+    print "PASS"
+else
+    print "FAIL `b.inner.name.get_length()`"

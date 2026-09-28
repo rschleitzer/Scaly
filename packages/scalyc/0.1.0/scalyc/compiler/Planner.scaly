@@ -1133,6 +1133,9 @@ define Planner
         store_mangled_masks: ref[Array[u64]]
         store_mangled_this: ref[Array[bool]]
         var store_acc: u64
+        ; the bindings and `set`s the store walk has passed in the routine it
+        ; walks, for stored_value_builds# to follow a stored local
+        store_scope: ref[Array[Statement]]
         ; ★A SEPARATE set for the return-position rule, and separate on purpose:
         ; impl_mentions_set propagates out of transitive_page_names by NAME
         ; MENTION, so feeding this rule's hits back into that set cascades — one
@@ -1456,6 +1459,7 @@ define Planner
             set store_mangled_recv: &Array[String]^this()
             set store_mangled_masks: &Array[u64]^this()
             set store_mangled_this: &Array[bool]^this()
+            set store_scope: &Array[Statement]^this()
             set store_acc: 0
             set return_page_names: Array[String]^this()
             set return_page_starts: Array[size_t]^this()
@@ -50017,10 +50021,12 @@ define Planner
             ; explicit `#`/rp is removed from their declaration.
             if transitive_page_built = false
             {
-                this.build_transitive_page_set()
-                this.phase_mark("B1-transitive-page-set")
+                ; residence first: R8 asks where a stored call result lives
+                ; (stored_value_builds#), and residence asks no page set
                 this.build_return_residence_set()
                 this.phase_mark("B2-return-residence-set")
+                this.build_transitive_page_set()
+                this.phase_mark("B1-transitive-page-set")
                 set transitive_page_built: true
             }
 
@@ -50833,6 +50839,7 @@ define Planner
                             0
             }
             set store_acc: 0
+            store_scope.clear()
             choose f.implementation
                 when a: Action
                     this.hand_action(f, owner, a, fields, params)
@@ -50843,8 +50850,19 @@ define Planner
 
         procedure hand_action(mutable this: Planner, mutable f: Function, owner: ref[String]?, a: Action, fields: Array[String], params: Array[String]) returns bool
         {
-            if a.target.length > 0 and this.ops_build_page_value(a.source, 0)
-                set store_acc: store_acc | Planner.root_bit(Planner.ops_root_name(a.target, false), fields, params)
+            if a.target.length > 0 and this.stored_value_builds(f, owner, a.source, 0)
+            {
+                let bit Planner.root_bit(Planner.ops_root_name(a.target, false), fields, params)
+                if bit <> 0 and getenv("SCALYC_PAGE_PROBE") <> null
+                {
+                    scaly_eputs "store-built set "
+                    scaly_eputs(f.name.to_c_string())
+                    scaly_eputs " -> "
+                    scaly_eputs(Planner.ops_root_name(a.target, false).to_c_string())
+                    scaly_eputs "\n"
+                }
+                set store_acc: store_acc | bit
+            }
             if this.hand_ops(f, owner, a.source, fields, params)
                 return true
             this.hand_ops(f, owner, a.target, fields, params)
@@ -50854,9 +50872,16 @@ define Planner
         {
             choose s
                 when a: Action
+                {
+                    if a.target.length > 0
+                        store_scope.add(s)
                     return this.hand_action(f, owner, a, fields, params)
+                }
                 when bd: Binding
+                {
+                    store_scope.add(s)
                     return this.hand_ops(f, owner, bd.operation, fields, params)
+                }
                 when r: Return
                     return this.hand_ops(f, owner, r.result, fields, params)
                 when th: Throw
@@ -50888,6 +50913,23 @@ define Planner
         {
             if this.seq_hands_page(f, owner, ops, fields, params)
                 return true
+            ; a call further on in the sequence (`t = this.m()`, `a + f(b)`):
+            ; the planner plans it like the head, so R8 must see it too
+            var ci: size_t 1
+            while ci + 1 < ops.length
+            {
+                let cp ops.get ci
+                let tp ops.get(ci + 1)
+                if cp <> null and tp <> null and Planner.model_operand_is_tuple((*tp))
+                {
+                    var call Vector[Operand](2)
+                    call.put(0, (*cp))
+                    call.put(1, (*tp))
+                    if this.seq_hands_page(f, owner, call, fields, params)
+                        return true
+                }
+                set ci: ci + 1
+            }
             var i: size_t 0
             while i < ops.length
             {
@@ -51086,7 +51128,330 @@ define Planner
             false
         }
 
-        procedure tuple_builds_page_value(mutable this: Planner, op: Operand) returns bool
+        function model_operand_is_tuple(op: Operand) returns bool
+        {
+            choose op.expression
+                when tup: Tuple
+                    return true
+                else
+                    0
+            false
+        }
+
+        ; stored_value_builds#: does a value a put/add or a `set` stores carry
+        ; something this routine BUILT on its own page -- the page R8 must hand
+        ; it from its caller? A construction (ops_build_page_value#), a call
+        ; whose callee builds its result on the caller page (R7's question about
+        ; a returned call, ret_page_call_head#), a local bound to or set with one
+        ; of those, or a positional construction with such a part. Until
+        ; 2026-09-28 only the construction counted: `names.add(sb.to_string())`
+        ; or `let made Fact(...)` + `facts.add(made)` seeded nothing, a caller
+        ; that merely forwards `names` got no page, and the String lived on a
+        ; frame released at that caller's return -- rc 0, read back as garbage
+        ; (tests/regress/store_forwarded_built_value.scaly).
+        procedure stored_value_builds(mutable this: Planner, mutable f: Function, owner: ref[String]?, ops: Vector[Operand], depth: size_t) returns bool
+        {
+            if this.ops_build_page_value(ops, 0)
+                return true
+            if ops.length = 0 or depth > 4
+                return false
+            let hp ops.get 0
+            if hp = null
+                return false
+            let head (*hp)
+            let len Planner.ops_length_without_trailing_cast(ops)
+            ; a bare local: what the walk saw bound to it or set into it
+            if len = 1
+            {
+                if head.member_access <> null
+                    return false
+                choose head.expression
+                    when t: scalyc.compiler.Model.Type
+                    {
+                        if t.name.length <> 1
+                            return false
+                        let np t.name.get 0
+                        if np = null
+                            return false
+                        return this.local_stores_build(f, owner, (*np), depth)
+                    }
+                    else
+                        return false
+            }
+            let ap ops.get 1
+            if ap = null
+                return false
+            var argc: size_t 0
+            var is_tuple false
+            choose (*ap).expression
+                when tup: Tuple
+                {
+                    set is_tuple: true
+                    set argc: tup.components.length
+                }
+                else
+                    0
+            if is_tuple = false
+                return false
+            ; a call whose result carries something built here
+            if this.call_result_builds(f, owner, head, (*ap), argc, depth)
+                return true
+            ; a positional construction: one of its parts built
+            if head.member_access <> null
+                return false
+            choose head.expression
+                when t: scalyc.compiler.Model.Type
+                {
+                    if t.name.length = 0
+                        return false
+                    let lp t.name.get(t.name.length - 1)
+                    if lp = null or this.lookup_concept((*lp)) = null
+                        return false
+                }
+                else
+                    return false
+            choose (*ap).expression
+                when tup: Tuple
+                {
+                    var ci: size_t 0
+                    while ci < tup.components.length
+                    {
+                        let cp tup.components.get ci
+                        if cp <> null and this.stored_value_builds(f, owner, (*cp).value, depth + 1)
+                            return true
+                        set ci: ci + 1
+                    }
+                }
+                else
+                    0
+            false
+        }
+
+        ; call_result_builds#: does a call's RESULT carry something built on
+        ; this routine's page? Its callee returns a non-reference VALUE (R1: the
+        ; value's parts are on the caller page -- `sb.to_string()`), residence
+        ; says the result is the caller page's (class 1), or it hands back an
+        ; argument (class 3/5) that is built here. A reference whose residence
+        ; is unknown (class 0) is NOT counted: R7's page for it is a
+        ; conservative guess, and counting it made every cache setter of the
+        ; tscaly checker a seed. Unresolved callee: residence's name bucket.
+        procedure call_result_builds(mutable this: Planner, mutable f: Function, owner: ref[String]?, head: Operand, args: Operand, argc: size_t, depth: size_t) returns bool
+        {
+            var path Vector[String](Planner.head_path_length(head))
+            var k: size_t 0
+            choose head.expression
+                when t: scalyc.compiler.Model.Type
+                {
+                    var ti: size_t 0
+                    while ti < t.name.length
+                    {
+                        let sp t.name.get ti
+                        if sp <> null
+                            path.put(k, (*sp))
+                        set k: k + 1
+                        set ti: ti + 1
+                    }
+                }
+                else
+                    return false
+            if head.member_access <> null
+            {
+                let ma (*head.member_access)
+                var mi: size_t 0
+                while mi < ma.length
+                {
+                    let hp ma.get mi
+                    if hp <> null
+                        path.put(k, (*hp))
+                    set k: k + 1
+                    set mi: mi + 1
+                }
+            }
+            if path.length = 0
+                return false
+            let lp path.get(path.length - 1)
+            if lp = null
+                return false
+            let method (*lp)
+            var found false
+            if path.length = 1
+            {
+                if owner <> null and owner.get_length() > 0
+                {
+                    let oc this.lookup_concept_any((*owner))
+                    if oc <> null
+                    {
+                        let r this.concept_result_builds(f, owner, (*oc), method, args, argc, depth)
+                        if r = 1
+                            return true
+                        if r = 0
+                            set found: true
+                    }
+                }
+                var cur model_function_index.lookup_head(method)
+                while cur <> (0 - 1) as i64
+                {
+                    let kvp model_functions.get(cur as size_t)
+                    if kvp <> null
+                    {
+                        let cf kvp.value
+                        if Planner.ret_page_arity_ok(cf, argc)
+                        {
+                            set found: true
+                            if this.function_result_builds(f, owner, cf, args, depth)
+                                return true
+                        }
+                    }
+                    set cur: model_function_index.next_of(cur as size_t)
+                }
+            }
+            else
+            {
+                let recv Planner.ret_page_receiver_concept(this, owner, f, Vector[Statement](), path, 0)
+                if recv <> null
+                {
+                    let rc this.lookup_concept_any((*recv))
+                    if rc <> null
+                    {
+                        let r this.concept_result_builds(f, owner, (*rc), method, args, argc, depth)
+                        if r = 1
+                            return true
+                        if r = 0
+                            set found: true
+                    }
+                }
+            }
+            if found
+                return false
+            let c this.rr_lookup_name(method)
+            if c = 1
+                return true
+            if c = 3 or c = 5
+                return this.args_build(f, owner, args, depth)
+            false
+        }
+
+        ; the members of `c` named `method` with that arity: 1 one of them
+        ; builds its result here, 0 none does, -1 there is no such member
+        procedure concept_result_builds(mutable this: Planner, mutable f: Function, owner: ref[String]?, c: Concept, method: String, args: Operand, argc: size_t, depth: size_t) returns int
+        {
+            var members Vector[Member](0)
+            choose c.definition
+                when st: Structure
+                    set members: st.members
+                when u: scalyc.compiler.Model.Union
+                    set members: u.members
+                else
+                    return 0 - 1
+            var found false
+            var i: size_t 0
+            while i < members.length
+            {
+                let mp members.get i
+                set i: i + 1
+                if mp = null
+                    continue
+                choose (*mp)
+                    when cf: Function
+                    {
+                        if cf.name = method and Planner.ret_page_arity_ok(cf, argc)
+                        {
+                            set found: true
+                            if this.function_result_builds(f, owner, cf, args, depth)
+                                return 1
+                        }
+                    }
+                    else
+                        0
+            }
+            if found
+                return 0
+            0 - 1
+        }
+
+        ; a callee's result is built here when it is a VALUE (not a pointer,
+        ; a reference or a scalar -- a stored handle is not a stored part) and
+        ; residence places it on the caller page (1) or hands back an argument
+        ; that is built here (3, 5). An unknown class (0) is not counted.
+        procedure function_result_builds(mutable this: Planner, mutable f: Function, owner: ref[String]?, cf: Function, args: Operand, depth: size_t) returns bool
+        {
+            if this.returns_value_with_parts(cf) = false
+                return false
+            let c this.return_residence_class(cf)
+            if c = 1
+                return true
+            if c = 3 or c = 5
+                return this.args_build(f, owner, args, depth)
+            false
+        }
+
+        ; does `cf` return a non-scalar VALUE -- through a type alias, as
+        ; function_needs_caller_page# asks (`LLVMValueRef` names a pointer)?
+        function returns_value_with_parts(this: Planner, cf: Function) returns bool
+        {
+            if cf.returns_ = null
+                return false
+            var rt (*cf.returns_)
+            if has_type_aliases and this.model_type_has_alias(rt, 0)
+                set rt: this.resolve_model_type_aliases(rt, 0)
+            if rt.name.length = 0 or Planner.is_npo_option_type(rt)
+                return false
+            let rn Planner.join_dotted_name(rt.name)
+            if rn = "pointer" or rn = "ref" or Planner.is_primitive_type_name(rn)
+                return false
+            Planner.is_generic_type_param_name(rn) = false
+        }
+
+        ; one of a call's arguments built (stored_value_builds#)
+        procedure args_build(mutable this: Planner, mutable f: Function, owner: ref[String]?, args: Operand, depth: size_t) returns bool
+        {
+            choose args.expression
+                when tup: Tuple
+                {
+                    var i: size_t 0
+                    while i < tup.components.length
+                    {
+                        let cp tup.components.get i
+                        if cp <> null and this.stored_value_builds(f, owner, (*cp).value, depth + 1)
+                            return true
+                        set i: i + 1
+                    }
+                }
+                else
+                    0
+            false
+        }
+
+        ; a local of the walked routine: a binding or a `set` the walk has
+        ; passed gives it a built value
+        procedure local_stores_build(mutable this: Planner, mutable f: Function, owner: ref[String]?, name: String, depth: size_t) returns bool
+        {
+            var i: size_t 0
+            while i < store_scope.length
+            {
+                let sp store_scope.get i
+                set i: i + 1
+                if sp = null
+                    continue
+                choose (*sp)
+                    when bd: Binding
+                    {
+                        if bd.item.name <> null and (*bd.item.name) = name and this.stored_value_builds(f, owner, bd.operation, depth + 1)
+                            return true
+                    }
+                    when a: Action
+                    {
+                        if a.target.length = 1 and Planner.ops_root_name(a.target, false) = name and this.stored_value_builds(f, owner, a.source, depth + 1)
+                            return true
+                    }
+                    else
+                        0
+            }
+            false
+        }
+
+        ; a put/add's arguments: one of them built (stored_value_builds#)
+        procedure tuple_stores_build(mutable this: Planner, mutable f: Function, owner: ref[String]?, op: Operand) returns bool
         {
             choose op.expression
                 when tup: Tuple
@@ -51095,7 +51460,7 @@ define Planner
                     while i < tup.components.length
                     {
                         let cp tup.components.get i
-                        if cp <> null and this.ops_build_page_value((*cp).value, 0)
+                        if cp <> null and this.stored_value_builds(f, owner, (*cp).value, 0)
                             return true
                         set i: i + 1
                     }
@@ -51129,7 +51494,7 @@ define Planner
             match callee
                 case "put" case "add"
                 {
-                    if this.tuple_builds_page_value((*args_ptr))
+                    if this.tuple_stores_build(f, owner, (*args_ptr))
                         set store_acc: store_acc | Planner.root_bit(Planner.ops_root_name(ops, true), fields, params)
                     return false
                 }
@@ -51237,12 +51602,71 @@ define Planner
                 return m
             }
             let recv Planner.ret_page_receiver_concept(this, owner, f, Vector[Statement](), path, 0)
-            if recv = null
-                return 0
-            let rc this.lookup_concept_any((*recv))
-            if rc = null
-                return 0
-            this.members_store_mask((*rc), method, argc)
+            if recv <> null
+            {
+                let rc this.lookup_concept_any((*recv))
+                if rc <> null and this.concept_has_member((*rc), method)
+                    return this.members_store_mask((*rc), method, argc)
+            }
+            ; a receiver this pre-pass cannot type (a `when` binding, an
+            ; untyped local), or one it types to a concept without that member
+            ; (a namespace named like its structure -- `define Emitter {
+            ; define Emitter (...) }`): every storing routine of that name, methods
+            ; included (the keys are `name@start`), as R7's name-keyed fallback
+            ; -- a page too many rather than one too few. Until 2026-09-28 this
+            ; answered 0, and R8's net refused the call.
+            var si: size_t 0
+            while si < store_page_names.length
+            {
+                let kp store_page_names.get si
+                if kp <> null and Planner.store_key_names((*kp), method)
+                {
+                    let mp store_page_masks.get si
+                    if mp <> null
+                        set m: m | (*mp)
+                }
+                set si: si + 1
+            }
+            m
+        }
+
+        ; is `key` (`name@start`, store_key#) a key of a routine named `name`?
+        function store_key_names(key: String, name: String) returns bool
+        {
+            let n name.get_length()
+            if key.get_length() <= n or key.get(n) <> 0x40     ; @
+                return false
+            key.substring(0, n).equals(name)
+        }
+
+        ; does `c` declare a routine named `method`?
+        function concept_has_member(this: Planner, c: Concept, method: String) returns bool
+        {
+            var members Vector[Member](0)
+            choose c.definition
+                when st: Structure
+                    set members: st.members
+                when u: scalyc.compiler.Model.Union
+                    set members: u.members
+                else
+                    return false
+            var i: size_t 0
+            while i < members.length
+            {
+                let mp members.get i
+                set i: i + 1
+                if mp = null
+                    continue
+                choose (*mp)
+                    when cf: Function
+                    {
+                        if cf.name = method
+                            return true
+                    }
+                    else
+                        0
+            }
+            false
         }
 
         procedure members_store_mask(mutable this: Planner, c: Concept, method: String, argc: size_t) returns u64
@@ -57632,10 +58056,15 @@ define Planner
         if np = null
             return null
         let n (*np)
+        ; `ref[T]?` is `Option[ref[T]]`: the SHAPE, not the name, says what it
+        ; points at (2026-09-28: every receiver typed `ref[T]?` fell to the
+        ; name-keyed fallback, and R8 could not follow a call on it)
         var unwrap: bool false
         if n = "pointer"
             set unwrap: true
         if n = "ref"
+            set unwrap: true
+        if n = "Option"
             set unwrap: true
         if unwrap
         {

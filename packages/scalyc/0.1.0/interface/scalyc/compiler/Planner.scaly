@@ -1005,6 +1005,9 @@ define Planner
         store_mangled_masks: ref[Array[u64]]
         store_mangled_this: ref[Array[bool]]
         var store_acc: u64
+        ; the bindings and `set`s the store walk has passed in the routine it
+        ; walks, for stored_value_builds# to follow a stored local
+        store_scope: ref[Array[Statement]]
         ; ★A SEPARATE set for the return-position rule, and separate on purpose:
         ; impl_mentions_set propagates out of transitive_page_names by NAME
         ; MENTION, so feeding this rule's hits back into that set cascades — one
@@ -3356,7 +3359,7 @@ define Planner
             left: PlannedType,
             right: PlannedType,
             arg_ops: Vector[PlannedOperand]
-        ) @page true @direct true @deep true @deep_this_12 true returns ref[PlannedType]? io linked
+        ) @page true @direct true @stores true @deep true @deep_this_12 true returns ref[PlannedType]? io linked
 
         ; mangle_method: build `_ZN<parent>methodEparam*` without the
         ; PlannedItem ceremony that mangle_function requires. Just takes
@@ -4166,7 +4169,7 @@ define Planner
             mutable union_type: PlannedType,
             is_throws_call: bool,
             throws_ty: ref[PlannedType]?
-        ) @page true @direct true @deep true @deep_this_22 true @deep_whole_20 true returns PlannedWhen io linked
+        ) @page true @direct true @stores true @deep true @deep_this_22 true @deep_whole_20 true returns PlannedWhen io linked
 
         ; plan_choose: Scaly's choose/when pattern match.
         ; Phase-5 class 2 helpers (choose-payload back-prop). True when ops
@@ -7650,20 +7653,20 @@ define Planner
         procedure set_store_mask(mutable this: Planner, key: String, mask: u64) @persists true @deep true linked
 
         ; the positions this body stores a page value into (store_page_masks)
-        procedure function_store_mask(mutable this: Planner, mutable f: Function, owner: ref[String]?) @ret_param_0 true @deep true returns u64 linked
+        procedure function_store_mask(mutable this: Planner, mutable f: Function, owner: ref[String]?) @ret_param_0 true @deep true returns u64 io linked
 
-        procedure hand_action(mutable this: Planner, mutable f: Function, owner: ref[String]?, a: Action, fields: Array[String], params: Array[String]) @ret_nonlocal true @deep true returns bool linked
+        procedure hand_action(mutable this: Planner, mutable f: Function, owner: ref[String]?, a: Action, fields: Array[String], params: Array[String]) @ret_nonlocal true @deep true returns bool io linked
 
-        procedure hand_statement(mutable this: Planner, mutable f: Function, owner: ref[String]?, s: Statement, fields: Array[String], params: Array[String]) @ret_nonlocal true @deep true returns bool linked
+        procedure hand_statement(mutable this: Planner, mutable f: Function, owner: ref[String]?, s: Statement, fields: Array[String], params: Array[String]) @ret_nonlocal true @deep true @deep_this_8 true @deep_whole_8 true returns bool io linked
 
-        procedure hand_statements(mutable this: Planner, mutable f: Function, owner: ref[String]?, stmts: Vector[Statement], fields: Array[String], params: Array[String]) @ret_nonlocal true @deep true returns bool linked
+        procedure hand_statements(mutable this: Planner, mutable f: Function, owner: ref[String]?, stmts: Vector[Statement], fields: Array[String], params: Array[String]) @ret_nonlocal true @deep true returns bool io linked
 
         ; one operand sequence: a put/add of a built value on the receiver's
         ; state, or a call of a routine in the set on state that outlives the
         ; frame; then everything nested inside it
-        procedure hand_ops(mutable this: Planner, mutable f: Function, owner: ref[String]?, ops: Vector[Operand], fields: Array[String], params: Array[String]) @ret_nonlocal true @deep true returns bool linked
+        procedure hand_ops(mutable this: Planner, mutable f: Function, owner: ref[String]?, ops: Vector[Operand], fields: Array[String], params: Array[String]) @ret_nonlocal true @deep true returns bool io linked
 
-        procedure hand_operand(mutable this: Planner, mutable f: Function, owner: ref[String]?, op: Operand, fields: Array[String], params: Array[String]) @ret_nonlocal true @deep true returns bool linked
+        procedure hand_operand(mutable this: Planner, mutable f: Function, owner: ref[String]?, op: Operand, fields: Array[String], params: Array[String]) @ret_nonlocal true @deep true returns bool io linked
 
         ; does this operand sequence BUILD a value that lives on the page it is
         ; built on? A construction of a concept through an `init` of that arity
@@ -7675,7 +7678,54 @@ define Planner
         ; elements; nor a plain read (`set current: node.next`).
         procedure ops_build_page_value(mutable this: Planner, ops: Vector[Operand], depth: size_t) @ret_nonlocal true @deep true returns bool linked
 
-        procedure tuple_builds_page_value(mutable this: Planner, op: Operand) @ret_nonlocal true @deep true returns bool linked
+        function model_operand_is_tuple(op: Operand) @ret_nonlocal true @deep true returns bool linked
+
+        ; stored_value_builds#: does a value a put/add or a `set` stores carry
+        ; something this routine BUILT on its own page -- the page R8 must hand
+        ; it from its caller? A construction (ops_build_page_value#), a call
+        ; whose callee builds its result on the caller page (R7's question about
+        ; a returned call, ret_page_call_head#), a local bound to or set with one
+        ; of those, or a positional construction with such a part. Until
+        ; 2026-09-28 only the construction counted: `names.add(sb.to_string())`
+        ; or `let made Fact(...)` + `facts.add(made)` seeded nothing, a caller
+        ; that merely forwards `names` got no page, and the String lived on a
+        ; frame released at that caller's return -- rc 0, read back as garbage
+        ; (tests/regress/store_forwarded_built_value.scaly).
+        procedure stored_value_builds(mutable this: Planner, mutable f: Function, owner: ref[String]?, ops: Vector[Operand], depth: size_t) @ret_nonlocal true @deep true returns bool linked
+
+        ; call_result_builds#: does a call's RESULT carry something built on
+        ; this routine's page? Its callee returns a non-reference VALUE (R1: the
+        ; value's parts are on the caller page -- `sb.to_string()`), residence
+        ; says the result is the caller page's (class 1), or it hands back an
+        ; argument (class 3/5) that is built here. A reference whose residence
+        ; is unknown (class 0) is NOT counted: R7's page for it is a
+        ; conservative guess, and counting it made every cache setter of the
+        ; tscaly checker a seed. Unresolved callee: residence's name bucket.
+        procedure call_result_builds(mutable this: Planner, mutable f: Function, owner: ref[String]?, head: Operand, args: Operand, argc: size_t, depth: size_t) @ret_nonlocal true @deep true returns bool linked
+
+        ; the members of `c` named `method` with that arity: 1 one of them
+        ; builds its result here, 0 none does, -1 there is no such member
+        procedure concept_result_builds(mutable this: Planner, mutable f: Function, owner: ref[String]?, c: Concept, method: String, args: Operand, argc: size_t, depth: size_t) @ret_nonlocal true @deep true returns int linked
+
+        ; a callee's result is built here when it is a VALUE (not a pointer,
+        ; a reference or a scalar -- a stored handle is not a stored part) and
+        ; residence places it on the caller page (1) or hands back an argument
+        ; that is built here (3, 5). An unknown class (0) is not counted.
+        procedure function_result_builds(mutable this: Planner, mutable f: Function, owner: ref[String]?, cf: Function, args: Operand, depth: size_t) @ret_nonlocal true @deep true returns bool linked
+
+        ; does `cf` return a non-scalar VALUE -- through a type alias, as
+        ; function_needs_caller_page# asks (`LLVMValueRef` names a pointer)?
+        function returns_value_with_parts(this: Planner, cf: Function) @ret_nonlocal true @deep true returns bool linked
+
+        ; one of a call's arguments built (stored_value_builds#)
+        procedure args_build(mutable this: Planner, mutable f: Function, owner: ref[String]?, args: Operand, depth: size_t) @ret_nonlocal true @deep true returns bool linked
+
+        ; a local of the walked routine: a binding or a `set` the walk has
+        ; passed gives it a built value
+        procedure local_stores_build(mutable this: Planner, mutable f: Function, owner: ref[String]?, name: String, depth: size_t) @ret_nonlocal true @deep true returns bool linked
+
+        ; a put/add's arguments: one of them built (stored_value_builds#)
+        procedure tuple_stores_build(mutable this: Planner, mutable f: Function, owner: ref[String]?, op: Operand) @ret_nonlocal true @deep true returns bool linked
 
         procedure seq_hands_page(mutable this: Planner, mutable f: Function, owner: ref[String]?, ops: Vector[Operand], fields: Array[String], params: Array[String]) @ret_nonlocal true @deep true returns bool linked
 
@@ -7683,6 +7733,12 @@ define Planner
         ; the receiver's concept (resolved from the owner, as R7 does), a
         ; sibling for a lone name, else a free function of that name
         procedure store_callee_mask(mutable this: Planner, mutable f: Function, owner: ref[String]?, head: Operand, argc: size_t) @ret_nonlocal true @deep true returns u64 linked
+
+        ; is `key` (`name@start`, store_key#) a key of a routine named `name`?
+        function store_key_names(key: String, name: String) @ret_caller true @deep true returns bool linked
+
+        ; does `c` declare a routine named `method`?
+        function concept_has_member(this: Planner, c: Concept, method: String) @ret_nonlocal true @deep true returns bool linked
 
         procedure members_store_mask(mutable this: Planner, c: Concept, method: String, argc: size_t) @ret_nonlocal true @deep true returns u64 linked
 

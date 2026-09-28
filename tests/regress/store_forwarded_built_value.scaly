@@ -1,0 +1,118 @@
+; Regression (2026-09-28): a procedure that keeps a value it BUILT in state a
+; parameter reaches gets the caller page (R8), and so does a caller that only
+; forwards that parameter -- but R8 knew a built value only as a construction
+; written right in the put/add or the `set`. Every other spelling seeded
+; nothing, the forwarding caller got no page, and the kept value lived on a
+; frame released at that caller's return: rc 0, read back as garbage, silent
+; under SCALY_POISON too. Each `keep_*` below is one such spelling, each
+; reached through `forward`:
+;   - a call whose result is built on the caller page (`sb.to_string()`,
+;     residence class 1),
+;   - a static that hands a built argument back (class 3/5),
+;   - a local bound to either, or to a construction,
+;   - a positional construction with such a local as a part.
+; Planner.stored_value_builds# / call_result_builds#. The first form was found
+; writing compiler/Interface.scaly (tests/escape/pending, until this fix).
+; Expected: PASS
+
+define Fact
+(
+    tag: int
+    kind: String
+)
+
+define Maker
+(
+    count: int
+)
+{
+    function wrap(tag: int, kind: String) returns Fact
+        Fact(tag, kind)
+
+    function built(tag: int) returns Fact
+        Fact(tag, String("built"))
+
+    procedure keep_wrapped(this, mutable facts: ref[Array[Fact]])
+    {
+        facts.add(Maker.wrap(1, String("wrapped")))
+    }
+
+    procedure keep_class1(this, mutable facts: ref[Array[Fact]])
+    {
+        facts.add(Maker.built(2))
+    }
+
+    procedure keep_bound_call(this, mutable facts: ref[Array[Fact]])
+    {
+        let made Maker.wrap(3, String("bound call"))
+        facts.add(made)
+    }
+
+    procedure keep_bound_construction(this, mutable facts: ref[Array[Fact]])
+    {
+        let made Fact(4, String("bound construction"))
+        facts.add(made)
+    }
+
+    procedure keep_bound_part(this, mutable facts: ref[Array[Fact]])
+    {
+        let k String("bound part")
+        facts.add(Fact(5, k))
+    }
+
+    procedure keep_to_string(this, mutable names: ref[Array[String]])
+    {
+        var sb StringBuilder()
+        sb.append "to_string"
+        names.add(sb.to_string())
+    }
+
+    procedure forward(this, mutable facts: ref[Array[Fact]], mutable names: ref[Array[String]])
+    {
+        this.keep_wrapped(facts)
+        this.keep_class1(facts)
+        this.keep_bound_call(facts)
+        this.keep_bound_construction(facts)
+        this.keep_bound_part(facts)
+        this.keep_to_string(names)
+    }
+}
+
+function churn() returns size_t
+{
+    var junk Array[String]()
+    var i: size_t 0
+    while i < 500
+    {
+        junk.add(String("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"))
+        set i: i + 1
+    }
+    junk.length
+}
+
+procedure run() returns String
+{
+    var facts Array[Fact]()
+    var names Array[String]()
+    let m Maker(0)
+    m.forward(&facts, &names)
+    churn()
+    var sb StringBuilder()
+    for f in facts
+    {
+        sb.append "`f.tag`:"
+        sb.append f.kind
+        sb.append ";"
+    }
+    for n in names
+        sb.append n
+    sb.to_string()
+}
+
+if getenv("SCALY_POISON") <> null
+    Page.enable_poison()
+let got run()
+if got.equals("1:wrapped;2:built;3:bound call;4:bound construction;5:bound part;to_string")
+    print "PASS"
+else
+    print "FAIL `got`"

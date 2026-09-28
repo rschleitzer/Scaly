@@ -243,7 +243,7 @@ define WriteCensus
         ; ================================================================
         ; Entry point: the pointer census's tables, the fixpoint, the report.
         ; ================================================================
-        procedure analyze(mutable this: WriteCensus, plan: Plan, model: ref[Program], mutable census: ref[PointerCensus]) @deep true @deep_this_10 true @deep_whole_8 true @deep_into_3_2 true io linked
+        procedure analyze(mutable this: WriteCensus, plan: Plan, model: ref[Program], mutable census: ref[PointerCensus]) @page true @stores true @deep true @deep_this_10 true @deep_whole_8 true @deep_into_3_2 true io linked
 
         function total(this: WriteCensus) @ret_param_0 true @deep true returns size_t linked
 
@@ -252,14 +252,14 @@ define WriteCensus
         function join(a: String, b: String) @page true @direct true @ret_caller true @deep true returns String linked
 
         ; The summary of one body under the callee summaries known so far.
-        procedure walk_body(mutable this: WriteCensus, func: PlannedFunction) @ret_param_0 true @deep true @deep_this_2 true returns u64 io linked
+        procedure walk_body(mutable this: WriteCensus, func: PlannedFunction) @page true @stores true @ret_param_0 true @deep true @deep_this_2 true returns u64 io linked
 
         procedure enter_body(mutable this: WriteCensus, func: PlannedFunction) @deep true @deep_this_2 true linked
 
         ; The last walk: sites, and one `fn` line per writing pure function.
         ; The last walk: one `fn`/`proc`/`init` line per body (`clean` or the
         ; parameters it writes), and the sites of every writing function.
-        procedure report_body(mutable this: WriteCensus, func: PlannedFunction, whole_mask: u64) @deep true @deep_this_2 true io linked
+        procedure report_body(mutable this: WriteCensus, func: PlannedFunction, whole_mask: u64) @page true @stores true @deep true @deep_this_2 true io linked
 
         ; ================================================================
         ; The global set of the body walked (cur_g) and of every body.
@@ -311,10 +311,10 @@ define WriteCensus
         ; starts at "aliases nothing", a stub or extern at every parameter, and
         ; each round re-walks the bodies that can still grow. mask_of reads the
         ; table as it stands, so a round sees the previous round's callees.
-        procedure learn_returned_params(mutable this: WriteCensus) @deep true io linked
+        procedure learn_returned_params(mutable this: WriteCensus) @page true @stores true @deep true io linked
 
         ; one walk of every body to learn which bodies return a global
-        procedure learn_returned_globals(mutable this: WriteCensus) @deep true io linked
+        procedure learn_returned_globals(mutable this: WriteCensus) @page true @stores true @deep true io linked
 
         ; the global a local aliases ("" none)
         function local_global(this: WriteCensus, name: String) @page true @direct true @ret_caller true @deep true returns String linked
@@ -402,7 +402,7 @@ define WriteCensus
         procedure hit(mutable this: WriteCensus, offset: size_t, cls: String, whole_mask: u64, detail: String) @deep true linked
 
         ; The page a Reference lifetime names, as a mask.
-        procedure note_life(mutable this: WriteCensus, offset: size_t, life: Lifetime, cls: String) @ret_nonlocal true @deep true linked
+        procedure note_life(mutable this: WriteCensus, offset: size_t, life: Lifetime, cls: String) @page true @stores true @ret_nonlocal true @deep true linked
 
         ; The index + 1 of a callee in plan.functions (0: none), read off the
         ; pointer census's table, which prefers a body over a stub.
@@ -410,7 +410,7 @@ define WriteCensus
 
         ; A call: the callee's body in this root, else a summary another
         ; root wrote (SCALYC_WRITE_SUMMARIES), else a real C extern.
-        procedure note_call(mutable this: WriteCensus, op: PlannedOperand, call: PlannedCall) @deep true linked
+        procedure note_call(mutable this: WriteCensus, op: PlannedOperand, call: PlannedCall) @page true @stores true @deep true linked
 
         ; The written parameters of a callee, mapped onto this call's arguments.
         procedure apply_callee(mutable this: WriteCensus, op: PlannedOperand, call: PlannedCall, callee_mask: u64, callee_name: String, n_in: size_t, slot: size_t) @deep true linked
@@ -475,7 +475,7 @@ define WriteCensus
 
         ; Breadth-first over the call edges from the entries (edge_mode walks),
         ; then the sites of every reachable body.
-        procedure report_frozen(mutable this: WriteCensus) @deep true io linked
+        procedure report_frozen(mutable this: WriteCensus) @page true @stores true @deep true io linked
 
         ; ================================================================
         ; The CHECK mode (`--purity-check`, R1 step 2): a `function` may not
@@ -568,7 +568,7 @@ define WriteCensus
         ; through the bodies it calls (a fixpoint over the call edges). A stub
         ; of another package is not followed -- the generated interface files
         ; will carry what it reads.
-        procedure learn_reads(mutable this: WriteCensus, fns: ref[Vector[PlannedFunction]]) @deep true io linked
+        procedure learn_reads(mutable this: WriteCensus, fns: ref[Vector[PlannedFunction]]) @page true @stores true @deep true io linked
 
         ; --emit-interface: the first changeable global each planned body of the
         ; root reads (the check's pre-pass), and whether it reaches I/O, keyed
@@ -594,7 +594,7 @@ define WriteCensus
         ; page parameters
         procedure wc_mark(this: WriteCensus, phase_name: pointer[const_char]) @deep true io linked
 
-        procedure run_check(mutable this: WriteCensus, model: ref[Program]) @deep true io linked
+        procedure run_check(mutable this: WriteCensus, model: ref[Program]) @page true @stores true @deep true io linked
 
         ; ================================================================
         ; Summaries across roots: `<mangled>\t<mask>\t<inputs>` per line.
@@ -675,9 +675,9 @@ define WriteCensus
         ; Bodies: the TaskPlanner's closed arm list, as the pointer census.
         ; ================================================================
 
-        procedure find_operands(mutable this: WriteCensus, ops: ref[Vector[PlannedOperand]]?) @deep true io linked
+        procedure find_operands(mutable this: WriteCensus, ops: ref[Vector[PlannedOperand]]?) @page true @stores true @deep true io linked
 
-        procedure find_statement_ref(mutable this: WriteCensus, stmt: ref[PlannedStatement]?) @ret_nonlocal true @deep true io linked
+        procedure find_statement_ref(mutable this: WriteCensus, stmt: ref[PlannedStatement]?) @page true @stores true @ret_nonlocal true @deep true io linked
 
         ; The store side of a `set`: the target head decides the class.
         ; ====================================================================
@@ -729,13 +729,13 @@ define WriteCensus
 
         function attributes_have_var(attrs: ref[Vector[PlannedAttribute]]?) @ret_nonlocal true @deep true returns bool linked
 
-        procedure find_action(mutable this: WriteCensus, act: PlannedAction) @deep true io linked
+        procedure find_action(mutable this: WriteCensus, act: PlannedAction) @page true @stores true @deep true io linked
 
-        procedure find_statement(mutable this: WriteCensus, stmt: PlannedStatement) @ret_nonlocal true @deep true io linked
+        procedure find_statement(mutable this: WriteCensus, stmt: PlannedStatement) @page true @stores true @ret_nonlocal true @deep true io linked
 
         ; A local inherits what its initializer reaches, unless it is a scalar.
-        procedure note_binding(mutable this: WriteCensus, binding: PlannedBinding) @deep true io linked
+        procedure note_binding(mutable this: WriteCensus, binding: PlannedBinding) @page true @stores true @deep true io linked
 
-        procedure find_operand(mutable this: WriteCensus, op: PlannedOperand) @deep true io linked
+        procedure find_operand(mutable this: WriteCensus, op: PlannedOperand) @page true @stores true @deep true io linked
     }
 }

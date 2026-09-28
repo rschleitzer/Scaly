@@ -85,7 +85,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z5Lexer = type { { ptr }, ptr, ptr, i64, i64, %_Z5Token, %_Z5SliceImE, i64, ptr }
 %_Z5Token = type { i8, [9 x i8] }
 %_Z11ParserError = type { i8, [24 x i8] }
-%_Z7Planner = type { { ptr }, %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, %_Z5ArrayImE, %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, i64, %_Z5ArrayI14TypeConstraintE, %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, %_Z5ArrayI12KeyValuePairI6String7ConceptEE, %_Z12ConceptIndex, ptr, %_Z5ArrayI16PlannedStructureE, %_Z5ArrayI12PlannedUnionE, %_Z5ArrayI6StringE, i1, i64, ptr, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6LambdaE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i64, i64, i1, i1, i1, %_Z5ArrayI15PlannedFunctionE, %_Z12ConceptIndex, %_Z5ArrayI13PlannedGlobalE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI12KeyValuePairI6String8FunctionEE, %_Z5ArrayI12KeyValuePairI6String6LambdaEE, %_Z13FunctionIndex, %_Z5ArrayI12KeyValuePairI6String8OperatorEE, %_Z13FunctionIndex, i1, %_Z6VectorI11PlannedTypeE, %_Z5ArrayI12KeyValuePairI6String6ModuleEE, %_Z5ArrayI12KeyValuePairI6String6ModuleEE, %_Z5ArrayI6StringE, %_Z5ArrayI17PlannerDiagnosticE, %_Z5ArrayI7ProgramE, ptr, ptr, ptr, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i64, %_Z5ArrayI12EscapeRecordE, ptr, ptr, ptr, ptr, i1, i1, i1, i64, i1, i1, ptr, ptr, ptr, %_Z5ArrayI6StringE, ptr, ptr, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i1, i1, %_Z5ArrayI6StringE, ptr, %_Z5ArrayImE, ptr, ptr, i1, i1, %_Z5ArrayI6StringE, i64, i1, i1, i64, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i64, i64, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, ptr, ptr, ptr, ptr, ptr, i64, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, { ptr }, { ptr }, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, i64, i64, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayImE, i1, %_Z12ConceptIndex, %_Z5ArrayI6StringE, i1, i64, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, ptr, { ptr }, ptr, ptr, i64, i64 }
+%_Z7Planner = type { { ptr }, %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, %_Z5ArrayImE, %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, i64, %_Z5ArrayI14TypeConstraintE, %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, %_Z5ArrayI12KeyValuePairI6String7ConceptEE, %_Z12ConceptIndex, ptr, %_Z5ArrayI16PlannedStructureE, %_Z5ArrayI12PlannedUnionE, %_Z5ArrayI6StringE, i1, i64, ptr, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6LambdaE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i64, i64, i1, i1, i1, %_Z5ArrayI15PlannedFunctionE, %_Z12ConceptIndex, %_Z5ArrayI13PlannedGlobalE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI12KeyValuePairI6String8FunctionEE, %_Z5ArrayI12KeyValuePairI6String6LambdaEE, %_Z13FunctionIndex, %_Z5ArrayI12KeyValuePairI6String8OperatorEE, %_Z13FunctionIndex, i1, %_Z6VectorI11PlannedTypeE, %_Z5ArrayI12KeyValuePairI6String6ModuleEE, %_Z5ArrayI12KeyValuePairI6String6ModuleEE, %_Z5ArrayI6StringE, %_Z5ArrayI17PlannerDiagnosticE, %_Z5ArrayI7ProgramE, ptr, ptr, ptr, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i64, %_Z5ArrayI12EscapeRecordE, ptr, ptr, ptr, ptr, i1, i1, i1, i64, i1, i1, ptr, ptr, ptr, %_Z5ArrayI6StringE, ptr, ptr, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i1, i1, %_Z5ArrayI6StringE, ptr, %_Z5ArrayImE, ptr, ptr, i1, i1, %_Z5ArrayI6StringE, i64, i1, i1, i64, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i64, i64, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, ptr, ptr, ptr, ptr, ptr, i64, ptr, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, { ptr }, { ptr }, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, i64, i64, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayImE, i1, %_Z12ConceptIndex, %_Z5ArrayI6StringE, i1, i64, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, ptr, { ptr }, ptr, ptr, i64, i64 }
 %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE = type { i64, i64, ptr }
 %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE = type { i64, i64, ptr }
 %_Z5ArrayI14TypeConstraintE = type { i64, i64, ptr }
@@ -151712,7 +151712,7 @@ while.body:                                       ; preds = %while.cond
   %uri4 = load ptr, ptr %uri, align 8
   call void @_ZN8docstore3getEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result3, ptr %frame, ptr %uri4)
   %uri5 = load ptr, ptr %uri, align 8
-  call void @_ZN6server11publish_forE6String6String(ptr %uri5, ptr %sret.result3)
+  call void @_ZN6server11publish_forEPN4scaly6memory4PageE6String6String(ptr %frame, ptr %uri5, ptr %sret.result3)
   %call6 = call i1 @_ZN6worker15stdin_has_inputEv()
   br i1 %call6, label %if.then, label %if.end
 
@@ -151732,16 +151732,11 @@ if.end:                                           ; preds = %while.body
   br label %while.cond
 }
 
-define linkonce_odr void @_ZN6server11publish_forE6String6String(ptr %0, ptr %1) {
+define linkonce_odr void @_ZN6server11publish_forEPN4scaly6memory4PageE6String6String(ptr %0, ptr %1, ptr %2) {
 entry:
-  %frame = alloca { ptr, ptr }, align 8
-  store ptr null, ptr %frame, align 8
-  %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
-  store ptr null, ptr %frame.parent, align 8
   %sret.result = alloca { ptr }, align 8
-  call void @_ZN6worker7analyzeEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %0, ptr %1)
+  call void @_ZN6worker7analyzeEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %0, ptr %1, ptr %2)
   call void @_ZN6server19write_notificationsE6String(ptr %sret.result)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 

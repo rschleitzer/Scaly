@@ -103,7 +103,7 @@ define tasklens
     ;
     ; "" whenever nothing can be said: no `for` loop at all, or a buffer whose
     ; `for` structure no longer matches the saved text.
-    procedure fragment(plan: Plan, has_diag: bool, entry_file: String, path: String, plan_text: String, anchor_text: String) @page true @direct true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
+    procedure fragment(plan: Plan, has_diag: bool, entry_file: String, path: String, plan_text: String, anchor_text: String) @page true @direct true @stores true @ret_caller true @deep true returns String mutable lc_col, lc_line, lc_off reads lc_line linked
 
     ; The CodeLens[] array itself: walk the `for` sites of both texts in
     ; lockstep (the counts were proved equal by code_lenses#), take the

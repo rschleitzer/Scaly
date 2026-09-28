@@ -1,0 +1,44 @@
+; Regression (2026-09-25, turned 2026-09-28): R8 at a PARAMETER position across
+; a receiver typed by a generic parameter. `fill` keeps a String built on the
+; page it is given in its parameter `r`; `poke` hands it its own parameter
+; through `inner`, typed by T. R8's net refused the call until 2026-09-28 (this
+; file was `xfail_lost_store_page_param`); since then the untyped receiver
+; takes the masks of every routine of that name (store_callee_mask#), `poke`
+; gets the page for `r`, and the program runs. Run under SCALY_POISON.
+; Expected: PASS
+define Rec (var name: String)
+
+define Filler (unused: int)
+{
+    procedure fill(this, mutable r: ref[Rec], t: String)
+        set r.name: String(t)
+}
+
+define Box[T] (var inner: T)
+{
+    procedure poke(this, mutable r: ref[Rec], t: String)
+        inner.fill(r, t)
+}
+
+function churn() returns size_t
+{
+    var junk Array[String]()
+    var i: size_t 0
+    while i < 500
+    {
+        junk.add(String("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"))
+        set i: i + 1
+    }
+    junk.length
+}
+
+if getenv("SCALY_POISON") <> null
+    Page.enable_poison()
+var rec Rec(String("a"))
+let b Box[Filler](Filler(0))
+b.poke(&rec, String("hello"))
+churn()
+if rec.name.equals("hello")
+    print "PASS"
+else
+    print "FAIL `rec.name.get_length()`"
