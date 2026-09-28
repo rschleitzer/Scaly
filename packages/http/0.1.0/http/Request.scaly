@@ -126,29 +126,40 @@ function head_end(buf: Slice[u8]) returns size_t
     0
 }
 
+; What an unfinished head answers: incomplete, or too large once more than
+; MAX_HEAD bytes have come without its end.
+function head_incomplete(have: size_t) returns i64
+{
+    if have > MAX_HEAD
+        return PARSE_HEAD_TOO_LARGE
+    PARSE_INCOMPLETE
+}
+
 ; Parse one request from the start of buf into req. A positive answer is the
 ; number of bytes the request took (head and encoded body); PARSE_INCOMPLETE
 ; asks for more bytes; the negative answers name the error response.
+;
+; ONE pass over the head (2026-09-28, the hot path of ROADMAP-http.md stage
+; A: the parser was 17 % of a pipelined server's CPU): memchr finds each
+; line's LF, the line is judged at once, and the head ends at the first
+; empty line — where the parser used to find the head's end first and then
+; walk every line again byte by byte. A line is only judged once its LF is
+; in, so every proper prefix of a valid request still answers incomplete.
 procedure parse_request(mutable buf: Slice[u8], mutable req: ref[Request]) returns i64
 {
     ; RFC 9112 2.2: empty lines before the request line are ignored.
     var start: size_t 0
     while start < buf.length and (buf[start] = 13 or buf[start] = 10)
         set start: start + 1
-    let view buf.slice_from(start)
-    let he head_end(view)
-    if he = 0
-    {
-        if view.length > MAX_HEAD
-            return PARSE_HEAD_TOO_LARGE
-        return PARSE_INCOMPLETE
-    }
-    if he > MAX_HEAD
-        return PARSE_HEAD_TOO_LARGE
 
     ; the request line: method SP target SP HTTP/1.x
-    let le line_end(view, 0)
-    let line view.slice_to(le)
+    let lf0 find_byte(buf, start, 10)
+    if lf0 < 0
+        return head_incomplete(buf.length - start)
+    var le lf0 as size_t
+    if le > start and buf[le - 1] = 13
+        set le: le - 1
+    let line buf.subslice(start, le)
     let sp1 index_of(line, 32)
     if sp1 <= 0
         return PARSE_BAD
@@ -177,66 +188,79 @@ procedure parse_request(mutable buf: Slice[u8], mutable req: ref[Request]) retur
         set req.query: req.target.slice_from(req.target.length)
     }
 
-    ; the header fields: the ones framing the message are read here
-    let first next_line(view, le)
-    var fend he - 1
-    if fend > first and view[fend - 1] = 13
-        set fend: fend - 1
-    if fend < first
-        set fend: first
-    set req.fields: view.subslice(first, fend)
+    ; the header fields, a line at a time: the ones framing the message are
+    ; read here, the rest stay in req.fields for Request.header
+    let first (lf0 as size_t) + 1
+    var p first
+    var he: size_t 0
     var content_length: u64 0
     var has_length false
     var chunked false
     var close false
     var keep false
-    var i first
-    while i < fend
+    repeat
     {
-        let e line_end(view, i)
-        let fl view.subslice(i, e)
-        if fl.length > 0
+        let lf find_byte(buf, p, 10)
+        if lf < 0
+            return head_incomplete(buf.length - start)
+        var e lf as size_t
+        if e > p and buf[e - 1] = 13
+            set e: e - 1
+        if e = p
         {
-            let colon index_of(fl, 58)
-            if colon <= 0
-                return PARSE_BAD
-            let name fl.slice_to(colon as size_t)
-            if has_space(name)
-                return PARSE_BAD
-            let value trim(fl.slice_from((colon as size_t) + 1))
-            if equals_lower(name, "content-length")
+            set he: (lf as size_t) + 1
+            break
+        }
+        let fl buf.subslice(p, e)
+        let colon index_of(fl, 58)
+        if colon <= 0
+            return PARSE_BAD
+        let name fl.slice_to(colon as size_t)
+        if has_space(name)
+            return PARSE_BAD
+        ; only three names matter here, and their lengths tell them apart
+        match name.length
+            case 14:
             {
-                let n parse_decimal(value)
-                if n < 0
-                    return PARSE_BAD
-                if has_length and content_length <> (n as u64)
-                    return PARSE_BAD
-                set content_length: n as u64
-                set has_length: true
+                if equals_lower(name, "content-length")
+                {
+                    let n parse_decimal(trim(fl.slice_from((colon as size_t) + 1)))
+                    if n < 0
+                        return PARSE_BAD
+                    if has_length and content_length <> (n as u64)
+                        return PARSE_BAD
+                    set content_length: n as u64
+                    set has_length: true
+                }
             }
-            else
+            case 17:
             {
                 if equals_lower(name, "transfer-encoding")
                 {
-                    if ends_with_lower(value, "chunked")
+                    if ends_with_lower(trim(fl.slice_from((colon as size_t) + 1)), "chunked")
                         set chunked: true
                     else
                         return PARSE_NOT_IMPLEMENTED
                 }
-                else
+            }
+            case 10:
+            {
+                if equals_lower(name, "connection")
                 {
-                    if equals_lower(name, "connection")
-                    {
-                        if contains_token_lower(value, "close")
-                            set close: true
-                        if contains_token_lower(value, "keep-alive")
-                            set keep: true
-                    }
+                    let value trim(fl.slice_from((colon as size_t) + 1))
+                    if contains_token_lower(value, "close")
+                        set close: true
+                    if contains_token_lower(value, "keep-alive")
+                        set keep: true
                 }
             }
-        }
-        set i: next_line(view, e)
+        set p: (lf as size_t) + 1
+        if p - start > MAX_HEAD
+            return PARSE_HEAD_TOO_LARGE
     }
+    if he - start > MAX_HEAD
+        return PARSE_HEAD_TOO_LARGE
+    set req.fields: buf.subslice(first, p)
     if req.minor = 0
         set req.keep_alive: keep and not close
     else
@@ -246,18 +270,18 @@ procedure parse_request(mutable buf: Slice[u8], mutable req: ref[Request]) retur
     if chunked
     {
         var blen: size_t 0
-        let n decode_chunked(buf, start + he, &blen)
+        let n decode_chunked(buf, he, &blen)
         if n <= 0
             return n
-        set req.body: buf.subslice(start + he, start + he + blen)
+        set req.body: buf.subslice(he, he + blen)
         return n
     }
     if content_length > (MAX_BODY as u64)
         return PARSE_BODY_TOO_LARGE
-    let total start + he + (content_length as size_t)
+    let total he + (content_length as size_t)
     if total > buf.length
         return PARSE_INCOMPLETE
-    set req.body: buf.subslice(start + he, total)
+    set req.body: buf.subslice(he, total)
     total as i64
 }
 

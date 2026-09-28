@@ -137,7 +137,9 @@ procedure http_connection()
     var inb ByteBuf.create(host, IN_SIZE)
     let outb &ByteBuf^host(host, allocate_slice[u8]^host(host, OUT_SIZE), 0)
     let req &Request^host(null, null, null, null, null, null, 1, true)
-    let res &Response^host(outb, 200, false, false, false, allocate_slice[u8]^host(host, DATE_LENGTH), 0 - 1)
+    var head_ok allocate_slice[u8]^host(host, HEAD_OK_LENGTH)
+    init_head_ok(head_ok)
+    let res &Response^host(outb, 200, false, false, false, head_ok.subslice(HEAD_OK_DATE_AT, HEAD_OK_DATE_AT + DATE_LENGTH), 0 - 1, head_ok)
     let router (scaly_atomic_load_u64(&http_router) as size_t) as ref[Router]
     var open true
     while open

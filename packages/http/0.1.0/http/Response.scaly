@@ -17,8 +17,9 @@ define Response
     var started: bool            ; the status line is written
     var sent: bool               ; the body is written: the response is done
     var close: bool              ; Connection: close, and the connection ends
-    date: Slice[u8]              ; DATE_LENGTH bytes, the connection's own
+    date: Slice[u8]              ; the connection's date, a view into head_ok
     var date_second: i64         ; the second date was formatted for
+    head_ok: Slice[u8]           ; "HTTP/1.1 200 OK\r\nDate: <date>\r\n", HEAD_OK_LENGTH
 )
 {
     ; Ready for the next response on the same connection.
@@ -49,17 +50,23 @@ define Response
         if started
             return
         set started: true
-        out.append("HTTP/1.1 ")
-        out.append_uint(status as u64)
-        out.append_byte(32)
-        out.append(reason_phrase(status))
-        out.append("\r\nDate: ")
         let now scaly_time_now()
         if now <> date_second
         {
             format_date(date, now)
             set date_second: now
         }
+        ; the common case in one copy: 200, the connection stays
+        if status = 200 and close = false
+        {
+            out.append(head_ok)
+            return
+        }
+        out.append("HTTP/1.1 ")
+        out.append_uint(status as u64)
+        out.append_byte(32)
+        out.append(reason_phrase(status))
+        out.append("\r\nDate: ")
         out.append(date)
         if close
             out.append("\r\nConnection: close")
@@ -89,9 +96,10 @@ define Response
         {
             out.append("Content-Type: ")
             out.append(content_type)
-            out.append("\r\n")
+            out.append("\r\nContent-Length: ")
         }
-        out.append("Content-Length: ")
+        else
+            out.append("Content-Length: ")
         out.append_uint(body.length as u64)
         out.append("\r\n\r\n")
         out.append(body)
@@ -140,6 +148,25 @@ define Response
         }
         this.send_text(Slice[u8](k, &text[0]))
     }
+}
+
+; "HTTP/1.1 200 OK\r\nDate: " (23), the date (DATE_LENGTH), "\r\n".
+define HEAD_OK_LENGTH: size_t 54
+define HEAD_OK_DATE_AT: size_t 23
+
+; Fill a connection's head_ok block with its fixed parts; the date in the
+; middle is Response.date, a view formatted in place once per second.
+procedure init_head_ok(mutable h: Slice[u8])
+{
+    let prefix: Slice[u8] "HTTP/1.1 200 OK\r\nDate: "
+    var i: size_t 0
+    while i < prefix.length
+    {
+        h.put(i, prefix[i])
+        set i: i + 1
+    }
+    h.put(HEAD_OK_LENGTH - 2, 13)
+    h.put(HEAD_OK_LENGTH - 1, 10)
 }
 
 function reason_phrase(code: int) returns Slice[u8]

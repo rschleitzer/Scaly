@@ -37,18 +37,24 @@ function next_line(buf: Slice[u8], e: size_t) returns size_t
     e + 1
 }
 
+; memchr(3): the byte scan every line of a request goes through (libc's is
+; vectorised; a Scaly loop over s[i] checks bounds at every byte).
+function memchr(s: pointer[void], c: i32, n: size_t) returns pointer[void] extern
+
+; The offset of the first byte b in s at or after from, -1 when there is none.
+function find_byte(s: Slice[u8], from: size_t, b: u8) returns i64
+{
+    if from >= s.length
+        return 0 - 1
+    let hit memchr(s.slice_from(from).data as pointer[void], b as i32, s.length - from)
+    if hit = null
+        return 0 - 1
+    ((hit as size_t) - (s.data as size_t)) as i64
+}
+
 ; The first offset of byte b, -1 when there is none.
 function index_of(s: Slice[u8], b: u8) returns i64
-{
-    var i: size_t 0
-    while i < s.length
-    {
-        if s[i] = b
-            return i as i64
-        set i: i + 1
-    }
-    0 - 1
-}
+    find_byte(s, 0, b)
 
 function lower(b: u8) returns u8
 {

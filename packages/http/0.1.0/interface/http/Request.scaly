@@ -59,9 +59,20 @@ define Request
 ; it (RFC 9112 2.2: a recipient MAY accept a bare LF as a line terminator).
 function head_end(buf: Slice[u8]) @ret_nonlocal true @deep true returns size_t linked
 
+; What an unfinished head answers: incomplete, or too large once more than
+; MAX_HEAD bytes have come without its end.
+function head_incomplete(have: size_t) @deep true returns i64 linked
+
 ; Parse one request from the start of buf into req. A positive answer is the
 ; number of bytes the request took (head and encoded body); PARSE_INCOMPLETE
 ; asks for more bytes; the negative answers name the error response.
+;
+; ONE pass over the head (2026-09-28, the hot path of ROADMAP-http.md stage
+; A: the parser was 17 % of a pipelined server's CPU): memchr finds each
+; line's LF, the line is judged at once, and the head ends at the first
+; empty line — where the parser used to find the head's end first and then
+; walk every line again byte by byte. A line is only judged once its LF is
+; in, so every proper prefix of a valid request still answers incomplete.
 procedure parse_request(mutable buf: Slice[u8], mutable req: ref[Request]) @deep true returns i64 linked
 
 ; A chunked body starting at buf[at]: first measured without touching the

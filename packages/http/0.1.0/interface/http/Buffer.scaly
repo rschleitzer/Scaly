@@ -39,7 +39,7 @@ define ByteBuf
 
     procedure append_byte(mutable this, b: u8) @persists true @deep true linked
 
-    ; An unsigned number in decimal.
+    ; An unsigned number in decimal, written backwards into its place.
     procedure append_uint(mutable this, v: u64) @deep true linked
 
     ; A signed number in decimal.

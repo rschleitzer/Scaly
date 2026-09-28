@@ -17,8 +17,9 @@ define Response
     var started: bool            ; the status line is written
     var sent: bool               ; the body is written: the response is done
     var close: bool              ; Connection: close, and the connection ends
-    date: Slice[u8]              ; DATE_LENGTH bytes, the connection's own
+    date: Slice[u8]              ; the connection's date, a view into head_ok
     var date_second: i64         ; the second date was formatted for
+    head_ok: Slice[u8]           ; "HTTP/1.1 200 OK\r\nDate: <date>\r\n", HEAD_OK_LENGTH
 )
 {
     ; Ready for the next response on the same connection.
@@ -47,5 +48,13 @@ define Response
     ; A decimal number as a text/plain body, without building a string.
     procedure send_int(mutable this, v: i64) @ret_nonlocal true @deep true io linked
 }
+
+; "HTTP/1.1 200 OK\r\nDate: " (23), the date (DATE_LENGTH), "\r\n".
+define HEAD_OK_LENGTH: size_t 54
+define HEAD_OK_DATE_AT: size_t 23
+
+; Fill a connection's head_ok block with its fixed parts; the date in the
+; middle is Response.date, a view formatted in place once per second.
+procedure init_head_ok(mutable h: Slice[u8]) @ret_nonlocal true @deep true linked
 
 function reason_phrase(code: int) @page true @direct true @ret_nonlocal true @deep true returns Slice[u8] linked

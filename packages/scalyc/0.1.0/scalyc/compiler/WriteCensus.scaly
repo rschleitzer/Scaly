@@ -4231,6 +4231,7 @@ define WriteCensus
             match name
                 case "strlen" case "strcmp" case "strncmp" case "strdup" case "strtod": return true
                 case "atoll" case "strerror" case "basename" case "dirname": return true
+                case "memchr": return true
             ; maths
             match name
                 case "sin" case "cos" case "tan" case "asin" case "acos" case "atan": return true
@@ -4276,6 +4277,8 @@ define WriteCensus
             if name = "fwrite"
                 return 8
             if name = "memcmp"
+                return 0
+            if name = "memchr"
                 return 0
             if name = "strlen"
                 return 0

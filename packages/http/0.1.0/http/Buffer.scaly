@@ -83,27 +83,28 @@ define ByteBuf
         set length: length + 1
     }
 
-    ; An unsigned number in decimal.
+    ; An unsigned number in decimal, written backwards into its place.
     procedure append_uint(mutable this, v: u64)
     {
-        var digits u8[24]
-        var n: size_t 0
+        var n: size_t 1
+        var t v / 10
+        while t > 0
+        {
+            set n: n + 1
+            set t: t / 10
+        }
+        this.reserve(n)
+        var at length + n
         var x v
         repeat
         {
-            set digits[n]: ((x % 10) as u8) + 48
-            set n: n + 1
+            set at: at - 1
+            data.put(at, ((x % 10) as u8) + 48)
             set x: x / 10
             if x = 0
                 break
         }
-        this.reserve(n)
-        while n > 0
-        {
-            set n: n - 1
-            data.put(length, digits[n])
-            set length: length + 1
-        }
+        set length: length + n
     }
 
     ; A signed number in decimal.
