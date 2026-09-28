@@ -1,0 +1,207 @@
+; Byte-level helpers over Slice[u8] for the HTTP grammar: lines, tokens,
+; ASCII case folding, numbers. Every name given as a literal is lower case.
+
+; The end of the line starting at i: the offset of its LF, or of the CR
+; before it, or buf.length when the line has no terminator.
+function line_end(buf: Slice[u8], i: size_t) returns size_t
+{
+    var j i
+    while j < buf.length and buf[j] <> 10
+        set j: j + 1
+    if j > i and j <= buf.length and buf[j - 1] = 13
+    {
+        if j < buf.length
+            return j - 1
+    }
+    j
+}
+
+; line_end, or -1 when the line's LF has not arrived yet.
+function line_end_or_none(buf: Slice[u8], i: size_t) returns i64
+{
+    var j i
+    while j < buf.length and buf[j] <> 10
+        set j: j + 1
+    if j >= buf.length
+        return 0 - 1
+    if j > i and buf[j - 1] = 13
+        return (j - 1) as i64
+    j as i64
+}
+
+; The start of the next line, given a line_end.
+function next_line(buf: Slice[u8], e: size_t) returns size_t
+{
+    if e < buf.length and buf[e] = 13
+        return e + 2
+    e + 1
+}
+
+; The first offset of byte b, -1 when there is none.
+function index_of(s: Slice[u8], b: u8) returns i64
+{
+    var i: size_t 0
+    while i < s.length
+    {
+        if s[i] = b
+            return i as i64
+        set i: i + 1
+    }
+    0 - 1
+}
+
+function lower(b: u8) returns u8
+{
+    if b >= 65 and b <= 90
+        return b + 32
+    b
+}
+
+function is_space(b: u8) returns bool
+    b = 32 or b = 9
+
+function has_space(s: Slice[u8]) returns bool
+{
+    var i: size_t 0
+    while i < s.length
+    {
+        if is_space(s[i])
+            return true
+        set i: i + 1
+    }
+    false
+}
+
+; s without leading and trailing spaces and tabs.
+function trim(s: Slice[u8]) returns Slice[u8]
+{
+    var a: size_t 0
+    var b s.length
+    while a < b and is_space(s[a])
+        set a: a + 1
+    while b > a and is_space(s[b - 1])
+        set b: b - 1
+    s.subslice(a, b)
+}
+
+; s equals the lower-case lit, ignoring ASCII case in s.
+function equals_lower(s: Slice[u8], lit: Slice[u8]) returns bool
+{
+    if s.length <> lit.length
+        return false
+    var i: size_t 0
+    while i < s.length
+    {
+        if lower(s[i]) <> lit[i]
+            return false
+        set i: i + 1
+    }
+    true
+}
+
+; s ends with the lower-case lit as its last comma-separated token.
+function ends_with_lower(s: Slice[u8], lit: Slice[u8]) returns bool
+{
+    let t trim(s)
+    if t.length < lit.length
+        return false
+    let tail t.slice_from(t.length - lit.length)
+    if equals_lower(tail, lit) = false
+        return false
+    if t.length = lit.length
+        return true
+    let before t[t.length - lit.length - 1]
+    before = 44 or is_space(before)
+}
+
+; One of the comma-separated tokens of s is the lower-case lit.
+function contains_token_lower(s: Slice[u8], lit: Slice[u8]) returns bool
+{
+    var i: size_t 0
+    while i <= s.length
+    {
+        var e i
+        while e < s.length and s[e] <> 44
+            set e: e + 1
+        if equals_lower(trim(s.subslice(i, e)), lit)
+            return true
+        set i: e + 1
+    }
+    false
+}
+
+; A non-negative decimal number filling all of s; -1 when s is empty, has
+; any other byte, or overflows.
+function parse_decimal(s: Slice[u8]) returns i64
+{
+    if s.length = 0 or s.length > 18
+        return 0 - 1
+    var v: i64 0
+    var i: size_t 0
+    while i < s.length
+    {
+        let c s[i]
+        if c < 48 or c > 57
+            return 0 - 1
+        set v: v * 10 + ((c - 48) as i64)
+        set i: i + 1
+    }
+    v
+}
+
+; A decimal number with an optional sign at the start of s, reading up to
+; the first non-digit; 0 when there are no digits.
+function parse_int_prefix(s: Slice[u8]) returns i64
+{
+    var i: size_t 0
+    var neg false
+    if s.length > 0 and s[0] = 45
+    {
+        set neg: true
+        set i: 1
+    }
+    var v: i64 0
+    while i < s.length and s[i] >= 48 and s[i] <= 57
+    {
+        set v: v * 10 + ((s[i] - 48) as i64)
+        set i: i + 1
+    }
+    if neg
+        return 0 - v
+    v
+}
+
+; The chunk size at the start of a chunk-size line (hex digits, then
+; optional extensions after ';' or whitespace); -1 when there are no hex
+; digits, the size overflows, or something else follows the digits.
+function parse_hex_prefix(s: Slice[u8]) returns i64
+{
+    var v: i64 0
+    var i: size_t 0
+    while i < s.length
+    {
+        let c s[i]
+        var d: i64 0 - 1
+        if c >= 48 and c <= 57
+            set d: (c - 48) as i64
+        if c >= 97 and c <= 102
+            set d: (c - 87) as i64
+        if c >= 65 and c <= 70
+            set d: (c - 55) as i64
+        if d < 0
+            break
+        if i >= 15
+            return 0 - 1
+        set v: v * 16 + d
+        set i: i + 1
+    }
+    if i = 0
+        return 0 - 1
+    if i < s.length
+    {
+        let c s[i]
+        if c <> 59 and is_space(c) = false
+            return 0 - 1
+    }
+    v
+}

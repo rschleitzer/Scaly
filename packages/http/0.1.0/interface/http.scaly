@@ -1,0 +1,19 @@
+; http — an HTTP/1.1 server over scaly.os.Tcp.
+;
+; ROADMAP-http.md, stage A: the milestone towards the FHIR server, measured
+; against the fastest frameworks on HttpArena's harness. The modules, in
+; dependency order: byte-level helpers, the growable buffer, the request and
+; its parser, the Date field, the response writer, the router and the
+; connection loop.
+
+package scaly 0.1.0
+
+define http
+{
+    module Text
+    module Buffer
+    module Request
+    module Date
+    module Response
+    module Server
+}

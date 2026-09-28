@@ -1,0 +1,78 @@
+; The Date header field (RFC 9110 5.6.7, IMF-fixdate):
+; "Sun, 06 Nov 1994 08:49:37 GMT", 29 bytes. Every connection keeps its own
+; copy and formats it at most once per second (Response.start): a cache per
+; thread would be a global every handler had to declare it writes.
+
+; Seconds since the epoch (the ctime shim in the runtime archive; dazzle
+; declares it the same way).
+function scaly_time_now() returns i64 extern
+
+define DATE_LENGTH: size_t 29
+
+; Days since 1970-01-01 to a civil date, as (year * 10000 + month * 100 +
+; day) — Howard Hinnant's days_from_civil inverse, integers only.
+function civil_from_days(z0: i64) returns i64
+{
+    let z z0 + 719468
+    var era z / 146097
+    if z < 0
+        set era: (z - 146096) / 146097
+    let doe z - era * 146097
+    let yoe (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365
+    let doy doe - (365 * yoe + yoe / 4 - yoe / 100)
+    let mp (5 * doy + 2) / 153
+    let d doy - (153 * mp + 2) / 5 + 1
+    var m mp + 3
+    if mp >= 10
+        set m: mp - 9
+    var y yoe + era * 400
+    if m <= 2
+        set y: y + 1
+    y * 10000 + m * 100 + d
+}
+
+procedure put_two(mutable p: Slice[u8], at: size_t, v: i64)
+{
+    p.put(at, ((v / 10) as u8) + 48)
+    p.put(at + 1, ((v % 10) as u8) + 48)
+}
+
+procedure put_text(mutable p: Slice[u8], at: size_t, t: Slice[u8])
+{
+    var i: size_t 0
+    while i < t.length
+    {
+        p.put(at + i, t[i])
+        set i: i + 1
+    }
+}
+
+; Format secs (since the epoch, UTC) into the 29 bytes of p.
+procedure format_date(mutable p: Slice[u8], secs: i64)
+{
+    let days secs / 86400
+    let sod secs - days * 86400
+    let ymd civil_from_days(days)
+    let y ymd / 10000
+    let mo (ymd / 100) % 100
+    let d ymd % 100
+    ; 1970-01-01 was a Thursday
+    let wd (days + 4) % 7
+    let day_names: Slice[u8] "SunMonTueWedThuFriSat"
+    let month_names: Slice[u8] "JanFebMarAprMayJunJulAugSepOctNovDec"
+    put_text(p, 0, day_names.subslice((wd * 3) as size_t, (wd * 3 + 3) as size_t))
+    put_text(p, 3, ", ")
+    put_two(p, 5, d)
+    p.put(7, 32)
+    put_text(p, 8, month_names.subslice(((mo - 1) * 3) as size_t, ((mo - 1) * 3 + 3) as size_t))
+    p.put(11, 32)
+    put_two(p, 12, y / 100)
+    put_two(p, 14, y % 100)
+    p.put(16, 32)
+    put_two(p, 17, sod / 3600)
+    p.put(19, 58)
+    put_two(p, 20, (sod / 60) % 60)
+    p.put(22, 58)
+    put_two(p, 23, sod % 60)
+    put_text(p, 25, " GMT")
+}

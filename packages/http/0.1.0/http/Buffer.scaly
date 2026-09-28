@@ -1,0 +1,120 @@
+; A growable byte buffer on a page the owner names: a connection's input
+; and output. The PAGE owns the bytes (hence a Slice, never a Vector): a
+; growth takes a larger block on the same page and leaves the old one to
+; the page, so a connection that once carried a large body keeps the peak
+; until it ends, and the page dies with the connection.
+
+; memmove(3) — the input buffer slides its unconsumed tail to the front.
+function memmove(dest: pointer[void], src: pointer[void], count: size_t) returns pointer[void] extern
+
+define ByteBuf
+(
+    host: ref[Page]
+    var data: Slice[u8]
+    var length: size_t
+)
+{
+    procedure create(host: ref[Page], capacity: size_t) returns ByteBuf
+    {
+        let d allocate_slice[u8]^host(host, capacity)
+        ByteBuf(host, d, 0)
+    }
+
+    function capacity(this) returns size_t
+        data.length
+
+    ; The filled part.
+    function bytes(this) returns Slice[u8]
+        data.slice_to(length)
+
+    ; The unfilled part — where a read goes.
+    function spare(this) returns Slice[u8]
+        data.slice_from(length)
+
+    procedure clear(mutable this)
+        set length: 0
+
+    ; n more bytes are filled (a read wrote them into spare()).
+    procedure advance(mutable this, n: size_t)
+        set length: length + n
+
+    ; Make room for n more bytes: at least double on growth.
+    procedure reserve(mutable this, n: size_t)
+    {
+        if length + n <= data.length
+            return
+        var cap data.length * 2
+        if cap < length + n
+            set cap: length + n
+        let fresh allocate_slice[u8]^host(host, cap)
+        if length > 0
+            memcpy(fresh.data as pointer[void], data.data as pointer[void], length)
+        set data: fresh
+    }
+
+    ; Drop the first n bytes, sliding the rest to the front.
+    procedure consume(mutable this, n: size_t)
+    {
+        if n = 0
+            return
+        if n >= length
+        {
+            set length: 0
+            return
+        }
+        let rest length - n
+        memmove(data.data as pointer[void], data.slice_from(n).data as pointer[void], rest)
+        set length: rest
+    }
+
+    procedure append(mutable this, s: Slice[u8])
+    {
+        if s.length = 0
+            return
+        this.reserve(s.length)
+        memcpy(data.slice_from(length).data as pointer[void], s.data as pointer[void], s.length)
+        set length: length + s.length
+    }
+
+    procedure append_byte(mutable this, b: u8)
+    {
+        this.reserve(1)
+        data.put(length, b)
+        set length: length + 1
+    }
+
+    ; An unsigned number in decimal.
+    procedure append_uint(mutable this, v: u64)
+    {
+        var digits u8[24]
+        var n: size_t 0
+        var x v
+        repeat
+        {
+            set digits[n]: ((x % 10) as u8) + 48
+            set n: n + 1
+            set x: x / 10
+            if x = 0
+                break
+        }
+        this.reserve(n)
+        while n > 0
+        {
+            set n: n - 1
+            data.put(length, digits[n])
+            set length: length + 1
+        }
+    }
+
+    ; A signed number in decimal.
+    procedure append_int(mutable this, v: i64)
+    {
+        if v < 0
+        {
+            this.append_byte(45)
+            this.append_uint(((0 as i64) - v) as u64)
+            return
+        }
+        this.append_uint(v as u64)
+    }
+}

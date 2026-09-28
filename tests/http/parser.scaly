@@ -1,0 +1,150 @@
+; The http package's request parser, without a network (ROADMAP-http.md
+; stage A). Every request shape is cut at EVERY byte offset: each proper
+; prefix must parse as incomplete and leave the buffer untouched, the whole
+; request must parse to the right fields — the property HttpArena's
+; validate-frag.py tests over a socket, here exhaustively and in-process.
+; Then pipelining (the first of two requests takes exactly its own bytes),
+; the error answers, and the field and query lookups.
+; Expected: split pipelined errors fields done
+
+package scaly 0.1.0
+package http 0.1.0
+
+use http.Request.Request
+
+; Copy text into the start of buf; the parser may decode a chunked body in
+; place, so every attempt starts from a fresh copy.
+procedure load(mutable buf: Slice[u8], text: Slice[u8])
+{
+    var i: size_t 0
+    while i < text.length
+    {
+        buf.put(i, text[i])
+        set i: i + 1
+    }
+}
+
+; Every proper prefix is incomplete (parse_request answers 0); the whole request parses to path and
+; body and takes all of its bytes.
+procedure splits(mutable buf: Slice[u8], text: Slice[u8], path: Slice[u8], body: Slice[u8]) returns bool
+{
+    var k: size_t 0
+    while k < text.length
+    {
+        load(buf, text)
+        var req Request.empty()
+        let r parse_request(buf.slice_to(k), &req)
+        if r <> 0
+        {
+            print "prefix `k` of `text.length` answered `r`"
+            return false
+        }
+        set k: k + 1
+    }
+    load(buf, text)
+    var req Request.empty()
+    let r parse_request(buf.slice_to(text.length), &req)
+    if r <> (text.length as i64)
+    {
+        print "whole request answered `r`, not `text.length`"
+        return false
+    }
+    if req.path.equals(path) = false or req.body.equals(body) = false
+    {
+        print "wrong path or body"
+        return false
+    }
+    true
+}
+
+procedure answer(mutable buf: Slice[u8], text: Slice[u8]) returns i64
+{
+    load(buf, text)
+    var req Request.empty()
+    parse_request(buf.slice_to(text.length), &req)
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    let host Page.allocate_page()
+    var buf allocate_slice[u8]^host(host, 32768)
+
+    if splits(buf, "GET /baseline11?a=13&b=42 HTTP/1.1\r\nHost: localhost\r\n\r\n", "/baseline11", "") = false
+        return 1
+    if splits(buf, "POST /baseline11?a=1&b=2 HTTP/1.1\r\nHost: x\r\ncontent-length: 2\r\n\r\n20", "/baseline11", "20") = false
+        return 2
+    if splits(buf, "POST /e HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n1\r\n2\r\n1;ext=x\r\n0\r\n0\r\nX-Trailer: y\r\n\r\n", "/e", "20") = false
+        return 3
+    if splits(buf, "POST /big HTTP/1.1\r\ntransfer-encoding: chunked\r\n\r\nA\r\n0123456789\r\n10\r\nabcdefghijklmnop\r\n0\r\n\r\n", "/big", "0123456789abcdefghijklmnop") = false
+        return 4
+    if splits(buf, "GET /lf HTTP/1.0\nConnection: keep-alive\n\n", "/lf", "") = false
+        return 5
+    if splits(buf, "\r\nGET /after-empty-line HTTP/1.1\r\n\r\n", "/after-empty-line", "") = false
+        return 6
+    Console.print "split "
+
+    ; two pipelined requests: the first takes exactly its own bytes
+    let first: Slice[u8] "GET /pipeline HTTP/1.1\r\nHost: a\r\n\r\n"
+    let second: Slice[u8] "POST /p HTTP/1.1\r\nContent-Length: 3\r\n\r\nabc"
+    load(buf, first)
+    load(buf.slice_from(first.length), second)
+    var req Request.empty()
+    let r1 parse_request(buf.slice_to(first.length + second.length), &req)
+    if r1 <> (first.length as i64) or req.path.equals("/pipeline") = false
+        return 7
+    let r2 parse_request(buf.subslice(first.length, first.length + second.length), &req)
+    if r2 <> (second.length as i64) or req.body.equals("abc") = false
+        return 8
+    Console.print "pipelined "
+
+    if refusal_status(answer(buf, "GARBAGE\r\n\r\n")) <> 400
+        return 10
+    if refusal_status(answer(buf, "GET / HTTP/2.0\r\n\r\n")) <> 400
+        return 11
+    if refusal_status(answer(buf, "GET / HTTP/1.1\r\nTransfer-Encoding: gzip\r\n\r\n")) <> 501
+        return 12
+    if refusal_status(answer(buf, "POST / HTTP/1.1\r\nContent-Length: 1\r\nContent-Length: 2\r\n\r\nab")) <> 400
+        return 13
+    if refusal_status(answer(buf, "GET / HTTP/1.1\r\nBad Name: x\r\n\r\n")) <> 400
+        return 14
+    if refusal_status(answer(buf, "GET / HTTP/1.1\r\nNoColon\r\n\r\n")) <> 400
+        return 15
+    if refusal_status(answer(buf, "POST / HTTP/1.1\r\nContent-Length: 12x\r\n\r\n")) <> 400
+        return 16
+    if refusal_status(answer(buf, "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\nzz\r\n")) <> 400
+        return 17
+    ; a head that never ends, longer than MAX_HEAD
+    var i: size_t 0
+    while i < 20000
+    {
+        buf.put(i, 65)
+        set i: i + 1
+    }
+    var big Request.empty()
+    let rb parse_request(buf.slice_to(20000), &big)
+    if refusal_status(rb) <> 431
+        return 18
+    Console.print "errors "
+
+    var f Request.empty()
+    let ftext: Slice[u8] "GET /q?a=13&empty=&flag&b=-42 HTTP/1.1\r\nHost: h\r\nX-Mixed-Case:  spaced value \r\nConnection: close\r\n\r\n"
+    load(buf, ftext)
+    if parse_request(buf.slice_to(ftext.length), &f) <> (ftext.length as i64)
+        return 20
+    if f.keep_alive
+        return 21
+    if f.header("x-mixed-case").equals("spaced value") = false
+        return 22
+    if f.header("host").equals("h") = false or f.header("absent").length <> 0
+        return 23
+    if f.query_param("a").equals("13") = false or f.query_param("b").equals("-42") = false
+        return 24
+    if f.query_param("empty").length <> 0 or f.query_param("flag").length <> 0 or f.query_param("zz").length <> 0
+        return 25
+    if f.is_method("GET") = false or f.minor <> 1
+        return 26
+    Console.print "fields "
+
+    Console.print "done"
+    0
+}

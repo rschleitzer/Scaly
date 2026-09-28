@@ -1,0 +1,346 @@
+; An HTTP/1.1 request and its parser (RFC 9112).
+;
+; The parser is RESUMABLE BY REPARSING: it reads a request from the start of
+; the buffered bytes and answers 0 while the request is incomplete; the
+; connection reads more and asks again. Nothing is written into the buffer
+; before the whole request is there, so a request split at any byte — a
+; header name, a chunk size, a CRLF — parses exactly as the unsplit one
+; (HttpArena's validate-frag.py tries every offset). A chunked body is
+; decoded IN PLACE once it is complete: the decoded bytes are never longer
+; than the encoded ones.
+;
+; A Request is a set of VIEWS into the connection's input buffer, valid until
+; the connection reads or consumes again — while its handler runs.
+
+; parse_request's answers besides a byte count.
+define PARSE_INCOMPLETE: i64 0
+define PARSE_BAD: i64 -1              ; 400
+define PARSE_HEAD_TOO_LARGE: i64 -2   ; 431
+define PARSE_BODY_TOO_LARGE: i64 -3   ; 413
+define PARSE_NOT_IMPLEMENTED: i64 -4  ; 501: a transfer coding other than chunked
+
+; The status code of the response refusing a request parse_request answered
+; negatively with (0 for any other answer). Also how another package tells
+; the answers apart: a module does not see another package's constants.
+function refusal_status(answer: i64) returns int
+{
+    match answer
+        case PARSE_BAD: return 400
+        case PARSE_HEAD_TOO_LARGE: return 431
+        case PARSE_BODY_TOO_LARGE: return 413
+        case PARSE_NOT_IMPLEMENTED: return 501
+    if answer < 0
+        return 400
+    0
+}
+
+; The request line and the header fields together.
+define MAX_HEAD: size_t 16384
+; A body, decoded or not.
+define MAX_BODY: size_t 16777216
+
+define Request
+(
+    var method: Slice[u8]
+    var target: Slice[u8]        ; path and query as sent
+    var path: Slice[u8]
+    var query: Slice[u8]         ; after '?', without it
+    var fields: Slice[u8]        ; the header field lines, CRLF-separated
+    var body: Slice[u8]
+    var minor: int               ; HTTP/1.minor
+    var keep_alive: bool
+)
+{
+    procedure empty() returns Request
+        Request(null, null, null, null, null, null, 1, true)
+
+    function is_method(this, m: Slice[u8]) returns bool
+        method.equals(m)
+
+    ; The value of the first header field of that name (ASCII case-
+    ; insensitive, the name given in lower case); empty when absent.
+    function header(this, lname: Slice[u8]) returns Slice[u8]
+    {
+        var i: size_t 0
+        while i < fields.length
+        {
+            let e line_end(fields, i)
+            let line fields.subslice(i, e)
+            let colon index_of(line, 58)
+            if colon >= 0
+            {
+                let name line.slice_to(colon as size_t)
+                if equals_lower(name, lname)
+                    return trim(line.slice_from((colon as size_t) + 1))
+            }
+            set i: next_line(fields, e)
+        }
+        fields.slice_to(0)
+    }
+
+    ; The raw value of query parameter `name` (no percent-decoding); empty
+    ; when absent or empty.
+    function query_param(this, name: Slice[u8]) returns Slice[u8]
+    {
+        var i: size_t 0
+        while i <= query.length
+        {
+            var e i
+            while e < query.length and query[e] <> 38
+                set e: e + 1
+            let pair query.subslice(i, e)
+            let eq index_of(pair, 61)
+            if eq >= 0
+            {
+                if pair.slice_to(eq as size_t).equals(name)
+                    return pair.slice_from((eq as size_t) + 1)
+            }
+            else
+            {
+                if pair.equals(name)
+                    return pair.slice_to(0)
+            }
+            set i: e + 1
+        }
+        query.slice_to(0)
+    }
+}
+
+; The offset of the first byte past the head (the blank line included),
+; 0 when the head is not complete yet. Both CRLF CRLF and a bare LF LF end
+; it (RFC 9112 2.2: a recipient MAY accept a bare LF as a line terminator).
+function head_end(buf: Slice[u8]) returns size_t
+{
+    var i: size_t 0
+    while i < buf.length
+    {
+        if buf[i] = 10
+        {
+            if i + 1 < buf.length and buf[i + 1] = 10
+                return i + 2
+            if i + 2 < buf.length and buf[i + 1] = 13 and buf[i + 2] = 10
+                return i + 3
+        }
+        set i: i + 1
+    }
+    0
+}
+
+; Parse one request from the start of buf into req. A positive answer is the
+; number of bytes the request took (head and encoded body); PARSE_INCOMPLETE
+; asks for more bytes; the negative answers name the error response.
+procedure parse_request(mutable buf: Slice[u8], mutable req: ref[Request]) returns i64
+{
+    ; RFC 9112 2.2: empty lines before the request line are ignored.
+    var start: size_t 0
+    while start < buf.length and (buf[start] = 13 or buf[start] = 10)
+        set start: start + 1
+    let view buf.slice_from(start)
+    let he head_end(view)
+    if he = 0
+    {
+        if view.length > MAX_HEAD
+            return PARSE_HEAD_TOO_LARGE
+        return PARSE_INCOMPLETE
+    }
+    if he > MAX_HEAD
+        return PARSE_HEAD_TOO_LARGE
+
+    ; the request line: method SP target SP HTTP/1.x
+    let le line_end(view, 0)
+    let line view.slice_to(le)
+    let sp1 index_of(line, 32)
+    if sp1 <= 0
+        return PARSE_BAD
+    let rest line.slice_from((sp1 as size_t) + 1)
+    let sp2 index_of(rest, 32)
+    if sp2 <= 0
+        return PARSE_BAD
+    let version rest.slice_from((sp2 as size_t) + 1)
+    if version.length <> 8 or version.slice_to(7).equals("HTTP/1.") = false
+        return PARSE_BAD
+    let mc version[7]
+    if mc < 48 or mc > 57
+        return PARSE_BAD
+    set req.method: line.slice_to(sp1 as size_t)
+    set req.target: rest.slice_to(sp2 as size_t)
+    set req.minor: (mc - 48) as int
+    let q index_of(req.target, 63)
+    if q >= 0
+    {
+        set req.path: req.target.slice_to(q as size_t)
+        set req.query: req.target.slice_from((q as size_t) + 1)
+    }
+    else
+    {
+        set req.path: req.target
+        set req.query: req.target.slice_from(req.target.length)
+    }
+
+    ; the header fields: the ones framing the message are read here
+    let first next_line(view, le)
+    var fend he - 1
+    if fend > first and view[fend - 1] = 13
+        set fend: fend - 1
+    if fend < first
+        set fend: first
+    set req.fields: view.subslice(first, fend)
+    var content_length: u64 0
+    var has_length false
+    var chunked false
+    var close false
+    var keep false
+    var i first
+    while i < fend
+    {
+        let e line_end(view, i)
+        let fl view.subslice(i, e)
+        if fl.length > 0
+        {
+            let colon index_of(fl, 58)
+            if colon <= 0
+                return PARSE_BAD
+            let name fl.slice_to(colon as size_t)
+            if has_space(name)
+                return PARSE_BAD
+            let value trim(fl.slice_from((colon as size_t) + 1))
+            if equals_lower(name, "content-length")
+            {
+                let n parse_decimal(value)
+                if n < 0
+                    return PARSE_BAD
+                if has_length and content_length <> (n as u64)
+                    return PARSE_BAD
+                set content_length: n as u64
+                set has_length: true
+            }
+            else
+            {
+                if equals_lower(name, "transfer-encoding")
+                {
+                    if ends_with_lower(value, "chunked")
+                        set chunked: true
+                    else
+                        return PARSE_NOT_IMPLEMENTED
+                }
+                else
+                {
+                    if equals_lower(name, "connection")
+                    {
+                        if contains_token_lower(value, "close")
+                            set close: true
+                        if contains_token_lower(value, "keep-alive")
+                            set keep: true
+                    }
+                }
+            }
+        }
+        set i: next_line(view, e)
+    }
+    if req.minor = 0
+        set req.keep_alive: keep and not close
+    else
+        set req.keep_alive: not close
+
+    ; the body
+    if chunked
+    {
+        var blen: size_t 0
+        let n decode_chunked(buf, start + he, &blen)
+        if n <= 0
+            return n
+        set req.body: buf.subslice(start + he, start + he + blen)
+        return n
+    }
+    if content_length > (MAX_BODY as u64)
+        return PARSE_BODY_TOO_LARGE
+    let total start + he + (content_length as size_t)
+    if total > buf.length
+        return PARSE_INCOMPLETE
+    set req.body: buf.subslice(start + he, total)
+    total as i64
+}
+
+; A chunked body starting at buf[at]: first measured without touching the
+; buffer (PARSE_INCOMPLETE until the last chunk and the trailer section are
+; in), then decoded in place to buf[at ..). Answers the offset past the
+; message (as a byte count from the buffer start) and stores the decoded
+; length into body_len.
+procedure decode_chunked(mutable buf: Slice[u8], at: size_t, mutable body_len: ref[size_t]) returns i64
+{
+    ; pass 1: measure
+    var p at
+    var body: u64 0
+    repeat
+    {
+        let e line_end_or_none(buf, p)
+        if e < 0
+            return PARSE_INCOMPLETE
+        let size_line buf.subslice(p, e as size_t)
+        let size parse_hex_prefix(size_line)
+        if size < 0
+            return PARSE_BAD
+        let data next_line(buf, e as size_t)
+        if size = 0
+        {
+            ; the trailer section: lines up to an empty one
+            var t data
+            repeat
+            {
+                let te line_end_or_none(buf, t)
+                if te < 0
+                    return PARSE_INCOMPLETE
+                let tl buf.subslice(t, te as size_t)
+                set t: next_line(buf, te as size_t)
+                if tl.length = 0
+                    break
+            }
+            set p: t
+            break
+        }
+        set body: body + (size as u64)
+        if body > (MAX_BODY as u64)
+            return PARSE_BODY_TOO_LARGE
+        let after data + (size as size_t)
+        ; the chunk's own CRLF (or LF)
+        if after >= buf.length
+            return PARSE_INCOMPLETE
+        if buf[after] = 13
+        {
+            if after + 1 >= buf.length
+                return PARSE_INCOMPLETE
+            if buf[after + 1] <> 10
+                return PARSE_BAD
+            set p: after + 2
+        }
+        else
+        {
+            if buf[after] <> 10
+                return PARSE_BAD
+            set p: after + 1
+        }
+    }
+    let total p
+
+    ; pass 2: decode in place
+    var r at
+    var w at
+    repeat
+    {
+        let e line_end_or_none(buf, r) as size_t
+        let size parse_hex_prefix(buf.subslice(r, e)) as size_t
+        let data next_line(buf, e)
+        if size = 0
+            break
+        if w <> data
+            memmove(buf.slice_from(w).data as pointer[void], buf.slice_from(data).data as pointer[void], size)
+        set w: w + size
+        set r: data + size
+        if buf[r] = 13
+            set r: r + 2
+        else
+            set r: r + 1
+    }
+    set body_len: w - at
+    total as i64
+}

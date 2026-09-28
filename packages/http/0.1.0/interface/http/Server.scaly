@@ -1,0 +1,90 @@
+; The server: a router of handlers and the connection loop over
+; scaly.os.Tcp's serve (one scheduler per core, every connection a task).
+;
+; A handler is a procedure (req: ref[Request], mutable res: ref[Response]),
+; registered by address:
+;
+;   procedure hello(req: ref[Request], mutable res: ref[Response])
+;       res.send_text("Hello, World!")
+;
+;   var app Router.create(Page.allocate_page())
+;   app.get("/hello", &hello)
+;   app.prefix("GET", "/delay/", &delay)     ; every path under /delay/
+;   serve(app, 8080)                          ; false: cannot listen
+;
+; A connection reads into a buffer on a page of its own, answers every
+; complete request in it (pipelined requests are answered in order and their
+; responses leave in one write), keeps the unconsumed tail, and reads again.
+; Each request is dispatched in a routine of its own, so what a handler
+; allocates dies when the handler returns, not when the connection ends.
+
+use http.Buffer.ByteBuf
+use http.Request.Request
+use http.Response.Response
+
+; A connection's input buffer starts here and doubles up to MAX_HEAD plus
+; MAX_BODY; its output buffer starts at OUT_SIZE.
+define IN_SIZE: size_t 16384
+define OUT_SIZE: size_t 16384
+
+define Route
+(
+    method: Slice[u8]            ; empty: every method
+    path: Slice[u8]
+    is_prefix: bool
+    handler: pointer[void]
+)
+
+define Router
+@resident true @inplace true (
+    host: ref[Page]
+    var routes: Array[Route]
+)
+{
+    procedure create(host: ref[Page]) @ret_explicit_0 true @deep true returns ref[Router] linked
+
+    procedure add(mutable this, method: Slice[u8], path: Slice[u8], is_prefix: bool, mutable handler: pointer[void]) @persists true @ret_nonlocal true @deep true @deep_this_6 true @deep_whole_6 true linked
+
+    procedure get(mutable this, path: Slice[u8], mutable handler: pointer[void]) @ret_nonlocal true @deep true @deep_this_2 true @deep_whole_2 true linked
+
+    procedure post(mutable this, path: Slice[u8], mutable handler: pointer[void]) @ret_nonlocal true @deep true @deep_this_2 true @deep_whole_2 true linked
+
+    ; Every method on path.
+    procedure any(mutable this, path: Slice[u8], mutable handler: pointer[void]) @ret_nonlocal true @deep true @deep_this_2 true @deep_whole_2 true linked
+
+    ; Every path starting with prefix, for one method ("" for every one).
+    procedure prefix(mutable this, method: Slice[u8], prefix: Slice[u8], mutable handler: pointer[void]) @ret_nonlocal true @deep true @deep_this_6 true @deep_whole_6 true linked
+
+    ; The handler for req, null when no route matches. A path match with the
+    ; wrong method answers method_mismatch true (405 rather than 404).
+    procedure find(this, req: ref[Request], mutable method_mismatch: ref[bool]) @ret_param_0 true @deep true returns pointer[void] linked
+}
+
+; The router the serving threads dispatch through, as an address: stored
+; before serve starts its threads (an ordinary global would be thread-
+; local), and only through scaly_atomic_* — so it is ambient, and neither
+; serve nor its callers have to name it as a global they write.
+shared atomic http_router: u64 linked
+
+; Answer one request: route it and run its handler. A routine of its own so
+; that what the handler allocates dies here. The request and the response
+; are the connection's, on its page, reused for every request: a handler
+; is called through an address, and the escape checker does not let a
+; frame-local reference go where it cannot see.
+procedure dispatch(router: ref[Router], mutable req: ref[Request], mutable res: ref[Response]) @deep true io linked
+
+; The answer to a request that could not be parsed; the connection ends
+; after it.
+procedure refuse(mutable res: ref[Response], code: int) @ret_nonlocal true @deep true io linked
+
+; Every connection: read, answer what is complete, write, keep the rest.
+procedure http_connection() @ret_nonlocal true @deep true io reads http_router linked
+
+; Serve router on every interface, both families, over all cores. Runs for
+; as long as the process (or until a handler shuts the server down) and
+; then answers true; false at once when the port cannot be listened on.
+procedure serve(router: ref[Router], port: int) @ret_nonlocal true @deep true returns bool io reads http_router linked
+
+; Serve like serve, but on a listener the caller made, and return at once
+; with the TcpServer (shutdown, wait).
+procedure start(router: ref[Router], l: TcpListener) @page true @direct true @ret_nonlocal true @deep true returns TcpServer reads http_router linked

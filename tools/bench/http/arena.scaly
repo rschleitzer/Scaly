@@ -1,0 +1,51 @@
+; arena — the HttpArena endpoints of ROADMAP-http.md stage A, served by the
+; http package: the entry that is measured against the other frameworks.
+;
+;   GET/POST /baseline11?a=&b=   the sum of a, b and the (optional) body
+;   GET      /pipeline           "ok"
+;   GET      /delay/{ms}         waits ms, then answers the number
+;
+;   arena [port]                 (default 8080)
+
+package scaly 0.1.0
+package http 0.1.0
+
+use http.Request.Request
+use http.Response.Response
+use http.Server.Router
+
+procedure baseline(req: ref[Request], mutable res: ref[Response])
+{
+    var sum parse_int_prefix(req.query_param("a")) + parse_int_prefix(req.query_param("b"))
+    if req.body.length > 0
+        set sum: sum + parse_int_prefix(trim(req.body))
+    res.send_int(sum)
+}
+
+procedure pipeline(req: ref[Request], mutable res: ref[Response])
+    res.send_text("ok")
+
+procedure delay(req: ref[Request], mutable res: ref[Response])
+{
+    let ms parse_int_prefix(req.path.slice_from(7))
+    if ms > 0
+        Scheduler.sleep(ms)
+    res.send_int(ms)
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var port 8080
+    if argc > 1
+        set port: parse_int_prefix(String(*(argv + 1)).as_slice()) as int
+    var app Router.create(Page.allocate_page())
+    app.any("/baseline11", &baseline)
+    app.get("/pipeline", &pipeline)
+    app.prefix("GET", "/delay/", &delay)
+    if serve(app, port) = false
+    {
+        print "arena: cannot listen on port `port`"
+        return 1
+    }
+    0
+}

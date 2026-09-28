@@ -1,0 +1,51 @@
+; A response, written straight into the connection's output buffer: the
+; status line and the fixed fields when the first field or the body comes,
+; each field as it is added, then Content-Length and the body. Nothing is
+; allocated per response; pipelined responses queue up in the buffer and
+; leave in one write.
+;
+;   res.set_status(201)                           ; before anything else
+;   res.header("x-cache", "HIT")                   ; any number of fields
+;   res.send("application/json", body)             ; ends the response
+
+use http.Buffer.ByteBuf
+
+define Response
+(
+    out: ref[ByteBuf]
+    var status: int
+    var started: bool            ; the status line is written
+    var sent: bool               ; the body is written: the response is done
+    var close: bool              ; Connection: close, and the connection ends
+    date: Slice[u8]              ; DATE_LENGTH bytes, the connection's own
+    var date_second: i64         ; the second date was formatted for
+)
+{
+    ; Ready for the next response on the same connection.
+    procedure reset(mutable this, close_after: bool) @deep true linked
+
+    ; The status code; ignored once the status line is out.
+    procedure set_status(mutable this, code: int) @deep true linked
+
+    ; End the connection after this response.
+    procedure set_close(mutable this) @deep true linked
+
+    procedure start(mutable this) @deep true io linked
+
+    ; One header field. After send it is ignored.
+    procedure header(mutable this, name: Slice[u8], value: Slice[u8]) @deep true io linked
+
+    ; The body with its content type; ends the response. A second send is
+    ; ignored.
+    procedure send(mutable this, content_type: Slice[u8], body: Slice[u8]) @deep true io linked
+
+    procedure send_text(mutable this, body: Slice[u8]) @ret_nonlocal true @deep true io linked
+
+    ; A body without a type (a 204, a 404's empty answer).
+    procedure send_empty(mutable this) @ret_nonlocal true @deep true io linked
+
+    ; A decimal number as a text/plain body, without building a string.
+    procedure send_int(mutable this, v: i64) @ret_nonlocal true @deep true io linked
+}
+
+function reason_phrase(code: int) @page true @direct true @ret_nonlocal true @deep true returns Slice[u8] linked

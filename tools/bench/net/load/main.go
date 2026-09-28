@@ -1,5 +1,5 @@
 // load — the load generator of tools/bench/net: -c connections, each asking
-// "GET / HTTP/1.1" in a loop and reading the whole response (by its
+// "GET / HTTP/1.1" (or -u's path) in a loop and reading the whole response (by its
 // Content-Length) before the next request, for -d seconds; prints requests per
 // second and the mean latency. -p N pipelines: N requests in ONE write, then
 // the N responses (TechEmpower's plaintext test uses 16) — it cuts the
@@ -52,7 +52,9 @@ func main() {
 	secs := flag.Int("d", 10, "seconds")
 	keep := flag.Bool("k", true, "keep-alive (false: a new connection per request)")
 	pipe := flag.Int("p", 1, "requests pipelined per round trip")
+	path := flag.String("u", "/", "request path (and query)")
 	flag.Parse()
+	req = []byte("GET " + *path + " HTTP/1.1\r\nHost: localhost\r\n\r\n")
 	batch := make([]byte, 0, len(req)**pipe)
 	for i := 0; i < *pipe; i++ {
 		batch = append(batch, req...)

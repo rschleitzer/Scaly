@@ -1,0 +1,213 @@
+; The server: a router of handlers and the connection loop over
+; scaly.os.Tcp's serve (one scheduler per core, every connection a task).
+;
+; A handler is a procedure (req: ref[Request], mutable res: ref[Response]),
+; registered by address:
+;
+;   procedure hello(req: ref[Request], mutable res: ref[Response])
+;       res.send_text("Hello, World!")
+;
+;   var app Router.create(Page.allocate_page())
+;   app.get("/hello", &hello)
+;   app.prefix("GET", "/delay/", &delay)     ; every path under /delay/
+;   serve(app, 8080)                          ; false: cannot listen
+;
+; A connection reads into a buffer on a page of its own, answers every
+; complete request in it (pipelined requests are answered in order and their
+; responses leave in one write), keeps the unconsumed tail, and reads again.
+; Each request is dispatched in a routine of its own, so what a handler
+; allocates dies when the handler returns, not when the connection ends.
+
+use http.Buffer.ByteBuf
+use http.Request.Request
+use http.Response.Response
+
+; A connection's input buffer starts here and doubles up to MAX_HEAD plus
+; MAX_BODY; its output buffer starts at OUT_SIZE.
+define IN_SIZE: size_t 16384
+define OUT_SIZE: size_t 16384
+
+define Route
+(
+    method: Slice[u8]            ; empty: every method
+    path: Slice[u8]
+    is_prefix: bool
+    handler: pointer[void]
+)
+
+define Router
+(
+    host: ref[Page]
+    var routes: Array[Route]
+)
+{
+    procedure create(host: ref[Page]) returns ref[Router]
+        &Router^host(host, Array[Route]^host())
+
+    procedure add(mutable this, method: Slice[u8], path: Slice[u8], is_prefix: bool, mutable handler: pointer[void])
+        routes.add(Route(method, path, is_prefix, handler))
+
+    procedure get(mutable this, path: Slice[u8], mutable handler: pointer[void])
+        this.add("GET", path, false, handler)
+
+    procedure post(mutable this, path: Slice[u8], mutable handler: pointer[void])
+        this.add("POST", path, false, handler)
+
+    ; Every method on path.
+    procedure any(mutable this, path: Slice[u8], mutable handler: pointer[void])
+        this.add("", path, false, handler)
+
+    ; Every path starting with prefix, for one method ("" for every one).
+    procedure prefix(mutable this, method: Slice[u8], prefix: Slice[u8], mutable handler: pointer[void])
+        this.add(method, prefix, true, handler)
+
+    ; The handler for req, null when no route matches. A path match with the
+    ; wrong method answers method_mismatch true (405 rather than 404).
+    procedure find(this, req: ref[Request], mutable method_mismatch: ref[bool]) returns pointer[void]
+    {
+        var wrong false
+        var i: size_t 0
+        while i < routes.length
+        {
+            let r routes.at(i)
+            var hit false
+            if r.is_prefix
+                set hit: req.path.starts_with(r.path)
+            else
+                set hit: req.path.equals(r.path)
+            if hit
+            {
+                if r.method.length = 0 or req.method.equals(r.method)
+                    return r.handler
+                set wrong: true
+            }
+            set i: i + 1
+        }
+        if wrong
+            set method_mismatch: true
+        null
+    }
+}
+
+; The router the serving threads dispatch through, as an address: stored
+; before serve starts its threads (an ordinary global would be thread-
+; local), and only through scaly_atomic_* — so it is ambient, and neither
+; serve nor its callers have to name it as a global they write.
+shared atomic http_router: u64 0
+
+; Answer one request: route it and run its handler. A routine of its own so
+; that what the handler allocates dies here. The request and the response
+; are the connection's, on its page, reused for every request: a handler
+; is called through an address, and the escape checker does not let a
+; frame-local reference go where it cannot see.
+procedure dispatch(router: ref[Router], mutable req: ref[Request], mutable res: ref[Response])
+{
+    res.reset(req.keep_alive = false)
+    var wrong false
+    let h router.find(req, &wrong)
+    if h = null
+    {
+        if wrong
+            res.set_status(405)
+        else
+            res.set_status(404)
+        res.send_empty()
+        return
+    }
+    h(req, res)
+    if res.sent = false
+        res.send_empty()
+}
+
+; The answer to a request that could not be parsed; the connection ends
+; after it.
+procedure refuse(mutable res: ref[Response], code: int)
+{
+    res.reset(true)
+    res.set_status(code)
+    res.send_empty()
+}
+
+; Every connection: read, answer what is complete, write, keep the rest.
+procedure http_connection()
+{
+    var c TcpStream.of_task()
+    c.set_nodelay(true)
+    let host Page.allocate_page()
+    var inb ByteBuf.create(host, IN_SIZE)
+    let outb &ByteBuf^host(host, allocate_slice[u8]^host(host, OUT_SIZE), 0)
+    let req &Request^host(null, null, null, null, null, null, 1, true)
+    let res &Response^host(outb, 200, false, false, false, allocate_slice[u8]^host(host, DATE_LENGTH), 0 - 1)
+    let router (scaly_atomic_load_u64(&http_router) as size_t) as ref[Router]
+    var open true
+    while open
+    {
+        let n c.read(inb.spare())
+        if n <= 0
+            break
+        inb.advance(n as size_t)
+        if TcpServer.current().stopping()
+            set open: false
+        ; answer every complete request in the buffer
+        var done: size_t 0
+        repeat
+        {
+            var view inb.bytes().slice_from(done)
+            if view.length = 0
+                break
+            let r parse_request(view, req)
+            if r = PARSE_INCOMPLETE
+                break
+            if r < 0
+            {
+                refuse(res, refusal_status(r))
+                set open: false
+                break
+            }
+            dispatch(router, req, res)
+            set done: done + (r as size_t)
+            if req.keep_alive = false
+            {
+                set open: false
+                break
+            }
+        }
+        if outb.length > 0
+        {
+            if c.write(outb.bytes()) = false
+                set open: false
+            outb.clear()
+        }
+        inb.consume(done)
+        if inb.length = inb.capacity()
+        {
+            if inb.capacity() >= MAX_HEAD + MAX_BODY
+                break
+            inb.reserve(inb.capacity())
+        }
+    }
+    c.close()
+    host.deallocate_extensions()
+    Page.release_page(host)
+}
+
+; Serve router on every interface, both families, over all cores. Runs for
+; as long as the process (or until a handler shuts the server down) and
+; then answers true; false at once when the port cannot be listened on.
+procedure serve(router: ref[Router], port: int) returns bool
+{
+    scaly_atomic_store_u64(&http_router, router as u64)
+    var l TcpListener.listen_any(port)
+    if l.is_open() = false
+        return false
+    l.serve(&http_connection)
+    true
+}
+
+; Serve like serve, but on a listener the caller made, and return at once
+; with the TcpServer (shutdown, wait).
+procedure start(router: ref[Router], l: TcpListener) returns TcpServer
+{
+    scaly_atomic_store_u64(&http_router, router as u64)
+    l.start(&http_connection)
+}

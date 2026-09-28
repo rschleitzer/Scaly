@@ -1,0 +1,126 @@
+; The http package's server over TCP (ROADMAP-http.md stage A): started on
+; an ephemeral port, main the client.
+;   1. three requests pipelined in ONE write — a GET with a query, a POST
+;      with a chunked body, a GET that sleeps 20 ms — come back as three
+;      responses in order, on the same connection;
+;   2. the connection stays open: a request with Connection: close for a
+;      path nothing serves answers 404 and ends the connection;
+;   3. a request that cannot be parsed answers 400 and ends it too;
+;   4. shutdown, and wait returns.
+; Expected: pipelined 3|72|20 404-close 400-close stopped
+
+package scaly 0.1.0
+package http 0.1.0
+
+use http.Request.Request
+use http.Response.Response
+use http.Server.Router
+
+procedure sum(req: ref[Request], mutable res: ref[Response])
+{
+    var total parse_int_prefix(req.query_param("a")) + parse_int_prefix(req.query_param("b"))
+    if req.body.length > 0
+        set total: total + parse_int_prefix(trim(req.body))
+    res.send_int(total)
+}
+
+procedure delay(req: ref[Request], mutable res: ref[Response])
+{
+    let ms parse_int_prefix(req.path.slice_from(7))
+    Scheduler.sleep(ms)
+    res.send_int(ms)
+}
+
+; Read from s until `want` complete responses are in, and answer their
+; status codes and bodies as "status:body" joined by "|"; stops early at
+; the end of the stream.
+procedure responses(s: TcpStream, want: int) returns String
+{
+    let host Page.allocate_page()
+    var buf allocate_slice[u8]^host(host, 8192)
+    var have: size_t 0
+    var out StringBuilder()
+    var got 0
+    var at: size_t 0
+    while got < want
+    {
+        let e head_end(buf.subslice(at, have))
+        if e > 0
+        {
+            var head Request.empty()
+            set head.fields: buf.subslice(at, at + e)
+            let n parse_decimal(head.header("content-length"))
+            if n >= 0 and at + e + (n as size_t) <= have
+            {
+                if got > 0
+                    out.append("|" as char)
+                let status buf.subslice(at + 9, at + 12)
+                out.append(String(status.data as pointer[const_char], status.length))
+                out.append(":" as char)
+                let body buf.subslice(at + e, at + e + (n as size_t))
+                out.append(String(body.data as pointer[const_char], body.length))
+                set at: at + e + (n as size_t)
+                set got: got + 1
+                continue
+            }
+        }
+        let r s.read(buf.slice_from(have))
+        if r <= 0
+            break
+        set have: have + (r as size_t)
+    }
+    out.to_string()
+}
+
+; The peer ended the connection: a read answers 0.
+procedure ended(s: TcpStream) returns bool
+{
+    var b u8[16]
+    s.read(Slice[u8](16, &b[0])) = 0
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var app Router.create(Page.allocate_page())
+    app.any("/sum", &sum)
+    app.prefix("GET", "/delay/", &delay)
+    var l TcpListener.listen(0)
+    let server start(app, l)
+
+    var s TcpStream.connect("127.0.0.1", l.port())
+    s.write("GET /sum?a=1&b=2 HTTP/1.1\r\nHost: t\r\n\r\nPOST /sum?a=30&b=40 HTTP/1.1\r\nHost: t\r\nTransfer-Encoding: chunked\r\n\r\n1\r\n2\r\n0\r\n\r\nGET /delay/20 HTTP/1.1\r\nHost: t\r\n\r\n")
+    let three responses(s, 3)
+    if three.equals("200:3|200:72|200:20") = false
+    {
+        print "got `three`"
+        return 1
+    }
+    Console.print "pipelined 3|72|20 "
+
+    s.write("GET /nothing HTTP/1.1\r\nConnection: close\r\n\r\n")
+    let nf responses(s, 1)
+    if nf.equals("404:") = false or ended(s) = false
+    {
+        print "got `nf`"
+        return 2
+    }
+    s.close()
+    Console.print "404-close "
+
+    var b TcpStream.connect("127.0.0.1", l.port())
+    b.write("NONSENSE\r\n\r\n")
+    let bad responses(b, 1)
+    if bad.equals("400:") = false or ended(b) = false
+    {
+        print "got `bad`"
+        return 3
+    }
+    b.close()
+    Console.print "400-close "
+
+    server.shutdown()
+    server.wait()
+    l.close()
+    Console.print "stopped"
+    0
+}

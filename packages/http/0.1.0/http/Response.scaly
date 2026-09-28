@@ -1,0 +1,166 @@
+; A response, written straight into the connection's output buffer: the
+; status line and the fixed fields when the first field or the body comes,
+; each field as it is added, then Content-Length and the body. Nothing is
+; allocated per response; pipelined responses queue up in the buffer and
+; leave in one write.
+;
+;   res.set_status(201)                           ; before anything else
+;   res.header("x-cache", "HIT")                   ; any number of fields
+;   res.send("application/json", body)             ; ends the response
+
+use http.Buffer.ByteBuf
+
+define Response
+(
+    out: ref[ByteBuf]
+    var status: int
+    var started: bool            ; the status line is written
+    var sent: bool               ; the body is written: the response is done
+    var close: bool              ; Connection: close, and the connection ends
+    date: Slice[u8]              ; DATE_LENGTH bytes, the connection's own
+    var date_second: i64         ; the second date was formatted for
+)
+{
+    ; Ready for the next response on the same connection.
+    procedure reset(mutable this, close_after: bool)
+    {
+        set status: 200
+        set started: false
+        set sent: false
+        set close: close_after
+    }
+
+    ; The status code; ignored once the status line is out.
+    procedure set_status(mutable this, code: int)
+    {
+        if started = false
+            set status: code
+    }
+
+    ; End the connection after this response.
+    procedure set_close(mutable this)
+    {
+        if started = false
+            set close: true
+    }
+
+    procedure start(mutable this)
+    {
+        if started
+            return
+        set started: true
+        out.append("HTTP/1.1 ")
+        out.append_uint(status as u64)
+        out.append_byte(32)
+        out.append(reason_phrase(status))
+        out.append("\r\nDate: ")
+        let now scaly_time_now()
+        if now <> date_second
+        {
+            format_date(date, now)
+            set date_second: now
+        }
+        out.append(date)
+        if close
+            out.append("\r\nConnection: close")
+        out.append("\r\n")
+    }
+
+    ; One header field. After send it is ignored.
+    procedure header(mutable this, name: Slice[u8], value: Slice[u8])
+    {
+        if sent
+            return
+        this.start()
+        out.append(name)
+        out.append(": ")
+        out.append(value)
+        out.append("\r\n")
+    }
+
+    ; The body with its content type; ends the response. A second send is
+    ; ignored.
+    procedure send(mutable this, content_type: Slice[u8], body: Slice[u8])
+    {
+        if sent
+            return
+        this.start()
+        if content_type.length > 0
+        {
+            out.append("Content-Type: ")
+            out.append(content_type)
+            out.append("\r\n")
+        }
+        out.append("Content-Length: ")
+        out.append_uint(body.length as u64)
+        out.append("\r\n\r\n")
+        out.append(body)
+        set sent: true
+    }
+
+    procedure send_text(mutable this, body: Slice[u8])
+        this.send("text/plain", body)
+
+    ; A body without a type (a 204, a 404's empty answer).
+    procedure send_empty(mutable this)
+        this.send("", "")
+
+    ; A decimal number as a text/plain body, without building a string.
+    procedure send_int(mutable this, v: i64)
+    {
+        var digits u8[24]
+        var n: size_t 0
+        var x v
+        var neg false
+        if x < 0
+        {
+            set neg: true
+            set x: 0 - x
+        }
+        repeat
+        {
+            set digits[n]: ((x % 10) as u8) + 48
+            set n: n + 1
+            set x: x / 10
+            if x = 0
+                break
+        }
+        var text u8[24]
+        var k: size_t 0
+        if neg
+        {
+            set text[0]: 45
+            set k: 1
+        }
+        while n > 0
+        {
+            set n: n - 1
+            set text[k]: digits[n]
+            set k: k + 1
+        }
+        this.send_text(Slice[u8](k, &text[0]))
+    }
+}
+
+function reason_phrase(code: int) returns Slice[u8]
+{
+    match code
+        case 200: return "OK"
+        case 201: return "Created"
+        case 204: return "No Content"
+        case 301: return "Moved Permanently"
+        case 302: return "Found"
+        case 304: return "Not Modified"
+        case 400: return "Bad Request"
+        case 401: return "Unauthorized"
+        case 403: return "Forbidden"
+        case 404: return "Not Found"
+        case 405: return "Method Not Allowed"
+        case 413: return "Content Too Large"
+        case 426: return "Upgrade Required"
+        case 431: return "Request Header Fields Too Large"
+        case 500: return "Internal Server Error"
+        case 501: return "Not Implemented"
+        case 503: return "Service Unavailable"
+    "Unknown"
+}
