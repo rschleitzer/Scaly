@@ -940,6 +940,10 @@ define SchedTask
     ; home: the spawning scheduler (milestone 2.4) — a remote channel
     ; sender routes wakes through it.
     home: pointer[void]
+    ; Scheduler.sleep: the monotonic deadline (scaly_eio_now_ns) and the
+    ; link in the scheduler's deadline-ordered timer list.
+    var wake_at: i64
+    var timer_next: ref[SchedTask]?
 )
 
 ; The calling shape of a task record viewed as a delegate value: the
@@ -971,6 +975,9 @@ define Scheduler
     inject: u64                  ; MPSC inject queue: Treiber stack of
                                  ; SchedTasks pushed by remote threads
     var chan_parked: int             ; tasks parked on a Channel receive
+    var timers: ref[SchedTask]?      ; sleeping tasks, earliest deadline first
+    var timers_tail: ref[SchedTask]?
+    var sleeping: int                ; tasks parked in Scheduler.sleep
 )
 {
     ; Create the scheduler on the given page and make it current. All
@@ -978,7 +985,7 @@ define Scheduler
     ; so they survive any spawning fiber's region teardown.
     procedure create(host: ref[Page]) returns ref[Scheduler]
     {
-        let s &Scheduler^host(host, null, null, 0, (0 - 1) as i32, 0, (0 - 1) as i32, 0, 0)
+        let s &Scheduler^host(host, null, null, 0, (0 - 1) as i32, 0, (0 - 1) as i32, 0, 0, null, null, 0)
         set current_scheduler: s as pointer[void]
         s
     }
@@ -1024,7 +1031,7 @@ define Scheduler
     {
         let s current_scheduler as ref[Scheduler]
         let host s.host
-        let t &SchedTask^host(fn, Fiber.create_sized(host, &scheduler_entry, size), null, null, false, false, arg, s as pointer[void])
+        let t &SchedTask^host(fn, Fiber.create_sized(host, &scheduler_entry, size), null, null, false, false, arg, s as pointer[void], 0, null)
         Scheduler.enqueue(t)
         t
     }
@@ -1058,6 +1065,133 @@ define Scheduler
         {
             Scheduler.enqueue(me)
             Fiber.yield()
+        }
+    }
+
+    ; Let ms milliseconds pass (monotonic clock), colorless like Io: a
+    ; task parks on the scheduler's timer list and the dispatcher runs
+    ; other work meanwhile; the main context drives the dispatcher until
+    ; the deadline; without a scheduler the thread sleeps. ms <= 0 is a
+    ; yield. A sleeping task is BLOCKED (join/deadlock accounting) and
+    ; bounds the poller's wait, so an otherwise idle scheduler sleeps in
+    ; the kernel instead of spinning (2026-09-28, ROADMAP-http.md stage A:
+    ; HttpArena's async profile parks 32 000 requests for 10 ms each).
+    procedure sleep(ms: i64)
+    {
+        let deadline scaly_eio_now_ns() + ms * 1000000
+        if current_scheduler = null
+        {
+            Scheduler.sleep_blocking(deadline)
+            return
+        }
+        let me current_task as ref[SchedTask]?
+        if me <> null
+        {
+            let s current_scheduler as ref[Scheduler]
+            set me.wake_at: deadline
+            Scheduler.add_timer(me)
+            set s.blocked: s.blocked + 1
+            set s.sleeping: s.sleeping + 1
+            Fiber.yield()
+            return
+        }
+        repeat
+        {
+            if scaly_eio_now_ns() >= deadline
+                return
+            if not Scheduler.step()
+                Scheduler.poll_io_by(deadline)
+        }
+    }
+
+    ; The scheduler-less leg of sleep: the thread itself sleeps, in
+    ; slices of at most a second (scaly_eio_sleep_us takes a u32).
+    procedure sleep_blocking(deadline: i64)
+    {
+        repeat
+        {
+            let left deadline - scaly_eio_now_ns()
+            if left <= 0
+                return
+            var us left / 1000
+            if us > 1000000
+                set us: 1000000
+            if us < 1
+                set us: 1
+            scaly_eio_sleep_us(us as u32)
+        }
+    }
+
+    ; Insert a sleeping task into the timer list, earliest deadline
+    ; first. A list, not a heap: sleeps of one length arrive in deadline
+    ; order and append at the tail in O(1) — the server case; a deadline
+    ; earlier than the last walks from the head.
+    procedure add_timer(mutable t: ref[SchedTask])
+    {
+        let s current_scheduler as ref[Scheduler]
+        set t.timer_next: null
+        let tl s.timers_tail
+        if tl = null
+        {
+            set s.timers: t
+            set s.timers_tail: t
+            return
+        }
+        if tl.wake_at <= t.wake_at
+        {
+            set tl.timer_next: t
+            set s.timers_tail: t
+            return
+        }
+        let h s.timers
+        if h = null
+            return
+        if t.wake_at < h.wake_at
+        {
+            set t.timer_next: h
+            set s.timers: t
+            return
+        }
+        var p h
+        repeat
+        {
+            let nx p.timer_next
+            if nx = null
+            {
+                set p.timer_next: t
+                set s.timers_tail: t
+                return
+            }
+            if t.wake_at < nx.wake_at
+            {
+                set t.timer_next: nx
+                set p.timer_next: t
+                return
+            }
+            set p: nx
+        }
+    }
+
+    ; Move every sleeping task whose deadline has come to the ready
+    ; queue.
+    procedure fire_timers(now: i64)
+    {
+        let s current_scheduler as ref[Scheduler]
+        repeat
+        {
+            let t s.timers
+            if t = null
+            {
+                set s.timers_tail: null
+                return
+            }
+            if t.wake_at > now
+                return
+            set s.timers: t.timer_next
+            set t.timer_next: null
+            Scheduler.enqueue(t)
+            set s.blocked: s.blocked - 1
+            set s.sleeping: s.sleeping - 1
         }
     }
 
@@ -1144,6 +1278,9 @@ define Scheduler
     procedure step() returns bool
     {
         Scheduler.drain_inject()
+        let sc current_scheduler as ref[Scheduler]
+        if sc.sleeping > 0
+            Scheduler.fire_timers(scaly_eio_now_ns())
         let t Scheduler.dequeue()
         if t = null
             return false
@@ -1179,45 +1316,76 @@ define Scheduler
     ; Returns true when the main context's own event (null tag) fired.
     ; Only ever runs on the main context (the dispatcher).
     procedure poll_io() returns bool
+        Scheduler.poll_io_by(0)
+
+    ; poll_io, waiting no later than until (a scaly_eio_now_ns deadline;
+    ; 0 = no bound of the caller's own) and no later than the earliest
+    ; sleeping task's deadline; due sleepers are woken on the way out.
+    ; A bounded wait is never a channel deadlock: time moves something.
+    procedure poll_io_by(until: i64) returns bool
     {
         let s current_scheduler as ref[Scheduler]
         var tagbuf u8[512]
         var n: i32 0
-        if s.io_waiting > 0
+        var limit until
+        if s.sleeping > 0
         {
-            ; At least one fd-readiness waiter: block until the OS reports
-            ; progress. External I/O is never a channel deadlock, so this
-            ; leg is unbounded exactly as before.
-            set n: scaly_eio_wait(s.eio, tagbuf as pointer[pointer[void]], 64 as i32)
+            let th s.timers
+            if th <> null
+            {
+                if limit = 0 or th.wake_at < limit
+                    set limit: th.wake_at
+            }
+        }
+        if limit > 0
+        {
+            let q Io.ensure_poll()
+            let now scaly_eio_now_ns()
+            var ms: i64 0
+            if limit > now
+                set ms: (limit - now + 999999) / 1000000
+            if ms > 1000000000
+                set ms: 1000000000
+            set n: scaly_eio_wait_timeout(q, tagbuf as pointer[pointer[void]], 64 as i32, ms as i32)
         }
         else
         {
-            ; Purely channel-motivated (task channel parks, or a main-
-            ; context channel wait): bound the wait so a global channel
-            ; deadlock is trapped (exit 106) instead of hanging. Mark this
-            ; thread blocked around the wait; on a timeout with no channel
-            ; event (epoch stable) and every live thread blocked, no wake
-            ; can ever come.
-            ensure_deadlock_state()
-            let d deadlock_state
-            let ep &d.epoch
-            let bp &d.blocked
-            let tp &d.threads
-            let e0 scaly_atomic_load_u64(ep)
-            scaly_atomic_add_u64(bp, 1 as u64)
-            set n: scaly_eio_wait_timeout(s.eio, tagbuf as pointer[pointer[void]], 64 as i32, CHAN_DEADLOCK_MS)
-            if n = 0
+            if s.io_waiting > 0
             {
-                let e1 scaly_atomic_load_u64(ep)
-                if e1 = e0
-                {
-                    let nb scaly_atomic_load_u64(bp)
-                    let nt scaly_atomic_load_u64(tp)
-                    if nb >= nt
-                        scaly_panic_deadlock("Scheduler.poll_io", 106 as i32)
-                }
+                ; At least one fd-readiness waiter: block until the OS reports
+                ; progress. External I/O is never a channel deadlock, so this
+                ; leg is unbounded exactly as before.
+                set n: scaly_eio_wait(s.eio, tagbuf as pointer[pointer[void]], 64 as i32)
             }
-            scaly_atomic_add_u64(bp, (0 as u64) - (1 as u64))
+            else
+            {
+                ; Purely channel-motivated (task channel parks, or a main-
+                ; context channel wait): bound the wait so a global channel
+                ; deadlock is trapped (exit 106) instead of hanging. Mark this
+                ; thread blocked around the wait; on a timeout with no channel
+                ; event (epoch stable) and every live thread blocked, no wake
+                ; can ever come.
+                ensure_deadlock_state()
+                let d deadlock_state
+                let ep &d.epoch
+                let bp &d.blocked
+                let tp &d.threads
+                let e0 scaly_atomic_load_u64(ep)
+                scaly_atomic_add_u64(bp, 1 as u64)
+                set n: scaly_eio_wait_timeout(s.eio, tagbuf as pointer[pointer[void]], 64 as i32, CHAN_DEADLOCK_MS)
+                if n = 0
+                {
+                    let e1 scaly_atomic_load_u64(ep)
+                    if e1 = e0
+                    {
+                        let nb scaly_atomic_load_u64(bp)
+                        let nt scaly_atomic_load_u64(tp)
+                        if nb >= nt
+                            scaly_panic_deadlock("Scheduler.poll_io", 106 as i32)
+                    }
+                }
+                scaly_atomic_add_u64(bp, (0 as u64) - (1 as u64))
+            }
         }
         if n = ((0 - 1) as i32)
             exit 107
@@ -1250,6 +1418,8 @@ define Scheduler
             }
             set i: i + 1
         }
+        if s.sleeping > 0
+            Scheduler.fire_timers(scaly_eio_now_ns())
         main_woke
     }
 
@@ -1273,6 +1443,11 @@ define Scheduler
             return true
         }
         if s.chan_parked > 0
+        {
+            Scheduler.poll_io()
+            return true
+        }
+        if s.sleeping > 0
         {
             Scheduler.poll_io()
             return true

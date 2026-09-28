@@ -40,6 +40,14 @@
  * gates this; ctime.c was written this way from the start.
  */
 
+/* sched_getaffinity and CPU_COUNT (scaly_eio_ncpu) are GNU extensions:
+ * glibc declares them only under _GNU_SOURCE, which must precede the
+ * first system header. */
+#ifdef __linux__
+#define _GNU_SOURCE
+#include <sched.h>
+#endif
+
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -55,6 +63,14 @@
 #include <unistd.h>
 
 #define SCALY_EIO_MAX_EVENTS 64
+
+/* The listen backlog asked of the kernel. Every kernel clamps it to its own
+ * ceiling (linux net.core.somaxconn, darwin kern.ipc.somaxconn), so asking
+ * for the most means getting whatever the host is configured to give. 64
+ * was the value until 2026-09-28: a server under a few thousand connections
+ * that reconnect (HttpArena's limited-conn profile: 4096 connections, a new
+ * one every ten requests) drops SYNs against a queue that short. */
+#define SCALY_EIO_LISTEN_BACKLOG 65535
 
 #ifdef __APPLE__
 
@@ -366,7 +382,7 @@ static int scaly_eio_tcp_listen_at(unsigned int ip_host_order, int port)
     addr.sin_port = htons((unsigned short)port);
     addr.sin_addr.s_addr = htonl(ip_host_order);
     if (bind(fd, (struct sockaddr*)&addr, sizeof addr) < 0
-        || listen(fd, 64) < 0
+        || listen(fd, SCALY_EIO_LISTEN_BACKLOG) < 0
         || scaly_eio_set_nonblocking(fd) < 0)
     {
         close(fd);
@@ -431,7 +447,7 @@ int scaly_eio_tcp_listen_host(const char* host, int port)
         }
         scaly_eio_sock_init(fd);
         if (bind(fd, ai->ai_addr, (socklen_t)ai->ai_addrlen) == 0
-            && listen(fd, 64) == 0
+            && listen(fd, SCALY_EIO_LISTEN_BACKLOG) == 0
             && scaly_eio_set_nonblocking(fd) == 0)
             break;
         close(fd);
@@ -643,11 +659,12 @@ int scaly_eio_accept(int fd)
     }
 }
 
-/* Online CPU count — the ncpu-based worker default for task pools
- * (stage-3 milestone 3.3). Shim rule (a): the _SC_NPROCESSORS_ONLN
- * constant's VALUE is OS-specific (darwin 58, glibc 84), so a Scaly
- * extern cannot pass it portably — the seed ships one scaly.ll for
- * all targets. Never less than 1. */
+/* Usable CPU count — the ncpu-based worker default for task pools
+ * (stage-3 milestone 3.3): the affinity mask on linux, the online CPUs
+ * elsewhere. Shim rule (a): the _SC_NPROCESSORS_ONLN constant's VALUE is
+ * OS-specific (darwin 58, glibc 84) and cpu_set_t's layout is glibc's, so
+ * a Scaly extern cannot reach either portably — the seed ships one
+ * scaly.ll for all targets. Never less than 1. */
 int scaly_eio_ncpu(void)
 {
     /* SCALY_WORKERS=<n> caps the default pool (the OMP_NUM_THREADS idea):
@@ -659,6 +676,22 @@ int scaly_eio_ncpu(void)
         if (k >= 1)
             return (int)k;
     }
+#ifdef __linux__
+    /* The CPUs this process may RUN on, not the CPUs the machine has: a
+     * container started with a cpuset (docker --cpuset-cpus, a benchmark
+     * harness pinning the server to half the machine) sees every online
+     * CPU through sysconf, and a scheduler per online CPU would put two
+     * on each CPU it was given. darwin has no affinity masks. */
+    {
+        cpu_set_t set;
+        CPU_ZERO(&set);
+        if (sched_getaffinity(0, sizeof set, &set) == 0) {
+            int k = CPU_COUNT(&set);
+            if (k >= 1)
+                return k;
+        }
+    }
+#endif
     long n = sysconf(_SC_NPROCESSORS_ONLN);
     if (n < 1)
         return 1;

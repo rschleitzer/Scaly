@@ -1,0 +1,117 @@
+; Scheduler.sleep (2026-09-28, ROADMAP-http.md stage A): a sleeping task
+; parks on its scheduler's timer list and wakes at its deadline, in
+; deadline order whatever the order of the calls (80 before 60 before 40
+; exercises the insert from the head, the two 20s the O(1) tail append);
+; five sleeps of 100 ms overlap instead of adding up; the main context
+; drives the dispatcher while it sleeps itself (the 10 ms task finishes
+; inside main's 50 ms); a thousand tasks of 10 ms each — the shape of
+; HttpArena's async profile — all wake and finish; and without a
+; scheduler, sleep simply lets the time pass.
+; Expected: plain 20a 20b 40 60 80 overlap main-waits 10 main-done many done
+
+mutable woken: int 0
+
+procedure s80()
+{
+    Scheduler.sleep(80)
+    Console.print "80 "
+}
+
+procedure s60()
+{
+    Scheduler.sleep(60)
+    Console.print "60 "
+}
+
+procedure s40()
+{
+    Scheduler.sleep(40)
+    Console.print "40 "
+}
+
+procedure s20a()
+{
+    Scheduler.sleep(20)
+    Console.print "20a "
+}
+
+procedure s20b()
+{
+    Scheduler.sleep(20)
+    Console.print "20b "
+}
+
+procedure s100()
+{
+    Scheduler.sleep(100)
+}
+
+procedure s10()
+{
+    Scheduler.sleep(10)
+    Console.print "10 "
+}
+
+procedure s10_quiet() mutable woken
+{
+    Scheduler.sleep(10)
+    set woken: woken + 1
+}
+
+; no scheduler yet: the thread sleeps
+let t0 scaly_eio_now_ns()
+Scheduler.sleep(15)
+if scaly_eio_now_ns() - t0 < 15000000
+    exit 1
+Console.print "plain "
+
+let page Page.allocate_page()
+let sched Scheduler.create(page)
+
+; deadline order, not call order
+Scheduler.spawn(&s80)
+Scheduler.spawn(&s60)
+Scheduler.spawn(&s40)
+Scheduler.spawn(&s20a)
+Scheduler.spawn(&s20b)
+Scheduler.run()
+
+; five overlapping sleeps: about 100 ms, never the 500 of a sequence
+let t1 scaly_eio_now_ns()
+var k 0
+while k < 5
+{
+    Scheduler.spawn(&s100)
+    set k: k + 1
+}
+Scheduler.run()
+let e1 scaly_eio_now_ns() - t1
+if e1 < 100000000
+    exit 2
+if e1 > 400000000
+    exit 3
+Console.print "overlap "
+
+; the main context sleeps while a task sleeps a shorter time
+Scheduler.spawn(&s10)
+Console.print "main-waits "
+Scheduler.sleep(50)
+Console.print "main-done "
+Scheduler.run()
+
+; a thousand concurrent 10 ms sleeps
+let t2 scaly_eio_now_ns()
+var j 0
+while j < 1000
+{
+    Scheduler.spawn(&s10_quiet)
+    set j: j + 1
+}
+Scheduler.run()
+if woken <> 1000
+    exit 4
+if scaly_eio_now_ns() - t2 > 2000000000
+    exit 5
+Console.print "many "
+
+Console.print "done"

@@ -716,6 +716,10 @@ define SchedTask
     ; home: the spawning scheduler (milestone 2.4) — a remote channel
     ; sender routes wakes through it.
     home: pointer[void]
+    ; Scheduler.sleep: the monotonic deadline (scaly_eio_now_ns) and the
+    ; link in the scheduler's deadline-ordered timer list.
+    var wake_at: i64
+    var timer_next: ref[SchedTask]?
 )
 
 ; The calling shape of a task record viewed as a delegate value: the
@@ -741,6 +745,9 @@ define Scheduler
     inject: u64                  ; MPSC inject queue: Treiber stack of
                                  ; SchedTasks pushed by remote threads
     var chan_parked: int             ; tasks parked on a Channel receive
+    var timers: ref[SchedTask]?      ; sleeping tasks, earliest deadline first
+    var timers_tail: ref[SchedTask]?
+    var sleeping: int                ; tasks parked in Scheduler.sleep
 )
 {
     ; Create the scheduler on the given page and make it current. All
@@ -775,6 +782,30 @@ define Scheduler
     ; tail and return to the dispatcher. A no-op on the main context.
     procedure yield() @ret_nonlocal true @deep true linked
 
+    ; Let ms milliseconds pass (monotonic clock), colorless like Io: a
+    ; task parks on the scheduler's timer list and the dispatcher runs
+    ; other work meanwhile; the main context drives the dispatcher until
+    ; the deadline; without a scheduler the thread sleeps. ms <= 0 is a
+    ; yield. A sleeping task is BLOCKED (join/deadlock accounting) and
+    ; bounds the poller's wait, so an otherwise idle scheduler sleeps in
+    ; the kernel instead of spinning (2026-09-28, ROADMAP-http.md stage A:
+    ; HttpArena's async profile parks 32 000 requests for 10 ms each).
+    procedure sleep(ms: i64) @deep true io linked
+
+    ; The scheduler-less leg of sleep: the thread itself sleeps, in
+    ; slices of at most a second (scaly_eio_sleep_us takes a u32).
+    procedure sleep_blocking(deadline: i64) @deep true io linked
+
+    ; Insert a sleeping task into the timer list, earliest deadline
+    ; first. A list, not a heap: sleeps of one length arrive in deadline
+    ; order and append at the tail in O(1) — the server case; a deadline
+    ; earlier than the last walks from the head.
+    procedure add_timer(mutable t: ref[SchedTask]) @deep true linked
+
+    ; Move every sleeping task whose deadline has come to the ready
+    ; queue.
+    procedure fire_timers(now: i64) @deep true linked
+
     ; Push a channel receiver onto its HOME scheduler's inject queue and
     ; poke that scheduler's wake handle (milestone 2.4). Called from a
     ; REMOTE thread: the only shared state touched is the atomic Treiber
@@ -804,7 +835,7 @@ define Scheduler
     ; when the ready queue is empty. Remotely-injected channel
     ; receivers are drained into the ready queue first (every dispatch
     ; loop runs through here, so no loop needs its own drain).
-    procedure step() @ret_nonlocal true @deep true returns bool linked
+    procedure step() @ret_nonlocal true @deep true returns bool io linked
 
     ; Move every task blocked on t back to the ready queue.
     procedure wake_waiters(mutable t: ref[SchedTask]) @deep true linked
@@ -814,6 +845,12 @@ define Scheduler
     ; Returns true when the main context's own event (null tag) fired.
     ; Only ever runs on the main context (the dispatcher).
     procedure poll_io() @ret_nonlocal true @deep true returns bool io linked
+
+    ; poll_io, waiting no later than until (a scaly_eio_now_ns deadline;
+    ; 0 = no bound of the caller's own) and no later than the earliest
+    ; sleeping task's deadline; due sleepers are woken on the way out.
+    ; A bounded wait is never a channel deadlock: time moves something.
+    procedure poll_io_by(until: i64) @ret_nonlocal true @deep true returns bool io linked
 
     ; Run one ready task; when the ready queue is empty but tasks await
     ; fd readiness, block in the poller and wake them. Tasks parked on a
