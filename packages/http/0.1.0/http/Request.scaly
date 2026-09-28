@@ -49,10 +49,16 @@ define Request
     var body: Slice[u8]
     var minor: int               ; HTTP/1.minor
     var keep_alive: bool
+    var pattern: Slice[u8]       ; the matched route's pattern (Router.handle)
 )
 {
     procedure empty() returns Request
-        Request(null, null, null, null, null, null, 1, true)
+        Request(null, null, null, null, null, null, 1, true, null)
+
+    ; The value of path parameter name of the matched route ("/{type}/{id}":
+    ; req.param("id")), raw — see percent_decode; empty when there is none.
+    function param(this, name: Slice[u8]) returns Slice[u8]
+        pattern_param(pattern, path, name)
 
     function is_method(this, m: Slice[u8]) returns bool
         method.equals(m)
@@ -76,6 +82,72 @@ define Request
             set i: next_line(fields, e)
         }
         fields.slice_to(0)
+    }
+
+    ; How often query parameter name occurs (`code=a&code=b`: 2).
+    function query_count(this, name: Slice[u8]) returns int
+    {
+        var n 0
+        var i: size_t 0
+        while i <= query.length
+        {
+            var e i
+            while e < query.length and query[e] <> 38
+                set e: e + 1
+            let pair query.subslice(i, e)
+            let eq index_of(pair, 61)
+            if eq >= 0
+            {
+                if pair.slice_to(eq as size_t).equals(name)
+                    set n: n + 1
+            }
+            else
+            {
+                if pair.equals(name)
+                    set n: n + 1
+            }
+            set i: e + 1
+        }
+        n
+    }
+
+    ; The raw value of the nth occurrence (from 0) of query parameter name;
+    ; empty when there are fewer.
+    function query_param_nth(this, name: Slice[u8], nth: int) returns Slice[u8]
+    {
+        var seen 0
+        var i: size_t 0
+        while i <= query.length
+        {
+            var e i
+            while e < query.length and query[e] <> 38
+                set e: e + 1
+            let pair query.subslice(i, e)
+            let eq index_of(pair, 61)
+            var hit false
+            var value pair.slice_to(0)
+            if eq >= 0
+            {
+                if pair.slice_to(eq as size_t).equals(name)
+                {
+                    set hit: true
+                    set value: pair.slice_from((eq as size_t) + 1)
+                }
+            }
+            else
+            {
+                if pair.equals(name)
+                    set hit: true
+            }
+            if hit
+            {
+                if seen = nth
+                    return value
+                set seen: seen + 1
+            }
+            set i: e + 1
+        }
+        query.slice_to(0)
     }
 
     ; The raw value of query parameter `name` (no percent-decoding); empty

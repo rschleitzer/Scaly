@@ -10,6 +10,14 @@
 
 use http.Buffer.ByteBuf
 
+; "HTTP/1.1 200 OK\r\nDate: " (23), the date (DATE_LENGTH), "\r\n".
+define HEAD_OK_LENGTH: size_t 54
+define HEAD_OK_DATE_AT: size_t 23
+
+; Fill a connection's head_ok block with its fixed parts; the date in the
+; middle is Response.date, a view formatted in place once per second.
+procedure init_head_ok(mutable h: Slice[u8]) @ret_nonlocal true @deep true linked
+
 define Response
 (
     out: ref[ByteBuf]
@@ -20,13 +28,21 @@ define Response
     date: Slice[u8]              ; the connection's date, a view into head_ok
     var date_second: i64         ; the second date was formatted for
     head_ok: Slice[u8]           ; "HTTP/1.1 200 OK\r\nDate: <date>\r\n", HEAD_OK_LENGTH
+    var head_only: bool          ; a HEAD request: everything but the body
 )
 {
+    ; A connection's response on its page, writing into out: the 200 head
+    ; block and the date view inside it made once (see init_head_ok).
+    procedure create(host: ref[Page], out: ref[ByteBuf]) @ret_explicit_0 true @deep true returns ref[Response] linked
+
     ; Ready for the next response on the same connection.
     procedure reset(mutable this, close_after: bool) @deep true linked
 
     ; The status code; ignored once the status line is out.
     procedure set_status(mutable this, code: int) @deep true linked
+
+    ; Answer without the body (a HEAD request); Content-Length still names it.
+    procedure set_head_only(mutable this) @deep true linked
 
     ; End the connection after this response.
     procedure set_close(mutable this) @deep true linked
@@ -48,13 +64,5 @@ define Response
     ; A decimal number as a text/plain body, without building a string.
     procedure send_int(mutable this, v: i64) @ret_nonlocal true @deep true io linked
 }
-
-; "HTTP/1.1 200 OK\r\nDate: " (23), the date (DATE_LENGTH), "\r\n".
-define HEAD_OK_LENGTH: size_t 54
-define HEAD_OK_DATE_AT: size_t 23
-
-; Fill a connection's head_ok block with its fixed parts; the date in the
-; middle is Response.date, a view formatted in place once per second.
-procedure init_head_ok(mutable h: Slice[u8]) @ret_nonlocal true @deep true linked
 
 function reason_phrase(code: int) @page true @direct true @ret_nonlocal true @deep true returns Slice[u8] linked

@@ -9,7 +9,7 @@
   "enabled": true,
   "completeness": {
     "routing": true,
-    "middleware": false,
+    "middleware": true,
     "request": true,
     "response": true
   },

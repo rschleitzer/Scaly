@@ -1,0 +1,294 @@
+; The router: routes with path parameters and a chain of middleware
+; (ROADMAP-http.md, stage A — the first thing the FHIR server's REST API
+; needs, and HttpArena's `completeness` flags).
+;
+; A route is a method and a PATTERN. A segment in braces is a parameter
+; that takes one path segment; a last one ending in "..." takes the rest of
+; the path:
+;
+;   app.get("/metadata", &capabilities)
+;   app.get("/{type}/{id}", &read)                   ; req.param("id")
+;   app.get("/{type}/{id}/_history/{vid}", &vread)
+;   app.get("/static/{path...}", &file)             ; the rest, slashes and all
+;
+; When several patterns match a path, the one with the most literal
+; segments wins (`/metadata` before `/{type}`, `/{type}/_search` before
+; `/{type}/{id}`), then the first registered. A path that matches with the
+; wrong method answers 405 with an Allow field; nothing at all, 404. HEAD is
+; served by the GET route without the body.
+;
+; Middleware has a handler's signature and runs, in the order it was added,
+; before the route's handler for every path under its prefix ("" = every
+; path); one that answers (sends a response: a 401, a preflight) ends the
+; request there. After-hooks run once the response is out — logging,
+; metrics — and can read res.status.
+;
+;   app.before("/api/", &authenticate)
+;   app.after("", &log)
+
+use http.Request.Request
+use http.Response.Response
+
+define Route
+(
+    method: Slice[u8]            ; empty: every method
+    pattern: Slice[u8]
+    handler: pointer[void]
+    literals: int                ; literal segments: the more, the more specific
+)
+
+define Hook
+(
+    prefix: Slice[u8]            ; empty: every path
+    handler: pointer[void]
+    after: bool                  ; an after-hook, not middleware
+)
+
+define Router
+(
+    host: ref[Page]
+    var routes: Array[Route]
+    var hooks: Array[Hook]
+)
+{
+    procedure create(host: ref[Page]) returns ref[Router]
+        &Router^host(host, Array[Route]^host(), Array[Hook]^host())
+
+    ; A route for method ("" for every method) on pattern.
+    procedure add(mutable this, method: Slice[u8], pattern: Slice[u8], mutable handler: pointer[void])
+        routes.add(Route(method, pattern, handler, literal_segments(pattern)))
+
+    procedure get(mutable this, pattern: Slice[u8], mutable handler: pointer[void])
+        this.add("GET", pattern, handler)
+
+    procedure post(mutable this, pattern: Slice[u8], mutable handler: pointer[void])
+        this.add("POST", pattern, handler)
+
+    procedure put(mutable this, pattern: Slice[u8], mutable handler: pointer[void])
+        this.add("PUT", pattern, handler)
+
+    procedure patch(mutable this, pattern: Slice[u8], mutable handler: pointer[void])
+        this.add("PATCH", pattern, handler)
+
+    procedure delete(mutable this, pattern: Slice[u8], mutable handler: pointer[void])
+        this.add("DELETE", pattern, handler)
+
+    ; Every method on pattern.
+    procedure any(mutable this, pattern: Slice[u8], mutable handler: pointer[void])
+        this.add("", pattern, handler)
+
+    ; Middleware for every path under prefix ("" = every path).
+    procedure before(mutable this, prefix: Slice[u8], mutable handler: pointer[void])
+        hooks.add(Hook(prefix, handler, false))
+
+    ; An after-hook for every path under prefix.
+    procedure after(mutable this, prefix: Slice[u8], mutable handler: pointer[void])
+        hooks.add(Hook(prefix, handler, true))
+
+    ; The route for req: the most specific whose pattern matches the path and
+    ; whose method fits (HEAD takes a GET route) — null when none does, with
+    ; path_matched telling a 405 from a 404.
+    procedure find(this, req: ref[Request], mutable path_matched: ref[bool]) returns ref[Route]?
+    {
+        let head req.method.equals("HEAD")
+        var best: ref[Route]? null
+        var best_literals 0 - 1
+        var i: size_t 0
+        while i < routes.length
+        {
+            let r routes.at(i)
+            if match_pattern(r.pattern, req.path)
+            {
+                set path_matched: true
+                var fits r.method.length = 0 or req.method.equals(r.method)
+                if fits = false and head and r.method.equals("GET")
+                    set fits: true
+                if fits and r.literals > best_literals
+                {
+                    set best: r
+                    set best_literals: r.literals
+                }
+            }
+            set i: i + 1
+        }
+        best
+    }
+
+    ; The methods of every route whose pattern matches path, for an Allow
+    ; field: "GET, HEAD, POST".
+    procedure allowed(this, path: Slice[u8]) returns String
+    {
+        var sb StringBuilder()
+        var get false
+        var i: size_t 0
+        while i < routes.length
+        {
+            let r routes.at(i)
+            if match_pattern(r.pattern, path) and r.method.length > 0
+            {
+                if sb.get_length() > 0
+                    sb.append ", "
+                sb.append(String(r.method.data as pointer[const_char], r.method.length))
+                if r.method.equals("GET")
+                    set get: true
+            }
+            set i: i + 1
+        }
+        if get
+            sb.append ", HEAD"
+        sb.to_string()
+    }
+
+    ; Answer req: middleware, the route's handler, after-hooks. The response
+    ; is the connection's (Response.reset has run).
+    procedure handle(this, mutable req: ref[Request], mutable res: ref[Response])
+    {
+        if req.method.equals("HEAD")
+            res.set_head_only()
+        var i: size_t 0
+        while i < hooks.length
+        {
+            let h hooks.at(i)
+            if h.after = false and req.path.starts_with(h.prefix)
+            {
+                let f h.handler
+                f(req, res)
+                if res.sent
+                {
+                    this.run_after(req, res)
+                    return
+                }
+            }
+            set i: i + 1
+        }
+        var matched false
+        let r this.find(req, &matched)
+        if r = null
+        {
+            if matched
+            {
+                res.set_status(405)
+                let allow this.allowed(req.path)
+                res.header("Allow", allow.as_slice())
+            }
+            else
+                res.set_status(404)
+            res.send_empty()
+            this.run_after(req, res)
+            return
+        }
+        set req.pattern: r.pattern
+        let f r.handler
+        f(req, res)
+        if res.sent = false
+            res.send_empty()
+        this.run_after(req, res)
+    }
+
+    procedure run_after(this, mutable req: ref[Request], mutable res: ref[Response])
+    {
+        var i: size_t 0
+        while i < hooks.length
+        {
+            let h hooks.at(i)
+            if h.after and req.path.starts_with(h.prefix)
+            {
+                let f h.handler
+                f(req, res)
+            }
+            set i: i + 1
+        }
+    }
+}
+
+; Does path match pattern? Literal bytes must be equal; a parameter "{x}"
+; takes one non-empty segment (up to the next '/'), a last one "{x...}"
+; the rest of the path.
+function match_pattern(pattern: Slice[u8], path: Slice[u8]) returns bool
+{
+    var i: size_t 0
+    var j: size_t 0
+    while i < pattern.length
+    {
+        if pattern[i] = 123
+        {
+            let close find_byte(pattern, i, 125)
+            if close < 0
+                return false
+            let name pattern.subslice(i + 1, close as size_t)
+            if name.ends_with("...")
+                return true
+            var e j
+            while e < path.length and path[e] <> 47
+                set e: e + 1
+            if e = j
+                return false
+            set i: (close as size_t) + 1
+            set j: e
+        }
+        else
+        {
+            if j >= path.length or path[j] <> pattern[i]
+                return false
+            set i: i + 1
+            set j: j + 1
+        }
+    }
+    j = path.length
+}
+
+; The literal segments of a pattern (segments not in braces).
+function literal_segments(pattern: Slice[u8]) returns int
+{
+    var n 0
+    var i: size_t 0
+    while i < pattern.length
+    {
+        if pattern[i] = 47 and i + 1 < pattern.length and pattern[i + 1] <> 123
+            set n: n + 1
+        set i: i + 1
+    }
+    n
+}
+
+; The value of parameter name in path, matched against pattern; empty when
+; the pattern has no such parameter.
+function pattern_param(pattern: Slice[u8], path: Slice[u8], name: Slice[u8]) returns Slice[u8]
+{
+    var i: size_t 0
+    var j: size_t 0
+    while i < pattern.length and j <= path.length
+    {
+        if pattern[i] = 123
+        {
+            let close find_byte(pattern, i, 125)
+            if close < 0
+                return path.slice_to(0)
+            var pname pattern.subslice(i + 1, close as size_t)
+            var rest false
+            if pname.ends_with("...")
+            {
+                set pname: pname.slice_to(pname.length - 3)
+                set rest: true
+            }
+            var e j
+            if rest
+                set e: path.length
+            else
+            {
+                while e < path.length and path[e] <> 47
+                    set e: e + 1
+            }
+            if pname.equals(name)
+                return path.subslice(j, e)
+            set i: (close as size_t) + 1
+            set j: e
+        }
+        else
+        {
+            set i: i + 1
+            set j: j + 1
+        }
+    }
+    path.slice_to(0)
+}

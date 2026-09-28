@@ -9,7 +9,7 @@
 ;
 ;   var app Router.create(Page.allocate_page())
 ;   app.get("/hello", &hello)
-;   app.prefix("GET", "/delay/", &delay)     ; every path under /delay/
+;   app.get("/delay/{ms}", &delay)            ; req.param("ms") — see Router
 ;   serve(app, 8080)                          ; false: cannot listen
 ;
 ; A connection reads into a buffer on a page of its own, answers every
@@ -21,73 +21,12 @@
 use http.Buffer.ByteBuf
 use http.Request.Request
 use http.Response.Response
+use http.Router.Router
 
 ; A connection's input buffer starts here and doubles up to MAX_HEAD plus
 ; MAX_BODY; its output buffer starts at OUT_SIZE.
 define IN_SIZE: size_t 16384
 define OUT_SIZE: size_t 16384
-
-define Route
-(
-    method: Slice[u8]            ; empty: every method
-    path: Slice[u8]
-    is_prefix: bool
-    handler: pointer[void]
-)
-
-define Router
-(
-    host: ref[Page]
-    var routes: Array[Route]
-)
-{
-    procedure create(host: ref[Page]) returns ref[Router]
-        &Router^host(host, Array[Route]^host())
-
-    procedure add(mutable this, method: Slice[u8], path: Slice[u8], is_prefix: bool, mutable handler: pointer[void])
-        routes.add(Route(method, path, is_prefix, handler))
-
-    procedure get(mutable this, path: Slice[u8], mutable handler: pointer[void])
-        this.add("GET", path, false, handler)
-
-    procedure post(mutable this, path: Slice[u8], mutable handler: pointer[void])
-        this.add("POST", path, false, handler)
-
-    ; Every method on path.
-    procedure any(mutable this, path: Slice[u8], mutable handler: pointer[void])
-        this.add("", path, false, handler)
-
-    ; Every path starting with prefix, for one method ("" for every one).
-    procedure prefix(mutable this, method: Slice[u8], prefix: Slice[u8], mutable handler: pointer[void])
-        this.add(method, prefix, true, handler)
-
-    ; The handler for req, null when no route matches. A path match with the
-    ; wrong method answers method_mismatch true (405 rather than 404).
-    procedure find(this, req: ref[Request], mutable method_mismatch: ref[bool]) returns pointer[void]
-    {
-        var wrong false
-        var i: size_t 0
-        while i < routes.length
-        {
-            let r routes.at(i)
-            var hit false
-            if r.is_prefix
-                set hit: req.path.starts_with(r.path)
-            else
-                set hit: req.path.equals(r.path)
-            if hit
-            {
-                if r.method.length = 0 or req.method.equals(r.method)
-                    return r.handler
-                set wrong: true
-            }
-            set i: i + 1
-        }
-        if wrong
-            set method_mismatch: true
-        null
-    }
-}
 
 ; The router the serving threads dispatch through, as an address: stored
 ; before serve starts its threads (an ordinary global would be thread-
@@ -103,20 +42,7 @@ shared atomic http_router: u64 0
 procedure dispatch(router: ref[Router], mutable req: ref[Request], mutable res: ref[Response])
 {
     res.reset(req.keep_alive = false)
-    var wrong false
-    let h router.find(req, &wrong)
-    if h = null
-    {
-        if wrong
-            res.set_status(405)
-        else
-            res.set_status(404)
-        res.send_empty()
-        return
-    }
-    h(req, res)
-    if res.sent = false
-        res.send_empty()
+    router.handle(req, res)
 }
 
 ; The answer to a request that could not be parsed; the connection ends
@@ -136,10 +62,8 @@ procedure http_connection()
     let host Page.allocate_page()
     var inb ByteBuf.create(host, IN_SIZE)
     let outb &ByteBuf^host(host, allocate_slice[u8]^host(host, OUT_SIZE), 0)
-    let req &Request^host(null, null, null, null, null, null, 1, true)
-    var head_ok allocate_slice[u8]^host(host, HEAD_OK_LENGTH)
-    init_head_ok(head_ok)
-    let res &Response^host(outb, 200, false, false, false, head_ok.subslice(HEAD_OK_DATE_AT, HEAD_OK_DATE_AT + DATE_LENGTH), 0 - 1, head_ok)
+    let req &Request^host(null, null, null, null, null, null, 1, true, null)
+    let res Response.create(host, outb)
     let router (scaly_atomic_load_u64(&http_router) as size_t) as ref[Router]
     var open true
     while open

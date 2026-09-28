@@ -39,6 +39,13 @@ function ends_with_lower(s: Slice[u8], lit: Slice[u8]) @ret_param_0 true @deep t
 ; One of the comma-separated tokens of s is the lower-case lit.
 function contains_token_lower(s: Slice[u8], lit: Slice[u8]) @ret_nonlocal true @deep true returns bool linked
 
+function hex_value(c: u8) @ret_nonlocal true @deep true returns int linked
+
+; s with its %XX escapes decoded, and '+' as a space when plus_is_space (a
+; query value, application/x-www-form-urlencoded); a malformed escape stays
+; as it is.
+function percent_decode(s: Slice[u8], plus_is_space: bool) @page true @direct true @ret_caller true @deep true returns String linked
+
 ; A non-negative decimal number filling all of s; -1 when s is empty, has
 ; any other byte, or overflows.
 function parse_decimal(s: Slice[u8]) @ret_nonlocal true @deep true returns i64 linked

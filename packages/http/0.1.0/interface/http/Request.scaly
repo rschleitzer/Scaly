@@ -39,15 +39,27 @@ define Request
     var body: Slice[u8]
     var minor: int               ; HTTP/1.minor
     var keep_alive: bool
+    var pattern: Slice[u8]       ; the matched route's pattern (Router.handle)
 )
 {
     procedure empty() @page true @direct true @ret_nonlocal true @deep true returns Request linked
+
+    ; The value of path parameter name of the matched route ("/{type}/{id}":
+    ; req.param("id")), raw — see percent_decode; empty when there is none.
+    function param(this, name: Slice[u8]) @page true @direct true @ret_param_0 true @deep true returns Slice[u8] linked
 
     function is_method(this, m: Slice[u8]) @ret_nonlocal true @deep true returns bool linked
 
     ; The value of the first header field of that name (ASCII case-
     ; insensitive, the name given in lower case); empty when absent.
     function header(this, lname: Slice[u8]) @page true @direct true @ret_param_0 true @deep true returns Slice[u8] linked
+
+    ; How often query parameter name occurs (`code=a&code=b`: 2).
+    function query_count(this, name: Slice[u8]) @ret_nonlocal true @deep true returns int linked
+
+    ; The raw value of the nth occurrence (from 0) of query parameter name;
+    ; empty when there are fewer.
+    function query_param_nth(this, name: Slice[u8], nth: int) @page true @direct true @ret_param_0 true @deep true returns Slice[u8] linked
 
     ; The raw value of query parameter `name` (no percent-decoding); empty
     ; when absent or empty.

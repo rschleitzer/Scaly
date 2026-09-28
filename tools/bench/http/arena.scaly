@@ -14,7 +14,7 @@ package http 0.1.0
 
 use http.Request.Request
 use http.Response.Response
-use http.Server.Router
+use http.Router.Router
 
 procedure baseline(req: ref[Request], mutable res: ref[Response])
 {
@@ -29,7 +29,7 @@ procedure pipeline(req: ref[Request], mutable res: ref[Response])
 
 procedure delay(req: ref[Request], mutable res: ref[Response])
 {
-    let ms parse_int_prefix(req.path.slice_from(7))
+    let ms parse_int_prefix(req.param("ms"))
     if ms > 0
         Scheduler.sleep(ms)
     res.send_int(ms)
@@ -52,7 +52,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     var app Router.create(Page.allocate_page())
     app.any("/baseline11", &baseline)
     app.get("/pipeline", &pipeline)
-    app.prefix("GET", "/delay/", &delay)
+    app.get("/delay/{ms}", &delay)
     if getenv("SCALY_ARENA_TRAIN") <> null
         app.get("/shutdown", &shutdown)
     if serve(app, port) = false

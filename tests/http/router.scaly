@@ -1,0 +1,211 @@
+; The http package's router, without a network (ROADMAP-http.md stage A):
+; requests are parsed from literals and handed to Router.handle, which
+; writes the responses into a buffer read back here.
+;   priority  `/metadata` beats `/{type}`, and `/{type}/_search` beats
+;             `/{type}/{id}` although registered after it
+;   params    `/{type}/{id}/_history/{vid}` names three segments
+;   rest      `/static/{path...}` takes the rest of the path, slashes and all
+;   405       a path matched with the wrong method: 405 with an Allow field
+;   404       no pattern matches
+;   head      HEAD is served by the GET route: Content-Length, no body
+;   middleware  runs in order before the handler; one that answers (401)
+;             ends the request; after-hooks see every response
+;   query     repeated parameters, percent-decoding
+; Expected: priority params rest 405 404 head middleware query done
+
+package scaly 0.1.0
+package http 0.1.0
+
+use http.Buffer.ByteBuf
+use http.Request.Request
+use http.Response.Response
+use http.Router.Router
+
+mutable handled: int 0
+mutable params_ok: bool false
+mutable rest_ok: bool false
+mutable middleware_calls: int 0
+mutable after_calls: int 0
+
+procedure metadata(req: ref[Request], mutable res: ref[Response]) mutable handled
+{
+    set handled: 1
+    res.send_text("capabilities")
+}
+
+procedure search_type(req: ref[Request], mutable res: ref[Response]) mutable handled
+{
+    set handled: 2
+    res.send_empty()
+}
+
+procedure read_resource(req: ref[Request], mutable res: ref[Response]) mutable handled
+{
+    set handled: 3
+    res.send_empty()
+}
+
+procedure search(req: ref[Request], mutable res: ref[Response]) mutable handled
+{
+    set handled: 4
+    res.send_empty()
+}
+
+procedure vread(req: ref[Request], mutable res: ref[Response]) mutable handled, params_ok
+{
+    set handled: 5
+    set params_ok: req.param("type").equals("Patient") and req.param("id").equals("123") and req.param("vid").equals("2") and req.param("nope").length = 0
+    res.send_empty()
+}
+
+procedure file(req: ref[Request], mutable res: ref[Response]) mutable handled, rest_ok
+{
+    set handled: 6
+    set rest_ok: req.param("path").equals("css/app.css")
+    res.send_empty()
+}
+
+procedure update(req: ref[Request], mutable res: ref[Response]) mutable handled
+{
+    set handled: 7
+    res.send_empty()
+}
+
+procedure count(req: ref[Request], mutable res: ref[Response]) mutable middleware_calls
+    set middleware_calls: middleware_calls + 1
+
+procedure deny(req: ref[Request], mutable res: ref[Response])
+{
+    res.set_status(401)
+    res.send_empty()
+}
+
+procedure after_all(req: ref[Request], mutable res: ref[Response]) mutable after_calls
+    set after_calls: after_calls + 1
+
+; Parse text into req and let the router answer it into out (cleared first).
+procedure answer(app: ref[Router], mutable buf: Slice[u8], mutable req: ref[Request], mutable res: ref[Response], mutable out: ref[ByteBuf], text: Slice[u8]) mutable handled
+{
+    set handled: 0
+    var i: size_t 0
+    while i < text.length
+    {
+        buf.put(i, text[i])
+        set i: i + 1
+    }
+    out.clear()
+    if parse_request(buf.slice_to(text.length), req) <= 0
+        exit 90
+    res.reset(false)
+    app.handle(req, res)
+}
+
+; The status code of the response in out.
+function status_of(out: ref[ByteBuf]) returns i64
+    parse_decimal(out.bytes().subslice(9, 12))
+
+; Does out contain needle?
+function contains(out: ref[ByteBuf], needle: Slice[u8]) returns bool
+{
+    let hay out.bytes()
+    if needle.length > hay.length
+        return false
+    var i: size_t 0
+    while i + needle.length <= hay.length
+    {
+        if hay.subslice(i, i + needle.length).equals(needle)
+            return true
+        set i: i + 1
+    }
+    false
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutable handled
+{
+    let host Page.allocate_page()
+    var app Router.create(host)
+    app.before("", &count)
+    app.before("/admin/", &deny)
+    app.after("", &after_all)
+    app.get("/metadata", &metadata)
+    app.get("/{type}", &search_type)
+    app.get("/{type}/{id}", &read_resource)
+    app.get("/{type}/_search", &search)
+    app.get("/{type}/{id}/_history/{vid}", &vread)
+    app.get("/static/{path...}", &file)
+    app.put("/{type}/{id}", &update)
+    app.delete("/{type}/{id}", &update)
+
+    var buf allocate_slice[u8]^host(host, 4096)
+    let out &ByteBuf^host(host, allocate_slice[u8]^host(host, 4096), 0)
+    let req &Request^host(null, null, null, null, null, null, 1, true, null)
+    let res Response.create(host, out)
+
+    answer(app, buf, req, res, out, "GET /metadata HTTP/1.1\r\n\r\n")
+    if handled <> 1
+        return 1
+    answer(app, buf, req, res, out, "GET /Patient HTTP/1.1\r\n\r\n")
+    if handled <> 2
+        return 2
+    answer(app, buf, req, res, out, "GET /Patient/_search HTTP/1.1\r\n\r\n")
+    if handled <> 4
+        return 3
+    answer(app, buf, req, res, out, "GET /Patient/123 HTTP/1.1\r\n\r\n")
+    if handled <> 3
+        return 4
+    Console.print "priority "
+
+    answer(app, buf, req, res, out, "GET /Patient/123/_history/2 HTTP/1.1\r\n\r\n")
+    if handled <> 5 or params_ok = false
+        return 5
+    Console.print "params "
+
+    answer(app, buf, req, res, out, "GET /static/css/app.css HTTP/1.1\r\n\r\n")
+    if handled <> 6 or rest_ok = false
+        return 6
+    Console.print "rest "
+
+    answer(app, buf, req, res, out, "PATCH /Patient/1 HTTP/1.1\r\n\r\n")
+    if handled <> 0 or status_of(out) <> 405 or contains(out, "Allow: GET, PUT, DELETE, HEAD\r\n") = false
+    {
+        print "got `String(out.bytes().data as pointer[const_char], out.length)`"
+        return 7
+    }
+    Console.print "405 "
+
+    answer(app, buf, req, res, out, "GET /a/b/c/d HTTP/1.1\r\n\r\n")
+    if handled <> 0 or status_of(out) <> 404
+        return 8
+    Console.print "404 "
+
+    answer(app, buf, req, res, out, "HEAD /metadata HTTP/1.1\r\n\r\n")
+    if handled <> 1 or status_of(out) <> 200 or contains(out, "Content-Length: 12\r\n") = false or contains(out, "capabilities")
+        return 9
+    Console.print "head "
+
+    let calls_before middleware_calls
+    let after_before after_calls
+    answer(app, buf, req, res, out, "GET /admin/x HTTP/1.1\r\n\r\n")
+    if handled <> 0 or status_of(out) <> 401 or middleware_calls <> calls_before + 1 or after_calls <> after_before + 1
+        return 10
+    ; every request so far went through both hooks
+    if middleware_calls <> 10 or after_calls <> 10
+        return 11
+    Console.print "middleware "
+
+    answer(app, buf, req, res, out, "GET /Patient?code=a&code=b%20c&x=1+2&bad=%zz HTTP/1.1\r\n\r\n")
+    if req.query_count("code") <> 2 or req.query_param_nth("code", 0).equals("a") = false
+        return 12
+    if req.query_param_nth("code", 1).equals("b%20c") = false or req.query_param_nth("code", 2).length <> 0
+        return 13
+    if percent_decode(req.query_param_nth("code", 1), true).equals("b c") = false
+        return 14
+    if percent_decode(req.query_param("x"), true).equals("1 2") = false or percent_decode(req.query_param("x"), false).equals("1+2") = false
+        return 15
+    if percent_decode(req.query_param("bad"), true).equals("%zz") = false
+        return 16
+    Console.print "query "
+
+    Console.print "done"
+    0
+}

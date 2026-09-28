@@ -10,6 +10,25 @@
 
 use http.Buffer.ByteBuf
 
+; "HTTP/1.1 200 OK\r\nDate: " (23), the date (DATE_LENGTH), "\r\n".
+define HEAD_OK_LENGTH: size_t 54
+define HEAD_OK_DATE_AT: size_t 23
+
+; Fill a connection's head_ok block with its fixed parts; the date in the
+; middle is Response.date, a view formatted in place once per second.
+procedure init_head_ok(mutable h: Slice[u8])
+{
+    let prefix: Slice[u8] "HTTP/1.1 200 OK\r\nDate: "
+    var i: size_t 0
+    while i < prefix.length
+    {
+        h.put(i, prefix[i])
+        set i: i + 1
+    }
+    h.put(HEAD_OK_LENGTH - 2, 13)
+    h.put(HEAD_OK_LENGTH - 1, 10)
+}
+
 define Response
 (
     out: ref[ByteBuf]
@@ -20,8 +39,18 @@ define Response
     date: Slice[u8]              ; the connection's date, a view into head_ok
     var date_second: i64         ; the second date was formatted for
     head_ok: Slice[u8]           ; "HTTP/1.1 200 OK\r\nDate: <date>\r\n", HEAD_OK_LENGTH
+    var head_only: bool          ; a HEAD request: everything but the body
 )
 {
+    ; A connection's response on its page, writing into out: the 200 head
+    ; block and the date view inside it made once (see init_head_ok).
+    procedure create(host: ref[Page], out: ref[ByteBuf]) returns ref[Response]
+    {
+        var head allocate_slice[u8]^host(host, HEAD_OK_LENGTH)
+        init_head_ok(head)
+        &Response^host(out, 200, false, false, false, head.subslice(HEAD_OK_DATE_AT, HEAD_OK_DATE_AT + DATE_LENGTH), 0 - 1, head, false)
+    }
+
     ; Ready for the next response on the same connection.
     procedure reset(mutable this, close_after: bool)
     {
@@ -29,6 +58,7 @@ define Response
         set started: false
         set sent: false
         set close: close_after
+        set head_only: false
     }
 
     ; The status code; ignored once the status line is out.
@@ -37,6 +67,10 @@ define Response
         if started = false
             set status: code
     }
+
+    ; Answer without the body (a HEAD request); Content-Length still names it.
+    procedure set_head_only(mutable this)
+        set head_only: true
 
     ; End the connection after this response.
     procedure set_close(mutable this)
@@ -102,7 +136,8 @@ define Response
             out.append("Content-Length: ")
         out.append_uint(body.length as u64)
         out.append("\r\n\r\n")
-        out.append(body)
+        if head_only = false
+            out.append(body)
         set sent: true
     }
 
@@ -148,25 +183,6 @@ define Response
         }
         this.send_text(Slice[u8](k, &text[0]))
     }
-}
-
-; "HTTP/1.1 200 OK\r\nDate: " (23), the date (DATE_LENGTH), "\r\n".
-define HEAD_OK_LENGTH: size_t 54
-define HEAD_OK_DATE_AT: size_t 23
-
-; Fill a connection's head_ok block with its fixed parts; the date in the
-; middle is Response.date, a view formatted in place once per second.
-procedure init_head_ok(mutable h: Slice[u8])
-{
-    let prefix: Slice[u8] "HTTP/1.1 200 OK\r\nDate: "
-    var i: size_t 0
-    while i < prefix.length
-    {
-        h.put(i, prefix[i])
-        set i: i + 1
-    }
-    h.put(HEAD_OK_LENGTH - 2, 13)
-    h.put(HEAD_OK_LENGTH - 1, 10)
 }
 
 function reason_phrase(code: int) returns Slice[u8]

@@ -14,7 +14,7 @@ package http 0.1.0
 
 use http.Request.Request
 use http.Response.Response
-use http.Server.Router
+use http.Router.Router
 
 procedure sum(req: ref[Request], mutable res: ref[Response])
 {
@@ -26,7 +26,7 @@ procedure sum(req: ref[Request], mutable res: ref[Response])
 
 procedure delay(req: ref[Request], mutable res: ref[Response])
 {
-    let ms parse_int_prefix(req.path.slice_from(7))
+    let ms parse_int_prefix(req.param("ms"))
     Scheduler.sleep(ms)
     res.send_int(ms)
 }
@@ -83,7 +83,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
 {
     var app Router.create(Page.allocate_page())
     app.any("/sum", &sum)
-    app.prefix("GET", "/delay/", &delay)
+    app.get("/delay/{ms}", &delay)
     var l TcpListener.listen(0)
     let server start(app, l)
 
