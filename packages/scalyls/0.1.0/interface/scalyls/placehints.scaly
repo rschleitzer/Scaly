@@ -1,5 +1,7 @@
-; placehints.scaly - textDocument/inlayHint: where each construction is
-; ALLOCATED — the stack, or which region.
+; placehints.scaly - where each construction is ALLOCATED — the stack, or
+; which region. Shown in the hover since 2026-09-28 (see hover_note#); the
+; inlay-hint rendering below still answers textDocument/inlayHint, which the
+; server no longer advertises.
 ;
 ; WHY. Lifetimes are INFERRED. The `$` sigil is gone, `#`/`^` survive only where
 ; a page is genuinely pinned, and the planner decides the rest — so the single
@@ -95,6 +97,9 @@ define placehints
 
 
 
+    ; The placement blob for the document, planned once per save and cached,
+    ; or "" when the buffer is not the saved text.
+    procedure blob_for(mutable uri: String, mutable text: String) @page true @direct true @ret_caller true @deep true returns String io mutable modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used reads ph_used linked
 
 
 
@@ -108,6 +113,167 @@ define placehints
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ; ====================================================================
+    ; Hover: the placement of the construction under the cursor.
+    ;
+    ; ★WHY A HOVER AND NOT AN INLAY HINT. The placement used to be shown as an
+    ; inlay hint at every construction, and the author found text woven into
+    ; the code confusing (2026-09-28): `var acc Vector[int]^host(n)` read as
+    ; `var acc : Vector Vector[int]^host region ^host (n)`. The server no longer
+    ; advertises inlayHintProvider; the same blob answers here instead, only
+    ; when asked.
+    ;
+    ; A blob offset sits on the construction's `(` (measured: `Point(`,
+    ; `StringBuilder(`, `Vector[int]^host(` all answer the parenthesis). The
+    ; cursor is on the type NAME, so the head is walked forward to that `(`:
+    ; the dotted name, balanced generic arguments, a `#` or `^name` sigil. A
+    ; cursor on the sigil's name finds the same `(`. Nothing is planned unless
+    ; the cursor is on such a head.
+    ; ====================================================================
+    procedure hover_note(mutable uri: String, mutable text: String, packed: String) @page true @direct true @ret_caller true @deep true returns String io mutable modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used reads ph_used linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ; A byte of a dotted name (`Union.Variant`).
+    function is_name_byte(c: u8) @ret_nonlocal true @deep true returns bool linked
+
+
+
+
+    ; The offset of the `(` that opens the construction whose head holds
+    ; `off`, or the source length when `off` is on no such head.
+    function head_paren(source: String, off: size_t) @ret_nonlocal true @deep true returns size_t linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ; The label the blob holds for `offset`, or "".
+    function label_at(blob: String, offset: size_t) @page true @direct true @ret_caller true @deep true returns String linked
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ; The hover paragraph for one label (the vocabulary in this file's header).
+    ; The backticks are escaped: unescaped they would interpolate.
+    function describe(note: String) @page true @direct true @ret_caller true @deep true returns String linked
 
 
 
@@ -127,7 +293,7 @@ define placehints
     ; load-bearing file in this server for a cosmetic gain. The shape it answers
     ; is known exactly — `[]` or `[...]` — so `[]` becomes `[mine]` and anything
     ; else takes `,mine` before its final byte.
-    procedure merged(mutable repaired: String, mutable source: String, mutable uri: String, packed: String) @page true @direct true @ret_caller true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig reads ph_used linked
+    procedure merged(mutable repaired: String, mutable source: String, mutable uri: String, packed: String) @page true @direct true @ret_caller true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig reads lc_line linked
 
 
 

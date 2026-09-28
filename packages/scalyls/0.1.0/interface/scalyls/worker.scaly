@@ -492,6 +492,15 @@ define worker
 
 
 
+
+
+
+
+
+
+
+
+
     ; ====================================================================
     ; Parent side: spawn / kill / analyze.
     ; ====================================================================
@@ -702,6 +711,11 @@ define worker
     procedure code_actions(uri: String, text: String, packed: String) @page true @direct true @deep true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
 
 
+    ; The allocation paragraph for the hover at the packed "<line> <char>"
+    ; position: where the construction under the cursor lives, or "".
+    procedure placement(uri: String, text: String, packed: String) @page true @direct true @deep true returns String io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
+
+
     ; Semantic type at the packed "<line> <char>" position. `text` is the
     ; in-memory copy (empty -> worker reads disk). Returns the framed reply
     ; "1<name>" on a hit, "0" on a miss, or "" if unavailable / crashed / hung
@@ -809,6 +823,8 @@ define worker
 
 
     procedure budget_for_kind(kind: String) @deep true returns i32 io linked
+
+
 
 
 

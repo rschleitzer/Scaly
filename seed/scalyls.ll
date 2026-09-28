@@ -1751,407 +1751,423 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 @.sconst.902 = private constant [3 x i8] c"\01)\00"
 @.sconst.903 = private constant [12 x i8] c"\0A through '\00"
 @.sconst.904 = private constant [60 x i8] c":' - no page parameter here, so its buffer cannot be pinned\00"
-@.sconst.905 = private constant [10 x i8] c"\08document\00"
-@.sconst.906 = private constant [5 x i8] c"\03C1E\00"
-@.sconst.907 = private constant [7 x i8] c"\05stack\00"
-@.sconst.908 = private constant [8 x i8] c"\06region\00"
-@.sconst.909 = private constant [10 x i8] c"\08region ^\00"
-@.sconst.910 = private constant [7 x i8] c"\05stack\00"
-@.sconst.911 = private constant [10 x i8] c"\08region #\00"
-@.sconst.912 = private constant [10 x i8] c"\08document\00"
-@.sconst.913 = private constant [20 x i8] c"\12Run (scalyc --jit)\00"
-@.str.914 = private unnamed_addr constant [14 x i8] c"scaly.runFile\00", align 1
-@.sconst.915 = private constant [53 x i8] c"3/packages/scalyc/0.1.0/scalyc/compiler/parser.scaly\00"
-@.sconst.916 = private constant [26 x i8] c"\18codegen/parser-scaly.scm\00"
-@.sconst.917 = private constant [53 x i8] c"3/packages/scalyc/0.1.0/scalyc/compiler/Syntax.scaly\00"
-@.sconst.918 = private constant [26 x i8] c"\18codegen/syntax-scaly.scm\00"
-@.sconst.919 = private constant [47 x i8] c"-/packages/scalyls/0.1.0/scalyls/grammar.scaly\00"
-@.sconst.920 = private constant [29 x i8] c"\1Bcodegen/highlight-scaly.scm\00"
-@.sconst.921 = private constant [19 x i8] c"\11/tests/selfhosted\00"
-@.sconst.922 = private constant [8 x i8] c"\06tests/\00"
-@.sconst.923 = private constant [6 x i8] c"\04.sgm\00"
-@.sconst.924 = private constant [19 x i8] c"\11/tests/selfhosted\00"
-@.sconst.925 = private constant [31 x i8] c"\1D/packages/opensp/0.1.0/opensp\00"
-@.sconst.926 = private constant [16 x i8] c"\0EMessages.scaly\00"
-@.sconst.927 = private constant [31 x i8] c"\1D/packages/opensp/0.1.0/opensp\00"
-@.sconst.928 = private constant [17 x i8] c"\0Ftools/msggen.py\00"
-@.sconst.929 = private constant [17 x i8] c"\0Fgenerated from \00"
-@.sconst.930 = private constant [35 x i8] c"! - edit the generator, then ./mkp\00"
-@.str.931 = private unnamed_addr constant [15 x i8] c"scaly.openPath\00", align 1
-@.sconst.932 = private constant [9 x i8] c"\07mutable\00"
-@.sconst.933 = private constant [35 x i8] c"!thread-local: one cell per thread\00"
-@.sconst.934 = private constant [8 x i8] c"\06shared\00"
-@.sconst.935 = private constant [55 x i8] c"5process-global: the declarer owns the race discipline\00"
-@.sconst.936 = private constant [39 x i8] c"%no type: the compiler rejects this - \00"
-@.sconst.937 = private constant [18 x i8] c"\10 NAME: TYPE INIT\00"
-@.sconst.938 = private constant [11 x i8] c"\09packages/\00"
-@.sconst.939 = private constant [3 x i8] c"\01/\00"
-@.sconst.940 = private constant [3 x i8] c"\01/\00"
-@.sconst.941 = private constant [8 x i8] c"\06.scaly\00"
-@.sconst.942 = private constant [11 x i8] c"\09package: \00"
-@.sconst.943 = private constant [13 x i8] c"\0Bnot found: \00"
-@.sconst.944 = private constant [16 x i8] c"\0Epackage root: \00"
-@.str.945 = private unnamed_addr constant [15 x i8] c"scaly.openPath\00", align 1
-@.sconst.946 = private constant [8 x i8] c"\06.scaly\00"
-@.sconst.947 = private constant [23 x i8] c"\15missing module file: \00"
-@.sconst.948 = private constant [8 x i8] c"\06opens \00"
-@.str.949 = private unnamed_addr constant [15 x i8] c"scaly.openPath\00", align 1
-@.str.950 = private unnamed_addr constant [11 x i8] c"SCALY_HOME\00", align 1
-@.sconst.951 = private constant [10 x i8] c"\08packages\00"
-@.sconst.952 = private constant [3 x i8] c"\01/\00"
-@.sconst.953 = private constant [3 x i8] c"\01.\00"
-@.str.954 = private unnamed_addr constant [9 x i8] c"Slice.at\00", align 1
-@.str.955 = private unnamed_addr constant [10 x i8] c"Slice.put\00", align 1
+@.sconst.905 = private constant [7 x i8] c"\05stack\00"
+@.sconst.906 = private constant [54 x i8] c"4Allocation: `stack`, in this frame; it dies with it.\00"
+@.sconst.907 = private constant [8 x i8] c"\06region\00"
+@.sconst.908 = private constant [77 x i8] c"KAllocation: `region`, this function's own region; released when it returns.\00"
+@.sconst.909 = private constant [10 x i8] c"\08region #\00"
+@.sconst.910 = private constant [67 x i8] c"AAllocation: `region #`, the caller's page; it outlives this call.\00"
+@.sconst.911 = private constant [15 x i8] c"\0DAllocation: `\00"
+@.sconst.912 = private constant [18 x i8] c"\10`, a named page.\00"
+@.sconst.913 = private constant [10 x i8] c"\08document\00"
+@.sconst.914 = private constant [5 x i8] c"\03C1E\00"
+@.sconst.915 = private constant [7 x i8] c"\05stack\00"
+@.sconst.916 = private constant [8 x i8] c"\06region\00"
+@.sconst.917 = private constant [10 x i8] c"\08region ^\00"
+@.sconst.918 = private constant [7 x i8] c"\05stack\00"
+@.sconst.919 = private constant [10 x i8] c"\08region #\00"
+@.sconst.920 = private constant [10 x i8] c"\08document\00"
+@.sconst.921 = private constant [20 x i8] c"\12Run (scalyc --jit)\00"
+@.str.922 = private unnamed_addr constant [14 x i8] c"scaly.runFile\00", align 1
+@.sconst.923 = private constant [53 x i8] c"3/packages/scalyc/0.1.0/scalyc/compiler/parser.scaly\00"
+@.sconst.924 = private constant [26 x i8] c"\18codegen/parser-scaly.scm\00"
+@.sconst.925 = private constant [53 x i8] c"3/packages/scalyc/0.1.0/scalyc/compiler/Syntax.scaly\00"
+@.sconst.926 = private constant [26 x i8] c"\18codegen/syntax-scaly.scm\00"
+@.sconst.927 = private constant [47 x i8] c"-/packages/scalyls/0.1.0/scalyls/grammar.scaly\00"
+@.sconst.928 = private constant [29 x i8] c"\1Bcodegen/highlight-scaly.scm\00"
+@.sconst.929 = private constant [19 x i8] c"\11/tests/selfhosted\00"
+@.sconst.930 = private constant [8 x i8] c"\06tests/\00"
+@.sconst.931 = private constant [6 x i8] c"\04.sgm\00"
+@.sconst.932 = private constant [19 x i8] c"\11/tests/selfhosted\00"
+@.sconst.933 = private constant [31 x i8] c"\1D/packages/opensp/0.1.0/opensp\00"
+@.sconst.934 = private constant [16 x i8] c"\0EMessages.scaly\00"
+@.sconst.935 = private constant [31 x i8] c"\1D/packages/opensp/0.1.0/opensp\00"
+@.sconst.936 = private constant [17 x i8] c"\0Ftools/msggen.py\00"
+@.sconst.937 = private constant [17 x i8] c"\0Fgenerated from \00"
+@.sconst.938 = private constant [35 x i8] c"! - edit the generator, then ./mkp\00"
+@.str.939 = private unnamed_addr constant [15 x i8] c"scaly.openPath\00", align 1
+@.sconst.940 = private constant [9 x i8] c"\07mutable\00"
+@.sconst.941 = private constant [35 x i8] c"!thread-local: one cell per thread\00"
+@.sconst.942 = private constant [8 x i8] c"\06shared\00"
+@.sconst.943 = private constant [55 x i8] c"5process-global: the declarer owns the race discipline\00"
+@.sconst.944 = private constant [39 x i8] c"%no type: the compiler rejects this - \00"
+@.sconst.945 = private constant [18 x i8] c"\10 NAME: TYPE INIT\00"
+@.sconst.946 = private constant [11 x i8] c"\09packages/\00"
+@.sconst.947 = private constant [3 x i8] c"\01/\00"
+@.sconst.948 = private constant [3 x i8] c"\01/\00"
+@.sconst.949 = private constant [8 x i8] c"\06.scaly\00"
+@.sconst.950 = private constant [11 x i8] c"\09package: \00"
+@.sconst.951 = private constant [13 x i8] c"\0Bnot found: \00"
+@.sconst.952 = private constant [16 x i8] c"\0Epackage root: \00"
+@.str.953 = private unnamed_addr constant [15 x i8] c"scaly.openPath\00", align 1
+@.sconst.954 = private constant [8 x i8] c"\06.scaly\00"
+@.sconst.955 = private constant [23 x i8] c"\15missing module file: \00"
+@.sconst.956 = private constant [8 x i8] c"\06opens \00"
+@.str.957 = private unnamed_addr constant [15 x i8] c"scaly.openPath\00", align 1
+@.str.958 = private unnamed_addr constant [11 x i8] c"SCALY_HOME\00", align 1
+@.sconst.959 = private constant [10 x i8] c"\08packages\00"
+@.sconst.960 = private constant [3 x i8] c"\01/\00"
+@.sconst.961 = private constant [3 x i8] c"\01.\00"
+@.str.962 = private unnamed_addr constant [9 x i8] c"Slice.at\00", align 1
+@.str.963 = private unnamed_addr constant [10 x i8] c"Slice.put\00", align 1
 @.unwrap.at = private unnamed_addr constant [26 x i8] c"_Z19worker_thread_entryPv\00", align 1
-@.str.956 = private unnamed_addr constant [20 x i8] c"SCALYC_STACK_BUDGET\00", align 1
-@.str.957 = private unnamed_addr constant [9 x i8] c"53687091\00", align 1
-@.sconst.958 = private constant [3 x i8] c"\01w\00"
-@.sconst.959 = private constant [3 x i8] c"\01s\00"
-@.sconst.960 = private constant [3 x i8] c"\01c\00"
-@.sconst.961 = private constant [3 x i8] c"\01v\00"
-@.sconst.962 = private constant [3 x i8] c"\01h\00"
-@.sconst.963 = private constant [3 x i8] c"\01g\00"
-@.sconst.964 = private constant [3 x i8] c"\01r\00"
-@.sconst.965 = private constant [3 x i8] c"\01l\00"
-@.sconst.966 = private constant [3 x i8] c"\01n\00"
-@.sconst.967 = private constant [3 x i8] c"\01p\00"
-@.sconst.968 = private constant [3 x i8] c"\01f\00"
-@.sconst.969 = private constant [3 x i8] c"\01y\00"
-@.sconst.970 = private constant [3 x i8] c"\01o\00"
-@.sconst.971 = private constant [3 x i8] c"\01u\00"
-@.sconst.972 = private constant [3 x i8] c"\01k\00"
-@.sconst.973 = private constant [3 x i8] c"\01i\00"
-@.sconst.974 = private constant [3 x i8] c"\01j\00"
-@.sconst.975 = private constant [3 x i8] c"\01e\00"
-@.sconst.976 = private constant [3 x i8] c"\01a\00"
-@.sconst.977 = private constant [3 x i8] c"\01m\00"
-@.sconst.978 = private constant [3 x i8] c"\01t\00"
-@.sconst.979 = private constant [3 x i8] c"\01x\00"
-@.sconst.980 = private constant [3 x i8] c"\01z\00"
-@.str.981 = private unnamed_addr constant [2 x i8] c"d\00", align 1
-@.str.982 = private unnamed_addr constant [2 x i8] c"s\00", align 1
-@.sconst.983 = private constant [4 x i8] c"\02[]\00"
-@.str.984 = private unnamed_addr constant [2 x i8] c"h\00", align 1
-@.str.985 = private unnamed_addr constant [2 x i8] c"g\00", align 1
-@.str.986 = private unnamed_addr constant [2 x i8] c"r\00", align 1
-@.sconst.987 = private constant [4 x i8] c"\02[]\00"
-@.str.988 = private unnamed_addr constant [2 x i8] c"l\00", align 1
-@.sconst.989 = private constant [4 x i8] c"\02[]\00"
-@.str.990 = private unnamed_addr constant [2 x i8] c"c\00", align 1
-@.sconst.991 = private constant [4 x i8] c"\02[]\00"
-@.str.992 = private unnamed_addr constant [2 x i8] c"v\00", align 1
-@.str.993 = private unnamed_addr constant [2 x i8] c"n\00", align 1
-@.str.994 = private unnamed_addr constant [2 x i8] c"p\00", align 1
-@.str.995 = private unnamed_addr constant [2 x i8] c"f\00", align 1
-@.str.996 = private unnamed_addr constant [2 x i8] c"y\00", align 1
-@.sconst.997 = private constant [4 x i8] c"\02[]\00"
-@.str.998 = private unnamed_addr constant [2 x i8] c"o\00", align 1
-@.sconst.999 = private constant [4 x i8] c"\02[]\00"
-@.str.1000 = private unnamed_addr constant [2 x i8] c"m\00", align 1
-@.sconst.1001 = private constant [4 x i8] c"\02[]\00"
-@.str.1002 = private unnamed_addr constant [2 x i8] c"z\00", align 1
-@.sconst.1003 = private constant [4 x i8] c"\02[]\00"
-@.str.1004 = private unnamed_addr constant [2 x i8] c"u\00", align 1
-@.str.1005 = private unnamed_addr constant [2 x i8] c"k\00", align 1
+@.str.964 = private unnamed_addr constant [20 x i8] c"SCALYC_STACK_BUDGET\00", align 1
+@.str.965 = private unnamed_addr constant [9 x i8] c"53687091\00", align 1
+@.sconst.966 = private constant [3 x i8] c"\01w\00"
+@.sconst.967 = private constant [3 x i8] c"\01s\00"
+@.sconst.968 = private constant [3 x i8] c"\01c\00"
+@.sconst.969 = private constant [3 x i8] c"\01v\00"
+@.sconst.970 = private constant [3 x i8] c"\01h\00"
+@.sconst.971 = private constant [3 x i8] c"\01g\00"
+@.sconst.972 = private constant [3 x i8] c"\01r\00"
+@.sconst.973 = private constant [3 x i8] c"\01l\00"
+@.sconst.974 = private constant [3 x i8] c"\01n\00"
+@.sconst.975 = private constant [3 x i8] c"\01p\00"
+@.sconst.976 = private constant [3 x i8] c"\01f\00"
+@.sconst.977 = private constant [3 x i8] c"\01y\00"
+@.sconst.978 = private constant [3 x i8] c"\01q\00"
+@.sconst.979 = private constant [3 x i8] c"\01o\00"
+@.sconst.980 = private constant [3 x i8] c"\01u\00"
+@.sconst.981 = private constant [3 x i8] c"\01k\00"
+@.sconst.982 = private constant [3 x i8] c"\01i\00"
+@.sconst.983 = private constant [3 x i8] c"\01j\00"
+@.sconst.984 = private constant [3 x i8] c"\01e\00"
+@.sconst.985 = private constant [3 x i8] c"\01a\00"
+@.sconst.986 = private constant [3 x i8] c"\01m\00"
+@.sconst.987 = private constant [3 x i8] c"\01t\00"
+@.sconst.988 = private constant [3 x i8] c"\01x\00"
+@.sconst.989 = private constant [3 x i8] c"\01z\00"
+@.str.990 = private unnamed_addr constant [2 x i8] c"d\00", align 1
+@.str.991 = private unnamed_addr constant [2 x i8] c"s\00", align 1
+@.sconst.992 = private constant [4 x i8] c"\02[]\00"
+@.str.993 = private unnamed_addr constant [2 x i8] c"h\00", align 1
+@.str.994 = private unnamed_addr constant [2 x i8] c"g\00", align 1
+@.str.995 = private unnamed_addr constant [2 x i8] c"r\00", align 1
+@.sconst.996 = private constant [4 x i8] c"\02[]\00"
+@.str.997 = private unnamed_addr constant [2 x i8] c"l\00", align 1
+@.sconst.998 = private constant [4 x i8] c"\02[]\00"
+@.str.999 = private unnamed_addr constant [2 x i8] c"c\00", align 1
+@.sconst.1000 = private constant [4 x i8] c"\02[]\00"
+@.str.1001 = private unnamed_addr constant [2 x i8] c"v\00", align 1
+@.str.1002 = private unnamed_addr constant [2 x i8] c"n\00", align 1
+@.str.1003 = private unnamed_addr constant [2 x i8] c"p\00", align 1
+@.str.1004 = private unnamed_addr constant [2 x i8] c"f\00", align 1
+@.str.1005 = private unnamed_addr constant [2 x i8] c"y\00", align 1
 @.sconst.1006 = private constant [4 x i8] c"\02[]\00"
-@.str.1007 = private unnamed_addr constant [2 x i8] c"i\00", align 1
+@.str.1007 = private unnamed_addr constant [2 x i8] c"o\00", align 1
 @.sconst.1008 = private constant [4 x i8] c"\02[]\00"
-@.str.1009 = private unnamed_addr constant [2 x i8] c"j\00", align 1
+@.str.1009 = private unnamed_addr constant [2 x i8] c"m\00", align 1
 @.sconst.1010 = private constant [4 x i8] c"\02[]\00"
-@.str.1011 = private unnamed_addr constant [2 x i8] c"e\00", align 1
+@.str.1011 = private unnamed_addr constant [2 x i8] c"z\00", align 1
 @.sconst.1012 = private constant [4 x i8] c"\02[]\00"
-@.str.1013 = private unnamed_addr constant [2 x i8] c"a\00", align 1
-@.sconst.1014 = private constant [4 x i8] c"\02[]\00"
-@.str.1015 = private unnamed_addr constant [2 x i8] c"x\00", align 1
-@.str.1016 = private unnamed_addr constant [2 x i8] c"t\00", align 1
-@.sconst.1017 = private constant [13 x i8] c"\0B{\22data\22:[]}\00"
-@.str.1018 = private unnamed_addr constant [2 x i8] c"w\00", align 1
+@.str.1013 = private unnamed_addr constant [2 x i8] c"u\00", align 1
+@.str.1014 = private unnamed_addr constant [2 x i8] c"k\00", align 1
+@.sconst.1015 = private constant [4 x i8] c"\02[]\00"
+@.str.1016 = private unnamed_addr constant [2 x i8] c"i\00", align 1
+@.sconst.1017 = private constant [4 x i8] c"\02[]\00"
+@.str.1018 = private unnamed_addr constant [2 x i8] c"j\00", align 1
 @.sconst.1019 = private constant [4 x i8] c"\02[]\00"
-@.str.1020 = private unnamed_addr constant [18 x i8] c"SCALYLS_BUDGET_MS\00", align 1
-@.sconst.1021 = private constant [3 x i8] c"\01w\00"
-@.sconst.1022 = private constant [3 x i8] c"\01g\00"
-@.sconst.1023 = private constant [3 x i8] c"\01r\00"
-@.sconst.1024 = private constant [3 x i8] c"\01n\00"
-@.sconst.1025 = private constant [3 x i8] c"\01f\00"
-@.sconst.1026 = private constant [3 x i8] c"\01u\00"
-@.sconst.1027 = private constant [3 x i8] c"\01k\00"
-@.sconst.1028 = private constant [3 x i8] c"\01i\00"
-@.sconst.1029 = private constant [3 x i8] c"\01j\00"
-@.sconst.1030 = private constant [3 x i8] c"\01y\00"
-@.sconst.1031 = private constant [3 x i8] c"\01t\00"
-@.sconst.1032 = private constant [3 x i8] c"\01c\00"
-@.sconst.1033 = private constant [3 x i8] c"\01x\00"
-@.str.1034 = private unnamed_addr constant [19 x i8] c"scalyls: request '\00", align 1
-@.str.1035 = private unnamed_addr constant [16 x i8] c"' exceeded its \00", align 1
-@.str.1036 = private unnamed_addr constant [49 x i8] c" ms budget - answering empty, respawning worker\0A\00", align 1
-@.str.1037 = private unnamed_addr constant [7 x i8] c"method\00", align 1
-@.str.1038 = private unnamed_addr constant [3 x i8] c"id\00", align 1
-@.sconst.1039 = private constant [12 x i8] c"\0Ainitialize\00"
-@.sconst.1040 = private constant [10 x i8] c"\08shutdown\00"
-@.sconst.1041 = private constant [6 x i8] c"\04exit\00"
-@.sconst.1042 = private constant [22 x i8] c"\14textDocument/didOpen\00"
-@.sconst.1043 = private constant [24 x i8] c"\16textDocument/didChange\00"
-@.sconst.1044 = private constant [23 x i8] c"\15textDocument/didClose\00"
-@.sconst.1045 = private constant [29 x i8] c"\1BtextDocument/documentSymbol\00"
-@.sconst.1046 = private constant [20 x i8] c"\12textDocument/hover\00"
-@.sconst.1047 = private constant [25 x i8] c"\17textDocument/definition\00"
-@.sconst.1048 = private constant [25 x i8] c"\17textDocument/references\00"
-@.sconst.1049 = private constant [32 x i8] c"\1EtextDocument/documentHighlight\00"
-@.sconst.1050 = private constant [25 x i8] c"\17textDocument/completion\00"
-@.sconst.1051 = private constant [24 x i8] c"\16completionItem/resolve\00"
-@.sconst.1052 = private constant [28 x i8] c"\1AtextDocument/prepareRename\00"
-@.sconst.1053 = private constant [21 x i8] c"\13textDocument/rename\00"
-@.sconst.1054 = private constant [28 x i8] c"\1AtextDocument/signatureHelp\00"
-@.sconst.1055 = private constant [27 x i8] c"\19textDocument/foldingRange\00"
-@.sconst.1056 = private constant [25 x i8] c"\17textDocument/formatting\00"
-@.sconst.1057 = private constant [34 x i8] c" textDocument/semanticTokens/full\00"
-@.sconst.1058 = private constant [24 x i8] c"\16textDocument/inlayHint\00"
-@.sconst.1059 = private constant [25 x i8] c"\17textDocument/codeAction\00"
-@.sconst.1060 = private constant [23 x i8] c"\15textDocument/codeLens\00"
-@.sconst.1061 = private constant [29 x i8] c"\1BtextDocument/selectionRange\00"
-@.sconst.1062 = private constant [29 x i8] c"\1BtextDocument/typeDefinition\00"
-@.sconst.1063 = private constant [35 x i8] c"!textDocument/prepareCallHierarchy\00"
-@.sconst.1064 = private constant [29 x i8] c"\1BcallHierarchy/incomingCalls\00"
-@.sconst.1065 = private constant [29 x i8] c"\1BcallHierarchy/outgoingCalls\00"
-@.sconst.1066 = private constant [18 x i8] c"\10workspace/symbol\00"
-@.str.1067 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.1068 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.1069 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.1070 = private unnamed_addr constant [5 x i8] c"text\00", align 1
-@.str.1071 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.1072 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.1073 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.1074 = private unnamed_addr constant [15 x i8] c"contentChanges\00", align 1
-@.str.1075 = private unnamed_addr constant [6 x i8] c"range\00", align 1
-@.str.1076 = private unnamed_addr constant [5 x i8] c"text\00", align 1
-@.str.1077 = private unnamed_addr constant [6 x i8] c"start\00", align 1
-@.str.1078 = private unnamed_addr constant [4 x i8] c"end\00", align 1
-@.str.1079 = private unnamed_addr constant [5 x i8] c"line\00", align 1
-@.str.1080 = private unnamed_addr constant [10 x i8] c"character\00", align 1
-@.str.1081 = private unnamed_addr constant [5 x i8] c"line\00", align 1
-@.str.1082 = private unnamed_addr constant [10 x i8] c"character\00", align 1
-@.str.1083 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.1084 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.1085 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.1086 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.1087 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.1088 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.1089 = private unnamed_addr constant [8 x i8] c"context\00", align 1
-@.sconst.1090 = private constant [4 x i8] c"\02[]\00"
-@.str.1091 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.1092 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.1093 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.1094 = private unnamed_addr constant [12 x i8] c"diagnostics\00", align 1
-@.str.1095 = private unnamed_addr constant [8 x i8] c"message\00", align 1
-@.str.1096 = private unnamed_addr constant [6 x i8] c"range\00", align 1
-@.str.1097 = private unnamed_addr constant [6 x i8] c"start\00", align 1
-@.str.1098 = private unnamed_addr constant [5 x i8] c"line\00", align 1
-@.str.1099 = private unnamed_addr constant [10 x i8] c"character\00", align 1
-@.str.1100 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.1101 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.1102 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.1103 = private unnamed_addr constant [9 x i8] c"position\00", align 1
-@.str.1104 = private unnamed_addr constant [5 x i8] c"line\00", align 1
-@.str.1105 = private unnamed_addr constant [10 x i8] c"character\00", align 1
-@.str.1106 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.1107 = private unnamed_addr constant [5 x i8] c"item\00", align 1
-@.str.1108 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.1109 = private unnamed_addr constant [5 x i8] c"name\00", align 1
-@.str.1110 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.1111 = private unnamed_addr constant [5 x i8] c"item\00", align 1
-@.str.1112 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.1113 = private unnamed_addr constant [6 x i8] c"range\00", align 1
-@.str.1114 = private unnamed_addr constant [6 x i8] c"start\00", align 1
+@.str.1020 = private unnamed_addr constant [2 x i8] c"e\00", align 1
+@.sconst.1021 = private constant [4 x i8] c"\02[]\00"
+@.str.1022 = private unnamed_addr constant [2 x i8] c"a\00", align 1
+@.sconst.1023 = private constant [4 x i8] c"\02[]\00"
+@.str.1024 = private unnamed_addr constant [2 x i8] c"q\00", align 1
+@.str.1025 = private unnamed_addr constant [2 x i8] c"x\00", align 1
+@.str.1026 = private unnamed_addr constant [2 x i8] c"t\00", align 1
+@.sconst.1027 = private constant [13 x i8] c"\0B{\22data\22:[]}\00"
+@.str.1028 = private unnamed_addr constant [2 x i8] c"w\00", align 1
+@.sconst.1029 = private constant [4 x i8] c"\02[]\00"
+@.str.1030 = private unnamed_addr constant [18 x i8] c"SCALYLS_BUDGET_MS\00", align 1
+@.sconst.1031 = private constant [3 x i8] c"\01w\00"
+@.sconst.1032 = private constant [3 x i8] c"\01g\00"
+@.sconst.1033 = private constant [3 x i8] c"\01r\00"
+@.sconst.1034 = private constant [3 x i8] c"\01n\00"
+@.sconst.1035 = private constant [3 x i8] c"\01f\00"
+@.sconst.1036 = private constant [3 x i8] c"\01u\00"
+@.sconst.1037 = private constant [3 x i8] c"\01k\00"
+@.sconst.1038 = private constant [3 x i8] c"\01i\00"
+@.sconst.1039 = private constant [3 x i8] c"\01j\00"
+@.sconst.1040 = private constant [3 x i8] c"\01y\00"
+@.sconst.1041 = private constant [3 x i8] c"\01q\00"
+@.sconst.1042 = private constant [3 x i8] c"\01t\00"
+@.sconst.1043 = private constant [3 x i8] c"\01c\00"
+@.sconst.1044 = private constant [3 x i8] c"\01x\00"
+@.str.1045 = private unnamed_addr constant [19 x i8] c"scalyls: request '\00", align 1
+@.str.1046 = private unnamed_addr constant [16 x i8] c"' exceeded its \00", align 1
+@.str.1047 = private unnamed_addr constant [49 x i8] c" ms budget - answering empty, respawning worker\0A\00", align 1
+@.str.1048 = private unnamed_addr constant [7 x i8] c"method\00", align 1
+@.str.1049 = private unnamed_addr constant [3 x i8] c"id\00", align 1
+@.sconst.1050 = private constant [12 x i8] c"\0Ainitialize\00"
+@.sconst.1051 = private constant [10 x i8] c"\08shutdown\00"
+@.sconst.1052 = private constant [6 x i8] c"\04exit\00"
+@.sconst.1053 = private constant [22 x i8] c"\14textDocument/didOpen\00"
+@.sconst.1054 = private constant [24 x i8] c"\16textDocument/didChange\00"
+@.sconst.1055 = private constant [23 x i8] c"\15textDocument/didClose\00"
+@.sconst.1056 = private constant [29 x i8] c"\1BtextDocument/documentSymbol\00"
+@.sconst.1057 = private constant [20 x i8] c"\12textDocument/hover\00"
+@.sconst.1058 = private constant [25 x i8] c"\17textDocument/definition\00"
+@.sconst.1059 = private constant [25 x i8] c"\17textDocument/references\00"
+@.sconst.1060 = private constant [32 x i8] c"\1EtextDocument/documentHighlight\00"
+@.sconst.1061 = private constant [25 x i8] c"\17textDocument/completion\00"
+@.sconst.1062 = private constant [24 x i8] c"\16completionItem/resolve\00"
+@.sconst.1063 = private constant [28 x i8] c"\1AtextDocument/prepareRename\00"
+@.sconst.1064 = private constant [21 x i8] c"\13textDocument/rename\00"
+@.sconst.1065 = private constant [28 x i8] c"\1AtextDocument/signatureHelp\00"
+@.sconst.1066 = private constant [27 x i8] c"\19textDocument/foldingRange\00"
+@.sconst.1067 = private constant [25 x i8] c"\17textDocument/formatting\00"
+@.sconst.1068 = private constant [34 x i8] c" textDocument/semanticTokens/full\00"
+@.sconst.1069 = private constant [24 x i8] c"\16textDocument/inlayHint\00"
+@.sconst.1070 = private constant [25 x i8] c"\17textDocument/codeAction\00"
+@.sconst.1071 = private constant [23 x i8] c"\15textDocument/codeLens\00"
+@.sconst.1072 = private constant [29 x i8] c"\1BtextDocument/selectionRange\00"
+@.sconst.1073 = private constant [29 x i8] c"\1BtextDocument/typeDefinition\00"
+@.sconst.1074 = private constant [35 x i8] c"!textDocument/prepareCallHierarchy\00"
+@.sconst.1075 = private constant [29 x i8] c"\1BcallHierarchy/incomingCalls\00"
+@.sconst.1076 = private constant [29 x i8] c"\1BcallHierarchy/outgoingCalls\00"
+@.sconst.1077 = private constant [18 x i8] c"\10workspace/symbol\00"
+@.str.1078 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.1079 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.1080 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.1081 = private unnamed_addr constant [5 x i8] c"text\00", align 1
+@.str.1082 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.1083 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.1084 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.1085 = private unnamed_addr constant [15 x i8] c"contentChanges\00", align 1
+@.str.1086 = private unnamed_addr constant [6 x i8] c"range\00", align 1
+@.str.1087 = private unnamed_addr constant [5 x i8] c"text\00", align 1
+@.str.1088 = private unnamed_addr constant [6 x i8] c"start\00", align 1
+@.str.1089 = private unnamed_addr constant [4 x i8] c"end\00", align 1
+@.str.1090 = private unnamed_addr constant [5 x i8] c"line\00", align 1
+@.str.1091 = private unnamed_addr constant [10 x i8] c"character\00", align 1
+@.str.1092 = private unnamed_addr constant [5 x i8] c"line\00", align 1
+@.str.1093 = private unnamed_addr constant [10 x i8] c"character\00", align 1
+@.str.1094 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.1095 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.1096 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.1097 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.1098 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.1099 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.1100 = private unnamed_addr constant [8 x i8] c"context\00", align 1
+@.sconst.1101 = private constant [4 x i8] c"\02[]\00"
+@.str.1102 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.1103 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.1104 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.1105 = private unnamed_addr constant [12 x i8] c"diagnostics\00", align 1
+@.str.1106 = private unnamed_addr constant [8 x i8] c"message\00", align 1
+@.str.1107 = private unnamed_addr constant [6 x i8] c"range\00", align 1
+@.str.1108 = private unnamed_addr constant [6 x i8] c"start\00", align 1
+@.str.1109 = private unnamed_addr constant [5 x i8] c"line\00", align 1
+@.str.1110 = private unnamed_addr constant [10 x i8] c"character\00", align 1
+@.str.1111 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.1112 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.1113 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.1114 = private unnamed_addr constant [9 x i8] c"position\00", align 1
 @.str.1115 = private unnamed_addr constant [5 x i8] c"line\00", align 1
 @.str.1116 = private unnamed_addr constant [10 x i8] c"character\00", align 1
 @.str.1117 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.1118 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.1118 = private unnamed_addr constant [5 x i8] c"item\00", align 1
 @.str.1119 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.1120 = private unnamed_addr constant [9 x i8] c"position\00", align 1
-@.str.1121 = private unnamed_addr constant [5 x i8] c"line\00", align 1
-@.str.1122 = private unnamed_addr constant [10 x i8] c"character\00", align 1
-@.str.1123 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.1124 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.1125 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.1126 = private unnamed_addr constant [10 x i8] c"positions\00", align 1
-@.str.1127 = private unnamed_addr constant [5 x i8] c"line\00", align 1
-@.str.1128 = private unnamed_addr constant [10 x i8] c"character\00", align 1
-@.str.1129 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.1130 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.1131 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.1132 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.1133 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.1134 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.1135 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.1136 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.1137 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.1138 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.1139 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.1140 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.1141 = private unnamed_addr constant [9 x i8] c"position\00", align 1
-@.str.1142 = private unnamed_addr constant [5 x i8] c"line\00", align 1
-@.str.1143 = private unnamed_addr constant [10 x i8] c"character\00", align 1
-@.str.1144 = private unnamed_addr constant [9 x i8] c"contents\00", align 1
-@.str.1145 = private unnamed_addr constant [5 x i8] c"kind\00", align 1
-@.sconst.1146 = private constant [10 x i8] c"\08markdown\00"
-@.str.1147 = private unnamed_addr constant [6 x i8] c"value\00", align 1
-@.str.1148 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.1149 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.1150 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.1151 = private unnamed_addr constant [9 x i8] c"position\00", align 1
-@.str.1152 = private unnamed_addr constant [5 x i8] c"line\00", align 1
-@.str.1153 = private unnamed_addr constant [10 x i8] c"character\00", align 1
-@.str.1154 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.1155 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.1156 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.1157 = private unnamed_addr constant [9 x i8] c"position\00", align 1
-@.str.1158 = private unnamed_addr constant [5 x i8] c"line\00", align 1
-@.str.1159 = private unnamed_addr constant [10 x i8] c"character\00", align 1
-@.str.1160 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.1161 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.1162 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.1163 = private unnamed_addr constant [6 x i8] c"range\00", align 1
-@.str.1164 = private unnamed_addr constant [6 x i8] c"start\00", align 1
-@.str.1165 = private unnamed_addr constant [4 x i8] c"end\00", align 1
-@.str.1166 = private unnamed_addr constant [5 x i8] c"line\00", align 1
-@.str.1167 = private unnamed_addr constant [10 x i8] c"character\00", align 1
-@.str.1168 = private unnamed_addr constant [5 x i8] c"line\00", align 1
-@.str.1169 = private unnamed_addr constant [10 x i8] c"character\00", align 1
-@.str.1170 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.1171 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.1172 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.1173 = private unnamed_addr constant [9 x i8] c"position\00", align 1
-@.str.1174 = private unnamed_addr constant [5 x i8] c"line\00", align 1
-@.str.1175 = private unnamed_addr constant [10 x i8] c"character\00", align 1
-@.str.1176 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.1177 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.1178 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.1179 = private unnamed_addr constant [9 x i8] c"position\00", align 1
-@.str.1180 = private unnamed_addr constant [5 x i8] c"line\00", align 1
-@.str.1181 = private unnamed_addr constant [10 x i8] c"character\00", align 1
-@.str.1182 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.1183 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.1184 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.1185 = private unnamed_addr constant [9 x i8] c"position\00", align 1
+@.str.1120 = private unnamed_addr constant [5 x i8] c"name\00", align 1
+@.str.1121 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.1122 = private unnamed_addr constant [5 x i8] c"item\00", align 1
+@.str.1123 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.1124 = private unnamed_addr constant [6 x i8] c"range\00", align 1
+@.str.1125 = private unnamed_addr constant [6 x i8] c"start\00", align 1
+@.str.1126 = private unnamed_addr constant [5 x i8] c"line\00", align 1
+@.str.1127 = private unnamed_addr constant [10 x i8] c"character\00", align 1
+@.str.1128 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.1129 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.1130 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.1131 = private unnamed_addr constant [9 x i8] c"position\00", align 1
+@.str.1132 = private unnamed_addr constant [5 x i8] c"line\00", align 1
+@.str.1133 = private unnamed_addr constant [10 x i8] c"character\00", align 1
+@.str.1134 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.1135 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.1136 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.1137 = private unnamed_addr constant [10 x i8] c"positions\00", align 1
+@.str.1138 = private unnamed_addr constant [5 x i8] c"line\00", align 1
+@.str.1139 = private unnamed_addr constant [10 x i8] c"character\00", align 1
+@.str.1140 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.1141 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.1142 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.1143 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.1144 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.1145 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.1146 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.1147 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.1148 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.1149 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.1150 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.1151 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.1152 = private unnamed_addr constant [9 x i8] c"position\00", align 1
+@.str.1153 = private unnamed_addr constant [5 x i8] c"line\00", align 1
+@.str.1154 = private unnamed_addr constant [10 x i8] c"character\00", align 1
+@.str.1155 = private unnamed_addr constant [9 x i8] c"contents\00", align 1
+@.str.1156 = private unnamed_addr constant [6 x i8] c"value\00", align 1
+@.sconst.1157 = private constant [9 x i8] c"\07\0A\0A---\0A\0A\00"
+@.str.1158 = private unnamed_addr constant [9 x i8] c"contents\00", align 1
+@.str.1159 = private unnamed_addr constant [5 x i8] c"kind\00", align 1
+@.sconst.1160 = private constant [10 x i8] c"\08markdown\00"
+@.str.1161 = private unnamed_addr constant [6 x i8] c"value\00", align 1
+@.str.1162 = private unnamed_addr constant [9 x i8] c"contents\00", align 1
+@.str.1163 = private unnamed_addr constant [5 x i8] c"kind\00", align 1
+@.sconst.1164 = private constant [10 x i8] c"\08markdown\00"
+@.str.1165 = private unnamed_addr constant [6 x i8] c"value\00", align 1
+@.str.1166 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.1167 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.1168 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.1169 = private unnamed_addr constant [9 x i8] c"position\00", align 1
+@.str.1170 = private unnamed_addr constant [5 x i8] c"line\00", align 1
+@.str.1171 = private unnamed_addr constant [10 x i8] c"character\00", align 1
+@.str.1172 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.1173 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.1174 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.1175 = private unnamed_addr constant [9 x i8] c"position\00", align 1
+@.str.1176 = private unnamed_addr constant [5 x i8] c"line\00", align 1
+@.str.1177 = private unnamed_addr constant [10 x i8] c"character\00", align 1
+@.str.1178 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.1179 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.1180 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.1181 = private unnamed_addr constant [6 x i8] c"range\00", align 1
+@.str.1182 = private unnamed_addr constant [6 x i8] c"start\00", align 1
+@.str.1183 = private unnamed_addr constant [4 x i8] c"end\00", align 1
+@.str.1184 = private unnamed_addr constant [5 x i8] c"line\00", align 1
+@.str.1185 = private unnamed_addr constant [10 x i8] c"character\00", align 1
 @.str.1186 = private unnamed_addr constant [5 x i8] c"line\00", align 1
 @.str.1187 = private unnamed_addr constant [10 x i8] c"character\00", align 1
 @.str.1188 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.1189 = private unnamed_addr constant [6 x i8] c"label\00", align 1
-@.str.1190 = private unnamed_addr constant [5 x i8] c"data\00", align 1
-@.str.1191 = private unnamed_addr constant [14 x i8] c"documentation\00", align 1
-@.str.1192 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.1193 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.1194 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.1195 = private unnamed_addr constant [9 x i8] c"position\00", align 1
-@.str.1196 = private unnamed_addr constant [5 x i8] c"line\00", align 1
-@.str.1197 = private unnamed_addr constant [10 x i8] c"character\00", align 1
-@.str.1198 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.1199 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.1200 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.1201 = private unnamed_addr constant [9 x i8] c"position\00", align 1
-@.str.1202 = private unnamed_addr constant [5 x i8] c"line\00", align 1
-@.str.1203 = private unnamed_addr constant [10 x i8] c"character\00", align 1
-@.str.1204 = private unnamed_addr constant [8 x i8] c"newName\00", align 1
-@.str.1205 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.1206 = private unnamed_addr constant [6 x i8] c"query\00", align 1
-@.str.1207 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.1208 = private unnamed_addr constant [8 x i8] c"rootUri\00", align 1
-@.str.1209 = private unnamed_addr constant [9 x i8] c"rootPath\00", align 1
-@.str.1210 = private unnamed_addr constant [17 x i8] c"workspaceFolders\00", align 1
-@.str.1211 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.1212 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.1213 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
-@.str.1214 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.1215 = private unnamed_addr constant [7 x i8] c"params\00", align 1
-@.str.1216 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
-@.str.1217 = private unnamed_addr constant [8 x i8] c"jsonrpc\00", align 1
-@.str.1218 = private unnamed_addr constant [4 x i8] c"2.0\00", align 1
-@.str.1219 = private unnamed_addr constant [3 x i8] c"id\00", align 1
-@.str.1220 = private unnamed_addr constant [7 x i8] c"result\00", align 1
-@.str.1221 = private unnamed_addr constant [13 x i8] c"capabilities\00", align 1
-@.str.1222 = private unnamed_addr constant [17 x i8] c"textDocumentSync\00", align 1
-@.str.1223 = private unnamed_addr constant [23 x i8] c"documentSymbolProvider\00", align 1
-@.sconst.1224 = private constant [6 x i8] c"\04true\00"
-@.str.1225 = private unnamed_addr constant [14 x i8] c"hoverProvider\00", align 1
-@.sconst.1226 = private constant [6 x i8] c"\04true\00"
-@.str.1227 = private unnamed_addr constant [19 x i8] c"definitionProvider\00", align 1
-@.sconst.1228 = private constant [6 x i8] c"\04true\00"
-@.str.1229 = private unnamed_addr constant [19 x i8] c"referencesProvider\00", align 1
-@.sconst.1230 = private constant [6 x i8] c"\04true\00"
-@.str.1231 = private unnamed_addr constant [26 x i8] c"documentHighlightProvider\00", align 1
-@.sconst.1232 = private constant [6 x i8] c"\04true\00"
-@.str.1233 = private unnamed_addr constant [19 x i8] c"completionProvider\00", align 1
-@.str.1234 = private unnamed_addr constant [18 x i8] c"triggerCharacters\00", align 1
-@.str.1235 = private unnamed_addr constant [16 x i8] c"resolveProvider\00", align 1
-@.sconst.1236 = private constant [6 x i8] c"\04true\00"
-@.str.1237 = private unnamed_addr constant [15 x i8] c"renameProvider\00", align 1
-@.str.1238 = private unnamed_addr constant [16 x i8] c"prepareProvider\00", align 1
-@.sconst.1239 = private constant [6 x i8] c"\04true\00"
-@.str.1240 = private unnamed_addr constant [22 x i8] c"signatureHelpProvider\00", align 1
-@.str.1241 = private unnamed_addr constant [18 x i8] c"triggerCharacters\00", align 1
-@.str.1242 = private unnamed_addr constant [21 x i8] c"foldingRangeProvider\00", align 1
-@.sconst.1243 = private constant [6 x i8] c"\04true\00"
-@.str.1244 = private unnamed_addr constant [27 x i8] c"documentFormattingProvider\00", align 1
-@.sconst.1245 = private constant [6 x i8] c"\04true\00"
-@.str.1246 = private unnamed_addr constant [23 x i8] c"semanticTokensProvider\00", align 1
-@.str.1247 = private unnamed_addr constant [7 x i8] c"legend\00", align 1
-@.str.1248 = private unnamed_addr constant [11 x i8] c"tokenTypes\00", align 1
-@.str.1249 = private unnamed_addr constant [8 x i8] c"keyword\00", align 1
-@.str.1250 = private unnamed_addr constant [5 x i8] c"type\00", align 1
-@.str.1251 = private unnamed_addr constant [9 x i8] c"function\00", align 1
-@.str.1252 = private unnamed_addr constant [9 x i8] c"variable\00", align 1
-@.str.1253 = private unnamed_addr constant [9 x i8] c"operator\00", align 1
-@.str.1254 = private unnamed_addr constant [7 x i8] c"string\00", align 1
-@.str.1255 = private unnamed_addr constant [7 x i8] c"number\00", align 1
-@.str.1256 = private unnamed_addr constant [8 x i8] c"comment\00", align 1
-@.str.1257 = private unnamed_addr constant [10 x i8] c"parameter\00", align 1
-@.str.1258 = private unnamed_addr constant [9 x i8] c"property\00", align 1
-@.str.1259 = private unnamed_addr constant [15 x i8] c"tokenModifiers\00", align 1
-@.str.1260 = private unnamed_addr constant [12 x i8] c"declaration\00", align 1
-@.str.1261 = private unnamed_addr constant [9 x i8] c"readonly\00", align 1
-@.str.1262 = private unnamed_addr constant [7 x i8] c"static\00", align 1
-@.str.1263 = private unnamed_addr constant [15 x i8] c"defaultLibrary\00", align 1
-@.str.1264 = private unnamed_addr constant [5 x i8] c"full\00", align 1
-@.sconst.1265 = private constant [6 x i8] c"\04true\00"
-@.str.1266 = private unnamed_addr constant [24 x i8] c"workspaceSymbolProvider\00", align 1
-@.sconst.1267 = private constant [6 x i8] c"\04true\00"
-@.str.1268 = private unnamed_addr constant [18 x i8] c"inlayHintProvider\00", align 1
-@.sconst.1269 = private constant [6 x i8] c"\04true\00"
-@.str.1270 = private unnamed_addr constant [19 x i8] c"codeActionProvider\00", align 1
-@.sconst.1271 = private constant [6 x i8] c"\04true\00"
-@.str.1272 = private unnamed_addr constant [17 x i8] c"codeLensProvider\00", align 1
-@.str.1273 = private unnamed_addr constant [16 x i8] c"resolveProvider\00", align 1
-@.sconst.1274 = private constant [7 x i8] c"\05false\00"
-@.str.1275 = private unnamed_addr constant [23 x i8] c"selectionRangeProvider\00", align 1
-@.sconst.1276 = private constant [6 x i8] c"\04true\00"
-@.str.1277 = private unnamed_addr constant [23 x i8] c"typeDefinitionProvider\00", align 1
-@.sconst.1278 = private constant [6 x i8] c"\04true\00"
-@.str.1279 = private unnamed_addr constant [22 x i8] c"callHierarchyProvider\00", align 1
-@.sconst.1280 = private constant [6 x i8] c"\04true\00"
-@.str.1281 = private unnamed_addr constant [11 x i8] c"serverInfo\00", align 1
-@.str.1282 = private unnamed_addr constant [5 x i8] c"name\00", align 1
-@.str.1283 = private unnamed_addr constant [8 x i8] c"scalyls\00", align 1
-@.str.1284 = private unnamed_addr constant [8 x i8] c"version\00", align 1
-@.str.1285 = private unnamed_addr constant [6 x i8] c"0.1.0\00", align 1
-@.str.1286 = private unnamed_addr constant [8 x i8] c"jsonrpc\00", align 1
-@.str.1287 = private unnamed_addr constant [4 x i8] c"2.0\00", align 1
-@.str.1288 = private unnamed_addr constant [3 x i8] c"id\00", align 1
-@.str.1289 = private unnamed_addr constant [7 x i8] c"result\00", align 1
-@.sconst.1290 = private constant [6 x i8] c"\04null\00"
-@.str.1291 = private unnamed_addr constant [8 x i8] c"jsonrpc\00", align 1
-@.str.1292 = private unnamed_addr constant [4 x i8] c"2.0\00", align 1
-@.str.1293 = private unnamed_addr constant [3 x i8] c"id\00", align 1
-@.str.1294 = private unnamed_addr constant [7 x i8] c"result\00", align 1
-@.str.1295 = private unnamed_addr constant [8 x i8] c"jsonrpc\00", align 1
-@.str.1296 = private unnamed_addr constant [4 x i8] c"2.0\00", align 1
-@.str.1297 = private unnamed_addr constant [3 x i8] c"id\00", align 1
-@.str.1298 = private unnamed_addr constant [7 x i8] c"result\00", align 1
-@.sconst.1299 = private constant [6 x i8] c"\04null\00"
-@.str.1300 = private unnamed_addr constant [8 x i8] c"jsonrpc\00", align 1
-@.str.1301 = private unnamed_addr constant [4 x i8] c"2.0\00", align 1
-@.str.1302 = private unnamed_addr constant [3 x i8] c"id\00", align 1
-@.str.1303 = private unnamed_addr constant [7 x i8] c"result\00", align 1
-@.sconst.1304 = private constant [6 x i8] c"\04null\00"
+@.str.1189 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.1190 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.1191 = private unnamed_addr constant [9 x i8] c"position\00", align 1
+@.str.1192 = private unnamed_addr constant [5 x i8] c"line\00", align 1
+@.str.1193 = private unnamed_addr constant [10 x i8] c"character\00", align 1
+@.str.1194 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.1195 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.1196 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.1197 = private unnamed_addr constant [9 x i8] c"position\00", align 1
+@.str.1198 = private unnamed_addr constant [5 x i8] c"line\00", align 1
+@.str.1199 = private unnamed_addr constant [10 x i8] c"character\00", align 1
+@.str.1200 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.1201 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.1202 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.1203 = private unnamed_addr constant [9 x i8] c"position\00", align 1
+@.str.1204 = private unnamed_addr constant [5 x i8] c"line\00", align 1
+@.str.1205 = private unnamed_addr constant [10 x i8] c"character\00", align 1
+@.str.1206 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.1207 = private unnamed_addr constant [6 x i8] c"label\00", align 1
+@.str.1208 = private unnamed_addr constant [5 x i8] c"data\00", align 1
+@.str.1209 = private unnamed_addr constant [14 x i8] c"documentation\00", align 1
+@.str.1210 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.1211 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.1212 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.1213 = private unnamed_addr constant [9 x i8] c"position\00", align 1
+@.str.1214 = private unnamed_addr constant [5 x i8] c"line\00", align 1
+@.str.1215 = private unnamed_addr constant [10 x i8] c"character\00", align 1
+@.str.1216 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.1217 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.1218 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.1219 = private unnamed_addr constant [9 x i8] c"position\00", align 1
+@.str.1220 = private unnamed_addr constant [5 x i8] c"line\00", align 1
+@.str.1221 = private unnamed_addr constant [10 x i8] c"character\00", align 1
+@.str.1222 = private unnamed_addr constant [8 x i8] c"newName\00", align 1
+@.str.1223 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.1224 = private unnamed_addr constant [6 x i8] c"query\00", align 1
+@.str.1225 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.1226 = private unnamed_addr constant [8 x i8] c"rootUri\00", align 1
+@.str.1227 = private unnamed_addr constant [9 x i8] c"rootPath\00", align 1
+@.str.1228 = private unnamed_addr constant [17 x i8] c"workspaceFolders\00", align 1
+@.str.1229 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.1230 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.1231 = private unnamed_addr constant [13 x i8] c"textDocument\00", align 1
+@.str.1232 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.1233 = private unnamed_addr constant [7 x i8] c"params\00", align 1
+@.str.1234 = private unnamed_addr constant [4 x i8] c"uri\00", align 1
+@.str.1235 = private unnamed_addr constant [8 x i8] c"jsonrpc\00", align 1
+@.str.1236 = private unnamed_addr constant [4 x i8] c"2.0\00", align 1
+@.str.1237 = private unnamed_addr constant [3 x i8] c"id\00", align 1
+@.str.1238 = private unnamed_addr constant [7 x i8] c"result\00", align 1
+@.str.1239 = private unnamed_addr constant [13 x i8] c"capabilities\00", align 1
+@.str.1240 = private unnamed_addr constant [17 x i8] c"textDocumentSync\00", align 1
+@.str.1241 = private unnamed_addr constant [23 x i8] c"documentSymbolProvider\00", align 1
+@.sconst.1242 = private constant [6 x i8] c"\04true\00"
+@.str.1243 = private unnamed_addr constant [14 x i8] c"hoverProvider\00", align 1
+@.sconst.1244 = private constant [6 x i8] c"\04true\00"
+@.str.1245 = private unnamed_addr constant [19 x i8] c"definitionProvider\00", align 1
+@.sconst.1246 = private constant [6 x i8] c"\04true\00"
+@.str.1247 = private unnamed_addr constant [19 x i8] c"referencesProvider\00", align 1
+@.sconst.1248 = private constant [6 x i8] c"\04true\00"
+@.str.1249 = private unnamed_addr constant [26 x i8] c"documentHighlightProvider\00", align 1
+@.sconst.1250 = private constant [6 x i8] c"\04true\00"
+@.str.1251 = private unnamed_addr constant [19 x i8] c"completionProvider\00", align 1
+@.str.1252 = private unnamed_addr constant [18 x i8] c"triggerCharacters\00", align 1
+@.str.1253 = private unnamed_addr constant [16 x i8] c"resolveProvider\00", align 1
+@.sconst.1254 = private constant [6 x i8] c"\04true\00"
+@.str.1255 = private unnamed_addr constant [15 x i8] c"renameProvider\00", align 1
+@.str.1256 = private unnamed_addr constant [16 x i8] c"prepareProvider\00", align 1
+@.sconst.1257 = private constant [6 x i8] c"\04true\00"
+@.str.1258 = private unnamed_addr constant [22 x i8] c"signatureHelpProvider\00", align 1
+@.str.1259 = private unnamed_addr constant [18 x i8] c"triggerCharacters\00", align 1
+@.str.1260 = private unnamed_addr constant [21 x i8] c"foldingRangeProvider\00", align 1
+@.sconst.1261 = private constant [6 x i8] c"\04true\00"
+@.str.1262 = private unnamed_addr constant [27 x i8] c"documentFormattingProvider\00", align 1
+@.sconst.1263 = private constant [6 x i8] c"\04true\00"
+@.str.1264 = private unnamed_addr constant [23 x i8] c"semanticTokensProvider\00", align 1
+@.str.1265 = private unnamed_addr constant [7 x i8] c"legend\00", align 1
+@.str.1266 = private unnamed_addr constant [11 x i8] c"tokenTypes\00", align 1
+@.str.1267 = private unnamed_addr constant [8 x i8] c"keyword\00", align 1
+@.str.1268 = private unnamed_addr constant [5 x i8] c"type\00", align 1
+@.str.1269 = private unnamed_addr constant [9 x i8] c"function\00", align 1
+@.str.1270 = private unnamed_addr constant [9 x i8] c"variable\00", align 1
+@.str.1271 = private unnamed_addr constant [9 x i8] c"operator\00", align 1
+@.str.1272 = private unnamed_addr constant [7 x i8] c"string\00", align 1
+@.str.1273 = private unnamed_addr constant [7 x i8] c"number\00", align 1
+@.str.1274 = private unnamed_addr constant [8 x i8] c"comment\00", align 1
+@.str.1275 = private unnamed_addr constant [10 x i8] c"parameter\00", align 1
+@.str.1276 = private unnamed_addr constant [9 x i8] c"property\00", align 1
+@.str.1277 = private unnamed_addr constant [15 x i8] c"tokenModifiers\00", align 1
+@.str.1278 = private unnamed_addr constant [12 x i8] c"declaration\00", align 1
+@.str.1279 = private unnamed_addr constant [9 x i8] c"readonly\00", align 1
+@.str.1280 = private unnamed_addr constant [7 x i8] c"static\00", align 1
+@.str.1281 = private unnamed_addr constant [15 x i8] c"defaultLibrary\00", align 1
+@.str.1282 = private unnamed_addr constant [5 x i8] c"full\00", align 1
+@.sconst.1283 = private constant [6 x i8] c"\04true\00"
+@.str.1284 = private unnamed_addr constant [24 x i8] c"workspaceSymbolProvider\00", align 1
+@.sconst.1285 = private constant [6 x i8] c"\04true\00"
+@.str.1286 = private unnamed_addr constant [19 x i8] c"codeActionProvider\00", align 1
+@.sconst.1287 = private constant [6 x i8] c"\04true\00"
+@.str.1288 = private unnamed_addr constant [17 x i8] c"codeLensProvider\00", align 1
+@.str.1289 = private unnamed_addr constant [16 x i8] c"resolveProvider\00", align 1
+@.sconst.1290 = private constant [7 x i8] c"\05false\00"
+@.str.1291 = private unnamed_addr constant [23 x i8] c"selectionRangeProvider\00", align 1
+@.sconst.1292 = private constant [6 x i8] c"\04true\00"
+@.str.1293 = private unnamed_addr constant [23 x i8] c"typeDefinitionProvider\00", align 1
+@.sconst.1294 = private constant [6 x i8] c"\04true\00"
+@.str.1295 = private unnamed_addr constant [22 x i8] c"callHierarchyProvider\00", align 1
+@.sconst.1296 = private constant [6 x i8] c"\04true\00"
+@.str.1297 = private unnamed_addr constant [11 x i8] c"serverInfo\00", align 1
+@.str.1298 = private unnamed_addr constant [5 x i8] c"name\00", align 1
+@.str.1299 = private unnamed_addr constant [8 x i8] c"scalyls\00", align 1
+@.str.1300 = private unnamed_addr constant [8 x i8] c"version\00", align 1
+@.str.1301 = private unnamed_addr constant [6 x i8] c"0.1.0\00", align 1
+@.str.1302 = private unnamed_addr constant [8 x i8] c"jsonrpc\00", align 1
+@.str.1303 = private unnamed_addr constant [4 x i8] c"2.0\00", align 1
+@.str.1304 = private unnamed_addr constant [3 x i8] c"id\00", align 1
+@.str.1305 = private unnamed_addr constant [7 x i8] c"result\00", align 1
+@.sconst.1306 = private constant [6 x i8] c"\04null\00"
+@.str.1307 = private unnamed_addr constant [8 x i8] c"jsonrpc\00", align 1
+@.str.1308 = private unnamed_addr constant [4 x i8] c"2.0\00", align 1
+@.str.1309 = private unnamed_addr constant [3 x i8] c"id\00", align 1
+@.str.1310 = private unnamed_addr constant [7 x i8] c"result\00", align 1
+@.str.1311 = private unnamed_addr constant [8 x i8] c"jsonrpc\00", align 1
+@.str.1312 = private unnamed_addr constant [4 x i8] c"2.0\00", align 1
+@.str.1313 = private unnamed_addr constant [3 x i8] c"id\00", align 1
+@.str.1314 = private unnamed_addr constant [7 x i8] c"result\00", align 1
+@.sconst.1315 = private constant [6 x i8] c"\04null\00"
+@.str.1316 = private unnamed_addr constant [8 x i8] c"jsonrpc\00", align 1
+@.str.1317 = private unnamed_addr constant [4 x i8] c"2.0\00", align 1
+@.str.1318 = private unnamed_addr constant [3 x i8] c"id\00", align 1
+@.str.1319 = private unnamed_addr constant [7 x i8] c"result\00", align 1
+@.sconst.1320 = private constant [6 x i8] c"\04null\00"
 
 declare ptr @memcpy(...)
 
@@ -143698,350 +143714,98 @@ if.end12:                                         ; preds = %if.then7
   br label %if.end8
 }
 
-declare i1 @_ZN6String6equalsE6String(ptr, ptr)
-
-define linkonce_odr i1 @_ZN10placehints9cache_hitE6Stringm(ptr %0, i64 %1) {
+define linkonce_odr void @_ZN10placehints8blob_forEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
 entry:
-  %i = alloca i64, align 8
-  %global.load = load i1, ptr @ph_used, align 1
-  %eq = icmp eq i1 %global.load, false
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  ret i1 false
-
-if.end:                                           ; preds = %entry
-  %global.load1 = load i64, ptr @ph_hash, align 8
-  %ne = icmp ne i64 %global.load1, %1
-  br i1 %ne, label %if.then2, label %if.end3
-
-if.then2:                                         ; preds = %if.end
-  ret i1 false
-
-if.end3:                                          ; preds = %if.end
-  %global.load4 = load i64, ptr @ph_path_len, align 8
-  %call = call i64 @_ZN6String10get_lengthEv(ptr %0)
-  %ne5 = icmp ne i64 %global.load4, %call
-  br i1 %ne5, label %if.then6, label %if.end7
-
-if.then6:                                         ; preds = %if.end3
-  ret i1 false
-
-if.end7:                                          ; preds = %if.end3
-  store i64 0, ptr %i, align 1
-  br label %while.cond
-
-while.cond:                                       ; preds = %if.end16, %if.end7
-  %i8 = load i64, ptr %i, align 8
-  %global.load9 = load i64, ptr @ph_path_len, align 8
-  %lt = icmp ult i64 %i8, %global.load9
-  br i1 %lt, label %while.body, label %while.exit
-
-while.body:                                       ; preds = %while.cond
-  %global.load10 = load ptr, ptr @ph_path_data, align 8
-  %i11 = load i64, ptr %i, align 8
-  %ptr.add = getelementptr inbounds i8, ptr %global.load10, i64 %i11
-  %deref = load i8, ptr %ptr.add, align 1
-  %i12 = load i64, ptr %i, align 8
-  %call13 = call i8 @_ZN6String3getEm(ptr %0, i64 %i12)
-  %ne14 = icmp ne i8 %deref, %call13
-  br i1 %ne14, label %if.then15, label %if.end16
-
-while.exit:                                       ; preds = %while.cond
-  ret i1 true
-
-if.then15:                                        ; preds = %while.body
-  ret i1 false
-
-if.end16:                                         ; preds = %while.body
-  %i17 = load i64, ptr %i, align 8
-  %add = add i64 %i17, 1
-  store i64 %add, ptr %i, align 1
-  br label %while.cond
-}
-
-define linkonce_odr void @_ZN10placehints11cached_blobEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %0, ptr %1) {
-entry:
-  %global.load = load i1, ptr @ph_used, align 1
-  %eq = icmp eq i1 %global.load, false
-  br i1 %eq, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-if.end:                                           ; preds = %entry
-  %frame.page = load ptr, ptr %1, align 8
-  %frame.has_page = icmp ne ptr %frame.page, null
-  br i1 %frame.has_page, label %frame.forced, label %frame.force
-
-frame.force:                                      ; preds = %if.end
-  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
-  br label %frame.forced
-
-frame.forced:                                     ; preds = %frame.force, %if.end
-  %forced_page1 = phi ptr [ %frame.page, %if.end ], [ %forced_page, %frame.force ]
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  %global.load2 = load ptr, ptr @ph_blob_data, align 8
-  %global.load3 = load i64, ptr @ph_blob_len, align 8
-  call void @_ZN6StringC1EP10const_charm(ptr %struct.region, ptr %global.load2, i64 %global.load3)
-  %sret.body = load { ptr }, ptr %struct.region, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  ret void
-}
-
-define linkonce_odr void @_ZN10placehints5buildEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
-entry:
-  %arg.tmp70 = alloca %_Z10FileSyntax, align 8
-  %arg.tmp50 = alloca %_Z10FileSyntax, align 8
-  %planner = alloca ptr, align 8
-  %arg.tmp = alloca %_Z13ProgramSyntax, align 8
-  %sret.result37 = alloca %_Z7Program, align 8
-  %sret.result27 = alloca { i8, [48 x i8] }, align 8
-  %rp2 = alloca ptr, align 8
-  %sret.result17 = alloca { ptr }, align 8
-  %sret.result13 = alloca { ptr }, align 8
-  %sret.result10 = alloca { ptr }, align 8
-  %sret.result = alloca { i8, [48 x i8] }, align 8
-  %dp = alloca ptr, align 8
-  %sb = alloca ptr, align 8
+  %sret.result19 = alloca { ptr }, align 8
+  %blob = alloca ptr, align 8
+  %arg.tmp = alloca { ptr }, align 8
   %frame = alloca { ptr, ptr }, align 8
   store ptr null, ptr %frame, align 8
   %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
   store ptr %1, ptr %frame.parent, align 8
-  %frame.page = load ptr, ptr %frame, align 8
+  %sret.result5 = alloca { ptr }, align 8
+  %sret.result = alloca { ptr }, align 8
+  call void @_ZN11diagnostics9strip_uriEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2)
+  %call = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
+  %eq = icmp eq i64 %call, 0
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret void
+
+if.end:                                           ; preds = %entry
+  %call1 = call i64 @_ZN6String10get_lengthEv(ptr %3)
+  %eq2 = icmp eq i64 %call1, 0
+  br i1 %eq2, label %if.then3, label %if.end4
+
+if.then3:                                         ; preds = %if.end
+  store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret void
+
+if.end4:                                          ; preds = %if.end
+  call void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result5, ptr %frame, ptr %sret.result)
+  %call6 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result5)
+  %eq7 = icmp eq i64 %call6, 0
+  br i1 %eq7, label %if.then8, label %if.end9
+
+if.then8:                                         ; preds = %if.end4
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  store { ptr } zeroinitializer, ptr %0, align 1
+  ret void
+
+if.end9:                                          ; preds = %if.end4
+  %call10 = call i1 @_ZN6String6equalsE6String(ptr %sret.result5, ptr %3)
+  %eq11 = icmp eq i1 %call10, false
+  br i1 %eq11, label %if.then12, label %if.end13
+
+if.then12:                                        ; preds = %if.end9
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  store { ptr } zeroinitializer, ptr %0, align 1
+  ret void
+
+if.end13:                                         ; preds = %if.end9
+  %call14 = call i64 @_ZN6String4hashEv(ptr %3)
+  %frame.page = load ptr, ptr %1, align 8
   %frame.has_page = icmp ne ptr %frame.page, null
   br i1 %frame.has_page, label %frame.forced, label %frame.force
 
-frame.force:                                      ; preds = %entry
-  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+frame.force:                                      ; preds = %if.end13
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
   br label %frame.forced
 
-frame.forced:                                     ; preds = %frame.force, %entry
-  %forced_page1 = phi ptr [ %frame.page, %entry ], [ %forced_page, %frame.force ]
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
-  store ptr %struct.region, ptr %sb, align 1
-  %frame.page2 = load ptr, ptr %frame, align 8
-  %frame.has_page3 = icmp ne ptr %frame.page2, null
-  br i1 %frame.has_page3, label %frame.forced5, label %frame.force4
+frame.forced:                                     ; preds = %frame.force, %if.end13
+  %forced_page15 = phi ptr [ %frame.page, %if.end13 ], [ %forced_page, %frame.force ]
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page15, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  store { ptr } zeroinitializer, ptr %arg.tmp, align 1
+  call void @_ZN6StringC1E6String(ptr %struct.region, ptr %arg.tmp)
+  store ptr %struct.region, ptr %blob, align 1
+  %call16 = call i1 @_ZN10placehints9cache_hitE6Stringm(ptr %sret.result, i64 %call14)
+  br i1 %call16, label %if.then17, label %if.else
 
-frame.force4:                                     ; preds = %frame.forced
-  %forced_page6 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
-  br label %frame.forced5
+if.then17:                                        ; preds = %frame.forced
+  call void @_ZN10placehints11cached_blobEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %arg.tmp, ptr %1)
+  %set.dest = load ptr, ptr %blob, align 8
+  %set.thru = load { ptr }, ptr %arg.tmp, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest, ptr align 1 %arg.tmp, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  br label %if.end18
 
-frame.forced5:                                    ; preds = %frame.force4, %frame.forced
-  %forced_page7 = phi ptr [ %frame.page2, %frame.forced ], [ %forced_page6, %frame.force4 ]
-  %struct.region8 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page7, i64 ptrtoint (ptr getelementptr (%_Z6Parser, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6Parser }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6ParserC1E6String(ptr %struct.region8, ptr %3)
-  store ptr %struct.region8, ptr %dp, align 1
-  %dp9 = load ptr, ptr %dp, align 8
-  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %sret.result, ptr %1, ptr %dp9)
-  %tag = load i8, ptr %sret.result, align 1
-  %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
-  switch i8 %tag, label %choose.else [
-    i8 1, label %choose.when
-    i8 0, label %choose.when12
-  ]
+if.else:                                          ; preds = %frame.forced
+  call void @_ZN10placehints5buildEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result19, ptr %1, ptr %sret.result, ptr %3)
+  %set.dest20 = load ptr, ptr %blob, align 8
+  %set.thru21 = load { ptr }, ptr %sret.result19, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest20, ptr align 1 %sret.result19, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  %blob22 = load ptr, ptr %blob, align 8
+  call void @_ZN10placehints9cache_putE6Stringm6String(ptr %sret.result, i64 %call14, ptr %blob22)
+  br label %if.end18
 
-choose.end:                                       ; preds = %choose.else, %if.end54
-  %sb71 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result13, ptr %1, ptr %sb71)
-  call void @_ZN10placehints6dedupeEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result10, ptr %1, ptr %sret.result13)
+if.end18:                                         ; preds = %if.else, %if.then17
+  %blob23 = load ptr, ptr %blob, align 8
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  %sret.body72 = load { ptr }, ptr %sret.result10, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result10, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  ret void
-
-choose.else:                                      ; preds = %frame.forced5
-  br label %choose.end
-
-choose.when:                                      ; preds = %frame.forced5
-  %throws.err.val = load %_Z11ParserError, ptr %throws.data.ptr, align 1
-  %sb11 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result10, ptr %1, ptr %sb11)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  %sret.body = load { ptr }, ptr %sret.result10, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result10, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  ret void
-
-choose.when12:                                    ; preds = %frame.forced5
-  %throws.success.val = load %_Z13ProgramSyntax, ptr %throws.data.ptr, align 1
-  call void @_ZN11diagnostics12package_rootEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result10, ptr %1, ptr %2)
-  %call = call i64 @_ZN6String10get_lengthEv(ptr %sret.result10)
-  %gt = icmp ugt i64 %call, 0
-  br i1 %gt, label %if.then, label %if.end
-
-if.then:                                          ; preds = %choose.when12
-  call void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result13, ptr %frame, ptr %sret.result10)
-  %call14 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result13)
-  %eq = icmp eq i64 %call14, 0
-  br i1 %eq, label %if.then15, label %if.end16
-
-if.end:                                           ; preds = %choose.end31, %choose.when12
-  %call51 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result10)
-  %eq52 = icmp eq i64 %call51, 0
-  br i1 %eq52, label %if.then53, label %if.end54
-
-if.then15:                                        ; preds = %if.then
-  %sb18 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result17, ptr %1, ptr %sb18)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  %sret.body19 = load { ptr }, ptr %sret.result17, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result17, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  ret void
-
-if.end16:                                         ; preds = %if.then
-  %frame.page20 = load ptr, ptr %frame, align 8
-  %frame.has_page21 = icmp ne ptr %frame.page20, null
-  br i1 %frame.has_page21, label %frame.forced23, label %frame.force22
-
-frame.force22:                                    ; preds = %if.end16
-  %forced_page24 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
-  br label %frame.forced23
-
-frame.forced23:                                   ; preds = %frame.force22, %if.end16
-  %forced_page25 = phi ptr [ %frame.page20, %if.end16 ], [ %forced_page24, %frame.force22 ]
-  %struct.region26 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page25, i64 ptrtoint (ptr getelementptr (%_Z6Parser, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6Parser }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN6ParserC1E6String(ptr %struct.region26, ptr %sret.result13)
-  store ptr %struct.region26, ptr %rp2, align 1
-  %rp228 = load ptr, ptr %rp2, align 8
-  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %sret.result27, ptr %1, ptr %rp228)
-  %tag29 = load i8, ptr %sret.result27, align 1
-  %throws.data.ptr30 = getelementptr inbounds i8, ptr %sret.result27, i8 1
-  switch i8 %tag29, label %choose.else32 [
-    i8 1, label %choose.when33
-    i8 0, label %choose.when35
-  ]
-
-choose.end31:                                     ; preds = %choose.else32, %if.end48, %choose.when33
-  br label %if.end
-
-choose.else32:                                    ; preds = %frame.forced23
-  br label %choose.end31
-
-choose.when33:                                    ; preds = %frame.forced23
-  %throws.err.val34 = load %_Z11ParserError, ptr %throws.data.ptr30, align 1
-  br label %choose.end31
-
-choose.when35:                                    ; preds = %frame.forced23
-  %throws.success.val36 = load %_Z13ProgramSyntax, ptr %throws.data.ptr30, align 1
-  call void @_ZN11diagnostics17root_program_nameEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result17, ptr %1, ptr %sret.result10)
-  store %_Z13ProgramSyntax %throws.success.val36, ptr %arg.tmp, align 1
-  call void @_ZN7Modeler13build_programEPN4scaly6memory4PageE6String6String13ProgramSyntaxb(ptr noalias sret(%_Z7Program) %sret.result37, ptr %1, ptr %sret.result10, ptr %sret.result17, ptr %arg.tmp, i1 true)
-  %frame.page38 = load ptr, ptr %frame, align 8
-  %frame.has_page39 = icmp ne ptr %frame.page38, null
-  br i1 %frame.has_page39, label %frame.forced41, label %frame.force40
-
-frame.force40:                                    ; preds = %choose.when35
-  %forced_page42 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
-  br label %frame.forced41
-
-frame.forced41:                                   ; preds = %frame.force40, %choose.when35
-  %forced_page43 = phi ptr [ %frame.page38, %choose.when35 ], [ %forced_page42, %frame.force40 ]
-  %struct.region44 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page43, i64 ptrtoint (ptr getelementptr (%_Z7Planner, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z7Planner }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN7PlannerC1E6String(ptr %struct.region44, ptr %sret.result10)
-  store ptr %struct.region44, ptr %planner, align 1
-  %addr.heap = load ptr, ptr %planner, align 8
-  call void @_ZN11diagnostics17register_packagesER7PlannerR7Program(ptr %addr.heap, ptr %sret.result37)
-  %planner45 = load ptr, ptr %planner, align 8
-  %call46 = call ptr @_ZN7Planner12plan_programEPN4scaly6memory4PageE7Program(ptr %1, ptr %planner45, ptr %sret.result37)
-  %ne = icmp ne ptr %call46, null
-  br i1 %ne, label %if.then47, label %if.end48
-
-if.then47:                                        ; preds = %frame.forced41
-  %addr.heap49 = load ptr, ptr %sb, align 8
-  %file = extractvalue %_Z13ProgramSyntax %throws.success.val, 2
-  store %_Z10FileSyntax %file, ptr %arg.tmp50, align 1
-  call void @_ZN10placehints12collect_planER13StringBuilder4Plan10FileSyntaxb(ptr %addr.heap49, ptr %call46, ptr %arg.tmp50, i1 false)
-  br label %if.end48
-
-if.end48:                                         ; preds = %if.then47, %frame.forced41
-  br label %choose.end31
-
-if.then53:                                        ; preds = %if.end
-  store { ptr } { ptr @.sconst.905 }, ptr %sret.result13, align 1
-  store %_Z13ProgramSyntax %throws.success.val, ptr %arg.tmp, align 1
-  call void @_ZN7Modeler13build_programEPN4scaly6memory4PageE6String6String13ProgramSyntaxb(ptr noalias sret(%_Z7Program) %sret.result37, ptr %1, ptr %2, ptr %sret.result13, ptr %arg.tmp, i1 true)
-  %frame.page55 = load ptr, ptr %frame, align 8
-  %frame.has_page56 = icmp ne ptr %frame.page55, null
-  br i1 %frame.has_page56, label %frame.forced58, label %frame.force57
-
-if.end54:                                         ; preds = %if.end67, %if.end
-  br label %choose.end
-
-frame.force57:                                    ; preds = %if.then53
-  %forced_page59 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
-  br label %frame.forced58
-
-frame.forced58:                                   ; preds = %frame.force57, %if.then53
-  %forced_page60 = phi ptr [ %frame.page55, %if.then53 ], [ %forced_page59, %frame.force57 ]
-  %struct.region61 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page60, i64 ptrtoint (ptr getelementptr (%_Z7Planner, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z7Planner }, ptr null, i64 0, i32 1) to i64))
-  call void @_ZN7PlannerC1E6String(ptr %struct.region61, ptr %2)
-  store ptr %struct.region61, ptr %rp2, align 1
-  %addr.heap62 = load ptr, ptr %rp2, align 8
-  call void @_ZN11diagnostics17register_packagesER7PlannerR7Program(ptr %addr.heap62, ptr %sret.result37)
-  %planner63 = load ptr, ptr %rp2, align 8
-  %call64 = call ptr @_ZN7Planner12plan_programEPN4scaly6memory4PageE7Program(ptr %1, ptr %planner63, ptr %sret.result37)
-  %ne65 = icmp ne ptr %call64, null
-  br i1 %ne65, label %if.then66, label %if.end67
-
-if.then66:                                        ; preds = %frame.forced58
-  %addr.heap68 = load ptr, ptr %sb, align 8
-  %file69 = extractvalue %_Z13ProgramSyntax %throws.success.val, 2
-  store %_Z10FileSyntax %file69, ptr %arg.tmp70, align 1
-  call void @_ZN10placehints12collect_planER13StringBuilder4Plan10FileSyntaxb(ptr %addr.heap68, ptr %call64, ptr %arg.tmp70, i1 true)
-  br label %if.end67
-
-if.end67:                                         ; preds = %if.then66, %frame.forced58
-  br label %if.end54
-}
-
-define linkonce_odr void @_ZN10placehints9cache_putE6Stringm6String(ptr %0, i64 %1, ptr %2) {
-entry:
-  %global.load = load i1, ptr @ph_used, align 1
-  br i1 %global.load, label %if.then, label %if.end
-
-if.then:                                          ; preds = %entry
-  %global.load1 = load ptr, ptr @ph_path_data, align 8
-  call void @free(ptr %global.load1)
-  %global.load2 = load ptr, ptr @ph_blob_data, align 8
-  call void @free(ptr %global.load2)
-  store i1 false, ptr @ph_used, align 1
-  br label %if.end
-
-if.end:                                           ; preds = %if.then, %entry
-  %call = call i64 @_ZN6String10get_lengthEv(ptr %0)
-  %call3 = call i64 @_ZN6String10get_lengthEv(ptr %2)
-  %add = add i64 %call, 1
-  %call4 = call ptr @malloc(i64 %add)
-  %eq = icmp eq ptr %call4, null
-  br i1 %eq, label %if.then5, label %if.end6
-
-if.then5:                                         ; preds = %if.end
-  ret void
-
-if.end6:                                          ; preds = %if.end
-  %add7 = add i64 %call3, 1
-  %call8 = call ptr @malloc(i64 %add7)
-  %eq9 = icmp eq ptr %call8, null
-  br i1 %eq9, label %if.then10, label %if.end11
-
-if.then10:                                        ; preds = %if.end6
-  call void @free(ptr %call4)
-  ret void
-
-if.end11:                                         ; preds = %if.end6
-  %call12 = call ptr @_ZN6String10get_bufferEv(ptr %0)
-  %call13 = call ptr @memcpy(ptr %call4, ptr %call12, i64 %call)
-  %call14 = call ptr @_ZN6String10get_bufferEv(ptr %2)
-  %call15 = call ptr @memcpy(ptr %call8, ptr %call14, i64 %call3)
-  store ptr %call4, ptr @ph_path_data, align 8
-  store i64 %call, ptr @ph_path_len, align 8
-  store ptr %call8, ptr @ph_blob_data, align 8
-  store i64 %call3, ptr @ph_blob_len, align 8
-  store i64 %1, ptr @ph_hash, align 8
-  store i1 true, ptr @ph_used, align 1
+  %sret.body = load { ptr }, ptr %blob23, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %blob23, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -144339,110 +144103,866 @@ if.end108:                                        ; preds = %if.then107, %if.the
 
 define linkonce_odr void @_ZN10placehints8fragmentEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
 entry:
-  %sret.result28 = alloca { ptr }, align 8
-  %sret.result19 = alloca { ptr }, align 8
-  %blob = alloca ptr, align 8
-  %arg.tmp = alloca { ptr }, align 8
-  %frame = alloca { ptr, ptr }, align 8
-  store ptr null, ptr %frame, align 8
-  %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
-  store ptr %1, ptr %frame.parent, align 8
-  %sret.result5 = alloca { ptr }, align 8
+  %sret.result1 = alloca { ptr }, align 8
   %sret.result = alloca { ptr }, align 8
-  call void @_ZN11diagnostics9strip_uriEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2)
+  call void @_ZN10placehints8blob_forEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %3)
   %call = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
   %eq = icmp eq i64 %call, 0
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   store { ptr } zeroinitializer, ptr %0, align 1
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end:                                           ; preds = %entry
-  %call1 = call i64 @_ZN6String10get_lengthEv(ptr %3)
-  %eq2 = icmp eq i64 %call1, 0
-  br i1 %eq2, label %if.then3, label %if.end4
+  call void @_ZN10placehints6renderEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result1, ptr %1, ptr %sret.result, ptr %3, ptr %4)
+  %sret.body = load { ptr }, ptr %sret.result1, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
 
-if.then3:                                         ; preds = %if.end
+declare i1 @_ZN6String6equalsE6String(ptr, ptr)
+
+define linkonce_odr i1 @_ZN10placehints9cache_hitE6Stringm(ptr %0, i64 %1) {
+entry:
+  %i = alloca i64, align 8
+  %global.load = load i1, ptr @ph_used, align 1
+  %eq = icmp eq i1 %global.load, false
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i1 false
+
+if.end:                                           ; preds = %entry
+  %global.load1 = load i64, ptr @ph_hash, align 8
+  %ne = icmp ne i64 %global.load1, %1
+  br i1 %ne, label %if.then2, label %if.end3
+
+if.then2:                                         ; preds = %if.end
+  ret i1 false
+
+if.end3:                                          ; preds = %if.end
+  %global.load4 = load i64, ptr @ph_path_len, align 8
+  %call = call i64 @_ZN6String10get_lengthEv(ptr %0)
+  %ne5 = icmp ne i64 %global.load4, %call
+  br i1 %ne5, label %if.then6, label %if.end7
+
+if.then6:                                         ; preds = %if.end3
+  ret i1 false
+
+if.end7:                                          ; preds = %if.end3
+  store i64 0, ptr %i, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %if.end16, %if.end7
+  %i8 = load i64, ptr %i, align 8
+  %global.load9 = load i64, ptr @ph_path_len, align 8
+  %lt = icmp ult i64 %i8, %global.load9
+  br i1 %lt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %global.load10 = load ptr, ptr @ph_path_data, align 8
+  %i11 = load i64, ptr %i, align 8
+  %ptr.add = getelementptr inbounds i8, ptr %global.load10, i64 %i11
+  %deref = load i8, ptr %ptr.add, align 1
+  %i12 = load i64, ptr %i, align 8
+  %call13 = call i8 @_ZN6String3getEm(ptr %0, i64 %i12)
+  %ne14 = icmp ne i8 %deref, %call13
+  br i1 %ne14, label %if.then15, label %if.end16
+
+while.exit:                                       ; preds = %while.cond
+  ret i1 true
+
+if.then15:                                        ; preds = %while.body
+  ret i1 false
+
+if.end16:                                         ; preds = %while.body
+  %i17 = load i64, ptr %i, align 8
+  %add = add i64 %i17, 1
+  store i64 %add, ptr %i, align 1
+  br label %while.cond
+}
+
+define linkonce_odr void @_ZN10placehints11cached_blobEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %0, ptr %1) {
+entry:
+  %global.load = load i1, ptr @ph_used, align 1
+  %eq = icmp eq i1 %global.load, false
+  br i1 %eq, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
   store { ptr } zeroinitializer, ptr %0, align 1
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
-if.end4:                                          ; preds = %if.end
-  call void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result5, ptr %frame, ptr %sret.result)
-  %call6 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result5)
-  %eq7 = icmp eq i64 %call6, 0
-  br i1 %eq7, label %if.then8, label %if.end9
-
-if.then8:                                         ; preds = %if.end4
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-if.end9:                                          ; preds = %if.end4
-  %call10 = call i1 @_ZN6String6equalsE6String(ptr %sret.result5, ptr %3)
-  %eq11 = icmp eq i1 %call10, false
-  br i1 %eq11, label %if.then12, label %if.end13
-
-if.then12:                                        ; preds = %if.end9
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  store { ptr } zeroinitializer, ptr %0, align 1
-  ret void
-
-if.end13:                                         ; preds = %if.end9
-  %call14 = call i64 @_ZN6String4hashEv(ptr %3)
+if.end:                                           ; preds = %entry
   %frame.page = load ptr, ptr %1, align 8
   %frame.has_page = icmp ne ptr %frame.page, null
   br i1 %frame.has_page, label %frame.forced, label %frame.force
 
-frame.force:                                      ; preds = %if.end13
+frame.force:                                      ; preds = %if.end
   %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
   br label %frame.forced
 
-frame.forced:                                     ; preds = %frame.force, %if.end13
-  %forced_page15 = phi ptr [ %frame.page, %if.end13 ], [ %forced_page, %frame.force ]
-  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page15, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } zeroinitializer, ptr %arg.tmp, align 1
-  call void @_ZN6StringC1E6String(ptr %struct.region, ptr %arg.tmp)
-  store ptr %struct.region, ptr %blob, align 1
-  %call16 = call i1 @_ZN10placehints9cache_hitE6Stringm(ptr %sret.result, i64 %call14)
-  br i1 %call16, label %if.then17, label %if.else
+frame.forced:                                     ; preds = %frame.force, %if.end
+  %forced_page1 = phi ptr [ %frame.page, %if.end ], [ %forced_page, %frame.force ]
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  %global.load2 = load ptr, ptr @ph_blob_data, align 8
+  %global.load3 = load i64, ptr @ph_blob_len, align 8
+  call void @_ZN6StringC1EP10const_charm(ptr %struct.region, ptr %global.load2, i64 %global.load3)
+  %sret.body = load { ptr }, ptr %struct.region, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
 
-if.then17:                                        ; preds = %frame.forced
-  call void @_ZN10placehints11cached_blobEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %arg.tmp, ptr %1)
-  %set.dest = load ptr, ptr %blob, align 8
-  %set.thru = load { ptr }, ptr %arg.tmp, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest, ptr align 1 %arg.tmp, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  br label %if.end18
+define linkonce_odr void @_ZN10placehints5buildEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
+entry:
+  %arg.tmp70 = alloca %_Z10FileSyntax, align 8
+  %arg.tmp50 = alloca %_Z10FileSyntax, align 8
+  %planner = alloca ptr, align 8
+  %arg.tmp = alloca %_Z13ProgramSyntax, align 8
+  %sret.result37 = alloca %_Z7Program, align 8
+  %sret.result27 = alloca { i8, [48 x i8] }, align 8
+  %rp2 = alloca ptr, align 8
+  %sret.result17 = alloca { ptr }, align 8
+  %sret.result13 = alloca { ptr }, align 8
+  %sret.result10 = alloca { ptr }, align 8
+  %sret.result = alloca { i8, [48 x i8] }, align 8
+  %dp = alloca ptr, align 8
+  %sb = alloca ptr, align 8
+  %frame = alloca { ptr, ptr }, align 8
+  store ptr null, ptr %frame, align 8
+  %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
+  store ptr %1, ptr %frame.parent, align 8
+  %frame.page = load ptr, ptr %frame, align 8
+  %frame.has_page = icmp ne ptr %frame.page, null
+  br i1 %frame.has_page, label %frame.forced, label %frame.force
 
-if.else:                                          ; preds = %frame.forced
-  call void @_ZN10placehints5buildEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result19, ptr %1, ptr %sret.result, ptr %3)
-  %set.dest20 = load ptr, ptr %blob, align 8
-  %set.thru21 = load { ptr }, ptr %sret.result19, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest20, ptr align 1 %sret.result19, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  %blob22 = load ptr, ptr %blob, align 8
-  call void @_ZN10placehints9cache_putE6Stringm6String(ptr %sret.result, i64 %call14, ptr %blob22)
-  br label %if.end18
+frame.force:                                      ; preds = %entry
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  br label %frame.forced
 
-if.end18:                                         ; preds = %if.else, %if.then17
-  %blob23 = load ptr, ptr %blob, align 8
-  %call24 = call i64 @_ZN6String10get_lengthEv(ptr %blob23)
-  %eq25 = icmp eq i64 %call24, 0
-  br i1 %eq25, label %if.then26, label %if.end27
+frame.forced:                                     ; preds = %frame.force, %entry
+  %forced_page1 = phi ptr [ %frame.page, %entry ], [ %forced_page, %frame.force ]
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
+  store ptr %struct.region, ptr %sb, align 1
+  %frame.page2 = load ptr, ptr %frame, align 8
+  %frame.has_page3 = icmp ne ptr %frame.page2, null
+  br i1 %frame.has_page3, label %frame.forced5, label %frame.force4
 
-if.then26:                                        ; preds = %if.end18
+frame.force4:                                     ; preds = %frame.forced
+  %forced_page6 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  br label %frame.forced5
+
+frame.forced5:                                    ; preds = %frame.force4, %frame.forced
+  %forced_page7 = phi ptr [ %frame.page2, %frame.forced ], [ %forced_page6, %frame.force4 ]
+  %struct.region8 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page7, i64 ptrtoint (ptr getelementptr (%_Z6Parser, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6Parser }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6ParserC1E6String(ptr %struct.region8, ptr %3)
+  store ptr %struct.region8, ptr %dp, align 1
+  %dp9 = load ptr, ptr %dp, align 8
+  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %sret.result, ptr %1, ptr %dp9)
+  %tag = load i8, ptr %sret.result, align 1
+  %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
+  switch i8 %tag, label %choose.else [
+    i8 1, label %choose.when
+    i8 0, label %choose.when12
+  ]
+
+choose.end:                                       ; preds = %choose.else, %if.end54
+  %sb71 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result13, ptr %1, ptr %sb71)
+  call void @_ZN10placehints6dedupeEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result10, ptr %1, ptr %sret.result13)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  %sret.body72 = load { ptr }, ptr %sret.result10, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result10, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  ret void
+
+choose.else:                                      ; preds = %frame.forced5
+  br label %choose.end
+
+choose.when:                                      ; preds = %frame.forced5
+  %throws.err.val = load %_Z11ParserError, ptr %throws.data.ptr, align 1
+  %sb11 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result10, ptr %1, ptr %sb11)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  %sret.body = load { ptr }, ptr %sret.result10, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result10, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  ret void
+
+choose.when12:                                    ; preds = %frame.forced5
+  %throws.success.val = load %_Z13ProgramSyntax, ptr %throws.data.ptr, align 1
+  call void @_ZN11diagnostics12package_rootEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result10, ptr %1, ptr %2)
+  %call = call i64 @_ZN6String10get_lengthEv(ptr %sret.result10)
+  %gt = icmp ugt i64 %call, 0
+  br i1 %gt, label %if.then, label %if.end
+
+if.then:                                          ; preds = %choose.when12
+  call void @_ZN4File14read_to_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result13, ptr %frame, ptr %sret.result10)
+  %call14 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result13)
+  %eq = icmp eq i64 %call14, 0
+  br i1 %eq, label %if.then15, label %if.end16
+
+if.end:                                           ; preds = %choose.end31, %choose.when12
+  %call51 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result10)
+  %eq52 = icmp eq i64 %call51, 0
+  br i1 %eq52, label %if.then53, label %if.end54
+
+if.then15:                                        ; preds = %if.then
+  %sb18 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result17, ptr %1, ptr %sb18)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  %sret.body19 = load { ptr }, ptr %sret.result17, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result17, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  ret void
+
+if.end16:                                         ; preds = %if.then
+  %frame.page20 = load ptr, ptr %frame, align 8
+  %frame.has_page21 = icmp ne ptr %frame.page20, null
+  br i1 %frame.has_page21, label %frame.forced23, label %frame.force22
+
+frame.force22:                                    ; preds = %if.end16
+  %forced_page24 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  br label %frame.forced23
+
+frame.forced23:                                   ; preds = %frame.force22, %if.end16
+  %forced_page25 = phi ptr [ %frame.page20, %if.end16 ], [ %forced_page24, %frame.force22 ]
+  %struct.region26 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page25, i64 ptrtoint (ptr getelementptr (%_Z6Parser, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z6Parser }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN6ParserC1E6String(ptr %struct.region26, ptr %sret.result13)
+  store ptr %struct.region26, ptr %rp2, align 1
+  %rp228 = load ptr, ptr %rp2, align 8
+  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %sret.result27, ptr %1, ptr %rp228)
+  %tag29 = load i8, ptr %sret.result27, align 1
+  %throws.data.ptr30 = getelementptr inbounds i8, ptr %sret.result27, i8 1
+  switch i8 %tag29, label %choose.else32 [
+    i8 1, label %choose.when33
+    i8 0, label %choose.when35
+  ]
+
+choose.end31:                                     ; preds = %choose.else32, %if.end48, %choose.when33
+  br label %if.end
+
+choose.else32:                                    ; preds = %frame.forced23
+  br label %choose.end31
+
+choose.when33:                                    ; preds = %frame.forced23
+  %throws.err.val34 = load %_Z11ParserError, ptr %throws.data.ptr30, align 1
+  br label %choose.end31
+
+choose.when35:                                    ; preds = %frame.forced23
+  %throws.success.val36 = load %_Z13ProgramSyntax, ptr %throws.data.ptr30, align 1
+  call void @_ZN11diagnostics17root_program_nameEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result17, ptr %1, ptr %sret.result10)
+  store %_Z13ProgramSyntax %throws.success.val36, ptr %arg.tmp, align 1
+  call void @_ZN7Modeler13build_programEPN4scaly6memory4PageE6String6String13ProgramSyntaxb(ptr noalias sret(%_Z7Program) %sret.result37, ptr %1, ptr %sret.result10, ptr %sret.result17, ptr %arg.tmp, i1 true)
+  %frame.page38 = load ptr, ptr %frame, align 8
+  %frame.has_page39 = icmp ne ptr %frame.page38, null
+  br i1 %frame.has_page39, label %frame.forced41, label %frame.force40
+
+frame.force40:                                    ; preds = %choose.when35
+  %forced_page42 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  br label %frame.forced41
+
+frame.forced41:                                   ; preds = %frame.force40, %choose.when35
+  %forced_page43 = phi ptr [ %frame.page38, %choose.when35 ], [ %forced_page42, %frame.force40 ]
+  %struct.region44 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page43, i64 ptrtoint (ptr getelementptr (%_Z7Planner, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z7Planner }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN7PlannerC1E6String(ptr %struct.region44, ptr %sret.result10)
+  store ptr %struct.region44, ptr %planner, align 1
+  %addr.heap = load ptr, ptr %planner, align 8
+  call void @_ZN11diagnostics17register_packagesER7PlannerR7Program(ptr %addr.heap, ptr %sret.result37)
+  %planner45 = load ptr, ptr %planner, align 8
+  %call46 = call ptr @_ZN7Planner12plan_programEPN4scaly6memory4PageE7Program(ptr %1, ptr %planner45, ptr %sret.result37)
+  %ne = icmp ne ptr %call46, null
+  br i1 %ne, label %if.then47, label %if.end48
+
+if.then47:                                        ; preds = %frame.forced41
+  %addr.heap49 = load ptr, ptr %sb, align 8
+  %file = extractvalue %_Z13ProgramSyntax %throws.success.val, 2
+  store %_Z10FileSyntax %file, ptr %arg.tmp50, align 1
+  call void @_ZN10placehints12collect_planER13StringBuilder4Plan10FileSyntaxb(ptr %addr.heap49, ptr %call46, ptr %arg.tmp50, i1 false)
+  br label %if.end48
+
+if.end48:                                         ; preds = %if.then47, %frame.forced41
+  br label %choose.end31
+
+if.then53:                                        ; preds = %if.end
+  store { ptr } { ptr @.sconst.913 }, ptr %sret.result13, align 1
+  store %_Z13ProgramSyntax %throws.success.val, ptr %arg.tmp, align 1
+  call void @_ZN7Modeler13build_programEPN4scaly6memory4PageE6String6String13ProgramSyntaxb(ptr noalias sret(%_Z7Program) %sret.result37, ptr %1, ptr %2, ptr %sret.result13, ptr %arg.tmp, i1 true)
+  %frame.page55 = load ptr, ptr %frame, align 8
+  %frame.has_page56 = icmp ne ptr %frame.page55, null
+  br i1 %frame.has_page56, label %frame.forced58, label %frame.force57
+
+if.end54:                                         ; preds = %if.end67, %if.end
+  br label %choose.end
+
+frame.force57:                                    ; preds = %if.then53
+  %forced_page59 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  br label %frame.forced58
+
+frame.forced58:                                   ; preds = %frame.force57, %if.then53
+  %forced_page60 = phi ptr [ %frame.page55, %if.then53 ], [ %forced_page59, %frame.force57 ]
+  %struct.region61 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page60, i64 ptrtoint (ptr getelementptr (%_Z7Planner, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z7Planner }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN7PlannerC1E6String(ptr %struct.region61, ptr %2)
+  store ptr %struct.region61, ptr %rp2, align 1
+  %addr.heap62 = load ptr, ptr %rp2, align 8
+  call void @_ZN11diagnostics17register_packagesER7PlannerR7Program(ptr %addr.heap62, ptr %sret.result37)
+  %planner63 = load ptr, ptr %rp2, align 8
+  %call64 = call ptr @_ZN7Planner12plan_programEPN4scaly6memory4PageE7Program(ptr %1, ptr %planner63, ptr %sret.result37)
+  %ne65 = icmp ne ptr %call64, null
+  br i1 %ne65, label %if.then66, label %if.end67
+
+if.then66:                                        ; preds = %frame.forced58
+  %addr.heap68 = load ptr, ptr %sb, align 8
+  %file69 = extractvalue %_Z13ProgramSyntax %throws.success.val, 2
+  store %_Z10FileSyntax %file69, ptr %arg.tmp70, align 1
+  call void @_ZN10placehints12collect_planER13StringBuilder4Plan10FileSyntaxb(ptr %addr.heap68, ptr %call64, ptr %arg.tmp70, i1 true)
+  br label %if.end67
+
+if.end67:                                         ; preds = %if.then66, %frame.forced58
+  br label %if.end54
+}
+
+define linkonce_odr void @_ZN10placehints9cache_putE6Stringm6String(ptr %0, i64 %1, ptr %2) {
+entry:
+  %global.load = load i1, ptr @ph_used, align 1
+  br i1 %global.load, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  %global.load1 = load ptr, ptr @ph_path_data, align 8
+  call void @free(ptr %global.load1)
+  %global.load2 = load ptr, ptr @ph_blob_data, align 8
+  call void @free(ptr %global.load2)
+  store i1 false, ptr @ph_used, align 1
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %entry
+  %call = call i64 @_ZN6String10get_lengthEv(ptr %0)
+  %call3 = call i64 @_ZN6String10get_lengthEv(ptr %2)
+  %add = add i64 %call, 1
+  %call4 = call ptr @malloc(i64 %add)
+  %eq = icmp eq ptr %call4, null
+  br i1 %eq, label %if.then5, label %if.end6
+
+if.then5:                                         ; preds = %if.end
+  ret void
+
+if.end6:                                          ; preds = %if.end
+  %add7 = add i64 %call3, 1
+  %call8 = call ptr @malloc(i64 %add7)
+  %eq9 = icmp eq ptr %call8, null
+  br i1 %eq9, label %if.then10, label %if.end11
+
+if.then10:                                        ; preds = %if.end6
+  call void @free(ptr %call4)
+  ret void
+
+if.end11:                                         ; preds = %if.end6
+  %call12 = call ptr @_ZN6String10get_bufferEv(ptr %0)
+  %call13 = call ptr @memcpy(ptr %call4, ptr %call12, i64 %call)
+  %call14 = call ptr @_ZN6String10get_bufferEv(ptr %2)
+  %call15 = call ptr @memcpy(ptr %call8, ptr %call14, i64 %call3)
+  store ptr %call4, ptr @ph_path_data, align 8
+  store i64 %call, ptr @ph_path_len, align 8
+  store ptr %call8, ptr @ph_blob_data, align 8
+  store i64 %call3, ptr @ph_blob_len, align 8
+  store i64 %1, ptr @ph_hash, align 8
+  store i1 true, ptr @ph_used, align 1
+  ret void
+}
+
+define linkonce_odr i64 @_ZN10placehints10head_parenE6Stringm(ptr %0, i64 %1) {
+entry:
+  %depth = alloca i64, align 8
+  %k = alloca i64, align 8
+  %call = call i64 @_ZN6String10get_lengthEv(ptr %0)
+  %ge = icmp uge i64 %1, %call
+  br i1 %ge, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  ret i64 %call
+
+if.end:                                           ; preds = %entry
+  %call1 = call i8 @_ZN6String3getEm(ptr %0, i64 %1)
+  %call2 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call1)
+  %eq = icmp eq i1 %call2, false
+  br i1 %eq, label %if.then3, label %if.end4
+
+if.then3:                                         ; preds = %if.end
+  ret i64 %call
+
+if.end4:                                          ; preds = %if.end
+  store i64 %1, ptr %k, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %while.body, %if.end4
+  %k5 = load i64, ptr %k, align 8
+  %gt = icmp ugt i64 %k5, 0
+  br i1 %gt, label %lor.rhs, label %lor.end
+
+while.body:                                       ; preds = %lor.end
+  %k9 = load i64, ptr %k, align 8
+  %sub10 = sub i64 %k9, 1
+  store i64 %sub10, ptr %k, align 1
+  br label %while.cond
+
+while.exit:                                       ; preds = %lor.end
+  br label %while.cond11
+
+lor.rhs:                                          ; preds = %while.cond
+  %k6 = load i64, ptr %k, align 8
+  %sub = sub i64 %k6, 1
+  %call7 = call i8 @_ZN6String3getEm(ptr %0, i64 %sub)
+  %call8 = call i1 @_ZN10placehints12is_name_byteE2u8(i8 %call7)
+  br label %lor.end
+
+lor.end:                                          ; preds = %lor.rhs, %while.cond
+  %lor.result = phi i1 [ false, %while.cond ], [ %call8, %lor.rhs ]
+  br i1 %lor.result, label %while.body, label %while.exit
+
+while.cond11:                                     ; preds = %while.body12, %while.exit
+  %k14 = load i64, ptr %k, align 8
+  %lt = icmp ult i64 %k14, %call
+  br i1 %lt, label %lor.rhs15, label %lor.end16
+
+while.body12:                                     ; preds = %lor.end16
+  %k21 = load i64, ptr %k, align 8
+  %add = add i64 %k21, 1
+  store i64 %add, ptr %k, align 1
+  br label %while.cond11
+
+while.exit13:                                     ; preds = %lor.end16
+  %k24 = load i64, ptr %k, align 8
+  %lt25 = icmp ult i64 %k24, %call
+  br i1 %lt25, label %land.rhs, label %if.end23
+
+lor.rhs15:                                        ; preds = %while.cond11
+  %k17 = load i64, ptr %k, align 8
+  %call18 = call i8 @_ZN6String3getEm(ptr %0, i64 %k17)
+  %call19 = call i1 @_ZN10placehints12is_name_byteE2u8(i8 %call18)
+  br label %lor.end16
+
+lor.end16:                                        ; preds = %lor.rhs15, %while.cond11
+  %lor.result20 = phi i1 [ false, %while.cond11 ], [ %call19, %lor.rhs15 ]
+  br i1 %lor.result20, label %while.body12, label %while.exit13
+
+if.then22:                                        ; preds = %land.rhs
+  store i64 0, ptr %depth, align 1
+  br label %while.cond29
+
+if.end23:                                         ; preds = %while.exit31, %land.rhs, %while.exit13
+  %k60 = load i64, ptr %k, align 8
+  %lt61 = icmp ult i64 %k60, %call
+  br i1 %lt61, label %land.rhs59, label %if.end58
+
+land.rhs:                                         ; preds = %while.exit13
+  %k26 = load i64, ptr %k, align 8
+  %call27 = call i8 @_ZN6String3getEm(ptr %0, i64 %k26)
+  %eq28 = icmp eq i8 %call27, 91
+  br i1 %eq28, label %if.then22, label %if.end23
+
+while.cond29:                                     ; preds = %if.end46, %if.then22
+  %k32 = load i64, ptr %k, align 8
+  %lt33 = icmp ult i64 %k32, %call
+  br i1 %lt33, label %while.body30, label %while.exit31
+
+while.body30:                                     ; preds = %while.cond29
+  %k34 = load i64, ptr %k, align 8
+  %call35 = call i8 @_ZN6String3getEm(ptr %0, i64 %k34)
+  %eq36 = icmp eq i8 %call35, 10
+  br i1 %eq36, label %if.then37, label %if.end38
+
+while.exit31:                                     ; preds = %if.then51, %while.cond29
+  br label %if.end23
+
+if.then37:                                        ; preds = %while.body30
+  ret i64 %call
+
+if.end38:                                         ; preds = %while.body30
+  %eq39 = icmp eq i8 %call35, 91
+  br i1 %eq39, label %if.then40, label %if.end41
+
+if.then40:                                        ; preds = %if.end38
+  %depth42 = load i64, ptr %depth, align 8
+  %add43 = add i64 %depth42, 1
+  store i64 %add43, ptr %depth, align 1
+  br label %if.end41
+
+if.end41:                                         ; preds = %if.then40, %if.end38
+  %eq44 = icmp eq i8 %call35, 93
+  br i1 %eq44, label %if.then45, label %if.end46
+
+if.then45:                                        ; preds = %if.end41
+  %depth47 = load i64, ptr %depth, align 8
+  %sub48 = sub i64 %depth47, 1
+  store i64 %sub48, ptr %depth, align 1
+  %depth49 = load i64, ptr %depth, align 8
+  %eq50 = icmp eq i64 %depth49, 0
+  br i1 %eq50, label %if.then51, label %if.end52
+
+if.end46:                                         ; preds = %if.end52, %if.end41
+  %k55 = load i64, ptr %k, align 8
+  %add56 = add i64 %k55, 1
+  store i64 %add56, ptr %k, align 1
+  br label %while.cond29
+
+if.then51:                                        ; preds = %if.then45
+  %k53 = load i64, ptr %k, align 8
+  %add54 = add i64 %k53, 1
+  store i64 %add54, ptr %k, align 1
+  br label %while.exit31
+
+if.end52:                                         ; preds = %if.then45
+  br label %if.end46
+
+if.then57:                                        ; preds = %land.rhs59
+  %k65 = load i64, ptr %k, align 8
+  %add66 = add i64 %k65, 1
+  store i64 %add66, ptr %k, align 1
+  br label %if.end58
+
+if.end58:                                         ; preds = %if.then57, %land.rhs59, %if.end23
+  %k70 = load i64, ptr %k, align 8
+  %lt71 = icmp ult i64 %k70, %call
+  br i1 %lt71, label %land.rhs69, label %if.end68
+
+land.rhs59:                                       ; preds = %if.end23
+  %k62 = load i64, ptr %k, align 8
+  %call63 = call i8 @_ZN6String3getEm(ptr %0, i64 %k62)
+  %eq64 = icmp eq i8 %call63, 35
+  br i1 %eq64, label %if.then57, label %if.end58
+
+if.then67:                                        ; preds = %land.rhs69
+  %k75 = load i64, ptr %k, align 8
+  %add76 = add i64 %k75, 1
+  store i64 %add76, ptr %k, align 1
+  br label %while.cond77
+
+if.end68:                                         ; preds = %while.exit79, %land.rhs69, %if.end58
+  %k93 = load i64, ptr %k, align 8
+  %lt94 = icmp ult i64 %k93, %call
+  br i1 %lt94, label %land.rhs92, label %if.end91
+
+land.rhs69:                                       ; preds = %if.end58
+  %k72 = load i64, ptr %k, align 8
+  %call73 = call i8 @_ZN6String3getEm(ptr %0, i64 %k72)
+  %eq74 = icmp eq i8 %call73, 94
+  br i1 %eq74, label %if.then67, label %if.end68
+
+while.cond77:                                     ; preds = %while.body78, %if.then67
+  %k80 = load i64, ptr %k, align 8
+  %lt81 = icmp ult i64 %k80, %call
+  br i1 %lt81, label %lor.rhs82, label %lor.end83
+
+while.body78:                                     ; preds = %lor.end83
+  %k88 = load i64, ptr %k, align 8
+  %add89 = add i64 %k88, 1
+  store i64 %add89, ptr %k, align 1
+  br label %while.cond77
+
+while.exit79:                                     ; preds = %lor.end83
+  br label %if.end68
+
+lor.rhs82:                                        ; preds = %while.cond77
+  %k84 = load i64, ptr %k, align 8
+  %call85 = call i8 @_ZN6String3getEm(ptr %0, i64 %k84)
+  %call86 = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %call85)
+  br label %lor.end83
+
+lor.end83:                                        ; preds = %lor.rhs82, %while.cond77
+  %lor.result87 = phi i1 [ false, %while.cond77 ], [ %call86, %lor.rhs82 ]
+  br i1 %lor.result87, label %while.body78, label %while.exit79
+
+if.then90:                                        ; preds = %land.rhs92
+  %k98 = load i64, ptr %k, align 8
+  ret i64 %k98
+
+if.end91:                                         ; preds = %land.rhs92, %if.end68
+  ret i64 %call
+
+land.rhs92:                                       ; preds = %if.end68
+  %k95 = load i64, ptr %k, align 8
+  %call96 = call i8 @_ZN6String3getEm(ptr %0, i64 %k95)
+  %eq97 = icmp eq i8 %call96, 40
+  br i1 %eq97, label %if.then90, label %if.end91
+}
+
+define linkonce_odr void @_ZN10placehints8label_atEPN4scaly6memory4PageE6Stringm(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, i64 %3) {
+entry:
+  %sret.result = alloca { ptr }, align 8
+  %off = alloca i64, align 8
+  %k = alloca i64, align 8
+  store i64 0, ptr %k, align 1
+  %call = call i64 @_ZN6String10get_lengthEv(ptr %2)
+  br label %while.cond
+
+while.cond:                                       ; preds = %if.end28, %entry
+  %k1 = load i64, ptr %k, align 8
+  %lt = icmp ult i64 %k1, %call
+  br i1 %lt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  store i64 0, ptr %off, align 1
+  br label %while.cond2
+
+while.exit:                                       ; preds = %while.cond
   store { ptr } zeroinitializer, ptr %0, align 1
   ret void
 
-if.end27:                                         ; preds = %if.end18
-  %blob29 = load ptr, ptr %blob, align 8
-  call void @_ZN10placehints6renderEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result28, ptr %1, ptr %blob29, ptr %3, ptr %4)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  %sret.body = load { ptr }, ptr %sret.result28, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result28, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+while.cond2:                                      ; preds = %if.end, %while.body
+  %k5 = load i64, ptr %k, align 8
+  %lt6 = icmp ult i64 %k5, %call
+  br i1 %lt6, label %while.body3, label %while.exit4
+
+while.body3:                                      ; preds = %while.cond2
+  %k7 = load i64, ptr %k, align 8
+  %call8 = call i8 @_ZN6String3getEm(ptr %2, i64 %k7)
+  %eq = icmp eq i8 %call8, 9
+  br i1 %eq, label %if.then, label %if.end
+
+while.exit4:                                      ; preds = %if.then, %while.cond2
+  %k12 = load i64, ptr %k, align 8
+  %add13 = add i64 %k12, 1
+  store i64 %add13, ptr %k, align 1
+  %k14 = load i64, ptr %k, align 8
+  br label %while.cond15
+
+if.then:                                          ; preds = %while.body3
+  br label %while.exit4
+
+if.end:                                           ; preds = %while.body3
+  %off9 = load i64, ptr %off, align 8
+  %mul = mul i64 %off9, 10
+  %sub = sub i8 %call8, 48
+  %as.zext = zext i8 %sub to i64
+  %add = add i64 %mul, %as.zext
+  store i64 %add, ptr %off, align 1
+  %k10 = load i64, ptr %k, align 8
+  %add11 = add i64 %k10, 1
+  store i64 %add11, ptr %k, align 1
+  br label %while.cond2
+
+while.cond15:                                     ; preds = %if.end24, %while.exit4
+  %k18 = load i64, ptr %k, align 8
+  %lt19 = icmp ult i64 %k18, %call
+  br i1 %lt19, label %while.body16, label %while.exit17
+
+while.body16:                                     ; preds = %while.cond15
+  %k20 = load i64, ptr %k, align 8
+  %call21 = call i8 @_ZN6String3getEm(ptr %2, i64 %k20)
+  %eq22 = icmp eq i8 %call21, 10
+  br i1 %eq22, label %if.then23, label %if.end24
+
+while.exit17:                                     ; preds = %if.then23, %while.cond15
+  %off29 = load i64, ptr %off, align 8
+  %eq30 = icmp eq i64 %off29, %3
+  br i1 %eq30, label %land.rhs, label %if.end28
+
+if.then23:                                        ; preds = %while.body16
+  br label %while.exit17
+
+if.end24:                                         ; preds = %while.body16
+  %k25 = load i64, ptr %k, align 8
+  %add26 = add i64 %k25, 1
+  store i64 %add26, ptr %k, align 1
+  br label %while.cond15
+
+if.then27:                                        ; preds = %land.rhs
+  %k32 = load i64, ptr %k, align 8
+  %sub33 = sub i64 %k32, %k14
+  call void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %k14, i64 %sub33)
+  %sret.body = load { ptr }, ptr %sret.result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
+
+if.end28:                                         ; preds = %land.rhs, %while.exit17
+  %k34 = load i64, ptr %k, align 8
+  %add35 = add i64 %k34, 1
+  store i64 %add35, ptr %k, align 1
+  br label %while.cond
+
+land.rhs:                                         ; preds = %while.exit17
+  %k31 = load i64, ptr %k, align 8
+  %gt = icmp ugt i64 %k31, %k14
+  br i1 %gt, label %if.then27, label %if.end28
+}
+
+define linkonce_odr void @_ZN10placehints8describeEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
+entry:
+  %sret.result = alloca { ptr }, align 8
+  %arg.tmp11 = alloca { ptr }, align 8
+  %arg.tmp10 = alloca { ptr }, align 8
+  %frame = alloca { ptr, ptr }, align 8
+  store ptr null, ptr %frame, align 8
+  %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
+  store ptr %1, ptr %frame.parent, align 8
+  %arg.tmp5 = alloca { ptr }, align 8
+  %arg.tmp1 = alloca { ptr }, align 8
+  %arg.tmp = alloca { ptr }, align 8
+  store { ptr } { ptr @.sconst.905 }, ptr %arg.tmp, align 1
+  %call = call i1 @_ZN6String6equalsE6String(ptr %2, ptr %arg.tmp)
+  br i1 %call, label %if.then, label %if.end
+
+if.then:                                          ; preds = %entry
+  store { ptr } { ptr @.sconst.906 }, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret void
+
+if.end:                                           ; preds = %entry
+  store { ptr } { ptr @.sconst.907 }, ptr %arg.tmp1, align 1
+  %call2 = call i1 @_ZN6String6equalsE6String(ptr %2, ptr %arg.tmp1)
+  br i1 %call2, label %if.then3, label %if.end4
+
+if.then3:                                         ; preds = %if.end
+  store { ptr } { ptr @.sconst.908 }, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret void
+
+if.end4:                                          ; preds = %if.end
+  store { ptr } { ptr @.sconst.909 }, ptr %arg.tmp5, align 1
+  %call6 = call i1 @_ZN6String6equalsE6String(ptr %2, ptr %arg.tmp5)
+  br i1 %call6, label %if.then7, label %if.end8
+
+if.then7:                                         ; preds = %if.end4
+  store { ptr } { ptr @.sconst.910 }, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret void
+
+if.end8:                                          ; preds = %if.end4
+  %frame.page = load ptr, ptr %frame, align 8
+  %frame.has_page = icmp ne ptr %frame.page, null
+  br i1 %frame.has_page, label %frame.forced, label %frame.force
+
+frame.force:                                      ; preds = %if.end8
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  br label %frame.forced
+
+frame.forced:                                     ; preds = %frame.force, %if.end8
+  %forced_page9 = phi ptr [ %frame.page, %if.end8 ], [ %forced_page, %frame.force ]
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page9, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
+  store { ptr } { ptr @.sconst.911 }, ptr %arg.tmp10, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp10)
+  call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %2)
+  store { ptr } { ptr @.sconst.912 }, ptr %arg.tmp11, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp11)
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %struct.region)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  %sret.body = load { ptr }, ptr %sret.result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN10placehints10hover_noteEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
+entry:
+  %sret.result30 = alloca { ptr }, align 8
+  %sret.result25 = alloca { ptr }, align 8
+  %sret.result = alloca { ptr }, align 8
+  %line = alloca i64, align 8
+  store i64 0, ptr %line, align 1
+  %character = alloca i64, align 8
+  store i64 0, ptr %character, align 1
+  %seen_space = alloca i1, align 1
+  store i1 false, ptr %seen_space, align 1
+  %i = alloca i64, align 8
+  store i64 0, ptr %i, align 1
+  %call = call i64 @_ZN6String10get_lengthEv(ptr %4)
+  br label %while.cond
+
+while.cond:                                       ; preds = %if.end, %entry
+  %i1 = load i64, ptr %i, align 8
+  %lt = icmp ult i64 %i1, %call
+  br i1 %lt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %i2 = load i64, ptr %i, align 8
+  %call3 = call i8 @_ZN6String3getEm(ptr %4, i64 %i2)
+  %eq = icmp eq i8 %call3, 32
+  br i1 %eq, label %if.then, label %if.else
+
+while.exit:                                       ; preds = %while.cond
+  %call14 = call i64 @_ZN6String10get_lengthEv(ptr %3)
+  %line15 = load i64, ptr %line, align 8
+  %character16 = load i64, ptr %character, align 8
+  %call17 = call i64 @_ZN7symbols18position_to_offsetE6Stringmm(ptr %3, i64 %line15, i64 %character16)
+  %call18 = call i64 @_ZN10placehints10head_parenE6Stringm(ptr %3, i64 %call17)
+  %ge = icmp uge i64 %call18, %call14
+  br i1 %ge, label %if.then19, label %if.end20
+
+if.then:                                          ; preds = %while.body
+  store i1 true, ptr %seen_space, align 1
+  br label %if.end
+
+if.else:                                          ; preds = %while.body
+  %sub = sub i8 %call3, 48
+  %as.zext = zext i8 %sub to i64
+  %seen_space4 = load i1, ptr %seen_space, align 1
+  br i1 %seen_space4, label %if.then5, label %if.else6
+
+if.end:                                           ; preds = %if.end7, %if.then
+  %i12 = load i64, ptr %i, align 8
+  %add13 = add i64 %i12, 1
+  store i64 %add13, ptr %i, align 1
+  br label %while.cond
+
+if.then5:                                         ; preds = %if.else
+  %character8 = load i64, ptr %character, align 8
+  %mul = mul i64 %character8, 10
+  %add = add i64 %mul, %as.zext
+  store i64 %add, ptr %character, align 1
+  br label %if.end7
+
+if.else6:                                         ; preds = %if.else
+  %line9 = load i64, ptr %line, align 8
+  %mul10 = mul i64 %line9, 10
+  %add11 = add i64 %mul10, %as.zext
+  store i64 %add11, ptr %line, align 1
+  br label %if.end7
+
+if.end7:                                          ; preds = %if.else6, %if.then5
+  %if.value = phi i64 [ %add, %if.then5 ], [ %add11, %if.else6 ]
+  br label %if.end
+
+if.then19:                                        ; preds = %while.exit
+  store { ptr } zeroinitializer, ptr %0, align 1
+  ret void
+
+if.end20:                                         ; preds = %while.exit
+  call void @_ZN10placehints8blob_forEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %3)
+  %call21 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
+  %eq22 = icmp eq i64 %call21, 0
+  br i1 %eq22, label %if.then23, label %if.end24
+
+if.then23:                                        ; preds = %if.end20
+  store { ptr } zeroinitializer, ptr %0, align 1
+  ret void
+
+if.end24:                                         ; preds = %if.end20
+  call void @_ZN10placehints8label_atEPN4scaly6memory4PageE6Stringm(ptr noalias sret({ ptr }) %sret.result25, ptr %1, ptr %sret.result, i64 %call18)
+  %call26 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result25)
+  %eq27 = icmp eq i64 %call26, 0
+  br i1 %eq27, label %if.then28, label %if.end29
+
+if.then28:                                        ; preds = %if.end24
+  store { ptr } zeroinitializer, ptr %0, align 1
+  ret void
+
+if.end29:                                         ; preds = %if.end24
+  call void @_ZN10placehints8describeEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result30, ptr %1, ptr %sret.result25)
+  %sret.body = load { ptr }, ptr %sret.result30, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result30, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr i1 @_ZN10placehints12is_name_byteE2u8(i8 %0) {
+entry:
+  %call = call i1 @_ZN7symbols13is_ident_byteE2u8(i8 %0)
+  br i1 %call, label %lor.end, label %lor.rhs
+
+lor.rhs:                                          ; preds = %entry
+  %eq = icmp eq i8 %0, 46
+  br label %lor.end
+
+lor.end:                                          ; preds = %lor.rhs, %entry
+  %lor.result = phi i1 [ true, %entry ], [ %eq, %lor.rhs ]
+  ret i1 %lor.result
 }
 
 define linkonce_odr void @_ZN10placehints6mergedEPN4scaly6memory4PageE6String6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) {
@@ -145842,7 +146362,7 @@ entry:
   %sret.result = alloca { ptr }, align 8
   %field.inplace = getelementptr inbounds nuw %_Z11PlannedCall, ptr %2, i32 0, i32 2
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.906 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.914 }, ptr %arg.tmp, align 1
   %call = call i1 @_ZN6String8containsE6String(ptr %field.inplace, ptr %arg.tmp)
   %eq = icmp eq i1 %call, false
   br i1 %eq, label %if.then, label %if.end
@@ -145947,7 +146467,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
 
 if.then:                                          ; preds = %frame.forced
   %sb2 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.907 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.915 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb2, ptr %arg.tmp)
   %sb3 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb3)
@@ -145976,7 +146496,7 @@ choose.when:                                      ; preds = %if.end
   %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z8Lifetime, ptr %2, i32 0, i32 1
   %variant.val = load %_Z5Local, ptr %"variant.c_data().ptr", align 8
   %sb4 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.908 }, ptr %arg.tmp5, align 1
+  store { ptr } { ptr @.sconst.916 }, ptr %arg.tmp5, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb4, ptr %arg.tmp5)
   %sb7 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result6, ptr %1, ptr %sb7)
@@ -145989,7 +146509,7 @@ choose.when9:                                     ; preds = %if.end
   %"variant.c_data().ptr10" = getelementptr inbounds nuw %_Z8Lifetime, ptr %2, i32 0, i32 1
   %variant.val11 = load %_Z9Reference, ptr %"variant.c_data().ptr10", align 8
   %sb12 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.909 }, ptr %arg.tmp13, align 1
+  store { ptr } { ptr @.sconst.917 }, ptr %arg.tmp13, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb12, ptr %arg.tmp13)
   %sb14 = load ptr, ptr %sb, align 8
   %location = extractvalue %_Z9Reference %variant.val11, 1
@@ -146004,7 +146524,7 @@ choose.when9:                                     ; preds = %if.end
 
 if.then20:                                        ; preds = %choose.end
   %sb22 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.910 }, ptr %arg.tmp23, align 1
+  store { ptr } { ptr @.sconst.918 }, ptr %arg.tmp23, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb22, ptr %arg.tmp23)
   %sb25 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result24, ptr %1, ptr %sb25)
@@ -146015,7 +146535,7 @@ if.then20:                                        ; preds = %choose.end
 
 if.end21:                                         ; preds = %choose.end
   %sb27 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.911 }, ptr %arg.tmp28, align 1
+  store { ptr } { ptr @.sconst.919 }, ptr %arg.tmp28, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb27, ptr %arg.tmp28)
   %sb30 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result29, ptr %1, ptr %sb30)
@@ -146204,11 +146724,11 @@ if.then6:                                         ; preds = %if.then3
 
 if.end7:                                          ; preds = %if.then6, %if.then3
   %addr.heap9 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.913 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.921 }, ptr %arg.tmp, align 1
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 13, ptr %tuple.field, align 1
   %tuple.field11 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.914, ptr %tuple.field11, align 1
+  store ptr @.str.922, ptr %tuple.field11, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp12, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN7symbols11lens_objectEPN4scaly6memory4PageE6Stringmm6String5SliceIcE6String(ptr noalias sret({ ptr }) %sret.result10, ptr %frame, ptr %3, i64 0, i64 3, ptr %arg.tmp, ptr %arg.tmp12, ptr %2)
@@ -146611,7 +147131,7 @@ choose.when:                                      ; preds = %frame.forced5
 
 choose.when10:                                    ; preds = %frame.forced5
   %throws.success.val = load %_Z13ProgramSyntax, ptr %throws.data.ptr, align 1
-  store { ptr } { ptr @.sconst.912 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.920 }, ptr %arg.tmp, align 1
   store %_Z13ProgramSyntax %throws.success.val, ptr %arg.tmp12, align 1
   call void @_ZN7Modeler13build_programEPN4scaly6memory4PageE6String6String13ProgramSyntaxb(ptr noalias sret(%_Z7Program) %sret.result11, ptr %1, ptr %2, ptr %arg.tmp, ptr %arg.tmp12, i1 true)
   %frame.page13 = load ptr, ptr %frame, align 8
@@ -146759,14 +147279,14 @@ entry:
   %arg.tmp1 = alloca { ptr }, align 8
   %sret.result = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
-  store { ptr } { ptr @.sconst.915 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.923 }, ptr %arg.tmp, align 1
   call void @_ZN8codelens12strip_suffixEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %3, ptr %arg.tmp)
   %call = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
   %gt = icmp ugt i64 %call, 0
   br i1 %gt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  store { ptr } { ptr @.sconst.916 }, ptr %arg.tmp1, align 1
+  store { ptr } { ptr @.sconst.924 }, ptr %arg.tmp1, align 1
   call void @_ZN8codelens11banner_lensEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %arg.tmp, ptr %1, ptr %2, ptr %sret.result, ptr %arg.tmp1)
   %sret.body = load { ptr }, ptr %arg.tmp, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %arg.tmp, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -146774,14 +147294,14 @@ if.then:                                          ; preds = %entry
   ret void
 
 if.end:                                           ; preds = %entry
-  store { ptr } { ptr @.sconst.917 }, ptr %arg.tmp1, align 1
+  store { ptr } { ptr @.sconst.925 }, ptr %arg.tmp1, align 1
   call void @_ZN8codelens12strip_suffixEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %arg.tmp, ptr %1, ptr %3, ptr %arg.tmp1)
   %call2 = call i64 @_ZN6String10get_lengthEv(ptr %arg.tmp)
   %gt3 = icmp ugt i64 %call2, 0
   br i1 %gt3, label %if.then4, label %if.end5
 
 if.then4:                                         ; preds = %if.end
-  store { ptr } { ptr @.sconst.918 }, ptr %arg.tmp6, align 1
+  store { ptr } { ptr @.sconst.926 }, ptr %arg.tmp6, align 1
   call void @_ZN8codelens11banner_lensEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %arg.tmp1, ptr %1, ptr %2, ptr %arg.tmp, ptr %arg.tmp6)
   %sret.body7 = load { ptr }, ptr %arg.tmp1, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %arg.tmp1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -146789,14 +147309,14 @@ if.then4:                                         ; preds = %if.end
   ret void
 
 if.end5:                                          ; preds = %if.end
-  store { ptr } { ptr @.sconst.919 }, ptr %arg.tmp6, align 1
+  store { ptr } { ptr @.sconst.927 }, ptr %arg.tmp6, align 1
   call void @_ZN8codelens12strip_suffixEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %arg.tmp1, ptr %1, ptr %3, ptr %arg.tmp6)
   %call8 = call i64 @_ZN6String10get_lengthEv(ptr %arg.tmp1)
   %gt9 = icmp ugt i64 %call8, 0
   br i1 %gt9, label %if.then10, label %if.end11
 
 if.then10:                                        ; preds = %if.end5
-  store { ptr } { ptr @.sconst.920 }, ptr %arg.tmp12, align 1
+  store { ptr } { ptr @.sconst.928 }, ptr %arg.tmp12, align 1
   call void @_ZN8codelens11banner_lensEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %arg.tmp6, ptr %1, ptr %2, ptr %arg.tmp1, ptr %arg.tmp12)
   %sret.body13 = load { ptr }, ptr %arg.tmp6, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %arg.tmp6, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -146806,7 +147326,7 @@ if.then10:                                        ; preds = %if.end5
 if.end11:                                         ; preds = %if.end5
   call void @_ZN8codelens12directory_ofEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %arg.tmp6, ptr %1, ptr %3)
   call void @_ZN8codelens9file_nameEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %arg.tmp12, ptr %frame, ptr %3)
-  store { ptr } { ptr @.sconst.921 }, ptr %arg.tmp14, align 1
+  store { ptr } { ptr @.sconst.929 }, ptr %arg.tmp14, align 1
   %call15 = call i1 @_ZN6String9ends_withE6String(ptr %arg.tmp6, ptr %arg.tmp14)
   br i1 %call15, label %if.then16, label %if.end17
 
@@ -146816,7 +147336,7 @@ if.then16:                                        ; preds = %if.end11
   br i1 %gt19, label %if.then20, label %if.end21
 
 if.end17:                                         ; preds = %if.end21, %if.end11
-  store { ptr } { ptr @.sconst.925 }, ptr %sret.result22, align 1
+  store { ptr } { ptr @.sconst.933 }, ptr %sret.result22, align 1
   %call38 = call i1 @_ZN6String9ends_withE6String(ptr %arg.tmp6, ptr %sret.result22)
   br i1 %call38, label %if.then39, label %if.end40
 
@@ -146839,16 +147359,16 @@ frame.forced:                                     ; preds = %frame.force, %if.th
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   store ptr %struct.region, ptr %rel, align 1
   %rel24 = load ptr, ptr %rel, align 8
-  store { ptr } { ptr @.sconst.922 }, ptr %arg.tmp25, align 1
+  store { ptr } { ptr @.sconst.930 }, ptr %arg.tmp25, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %rel24, ptr %arg.tmp25)
   %rel26 = load ptr, ptr %rel, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %rel26, ptr %sret.result22)
   %rel27 = load ptr, ptr %rel, align 8
-  store { ptr } { ptr @.sconst.923 }, ptr %arg.tmp28, align 1
+  store { ptr } { ptr @.sconst.931 }, ptr %arg.tmp28, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %rel27, ptr %arg.tmp28)
   %rel30 = load ptr, ptr %rel, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result29, ptr %1, ptr %rel30)
-  store { ptr } { ptr @.sconst.924 }, ptr %arg.tmp32, align 1
+  store { ptr } { ptr @.sconst.932 }, ptr %arg.tmp32, align 1
   call void @_ZN8codelens12strip_suffixEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result31, ptr %1, ptr %arg.tmp6, ptr %arg.tmp32)
   %call33 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result31)
   %gt34 = icmp ugt i64 %call33, 0
@@ -146865,7 +147385,7 @@ if.end36:                                         ; preds = %frame.forced
   br label %if.end21
 
 if.then39:                                        ; preds = %if.end17
-  store { ptr } { ptr @.sconst.926 }, ptr %sret.result29, align 1
+  store { ptr } { ptr @.sconst.934 }, ptr %sret.result29, align 1
   %call41 = call i1 @_ZN6String9ends_withE6String(ptr %arg.tmp12, ptr %sret.result29)
   br i1 %call41, label %if.then42, label %if.end43
 
@@ -146875,7 +147395,7 @@ if.end40:                                         ; preds = %if.end43, %if.end17
   ret void
 
 if.then42:                                        ; preds = %if.then39
-  store { ptr } { ptr @.sconst.927 }, ptr %arg.tmp32, align 1
+  store { ptr } { ptr @.sconst.935 }, ptr %arg.tmp32, align 1
   call void @_ZN8codelens12strip_suffixEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result31, ptr %1, ptr %arg.tmp6, ptr %arg.tmp32)
   %call44 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result31)
   %gt45 = icmp ugt i64 %call44, 0
@@ -146885,7 +147405,7 @@ if.end43:                                         ; preds = %if.end47, %if.then3
   br label %if.end40
 
 if.then46:                                        ; preds = %if.then42
-  store { ptr } { ptr @.sconst.928 }, ptr %arg.tmp48, align 1
+  store { ptr } { ptr @.sconst.936 }, ptr %arg.tmp48, align 1
   call void @_ZN8codelens11banner_lensEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %arg.tmp32, ptr %1, ptr %2, ptr %sret.result31, ptr %arg.tmp48)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body49 = load { ptr }, ptr %arg.tmp32, align 8
@@ -147022,12 +147542,12 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   store ptr %struct.region, ptr %title, align 1
   %title2 = load ptr, ptr %title, align 8
-  store { ptr } { ptr @.sconst.929 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.937 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %title2, ptr %arg.tmp)
   %title3 = load ptr, ptr %title, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %title3, ptr %4)
   %title4 = load ptr, ptr %title, align 8
-  store { ptr } { ptr @.sconst.930 }, ptr %arg.tmp5, align 1
+  store { ptr } { ptr @.sconst.938 }, ptr %arg.tmp5, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %title4, ptr %arg.tmp5)
   %title7 = load ptr, ptr %title, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result6, ptr %1, ptr %title7)
@@ -147045,7 +147565,7 @@ frame.forced12:                                   ; preds = %frame.force11, %fra
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 0
   store i64 14, ptr %tuple.field, align 1
   %tuple.field15 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
-  store ptr @.str.931, ptr %tuple.field15, align 1
+  store ptr @.str.939, ptr %tuple.field15, align 1
   call void @_ZN7symbols11lens_objectEPN4scaly6memory4PageE6Stringmm6String5SliceIcE6String(ptr noalias sret({ ptr }) %sret.result8, ptr %1, ptr %2, i64 0, i64 3, ptr %sret.result6, ptr %tuple.region, ptr %sret.result)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result8, align 8
@@ -147061,7 +147581,7 @@ entry:
   br i1 %le, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  store { ptr } { ptr @.sconst.953 }, ptr %0, align 1
+  store { ptr } { ptr @.sconst.961 }, ptr %0, align 1
   ret void
 
 if.end:                                           ; preds = %entry
@@ -147128,7 +147648,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %sb2 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %sb2, ptr %2)
   %sb3 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.952 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.960 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb3, ptr %arg.tmp)
   %sb4 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %sb4, ptr %3)
@@ -147443,10 +147963,10 @@ choose.when62:                                    ; preds = %entry
   %"variant.c_data().ptr63" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %6, i32 0, i32 1
   %variant.val64 = load %_Z13MutableSyntax, ptr %"variant.c_data().ptr63", align 8
   %start = extractvalue %_Z13MutableSyntax %variant.val64, 0
-  store { ptr } { ptr @.sconst.932 }, ptr %sret.result16, align 1
+  store { ptr } { ptr @.sconst.940 }, ptr %sret.result16, align 1
   %binding = extractvalue %_Z13MutableSyntax %variant.val64, 2
   %annotation = extractvalue %_Z13BindingSyntax %binding, 3
-  store { ptr } { ptr @.sconst.933 }, ptr %arg.tmp65, align 1
+  store { ptr } { ptr @.sconst.941 }, ptr %arg.tmp65, align 1
   call void @_ZN8codelens12storage_lensEPN4scaly6memory4PageE6Stringm6String6OptionIR23BindingAnnotationSyntaxE6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %start, ptr %sret.result16, ptr %annotation, ptr %arg.tmp65)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body66 = load { ptr }, ptr %sret.result, align 8
@@ -147457,10 +147977,10 @@ choose.when67:                                    ; preds = %entry
   %"variant.c_data().ptr68" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %6, i32 0, i32 1
   %variant.val69 = load %_Z12SharedSyntax, ptr %"variant.c_data().ptr68", align 8
   %start70 = extractvalue %_Z12SharedSyntax %variant.val69, 0
-  store { ptr } { ptr @.sconst.934 }, ptr %sret.result16, align 1
+  store { ptr } { ptr @.sconst.942 }, ptr %sret.result16, align 1
   %binding71 = extractvalue %_Z12SharedSyntax %variant.val69, 3
   %annotation72 = extractvalue %_Z13BindingSyntax %binding71, 3
-  store { ptr } { ptr @.sconst.935 }, ptr %arg.tmp65, align 1
+  store { ptr } { ptr @.sconst.943 }, ptr %arg.tmp65, align 1
   call void @_ZN8codelens12storage_lensEPN4scaly6memory4PageE6Stringm6String6OptionIR23BindingAnnotationSyntaxE6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %start70, ptr %sret.result16, ptr %annotation72, ptr %arg.tmp65)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body73 = load { ptr }, ptr %sret.result, align 8
@@ -147535,26 +148055,26 @@ frame.forced:                                     ; preds = %frame.force, %if.en
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   store ptr %struct.region, ptr %rel, align 1
   %rel7 = load ptr, ptr %rel, align 8
-  store { ptr } { ptr @.sconst.938 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.946 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %rel7, ptr %arg.tmp)
   %rel8 = load ptr, ptr %rel, align 8
   %field.inplace9 = getelementptr inbounds nuw %_Z13PackageSyntax, ptr %4, i32 0, i32 2
   %field.inplace10 = getelementptr inbounds nuw %_Z10NameSyntax, ptr %field.inplace9, i32 0, i32 2
   call void @_ZN13StringBuilder6appendE6String(ptr %rel8, ptr %field.inplace10)
   %rel11 = load ptr, ptr %rel, align 8
-  store { ptr } { ptr @.sconst.939 }, ptr %arg.tmp12, align 1
+  store { ptr } { ptr @.sconst.947 }, ptr %arg.tmp12, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %rel11, ptr %arg.tmp12)
   %rel13 = load ptr, ptr %rel, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %rel13, ptr %sret.result)
   %rel14 = load ptr, ptr %rel, align 8
-  store { ptr } { ptr @.sconst.940 }, ptr %arg.tmp15, align 1
+  store { ptr } { ptr @.sconst.948 }, ptr %arg.tmp15, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %rel14, ptr %arg.tmp15)
   %rel16 = load ptr, ptr %rel, align 8
   %field.inplace17 = getelementptr inbounds nuw %_Z13PackageSyntax, ptr %4, i32 0, i32 2
   %field.inplace18 = getelementptr inbounds nuw %_Z10NameSyntax, ptr %field.inplace17, i32 0, i32 2
   call void @_ZN13StringBuilder6appendE6String(ptr %rel16, ptr %field.inplace18)
   %rel19 = load ptr, ptr %rel, align 8
-  store { ptr } { ptr @.sconst.941 }, ptr %arg.tmp20, align 1
+  store { ptr } { ptr @.sconst.949 }, ptr %arg.tmp20, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %rel19, ptr %arg.tmp20)
   %rel22 = load ptr, ptr %rel, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result21, ptr %1, ptr %rel22)
@@ -147584,7 +148104,7 @@ frame.forced31:                                   ; preds = %frame.force30, %if.
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region34)
   store ptr %struct.region34, ptr %plain, align 1
   %plain35 = load ptr, ptr %plain, align 8
-  store { ptr } { ptr @.sconst.942 }, ptr %arg.tmp36, align 1
+  store { ptr } { ptr @.sconst.950 }, ptr %arg.tmp36, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %plain35, ptr %arg.tmp36)
   %plain37 = load ptr, ptr %plain, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %plain37, ptr %sret.result21)
@@ -147634,7 +148154,7 @@ frame.forced58:                                   ; preds = %frame.force57, %if.
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region61)
   store ptr %struct.region61, ptr %plain, align 1
   %missing = load ptr, ptr %plain, align 8
-  store { ptr } { ptr @.sconst.943 }, ptr %arg.tmp62, align 1
+  store { ptr } { ptr @.sconst.951 }, ptr %arg.tmp62, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %missing, ptr %arg.tmp62)
   %missing63 = load ptr, ptr %plain, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %missing63, ptr %sret.result21)
@@ -147674,7 +148194,7 @@ frame.forced83:                                   ; preds = %frame.force82, %if.
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region86)
   store ptr %struct.region86, ptr %plain, align 1
   %title = load ptr, ptr %plain, align 8
-  store { ptr } { ptr @.sconst.944 }, ptr %sret.result64, align 1
+  store { ptr } { ptr @.sconst.952 }, ptr %sret.result64, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %title, ptr %sret.result64)
   %title87 = load ptr, ptr %plain, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %title87, ptr %sret.result21)
@@ -147696,7 +148216,7 @@ frame.forced96:                                   ; preds = %frame.force95, %fra
   %tuple.field100 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region99, i32 0, i32 0
   store i64 14, ptr %tuple.field100, align 1
   %tuple.field101 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region99, i32 0, i32 1
-  store ptr @.str.945, ptr %tuple.field101, align 1
+  store ptr @.str.953, ptr %tuple.field101, align 1
   call void @_ZN7symbols11lens_objectEPN4scaly6memory4PageE6Stringmm6String5SliceIcE6String(ptr noalias sret({ ptr }) %sret.result90, ptr %1, ptr %2, i64 %field.val92, i64 7, ptr %sret.result88, ptr %tuple.region99, ptr %sret.result38)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body102 = load { ptr }, ptr %sret.result90, align 8
@@ -147739,7 +148259,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %field.inplace = getelementptr inbounds nuw %_Z12ModuleSyntax, ptr %5, i32 0, i32 2
   call void @_ZN13StringBuilder6appendE6String(ptr %t2, ptr %field.inplace)
   %t3 = load ptr, ptr %t, align 8
-  store { ptr } { ptr @.sconst.946 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.954 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %t3, ptr %arg.tmp)
   %t4 = load ptr, ptr %t, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %t4)
@@ -147769,7 +148289,7 @@ frame.forced10:                                   ; preds = %frame.force9, %if.t
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region13)
   store ptr %struct.region13, ptr %missing, align 1
   %missing14 = load ptr, ptr %missing, align 8
-  store { ptr } { ptr @.sconst.947 }, ptr %arg.tmp15, align 1
+  store { ptr } { ptr @.sconst.955 }, ptr %arg.tmp15, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %missing14, ptr %arg.tmp15)
   %missing16 = load ptr, ptr %missing, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %missing16, ptr %sret.result6)
@@ -147809,7 +148329,7 @@ frame.forced32:                                   ; preds = %frame.force31, %if.
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region35)
   store ptr %struct.region35, ptr %missing, align 1
   %title = load ptr, ptr %missing, align 8
-  store { ptr } { ptr @.sconst.948 }, ptr %sret.result17, align 1
+  store { ptr } { ptr @.sconst.956 }, ptr %sret.result17, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %title, ptr %sret.result17)
   %title36 = load ptr, ptr %missing, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %title36, ptr %sret.result6)
@@ -147831,7 +148351,7 @@ frame.forced45:                                   ; preds = %frame.force44, %fra
   %tuple.field49 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region48, i32 0, i32 0
   store i64 14, ptr %tuple.field49, align 1
   %tuple.field50 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region48, i32 0, i32 1
-  store ptr @.str.949, ptr %tuple.field50, align 1
+  store ptr @.str.957, ptr %tuple.field50, align 1
   call void @_ZN7symbols11lens_objectEPN4scaly6memory4PageE6Stringmm6String5SliceIcE6String(ptr noalias sret({ ptr }) %sret.result39, ptr %1, ptr %2, i64 %field.val41, i64 6, ptr %sret.result37, ptr %tuple.region48, ptr %sret.result5)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body51 = load { ptr }, ptr %sret.result39, align 8
@@ -147893,12 +148413,12 @@ frame.forced7:                                    ; preds = %frame.force6, %if.e
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   store ptr %struct.region, ptr %sb, align 1
   %sb10 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.936 }, ptr %sret.result, align 1
+  store { ptr } { ptr @.sconst.944 }, ptr %sret.result, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb10, ptr %sret.result)
   %sb11 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendE6String(ptr %sb11, ptr %4)
   %sb12 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.937 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.945 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb12, ptr %arg.tmp)
   %sb14 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result13, ptr %1, ptr %sb14)
@@ -148053,7 +148573,7 @@ entry:
   %depth = alloca i64, align 8
   %dir = alloca ptr, align 8
   %sret.result = alloca { ptr }, align 8
-  %call = call ptr @getenv(ptr @.str.950)
+  %call = call ptr @getenv(ptr @.str.958)
   %ne = icmp ne ptr %call, null
   br i1 %ne, label %if.then, label %if.end
 
@@ -148096,7 +148616,7 @@ while.cond:                                       ; preds = %if.end20, %if.end
 
 while.body:                                       ; preds = %while.cond
   %dir7 = load ptr, ptr %dir, align 8
-  store { ptr } { ptr @.sconst.951 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.959 }, ptr %arg.tmp, align 1
   call void @_ZN8codelens4joinEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result6, ptr %frame, ptr %dir7, ptr %arg.tmp)
   %call8 = call i1 @_ZN4File6existsE6String(ptr %sret.result6)
   br i1 %call8, label %if.then9, label %if.end10
@@ -148215,7 +148735,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5SliceI7DocSlotE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.954, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.962, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -148235,7 +148755,7 @@ entry:
 if.then:                                          ; preds = %entry
   %field.inplace = getelementptr inbounds nuw %_Z5SliceI7DocSlotE, ptr %0, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.955, i64 %1, i64 %field.val)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.str.963, i64 %1, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
@@ -149109,7 +149629,7 @@ declare void @_ZN6Thread4joinEm(i64)
 
 define linkonce_odr i64 @_ZN6worker21serve_on_worker_stackEii(i64 %0, i64 %1) {
 entry:
-  %call = call i32 @setenv(ptr @.str.956, ptr @.str.957, i32 1)
+  %call = call i32 @setenv(ptr @.str.964, ptr @.str.965, i32 1)
   %tuple = alloca %_Z9WorkerFds, align 8
   %tuple.field = getelementptr inbounds nuw %_Z9WorkerFds, ptr %tuple, i32 0, i32 0
   store i64 %0, ptr %tuple.field, align 1
@@ -149125,10 +149645,12 @@ entry:
 
 define linkonce_odr i1 @_ZN6worker13serve_requestEii(i64 %0, i64 %1) {
 entry:
-  %sret.result135 = alloca { ptr }, align 8
+  %sret.result140 = alloca { ptr }, align 8
+  %sret.result139 = alloca { ptr }, align 8
+  %arg.tmp135 = alloca { ptr }, align 8
   %sret.result134 = alloca { ptr }, align 8
-  %arg.tmp130 = alloca { ptr }, align 8
-  %sret.result129 = alloca { ptr }, align 8
+  %sret.result133 = alloca { ptr }, align 8
+  %arg.tmp129 = alloca { ptr }, align 8
   %sret.result128 = alloca { ptr }, align 8
   %arg.tmp124 = alloca { ptr }, align 8
   %sret.result123 = alloca { ptr }, align 8
@@ -149137,18 +149659,18 @@ entry:
   %arg.tmp114 = alloca { ptr }, align 8
   %sret.result113 = alloca { ptr }, align 8
   %arg.tmp109 = alloca { ptr }, align 8
-  %sret.result108 = alloca { ptr }, align 8
-  %arg.tmp104 = alloca { ptr }, align 8
-  %sret.result99 = alloca { ptr }, align 8
-  %sret.result98 = alloca { ptr }, align 8
+  %sret.result104 = alloca { ptr }, align 8
+  %sret.result103 = alloca { ptr }, align 8
+  %sret.result102 = alloca { ptr }, align 8
+  %arg.tmp98 = alloca { ptr }, align 8
   %sret.result97 = alloca { ptr }, align 8
   %arg.tmp93 = alloca { ptr }, align 8
   %sret.result92 = alloca { ptr }, align 8
-  %arg.tmp88 = alloca { ptr }, align 8
-  %sret.result87 = alloca { ptr }, align 8
+  %sret.result91 = alloca { ptr }, align 8
+  %arg.tmp87 = alloca { ptr }, align 8
   %sret.result86 = alloca { ptr }, align 8
-  %arg.tmp82 = alloca { ptr }, align 8
-  %sret.result81 = alloca { ptr }, align 8
+  %sret.result85 = alloca { ptr }, align 8
+  %arg.tmp81 = alloca { ptr }, align 8
   %sret.result80 = alloca { ptr }, align 8
   %arg.tmp76 = alloca { ptr }, align 8
   %sret.result75 = alloca { ptr }, align 8
@@ -149208,7 +149730,7 @@ if.end:                                           ; preds = %entry
   call void @_ZN3rpc15read_message_fdEPN4scaly6memory4PageEi(ptr noalias sret({ ptr }) %sret.result3, ptr %frame, i64 %0)
   call void @_ZN8symindex13begin_requestEv()
   call void @_ZN7symbols10prof_resetEv()
-  store { ptr } { ptr @.sconst.958 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.966 }, ptr %arg.tmp, align 1
   %call4 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp)
   br i1 %call4, label %if.then5, label %if.end6
 
@@ -149233,7 +149755,7 @@ if.then11:                                        ; preds = %if.end6
   br label %if.end12
 
 if.end12:                                         ; preds = %if.then11, %if.end6
-  store { ptr } { ptr @.sconst.959 }, ptr %arg.tmp14, align 1
+  store { ptr } { ptr @.sconst.967 }, ptr %arg.tmp14, align 1
   %call15 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp14)
   br i1 %call15, label %if.then16, label %if.end17
 
@@ -149245,7 +149767,7 @@ if.then16:                                        ; preds = %if.end12
   ret i1 true
 
 if.end17:                                         ; preds = %if.end12
-  store { ptr } { ptr @.sconst.960 }, ptr %arg.tmp20, align 1
+  store { ptr } { ptr @.sconst.968 }, ptr %arg.tmp20, align 1
   %call21 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp20)
   br i1 %call21, label %if.then22, label %if.end23
 
@@ -149257,7 +149779,7 @@ if.then22:                                        ; preds = %if.end17
   ret i1 true
 
 if.end23:                                         ; preds = %if.end17
-  store { ptr } { ptr @.sconst.961 }, ptr %arg.tmp26, align 1
+  store { ptr } { ptr @.sconst.969 }, ptr %arg.tmp26, align 1
   %call27 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp26)
   br i1 %call27, label %if.then28, label %if.end29
 
@@ -149269,7 +149791,7 @@ if.then28:                                        ; preds = %if.end23
   ret i1 true
 
 if.end29:                                         ; preds = %if.end23
-  store { ptr } { ptr @.sconst.962 }, ptr %arg.tmp32, align 1
+  store { ptr } { ptr @.sconst.970 }, ptr %arg.tmp32, align 1
   %call33 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp32)
   br i1 %call33, label %if.then34, label %if.end35
 
@@ -149281,7 +149803,7 @@ if.then34:                                        ; preds = %if.end29
   ret i1 true
 
 if.end35:                                         ; preds = %if.end29
-  store { ptr } { ptr @.sconst.963 }, ptr %arg.tmp38, align 1
+  store { ptr } { ptr @.sconst.971 }, ptr %arg.tmp38, align 1
   %call39 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp38)
   br i1 %call39, label %if.then40, label %if.end41
 
@@ -149293,7 +149815,7 @@ if.then40:                                        ; preds = %if.end35
   ret i1 true
 
 if.end41:                                         ; preds = %if.end35
-  store { ptr } { ptr @.sconst.964 }, ptr %arg.tmp44, align 1
+  store { ptr } { ptr @.sconst.972 }, ptr %arg.tmp44, align 1
   %call45 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp44)
   br i1 %call45, label %if.then46, label %if.end47
 
@@ -149304,7 +149826,7 @@ if.then46:                                        ; preds = %if.end41
   ret i1 true
 
 if.end47:                                         ; preds = %if.end41
-  store { ptr } { ptr @.sconst.965 }, ptr %arg.tmp49, align 1
+  store { ptr } { ptr @.sconst.973 }, ptr %arg.tmp49, align 1
   %call50 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp49)
   br i1 %call50, label %if.then51, label %if.end52
 
@@ -149315,7 +149837,7 @@ if.then51:                                        ; preds = %if.end47
   ret i1 true
 
 if.end52:                                         ; preds = %if.end47
-  store { ptr } { ptr @.sconst.966 }, ptr %arg.tmp54, align 1
+  store { ptr } { ptr @.sconst.974 }, ptr %arg.tmp54, align 1
   %call55 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp54)
   br i1 %call55, label %if.then56, label %if.end57
 
@@ -149326,7 +149848,7 @@ if.then56:                                        ; preds = %if.end52
   ret i1 true
 
 if.end57:                                         ; preds = %if.end52
-  store { ptr } { ptr @.sconst.967 }, ptr %arg.tmp59, align 1
+  store { ptr } { ptr @.sconst.975 }, ptr %arg.tmp59, align 1
   %call60 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp59)
   br i1 %call60, label %if.then61, label %if.end62
 
@@ -149337,7 +149859,7 @@ if.then61:                                        ; preds = %if.end57
   ret i1 true
 
 if.end62:                                         ; preds = %if.end57
-  store { ptr } { ptr @.sconst.968 }, ptr %arg.tmp64, align 1
+  store { ptr } { ptr @.sconst.976 }, ptr %arg.tmp64, align 1
   %call65 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp64)
   br i1 %call65, label %if.then66, label %if.end67
 
@@ -149349,7 +149871,7 @@ if.then66:                                        ; preds = %if.end62
   ret i1 true
 
 if.end67:                                         ; preds = %if.end62
-  store { ptr } { ptr @.sconst.969 }, ptr %arg.tmp70, align 1
+  store { ptr } { ptr @.sconst.977 }, ptr %arg.tmp70, align 1
   %call71 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp70)
   br i1 %call71, label %if.then72, label %if.end73
 
@@ -149361,135 +149883,146 @@ if.then72:                                        ; preds = %if.end67
   ret i1 true
 
 if.end73:                                         ; preds = %if.end67
-  store { ptr } { ptr @.sconst.970 }, ptr %arg.tmp76, align 1
+  store { ptr } { ptr @.sconst.978 }, ptr %arg.tmp76, align 1
   %call77 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp76)
   br i1 %call77, label %if.then78, label %if.end79
 
 if.then78:                                        ; preds = %if.end73
-  call void @_ZN7symbols15repaired_sourceEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result81, ptr %frame, ptr %source)
-  call void @_ZN7symbols14folding_rangesEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result80, ptr %frame, ptr %sret.result81)
+  call void @_ZN10placehints10hover_noteEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result80, ptr %frame, ptr %sret.result1, ptr %source, ptr %sret.result3)
   call void @_ZN3rpc16write_message_fdEi6String(i64 %1, ptr %sret.result80)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 true
 
 if.end79:                                         ; preds = %if.end73
-  store { ptr } { ptr @.sconst.971 }, ptr %arg.tmp82, align 1
-  %call83 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp82)
-  br i1 %call83, label %if.then84, label %if.end85
+  store { ptr } { ptr @.sconst.979 }, ptr %arg.tmp81, align 1
+  %call82 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp81)
+  br i1 %call82, label %if.then83, label %if.end84
 
-if.then84:                                        ; preds = %if.end79
-  call void @_ZN7symbols15repaired_sourceEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result87, ptr %frame, ptr %source)
-  call void @_ZN7symbols22type_definition_packedEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result86, ptr %frame, ptr %sret.result87, ptr %sret.result1, ptr %sret.result3)
-  call void @_ZN3rpc16write_message_fdEi6String(i64 %1, ptr %sret.result86)
+if.then83:                                        ; preds = %if.end79
+  call void @_ZN7symbols15repaired_sourceEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result86, ptr %frame, ptr %source)
+  call void @_ZN7symbols14folding_rangesEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result85, ptr %frame, ptr %sret.result86)
+  call void @_ZN3rpc16write_message_fdEi6String(i64 %1, ptr %sret.result85)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 true
 
-if.end85:                                         ; preds = %if.end79
-  store { ptr } { ptr @.sconst.972 }, ptr %arg.tmp88, align 1
-  %call89 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp88)
-  br i1 %call89, label %if.then90, label %if.end91
+if.end84:                                         ; preds = %if.end79
+  store { ptr } { ptr @.sconst.980 }, ptr %arg.tmp87, align 1
+  %call88 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp87)
+  br i1 %call88, label %if.then89, label %if.end90
 
-if.then90:                                        ; preds = %if.end85
-  call void @_ZN7symbols29prepare_call_hierarchy_packedEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result92, ptr %frame, ptr %source, ptr %sret.result1, ptr %sret.result3)
-  call void @_ZN3rpc16write_message_fdEi6String(i64 %1, ptr %sret.result92)
+if.then89:                                        ; preds = %if.end84
+  call void @_ZN7symbols15repaired_sourceEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result92, ptr %frame, ptr %source)
+  call void @_ZN7symbols22type_definition_packedEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result91, ptr %frame, ptr %sret.result92, ptr %sret.result1, ptr %sret.result3)
+  call void @_ZN3rpc16write_message_fdEi6String(i64 %1, ptr %sret.result91)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 true
 
-if.end91:                                         ; preds = %if.end85
-  store { ptr } { ptr @.sconst.973 }, ptr %arg.tmp93, align 1
+if.end90:                                         ; preds = %if.end84
+  store { ptr } { ptr @.sconst.981 }, ptr %arg.tmp93, align 1
   %call94 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp93)
   br i1 %call94, label %if.then95, label %if.end96
 
-if.then95:                                        ; preds = %if.end91
-  call void @_ZN7symbols11root_prefixEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result97, ptr %frame, ptr %sret.result3)
-  call void @_ZN7symbols17strip_root_prefixEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result98, ptr %frame, ptr %sret.result3)
-  call void @_ZN7symbols14incoming_callsEPN4scaly6memory4PageE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result99, ptr %frame, ptr %source, ptr %sret.result1, ptr %sret.result98, ptr %sret.result97)
-  call void @_ZN3rpc16write_message_fdEi6String(i64 %1, ptr %sret.result99)
+if.then95:                                        ; preds = %if.end90
+  call void @_ZN7symbols29prepare_call_hierarchy_packedEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result97, ptr %frame, ptr %source, ptr %sret.result1, ptr %sret.result3)
+  call void @_ZN3rpc16write_message_fdEi6String(i64 %1, ptr %sret.result97)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 true
 
-if.end96:                                         ; preds = %if.end91
-  store { ptr } { ptr @.sconst.974 }, ptr %sret.result97, align 1
-  %call100 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %sret.result97)
-  br i1 %call100, label %if.then101, label %if.end102
+if.end96:                                         ; preds = %if.end90
+  store { ptr } { ptr @.sconst.982 }, ptr %arg.tmp98, align 1
+  %call99 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp98)
+  br i1 %call99, label %if.then100, label %if.end101
 
-if.then101:                                       ; preds = %if.end96
-  %call103 = call i64 @_ZN7symbols13packed_offsetE6String6String(ptr %source, ptr %sret.result3)
-  call void @_ZN7symbols14outgoing_callsEPN4scaly6memory4PageE6String6Stringm(ptr noalias sret({ ptr }) %sret.result98, ptr %frame, ptr %source, ptr %sret.result1, i64 %call103)
-  call void @_ZN3rpc16write_message_fdEi6String(i64 %1, ptr %sret.result98)
+if.then100:                                       ; preds = %if.end96
+  call void @_ZN7symbols11root_prefixEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result102, ptr %frame, ptr %sret.result3)
+  call void @_ZN7symbols17strip_root_prefixEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result103, ptr %frame, ptr %sret.result3)
+  call void @_ZN7symbols14incoming_callsEPN4scaly6memory4PageE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result104, ptr %frame, ptr %source, ptr %sret.result1, ptr %sret.result103, ptr %sret.result102)
+  call void @_ZN3rpc16write_message_fdEi6String(i64 %1, ptr %sret.result104)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 true
 
-if.end102:                                        ; preds = %if.end96
-  store { ptr } { ptr @.sconst.975 }, ptr %arg.tmp104, align 1
-  %call105 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp104)
+if.end101:                                        ; preds = %if.end96
+  store { ptr } { ptr @.sconst.983 }, ptr %sret.result102, align 1
+  %call105 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %sret.result102)
   br i1 %call105, label %if.then106, label %if.end107
 
-if.then106:                                       ; preds = %if.end102
-  call void @_ZN7symbols23selection_ranges_packedEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result108, ptr %frame, ptr %source, ptr %sret.result3)
-  call void @_ZN3rpc16write_message_fdEi6String(i64 %1, ptr %sret.result108)
+if.then106:                                       ; preds = %if.end101
+  %call108 = call i64 @_ZN7symbols13packed_offsetE6String6String(ptr %source, ptr %sret.result3)
+  call void @_ZN7symbols14outgoing_callsEPN4scaly6memory4PageE6String6Stringm(ptr noalias sret({ ptr }) %sret.result103, ptr %frame, ptr %source, ptr %sret.result1, i64 %call108)
+  call void @_ZN3rpc16write_message_fdEi6String(i64 %1, ptr %sret.result103)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 true
 
-if.end107:                                        ; preds = %if.end102
-  store { ptr } { ptr @.sconst.976 }, ptr %arg.tmp109, align 1
+if.end107:                                        ; preds = %if.end101
+  store { ptr } { ptr @.sconst.984 }, ptr %arg.tmp109, align 1
   %call110 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp109)
   br i1 %call110, label %if.then111, label %if.end112
 
 if.then111:                                       ; preds = %if.end107
-  call void @_ZN7symbols19code_actions_packedEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result113, ptr %frame, ptr %source, ptr %sret.result1, ptr %sret.result3)
+  call void @_ZN7symbols23selection_ranges_packedEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result113, ptr %frame, ptr %source, ptr %sret.result3)
   call void @_ZN3rpc16write_message_fdEi6String(i64 %1, ptr %sret.result113)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 true
 
 if.end112:                                        ; preds = %if.end107
-  store { ptr } { ptr @.sconst.977 }, ptr %arg.tmp114, align 1
+  store { ptr } { ptr @.sconst.985 }, ptr %arg.tmp114, align 1
   %call115 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp114)
   br i1 %call115, label %if.then116, label %if.end117
 
 if.then116:                                       ; preds = %if.end112
-  call void @_ZN6format12format_editsEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result118, ptr %frame, ptr %source)
+  call void @_ZN7symbols19code_actions_packedEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result118, ptr %frame, ptr %source, ptr %sret.result1, ptr %sret.result3)
   call void @_ZN3rpc16write_message_fdEi6String(i64 %1, ptr %sret.result118)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 true
 
 if.end117:                                        ; preds = %if.end112
-  store { ptr } { ptr @.sconst.978 }, ptr %arg.tmp119, align 1
+  store { ptr } { ptr @.sconst.986 }, ptr %arg.tmp119, align 1
   %call120 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp119)
   br i1 %call120, label %if.then121, label %if.end122
 
 if.then121:                                       ; preds = %if.end117
-  call void @_ZN7symbols15semantic_tokensEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result123, ptr %frame, ptr %source, ptr %sret.result1)
+  call void @_ZN6format12format_editsEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result123, ptr %frame, ptr %source)
   call void @_ZN3rpc16write_message_fdEi6String(i64 %1, ptr %sret.result123)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 true
 
 if.end122:                                        ; preds = %if.end117
-  store { ptr } { ptr @.sconst.979 }, ptr %arg.tmp124, align 1
+  store { ptr } { ptr @.sconst.987 }, ptr %arg.tmp124, align 1
   %call125 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp124)
   br i1 %call125, label %if.then126, label %if.end127
 
 if.then126:                                       ; preds = %if.end122
-  call void @_ZN7symbols15repaired_sourceEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result129, ptr %frame, ptr %source)
-  call void @_ZN8semantic20semantic_type_framedEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result128, ptr %frame, ptr %sret.result129, ptr %sret.result1, ptr %sret.result3)
+  call void @_ZN7symbols15semantic_tokensEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result128, ptr %frame, ptr %source, ptr %sret.result1)
   call void @_ZN3rpc16write_message_fdEi6String(i64 %1, ptr %sret.result128)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 true
 
 if.end127:                                        ; preds = %if.end122
-  store { ptr } { ptr @.sconst.980 }, ptr %arg.tmp130, align 1
-  %call131 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp130)
-  br i1 %call131, label %if.then132, label %if.end133
+  store { ptr } { ptr @.sconst.988 }, ptr %arg.tmp129, align 1
+  %call130 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp129)
+  br i1 %call130, label %if.then131, label %if.end132
 
-if.then132:                                       ; preds = %if.end127
-  call void @_ZN8codelens6lensesEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result134, ptr %frame, ptr %sret.result1, ptr %source)
-  call void @_ZN3rpc16write_message_fdEi6String(i64 %1, ptr %sret.result134)
+if.then131:                                       ; preds = %if.end127
+  call void @_ZN7symbols15repaired_sourceEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result134, ptr %frame, ptr %source)
+  call void @_ZN8semantic20semantic_type_framedEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result133, ptr %frame, ptr %sret.result134, ptr %sret.result1, ptr %sret.result3)
+  call void @_ZN3rpc16write_message_fdEi6String(i64 %1, ptr %sret.result133)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 true
 
-if.end133:                                        ; preds = %if.end127
-  call void @_ZN11diagnostics19publish_diagnosticsEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result135, ptr %frame, ptr %sret.result1, ptr %source)
-  call void @_ZN3rpc16write_message_fdEi6String(i64 %1, ptr %sret.result135)
+if.end132:                                        ; preds = %if.end127
+  store { ptr } { ptr @.sconst.989 }, ptr %arg.tmp135, align 1
+  %call136 = call i1 @_ZN6String6equalsE6String(ptr %sret.result, ptr %arg.tmp135)
+  br i1 %call136, label %if.then137, label %if.end138
+
+if.then137:                                       ; preds = %if.end132
+  call void @_ZN8codelens6lensesEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result139, ptr %frame, ptr %sret.result1, ptr %source)
+  call void @_ZN3rpc16write_message_fdEi6String(i64 %1, ptr %sret.result139)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  ret i1 true
+
+if.end138:                                        ; preds = %if.end132
+  call void @_ZN11diagnostics19publish_diagnosticsEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result140, ptr %frame, ptr %sret.result1, ptr %source)
+  call void @_ZN3rpc16write_message_fdEi6String(i64 %1, ptr %sret.result140)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret i1 true
 }
@@ -149741,16 +150274,16 @@ frame.forced:                                     ; preds = %frame.force, %if.en
   br i1 %le13, label %if.then14, label %if.end15
 
 if.then14:                                        ; preds = %frame.forced
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.1034)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.1045)
   %load.struct16 = load %_Z5SliceIcE, ptr %2, align 8
   %data17 = extractvalue %_Z5SliceIcE %load.struct16, 1
   %field.inplace = getelementptr inbounds nuw %_Z5SliceIcE, ptr %2, i32 0, i32 0
   %field.val = load i64, ptr %field.inplace, align 8
   %call18 = call i64 @write(i64 2, ptr %data17, i64 %field.val)
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.1035)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.1046)
   %as.sext = sext i32 %call to i64
   call void @_Z11scaly_eputi3i64(i64 %as.sext)
-  call void @_Z11scaly_eputsP10const_char(ptr @.str.1036)
+  call void @_Z11scaly_eputsP10const_char(ptr @.str.1047)
   call void @_ZN6worker8shutdownEv()
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body19 = load { ptr }, ptr %6, align 8
@@ -149794,7 +150327,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 0
   store i64 1, ptr %tuple.field, align 1
   %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
-  store ptr @.str.981, ptr %tuple.field2, align 1
+  store ptr @.str.990, ptr %tuple.field2, align 1
   store { ptr } zeroinitializer, ptr %arg.tmp, align 1
   call void @_ZN11diagnostics17clear_diagnosticsEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result3, ptr %1, ptr %2)
   call void @_ZN6worker8exchangeEPN4scaly6memory4PageE5SliceIcE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %tuple.region, ptr %2, ptr %3, ptr %arg.tmp, ptr %sret.result3)
@@ -149822,9 +150355,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 0
   store i64 1, ptr %tuple.field, align 1
   %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
-  store ptr @.str.982, ptr %tuple.field2, align 1
+  store ptr @.str.991, ptr %tuple.field2, align 1
   store { ptr } zeroinitializer, ptr %arg.tmp, align 1
-  store { ptr } { ptr @.sconst.983 }, ptr %arg.tmp3, align 1
+  store { ptr } { ptr @.sconst.992 }, ptr %arg.tmp3, align 1
   call void @_ZN6worker8exchangeEPN4scaly6memory4PageE5SliceIcE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %tuple.region, ptr %2, ptr %3, ptr %arg.tmp, ptr %arg.tmp3)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -149832,162 +150365,6 @@ frame.forced:                                     ; preds = %frame.force, %entry
 }
 
 define linkonce_odr void @_ZN6worker5hoverEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
-entry:
-  %arg.tmp = alloca { ptr }, align 8
-  %sret.result = alloca { ptr }, align 8
-  %frame.page = load ptr, ptr %1, align 8
-  %frame.has_page = icmp ne ptr %frame.page, null
-  br i1 %frame.has_page, label %frame.forced, label %frame.force
-
-frame.force:                                      ; preds = %entry
-  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
-  br label %frame.forced
-
-frame.forced:                                     ; preds = %frame.force, %entry
-  %forced_page1 = phi ptr [ %frame.page, %entry ], [ %forced_page, %frame.force ]
-  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5SliceIcE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 0
-  store i64 1, ptr %tuple.field, align 1
-  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
-  store ptr @.str.984, ptr %tuple.field2, align 1
-  store { ptr } zeroinitializer, ptr %arg.tmp, align 1
-  call void @_ZN6worker8exchangeEPN4scaly6memory4PageE5SliceIcE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %tuple.region, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
-  %sret.body = load { ptr }, ptr %sret.result, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  ret void
-}
-
-define linkonce_odr void @_ZN6worker10definitionEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
-entry:
-  %arg.tmp = alloca { ptr }, align 8
-  %sret.result = alloca { ptr }, align 8
-  %frame.page = load ptr, ptr %1, align 8
-  %frame.has_page = icmp ne ptr %frame.page, null
-  br i1 %frame.has_page, label %frame.forced, label %frame.force
-
-frame.force:                                      ; preds = %entry
-  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
-  br label %frame.forced
-
-frame.forced:                                     ; preds = %frame.force, %entry
-  %forced_page1 = phi ptr [ %frame.page, %entry ], [ %forced_page, %frame.force ]
-  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5SliceIcE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 0
-  store i64 1, ptr %tuple.field, align 1
-  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
-  store ptr @.str.985, ptr %tuple.field2, align 1
-  store { ptr } zeroinitializer, ptr %arg.tmp, align 1
-  call void @_ZN6worker8exchangeEPN4scaly6memory4PageE5SliceIcE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %tuple.region, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
-  %sret.body = load { ptr }, ptr %sret.result, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  ret void
-}
-
-define linkonce_odr void @_ZN6worker10referencesEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
-entry:
-  %arg.tmp = alloca { ptr }, align 8
-  %sret.result = alloca { ptr }, align 8
-  %frame.page = load ptr, ptr %1, align 8
-  %frame.has_page = icmp ne ptr %frame.page, null
-  br i1 %frame.has_page, label %frame.forced, label %frame.force
-
-frame.force:                                      ; preds = %entry
-  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
-  br label %frame.forced
-
-frame.forced:                                     ; preds = %frame.force, %entry
-  %forced_page1 = phi ptr [ %frame.page, %entry ], [ %forced_page, %frame.force ]
-  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5SliceIcE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 0
-  store i64 1, ptr %tuple.field, align 1
-  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
-  store ptr @.str.986, ptr %tuple.field2, align 1
-  store { ptr } { ptr @.sconst.987 }, ptr %arg.tmp, align 1
-  call void @_ZN6worker8exchangeEPN4scaly6memory4PageE5SliceIcE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %tuple.region, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
-  %sret.body = load { ptr }, ptr %sret.result, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  ret void
-}
-
-define linkonce_odr void @_ZN6worker10highlightsEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
-entry:
-  %arg.tmp = alloca { ptr }, align 8
-  %sret.result = alloca { ptr }, align 8
-  %frame.page = load ptr, ptr %1, align 8
-  %frame.has_page = icmp ne ptr %frame.page, null
-  br i1 %frame.has_page, label %frame.forced, label %frame.force
-
-frame.force:                                      ; preds = %entry
-  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
-  br label %frame.forced
-
-frame.forced:                                     ; preds = %frame.force, %entry
-  %forced_page1 = phi ptr [ %frame.page, %entry ], [ %forced_page, %frame.force ]
-  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5SliceIcE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 0
-  store i64 1, ptr %tuple.field, align 1
-  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
-  store ptr @.str.988, ptr %tuple.field2, align 1
-  store { ptr } { ptr @.sconst.989 }, ptr %arg.tmp, align 1
-  call void @_ZN6worker8exchangeEPN4scaly6memory4PageE5SliceIcE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %tuple.region, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
-  %sret.body = load { ptr }, ptr %sret.result, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  ret void
-}
-
-define linkonce_odr void @_ZN6worker10completionEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
-entry:
-  %arg.tmp = alloca { ptr }, align 8
-  %sret.result = alloca { ptr }, align 8
-  %frame.page = load ptr, ptr %1, align 8
-  %frame.has_page = icmp ne ptr %frame.page, null
-  br i1 %frame.has_page, label %frame.forced, label %frame.force
-
-frame.force:                                      ; preds = %entry
-  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
-  br label %frame.forced
-
-frame.forced:                                     ; preds = %frame.force, %entry
-  %forced_page1 = phi ptr [ %frame.page, %entry ], [ %forced_page, %frame.force ]
-  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5SliceIcE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 0
-  store i64 1, ptr %tuple.field, align 1
-  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
-  store ptr @.str.990, ptr %tuple.field2, align 1
-  store { ptr } { ptr @.sconst.991 }, ptr %arg.tmp, align 1
-  call void @_ZN6worker8exchangeEPN4scaly6memory4PageE5SliceIcE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %tuple.region, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
-  %sret.body = load { ptr }, ptr %sret.result, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  ret void
-}
-
-define linkonce_odr void @_ZN6worker18completion_resolveEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
-entry:
-  %arg.tmp = alloca { ptr }, align 8
-  %sret.result = alloca { ptr }, align 8
-  %frame.page = load ptr, ptr %1, align 8
-  %frame.has_page = icmp ne ptr %frame.page, null
-  br i1 %frame.has_page, label %frame.forced, label %frame.force
-
-frame.force:                                      ; preds = %entry
-  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
-  br label %frame.forced
-
-frame.forced:                                     ; preds = %frame.force, %entry
-  %forced_page1 = phi ptr [ %frame.page, %entry ], [ %forced_page, %frame.force ]
-  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5SliceIcE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 0
-  store i64 1, ptr %tuple.field, align 1
-  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
-  store ptr @.str.992, ptr %tuple.field2, align 1
-  store { ptr } zeroinitializer, ptr %arg.tmp, align 1
-  call void @_ZN6worker8exchangeEPN4scaly6memory4PageE5SliceIcE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %tuple.region, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
-  %sret.body = load { ptr }, ptr %sret.result, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  ret void
-}
-
-define linkonce_odr void @_ZN6worker6renameEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
 entry:
   %arg.tmp = alloca { ptr }, align 8
   %sret.result = alloca { ptr }, align 8
@@ -150013,7 +150390,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   ret void
 }
 
-define linkonce_odr void @_ZN6worker14prepare_renameEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
+define linkonce_odr void @_ZN6worker10definitionEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
 entry:
   %arg.tmp = alloca { ptr }, align 8
   %sret.result = alloca { ptr }, align 8
@@ -150039,7 +150416,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   ret void
 }
 
-define linkonce_odr void @_ZN6worker14signature_helpEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
+define linkonce_odr void @_ZN6worker10referencesEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
 entry:
   %arg.tmp = alloca { ptr }, align 8
   %sret.result = alloca { ptr }, align 8
@@ -150058,6 +150435,84 @@ frame.forced:                                     ; preds = %frame.force, %entry
   store i64 1, ptr %tuple.field, align 1
   %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
   store ptr @.str.995, ptr %tuple.field2, align 1
+  store { ptr } { ptr @.sconst.996 }, ptr %arg.tmp, align 1
+  call void @_ZN6worker8exchangeEPN4scaly6memory4PageE5SliceIcE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %tuple.region, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
+  %sret.body = load { ptr }, ptr %sret.result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN6worker10highlightsEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
+entry:
+  %arg.tmp = alloca { ptr }, align 8
+  %sret.result = alloca { ptr }, align 8
+  %frame.page = load ptr, ptr %1, align 8
+  %frame.has_page = icmp ne ptr %frame.page, null
+  br i1 %frame.has_page, label %frame.forced, label %frame.force
+
+frame.force:                                      ; preds = %entry
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
+  br label %frame.forced
+
+frame.forced:                                     ; preds = %frame.force, %entry
+  %forced_page1 = phi ptr [ %frame.page, %entry ], [ %forced_page, %frame.force ]
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5SliceIcE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 0
+  store i64 1, ptr %tuple.field, align 1
+  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
+  store ptr @.str.997, ptr %tuple.field2, align 1
+  store { ptr } { ptr @.sconst.998 }, ptr %arg.tmp, align 1
+  call void @_ZN6worker8exchangeEPN4scaly6memory4PageE5SliceIcE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %tuple.region, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
+  %sret.body = load { ptr }, ptr %sret.result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN6worker10completionEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
+entry:
+  %arg.tmp = alloca { ptr }, align 8
+  %sret.result = alloca { ptr }, align 8
+  %frame.page = load ptr, ptr %1, align 8
+  %frame.has_page = icmp ne ptr %frame.page, null
+  br i1 %frame.has_page, label %frame.forced, label %frame.force
+
+frame.force:                                      ; preds = %entry
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
+  br label %frame.forced
+
+frame.forced:                                     ; preds = %frame.force, %entry
+  %forced_page1 = phi ptr [ %frame.page, %entry ], [ %forced_page, %frame.force ]
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5SliceIcE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 0
+  store i64 1, ptr %tuple.field, align 1
+  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
+  store ptr @.str.999, ptr %tuple.field2, align 1
+  store { ptr } { ptr @.sconst.1000 }, ptr %arg.tmp, align 1
+  call void @_ZN6worker8exchangeEPN4scaly6memory4PageE5SliceIcE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %tuple.region, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
+  %sret.body = load { ptr }, ptr %sret.result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN6worker18completion_resolveEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
+entry:
+  %arg.tmp = alloca { ptr }, align 8
+  %sret.result = alloca { ptr }, align 8
+  %frame.page = load ptr, ptr %1, align 8
+  %frame.has_page = icmp ne ptr %frame.page, null
+  br i1 %frame.has_page, label %frame.forced, label %frame.force
+
+frame.force:                                      ; preds = %entry
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
+  br label %frame.forced
+
+frame.forced:                                     ; preds = %frame.force, %entry
+  %forced_page1 = phi ptr [ %frame.page, %entry ], [ %forced_page, %frame.force ]
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5SliceIcE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 0
+  store i64 1, ptr %tuple.field, align 1
+  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
+  store ptr @.str.1001, ptr %tuple.field2, align 1
   store { ptr } zeroinitializer, ptr %arg.tmp, align 1
   call void @_ZN6worker8exchangeEPN4scaly6memory4PageE5SliceIcE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %tuple.region, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
   %sret.body = load { ptr }, ptr %sret.result, align 8
@@ -150065,91 +150520,8 @@ frame.forced:                                     ; preds = %frame.force, %entry
   ret void
 }
 
-define linkonce_odr void @_ZN6worker11inlay_hintsEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
+define linkonce_odr void @_ZN6worker6renameEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
 entry:
-  %arg.tmp = alloca { ptr }, align 8
-  %sret.result = alloca { ptr }, align 8
-  %frame.page = load ptr, ptr %1, align 8
-  %frame.has_page = icmp ne ptr %frame.page, null
-  br i1 %frame.has_page, label %frame.forced, label %frame.force
-
-frame.force:                                      ; preds = %entry
-  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
-  br label %frame.forced
-
-frame.forced:                                     ; preds = %frame.force, %entry
-  %forced_page1 = phi ptr [ %frame.page, %entry ], [ %forced_page, %frame.force ]
-  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5SliceIcE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 0
-  store i64 1, ptr %tuple.field, align 1
-  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
-  store ptr @.str.996, ptr %tuple.field2, align 1
-  store { ptr } { ptr @.sconst.997 }, ptr %arg.tmp, align 1
-  call void @_ZN6worker8exchangeEPN4scaly6memory4PageE5SliceIcE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %tuple.region, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
-  %sret.body = load { ptr }, ptr %sret.result, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  ret void
-}
-
-define linkonce_odr void @_ZN6worker7foldingEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
-entry:
-  %arg.tmp3 = alloca { ptr }, align 8
-  %arg.tmp = alloca { ptr }, align 8
-  %sret.result = alloca { ptr }, align 8
-  %frame.page = load ptr, ptr %1, align 8
-  %frame.has_page = icmp ne ptr %frame.page, null
-  br i1 %frame.has_page, label %frame.forced, label %frame.force
-
-frame.force:                                      ; preds = %entry
-  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
-  br label %frame.forced
-
-frame.forced:                                     ; preds = %frame.force, %entry
-  %forced_page1 = phi ptr [ %frame.page, %entry ], [ %forced_page, %frame.force ]
-  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5SliceIcE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 0
-  store i64 1, ptr %tuple.field, align 1
-  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
-  store ptr @.str.998, ptr %tuple.field2, align 1
-  store { ptr } zeroinitializer, ptr %arg.tmp, align 1
-  store { ptr } { ptr @.sconst.999 }, ptr %arg.tmp3, align 1
-  call void @_ZN6worker8exchangeEPN4scaly6memory4PageE5SliceIcE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %tuple.region, ptr %2, ptr %3, ptr %arg.tmp, ptr %arg.tmp3)
-  %sret.body = load { ptr }, ptr %sret.result, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  ret void
-}
-
-define linkonce_odr void @_ZN6worker10formattingEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
-entry:
-  %arg.tmp3 = alloca { ptr }, align 8
-  %arg.tmp = alloca { ptr }, align 8
-  %sret.result = alloca { ptr }, align 8
-  %frame.page = load ptr, ptr %1, align 8
-  %frame.has_page = icmp ne ptr %frame.page, null
-  br i1 %frame.has_page, label %frame.forced, label %frame.force
-
-frame.force:                                      ; preds = %entry
-  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
-  br label %frame.forced
-
-frame.forced:                                     ; preds = %frame.force, %entry
-  %forced_page1 = phi ptr [ %frame.page, %entry ], [ %forced_page, %frame.force ]
-  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5SliceIcE }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 0
-  store i64 1, ptr %tuple.field, align 1
-  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
-  store ptr @.str.1000, ptr %tuple.field2, align 1
-  store { ptr } zeroinitializer, ptr %arg.tmp, align 1
-  store { ptr } { ptr @.sconst.1001 }, ptr %arg.tmp3, align 1
-  call void @_ZN6worker8exchangeEPN4scaly6memory4PageE5SliceIcE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %tuple.region, ptr %2, ptr %3, ptr %arg.tmp, ptr %arg.tmp3)
-  %sret.body = load { ptr }, ptr %sret.result, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
-  ret void
-}
-
-define linkonce_odr void @_ZN6worker11code_lensesEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
-entry:
-  %arg.tmp3 = alloca { ptr }, align 8
   %arg.tmp = alloca { ptr }, align 8
   %sret.result = alloca { ptr }, align 8
   %frame.page = load ptr, ptr %1, align 8
@@ -150168,14 +150540,39 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
   store ptr @.str.1002, ptr %tuple.field2, align 1
   store { ptr } zeroinitializer, ptr %arg.tmp, align 1
-  store { ptr } { ptr @.sconst.1003 }, ptr %arg.tmp3, align 1
-  call void @_ZN6worker8exchangeEPN4scaly6memory4PageE5SliceIcE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %tuple.region, ptr %2, ptr %3, ptr %arg.tmp, ptr %arg.tmp3)
+  call void @_ZN6worker8exchangeEPN4scaly6memory4PageE5SliceIcE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %tuple.region, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
-define linkonce_odr void @_ZN6worker15type_definitionEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
+define linkonce_odr void @_ZN6worker14prepare_renameEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
+entry:
+  %arg.tmp = alloca { ptr }, align 8
+  %sret.result = alloca { ptr }, align 8
+  %frame.page = load ptr, ptr %1, align 8
+  %frame.has_page = icmp ne ptr %frame.page, null
+  br i1 %frame.has_page, label %frame.forced, label %frame.force
+
+frame.force:                                      ; preds = %entry
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
+  br label %frame.forced
+
+frame.forced:                                     ; preds = %frame.force, %entry
+  %forced_page1 = phi ptr [ %frame.page, %entry ], [ %forced_page, %frame.force ]
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5SliceIcE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 0
+  store i64 1, ptr %tuple.field, align 1
+  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
+  store ptr @.str.1003, ptr %tuple.field2, align 1
+  store { ptr } zeroinitializer, ptr %arg.tmp, align 1
+  call void @_ZN6worker8exchangeEPN4scaly6memory4PageE5SliceIcE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %tuple.region, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
+  %sret.body = load { ptr }, ptr %sret.result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN6worker14signature_helpEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
 entry:
   %arg.tmp = alloca { ptr }, align 8
   %sret.result = alloca { ptr }, align 8
@@ -150201,7 +150598,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   ret void
 }
 
-define linkonce_odr void @_ZN6worker22prepare_call_hierarchyEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
+define linkonce_odr void @_ZN6worker11inlay_hintsEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
 entry:
   %arg.tmp = alloca { ptr }, align 8
   %sret.result = alloca { ptr }, align 8
@@ -150227,6 +150624,142 @@ frame.forced:                                     ; preds = %frame.force, %entry
   ret void
 }
 
+define linkonce_odr void @_ZN6worker7foldingEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
+entry:
+  %arg.tmp3 = alloca { ptr }, align 8
+  %arg.tmp = alloca { ptr }, align 8
+  %sret.result = alloca { ptr }, align 8
+  %frame.page = load ptr, ptr %1, align 8
+  %frame.has_page = icmp ne ptr %frame.page, null
+  br i1 %frame.has_page, label %frame.forced, label %frame.force
+
+frame.force:                                      ; preds = %entry
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
+  br label %frame.forced
+
+frame.forced:                                     ; preds = %frame.force, %entry
+  %forced_page1 = phi ptr [ %frame.page, %entry ], [ %forced_page, %frame.force ]
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5SliceIcE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 0
+  store i64 1, ptr %tuple.field, align 1
+  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
+  store ptr @.str.1007, ptr %tuple.field2, align 1
+  store { ptr } zeroinitializer, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.1008 }, ptr %arg.tmp3, align 1
+  call void @_ZN6worker8exchangeEPN4scaly6memory4PageE5SliceIcE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %tuple.region, ptr %2, ptr %3, ptr %arg.tmp, ptr %arg.tmp3)
+  %sret.body = load { ptr }, ptr %sret.result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN6worker10formattingEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
+entry:
+  %arg.tmp3 = alloca { ptr }, align 8
+  %arg.tmp = alloca { ptr }, align 8
+  %sret.result = alloca { ptr }, align 8
+  %frame.page = load ptr, ptr %1, align 8
+  %frame.has_page = icmp ne ptr %frame.page, null
+  br i1 %frame.has_page, label %frame.forced, label %frame.force
+
+frame.force:                                      ; preds = %entry
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
+  br label %frame.forced
+
+frame.forced:                                     ; preds = %frame.force, %entry
+  %forced_page1 = phi ptr [ %frame.page, %entry ], [ %forced_page, %frame.force ]
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5SliceIcE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 0
+  store i64 1, ptr %tuple.field, align 1
+  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
+  store ptr @.str.1009, ptr %tuple.field2, align 1
+  store { ptr } zeroinitializer, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.1010 }, ptr %arg.tmp3, align 1
+  call void @_ZN6worker8exchangeEPN4scaly6memory4PageE5SliceIcE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %tuple.region, ptr %2, ptr %3, ptr %arg.tmp, ptr %arg.tmp3)
+  %sret.body = load { ptr }, ptr %sret.result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN6worker11code_lensesEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
+entry:
+  %arg.tmp3 = alloca { ptr }, align 8
+  %arg.tmp = alloca { ptr }, align 8
+  %sret.result = alloca { ptr }, align 8
+  %frame.page = load ptr, ptr %1, align 8
+  %frame.has_page = icmp ne ptr %frame.page, null
+  br i1 %frame.has_page, label %frame.forced, label %frame.force
+
+frame.force:                                      ; preds = %entry
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
+  br label %frame.forced
+
+frame.forced:                                     ; preds = %frame.force, %entry
+  %forced_page1 = phi ptr [ %frame.page, %entry ], [ %forced_page, %frame.force ]
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5SliceIcE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 0
+  store i64 1, ptr %tuple.field, align 1
+  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
+  store ptr @.str.1011, ptr %tuple.field2, align 1
+  store { ptr } zeroinitializer, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.1012 }, ptr %arg.tmp3, align 1
+  call void @_ZN6worker8exchangeEPN4scaly6memory4PageE5SliceIcE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %tuple.region, ptr %2, ptr %3, ptr %arg.tmp, ptr %arg.tmp3)
+  %sret.body = load { ptr }, ptr %sret.result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN6worker15type_definitionEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
+entry:
+  %arg.tmp = alloca { ptr }, align 8
+  %sret.result = alloca { ptr }, align 8
+  %frame.page = load ptr, ptr %1, align 8
+  %frame.has_page = icmp ne ptr %frame.page, null
+  br i1 %frame.has_page, label %frame.forced, label %frame.force
+
+frame.force:                                      ; preds = %entry
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
+  br label %frame.forced
+
+frame.forced:                                     ; preds = %frame.force, %entry
+  %forced_page1 = phi ptr [ %frame.page, %entry ], [ %forced_page, %frame.force ]
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5SliceIcE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 0
+  store i64 1, ptr %tuple.field, align 1
+  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
+  store ptr @.str.1013, ptr %tuple.field2, align 1
+  store { ptr } zeroinitializer, ptr %arg.tmp, align 1
+  call void @_ZN6worker8exchangeEPN4scaly6memory4PageE5SliceIcE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %tuple.region, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
+  %sret.body = load { ptr }, ptr %sret.result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN6worker22prepare_call_hierarchyEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
+entry:
+  %arg.tmp = alloca { ptr }, align 8
+  %sret.result = alloca { ptr }, align 8
+  %frame.page = load ptr, ptr %1, align 8
+  %frame.has_page = icmp ne ptr %frame.page, null
+  br i1 %frame.has_page, label %frame.forced, label %frame.force
+
+frame.force:                                      ; preds = %entry
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
+  br label %frame.forced
+
+frame.forced:                                     ; preds = %frame.force, %entry
+  %forced_page1 = phi ptr [ %frame.page, %entry ], [ %forced_page, %frame.force ]
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5SliceIcE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 0
+  store i64 1, ptr %tuple.field, align 1
+  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
+  store ptr @.str.1014, ptr %tuple.field2, align 1
+  store { ptr } { ptr @.sconst.1015 }, ptr %arg.tmp, align 1
+  call void @_ZN6worker8exchangeEPN4scaly6memory4PageE5SliceIcE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %tuple.region, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
+  %sret.body = load { ptr }, ptr %sret.result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
 define linkonce_odr void @_ZN6worker14incoming_callsEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
 entry:
   %arg.tmp = alloca { ptr }, align 8
@@ -150245,8 +150778,8 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 0
   store i64 1, ptr %tuple.field, align 1
   %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
-  store ptr @.str.1007, ptr %tuple.field2, align 1
-  store { ptr } { ptr @.sconst.1008 }, ptr %arg.tmp, align 1
+  store ptr @.str.1016, ptr %tuple.field2, align 1
+  store { ptr } { ptr @.sconst.1017 }, ptr %arg.tmp, align 1
   call void @_ZN6worker8exchangeEPN4scaly6memory4PageE5SliceIcE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %tuple.region, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -150271,8 +150804,8 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 0
   store i64 1, ptr %tuple.field, align 1
   %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
-  store ptr @.str.1009, ptr %tuple.field2, align 1
-  store { ptr } { ptr @.sconst.1010 }, ptr %arg.tmp, align 1
+  store ptr @.str.1018, ptr %tuple.field2, align 1
+  store { ptr } { ptr @.sconst.1019 }, ptr %arg.tmp, align 1
   call void @_ZN6worker8exchangeEPN4scaly6memory4PageE5SliceIcE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %tuple.region, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -150297,8 +150830,8 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 0
   store i64 1, ptr %tuple.field, align 1
   %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
-  store ptr @.str.1011, ptr %tuple.field2, align 1
-  store { ptr } { ptr @.sconst.1012 }, ptr %arg.tmp, align 1
+  store ptr @.str.1020, ptr %tuple.field2, align 1
+  store { ptr } { ptr @.sconst.1021 }, ptr %arg.tmp, align 1
   call void @_ZN6worker8exchangeEPN4scaly6memory4PageE5SliceIcE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %tuple.region, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -150323,8 +150856,34 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 0
   store i64 1, ptr %tuple.field, align 1
   %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
-  store ptr @.str.1013, ptr %tuple.field2, align 1
-  store { ptr } { ptr @.sconst.1014 }, ptr %arg.tmp, align 1
+  store ptr @.str.1022, ptr %tuple.field2, align 1
+  store { ptr } { ptr @.sconst.1023 }, ptr %arg.tmp, align 1
+  call void @_ZN6worker8exchangeEPN4scaly6memory4PageE5SliceIcE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %tuple.region, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
+  %sret.body = load { ptr }, ptr %sret.result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN6worker9placementEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3, ptr %4) {
+entry:
+  %arg.tmp = alloca { ptr }, align 8
+  %sret.result = alloca { ptr }, align 8
+  %frame.page = load ptr, ptr %1, align 8
+  %frame.has_page = icmp ne ptr %frame.page, null
+  br i1 %frame.has_page, label %frame.forced, label %frame.force
+
+frame.force:                                      ; preds = %entry
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
+  br label %frame.forced
+
+frame.forced:                                     ; preds = %frame.force, %entry
+  %forced_page1 = phi ptr [ %frame.page, %entry ], [ %forced_page, %frame.force ]
+  %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z5SliceIcE }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 0
+  store i64 1, ptr %tuple.field, align 1
+  %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
+  store ptr @.str.1024, ptr %tuple.field2, align 1
+  store { ptr } zeroinitializer, ptr %arg.tmp, align 1
   call void @_ZN6worker8exchangeEPN4scaly6memory4PageE5SliceIcE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %tuple.region, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -150349,7 +150908,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 0
   store i64 1, ptr %tuple.field, align 1
   %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
-  store ptr @.str.1015, ptr %tuple.field2, align 1
+  store ptr @.str.1025, ptr %tuple.field2, align 1
   store { ptr } zeroinitializer, ptr %arg.tmp, align 1
   call void @_ZN6worker8exchangeEPN4scaly6memory4PageE5SliceIcE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %tuple.region, ptr %2, ptr %3, ptr %4, ptr %arg.tmp)
   %sret.body = load { ptr }, ptr %sret.result, align 8
@@ -150376,9 +150935,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 0
   store i64 1, ptr %tuple.field, align 1
   %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
-  store ptr @.str.1016, ptr %tuple.field2, align 1
+  store ptr @.str.1026, ptr %tuple.field2, align 1
   store { ptr } zeroinitializer, ptr %arg.tmp, align 1
-  store { ptr } { ptr @.sconst.1017 }, ptr %arg.tmp3, align 1
+  store { ptr } { ptr @.sconst.1027 }, ptr %arg.tmp3, align 1
   call void @_ZN6worker8exchangeEPN4scaly6memory4PageE5SliceIcE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %tuple.region, ptr %2, ptr %3, ptr %arg.tmp, ptr %arg.tmp3)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -150404,9 +150963,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 0
   store i64 1, ptr %tuple.field, align 1
   %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
-  store ptr @.str.1018, ptr %tuple.field2, align 1
+  store ptr @.str.1028, ptr %tuple.field2, align 1
   store { ptr } zeroinitializer, ptr %arg.tmp, align 1
-  store { ptr } { ptr @.sconst.1019 }, ptr %arg.tmp3, align 1
+  store { ptr } { ptr @.sconst.1029 }, ptr %arg.tmp3, align 1
   call void @_ZN6worker8exchangeEPN4scaly6memory4PageE5SliceIcE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %tuple.region, ptr %2, ptr %arg.tmp, ptr %3, ptr %arg.tmp3)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
@@ -150421,7 +150980,7 @@ entry:
   store ptr null, ptr %frame, align 8
   %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
   store ptr null, ptr %frame.parent, align 8
-  %call = call ptr @getenv(ptr @.str.1020)
+  %call = call ptr @getenv(ptr @.str.1030)
   %eq = icmp eq ptr %call, null
   br i1 %eq, label %if.then, label %if.end
 
@@ -150498,6 +151057,7 @@ if.end13:                                         ; preds = %if.end11
 
 define linkonce_odr i32 @_ZN6worker15budget_for_kindE6String(ptr %0) {
 entry:
+  %arg.tmp52 = alloca { ptr }, align 8
   %arg.tmp48 = alloca { ptr }, align 8
   %arg.tmp44 = alloca { ptr }, align 8
   %arg.tmp40 = alloca { ptr }, align 8
@@ -150519,7 +151079,7 @@ if.then:                                          ; preds = %entry
   ret i32 %call
 
 if.end:                                           ; preds = %entry
-  store { ptr } { ptr @.sconst.1021 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.1031 }, ptr %arg.tmp, align 1
   %call1 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp)
   br i1 %call1, label %if.then2, label %if.end3
 
@@ -150527,7 +151087,7 @@ if.then2:                                         ; preds = %if.end
   ret i32 60000
 
 if.end3:                                          ; preds = %if.end
-  store { ptr } { ptr @.sconst.1022 }, ptr %arg.tmp4, align 1
+  store { ptr } { ptr @.sconst.1032 }, ptr %arg.tmp4, align 1
   %call5 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp4)
   br i1 %call5, label %if.then6, label %if.end7
 
@@ -150535,7 +151095,7 @@ if.then6:                                         ; preds = %if.end3
   ret i32 60000
 
 if.end7:                                          ; preds = %if.end3
-  store { ptr } { ptr @.sconst.1023 }, ptr %arg.tmp8, align 1
+  store { ptr } { ptr @.sconst.1033 }, ptr %arg.tmp8, align 1
   %call9 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp8)
   br i1 %call9, label %if.then10, label %if.end11
 
@@ -150543,7 +151103,7 @@ if.then10:                                        ; preds = %if.end7
   ret i32 60000
 
 if.end11:                                         ; preds = %if.end7
-  store { ptr } { ptr @.sconst.1024 }, ptr %arg.tmp12, align 1
+  store { ptr } { ptr @.sconst.1034 }, ptr %arg.tmp12, align 1
   %call13 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp12)
   br i1 %call13, label %if.then14, label %if.end15
 
@@ -150551,7 +151111,7 @@ if.then14:                                        ; preds = %if.end11
   ret i32 60000
 
 if.end15:                                         ; preds = %if.end11
-  store { ptr } { ptr @.sconst.1025 }, ptr %arg.tmp16, align 1
+  store { ptr } { ptr @.sconst.1035 }, ptr %arg.tmp16, align 1
   %call17 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp16)
   br i1 %call17, label %if.then18, label %if.end19
 
@@ -150559,7 +151119,7 @@ if.then18:                                        ; preds = %if.end15
   ret i32 60000
 
 if.end19:                                         ; preds = %if.end15
-  store { ptr } { ptr @.sconst.1026 }, ptr %arg.tmp20, align 1
+  store { ptr } { ptr @.sconst.1036 }, ptr %arg.tmp20, align 1
   %call21 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp20)
   br i1 %call21, label %if.then22, label %if.end23
 
@@ -150567,7 +151127,7 @@ if.then22:                                        ; preds = %if.end19
   ret i32 60000
 
 if.end23:                                         ; preds = %if.end19
-  store { ptr } { ptr @.sconst.1027 }, ptr %arg.tmp24, align 1
+  store { ptr } { ptr @.sconst.1037 }, ptr %arg.tmp24, align 1
   %call25 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp24)
   br i1 %call25, label %if.then26, label %if.end27
 
@@ -150575,7 +151135,7 @@ if.then26:                                        ; preds = %if.end23
   ret i32 60000
 
 if.end27:                                         ; preds = %if.end23
-  store { ptr } { ptr @.sconst.1028 }, ptr %arg.tmp28, align 1
+  store { ptr } { ptr @.sconst.1038 }, ptr %arg.tmp28, align 1
   %call29 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp28)
   br i1 %call29, label %if.then30, label %if.end31
 
@@ -150583,7 +151143,7 @@ if.then30:                                        ; preds = %if.end27
   ret i32 60000
 
 if.end31:                                         ; preds = %if.end27
-  store { ptr } { ptr @.sconst.1029 }, ptr %arg.tmp32, align 1
+  store { ptr } { ptr @.sconst.1039 }, ptr %arg.tmp32, align 1
   %call33 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp32)
   br i1 %call33, label %if.then34, label %if.end35
 
@@ -150591,7 +151151,7 @@ if.then34:                                        ; preds = %if.end31
   ret i32 60000
 
 if.end35:                                         ; preds = %if.end31
-  store { ptr } { ptr @.sconst.1030 }, ptr %arg.tmp36, align 1
+  store { ptr } { ptr @.sconst.1040 }, ptr %arg.tmp36, align 1
   %call37 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp36)
   br i1 %call37, label %if.then38, label %if.end39
 
@@ -150599,7 +151159,7 @@ if.then38:                                        ; preds = %if.end35
   ret i32 60000
 
 if.end39:                                         ; preds = %if.end35
-  store { ptr } { ptr @.sconst.1031 }, ptr %arg.tmp40, align 1
+  store { ptr } { ptr @.sconst.1041 }, ptr %arg.tmp40, align 1
   %call41 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp40)
   br i1 %call41, label %if.then42, label %if.end43
 
@@ -150607,15 +151167,15 @@ if.then42:                                        ; preds = %if.end39
   ret i32 60000
 
 if.end43:                                         ; preds = %if.end39
-  store { ptr } { ptr @.sconst.1032 }, ptr %arg.tmp44, align 1
+  store { ptr } { ptr @.sconst.1042 }, ptr %arg.tmp44, align 1
   %call45 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp44)
   br i1 %call45, label %if.then46, label %if.end47
 
 if.then46:                                        ; preds = %if.end43
-  ret i32 20000
+  ret i32 60000
 
 if.end47:                                         ; preds = %if.end43
-  store { ptr } { ptr @.sconst.1033 }, ptr %arg.tmp48, align 1
+  store { ptr } { ptr @.sconst.1043 }, ptr %arg.tmp48, align 1
   %call49 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp48)
   br i1 %call49, label %if.then50, label %if.end51
 
@@ -150623,6 +151183,14 @@ if.then50:                                        ; preds = %if.end47
   ret i32 20000
 
 if.end51:                                         ; preds = %if.end47
+  store { ptr } { ptr @.sconst.1044 }, ptr %arg.tmp52, align 1
+  %call53 = call i1 @_ZN6String6equalsE6String(ptr %0, ptr %arg.tmp52)
+  br i1 %call53, label %if.then54, label %if.end55
+
+if.then54:                                        ; preds = %if.end51
+  ret i32 20000
+
+if.end55:                                         ; preds = %if.end51
   ret i32 30000
 }
 
@@ -150716,7 +151284,7 @@ entry:
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 6, ptr %tuple.field, align 1
   %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1037, ptr %tuple.field2, align 1
+  store ptr @.str.1048, ptr %tuple.field2, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   %arg.tmp = alloca %_Z5SliceIcE, align 8
   store %_Z5SliceIcE %tuple.val, ptr %arg.tmp, align 1
@@ -150727,7 +151295,7 @@ entry:
   %tuple.field5 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 2, ptr %tuple.field5, align 1
   %tuple.field6 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1038, ptr %tuple.field6, align 1
+  store ptr @.str.1049, ptr %tuple.field6, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %frame, ptr %sret.result, ptr %tuple)
   %has_id = alloca i1, align 1
   store i1 true, ptr %has_id, align 1
@@ -150740,7 +151308,7 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %if.then, %entry
   %call7 = call i64 @_ZN4json6as_i64Ev(ptr %sret.result4)
-  store { ptr } { ptr @.sconst.1039 }, ptr %arg.tmp8, align 1
+  store { ptr } { ptr @.sconst.1050 }, ptr %arg.tmp8, align 1
   %call9 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %arg.tmp8)
   br i1 %call9, label %if.then10, label %if.end11
 
@@ -150750,7 +151318,7 @@ if.then10:                                        ; preds = %if.end
   br i1 %has_id12, label %if.then13, label %if.end14
 
 if.end11:                                         ; preds = %if.end
-  store { ptr } { ptr @.sconst.1040 }, ptr %arg.tmp16, align 1
+  store { ptr } { ptr @.sconst.1051 }, ptr %arg.tmp16, align 1
   %call17 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %arg.tmp16)
   br i1 %call17, label %if.then18, label %if.end19
 
@@ -150768,7 +151336,7 @@ if.then18:                                        ; preds = %if.end11
   br i1 %has_id20, label %if.then21, label %if.end22
 
 if.end19:                                         ; preds = %if.end11
-  store { ptr } { ptr @.sconst.1041 }, ptr %arg.tmp24, align 1
+  store { ptr } { ptr @.sconst.1052 }, ptr %arg.tmp24, align 1
   %call25 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %arg.tmp24)
   br i1 %call25, label %if.then26, label %if.end27
 
@@ -150787,7 +151355,7 @@ if.then26:                                        ; preds = %if.end19
   ret void
 
 if.end27:                                         ; preds = %if.end19
-  store { ptr } { ptr @.sconst.1042 }, ptr %arg.tmp28, align 1
+  store { ptr } { ptr @.sconst.1053 }, ptr %arg.tmp28, align 1
   %call29 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %arg.tmp28)
   br i1 %call29, label %if.then30, label %if.end31
 
@@ -150797,7 +151365,7 @@ if.then30:                                        ; preds = %if.end27
   ret void
 
 if.end31:                                         ; preds = %if.end27
-  store { ptr } { ptr @.sconst.1043 }, ptr %arg.tmp32, align 1
+  store { ptr } { ptr @.sconst.1054 }, ptr %arg.tmp32, align 1
   %call33 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %arg.tmp32)
   br i1 %call33, label %if.then34, label %if.end35
 
@@ -150807,7 +151375,7 @@ if.then34:                                        ; preds = %if.end31
   ret void
 
 if.end35:                                         ; preds = %if.end31
-  store { ptr } { ptr @.sconst.1044 }, ptr %arg.tmp36, align 1
+  store { ptr } { ptr @.sconst.1055 }, ptr %arg.tmp36, align 1
   %call37 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %arg.tmp36)
   br i1 %call37, label %if.then38, label %if.end39
 
@@ -150817,7 +151385,7 @@ if.then38:                                        ; preds = %if.end35
   ret void
 
 if.end39:                                         ; preds = %if.end35
-  store { ptr } { ptr @.sconst.1045 }, ptr %arg.tmp40, align 1
+  store { ptr } { ptr @.sconst.1056 }, ptr %arg.tmp40, align 1
   %call41 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %arg.tmp40)
   br i1 %call41, label %if.then42, label %if.end43
 
@@ -150826,7 +151394,7 @@ if.then42:                                        ; preds = %if.end39
   br i1 %has_id44, label %if.then45, label %if.end46
 
 if.end43:                                         ; preds = %if.end39
-  store { ptr } { ptr @.sconst.1046 }, ptr %arg.tmp47, align 1
+  store { ptr } { ptr @.sconst.1057 }, ptr %arg.tmp47, align 1
   %call48 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %arg.tmp47)
   br i1 %call48, label %if.then49, label %if.end50
 
@@ -150843,7 +151411,7 @@ if.then49:                                        ; preds = %if.end43
   br i1 %has_id51, label %if.then52, label %if.end53
 
 if.end50:                                         ; preds = %if.end43
-  store { ptr } { ptr @.sconst.1047 }, ptr %arg.tmp54, align 1
+  store { ptr } { ptr @.sconst.1058 }, ptr %arg.tmp54, align 1
   %call55 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %arg.tmp54)
   br i1 %call55, label %if.then56, label %if.end57
 
@@ -150860,7 +151428,7 @@ if.then56:                                        ; preds = %if.end50
   br i1 %has_id58, label %if.then59, label %if.end60
 
 if.end57:                                         ; preds = %if.end50
-  store { ptr } { ptr @.sconst.1048 }, ptr %arg.tmp61, align 1
+  store { ptr } { ptr @.sconst.1059 }, ptr %arg.tmp61, align 1
   %call62 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %arg.tmp61)
   br i1 %call62, label %if.then63, label %if.end64
 
@@ -150877,7 +151445,7 @@ if.then63:                                        ; preds = %if.end57
   br i1 %has_id65, label %if.then66, label %if.end67
 
 if.end64:                                         ; preds = %if.end57
-  store { ptr } { ptr @.sconst.1049 }, ptr %arg.tmp68, align 1
+  store { ptr } { ptr @.sconst.1060 }, ptr %arg.tmp68, align 1
   %call69 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %arg.tmp68)
   br i1 %call69, label %if.then70, label %if.end71
 
@@ -150894,7 +151462,7 @@ if.then70:                                        ; preds = %if.end64
   br i1 %has_id72, label %if.then73, label %if.end74
 
 if.end71:                                         ; preds = %if.end64
-  store { ptr } { ptr @.sconst.1050 }, ptr %arg.tmp75, align 1
+  store { ptr } { ptr @.sconst.1061 }, ptr %arg.tmp75, align 1
   %call76 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %arg.tmp75)
   br i1 %call76, label %if.then77, label %if.end78
 
@@ -150911,7 +151479,7 @@ if.then77:                                        ; preds = %if.end71
   br i1 %has_id79, label %if.then80, label %if.end81
 
 if.end78:                                         ; preds = %if.end71
-  store { ptr } { ptr @.sconst.1051 }, ptr %arg.tmp82, align 1
+  store { ptr } { ptr @.sconst.1062 }, ptr %arg.tmp82, align 1
   %call83 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %arg.tmp82)
   br i1 %call83, label %if.then84, label %if.end85
 
@@ -150928,7 +151496,7 @@ if.then84:                                        ; preds = %if.end78
   br i1 %has_id86, label %if.then87, label %if.end88
 
 if.end85:                                         ; preds = %if.end78
-  store { ptr } { ptr @.sconst.1052 }, ptr %arg.tmp89, align 1
+  store { ptr } { ptr @.sconst.1063 }, ptr %arg.tmp89, align 1
   %call90 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %arg.tmp89)
   br i1 %call90, label %if.then91, label %if.end92
 
@@ -150945,7 +151513,7 @@ if.then91:                                        ; preds = %if.end85
   br i1 %has_id93, label %if.then94, label %if.end95
 
 if.end92:                                         ; preds = %if.end85
-  store { ptr } { ptr @.sconst.1053 }, ptr %arg.tmp96, align 1
+  store { ptr } { ptr @.sconst.1064 }, ptr %arg.tmp96, align 1
   %call97 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %arg.tmp96)
   br i1 %call97, label %if.then98, label %if.end99
 
@@ -150962,7 +151530,7 @@ if.then98:                                        ; preds = %if.end92
   br i1 %has_id100, label %if.then101, label %if.end102
 
 if.end99:                                         ; preds = %if.end92
-  store { ptr } { ptr @.sconst.1054 }, ptr %arg.tmp103, align 1
+  store { ptr } { ptr @.sconst.1065 }, ptr %arg.tmp103, align 1
   %call104 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %arg.tmp103)
   br i1 %call104, label %if.then105, label %if.end106
 
@@ -150979,7 +151547,7 @@ if.then105:                                       ; preds = %if.end99
   br i1 %has_id107, label %if.then108, label %if.end109
 
 if.end106:                                        ; preds = %if.end99
-  store { ptr } { ptr @.sconst.1055 }, ptr %arg.tmp110, align 1
+  store { ptr } { ptr @.sconst.1066 }, ptr %arg.tmp110, align 1
   %call111 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %arg.tmp110)
   br i1 %call111, label %if.then112, label %if.end113
 
@@ -150996,7 +151564,7 @@ if.then112:                                       ; preds = %if.end106
   br i1 %has_id114, label %if.then115, label %if.end116
 
 if.end113:                                        ; preds = %if.end106
-  store { ptr } { ptr @.sconst.1056 }, ptr %arg.tmp117, align 1
+  store { ptr } { ptr @.sconst.1067 }, ptr %arg.tmp117, align 1
   %call118 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %arg.tmp117)
   br i1 %call118, label %if.then119, label %if.end120
 
@@ -151013,7 +151581,7 @@ if.then119:                                       ; preds = %if.end113
   br i1 %has_id121, label %if.then122, label %if.end123
 
 if.end120:                                        ; preds = %if.end113
-  store { ptr } { ptr @.sconst.1057 }, ptr %arg.tmp124, align 1
+  store { ptr } { ptr @.sconst.1068 }, ptr %arg.tmp124, align 1
   %call125 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %arg.tmp124)
   br i1 %call125, label %if.then126, label %if.end127
 
@@ -151030,7 +151598,7 @@ if.then126:                                       ; preds = %if.end120
   br i1 %has_id128, label %if.then129, label %if.end130
 
 if.end127:                                        ; preds = %if.end120
-  store { ptr } { ptr @.sconst.1058 }, ptr %arg.tmp131, align 1
+  store { ptr } { ptr @.sconst.1069 }, ptr %arg.tmp131, align 1
   %call132 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %arg.tmp131)
   br i1 %call132, label %if.then133, label %if.end134
 
@@ -151047,7 +151615,7 @@ if.then133:                                       ; preds = %if.end127
   br i1 %has_id135, label %if.then136, label %if.end137
 
 if.end134:                                        ; preds = %if.end127
-  store { ptr } { ptr @.sconst.1059 }, ptr %arg.tmp138, align 1
+  store { ptr } { ptr @.sconst.1070 }, ptr %arg.tmp138, align 1
   %call139 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %arg.tmp138)
   br i1 %call139, label %if.then140, label %if.end141
 
@@ -151064,7 +151632,7 @@ if.then140:                                       ; preds = %if.end134
   br i1 %has_id142, label %if.then143, label %if.end144
 
 if.end141:                                        ; preds = %if.end134
-  store { ptr } { ptr @.sconst.1060 }, ptr %arg.tmp145, align 1
+  store { ptr } { ptr @.sconst.1071 }, ptr %arg.tmp145, align 1
   %call146 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %arg.tmp145)
   br i1 %call146, label %if.then147, label %if.end148
 
@@ -151081,7 +151649,7 @@ if.then147:                                       ; preds = %if.end141
   br i1 %has_id149, label %if.then150, label %if.end151
 
 if.end148:                                        ; preds = %if.end141
-  store { ptr } { ptr @.sconst.1061 }, ptr %arg.tmp152, align 1
+  store { ptr } { ptr @.sconst.1072 }, ptr %arg.tmp152, align 1
   %call153 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %arg.tmp152)
   br i1 %call153, label %if.then154, label %if.end155
 
@@ -151098,7 +151666,7 @@ if.then154:                                       ; preds = %if.end148
   br i1 %has_id156, label %if.then157, label %if.end158
 
 if.end155:                                        ; preds = %if.end148
-  store { ptr } { ptr @.sconst.1062 }, ptr %arg.tmp159, align 1
+  store { ptr } { ptr @.sconst.1073 }, ptr %arg.tmp159, align 1
   %call160 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %arg.tmp159)
   br i1 %call160, label %if.then161, label %if.end162
 
@@ -151115,7 +151683,7 @@ if.then161:                                       ; preds = %if.end155
   br i1 %has_id163, label %if.then164, label %if.end165
 
 if.end162:                                        ; preds = %if.end155
-  store { ptr } { ptr @.sconst.1063 }, ptr %arg.tmp166, align 1
+  store { ptr } { ptr @.sconst.1074 }, ptr %arg.tmp166, align 1
   %call167 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %arg.tmp166)
   br i1 %call167, label %if.then168, label %if.end169
 
@@ -151132,7 +151700,7 @@ if.then168:                                       ; preds = %if.end162
   br i1 %has_id170, label %if.then171, label %if.end172
 
 if.end169:                                        ; preds = %if.end162
-  store { ptr } { ptr @.sconst.1064 }, ptr %arg.tmp173, align 1
+  store { ptr } { ptr @.sconst.1075 }, ptr %arg.tmp173, align 1
   %call174 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %arg.tmp173)
   br i1 %call174, label %if.then175, label %if.end176
 
@@ -151149,7 +151717,7 @@ if.then175:                                       ; preds = %if.end169
   br i1 %has_id177, label %if.then178, label %if.end179
 
 if.end176:                                        ; preds = %if.end169
-  store { ptr } { ptr @.sconst.1065 }, ptr %arg.tmp180, align 1
+  store { ptr } { ptr @.sconst.1076 }, ptr %arg.tmp180, align 1
   %call181 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %arg.tmp180)
   br i1 %call181, label %if.then182, label %if.end183
 
@@ -151166,7 +151734,7 @@ if.then182:                                       ; preds = %if.end176
   br i1 %has_id184, label %if.then185, label %if.end186
 
 if.end183:                                        ; preds = %if.end176
-  store { ptr } { ptr @.sconst.1066 }, ptr %arg.tmp187, align 1
+  store { ptr } { ptr @.sconst.1077 }, ptr %arg.tmp187, align 1
   %call188 = call i1 @_ZN6String6equalsE6String(ptr %sret.result3, ptr %arg.tmp187)
   br i1 %call188, label %if.then189, label %if.end190
 
@@ -151283,13 +151851,13 @@ entry:
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 6, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1207, ptr %tuple.field1, align 1
+  store ptr @.str.1225, ptr %tuple.field1, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %frame, ptr %0, ptr %tuple)
   %sret.result2 = alloca %_Z9JsonValue, align 8
   %tuple.field3 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 7, ptr %tuple.field3, align 1
   %tuple.field4 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1208, ptr %tuple.field4, align 1
+  store ptr @.str.1226, ptr %tuple.field4, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   %arg.tmp = alloca %_Z5SliceIcE, align 8
   store %_Z5SliceIcE %tuple.val, ptr %arg.tmp, align 1
@@ -151309,7 +151877,7 @@ if.end:                                           ; preds = %entry
   %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 8, ptr %tuple.field8, align 1
   %tuple.field9 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1209, ptr %tuple.field9, align 1
+  store ptr @.str.1227, ptr %tuple.field9, align 1
   %tuple.val10 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result7, ptr %frame, ptr %sret.result, ptr %arg.tmp)
@@ -151327,7 +151895,7 @@ if.end14:                                         ; preds = %if.end
   %tuple.field17 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 16, ptr %tuple.field17, align 1
   %tuple.field18 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1210, ptr %tuple.field18, align 1
+  store ptr @.str.1228, ptr %tuple.field18, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result16, ptr %frame, ptr %sret.result, ptr %tuple)
   %call19 = call i1 @_ZN4json7is_nullEv(ptr %sret.result16)
   %eq20 = icmp eq i1 %call19, false
@@ -151347,7 +151915,7 @@ if.then24:                                        ; preds = %if.then21
   %tuple.field30 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 3, ptr %tuple.field30, align 1
   %tuple.field31 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1211, ptr %tuple.field31, align 1
+  store ptr @.str.1229, ptr %tuple.field31, align 1
   %tuple.val32 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result29, ptr %frame, ptr %sret.result26, ptr %arg.tmp)
@@ -151362,26 +151930,22 @@ if.end25:                                         ; preds = %if.then24, %if.then
 
 define linkonce_odr void @_ZN6server19initialize_responseEPN4scaly6memory4PageE3i64(ptr noalias sret({ ptr }) %0, ptr %1, i64 %2) {
 entry:
-  %sret.result473 = alloca { ptr }, align 8
-  %arg.tmp469 = alloca %_Z5SliceIcE, align 8
-  %tuple465 = alloca %_Z5SliceIcE, align 8
-  %sret.result464 = alloca { ptr }, align 8
-  %arg.tmp462 = alloca %_Z5SliceIcE, align 8
-  %tuple458 = alloca %_Z5SliceIcE, align 8
-  %sret.result457 = alloca { ptr }, align 8
-  %arg.tmp454 = alloca %_Z5SliceIcE, align 8
-  %tuple450 = alloca %_Z5SliceIcE, align 8
-  %sret.result449 = alloca { ptr }, align 8
-  %arg.tmp447 = alloca %_Z5SliceIcE, align 8
-  %tuple443 = alloca %_Z5SliceIcE, align 8
-  %sret.result442 = alloca { ptr }, align 8
-  %arg.tmp439 = alloca %_Z5SliceIcE, align 8
-  %tuple435 = alloca %_Z5SliceIcE, align 8
-  %sret.result434 = alloca { ptr }, align 8
-  %arg.tmp430 = alloca { ptr }, align 8
-  %arg.tmp428 = alloca %_Z5SliceIcE, align 8
-  %tuple424 = alloca %_Z5SliceIcE, align 8
-  %sret.result423 = alloca { ptr }, align 8
+  %sret.result463 = alloca { ptr }, align 8
+  %arg.tmp459 = alloca %_Z5SliceIcE, align 8
+  %tuple455 = alloca %_Z5SliceIcE, align 8
+  %sret.result454 = alloca { ptr }, align 8
+  %arg.tmp452 = alloca %_Z5SliceIcE, align 8
+  %tuple448 = alloca %_Z5SliceIcE, align 8
+  %sret.result447 = alloca { ptr }, align 8
+  %arg.tmp444 = alloca %_Z5SliceIcE, align 8
+  %tuple440 = alloca %_Z5SliceIcE, align 8
+  %sret.result439 = alloca { ptr }, align 8
+  %arg.tmp437 = alloca %_Z5SliceIcE, align 8
+  %tuple433 = alloca %_Z5SliceIcE, align 8
+  %sret.result432 = alloca { ptr }, align 8
+  %arg.tmp429 = alloca %_Z5SliceIcE, align 8
+  %tuple425 = alloca %_Z5SliceIcE, align 8
+  %sret.result424 = alloca { ptr }, align 8
   %arg.tmp420 = alloca { ptr }, align 8
   %arg.tmp418 = alloca %_Z5SliceIcE, align 8
   %tuple414 = alloca %_Z5SliceIcE, align 8
@@ -151390,14 +151954,14 @@ entry:
   %arg.tmp408 = alloca %_Z5SliceIcE, align 8
   %tuple404 = alloca %_Z5SliceIcE, align 8
   %sret.result403 = alloca { ptr }, align 8
-  %arg.tmp399 = alloca { ptr }, align 8
-  %arg.tmp397 = alloca %_Z5SliceIcE, align 8
-  %tuple393 = alloca %_Z5SliceIcE, align 8
-  %sret.result392 = alloca { ptr }, align 8
-  %arg.tmp389 = alloca %_Z5SliceIcE, align 8
-  %tuple385 = alloca %_Z5SliceIcE, align 8
-  %sret.result384 = alloca { ptr }, align 8
-  %arg.tmp381 = alloca { ptr }, align 8
+  %arg.tmp400 = alloca { ptr }, align 8
+  %arg.tmp398 = alloca %_Z5SliceIcE, align 8
+  %tuple394 = alloca %_Z5SliceIcE, align 8
+  %sret.result393 = alloca { ptr }, align 8
+  %arg.tmp389 = alloca { ptr }, align 8
+  %arg.tmp387 = alloca %_Z5SliceIcE, align 8
+  %tuple383 = alloca %_Z5SliceIcE, align 8
+  %sret.result382 = alloca { ptr }, align 8
   %arg.tmp379 = alloca %_Z5SliceIcE, align 8
   %tuple375 = alloca %_Z5SliceIcE, align 8
   %sret.result374 = alloca { ptr }, align 8
@@ -151561,7 +152125,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 7, ptr %tuple.field, align 1
   %tuple.field4 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1217, ptr %tuple.field4, align 1
+  store ptr @.str.1235, ptr %tuple.field4, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %arg.tmp)
@@ -151570,7 +152134,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple7, i32 0, i32 0
   store i64 3, ptr %tuple.field8, align 1
   %tuple.field9 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple7, i32 0, i32 1
-  store ptr @.str.1218, ptr %tuple.field9, align 1
+  store ptr @.str.1236, ptr %tuple.field9, align 1
   %tuple.val10 = load %_Z5SliceIcE, ptr %tuple7, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp11, ptr align 1 %tuple7, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server6quotedEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result6, ptr %frame, ptr %arg.tmp11)
@@ -151581,7 +152145,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field16 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple15, i32 0, i32 0
   store i64 2, ptr %tuple.field16, align 1
   %tuple.field17 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple15, i32 0, i32 1
-  store ptr @.str.1219, ptr %tuple.field17, align 1
+  store ptr @.str.1237, ptr %tuple.field17, align 1
   %tuple.val18 = load %_Z5SliceIcE, ptr %tuple15, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp19, ptr align 1 %tuple15, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result14, ptr %frame, ptr %arg.tmp19)
@@ -151595,7 +152159,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field26 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple25, i32 0, i32 0
   store i64 6, ptr %tuple.field26, align 1
   %tuple.field27 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple25, i32 0, i32 1
-  store ptr @.str.1220, ptr %tuple.field27, align 1
+  store ptr @.str.1238, ptr %tuple.field27, align 1
   %tuple.val28 = load %_Z5SliceIcE, ptr %tuple25, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp29, ptr align 1 %tuple25, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result24, ptr %frame, ptr %arg.tmp29)
@@ -151606,7 +152170,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field34 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple33, i32 0, i32 0
   store i64 12, ptr %tuple.field34, align 1
   %tuple.field35 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple33, i32 0, i32 1
-  store ptr @.str.1221, ptr %tuple.field35, align 1
+  store ptr @.str.1239, ptr %tuple.field35, align 1
   %tuple.val36 = load %_Z5SliceIcE, ptr %tuple33, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp37, ptr align 1 %tuple33, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result32, ptr %frame, ptr %arg.tmp37)
@@ -151617,7 +152181,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field42 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple41, i32 0, i32 0
   store i64 16, ptr %tuple.field42, align 1
   %tuple.field43 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple41, i32 0, i32 1
-  store ptr @.str.1222, ptr %tuple.field43, align 1
+  store ptr @.str.1240, ptr %tuple.field43, align 1
   %tuple.val44 = load %_Z5SliceIcE, ptr %tuple41, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp45, ptr align 1 %tuple41, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result40, ptr %frame, ptr %arg.tmp45)
@@ -151630,13 +152194,13 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field51 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple50, i32 0, i32 0
   store i64 22, ptr %tuple.field51, align 1
   %tuple.field52 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple50, i32 0, i32 1
-  store ptr @.str.1223, ptr %tuple.field52, align 1
+  store ptr @.str.1241, ptr %tuple.field52, align 1
   %tuple.val53 = load %_Z5SliceIcE, ptr %tuple50, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp54, ptr align 1 %tuple50, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result49, ptr %frame, ptr %arg.tmp54)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb48, ptr %sret.result49)
   %sb55 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.1224 }, ptr %arg.tmp56, align 1
+  store { ptr } { ptr @.sconst.1242 }, ptr %arg.tmp56, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb55, ptr %arg.tmp56)
   %sb57 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb57, i8 44)
@@ -151644,13 +152208,13 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field61 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple60, i32 0, i32 0
   store i64 13, ptr %tuple.field61, align 1
   %tuple.field62 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple60, i32 0, i32 1
-  store ptr @.str.1225, ptr %tuple.field62, align 1
+  store ptr @.str.1243, ptr %tuple.field62, align 1
   %tuple.val63 = load %_Z5SliceIcE, ptr %tuple60, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp64, ptr align 1 %tuple60, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result59, ptr %frame, ptr %arg.tmp64)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb58, ptr %sret.result59)
   %sb65 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.1226 }, ptr %arg.tmp66, align 1
+  store { ptr } { ptr @.sconst.1244 }, ptr %arg.tmp66, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb65, ptr %arg.tmp66)
   %sb67 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb67, i8 44)
@@ -151658,13 +152222,13 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field71 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple70, i32 0, i32 0
   store i64 18, ptr %tuple.field71, align 1
   %tuple.field72 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple70, i32 0, i32 1
-  store ptr @.str.1227, ptr %tuple.field72, align 1
+  store ptr @.str.1245, ptr %tuple.field72, align 1
   %tuple.val73 = load %_Z5SliceIcE, ptr %tuple70, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp74, ptr align 1 %tuple70, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result69, ptr %frame, ptr %arg.tmp74)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb68, ptr %sret.result69)
   %sb75 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.1228 }, ptr %arg.tmp76, align 1
+  store { ptr } { ptr @.sconst.1246 }, ptr %arg.tmp76, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb75, ptr %arg.tmp76)
   %sb77 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb77, i8 44)
@@ -151672,13 +152236,13 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field81 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple80, i32 0, i32 0
   store i64 18, ptr %tuple.field81, align 1
   %tuple.field82 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple80, i32 0, i32 1
-  store ptr @.str.1229, ptr %tuple.field82, align 1
+  store ptr @.str.1247, ptr %tuple.field82, align 1
   %tuple.val83 = load %_Z5SliceIcE, ptr %tuple80, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp84, ptr align 1 %tuple80, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result79, ptr %frame, ptr %arg.tmp84)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb78, ptr %sret.result79)
   %sb85 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.1230 }, ptr %arg.tmp86, align 1
+  store { ptr } { ptr @.sconst.1248 }, ptr %arg.tmp86, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb85, ptr %arg.tmp86)
   %sb87 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb87, i8 44)
@@ -151686,13 +152250,13 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field91 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple90, i32 0, i32 0
   store i64 25, ptr %tuple.field91, align 1
   %tuple.field92 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple90, i32 0, i32 1
-  store ptr @.str.1231, ptr %tuple.field92, align 1
+  store ptr @.str.1249, ptr %tuple.field92, align 1
   %tuple.val93 = load %_Z5SliceIcE, ptr %tuple90, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp94, ptr align 1 %tuple90, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result89, ptr %frame, ptr %arg.tmp94)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb88, ptr %sret.result89)
   %sb95 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.1232 }, ptr %arg.tmp96, align 1
+  store { ptr } { ptr @.sconst.1250 }, ptr %arg.tmp96, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb95, ptr %arg.tmp96)
   %sb97 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb97, i8 44)
@@ -151700,7 +152264,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field101 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple100, i32 0, i32 0
   store i64 18, ptr %tuple.field101, align 1
   %tuple.field102 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple100, i32 0, i32 1
-  store ptr @.str.1233, ptr %tuple.field102, align 1
+  store ptr @.str.1251, ptr %tuple.field102, align 1
   %tuple.val103 = load %_Z5SliceIcE, ptr %tuple100, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp104, ptr align 1 %tuple100, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result99, ptr %frame, ptr %arg.tmp104)
@@ -151711,7 +152275,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field109 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple108, i32 0, i32 0
   store i64 17, ptr %tuple.field109, align 1
   %tuple.field110 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple108, i32 0, i32 1
-  store ptr @.str.1234, ptr %tuple.field110, align 1
+  store ptr @.str.1252, ptr %tuple.field110, align 1
   %tuple.val111 = load %_Z5SliceIcE, ptr %tuple108, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp112, ptr align 1 %tuple108, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result107, ptr %frame, ptr %arg.tmp112)
@@ -151732,13 +152296,13 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field122 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple121, i32 0, i32 0
   store i64 15, ptr %tuple.field122, align 1
   %tuple.field123 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple121, i32 0, i32 1
-  store ptr @.str.1235, ptr %tuple.field123, align 1
+  store ptr @.str.1253, ptr %tuple.field123, align 1
   %tuple.val124 = load %_Z5SliceIcE, ptr %tuple121, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp125, ptr align 1 %tuple121, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result120, ptr %frame, ptr %arg.tmp125)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb119, ptr %sret.result120)
   %sb126 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.1236 }, ptr %arg.tmp127, align 1
+  store { ptr } { ptr @.sconst.1254 }, ptr %arg.tmp127, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb126, ptr %arg.tmp127)
   %sb128 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb128, i8 125)
@@ -151748,7 +152312,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field133 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple132, i32 0, i32 0
   store i64 14, ptr %tuple.field133, align 1
   %tuple.field134 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple132, i32 0, i32 1
-  store ptr @.str.1237, ptr %tuple.field134, align 1
+  store ptr @.str.1255, ptr %tuple.field134, align 1
   %tuple.val135 = load %_Z5SliceIcE, ptr %tuple132, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp136, ptr align 1 %tuple132, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result131, ptr %frame, ptr %arg.tmp136)
@@ -151759,13 +152323,13 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field141 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple140, i32 0, i32 0
   store i64 15, ptr %tuple.field141, align 1
   %tuple.field142 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple140, i32 0, i32 1
-  store ptr @.str.1238, ptr %tuple.field142, align 1
+  store ptr @.str.1256, ptr %tuple.field142, align 1
   %tuple.val143 = load %_Z5SliceIcE, ptr %tuple140, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp144, ptr align 1 %tuple140, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result139, ptr %frame, ptr %arg.tmp144)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb138, ptr %sret.result139)
   %sb145 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.1239 }, ptr %arg.tmp146, align 1
+  store { ptr } { ptr @.sconst.1257 }, ptr %arg.tmp146, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb145, ptr %arg.tmp146)
   %sb147 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb147, i8 125)
@@ -151775,7 +152339,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field152 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple151, i32 0, i32 0
   store i64 21, ptr %tuple.field152, align 1
   %tuple.field153 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple151, i32 0, i32 1
-  store ptr @.str.1240, ptr %tuple.field153, align 1
+  store ptr @.str.1258, ptr %tuple.field153, align 1
   %tuple.val154 = load %_Z5SliceIcE, ptr %tuple151, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp155, ptr align 1 %tuple151, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result150, ptr %frame, ptr %arg.tmp155)
@@ -151786,7 +152350,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field160 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple159, i32 0, i32 0
   store i64 17, ptr %tuple.field160, align 1
   %tuple.field161 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple159, i32 0, i32 1
-  store ptr @.str.1241, ptr %tuple.field161, align 1
+  store ptr @.str.1259, ptr %tuple.field161, align 1
   %tuple.val162 = load %_Z5SliceIcE, ptr %tuple159, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp163, ptr align 1 %tuple159, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result158, ptr %frame, ptr %arg.tmp163)
@@ -151817,13 +152381,13 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field178 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple177, i32 0, i32 0
   store i64 20, ptr %tuple.field178, align 1
   %tuple.field179 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple177, i32 0, i32 1
-  store ptr @.str.1242, ptr %tuple.field179, align 1
+  store ptr @.str.1260, ptr %tuple.field179, align 1
   %tuple.val180 = load %_Z5SliceIcE, ptr %tuple177, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp181, ptr align 1 %tuple177, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result176, ptr %frame, ptr %arg.tmp181)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb175, ptr %sret.result176)
   %sb182 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.1243 }, ptr %arg.tmp183, align 1
+  store { ptr } { ptr @.sconst.1261 }, ptr %arg.tmp183, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb182, ptr %arg.tmp183)
   %sb184 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb184, i8 44)
@@ -151831,13 +152395,13 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field188 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple187, i32 0, i32 0
   store i64 26, ptr %tuple.field188, align 1
   %tuple.field189 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple187, i32 0, i32 1
-  store ptr @.str.1244, ptr %tuple.field189, align 1
+  store ptr @.str.1262, ptr %tuple.field189, align 1
   %tuple.val190 = load %_Z5SliceIcE, ptr %tuple187, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp191, ptr align 1 %tuple187, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result186, ptr %frame, ptr %arg.tmp191)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb185, ptr %sret.result186)
   %sb192 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.1245 }, ptr %arg.tmp193, align 1
+  store { ptr } { ptr @.sconst.1263 }, ptr %arg.tmp193, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb192, ptr %arg.tmp193)
   %sb194 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb194, i8 44)
@@ -151845,7 +152409,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field198 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple197, i32 0, i32 0
   store i64 22, ptr %tuple.field198, align 1
   %tuple.field199 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple197, i32 0, i32 1
-  store ptr @.str.1246, ptr %tuple.field199, align 1
+  store ptr @.str.1264, ptr %tuple.field199, align 1
   %tuple.val200 = load %_Z5SliceIcE, ptr %tuple197, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp201, ptr align 1 %tuple197, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result196, ptr %frame, ptr %arg.tmp201)
@@ -151856,7 +152420,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field206 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple205, i32 0, i32 0
   store i64 6, ptr %tuple.field206, align 1
   %tuple.field207 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple205, i32 0, i32 1
-  store ptr @.str.1247, ptr %tuple.field207, align 1
+  store ptr @.str.1265, ptr %tuple.field207, align 1
   %tuple.val208 = load %_Z5SliceIcE, ptr %tuple205, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp209, ptr align 1 %tuple205, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result204, ptr %frame, ptr %arg.tmp209)
@@ -151867,7 +152431,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field214 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple213, i32 0, i32 0
   store i64 10, ptr %tuple.field214, align 1
   %tuple.field215 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple213, i32 0, i32 1
-  store ptr @.str.1248, ptr %tuple.field215, align 1
+  store ptr @.str.1266, ptr %tuple.field215, align 1
   %tuple.val216 = load %_Z5SliceIcE, ptr %tuple213, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp217, ptr align 1 %tuple213, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result212, ptr %frame, ptr %arg.tmp217)
@@ -151878,7 +152442,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field222 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple221, i32 0, i32 0
   store i64 7, ptr %tuple.field222, align 1
   %tuple.field223 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple221, i32 0, i32 1
-  store ptr @.str.1249, ptr %tuple.field223, align 1
+  store ptr @.str.1267, ptr %tuple.field223, align 1
   %tuple.val224 = load %_Z5SliceIcE, ptr %tuple221, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp225, ptr align 1 %tuple221, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server6quotedEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result220, ptr %frame, ptr %arg.tmp225)
@@ -151889,7 +152453,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field230 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple229, i32 0, i32 0
   store i64 4, ptr %tuple.field230, align 1
   %tuple.field231 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple229, i32 0, i32 1
-  store ptr @.str.1250, ptr %tuple.field231, align 1
+  store ptr @.str.1268, ptr %tuple.field231, align 1
   %tuple.val232 = load %_Z5SliceIcE, ptr %tuple229, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp233, ptr align 1 %tuple229, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server6quotedEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result228, ptr %frame, ptr %arg.tmp233)
@@ -151900,7 +152464,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field238 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple237, i32 0, i32 0
   store i64 8, ptr %tuple.field238, align 1
   %tuple.field239 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple237, i32 0, i32 1
-  store ptr @.str.1251, ptr %tuple.field239, align 1
+  store ptr @.str.1269, ptr %tuple.field239, align 1
   %tuple.val240 = load %_Z5SliceIcE, ptr %tuple237, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp241, ptr align 1 %tuple237, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server6quotedEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result236, ptr %frame, ptr %arg.tmp241)
@@ -151911,7 +152475,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field246 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple245, i32 0, i32 0
   store i64 8, ptr %tuple.field246, align 1
   %tuple.field247 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple245, i32 0, i32 1
-  store ptr @.str.1252, ptr %tuple.field247, align 1
+  store ptr @.str.1270, ptr %tuple.field247, align 1
   %tuple.val248 = load %_Z5SliceIcE, ptr %tuple245, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp249, ptr align 1 %tuple245, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server6quotedEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result244, ptr %frame, ptr %arg.tmp249)
@@ -151922,7 +152486,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field254 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple253, i32 0, i32 0
   store i64 8, ptr %tuple.field254, align 1
   %tuple.field255 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple253, i32 0, i32 1
-  store ptr @.str.1253, ptr %tuple.field255, align 1
+  store ptr @.str.1271, ptr %tuple.field255, align 1
   %tuple.val256 = load %_Z5SliceIcE, ptr %tuple253, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp257, ptr align 1 %tuple253, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server6quotedEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result252, ptr %frame, ptr %arg.tmp257)
@@ -151933,7 +152497,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field262 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple261, i32 0, i32 0
   store i64 6, ptr %tuple.field262, align 1
   %tuple.field263 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple261, i32 0, i32 1
-  store ptr @.str.1254, ptr %tuple.field263, align 1
+  store ptr @.str.1272, ptr %tuple.field263, align 1
   %tuple.val264 = load %_Z5SliceIcE, ptr %tuple261, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp265, ptr align 1 %tuple261, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server6quotedEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result260, ptr %frame, ptr %arg.tmp265)
@@ -151944,7 +152508,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field270 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple269, i32 0, i32 0
   store i64 6, ptr %tuple.field270, align 1
   %tuple.field271 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple269, i32 0, i32 1
-  store ptr @.str.1255, ptr %tuple.field271, align 1
+  store ptr @.str.1273, ptr %tuple.field271, align 1
   %tuple.val272 = load %_Z5SliceIcE, ptr %tuple269, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp273, ptr align 1 %tuple269, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server6quotedEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result268, ptr %frame, ptr %arg.tmp273)
@@ -151955,7 +152519,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field278 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple277, i32 0, i32 0
   store i64 7, ptr %tuple.field278, align 1
   %tuple.field279 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple277, i32 0, i32 1
-  store ptr @.str.1256, ptr %tuple.field279, align 1
+  store ptr @.str.1274, ptr %tuple.field279, align 1
   %tuple.val280 = load %_Z5SliceIcE, ptr %tuple277, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp281, ptr align 1 %tuple277, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server6quotedEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result276, ptr %frame, ptr %arg.tmp281)
@@ -151966,7 +152530,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field286 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple285, i32 0, i32 0
   store i64 9, ptr %tuple.field286, align 1
   %tuple.field287 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple285, i32 0, i32 1
-  store ptr @.str.1257, ptr %tuple.field287, align 1
+  store ptr @.str.1275, ptr %tuple.field287, align 1
   %tuple.val288 = load %_Z5SliceIcE, ptr %tuple285, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp289, ptr align 1 %tuple285, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server6quotedEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result284, ptr %frame, ptr %arg.tmp289)
@@ -151977,7 +152541,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field294 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple293, i32 0, i32 0
   store i64 8, ptr %tuple.field294, align 1
   %tuple.field295 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple293, i32 0, i32 1
-  store ptr @.str.1258, ptr %tuple.field295, align 1
+  store ptr @.str.1276, ptr %tuple.field295, align 1
   %tuple.val296 = load %_Z5SliceIcE, ptr %tuple293, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp297, ptr align 1 %tuple293, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server6quotedEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result292, ptr %frame, ptr %arg.tmp297)
@@ -151990,7 +152554,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field303 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple302, i32 0, i32 0
   store i64 14, ptr %tuple.field303, align 1
   %tuple.field304 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple302, i32 0, i32 1
-  store ptr @.str.1259, ptr %tuple.field304, align 1
+  store ptr @.str.1277, ptr %tuple.field304, align 1
   %tuple.val305 = load %_Z5SliceIcE, ptr %tuple302, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp306, ptr align 1 %tuple302, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result301, ptr %frame, ptr %arg.tmp306)
@@ -152001,7 +152565,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field311 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple310, i32 0, i32 0
   store i64 11, ptr %tuple.field311, align 1
   %tuple.field312 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple310, i32 0, i32 1
-  store ptr @.str.1260, ptr %tuple.field312, align 1
+  store ptr @.str.1278, ptr %tuple.field312, align 1
   %tuple.val313 = load %_Z5SliceIcE, ptr %tuple310, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp314, ptr align 1 %tuple310, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server6quotedEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result309, ptr %frame, ptr %arg.tmp314)
@@ -152012,7 +152576,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field319 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple318, i32 0, i32 0
   store i64 8, ptr %tuple.field319, align 1
   %tuple.field320 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple318, i32 0, i32 1
-  store ptr @.str.1261, ptr %tuple.field320, align 1
+  store ptr @.str.1279, ptr %tuple.field320, align 1
   %tuple.val321 = load %_Z5SliceIcE, ptr %tuple318, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp322, ptr align 1 %tuple318, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server6quotedEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result317, ptr %frame, ptr %arg.tmp322)
@@ -152023,7 +152587,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field327 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple326, i32 0, i32 0
   store i64 6, ptr %tuple.field327, align 1
   %tuple.field328 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple326, i32 0, i32 1
-  store ptr @.str.1262, ptr %tuple.field328, align 1
+  store ptr @.str.1280, ptr %tuple.field328, align 1
   %tuple.val329 = load %_Z5SliceIcE, ptr %tuple326, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp330, ptr align 1 %tuple326, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server6quotedEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result325, ptr %frame, ptr %arg.tmp330)
@@ -152034,7 +152598,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field335 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple334, i32 0, i32 0
   store i64 14, ptr %tuple.field335, align 1
   %tuple.field336 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple334, i32 0, i32 1
-  store ptr @.str.1263, ptr %tuple.field336, align 1
+  store ptr @.str.1281, ptr %tuple.field336, align 1
   %tuple.val337 = load %_Z5SliceIcE, ptr %tuple334, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp338, ptr align 1 %tuple334, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server6quotedEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result333, ptr %frame, ptr %arg.tmp338)
@@ -152049,13 +152613,13 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field345 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple344, i32 0, i32 0
   store i64 4, ptr %tuple.field345, align 1
   %tuple.field346 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple344, i32 0, i32 1
-  store ptr @.str.1264, ptr %tuple.field346, align 1
+  store ptr @.str.1282, ptr %tuple.field346, align 1
   %tuple.val347 = load %_Z5SliceIcE, ptr %tuple344, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp348, ptr align 1 %tuple344, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result343, ptr %frame, ptr %arg.tmp348)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb342, ptr %sret.result343)
   %sb349 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.1265 }, ptr %arg.tmp350, align 1
+  store { ptr } { ptr @.sconst.1283 }, ptr %arg.tmp350, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb349, ptr %arg.tmp350)
   %sb351 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb351, i8 125)
@@ -152065,175 +152629,161 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field356 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple355, i32 0, i32 0
   store i64 23, ptr %tuple.field356, align 1
   %tuple.field357 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple355, i32 0, i32 1
-  store ptr @.str.1266, ptr %tuple.field357, align 1
+  store ptr @.str.1284, ptr %tuple.field357, align 1
   %tuple.val358 = load %_Z5SliceIcE, ptr %tuple355, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp359, ptr align 1 %tuple355, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result354, ptr %frame, ptr %arg.tmp359)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb353, ptr %sret.result354)
   %sb360 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.1267 }, ptr %arg.tmp361, align 1
+  store { ptr } { ptr @.sconst.1285 }, ptr %arg.tmp361, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb360, ptr %arg.tmp361)
   %sb362 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb362, i8 44)
   %sb363 = load ptr, ptr %sb, align 8
   %tuple.field366 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple365, i32 0, i32 0
-  store i64 17, ptr %tuple.field366, align 1
+  store i64 18, ptr %tuple.field366, align 1
   %tuple.field367 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple365, i32 0, i32 1
-  store ptr @.str.1268, ptr %tuple.field367, align 1
+  store ptr @.str.1286, ptr %tuple.field367, align 1
   %tuple.val368 = load %_Z5SliceIcE, ptr %tuple365, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp369, ptr align 1 %tuple365, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result364, ptr %frame, ptr %arg.tmp369)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb363, ptr %sret.result364)
   %sb370 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.1269 }, ptr %arg.tmp371, align 1
+  store { ptr } { ptr @.sconst.1287 }, ptr %arg.tmp371, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb370, ptr %arg.tmp371)
   %sb372 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb372, i8 44)
   %sb373 = load ptr, ptr %sb, align 8
   %tuple.field376 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple375, i32 0, i32 0
-  store i64 18, ptr %tuple.field376, align 1
+  store i64 16, ptr %tuple.field376, align 1
   %tuple.field377 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple375, i32 0, i32 1
-  store ptr @.str.1270, ptr %tuple.field377, align 1
+  store ptr @.str.1288, ptr %tuple.field377, align 1
   %tuple.val378 = load %_Z5SliceIcE, ptr %tuple375, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp379, ptr align 1 %tuple375, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result374, ptr %frame, ptr %arg.tmp379)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb373, ptr %sret.result374)
   %sb380 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.1271 }, ptr %arg.tmp381, align 1
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb380, ptr %arg.tmp381)
-  %sb382 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb382, i8 44)
-  %sb383 = load ptr, ptr %sb, align 8
-  %tuple.field386 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple385, i32 0, i32 0
-  store i64 16, ptr %tuple.field386, align 1
-  %tuple.field387 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple385, i32 0, i32 1
-  store ptr @.str.1272, ptr %tuple.field387, align 1
-  %tuple.val388 = load %_Z5SliceIcE, ptr %tuple385, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp389, ptr align 1 %tuple385, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result384, ptr %frame, ptr %arg.tmp389)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb383, ptr %sret.result384)
+  call void @_ZN13StringBuilder6appendEc(ptr %sb380, i8 123)
+  %sb381 = load ptr, ptr %sb, align 8
+  %tuple.field384 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple383, i32 0, i32 0
+  store i64 15, ptr %tuple.field384, align 1
+  %tuple.field385 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple383, i32 0, i32 1
+  store ptr @.str.1289, ptr %tuple.field385, align 1
+  %tuple.val386 = load %_Z5SliceIcE, ptr %tuple383, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp387, ptr align 1 %tuple383, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result382, ptr %frame, ptr %arg.tmp387)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb381, ptr %sret.result382)
+  %sb388 = load ptr, ptr %sb, align 8
+  store { ptr } { ptr @.sconst.1290 }, ptr %arg.tmp389, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb388, ptr %arg.tmp389)
   %sb390 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb390, i8 123)
+  call void @_ZN13StringBuilder6appendEc(ptr %sb390, i8 125)
   %sb391 = load ptr, ptr %sb, align 8
-  %tuple.field394 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple393, i32 0, i32 0
-  store i64 15, ptr %tuple.field394, align 1
-  %tuple.field395 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple393, i32 0, i32 1
-  store ptr @.str.1273, ptr %tuple.field395, align 1
-  %tuple.val396 = load %_Z5SliceIcE, ptr %tuple393, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp397, ptr align 1 %tuple393, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result392, ptr %frame, ptr %arg.tmp397)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb391, ptr %sret.result392)
-  %sb398 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.1274 }, ptr %arg.tmp399, align 1
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb398, ptr %arg.tmp399)
-  %sb400 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb400, i8 125)
+  call void @_ZN13StringBuilder6appendEc(ptr %sb391, i8 44)
+  %sb392 = load ptr, ptr %sb, align 8
+  %tuple.field395 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple394, i32 0, i32 0
+  store i64 22, ptr %tuple.field395, align 1
+  %tuple.field396 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple394, i32 0, i32 1
+  store ptr @.str.1291, ptr %tuple.field396, align 1
+  %tuple.val397 = load %_Z5SliceIcE, ptr %tuple394, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp398, ptr align 1 %tuple394, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result393, ptr %frame, ptr %arg.tmp398)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb392, ptr %sret.result393)
+  %sb399 = load ptr, ptr %sb, align 8
+  store { ptr } { ptr @.sconst.1292 }, ptr %arg.tmp400, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb399, ptr %arg.tmp400)
   %sb401 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb401, i8 44)
   %sb402 = load ptr, ptr %sb, align 8
   %tuple.field405 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple404, i32 0, i32 0
   store i64 22, ptr %tuple.field405, align 1
   %tuple.field406 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple404, i32 0, i32 1
-  store ptr @.str.1275, ptr %tuple.field406, align 1
+  store ptr @.str.1293, ptr %tuple.field406, align 1
   %tuple.val407 = load %_Z5SliceIcE, ptr %tuple404, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp408, ptr align 1 %tuple404, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result403, ptr %frame, ptr %arg.tmp408)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb402, ptr %sret.result403)
   %sb409 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.1276 }, ptr %arg.tmp410, align 1
+  store { ptr } { ptr @.sconst.1294 }, ptr %arg.tmp410, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb409, ptr %arg.tmp410)
   %sb411 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb411, i8 44)
   %sb412 = load ptr, ptr %sb, align 8
   %tuple.field415 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple414, i32 0, i32 0
-  store i64 22, ptr %tuple.field415, align 1
+  store i64 21, ptr %tuple.field415, align 1
   %tuple.field416 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple414, i32 0, i32 1
-  store ptr @.str.1277, ptr %tuple.field416, align 1
+  store ptr @.str.1295, ptr %tuple.field416, align 1
   %tuple.val417 = load %_Z5SliceIcE, ptr %tuple414, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp418, ptr align 1 %tuple414, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result413, ptr %frame, ptr %arg.tmp418)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb412, ptr %sret.result413)
   %sb419 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.1278 }, ptr %arg.tmp420, align 1
+  store { ptr } { ptr @.sconst.1296 }, ptr %arg.tmp420, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb419, ptr %arg.tmp420)
   %sb421 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb421, i8 44)
+  call void @_ZN13StringBuilder6appendEc(ptr %sb421, i8 125)
   %sb422 = load ptr, ptr %sb, align 8
-  %tuple.field425 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple424, i32 0, i32 0
-  store i64 21, ptr %tuple.field425, align 1
-  %tuple.field426 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple424, i32 0, i32 1
-  store ptr @.str.1279, ptr %tuple.field426, align 1
-  %tuple.val427 = load %_Z5SliceIcE, ptr %tuple424, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp428, ptr align 1 %tuple424, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result423, ptr %frame, ptr %arg.tmp428)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb422, ptr %sret.result423)
-  %sb429 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.1280 }, ptr %arg.tmp430, align 1
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb429, ptr %arg.tmp430)
+  call void @_ZN13StringBuilder6appendEc(ptr %sb422, i8 44)
+  %sb423 = load ptr, ptr %sb, align 8
+  %tuple.field426 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple425, i32 0, i32 0
+  store i64 10, ptr %tuple.field426, align 1
+  %tuple.field427 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple425, i32 0, i32 1
+  store ptr @.str.1297, ptr %tuple.field427, align 1
+  %tuple.val428 = load %_Z5SliceIcE, ptr %tuple425, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp429, ptr align 1 %tuple425, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result424, ptr %frame, ptr %arg.tmp429)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb423, ptr %sret.result424)
+  %sb430 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb430, i8 123)
   %sb431 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb431, i8 125)
-  %sb432 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb432, i8 44)
-  %sb433 = load ptr, ptr %sb, align 8
-  %tuple.field436 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple435, i32 0, i32 0
-  store i64 10, ptr %tuple.field436, align 1
-  %tuple.field437 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple435, i32 0, i32 1
-  store ptr @.str.1281, ptr %tuple.field437, align 1
-  %tuple.val438 = load %_Z5SliceIcE, ptr %tuple435, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp439, ptr align 1 %tuple435, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result434, ptr %frame, ptr %arg.tmp439)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb433, ptr %sret.result434)
-  %sb440 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb440, i8 123)
-  %sb441 = load ptr, ptr %sb, align 8
-  %tuple.field444 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple443, i32 0, i32 0
-  store i64 4, ptr %tuple.field444, align 1
-  %tuple.field445 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple443, i32 0, i32 1
-  store ptr @.str.1282, ptr %tuple.field445, align 1
-  %tuple.val446 = load %_Z5SliceIcE, ptr %tuple443, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp447, ptr align 1 %tuple443, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result442, ptr %frame, ptr %arg.tmp447)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb441, ptr %sret.result442)
-  %sb448 = load ptr, ptr %sb, align 8
-  %tuple.field451 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple450, i32 0, i32 0
-  store i64 7, ptr %tuple.field451, align 1
-  %tuple.field452 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple450, i32 0, i32 1
-  store ptr @.str.1283, ptr %tuple.field452, align 1
-  %tuple.val453 = load %_Z5SliceIcE, ptr %tuple450, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp454, ptr align 1 %tuple450, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN6server6quotedEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result449, ptr %frame, ptr %arg.tmp454)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb448, ptr %sret.result449)
-  %sb455 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb455, i8 44)
-  %sb456 = load ptr, ptr %sb, align 8
-  %tuple.field459 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple458, i32 0, i32 0
-  store i64 7, ptr %tuple.field459, align 1
-  %tuple.field460 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple458, i32 0, i32 1
-  store ptr @.str.1284, ptr %tuple.field460, align 1
-  %tuple.val461 = load %_Z5SliceIcE, ptr %tuple458, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp462, ptr align 1 %tuple458, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result457, ptr %frame, ptr %arg.tmp462)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb456, ptr %sret.result457)
-  %sb463 = load ptr, ptr %sb, align 8
-  %tuple.field466 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple465, i32 0, i32 0
-  store i64 5, ptr %tuple.field466, align 1
-  %tuple.field467 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple465, i32 0, i32 1
-  store ptr @.str.1285, ptr %tuple.field467, align 1
-  %tuple.val468 = load %_Z5SliceIcE, ptr %tuple465, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp469, ptr align 1 %tuple465, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN6server6quotedEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result464, ptr %frame, ptr %arg.tmp469)
-  call void @_ZN13StringBuilder6appendE6String(ptr %sb463, ptr %sret.result464)
-  %sb470 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb470, i8 125)
-  %sb471 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb471, i8 125)
-  %sb472 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder6appendEc(ptr %sb472, i8 125)
-  %sb474 = load ptr, ptr %sb, align 8
-  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result473, ptr %1, ptr %sb474)
+  %tuple.field434 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple433, i32 0, i32 0
+  store i64 4, ptr %tuple.field434, align 1
+  %tuple.field435 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple433, i32 0, i32 1
+  store ptr @.str.1298, ptr %tuple.field435, align 1
+  %tuple.val436 = load %_Z5SliceIcE, ptr %tuple433, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp437, ptr align 1 %tuple433, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result432, ptr %frame, ptr %arg.tmp437)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb431, ptr %sret.result432)
+  %sb438 = load ptr, ptr %sb, align 8
+  %tuple.field441 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple440, i32 0, i32 0
+  store i64 7, ptr %tuple.field441, align 1
+  %tuple.field442 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple440, i32 0, i32 1
+  store ptr @.str.1299, ptr %tuple.field442, align 1
+  %tuple.val443 = load %_Z5SliceIcE, ptr %tuple440, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp444, ptr align 1 %tuple440, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN6server6quotedEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result439, ptr %frame, ptr %arg.tmp444)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb438, ptr %sret.result439)
+  %sb445 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb445, i8 44)
+  %sb446 = load ptr, ptr %sb, align 8
+  %tuple.field449 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple448, i32 0, i32 0
+  store i64 7, ptr %tuple.field449, align 1
+  %tuple.field450 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple448, i32 0, i32 1
+  store ptr @.str.1300, ptr %tuple.field450, align 1
+  %tuple.val451 = load %_Z5SliceIcE, ptr %tuple448, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp452, ptr align 1 %tuple448, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result447, ptr %frame, ptr %arg.tmp452)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb446, ptr %sret.result447)
+  %sb453 = load ptr, ptr %sb, align 8
+  %tuple.field456 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple455, i32 0, i32 0
+  store i64 5, ptr %tuple.field456, align 1
+  %tuple.field457 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple455, i32 0, i32 1
+  store ptr @.str.1301, ptr %tuple.field457, align 1
+  %tuple.val458 = load %_Z5SliceIcE, ptr %tuple455, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp459, ptr align 1 %tuple455, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN6server6quotedEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result454, ptr %frame, ptr %arg.tmp459)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb453, ptr %sret.result454)
+  %sb460 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb460, i8 125)
+  %sb461 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb461, i8 125)
+  %sb462 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb462, i8 125)
+  %sb464 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result463, ptr %1, ptr %sb464)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  %sret.body = load { ptr }, ptr %sret.result473, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result473, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  %sret.body = load { ptr }, ptr %sret.result463, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result463, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -152278,7 +152828,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 7, ptr %tuple.field, align 1
   %tuple.field4 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1286, ptr %tuple.field4, align 1
+  store ptr @.str.1302, ptr %tuple.field4, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %arg.tmp)
@@ -152287,7 +152837,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple7, i32 0, i32 0
   store i64 3, ptr %tuple.field8, align 1
   %tuple.field9 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple7, i32 0, i32 1
-  store ptr @.str.1287, ptr %tuple.field9, align 1
+  store ptr @.str.1303, ptr %tuple.field9, align 1
   %tuple.val10 = load %_Z5SliceIcE, ptr %tuple7, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp11, ptr align 1 %tuple7, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server6quotedEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result6, ptr %frame, ptr %arg.tmp11)
@@ -152298,7 +152848,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field16 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple15, i32 0, i32 0
   store i64 2, ptr %tuple.field16, align 1
   %tuple.field17 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple15, i32 0, i32 1
-  store ptr @.str.1288, ptr %tuple.field17, align 1
+  store ptr @.str.1304, ptr %tuple.field17, align 1
   %tuple.val18 = load %_Z5SliceIcE, ptr %tuple15, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp19, ptr align 1 %tuple15, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result14, ptr %frame, ptr %arg.tmp19)
@@ -152312,13 +152862,13 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field26 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple25, i32 0, i32 0
   store i64 6, ptr %tuple.field26, align 1
   %tuple.field27 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple25, i32 0, i32 1
-  store ptr @.str.1289, ptr %tuple.field27, align 1
+  store ptr @.str.1305, ptr %tuple.field27, align 1
   %tuple.val28 = load %_Z5SliceIcE, ptr %tuple25, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp29, ptr align 1 %tuple25, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result24, ptr %frame, ptr %arg.tmp29)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb23, ptr %sret.result24)
   %sb30 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.1290 }, ptr %arg.tmp31, align 1
+  store { ptr } { ptr @.sconst.1306 }, ptr %arg.tmp31, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb30, ptr %arg.tmp31)
   %sb32 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder6appendEc(ptr %sb32, i8 125)
@@ -152341,27 +152891,27 @@ entry:
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 6, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1067, ptr %tuple.field1, align 1
+  store ptr @.str.1078, ptr %tuple.field1, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %frame, ptr %0, ptr %tuple)
   %sret.result2 = alloca %_Z9JsonValue, align 8
   %tuple.field3 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 12, ptr %tuple.field3, align 1
   %tuple.field4 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1068, ptr %tuple.field4, align 1
+  store ptr @.str.1079, ptr %tuple.field4, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %frame, ptr %sret.result, ptr %tuple)
   %sret.result5 = alloca { ptr }, align 8
   %sret.result6 = alloca %_Z9JsonValue, align 8
   %tuple.field7 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 3, ptr %tuple.field7, align 1
   %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1069, ptr %tuple.field8, align 1
+  store ptr @.str.1080, ptr %tuple.field8, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %frame, ptr %sret.result2, ptr %tuple)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result5, ptr %frame, ptr %sret.result6)
   %sret.result9 = alloca { ptr }, align 8
   %tuple.field10 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 4, ptr %tuple.field10, align 1
   %tuple.field11 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1070, ptr %tuple.field11, align 1
+  store ptr @.str.1081, ptr %tuple.field11, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   %arg.tmp = alloca %_Z5SliceIcE, align 8
   store %_Z5SliceIcE %tuple.val, ptr %arg.tmp, align 1
@@ -152389,26 +152939,26 @@ entry:
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 6, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1071, ptr %tuple.field1, align 1
+  store ptr @.str.1082, ptr %tuple.field1, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %frame, ptr %0, ptr %tuple)
   %sret.result2 = alloca %_Z9JsonValue, align 8
   %tuple.field3 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 12, ptr %tuple.field3, align 1
   %tuple.field4 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1072, ptr %tuple.field4, align 1
+  store ptr @.str.1083, ptr %tuple.field4, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %frame, ptr %sret.result, ptr %tuple)
   %sret.result5 = alloca { ptr }, align 8
   %sret.result6 = alloca %_Z9JsonValue, align 8
   %tuple.field7 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 3, ptr %tuple.field7, align 1
   %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1073, ptr %tuple.field8, align 1
+  store ptr @.str.1084, ptr %tuple.field8, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %frame, ptr %sret.result2, ptr %tuple)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result5, ptr %frame, ptr %sret.result6)
   %tuple.field9 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 14, ptr %tuple.field9, align 1
   %tuple.field10 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1074, ptr %tuple.field10, align 1
+  store ptr @.str.1085, ptr %tuple.field10, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   %arg.tmp = alloca %_Z5SliceIcE, align 8
   store %_Z5SliceIcE %tuple.val, ptr %arg.tmp, align 1
@@ -152464,20 +153014,20 @@ entry:
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 6, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1212, ptr %tuple.field1, align 1
+  store ptr @.str.1230, ptr %tuple.field1, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %frame, ptr %0, ptr %tuple)
   %sret.result2 = alloca %_Z9JsonValue, align 8
   %tuple.field3 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 12, ptr %tuple.field3, align 1
   %tuple.field4 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1213, ptr %tuple.field4, align 1
+  store ptr @.str.1231, ptr %tuple.field4, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %frame, ptr %sret.result, ptr %tuple)
   %sret.result5 = alloca { ptr }, align 8
   %sret.result6 = alloca %_Z9JsonValue, align 8
   %tuple.field7 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 3, ptr %tuple.field7, align 1
   %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1214, ptr %tuple.field8, align 1
+  store ptr @.str.1232, ptr %tuple.field8, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %frame, ptr %sret.result2, ptr %tuple)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result5, ptr %frame, ptr %sret.result6)
   call void @_ZN8docstore6removeE6String(ptr %sret.result5)
@@ -152499,20 +153049,20 @@ entry:
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 6, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1083, ptr %tuple.field1, align 1
+  store ptr @.str.1094, ptr %tuple.field1, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %frame, ptr %0, ptr %tuple)
   %sret.result2 = alloca %_Z9JsonValue, align 8
   %tuple.field3 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 12, ptr %tuple.field3, align 1
   %tuple.field4 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1084, ptr %tuple.field4, align 1
+  store ptr @.str.1095, ptr %tuple.field4, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %frame, ptr %sret.result, ptr %tuple)
   %sret.result5 = alloca { ptr }, align 8
   %sret.result6 = alloca %_Z9JsonValue, align 8
   %tuple.field7 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 3, ptr %tuple.field7, align 1
   %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1085, ptr %tuple.field8, align 1
+  store ptr @.str.1096, ptr %tuple.field8, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %frame, ptr %sret.result2, ptr %tuple)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result5, ptr %frame, ptr %sret.result6)
   %sret.result9 = alloca { ptr }, align 8
@@ -152528,6 +153078,8 @@ entry:
 
 define linkonce_odr void @_ZN6server12handle_hoverE9JsonValue3i64(ptr %0, i64 %1) {
 entry:
+  %sret.result35 = alloca { ptr }, align 8
+  %sret.result31 = alloca { ptr }, align 8
   %sret.result27 = alloca { ptr }, align 8
   %sret.result26 = alloca { ptr }, align 8
   %value = alloca ptr, align 8
@@ -152544,26 +153096,26 @@ entry:
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 6, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1138, ptr %tuple.field1, align 1
+  store ptr @.str.1149, ptr %tuple.field1, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %frame, ptr %0, ptr %tuple)
   %sret.result2 = alloca %_Z9JsonValue, align 8
   %tuple.field3 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 12, ptr %tuple.field3, align 1
   %tuple.field4 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1139, ptr %tuple.field4, align 1
+  store ptr @.str.1150, ptr %tuple.field4, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %frame, ptr %sret.result, ptr %tuple)
   %sret.result5 = alloca { ptr }, align 8
   %sret.result6 = alloca %_Z9JsonValue, align 8
   %tuple.field7 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 3, ptr %tuple.field7, align 1
   %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1140, ptr %tuple.field8, align 1
+  store ptr @.str.1151, ptr %tuple.field8, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %frame, ptr %sret.result2, ptr %tuple)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result5, ptr %frame, ptr %sret.result6)
   %tuple.field9 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 8, ptr %tuple.field9, align 1
   %tuple.field10 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1141, ptr %tuple.field10, align 1
+  store ptr @.str.1152, ptr %tuple.field10, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   %arg.tmp = alloca %_Z5SliceIcE, align 8
   store %_Z5SliceIcE %tuple.val, ptr %arg.tmp, align 1
@@ -152572,7 +153124,7 @@ entry:
   %tuple.field12 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 4, ptr %tuple.field12, align 1
   %tuple.field13 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1142, ptr %tuple.field13, align 1
+  store ptr @.str.1153, ptr %tuple.field13, align 1
   %tuple.val14 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result11, ptr %frame, ptr %sret.result6, ptr %arg.tmp)
@@ -152580,7 +153132,7 @@ entry:
   %tuple.field15 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 9, ptr %tuple.field15, align 1
   %tuple.field16 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1143, ptr %tuple.field16, align 1
+  store ptr @.str.1154, ptr %tuple.field16, align 1
   %tuple.val17 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result11, ptr %frame, ptr %sret.result6, ptr %arg.tmp)
@@ -152620,9 +153172,23 @@ if.then:                                          ; preds = %frame.forced
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %frame.forced
-  %value28 = load ptr, ptr %value, align 8
-  call void @_ZN6server14hover_responseEPN4scaly6memory4PageE3i646String(ptr noalias sret({ ptr }) %sret.result27, ptr %frame, i64 %1, ptr %value28)
-  call void @_ZN3rpc13write_messageE6String(ptr %sret.result27)
+  call void @_ZN6worker9placementEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result27, ptr %frame, ptr %sret.result5, ptr %sret.result20, ptr %sret.result22)
+  %call28 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result27)
+  %gt = icmp ugt i64 %call28, 0
+  br i1 %gt, label %if.then29, label %if.end30
+
+if.then29:                                        ; preds = %if.end
+  %value32 = load ptr, ptr %value, align 8
+  call void @_ZN6server20hover_with_paragraphEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result31, ptr %frame, ptr %value32, ptr %sret.result27)
+  %set.dest33 = load ptr, ptr %value, align 8
+  %set.thru34 = load { ptr }, ptr %sret.result31, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest33, ptr align 1 %sret.result31, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  br label %if.end30
+
+if.end30:                                         ; preds = %if.then29, %if.end
+  %value36 = load ptr, ptr %value, align 8
+  call void @_ZN6server14hover_responseEPN4scaly6memory4PageE3i646String(ptr noalias sret({ ptr }) %sret.result35, ptr %frame, i64 %1, ptr %value36)
+  call void @_ZN3rpc13write_messageE6String(ptr %sret.result35)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
@@ -152642,26 +153208,26 @@ entry:
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 6, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1148, ptr %tuple.field1, align 1
+  store ptr @.str.1166, ptr %tuple.field1, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %frame, ptr %0, ptr %tuple)
   %sret.result2 = alloca %_Z9JsonValue, align 8
   %tuple.field3 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 12, ptr %tuple.field3, align 1
   %tuple.field4 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1149, ptr %tuple.field4, align 1
+  store ptr @.str.1167, ptr %tuple.field4, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %frame, ptr %sret.result, ptr %tuple)
   %sret.result5 = alloca { ptr }, align 8
   %sret.result6 = alloca %_Z9JsonValue, align 8
   %tuple.field7 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 3, ptr %tuple.field7, align 1
   %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1150, ptr %tuple.field8, align 1
+  store ptr @.str.1168, ptr %tuple.field8, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %frame, ptr %sret.result2, ptr %tuple)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result5, ptr %frame, ptr %sret.result6)
   %tuple.field9 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 8, ptr %tuple.field9, align 1
   %tuple.field10 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1151, ptr %tuple.field10, align 1
+  store ptr @.str.1169, ptr %tuple.field10, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   %arg.tmp = alloca %_Z5SliceIcE, align 8
   store %_Z5SliceIcE %tuple.val, ptr %arg.tmp, align 1
@@ -152670,7 +153236,7 @@ entry:
   %tuple.field12 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 4, ptr %tuple.field12, align 1
   %tuple.field13 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1152, ptr %tuple.field13, align 1
+  store ptr @.str.1170, ptr %tuple.field13, align 1
   %tuple.val14 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result11, ptr %frame, ptr %sret.result6, ptr %arg.tmp)
@@ -152678,7 +153244,7 @@ entry:
   %tuple.field15 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 9, ptr %tuple.field15, align 1
   %tuple.field16 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1153, ptr %tuple.field16, align 1
+  store ptr @.str.1171, ptr %tuple.field16, align 1
   %tuple.val17 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result11, ptr %frame, ptr %sret.result6, ptr %arg.tmp)
@@ -152728,26 +153294,26 @@ entry:
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 6, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1170, ptr %tuple.field1, align 1
+  store ptr @.str.1188, ptr %tuple.field1, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %frame, ptr %0, ptr %tuple)
   %sret.result2 = alloca %_Z9JsonValue, align 8
   %tuple.field3 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 12, ptr %tuple.field3, align 1
   %tuple.field4 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1171, ptr %tuple.field4, align 1
+  store ptr @.str.1189, ptr %tuple.field4, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %frame, ptr %sret.result, ptr %tuple)
   %sret.result5 = alloca { ptr }, align 8
   %sret.result6 = alloca %_Z9JsonValue, align 8
   %tuple.field7 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 3, ptr %tuple.field7, align 1
   %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1172, ptr %tuple.field8, align 1
+  store ptr @.str.1190, ptr %tuple.field8, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %frame, ptr %sret.result2, ptr %tuple)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result5, ptr %frame, ptr %sret.result6)
   %tuple.field9 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 8, ptr %tuple.field9, align 1
   %tuple.field10 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1173, ptr %tuple.field10, align 1
+  store ptr @.str.1191, ptr %tuple.field10, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   %arg.tmp = alloca %_Z5SliceIcE, align 8
   store %_Z5SliceIcE %tuple.val, ptr %arg.tmp, align 1
@@ -152756,7 +153322,7 @@ entry:
   %tuple.field12 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 4, ptr %tuple.field12, align 1
   %tuple.field13 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1174, ptr %tuple.field13, align 1
+  store ptr @.str.1192, ptr %tuple.field13, align 1
   %tuple.val14 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result11, ptr %frame, ptr %sret.result6, ptr %arg.tmp)
@@ -152764,7 +153330,7 @@ entry:
   %tuple.field15 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 9, ptr %tuple.field15, align 1
   %tuple.field16 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1175, ptr %tuple.field16, align 1
+  store ptr @.str.1193, ptr %tuple.field16, align 1
   %tuple.val17 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result11, ptr %frame, ptr %sret.result6, ptr %arg.tmp)
@@ -152839,26 +153405,26 @@ entry:
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 6, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1176, ptr %tuple.field1, align 1
+  store ptr @.str.1194, ptr %tuple.field1, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %frame, ptr %0, ptr %tuple)
   %sret.result2 = alloca %_Z9JsonValue, align 8
   %tuple.field3 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 12, ptr %tuple.field3, align 1
   %tuple.field4 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1177, ptr %tuple.field4, align 1
+  store ptr @.str.1195, ptr %tuple.field4, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %frame, ptr %sret.result, ptr %tuple)
   %sret.result5 = alloca { ptr }, align 8
   %sret.result6 = alloca %_Z9JsonValue, align 8
   %tuple.field7 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 3, ptr %tuple.field7, align 1
   %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1178, ptr %tuple.field8, align 1
+  store ptr @.str.1196, ptr %tuple.field8, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %frame, ptr %sret.result2, ptr %tuple)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result5, ptr %frame, ptr %sret.result6)
   %tuple.field9 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 8, ptr %tuple.field9, align 1
   %tuple.field10 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1179, ptr %tuple.field10, align 1
+  store ptr @.str.1197, ptr %tuple.field10, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   %arg.tmp = alloca %_Z5SliceIcE, align 8
   store %_Z5SliceIcE %tuple.val, ptr %arg.tmp, align 1
@@ -152867,7 +153433,7 @@ entry:
   %tuple.field12 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 4, ptr %tuple.field12, align 1
   %tuple.field13 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1180, ptr %tuple.field13, align 1
+  store ptr @.str.1198, ptr %tuple.field13, align 1
   %tuple.val14 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result11, ptr %frame, ptr %sret.result6, ptr %arg.tmp)
@@ -152875,7 +153441,7 @@ entry:
   %tuple.field15 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 9, ptr %tuple.field15, align 1
   %tuple.field16 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1181, ptr %tuple.field16, align 1
+  store ptr @.str.1199, ptr %tuple.field16, align 1
   %tuple.val17 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result11, ptr %frame, ptr %sret.result6, ptr %arg.tmp)
@@ -152921,26 +153487,26 @@ entry:
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 6, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1182, ptr %tuple.field1, align 1
+  store ptr @.str.1200, ptr %tuple.field1, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %frame, ptr %0, ptr %tuple)
   %sret.result2 = alloca %_Z9JsonValue, align 8
   %tuple.field3 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 12, ptr %tuple.field3, align 1
   %tuple.field4 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1183, ptr %tuple.field4, align 1
+  store ptr @.str.1201, ptr %tuple.field4, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %frame, ptr %sret.result, ptr %tuple)
   %sret.result5 = alloca { ptr }, align 8
   %sret.result6 = alloca %_Z9JsonValue, align 8
   %tuple.field7 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 3, ptr %tuple.field7, align 1
   %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1184, ptr %tuple.field8, align 1
+  store ptr @.str.1202, ptr %tuple.field8, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %frame, ptr %sret.result2, ptr %tuple)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result5, ptr %frame, ptr %sret.result6)
   %tuple.field9 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 8, ptr %tuple.field9, align 1
   %tuple.field10 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1185, ptr %tuple.field10, align 1
+  store ptr @.str.1203, ptr %tuple.field10, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   %arg.tmp = alloca %_Z5SliceIcE, align 8
   store %_Z5SliceIcE %tuple.val, ptr %arg.tmp, align 1
@@ -152949,7 +153515,7 @@ entry:
   %tuple.field12 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 4, ptr %tuple.field12, align 1
   %tuple.field13 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1186, ptr %tuple.field13, align 1
+  store ptr @.str.1204, ptr %tuple.field13, align 1
   %tuple.val14 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result11, ptr %frame, ptr %sret.result6, ptr %arg.tmp)
@@ -152957,7 +153523,7 @@ entry:
   %tuple.field15 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 9, ptr %tuple.field15, align 1
   %tuple.field16 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1187, ptr %tuple.field16, align 1
+  store ptr @.str.1205, ptr %tuple.field16, align 1
   %tuple.val17 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result11, ptr %frame, ptr %sret.result6, ptr %arg.tmp)
@@ -153003,21 +153569,21 @@ entry:
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 6, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1188, ptr %tuple.field1, align 1
+  store ptr @.str.1206, ptr %tuple.field1, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %frame, ptr %0, ptr %tuple)
   %sret.result2 = alloca { ptr }, align 8
   %sret.result3 = alloca %_Z9JsonValue, align 8
   %tuple.field4 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 5, ptr %tuple.field4, align 1
   %tuple.field5 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1189, ptr %tuple.field5, align 1
+  store ptr @.str.1207, ptr %tuple.field5, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %frame, ptr %sret.result, ptr %tuple)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result2, ptr %frame, ptr %sret.result3)
   %sret.result6 = alloca { ptr }, align 8
   %tuple.field7 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 4, ptr %tuple.field7, align 1
   %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1190, ptr %tuple.field8, align 1
+  store ptr @.str.1208, ptr %tuple.field8, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %frame, ptr %sret.result, ptr %tuple)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result6, ptr %frame, ptr %sret.result3)
   %sret.result9 = alloca { ptr }, align 8
@@ -153077,26 +153643,26 @@ entry:
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 6, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1192, ptr %tuple.field1, align 1
+  store ptr @.str.1210, ptr %tuple.field1, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %frame, ptr %0, ptr %tuple)
   %sret.result2 = alloca %_Z9JsonValue, align 8
   %tuple.field3 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 12, ptr %tuple.field3, align 1
   %tuple.field4 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1193, ptr %tuple.field4, align 1
+  store ptr @.str.1211, ptr %tuple.field4, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %frame, ptr %sret.result, ptr %tuple)
   %sret.result5 = alloca { ptr }, align 8
   %sret.result6 = alloca %_Z9JsonValue, align 8
   %tuple.field7 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 3, ptr %tuple.field7, align 1
   %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1194, ptr %tuple.field8, align 1
+  store ptr @.str.1212, ptr %tuple.field8, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %frame, ptr %sret.result2, ptr %tuple)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result5, ptr %frame, ptr %sret.result6)
   %tuple.field9 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 8, ptr %tuple.field9, align 1
   %tuple.field10 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1195, ptr %tuple.field10, align 1
+  store ptr @.str.1213, ptr %tuple.field10, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   %arg.tmp = alloca %_Z5SliceIcE, align 8
   store %_Z5SliceIcE %tuple.val, ptr %arg.tmp, align 1
@@ -153105,7 +153671,7 @@ entry:
   %tuple.field12 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 4, ptr %tuple.field12, align 1
   %tuple.field13 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1196, ptr %tuple.field13, align 1
+  store ptr @.str.1214, ptr %tuple.field13, align 1
   %tuple.val14 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result11, ptr %frame, ptr %sret.result6, ptr %arg.tmp)
@@ -153113,7 +153679,7 @@ entry:
   %tuple.field15 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 9, ptr %tuple.field15, align 1
   %tuple.field16 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1197, ptr %tuple.field16, align 1
+  store ptr @.str.1215, ptr %tuple.field16, align 1
   %tuple.val17 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result11, ptr %frame, ptr %sret.result6, ptr %arg.tmp)
@@ -153165,26 +153731,26 @@ entry:
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 6, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1198, ptr %tuple.field1, align 1
+  store ptr @.str.1216, ptr %tuple.field1, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %frame, ptr %0, ptr %tuple)
   %sret.result2 = alloca %_Z9JsonValue, align 8
   %tuple.field3 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 12, ptr %tuple.field3, align 1
   %tuple.field4 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1199, ptr %tuple.field4, align 1
+  store ptr @.str.1217, ptr %tuple.field4, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %frame, ptr %sret.result, ptr %tuple)
   %sret.result5 = alloca { ptr }, align 8
   %sret.result6 = alloca %_Z9JsonValue, align 8
   %tuple.field7 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 3, ptr %tuple.field7, align 1
   %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1200, ptr %tuple.field8, align 1
+  store ptr @.str.1218, ptr %tuple.field8, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %frame, ptr %sret.result2, ptr %tuple)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result5, ptr %frame, ptr %sret.result6)
   %tuple.field9 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 8, ptr %tuple.field9, align 1
   %tuple.field10 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1201, ptr %tuple.field10, align 1
+  store ptr @.str.1219, ptr %tuple.field10, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   %arg.tmp = alloca %_Z5SliceIcE, align 8
   store %_Z5SliceIcE %tuple.val, ptr %arg.tmp, align 1
@@ -153193,7 +153759,7 @@ entry:
   %tuple.field12 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 4, ptr %tuple.field12, align 1
   %tuple.field13 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1202, ptr %tuple.field13, align 1
+  store ptr @.str.1220, ptr %tuple.field13, align 1
   %tuple.val14 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result11, ptr %frame, ptr %sret.result6, ptr %arg.tmp)
@@ -153201,7 +153767,7 @@ entry:
   %tuple.field15 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 9, ptr %tuple.field15, align 1
   %tuple.field16 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1203, ptr %tuple.field16, align 1
+  store ptr @.str.1221, ptr %tuple.field16, align 1
   %tuple.val17 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result11, ptr %frame, ptr %sret.result6, ptr %arg.tmp)
@@ -153210,7 +153776,7 @@ entry:
   %tuple.field20 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 7, ptr %tuple.field20, align 1
   %tuple.field21 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1204, ptr %tuple.field21, align 1
+  store ptr @.str.1222, ptr %tuple.field21, align 1
   %tuple.val22 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result11, ptr %frame, ptr %sret.result, ptr %arg.tmp)
@@ -153325,26 +153891,26 @@ entry:
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 6, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1154, ptr %tuple.field1, align 1
+  store ptr @.str.1172, ptr %tuple.field1, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %frame, ptr %0, ptr %tuple)
   %sret.result2 = alloca %_Z9JsonValue, align 8
   %tuple.field3 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 12, ptr %tuple.field3, align 1
   %tuple.field4 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1155, ptr %tuple.field4, align 1
+  store ptr @.str.1173, ptr %tuple.field4, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %frame, ptr %sret.result, ptr %tuple)
   %sret.result5 = alloca { ptr }, align 8
   %sret.result6 = alloca %_Z9JsonValue, align 8
   %tuple.field7 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 3, ptr %tuple.field7, align 1
   %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1156, ptr %tuple.field8, align 1
+  store ptr @.str.1174, ptr %tuple.field8, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %frame, ptr %sret.result2, ptr %tuple)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result5, ptr %frame, ptr %sret.result6)
   %tuple.field9 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 8, ptr %tuple.field9, align 1
   %tuple.field10 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1157, ptr %tuple.field10, align 1
+  store ptr @.str.1175, ptr %tuple.field10, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   %arg.tmp = alloca %_Z5SliceIcE, align 8
   store %_Z5SliceIcE %tuple.val, ptr %arg.tmp, align 1
@@ -153353,7 +153919,7 @@ entry:
   %tuple.field12 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 4, ptr %tuple.field12, align 1
   %tuple.field13 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1158, ptr %tuple.field13, align 1
+  store ptr @.str.1176, ptr %tuple.field13, align 1
   %tuple.val14 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result11, ptr %frame, ptr %sret.result6, ptr %arg.tmp)
@@ -153361,7 +153927,7 @@ entry:
   %tuple.field15 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 9, ptr %tuple.field15, align 1
   %tuple.field16 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1159, ptr %tuple.field16, align 1
+  store ptr @.str.1177, ptr %tuple.field16, align 1
   %tuple.val17 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result11, ptr %frame, ptr %sret.result6, ptr %arg.tmp)
@@ -153403,20 +153969,20 @@ entry:
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 6, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1129, ptr %tuple.field1, align 1
+  store ptr @.str.1140, ptr %tuple.field1, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %frame, ptr %0, ptr %tuple)
   %sret.result2 = alloca %_Z9JsonValue, align 8
   %tuple.field3 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 12, ptr %tuple.field3, align 1
   %tuple.field4 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1130, ptr %tuple.field4, align 1
+  store ptr @.str.1141, ptr %tuple.field4, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %frame, ptr %sret.result, ptr %tuple)
   %sret.result5 = alloca { ptr }, align 8
   %sret.result6 = alloca %_Z9JsonValue, align 8
   %tuple.field7 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 3, ptr %tuple.field7, align 1
   %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1131, ptr %tuple.field8, align 1
+  store ptr @.str.1142, ptr %tuple.field8, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %frame, ptr %sret.result2, ptr %tuple)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result5, ptr %frame, ptr %sret.result6)
   %sret.result9 = alloca { ptr }, align 8
@@ -153441,20 +154007,20 @@ entry:
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 6, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1132, ptr %tuple.field1, align 1
+  store ptr @.str.1143, ptr %tuple.field1, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %frame, ptr %0, ptr %tuple)
   %sret.result2 = alloca %_Z9JsonValue, align 8
   %tuple.field3 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 12, ptr %tuple.field3, align 1
   %tuple.field4 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1133, ptr %tuple.field4, align 1
+  store ptr @.str.1144, ptr %tuple.field4, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %frame, ptr %sret.result, ptr %tuple)
   %sret.result5 = alloca { ptr }, align 8
   %sret.result6 = alloca %_Z9JsonValue, align 8
   %tuple.field7 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 3, ptr %tuple.field7, align 1
   %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1134, ptr %tuple.field8, align 1
+  store ptr @.str.1145, ptr %tuple.field8, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %frame, ptr %sret.result2, ptr %tuple)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result5, ptr %frame, ptr %sret.result6)
   %sret.result9 = alloca { ptr }, align 8
@@ -153479,20 +154045,20 @@ entry:
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 6, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1135, ptr %tuple.field1, align 1
+  store ptr @.str.1146, ptr %tuple.field1, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %frame, ptr %0, ptr %tuple)
   %sret.result2 = alloca %_Z9JsonValue, align 8
   %tuple.field3 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 12, ptr %tuple.field3, align 1
   %tuple.field4 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1136, ptr %tuple.field4, align 1
+  store ptr @.str.1147, ptr %tuple.field4, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %frame, ptr %sret.result, ptr %tuple)
   %sret.result5 = alloca { ptr }, align 8
   %sret.result6 = alloca %_Z9JsonValue, align 8
   %tuple.field7 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 3, ptr %tuple.field7, align 1
   %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1137, ptr %tuple.field8, align 1
+  store ptr @.str.1148, ptr %tuple.field8, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %frame, ptr %sret.result2, ptr %tuple)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result5, ptr %frame, ptr %sret.result6)
   %sret.result9 = alloca { ptr }, align 8
@@ -153522,26 +154088,26 @@ entry:
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 6, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1160, ptr %tuple.field1, align 1
+  store ptr @.str.1178, ptr %tuple.field1, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %frame, ptr %0, ptr %tuple)
   %sret.result2 = alloca %_Z9JsonValue, align 8
   %tuple.field3 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 12, ptr %tuple.field3, align 1
   %tuple.field4 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1161, ptr %tuple.field4, align 1
+  store ptr @.str.1179, ptr %tuple.field4, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %frame, ptr %sret.result, ptr %tuple)
   %sret.result5 = alloca { ptr }, align 8
   %sret.result6 = alloca %_Z9JsonValue, align 8
   %tuple.field7 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 3, ptr %tuple.field7, align 1
   %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1162, ptr %tuple.field8, align 1
+  store ptr @.str.1180, ptr %tuple.field8, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %frame, ptr %sret.result2, ptr %tuple)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result5, ptr %frame, ptr %sret.result6)
   %tuple.field9 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 5, ptr %tuple.field9, align 1
   %tuple.field10 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1163, ptr %tuple.field10, align 1
+  store ptr @.str.1181, ptr %tuple.field10, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   %arg.tmp = alloca %_Z5SliceIcE, align 8
   store %_Z5SliceIcE %tuple.val, ptr %arg.tmp, align 1
@@ -153550,7 +154116,7 @@ entry:
   %tuple.field12 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 5, ptr %tuple.field12, align 1
   %tuple.field13 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1164, ptr %tuple.field13, align 1
+  store ptr @.str.1182, ptr %tuple.field13, align 1
   %tuple.val14 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result11, ptr %frame, ptr %sret.result6, ptr %arg.tmp)
@@ -153558,7 +154124,7 @@ entry:
   %tuple.field16 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 3, ptr %tuple.field16, align 1
   %tuple.field17 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1165, ptr %tuple.field17, align 1
+  store ptr @.str.1183, ptr %tuple.field17, align 1
   %tuple.val18 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result15, ptr %frame, ptr %sret.result6, ptr %arg.tmp)
@@ -153566,7 +154132,7 @@ entry:
   %tuple.field20 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 4, ptr %tuple.field20, align 1
   %tuple.field21 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1166, ptr %tuple.field21, align 1
+  store ptr @.str.1184, ptr %tuple.field21, align 1
   %tuple.val22 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result19, ptr %frame, ptr %sret.result11, ptr %arg.tmp)
@@ -153574,7 +154140,7 @@ entry:
   %tuple.field23 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 9, ptr %tuple.field23, align 1
   %tuple.field24 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1167, ptr %tuple.field24, align 1
+  store ptr @.str.1185, ptr %tuple.field24, align 1
   %tuple.val25 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result19, ptr %frame, ptr %sret.result11, ptr %arg.tmp)
@@ -153582,7 +154148,7 @@ entry:
   %tuple.field27 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 4, ptr %tuple.field27, align 1
   %tuple.field28 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1168, ptr %tuple.field28, align 1
+  store ptr @.str.1186, ptr %tuple.field28, align 1
   %tuple.val29 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result19, ptr %frame, ptr %sret.result15, ptr %arg.tmp)
@@ -153590,7 +154156,7 @@ entry:
   %tuple.field31 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 9, ptr %tuple.field31, align 1
   %tuple.field32 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1169, ptr %tuple.field32, align 1
+  store ptr @.str.1187, ptr %tuple.field32, align 1
   %tuple.val33 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result19, ptr %frame, ptr %sret.result15, ptr %arg.tmp)
@@ -153643,27 +154209,27 @@ entry:
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 6, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1086, ptr %tuple.field1, align 1
+  store ptr @.str.1097, ptr %tuple.field1, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %frame, ptr %0, ptr %tuple)
   %sret.result2 = alloca %_Z9JsonValue, align 8
   %tuple.field3 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 12, ptr %tuple.field3, align 1
   %tuple.field4 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1087, ptr %tuple.field4, align 1
+  store ptr @.str.1098, ptr %tuple.field4, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %frame, ptr %sret.result, ptr %tuple)
   %sret.result5 = alloca { ptr }, align 8
   %sret.result6 = alloca %_Z9JsonValue, align 8
   %tuple.field7 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 3, ptr %tuple.field7, align 1
   %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1088, ptr %tuple.field8, align 1
+  store ptr @.str.1099, ptr %tuple.field8, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %frame, ptr %sret.result2, ptr %tuple)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result5, ptr %frame, ptr %sret.result6)
   %sret.result9 = alloca { ptr }, align 8
   %tuple.field10 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 7, ptr %tuple.field10, align 1
   %tuple.field11 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1089, ptr %tuple.field11, align 1
+  store ptr @.str.1100, ptr %tuple.field11, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %frame, ptr %sret.result, ptr %tuple)
   call void @_ZN6server18diagnostics_packedEPN4scaly6memory4PageE9JsonValue(ptr noalias sret({ ptr }) %sret.result9, ptr %frame, ptr %sret.result6)
   %call = call i64 @_ZN6String10get_lengthEv(ptr %sret.result9)
@@ -153671,7 +154237,7 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  store { ptr } { ptr @.sconst.1090 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.1101 }, ptr %arg.tmp, align 1
   call void @_ZN6server24document_symbol_responseEPN4scaly6memory4PageE3i646String(ptr noalias sret({ ptr }) %sret.result12, ptr %frame, i64 %1, ptr %arg.tmp)
   call void @_ZN3rpc13write_messageE6String(ptr %sret.result12)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
@@ -153697,20 +154263,20 @@ entry:
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 6, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1091, ptr %tuple.field1, align 1
+  store ptr @.str.1102, ptr %tuple.field1, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %frame, ptr %0, ptr %tuple)
   %sret.result2 = alloca %_Z9JsonValue, align 8
   %tuple.field3 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 12, ptr %tuple.field3, align 1
   %tuple.field4 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1092, ptr %tuple.field4, align 1
+  store ptr @.str.1103, ptr %tuple.field4, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %frame, ptr %sret.result, ptr %tuple)
   %sret.result5 = alloca { ptr }, align 8
   %sret.result6 = alloca %_Z9JsonValue, align 8
   %tuple.field7 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 3, ptr %tuple.field7, align 1
   %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1093, ptr %tuple.field8, align 1
+  store ptr @.str.1104, ptr %tuple.field8, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %frame, ptr %sret.result2, ptr %tuple)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result5, ptr %frame, ptr %sret.result6)
   %sret.result9 = alloca { ptr }, align 8
@@ -153747,26 +154313,26 @@ entry:
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 6, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1123, ptr %tuple.field1, align 1
+  store ptr @.str.1134, ptr %tuple.field1, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %frame, ptr %0, ptr %tuple)
   %sret.result2 = alloca %_Z9JsonValue, align 8
   %tuple.field3 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 12, ptr %tuple.field3, align 1
   %tuple.field4 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1124, ptr %tuple.field4, align 1
+  store ptr @.str.1135, ptr %tuple.field4, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %frame, ptr %sret.result, ptr %tuple)
   %sret.result5 = alloca { ptr }, align 8
   %sret.result6 = alloca %_Z9JsonValue, align 8
   %tuple.field7 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 3, ptr %tuple.field7, align 1
   %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1125, ptr %tuple.field8, align 1
+  store ptr @.str.1136, ptr %tuple.field8, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %frame, ptr %sret.result2, ptr %tuple)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result5, ptr %frame, ptr %sret.result6)
   %tuple.field9 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 9, ptr %tuple.field9, align 1
   %tuple.field10 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1126, ptr %tuple.field10, align 1
+  store ptr @.str.1137, ptr %tuple.field10, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   %arg.tmp = alloca %_Z5SliceIcE, align 8
   store %_Z5SliceIcE %tuple.val, ptr %arg.tmp, align 1
@@ -153800,7 +154366,7 @@ while.body:                                       ; preds = %while.cond
   %tuple.field18 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 4, ptr %tuple.field18, align 1
   %tuple.field19 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1127, ptr %tuple.field19, align 1
+  store ptr @.str.1138, ptr %tuple.field19, align 1
   %tuple.val20 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result17, ptr %frame, ptr %sret.result13, ptr %arg.tmp)
@@ -153813,7 +154379,7 @@ while.body:                                       ; preds = %while.cond
   %tuple.field27 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple26, i32 0, i32 0
   store i64 9, ptr %tuple.field27, align 1
   %tuple.field28 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple26, i32 0, i32 1
-  store ptr @.str.1128, ptr %tuple.field28, align 1
+  store ptr @.str.1139, ptr %tuple.field28, align 1
   %tuple.val29 = load %_Z5SliceIcE, ptr %tuple26, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp30, ptr align 1 %tuple26, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result25, ptr %frame, ptr %sret.result13, ptr %arg.tmp30)
@@ -153855,26 +154421,26 @@ entry:
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 6, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1117, ptr %tuple.field1, align 1
+  store ptr @.str.1128, ptr %tuple.field1, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %frame, ptr %0, ptr %tuple)
   %sret.result2 = alloca %_Z9JsonValue, align 8
   %tuple.field3 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 12, ptr %tuple.field3, align 1
   %tuple.field4 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1118, ptr %tuple.field4, align 1
+  store ptr @.str.1129, ptr %tuple.field4, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %frame, ptr %sret.result, ptr %tuple)
   %sret.result5 = alloca { ptr }, align 8
   %sret.result6 = alloca %_Z9JsonValue, align 8
   %tuple.field7 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 3, ptr %tuple.field7, align 1
   %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1119, ptr %tuple.field8, align 1
+  store ptr @.str.1130, ptr %tuple.field8, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %frame, ptr %sret.result2, ptr %tuple)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result5, ptr %frame, ptr %sret.result6)
   %tuple.field9 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 8, ptr %tuple.field9, align 1
   %tuple.field10 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1120, ptr %tuple.field10, align 1
+  store ptr @.str.1131, ptr %tuple.field10, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   %arg.tmp = alloca %_Z5SliceIcE, align 8
   store %_Z5SliceIcE %tuple.val, ptr %arg.tmp, align 1
@@ -153883,7 +154449,7 @@ entry:
   %tuple.field12 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 4, ptr %tuple.field12, align 1
   %tuple.field13 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1121, ptr %tuple.field13, align 1
+  store ptr @.str.1132, ptr %tuple.field13, align 1
   %tuple.val14 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result11, ptr %frame, ptr %sret.result6, ptr %arg.tmp)
@@ -153891,7 +154457,7 @@ entry:
   %tuple.field15 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 9, ptr %tuple.field15, align 1
   %tuple.field16 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1122, ptr %tuple.field16, align 1
+  store ptr @.str.1133, ptr %tuple.field16, align 1
   %tuple.val17 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result11, ptr %frame, ptr %sret.result6, ptr %arg.tmp)
@@ -153948,26 +154514,26 @@ entry:
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 6, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1100, ptr %tuple.field1, align 1
+  store ptr @.str.1111, ptr %tuple.field1, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %frame, ptr %0, ptr %tuple)
   %sret.result2 = alloca %_Z9JsonValue, align 8
   %tuple.field3 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 12, ptr %tuple.field3, align 1
   %tuple.field4 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1101, ptr %tuple.field4, align 1
+  store ptr @.str.1112, ptr %tuple.field4, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %frame, ptr %sret.result, ptr %tuple)
   %sret.result5 = alloca { ptr }, align 8
   %sret.result6 = alloca %_Z9JsonValue, align 8
   %tuple.field7 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 3, ptr %tuple.field7, align 1
   %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1102, ptr %tuple.field8, align 1
+  store ptr @.str.1113, ptr %tuple.field8, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %frame, ptr %sret.result2, ptr %tuple)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result5, ptr %frame, ptr %sret.result6)
   %tuple.field9 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 8, ptr %tuple.field9, align 1
   %tuple.field10 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1103, ptr %tuple.field10, align 1
+  store ptr @.str.1114, ptr %tuple.field10, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   %arg.tmp = alloca %_Z5SliceIcE, align 8
   store %_Z5SliceIcE %tuple.val, ptr %arg.tmp, align 1
@@ -153989,7 +154555,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field15 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 4, ptr %tuple.field15, align 1
   %tuple.field16 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1104, ptr %tuple.field16, align 1
+  store ptr @.str.1115, ptr %tuple.field16, align 1
   %tuple.val17 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result14, ptr %frame, ptr %sret.result6, ptr %arg.tmp)
@@ -154002,7 +154568,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field23 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple22, i32 0, i32 0
   store i64 9, ptr %tuple.field23, align 1
   %tuple.field24 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple22, i32 0, i32 1
-  store ptr @.str.1105, ptr %tuple.field24, align 1
+  store ptr @.str.1116, ptr %tuple.field24, align 1
   %tuple.val25 = load %_Z5SliceIcE, ptr %tuple22, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp26, ptr align 1 %tuple22, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result21, ptr %frame, ptr %sret.result6, ptr %arg.tmp26)
@@ -154036,27 +154602,27 @@ entry:
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 6, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1106, ptr %tuple.field1, align 1
+  store ptr @.str.1117, ptr %tuple.field1, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %frame, ptr %0, ptr %tuple)
   %sret.result2 = alloca %_Z9JsonValue, align 8
   %tuple.field3 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 4, ptr %tuple.field3, align 1
   %tuple.field4 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1107, ptr %tuple.field4, align 1
+  store ptr @.str.1118, ptr %tuple.field4, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %frame, ptr %sret.result, ptr %tuple)
   %sret.result5 = alloca { ptr }, align 8
   %sret.result6 = alloca %_Z9JsonValue, align 8
   %tuple.field7 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 3, ptr %tuple.field7, align 1
   %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1108, ptr %tuple.field8, align 1
+  store ptr @.str.1119, ptr %tuple.field8, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %frame, ptr %sret.result2, ptr %tuple)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result5, ptr %frame, ptr %sret.result6)
   %sret.result9 = alloca { ptr }, align 8
   %tuple.field10 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 4, ptr %tuple.field10, align 1
   %tuple.field11 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1109, ptr %tuple.field11, align 1
+  store ptr @.str.1120, ptr %tuple.field11, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   %arg.tmp = alloca %_Z5SliceIcE, align 8
   store %_Z5SliceIcE %tuple.val, ptr %arg.tmp, align 1
@@ -154150,26 +154716,26 @@ entry:
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 6, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1110, ptr %tuple.field1, align 1
+  store ptr @.str.1121, ptr %tuple.field1, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %frame, ptr %0, ptr %tuple)
   %sret.result2 = alloca %_Z9JsonValue, align 8
   %tuple.field3 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 4, ptr %tuple.field3, align 1
   %tuple.field4 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1111, ptr %tuple.field4, align 1
+  store ptr @.str.1122, ptr %tuple.field4, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %frame, ptr %sret.result, ptr %tuple)
   %sret.result5 = alloca { ptr }, align 8
   %sret.result6 = alloca %_Z9JsonValue, align 8
   %tuple.field7 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 3, ptr %tuple.field7, align 1
   %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1112, ptr %tuple.field8, align 1
+  store ptr @.str.1123, ptr %tuple.field8, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result6, ptr %frame, ptr %sret.result2, ptr %tuple)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result5, ptr %frame, ptr %sret.result6)
   %tuple.field9 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 5, ptr %tuple.field9, align 1
   %tuple.field10 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1113, ptr %tuple.field10, align 1
+  store ptr @.str.1124, ptr %tuple.field10, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   %arg.tmp = alloca %_Z5SliceIcE, align 8
   store %_Z5SliceIcE %tuple.val, ptr %arg.tmp, align 1
@@ -154178,7 +154744,7 @@ entry:
   %tuple.field12 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 5, ptr %tuple.field12, align 1
   %tuple.field13 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1114, ptr %tuple.field13, align 1
+  store ptr @.str.1125, ptr %tuple.field13, align 1
   %tuple.val14 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result11, ptr %frame, ptr %sret.result6, ptr %arg.tmp)
@@ -154199,7 +154765,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field19 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 4, ptr %tuple.field19, align 1
   %tuple.field20 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1115, ptr %tuple.field20, align 1
+  store ptr @.str.1126, ptr %tuple.field20, align 1
   %tuple.val21 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result18, ptr %frame, ptr %sret.result11, ptr %arg.tmp)
@@ -154212,7 +154778,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field27 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple26, i32 0, i32 0
   store i64 9, ptr %tuple.field27, align 1
   %tuple.field28 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple26, i32 0, i32 1
-  store ptr @.str.1116, ptr %tuple.field28, align 1
+  store ptr @.str.1127, ptr %tuple.field28, align 1
   %tuple.val29 = load %_Z5SliceIcE, ptr %tuple26, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp30, ptr align 1 %tuple26, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result25, ptr %frame, ptr %sret.result11, ptr %arg.tmp30)
@@ -154240,14 +154806,14 @@ entry:
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 6, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1205, ptr %tuple.field1, align 1
+  store ptr @.str.1223, ptr %tuple.field1, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %frame, ptr %0, ptr %tuple)
   %sret.result2 = alloca { ptr }, align 8
   %sret.result3 = alloca %_Z9JsonValue, align 8
   %tuple.field4 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 5, ptr %tuple.field4, align 1
   %tuple.field5 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1206, ptr %tuple.field5, align 1
+  store ptr @.str.1224, ptr %tuple.field5, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %frame, ptr %sret.result, ptr %tuple)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result2, ptr %frame, ptr %sret.result3)
   %sret.result6 = alloca { ptr }, align 8
@@ -154279,7 +154845,7 @@ entry:
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 5, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1075, ptr %tuple.field1, align 1
+  store ptr @.str.1086, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   %arg.tmp = alloca %_Z5SliceIcE, align 8
   store %_Z5SliceIcE %tuple.val, ptr %arg.tmp, align 1
@@ -154300,7 +154866,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field5 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 0
   store i64 4, ptr %tuple.field5, align 1
   %tuple.field6 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
-  store ptr @.str.1076, ptr %tuple.field6, align 1
+  store ptr @.str.1087, ptr %tuple.field6, align 1
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %1, ptr %3, ptr %tuple.region)
   call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result2, ptr %1, ptr %sret.result3)
   %call = call i1 @_ZN4json7is_nullEv(ptr %sret.result)
@@ -154316,21 +154882,21 @@ if.end:                                           ; preds = %frame.forced
   %tuple.field7 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 5, ptr %tuple.field7, align 1
   %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1077, ptr %tuple.field8, align 1
+  store ptr @.str.1088, ptr %tuple.field8, align 1
   %tuple.val9 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %frame, ptr %sret.result, ptr %arg.tmp)
   %tuple.field11 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 3, ptr %tuple.field11, align 1
   %tuple.field12 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1078, ptr %tuple.field12, align 1
+  store ptr @.str.1089, ptr %tuple.field12, align 1
   %tuple.val13 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result10, ptr %frame, ptr %sret.result, ptr %arg.tmp)
   %tuple.field15 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 4, ptr %tuple.field15, align 1
   %tuple.field16 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1079, ptr %tuple.field16, align 1
+  store ptr @.str.1090, ptr %tuple.field16, align 1
   %tuple.val17 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result14, ptr %frame, ptr %sret.result3, ptr %arg.tmp)
@@ -154338,7 +154904,7 @@ if.end:                                           ; preds = %frame.forced
   %tuple.field19 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 9, ptr %tuple.field19, align 1
   %tuple.field20 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1080, ptr %tuple.field20, align 1
+  store ptr @.str.1091, ptr %tuple.field20, align 1
   %tuple.val21 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result14, ptr %frame, ptr %sret.result3, ptr %arg.tmp)
@@ -154346,7 +154912,7 @@ if.end:                                           ; preds = %frame.forced
   %tuple.field23 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 4, ptr %tuple.field23, align 1
   %tuple.field24 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1081, ptr %tuple.field24, align 1
+  store ptr @.str.1092, ptr %tuple.field24, align 1
   %tuple.val25 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result14, ptr %frame, ptr %sret.result10, ptr %arg.tmp)
@@ -154354,7 +154920,7 @@ if.end:                                           ; preds = %frame.forced
   %tuple.field27 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 9, ptr %tuple.field27, align 1
   %tuple.field28 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1082, ptr %tuple.field28, align 1
+  store ptr @.str.1093, ptr %tuple.field28, align 1
   %tuple.val29 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result14, ptr %frame, ptr %sret.result10, ptr %arg.tmp)
@@ -154482,7 +155048,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 7, ptr %tuple.field, align 1
   %tuple.field4 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1291, ptr %tuple.field4, align 1
+  store ptr @.str.1307, ptr %tuple.field4, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %arg.tmp)
@@ -154491,7 +155057,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple7, i32 0, i32 0
   store i64 3, ptr %tuple.field8, align 1
   %tuple.field9 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple7, i32 0, i32 1
-  store ptr @.str.1292, ptr %tuple.field9, align 1
+  store ptr @.str.1308, ptr %tuple.field9, align 1
   %tuple.val10 = load %_Z5SliceIcE, ptr %tuple7, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp11, ptr align 1 %tuple7, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server6quotedEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result6, ptr %frame, ptr %arg.tmp11)
@@ -154502,7 +155068,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field16 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple15, i32 0, i32 0
   store i64 2, ptr %tuple.field16, align 1
   %tuple.field17 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple15, i32 0, i32 1
-  store ptr @.str.1293, ptr %tuple.field17, align 1
+  store ptr @.str.1309, ptr %tuple.field17, align 1
   %tuple.val18 = load %_Z5SliceIcE, ptr %tuple15, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp19, ptr align 1 %tuple15, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result14, ptr %frame, ptr %arg.tmp19)
@@ -154516,7 +155082,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field26 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple25, i32 0, i32 0
   store i64 6, ptr %tuple.field26, align 1
   %tuple.field27 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple25, i32 0, i32 1
-  store ptr @.str.1294, ptr %tuple.field27, align 1
+  store ptr @.str.1310, ptr %tuple.field27, align 1
   %tuple.val28 = load %_Z5SliceIcE, ptr %tuple25, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp29, ptr align 1 %tuple25, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result24, ptr %frame, ptr %arg.tmp29)
@@ -154589,7 +155155,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 11, ptr %tuple.field, align 1
   %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1094, ptr %tuple.field2, align 1
+  store ptr @.str.1105, ptr %tuple.field2, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %frame, ptr %2, ptr %arg.tmp)
@@ -154608,7 +155174,7 @@ while.body:                                       ; preds = %while.cond
   %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 7, ptr %tuple.field8, align 1
   %tuple.field9 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1095, ptr %tuple.field9, align 1
+  store ptr @.str.1106, ptr %tuple.field9, align 1
   %tuple.val10 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result7, ptr %frame, ptr %sret.result4, ptr %arg.tmp)
@@ -154629,14 +155195,14 @@ if.then:                                          ; preds = %while.body
   %tuple.field12 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 5, ptr %tuple.field12, align 1
   %tuple.field13 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1096, ptr %tuple.field13, align 1
+  store ptr @.str.1107, ptr %tuple.field13, align 1
   %tuple.val14 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result7, ptr %frame, ptr %sret.result4, ptr %arg.tmp)
   %tuple.field16 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 5, ptr %tuple.field16, align 1
   %tuple.field17 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1097, ptr %tuple.field17, align 1
+  store ptr @.str.1108, ptr %tuple.field17, align 1
   %tuple.val18 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result15, ptr %frame, ptr %sret.result7, ptr %arg.tmp)
@@ -154644,7 +155210,7 @@ if.then:                                          ; preds = %while.body
   %tuple.field22 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 4, ptr %tuple.field22, align 1
   %tuple.field23 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1098, ptr %tuple.field23, align 1
+  store ptr @.str.1109, ptr %tuple.field23, align 1
   %tuple.val24 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result21, ptr %frame, ptr %sret.result15, ptr %arg.tmp)
@@ -154657,7 +155223,7 @@ if.then:                                          ; preds = %while.body
   %tuple.field31 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple30, i32 0, i32 0
   store i64 9, ptr %tuple.field31, align 1
   %tuple.field32 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple30, i32 0, i32 1
-  store ptr @.str.1099, ptr %tuple.field32, align 1
+  store ptr @.str.1110, ptr %tuple.field32, align 1
   %tuple.val33 = load %_Z5SliceIcE, ptr %tuple30, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp34, ptr align 1 %tuple30, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result29, ptr %frame, ptr %sret.result15, ptr %arg.tmp34)
@@ -154832,7 +155398,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 7, ptr %tuple.field, align 1
   %tuple.field4 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1300, ptr %tuple.field4, align 1
+  store ptr @.str.1316, ptr %tuple.field4, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %arg.tmp)
@@ -154841,7 +155407,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple7, i32 0, i32 0
   store i64 3, ptr %tuple.field8, align 1
   %tuple.field9 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple7, i32 0, i32 1
-  store ptr @.str.1301, ptr %tuple.field9, align 1
+  store ptr @.str.1317, ptr %tuple.field9, align 1
   %tuple.val10 = load %_Z5SliceIcE, ptr %tuple7, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp11, ptr align 1 %tuple7, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server6quotedEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result6, ptr %frame, ptr %arg.tmp11)
@@ -154852,7 +155418,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field16 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple15, i32 0, i32 0
   store i64 2, ptr %tuple.field16, align 1
   %tuple.field17 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple15, i32 0, i32 1
-  store ptr @.str.1302, ptr %tuple.field17, align 1
+  store ptr @.str.1318, ptr %tuple.field17, align 1
   %tuple.val18 = load %_Z5SliceIcE, ptr %tuple15, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp19, ptr align 1 %tuple15, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result14, ptr %frame, ptr %arg.tmp19)
@@ -154866,7 +155432,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field26 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple25, i32 0, i32 0
   store i64 6, ptr %tuple.field26, align 1
   %tuple.field27 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple25, i32 0, i32 1
-  store ptr @.str.1303, ptr %tuple.field27, align 1
+  store ptr @.str.1319, ptr %tuple.field27, align 1
   %tuple.val28 = load %_Z5SliceIcE, ptr %tuple25, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp29, ptr align 1 %tuple25, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result24, ptr %frame, ptr %arg.tmp29)
@@ -154877,7 +155443,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
 
 if.then:                                          ; preds = %frame.forced
   %sb30 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.1304 }, ptr %arg.tmp31, align 1
+  store { ptr } { ptr @.sconst.1320 }, ptr %arg.tmp31, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb30, ptr %arg.tmp31)
   br label %if.end
 
@@ -154965,7 +155531,7 @@ frame.forced:                                     ; preds = %frame.force, %if.en
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 8, ptr %tuple.field, align 1
   %tuple.field9 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1144, ptr %tuple.field9, align 1
+  store ptr @.str.1162, ptr %tuple.field9, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result8, ptr %frame, ptr %arg.tmp)
@@ -154976,13 +155542,13 @@ frame.forced:                                     ; preds = %frame.force, %if.en
   %tuple.field14 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple13, i32 0, i32 0
   store i64 4, ptr %tuple.field14, align 1
   %tuple.field15 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple13, i32 0, i32 1
-  store ptr @.str.1145, ptr %tuple.field15, align 1
+  store ptr @.str.1163, ptr %tuple.field15, align 1
   %tuple.val16 = load %_Z5SliceIcE, ptr %tuple13, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp17, ptr align 1 %tuple13, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result12, ptr %frame, ptr %arg.tmp17)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb11, ptr %sret.result12)
   %sb18 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.1146 }, ptr %arg.tmp20, align 1
+  store { ptr } { ptr @.sconst.1164 }, ptr %arg.tmp20, align 1
   call void @_ZN4json12quote_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result19, ptr %frame, ptr %arg.tmp20)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb18, ptr %sret.result19)
   %sb21 = load ptr, ptr %sb, align 8
@@ -154991,7 +155557,7 @@ frame.forced:                                     ; preds = %frame.force, %if.en
   %tuple.field25 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple24, i32 0, i32 0
   store i64 5, ptr %tuple.field25, align 1
   %tuple.field26 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple24, i32 0, i32 1
-  store ptr @.str.1147, ptr %tuple.field26, align 1
+  store ptr @.str.1165, ptr %tuple.field26, align 1
   %tuple.val27 = load %_Z5SliceIcE, ptr %tuple24, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp28, ptr align 1 %tuple24, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result23, ptr %frame, ptr %arg.tmp28)
@@ -155008,6 +155574,181 @@ frame.forced:                                     ; preds = %frame.force, %if.en
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result33, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result33, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  ret void
+}
+
+define linkonce_odr void @_ZN6server20hover_with_paragraphEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
+entry:
+  %sret.result69 = alloca { ptr }, align 8
+  %sret.result65 = alloca { ptr }, align 8
+  %arg.tmp63 = alloca %_Z5SliceIcE, align 8
+  %tuple59 = alloca %_Z5SliceIcE, align 8
+  %sret.result58 = alloca { ptr }, align 8
+  %arg.tmp55 = alloca { ptr }, align 8
+  %sret.result54 = alloca { ptr }, align 8
+  %arg.tmp52 = alloca %_Z5SliceIcE, align 8
+  %tuple48 = alloca %_Z5SliceIcE, align 8
+  %sret.result47 = alloca { ptr }, align 8
+  %arg.tmp44 = alloca %_Z5SliceIcE, align 8
+  %tuple40 = alloca %_Z5SliceIcE, align 8
+  %sret.result39 = alloca { ptr }, align 8
+  %sb = alloca ptr, align 8
+  %sret.result25 = alloca { ptr }, align 8
+  %arg.tmp24 = alloca { ptr }, align 8
+  %arg.tmp10 = alloca %_Z5SliceIcE, align 8
+  %tuple6 = alloca %_Z5SliceIcE, align 8
+  %arg.tmp5 = alloca %_Z5SliceIcE, align 8
+  %tuple = alloca %_Z5SliceIcE, align 8
+  %sret.result3 = alloca %_Z9JsonValue, align 8
+  %sret.result2 = alloca %_Z9JsonValue, align 8
+  %sret.result = alloca %_Z9JsonValue, align 8
+  %text = alloca ptr, align 8
+  %arg.tmp = alloca { ptr }, align 8
+  %frame = alloca { ptr, ptr }, align 8
+  store ptr null, ptr %frame, align 8
+  %frame.parent = getelementptr inbounds nuw { ptr, ptr }, ptr %frame, i32 0, i32 1
+  store ptr %1, ptr %frame.parent, align 8
+  %frame.page = load ptr, ptr %frame, align 8
+  %frame.has_page = icmp ne ptr %frame.page, null
+  br i1 %frame.has_page, label %frame.forced, label %frame.force
+
+frame.force:                                      ; preds = %entry
+  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  br label %frame.forced
+
+frame.forced:                                     ; preds = %frame.force, %entry
+  %forced_page1 = phi ptr [ %frame.page, %entry ], [ %forced_page, %frame.force ]
+  %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
+  store { ptr } zeroinitializer, ptr %arg.tmp, align 1
+  call void @_ZN6StringC1E6String(ptr %struct.region, ptr %arg.tmp)
+  store ptr %struct.region, ptr %text, align 1
+  %call = call i64 @_ZN6String10get_lengthEv(ptr %2)
+  %gt = icmp ugt i64 %call, 0
+  br i1 %gt, label %if.then, label %if.end
+
+if.then:                                          ; preds = %frame.forced
+  call void @_ZN4json5parseEPN4scaly6memory4PageE6String(ptr noalias sret(%_Z9JsonValue) %sret.result3, ptr %frame, ptr %2)
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
+  store i64 8, ptr %tuple.field, align 1
+  %tuple.field4 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
+  store ptr @.str.1155, ptr %tuple.field4, align 1
+  %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp5, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result2, ptr %frame, ptr %sret.result3, ptr %arg.tmp5)
+  %tuple.field7 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple6, i32 0, i32 0
+  store i64 5, ptr %tuple.field7, align 1
+  %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple6, i32 0, i32 1
+  store ptr @.str.1156, ptr %tuple.field8, align 1
+  %tuple.val9 = load %_Z5SliceIcE, ptr %tuple6, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp10, ptr align 1 %tuple6, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %frame, ptr %sret.result2, ptr %arg.tmp10)
+  call void @_ZN4json9as_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %arg.tmp, ptr %frame, ptr %sret.result)
+  %set.dest = load ptr, ptr %text, align 8
+  %set.thru = load { ptr }, ptr %arg.tmp, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest, ptr align 1 %arg.tmp, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  br label %if.end
+
+if.end:                                           ; preds = %if.then, %frame.forced
+  %text11 = load ptr, ptr %text, align 8
+  %call12 = call i64 @_ZN6String10get_lengthEv(ptr %text11)
+  %gt13 = icmp ugt i64 %call12, 0
+  br i1 %gt13, label %if.then14, label %if.else
+
+if.then14:                                        ; preds = %if.end
+  %frame.page16 = load ptr, ptr %frame, align 8
+  %frame.has_page17 = icmp ne ptr %frame.page16, null
+  br i1 %frame.has_page17, label %frame.forced19, label %frame.force18
+
+if.else:                                          ; preds = %if.end
+  %set.dest28 = load ptr, ptr %text, align 8
+  %set.thru29 = load { ptr }, ptr %3, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest28, ptr align 1 %3, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  br label %if.end15
+
+if.end15:                                         ; preds = %if.else, %frame.forced19
+  %if.value = phi ptr [ %sret.result25, %frame.forced19 ], [ %3, %if.else ]
+  %frame.page30 = load ptr, ptr %frame, align 8
+  %frame.has_page31 = icmp ne ptr %frame.page30, null
+  br i1 %frame.has_page31, label %frame.forced33, label %frame.force32
+
+frame.force18:                                    ; preds = %if.then14
+  %forced_page20 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  br label %frame.forced19
+
+frame.forced19:                                   ; preds = %frame.force18, %if.then14
+  %forced_page21 = phi ptr [ %frame.page16, %if.then14 ], [ %forced_page20, %frame.force18 ]
+  %struct.region22 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page21, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region22)
+  %text23 = load ptr, ptr %text, align 8
+  call void @_ZN13StringBuilder6appendE6String(ptr %struct.region22, ptr %text23)
+  store { ptr } { ptr @.sconst.1157 }, ptr %arg.tmp24, align 1
+  call void @_ZN13StringBuilder6appendE6String(ptr %struct.region22, ptr %arg.tmp24)
+  call void @_ZN13StringBuilder6appendE6String(ptr %struct.region22, ptr %3)
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result25, ptr %frame, ptr %struct.region22)
+  %set.dest26 = load ptr, ptr %text, align 8
+  %set.thru27 = load { ptr }, ptr %sret.result25, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest26, ptr align 1 %sret.result25, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  br label %if.end15
+
+frame.force32:                                    ; preds = %if.end15
+  %forced_page34 = call ptr @_Z17scaly_force_frameP5Frame(ptr %frame)
+  br label %frame.forced33
+
+frame.forced33:                                   ; preds = %frame.force32, %if.end15
+  %forced_page35 = phi ptr [ %frame.page30, %if.end15 ], [ %forced_page34, %frame.force32 ]
+  %struct.region36 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page35, i64 64, i64 ptrtoint (ptr getelementptr ({ i1, ptr }, ptr null, i64 0, i32 1) to i64))
+  call void @_ZN13StringBuilderC1Ev(ptr %struct.region36)
+  store ptr %struct.region36, ptr %sb, align 1
+  %sb37 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb37, i8 123)
+  %sb38 = load ptr, ptr %sb, align 8
+  %tuple.field41 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple40, i32 0, i32 0
+  store i64 8, ptr %tuple.field41, align 1
+  %tuple.field42 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple40, i32 0, i32 1
+  store ptr @.str.1158, ptr %tuple.field42, align 1
+  %tuple.val43 = load %_Z5SliceIcE, ptr %tuple40, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp44, ptr align 1 %tuple40, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result39, ptr %frame, ptr %arg.tmp44)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb38, ptr %sret.result39)
+  %sb45 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb45, i8 123)
+  %sb46 = load ptr, ptr %sb, align 8
+  %tuple.field49 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple48, i32 0, i32 0
+  store i64 4, ptr %tuple.field49, align 1
+  %tuple.field50 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple48, i32 0, i32 1
+  store ptr @.str.1159, ptr %tuple.field50, align 1
+  %tuple.val51 = load %_Z5SliceIcE, ptr %tuple48, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp52, ptr align 1 %tuple48, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result47, ptr %frame, ptr %arg.tmp52)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb46, ptr %sret.result47)
+  %sb53 = load ptr, ptr %sb, align 8
+  store { ptr } { ptr @.sconst.1160 }, ptr %arg.tmp55, align 1
+  call void @_ZN4json12quote_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result54, ptr %frame, ptr %arg.tmp55)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb53, ptr %sret.result54)
+  %sb56 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb56, i8 44)
+  %sb57 = load ptr, ptr %sb, align 8
+  %tuple.field60 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple59, i32 0, i32 0
+  store i64 5, ptr %tuple.field60, align 1
+  %tuple.field61 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple59, i32 0, i32 1
+  store ptr @.str.1161, ptr %tuple.field61, align 1
+  %tuple.val62 = load %_Z5SliceIcE, ptr %tuple59, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp63, ptr align 1 %tuple59, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result58, ptr %frame, ptr %arg.tmp63)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb57, ptr %sret.result58)
+  %sb64 = load ptr, ptr %sb, align 8
+  %text66 = load ptr, ptr %text, align 8
+  call void @_ZN4json12quote_stringEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result65, ptr %frame, ptr %text66)
+  call void @_ZN13StringBuilder6appendE6String(ptr %sb64, ptr %sret.result65)
+  %sb67 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb67, i8 125)
+  %sb68 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder6appendEc(ptr %sb68, i8 125)
+  %sb70 = load ptr, ptr %sb, align 8
+  call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result69, ptr %1, ptr %sb70)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
+  %sret.body = load { ptr }, ptr %sret.result69, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result69, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -155052,7 +155793,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 7, ptr %tuple.field, align 1
   %tuple.field4 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1295, ptr %tuple.field4, align 1
+  store ptr @.str.1311, ptr %tuple.field4, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %arg.tmp)
@@ -155061,7 +155802,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field8 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple7, i32 0, i32 0
   store i64 3, ptr %tuple.field8, align 1
   %tuple.field9 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple7, i32 0, i32 1
-  store ptr @.str.1296, ptr %tuple.field9, align 1
+  store ptr @.str.1312, ptr %tuple.field9, align 1
   %tuple.val10 = load %_Z5SliceIcE, ptr %tuple7, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp11, ptr align 1 %tuple7, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server6quotedEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result6, ptr %frame, ptr %arg.tmp11)
@@ -155072,7 +155813,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field16 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple15, i32 0, i32 0
   store i64 2, ptr %tuple.field16, align 1
   %tuple.field17 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple15, i32 0, i32 1
-  store ptr @.str.1297, ptr %tuple.field17, align 1
+  store ptr @.str.1313, ptr %tuple.field17, align 1
   %tuple.val18 = load %_Z5SliceIcE, ptr %tuple15, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp19, ptr align 1 %tuple15, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result14, ptr %frame, ptr %arg.tmp19)
@@ -155086,7 +155827,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   %tuple.field26 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple25, i32 0, i32 0
   store i64 6, ptr %tuple.field26, align 1
   %tuple.field27 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple25, i32 0, i32 1
-  store ptr @.str.1298, ptr %tuple.field27, align 1
+  store ptr @.str.1314, ptr %tuple.field27, align 1
   %tuple.val28 = load %_Z5SliceIcE, ptr %tuple25, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp29, ptr align 1 %tuple25, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result24, ptr %frame, ptr %arg.tmp29)
@@ -155097,7 +155838,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
 
 if.then:                                          ; preds = %frame.forced
   %sb30 = load ptr, ptr %sb, align 8
-  store { ptr } { ptr @.sconst.1299 }, ptr %arg.tmp31, align 1
+  store { ptr } { ptr @.sconst.1315 }, ptr %arg.tmp31, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %sb30, ptr %arg.tmp31)
   br label %if.end
 
@@ -155233,7 +155974,7 @@ if.end9:                                          ; preds = %if.then8, %while.ex
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 13, ptr %tuple.field, align 1
   %tuple.field12 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1191, ptr %tuple.field12, align 1
+  store ptr @.str.1209, ptr %tuple.field12, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN6server3keyEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %arg.tmp)
@@ -155374,14 +156115,14 @@ if.then:                                          ; preds = %entry
   %tuple.field = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 6, ptr %tuple.field, align 1
   %tuple.field2 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1215, ptr %tuple.field2, align 1
+  store ptr @.str.1233, ptr %tuple.field2, align 1
   %tuple.val = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result1, ptr %frame, ptr %sret.result, ptr %arg.tmp)
   %tuple.field5 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 0
   store i64 3, ptr %tuple.field5, align 1
   %tuple.field6 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple, i32 0, i32 1
-  store ptr @.str.1216, ptr %tuple.field6, align 1
+  store ptr @.str.1234, ptr %tuple.field6, align 1
   %tuple.val7 = load %_Z5SliceIcE, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceIcE, ptr null, i32 1) to i64), i1 false)
   call void @_ZN4json3getEPN4scaly6memory4PageE5SliceIcE(ptr noalias sret(%_Z9JsonValue) %sret.result4, ptr %frame, ptr %sret.result1, ptr %arg.tmp)

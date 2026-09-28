@@ -1,5 +1,7 @@
-; placehints.scaly - textDocument/inlayHint: where each construction is
-; ALLOCATED — the stack, or which region.
+; placehints.scaly - where each construction is ALLOCATED — the stack, or
+; which region. Shown in the hover since 2026-09-28 (see hover_note#); the
+; inlay-hint rendering below still answers textDocument/inlayHint, which the
+; server no longer advertises.
 ;
 ; WHY. Lifetimes are INFERRED. The `$` sigil is gone, `#`/`^` survive only where
 ; a page is genuinely pinned, and the planner decides the rest — so the single
@@ -89,6 +91,16 @@ define placehints
     ; COMMA-JOINED FRAGMENT of InlayHint objects, or "".
     procedure fragment(mutable uri: String, mutable text: String, packed: String) returns String mutable lc_col, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used
     {
+        let blob placehints.blob_for(uri, text)
+        if blob.get_length() = 0
+            return ""
+        placehints.render(blob, text, packed)
+    }
+
+    ; The placement blob for the document, planned once per save and cached,
+    ; or "" when the buffer is not the saved text.
+    procedure blob_for(mutable uri: String, mutable text: String) returns String mutable modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used
+    {
         let path diagnostics.strip_uri uri
         if path.get_length() = 0
             return ""
@@ -113,9 +125,163 @@ define placehints
             set blob: placehints.build(path, text)
             placehints.cache_put(path, h, blob)
         }
+        blob
+    }
+
+    ; ====================================================================
+    ; Hover: the placement of the construction under the cursor.
+    ;
+    ; ★WHY A HOVER AND NOT AN INLAY HINT. The placement used to be shown as an
+    ; inlay hint at every construction, and the author found text woven into
+    ; the code confusing (2026-09-28): `var acc Vector[int]^host(n)` read as
+    ; `var acc : Vector Vector[int]^host region ^host (n)`. The server no longer
+    ; advertises inlayHintProvider; the same blob answers here instead, only
+    ; when asked.
+    ;
+    ; A blob offset sits on the construction's `(` (measured: `Point(`,
+    ; `StringBuilder(`, `Vector[int]^host(` all answer the parenthesis). The
+    ; cursor is on the type NAME, so the head is walked forward to that `(`:
+    ; the dotted name, balanced generic arguments, a `#` or `^name` sigil. A
+    ; cursor on the sigil's name finds the same `(`. Nothing is planned unless
+    ; the cursor is on such a head.
+    ; ====================================================================
+    procedure hover_note(mutable uri: String, mutable text: String, packed: String) returns String mutable modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used
+    {
+        ; The packed position is "<line> <char>", 0-based.
+        var line: size_t 0
+        var character: size_t 0
+        var seen_space false
+        var i: size_t 0
+        let pn packed.get_length()
+        while i < pn
+        {
+            let c packed.get i
+            if c = 0x20
+                set seen_space: true
+            else
+            {
+                let digit (c - 0x30) as size_t
+                if seen_space
+                    set character: character * 10 + digit
+                else
+                    set line: line * 10 + digit
+            }
+            set i: i + 1
+        }
+        let len text.get_length()
+        let off symbols.position_to_offset(text, line, character)
+        let paren placehints.head_paren(text, off)
+        if paren >= len
+            return ""
+        let blob placehints.blob_for(uri, text)
         if blob.get_length() = 0
             return ""
-        placehints.render(blob, text, packed)
+        let note placehints.label_at(blob, paren)
+        if note.get_length() = 0
+            return ""
+        placehints.describe note
+    }
+
+    ; A byte of a dotted name (`Union.Variant`).
+    function is_name_byte(c: u8) returns bool
+    {
+        symbols.is_ident_byte(c) or c = 0x2E
+    }
+
+    ; The offset of the `(` that opens the construction whose head holds
+    ; `off`, or the source length when `off` is on no such head.
+    function head_paren(source: String, off: size_t) returns size_t
+    {
+        let len source.get_length()
+        if off >= len
+            return len
+        if symbols.is_ident_byte(source.get off) = false
+            return len
+        var k off
+        while k > 0 and placehints.is_name_byte(source.get(k - 1))
+            set k: k - 1
+        while k < len and placehints.is_name_byte(source.get k)
+            set k: k + 1
+        ; Generic arguments, balanced, on one line.
+        if k < len and source.get(k) = 0x5B
+        {
+            var depth: size_t 0
+            while k < len
+            {
+                let c source.get k
+                if c = 0x0A
+                    return len
+                if c = 0x5B
+                    set depth: depth + 1
+                if c = 0x5D
+                {
+                    set depth: depth - 1
+                    if depth = 0
+                    {
+                        set k: k + 1
+                        break
+                    }
+                }
+                set k: k + 1
+            }
+        }
+        ; A page sigil: `#`, or `^name`.
+        if k < len and source.get(k) = 0x23
+            set k: k + 1
+        if k < len and source.get(k) = 0x5E
+        {
+            set k: k + 1
+            while k < len and symbols.is_ident_byte(source.get k)
+                set k: k + 1
+        }
+        if k < len and source.get(k) = 0x28
+            return k
+        len
+    }
+
+    ; The label the blob holds for `offset`, or "".
+    function label_at(blob: String, offset: size_t) returns String
+    {
+        var k: size_t 0
+        let bn blob.get_length()
+        while k < bn
+        {
+            ; One line: digits, tab, label, newline.
+            var off: size_t 0
+            while k < bn
+            {
+                let c blob.get k
+                if c = 0x09
+                    break
+                set off: off * 10 + ((c - 0x30) as size_t)
+                set k: k + 1
+            }
+            set k: k + 1
+            let lstart k
+            while k < bn
+            {
+                if blob.get(k) = 0x0A
+                    break
+                set k: k + 1
+            }
+            if off = offset and k > lstart
+                return blob.substring(lstart, k - lstart)
+            set k: k + 1
+        }
+        ""
+    }
+
+    ; The hover paragraph for one label (the vocabulary in this file's header).
+    ; The backticks are escaped: unescaped they would interpolate.
+    function describe(note: String) returns String
+    {
+        if note = "stack"
+            return "Allocation: \`stack\`, in this frame; it dies with it."
+        if note = "region"
+            return "Allocation: \`region\`, this function's own region; released when it returns."
+        if note = "region #"
+            return "Allocation: \`region #\`, the caller's page; it outlives this call."
+        "Allocation: \``note`\`, a named page."
     }
 
     ; The whole InlayHint[] array for one request: the lexical hints

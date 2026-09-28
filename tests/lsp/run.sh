@@ -4134,7 +4134,9 @@ def check(cond, label):
     if not cond: failures += 1
 def result(idn): return next((x for x in frames if x.get("id") == idn), {}).get("result")
 caps = (result(1) or {}).get("capabilities", {})
-check(caps.get("inlayHintProvider") is True, "initialize advertises inlayHintProvider")
+# Not advertised since 2026-09-28 (text woven into the code read as noise);
+# the handler still answers a client that asks, which is what this block tests.
+check("inlayHintProvider" not in caps, "initialize does not advertise inlayHintProvider")
 whole = result(2)
 pairs = [(h["label"], h["position"]["line"], h.get("kind")) for h in (whole or [])]
 labels = [p[0] for p in pairs]
@@ -6132,6 +6134,36 @@ def hints(path, buffer=None, repeat=1):
         res = (r or {}).get("result") or []
         answers.append(res)
     return answers
+# The same placement, answered in the HOVER (the server no longer advertises
+# inlay hints): one hover per (line, character), 0-based, on the type name.
+def hovers(path, positions):
+    buffer = open(path).read()
+    uri = "file://" + os.path.abspath(path)
+    inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{}})
+    inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
+    inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{
+                  "textDocument":{"uri":uri,"languageId":"scaly","version":1,"text":buffer}}})
+    for i, (l, c) in enumerate(positions):
+        inp += frame({"jsonrpc":"2.0","id":20+i,"method":"textDocument/hover","params":{
+                      "textDocument":{"uri":uri},"position":{"line":l,"character":c}}})
+    inp += frame({"jsonrpc":"2.0","id":9,"method":"shutdown"})
+    inp += frame({"jsonrpc":"2.0","method":"exit"})
+    out = subprocess.run(["/tmp/scalyls"], input=inp, stdout=subprocess.PIPE).stdout
+    frames, d = [], out
+    while d:
+        i = d.find(b"\r\n\r\n")
+        if i < 0: break
+        n = int(d[:i].decode().split(":")[1].strip())
+        frames.append(json.loads(d[i+4:i+4+n])); d = d[i+4+n:]
+    texts = []
+    for i in range(len(positions)):
+        r = next((f for f in frames if f.get("id") == 20+i), None)
+        res = (r or {}).get("result") or {}
+        texts.append((res.get("contents") or {}).get("value", ""))
+    return texts
+def hover_placement(text):
+    m = re.search(r"Allocation: `([^`]*)`", text)
+    return m.group(1) if m else None
 def placement(res):
     out = []
     for h in res:
@@ -6230,6 +6262,14 @@ if os.path.exists(ir):
               "  the IR classifies %s as %s" % (fname, want))
         check(got.get(line) == want,
               "  the hint on line %d says %r and the IR says %r" % (line, got.get(line), want))
+    # The hover on the construction's type name says the same, and the hover
+    # on a name that is no construction head says nothing about allocation.
+    heads = [(8, 10), (14, 10), (20, 11), (8, 8)]   # Point, Point#, StringBuilder, `p`
+    texts = hovers(path, heads)
+    for (line, fname), t in zip(sites, texts):
+        check(hover_placement(t) == got.get(line),
+              "  the hover on line %d says %r like the hint" % (line, hover_placement(t)))
+    check(hover_placement(texts[3]) is None, "  a binding name's hover carries no allocation")
 
 # ---- the saved-text rule ----------------------------------------------
 # The placement comes from a plan the modeler builds from DISK, and a

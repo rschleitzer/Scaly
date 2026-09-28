@@ -57,8 +57,8 @@ define scalyls
     ; escape checker, marked for hand-checking.
     module storelens
 
-    ; textDocument/inlayHint: where each construction is allocated (stack, or
-    ; which region). Plan-derived, cached per saved file.
+    ; Where each construction is allocated (stack, or which region), shown in
+    ; the hover. Plan-derived, cached per saved file.
     module placehints
 
     ; textDocument/codeLens: assembles the array from every lens family, and

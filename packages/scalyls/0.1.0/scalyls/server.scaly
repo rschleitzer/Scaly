@@ -734,7 +734,37 @@ define server
         var value server.semantic_hover_from_framed sem
         if value.get_length() = 0
             set value: worker.hover(uri, text, packed)
+        ; Where the construction under the cursor is allocated — the
+        ; information the placement inlay hints used to weave into the code.
+        let place worker.placement(uri, text, packed)
+        if place.get_length() > 0
+            set value: server.hover_with_paragraph(value, place)
         rpc.write_message(server.hover_response(id, value))
+    }
+
+    ; A hover object with `paragraph` appended to its markdown, separated by a
+    ; rule; a hover of the paragraph alone when `hover` is "".
+    procedure hover_with_paragraph(mutable hover: String, paragraph: String) returns String
+    {
+        var text String("")
+        if hover.get_length() > 0
+            set text: json.as_string(json.get(json.get(json.parse(hover), "contents"), "value"))
+        if text.get_length() > 0
+            set text: "`text`\n\n---\n\n`paragraph`"
+        else
+            set text: paragraph
+        var sb StringBuilder()
+        sb.append("{" as char)
+        sb.append(server.key("contents"))
+        sb.append("{" as char)                    ; contents {
+        sb.append(server.key("kind"))
+        sb.append(json.quote_string("markdown"))
+        sb.append("," as char)
+        sb.append(server.key("value"))
+        sb.append(json.quote_string(text))
+        sb.append("}" as char)
+        sb.append("}" as char)
+        sb.to_string()
     }
 
     ; Decode the worker's framed semantic-type reply ("1<name>" hit / "0" miss
@@ -1334,9 +1364,9 @@ define server
         sb.append(server.key("workspaceSymbolProvider"))
         sb.append "true"
         sb.append("," as char)
-        sb.append(server.key("inlayHintProvider"))
-        sb.append "true"
-        sb.append("," as char)
+        ; No inlayHintProvider (2026-09-28): text woven into the code read as
+        ; noise. The handler stays — the placement answers in the hover now,
+        ; and textDocument/inlayHint still answers a client that asks.
         ; codeActionProvider as a bare true rather than CodeActionOptions: we
         ; advertise no codeActionKinds filter, so the client asks on every
         ; position and we answer [] where there is nothing to fix.
