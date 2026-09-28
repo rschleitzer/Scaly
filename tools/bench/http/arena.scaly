@@ -4,6 +4,8 @@
 ;   GET/POST /baseline11?a=&b=   the sum of a, b and the (optional) body
 ;   GET      /pipeline           "ok"
 ;   GET      /delay/{ms}         waits ms, then answers the number
+;   GET      /shutdown           ends the server (only with SCALY_ARENA_TRAIN set,
+;                                the PGO training run)
 ;
 ;   arena [port]                 (default 8080)
 
@@ -33,6 +35,15 @@ procedure delay(req: ref[Request], mutable res: ref[Response])
     res.send_int(ms)
 }
 
+; Ends the server — registered only in the PGO training run (SCALY_ARENA_TRAIN
+; set, tools/bench/http/train.scaly), whose profile is written at a clean exit.
+procedure shutdown(req: ref[Request], mutable res: ref[Response])
+{
+    res.set_close()
+    res.send_text("bye")
+    TcpServer.current().shutdown()
+}
+
 procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
 {
     var port 8080
@@ -42,6 +53,8 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     app.any("/baseline11", &baseline)
     app.get("/pipeline", &pipeline)
     app.prefix("GET", "/delay/", &delay)
+    if getenv("SCALY_ARENA_TRAIN") <> null
+        app.get("/shutdown", &shutdown)
     if serve(app, port) = false
     {
         print "arena: cannot listen on port `port`"

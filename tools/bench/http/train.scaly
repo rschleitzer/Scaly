@@ -1,0 +1,135 @@
+; train — the profile run of the HttpArena image's PGO build
+; (tools/bench/httparena/build.sh): drives an instrumented arena with the
+; request shapes the benchmark profiles send, then shuts it down so that the
+; profile runtime writes its counts at a clean exit.
+;
+; Every connection sends, per round, ONE write holding sixteen pipelined
+; GET /pipeline, a baseline GET with a query, a POST with Content-Length
+; and a POST with a chunked body, and reads the nineteen responses; every
+; hundredth round adds a GET /delay/1 on its own.
+;
+;   train <port> [rounds]      (default 3000 rounds on each of 16 connections)
+
+package scaly 0.1.0
+package http 0.1.0
+
+use http.Request.Request
+
+define CONNECTIONS: int 16
+define BATCH_RESPONSES: int 19
+
+; the batch every connection writes, built once in main (the clients run as
+; tasks of main's own scheduler, on its thread)
+mutable batch_data: pointer[u8] null
+mutable batch_length: size_t 0
+mutable train_rounds: int 3000
+mutable train_port: int 0
+
+; Read from s until want complete responses are in; false at the end of the
+; stream.
+procedure drain(s: TcpStream, mutable buf: Slice[u8], want: int) returns bool
+{
+    var have: size_t 0
+    var at: size_t 0
+    var got 0
+    while got < want
+    {
+        let e head_end(buf.subslice(at, have))
+        if e > 0
+        {
+            var head Request.empty()
+            set head.fields: buf.subslice(at, at + e)
+            let n parse_decimal(head.header("content-length"))
+            if n >= 0 and at + e + (n as size_t) <= have
+            {
+                set at: at + e + (n as size_t)
+                set got: got + 1
+                continue
+            }
+        }
+        if have = buf.length
+            return false
+        let r s.read(buf.slice_from(have))
+        if r <= 0
+            return false
+        set have: have + (r as size_t)
+    }
+    true
+}
+
+procedure client()
+{
+    var s TcpStream.connect("127.0.0.1", train_port)
+    let host Page.allocate_page()
+    var buf allocate_slice[u8]^host(host, 65536)
+    let batch Slice[u8](batch_length, batch_data)
+    var r 0
+    while r < train_rounds
+    {
+        if s.write(batch) = false or drain(s, buf, BATCH_RESPONSES) = false
+            break
+        if r % 100 = 0
+        {
+            s.write("GET /delay/1 HTTP/1.1\r\nHost: t\r\n\r\n")
+            drain(s, buf, 1)
+        }
+        set r: r + 1
+    }
+    s.close()
+    host.deallocate_extensions()
+    Page.release_page(host)
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutable batch_data, batch_length, train_rounds, train_port
+{
+    if argc < 2
+    {
+        print "usage: train <port> [rounds]"
+        return 2
+    }
+    set train_port: parse_int_prefix(String(*(argv + 1)).as_slice()) as int
+    if argc > 2
+        set train_rounds: parse_int_prefix(String(*(argv + 2)).as_slice()) as int
+
+    let bp Page.allocate_page()
+    var sb StringBuilder()
+    var i 0
+    while i < 16
+    {
+        sb.append "GET /pipeline HTTP/1.1\r\nHost: localhost\r\n\r\n"
+        set i: i + 1
+    }
+    sb.append "GET /baseline11?a=13&b=42 HTTP/1.1\r\nHost: localhost\r\n\r\n"
+    sb.append "POST /baseline11?a=13&b=42 HTTP/1.1\r\nHost: localhost\r\nContent-Type: text/plain\r\nContent-Length: 2\r\n\r\n20"
+    sb.append "POST /baseline11?a=13&b=42 HTTP/1.1\r\nHost: localhost\r\nContent-Type: text/plain\r\nTransfer-Encoding: chunked\r\n\r\n2\r\n20\r\n0\r\n\r\n"
+    let text sb.to_string()
+    let cells allocate_slice[u8]^bp(bp, text.length)
+    var k: size_t 0
+    let tb text.as_slice()
+    while k < tb.length
+    {
+        cells.put(k, tb[k])
+        set k: k + 1
+    }
+    set batch_data: cells.data
+    set batch_length: cells.length
+
+    let page Page.allocate_page()
+    let sched Scheduler.create(page)
+    var c 0
+    while c < CONNECTIONS
+    {
+        Scheduler.spawn(&client)
+        set c: c + 1
+    }
+    Scheduler.run()
+
+    ; the instrumented server writes its profile only at a clean exit
+    var s TcpStream.connect("127.0.0.1", train_port)
+    let host Page.allocate_page()
+    var buf allocate_slice[u8]^host(host, 4096)
+    s.write("GET /shutdown HTTP/1.1\r\nHost: t\r\n\r\n")
+    drain(s, buf, 1)
+    s.close()
+    0
+}

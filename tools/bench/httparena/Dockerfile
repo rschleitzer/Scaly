@@ -2,12 +2,24 @@
 # on the http package, built from the committed seed the way CI's Linux leg
 # builds the compiler (.github/actions/llvm20), then copied alone into a
 # runtime image. The build context is not the repository: build.sh stages the
-# few directories the build reads.
+# few directories the build reads, and runs the PGO training BETWEEN two
+# builds of this file:
+#
+#   --target pgo-train   an instrumented arena and the training client
+#   (build.sh)           trains it in a container that allows io_uring
+#   default target       the arena optimized with that profile
+#
+# Everything is one whole-program module (tools/link-lto.sh: runtime, http
+# package and program merged, opt -O2, hidden definitions) code-generated for
+# the build host's CPU, as the Rust entries do with -C target-cpu=native — so
+# the image is built on the machine that runs it. Without pgo/arena.profdata
+# in the context (SCALY_PGO=0) the arena is built the same way minus the
+# profile.
 
 FROM ubuntu:24.04 AS build
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
- && apt-get install -y --no-install-recommends llvm-20 llvm-20-dev clang-20 lld-20 perl ca-certificates \
+ && apt-get install -y --no-install-recommends llvm-20 llvm-20-dev clang-20 lld-20 libclang-rt-20-dev perl ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 # seed.sh and the compiler's own link invoke `clang`; libLLVM-20.so sits under
 # the versioned prefix; GNU BFD ld cannot link libLLVM-20, so `ld` is lld.
@@ -19,24 +31,33 @@ WORKDIR /scaly
 COPY . .
 # the compiler (no language server) and /tmp/libscaly.a, both from the seed
 RUN SCALYC_SEED_NO_SCALYLS=1 tools/build-from-seed.sh
-# Everything the server runs is code-generated for the build host's CPU, as
-# the Rust entries do with -C target-cpu=native: the runtime archive's Scaly
-# half again (build-from-seed made it generic), the http package, the program.
-# The image is therefore built on the machine that runs it.
-RUN . tools/llvm-env.sh \
- && scalyc/build/scalyc -S --no-prelude --no-tests -o /tmp/libscaly.ll packages/scaly/0.1.0/scaly.scaly \
- && sed 's/^define linkonce_odr /define weak_odr /' /tmp/libscaly.ll > /tmp/libscaly_weak.ll \
- && "$OPT" -O2 /tmp/libscaly_weak.ll -o /tmp/libscaly_opt.bc \
- && "$LLC" -mcpu=native -relocation-model=pic -O2 -filetype=obj /tmp/libscaly_opt.bc -o /tmp/libscaly.o \
- && ar rcs /tmp/libscaly.a /tmp/libscaly.o \
- && scalyc/build/scalyc -S --no-prelude -o /tmp/http.ll packages/http/0.1.0/http.scaly \
- && sed 's/^define linkonce_odr /define weak_odr /' /tmp/http.ll > /tmp/http_weak.ll \
- && "$OPT" -O2 /tmp/http_weak.ll -o /tmp/http_opt.bc \
- && "$LLC" -mcpu=native -relocation-model=pic -O2 -filetype=obj /tmp/http_opt.bc -o /tmp/http.o \
- && ar rcs /tmp/libhttp.a /tmp/http.o \
- && scalyc/build/scalyc -O2 -mcpu=native -o /arena tools/bench/http/arena.scaly /tmp/libhttp.a
+# the whole program's IR: runtime, http package, the arena, the trainer
+RUN mkdir -p /ir \
+ && scalyc/build/scalyc -S --no-prelude --no-tests -o /ir/rt.ll packages/scaly/0.1.0/scaly.scaly \
+ && scalyc/build/scalyc -S --no-prelude -o /ir/http.ll packages/http/0.1.0/http.scaly \
+ && scalyc/build/scalyc -S -o /ir/arena.ll tools/bench/http/arena.scaly \
+ && scalyc/build/scalyc -S -o /ir/train.ll tools/bench/http/train.scaly
+
+# The profile runtime is a static archive; the clang driver would pull its
+# writer in with -u __llvm_profile_runtime, and a hand-made link must say so —
+# without it the instrumented arena counts and never writes.
+FROM build AS pgo-train
+RUN TRIPLE=$(clang-20 -print-target-triple) \
+ && PROFRT=$(find /usr/lib/llvm-20/lib/clang -name 'libclang_rt.profile*.a' | head -1) \
+ && LTO_OPT_FLAGS="-mtriple=$TRIPLE -mcpu=native --pgo-kind=pgo-instr-gen-pipeline" \
+    LTO_LLC_FLAGS="-mcpu=native" LINK_EXTRA="-Wl,-u,__llvm_profile_runtime $PROFRT" \
+    tools/link-lto.sh /arena_instr /ir/arena.ll /ir/http.ll /ir/rt.ll \
+ && tools/link-lto.sh /train /ir/train.ll /ir/http.ll /ir/rt.ll
+
+FROM build AS optimized
+COPY pgo/ /pgo/
+RUN TRIPLE=$(clang-20 -print-target-triple) \
+ && PGO="" \
+ && if [ -f /pgo/arena.profdata ]; then PGO="--pgo-kind=pgo-instr-use-pipeline --profile-file=/pgo/arena.profdata"; fi \
+ && LTO_OPT_FLAGS="-mtriple=$TRIPLE -mcpu=native $PGO" LTO_LLC_FLAGS="-mcpu=native" \
+    tools/link-lto.sh /arena /ir/arena.ll /ir/http.ll /ir/rt.ll
 
 FROM ubuntu:24.04
-COPY --from=build /arena /arena
+COPY --from=optimized /arena /arena
 EXPOSE 8080
 CMD ["/arena", "8080"]
