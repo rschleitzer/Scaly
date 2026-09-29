@@ -29,6 +29,46 @@ procedure memcpy(mutable dest: pointer[void], src: pointer[void], count: size_t)
 
 define JsonMember (key: Slice[u8], value: JsonValue)
 
+; Where a parse puts its copy of the document and the buffers of its closed
+; containers: the page this record lives on, which is the parse's caller
+; page. One allocation each, the exact size, filled by one copy -- where
+; `Vector#(n)` spent a second allocation on its own record and cleared the
+; buffer first (for the document copy, a memset of the whole document).
+define JsonArena
+(
+    ; a record needs a field; the page is the point
+    unused: u8
+)
+{
+    init()
+    {
+        let own_page Page.get(this)
+        set unused: 0
+    }
+
+    procedure keep_bytes(mutable this, items: Slice[u8]) returns Slice[u8]
+    {
+        let kept allocate_slice[u8](Page.get(this), items.length)
+        if items.length > 0
+            memcpy(kept.data as pointer[void], items.data as pointer[void], items.length)
+        kept
+    }
+
+    procedure keep_values(mutable this, items: Slice[JsonValue]) returns Slice[JsonValue]
+    {
+        let kept allocate_slice[JsonValue](Page.get(this), items.length)
+        memcpy(kept.data as pointer[void], items.data as pointer[void], items.length * sizeof JsonValue)
+        kept
+    }
+
+    procedure keep_members(mutable this, items: Slice[JsonMember]) returns Slice[JsonMember]
+    {
+        let kept allocate_slice[JsonMember](Page.get(this), items.length)
+        memcpy(kept.data as pointer[void], items.data as pointer[void], items.length * sizeof JsonMember)
+        kept
+    }
+}
+
 ; The views as records: a union's payload is a type NAME, not a generic
 ; instance (the grammar has no `Slice[...]` in that position).
 define JsonArray (items: Slice[JsonValue])
@@ -294,11 +334,9 @@ define JsonValue union
     ; complete, so an open object's pending member is always the last.
     procedure parse(source: Slice[u8]) returns JsonParsed
     {
-        var copy Vector[u8]#(source.length)
-        var doc copy.as_slice()
+        var arena JsonArena#()
+        var doc arena.keep_bytes(source)
         let n source.length
-        if n > 0
-            memcpy(doc.data as pointer[void], source.data as pointer[void], n)
         var values Array[JsonValue]()
         var members Array[JsonMember]()
         ; per open container: its run's start on its stack, times two, plus
@@ -513,32 +551,17 @@ define JsonValue union
             let run top >> 1
             if in_object and c = 0x7D                       ; '}'
             {
-                let count members.length - run
-                ; built on the caller's page, which the returned value carries on
-                var store Vector[JsonMember]#(count)
-                var i: size_t 0
-                while i < count
-                {
-                    store.put(i, members[run + i])
-                    set i: i + 1
-                }
+                let kept arena.keep_members(members.as_slice().subslice(run, members.length))
                 set members.length: run
-                set v: JsonValue.Object(JsonObject(store.as_slice()))
+                set v: JsonValue.Object(JsonObject(kept))
             }
             else
             {
                 if in_object = false and c = 0x5D           ; ']'
                 {
-                    let count values.length - run
-                    var store Vector[JsonValue]#(count)
-                    var i: size_t 0
-                    while i < count
-                    {
-                        store.put(i, values[run + i])
-                        set i: i + 1
-                    }
+                    let kept arena.keep_values(values.as_slice().subslice(run, values.length))
                     set values.length: run
-                    set v: JsonValue.Array(JsonArray(store.as_slice()))
+                    set v: JsonValue.Array(JsonArray(kept))
                 }
                 else
                 {

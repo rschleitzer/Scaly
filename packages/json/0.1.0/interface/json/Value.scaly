@@ -29,6 +29,26 @@ procedure memcpy(mutable dest: pointer[void], src: pointer[void], count: size_t)
 
 define JsonMember (key: Slice[u8], value: JsonValue)
 
+; Where a parse puts its copy of the document and the buffers of its closed
+; containers: the page this record lives on, which is the parse's caller
+; page. One allocation each, the exact size, filled by one copy -- where
+; `Vector#(n)` spent a second allocation on its own record and cleared the
+; buffer first (for the document copy, a memset of the whole document).
+define JsonArena
+@resident true @inplace true (
+    ; a record needs a field; the page is the point
+    unused: u8
+)
+{
+    init() linked
+
+    procedure keep_bytes(mutable this, items: Slice[u8]) @page true @direct true @deep true returns Slice[u8] linked
+
+    procedure keep_values(mutable this, items: Slice[JsonValue]) @page true @direct true @deep true returns Slice[JsonValue] linked
+
+    procedure keep_members(mutable this, items: Slice[JsonMember]) @page true @direct true @deep true returns Slice[JsonMember] linked
+}
+
 ; The views as records: a union's payload is a type NAME, not a generic
 ; instance (the grammar has no `Slice[...]` in that position).
 define JsonArray (items: Slice[JsonValue])
