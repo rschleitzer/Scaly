@@ -63,11 +63,11 @@ step() {
 seed_refresh() {
   local out=$LOG/seed f changed=""
   tools/seed.sh /tmp/scalyc_stage2 "$out" || return 1
-  for f in main.ll scalyc.ll scaly.ll scalyls.ll scalyls_main.ll; do
+  for f in main.ll scalyc.ll scaly.ll scalyls.ll scalyls_main.ll json.ll; do
     cmp -s "$out/$f" "seed/$f" || { cp "$out/$f" "seed/$f"; changed="$changed $f"; }
   done
   if [ -n "$changed" ]; then
-    ( cd seed && shasum -a 256 main.ll scalyc.ll scaly.ll scalyls.ll scalyls_main.ll > SHA256SUMS )
+    ( cd seed && shasum -a 256 main.ll scalyc.ll scaly.ll scalyls.ll scalyls_main.ll json.ll > SHA256SUMS )
     echo "seed REFRESHED:$changed"
   else
     echo "seed unchanged"

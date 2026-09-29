@@ -63,7 +63,6 @@
 use scaly.memory.runtime
 
 use scalyls.symbols
-use scalyls.json
 
 use scalyc.compiler.Planner
 

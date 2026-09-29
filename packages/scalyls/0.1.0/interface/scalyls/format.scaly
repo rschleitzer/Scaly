@@ -60,7 +60,7 @@
 ; so every append is in place on a local.
 
 use scaly.memory.runtime
-use scalyls.json
+use json.Writer.JsonWriter
 
 define format
 {

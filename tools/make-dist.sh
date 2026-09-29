@@ -36,6 +36,7 @@ cp seed/main.ll seed/scalyc.ll seed/scaly.ll "$STAGE/seed/"
 # <prefix>/bin/scalyls when both are present).
 [ -f seed/scalyls.ll ] && cp seed/scalyls.ll "$STAGE/seed/"
 [ -f seed/scalyls_main.ll ] && cp seed/scalyls_main.ll "$STAGE/seed/"
+[ -f seed/json.ll ] && cp seed/json.ll "$STAGE/seed/"
 
 # scaly stdlib + prelude SOURCES (parsed by the front-end; no scalyc sources)
 mkdir -p "$STAGE/packages/scaly"

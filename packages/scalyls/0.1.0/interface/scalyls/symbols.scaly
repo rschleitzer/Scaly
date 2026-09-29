@@ -39,7 +39,9 @@
 use scaly.os.File
 use scaly.memory.runtime
 use scaly.memory.root_pages.getenv
-use scalyls.json
+use json.Value.JsonValue
+use json.Value.JsonParsed
+use json.Writer.JsonWriter
 use scalyls.symindex
 use scalyls.grammar
 use scalyls.nameset
@@ -66,7 +68,6 @@ use scalyc.compiler.lexer.*
 use scalyc.compiler.parser.*
 use scalyc.compiler.Syntax.*
 use scalyls.nameset.*
-use scalyls.json.*
 
 mutable prof_list: int linked
 mutable prof_read: int linked
@@ -2119,7 +2120,7 @@ define symbols
     ; the name match later AND drops the detail+rettype fields (bounding at the
     ; SECOND tab) so workspace/symbol output stays byte-identical. A
     ; SymbolInformation JSON object never contains a raw tab or newline
-    ; (json.quote_string# escapes them); the detail field (param labels /
+    ; (JsonWriter.quote# escapes them); the detail field (param labels /
     ; completion items) likewise has no raw tab/newline; and the rettype field
     ; (Step 32) and the membertypes field (Step 33) are bare identifiers /
     ; 0x1F-joined identifier pairs (no tab/newline) — so all four delimiters are

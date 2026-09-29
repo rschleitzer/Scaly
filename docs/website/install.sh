@@ -153,19 +153,19 @@ say "installed scalyc -> $PREFIX/bin/scalyc"
 # ---------------------------------------------------------------------------
 # 5b. Build the scalyls language server, when the distribution shipped its seed.
 #     scalyls is a separate program with two roots (scalyls_main.ll +
-#     scalyls.ll); it depends on the scalyc + scaly packages, whose bodies come
+#     scalyls.ll); it depends on the json (json.ll), scalyc + scaly packages, whose bodies come
 #     from the compiler seed objects already built in step 3. The VS Code
 #     extension launches `scalyls` from PATH; the wrapper sets SCALY_HOME so
 #     the server resolves the prelude from $PREFIX.
 # ---------------------------------------------------------------------------
-if [ -f "$PREFIX/seed/scalyls.ll" ] && [ -f "$PREFIX/seed/scalyls_main.ll" ]; then
+if [ -f "$PREFIX/seed/scalyls.ll" ] && [ -f "$PREFIX/seed/scalyls_main.ll" ] && [ -f "$PREFIX/seed/json.ll" ]; then
   say "building scalyls language server from seed"
-  for f in scalyls_main scalyls; do
+  for f in scalyls_main scalyls json; do
     "$LLC" -relocation-model=pic -filetype=obj "$PREFIX/seed/$f.ll" \
       -o "$WORK/$f.o" || die "llc failed on seed/$f.ll"
   done
   # shellcheck disable=SC2086
-  "$CC" $LD_ARG "$WORK/scalyls_main.o" "$WORK/scalyls.o" \
+  "$CC" $LD_ARG "$WORK/scalyls_main.o" "$WORK/scalyls.o" "$WORK/json.o" \
     "$WORK/scalyc.o" "$WORK/scaly.o" \
     -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -o "$PREFIX/libexec/scalyls" \
     || die "linking scalyls failed (is libLLVM-20 in $LLVM_LIBDIR?)"

@@ -128,7 +128,6 @@ use scaly.memory.runtime
 
 use scalyls.symbols
 use scalyls.instlens
-use scalyls.json
 
 ; Model.* is not optional: `Span` lives in Model.scaly, and without it visible
 ; the emitter cannot lay `loc` out — `act.loc.start` then fails with
@@ -760,7 +759,7 @@ define storelens
 
     procedure emit_site(mutable sb: ref[StringBuilder], offset: size_t, param: String, stored: String, carrier: String)
     {
-        sb.append(json.format_i64(offset as i64))
+        sb.append((offset as i64))
         sb.append("\t" as char)
         sb.append param
         sb.append("\t" as char)

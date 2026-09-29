@@ -167,7 +167,7 @@ echo "seed: hello.scaly, AOT corpus, fixed-point re-emission, scalyls roots"
   [ "${PIPESTATUS[0]}" = "0" ] || { echo "AOT corpus"; exit 1; }
 ) > "$OUT/aot.log" 2>&1 & aot_pid=$!
 emit_roots "$OUT/scalyc_seed" r_main=$C/main.scaly r_scalyc=$C/scalyc.scaly r_scaly=packages/scaly/0.1.0/scaly.scaly & reemit_pid=$!
-emit_roots "$OUT/scalyc_seed" scalyls_main=$L/main.scaly scalyls=$L/scalyls.scaly & ls_pid=$!
+emit_roots "$OUT/scalyc_seed" scalyls_main=$L/main.scaly scalyls=$L/scalyls.scaly json=packages/json/0.1.0/json.scaly & ls_pid=$!
 wait $aot_pid; aot_rc=$?
 cat "$OUT/aot.log"; rm -f "$OUT/aot.log"
 [ $aot_rc = 0 ] || fail "hello / AOT corpus"
@@ -223,8 +223,8 @@ if [ "$SCALY_COFF" = 1 ]; then
 echo "seed: SKIP scalyls link + LSP smoke on the Windows box (worker.scaly: fork/popen/waitpid/kill)"
 SCALYLS_VERDICT="scalyls roots emitted, link + smoke SKIPPED (Windows box)"
 else
-llc_objs scalyls_main scalyls || fail "llc scalyls"
-if ! "$CLANG" "${LINKARGS[@]}" "$OUT/scalyls_main.o" "$OUT/scalyls.o" "$OUT/scalyc.o" "$OUT/scaly.o" "$OUT/fcontext.o" "$OUT/eio.o" "$OUT/ctime.o" "$OUT/panic.o" \
+llc_objs scalyls_main scalyls json || fail "llc scalyls"
+if ! "$CLANG" "${LINKARGS[@]}" "$OUT/scalyls_main.o" "$OUT/scalyls.o" "$OUT/json.o" "$OUT/scalyc.o" "$OUT/scaly.o" "$OUT/fcontext.o" "$OUT/eio.o" "$OUT/ctime.o" "$OUT/panic.o" \
      -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -lm -o "$OUT/scalyls" 2> "$OUT/scalyls_link.log"; then
   grep -v 'reexported library' "$OUT/scalyls_link.log" || true
   fail "scalyls link (undefined symbols)"

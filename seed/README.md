@@ -7,9 +7,10 @@ emitted as its own LLVM IR:
 - `scalyc.ll` — the compiler (lexer → parser → modeler → planner → emitter)
 - `scaly.ll` — the standard library / runtime
 - `scalyls.ll` + `scalyls_main.ll` — the language server, a **separate
-  program** with its own two roots. It depends on the scalyc + scaly packages,
-  whose bodies come from the compiler seed objects above, so it links as
-  `scalyls_main.o + scalyls.o + scalyc.o + scaly.o`. It is emitted
+  program** with its own two roots. It depends on the json package
+  (`json.ll`, emitted beside them) and the scalyc + scaly packages, whose
+  bodies come from the compiler seed objects above, so it links as
+  `scalyls_main.o + scalyls.o + json.o + scalyc.o + scaly.o`. It is emitted
   **self-hosted** (by the seed compiler) but is **not** part of the compiler
   fixed point. `install.sh` and `tools/build-from-seed.sh` link it into
   `<prefix>/bin/scalyls` / `scalyc/build/scalyls`.

@@ -27,8 +27,9 @@
 
 use scaly.memory.runtime
 use scalyls.rpc
-use scalyls.json
-use scalyls.json.JsonValue
+use json.Value.JsonValue
+use json.Value.JsonParsed
+use json.Writer.JsonWriter
 use scalyls.diagnostics
 use scalyls.docstore
 use scalyls.symbols
@@ -90,19 +91,19 @@ define server
 
     procedure handle_message(mutable body: String) mutable dir_slots, doc_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid, ws_root_data, ws_root_len
     {
-        let msg json.parse body
+        let msg JsonValue.parse(body.as_slice()).value
 
-        let method_val json.get(msg, "method")
-        let method json.as_string method_val
+        let method_val msg.get("method")
+        let method method_val.as_string()
 
         ; An `id` field marks a Request (needs a Response). Notifications
         ; carry no id. A comparison result bound straight to a `let`
         ; mis-plans under stage-0, so latch has_id via a if instead.
-        let id_val json.get(msg, "id")
+        let id_val msg.get("id")
         var has_id true
-        if json.is_null(id_val)
+        if id_val.is_null()
             set has_id: false
-        let id json.as_i64 id_val
+        let id id_val.as_i64()
 
         if method = "initialize"
         {
@@ -322,10 +323,10 @@ define server
 
     procedure handle_did_open(msg: JsonValue) mutable doc_slots
     {
-        let params json.get(msg, "params")
-        let doc json.get(params, "textDocument")
-        let uri json.as_string(json.get(doc, "uri"))
-        let text json.as_string(json.get(doc, "text"))
+        let params msg.get("params")
+        let doc params.get("textDocument")
+        let uri doc.get("uri").as_string()
+        let text doc.get("text").as_string()
         ; Remember the buffer so later navigation requests (which carry only a
         ; uri) see this text — including unsaved edits — instead of disk.
         docstore.put(uri, text)
@@ -334,16 +335,16 @@ define server
 
     procedure handle_did_change(msg: JsonValue) mutable doc_slots
     {
-        let params json.get(msg, "params")
-        let doc json.get(params, "textDocument")
-        let uri json.as_string(json.get(doc, "uri"))
+        let params msg.get("params")
+        let doc params.get("textDocument")
+        let uri doc.get("uri").as_string()
 
         ; textDocumentSync = incremental: each contentChange is either a
         ; ranged edit (replace the [start,end) span with its text) or a
         ; full-document replacement (no range). Apply them in order, starting
         ; from the current stored buffer, to rebuild the whole document.
-        let changes json.get(params, "contentChanges")
-        let n json.array_length changes
+        let changes params.get("contentChanges")
+        let n changes.length()
         if n = 0
             return
 
@@ -351,7 +352,7 @@ define server
         var i: size_t 0
         while i < n
         {
-            let change json.array_get(changes, i)
+            let change changes.item(i)
             set text: server.apply_change(text, change)
             set i: i + 1
         }
@@ -371,18 +372,18 @@ define server
     ; crash (see symbols.scaly's STRING/JSON NOTE).
     function apply_change(text: String, change: JsonValue) returns String
     {
-        let range json.get(change, "range")
-        let new_text json.as_string(json.get(change, "text"))
+        let range change.get("range")
+        let new_text change.get("text").as_string()
 
-        if json.is_null(range)
+        if range.is_null()
             return new_text
 
-        let start json.get(range, "start")
-        let end json.get(range, "end")
-        let s_line json.as_i64(json.get(start, "line"))
-        let s_char json.as_i64(json.get(start, "character"))
-        let e_line json.as_i64(json.get(end, "line"))
-        let e_char json.as_i64(json.get(end, "character"))
+        let start range.get("start")
+        let end range.get("end")
+        let s_line start.get("line").as_i64()
+        let s_char start.get("character").as_i64()
+        let e_line end.get("line").as_i64()
+        let e_char end.get("character").as_i64()
         let s_off symbols.position_to_offset(text, s_line as size_t, s_char as size_t)
         let e_off symbols.position_to_offset(text, e_line as size_t, e_char as size_t)
 
@@ -416,9 +417,9 @@ define server
     ; Response envelope with the request id.
     procedure handle_document_symbol(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
-        let params json.get(msg, "params")
-        let doc json.get(params, "textDocument")
-        let uri json.as_string(json.get(doc, "uri"))
+        let params msg.get("params")
+        let doc params.get("textDocument")
+        let uri doc.get("uri").as_string()
         ; In-memory text (empty -> worker reads disk) so the outline reflects
         ; unsaved edits.
         let text docstore.get uri
@@ -442,10 +443,10 @@ define server
     ; cursor position (it asks constantly, unprompted).
     procedure handle_code_action(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
-        let params json.get(msg, "params")
-        let doc json.get(params, "textDocument")
-        let uri json.as_string(json.get(doc, "uri"))
-        let packed server.diagnostics_packed(json.get(params, "context"))
+        let params msg.get("params")
+        let doc params.get("textDocument")
+        let uri doc.get("uri").as_string()
+        let packed server.diagnostics_packed(params.get("context"))
         if packed.get_length() = 0
         {
             rpc.write_message(server.document_symbol_response(id, "[]"))
@@ -466,9 +467,9 @@ define server
     ; per burst, and the reason the answer is never computed in this process.
     procedure handle_code_lens(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
-        let params json.get(msg, "params")
-        let doc json.get(params, "textDocument")
-        let uri json.as_string(json.get(doc, "uri"))
+        let params msg.get("params")
+        let doc params.get("textDocument")
+        let uri doc.get("uri").as_string()
         let text docstore.get uri
         let result worker.code_lenses(uri, text)
         rpc.write_message(server.document_symbol_response(id, result))
@@ -492,20 +493,20 @@ define server
     function diagnostics_packed(context: JsonValue) returns String
     {
         var sb StringBuilder()
-        let diags json.get(context, "diagnostics")
-        let n json.array_length diags
+        let diags context.get("diagnostics")
+        let n diags.length()
         var i: size_t 0
         while i < n
         {
-            let d json.array_get(diags, i)
-            let message json.as_string(json.get(d, "message"))
+            let d diags.item(i)
+            let message d.get("message").as_string()
             if message.get_length() > 0
             {
-                let range json.get(d, "range")
-                let start json.get(range, "start")
-                sb.append(json.format_i64(json.as_i64(json.get(start, "line"))))
+                let range d.get("range")
+                let start range.get("start")
+                sb.append(start.get("line").as_i64())
                 sb.append(" " as char)
-                sb.append(json.format_i64(json.as_i64(json.get(start, "character"))))
+                sb.append(start.get("character").as_i64())
                 sb.append(" " as char)
 
                 var k: size_t 0
@@ -560,14 +561,14 @@ define server
     ; arrive with the ITEM this returned, not with a cursor.
     procedure handle_prepare_call_hierarchy(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
-        let params json.get(msg, "params")
-        let doc json.get(params, "textDocument")
-        let uri json.as_string(json.get(doc, "uri"))
-        let position json.get(params, "position")
+        let params msg.get("params")
+        let doc params.get("textDocument")
+        let uri doc.get("uri").as_string()
+        let position params.get("position")
         var pb StringBuilder()
-        pb.append(json.format_i64(json.as_i64(json.get(position, "line"))))
+        pb.append(position.get("line").as_i64())
         pb.append(" " as char)
-        pb.append(json.format_i64(json.as_i64(json.get(position, "character"))))
+        pb.append(position.get("character").as_i64())
         let text docstore.get uri
         let result worker.prepare_call_hierarchy(uri, text, pb.to_string())
         rpc.write_message(server.document_symbol_response(id, result))
@@ -578,10 +579,10 @@ define server
     ; the workspace root rides along the same way references passes it.
     procedure handle_incoming_calls(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
-        let params json.get(msg, "params")
-        let item json.get(params, "item")
-        let uri json.as_string(json.get(item, "uri"))
-        let name json.as_string(json.get(item, "name"))
+        let params msg.get("params")
+        let item params.get("item")
+        let uri item.get("uri").as_string()
+        let name item.get("name").as_string()
         let root docstore.workspace_root()
         var pb StringBuilder()
         var ri: size_t 0
@@ -608,15 +609,15 @@ define server
     ; locates the routine in its own file.
     procedure handle_outgoing_calls(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
-        let params json.get(msg, "params")
-        let item json.get(params, "item")
-        let uri json.as_string(json.get(item, "uri"))
-        let range json.get(item, "range")
-        let start json.get(range, "start")
+        let params msg.get("params")
+        let item params.get("item")
+        let uri item.get("uri").as_string()
+        let range item.get("range")
+        let start range.get("start")
         var pb StringBuilder()
-        pb.append(json.format_i64(json.as_i64(json.get(start, "line"))))
+        pb.append(start.get("line").as_i64())
         pb.append(" " as char)
-        pb.append(json.format_i64(json.as_i64(json.get(start, "character"))))
+        pb.append(start.get("character").as_i64())
         let text docstore.get uri
         let result worker.outgoing_calls(uri, text, pb.to_string())
         rpc.write_message(server.document_symbol_response(id, result))
@@ -626,16 +627,16 @@ define server
     ; resolves the TYPE of the thing at the cursor and then looks THAT up.
     procedure handle_type_definition(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
-        let params json.get(msg, "params")
-        let doc json.get(params, "textDocument")
-        let uri json.as_string(json.get(doc, "uri"))
-        let position json.get(params, "position")
-        let line json.as_i64(json.get(position, "line"))
-        let character json.as_i64(json.get(position, "character"))
+        let params msg.get("params")
+        let doc params.get("textDocument")
+        let uri doc.get("uri").as_string()
+        let position params.get("position")
+        let line position.get("line").as_i64()
+        let character position.get("character").as_i64()
         var pb StringBuilder()
-        pb.append(json.format_i64(line))
+        pb.append(line)
         pb.append(" " as char)
-        pb.append(json.format_i64(character))
+        pb.append(character)
         let text docstore.get uri
         let result worker.type_definition(uri, text, pb.to_string())
         rpc.write_message(server.definition_response(id, result))
@@ -647,19 +648,19 @@ define server
     ; "<line> <char>" per line, the same shape every other position frame uses.
     procedure handle_selection_range(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
-        let params json.get(msg, "params")
-        let doc json.get(params, "textDocument")
-        let uri json.as_string(json.get(doc, "uri"))
-        let positions json.get(params, "positions")
-        let n json.array_length positions
+        let params msg.get("params")
+        let doc params.get("textDocument")
+        let uri doc.get("uri").as_string()
+        let positions params.get("positions")
+        let n positions.length()
         var pb StringBuilder()
         var i: size_t 0
         while i < n
         {
-            let pos json.array_get(positions, i)
-            pb.append(json.format_i64(json.as_i64(json.get(pos, "line"))))
+            let pos positions.item(i)
+            pb.append(pos.get("line").as_i64())
             pb.append(" " as char)
-            pb.append(json.format_i64(json.as_i64(json.get(pos, "character"))))
+            pb.append(pos.get("character").as_i64())
             pb.append("\n" as char)
             set i: i + 1
         }
@@ -670,9 +671,9 @@ define server
 
     procedure handle_folding_range(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
-        let params json.get(msg, "params")
-        let doc json.get(params, "textDocument")
-        let uri json.as_string(json.get(doc, "uri"))
+        let params msg.get("params")
+        let doc params.get("textDocument")
+        let uri doc.get("uri").as_string()
         let text docstore.get uri
         let result worker.folding(uri, text)
         rpc.write_message(server.document_symbol_response(id, result))
@@ -686,9 +687,9 @@ define server
     ; response builder applies.
     procedure handle_formatting(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
-        let params json.get(msg, "params")
-        let doc json.get(params, "textDocument")
-        let uri json.as_string(json.get(doc, "uri"))
+        let params msg.get("params")
+        let doc params.get("textDocument")
+        let uri doc.get("uri").as_string()
         let text docstore.get uri
         let result worker.formatting(uri, text)
         rpc.write_message(server.document_symbol_response(id, result))
@@ -700,9 +701,9 @@ define server
     ; data array can be large, so document_symbol_response# (byte-at-a-time).
     procedure handle_semantic_tokens(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
-        let params json.get(msg, "params")
-        let doc json.get(params, "textDocument")
-        let uri json.as_string(json.get(doc, "uri"))
+        let params msg.get("params")
+        let doc params.get("textDocument")
+        let uri doc.get("uri").as_string()
         let text docstore.get uri
         let result worker.semantic_tokens(uri, text)
         rpc.write_message(server.document_symbol_response(id, result))
@@ -714,14 +715,14 @@ define server
     ; An empty worker reply -> result:null.
     procedure handle_hover(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
-        let params json.get(msg, "params")
-        let doc json.get(params, "textDocument")
-        let uri json.as_string(json.get(doc, "uri"))
-        let position json.get(params, "position")
-        let line json.as_i64(json.get(position, "line"))
-        let character json.as_i64(json.get(position, "character"))
+        let params msg.get("params")
+        let doc params.get("textDocument")
+        let uri doc.get("uri").as_string()
+        let position params.get("position")
+        let line position.get("line").as_i64()
+        let character position.get("character").as_i64()
 
-        let packed "`json.format_i64(line)` `json.format_i64(character)`"
+        let packed "`line` `character`"
 
         let text docstore.get uri
         ; PREFER the planner-resolved type (handles reassigned vars, generic
@@ -748,7 +749,7 @@ define server
     {
         var text String("")
         if hover.get_length() > 0
-            set text: json.as_string(json.get(json.get(json.parse(hover), "contents"), "value"))
+            set text: JsonValue.parse(hover.as_slice()).value.get("contents").get("value").as_string()
         if text.get_length() > 0
             set text: "`text`\n\n---\n\n`paragraph`"
         else
@@ -758,10 +759,10 @@ define server
         sb.append(server.key("contents"))
         sb.append("{" as char)                    ; contents {
         sb.append(server.key("kind"))
-        sb.append(json.quote_string("markdown"))
+        sb.append(JsonWriter.quote("markdown"))
         sb.append("," as char)
         sb.append(server.key("value"))
-        sb.append(json.quote_string(text))
+        sb.append(JsonWriter.quote(text))
         sb.append("}" as char)
         sb.append("}" as char)
         sb.to_string()
@@ -783,10 +784,10 @@ define server
         sb.append(server.key("contents"))
         sb.append("{" as char)                    ; contents {
         sb.append(server.key("kind"))
-        sb.append(json.quote_string("markdown"))
+        sb.append(JsonWriter.quote("markdown"))
         sb.append("," as char)
         sb.append(server.key("value"))
-        sb.append(json.quote_string(tname))
+        sb.append(JsonWriter.quote(tname))
         sb.append("}" as char)
         sb.append("}" as char)
         sb.to_string()
@@ -798,14 +799,14 @@ define server
     ; declaration in the same file. An empty worker reply -> result:null.
     procedure handle_definition(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
-        let params json.get(msg, "params")
-        let doc json.get(params, "textDocument")
-        let uri json.as_string(json.get(doc, "uri"))
-        let position json.get(params, "position")
-        let line json.as_i64(json.get(position, "line"))
-        let character json.as_i64(json.get(position, "character"))
+        let params msg.get("params")
+        let doc params.get("textDocument")
+        let uri doc.get("uri").as_string()
+        let position params.get("position")
+        let line position.get("line").as_i64()
+        let character position.get("character").as_i64()
 
-        let packed "`json.format_i64(line)` `json.format_i64(character)`"
+        let packed "`line` `character`"
 
         let text docstore.get uri
         let result worker.definition(uri, text, packed)
@@ -817,14 +818,14 @@ define server
     ; the call enclosing the cursor. An empty worker reply -> result:null.
     procedure handle_signature_help(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
-        let params json.get(msg, "params")
-        let doc json.get(params, "textDocument")
-        let uri json.as_string(json.get(doc, "uri"))
-        let position json.get(params, "position")
-        let line json.as_i64(json.get(position, "line"))
-        let character json.as_i64(json.get(position, "character"))
+        let params msg.get("params")
+        let doc params.get("textDocument")
+        let uri doc.get("uri").as_string()
+        let position params.get("position")
+        let line position.get("line").as_i64()
+        let character position.get("character").as_i64()
 
-        let packed "`json.format_i64(line)` `json.format_i64(character)`"
+        let packed "`line` `character`"
 
         let text docstore.get uri
         let result worker.signature_help(uri, text, packed)
@@ -837,18 +838,18 @@ define server
     ; (can be large -> document_symbol_response# appends it byte-at-a-time).
     procedure handle_inlay_hint(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
-        let params json.get(msg, "params")
-        let doc json.get(params, "textDocument")
-        let uri json.as_string(json.get(doc, "uri"))
-        let range json.get(params, "range")
-        let start json.get(range, "start")
-        let end_ json.get(range, "end")
-        let sl json.as_i64(json.get(start, "line"))
-        let sc json.as_i64(json.get(start, "character"))
-        let el json.as_i64(json.get(end_, "line"))
-        let ec json.as_i64(json.get(end_, "character"))
+        let params msg.get("params")
+        let doc params.get("textDocument")
+        let uri doc.get("uri").as_string()
+        let range params.get("range")
+        let start range.get("start")
+        let end_ range.get("end")
+        let sl start.get("line").as_i64()
+        let sc start.get("character").as_i64()
+        let el end_.get("line").as_i64()
+        let ec end_.get("character").as_i64()
 
-        let packed "`json.format_i64(sl)` `json.format_i64(sc)` `json.format_i64(el)` `json.format_i64(ec)`"
+        let packed "`sl` `sc` `el` `ec`"
 
         let text docstore.get uri
         let result worker.inlay_hints(uri, text, packed)
@@ -862,12 +863,12 @@ define server
     ; re-reads the file and scans it. The result is a Location[] array.
     procedure handle_references(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
-        let params json.get(msg, "params")
-        let doc json.get(params, "textDocument")
-        let uri json.as_string(json.get(doc, "uri"))
-        let position json.get(params, "position")
-        let line json.as_i64(json.get(position, "line"))
-        let character json.as_i64(json.get(position, "character"))
+        let params msg.get("params")
+        let doc params.get("textDocument")
+        let uri doc.get("uri").as_string()
+        let position params.get("position")
+        let line position.get("line").as_i64()
+        let character position.get("character").as_i64()
 
         ; Prefix the workspace root (captured at initialize) as "<root>\n..." so
         ; the worker's cross-file walk can fan out from the real root (a use in a
@@ -884,9 +885,9 @@ define server
             set ri: ri + 1
         }
         pb.append("\n" as char)                    ; \n  (root / position separator)
-        pb.append(json.format_i64(line))
+        pb.append(line)
         pb.append(" " as char)
-        pb.append(json.format_i64(character))
+        pb.append(character)
         let packed pb.to_string()
 
         let text docstore.get uri
@@ -901,14 +902,14 @@ define server
     ; (the editor highlights occurrences in the current document only).
     procedure handle_document_highlight(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
-        let params json.get(msg, "params")
-        let doc json.get(params, "textDocument")
-        let uri json.as_string(json.get(doc, "uri"))
-        let position json.get(params, "position")
-        let line json.as_i64(json.get(position, "line"))
-        let character json.as_i64(json.get(position, "character"))
+        let params msg.get("params")
+        let doc params.get("textDocument")
+        let uri doc.get("uri").as_string()
+        let position params.get("position")
+        let line position.get("line").as_i64()
+        let character position.get("character").as_i64()
 
-        let packed "`json.format_i64(line)` `json.format_i64(character)`"
+        let packed "`line` `character`"
 
         let text docstore.get uri
         let result worker.highlights(uri, text, packed)
@@ -923,14 +924,14 @@ define server
     ; text is passed so unsaved edits are reflected; empty -> worker reads disk.
     procedure handle_completion(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
-        let params json.get(msg, "params")
-        let doc json.get(params, "textDocument")
-        let uri json.as_string(json.get(doc, "uri"))
-        let position json.get(params, "position")
-        let line json.as_i64(json.get(position, "line"))
-        let character json.as_i64(json.get(position, "character"))
+        let params msg.get("params")
+        let doc params.get("textDocument")
+        let uri doc.get("uri").as_string()
+        let position params.get("position")
+        let line position.get("line").as_i64()
+        let character position.get("character").as_i64()
 
-        let packed "`json.format_i64(line)` `json.format_i64(character)`"
+        let packed "`line` `character`"
 
         let text docstore.get uri
         ; The CompletionItem[] array can be large (many names); reuse the
@@ -958,11 +959,11 @@ define server
     ; the string one line above.
     procedure handle_completion_resolve(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
-        let item json.get(msg, "params")
+        let item msg.get("params")
         ; `label` is a reserved word in Scaly and cannot be a binding name.
-        let item_label json.as_string(json.get(item, "label"))
-        let data json.as_string(json.get(item, "data"))
-        let serialized json.stringify item
+        let item_label item.get("label").as_string()
+        let data item.get("data").as_string()
+        let serialized JsonWriter.stringify(item)
 
         ; No label or no data: an entry this server did not produce (or one from
         ; before `data` existed). Answer it unchanged — resolve is allowed to
@@ -1020,14 +1021,14 @@ define server
     ; result:null (the editor then refuses the rename).
     procedure handle_prepare_rename(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
-        let params json.get(msg, "params")
-        let doc json.get(params, "textDocument")
-        let uri json.as_string(json.get(doc, "uri"))
-        let position json.get(params, "position")
-        let line json.as_i64(json.get(position, "line"))
-        let character json.as_i64(json.get(position, "character"))
+        let params msg.get("params")
+        let doc params.get("textDocument")
+        let uri doc.get("uri").as_string()
+        let position params.get("position")
+        let line position.get("line").as_i64()
+        let character position.get("character").as_i64()
 
-        let packed "`json.format_i64(line)` `json.format_i64(character)`"
+        let packed "`line` `character`"
 
         let text docstore.get uri
         let result worker.prepare_rename(uri, text, packed)
@@ -1041,13 +1042,13 @@ define server
     ; wrap); an empty worker reply -> result:null.
     procedure handle_rename(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
-        let params json.get(msg, "params")
-        let doc json.get(params, "textDocument")
-        let uri json.as_string(json.get(doc, "uri"))
-        let position json.get(params, "position")
-        let line json.as_i64(json.get(position, "line"))
-        let character json.as_i64(json.get(position, "character"))
-        let new_name json.as_string(json.get(params, "newName"))
+        let params msg.get("params")
+        let doc params.get("textDocument")
+        let uri doc.get("uri").as_string()
+        let position params.get("position")
+        let line position.get("line").as_i64()
+        let character position.get("character").as_i64()
+        let new_name params.get("newName").as_string()
 
         ; Prefix the workspace root as "<root>\n<line> <char> <newName>" so the
         ; worker can fan a module/file-wide rename out across the real root; an
@@ -1062,9 +1063,9 @@ define server
             set ri: ri + 1
         }
         pb.append("\n" as char)                    ; \n  (root / position separator)
-        pb.append(json.format_i64(line))
+        pb.append(line)
         pb.append(" " as char)
-        pb.append(json.format_i64(character))
+        pb.append(character)
         pb.append(" " as char)
         ; new_name is an identifier (no spaces). Append byte-at-a-time (small,
         ; but keeps to the no-StringBuilder.append(String) discipline).
@@ -1093,8 +1094,8 @@ define server
     ; result SymbolInformation[] can be large -> byte-at-a-time wrap.
     procedure handle_workspace_symbol(msg: JsonValue, id: i64) mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
-        let params json.get(msg, "params")
-        let query json.as_string(json.get(params, "query"))
+        let params msg.get("params")
+        let query params.get("query").as_string()
         let root docstore.workspace_root()
         let result worker.workspace_symbols(root, query)
         rpc.write_message(server.document_symbol_response(id, result))
@@ -1105,28 +1106,28 @@ define server
     ; the docstore so workspace/symbol (which carries no uri) can find it.
     procedure capture_workspace_root(msg: JsonValue) mutable ws_root_data, ws_root_len
     {
-        let params json.get(msg, "params")
+        let params msg.get("params")
 
-        let root_uri_val json.get(params, "rootUri")
-        if json.is_null(root_uri_val) = false
+        let root_uri_val params.get("rootUri")
+        if root_uri_val.is_null() = false
         {
-            docstore.set_workspace_root(symbols.uri_to_path(json.as_string(root_uri_val)))
+            docstore.set_workspace_root(symbols.uri_to_path(root_uri_val.as_string()))
             return
         }
 
-        let root_path_val json.get(params, "rootPath")
-        if json.is_null(root_path_val) = false
+        let root_path_val params.get("rootPath")
+        if root_path_val.is_null() = false
         {
-            docstore.set_workspace_root(json.as_string(root_path_val))
+            docstore.set_workspace_root(root_path_val.as_string())
             return
         }
 
-        let folders json.get(params, "workspaceFolders")
-        if json.is_null(folders) = false
-            if json.array_length(folders) > 0
+        let folders params.get("workspaceFolders")
+        if folders.is_null() = false
+            if folders.length() > 0
             {
-                let f0 json.array_get(folders, 0)
-                docstore.set_workspace_root(symbols.uri_to_path(json.as_string(json.get(f0, "uri"))))
+                let f0 folders.item(0)
+                docstore.set_workspace_root(symbols.uri_to_path(f0.get("uri").as_string()))
             }
     }
 
@@ -1134,9 +1135,9 @@ define server
     ; diagnostics the editor still shows for it (empty diagnostics array).
     procedure handle_did_close(msg: JsonValue) mutable doc_slots
     {
-        let params json.get(msg, "params")
-        let doc json.get(params, "textDocument")
-        let uri json.as_string(json.get(doc, "uri"))
+        let params msg.get("params")
+        let doc params.get("textDocument")
+        let uri doc.get("uri").as_string()
         ; Drop the in-memory buffer; subsequent requests fall back to disk.
         docstore.remove uri
         let payload diagnostics.clear_diagnostics uri
@@ -1205,9 +1206,9 @@ define server
     {
         if index > 0
         {
-            let msg json.parse notification
-            let params json.get(msg, "params")
-            let uri json.as_string(json.get(params, "uri"))
+            let msg JsonValue.parse(notification.as_slice()).value
+            let params msg.get("params")
+            let uri params.get("uri").as_string()
             if docstore.find(uri) >= 0
                 return
         }
@@ -1230,7 +1231,7 @@ define server
         sb.append(server.quoted("2.0"))
         sb.append("," as char)
         sb.append(server.key("id"))
-        sb.append(json.format_i64(id))
+        sb.append(id)
         sb.append("," as char)
         sb.append(server.key("result"))
         sb.append("{" as char)                    ; result {
@@ -1415,7 +1416,7 @@ define server
         sb.append(server.quoted("2.0"))
         sb.append("," as char)
         sb.append(server.key("id"))
-        sb.append(json.format_i64(id))
+        sb.append(id)
         sb.append("," as char)
         sb.append(server.key("result"))
         sb.append "null"
@@ -1441,7 +1442,7 @@ define server
         sb.append(server.quoted("2.0"))
         sb.append("," as char)
         sb.append(server.key("id"))
-        sb.append(json.format_i64(id))
+        sb.append(id)
         sb.append("," as char)
         sb.append(server.key("result"))
         var ci: size_t 0
@@ -1466,7 +1467,7 @@ define server
         sb.append(server.quoted("2.0"))
         sb.append("," as char)
         sb.append(server.key("id"))
-        sb.append(json.format_i64(id))
+        sb.append(id)
         sb.append("," as char)
         sb.append(server.key("result"))
         if result.get_length() = 0
@@ -1489,7 +1490,7 @@ define server
         sb.append(server.quoted("2.0"))
         sb.append("," as char)
         sb.append(server.key("id"))
-        sb.append(json.format_i64(id))
+        sb.append(id)
         sb.append("," as char)
         sb.append(server.key("result"))
         if result.get_length() = 0

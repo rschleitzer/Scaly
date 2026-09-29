@@ -63,7 +63,6 @@
 use scaly.memory.runtime
 
 use scalyls.symbols
-use scalyls.json
 
 use scalyc.compiler.Planner
 
@@ -253,7 +252,7 @@ define instlens
             return ""
 
         var sb StringBuilder()
-        sb.append(json.format_i64(count as i64))
+        sb.append((count as i64))
         sb.append " definitions emitted"
         if types.length > 0
         {

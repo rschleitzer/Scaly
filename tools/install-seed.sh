@@ -36,6 +36,11 @@ if [ -f "$SRC/scalyls_main.ll" ]; then
     cp "$SRC/scalyls_main.ll" seed/
     SUM_FILES="$SUM_FILES scalyls_main.ll"
 fi
+# the json package scalyls depends on
+if [ -f "$SRC/json.ll" ]; then
+    cp "$SRC/json.ll" seed/
+    SUM_FILES="$SUM_FILES json.ll"
+fi
 
 # shellcheck disable=SC2086
 ( cd seed && shasum -a 256 $SUM_FILES > SHA256SUMS )

@@ -1,4 +1,4 @@
-; AOT test for scalyls.json + scalyls.rpc framing helpers.
+; AOT test for the json package as scalyls uses it + scalyls.rpc framing helpers.
 ; Prints "PASS" when every check holds, else "FAIL <code>".
 ;
 ; Quotes are injected as 0x22 bytes (never as \" string literals) so the
@@ -6,13 +6,15 @@
 ; line (';' starts a comment in Scaly, it is not a separator).
 
 package scaly 0.1.0
+package json 0.1.0
 package scalyls 0.1.0
 
 use scaly.containers.String
 use scaly.containers.StringBuilder
 use scaly.os.Console
-use scalyls.json
-use scalyls.json.JsonValue
+use json.Value.JsonValue
+use json.Value.JsonParsed
+use json.Writer.JsonWriter
 use scalyls.rpc
 
 function run_test() returns int
@@ -61,38 +63,38 @@ function run_test() returns int
     b.append(0x7D as char)             ; }
     let src b.to_string#()
 
-    let v json.parse#(src)
+    let v JsonValue.parse(src.as_slice()).value
 
     ; Accessor checks
-    let id json.get(v, "id")
-    if json.as_i64(id) <> 42
+    let id v.get("id")
+    if id.as_i64() <> 42
         return 1
 
-    let neg json.get(v, "neg")
-    if json.as_i64(neg) <> (0 - 7)
+    let neg v.get("neg")
+    if neg.as_i64() <> (0 - 7)
         return 2
 
-    let ok json.get(v, "ok")
-    if json.as_bool(ok) = false
+    let ok v.get("ok")
+    if ok.as_bool() = false
         return 3
 
-    let name json.get(v, "name")
-    let name_str json.as_string#(name)
+    let name v.get("name")
+    let name_str name.as_string()
     if name_str.equals("hi") = false
         return 4
 
-    let missing json.get(v, "absent")
-    if json.is_null(missing) = false
+    let missing v.get("absent")
+    if missing.is_null() = false
         return 5
 
-    let arr json.get(v, "arr")
-    if json.array_length(arr) <> (3 as size_t)
+    let arr v.get("arr")
+    if arr.length() <> 3
         return 6
-    if json.as_i64(json.array_get(arr, 1 as size_t)) <> 2
+    if arr.item(1).as_i64() <> 2
         return 9
 
     ; Round-trip: canonical serialization reproduces src exactly.
-    let out json.stringify#(v)
+    let out JsonWriter.stringify(v)
     if out.equals(src) = false
         return 10
 

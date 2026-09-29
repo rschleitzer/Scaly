@@ -53,7 +53,6 @@ use scaly.memory.root_pages.getenv
 
 use scalyls.diagnostics
 use scalyls.symbols
-use scalyls.json
 use scalyls.tasklens
 use scalyls.instlens
 use scalyls.storelens
@@ -386,8 +385,8 @@ define codelens
     ;
     ;   module lexer   at the top level of compiler/parser.scaly
     ;                                       -> compiler/lexer.scaly   (SIBLING)
-    ;   define scalyls { module json }  in   scalyls.scaly
-    ;                                       -> scalyls/json.scaly     (CHILD)
+    ;   define scalyls { module rpc }   in   scalyls.scaly
+    ;                                       -> scalyls/rpc.scaly      (CHILD)
     ;
     ; The first draft used the child rule everywhere and reported "missing
     ; module file: parser/lexer.scaly" for a module that resolves perfectly —

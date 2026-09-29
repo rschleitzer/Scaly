@@ -60,7 +60,7 @@ tests/regress/run.sh "$SC" || fail "regression suite"
 # scaly packages it depends on, and the fcontext/eio runtime objects — the
 # same objects tools/seed.sh links a fresh mint from. Smoke-test an LSP
 # initialize round-trip. Best-effort: skipped if LLVM 20 is not resolvable.
-if [ -f seed/scalyls.ll ] && [ -f seed/scalyls_main.ll ]; then
+if [ -f seed/scalyls.ll ] && [ -f seed/scalyls_main.ll ] && [ -f seed/json.ll ]; then
   echo "verify: scalyls language server"
   # shellcheck disable=SC1091
   . tools/llvm-env.sh 2>/dev/null || true
@@ -71,7 +71,7 @@ if [ -f seed/scalyls.ll ] && [ -f seed/scalyls_main.ll ]; then
         command -v "$c" >/dev/null 2>&1 && { LD_ARG="-fuse-ld=$c"; break; }
       done
     fi
-    for f in scalyls_main scalyls scalyc scaly; do
+    for f in scalyls_main scalyls json scalyc scaly; do
       "$LLC" -relocation-model=pic -filetype=obj "seed/$f.ll" -o "$WORK/$f.o" \
         >/dev/null 2>&1 || fail "llc $f.ll"
     done
@@ -83,7 +83,7 @@ if [ -f seed/scalyls.ll ] && [ -f seed/scalyls_main.ll ]; then
     # link used to discard it, so a missing -lm on Linux reported a bare
     # "VERIFY: FAIL — link scalyls" with no undefined symbol named.
     # shellcheck disable=SC2086
-    if ! "${CLANG:-clang}" $LD_ARG "$WORK/scalyls_main.o" "$WORK/scalyls.o" "$WORK/scalyc.o" \
+    if ! "${CLANG:-clang}" $LD_ARG "$WORK/scalyls_main.o" "$WORK/scalyls.o" "$WORK/json.o" "$WORK/scalyc.o" \
       "$WORK/scaly.o" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" "$WORK/panic.o" -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" \
       -lm -o "$WORK/scalyls" 2> "$WORK/scalyls_link.log"; then
       grep -v 'reexported library' "$WORK/scalyls_link.log" || true

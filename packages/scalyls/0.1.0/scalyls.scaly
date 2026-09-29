@@ -9,11 +9,11 @@ package scaly 0.1.0
 ; The diagnostics module drives the self-hosted compiler pipeline.
 package scalyc 0.1.0
 
+; JSON: the reader, the value tree and the quoting of hand-built replies.
+package json 0.1.0
+
 define scalyls
 {
-    ; JSON value tree + parser + serializer (reusable; not LSP-specific).
-    module json
-
     ; Content-Length framed JSON-RPC transport over stdin/stdout.
     module rpc
 

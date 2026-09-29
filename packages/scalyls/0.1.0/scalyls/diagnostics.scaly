@@ -31,7 +31,7 @@
 ; one notification per sibling module after it, and server.write_notifications#
 ; writes each as its own frame.
 ;
-; LF is a safe separator because json.quote_string# escapes 0x0A to `\n`: no
+; LF is a safe separator because JsonWriter.quote# escapes 0x0A to `\n`: no
 ; notification we build can contain a raw one. Paths cannot either.
 ;
 ; ★CLEAN SIBLINGS ARE REPORTED TOO, with an EMPTY diagnostics array, and that is
@@ -60,7 +60,7 @@
 use scaly.memory.runtime
 use scaly.os.File
 use scaly.os.Path
-use scalyls.json
+use json.Writer.JsonWriter
 use scalyls.symbols
 
 ; Compiler pipeline (scalyc package).
@@ -91,7 +91,7 @@ define diagnostics
         sb.append(diagnostics.key("params"))
         sb.append("{" as char)                    ; params {
         sb.append(diagnostics.key("uri"))
-        sb.append(json.quote_string(uri))
+        sb.append(JsonWriter.quote(uri))
         sb.append("," as char)
         sb.append(diagnostics.key("diagnostics"))
         sb.append("[" as char)
@@ -239,7 +239,7 @@ define diagnostics
         sb.append(diagnostics.key("params"))
         sb.append("{" as char)                    ; params {
         sb.append(diagnostics.key("uri"))
-        sb.append(json.quote_string(uri))
+        sb.append(JsonWriter.quote(uri))
         sb.append("," as char)
         sb.append(diagnostics.key("diagnostics"))
         sb.append("[" as char)
@@ -519,7 +519,7 @@ define diagnostics
         sb.append(diagnostics.key("params"))
         sb.append("{" as char)                    ; params {
         sb.append(diagnostics.key("uri"))
-        sb.append(json.quote_string(uri))
+        sb.append(JsonWriter.quote(uri))
         sb.append("," as char)
         sb.append(diagnostics.key("diagnostics"))
         sb.append("[" as char)
@@ -841,7 +841,7 @@ define diagnostics
         sb.append("1" as char)                    ; 1 = Error
         sb.append("," as char)
         sb.append(diagnostics.key("message"))
-        sb.append(json.quote_string(message))
+        sb.append(JsonWriter.quote(message))
         sb.append("}" as char)
         sb.to_string()
     }
@@ -852,10 +852,10 @@ define diagnostics
         var sb StringBuilder()
         sb.append("{" as char)
         sb.append(diagnostics.key("line"))
-        sb.append(json.format_i64(line as i64))
+        sb.append((line as i64))
         sb.append("," as char)
         sb.append(diagnostics.key("character"))
-        sb.append(json.format_i64(character as i64))
+        sb.append((character as i64))
         sb.append("}" as char)
         sb.to_string()
     }

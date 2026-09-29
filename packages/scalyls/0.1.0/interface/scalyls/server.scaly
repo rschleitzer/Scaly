@@ -27,8 +27,9 @@
 
 use scaly.memory.runtime
 use scalyls.rpc
-use scalyls.json
-use scalyls.json.JsonValue
+use json.Value.JsonValue
+use json.Value.JsonParsed
+use json.Writer.JsonWriter
 use scalyls.diagnostics
 use scalyls.docstore
 use scalyls.symbols
@@ -56,7 +57,7 @@ define server
     ; Document sync -> diagnostics
     ; ====================================================================
 
-    procedure handle_did_open(msg: JsonValue) @ret_caller true @deep true mutable doc_slots reads doc_slots linked
+    procedure handle_did_open(msg: JsonValue) @deep true mutable doc_slots reads doc_slots linked
 
     procedure handle_did_change(msg: JsonValue) @deep true mutable doc_slots reads doc_slots linked
 
@@ -67,7 +68,7 @@ define server
     ; ONE BYTE AT A TIME (prefix, inserted text, suffix): a single
     ; StringBuilder.append of a large String hits the runtime's manual-grow
     ; crash (see symbols.scaly's STRING/JSON NOTE).
-    function apply_change(text: String, change: JsonValue) @page true @direct true @ret_caller true @deep true returns String linked
+    function apply_change(text: String, change: JsonValue) @page true @direct true @deep true returns String linked
 
     ; documentSymbol: return the outline tree for the requested document.
     ; The request carries only a uri (no text), so the worker re-reads the
@@ -262,7 +263,7 @@ define server
 
     ; A closed document leaves no buffer to analyze; clear whatever
     ; diagnostics the editor still shows for it (empty diagnostics array).
-    procedure handle_did_close(msg: JsonValue) @ret_caller true @deep true io mutable doc_slots reads doc_slots linked
+    procedure handle_did_close(msg: JsonValue) @deep true io mutable doc_slots reads doc_slots linked
 
     ; Diagnostics are computed in a crash-isolated worker subprocess (see
     ; scalyls.worker): a SIGSEGV/abort/hang in the compiler pipeline on a

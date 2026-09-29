@@ -39,7 +39,9 @@
 use scaly.os.File
 use scaly.memory.runtime
 use scaly.memory.root_pages.getenv
-use scalyls.json
+use json.Value.JsonValue
+use json.Value.JsonParsed
+use json.Writer.JsonWriter
 use scalyls.symindex
 use scalyls.grammar
 use scalyls.nameset
@@ -66,7 +68,6 @@ use scalyc.compiler.lexer.*
 use scalyc.compiler.parser.*
 use scalyc.compiler.Syntax.*
 use scalyls.nameset.*
-use scalyls.json.*
 
 mutable prof_list: int 0
 mutable prof_read: int 0
@@ -484,10 +485,10 @@ define symbols
         var sb StringBuilder()
         sb.append("{" as char)
         sb.append(symbols.key("name"))
-        sb.append(json.quote_string(name))
+        sb.append(JsonWriter.quote(name))
         sb.append("," as char)
         sb.append(symbols.key("kind"))
-        sb.append(json.format_i64(kind))
+        sb.append(kind)
         sb.append("," as char)
         sb.append(symbols.key("range"))
         sb.append(symbols.range_for(source, start, end))
@@ -886,10 +887,10 @@ define symbols
         var sb StringBuilder()
         sb.append("{" as char)
         sb.append(symbols.key("line"))
-        sb.append(json.format_i64(line as i64))
+        sb.append((line as i64))
         sb.append("," as char)
         sb.append(symbols.key("character"))
-        sb.append(json.format_i64(col as i64))
+        sb.append((col as i64))
         sb.append("}" as char)
         sb.to_string()
     }
@@ -927,7 +928,7 @@ define symbols
         sb.append(symbols.key("command"))
         sb.append("{" as char)
         sb.append(symbols.key("title"))
-        sb.append(json.quote_string(title))
+        sb.append(JsonWriter.quote(title))
         sb.append("," as char)
         sb.append(symbols.key("command"))
         sb.append("\"" as char)
@@ -939,7 +940,7 @@ define symbols
             sb.append("," as char)
             sb.append(symbols.key("arguments"))
             sb.append("[" as char)
-            sb.append(json.quote_string(argument))
+            sb.append(JsonWriter.quote(argument))
             sb.append("]" as char)
         }
         sb.append("}" as char)
@@ -1730,10 +1731,10 @@ define symbols
         var sb StringBuilder()
         sb.append("{" as char)
         sb.append(symbols.key("title"))
-        sb.append(json.quote_string(title))
+        sb.append(JsonWriter.quote(title))
         sb.append("," as char)
         sb.append(symbols.key("kind"))
-        sb.append(json.quote_string("quickfix"))
+        sb.append(JsonWriter.quote("quickfix"))
         if preferred
         {
             sb.append("," as char)
@@ -1745,7 +1746,7 @@ define symbols
         sb.append("{" as char)
         sb.append(symbols.key("changes"))
         sb.append("{" as char)
-        sb.append(json.quote_string(uri))
+        sb.append(JsonWriter.quote(uri))
         sb.append(":" as char)
         sb.append("[" as char)
         sb.append("{" as char)
@@ -1759,7 +1760,7 @@ define symbols
         sb.append("}" as char)
         sb.append("," as char)
         sb.append(symbols.key("newText"))
-        sb.append(json.quote_string(new_text))
+        sb.append(JsonWriter.quote(new_text))
         sb.append("}" as char)
         sb.append("]" as char)
         sb.append("}" as char)
@@ -1774,10 +1775,10 @@ define symbols
         var sb StringBuilder()
         sb.append("{" as char)
         sb.append(symbols.key("line"))
-        sb.append(json.format_i64(line as i64))
+        sb.append((line as i64))
         sb.append("," as char)
         sb.append(symbols.key("character"))
-        sb.append(json.format_i64(character as i64))
+        sb.append((character as i64))
         sb.append("}" as char)
         sb.to_string()
     }
@@ -2160,10 +2161,10 @@ define symbols
         var sb StringBuilder()
         sb.append("{" as char)
         sb.append(symbols.key("startLine"))
-        sb.append(json.format_i64(start_line as i64))
+        sb.append((start_line as i64))
         sb.append("," as char)
         sb.append(symbols.key("endLine"))
-        sb.append(json.format_i64(end_line as i64))
+        sb.append((end_line as i64))
         sb.append("}" as char)
         sb.to_string()
     }
@@ -2752,15 +2753,15 @@ define symbols
         if dline = 0
             set dcol: tcol - prev_col
         var sb StringBuilder()
-        sb.append(json.format_i64(dline as i64))
+        sb.append((dline as i64))
         sb.append("," as char)
-        sb.append(json.format_i64(dcol as i64))
+        sb.append((dcol as i64))
         sb.append("," as char)
-        sb.append(json.format_i64(tlen as i64))
+        sb.append((tlen as i64))
         sb.append("," as char)
-        sb.append(json.format_i64(ttype))
+        sb.append(ttype)
         sb.append("," as char)
-        sb.append(json.format_i64(mods))
+        sb.append(mods)
         sb.to_string()
     }
 
@@ -2941,21 +2942,21 @@ define symbols
     {
         var sb StringBuilder()
         sb.append("\n" as char)                    ; leading newline
-        let jv json.parse items_json
-        let count json.array_length jv
+        let jv JsonValue.parse(items_json.as_slice()).value
+        let count jv.length()
         var i: size_t 0
         while i < count
         {
-            let item json.array_get(jv, i)
-            let kind json.as_i64(json.get(item, "kind"))
+            let item jv.item(i)
+            let kind item.get("kind").as_i64()
             if kind = k1
             {
-                sb.append(json.as_string(json.get(item, "label")))
+                sb.append(item.get("label").as_string())
                 sb.append("\n" as char)
             }
             if kind = k2
             {
-                sb.append(json.as_string(json.get(item, "label")))
+                sb.append(item.get("label").as_string())
                 sb.append("\n" as char)
             }
             set i: i + 1
@@ -3079,9 +3080,9 @@ define symbols
             var sb StringBuilder()
             sb.append("P" as char)
             sb.append("\t" as char)
-            sb.append(json.format_i64(start as i64))
+            sb.append((start as i64))
             sb.append("\t" as char)
-            sb.append(json.format_i64(end as i64))
+            sb.append((end as i64))
             sb.append("\t" as char)
             var k: size_t 0
             let nn names.get_length()
@@ -3103,13 +3104,13 @@ define symbols
     ; is_field_decl_offset both skip unknown tags, so adding R is safe for them.
     function r_record(start: size_t, end: size_t) returns String
     {
-        "R\t`json.format_i64(start as i64)`\t`json.format_i64(end as i64)`\n"
+        "R\t`start as i64`\t`end as i64`\n"
     }
 
     ; One field-declaration record "F\t<offset>\n".
     function f_record(off: size_t) returns String
     {
-        "F\t`json.format_i64(off as i64)`\n"
+        "F\t`off as i64`\n"
     }
 
     ; The scope record for a routine target (named -> its routine; an anonymous
@@ -3569,7 +3570,7 @@ define symbols
         }
         if found
         {
-            return "`json.format_i64(best_start as i64)` `json.format_i64(best_end as i64)`"
+            return "`best_start as i64` `best_end as i64`"
         }
         ""
     }
@@ -3700,15 +3701,15 @@ define symbols
         var sb StringBuilder()
         sb.append("{" as char)
         sb.append(symbols.key("label"))
-        sb.append(json.quote_string(name))
+        sb.append(JsonWriter.quote(name))
         sb.append("," as char)
         sb.append(symbols.key("kind"))
-        sb.append(json.format_i64(kind))
+        sb.append(kind)
         if detail.get_length() > 0
         {
             sb.append("," as char)
             sb.append(symbols.key("detail"))
-            sb.append(json.quote_string(detail))
+            sb.append(JsonWriter.quote(detail))
         }
         sb.append("}" as char)
         sb.to_string()
@@ -4255,7 +4256,7 @@ define symbols
         if uri.get_length() = 0
             return items
 
-        let quoted json.quote_string uri
+        let quoted JsonWriter.quote(uri)
         var sb StringBuilder()
         var depth: size_t 0
         var in_string: bool false
@@ -4333,10 +4334,10 @@ define symbols
         var sb StringBuilder()
         sb.append("{" as char)
         sb.append(symbols.key("kind"))
-        sb.append(json.quote_string("markdown"))
+        sb.append(JsonWriter.quote("markdown"))
         sb.append("," as char)
         sb.append(symbols.key("value"))
-        sb.append(json.quote_string(vb.to_string()))
+        sb.append(JsonWriter.quote(vb.to_string()))
         sb.append("}" as char)
         sb.to_string()
     }
@@ -4360,11 +4361,11 @@ define symbols
         if loc.get(0) = ("M" as char)
             return ""
 
-        let v json.parse loc
-        let range json.get(v, "range")
-        let start json.get(range, "start")
-        let line json.as_i64(json.get(start, "line"))
-        let character json.as_i64(json.get(start, "character"))
+        let v JsonValue.parse(loc.as_slice()).value
+        let range v.get("range")
+        let start range.get("start")
+        let line start.get("line").as_i64()
+        let character start.get("character").as_i64()
         if line < 0
             return ""
         if character < 0
@@ -6030,10 +6031,10 @@ define symbols
         sb.append(symbols.key("contents"))
         sb.append("{" as char)
         sb.append(symbols.key("kind"))
-        sb.append(json.quote_string("markdown"))
+        sb.append(JsonWriter.quote("markdown"))
         sb.append("," as char)
         sb.append(symbols.key("value"))
-        sb.append(json.quote_string(text))
+        sb.append(JsonWriter.quote(text))
         sb.append("}" as char)
         sb.append("}" as char)
         sb.to_string()
@@ -7321,7 +7322,7 @@ define symbols
         var sb StringBuilder()
         sb.append("{" as char)
         sb.append(symbols.key("uri"))
-        sb.append(json.quote_string(uri))
+        sb.append(JsonWriter.quote(uri))
         sb.append("," as char)
         sb.append(symbols.key("range"))
         sb.append(symbols.range_for(source, start, start))
@@ -9790,7 +9791,7 @@ define symbols
     ; the name match later AND drops the detail+rettype fields (bounding at the
     ; SECOND tab) so workspace/symbol output stays byte-identical. A
     ; SymbolInformation JSON object never contains a raw tab or newline
-    ; (json.quote_string# escapes them); the detail field (param labels /
+    ; (JsonWriter.quote# escapes them); the detail field (param labels /
     ; completion items) likewise has no raw tab/newline; and the rettype field
     ; (Step 32) and the membertypes field (Step 33) are bare identifiers /
     ; 0x1F-joined identifier pairs (no tab/newline) — so all four delimiters are
@@ -9815,10 +9816,10 @@ define symbols
         sb.append("\t" as char)                    ; tab: name / json separator
         sb.append("{" as char)
         sb.append(symbols.key("name"))
-        sb.append(json.quote_string(name))
+        sb.append(JsonWriter.quote(name))
         sb.append("," as char)
         sb.append(symbols.key("kind"))
-        sb.append(json.format_i64(kind))
+        sb.append(kind)
         sb.append("," as char)
         sb.append(symbols.key("location"))
         sb.append(symbols.location_span_object(source, uri, start, end))
@@ -10527,9 +10528,9 @@ define symbols
                 let rend symbols.routine_body_end(source, j, len)
                 if symbols.range_binds_name(source, name, k, rend)
                 {
-                    sb.append(json.format_i64(k as i64))
+                    sb.append((k as i64))
                     sb.append(" " as char)
-                    sb.append(json.format_i64(rend as i64))
+                    sb.append((rend as i64))
                     sb.append("\n" as char)
                 }
                 ; routines don't nest in a body -> resume past this routine
@@ -10657,13 +10658,13 @@ define symbols
                         set ri: ri + 1
                     }
                     sb.append("\t" as char)
-                    sb.append(json.format_i64(k as i64))
+                    sb.append((k as i64))
                     sb.append("\t" as char)
-                    sb.append(json.format_i64(ns as i64))
+                    sb.append((ns as i64))
                     sb.append("\t" as char)
-                    sb.append(json.format_i64(ne as i64))
+                    sb.append((ne as i64))
                     sb.append("\t" as char)
-                    sb.append(json.format_i64(rend as i64))
+                    sb.append((rend as i64))
                     sb.append("\n" as char)
                 }
                 if rend > j
@@ -10801,13 +10802,13 @@ define symbols
         var sb StringBuilder()
         sb.append("{" as char)
         sb.append(symbols.key("name"))
-        sb.append(json.quote_string(name))
+        sb.append(JsonWriter.quote(name))
         sb.append("," as char)
         sb.append(symbols.key("kind"))
         sb.append("12")
         sb.append("," as char)
         sb.append(symbols.key("uri"))
-        sb.append(json.quote_string(uri))
+        sb.append(JsonWriter.quote(uri))
         sb.append("," as char)
         sb.append(symbols.key("range"))
         sb.append(symbols.range_for(source, start, end))
@@ -11728,13 +11729,13 @@ define symbols
     ; True when `name` equals the label of any completion item.
     procedure name_in_completion(mutable comp_items: String, name: String) returns bool
     {
-        let jv json.parse comp_items
-        let count json.array_length jv
+        let jv JsonValue.parse(comp_items.as_slice()).value
+        let count jv.length()
         var i: size_t 0
         while i < count
         {
-            let item json.array_get(jv, i)
-            let lbl json.as_string(json.get(item, "label"))
+            let item jv.item(i)
+            let lbl item.get("label").as_string()
             if lbl = name
                 return true
             set i: i + 1
@@ -11832,7 +11833,7 @@ define symbols
         var sb StringBuilder()
         sb.append("{" as char)
         sb.append(symbols.key("uri"))
-        sb.append(json.quote_string(uri))
+        sb.append(JsonWriter.quote(uri))
         sb.append("," as char)
         sb.append(symbols.key("range"))
         sb.append(symbols.range_for(source, start, end))
@@ -12069,7 +12070,7 @@ define symbols
         sb.append("{" as char)
         sb.append(symbols.key("changes"))
         sb.append("{" as char)                    ; { (changes object)
-        sb.append(json.quote_string(uri))
+        sb.append(JsonWriter.quote(uri))
         sb.append(":" as char)
         sb.append("[" as char)                    ; [ (TextEdit array)
         var i: size_t 0
@@ -12109,7 +12110,7 @@ define symbols
         let cur symbols.edits_fragment(source, old_name, new_name, "", cur_shadow)
         if cur.get_length() > 0
         {
-            sb.append(json.quote_string(uri))
+            sb.append(JsonWriter.quote(uri))
             sb.append(":" as char)
             sb.append("[" as char)
             var ci: size_t 0
@@ -12163,7 +12164,7 @@ define symbols
                                     if first = false
                                         sb.append("," as char)
                                     let furi symbols.path_to_uri fpath
-                                    sb.append(json.quote_string(furi))
+                                    sb.append(JsonWriter.quote(furi))
                                     sb.append(":" as char)
                                     sb.append("[" as char)
                                     var fi: size_t 0
@@ -12197,7 +12198,7 @@ define symbols
         sb.append(symbols.range_for(source, start, end))
         sb.append("," as char)
         sb.append(symbols.key("newText"))
-        sb.append(json.quote_string(new_name))
+        sb.append(JsonWriter.quote(new_name))
         sb.append("}" as char)
         sb.to_string()
     }
@@ -13125,17 +13126,17 @@ define symbols
         var sig symbols.find_signature_in_workspace(uri, callee, 0)
         if sig.get_length() = 0
             return ""
-        let v json.parse sig
-        let sigs json.get(v, "signatures")
-        let sig0 json.array_get(sigs, 0)
-        let params json.get(sig0, "parameters")
-        let np json.array_length params
+        let v JsonValue.parse(sig.as_slice()).value
+        let sigs v.get("signatures")
+        let sig0 sigs.item(0)
+        let params sig0.get("parameters")
+        let np params.length()
         var sb StringBuilder()
         var i: size_t 0
         while i < np
         {
-            let p json.array_get(params, i)
-            let plabel json.as_string(json.get(p, "label"))
+            let p params.item(i)
+            let plabel p.get("label").as_string()
             var nlen: size_t 0
             let ll plabel.get_length()
             var ci: size_t 0
@@ -13280,7 +13281,7 @@ define symbols
         sb.append(symbols.offset_to_pos(source, offset))
         sb.append("," as char)
         sb.append(symbols.key("label"))
-        sb.append(json.quote_string(lbl_str))
+        sb.append(JsonWriter.quote(lbl_str))
         sb.append("," as char)
         sb.append(symbols.key("kind"))
         sb.append "2"                             ; InlayHintKind.Parameter
@@ -13312,7 +13313,7 @@ define symbols
         sb.append(symbols.offset_to_pos(source, offset))
         sb.append("," as char)
         sb.append(symbols.key("label"))
-        sb.append(json.quote_string(lbl_str))
+        sb.append(JsonWriter.quote(lbl_str))
         sb.append("," as char)
         sb.append(symbols.key("kind"))
         sb.append "1"                             ; InlayHintKind.Type
@@ -13335,7 +13336,7 @@ define symbols
         sb.append(symbols.offset_to_pos(source, offset))
         sb.append("," as char)
         sb.append(symbols.key("label"))
-        sb.append(json.quote_string(note))
+        sb.append(JsonWriter.quote(note))
         sb.append("," as char)
         sb.append(symbols.key("kind"))
         sb.append "1"                             ; InlayHintKind.Type
@@ -13833,7 +13834,7 @@ define symbols
         sb.append("[" as char)
         sb.append("{" as char)
         sb.append(symbols.key("label"))
-        sb.append(json.quote_string(sig_label_str))
+        sb.append(JsonWriter.quote(sig_label_str))
         sb.append("," as char)
         sb.append(symbols.key("parameters"))
         sb.append("[" as char)
@@ -13852,7 +13853,7 @@ define symbols
         sb.append("0" as char)
         sb.append("," as char)
         sb.append(symbols.key("activeParameter"))
-        sb.append(json.format_i64(act as i64))
+        sb.append((act as i64))
         sb.append("}" as char)
         sb.to_string()
     }
@@ -14021,7 +14022,7 @@ define symbols
         sb.append("[" as char)
         sb.append("{" as char)
         sb.append(symbols.key("label"))
-        sb.append(json.quote_string(sig_label_str))
+        sb.append(JsonWriter.quote(sig_label_str))
         sb.append("," as char)
         sb.append(symbols.key("parameters"))
         sb.append("[" as char)
@@ -14040,7 +14041,7 @@ define symbols
         sb.append("0" as char)
         sb.append("," as char)
         sb.append(symbols.key("activeParameter"))
-        sb.append(json.format_i64(act as i64))
+        sb.append((act as i64))
         sb.append("}" as char)
         sb.to_string()
     }
@@ -14165,7 +14166,7 @@ define symbols
         var sb StringBuilder()
         sb.append("{" as char)
         sb.append(symbols.key("label"))
-        sb.append(json.quote_string(ptext))
+        sb.append(JsonWriter.quote(ptext))
         sb.append("}" as char)
         sb.to_string()
     }

@@ -127,7 +127,7 @@ tools/panic.sh "$WORK/panic.o"
 
 # Build the scalyls language server from its seed, when committed. scalyls is
 # a separate program with its own two roots (scalyls_main.ll + scalyls.ll);
-# it depends on the scalyc + scaly packages, whose bodies come from the
+# it depends on the json package (json.ll) and the scalyc + scaly packages, whose bodies come from the
 # compiler seed objects already built above — same recipe as tools/seed.sh.
 # Lands beside the compiler so tools/install.sh and the VS Code extension can
 # find it.
@@ -144,7 +144,7 @@ build_scalyls() {
         # Same whole-program shape as the compiler: scalyls' own two roots
         # plus the scalyc + scaly package bodies (the compiler's main.ll is
         # excluded — scalyls_main.ll provides this program's @main anchor).
-        "$LLVM_LINK" "$SEED/scalyls_main.ll" "$SEED/scalyls.ll" \
+        "$LLVM_LINK" "$SEED/scalyls_main.ll" "$SEED/scalyls.ll" "$SEED/json.ll" \
             "$SEED/scalyc.ll" "$SEED/scaly.ll" -o "$WORK/scalyls_linked.bc"
         "$OPT" -O2 "$WORK/scalyls_linked.bc" -o "$WORK/scalyls_opt.bc"
         tools/llc-split.sh "${SCALYC_LLC_SPLIT:-auto}" "$WORK/scalyls_opt.bc" "$WORK/scalyls_all" \
@@ -152,7 +152,7 @@ build_scalyls() {
         SCALYLS_OBJS=()
         while IFS= read -r o; do SCALYLS_OBJS+=("$o"); done < "$WORK/scalyls_objs.txt"
     else
-        for f in scalyls_main scalyls; do
+        for f in scalyls_main scalyls json; do
             "$LLC" -relocation-model=pic -filetype=obj "$SEED/$f.ll" -o "$WORK/$f.o"
         done
         if [ ! -f "$WORK/scalyc.o" ]; then
@@ -160,14 +160,14 @@ build_scalyls() {
                 "$LLC" -relocation-model=pic -filetype=obj "$SEED/$f.ll" -o "$WORK/$f.o"
             done
         fi
-        SCALYLS_OBJS=("$WORK/scalyls_main.o" "$WORK/scalyls.o" "$WORK/scalyc.o" "$WORK/scaly.o")
+        SCALYLS_OBJS=("$WORK/scalyls_main.o" "$WORK/scalyls.o" "$WORK/json.o" "$WORK/scalyc.o" "$WORK/scaly.o")
     fi
     ${CLANG:-clang} "${LINKARGS[@]}" "${SCALYLS_OBJS[@]}" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" "$WORK/panic.o" \
         -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -lm -o "$LSOUT"
     echo "build-from-seed: OK — $LSOUT (language server)"
 }
 WANT_SCALYLS=0
-if [ "${SCALYC_SEED_NO_SCALYLS:-0}" != "1" ] && [ -f "$SEED/scalyls.ll" ] && [ -f "$SEED/scalyls_main.ll" ]; then WANT_SCALYLS=1; fi
+if [ "${SCALYC_SEED_NO_SCALYLS:-0}" != "1" ] && [ -f "$SEED/scalyls.ll" ] && [ -f "$SEED/scalyls_main.ll" ] && [ -f "$SEED/json.ll" ]; then WANT_SCALYLS=1; fi
 ls_pid=""
 if [ "$WANT_SCALYLS" = 1 ] && [ "$use_opt" = 1 ]; then
     build_scalyls > "$WORK/scalyls.log" 2>&1 & ls_pid=$!

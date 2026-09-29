@@ -83,6 +83,7 @@ if [ "$MODE" = selfhosted ]; then
     lsp_root scalyc       packages/scalyc/0.1.0/scalyc.scaly & pids+=($!)
     lsp_root scaly        packages/scaly/0.1.0/scaly.scaly & pids+=($!)
     lsp_root scalyls      packages/scalyls/0.1.0/scalyls.scaly & pids+=($!)
+    lsp_root json         packages/json/0.1.0/json.scaly & pids+=($!)
     lsp_root scalyls_main packages/scalyls/0.1.0/main.scaly & pids+=($!)
     for p in "${pids[@]}"; do wait "$p" || exit 1; done
     # scaly.o references the fiber context-switch primitives (vendored asm)
@@ -99,7 +100,7 @@ lsp_build_prog() {
     if [ "$MODE" = selfhosted ]; then
         ( ulimit -s 65520; "$SCALYC" -S --no-tests -o "$LSO/prog.ll" "$1" ) || return 1
         "$LLC" -relocation-model=pic -filetype=obj "$LSO/prog.ll" -o "$LSO/prog.o" || return 1
-        clang "$LSO/prog.o" "$LSO/scalyls.o" "$LSO/scalyc.o" "$LSO/scaly.o" "$LSO/fcontext.o" "$LSO/eio.o" "$LSO/ctime.o" "$LSO/panic.o" "${LINK[@]}" -o "$2" 2>/dev/null
+        clang "$LSO/prog.o" "$LSO/scalyls.o" "$LSO/json.o" "$LSO/scalyc.o" "$LSO/scaly.o" "$LSO/fcontext.o" "$LSO/eio.o" "$LSO/ctime.o" "$LSO/panic.o" "${LINK[@]}" -o "$2" 2>/dev/null
     else
         "$SCALYC" -o "$2" "$1" "${LINK[@]}" 2>/dev/null
     fi
@@ -111,7 +112,7 @@ lsp_build_server() {
         [ -x "$SCALYLS_PREBUILT" ] || return 1
         cp "$SCALYLS_PREBUILT" "$1"
     elif [ "$MODE" = selfhosted ]; then
-        clang "$LSO/scalyls_main.o" "$LSO/scalyls.o" "$LSO/scalyc.o" "$LSO/scaly.o" "$LSO/fcontext.o" "$LSO/eio.o" "$LSO/ctime.o" "$LSO/panic.o" "${LINK[@]}" -o "$1" 2>/dev/null
+        clang "$LSO/scalyls_main.o" "$LSO/scalyls.o" "$LSO/json.o" "$LSO/scalyc.o" "$LSO/scaly.o" "$LSO/fcontext.o" "$LSO/eio.o" "$LSO/ctime.o" "$LSO/panic.o" "${LINK[@]}" -o "$1" 2>/dev/null
     else
         "$SCALYC" -o "$1" packages/scalyls/0.1.0/main.scaly "${LINK[@]}" 2>/dev/null
     fi
@@ -5440,7 +5441,7 @@ check(len(pkg_rows) == 1 and pkg_rows[0][1] == "package: packages/scaly/0.1.0/sc
       "with no resolution base the package lens is plain text, not a link")
 # In the checkout the same declaration IS clickable and absolute.
 tree_pkg = [r for r in rows(lenses("packages/scalyls/0.1.0/scalyls.scaly")) if r[1].startswith("package root: ")]
-check(len(tree_pkg) == 2 and all(r[2] == "scaly.openPath" and os.path.isabs(r[3]) for r in tree_pkg),
+check(len(tree_pkg) == 3 and all(r[2] == "scaly.openPath" and os.path.isabs(r[3]) for r in tree_pkg),
       "in a checkout the package lens resolves absolutely and is clickable")
 sys.exit(1 if failures else 0)
 PY

@@ -31,7 +31,7 @@
 ; one notification per sibling module after it, and server.write_notifications#
 ; writes each as its own frame.
 ;
-; LF is a safe separator because json.quote_string# escapes 0x0A to `\n`: no
+; LF is a safe separator because JsonWriter.quote# escapes 0x0A to `\n`: no
 ; notification we build can contain a raw one. Paths cannot either.
 ;
 ; ★CLEAN SIBLINGS ARE REPORTED TOO, with an EMPTY diagnostics array, and that is
@@ -60,7 +60,7 @@
 use scaly.memory.runtime
 use scaly.os.File
 use scaly.os.Path
-use scalyls.json
+use json.Writer.JsonWriter
 use scalyls.symbols
 
 ; Compiler pipeline (scalyc package).

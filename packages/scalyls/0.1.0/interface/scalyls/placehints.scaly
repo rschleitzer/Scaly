@@ -61,7 +61,6 @@ use scaly.memory.runtime
 use scalyls.diagnostics
 use scalyls.symbols
 use scalyls.semantic
-use scalyls.json
 
 use scalyc.compiler.parser
 use scalyc.compiler.Modeler
@@ -93,7 +92,7 @@ define placehints
 
     ; The placement blob for the document, planned once per save and cached,
     ; or "" when the buffer is not the saved text.
-    procedure blob_for(mutable uri: String, mutable text: String) @page true @direct true @ret_caller true @deep true returns String io mutable modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used reads ph_used linked
+    procedure blob_for(mutable uri: String, mutable text: String) @page true @direct true @deep true returns String io mutable modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used reads ph_used linked
 
     ; ====================================================================
     ; Hover: the placement of the construction under the cursor.

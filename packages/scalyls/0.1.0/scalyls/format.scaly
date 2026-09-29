@@ -60,7 +60,7 @@
 ; so every append is in place on a local.
 
 use scaly.memory.runtime
-use scalyls.json
+use json.Writer.JsonWriter
 
 define format
 {
@@ -940,7 +940,7 @@ define format
         sb.append("}" as char)
         sb.append("," as char)
         sb.append(format.key("newText"))
-        sb.append(json.quote_string(text))
+        sb.append(JsonWriter.quote(text))
         sb.append("}" as char)
         sb.to_string()
     }
@@ -950,10 +950,10 @@ define format
         var sb StringBuilder()
         sb.append("{" as char)
         sb.append(format.key("line"))
-        sb.append(json.format_i64(line as i64))
+        sb.append((line as i64))
         sb.append("," as char)
         sb.append(format.key("character"))
-        sb.append(json.format_i64(character as i64))
+        sb.append((character as i64))
         sb.append("}" as char)
         sb.to_string()
     }
