@@ -1,0 +1,115 @@
+; HPACK (RFC 7541), the header compression of HTTP/2: a decoder with the
+; dynamic table and Huffman-coded strings, and an encoder for responses that
+; sends literals without indexing and without Huffman (every decoder must
+; take them, and a response's fields change too often to be worth a table).
+;
+; The dynamic table is a ring of at most DYN_ENTRIES entries whose bytes
+; live in one buffer of DYN_BYTES that is compacted in place: a connection
+; that sees a new :path on every request keeps a table of fixed size, not a
+; page that grows with the requests.
+
+use http.Buffer.ByteBuf
+
+; The table size this decoder allows (SETTINGS_HEADER_TABLE_SIZE, which the
+; server leaves at its default), the entries that can fit in it (an entry
+; costs its name, its value and 32), and the room for their bytes.
+define HPACK_TABLE_SIZE: size_t 4096
+define DYN_ENTRIES: size_t 128
+define DYN_BYTES: size_t 8192
+
+; A decoded header block: every field's name and value as spans of `bytes`.
+define HeaderList
+@resident true @inplace true (
+    var bytes: ByteBuf
+    ; four per field: name start, name length, value start, value length
+    var spans: Array[size_t]
+)
+{
+    procedure create(host: ref[Page]) @page true @direct true @ret_explicit_0 true @deep true returns HeaderList linked
+
+    procedure clear(mutable this) @ret_nonlocal true @deep true linked
+
+    function count(this) @ret_param_0 true @deep true returns size_t linked
+
+    function name(this, i: size_t) @ret_param_0 true @deep true returns Slice[u8] linked
+
+    function value(this, i: size_t) @ret_param_0 true @deep true returns Slice[u8] linked
+
+    ; The value of the first field named `name`, empty without one.
+    function get(this, name: Slice[u8]) @ret_param_0 true @deep true returns Slice[u8] linked
+
+    procedure record(mutable this, name_start: size_t, name_length: size_t, value_start: size_t, value_length: size_t) @persists true @ret_nonlocal true @deep true linked
+}
+
+; An integer with an n-bit prefix (RFC 7541 5.1) at block[at]; at moves
+; past it. -1 when the block ends inside it or it overflows.
+procedure decode_integer(block: Slice[u8], mutable at: ref[size_t], prefix_bits: u64) @ret_param_0 true @deep true returns i64 linked
+
+; Huffman-coded bytes decoded onto out (RFC 7541 5.2, Appendix B); false on
+; an EOS inside the string or padding that is not a short run of ones.
+procedure huffman_decode(src: Slice[u8], mutable out: ref[ByteBuf]) @ret_nonlocal true @deep true returns bool linked
+
+define HpackDecoder
+(
+    ; the entries' bytes, name then value, oldest first
+    var data: Slice[u8]
+    var used: size_t
+    ; the ring of entries: where each starts and its two lengths
+    var ring_start: Slice[u32]
+    var ring_name: Slice[u32]
+    var ring_value: Slice[u32]
+    ; the slot the next entry takes, and how many are live
+    var head: size_t
+    var count: size_t
+    ; the table's size by RFC 7541 4.1, and its current limit
+    var size: size_t
+    var limit: size_t
+)
+{
+    procedure create(host: ref[Page]) @page true @direct true @deep true returns HpackDecoder linked
+
+    ; The slot of dynamic entry d (0 is the newest).
+    function slot(this, d: size_t) @ret_param_0 true @deep true returns size_t linked
+
+    procedure evict_oldest(mutable this) @deep true linked
+
+    ; Evict until the table fits `limit` less `room`.
+    procedure evict_to(mutable this, room: size_t) @deep true linked
+
+    ; Slide the live entries' bytes to the front of data.
+    procedure compact(mutable this) @deep true linked
+
+    procedure insert(mutable this, name: Slice[u8], value: Slice[u8]) @deep true linked
+
+    ; Entry `index` of the combined table (1..61 static, then dynamic) copied
+    ; onto out: its name, and its value when with_value; the spans they got
+    ; through name_at/value_at. False for an index that names nothing.
+    procedure copy_entry(this, index: u64, mutable out: ref[ByteBuf], mutable name_start: ref[size_t], mutable name_length: ref[size_t], mutable value_start: ref[size_t], mutable value_length: ref[size_t], with_value: bool) @ret_nonlocal true @deep true returns bool linked
+
+    ; One string literal (RFC 7541 5.2) at block[at] decoded onto out: its
+    ; span. False when it is malformed.
+    procedure read_string(this, block: Slice[u8], mutable at: ref[size_t], mutable out: ref[ByteBuf], mutable start: ref[size_t], mutable length: ref[size_t]) @ret_nonlocal true @deep true returns bool linked
+
+    ; Decode one complete header block onto list; false on a malformed
+    ; block (a COMPRESSION_ERROR: the connection must end).
+    procedure decode(mutable this, block: Slice[u8], mutable list: ref[HeaderList]) @ret_nonlocal true @deep true returns bool linked
+}
+
+; An integer with an n-bit prefix whose other bits are `flags`.
+procedure encode_integer(mutable out: ref[ByteBuf], flags: u8, prefix_bits: u64, value: u64) @deep true linked
+
+; A string literal, not Huffman-coded.
+procedure encode_string(mutable out: ref[ByteBuf], s: Slice[u8]) @ret_nonlocal true @deep true linked
+
+; The :status field: indexed for the seven the static table holds, else a
+; literal with the indexed name :status.
+procedure encode_status(mutable out: ref[ByteBuf], status: i64) @deep true linked
+
+; The static table entry of a :status, 0 for one it does not hold.
+function static_status_index(status: i64) @ret_nonlocal true @deep true returns u64 linked
+
+; The static table index of a lowercase field name worth one, else 0.
+function static_name_index(name: Slice[u8]) @ret_nonlocal true @deep true returns u64 linked
+
+; A field as a literal without indexing (RFC 7541 6.2.2); name lowercase.
+procedure encode_field(mutable out: ref[ByteBuf], name: Slice[u8], value: Slice[u8]) @ret_nonlocal true @deep true linked

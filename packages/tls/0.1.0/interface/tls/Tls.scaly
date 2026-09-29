@@ -74,11 +74,15 @@ define SERVER_PREFERENCE: u64 0x400000
 ; is at most 16 KB of payload plus its overhead.
 define TLS_CHUNK: size_t 17408
 
-; ALPN on the server (RFC 7301): http/1.1 when the client offers it, else
-; no protocol at all (the extension is left out and the client falls back) —
-; never one the client did not offer. Called by OpenSSL during the
-; handshake; `offered` is the client's list of length-prefixed names.
+; ALPN on the server (RFC 7301): h2 when the context prefers it (a non-null
+; `arg`, TlsContext.prefer_h2) and the client offers it, else http/1.1 when
+; offered, else no protocol at all (the extension is left out and the client
+; falls back) — never one the client did not offer. Called by OpenSSL during
+; the handshake; `offered` is the client's list of length-prefixed names.
 procedure alpn_select(ssl: SslRef, mutable selected: pointer[pointer[u8]], mutable selected_length: pointer[u8], offered: pointer[u8], offered_length: u32, arg: pointer[void]) @deep true returns i32 linked
+
+; Select `want` from the client's ALPN list if it is there.
+procedure alpn_pick(offered: pointer[u8], offered_length: u32, want: Slice[u8], mutable selected: pointer[pointer[u8]], mutable selected_length: pointer[u8]) @ret_nonlocal true @deep true returns bool linked
 
 ; A TLS context: a server's certificate chain and key, or a client's
 ; defaults. It is not valid() when a file could not be read or the key does
@@ -95,6 +99,10 @@ define TlsContext(var ctx: SslCtxRef)
     ; Offer ALPN protocols as a client: `protos` is the wire form, each name
     ; after its length byte (8, then "http/1.1"). False when OpenSSL refuses.
     procedure offer_protocols(mutable this, protos: Slice[u8]) @ret_caller true @deep true returns bool io linked
+
+    ; Choose h2 by ALPN when the client offers it (the http package serves
+    ; HTTP/2 on a connection that begins with its preface).
+    procedure prefer_h2(mutable this) @ret_caller true @deep true io linked
 
     function valid(this) @ret_param_0 true @deep true returns bool linked
 

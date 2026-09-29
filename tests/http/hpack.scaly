@@ -1,0 +1,105 @@
+; The http package's HPACK against RFC 7541 Appendix C.4: three requests
+; with Huffman-coded strings decoded by one decoder, the second and third
+; reading entries the earlier ones put into the dynamic table (whose size
+; after the third is 164), and a response block from the encoder decoded
+; back (an indexed :status, a :status the static table does not hold, a
+; field with an indexed name and one with a literal name).
+; Expected: c41 c42 c43 table encoder
+
+package scaly 0.1.0
+package http 0.1.0
+
+use http.Buffer.ByteBuf
+use http.Hpack.HeaderList
+use http.Hpack.HpackDecoder
+
+function hex_value(c: u8) returns u8
+{
+    if c >= 97
+        return c - 87
+    c - 48
+}
+
+; The bytes a hex string spells, onto out.
+procedure unhex(hex: Slice[u8], mutable out: ref[ByteBuf])
+{
+    var i: size_t 0
+    while i + 1 < hex.length
+    {
+        out.append_byte(hex_value(hex[i]) * 16 + hex_value(hex[i + 1]))
+        set i: i + 2
+    }
+}
+
+; The fields of a list as "name=value" joined by " ".
+procedure fields(list: ref[HeaderList]) returns String
+{
+    var sb StringBuilder()
+    var i: size_t 0
+    while i < list.count()
+    {
+        if i > 0
+            sb.append(" " as char)
+        let n list.name(i)
+        let v list.value(i)
+        sb.append(String(n.data as pointer[const_char], n.length))
+        sb.append("=" as char)
+        sb.append(String(v.data as pointer[const_char], v.length))
+        set i: i + 1
+    }
+    sb.to_string()
+}
+
+procedure check(mutable d: ref[HpackDecoder], mutable list: ref[HeaderList], hex: Slice[u8], want: String, what: String) returns bool
+{
+    let host Page.allocate_page()
+    var block ByteBuf.create(host, 64)
+    unhex(hex, &block)
+    list.clear()
+    if d.decode(block.bytes(), list) = false
+    {
+        print "`what`: decode failed"
+        return false
+    }
+    let got fields(list)
+    if got.equals(want) = false
+    {
+        print "`what`: `got`"
+        return false
+    }
+    Console.print "`what` "
+    true
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    let host Page.allocate_page()
+    var d HpackDecoder.create(host)
+    var list HeaderList.create(host)
+    if check(&d, &list, "828684418cf1e3c2e5f23a6ba0ab90f4ff", String(":method=GET :scheme=http :path=/ :authority=www.example.com"), String("c41")) = false
+        return 1
+    if check(&d, &list, "828684be5886a8eb10649cbf", String(":method=GET :scheme=http :path=/ :authority=www.example.com cache-control=no-cache"), String("c42")) = false
+        return 2
+    if check(&d, &list, "828785bf408825a849e95ba97d7f8925a849e95bb8e8b4bf", String(":method=GET :scheme=https :path=/index.html :authority=www.example.com custom-key=custom-value"), String("c43")) = false
+        return 3
+    if d.size <> 164 or d.count <> 3
+    {
+        print "table: size `d.size` count `d.count`"
+        return 4
+    }
+    Console.print "table "
+    var out ByteBuf.create(host, 64)
+    encode_status(&out, 200)
+    encode_status(&out, 418)
+    encode_field(&out, "content-type", "text/plain")
+    encode_field(&out, "x-sum", "72")
+    var e HpackDecoder.create(host)
+    list.clear()
+    if e.decode(out.bytes(), &list) = false or fields(&list).equals(String(":status=200 :status=418 content-type=text/plain x-sum=72")) = false
+    {
+        print "encoder: `fields(&list)`"
+        return 5
+    }
+    Console.print "encoder"
+    0
+}

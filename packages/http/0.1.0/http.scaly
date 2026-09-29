@@ -15,7 +15,11 @@ define http
     module Request
     module Date
     module Response
+    module HpackTables
+    module Hpack
     module Router
     module Static
     module Server
+    module H2
+    module Grpc
 }

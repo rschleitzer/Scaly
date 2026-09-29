@@ -33,7 +33,9 @@ for f in tests/http/*.scaly; do
   if ! "$BIN" -o "$bin" "$f" "$TMP/libhttp.a" > "$TMP/$t.log" 2>&1; then
     fail=$((fail+1)); failures+=("$t(compile): $(head -1 "$TMP/$t.log")"); continue
   fi
-  out=$(SCALY_POISON=1 "$bin" 2>"$TMP/$t.err"); rc=$?
+  # a protocol test that loses a frame waits forever: 60 s and it is killed
+  # (perl's alarm -- no `timeout` on macOS)
+  out=$(SCALY_POISON=1 perl -e 'alarm shift; exec @ARGV' 60 "$bin" 2>"$TMP/$t.err"); rc=$?
   if [ "$rc" = 0 ] && [ "$out" = "$expected" ]; then
     pass=$((pass+1))
   else

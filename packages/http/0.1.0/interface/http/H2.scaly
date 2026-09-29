@@ -1,0 +1,214 @@
+; HTTP/2 (RFC 9113) on a connection whose first bytes are the client
+; preface: h2 over TLS after ALPN, h2c by prior knowledge, and on the
+; HTTP/1.1 port the same way — serve_connection looks at the first bytes and
+; hands the connection here.
+;
+; A request is translated, not re-implemented: its header block (HPACK) and
+; body become HTTP/1.1 request text, parse_request fills the connection's
+; Request from it and the router runs the handler as for HTTP/1.1; the
+; response the handler wrote as HTTP/1.1 text is taken apart into a HEADERS
+; frame (literals without indexing) and DATA frames. Every route, middleware
+; and handler therefore serves both protocols unchanged.
+;
+; Flow control: a response is sent as far as the connection's and its
+; stream's send windows allow and the rest waits, copied onto a page of its
+; own, for the client's WINDOW_UPDATE. Received DATA is credited back at
+; once, and the server's initial window for request bodies is 1 MiB.
+; Streams are answered in the order their requests complete, one at a time:
+; a handler that parks holds the connection's other streams.
+
+use http.Buffer.ByteBuf
+use http.Request.Request
+use http.Response.Response
+use http.Router.Router
+use http.Hpack.HeaderList
+use http.Hpack.HpackDecoder
+
+define H2_FRAME_HEAD: size_t 9
+; SETTINGS_MAX_FRAME_SIZE's upper bound; a larger frame is refused
+define H2_MAX_FRAME: size_t 16777215
+define H2_DEFAULT_WINDOW: i64 65535
+define H2_OWN_WINDOW: i64 1048576
+define H2_CONN_WINDOW_BOOST: i64 16711680
+
+; The client connection preface (RFC 9113 3.4).
+function h2_preface() @ret_nonlocal true @deep true returns Slice[u8] linked
+
+; Do the first bytes of a connection begin (or, with fewer than 24, may
+; still begin) the client preface?
+function starts_h2(bytes: Slice[u8]) @ret_param_0 true @deep true returns bool linked
+
+function be24(s: Slice[u8], at: size_t) @ret_param_0 true @deep true returns size_t linked
+
+function be31(s: Slice[u8], at: size_t) @ret_param_0 true @deep true returns u64 linked
+
+; A frame's head: length, type, flags, stream.
+procedure frame_head(mutable out: ref[ByteBuf], length: size_t, kind: u8, flags: u8, stream: u64) @ret_nonlocal true @deep true linked
+
+procedure append_u32(mutable out: ref[ByteBuf], v: u64) @ret_nonlocal true @deep true linked
+
+; A stream whose request body is still arriving: its request text so far.
+define H2Stream
+(
+    id: u64
+    page: ref[Page]
+    var text: ByteBuf
+    ; where the body starts in text, to count its length
+    body_at: size_t
+)
+
+; A response that waits for window: the rest of its body, on its own page.
+define H2Pending
+(
+    id: u64
+    page: ref[Page]
+    body: Slice[u8]
+    var sent: size_t
+    var window: i64
+    ; the last DATA frame ends the stream (no trailers follow)
+    end_stream: bool
+    ; trailer lines sent once the body is out
+    trailers: Slice[u8]
+)
+
+define H2Conn
+@resident true @inplace true (
+    host: ref[Page]
+    var decoder: HpackDecoder
+    var fields: HeaderList
+    ; the frames to send, and the HTTP/1.1 request being built
+    var frames: ByteBuf
+    var text: ByteBuf
+    ; a header block that goes on in CONTINUATION frames
+    var block: ByteBuf
+    var block_stream: u64
+    var block_end_stream: bool
+    var peer_window: i64
+    var peer_max_frame: size_t
+    var send_window: i64
+    var last_stream: u64
+    var streams: Array[ref[H2Stream]]
+    var pending: Array[ref[H2Pending]]
+    var closing: bool
+)
+{
+    procedure create(host: ref[Page]) @ret_explicit_0 true @deep true returns ref[H2Conn] linked
+
+    ; Our SETTINGS, and room for the client's bodies on the connection.
+    procedure greet(mutable this) @ret_nonlocal true @deep true linked
+
+    ; End the connection with GOAWAY carrying `code`.
+    procedure goaway(mutable this, code: u64) @deep true linked
+
+    procedure reset_stream(mutable this, stream: u64, code: u64) @ret_nonlocal true @deep true linked
+
+    ; Credit n received bytes back to the connection and the stream.
+    procedure credit(mutable this, stream: u64, n: size_t) @deep true linked
+
+    ; The stream whose body is arriving, null when there is none.
+    procedure stream_of(this, id: u64) @ret_param_0 true @deep true returns ref[H2Stream]? linked
+
+    procedure drop_stream(mutable this, id: u64) @deep true linked
+
+    ; The decoded header fields as HTTP/1.1 request text in `text`; false
+    ; for a request without :method or :path.
+    procedure request_text(mutable this, has_body: bool) @ret_nonlocal true @deep true returns bool linked
+
+    ; Send as much of pending response p as the windows allow; true when
+    ; it is all out.
+    procedure push_data(mutable this, mutable p: ref[H2Pending]) @ret_nonlocal true @deep true returns bool linked
+
+    ; Send what waits for window, in arrival order, as far as it goes.
+    procedure push_pending(mutable this) @deep true linked
+
+    ; Header lines "Name: value\r\n" of `lines` from `at` HPACK-encoded onto
+    ; frames (names lowercased, connection-specific fields left out), up to
+    ; a blank line or the end; answers where the lines end (past the blank
+    ; line).
+    procedure encode_lines(mutable this, lines: Slice[u8], from: size_t) @ret_param_1 true @deep true returns size_t linked
+
+    ; A HEADERS frame on `stream` whose block encode_lines writes from
+    ; `lines`, after a :status when status is not 0.
+    procedure headers_frame(mutable this, stream: u64, status: i64, lines: Slice[u8], from: size_t, end_stream: bool) @ret_param_3 true @deep true returns size_t linked
+
+    ; The HTTP/1.1 response in `response` as frames on `stream`, then the
+    ; trailer lines when there are any.
+    procedure respond(mutable this, stream: u64, mutable response: Slice[u8], mutable trailers: Slice[u8]) @deep true @deep_this_8 true linked
+
+    ; Answer the request in `text` on `stream`.
+    procedure answer(mutable this, stream: u64, router: ref[Router], mutable req: ref[Request], mutable res: ref[Response], mutable outb: ref[ByteBuf]) @deep true io linked
+
+    ; A complete header block for `stream`: a request to answer now (no
+    ; body) or a stream whose body follows. False on a compression error.
+    procedure headers_done(mutable this, stream: u64, block_bytes: Slice[u8], end_stream: bool, router: ref[Router], mutable req: ref[Request], mutable res: ref[Response], mutable outb: ref[ByteBuf]) @ret_nonlocal true @deep true returns bool io linked
+
+    ; A stream's body is complete: its request text gets its length and body.
+    procedure body_done(mutable this, mutable s: ref[H2Stream], router: ref[Router], mutable req: ref[Request], mutable res: ref[Response], mutable outb: ref[ByteBuf]) @ret_nonlocal true @deep true io linked
+
+    ; Handle every complete frame at the front of inb; answers how many
+    ; bytes it took. Sets closing on a connection error or GOAWAY.
+    procedure frames_in(mutable this, input: Slice[u8], router: ref[Router], mutable req: ref[Request], mutable res: ref[Response], mutable outb: ref[ByteBuf]) @ret_nonlocal true @deep true returns size_t io linked
+}
+
+; Start a header block that continues: its first fragment.
+procedure self_block_start(mutable block: ref[ByteBuf], fragment: Slice[u8]) @ret_nonlocal true @deep true linked
+
+; Serve one HTTP/2 connection whose input so far is in inb (it begins with
+; the preface, or with as much of it as arrived), with the connection's
+; request, response and output buffer.
+procedure serve_h2[S](mutable c: ref[S], router: ref[Router], host: ref[Page], mutable inb: ref[ByteBuf], mutable req: ref[Request], mutable res: ref[Response], mutable outb: ref[ByteBuf])
+{
+    var h H2Conn.create(host)
+    h.greet()
+    var preface_done false
+    repeat
+    {
+        if preface_done = false and inb.length >= 24
+        {
+            if inb.bytes().slice_to(24).equals(h2_preface()) = false
+                break
+            inb.consume(24)
+            set preface_done: true
+        }
+        if preface_done
+        {
+            let used h.frames_in(inb.bytes(), router, req, res, outb)
+            inb.consume(used)
+        }
+        if h.frames.length > 0
+        {
+            if c.write(h.frames.bytes()) = false
+                break
+            h.frames.clear()
+        }
+        if h.closing
+            break
+        if inb.length = inb.capacity()
+            inb.reserve(inb.capacity())
+        let n c.read(inb.spare())
+        if n <= 0
+            break
+        inb.advance(n as size_t)
+        if TcpServer.current().stopping()
+        {
+            h.goaway(0)
+            if c.write(h.frames.bytes())
+                h.frames.clear()
+            break
+        }
+    }
+    var i: size_t 0
+    while i < h.streams.length
+    {
+        let s h.streams.at(i)
+        Page.release_page(s.page)
+        set i: i + 1
+    }
+    set i: 0
+    while i < h.pending.length
+    {
+        let p h.pending.at(i)
+        Page.release_page(p.page)
+        set i: i + 1
+    }
+}

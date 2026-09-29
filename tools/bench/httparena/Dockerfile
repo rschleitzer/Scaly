@@ -72,5 +72,5 @@ RUN TRIPLE=$(clang-20 -print-target-triple) \
 
 FROM ubuntu:24.04
 COPY --from=optimized /arena /arena
-EXPOSE 8080 8081
+EXPOSE 8080 8081 8082 8443
 CMD ["/arena", "8080"]

@@ -25,7 +25,13 @@
     "async-db",
     "fortunes",
     "static-tls",
-    "8gbit"
+    "8gbit",
+    "baseline-h2",
+    "static-h2",
+    "baseline-h2c",
+    "json-h2c",
+    "unary-grpc",
+    "unary-grpc-tls"
   ],
   "maintainers": []
 }

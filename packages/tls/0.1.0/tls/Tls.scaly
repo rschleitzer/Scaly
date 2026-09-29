@@ -74,29 +74,39 @@ define SERVER_PREFERENCE: u64 0x400000
 ; is at most 16 KB of payload plus its overhead.
 define TLS_CHUNK: size_t 17408
 
-; ALPN on the server (RFC 7301): http/1.1 when the client offers it, else
-; no protocol at all (the extension is left out and the client falls back) —
-; never one the client did not offer. Called by OpenSSL during the
-; handshake; `offered` is the client's list of length-prefixed names.
+; ALPN on the server (RFC 7301): h2 when the context prefers it (a non-null
+; `arg`, TlsContext.prefer_h2) and the client offers it, else http/1.1 when
+; offered, else no protocol at all (the extension is left out and the client
+; falls back) — never one the client did not offer. Called by OpenSSL during
+; the handshake; `offered` is the client's list of length-prefixed names.
 procedure alpn_select(ssl: SslRef, mutable selected: pointer[pointer[u8]], mutable selected_length: pointer[u8], offered: pointer[u8], offered_length: u32, arg: pointer[void]) returns i32
 {
+    if arg <> null and alpn_pick(offered, offered_length, "h2", selected, selected_length)
+        return SSL_TLSEXT_ERR_OK
+    if alpn_pick(offered, offered_length, "http/1.1", selected, selected_length)
+        return SSL_TLSEXT_ERR_OK
+    SSL_TLSEXT_ERR_NOACK
+}
+
+; Select `want` from the client's ALPN list if it is there.
+procedure alpn_pick(offered: pointer[u8], offered_length: u32, want: Slice[u8], mutable selected: pointer[pointer[u8]], mutable selected_length: pointer[u8]) returns bool
+{
     let list Slice[u8](offered_length as size_t, offered)
-    let want: Slice[u8] "http/1.1"
     var at: size_t 0
     while at < list.length
     {
         let n list[at] as size_t
         if at + 1 + n > list.length
-            return SSL_TLSEXT_ERR_NOACK
+            return false
         if list.subslice(at + 1, at + 1 + n).equals(want)
         {
             set *selected: offered + (at + 1)
             set *selected_length: n as u8
-            return SSL_TLSEXT_ERR_OK
+            return true
         }
         set at: at + 1 + n
     }
-    SSL_TLSEXT_ERR_NOACK
+    false
 }
 
 ; A TLS context: a server's certificate chain and key, or a client's
@@ -140,6 +150,14 @@ define TlsContext(var ctx: SslCtxRef)
         if ctx = null
             return false
         SSL_CTX_set_alpn_protos(ctx, protos.data, protos.length as u32) = 0
+    }
+
+    ; Choose h2 by ALPN when the client offers it (the http package serves
+    ; HTTP/2 on a connection that begins with its preface).
+    procedure prefer_h2(mutable this)
+    {
+        if ctx <> null
+            SSL_CTX_set_alpn_select_cb(ctx, &alpn_select, 1 as pointer[void])
     }
 
     function valid(this) returns bool

@@ -75,12 +75,25 @@ procedure serve_connection[S](mutable c: ref[S], router: ref[Router])
     let req &Request^host(null, null, null, null, null, null, 1, true, null)
     let res Response.create(host, outb)
     var open true
+    var first true
     while open
     {
         let n c.read(inb.spare())
         if n <= 0
             break
         inb.advance(n as size_t)
+        ; HTTP/2: the client preface instead of a request line (h2c by prior
+        ; knowledge, and h2 after ALPN -- the preface is all either sends).
+        ; Fewer bytes than the preface that still match it decide nothing:
+        ; "P" begins "PRI * HTTP/2.0" and "POST" alike, so read on.
+        if first and starts_h2(inb.bytes())
+        {
+            if inb.length < h2_preface().length
+                continue
+            serve_h2[S](c, router, host, &inb, req, res, outb)
+            break
+        }
+        set first: false
         if TcpServer.current().stopping()
             set open: false
         ; answer every complete request in the buffer

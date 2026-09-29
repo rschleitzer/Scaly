@@ -1,0 +1,711 @@
+; HTTP/2 (RFC 9113) on a connection whose first bytes are the client
+; preface: h2 over TLS after ALPN, h2c by prior knowledge, and on the
+; HTTP/1.1 port the same way — serve_connection looks at the first bytes and
+; hands the connection here.
+;
+; A request is translated, not re-implemented: its header block (HPACK) and
+; body become HTTP/1.1 request text, parse_request fills the connection's
+; Request from it and the router runs the handler as for HTTP/1.1; the
+; response the handler wrote as HTTP/1.1 text is taken apart into a HEADERS
+; frame (literals without indexing) and DATA frames. Every route, middleware
+; and handler therefore serves both protocols unchanged.
+;
+; Flow control: a response is sent as far as the connection's and its
+; stream's send windows allow and the rest waits, copied onto a page of its
+; own, for the client's WINDOW_UPDATE. Received DATA is credited back at
+; once, and the server's initial window for request bodies is 1 MiB.
+; Streams are answered in the order their requests complete, one at a time:
+; a handler that parks holds the connection's other streams.
+
+use http.Buffer.ByteBuf
+use http.Request.Request
+use http.Response.Response
+use http.Router.Router
+use http.Hpack.HeaderList
+use http.Hpack.HpackDecoder
+
+define H2_FRAME_HEAD: size_t 9
+; SETTINGS_MAX_FRAME_SIZE's upper bound; a larger frame is refused
+define H2_MAX_FRAME: size_t 16777215
+define H2_DEFAULT_WINDOW: i64 65535
+define H2_OWN_WINDOW: i64 1048576
+define H2_CONN_WINDOW_BOOST: i64 16711680
+
+; The client connection preface (RFC 9113 3.4).
+function h2_preface() returns Slice[u8]
+    "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
+
+; Do the first bytes of a connection begin (or, with fewer than 24, may
+; still begin) the client preface?
+function starts_h2(bytes: Slice[u8]) returns bool
+{
+    let p h2_preface()
+    var n bytes.length
+    if n > p.length
+        set n: p.length
+    n > 0 and bytes.slice_to(n).equals(p.slice_to(n))
+}
+
+function be24(s: Slice[u8], at: size_t) returns size_t
+    ((s[at] as size_t) << 16) | ((s[at + 1] as size_t) << 8) | (s[at + 2] as size_t)
+
+function be31(s: Slice[u8], at: size_t) returns u64
+    (((s[at] as u64) & 127) << 24) | ((s[at + 1] as u64) << 16) | ((s[at + 2] as u64) << 8) | (s[at + 3] as u64)
+
+; A frame's head: length, type, flags, stream.
+procedure frame_head(mutable out: ref[ByteBuf], length: size_t, kind: u8, flags: u8, stream: u64)
+{
+    out.append_byte(((length >> 16) & 255) as u8)
+    out.append_byte(((length >> 8) & 255) as u8)
+    out.append_byte((length & 255) as u8)
+    out.append_byte(kind)
+    out.append_byte(flags)
+    out.append_byte(((stream >> 24) & 127) as u8)
+    out.append_byte(((stream >> 16) & 255) as u8)
+    out.append_byte(((stream >> 8) & 255) as u8)
+    out.append_byte((stream & 255) as u8)
+}
+
+procedure append_u32(mutable out: ref[ByteBuf], v: u64)
+{
+    out.append_byte(((v >> 24) & 255) as u8)
+    out.append_byte(((v >> 16) & 255) as u8)
+    out.append_byte(((v >> 8) & 255) as u8)
+    out.append_byte((v & 255) as u8)
+}
+
+; A stream whose request body is still arriving: its request text so far.
+define H2Stream
+(
+    id: u64
+    page: ref[Page]
+    var text: ByteBuf
+    ; where the body starts in text, to count its length
+    body_at: size_t
+)
+
+; A response that waits for window: the rest of its body, on its own page.
+define H2Pending
+(
+    id: u64
+    page: ref[Page]
+    body: Slice[u8]
+    var sent: size_t
+    var window: i64
+    ; the last DATA frame ends the stream (no trailers follow)
+    end_stream: bool
+    ; trailer lines sent once the body is out
+    trailers: Slice[u8]
+)
+
+define H2Conn
+(
+    host: ref[Page]
+    var decoder: HpackDecoder
+    var fields: HeaderList
+    ; the frames to send, and the HTTP/1.1 request being built
+    var frames: ByteBuf
+    var text: ByteBuf
+    ; a header block that goes on in CONTINUATION frames
+    var block: ByteBuf
+    var block_stream: u64
+    var block_end_stream: bool
+    var peer_window: i64
+    var peer_max_frame: size_t
+    var send_window: i64
+    var last_stream: u64
+    var streams: Array[ref[H2Stream]]
+    var pending: Array[ref[H2Pending]]
+    var closing: bool
+)
+{
+    procedure create(host: ref[Page]) returns ref[H2Conn]
+    {
+        &H2Conn^host(
+            host,
+            HpackDecoder.create(host),
+            HeaderList.create(host),
+            ByteBuf.create(host, 16384),
+            ByteBuf.create(host, 1024),
+            ByteBuf.create(host, 1024),
+            0, false,
+            H2_DEFAULT_WINDOW, 16384, H2_DEFAULT_WINDOW, 0,
+            Array[ref[H2Stream]]^host(),
+            Array[ref[H2Pending]]^host(),
+            false)
+    }
+
+    ; Our SETTINGS, and room for the client's bodies on the connection.
+    procedure greet(mutable this)
+    {
+        frame_head(&frames, 18, 4, 0, 0)
+        frames.append_byte(0)
+        frames.append_byte(3)
+        append_u32(&frames, 256)
+        frames.append_byte(0)
+        frames.append_byte(4)
+        append_u32(&frames, H2_OWN_WINDOW as u64)
+        frames.append_byte(0)
+        frames.append_byte(2)
+        append_u32(&frames, 0)
+        frame_head(&frames, 4, 8, 0, 0)
+        append_u32(&frames, H2_CONN_WINDOW_BOOST as u64)
+    }
+
+    ; End the connection with GOAWAY carrying `code`.
+    procedure goaway(mutable this, code: u64)
+    {
+        frame_head(&frames, 8, 7, 0, 0)
+        append_u32(&frames, last_stream)
+        append_u32(&frames, code)
+        set closing: true
+    }
+
+    procedure reset_stream(mutable this, stream: u64, code: u64)
+    {
+        frame_head(&frames, 4, 3, 0, stream)
+        append_u32(&frames, code)
+    }
+
+    ; Credit n received bytes back to the connection and the stream.
+    procedure credit(mutable this, stream: u64, n: size_t)
+    {
+        if n = 0
+            return
+        frame_head(&frames, 4, 8, 0, 0)
+        append_u32(&frames, n as u64)
+        frame_head(&frames, 4, 8, 0, stream)
+        append_u32(&frames, n as u64)
+    }
+
+    ; The stream whose body is arriving, null when there is none.
+    procedure stream_of(this, id: u64) returns ref[H2Stream]?
+    {
+        var i: size_t 0
+        while i < streams.length
+        {
+            let s streams.at(i)
+            if s.id = id
+                return s
+            set i: i + 1
+        }
+        null
+    }
+
+    procedure drop_stream(mutable this, id: u64)
+    {
+        var i: size_t 0
+        while i < streams.length
+        {
+            let s streams.at(i)
+            if s.id = id
+            {
+                Page.release_page(s.page)
+                streams.put(i, streams.at(streams.length - 1))
+                set streams.length: streams.length - 1
+                return
+            }
+            set i: i + 1
+        }
+    }
+
+    ; The decoded header fields as HTTP/1.1 request text in `text`; false
+    ; for a request without :method or :path.
+    procedure request_text(mutable this, has_body: bool) returns bool
+    {
+        let method fields.get(":method")
+        let path fields.get(":path")
+        if method.length = 0 or path.length = 0
+            return false
+        text.clear()
+        text.append(method)
+        text.append_byte(32)
+        text.append(path)
+        text.append(" HTTP/1.1\r\n")
+        let authority fields.get(":authority")
+        if authority.length > 0
+        {
+            text.append("host: ")
+            text.append(authority)
+            text.append("\r\n")
+        }
+        var i: size_t 0
+        while i < fields.count()
+        {
+            let name fields.name(i)
+            if name.length > 0 and name[0] <> 58 and name.equals("host") = false and name.equals("content-length") = false and name.equals("transfer-encoding") = false and name.equals("connection") = false
+            {
+                text.append(name)
+                text.append(": ")
+                text.append(fields.value(i))
+                text.append("\r\n")
+            }
+            set i: i + 1
+        }
+        if has_body = false
+            text.append("\r\n")
+        true
+    }
+
+    ; Send as much of pending response p as the windows allow; true when
+    ; it is all out.
+    procedure push_data(mutable this, mutable p: ref[H2Pending]) returns bool
+    {
+        while p.sent < p.body.length
+        {
+            var n p.body.length - p.sent
+            if n > peer_max_frame
+                set n: peer_max_frame
+            if (n as i64) > send_window
+                set n: send_window as size_t
+            if (n as i64) > p.window
+                set n: p.window as size_t
+            if n = 0
+                return false
+            var flags: u8 0
+            if p.sent + n = p.body.length and p.end_stream
+                set flags: 1
+            frame_head(&frames, n, 0, flags, p.id)
+            frames.append(p.body.subslice(p.sent, p.sent + n))
+            set p.sent: p.sent + n
+            set send_window: send_window - (n as i64)
+            set p.window: p.window - (n as i64)
+        }
+        true
+    }
+
+    ; Send what waits for window, in arrival order, as far as it goes.
+    procedure push_pending(mutable this)
+    {
+        var i: size_t 0
+        while i < pending.length
+        {
+            var p pending.at(i)
+            if this.push_data(p)
+            {
+                if p.trailers.length > 0
+                    this.headers_frame(p.id, 0, p.trailers, 0, true)
+                Page.release_page(p.page)
+                var j i
+                while j + 1 < pending.length
+                {
+                    pending.put(j, pending.at(j + 1))
+                    set j: j + 1
+                }
+                set pending.length: pending.length - 1
+            }
+            else
+                set i: i + 1
+        }
+    }
+
+    ; Header lines "Name: value\r\n" of `lines` from `at` HPACK-encoded onto
+    ; frames (names lowercased, connection-specific fields left out), up to
+    ; a blank line or the end; answers where the lines end (past the blank
+    ; line).
+    procedure encode_lines(mutable this, lines: Slice[u8], from: size_t) returns size_t
+    {
+        var at from
+        while at + 1 < lines.length
+        {
+            if lines[at] = 13 and lines[at + 1] = 10
+                return at + 2
+            var colon at
+            while colon < lines.length and lines[colon] <> 58
+                set colon: colon + 1
+            var eol colon
+            while eol + 1 < lines.length and (lines[eol] <> 13 or lines[eol + 1] <> 10)
+                set eol: eol + 1
+            if colon >= eol
+                return lines.length
+            let name_raw lines.subslice(at, colon)
+            var vstart colon + 1
+            while vstart < eol and lines[vstart] = 32
+                set vstart: vstart + 1
+            let value lines.subslice(vstart, eol)
+            text.clear()
+            var k: size_t 0
+            while k < name_raw.length
+            {
+                var ch name_raw[k]
+                if ch >= 65 and ch <= 90
+                    set ch: ch + 32
+                text.append_byte(ch)
+                set k: k + 1
+            }
+            let name text.bytes()
+            if name.equals("connection") = false and name.equals("keep-alive") = false and name.equals("transfer-encoding") = false
+                encode_field(&frames, name, value)
+            set at: eol + 2
+        }
+        lines.length
+    }
+
+    ; A HEADERS frame on `stream` whose block encode_lines writes from
+    ; `lines`, after a :status when status is not 0.
+    procedure headers_frame(mutable this, stream: u64, status: i64, lines: Slice[u8], from: size_t, end_stream: bool) returns size_t
+    {
+        let head_at frames.length
+        frames.reserve(H2_FRAME_HEAD)
+        set frames.length: frames.length + H2_FRAME_HEAD
+        if status <> 0
+            encode_status(&frames, status)
+        let after this.encode_lines(lines, from)
+        let block_length frames.length - head_at - H2_FRAME_HEAD
+        var flags: u8 4
+        if end_stream
+            set flags: 5
+        let save frames.length
+        set frames.length: head_at
+        frame_head(&frames, block_length, 1, flags, stream)
+        set frames.length: save
+        after
+    }
+
+    ; The HTTP/1.1 response in `response` as frames on `stream`, then the
+    ; trailer lines when there are any.
+    procedure respond(mutable this, stream: u64, mutable response: Slice[u8], mutable trailers: Slice[u8])
+    {
+        ; "HTTP/1.1 200 OK\r\n", then the fields, a blank line and the body
+        var status: i64 0
+        if response.length > 12
+            set status: ((response[9] - 48) as i64) * 100 + ((response[10] - 48) as i64) * 10 + ((response[11] - 48) as i64)
+        var at: size_t 0
+        while at + 1 < response.length and (response[at] <> 13 or response[at + 1] <> 10)
+            set at: at + 1
+        let has_trailers trailers.length > 0
+        ; the body follows the blank line; whether the HEADERS end the stream
+        ; is known only then, so the frame is written with a guess and fixed
+        let head_at frames.length
+        let body_at this.headers_frame(stream, status, response, at + 2, false)
+        var body response.slice_from(body_at)
+        if body.length = 0 and has_trailers = false
+        {
+            frames.data.put(head_at + 4, 5)
+            return
+        }
+        let page Page.allocate_page()
+        var p &H2Pending^page(stream, page, body, 0, peer_window, has_trailers = false, trailers)
+        if this.push_data(p)
+        {
+            if has_trailers
+                this.headers_frame(stream, 0, trailers, 0, true)
+            Page.release_page(page)
+            return
+        }
+        ; the rest waits: its own copy of the body and the trailers, since
+        ; `response` and the trailers are reused
+        let rest allocate_slice[u8]^page(page, body.length)
+        memcpy(rest.data as pointer[void], body.data as pointer[void], body.length)
+        let kept allocate_slice[u8]^page(page, trailers.length)
+        if trailers.length > 0
+            memcpy(kept.data as pointer[void], trailers.data as pointer[void], trailers.length)
+        var q &H2Pending^page(stream, page, rest, p.sent, p.window, has_trailers = false, kept)
+        pending.add(q)
+    }
+
+    ; Answer the request in `text` on `stream`.
+    procedure answer(mutable this, stream: u64, router: ref[Router], mutable req: ref[Request], mutable res: ref[Response], mutable outb: ref[ByteBuf])
+    {
+        let r parse_request(text.bytes(), req)
+        if r <= 0
+        {
+            this.reset_stream(stream, 1)
+            return
+        }
+        outb.clear()
+        dispatch(router, req, res)
+        this.respond(stream, outb.bytes(), res.trailers.bytes())
+        outb.clear()
+    }
+
+    ; A complete header block for `stream`: a request to answer now (no
+    ; body) or a stream whose body follows. False on a compression error.
+    procedure headers_done(mutable this, stream: u64, block_bytes: Slice[u8], end_stream: bool, router: ref[Router], mutable req: ref[Request], mutable res: ref[Response], mutable outb: ref[ByteBuf]) returns bool
+    {
+        fields.clear()
+        if decoder.decode(block_bytes, &fields) = false
+            return false
+        if stream > last_stream
+            set last_stream: stream
+        if this.request_text(end_stream = false) = false
+        {
+            this.reset_stream(stream, 1)
+            return true
+        }
+        if end_stream
+        {
+            this.answer(stream, router, req, res, outb)
+            return true
+        }
+        ; the body follows in DATA frames: keep the head on a page of its own
+        let page Page.allocate_page()
+        var t ByteBuf.create(page, text.length + 1024)
+        t.append(text.bytes())
+        let s &H2Stream^page(stream, page, t, t.length)
+        streams.add(s)
+        true
+    }
+
+    ; A stream's body is complete: its request text gets its length and body.
+    procedure body_done(mutable this, mutable s: ref[H2Stream], router: ref[Router], mutable req: ref[Request], mutable res: ref[Response], mutable outb: ref[ByteBuf])
+    {
+        let all s.text.bytes()
+        let body all.slice_from(s.body_at)
+        text.clear()
+        text.append(all.slice_to(s.body_at))
+        text.append("content-length: ")
+        text.append_uint(body.length as u64)
+        text.append("\r\n\r\n")
+        text.append(body)
+        let id s.id
+        this.drop_stream(id)
+        this.answer(id, router, req, res, outb)
+    }
+
+    ; Handle every complete frame at the front of inb; answers how many
+    ; bytes it took. Sets closing on a connection error or GOAWAY.
+    procedure frames_in(mutable this, input: Slice[u8], router: ref[Router], mutable req: ref[Request], mutable res: ref[Response], mutable outb: ref[ByteBuf]) returns size_t
+    {
+        var at: size_t 0
+        while closing = false and at + H2_FRAME_HEAD <= input.length
+        {
+            let length be24(input, at)
+            if length > H2_MAX_FRAME
+            {
+                this.goaway(6)
+                return at
+            }
+            if at + H2_FRAME_HEAD + length > input.length
+                return at
+            let kind input[at + 3]
+            let flags input[at + 4]
+            let stream be31(input, at + 5)
+            var payload input.subslice(at + H2_FRAME_HEAD, at + H2_FRAME_HEAD + length)
+            set at: at + H2_FRAME_HEAD + length
+            if block_stream <> 0 and (kind <> 9 or stream <> block_stream)
+            {
+                this.goaway(1)
+                return at
+            }
+            ; PADDED: the pad length first, the padding last
+            if (kind = 0 or kind = 1) and (flags & 8) <> 0
+            {
+                if payload.length = 0 or (payload[0] as size_t) >= payload.length
+                {
+                    this.goaway(1)
+                    return at
+                }
+                set payload: payload.subslice(1, payload.length - (payload[0] as size_t))
+            }
+            match kind
+                case 0:
+                {
+                    let s this.stream_of(stream)
+                    this.credit(stream, length)
+                    if s <> null
+                    {
+                        var st s as ref[H2Stream]
+                        st.text.append(payload)
+                        if (flags & 1) <> 0
+                            this.body_done(st, router, req, res, outb)
+                    }
+                }
+                case 1:
+                {
+                    if stream = 0 or (stream & 1) = 0
+                    {
+                        this.goaway(1)
+                        return at
+                    }
+                    var block payload
+                    if (flags & 32) <> 0
+                    {
+                        if block.length < 5
+                        {
+                            this.goaway(1)
+                            return at
+                        }
+                        set block: block.slice_from(5)
+                    }
+                    if (flags & 4) <> 0
+                    {
+                        if this.headers_done(stream, block, (flags & 1) <> 0, router, req, res, outb) = false
+                        {
+                            this.goaway(9)
+                            return at
+                        }
+                    }
+                    else
+                    {
+                        self_block_start(&this.block, block)
+                        set block_stream: stream
+                        set block_end_stream: (flags & 1) <> 0
+                    }
+                }
+                case 9:
+                {
+                    this.block.append(payload)
+                    if (flags & 4) <> 0
+                    {
+                        let id block_stream
+                        set block_stream: 0
+                        if this.headers_done(id, this.block.bytes(), block_end_stream, router, req, res, outb) = false
+                        {
+                            this.goaway(9)
+                            return at
+                        }
+                    }
+                }
+                case 3:
+                    this.drop_stream(stream)
+                case 4:
+                {
+                    if (flags & 1) = 0
+                    {
+                        if stream <> 0 or length % 6 <> 0
+                        {
+                            this.goaway(1)
+                            return at
+                        }
+                        var k: size_t 0
+                        while k < length
+                        {
+                            let id ((payload[k] as u64) << 8) | (payload[k + 1] as u64)
+                            let value be31(payload, k + 2) | (((payload[k + 2] as u64) & 128) << 24)
+                            if id = 4
+                            {
+                                if value > 2147483647
+                                {
+                                    this.goaway(3)
+                                    return at
+                                }
+                                let delta (value as i64) - peer_window
+                                set peer_window: value as i64
+                                var i: size_t 0
+                                while i < pending.length
+                                {
+                                    var p pending.at(i)
+                                    set p.window: p.window + delta
+                                    set i: i + 1
+                                }
+                            }
+                            if id = 5
+                            {
+                                if value < 16384 or value > 16777215
+                                {
+                                    this.goaway(1)
+                                    return at
+                                }
+                                set peer_max_frame: value as size_t
+                            }
+                            set k: k + 6
+                        }
+                        frame_head(&frames, 0, 4, 1, 0)
+                        this.push_pending()
+                    }
+                }
+                case 6:
+                {
+                    if (flags & 1) = 0
+                    {
+                        frame_head(&frames, 8, 6, 1, 0)
+                        frames.append(payload)
+                    }
+                }
+                case 7:
+                    set closing: true
+                case 8:
+                {
+                    if length <> 4
+                    {
+                        this.goaway(6)
+                        return at
+                    }
+                    let increment be31(payload, 0) as i64
+                    if stream = 0
+                        set send_window: send_window + increment
+                    else
+                    {
+                        var i: size_t 0
+                        while i < pending.length
+                        {
+                            var p pending.at(i)
+                            if p.id = stream
+                                set p.window: p.window + increment
+                            set i: i + 1
+                        }
+                    }
+                    this.push_pending()
+                }
+        }
+        at
+    }
+}
+
+; Start a header block that continues: its first fragment.
+procedure self_block_start(mutable block: ref[ByteBuf], fragment: Slice[u8])
+{
+    block.clear()
+    block.append(fragment)
+}
+
+; Serve one HTTP/2 connection whose input so far is in inb (it begins with
+; the preface, or with as much of it as arrived), with the connection's
+; request, response and output buffer.
+procedure serve_h2[S](mutable c: ref[S], router: ref[Router], host: ref[Page], mutable inb: ref[ByteBuf], mutable req: ref[Request], mutable res: ref[Response], mutable outb: ref[ByteBuf])
+{
+    var h H2Conn.create(host)
+    h.greet()
+    var preface_done false
+    repeat
+    {
+        if preface_done = false and inb.length >= 24
+        {
+            if inb.bytes().slice_to(24).equals(h2_preface()) = false
+                break
+            inb.consume(24)
+            set preface_done: true
+        }
+        if preface_done
+        {
+            let used h.frames_in(inb.bytes(), router, req, res, outb)
+            inb.consume(used)
+        }
+        if h.frames.length > 0
+        {
+            if c.write(h.frames.bytes()) = false
+                break
+            h.frames.clear()
+        }
+        if h.closing
+            break
+        if inb.length = inb.capacity()
+            inb.reserve(inb.capacity())
+        let n c.read(inb.spare())
+        if n <= 0
+            break
+        inb.advance(n as size_t)
+        if TcpServer.current().stopping()
+        {
+            h.goaway(0)
+            if c.write(h.frames.bytes())
+                h.frames.clear()
+            break
+        }
+    }
+    var i: size_t 0
+    while i < h.streams.length
+    {
+        let s h.streams.at(i)
+        Page.release_page(s.page)
+        set i: i + 1
+    }
+    set i: 0
+    while i < h.pending.length
+    {
+        let p h.pending.at(i)
+        Page.release_page(p.page)
+        set i: i + 1
+    }
+}

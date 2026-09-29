@@ -11,8 +11,17 @@ use tls.Tls.SslCtxRef
 ; What every connection task reads: set once, before the first connection.
 shared atomic https_router: u64 linked
 shared atomic https_context: u64 linked
+; the context of the listener start_h2 made (its ALPN prefers h2)
+shared atomic https_context_h2: u64 linked
 
-procedure https_connection() @deep true io reads https_context linked
+procedure https_connection() @ret_nonlocal true @deep true io reads https_context linked
+
+procedure https_connection_h2() @ret_nonlocal true @deep true io reads https_context_h2 linked
+
+; This task's connection: the TLS handshake with `context`, then the http
+; package's loop, which serves HTTP/2 when the client begins with its
+; preface (after ALPN chose h2) and HTTP/1.1 otherwise.
+procedure serve_tls(mutable context: TlsContext) @deep true io reads https_router linked
 
 ; Serve router over TLS on every interface, both families, over all cores
 ; (as http.Server.serve does over TCP): false at once when the port cannot
@@ -22,3 +31,7 @@ procedure serve(router: ref[Router], port: int, context: TlsContext) @ret_nonloc
 ; Serve like serve, on a listener the caller made, and return at once with
 ; the TcpServer (shutdown, wait).
 procedure start(router: ref[Router], l: TcpListener, context: TlsContext) @page true @direct true @ret_nonlocal true @deep true returns TcpServer reads https_router linked
+
+; Serve like start, on a second listener whose context offers h2 by ALPN
+; (TlsContext.prefer_h2): the h2 port beside an HTTP/1.1-only one.
+procedure start_h2(router: ref[Router], l: TcpListener, context: TlsContext) @page true @direct true @ret_nonlocal true @deep true returns TcpServer reads https_router linked

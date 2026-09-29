@@ -11,12 +11,22 @@ use tls.Tls.SslCtxRef
 ; What every connection task reads: set once, before the first connection.
 shared atomic https_router: u64 0
 shared atomic https_context: u64 0
+; the context of the listener start_h2 made (its ALPN prefers h2)
+shared atomic https_context_h2: u64 0
 
 procedure https_connection()
+    serve_tls(TlsContext((scaly_atomic_load_u64(&https_context) as size_t) as SslCtxRef))
+
+procedure https_connection_h2()
+    serve_tls(TlsContext((scaly_atomic_load_u64(&https_context_h2) as size_t) as SslCtxRef))
+
+; This task's connection: the TLS handshake with `context`, then the http
+; package's loop, which serves HTTP/2 when the client begins with its
+; preface (after ALPN chose h2) and HTTP/1.1 otherwise.
+procedure serve_tls(mutable context: TlsContext)
 {
     var tcp TcpStream.of_task()
     tcp.set_nodelay(true)
-    var context TlsContext((scaly_atomic_load_u64(&https_context) as size_t) as SslCtxRef)
     var s TlsStream.accept(context, tcp)
     if s.is_open() = false
         return
@@ -47,4 +57,13 @@ procedure start(router: ref[Router], l: TcpListener, context: TlsContext) return
     scaly_atomic_store_u64(&https_router, router as u64)
     scaly_atomic_store_u64(&https_context, context.ctx as u64)
     l.start(&https_connection)
+}
+
+; Serve like start, on a second listener whose context offers h2 by ALPN
+; (TlsContext.prefer_h2): the h2 port beside an HTTP/1.1-only one.
+procedure start_h2(router: ref[Router], l: TcpListener, context: TlsContext) returns TcpServer
+{
+    scaly_atomic_store_u64(&https_router, router as u64)
+    scaly_atomic_store_u64(&https_context_h2, context.ctx as u64)
+    l.start(&https_connection_h2)
 }

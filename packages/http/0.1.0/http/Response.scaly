@@ -40,6 +40,7 @@ define Response
     var date_second: i64         ; the second date was formatted for
     head_ok: Slice[u8]           ; "HTTP/1.1 200 OK\r\nDate: <date>\r\n", HEAD_OK_LENGTH
     var head_only: bool          ; a HEAD request: everything but the body
+    trailers: ref[ByteBuf]       ; "name: value\r\n" lines sent after the body (HTTP/2 only)
 )
 {
     ; A connection's response on its page, writing into out: the 200 head
@@ -48,7 +49,8 @@ define Response
     {
         var head allocate_slice[u8]^host(host, HEAD_OK_LENGTH)
         init_head_ok(head)
-        &Response^host(out, 200, false, false, false, head.subslice(HEAD_OK_DATE_AT, HEAD_OK_DATE_AT + DATE_LENGTH), 0 - 1, head, false)
+        let trailers &ByteBuf^host(host, allocate_slice[u8]^host(host, 64), 0)
+        &Response^host(out, 200, false, false, false, head.subslice(HEAD_OK_DATE_AT, HEAD_OK_DATE_AT + DATE_LENGTH), 0 - 1, head, false, trailers)
     }
 
     ; Ready for the next response on the same connection.
@@ -59,6 +61,17 @@ define Response
         set sent: false
         set close: close_after
         set head_only: false
+        trailers.clear()
+    }
+
+    ; A trailer field (lowercase name), sent after the body when the response
+    ; goes out over HTTP/2 -- gRPC's grpc-status. HTTP/1.1 leaves it out.
+    procedure trailer(mutable this, name: Slice[u8], value: Slice[u8])
+    {
+        trailers.append(name)
+        trailers.append(": ")
+        trailers.append(value)
+        trailers.append("\r\n")
     }
 
     ; The status code; ignored once the status line is out.

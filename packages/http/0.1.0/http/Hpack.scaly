@@ -1,0 +1,436 @@
+; HPACK (RFC 7541), the header compression of HTTP/2: a decoder with the
+; dynamic table and Huffman-coded strings, and an encoder for responses that
+; sends literals without indexing and without Huffman (every decoder must
+; take them, and a response's fields change too often to be worth a table).
+;
+; The dynamic table is a ring of at most DYN_ENTRIES entries whose bytes
+; live in one buffer of DYN_BYTES that is compacted in place: a connection
+; that sees a new :path on every request keeps a table of fixed size, not a
+; page that grows with the requests.
+
+use http.Buffer.ByteBuf
+
+; The table size this decoder allows (SETTINGS_HEADER_TABLE_SIZE, which the
+; server leaves at its default), the entries that can fit in it (an entry
+; costs its name, its value and 32), and the room for their bytes.
+define HPACK_TABLE_SIZE: size_t 4096
+define DYN_ENTRIES: size_t 128
+define DYN_BYTES: size_t 8192
+
+; A decoded header block: every field's name and value as spans of `bytes`.
+define HeaderList
+(
+    var bytes: ByteBuf
+    ; four per field: name start, name length, value start, value length
+    var spans: Array[size_t]
+)
+{
+    procedure create(host: ref[Page]) returns HeaderList
+        HeaderList(ByteBuf.create(host, 1024), Array[size_t]^host())
+
+    procedure clear(mutable this)
+    {
+        bytes.clear()
+        spans.clear()
+    }
+
+    function count(this) returns size_t
+        spans.length / 4
+
+    function name(this, i: size_t) returns Slice[u8]
+        bytes.bytes().subslice(spans.at(4 * i), spans.at(4 * i) + spans.at(4 * i + 1))
+
+    function value(this, i: size_t) returns Slice[u8]
+        bytes.bytes().subslice(spans.at(4 * i + 2), spans.at(4 * i + 2) + spans.at(4 * i + 3))
+
+    ; The value of the first field named `name`, empty without one.
+    function get(this, name: Slice[u8]) returns Slice[u8]
+    {
+        var i: size_t 0
+        while i < this.count()
+        {
+            if this.name(i).equals(name)
+                return this.value(i)
+            set i: i + 1
+        }
+        bytes.bytes().slice_to(0)
+    }
+
+    procedure record(mutable this, name_start: size_t, name_length: size_t, value_start: size_t, value_length: size_t)
+    {
+        spans.add(name_start)
+        spans.add(name_length)
+        spans.add(value_start)
+        spans.add(value_length)
+    }
+}
+
+; An integer with an n-bit prefix (RFC 7541 5.1) at block[at]; at moves
+; past it. -1 when the block ends inside it or it overflows.
+procedure decode_integer(block: Slice[u8], mutable at: ref[size_t], prefix_bits: u64) returns i64
+{
+    if at >= block.length
+        return 0 - 1
+    let mask ((1 as u64) << prefix_bits) - 1
+    var v (block[at] as u64) & mask
+    set at: at + 1
+    if v < mask
+        return v as i64
+    var shift: u64 0
+    repeat
+    {
+        if at >= block.length or shift > 28
+            return 0 - 1
+        let b block[at] as u64
+        set at: at + 1
+        set v: v + ((b & 127) << shift)
+        set shift: shift + 7
+        if (b & 128) = 0
+            break
+    }
+    v as i64
+}
+
+; Huffman-coded bytes decoded onto out (RFC 7541 5.2, Appendix B); false on
+; an EOS inside the string or padding that is not a short run of ones.
+procedure huffman_decode(src: Slice[u8], mutable out: ref[ByteBuf]) returns bool
+{
+    var code: u64 0
+    var length: size_t 0
+    var i: size_t 0
+    while i < src.length
+    {
+        let b src[i] as u64
+        var bit: u64 8
+        while bit > 0
+        {
+            set bit: bit - 1
+            set code: (code << 1) | ((b >> bit) & 1)
+            set length: length + 1
+            if length > 30
+                return false
+            let n HUFF_COUNT[length] as u64
+            let first HUFF_FIRST[length] as u64
+            if n > 0 and code >= first and code - first < n
+            {
+                let symbol HUFF_SYMBOLS[(HUFF_OFFSET[length] as size_t) + ((code - first) as size_t)]
+                if symbol = 256
+                    return false
+                out.append_byte(symbol as u8)
+                set code: 0
+                set length: 0
+            }
+        }
+        set i: i + 1
+    }
+    length < 8 and code = ((1 as u64) << length) - 1
+}
+
+define HpackDecoder
+(
+    ; the entries' bytes, name then value, oldest first
+    var data: Slice[u8]
+    var used: size_t
+    ; the ring of entries: where each starts and its two lengths
+    var ring_start: Slice[u32]
+    var ring_name: Slice[u32]
+    var ring_value: Slice[u32]
+    ; the slot the next entry takes, and how many are live
+    var head: size_t
+    var count: size_t
+    ; the table's size by RFC 7541 4.1, and its current limit
+    var size: size_t
+    var limit: size_t
+)
+{
+    procedure create(host: ref[Page]) returns HpackDecoder
+    {
+        HpackDecoder(
+            allocate_slice[u8]^host(host, DYN_BYTES), 0,
+            allocate_slice[u32]^host(host, DYN_ENTRIES),
+            allocate_slice[u32]^host(host, DYN_ENTRIES),
+            allocate_slice[u32]^host(host, DYN_ENTRIES),
+            0, 0, 0, HPACK_TABLE_SIZE)
+    }
+
+    ; The slot of dynamic entry d (0 is the newest).
+    function slot(this, d: size_t) returns size_t
+        (head + DYN_ENTRIES - 1 - d) % DYN_ENTRIES
+
+    procedure evict_oldest(mutable this)
+    {
+        let s (head + DYN_ENTRIES - count) % DYN_ENTRIES
+        set size: size - (ring_name[s] as size_t) - (ring_value[s] as size_t) - 32
+        set count: count - 1
+        if count = 0
+            set used: 0
+    }
+
+    ; Evict until the table fits `limit` less `room`.
+    procedure evict_to(mutable this, room: size_t)
+    {
+        while count > 0 and size + room > limit
+            this.evict_oldest()
+    }
+
+    ; Slide the live entries' bytes to the front of data.
+    procedure compact(mutable this)
+    {
+        var to: size_t 0
+        var d count
+        while d > 0
+        {
+            set d: d - 1
+            let s this.slot(d)
+            let from ring_start[s] as size_t
+            let n (ring_name[s] as size_t) + (ring_value[s] as size_t)
+            if n > 0 and from <> to
+                memmove(data.slice_from(to).data as pointer[void], data.slice_from(from).data as pointer[void], n)
+            ring_start.put(s, to as u32)
+            set to: to + n
+        }
+        set used: to
+    }
+
+    procedure insert(mutable this, name: Slice[u8], value: Slice[u8])
+    {
+        let cost name.length + value.length + 32
+        if cost > limit
+        {
+            while count > 0
+                this.evict_oldest()
+            return
+        }
+        this.evict_to(cost)
+        if count = DYN_ENTRIES
+            this.evict_oldest()
+        if used + name.length + value.length > data.length
+            this.compact()
+        let at used
+        memcpy(data.slice_from(at).data as pointer[void], name.data as pointer[void], name.length)
+        memcpy(data.slice_from(at + name.length).data as pointer[void], value.data as pointer[void], value.length)
+        ring_start.put(head, at as u32)
+        ring_name.put(head, name.length as u32)
+        ring_value.put(head, value.length as u32)
+        set head: (head + 1) % DYN_ENTRIES
+        set count: count + 1
+        set size: size + cost
+        set used: at + name.length + value.length
+    }
+
+    ; Entry `index` of the combined table (1..61 static, then dynamic) copied
+    ; onto out: its name, and its value when with_value; the spans they got
+    ; through name_at/value_at. False for an index that names nothing.
+    procedure copy_entry(this, index: u64, mutable out: ref[ByteBuf], mutable name_start: ref[size_t], mutable name_length: ref[size_t], mutable value_start: ref[size_t], mutable value_length: ref[size_t], with_value: bool) returns bool
+    {
+        if index = 0
+            return false
+        var name: Slice[u8] ""
+        var value: Slice[u8] ""
+        if index <= 61
+        {
+            set name: static_name(index)
+            set value: static_value(index)
+        }
+        else
+        {
+            let d (index - 62) as size_t
+            if d >= count
+                return false
+            let s this.slot(d)
+            let at ring_start[s] as size_t
+            let nl ring_name[s] as size_t
+            set name: data.subslice(at, at + nl)
+            set value: data.subslice(at + nl, at + nl + (ring_value[s] as size_t))
+        }
+        set name_start: out.length
+        set name_length: name.length
+        out.append(name)
+        if with_value
+        {
+            set value_start: out.length
+            set value_length: value.length
+            out.append(value)
+        }
+        true
+    }
+
+    ; One string literal (RFC 7541 5.2) at block[at] decoded onto out: its
+    ; span. False when it is malformed.
+    procedure read_string(this, block: Slice[u8], mutable at: ref[size_t], mutable out: ref[ByteBuf], mutable start: ref[size_t], mutable length: ref[size_t]) returns bool
+    {
+        if at >= block.length
+            return false
+        let huffman (block[at] & 128) <> 0
+        let n decode_integer(block, at, 7)
+        if n < 0 or at + (n as size_t) > block.length
+            return false
+        let raw block.subslice(at, at + (n as size_t))
+        set at: at + (n as size_t)
+        set start: out.length
+        if huffman
+        {
+            if huffman_decode(raw, out) = false
+                return false
+        }
+        else
+            out.append(raw)
+        set length: out.length - start
+        true
+    }
+
+    ; Decode one complete header block onto list; false on a malformed
+    ; block (a COMPRESSION_ERROR: the connection must end).
+    procedure decode(mutable this, block: Slice[u8], mutable list: ref[HeaderList]) returns bool
+    {
+        var at: size_t 0
+        while at < block.length
+        {
+            let b block[at]
+            var ns: size_t 0
+            var nl: size_t 0
+            var vs: size_t 0
+            var vl: size_t 0
+            if (b & 128) <> 0
+            {
+                let index decode_integer(block, &at, 7)
+                if index <= 0 or this.copy_entry(index as u64, &list.bytes, &ns, &nl, &vs, &vl, true) = false
+                    return false
+                list.record(ns, nl, vs, vl)
+            }
+            else if (b & 224) = 32
+            {
+                let new_limit decode_integer(block, &at, 5)
+                if new_limit < 0 or (new_limit as size_t) > HPACK_TABLE_SIZE
+                    return false
+                set limit: new_limit as size_t
+                this.evict_to(0)
+            }
+            else
+            {
+                ; 01: incremental indexing (6-bit index); 0000 / 0001: not
+                ; indexed / never indexed (4-bit index)
+                let indexing (b & 192) = 64
+                var prefix: u64 4
+                if indexing
+                    set prefix: 6
+                let index decode_integer(block, &at, prefix)
+                if index < 0
+                    return false
+                if index = 0
+                {
+                    if this.read_string(block, &at, &list.bytes, &ns, &nl) = false
+                        return false
+                }
+                else if this.copy_entry(index as u64, &list.bytes, &ns, &nl, &vs, &vl, false) = false
+                    return false
+                if this.read_string(block, &at, &list.bytes, &vs, &vl) = false
+                    return false
+                list.record(ns, nl, vs, vl)
+                if indexing
+                {
+                    let all list.bytes.bytes()
+                    this.insert(all.subslice(ns, ns + nl), all.subslice(vs, vs + vl))
+                }
+            }
+        }
+        true
+    }
+}
+
+; An integer with an n-bit prefix whose other bits are `flags`.
+procedure encode_integer(mutable out: ref[ByteBuf], flags: u8, prefix_bits: u64, value: u64)
+{
+    let mask ((1 as u64) << prefix_bits) - 1
+    if value < mask
+    {
+        out.append_byte(flags | (value as u8))
+        return
+    }
+    out.append_byte(flags | (mask as u8))
+    var v value - mask
+    while v >= 128
+    {
+        out.append_byte(((v & 127) | 128) as u8)
+        set v: v >> 7
+    }
+    out.append_byte(v as u8)
+}
+
+; A string literal, not Huffman-coded.
+procedure encode_string(mutable out: ref[ByteBuf], s: Slice[u8])
+{
+    encode_integer(out, 0, 7, s.length as u64)
+    out.append(s)
+}
+
+; The :status field: indexed for the seven the static table holds, else a
+; literal with the indexed name :status.
+procedure encode_status(mutable out: ref[ByteBuf], status: i64)
+{
+    let index static_status_index(status)
+    if index > 0
+    {
+        encode_integer(out, 128, 7, index)
+        return
+    }
+    encode_integer(out, 0, 4, 8)
+    encode_integer(out, 0, 7, 3)
+    out.append_byte(((status / 100) % 10 + 48) as u8)
+    out.append_byte(((status / 10) % 10 + 48) as u8)
+    out.append_byte((status % 10 + 48) as u8)
+}
+
+; The static table entry of a :status, 0 for one it does not hold.
+function static_status_index(status: i64) returns u64
+{
+    match status
+        case 200: return 8
+        case 204: return 9
+        case 206: return 10
+        case 304: return 11
+        case 400: return 12
+        case 404: return 13
+        case 500: return 14
+    0
+}
+
+; The static table index of a lowercase field name worth one, else 0.
+function static_name_index(name: Slice[u8]) returns u64
+{
+    if name.equals("content-type")
+        return 31
+    if name.equals("content-length")
+        return 28
+    if name.equals("date")
+        return 33
+    if name.equals("content-encoding")
+        return 26
+    if name.equals("vary")
+        return 59
+    if name.equals("server")
+        return 54
+    if name.equals("cache-control")
+        return 24
+    if name.equals("location")
+        return 46
+    if name.equals("allow")
+        return 22
+    if name.equals("set-cookie")
+        return 55
+    if name.equals("etag")
+        return 34
+    if name.equals("last-modified")
+        return 44
+    0
+}
+
+; A field as a literal without indexing (RFC 7541 6.2.2); name lowercase.
+procedure encode_field(mutable out: ref[ByteBuf], name: Slice[u8], value: Slice[u8])
+{
+    let index static_name_index(name)
+    encode_integer(out, 0, 4, index)
+    if index = 0
+        encode_string(out, name)
+    encode_string(out, value)
+}

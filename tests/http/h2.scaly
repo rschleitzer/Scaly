@@ -1,0 +1,222 @@
+; The http package's HTTP/2 (ROADMAP-http.md stage E) against a client
+; written here over TCP by prior knowledge, with a send window of 1000
+; bytes so that flow control has to work:
+;   h2        the preface and SETTINGS are answered (the server's SETTINGS
+;             and our SETTINGS acknowledged), a PING is echoed with ACK
+;   streams   three streams in one write: GET /sum?a=1&b=2 answers 3; GET
+;             /big 100 000 bytes that only arrive as our WINDOW_UPDATEs open
+;             the window (never more than it); POST /echo with its body in a
+;             DATA frame answers it back
+;   h1        the same port still answers HTTP/1.1, also when the first
+;             read holds only "P" (the preface begins with it too)
+; Expected: h2 streams h1
+
+package scaly 0.1.0
+package http 0.1.0
+
+use http.Buffer.ByteBuf
+use http.Hpack.HeaderList
+use http.Hpack.HpackDecoder
+use http.Request.Request
+use http.Response.Response
+use http.Router.Router
+
+procedure sum(req: ref[Request], mutable res: ref[Response])
+    res.send_int(parse_int_prefix(req.query_param("a")) + parse_int_prefix(req.query_param("b")))
+
+; 100 000 bytes: byte i is i % 251.
+procedure big(req: ref[Request], mutable res: ref[Response])
+{
+    var body Vector[u8](100000)
+    var i: size_t 0
+    while i < 100000
+    {
+        body.put(i, (i % 251) as u8)
+        set i: i + 1
+    }
+    res.send("application/octet-stream", body.as_slice())
+}
+
+procedure echo(req: ref[Request], mutable res: ref[Response])
+    res.send("text/plain", req.body)
+
+; A request's header block: the four pseudo-fields.
+procedure request_block(mutable out: ref[ByteBuf], method: Slice[u8], path: Slice[u8])
+{
+    encode_field(out, ":method", method)
+    encode_field(out, ":scheme", "http")
+    encode_field(out, ":path", path)
+    encode_field(out, ":authority", "localhost")
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var app Router.create(Page.allocate_page())
+    app.get("/sum", &sum)
+    app.get("/big", &big)
+    app.post("/echo", &echo)
+    var l TcpListener.listen(0)
+    let server start(app, l)
+
+    let host Page.allocate_page()
+    var s TcpStream.connect("127.0.0.1", l.port())
+    var out ByteBuf.create(host, 4096)
+    out.append(h2_preface())
+    ; SETTINGS: INITIAL_WINDOW_SIZE 1000
+    frame_head(&out, 6, 4, 0, 0)
+    out.append_byte(0)
+    out.append_byte(4)
+    append_u32(&out, 1000)
+    frame_head(&out, 8, 6, 0, 0)
+    out.append("pingpong")
+    var block ByteBuf.create(host, 256)
+    request_block(&block, "GET", "/sum?a=1&b=2")
+    frame_head(&out, block.length, 1, 5, 1)
+    out.append(block.bytes())
+    block.clear()
+    request_block(&block, "GET", "/big")
+    frame_head(&out, block.length, 1, 5, 3)
+    out.append(block.bytes())
+    block.clear()
+    request_block(&block, "POST", "/echo")
+    frame_head(&out, block.length, 1, 4, 5)
+    out.append(block.bytes())
+    frame_head(&out, 11, 0, 1, 5)
+    out.append("hello there")
+    s.write(out.bytes())
+    out.clear()
+
+    var inb ByteBuf.create(host, 65536)
+    var decoder HpackDecoder.create(host)
+    var fields HeaderList.create(host)
+    var settings_ack false
+    var server_settings false
+    var pong false
+    var sum_body ByteBuf.create(host, 16)
+    var echo_body ByteBuf.create(host, 16)
+    var big_body ByteBuf.create(host, 100000)
+    var statuses 0
+    var ended 0
+    var window: i64 1000
+    var overrun false
+    while ended < 3
+    {
+        if inb.length = inb.capacity()
+            inb.reserve(inb.capacity())
+        let n s.read(inb.spare())
+        if n <= 0
+        {
+            print "connection ended after `ended` streams"
+            return 1
+        }
+        inb.advance(n as size_t)
+        var at: size_t 0
+        let b inb.bytes()
+        while at + 9 <= b.length and at + 9 + be24(b, at) <= b.length
+        {
+            let length be24(b, at)
+            let kind b[at + 3]
+            let flags b[at + 4]
+            let stream be31(b, at + 5)
+            let payload b.subslice(at + 9, at + 9 + length)
+            set at: at + 9 + length
+            if kind = 4 and (flags & 1) = 0
+            {
+                set server_settings: true
+                frame_head(&out, 0, 4, 1, 0)
+            }
+            if kind = 4 and (flags & 1) <> 0
+                set settings_ack: true
+            if kind = 6 and (flags & 1) <> 0 and payload.equals("pingpong")
+                set pong: true
+            if kind = 1
+            {
+                fields.clear()
+                if decoder.decode(payload, &fields) = false or fields.get(":status").equals("200") = false
+                {
+                    print "stream `stream`: bad HEADERS"
+                    return 2
+                }
+                set statuses: statuses + 1
+                if (flags & 1) <> 0
+                    set ended: ended + 1
+            }
+            if kind = 0
+            {
+                if stream = 1
+                    sum_body.append(payload)
+                if stream = 3
+                {
+                    set window: window - (length as i64)
+                    if window < 0
+                        set overrun: true
+                    big_body.append(payload)
+                    ; open the stream's and the connection's window again
+                    ; by what arrived
+                    frame_head(&out, 4, 8, 0, 3)
+                    append_u32(&out, length as u64)
+                    frame_head(&out, 4, 8, 0, 0)
+                    append_u32(&out, length as u64)
+                    set window: window + (length as i64)
+                }
+                if stream = 5
+                    echo_body.append(payload)
+                if (flags & 1) <> 0
+                    set ended: ended + 1
+            }
+        }
+        inb.consume(at)
+        if out.length > 0
+        {
+            s.write(out.bytes())
+            out.clear()
+        }
+    }
+    if server_settings = false or settings_ack = false or pong = false
+    {
+        print "h2: settings `server_settings` ack `settings_ack` ping `pong`"
+        return 3
+    }
+    Console.print "h2 "
+    var big_ok big_body.length = 100000
+    var i: size_t 0
+    while big_ok and i < 100000
+    {
+        if big_body.bytes()[i] <> ((i % 251) as u8)
+            set big_ok: false
+        set i: i + 1
+    }
+    if statuses <> 3 or sum_body.bytes().equals("3") = false or echo_body.bytes().equals("hello there") = false or big_ok = false or overrun
+    {
+        print "streams: statuses `statuses` big `big_body.length` overrun `overrun`"
+        return 4
+    }
+    Console.print "streams "
+    s.close()
+
+    var h1 TcpStream.connect("127.0.0.1", l.port())
+    h1.write("P")
+    Scheduler.sleep(50)
+    h1.write("OST /echo HTTP/1.1\r\nHost: t\r\nConnection: close\r\nContent-Length: 2\r\n\r\n42")
+    var reply ByteBuf.create(host, 1024)
+    repeat
+    {
+        if reply.length = reply.capacity()
+            reply.reserve(reply.capacity())
+        let n h1.read(reply.spare())
+        if n <= 0
+            break
+        reply.advance(n as size_t)
+    }
+    h1.close()
+    if reply.bytes().ends_with("\r\n\r\n42") = false
+    {
+        print "h1: `String(reply.bytes().data as pointer[const_char], reply.length)`"
+        return 5
+    }
+    Console.print "h1"
+    server.shutdown()
+    server.wait()
+    l.close()
+    0
+}
