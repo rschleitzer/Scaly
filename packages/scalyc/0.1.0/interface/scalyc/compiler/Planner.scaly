@@ -569,6 +569,20 @@ define Planner
         ; ESCAPING closure (env on the caller page `#`). Null outside a function
         ; body or when the function has no declared return type.
         var current_return_type: ref[PlannedType]?
+        ; The body being planned is an uninstantiated generic TEMPLATE (a type
+        ; parameter was seeded with a fresh type variable, plan_function#): its
+        ; calls on a `T` do not resolve, and every instantiation is planned
+        ; separately and checked (report_effect_free_statement#).
+        var planning_template: bool
+        ; Depth of generic FREE function instantiations under way
+        ; (instantiate_generic_function#): their bodies see every concept, as
+        ; a generic concept's do (use_vis_check#) -- a type argument is a
+        ; concept of the CALLER's package the template's file never names.
+        var instantiating_functions: size_t
+        ; The package directory of the root being compiled (package_dir_of#
+        ; of its main module's file), "" outside packages/: a constant of
+        ; another package is planned on demand (plan_foreign_constant#).
+        var root_package: String
         ; Names bound to a stack (non-escaping, Lifetime.Local) closure in the
         ; current function (GAP B escape checking). Returning one is an escape
         ; (the record lives on this frame) — flagged as a hard diagnostic.
@@ -1539,6 +1553,17 @@ define Planner
         ; derives its page from its own address fits on one (check_receiver_
         ; fits_page#).
         function page_size_constant(this: Planner) @deep true returns size_t linked
+
+        ; plan_foreign_constant: a module-level constant of ANOTHER package
+        ; than the root's is planned where it is first named. Constants are
+        ; planned in module declaration order during the module walk, and the
+        ; walk never enters a dependency package, so a generic body of the http
+        ; package instantiated from https (serve_connection[TlsStream]) could
+        ; not read http's own IN_SIZE, and a program none of its dependency's
+        ; constants. A constant is emitted `internal` into every module that
+        ; reads it, as its own package does. Within the root's package the
+        ; module order stays the rule (use_vis_hint# says so).
+        procedure plan_foreign_constant(mutable this: Planner, name: String) @page true @stores true @deep true io linked
 
         function lookup_global(this: Planner, name: String) @ret_param_0 true @deep true returns ref[PlannedGlobal]? linked
 
@@ -3873,7 +3898,7 @@ define Planner
         ;     call resolution)
         ;   - an actual type name → PlannedExpression.Type with the
         ;     planned type
-        procedure plan_type_operand(mutable this: Planner, mutable t: Type, loc: Span) @page true @direct true @deep true @deep_this_2 true returns PlannedOperand io linked
+        procedure plan_type_operand(mutable this: Planner, mutable t: Type, loc: Span) @page true @direct true @stores true @deep true @deep_this_2 true returns PlannedOperand io linked
 
         ; ================================================================
         ; Control-flow planners.
@@ -6928,6 +6953,9 @@ define Planner
         ; failed collapse. `print sb.to_string()` as a procedure's last
         ; statement emitted nothing at rc 0 while the same line one statement
         ; earlier was refused (2026-09-29, found by the json package's tests).
+        ; Not in an uninstantiated generic template (planning_template): there
+        ; a tail like `v.get() + v.get()` on a `T` is unresolved by nature, and
+        ; the instantiation is planned and judged on its own.
         procedure report_effect_free_statement(mutable this: Planner, stmt: PlannedStatement, last: bool) @ret_nonlocal true @deep true linked
 
         ; plan_statements: batch plan_statement over a Model.Block's statements.

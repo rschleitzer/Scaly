@@ -5540,13 +5540,26 @@ define Emitter
             while i < n
             {
                 let c mangled.get i
+                ; A one-letter name is a type parameter (the Planner's rule,
+                ; is_generic_type_param_name). T, K and V anywhere, as always;
+                ; every other letter only at a TYPE position -- after I
+                ; (template arguments), R or P (reference, pointer) or E (a
+                ; parameter after the nested name) -- because elsewhere the
+                ; mangling spells the same shape without a type: `C1E` is
+                ; every constructor, `…Conv1CEv` the method LLVMCallConv.C.
+                ; With T/K/V alone, a template over `S` passed for a real
+                ; function and its unresolved body reached the emitter:
+                ; `Emitter: unknown unary operator: =`, no file, no line
+                ; (2026-09-29, the https connection loop). A real one-letter
+                ; concept is told apart by signature_has_resolved_letter#.
                 var is_param: bool false
-                if c = ("T" as char)
+                if c = ("T" as char) or c = ("K" as char) or c = ("V" as char)
                     set is_param: true
-                if c = ("K" as char)
-                    set is_param: true
-                if c = ("V" as char)
-                    set is_param: true
+                else if c >= ("A" as char) and c <= ("Z" as char)
+                {
+                    let at mangled.get(i - 2)
+                    set is_param: at = ("I" as char) or at = ("R" as char) or at = ("P" as char) or at = ("E" as char)
+                }
                 if is_param
                 {
                     let prev mangled.get(i - 1)

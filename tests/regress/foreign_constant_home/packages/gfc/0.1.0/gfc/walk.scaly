@@ -1,0 +1,4 @@
+; A type argument's method and this package's constant, read in a body that
+; is planned in the caller's root.
+function run_over[S](s: ref[S]) returns int
+    s.size() * LIMIT

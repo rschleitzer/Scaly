@@ -697,6 +697,20 @@ define Planner
         ; ESCAPING closure (env on the caller page `#`). Null outside a function
         ; body or when the function has no declared return type.
         var current_return_type: ref[PlannedType]?
+        ; The body being planned is an uninstantiated generic TEMPLATE (a type
+        ; parameter was seeded with a fresh type variable, plan_function#): its
+        ; calls on a `T` do not resolve, and every instantiation is planned
+        ; separately and checked (report_effect_free_statement#).
+        var planning_template: bool
+        ; Depth of generic FREE function instantiations under way
+        ; (instantiate_generic_function#): their bodies see every concept, as
+        ; a generic concept's do (use_vis_check#) -- a type argument is a
+        ; concept of the CALLER's package the template's file never names.
+        var instantiating_functions: size_t
+        ; The package directory of the root being compiled (package_dir_of#
+        ; of its main module's file), "" outside packages/: a constant of
+        ; another package is planned on demand (plan_foreign_constant#).
+        var root_package: String
         ; Names bound to a stack (non-escaping, Lifetime.Local) closure in the
         ; current function (GAP B escape checking). Returning one is an escape
         ; (the record lives on this frame) — flagged as a hard diagnostic.
@@ -1355,6 +1369,9 @@ define Planner
             set has_type_aliases: false
             set alias_depth: 0
             set current_return_type: null
+            set planning_template: false
+            set instantiating_functions: 0
+            set root_package: String^this("")
             set local_closure_names: Array[String]^this()
             set local_box_names: Array[String]^this()
             set escaping_return_locals: Array[String]^this()
@@ -2803,6 +2820,49 @@ define Planner
             n
         }
 
+        ; plan_foreign_constant: a module-level constant of ANOTHER package
+        ; than the root's is planned where it is first named. Constants are
+        ; planned in module declaration order during the module walk, and the
+        ; walk never enters a dependency package, so a generic body of the http
+        ; package instantiated from https (serve_connection[TlsStream]) could
+        ; not read http's own IN_SIZE, and a program none of its dependency's
+        ; constants. A constant is emitted `internal` into every module that
+        ; reads it, as its own package does. Within the root's package the
+        ; module order stays the rule (use_vis_hint# says so).
+        procedure plan_foreign_constant(mutable this: Planner, name: String)
+        {
+            if this.lookup_global(name) <> null
+                return
+            let idx concept_index.lookup name
+            if idx < 0
+                return
+            let i idx as size_t
+            if i >= concept_origin_files.length
+                return
+            let of concept_origin_files.get i
+            if of = null
+                return
+            let their Planner.package_dir_of((*of))
+            if their.get_length() = 0 or their = root_package
+                return
+            let ck concepts.get i
+            if ck = null
+                return
+            choose ck.value.definition
+                when g: Global
+                {
+                    var gv g
+                    let saved this.file
+                    set this.file: String^this((*of))
+                    ; on the Planner's page: the global outlives this frame in
+                    ; instantiated_globals (the 2026-07-08 pre-pass dangled)
+                    let kept &^this this.plan_global(gv, ck.value.name)
+                    set this.file: saved
+                }
+                else
+                    0
+        }
+
         function lookup_global(this: Planner, name: String) returns ref[PlannedGlobal]?
         {
             let at global_index.table.lookup(name)
@@ -3449,6 +3509,8 @@ define Planner
                 return true
             if instantiating_methods.length > 0 or idx >= concept_origin_files.length
                 return true
+            if instantiating_functions > 0
+                return true
             if idx < use_vis_verdict_file.length
             {
                 let vf use_vis_verdict_file.get idx
@@ -3670,27 +3732,17 @@ define Planner
             if op_ptr = null
                 return ""
             ; A module-level CONSTANT is not use-gated: it is planned in
-            ; module DECLARATION order, so one from a later module (or, inside
-            ; a module, from another package) is simply not planned yet, and
-            ; the `use` this hint suggested did not help -- measured
-            ; 2026-09-24, the same error with the `use` added.
+            ; module DECLARATION order, so one from a later module of the
+            ; root's own package is simply not planned yet, and the `use` this
+            ; hint suggested did not help -- measured 2026-09-24, the same
+            ; error with the `use` added. (One of another package is planned
+            ; where it is named, plan_foreign_constant#.)
             if this.concept_is_constant(idx as size_t)
             {
                 var csb StringBuilder()
                 csb.append " - a constant of "
                 csb.append((*op_ptr))
-                var other_package: bool false
-                let cf_ptr concept_origin_files.get(idx as size_t)
-                if cf_ptr <> null
-                {
-                    let their Planner.package_dir_of((*cf_ptr))
-                    let ours Planner.package_dir_of(file)
-                    set other_package: their <> ours
-                }
-                if other_package
-                    csb.append ", another package: a module does not see another package's constants (a program root does), so export the value through a function of that package (a use does not help)"
-                else
-                    csb.append ", which is planned after this module: constants are visible in module declaration order, so declare its module earlier in the root or move the constant to an earlier module (a use does not help)"
+                csb.append ", which is planned after this module: constants are visible in module declaration order, so declare its module earlier in the root or move the constant to an earlier module (a use does not help)"
                 let chint csb.to_string()
                 return String^this(chint)
             }
@@ -7990,7 +8042,9 @@ define Planner
             let ffile this.function_origin_file(f)
             if ffile.get_length() > 0
                 set this.file: String^this(ffile)
+            set instantiating_functions: instantiating_functions + 1
             let result this.plan_function(f, null)
+            set instantiating_functions: instantiating_functions - 1
             set this.file: saved_ffile
             set type_substitutions.length: saved_len
             result
@@ -21465,6 +21519,7 @@ define Planner
                     ; Mirrors Planner.cpp:6950-6995. Single scalar
                     ; PlannedConstant inlines directly; non-constant or
                     ; multi-operand value falls back to PlannedGlobalRef.
+                    this.plan_foreign_constant(name)
                     let g_ref this.lookup_global(name)
                     if g_ref <> null
                     {
@@ -44835,6 +44890,9 @@ define Planner
         ; failed collapse. `print sb.to_string()` as a procedure's last
         ; statement emitted nothing at rc 0 while the same line one statement
         ; earlier was refused (2026-09-29, found by the json package's tests).
+        ; Not in an uninstantiated generic template (planning_template): there
+        ; a tail like `v.get() + v.get()` on a `T` is unresolved by nature, and
+        ; the instantiation is planned and judged on its own.
         procedure report_effect_free_statement(mutable this: Planner, stmt: PlannedStatement, last: bool)
         {
             choose stmt
@@ -44854,7 +44912,7 @@ define Planner
                                     choose s0.expr
                                         when oc: PlannedCall
                                         {
-                                            if oc.is_operator and (last = false or oc.name.get_length() = 0)
+                                            if oc.is_operator and (last = false or (oc.name.get_length() = 0 and this.planning_template = false))
                                             {
                                                 var esb StringBuilder()
                                                 if oc.name.get_length() = 0
@@ -47651,6 +47709,7 @@ define Planner
             ; seed each type parameter with a fresh type variable so
             ; plan_type can resolve `T` etc. to something unifiable.
             let saved_subst_len type_substitutions.length
+            let saved_template this.planning_template
             var gi: size_t 0
             while gi < f.parameters.length
             {
@@ -47663,6 +47722,7 @@ define Planner
                     {
                         let fresh this.fresh_type_var(gp.name)
                         this.define_type_substitution(gp.name, fresh)
+                        set this.planning_template: true
                     }
                 }
                 set gi: gi + 1
@@ -47948,6 +48008,7 @@ define Planner
             set local_closure_names.length: saved_lcn
             set local_box_names.length: saved_lbn
             set this.current_return_type: saved_return_type
+            set this.planning_template: saved_template
 
             this.pop_scope()
             set type_substitutions.length: saved_subst_len
@@ -50972,6 +51033,7 @@ define Planner
             ; so the dotted-call extern-decl gate can consult them
             ; while planning loaded-package namespace bodies.
             this.record_program_uses(prog)
+            set root_package: String^this(Planner.package_dir_of(prog.module_.file))
 
             ; Seed the concept/function/operator registries with
             ; every sibling program's top-level definitions first.

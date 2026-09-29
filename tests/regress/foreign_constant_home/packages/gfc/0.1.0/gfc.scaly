@@ -1,0 +1,9 @@
+; The dependency of tests/regress/foreign_constant.scaly: a constant module
+; and a generic free function that reads it and calls a method of its type
+; argument.
+
+define gfc
+{
+    module limits
+    module walk
+}

@@ -1,0 +1,39 @@
+; Regression (2026-09-29): a root that is not the constant's own package did
+; not see it. Constants are planned in module declaration order during the
+; module walk, and the walk never enters a dependency package, so a program
+; could not read LIMIT of package gfc, and a generic body of gfc instantiated
+; here (run_over[Probe]) could not read it either -- rc 4, "unknown identifier:
+; LIMIT". The same instantiation did not find Probe's method: the template's
+; file does not see Probe, and a generic free function's body was use-gated
+; where a generic concept's has never been ("method not found: size"). Found
+; making the http connection loop generic over a TLS stream for https.
+; Planner.plan_foreign_constant# plans such a constant where it is first
+; named, emitted internal as in its own package; use_vis_check# is lenient
+; while instantiating a generic free function (instantiating_functions).
+;
+; An IR gate: the package lives in its own SCALY_HOME, which has no runtime
+; archive to link against.
+; env: SCALY_HOME=tests/regress/foreign_constant_home
+; args: --no-prelude
+; expect-ir: @"5LIMIT" = internal constant i64 7
+; expect-ir: %call = call i64 @_ZN5Probe4sizeEv(ptr %0)
+; expect-ir: %mul = mul i64 %call, 7
+
+package gfc 0.1.0
+use gfc.walk.run_over
+use gfc.limits.LIMIT
+
+define Probe(n: int)
+{
+    function size(this) returns int
+        n + 1
+}
+
+function product() returns int
+{
+    let p Probe(5)
+    run_over[Probe](&p)
+}
+
+function limit() returns int
+    LIMIT

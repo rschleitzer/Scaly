@@ -1,0 +1,40 @@
+; A generic procedure's type parameter may be ANY one letter. The Emitter
+; recognized an uninstantiated template by `1T`, `1K` or `1V` in its mangled
+; name alone: a template over `S` passed for a real function and its
+; unresolved body -- `c.ok() = false` on a `ref[S]` -- reached the emitter as
+; `Emitter: unknown unary operator: =`, with no file and no line
+; (2026-09-29). Instantiated here over S, Q and A.
+; Expected: PASS
+
+define Probe(var n: int)
+{
+    procedure ok(this) returns bool
+        n > 0
+}
+
+procedure over_s[S](c: ref[S]) returns int
+{
+    if c.ok() = false
+        return 1
+    2
+}
+
+procedure over_q[Q](c: ref[Q]) returns int
+{
+    if c.ok() = false
+        return 1
+    3
+}
+
+procedure over_a[A](c: ref[A]) returns int
+{
+    if c.ok() = false
+        return 1
+    4
+}
+
+var p Probe(5)
+if over_s[Probe](&p) = 2 and over_q[Probe](&p) = 3 and over_a[Probe](&p) = 4
+    print "PASS"
+else
+    print "FAIL"
