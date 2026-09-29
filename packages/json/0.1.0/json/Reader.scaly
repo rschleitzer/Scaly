@@ -110,24 +110,23 @@ define JsonStream
         let base s.to
         var quote: u64 0
         var back: u64 0
-        var blank: u64 0
+        var nonscalar: u64 0
         var op: u64 0
-        var ctl: u64 0
+        var special: u64 0
         if base + 64 <= src.length
         {
-            var k: u64 0
-            while k < 64
-            {
-                let v u8x32.load(src, base + (k as size_t))
-                set quote: quote | ((v = u8x32.splat(0x22)).bits() << k)
-                set back: back | ((v = u8x32.splat(0x5C)).bits() << k)
-                set blank: blank | (((v = u8x32.splat(0x20)) or (v = u8x32.splat(0x0A)) or (v = u8x32.splat(0x0D)) or (v = u8x32.splat(0x09))).bits() << k)
-                ; '{' '[' and '}' ']' differ by 0x20 only
-                let folded v | u8x32.splat(0x20)
-                set op: op | (((folded = u8x32.splat(0x7B)) or (folded = u8x32.splat(0x7D)) or (v = u8x32.splat(0x3A)) or (v = u8x32.splat(0x2C))).bits() << k)
-                set ctl: ctl | ((v < u8x32.splat(0x20)).bits() << k)
-                set k: k + 32
-            }
+            ; every byte's classes at once (JsonStream.classes), thirty-two
+            ; bytes a step (one AVX2 register; two NEON or SSE ones), then
+            ; each class over the whole block as one bitmap
+            let c0 JsonStream.classes(u8x32.load(src, base))
+            let c1 JsonStream.classes(u8x32.load(src, base + 32))
+            set quote: JsonStream.class_bits(c0, c1, 0x80)
+            set back: JsonStream.class_bits(c0, c1, 0x40)
+            set op: JsonStream.class_bits(c0, c1, 0x07)
+            ; no scalar byte: operator, whitespace, quote
+            set nonscalar: JsonStream.class_bits(c0, c1, 0x9F)
+            ; inside a string the byte scanner's business: control, backslash
+            set special: JsonStream.class_bits(c0, c1, 0x60)
         }
         else
         {
@@ -137,22 +136,34 @@ define JsonStream
                 let c src[base + i]
                 let bit (1 as u64) << (i as u64)
                 match c
-                    case 0x22: set quote: quote | bit
-                    case 0x5C: set back: back | bit
-                    case 0x7B case 0x7D case 0x5B case 0x5D case 0x3A case 0x2C: set op: op | bit
+                    case 0x22
+                    {
+                        set quote: quote | bit
+                        set nonscalar: nonscalar | bit
+                    }
+                    case 0x5C
+                    {
+                        set back: back | bit
+                        set special: special | bit
+                    }
+                    case 0x7B case 0x7D case 0x5B case 0x5D case 0x3A case 0x2C
+                    {
+                        set op: op | bit
+                        set nonscalar: nonscalar | bit
+                    }
                     else
                     {
                         if JsonReader.is_ws(c)
-                            set blank: blank | bit
+                            set nonscalar: nonscalar | bit
                     }
                 if c < 0x20
-                    set ctl: ctl | bit
+                    set special: special | bit
                 set i: i + 1
             }
             ; past the end: whitespace, which is never structural
             while i < 64
             {
-                set blank: blank | ((1 as u64) << (i as u64))
+                set nonscalar: nonscalar | ((1 as u64) << (i as u64))
                 set i: i + 1
             }
         }
@@ -179,10 +190,36 @@ define JsonStream
         ; closing one
         let inside JsonStream.prefix_xor(q) xor s.string_carry
         let outside inside xor 0xFFFFFFFFFFFFFFFF
-        let scalar (blank | op | q | inside) xor 0xFFFFFFFFFFFFFFFF
+        ; an escaped quote outside a string counts as no scalar byte here;
+        ; it only occurs past the first error (the backslash before it is a
+        ; scalar byte, and stage 2 refuses it)
+        let scalar (nonscalar | inside) xor 0xFFFFFFFFFFFFFFFF
         let scalar_start scalar & (((scalar << 1) | s.scalar_carry) xor 0xFFFFFFFFFFFFFFFF)
-        let bits q | (op & outside) | scalar_start | ((back | ctl) & inside)
+        let bits q | (op & outside) | scalar_start | (special & inside)
         JsonStream(bits, base, base + 64, escape_carry, (0 as u64) - (inside >> 63), scalar >> 63)
+    }
+
+    ; The classes of sixteen bytes, one bit each (after simdjson's two-table
+    ; classification; the tables are this reader's own): the byte's low
+    ; nibble picks an entry of one table, its high nibble one of the other,
+    ; and a class bit survives the AND exactly for the bytes of its class --
+    ; 0x01 [ ] { }, 0x02 `,`, 0x04 `:`, 0x08 tab, LF, CR, 0x10 space, 0x20
+    ; a control character (below 0x20, tab, LF and CR included), 0x40
+    ; backslash, 0x80 quote. Two table lookups (NEON's tbl) and an AND for
+    ; what were fourteen compares (NEON tbl, x86 pshufb / vpshufb).
+    function classes(v: u8x32) returns u8x32
+    {
+        let by_low u8x16(48, 32, 160, 32, 32, 32, 32, 32, 32, 40, 44, 33, 98, 41, 32, 32)
+        let by_high u8x16(40, 32, 146, 4, 0, 65, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0)
+        u8x32.lookup(by_low, v & u8x32.splat(0x0F)) & u8x32.lookup(by_high, v >> u8x32.splat(4))
+    }
+
+    ; The bytes of a 64-byte block whose classes meet `class`, as a bitmap.
+    function class_bits(c0: u8x32, c1: u8x32, class: u8) returns u64
+    {
+        let k u8x32.splat(class)
+        let none u8x32.splat(0)
+        mask32.join((c0 & k) <> none, (c1 & k) <> none)
     }
 
     ; Bit i: the XOR of bits 0 to i of x.

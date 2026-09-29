@@ -88,6 +88,11 @@ fi
 # `scalyc.ll` differed only in the functions that had changed. The emission is
 # a property of the TARGET and the LLVM version, not of who ran it.
 SEED_TARGET=${SEED_TARGET:-arm64-apple-darwin}
+# ★--portable-simd (2026-09-29): a SIMD operation with a target form (NEON's
+# tbl and addp, ROADMAP-simd.md phase 6) would otherwise take it for the named
+# arm64 target, and an x86_64 build from this seed would meet AArch64
+# intrinsics. The seed carries the target-neutral forms; a program compiled
+# for its machine gets the target's.
 # The roots are independent, so every step over them runs them side by side;
 # `waitall` fails if any of them did.
 waitall() { local rc=0 p; for p in "$@"; do wait "$p" || rc=1; done; return $rc; }
@@ -95,7 +100,7 @@ waitall() { local rc=0 p; for p in "$@"; do wait "$p" || rc=1; done; return $rc;
 emit_roots() {
   local cc=$1 a pids=(); shift
   for a in "$@"; do
-    ( ulimit -s 65520; "$cc" -S --no-tests --target "$SEED_TARGET" -o "$OUT/${a%%=*}.ll" "${a#*=}" ) & pids+=($!)
+    ( ulimit -s 65520; "$cc" -S --no-tests --portable-simd --target "$SEED_TARGET" -o "$OUT/${a%%=*}.ll" "${a#*=}" ) & pids+=($!)
   done
   waitall "${pids[@]}"
 }
@@ -116,7 +121,7 @@ llc_objs() {
   waitall "${pids[@]}"
 }
 C=packages/scalyc/0.1.0 L=packages/scalyls/0.1.0
-echo "seed: emitting .ll with $CC --no-tests --target $SEED_TARGET"
+echo "seed: emitting .ll with $CC --no-tests --portable-simd --target $SEED_TARGET"
 emit_roots "$CC" main=$C/main.scaly scalyc=$C/scalyc.scaly scaly=packages/scaly/0.1.0/scaly.scaly || fail "emission"
 
 if [ "$SCALY_COFF" = 1 ]; then

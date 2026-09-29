@@ -36,9 +36,12 @@ TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 # the IR carries no triple (one seed for every target): name the host's
 TRIPLE=$(${CLANG:-clang} -print-target-triple)
-"$BIN" -S --no-prelude --no-tests -o "$TMP/rt.ll" packages/scaly/0.1.0/scaly.scaly
-"$BIN" -S --no-prelude -o "$TMP/json.ll" packages/json/0.1.0/json.scaly
-"$BIN" -S -o "$TMP/bench.ll" tools/bench/json/bench.scaly
+# -mcpu=native reaches the IR since SIMD phase 6: a SIMD operation takes the
+# form this CPU's features allow (pshufb on x86_64), as the Rust side's
+# target-cpu=native does
+"$BIN" -S -mcpu=native --no-prelude --no-tests -o "$TMP/rt.ll" packages/scaly/0.1.0/scaly.scaly
+"$BIN" -S -mcpu=native --no-prelude -o "$TMP/json.ll" packages/json/0.1.0/json.scaly
+"$BIN" -S -mcpu=native -o "$TMP/bench.ll" tools/bench/json/bench.scaly
 LTO_OPT_FLAGS="-mtriple=$TRIPLE -mcpu=native" LTO_LLC_FLAGS="-mcpu=native" \
   tools/link-lto.sh "$TMP/bench" "$TMP/bench.ll" "$TMP/json.ll" "$TMP/rt.ll"
 ( cd tools/bench/json/rust && RUSTFLAGS="-C target-cpu=native" cargo build --release -q )
@@ -50,7 +53,9 @@ for p in simdjson yyjson; do
     INC+=(-I"$d/include"); LIBS+=(-L"$d/lib" -Wl,-rpath,"$d/lib")
   fi
 done
-if ${CXX:-clang++} -std=c++17 -O3 -mcpu=native "${INC[@]+"${INC[@]}"}" tools/bench/json/cpp/bench.cpp \
+# the host CPU, spelled per architecture (clang takes -march on x86)
+case "$(uname -m)" in x86_64|amd64) NATIVE=-march=native ;; *) NATIVE=-mcpu=native ;; esac
+if ${CXX:-clang++} -std=c++17 -O3 $NATIVE "${INC[@]+"${INC[@]}"}" tools/bench/json/cpp/bench.cpp \
      "${LIBS[@]+"${LIBS[@]}"}" -lsimdjson -lyyjson -o "$TMP/cppbench" 2> "$TMP/cpp.log"; then
   CPP="$TMP/cppbench"
 else

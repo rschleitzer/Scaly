@@ -90,6 +90,19 @@ define JsonStream
     ; compare; the last, short block byte by byte).
     function classify(src: Slice[u8], s: JsonStream) @page true @direct true @ret_param_1 true @deep true returns JsonStream linked
 
+    ; The classes of sixteen bytes, one bit each (after simdjson's two-table
+    ; classification; the tables are this reader's own): the byte's low
+    ; nibble picks an entry of one table, its high nibble one of the other,
+    ; and a class bit survives the AND exactly for the bytes of its class --
+    ; 0x01 [ ] { }, 0x02 `,`, 0x04 `:`, 0x08 tab, LF, CR, 0x10 space, 0x20
+    ; a control character (below 0x20, tab, LF and CR included), 0x40
+    ; backslash, 0x80 quote. Two table lookups (NEON's tbl) and an AND for
+    ; what were fourteen compares (NEON tbl, x86 pshufb / vpshufb).
+    function classes(v: u8x32) @deep true returns u8x32 linked
+
+    ; The bytes of a 64-byte block whose classes meet `class`, as a bitmap.
+    function class_bits(c0: u8x32, c1: u8x32, class: u8) @deep true returns u64 linked
+
     ; Bit i: the XOR of bits 0 to i of x.
     function prefix_xor(x: u64) @ret_nonlocal true @deep true returns u64 linked
 }

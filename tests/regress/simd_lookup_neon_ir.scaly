@@ -1,0 +1,13 @@
+; SIMD phase 6: an AArch64 emission takes NEON's forms -- tbl for lookup,
+; addp for join -- and --portable-simd would take none (the seed is emitted
+; that way). simd_lookup_join checks what they compute.
+; args: --target arm64-apple-darwin
+; expect-ir: @llvm.aarch64.neon.tbl1.v16i8
+; expect-ir: @llvm.aarch64.neon.addp.v16i8
+
+let t u8x16.iota(0, 1)
+let x u8x16.lookup(t, u8x16.splat(3))
+let m x = u8x16.splat(3)
+let b mask16.join(m, m, m, m)
+if b = 0
+    print "none"

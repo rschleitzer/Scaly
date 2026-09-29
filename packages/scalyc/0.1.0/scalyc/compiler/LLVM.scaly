@@ -309,6 +309,7 @@ function LLVMGetEnumAttributeKindForName(name: pointer[const_char], len: size_t)
 function LLVMCreateTypeAttribute(context: LLVMContextRef, kind_id: u32, type_ref: LLVMTypeRef) returns LLVMAttributeRef extern
 function LLVMCreateEnumAttribute(context: LLVMContextRef, kind_id: u32, val: u64) returns LLVMAttributeRef extern
 procedure LLVMAddAttributeAtIndex(func: LLVMValueRef, idx: u32, attr: LLVMAttributeRef) extern
+function LLVMCreateStringAttribute(context: LLVMContextRef, key: pointer[const_char], key_length: u32, value: pointer[const_char], value_length: u32) returns LLVMAttributeRef extern
 function LLVMGetEnumAttributeAtIndex(func: LLVMValueRef, idx: u32, kind_id: u32) returns LLVMAttributeRef extern
 function LLVMGetTypeAttributeValue(attr: LLVMAttributeRef) returns LLVMTypeRef extern
 procedure LLVMAddCallSiteAttribute(call: LLVMValueRef, idx: u32, attr: LLVMAttributeRef) extern
@@ -363,6 +364,7 @@ function LLVMConstReal(real_type: LLVMTypeRef, value: double) returns LLVMValueR
 
 ; Null pointer constant
 function LLVMConstNull(type: LLVMTypeRef) returns LLVMValueRef extern
+function LLVMConstVector(scalar_constant_vals: pointer[LLVMValueRef], size: u32) returns LLVMValueRef extern
 function LLVMConstPointerNull(type: LLVMTypeRef) returns LLVMValueRef extern
 
 ; String constant
@@ -378,6 +380,7 @@ function LLVMConstArray2(element_type: LLVMTypeRef, constant_vals: pointer[LLVMV
 
 ; Undefined value
 function LLVMGetUndef(type: LLVMTypeRef) returns LLVMValueRef extern
+function LLVMBuildShuffleVector(builder: LLVMBuilderRef, v1: LLVMValueRef, v2: LLVMValueRef, mask: LLVMValueRef, name: pointer[const_char]) returns LLVMValueRef extern
 function LLVMConstAllOnes(type: LLVMTypeRef) returns LLVMValueRef extern
 
 ; ============================================================================

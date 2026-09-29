@@ -40,10 +40,18 @@ define JsonMember (key: Slice[u8], value: JsonValue, verbatim_key: bool)
 ; page. One allocation each, the exact size, filled by one copy -- where
 ; `Vector#(n)` spent a second allocation on its own record and cleared the
 ; buffer first (for the document copy, a memset of the whole document).
+; A container's buffer is cut from a chunk of JSON_CHUNK elements the arena
+; holds, filled element by element: a call to Page.allocate and one to
+; memmove per container were a fifth of a parse of many small containers
+; (citm_catalog, 2026-09-29). A container larger than a chunk gets its own.
+define JSON_CHUNK: size_t 128
+
 define JsonArena
 @resident true @inplace true (
-    ; a record needs a field; the page is the point
-    unused: u8
+    var value_room: Slice[JsonValue]
+    var value_used: size_t
+    var member_room: Slice[JsonMember]
+    var member_used: size_t
 )
 {
     init() linked
@@ -52,9 +60,9 @@ define JsonArena
     ; answer's length is the document's).
     procedure keep_document(mutable this, items: Slice[u8]) @page true @direct true @deep true returns Slice[u8] linked
 
-    procedure keep_values(mutable this, items: Slice[JsonValue]) @page true @direct true @deep true returns Slice[JsonValue] linked
+    procedure keep_values(mutable this, items: Slice[JsonValue]) @page true @direct true @deep true @deep_this_2 true returns Slice[JsonValue] linked
 
-    procedure keep_members(mutable this, items: Slice[JsonMember]) @page true @direct true @deep true returns Slice[JsonMember] linked
+    procedure keep_members(mutable this, items: Slice[JsonMember]) @page true @direct true @deep true @deep_this_2 true returns Slice[JsonMember] linked
 }
 
 ; The views as records: a union's payload is a type NAME, not a generic
@@ -145,6 +153,13 @@ define JsonValue union
     ; name as soon as the colon is seen and gets its value when that is
     ; complete, so an open object's pending member is always the last.
     procedure parse(source: Slice[u8]) @page true @direct true @deep true returns JsonParsed linked
+
+    ; The closing quote of the string that opens at doc[t], given stage 1's
+    ; next structural position u: that one, when it is a quote (the string
+    ; has neither escape nor control character), else the byte scanner's.
+    ; Bound with `let`: a `var` of a record `set` to a call's result was
+    ; copied to the frame page at every set -- an allocation per string.
+    function closing_quote(doc: Slice[u8], t: size_t, u: size_t) @page true @direct true @deep true returns JsonScan linked
 
     ; The text of the string that opens at doc[open] and closes at close.at,
     ; its escapes decoded in place. Its closing quote was TAKEN from the

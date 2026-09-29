@@ -1,0 +1,96 @@
+; SIMD phase 6 (2026-09-29): the two operations with a target form.
+;   u8x16.lookup(table, index)  lane i is table[index[i]], 0 where index[i]
+;                               is 16 or more (NEON: tbl)
+;   mask16.join(m0, m1, m2, m3) one u64, mask i in bits 16i..16i+15
+;                               (NEON: weighted bytes, three levels of addp)
+;   u8x32.lookup(table, index)  the same table for thirty-two indices (AVX2:
+;                               one vpshufb, the table in both halves)
+;   mask32.join(m0, m1)         one u64, mask i in bits 32i..32i+31
+; Both against their definitions: lookup lane by lane, join against four
+; bits() shifted into place, over a pattern's every 64-byte window.
+; This is simd_lookup_join with --portable-simd: the target-neutral forms.
+; args: --portable-simd
+; Expected: PASS
+
+var ok true
+let table u8x16(10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25)
+let index u8x16(0, 15, 16, 255, 3, 7, 128, 1, 2, 17, 8, 9, 14, 13, 12, 31)
+let got u8x16.lookup(table, index)
+var i: size_t 0
+while i < 16
+{
+    let ix index[i]
+    var want: u8 0
+    if ix < 16
+        set want: table[ix as size_t]
+    if got[i] <> want
+        set ok: false
+    set i: i + 1
+}
+
+; a pattern with every class of byte in it
+var data Array[u8]()
+var j: size_t 0
+while j < 400
+{
+    data.add((((j * 37) + (j / 7)) % 97) as u8)
+    set j: j + 1
+}
+var w: size_t 0
+while w + 64 <= data.length
+{
+    let v0 u8x16.load(data, w)
+    let v1 u8x16.load(data, w + 16)
+    let v2 u8x16.load(data, w + 32)
+    let v3 u8x16.load(data, w + 48)
+    let key u8x16.splat(((w % 13) + 30) as u8)
+    let m0 v0 < key
+    let m1 v1 = key
+    let m2 v2 > key
+    let m3 v3 <> key
+    let joined mask16.join(m0, m1, m2, m3)
+    let composed m0.bits() | (m1.bits() << 16) | (m2.bits() << 32) | (m3.bits() << 48)
+    if joined <> composed
+        set ok: false
+    set w: w + 1
+}
+if mask16.join(mask16.none_set(), mask16.all_set(), mask16.none_set(), mask16.all_set()) <> 0xFFFF0000FFFF0000
+    set ok: false
+
+; thirty-two lanes: the lookup lane by lane, the join against two bits()
+var wide Array[u8]()
+set j: 0
+while j < 32
+{
+    wide.add(((j * 7) + 3) as u8)
+    set j: j + 1
+}
+let index32 u8x32.load(wide, 0)
+let got32 u8x32.lookup(table, index32)
+set i: 0
+while i < 32
+{
+    let ix index32[i]
+    var want: u8 0
+    if ix < 16
+        set want: table[ix as size_t]
+    if got32[i] <> want
+        set ok: false
+    set i: i + 1
+}
+set w: 0
+while w + 64 <= data.length
+{
+    let a0 u8x32.load(data, w)
+    let a1 u8x32.load(data, w + 32)
+    let key32 u8x32.splat(((w % 11) + 40) as u8)
+    let n0 a0 < key32
+    let n1 a1 >= key32
+    if mask32.join(n0, n1) <> (n0.bits() | (n1.bits() << 32))
+        set ok: false
+    set w: w + 3
+}
+if ok
+    print "PASS"
+else
+    print "FAIL"

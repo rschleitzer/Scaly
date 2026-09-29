@@ -90,6 +90,31 @@ for f in tests/aot/*.scaly; do
     fi
 done
 
+# ---- SIMD phase 6 on x86: the lookup/join fixture as an x86_64 program, with
+# SSSE3 (pshufb behind the saturating add), with AVX2 (vpshufb over 256 bits)
+# and on the x86-64 baseline (the compare-select form). Rosetta 2 runs SSE up
+# to 4.2 everywhere and AVX2 on recent macOS (26 measured); an AVX2 binary
+# that dies of SIGILL means the translator, not the code, and is skipped.
+simd_fail=""
+for cpu in -mcpu=core2 -mcpu=x86-64-v3 ""; do
+    if ! "$SCALYC" --target "$TRIPLE" $cpu -c -o "$WORK/simd.o" tests/regress/simd_lookup_join.scaly >/dev/null 2>&1 \
+       || ! clang -arch x86_64 "$WORK/simd.o" "$WORK/libscaly.a" -lm -o "$WORK/simd" 2>/dev/null; then
+        simd_fail="$simd_fail simd_lookup_join(${cpu:-baseline}, build)"
+        continue
+    fi
+    simd_out=$("$WORK/simd" 2>/dev/null); simd_rc=$?
+    if [ "$cpu" = -mcpu=x86-64-v3 ] && [ "$simd_rc" = 132 ]; then
+        echo "rosetta: SKIP simd_lookup_join(x86-64-v3) -- this Rosetta has no AVX2"
+        continue
+    fi
+    [ "$simd_out" = "PASS" ] || simd_fail="$simd_fail simd_lookup_join(${cpu:-baseline})"
+done
+if [ -n "$simd_fail" ]; then
+    fail=$((fail+1)); failed="$failed$simd_fail"
+else
+    pass=$((pass+1))
+fi
+
 # A corpus that shrank to nothing would report a proud green, so the count is
 # asserted rather than printed — the same reason tools/aot_corpus.sh had to
 # stop ending on `echo`.

@@ -19842,7 +19842,14 @@ define Planner
             var want: size_t 0
             match m
                 case "splat" case "load_ptr": set want: 1
-                case "iota" case "load": set want: 2
+                case "iota" case "load" case "lookup": set want: 2
+                case "join":
+                {
+                    if t = "mask32"
+                        set want: 2
+                    else
+                        set want: 4
+                }
             let rn Planner.simd_static_result(t, m)
             if rn.get_length() = 0
                 this.add_diagnostic(second.loc, String^this("`t` has no static `m` - a vector type offers splat, iota, load and load_ptr, a mask all_set and none_set"))
@@ -19852,7 +19859,26 @@ define Planner
                 this.check_simd_memory(t, m, arg_ops[0], second.loc)
             else if m = "load_ptr"
                 this.check_simd_pointer(t, m, arg_ops[0], second.loc)
-            this.simd_operand(second.loc, "simd.`m`", arg_ops, Planner.simd_type(t), second.member_access)
+            else if m = "join"
+            {
+                var i: size_t 0
+                while i < arg_ops.length
+                {
+                    if arg_ops[i].result_type.name <> t
+                        this.add_diagnostic(second.loc, String^this("`t`.`m` takes `want` values of `t`"))
+                    set i: i + 1
+                }
+            }
+            else if m = "lookup"
+            {
+                ; a sixteen-entry table, then the indices
+                if arg_ops[0].result_type.name <> "u8x16" or arg_ops[1].result_type.name <> t
+                    this.add_diagnostic(second.loc, String^this("`t`.lookup takes a table of u8x16 and indices of `t`"))
+            }
+            var rt Planner.simd_type(t)
+            if rn.get_length() > 0 and rn <> t
+                set rt: Planner.simd_result_type(rn)
+            this.simd_operand(second.loc, "simd.`m`", arg_ops, rt, second.member_access)
         }
 
         procedure plan_simd_method(mutable this: Planner, recv: PlannedOperand, m: String, arg_ops: Vector[PlannedOperand], second: PlannedOperand) returns PlannedOperand
@@ -53803,10 +53829,17 @@ define Planner
         {
             match m
                 case "all_set" case "none_set": return t
+            ; four sixteen-lane masks, or two thirty-two-lane ones, as one u64
+            ; bitmap (ROADMAP-simd.md phase 6)
+            if m = "join" and (t = "mask16" or t = "mask32")
+                return String("u64")
             return String()
         }
         match m
             case "splat" case "iota" case "load" case "load_ptr": return t
+        ; a sixteen-entry byte table indexed per lane (phase 6)
+        if m = "lookup" and (t = "u8x16" or t = "u8x32")
+            return t
         String()
     }
 

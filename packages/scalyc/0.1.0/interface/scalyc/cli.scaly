@@ -87,6 +87,7 @@ define Options
     target_triple: String           ; --target <triple>: cross-emit object (empty = host)
     target_cpu: String              ; -mcpu=<name>|native: the CPU codegen tunes for (empty = generic)
     opt_level: int                  ; -O0..-O3: LLVM pipeline for object emission (default 0)
+    portable_simd: bool             ; --portable-simd: no target form for a SIMD operation (the seed)
 )
 {
     init() linked

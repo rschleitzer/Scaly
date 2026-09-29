@@ -126,8 +126,13 @@ run_one() {
         # The comparison itself stays STDOUT-ONLY: a test that writes to
         # stderr and still prints PASS must keep passing.
         cerr=$(mktemp); rerr=$(mktemp)
+        # `; args: <flags>` (repeatable) passes compiler flags here too: one
+        # fixture body can then be run through both lowerings of an operation
+        # (simd_lookup_join / _portable, --portable-simd).
+        arg_args=()
+        while IFS= read -r a; do [ -n "$a" ] && arg_args+=($a); done < <(sed -n 's/^; args: //p' "$f")
         crc=0
-        "$STAGE" -o "$bin" "$f" "${extra[@]}" > "$cerr" 2>&1 || crc=$?
+        "$STAGE" "${arg_args[@]}" -o "$bin" "$f" "${extra[@]}" > "$cerr" 2>&1 || crc=$?
         out=$("$bin" 2>"$rerr"); rc=$?
         if [ "$out" = "PASS" ]; then
           echo "PASS $t"

@@ -74,6 +74,7 @@ define Emitter
         data_layout: String         ; Empty = default for target
         skip_tests: bool            ; --no-tests: omit test/test_* functions
         page_size: size_t           ; the stdlib's PAGE_SIZE; 0 = no page-fit check
+        portable_simd: bool         ; --portable-simd: SIMD lowered target-neutrally (the seed)
     )
     {
         init() linked
@@ -133,6 +134,18 @@ define Emitter
         ; OBJECT FORMAT, not of the host — a cross-emit for Windows from a Mac
         ; must set it and a native Mac build must not.
         var target_is_coff: bool
+        ; The emission triple is AArch64 and --portable-simd is off: the SIMD
+        ; operations with a NEON form take it (ROADMAP-simd.md phase 6).
+        ; Decided once in apply_target_layout.
+        var simd_neon: bool
+        ; The emission triple is x86_64, --portable-simd is off, and the CPU
+        ; -mcpu names has SSSE3 (pshufb) / AVX2: `native` asks the host's
+        ; feature string; a named CPU has SSSE3 unless it is `generic` or
+        ; the x86-64 baseline, AVX2 when it is x86-64-v3 or -v4 (LLVM-C
+        ; cannot list a named CPU's features). No -mcpu: neither -- the IR
+        ; must run on any x86_64.
+        var simd_ssse3: bool
+        var simd_avx2: bool
         var llvm_module: LLVMModuleRef
         var builder: LLVMBuilderRef
         ; Debug info (DWARF) — populated only when config.emit_debug_info.
@@ -2163,6 +2176,29 @@ define Emitter
         procedure simd_lane_index(mutable this, mutable idx: LLVMValueRef, lanes: size_t) @direct true @deep true returns LLVMValueRef linked
 
         procedure simd_intrinsic(mutable this, mutable name: String, mutable ret: LLVMTypeRef, mutable arg: LLVMTypeRef) @direct true @deep true returns LLVMValueRef linked
+
+        ; "target-cpu" / "target-features" on every function this module
+        ; defines (the CPU -mcpu names; for `native`, the host's CPU and
+        ; feature string)
+        procedure stamp_target_cpu(mutable this) @deep true io linked
+
+        ; `u8x16.lookup(table, index)`: lane i is table[index[i]], 0 where
+        ; index[i] is 16 or more -- NEON's tbl, one instruction; elsewhere a
+        ; lane-by-lane select (correct, and slow).
+        procedure simd_lookup(mutable this, mutable table: LLVMValueRef, mutable index: LLVMValueRef) @direct true @deep true returns LLVMValueRef linked
+
+        ; `mask16.join(m0, m1, m2, m3)`: one u64, mask i in bits 16i to 16i+15.
+        ; NEON: each mask's lanes weighted 1, 2, 4 ... 128 per byte, then three
+        ; levels of pairwise adds (addp) fold the four into eight bytes --
+        ; simdjson's reduction, where four bits() cost five instructions each.
+        ; Elsewhere: four bitcasts, shifted and joined.
+        procedure simd_join(mutable this, mutable vals: Array[LLVMValueRef]) @direct true @ret_caller true @deep true returns LLVMValueRef linked
+
+        ; lanes from..from+count of the concatenation of a and b
+        procedure simd_shuffle(mutable this, mutable a: LLVMValueRef, mutable b: LLVMValueRef, from: size_t, count: size_t) @direct true @ret_caller true @deep true returns LLVMValueRef linked
+
+        ; f(a, b) for a two-operand intrinsic
+        procedure simd_call2(mutable this, mutable f: LLVMValueRef, mutable a: LLVMValueRef, mutable b: LLVMValueRef) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
         ; a declared intrinsic with any number of parameters
         procedure simd_intrinsic_n(mutable this, mutable name: String, mutable ret: LLVMTypeRef, mutable params: Vector[LLVMTypeRef]) @direct true @deep true returns LLVMValueRef linked

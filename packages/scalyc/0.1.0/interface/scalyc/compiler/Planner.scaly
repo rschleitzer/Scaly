@@ -8063,7 +8063,7 @@ define Planner
     function simd_pointee_name(t: PlannedType) @page true @direct true @ret_param_0 true @deep true returns String linked
 
     ; The result type of a static `T.m(...)` on vector type `t`, "" if none.
-    function simd_static_result(t: String, m: String) @page true @direct true @ret_param_0 true @deep true returns String linked
+    function simd_static_result(t: String, m: String) @page true @direct true @deep true returns String linked
 
     function is_primitive_type_name(name: String) @ret_nonlocal true @deep true returns bool linked
 

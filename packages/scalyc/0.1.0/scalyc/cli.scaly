@@ -87,6 +87,7 @@ define Options
     target_triple: String           ; --target <triple>: cross-emit object (empty = host)
     target_cpu: String              ; -mcpu=<name>|native: the CPU codegen tunes for (empty = generic)
     opt_level: int                  ; -O0..-O3: LLVM pipeline for object emission (default 0)
+    portable_simd: bool             ; --portable-simd: no target form for a SIMD operation (the seed)
 )
 {
     init()
@@ -123,6 +124,7 @@ define Options
         set target_triple: String()
         set target_cpu: String()
         set opt_level: 0
+        set portable_simd: false
     }
 
     function has_error(this) returns bool
@@ -300,12 +302,23 @@ define cli
                         set opts.error_message: "--target requires a triple"
                     }
                 }
+                else if arg = "--portable-simd"
+                {
+                    ; A SIMD operation with a target form (NEON's tbl and addp,
+                    ; ROADMAP-simd.md phase 6) takes its target-neutral one: the
+                    ; seed is emitted this way, since one seed serves every
+                    ; target.
+                    set opts.portable_simd: true
+                }
                 else if arg.starts_with("-mcpu=")
                 {
                     ; The CPU the object code is generated and optimized for
                     ; (ROADMAP-simd.md phase 3): a name the target's backend
                     ; knows, or `native` for this machine's CPU and features.
-                    ; The IR does not change -- the seed stays generic.
+                    ; Since phase 6 it reaches the IR too: every function
+                    ; carries the CPU, and on x86_64 a SIMD operation takes the
+                    ; form the CPU's features allow (pshufb). The seed is
+                    ; emitted without it.
                     let cpu arg.substring(6, arg.get_length() - 6)
                     if cpu.get_length() = 0
                         set opts.error_message: "-mcpu= requires a CPU name, or native"
@@ -386,6 +399,7 @@ define cli
         Console.println "  --jit          JIT-compile and run the whole program"
         Console.println "  --target <t>   Cross-emit object for triple <t> (use with -c)"
         Console.println "  -mcpu=<cpu>    Generate code for <cpu>, or native for this machine (default generic)"
+        Console.println "  --portable-simd  SIMD operations in their target-neutral form (the seed)"
     }
 
     ; The directory for the compiler's own scratch object. POSIX has /tmp;
@@ -788,6 +802,7 @@ define cli
         set config.target_triple: opts.target_triple
         set config.target_cpu: opts.target_cpu
         set config.opt_level: opts.opt_level
+        set config.portable_simd: opts.portable_simd
         set config.page_size: planner.page_size_constant()
 
         var emitter Emitter.Emitter(config)

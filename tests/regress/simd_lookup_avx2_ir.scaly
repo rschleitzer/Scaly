@@ -1,0 +1,13 @@
+; SIMD phase 6 on x86_64 with AVX2 (-mcpu=x86-64-v3): a thirty-two-lane
+; lookup is one vpshufb over the table copied into both 128-bit halves,
+; behind the same saturating add as pshufb's.
+; args: --target x86_64-unknown-linux-gnu -mcpu=x86-64-v3
+; expect-ir: @llvm.x86.avx2.pshuf.b
+; expect-ir: @llvm.uadd.sat.v32i8
+
+; a run-time index, so the IR builder cannot fold the lookup away
+let k String("abc").length as u8
+let t u8x16.iota(0, 1)
+let x u8x32.lookup(t, u8x32.splat(k))
+if x[0] = 3
+    print "three"

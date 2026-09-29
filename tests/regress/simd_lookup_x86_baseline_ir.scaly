@@ -1,0 +1,12 @@
+; SIMD phase 6 on x86_64 without -mcpu: the IR assumes the x86-64 baseline
+; (SSE2), so `lookup` takes its compare-select form -- no pshufb, no CPU
+; attribute (simd_lookup_x86_ir is the other side).
+; args: --target x86_64-unknown-linux-gnu
+; expect-ir: simd.lookup.hits
+
+; a run-time index, so the IR builder cannot fold the lookup away
+let k String("abc").length as u8
+let t u8x16.iota(0, 1)
+let x u8x16.lookup(t, u8x16.splat(k))
+if x[0] = 3
+    print "three"

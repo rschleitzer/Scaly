@@ -40,16 +40,29 @@ define JsonMember (key: Slice[u8], value: JsonValue, verbatim_key: bool)
 ; page. One allocation each, the exact size, filled by one copy -- where
 ; `Vector#(n)` spent a second allocation on its own record and cleared the
 ; buffer first (for the document copy, a memset of the whole document).
+; A container's buffer is cut from a chunk of JSON_CHUNK elements the arena
+; holds, filled element by element: a call to Page.allocate and one to
+; memmove per container were a fifth of a parse of many small containers
+; (citm_catalog, 2026-09-29). A container larger than a chunk gets its own.
+define JSON_CHUNK: size_t 128
+
 define JsonArena
 (
-    ; a record needs a field; the page is the point
-    unused: u8
+    var value_room: Slice[JsonValue]
+    var value_used: size_t
+    var member_room: Slice[JsonMember]
+    var member_used: size_t
 )
 {
     init()
     {
         let own_page Page.get(this)
-        set unused: 0
+        set value_room.data: null
+        set value_room.length: 0
+        set value_used: 0
+        set member_room.data: null
+        set member_room.length: 0
+        set member_used: 0
     }
 
     ; The document's copy, with JSON_PADDING zero bytes past its end (the
@@ -70,15 +83,51 @@ define JsonArena
 
     procedure keep_values(mutable this, items: Slice[JsonValue]) returns Slice[JsonValue]
     {
-        let kept allocate_slice[JsonValue](Page.get(this), items.length)
-        memcpy(kept.data as pointer[void], items.data as pointer[void], items.length * sizeof JsonValue)
+        let n items.length
+        if n > JSON_CHUNK
+        {
+            let own allocate_slice[JsonValue](Page.get(this), n)
+            memcpy(own.data as pointer[void], items.data as pointer[void], n * sizeof JsonValue)
+            return own
+        }
+        if value_used + n > value_room.length
+        {
+            set value_room: allocate_slice[JsonValue](Page.get(this), JSON_CHUNK)
+            set value_used: 0
+        }
+        let kept value_room.subslice(value_used, value_used + n)
+        set value_used: value_used + n
+        var i: size_t 0
+        while i < n
+        {
+            kept.put(i, items[i])
+            set i: i + 1
+        }
         kept
     }
 
     procedure keep_members(mutable this, items: Slice[JsonMember]) returns Slice[JsonMember]
     {
-        let kept allocate_slice[JsonMember](Page.get(this), items.length)
-        memcpy(kept.data as pointer[void], items.data as pointer[void], items.length * sizeof JsonMember)
+        let n items.length
+        if n > JSON_CHUNK
+        {
+            let own allocate_slice[JsonMember](Page.get(this), n)
+            memcpy(own.data as pointer[void], items.data as pointer[void], n * sizeof JsonMember)
+            return own
+        }
+        if member_used + n > member_room.length
+        {
+            set member_room: allocate_slice[JsonMember](Page.get(this), JSON_CHUNK)
+            set member_used: 0
+        }
+        let kept member_room.subslice(member_used, member_used + n)
+        set member_used: member_used + n
+        var i: size_t 0
+        while i < n
+        {
+            kept.put(i, items[i])
+            set i: i + 1
+        }
         kept
     }
 }
@@ -385,19 +434,15 @@ define JsonValue union
                     break
                 }
                 var u s.take(doc)
-                var close JsonScan(JSON_OK, u, false)
-                if u >= n or doc[u] <> 0x22
+                let close JsonValue.closing_quote(doc, t, u)
+                if close.code <> JSON_OK
                 {
-                    set close: JsonReader.string_close(doc, t)
-                    if close.code <> JSON_OK
-                    {
-                        set error: close.code
-                        set error_at: close.at
-                        break
-                    }
-                    while u < close.at
-                        set u: s.take(doc)
+                    set error: close.code
+                    set error_at: close.at
+                    break
                 }
+                while u < close.at
+                    set u: s.take(doc)
                 let key JsonValue.string_text(doc, t, close)
                 set t: s.take(doc)
                 if t >= n or doc[t] <> 0x3A                 ; ':'
@@ -463,19 +508,15 @@ define JsonValue union
                     ; else the byte scanner's (string_text says why the
                     ; stream is taken up to it first)
                     var u s.take(doc)
-                    var close JsonScan(JSON_OK, u, false)
-                    if u >= n or doc[u] <> 0x22
+                    let close JsonValue.closing_quote(doc, t, u)
+                    if close.code <> JSON_OK
                     {
-                        set close: JsonReader.string_close(doc, t)
-                        if close.code <> JSON_OK
-                        {
-                            set error: close.code
-                            set error_at: close.at
-                            break
-                        }
-                        while u < close.at
-                            set u: s.take(doc)
+                        set error: close.code
+                        set error_at: close.at
+                        break
                     }
+                    while u < close.at
+                        set u: s.take(doc)
                     set v: JsonValue.Text(JsonString(JsonValue.string_text(doc, t, close), close.flag = false))
                     set t: s.take(doc)
                     set state: STAGE_COMPLETE
@@ -599,6 +640,18 @@ define JsonValue union
         if error <> JSON_OK
             return JsonParsed(JsonValue.Null, error, error_at)
         JsonParsed(v, JSON_OK, 0)
+    }
+
+    ; The closing quote of the string that opens at doc[t], given stage 1's
+    ; next structural position u: that one, when it is a quote (the string
+    ; has neither escape nor control character), else the byte scanner's.
+    ; Bound with `let`: a `var` of a record `set` to a call's result was
+    ; copied to the frame page at every set -- an allocation per string.
+    function closing_quote(doc: Slice[u8], t: size_t, u: size_t) returns JsonScan
+    {
+        if u < doc.length and doc[u] = 0x22
+            return JsonScan(JSON_OK, u, false)
+        JsonReader.string_close(doc, t)
     }
 
     ; The text of the string that opens at doc[open] and closes at close.at,

@@ -74,6 +74,7 @@ define Emitter
         data_layout: String         ; Empty = default for target
         skip_tests: bool            ; --no-tests: omit test/test_* functions
         page_size: size_t           ; the stdlib's PAGE_SIZE; 0 = no page-fit check
+        portable_simd: bool         ; --portable-simd: SIMD lowered target-neutrally (the seed)
     )
     {
         init()
@@ -86,6 +87,7 @@ define Emitter
             set data_layout: String()
             set skip_tests: false
             set page_size: 0
+            set portable_simd: false
         }
     }
 
@@ -169,6 +171,18 @@ define Emitter
         ; OBJECT FORMAT, not of the host — a cross-emit for Windows from a Mac
         ; must set it and a native Mac build must not.
         var target_is_coff: bool
+        ; The emission triple is AArch64 and --portable-simd is off: the SIMD
+        ; operations with a NEON form take it (ROADMAP-simd.md phase 6).
+        ; Decided once in apply_target_layout.
+        var simd_neon: bool
+        ; The emission triple is x86_64, --portable-simd is off, and the CPU
+        ; -mcpu names has SSSE3 (pshufb) / AVX2: `native` asks the host's
+        ; feature string; a named CPU has SSSE3 unless it is `generic` or
+        ; the x86-64 baseline, AVX2 when it is x86-64-v3 or -v4 (LLVM-C
+        ; cannot list a named CPU's features). No -mcpu: neither -- the IR
+        ; must run on any x86_64.
+        var simd_ssse3: bool
+        var simd_avx2: bool
         var llvm_module: LLVMModuleRef
         var builder: LLVMBuilderRef
         ; Debug info (DWARF) — populated only when config.emit_debug_info.
@@ -411,6 +425,9 @@ define Emitter
             set external_context: null
             set has_external_context: false
             set target_is_coff: false
+            set simd_neon: false
+            set simd_ssse3: false
+            set simd_avx2: false
             set llvm_module: null
             set builder: null
             set di_builder: null
@@ -557,6 +574,28 @@ define Emitter
             ; resolved before any function is emitted, so it is where the question
             ; gets answered — once, not per function.
             set target_is_coff: triple_is_coff(triple)
+            let triple_name String(triple)
+            set simd_neon: config.portable_simd = false and (triple_name.starts_with("aarch64") or triple_name.starts_with("arm64"))
+            if config.portable_simd = false and triple_name.starts_with("x86_64")
+            {
+                let cpu config.target_cpu
+                if cpu = "native"
+                {
+                    let host_features LLVMGetHostCPUFeatures()
+                    if host_features <> null
+                    {
+                        let features String(host_features as pointer[const_char])
+                        set simd_ssse3: features.contains(String("+ssse3"))
+                        set simd_avx2: features.contains(String("+avx2"))
+                        LLVMDisposeMessage host_features
+                    }
+                }
+                else if cpu.get_length() > 0 and cpu <> "generic" and cpu <> "x86-64"
+                {
+                    set simd_ssse3: true
+                    set simd_avx2: cpu = "x86-64-v3" or cpu = "x86-64-v4"
+                }
+            }
 
             var target: LLVMTargetRef null
             let lookup_err LLVMGetTargetFromTriple(triple, &target, null as pointer[pointer[char]])
@@ -7762,6 +7801,13 @@ define Emitter
             if stamp_main <> null and LLVMIsDeclaration(stamp_main) = 0
                 emit_build_stamp()
 
+            ; -mcpu: every function carries the CPU and its features, as clang's
+            ; do -- an intrinsic of a feature (pshufb) is only selectable in a
+            ; function that has it, and a function with features its caller
+            ; lacks is not inlined into it
+            if config.target_cpu.get_length() > 0
+                this.stamp_target_cpu()
+
             ; Last: drop the region frames nothing allocates on. Runs over the
             ; FINISHED module — every body, stub and template instantiation has
             ; to exist before a callee's parameter uses can be read.
@@ -13232,6 +13278,203 @@ define Emitter
             this.get_parfor_runtime_fn(name, LLVMFunctionType(ret, ps.data, 1, 0))
         }
 
+        ; "target-cpu" / "target-features" on every function this module
+        ; defines (the CPU -mcpu names; for `native`, the host's CPU and
+        ; feature string)
+        procedure stamp_target_cpu(mutable this)
+        {
+            var cpu_name config.target_cpu
+            var features String()
+            if cpu_name = "native"
+            {
+                let host_cpu LLVMGetHostCPUName()
+                let host_features LLVMGetHostCPUFeatures()
+                set cpu_name: String(host_cpu as pointer[const_char])
+                set features: String(host_features as pointer[const_char])
+                LLVMDisposeMessage host_cpu
+                LLVMDisposeMessage host_features
+            }
+            let cpu_c cpu_name.to_c_string()
+            let features_c features.to_c_string()
+            let cpu_attr LLVMCreateStringAttribute(context, "target-cpu" as pointer[const_char], 10, cpu_c, cpu_name.get_length() as u32)
+            let features_attr LLVMCreateStringAttribute(context, "target-features" as pointer[const_char], 15, features_c, features.get_length() as u32)
+            var f LLVMGetFirstFunction(llvm_module)
+            while f <> null
+            {
+                if LLVMIsDeclaration(f) = 0
+                {
+                    LLVMAddAttributeAtIndex(f, 4294967295, cpu_attr)
+                    if features.get_length() > 0
+                        LLVMAddAttributeAtIndex(f, 4294967295, features_attr)
+                }
+                set f: LLVMGetNextFunction(f)
+            }
+        }
+
+        ; `u8x16.lookup(table, index)`: lane i is table[index[i]], 0 where
+        ; index[i] is 16 or more -- NEON's tbl, one instruction; elsewhere a
+        ; lane-by-lane select (correct, and slow).
+        procedure simd_lookup(mutable this, mutable table: LLVMValueRef, mutable index: LLVMValueRef) returns LLVMValueRef
+        {
+            let vt LLVMTypeOf(table)
+            let i8_ty LLVMInt8TypeInContext(context)
+            let i64_ty LLVMInt64TypeInContext(context)
+            if LLVMGetVectorSize(LLVMTypeOf(index)) = 32
+            {
+                ; thirty-two indices, one sixteen-entry table
+                let v32 LLVMVectorType(i8_ty, 32)
+                if simd_avx2
+                {
+                    ; vpshufb looks up within each 128-bit half: the table in
+                    ; both, the same saturating lift as pshufb's
+                    let both this.simd_shuffle(table, table, 0, 32)
+                    var ps Vector[LLVMTypeRef](2)
+                    ps.put(0, v32)
+                    ps.put(1, v32)
+                    let sat this.simd_intrinsic_n(String("llvm.uadd.sat.v32i8"), v32, ps)
+                    let lifted this.simd_call2(sat, index, this.simd_splat(LLVMConstInt(i8_ty, 0x70, 0), v32, false))
+                    let f this.simd_intrinsic_n(String("llvm.x86.avx2.pshuf.b"), v32, ps)
+                    return this.simd_call2(f, both, lifted)
+                }
+                ; two halves, each the sixteen-lane form
+                let low this.simd_lookup(table, this.simd_shuffle(index, index, 0, 16))
+                let high this.simd_lookup(table, this.simd_shuffle(index, index, 16, 16))
+                return this.simd_shuffle(low, high, 0, 32)
+            }
+            if simd_ssse3
+            {
+                ; pshufb zeroes a lane whose index has bit 7 set and otherwise
+                ; reads index & 15: a saturating +0x70 lifts every index of 16
+                ; or more to 0x80 and above and leaves 0..15 below it
+                var ps Vector[LLVMTypeRef](2)
+                ps.put(0, vt)
+                ps.put(1, vt)
+                let sat this.simd_intrinsic_n(String("llvm.uadd.sat.v16i8"), vt, ps)
+                let lifted this.simd_call2(sat, index, this.simd_splat(LLVMConstInt(i8_ty, 0x70, 0), vt, false))
+                let f this.simd_intrinsic_n(String("llvm.x86.ssse3.pshuf.b.128"), vt, ps)
+                return this.simd_call2(f, table, lifted)
+            }
+            if simd_neon
+            {
+                var ps Vector[LLVMTypeRef](2)
+                ps.put(0, vt)
+                ps.put(1, vt)
+                let f this.simd_intrinsic_n(String("llvm.aarch64.neon.tbl1.v16i8"), vt, ps)
+                var a2 Vector[LLVMValueRef](2)
+                a2.put(0, table)
+                a2.put(1, index)
+                return LLVMBuildCall2(builder, LLVMGlobalGetValueType(f), f, a2.data, 2, "simd.lookup")
+            }
+            ; everywhere else: sixteen compares, each selecting one table
+            ; entry into the lanes that name it (vector operations only; a
+            ; constant table folds its entries)
+            var acc LLVMConstNull(vt)
+            var k: size_t 0
+            while k < 16
+            {
+                let entry LLVMBuildExtractElement(builder, table, LLVMConstInt(i64_ty, k, 0), "simd.lookup.entry")
+                let hits LLVMBuildICmp(builder, LLVMIntPredicate.EQ(), index, this.simd_splat(LLVMConstInt(i8_ty, k, 0), vt, false), "simd.lookup.hits")
+                set acc: LLVMBuildSelect(builder, hits, this.simd_splat(entry, vt, false), acc, "simd.lookup")
+                set k: k + 1
+            }
+            acc
+        }
+
+        ; `mask16.join(m0, m1, m2, m3)`: one u64, mask i in bits 16i to 16i+15.
+        ; NEON: each mask's lanes weighted 1, 2, 4 ... 128 per byte, then three
+        ; levels of pairwise adds (addp) fold the four into eight bytes --
+        ; simdjson's reduction, where four bits() cost five instructions each.
+        ; Elsewhere: four bitcasts, shifted and joined.
+        procedure simd_join(mutable this, mutable vals: Array[LLVMValueRef]) returns LLVMValueRef
+        {
+            let i64_ty LLVMInt64TypeInContext(context)
+            if vals.length = 2
+            {
+                ; two thirty-two-lane masks
+                if simd_neon
+                {
+                    ; as four sixteen-lane ones
+                    var quarters Array[LLVMValueRef]()
+                    quarters.add(this.simd_shuffle(vals[0], vals[0], 0, 16))
+                    quarters.add(this.simd_shuffle(vals[0], vals[0], 16, 16))
+                    quarters.add(this.simd_shuffle(vals[1], vals[1], 0, 16))
+                    quarters.add(this.simd_shuffle(vals[1], vals[1], 16, 16))
+                    return this.simd_join(quarters)
+                }
+                ; x86: a vpmovmskb (pmovmskb twice without AVX2) each
+                let i32_ty LLVMInt32TypeInContext(context)
+                let b0 LLVMBuildZExt(builder, LLVMBuildBitCast(builder, vals[0], i32_ty, "simd.join.bits"), i64_ty, "simd.join.wide")
+                let b1 LLVMBuildZExt(builder, LLVMBuildBitCast(builder, vals[1], i32_ty, "simd.join.bits"), i64_ty, "simd.join.wide")
+                return LLVMBuildOr(builder, b0, LLVMBuildShl(builder, b1, LLVMConstInt(i64_ty, 32, 0), "simd.join.at"), "simd.join")
+            }
+            if simd_neon
+            {
+                let i8_ty LLVMInt8TypeInContext(context)
+                let v16 LLVMVectorType(i8_ty, 16)
+                var weights Vector[LLVMValueRef](16)
+                var j: size_t 0
+                while j < 16
+                {
+                    weights.put(j, LLVMConstInt(i8_ty, (1 as u64) << ((j % 8) as u64), 0))
+                    set j: j + 1
+                }
+                let wv LLVMConstVector(weights.data, 16)
+                var w Vector[LLVMValueRef](4)
+                var k: size_t 0
+                while k < 4
+                {
+                    let wide LLVMBuildSExt(builder, vals[k], v16, "simd.join.wide")
+                    w.put(k, LLVMBuildAnd(builder, wide, wv, "simd.join.weighted"))
+                    set k: k + 1
+                }
+                var ps Vector[LLVMTypeRef](2)
+                ps.put(0, v16)
+                ps.put(1, v16)
+                let f this.simd_intrinsic_n(String("llvm.aarch64.neon.addp.v16i8"), v16, ps)
+                let p01 this.simd_call2(f, w[0], w[1])
+                let p23 this.simd_call2(f, w[2], w[3])
+                let p this.simd_call2(f, p01, p23)
+                let q this.simd_call2(f, p, p)
+                let as64 LLVMBuildBitCast(builder, q, LLVMVectorType(i64_ty, 2), "simd.join.words")
+                return LLVMBuildExtractElement(builder, as64, LLVMConstInt(i64_ty, 0, 0), "simd.join")
+            }
+            let i16_ty LLVMInt16TypeInContext(context)
+            var acc LLVMConstInt(i64_ty, 0, 0)
+            var k: size_t 0
+            while k < 4
+            {
+                let b LLVMBuildBitCast(builder, vals[k], i16_ty, "simd.join.bits")
+                let z LLVMBuildZExt(builder, b, i64_ty, "simd.join.wide")
+                let sh LLVMBuildShl(builder, z, LLVMConstInt(i64_ty, 16 * k, 0), "simd.join.at")
+                set acc: LLVMBuildOr(builder, acc, sh, "simd.join")
+                set k: k + 1
+            }
+            acc
+        }
+
+        ; lanes from..from+count of the concatenation of a and b
+        procedure simd_shuffle(mutable this, mutable a: LLVMValueRef, mutable b: LLVMValueRef, from: size_t, count: size_t) returns LLVMValueRef
+        {
+            let i32_ty LLVMInt32TypeInContext(context)
+            var lanes Vector[LLVMValueRef](count)
+            var i: size_t 0
+            while i < count
+            {
+                lanes.put(i, LLVMConstInt(i32_ty, from + i, 0))
+                set i: i + 1
+            }
+            LLVMBuildShuffleVector(builder, a, b, LLVMConstVector(lanes.data, count as u32), "simd.shuffle")
+        }
+
+        ; f(a, b) for a two-operand intrinsic
+        procedure simd_call2(mutable this, mutable f: LLVMValueRef, mutable a: LLVMValueRef, mutable b: LLVMValueRef) returns LLVMValueRef
+        {
+            var args Vector[LLVMValueRef](2)
+            args.put(0, a)
+            args.put(1, b)
+            LLVMBuildCall2(builder, LLVMGlobalGetValueType(f), f, args.data, 2, "simd.call")
+        }
+
         ; a declared intrinsic with any number of parameters
         procedure simd_intrinsic_n(mutable this, mutable name: String, mutable ret: LLVMTypeRef, mutable params: Vector[LLVMTypeRef]) returns LLVMValueRef
             this.get_parfor_runtime_fn(name, LLVMFunctionType(ret, params.data, params.length as u32, 0))
@@ -13463,6 +13706,8 @@ define Emitter
                     return LLVMBuildCall2(builder, LLVMGlobalGetValueType(f), f, a1.data, 1, "simd.reduce")
                 }
                 ; lane i as bit i: the mask bitcast to iN, zero-extended to 64 bits
+                case "simd.lookup": return this.simd_lookup(vals[0], vals[1])
+                case "simd.join": return this.simd_join(vals)
                 case "simd.bits":
                 {
                     let mt LLVMTypeOf(vals[0])

@@ -1,0 +1,18 @@
+; SIMD phase 6 on x86_64: with a CPU that has SSSE3 (-mcpu names one, or
+; native finds it) `lookup` is pshufb behind a saturating add that sends
+; every index of 16 or more to a zeroed lane, and every function carries the
+; CPU (an intrinsic of a feature is selectable only in a function that has
+; it). Without -mcpu the IR assumes the x86-64 baseline: no pshufb --
+; simd_lookup_x86_baseline_ir. What they compute: simd_lookup_join, and
+; tests/target/rosetta.sh runs it as an x86_64 program both ways.
+; args: --target x86_64-unknown-linux-gnu -mcpu=core2
+; expect-ir: @llvm.x86.ssse3.pshuf.b.128
+; expect-ir: @llvm.uadd.sat.v16i8
+; expect-ir: "target-cpu"="core2"
+
+; a run-time index, so the IR builder cannot fold the lookup away
+let k String("abc").length as u8
+let t u8x16.iota(0, 1)
+let x u8x16.lookup(t, u8x16.splat(k))
+if x[0] = 3
+    print "three"
