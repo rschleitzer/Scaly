@@ -1,0 +1,20 @@
+; Regression (2026-09-29): `use pkg.Module.fn` for a free function of another
+; package's MODULE mangled the call as a member of a namespace named like the
+; module (`_ZN5Tools5firstEi`), while the definition is the free `_Z5firsti`
+; -- an undefined symbol at link time. The alias machinery took the path's
+; second-to-last segment for a namespace; it is one only when a function of
+; that name is registered in a namespace of that name
+; (Planner.use_alias_member_namespace#). Found with `use tls.Crypto.sha256`.
+;
+; An IR gate: the package lives in its own SCALY_HOME.
+; env: SCALY_HOME=tests/regress/use_module_function_home
+; args: --no-prelude
+; expect-ir: call i64 @_Z5firsti(i64 1)
+; expect-ir: call i64 @_Z6secondi(i64 2)
+
+package umf 0.1.0
+use umf.Tools.first
+use umf.Tools.second
+
+function total() returns int
+    first(1) + second(2)

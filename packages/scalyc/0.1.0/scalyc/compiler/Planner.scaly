@@ -2960,6 +2960,28 @@ define Planner
             ""
         }
 
+        ; use_alias_member_namespace: the namespace a use-imported `name` is a
+        ; MEMBER of -- the alias's second-to-last segment, when a function of
+        ; that name is registered in a namespace of that name -- else "". The
+        ; segment can name a MODULE (`use tls.Crypto.sha256`), whose functions
+        ; are free and mangle `_Z<fn>`; taken as a namespace, the call went to
+        ; `_ZN6Crypto…`, which nothing defines (a link error, 2026-09-29).
+        function use_alias_member_namespace(this: Planner, name: String) returns String
+        {
+            let aliased this.lookup_use_alias_namespace(name)
+            if aliased.get_length() = 0
+                return ""
+            var cur model_function_index.lookup_head name
+            while cur <> (0 - 1) as i64
+            {
+                let nsp function_namespaces.get(cur as size_t)
+                if nsp <> null and (*nsp) = aliased
+                    return aliased
+                set cur: model_function_index.next_of(cur as size_t)
+            }
+            ""
+        }
+
         ; is_program_use_alias: linear scan of program_use_aliases.
         function is_program_use_alias(this: Planner, name: String) returns bool
         {
@@ -8931,7 +8953,7 @@ define Planner
                     set ns_for_mangle: String(cnsn)
                 }
                 if is_namespace_sibling = false
-                    set ns_for_mangle: this.lookup_use_alias_namespace(f.name)
+                    set ns_for_mangle: this.use_alias_member_namespace(f.name)
 
                 if ns_for_mangle.get_length() = 0
                     set mangled: Planner.mangle_free_function_from_types(
@@ -47720,7 +47742,11 @@ define Planner
                     let existing this.lookup_type_substitution(gp.name)
                     if existing = null
                     {
-                        let fresh this.fresh_type_var(gp.name)
+                        ; on the Planner's page: the template's plan keeps it (a
+                        ; `sizeof T` in a body the emitter still emits when T appears
+                        ; only in the return type, allocate_slice[T]), and on this
+                        ; frame its name was read back dangling (2026-09-29)
+                        let fresh this.fresh_type_var^this(gp.name)
                         this.define_type_substitution(gp.name, fresh)
                         set this.planning_template: true
                     }
@@ -48889,7 +48915,11 @@ define Planner
                     let existing this.lookup_type_substitution(gp.name)
                     if existing = null
                     {
-                        let fresh this.fresh_type_var(gp.name)
+                        ; on the Planner's page: the template's plan keeps it (a
+                        ; `sizeof T` in a body the emitter still emits when T appears
+                        ; only in the return type, allocate_slice[T]), and on this
+                        ; frame its name was read back dangling (2026-09-29)
+                        let fresh this.fresh_type_var^this(gp.name)
                         this.define_type_substitution(gp.name, fresh)
                     }
                 }

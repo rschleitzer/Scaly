@@ -1,0 +1,6 @@
+; The dependency of tests/regress/use_module_function.scaly.
+
+define umf
+{
+    module Tools
+}

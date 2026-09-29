@@ -1,0 +1,6 @@
+; Two free functions of a MODULE (not a namespace).
+function first(x: int) returns int
+    x + 1
+
+function second(x: int) returns int
+    x + 2

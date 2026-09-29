@@ -1608,6 +1608,14 @@ define Planner
         ; use clause whose last segment equals `name`, or empty if none.
         function lookup_use_alias_namespace(this: Planner, name: String) @page true @direct true @ret_caller true @deep true returns String linked
 
+        ; use_alias_member_namespace: the namespace a use-imported `name` is a
+        ; MEMBER of -- the alias's second-to-last segment, when a function of
+        ; that name is registered in a namespace of that name -- else "". The
+        ; segment can name a MODULE (`use tls.Crypto.sha256`), whose functions
+        ; are free and mangle `_Z<fn>`; taken as a namespace, the call went to
+        ; `_ZN6Crypto…`, which nothing defines (a link error, 2026-09-29).
+        function use_alias_member_namespace(this: Planner, name: String) @page true @direct true @ret_caller true @deep true returns String linked
+
         ; is_program_use_alias: linear scan of program_use_aliases.
         function is_program_use_alias(this: Planner, name: String) @ret_nonlocal true @deep true returns bool linked
 
