@@ -350,6 +350,50 @@ define JsonValue union
         var error_at: size_t 0
         repeat
         {
+            if state = STAGE_KEY
+            {
+                ; a member name at t, then its colon
+                if t >= n
+                {
+                    set error: JSON_END
+                    set error_at: n
+                    break
+                }
+                if doc[t] <> 0x22
+                {
+                    set error: JSON_KEY
+                    set error_at: t
+                    break
+                }
+                var u s.take(doc)
+                var close JsonScan(JSON_OK, u, false)
+                if u >= n or doc[u] <> 0x22
+                {
+                    set close: JsonReader.string_close(doc, t)
+                    if close.code <> JSON_OK
+                    {
+                        set error: close.code
+                        set error_at: close.at
+                        break
+                    }
+                    while u < close.at
+                        set u: s.take(doc)
+                }
+                let key JsonValue.string_text(doc, t, close)
+                set t: s.take(doc)
+                if t >= n or doc[t] <> 0x3A                 ; ':'
+                {
+                    set error: JSON_COLON
+                    set error_at: t
+                    break
+                }
+                members.add(JsonMember(key, JsonValue.Null))
+                set t: s.take(doc)
+                set state: STAGE_VALUE
+            }
+            ; a KEY falls through into its VALUE, a scalar VALUE into
+            ; COMPLETE: the common path runs straight, and only a container
+            ; or a separator goes back round the loop
             if state = STAGE_VALUE
             {
                 ; a value begins at t
@@ -416,102 +460,61 @@ define JsonValue union
                     set v: JsonValue.Text(JsonString(JsonValue.string_text(doc, t, close)))
                     set t: s.take(doc)
                     set state: STAGE_COMPLETE
-                    continue
-                }
-                var end: size_t 0
-                if c = 0x2D or (c >= 0x30 and c <= 0x39)    ; '-' or a digit
-                {
-                    let num JsonReader.number_end(doc, t)
-                    if num.code <> JSON_OK
-                    {
-                        set error: num.code
-                        set error_at: num.at
-                        break
-                    }
-                    set v: JsonValue.Number(JsonNumber(doc.subslice(t, num.at)))
-                    set end: num.at
                 }
                 else
                 {
-                    if JsonValue.literal_at(doc, t, "true")
+                    var end: size_t 0
+                    if c = 0x2D or (c >= 0x30 and c <= 0x39)    ; '-' or a digit
                     {
-                        set v: JsonValue.Bool(true)
-                        set end: t + 4
+                        let num JsonReader.number_end(doc, t)
+                        if num.code <> JSON_OK
+                        {
+                            set error: num.code
+                            set error_at: num.at
+                            break
+                        }
+                        set v: JsonValue.Number(JsonNumber(doc.subslice(t, num.at)))
+                        set end: num.at
                     }
                     else
                     {
-                        if JsonValue.literal_at(doc, t, "false")
+                        if JsonValue.literal_at(doc, t, "true")
                         {
-                            set v: JsonValue.Bool(false)
-                            set end: t + 5
+                            set v: JsonValue.Bool(true)
+                            set end: t + 4
                         }
                         else
                         {
-                            if JsonValue.literal_at(doc, t, "null")
+                            if JsonValue.literal_at(doc, t, "false")
                             {
-                                set v: JsonValue.Null
-                                set end: t + 4
+                                set v: JsonValue.Bool(false)
+                                set end: t + 5
                             }
                             else
                             {
-                                set error: JSON_VALUE
-                                set error_at: t
-                                break
+                                if JsonValue.literal_at(doc, t, "null")
+                                {
+                                    set v: JsonValue.Null
+                                    set end: t + 4
+                                }
+                                else
+                                {
+                                    set error: JSON_VALUE
+                                    set error_at: t
+                                    break
+                                }
                             }
                         }
                     }
+                    ; a scalar that runs on into scalar bytes (`12x`, `truex`)
+                    ; ends where the pull reader sees the byte after it: that
+                    ; byte is no structural position, and the separator test
+                    ; refuses it
+                    set t: s.take(doc)
+                    if end < n and t <> end and JsonReader.is_ws(doc[end]) = false
+                        set t: end
+                    set state: STAGE_COMPLETE
                 }
-                ; a scalar that runs on into scalar bytes (`12x`, `truex`)
-                ; ends where the pull reader sees the byte after it: that
-                ; byte is no structural position, and the separator test
-                ; refuses it
-                set t: s.take(doc)
-                if end < n and t <> end and JsonReader.is_ws(doc[end]) = false
-                    set t: end
-                set state: STAGE_COMPLETE
-                continue
-            }
-            if state = STAGE_KEY
-            {
-                ; a member name at t, then its colon
-                if t >= n
-                {
-                    set error: JSON_END
-                    set error_at: n
-                    break
-                }
-                if doc[t] <> 0x22
-                {
-                    set error: JSON_KEY
-                    set error_at: t
-                    break
-                }
-                var u s.take(doc)
-                var close JsonScan(JSON_OK, u, false)
-                if u >= n or doc[u] <> 0x22
-                {
-                    set close: JsonReader.string_close(doc, t)
-                    if close.code <> JSON_OK
-                    {
-                        set error: close.code
-                        set error_at: close.at
-                        break
-                    }
-                    while u < close.at
-                        set u: s.take(doc)
-                }
-                let key JsonValue.string_text(doc, t, close)
-                set t: s.take(doc)
-                if t >= n or doc[t] <> 0x3A                 ; ':'
-                {
-                    set error: JSON_COLON
-                    set error_at: t
-                    break
-                }
-                members.add(JsonMember(key, JsonValue.Null))
-                set t: s.take(doc)
-                set state: STAGE_VALUE
-                continue
             }
             ; STAGE_COMPLETE: v is complete, t is the token after it
             if open.length = 0

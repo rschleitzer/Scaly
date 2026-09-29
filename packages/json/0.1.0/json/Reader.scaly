@@ -118,15 +118,15 @@ define JsonStream
             var k: u64 0
             while k < 64
             {
-                let v u8x16.load(src, base + (k as size_t))
-                set quote: quote | ((v = u8x16.splat(0x22)).bits() << k)
-                set back: back | ((v = u8x16.splat(0x5C)).bits() << k)
-                set blank: blank | (((v = u8x16.splat(0x20)) or (v = u8x16.splat(0x0A)) or (v = u8x16.splat(0x0D)) or (v = u8x16.splat(0x09))).bits() << k)
+                let v u8x32.load(src, base + (k as size_t))
+                set quote: quote | ((v = u8x32.splat(0x22)).bits() << k)
+                set back: back | ((v = u8x32.splat(0x5C)).bits() << k)
+                set blank: blank | (((v = u8x32.splat(0x20)) or (v = u8x32.splat(0x0A)) or (v = u8x32.splat(0x0D)) or (v = u8x32.splat(0x09))).bits() << k)
                 ; '{' '[' and '}' ']' differ by 0x20 only
-                let folded v | u8x16.splat(0x20)
-                set op: op | (((folded = u8x16.splat(0x7B)) or (folded = u8x16.splat(0x7D)) or (v = u8x16.splat(0x3A)) or (v = u8x16.splat(0x2C))).bits() << k)
-                set ctl: ctl | ((v < u8x16.splat(0x20)).bits() << k)
-                set k: k + 16
+                let folded v | u8x32.splat(0x20)
+                set op: op | (((folded = u8x32.splat(0x7B)) or (folded = u8x32.splat(0x7D)) or (v = u8x32.splat(0x3A)) or (v = u8x32.splat(0x2C))).bits() << k)
+                set ctl: ctl | ((v < u8x32.splat(0x20)).bits() << k)
+                set k: k + 32
             }
         }
         else
