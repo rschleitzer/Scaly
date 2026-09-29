@@ -12,6 +12,9 @@
 ;                                50), from Postgres (DATABASE_URL; stage C)
 ;   GET      /fortunes           the fortune table and one row added per
 ;                                request, sorted by message, as an HTML table
+;   GET      /static/{path...}   a file of /data/static, or its .br/.gz twin by
+;                                Accept-Encoding (http.Static; stage D)
+;   POST     /echo               the request body, unchanged (8gbit)
 ;   GET      /shutdown           ends the server (only with SCALY_ARENA_TRAIN set,
 ;                                the PGO training run)
 ;
@@ -383,6 +386,14 @@ procedure fortunes(req: ref[Request], mutable res: ref[Response]) mutable pg_poo
     Page.release_page(host)
 }
 
+; A file of the mounted static directory (static-tls).
+procedure static_file(req: ref[Request], mutable res: ref[Response]) mutable static_cache
+    serve_file(req, res, "/data/static", req.param("path"))
+
+; The body back as it came, Content-Length or chunked (8gbit).
+procedure echo(req: ref[Request], mutable res: ref[Response])
+    res.send("application/octet-stream", req.body)
+
 ; Ends the server — registered only in the PGO training run (SCALY_ARENA_TRAIN
 ; set, tools/bench/http/train.scaly), whose profile is written at a clean exit.
 procedure shutdown(req: ref[Request], mutable res: ref[Response])
@@ -414,6 +425,8 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
     app.get("/json/{count}", &json_items)
     app.get("/async-db", &async_db)
     app.get("/fortunes", &fortunes)
+    app.get("/static/{path...}", &static_file)
+    app.post("/echo", &echo)
     if getenv("SCALY_ARENA_TRAIN") <> null
         app.get("/shutdown", &shutdown)
     var cert String("/certs/server.crt")

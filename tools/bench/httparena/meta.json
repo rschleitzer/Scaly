@@ -23,7 +23,9 @@
     "json-comp",
     "json-tls",
     "async-db",
-    "fortunes"
+    "fortunes",
+    "static-tls",
+    "8gbit"
   ],
   "maintainers": []
 }

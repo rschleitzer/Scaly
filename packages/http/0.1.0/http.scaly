@@ -16,5 +16,6 @@ define http
     module Date
     module Response
     module Router
+    module Static
     module Server
 }

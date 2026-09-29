@@ -1,0 +1,310 @@
+; Static files (ROADMAP-http.md, stage D): the file a route names under a
+; directory, with its media type from the extension and, when the client
+; accepts a content coding, the pre-compressed twin that sits beside it on
+; disk (`app.js.br`, `app.js.gz`) — chosen by the q-values of
+; Accept-Encoding, brotli first on a tie. Nothing is compressed here.
+;
+;   procedure asset(req: ref[Request], mutable res: ref[Response])
+;       serve_file(req, res, "/data/static", req.param("path"))
+;   app.get("/static/{path...}", &asset)
+;
+; Contents are cached per scheduler thread (a request's task never leaves
+; its thread, so the cache needs no lock) and FOLLOW THE DISK: an entry
+; older than a second is read again before it is served, on a page of its
+; own that replaces the old one — a file replaced on disk is served within
+; about a second, and a file removed answers 404. A path that climbs out of
+; the directory ("..") or starts with '/' answers 404 as well.
+
+use http.Request.Request
+use http.Response.Response
+
+; How long a cached file is served before it is read again.
+define STATIC_TTL_NS: i64 1000000000
+
+define StaticEntry
+(
+    ; the file on disk, on the cache's page
+    path: String
+    ; the contents, on `page`, which a reload replaces
+    var page: ref[Page]
+    var content: String
+    var present: bool
+    ; monotonic time of the last read, 0 before the first
+    var loaded_at: i64
+    var loading: bool
+    ; whether `page` is the entry's own (false while it is the cache's)
+    var owns_page: bool
+)
+
+define StaticCache
+(
+    host: ref[Page]
+    var entries: Array[ref[StaticEntry]]
+)
+
+; This thread's cache, made at its first request.
+mutable static_cache: ref[StaticCache]? null
+
+; The media type for a file name's extension; application/octet-stream
+; for one this table does not know.
+function media_type(name: Slice[u8]) returns Slice[u8]
+{
+    var dot name.length
+    while dot > 0 and name[dot - 1] <> 46 and name[dot - 1] <> 47
+        set dot: dot - 1
+    if dot = 0 or name[dot - 1] <> 46
+        return "application/octet-stream"
+    let ext name.slice_from(dot)
+    if ext.equals("html") or ext.equals("htm")
+        return "text/html"
+    if ext.equals("css")
+        return "text/css"
+    if ext.equals("js") or ext.equals("mjs")
+        return "application/javascript"
+    if ext.equals("json")
+        return "application/json"
+    if ext.equals("svg")
+        return "image/svg+xml"
+    if ext.equals("webp")
+        return "image/webp"
+    if ext.equals("png")
+        return "image/png"
+    if ext.equals("jpg") or ext.equals("jpeg")
+        return "image/jpeg"
+    if ext.equals("gif")
+        return "image/gif"
+    if ext.equals("ico")
+        return "image/x-icon"
+    if ext.equals("woff2")
+        return "font/woff2"
+    if ext.equals("woff")
+        return "font/woff"
+    if ext.equals("txt")
+        return "text/plain"
+    if ext.equals("xml")
+        return "application/xml"
+    if ext.equals("wasm")
+        return "application/wasm"
+    if ext.equals("pdf")
+        return "application/pdf"
+    "application/octet-stream"
+}
+
+; Is rel a path this handler may open: not empty, not absolute, no ".."
+; segment?
+function safe_relative(rel: Slice[u8]) returns bool
+{
+    if rel.length = 0 or rel[0] = 47
+        return false
+    var start: size_t 0
+    var i: size_t 0
+    while i <= rel.length
+    {
+        if i = rel.length or rel[i] = 47
+        {
+            let seg rel.subslice(start, i)
+            if seg.equals("..")
+                return false
+            set start: i + 1
+        }
+        set i: i + 1
+    }
+    true
+}
+
+; The q-value (in thousandths) Accept-Encoding gives coding `name`: an
+; explicit entry, else a `*` entry, else 0.
+function coding_quality(accept: Slice[u8], name: Slice[u8]) returns i64
+{
+    var star: i64 0 - 1
+    var at: size_t 0
+    while at < accept.length
+    {
+        var end at
+        while end < accept.length and accept[end] <> 44
+            set end: end + 1
+        let item trim(accept.subslice(at, end))
+        var semi: size_t 0
+        while semi < item.length and item[semi] <> 59
+            set semi: semi + 1
+        let coding trim(item.slice_to(semi))
+        var q: i64 1000
+        var p semi
+        while p < item.length
+        {
+            if item[p] = 113 and p + 1 < item.length and item[p + 1] = 61
+            {
+                set q: quality_value(item.slice_from(p + 2))
+                break
+            }
+            set p: p + 1
+        }
+        if coding.equals(name)
+            return q
+        if coding.equals("*")
+            set star: q
+        set at: end + 1
+    }
+    if star < 0
+        return 0
+    star
+}
+
+; "1", "0.8", "0.125" as thousandths.
+function quality_value(s: Slice[u8]) returns i64
+{
+    if s.length = 0
+        return 1000
+    if s[0] = 49
+        return 1000
+    if s[0] <> 48
+        return 0
+    var v: i64 0
+    var scale: i64 100
+    var i: size_t 2
+    while i < s.length and scale > 0 and s[i] >= 48 and s[i] <= 57
+    {
+        set v: v + ((s[i] - 48) as i64) * scale
+        set scale: scale / 10
+        set i: i + 1
+    }
+    v
+}
+
+; This thread's cache.
+procedure static_cache_here() returns ref[StaticCache] mutable static_cache
+{
+    let existing static_cache
+    if existing <> null
+        return existing as ref[StaticCache]
+    let host Page.allocate_page()
+    let made &StaticCache^host(host, Array[ref[StaticEntry]]^host())
+    set static_cache: made
+    made
+}
+
+; The cache entry of the file at path, read (again) when it is new or
+; older than STATIC_TTL_NS; while one task reads it the others serve what
+; is there, or wait for a first read.
+procedure static_entry(path: Slice[u8]) returns ref[StaticEntry] mutable static_cache
+{
+    let cache static_cache_here()
+    var found: ref[StaticEntry]? null
+    var i: size_t 0
+    while i < cache.entries.length
+    {
+        let e cache.entries.at(i)
+        if e.path.as_slice().equals(path)
+        {
+            set found: e
+            break
+        }
+        set i: i + 1
+    }
+    if found = null
+    {
+        let host cache.host
+        let made &StaticEntry^host(String^host(path.data as pointer[const_char], path.length), host, String^host(), false, 0, false, false)
+        cache.entries.add(made)
+        set found: made
+    }
+    var e found as ref[StaticEntry]
+    let now scaly_eio_now_ns()
+    if e.loading = false and (e.loaded_at = 0 or now - e.loaded_at > STATIC_TTL_NS)
+        load_entry(e)
+    while e.loaded_at = 0
+        Scheduler.yield()
+    e
+}
+
+; Read the entry's file onto a fresh page and put it in place of the old
+; one; a file that is not there reads as absent.
+procedure load_entry(mutable e: ref[StaticEntry])
+{
+    set e.loading: true
+    let fresh Page.allocate_page()
+    var p String^fresh(e.path)
+    let present File.exists(p)
+    var content String^fresh()
+    if present
+        set content: File.read_to_string^fresh(p)
+    let old e.page
+    let had_own e.owns_page
+    set e.page: fresh
+    set e.owns_page: true
+    set e.content: content
+    set e.present: present
+    set e.loaded_at: scaly_eio_now_ns()
+    set e.loading: false
+    if had_own
+        Page.release_page(old)
+}
+
+; Serve the file rel under root (see the module header): 200 with the file
+; or a pre-compressed twin, 404 when there is none.
+procedure serve_file(req: ref[Request], mutable res: ref[Response], root: Slice[u8], rel: Slice[u8]) mutable static_cache
+{
+    if safe_relative(rel) = false
+    {
+        res.set_status(404)
+        res.send_empty()
+        return
+    }
+    var path Array[u8]()
+    path.add(root)
+    if root.length > 0 and root[root.length - 1] <> 47
+        path.add(47 as u8)
+    path.add(rel)
+    let base path.length
+    let accept req.header("accept-encoding")
+    let q_br coding_quality(accept, "br")
+    let q_gzip coding_quality(accept, "gzip")
+    ; the codings worth trying, best first, then the file itself
+    var first: Slice[u8] ""
+    var second: Slice[u8] ""
+    if q_br > 0 and q_br >= q_gzip
+    {
+        set first: "br"
+        if q_gzip > 0
+            set second: "gzip"
+    }
+    else if q_gzip > 0
+    {
+        set first: "gzip"
+        if q_br > 0
+            set second: "br"
+    }
+    let media media_type(rel)
+    if first.length > 0 and try_variant(res, &path, base, first, media)
+        return
+    if second.length > 0 and try_variant(res, &path, base, second, media)
+        return
+    set path.length: base
+    let e static_entry(path.as_slice())
+    if e.present = false
+    {
+        res.set_status(404)
+        res.send_empty()
+        return
+    }
+    ; the status line goes out with the first header, so the 404 above
+    ; must come before this one
+    res.header("Vary", "Accept-Encoding")
+    res.send(media, e.content.as_slice())
+}
+
+; Send the twin of the file at path[0, base) in `coding` if it exists.
+procedure try_variant(mutable res: ref[Response], mutable path: ref[Array[u8]], base: size_t, coding: Slice[u8], media: Slice[u8]) returns bool mutable static_cache
+{
+    set path.length: base
+    var suffix: Slice[u8] ".gz"
+    if coding.equals("br")
+        set suffix: ".br"
+    path.add(suffix)
+    let e static_entry(path.as_slice())
+    if e.present = false
+        return false
+    res.header("Vary", "Accept-Encoding")
+    res.send_encoded(media, coding, e.content.as_slice())
+    true
+}

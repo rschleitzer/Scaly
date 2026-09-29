@@ -1,0 +1,127 @@
+; The http package's static files (ROADMAP-http.md stage D) over TCP, from a
+; directory this test writes (/tmp/scaly_http_static):
+;   br        Accept-Encoding "br;q=1, gzip;q=0.8": the .br twin, its coding
+;             named, the original's media type
+;   gzip      "gzip": the .gz twin
+;   identity  no Accept-Encoding: the file itself
+;   q0        "br;q=0, gzip;q=0.5": br refused, so gzip
+;   binary    a file without twins under "br": the file itself, image/webp
+;   404       a missing file, and a path with a ".." segment
+;   fresh     the .br twin rewritten on disk is served after a second
+; Expected: br gzip identity q0 binary 404 fresh
+
+package scaly 0.1.0
+package http 0.1.0
+
+use http.Request.Request
+use http.Response.Response
+use http.Router.Router
+
+procedure asset(req: ref[Request], mutable res: ref[Response]) mutable static_cache
+    serve_file(req, res, "/tmp/scaly_http_static", req.param("path"))
+
+; One request on a connection of its own: the whole response.
+procedure fetch(port: int, target: String, accept: String) returns String
+{
+    var s TcpStream.connect("127.0.0.1", port)
+    var sb StringBuilder()
+    sb.append("GET ")
+    sb.append(target)
+    sb.append(" HTTP/1.1\r\nHost: t\r\nConnection: close\r\n")
+    if accept.get_length() > 0
+    {
+        sb.append("Accept-Encoding: ")
+        sb.append(accept)
+        sb.append("\r\n")
+    }
+    sb.append("\r\n")
+    s.write_string(sb.to_string())
+    var out StringBuilder()
+    var buf u8[4096]
+    repeat
+    {
+        let n s.read(Slice[u8](4096, &buf[0]))
+        if n <= 0
+            break
+        out.append(String(&buf[0] as pointer[const_char], n as size_t))
+    }
+    s.close()
+    out.to_string()
+}
+
+; Does the response carry every one of the three fragments?
+function has(r: String, a: String, b: String, c: String) returns bool
+    r.contains(a) and r.contains(b) and r.contains(c)
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var dir String("/tmp/scaly_http_static")
+    Directory.create(dir)
+    File.write_from_string(String("/tmp/scaly_http_static/app.js"), String("console.log(1)"))
+    File.write_from_string(String("/tmp/scaly_http_static/app.js.br"), String("BR-BODY"))
+    File.write_from_string(String("/tmp/scaly_http_static/app.js.gz"), String("GZ-BODY"))
+    File.write_from_string(String("/tmp/scaly_http_static/logo.webp"), String("WEBP-BODY"))
+
+    var app Router.create(Page.allocate_page())
+    app.get("/static/{path...}", &asset)
+    var l TcpListener.listen(0)
+    let server start(app, l)
+    let port l.port()
+
+    let a fetch(port, String("/static/app.js"), String("br;q=1, gzip;q=0.8"))
+    if has(a, String("Content-Encoding: br"), String("Content-Type: application/javascript"), String("\r\n\r\nBR-BODY")) = false
+    {
+        print "br: `a`"
+        return 1
+    }
+    Console.print "br "
+    let b fetch(port, String("/static/app.js"), String("gzip"))
+    if has(b, String("Content-Encoding: gzip"), String("Vary: Accept-Encoding"), String("\r\n\r\nGZ-BODY")) = false
+    {
+        print "gzip: `b`"
+        return 2
+    }
+    Console.print "gzip "
+    let c fetch(port, String("/static/app.js"), String(""))
+    if c.contains(String("Content-Encoding")) or has(c, String("200"), String("application/javascript"), String("\r\n\r\nconsole.log(1)")) = false
+    {
+        print "identity: `c`"
+        return 3
+    }
+    Console.print "identity "
+    let d fetch(port, String("/static/app.js"), String("br;q=0, gzip;q=0.5"))
+    if has(d, String("Content-Encoding: gzip"), String("GZ-BODY"), String("200")) = false
+    {
+        print "q0: `d`"
+        return 4
+    }
+    Console.print "q0 "
+    let e fetch(port, String("/static/logo.webp"), String("br"))
+    if e.contains(String("Content-Encoding")) or has(e, String("image/webp"), String("WEBP-BODY"), String("200")) = false
+    {
+        print "binary: `e`"
+        return 5
+    }
+    Console.print "binary "
+    let f fetch(port, String("/static/missing.txt"), String(""))
+    let g fetch(port, String("/static/../etc/passwd"), String(""))
+    if f.contains(String(" 404 ")) = false or g.contains(String(" 404 ")) = false
+    {
+        print "404: `f` `g`"
+        return 6
+    }
+    Console.print "404 "
+    File.write_from_string(String("/tmp/scaly_http_static/app.js.br"), String("BR-NEWER"))
+    Scheduler.sleep(1100)
+    let h fetch(port, String("/static/app.js"), String("br"))
+    if h.contains(String("\r\n\r\nBR-NEWER")) = false
+    {
+        print "fresh: `h`"
+        return 7
+    }
+    Console.print "fresh"
+    server.shutdown()
+    server.wait()
+    l.close()
+    0
+}

@@ -1,0 +1,80 @@
+; Static files (ROADMAP-http.md, stage D): the file a route names under a
+; directory, with its media type from the extension and, when the client
+; accepts a content coding, the pre-compressed twin that sits beside it on
+; disk (`app.js.br`, `app.js.gz`) — chosen by the q-values of
+; Accept-Encoding, brotli first on a tie. Nothing is compressed here.
+;
+;   procedure asset(req: ref[Request], mutable res: ref[Response])
+;       serve_file(req, res, "/data/static", req.param("path"))
+;   app.get("/static/{path...}", &asset)
+;
+; Contents are cached per scheduler thread (a request's task never leaves
+; its thread, so the cache needs no lock) and FOLLOW THE DISK: an entry
+; older than a second is read again before it is served, on a page of its
+; own that replaces the old one — a file replaced on disk is served within
+; about a second, and a file removed answers 404. A path that climbs out of
+; the directory ("..") or starts with '/' answers 404 as well.
+
+use http.Request.Request
+use http.Response.Response
+
+; How long a cached file is served before it is read again.
+define STATIC_TTL_NS: i64 1000000000
+
+define StaticEntry
+(
+    ; the file on disk, on the cache's page
+    path: String
+    ; the contents, on `page`, which a reload replaces
+    var page: ref[Page]
+    var content: String
+    var present: bool
+    ; monotonic time of the last read, 0 before the first
+    var loaded_at: i64
+    var loading: bool
+    ; whether `page` is the entry's own (false while it is the cache's)
+    var owns_page: bool
+)
+
+define StaticCache
+@resident true @inplace true (
+    host: ref[Page]
+    var entries: Array[ref[StaticEntry]]
+)
+
+; This thread's cache, made at its first request.
+mutable static_cache: ref[StaticCache]? linked
+
+; The media type for a file name's extension; application/octet-stream
+; for one this table does not know.
+function media_type(name: Slice[u8]) @ret_nonlocal true @deep true returns Slice[u8] linked
+
+; Is rel a path this handler may open: not empty, not absolute, no ".."
+; segment?
+function safe_relative(rel: Slice[u8]) @ret_nonlocal true @deep true returns bool linked
+
+; The q-value (in thousandths) Accept-Encoding gives coding `name`: an
+; explicit entry, else a `*` entry, else 0.
+function coding_quality(accept: Slice[u8], name: Slice[u8]) @ret_nonlocal true @deep true returns i64 linked
+
+; "1", "0.8", "0.125" as thousandths.
+function quality_value(s: Slice[u8]) @ret_nonlocal true @deep true returns i64 linked
+
+; This thread's cache.
+procedure static_cache_here() @deep true returns ref[StaticCache] mutable static_cache reads static_cache linked
+
+; The cache entry of the file at path, read (again) when it is new or
+; older than STATIC_TTL_NS; while one task reads it the others serve what
+; is there, or wait for a first read.
+procedure static_entry(path: Slice[u8]) @deep true returns ref[StaticEntry] io mutable static_cache reads static_cache linked
+
+; Read the entry's file onto a fresh page and put it in place of the old
+; one; a file that is not there reads as absent.
+procedure load_entry(mutable e: ref[StaticEntry]) @ret_nonlocal true @deep true @deep_beyond_1 true io linked
+
+; Serve the file rel under root (see the module header): 200 with the file
+; or a pre-compressed twin, 404 when there is none.
+procedure serve_file(req: ref[Request], mutable res: ref[Response], root: Slice[u8], rel: Slice[u8]) @deep true io mutable static_cache reads static_cache linked
+
+; Send the twin of the file at path[0, base) in `coding` if it exists.
+procedure try_variant(mutable res: ref[Response], mutable path: ref[Array[u8]], base: size_t, coding: Slice[u8], media: Slice[u8]) @ret_nonlocal true @deep true returns bool io mutable static_cache reads static_cache linked

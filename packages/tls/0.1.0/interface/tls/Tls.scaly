@@ -40,6 +40,9 @@ procedure SSL_CTX_use_PrivateKey_file(mutable ctx: SslCtxRef, file: pointer[cons
 procedure SSL_CTX_check_private_key(ctx: SslCtxRef) returns i32 extern
 procedure SSL_CTX_set_options(mutable ctx: SslCtxRef, options: u64) returns u64 extern
 procedure SSL_CTX_set_ciphersuites(mutable ctx: SslCtxRef, suites: pointer[const_char]) returns i32 extern
+procedure SSL_CTX_set_alpn_select_cb(mutable ctx: SslCtxRef, cb: pointer[void], arg: pointer[void]) extern
+procedure SSL_CTX_set_alpn_protos(mutable ctx: SslCtxRef, protos: pointer[u8], protos_len: u32) returns i32 extern
+procedure SSL_get0_alpn_selected(ssl: SslRef, mutable data: pointer[pointer[u8]], mutable len: pointer[u32]) extern
 procedure SSL_new(mutable ctx: SslCtxRef) returns SslRef extern
 procedure SSL_free(mutable ssl: SslRef) extern
 procedure SSL_set_accept_state(mutable ssl: SslRef) extern
@@ -60,6 +63,8 @@ define SSL_FILETYPE_PEM: i32 1
 define SSL_ERROR_WANT_READ: i32 2
 define SSL_ERROR_WANT_WRITE: i32 3
 define SSL_ERROR_ZERO_RETURN: i32 6
+define SSL_TLSEXT_ERR_OK: i32 0
+define SSL_TLSEXT_ERR_NOACK: i32 3
 ; SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_2 | SSL_OP_NO_TLSv1_1
 define TLS13_ONLY: u64 0x1E000000
 ; SSL_OP_CIPHER_SERVER_PREFERENCE: the server's order of the suites decides
@@ -68,6 +73,12 @@ define SERVER_PREFERENCE: u64 0x400000
 ; What moves between the TcpStream and a memory BIO at a time: a TLS record
 ; is at most 16 KB of payload plus its overhead.
 define TLS_CHUNK: size_t 17408
+
+; ALPN on the server (RFC 7301): http/1.1 when the client offers it, else
+; no protocol at all (the extension is left out and the client falls back) —
+; never one the client did not offer. Called by OpenSSL during the
+; handshake; `offered` is the client's list of length-prefixed names.
+procedure alpn_select(ssl: SslRef, mutable selected: pointer[pointer[u8]], mutable selected_length: pointer[u8], offered: pointer[u8], offered_length: u32, arg: pointer[void]) @deep true returns i32 linked
 
 ; A TLS context: a server's certificate chain and key, or a client's
 ; defaults. It is not valid() when a file could not be read or the key does
@@ -80,6 +91,10 @@ define TlsContext(var ctx: SslCtxRef)
     ; A client context. It does not verify the server's certificate: its
     ; one use so far is talking to our own server in a test.
     procedure client() @page true @direct true @ret_caller true @deep true returns TlsContext io linked
+
+    ; Offer ALPN protocols as a client: `protos` is the wire form, each name
+    ; after its length byte (8, then "http/1.1"). False when OpenSSL refuses.
+    procedure offer_protocols(mutable this, protos: Slice[u8]) @ret_caller true @deep true returns bool io linked
 
     function valid(this) @ret_param_0 true @deep true returns bool linked
 
@@ -99,6 +114,9 @@ define TlsStream(var ssl: SslRef, var rbio: BioRef, var wbio: BioRef, var tcp: T
     procedure start(mutable context: TlsContext, mutable tcp: TcpStream, server: bool) @page true @direct true @deep true returns TlsStream io linked
 
     function is_open(this) @ret_param_0 true @deep true returns bool linked
+
+    ; The protocol ALPN settled on, empty when none was.
+    procedure protocol(this) @page true @direct true @ret_nonlocal true @deep true returns Slice[u8] io linked
 
     ; Read up to buf.length bytes of plaintext into buf: the count, 0 at the
     ; end of the stream (a close_notify, or the peer's TCP end), -1 on an

@@ -1,11 +1,12 @@
 ; The https package (ROADMAP-http.md stage D): the http package's connection
 ; loop over a TlsStream, started on an ephemeral port; main is the client.
+;   alpn       a client offering h2 and http/1.1 is given http/1.1
 ;   pipelined  two requests in ONE TLS write come back as two responses in
 ;              order, on the same connection
 ;   404-close  a request with Connection: close for a path nothing serves
 ;              answers 404 and the server ends the connection (a close_notify)
 ;   stopped    shutdown, and wait returns
-; Expected: pipelined 3|72 404-close stopped
+; Expected: alpn pipelined 3|72 404-close stopped
 
 package scaly 0.1.0
 package http 0.1.0
@@ -17,6 +18,9 @@ use http.Response.Response
 use http.Router.Router
 use tls.Tls.TlsContext
 use tls.Tls.TlsStream
+
+; ALPN's wire form of the offer: "h2", then "http/1.1", each after its length
+define ALPN_OFFER: u8[] [2, 104, 50, 8, 104, 116, 116, 112, 47, 49, 46, 49]
 
 procedure sum(req: ref[Request], mutable res: ref[Response])
 {
@@ -86,12 +90,19 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     let server https.Server.start(app, l, context)
 
     var client TlsContext.client()
+    client.offer_protocols(Slice[u8](12, &ALPN_OFFER[0]))
     var s TlsStream.connect(client, TcpStream.connect("127.0.0.1", l.port()))
     if s.is_open() = false
     {
         print "handshake failed"
         return 3
     }
+    if s.protocol().equals("http/1.1") = false
+    {
+        print "alpn: `String(s.protocol().data as pointer[const_char], s.protocol().length)`"
+        return 6
+    }
+    Console.print "alpn "
     s.write("GET /sum?a=1&b=2 HTTP/1.1\r\nHost: t\r\n\r\nPOST /sum?a=30&b=40 HTTP/1.1\r\nHost: t\r\nTransfer-Encoding: chunked\r\n\r\n1\r\n2\r\n0\r\n\r\n")
     let two responses(&s, 2)
     if two.equals("200:3|200:72") = false
