@@ -17,6 +17,22 @@ mutable stack_top:  pointer[Page] linked
 ; Dead heap buckets this thread drained and freed (milestone 2.3b) —
 ; teardown-proof counter, read via Page.reclaimed_dead_buckets().
 mutable dead_buckets_reclaimed: i64 linked
+
+; The oversized blocks this thread released last, kept for reuse instead of
+; going back to free (2026-09-29). glibc serves a block of this size with
+; mmap and unmaps it on free, so every region that needed one faulted all
+; its pages in again -- a third of a json parse on the x86 runner, 42 810
+; minor faults for 100 parses of a 1.7 MB document; macOS keeps such blocks
+; itself, which is why no Mac measurement saw it. Chained through
+; next_page, the size in current_page (as allocate_oversized records it);
+; at most OVERSIZED_KEPT blocks and OVERSIZED_KEPT_BYTES together, freed at
+; thread exit (scaly_thread_release_buckets). Not under SCALY_POISON: there
+; a released block goes back at once, as it always did.
+define OVERSIZED_KEPT: size_t 4
+define OVERSIZED_KEPT_BYTES: size_t 0x1000000
+mutable oversized_kept: pointer[Page] linked
+mutable oversized_kept_count: size_t linked
+mutable oversized_kept_bytes: size_t linked
 ; tsc's `--diagnostics` memory rows (its `Memory used` and `Memory allocs`, read
 ; from Go's runtime.MemStats there): the bytes the regions hold in pages, every
 ; allocation made from a page, and the bytes of LIVE objects — Go's `Alloc`: every

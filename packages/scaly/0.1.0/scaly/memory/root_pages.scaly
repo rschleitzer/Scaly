@@ -37,6 +37,9 @@ define BUCKET_PAGES  size_t 64
 define BUCKET_SIZE   size_t PAGE_SIZE * BUCKET_PAGES
 define BUCKET_MASK   size_t BUCKET_SIZE - 1
 define BITMAP_ALL_FREE u64 0x7FFFFFFFFFFFFFFF  ; bits 0..62 set (page 0 is header)
+; Empty heap buckets a thread's chain keeps before one goes back to the
+; system (release_idle_bucket): 2 MB of pages ready for the next region.
+define IDLE_BUCKETS_KEPT size_t 8
 
 ; Bucket headers sit at offset 0 of each bucket.
 define StackBucketHeader
@@ -740,6 +743,16 @@ procedure count_bucket_freed()
 ; (2026-09-28: 0.6 GiB per 5 s of HttpArena's limited-conn, ROADMAP-http.md).
 ; Safe without further locking: an all-free bucket has no live page for
 ; another thread to free, and only the owner allocates from its chain.
+;
+; ★But not at once (2026-09-29): the chain keeps IDLE_BUCKETS_KEPT empty
+; buckets besides this one first. glibc maps a bucket (256 KB, aligned) and
+; unmaps it on free, so a region that outgrew one bucket faulted every page
+; of the next one in again on every request -- the json parse on the x86
+; runner spent more in the kernel than in stage 1. Kept, the chain stays
+; bounded (the 2026-09-28 growth needed buckets that were NEVER returned);
+; freed, it paid a mmap and a fault per page each time. The count reads the
+; other buckets' bitmaps without their locks: a remote free only sets bits,
+; so a stale read errs towards keeping one bucket more or less.
 procedure release_idle_bucket(mutable b: pointer[HeapBucketHeader]) returns bool
 {
     if b.bitmap <> BITMAP_ALL_FREE
@@ -749,6 +762,16 @@ procedure release_idle_bucket(mutable b: pointer[HeapBucketHeader]) returns bool
     let p b.prev
     let n b.next
     if p = null and n = null
+        return false
+    var idle: size_t 0
+    var c heap_head
+    while c <> null and idle < IDLE_BUCKETS_KEPT
+    {
+        if c <> b and c.bitmap = BITMAP_ALL_FREE
+            set idle: idle + 1
+        set c: c.next as pointer[HeapBucketHeader]
+    }
+    if idle < IDLE_BUCKETS_KEPT
         return false
     if p = null
         set heap_head: n as pointer[HeapBucketHeader]
@@ -787,6 +810,18 @@ procedure scaly_thread_release_buckets()
     }
     set stack_head: null
     set stack_top: null
+
+    ; the oversized blocks kept for reuse (Page.release_page)
+    var ob oversized_kept
+    while ob <> null
+    {
+        let onext ob.next_page
+        scaly_aligned_free(ob as pointer[void])
+        set ob: onext
+    }
+    set oversized_kept: null
+    set oversized_kept_count: 0
+    set oversized_kept_bytes: 0
 
     var hb heap_head
     while hb <> null

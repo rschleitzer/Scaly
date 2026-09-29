@@ -42,9 +42,11 @@ jobs:
           echo "CPATH=$RUNNER_TEMP/yyjson-0.10.0/src" >> "$GITHUB_ENV"
           echo "LIBRARY_PATH=$RUNNER_TEMP" >> "$GITHUB_ENV"
 
+      # g++: Ubuntu's simdjson.h does not compile with clang++-20 (its
+      # formatter names members only GCC's lookup finds)
       - name: Benchmark
         env:
-          CXX: clang++-20
+          CXX: g++
           STAGES: 1
           JSONBENCH_KEEP: ${{ runner.temp }}/keep
         run: tools/bench/json/run.sh
