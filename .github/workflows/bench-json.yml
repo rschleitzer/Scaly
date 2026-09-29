@@ -32,7 +32,8 @@ jobs:
         run: tools/build-from-seed.sh
 
       - name: simdjson and yyjson
-        run: sudo apt-get install -y libsimdjson-dev libyyjson-dev || echo "not packaged: run.sh skips them by name"
+        run: |
+          sudo apt-get install -y libsimdjson-dev libyyjson-dev || echo "not packaged -- run.sh skips them by name"
 
       - name: Benchmark
         env:
