@@ -98,6 +98,64 @@ define H2Pending
     trailers: Slice[u8]
 )
 
+; A request waiting to be answered: its HTTP/1.1 text on a page of its own,
+; and -- when it runs in a task of its own -- its own request, response and
+; output buffer there.
+define H2Job
+(
+    id: u64
+    page: ref[Page]
+    var text: ByteBuf
+    router: ref[Router]
+    var req: ref[Request]?
+    var res: ref[Response]?
+    var outb: ref[ByteBuf]?
+    var parsed: bool
+    ; the request waits (Router.waits) and runs in a task of its own
+    var waiting: bool
+    ; the waiting jobs still running, the connection's count
+    var outstanding: ref[size_t]?
+)
+
+; A waiting job's task: parse its request and run its handler; the
+; connection turns the response into frames once no job runs any more.
+procedure h2_job()
+{
+    let job Scheduler.task_arg() as ref[H2Job]
+    let req job.req as ref[Request]
+    let r parse_request(job.text.bytes(), req)
+    if r > 0
+    {
+        set job.parsed: true
+        dispatch(job.router, req, job.res as ref[Response])
+    }
+    let left job.outstanding as ref[size_t]
+    set left: left - 1
+}
+
+; The method and the path (without its query) of HTTP/1.1 request text.
+function request_method(text: Slice[u8]) returns Slice[u8]
+{
+    var i: size_t 0
+    while i < text.length and text[i] <> 32
+        set i: i + 1
+    text.slice_to(i)
+}
+
+function request_path(text: Slice[u8]) returns Slice[u8]
+{
+    var i: size_t 0
+    while i < text.length and text[i] <> 32
+        set i: i + 1
+    let start i + 1
+    var end start
+    while end < text.length and text[end] <> 32 and text[end] <> 63
+        set end: end + 1
+    if start > text.length
+        return text.slice_to(0)
+    text.subslice(start, end)
+}
+
 define H2Conn
 (
     host: ref[Page]
@@ -116,6 +174,10 @@ define H2Conn
     var last_stream: u64
     var streams: Array[ref[H2Stream]]
     var pending: Array[ref[H2Pending]]
+    ; the requests complete in the frames of the last read
+    var jobs: Array[ref[H2Job]]
+    ; how many of them still run in tasks of their own
+    var outstanding: size_t
     var closing: bool
 )
 {
@@ -132,6 +194,8 @@ define H2Conn
             H2_DEFAULT_WINDOW, 16384, H2_DEFAULT_WINDOW, 0,
             Array[ref[H2Stream]]^host(),
             Array[ref[H2Pending]]^host(),
+            Array[ref[H2Job]]^host(),
+            0,
             false)
     }
 
@@ -352,13 +416,43 @@ define H2Conn
             encode_status(&frames, status)
         let after this.encode_lines(lines, from)
         let block_length frames.length - head_at - H2_FRAME_HEAD
-        var flags: u8 4
-        if end_stream
-            set flags: 5
-        let save frames.length
+        if block_length <= peer_max_frame
+        {
+            var flags: u8 4
+            if end_stream
+                set flags: 5
+            let save frames.length
+            set frames.length: head_at
+            frame_head(&frames, block_length, 1, flags, stream)
+            set frames.length: save
+            return after
+        }
+        ; larger than a frame: HEADERS, then CONTINUATION frames, the last
+        ; with END_HEADERS (the block goes through `block`, free by now --
+        ; an incoming block is decoded before its request is answered)
+        block.clear()
+        block.append(frames.bytes().subslice(head_at + H2_FRAME_HEAD, head_at + H2_FRAME_HEAD + block_length))
         set frames.length: head_at
-        frame_head(&frames, block_length, 1, flags, stream)
-        set frames.length: save
+        var off: size_t 0
+        while off < block_length
+        {
+            var n block_length - off
+            if n > peer_max_frame
+                set n: peer_max_frame
+            var kind: u8 9
+            var flags: u8 0
+            if off = 0
+            {
+                set kind: 1
+                if end_stream
+                    set flags: 1
+            }
+            if off + n = block_length
+                set flags: flags | 4
+            frame_head(&frames, n, kind, flags, stream)
+            frames.append(block.bytes().subslice(off, off + n))
+            set off: off + n
+        }
         after
     }
 
@@ -374,16 +468,15 @@ define H2Conn
         while at + 1 < response.length and (response[at] <> 13 or response[at + 1] <> 10)
             set at: at + 1
         let has_trailers trailers.length > 0
-        ; the body follows the blank line; whether the HEADERS end the stream
-        ; is known only then, so the frame is written with a guess and fixed
-        let head_at frames.length
-        let body_at this.headers_frame(stream, status, response, at + 2, false)
-        var body response.slice_from(body_at)
-        if body.length = 0 and has_trailers = false
-        {
-            frames.data.put(head_at + 4, 5)
+        ; the body follows the blank line: whether the HEADERS end the stream
+        var blank at
+        while blank + 3 < response.length and (response[blank] <> 13 or response[blank + 1] <> 10 or response[blank + 2] <> 13 or response[blank + 3] <> 10)
+            set blank: blank + 1
+        let bodiless blank + 4 >= response.length and has_trailers = false
+        let body_at this.headers_frame(stream, status, response, at + 2, bodiless)
+        if bodiless
             return
-        }
+        var body response.slice_from(body_at)
         let page Page.allocate_page()
         var p &H2Pending^page(stream, page, body, 0, peer_window, has_trailers = false, trailers)
         if this.push_data(p)
@@ -404,19 +497,84 @@ define H2Conn
         pending.add(q)
     }
 
-    ; Answer the request in `text` on `stream`.
+    ; Answer the request in `text` on `stream` -- at once, unless its route
+    ; waits (Router.waits): that one is queued for run_jobs.
     procedure answer(mutable this, stream: u64, router: ref[Router], mutable req: ref[Request], mutable res: ref[Response], mutable outb: ref[ByteBuf])
     {
-        let r parse_request(text.bytes(), req)
-        if r <= 0
+        let request text.bytes()
+        if router.route_waits(request_method(request), request_path(request)) = false
         {
-            this.reset_stream(stream, 1)
+            let r parse_request(request, req)
+            if r <= 0
+            {
+                this.reset_stream(stream, 1)
+                return
+            }
+            outb.clear()
+            dispatch(router, req, res)
+            this.respond(stream, outb.bytes(), res.trailers.bytes())
+            outb.clear()
             return
         }
-        outb.clear()
-        dispatch(router, req, res)
-        this.respond(stream, outb.bytes(), res.trailers.bytes())
-        outb.clear()
+        let page Page.allocate_page()
+        var t ByteBuf.create(page, text.length + 64)
+        t.append(text.bytes())
+        let job &H2Job^page(stream, page, t, router, null, null, null, false, false, null)
+        jobs.add(job)
+    }
+
+    ; Answer the queued requests -- those whose route waits: each starts in
+    ; a task of its own, the connection waits for them -- a millisecond at a
+    ; time, so that the poller runs -- and answers them in the order they
+    ; were queued.
+    procedure run_jobs(mutable this, router: ref[Router], mutable req: ref[Request], mutable res: ref[Response], mutable outb: ref[ByteBuf])
+    {
+        if jobs.length = 0
+            return
+        var i: size_t 0
+        while i < jobs.length
+        {
+            ; typed: the job itself -- `as pointer[void]` on the element
+            ; reference would hand over the array slot's address
+            var job: ref[H2Job] jobs.at(i)
+            let page job.page
+            let own_out &ByteBuf^page(page, allocate_slice[u8]^page(page, 4096), 0)
+            set job.outb: own_out
+            set job.req: &Request^page(null, null, null, null, null, null, 1, true, null)
+            set job.res: Response.create(page, own_out)
+            set job.waiting: true
+            set job.outstanding: &outstanding
+            set outstanding: outstanding + 1
+            Scheduler.spawn_detached(&h2_job, job as pointer[void])
+            set i: i + 1
+        }
+        while outstanding > 0
+            Scheduler.sleep(1)
+        set i: 0
+        while i < jobs.length
+        {
+            let job jobs.at(i)
+            if job.waiting
+            {
+                if job.parsed
+                {
+                    let jres job.res as ref[Response]
+                    let jout job.outb as ref[ByteBuf]
+                    this.respond(job.id, jout.bytes(), jres.trailers.bytes())
+                }
+                else
+                    this.reset_stream(job.id, 1)
+            }
+            set i: i + 1
+        }
+        var k: size_t 0
+        while k < jobs.length
+        {
+            let job jobs.at(k)
+            Page.release_page(job.page)
+            set k: k + 1
+        }
+        jobs.clear()
     }
 
     ; A complete header block for `stream`: a request to answer now (no
@@ -671,6 +829,7 @@ procedure serve_h2[S](mutable c: ref[S], router: ref[Router], host: ref[Page], m
         {
             let used h.frames_in(inb.bytes(), router, req, res, outb)
             inb.consume(used)
+            h.run_jobs(router, req, res, outb)
         }
         if h.frames.length > 0
         {

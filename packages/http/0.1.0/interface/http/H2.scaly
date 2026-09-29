@@ -71,6 +71,34 @@ define H2Pending
     trailers: Slice[u8]
 )
 
+; A request waiting to be answered: its HTTP/1.1 text on a page of its own,
+; and -- when it runs in a task of its own -- its own request, response and
+; output buffer there.
+define H2Job
+(
+    id: u64
+    page: ref[Page]
+    var text: ByteBuf
+    router: ref[Router]
+    var req: ref[Request]?
+    var res: ref[Response]?
+    var outb: ref[ByteBuf]?
+    var parsed: bool
+    ; the request waits (Router.waits) and runs in a task of its own
+    var waiting: bool
+    ; the waiting jobs still running, the connection's count
+    var outstanding: ref[size_t]?
+)
+
+; A waiting job's task: parse its request and run its handler; the
+; connection turns the response into frames once no job runs any more.
+procedure h2_job() @deep true io linked
+
+; The method and the path (without its query) of HTTP/1.1 request text.
+function request_method(text: Slice[u8]) @ret_param_0 true @deep true returns Slice[u8] linked
+
+function request_path(text: Slice[u8]) @ret_param_0 true @deep true returns Slice[u8] linked
+
 define H2Conn
 @resident true @inplace true (
     host: ref[Page]
@@ -89,6 +117,10 @@ define H2Conn
     var last_stream: u64
     var streams: Array[ref[H2Stream]]
     var pending: Array[ref[H2Pending]]
+    ; the requests complete in the frames of the last read
+    var jobs: Array[ref[H2Job]]
+    ; how many of them still run in tasks of their own
+    var outstanding: size_t
     var closing: bool
 )
 {
@@ -135,19 +167,26 @@ define H2Conn
     ; trailer lines when there are any.
     procedure respond(mutable this, stream: u64, mutable response: Slice[u8], mutable trailers: Slice[u8]) @deep true @deep_this_8 true linked
 
-    ; Answer the request in `text` on `stream`.
-    procedure answer(mutable this, stream: u64, router: ref[Router], mutable req: ref[Request], mutable res: ref[Response], mutable outb: ref[ByteBuf]) @deep true io linked
+    ; Answer the request in `text` on `stream` -- at once, unless its route
+    ; waits (Router.waits): that one is queued for run_jobs.
+    procedure answer(mutable this, stream: u64, router: ref[Router], mutable req: ref[Request], mutable res: ref[Response], mutable outb: ref[ByteBuf]) @deep true @deep_this_4 true @deep_whole_4 true io linked
+
+    ; Answer the queued requests -- those whose route waits: each starts in
+    ; a task of its own, the connection waits for them -- a millisecond at a
+    ; time, so that the poller runs -- and answers them in the order they
+    ; were queued.
+    procedure run_jobs(mutable this, router: ref[Router], mutable req: ref[Request], mutable res: ref[Response], mutable outb: ref[ByteBuf]) @deep true io linked
 
     ; A complete header block for `stream`: a request to answer now (no
     ; body) or a stream whose body follows. False on a compression error.
-    procedure headers_done(mutable this, stream: u64, block_bytes: Slice[u8], end_stream: bool, router: ref[Router], mutable req: ref[Request], mutable res: ref[Response], mutable outb: ref[ByteBuf]) @ret_nonlocal true @deep true returns bool io linked
+    procedure headers_done(mutable this, stream: u64, block_bytes: Slice[u8], end_stream: bool, router: ref[Router], mutable req: ref[Request], mutable res: ref[Response], mutable outb: ref[ByteBuf]) @ret_nonlocal true @deep true @deep_this_16 true @deep_whole_16 true returns bool io linked
 
     ; A stream's body is complete: its request text gets its length and body.
-    procedure body_done(mutable this, mutable s: ref[H2Stream], router: ref[Router], mutable req: ref[Request], mutable res: ref[Response], mutable outb: ref[ByteBuf]) @ret_nonlocal true @deep true io linked
+    procedure body_done(mutable this, mutable s: ref[H2Stream], router: ref[Router], mutable req: ref[Request], mutable res: ref[Response], mutable outb: ref[ByteBuf]) @ret_nonlocal true @deep true @deep_this_4 true @deep_whole_4 true io linked
 
     ; Handle every complete frame at the front of inb; answers how many
     ; bytes it took. Sets closing on a connection error or GOAWAY.
-    procedure frames_in(mutable this, input: Slice[u8], router: ref[Router], mutable req: ref[Request], mutable res: ref[Response], mutable outb: ref[ByteBuf]) @ret_nonlocal true @deep true returns size_t io linked
+    procedure frames_in(mutable this, input: Slice[u8], router: ref[Router], mutable req: ref[Request], mutable res: ref[Response], mutable outb: ref[ByteBuf]) @ret_nonlocal true @deep true @deep_this_4 true @deep_whole_4 true returns size_t io linked
 }
 
 ; Start a header block that continues: its first fragment.
@@ -174,6 +213,7 @@ procedure serve_h2[S](mutable c: ref[S], router: ref[Router], host: ref[Page], m
         {
             let used h.frames_in(inb.bytes(), router, req, res, outb)
             inb.consume(used)
+            h.run_jobs(router, req, res, outb)
         }
         if h.frames.length > 0
         {

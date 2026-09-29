@@ -457,6 +457,9 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
     app.get("/json/{count}", &json_items)
     app.get("/async-db", &async_db)
     app.get("/fortunes", &fortunes)
+    ; both wait on the database: over HTTP/2 they run beside the other streams
+    app.waits("/async-db")
+    app.waits("/fortunes")
     app.get("/static/{path...}", &static_file)
     app.post("/echo", &echo)
     app.post("/benchmark.BenchmarkService/GetSum", &get_sum)

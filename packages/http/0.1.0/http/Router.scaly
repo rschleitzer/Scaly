@@ -35,6 +35,7 @@ define Route
     pattern: Slice[u8]
     handler: pointer[void]
     literals: int                ; literal segments: the more, the more specific
+    var waits: bool              ; its handler waits (Router.waits)
 )
 
 define Hook
@@ -56,7 +57,7 @@ define Router
 
     ; A route for method ("" for every method) on pattern.
     procedure add(mutable this, method: Slice[u8], pattern: Slice[u8], mutable handler: pointer[void])
-        routes.add(Route(method, pattern, handler, literal_segments(pattern)))
+        routes.add(Route(method, pattern, handler, literal_segments(pattern), false))
 
     procedure get(mutable this, pattern: Slice[u8], mutable handler: pointer[void])
         this.add("GET", pattern, handler)
@@ -76,6 +77,37 @@ define Router
     ; Every method on pattern.
     procedure any(mutable this, pattern: Slice[u8], mutable handler: pointer[void])
         this.add("", pattern, handler)
+
+    ; The routes on pattern have handlers that WAIT -- a database query, a
+    ; call to another service, a sleep. Over HTTP/2 each such request runs
+    ; in a task of its own, so it holds only its own stream; every other
+    ; request is answered in the connection's own task, which costs
+    ; nothing. (Over HTTP/1.1 a connection answers in order anyway.)
+    procedure waits(mutable this, pattern: Slice[u8])
+    {
+        var i: size_t 0
+        while i < routes.length
+        {
+            var r routes.at(i)
+            if r.pattern.equals(pattern)
+                set r.waits: true
+            set i: i + 1
+        }
+    }
+
+    ; Does a request for method and path reach a route that waits?
+    function route_waits(this, method: Slice[u8], path: Slice[u8]) returns bool
+    {
+        var i: size_t 0
+        while i < routes.length
+        {
+            let r routes.at(i)
+            if r.waits and (r.method.length = 0 or r.method.equals(method)) and match_pattern(r.pattern, path)
+                return true
+            set i: i + 1
+        }
+        false
+    }
 
     ; Middleware for every path under prefix ("" = every path).
     procedure before(mutable this, prefix: Slice[u8], mutable handler: pointer[void])

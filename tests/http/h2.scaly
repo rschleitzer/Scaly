@@ -7,9 +7,14 @@
 ;             /big 100 000 bytes that only arrive as our WINDOW_UPDATEs open
 ;             the window (never more than it); POST /echo with its body in a
 ;             DATA frame answers it back
+;   continued a response field of 20 000 bytes arrives as HEADERS and
+;             CONTINUATION frames (the client's frame limit is 16 384)
+;   parallel  five streams whose handlers sleep 200 ms each, in one write,
+;             are answered in well under a second: each runs in a task of its
+;             own, so a handler that parks holds only its own stream
 ;   h1        the same port still answers HTTP/1.1, also when the first
 ;             read holds only "P" (the preface begins with it too)
-; Expected: h2 streams h1
+; Expected: h2 streams continued parallel h1
 
 package scaly 0.1.0
 package http 0.1.0
@@ -37,6 +42,26 @@ procedure big(req: ref[Request], mutable res: ref[Response])
     res.send("application/octet-stream", body.as_slice())
 }
 
+; A response whose header block needs more than one frame.
+procedure bighead(req: ref[Request], mutable res: ref[Response])
+{
+    var v Vector[u8](20000)
+    var i: size_t 0
+    while i < 20000
+    {
+        v.put(i, 97)
+        set i: i + 1
+    }
+    res.header("x-big", v.as_slice())
+    res.send_text("ok")
+}
+
+procedure nap(req: ref[Request], mutable res: ref[Response])
+{
+    Scheduler.sleep(200)
+    res.send_text("zz")
+}
+
 procedure echo(req: ref[Request], mutable res: ref[Response])
     res.send("text/plain", req.body)
 
@@ -55,6 +80,9 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     app.get("/sum", &sum)
     app.get("/big", &big)
     app.post("/echo", &echo)
+    app.get("/bighead", &bighead)
+    app.get("/nap", &nap)
+    app.waits("/nap")
     var l TcpListener.listen(0)
     let server start(app, l)
 
@@ -192,6 +220,108 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
         return 4
     }
     Console.print "streams "
+
+    ; one more stream on the same connection: a header block over two frames
+    block.clear()
+    request_block(&block, "GET", "/bighead")
+    frame_head(&out, block.length, 1, 5, 7)
+    out.append(block.bytes())
+    s.write(out.bytes())
+    out.clear()
+    var hblock ByteBuf.create(host, 32768)
+    var head_frames 0
+    var big_value: size_t 0
+    var body_ok false
+    var done7 false
+    while done7 = false
+    {
+        let n s.read(inb.spare())
+        if n <= 0
+        {
+            print "continued: connection ended"
+            return 6
+        }
+        inb.advance(n as size_t)
+        var at: size_t 0
+        let b inb.bytes()
+        while at + 9 <= b.length and at + 9 + be24(b, at) <= b.length
+        {
+            let length be24(b, at)
+            let kind b[at + 3]
+            let flags b[at + 4]
+            let payload b.subslice(at + 9, at + 9 + length)
+            set at: at + 9 + length
+            if kind = 1 or kind = 9
+            {
+                set head_frames: head_frames + 1
+                hblock.append(payload)
+                if (flags & 4) <> 0
+                {
+                    fields.clear()
+                    if decoder.decode(hblock.bytes(), &fields)
+                        set big_value: fields.get("x-big").length
+                }
+            }
+            if kind = 0
+            {
+                set body_ok: payload.equals("ok")
+                if (flags & 1) <> 0
+                    set done7: true
+            }
+        }
+        inb.consume(at)
+        if inb.length = inb.capacity()
+            inb.reserve(inb.capacity())
+    }
+    if head_frames < 2 or big_value <> 20000 or body_ok = false
+    {
+        print "continued: frames `head_frames` value `big_value` body `body_ok`"
+        return 7
+    }
+    Console.print "continued "
+
+    let started scaly_eio_now_ns()
+    var sid: u64 9
+    while sid <= 17
+    {
+        block.clear()
+        request_block(&block, "GET", "/nap")
+        frame_head(&out, block.length, 1, 5, sid)
+        out.append(block.bytes())
+        set sid: sid + 2
+    }
+    s.write(out.bytes())
+    out.clear()
+    var naps 0
+    while naps < 5
+    {
+        let n s.read(inb.spare())
+        if n <= 0
+        {
+            print "parallel: connection ended"
+            return 8
+        }
+        inb.advance(n as size_t)
+        var at: size_t 0
+        let b inb.bytes()
+        while at + 9 <= b.length and at + 9 + be24(b, at) <= b.length
+        {
+            let length be24(b, at)
+            let kind b[at + 3]
+            let flags b[at + 4]
+            set at: at + 9 + length
+            if kind = 0 and (flags & 1) <> 0
+                set naps: naps + 1
+        }
+        inb.consume(at)
+    }
+    let elapsed_ms (scaly_eio_now_ns() - started) / 1000000
+    if elapsed_ms >= 800
+    {
+        print "parallel: five naps took `elapsed_ms` ms"
+        return 9
+    }
+    Console.print "parallel "
     s.close()
 
     var h1 TcpStream.connect("127.0.0.1", l.port())

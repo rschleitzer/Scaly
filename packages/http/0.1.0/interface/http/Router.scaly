@@ -35,6 +35,7 @@ define Route
     pattern: Slice[u8]
     handler: pointer[void]
     literals: int                ; literal segments: the more, the more specific
+    var waits: bool              ; its handler waits (Router.waits)
 )
 
 define Hook
@@ -68,6 +69,16 @@ define Router
 
     ; Every method on pattern.
     procedure any(mutable this, pattern: Slice[u8], mutable handler: pointer[void]) @ret_nonlocal true @deep true @deep_this_2 true @deep_whole_2 true linked
+
+    ; The routes on pattern have handlers that WAIT -- a database query, a
+    ; call to another service, a sleep. Over HTTP/2 each such request runs
+    ; in a task of its own, so it holds only its own stream; every other
+    ; request is answered in the connection's own task, which costs
+    ; nothing. (Over HTTP/1.1 a connection answers in order anyway.)
+    procedure waits(mutable this, pattern: Slice[u8]) @deep true linked
+
+    ; Does a request for method and path reach a route that waits?
+    function route_waits(this, method: Slice[u8], path: Slice[u8]) @ret_nonlocal true @deep true returns bool linked
 
     ; Middleware for every path under prefix ("" = every path).
     procedure before(mutable this, prefix: Slice[u8], mutable handler: pointer[void]) @persists true @ret_nonlocal true @deep true @deep_this_2 true @deep_whole_2 true linked
