@@ -1,0 +1,74 @@
+; gzip through libdeflate (github.com/ebiggers/libdeflate), bound directly:
+; its API is size_t and opaque pointers throughout, so no C shim is needed
+; (CLAUDE.md, the containment rule) and no `long` crosses the boundary. A
+; program using this module links with -ldeflate.
+;
+; A compressor is not safe to share between threads. Each thread makes its
+; own on first use and keeps it -- a module `mutable` is thread-local -- so a
+; scheduler's connections share one, and no request pays for the allocation.
+
+define LibdeflateCompressorOpaque()
+define LibdeflateCompressor pointer[LibdeflateCompressorOpaque]
+define LibdeflateDecompressorOpaque()
+define LibdeflateDecompressor pointer[LibdeflateDecompressorOpaque]
+
+; Each binding declares what it writes: a `procedure` extern writes exactly
+; the parameters it marks `mutable` (the (de)compressor's own state, the output
+; and its count), and the write census takes that as the contract.
+procedure libdeflate_alloc_compressor(compression_level: i32) returns LibdeflateCompressor extern
+procedure libdeflate_gzip_compress(mutable compressor: LibdeflateCompressor, input: pointer[void], in_nbytes: size_t, mutable output: pointer[void], out_nbytes_avail: size_t) returns size_t extern
+procedure libdeflate_gzip_compress_bound(compressor: LibdeflateCompressor, in_nbytes: size_t) returns size_t extern
+procedure libdeflate_alloc_decompressor() returns LibdeflateDecompressor extern
+; the result is `enum libdeflate_result`: 0 success, 1 bad data, 2 short
+; output, 3 insufficient space
+procedure libdeflate_gzip_decompress(mutable decompressor: LibdeflateDecompressor, input: pointer[void], in_nbytes: size_t, mutable output: pointer[void], out_nbytes_avail: size_t, mutable actual_out_nbytes_ret: pointer[size_t]) returns i32 extern
+
+; Level 1: what HttpArena's json-comp profile asks for, and what the fast
+; frameworks' own gzip paths use.
+define GZIP_LEVEL: i32 1
+
+mutable gzip_compressor: LibdeflateCompressor null
+mutable gzip_decompressor: LibdeflateDecompressor null
+
+procedure gzip_compressor_of_thread() returns LibdeflateCompressor mutable gzip_compressor
+{
+    if gzip_compressor = null
+        set gzip_compressor: libdeflate_alloc_compressor(GZIP_LEVEL)
+    gzip_compressor
+}
+
+; The most bytes gzip_compress writes for n input bytes; 0 when no
+; compressor could be made.
+procedure gzip_bound(n: size_t) returns size_t mutable gzip_compressor
+{
+    let c gzip_compressor_of_thread()
+    if c = null
+        return 0
+    libdeflate_gzip_compress_bound(c, n)
+}
+
+; input as one gzip member into output: the number of bytes written, 0 when
+; output is too small (gzip_bound says how large is enough) or no compressor
+; could be made.
+procedure gzip_compress(input: Slice[u8], mutable output: Slice[u8]) returns size_t mutable gzip_compressor
+{
+    let c gzip_compressor_of_thread()
+    if c = null
+        return 0
+    libdeflate_gzip_compress(c, input.data as pointer[void], input.length, output.data as pointer[void], output.length)
+}
+
+; A gzip member into output: the number of bytes written, or -1 when input is
+; not gzip or output is too small.
+procedure gzip_decompress(input: Slice[u8], mutable output: Slice[u8]) returns i64 mutable gzip_decompressor
+{
+    if gzip_decompressor = null
+        set gzip_decompressor: libdeflate_alloc_decompressor()
+    if gzip_decompressor = null
+        return 0 - 1
+    var got: size_t 0
+    let r libdeflate_gzip_decompress(gzip_decompressor, input.data as pointer[void], input.length, output.data as pointer[void], output.length, &got as pointer[size_t])
+    if r <> 0
+        return 0 - 1
+    got as i64
+}

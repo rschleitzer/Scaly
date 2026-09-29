@@ -5,7 +5,7 @@
 #
 # The Docker build context is staged from the WORKING TREE, not the whole
 # repository (the test corpora alone are gigabytes): the seed, the tools the
-# seed build calls, the scaly/scalyc/http packages and the arena and trainer
+# seed build calls, the scaly/scalyc/http/json/compress packages and the arena and trainer
 # programs. To run it under HttpArena's own scripts, put a frameworks/scaly/
 # directory in an HttpArena checkout holding meta.json and a build.sh that
 # calls this one:
@@ -21,6 +21,10 @@
 # paths cold. The profile then goes into the final build. SCALY_PGO=0 builds
 # without it (the same whole-program build, for comparison).
 set -eu
+# The dataset the /json profile serves: HttpArena's own data/dataset.json,
+# found from the directory validate.sh calls this from (the HttpArena root),
+# or named by HTTPARENA_DATA. The training run needs it to reach /json.
+DATASET="${HTTPARENA_DATA:-$PWD/data}/dataset.json"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../../.." && pwd)"
 IMAGE=${1:-httparena-scaly}
@@ -31,12 +35,18 @@ mkdir -p "$CTX/packages" "$CTX/tools/bench/http" "$CTX/pgo"
 cp -R seed "$CTX/"
 # the tools directory without the benchmark programs and their build output
 ( cd tools && find . -maxdepth 1 -type f -exec cp {} "$CTX/tools/" \; )
-cp -R packages/scaly packages/scalyc packages/http "$CTX/packages/"
+cp -R packages/scaly packages/scalyc packages/http packages/json packages/compress "$CTX/packages/"
 cp tools/bench/http/arena.scaly tools/bench/http/train.scaly "$CTX/tools/bench/http/"
 rm -f "$CTX"/seed/r_*.ll
 if [ "${SCALY_PGO:-1}" != 0 ]; then
   docker build -t "$IMAGE-pgo-train" --target pgo-train -f "$HERE/Dockerfile" "$CTX"
-  docker run --rm --security-opt seccomp=unconfined -v "$CTX/pgo:/pgo" "$IMAGE-pgo-train" sh -c '
+  DATA_MOUNT=()
+  if [ -f "$DATASET" ]; then
+    DATA_MOUNT=(-v "$DATASET:/data/dataset.json:ro")
+  else
+    echo "build.sh: no dataset at $DATASET - the training reaches /json only as a 500"
+  fi
+  docker run --rm --security-opt seccomp=unconfined -v "$CTX/pgo:/pgo" ${DATA_MOUNT[@]+"${DATA_MOUNT[@]}"} "$IMAGE-pgo-train" sh -c '
     SCALY_ARENA_TRAIN=1 LLVM_PROFILE_FILE=/pgo/%p.profraw /arena_instr 18090 &
     p=$!
     sleep 1

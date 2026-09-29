@@ -6,7 +6,8 @@
 ;   integer  0, both i64 limits
 ;   round    parse, write, compare: the canonical text comes back byte for
 ;            byte, a decimal's trailing zero and an exponent included
-;   grow     a buffer that starts at 8 bytes, grown through the page
+;   grow     4 KB of output: the buffer outgrows the bump range into its
+;            own page
 ;   string   quote and stringify, the StringBuilder forms: the same text
 ; Expected: build escape integer round grow string done
 
@@ -28,8 +29,7 @@ procedure same(w: ref[JsonWriter], want: Slice[u8]) returns bool
 }
 
 var ok true
-let host Page.allocate_page()
-var w JsonWriter.create(host, 256)
+var w JsonWriter()
 
 w.begin_object()
 w.key("id")
@@ -118,7 +118,7 @@ if parsed.ok() = false or same(&w, canonical.as_slice()) = false
 if ok
     Console.print "round "
 
-var small JsonWriter.create(host, 8)
+var small JsonWriter()
 small.begin_array()
 var i: i64 0
 while i < 1000

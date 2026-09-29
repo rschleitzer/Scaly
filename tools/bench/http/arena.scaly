@@ -4,17 +4,48 @@
 ;   GET/POST /baseline11?a=&b=   the sum of a, b and the (optional) body
 ;   GET      /pipeline           "ok"
 ;   GET      /delay/{ms}         waits ms, then answers the number
+;   GET      /json/{count}?m=    the first count items of the dataset, each with
+;                                total = price * quantity * m, gzip-compressed
+;                                when Accept-Encoding allows it (stage B)
 ;   GET      /shutdown           ends the server (only with SCALY_ARENA_TRAIN set,
 ;                                the PGO training run)
 ;
 ;   arena [port]                 (default 8080)
+;
+; The dataset (DATASET_PATH, default /data/dataset.json) is read ONCE, parsed
+; with the json package into records, and serialized per request by a
+; JsonWriter on the handler's frame page -- nothing is prepared for a count
+; or a multiplier.
 
 package scaly 0.1.0
 package http 0.1.0
+package json 0.1.0
+package compress 0.1.0
 
 use http.Request.Request
 use http.Response.Response
 use http.Router.Router
+use json.Value.JsonValue
+use json.Value.JsonParsed
+use json.Writer.JsonWriter
+
+; One dataset entry, as the benchmark's validation reads it back.
+define Item
+(
+    id: i64
+    name: String
+    category: String
+    price: i64
+    quantity: i64
+    active: bool
+    tags: Vector[String]
+    score: i64
+    rating_count: i64
+)
+
+; The dataset, set once in main before the schedulers start and only read
+; after: every connection's fiber reads it from its own thread.
+shared dataset: ref[Array[Item]]? null
 
 procedure baseline(req: ref[Request], mutable res: ref[Response])
 {
@@ -35,6 +66,119 @@ procedure delay(req: ref[Request], mutable res: ref[Response])
     res.send_int(ms)
 }
 
+procedure json_items(req: ref[Request], mutable res: ref[Response]) mutable gzip_compressor
+{
+    let items dataset
+    if items = null
+    {
+        res.set_status(500)
+        res.send_empty()
+        return
+    }
+    var count parse_int_prefix(req.param("count"))
+    if count < 0
+        set count: 0
+    if count > (items.length as i64)
+        set count: items.length as i64
+    var m: i64 1
+    let m_text req.query_param("m")
+    if m_text.length > 0
+        set m: parse_int_prefix(m_text)
+    var w JsonWriter()
+    w.begin_object()
+    w.key("items")
+    w.begin_array()
+    var i: i64 0
+    while i < count
+    {
+        let it items.at(i as size_t)
+        w.begin_object()
+        w.key("id")
+        w.integer(it.id)
+        w.key("name")
+        w.text(it.name.as_slice())
+        w.key("category")
+        w.text(it.category.as_slice())
+        w.key("price")
+        w.integer(it.price)
+        w.key("quantity")
+        w.integer(it.quantity)
+        w.key("active")
+        w.boolean(it.active)
+        w.key("tags")
+        w.begin_array()
+        var t: size_t 0
+        while t < it.tags.length
+        {
+            w.text(it.tags[t].as_slice())
+            set t: t + 1
+        }
+        w.end_array()
+        w.key("rating")
+        w.begin_object()
+        w.key("score")
+        w.integer(it.score)
+        w.key("count")
+        w.integer(it.rating_count)
+        w.end_object()
+        w.key("total")
+        w.integer(it.price * it.quantity * m)
+        w.end_object()
+        set i: i + 1
+    }
+    w.end_array()
+    w.key("count")
+    w.integer(count)
+    w.end_object()
+    let body w.bytes()
+    ; level 1, as the json-comp profile asks; the compressed copy lives on
+    ; this frame's page like the writer
+    if req.accepts_encoding("gzip")
+    {
+        let bound gzip_bound(body.length)
+        if bound > 0
+        {
+            var packed Vector[u8](bound)
+            let n gzip_compress(body, packed.as_slice())
+            if n > 0
+            {
+                res.send_encoded("application/json", "gzip", packed.as_slice().slice_to(n))
+                return
+            }
+        }
+    }
+    res.send("application/json", body)
+}
+
+; Read and convert the dataset onto host; false when it cannot be read.
+procedure load_dataset(host: ref[Page], path: String) returns bool mutable dataset
+{
+    let text File.read_to_string(path)
+    let parsed JsonValue.parse(text.as_slice())
+    if parsed.ok() = false
+        return false
+    let doc parsed.value
+    let items &Array[Item]^host()
+    var i: size_t 0
+    while i < doc.length()
+    {
+        let v doc.item(i)
+        let rating v.get("rating")
+        let tags_v v.get("tags")
+        var tags Vector[String]^host(tags_v.length())
+        var t: size_t 0
+        while t < tags_v.length()
+        {
+            tags.put(t, String^host(tags_v.item(t).as_string()))
+            set t: t + 1
+        }
+        items.add(Item(v.get("id").as_i64(), String^host(v.get("name").as_string()), String^host(v.get("category").as_string()), v.get("price").as_i64(), v.get("quantity").as_i64(), v.get("active").as_bool(), tags, rating.get("score").as_i64(), rating.get("count").as_i64()))
+        set i: i + 1
+    }
+    set dataset: items
+    true
+}
+
 ; Ends the server — registered only in the PGO training run (SCALY_ARENA_TRAIN
 ; set, tools/bench/http/train.scaly), whose profile is written at a clean exit.
 procedure shutdown(req: ref[Request], mutable res: ref[Response])
@@ -44,15 +188,23 @@ procedure shutdown(req: ref[Request], mutable res: ref[Response])
     TcpServer.current().shutdown()
 }
 
-procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutable dataset
 {
     var port 8080
     if argc > 1
         set port: parse_int_prefix(String(*(argv + 1)).as_slice()) as int
+    let data_host Page.allocate_page()
+    var path String("/data/dataset.json")
+    let env_path getenv("DATASET_PATH")
+    if env_path <> null
+        set path: String(env_path)
+    if load_dataset(data_host, path) = false
+        print "arena: no dataset at `path` - /json answers 500"
     var app Router.create(Page.allocate_page())
     app.any("/baseline11", &baseline)
     app.get("/pipeline", &pipeline)
     app.get("/delay/{ms}", &delay)
+    app.get("/json/{count}", &json_items)
     if getenv("SCALY_ARENA_TRAIN") <> null
         app.get("/shutdown", &shutdown)
     if serve(app, port) = false

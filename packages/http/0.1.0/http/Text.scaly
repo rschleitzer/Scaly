@@ -136,6 +136,64 @@ function contains_token_lower(s: Slice[u8], lit: Slice[u8]) returns bool
     false
 }
 
+; The weight an Accept-Encoding value gives the lower-case coding, in
+; thousandths (`gzip;q=0.5` -> 500, a bare `gzip` -> 1000), or -1 when the
+; value does not name it. The q-value grammar of RFC 9110 12.4.2: a 0 or 1,
+; up to three decimals.
+function coding_quality(value: Slice[u8], coding: Slice[u8]) returns int
+{
+    var i: size_t 0
+    while i <= value.length
+    {
+        var e i
+        while e < value.length and value[e] <> 44          ; ','
+            set e: e + 1
+        let element value.subslice(i, e)
+        var semi: size_t 0
+        while semi < element.length and element[semi] <> 59  ; ';'
+            set semi: semi + 1
+        if equals_lower(trim(element.slice_to(semi)), coding)
+            return quality_of(element.slice_from(semi))
+        set i: e + 1
+    }
+    0 - 1
+}
+
+; The q parameter among `;name=value` parameters, in thousandths; 1000 when
+; there is none.
+function quality_of(params: Slice[u8]) returns int
+{
+    var i: size_t 0
+    while i < params.length
+    {
+        ; one parameter: from after a ';' to the next
+        var e i + 1
+        while e < params.length and params[e] <> 59
+            set e: e + 1
+        let p trim(params.subslice(i + 1, e))
+        if p.length >= 2 and lower(p[0]) = 113 and p[1] = 61      ; 'q='
+        {
+            let v trim(p.slice_from(2))
+            if v.length = 0
+                return 1000
+            if v[0] = 49                                        ; '1'
+                return 1000
+            var q 0
+            var scale 100
+            var k: size_t 2
+            while k < v.length and scale > 0 and v[k] >= 48 and v[k] <= 57
+            {
+                set q: q + ((v[k] - 48) as int) * scale
+                set scale: scale / 10
+                set k: k + 1
+            }
+            return q
+        }
+        set i: e
+    }
+    1000
+}
+
 function hex_value(c: u8) returns int
 {
     if c >= 48 and c <= 57

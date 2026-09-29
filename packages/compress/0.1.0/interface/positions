@@ -1,0 +1,9 @@
+; where the lines of this interface stand in the package's sources,
+; written by compiler/Interface.scaly: after a file's path, the interface
+; line starting at the first byte is the source's line starting at the second
+compress/Gzip.scaly
+1969 1967
+2026 2022
+2193 2237
+2422 2520
+2763 2994

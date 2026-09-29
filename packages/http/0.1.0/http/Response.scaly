@@ -122,18 +122,38 @@ define Response
     ; The body with its content type; ends the response. A second send is
     ; ignored.
     procedure send(mutable this, content_type: Slice[u8], body: Slice[u8])
+        this.send_encoded(content_type, "", body)
+
+    ; A body already in a content coding (`gzip`: the client's
+    ; accepts_encoding said so, the caller compressed it); an empty encoding
+    ; is send. Ends the response.
+    procedure send_encoded(mutable this, content_type: Slice[u8], encoding: Slice[u8], body: Slice[u8])
     {
         if sent
             return
         this.start()
+        ; the plain case in the appends it always took (baseline's hot path)
         if content_type.length > 0
         {
             out.append("Content-Type: ")
             out.append(content_type)
+            if encoding.length > 0
+            {
+                out.append("\r\nContent-Encoding: ")
+                out.append(encoding)
+            }
             out.append("\r\nContent-Length: ")
         }
         else
+        {
+            if encoding.length > 0
+            {
+                out.append("Content-Encoding: ")
+                out.append(encoding)
+                out.append("\r\n")
+            }
             out.append("Content-Length: ")
+        }
         out.append_uint(body.length as u64)
         out.append("\r\n\r\n")
         if head_only = false

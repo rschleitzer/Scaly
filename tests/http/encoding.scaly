@@ -1,0 +1,88 @@
+; The http package's content-coding negotiation (ROADMAP-http.md stage B):
+;   quality   coding_quality reads a coding's weight off an Accept-Encoding
+;             value: bare, with q, case-insensitive, absent
+;   accepts   Request.accepts_encoding: named with q > 0, refused by q=0,
+;             covered by `*`, `*` overruled by name, no field at all
+;   send      Response.send_encoded writes Content-Encoding beside the type
+;             and the length; send keeps its old head byte for byte
+; Expected: quality accepts send done
+
+package scaly 0.1.0
+package http 0.1.0
+
+use http.Buffer.ByteBuf
+use http.Request.Request
+use http.Response.Response
+
+; Parse text into req (the buffer outlives the request).
+procedure parse_into(mutable buf: Slice[u8], mutable req: ref[Request], text: Slice[u8]) returns bool
+{
+    var i: size_t 0
+    while i < text.length
+    {
+        buf.put(i, text[i])
+        set i: i + 1
+    }
+    parse_request(buf.slice_to(text.length), req) > 0
+}
+
+procedure accepts(mutable buf: Slice[u8], mutable req: ref[Request], field: Slice[u8]) returns bool
+{
+    var sb StringBuilder()
+    sb.append "GET / HTTP/1.1\r\n"
+    sb.append(field.data as pointer[char], field.length)
+    sb.append "\r\n\r\n"
+    let text sb.to_string()
+    if parse_into(buf, req, text.as_slice()) = false
+        exit 90
+    req.accepts_encoding("gzip")
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var ok true
+    if coding_quality("gzip, br", "gzip") <> 1000 or coding_quality("br;q=0.8, GZIP;q=0.5", "gzip") <> 500
+        set ok: false
+    if coding_quality("gzip;q=0", "gzip") <> 0 or coding_quality("gzip;q=0.000", "gzip") <> 0 or coding_quality("gzip; Q=1.0", "gzip") <> 1000
+        set ok: false
+    if coding_quality("br", "gzip") <> (0 - 1) or coding_quality("", "gzip") <> (0 - 1) or coding_quality("x-gzip", "gzip") <> (0 - 1)
+        set ok: false
+    if coding_quality("gzip;level=1;q=0.25", "gzip") <> 250
+        set ok: false
+    if ok = false
+        return 1
+    Console.print "quality "
+
+    let host Page.allocate_page()
+    var buf allocate_slice[u8]^host(host, 4096)
+    let req &Request^host(null, null, null, null, null, null, 1, true, null)
+    if accepts(buf, req, "Accept-Encoding: gzip, br") = false or accepts(buf, req, "accept-encoding: br;q=1, gzip;q=0.1") = false
+        return 2
+    if accepts(buf, req, "Accept-Encoding: gzip;q=0") or accepts(buf, req, "Accept-Encoding: br") or accepts(buf, req, "Host: x")
+        return 3
+    if accepts(buf, req, "Accept-Encoding: *") = false or accepts(buf, req, "Accept-Encoding: *, gzip;q=0")
+        return 4
+    Console.print "accepts "
+
+    let out &ByteBuf^host(host, allocate_slice[u8]^host(host, 4096), 0)
+    let res Response.create(host, out)
+    res.reset(false)
+    res.send_encoded("application/json", "gzip", "xyz")
+    let got String(out.bytes().data as pointer[const_char], out.length)
+    ; the Date line is the only varying part: 54 bytes of status line and date
+    let tail got.as_slice().slice_from(54)
+    if tail.equals("Content-Type: application/json\r\nContent-Encoding: gzip\r\nContent-Length: 3\r\n\r\nxyz") = false
+    {
+        print "got `got`"
+        return 5
+    }
+    out.clear()
+    res.reset(false)
+    res.send_text("ok")
+    if out.bytes().slice_from(54).equals("Content-Type: text/plain\r\nContent-Length: 2\r\n\r\nok") = false
+        return 6
+    Console.print "send "
+
+    Console.print "done"
+    0
+}

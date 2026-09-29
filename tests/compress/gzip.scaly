@@ -1,0 +1,55 @@
+; The compress package's gzip over libdeflate (ROADMAP-http.md stage B):
+;   round     12 KB of JSON-like text compressed and decompressed back, byte
+;             for byte; the member starts with the gzip magic and deflate
+;   ratio     repetitive text comes out below a quarter of its size
+;   limits    an output below the bound compresses to 0; a short output and
+;             bytes that are not gzip decompress to -1
+; Expected: round ratio limits done
+
+package scaly 0.1.0
+package compress 0.1.0
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutable gzip_compressor, gzip_decompressor
+{
+    var sb StringBuilder()
+    var i 0
+    while i < 200
+    {
+        sb.append "{\"id\":"
+        sb.append i
+        sb.append ",\"name\":\"widget\",\"tags\":[\"a\",\"b\"]},"
+        set i: i + 1
+    }
+    let text sb.to_string()
+    let input text.as_slice()
+
+    let host Page.allocate_page()
+    let bound gzip_bound(input.length)
+    if bound < input.length
+        return 1
+    var packed allocate_slice[u8]^host(host, bound)
+    let n gzip_compress(input, packed)
+    if n = 0 or packed[0] <> 0x1F or packed[1] <> 0x8B or packed[2] <> 8
+        return 2
+    var back allocate_slice[u8]^host(host, input.length)
+    let m gzip_decompress(packed.slice_to(n), back)
+    if m <> (input.length as i64) or back.equals(input) = false
+        return 3
+    Console.print "round "
+
+    if n * 4 >= input.length
+        return 4
+    Console.print "ratio "
+
+    var tiny allocate_slice[u8]^host(host, 16)
+    if gzip_compress(input, tiny) <> 0
+        return 5
+    if gzip_decompress(packed.slice_to(n), tiny) <> (0 - 1)
+        return 6
+    if gzip_decompress(input, back) <> (0 - 1)
+        return 7
+    Console.print "limits "
+
+    Console.print "done"
+    0
+}

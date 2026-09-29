@@ -4,9 +4,10 @@
 ; profile runtime writes its counts at a clean exit.
 ;
 ; Every connection sends, per round, ONE write holding sixteen pipelined
-; GET /pipeline, a baseline GET with a query, a POST with Content-Length
-; and a POST with a chunked body, and reads the nineteen responses; every
-; hundredth round adds a GET /delay/1 on its own.
+; GET /pipeline, a baseline GET with a query, a POST with Content-Length,
+; a POST with a chunked body and two GET /json (the whole dataset gzipped,
+; as json-comp asks, and a part of it plain), and reads the twenty-one responses; every hundredth round
+; adds a GET /delay/1 on its own.
 ;
 ;   train <port> [rounds]      (default 3000 rounds on each of 16 connections)
 
@@ -16,7 +17,7 @@ package http 0.1.0
 use http.Request.Request
 
 define CONNECTIONS: int 16
-define BATCH_RESPONSES: int 19
+define BATCH_RESPONSES: int 21
 
 ; the batch every connection writes, built once in main (the clients run as
 ; tasks of main's own scheduler, on its thread)
@@ -102,6 +103,8 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
     sb.append "GET /baseline11?a=13&b=42 HTTP/1.1\r\nHost: localhost\r\n\r\n"
     sb.append "POST /baseline11?a=13&b=42 HTTP/1.1\r\nHost: localhost\r\nContent-Type: text/plain\r\nContent-Length: 2\r\n\r\n20"
     sb.append "POST /baseline11?a=13&b=42 HTTP/1.1\r\nHost: localhost\r\nContent-Type: text/plain\r\nTransfer-Encoding: chunked\r\n\r\n2\r\n20\r\n0\r\n\r\n"
+    sb.append "GET /json/50?m=3 HTTP/1.1\r\nHost: localhost\r\nAccept-Encoding: gzip, br\r\n\r\n"
+    sb.append "GET /json/12?m=7 HTTP/1.1\r\nHost: localhost\r\n\r\n"
     let text sb.to_string()
     let cells allocate_slice[u8]^bp(bp, text.length)
     var k: size_t 0

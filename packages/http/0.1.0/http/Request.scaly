@@ -84,6 +84,18 @@ define Request
         fields.slice_to(0)
     }
 
+    ; Does the client accept the lower-case content coding (Accept-Encoding,
+    ; RFC 9110 12.5.3): named with a weight above 0, or covered by `*` and
+    ; not refused by name. No field at all accepts nothing but identity.
+    function accepts_encoding(this, coding: Slice[u8]) returns bool
+    {
+        let value this.header("accept-encoding")
+        let named coding_quality(value, coding)
+        if named >= 0
+            return named > 0
+        coding_quality(value, "*") > 0
+    }
+
     ; How often query parameter name occurs (`code=a&code=b`: 2).
     function query_count(this, name: Slice[u8]) returns int
     {

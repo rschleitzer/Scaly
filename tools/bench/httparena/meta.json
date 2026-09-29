@@ -4,7 +4,7 @@
   "type": "experimental",
   "engine": "scaly",
   "mode": "standard",
-  "description": "The http package of the Scaly language on its own runtime: one scheduler per core, a fiber per connection with region-based memory that dies with the request, an HTTP/1.1 parser resumable at any byte, pipelined responses in one write.",
+  "description": "The http package of the Scaly language on its own runtime: one scheduler per core, a fiber per connection with region-based memory that dies with the request, an HTTP/1.1 parser resumable at any byte, pipelined responses in one write, JSON written per request by its own json package and gzipped through libdeflate.",
   "repo": "https://github.com/rschleitzer/Scaly",
   "enabled": true,
   "completeness": {
@@ -19,7 +19,8 @@
     "limited-conn",
     "async",
     "latency-1m",
-    "latency-10k"
+    "latency-10k",
+    "json-comp"
   ],
   "maintainers": []
 }

@@ -1,10 +1,12 @@
-; The writer: appends a document to a growable byte buffer on a page its
-; owner names, the way http's ByteBuf holds a connection's output. The
-; separators are its business — the caller says begin_object, key, a value,
-; end_object, and the commas and colons follow. Strings are escaped by RFC
-; 8259: the quote, the backslash and every control character; the named
-; escapes where the RFC has one, \u00XX for the rest. A number given as
-; text goes out VERBATIM (number_text of a parsed value, a FHIR decimal).
+; The writer: appends a document to a growable byte buffer, an Array[u8]
+; on the writer's own page. A writer is page-resident, so a local one lives
+; on its routine's frame page and dies with it -- a request handler's writer
+; leaves nothing behind on a connection that stays open. The separators are
+; its business -- the caller says begin_object, key, a value, end_object,
+; and the commas and colons follow. Strings are escaped by RFC 8259: the
+; quote, the backslash and every control character; the named escapes where
+; the RFC has one, \u00XX for the rest. A number given as text goes out
+; VERBATIM (number_text of a parsed value, a FHIR decimal).
 ;
 ; Commas need no stack: `first` is true exactly between an opening bracket
 ; and the container's first element, and a closed container is itself the
@@ -15,19 +17,14 @@ use json.Value.JsonMember
 use json.Value.JsonArray
 use json.Value.JsonObject
 
-; memcpy(3)
-function memcpy(dest: pointer[void], src: pointer[void], count: size_t) returns pointer[void] extern
-
 define JsonWriter
-(
-    host: ref[Page]
-    var data: Slice[u8]
-    var length: size_t
+@resident true @inplace true (
+    var buffer: Array[u8]
     var first: bool
     var after_key: bool
 )
 {
-    procedure create(host: ref[Page], capacity: size_t) @page true @direct true @ret_explicit_0 true @deep true returns JsonWriter linked
+    init() linked
 
     ; The document so far.
     function bytes(this) @page true @direct true @ret_param_0 true @deep true returns Slice[u8] linked
@@ -95,11 +92,7 @@ define JsonWriter
 
     function hex_digit(v: u8) @ret_nonlocal true @deep true returns u8 linked
 
-    procedure byte(mutable this, b: u8) @persists true @deep true linked
+    procedure byte(mutable this, b: u8) @persists true @ret_nonlocal true @deep true linked
 
-    procedure append(mutable this, s: Slice[u8]) @deep true linked
-
-    ; Room for n more bytes: at least double on growth. The old block stays
-    ; with the page, which dies with its owner.
-    procedure reserve(mutable this, n: size_t) @deep true linked
+    procedure append(mutable this, s: Slice[u8]) @ret_nonlocal true @deep true linked
 }
