@@ -6,7 +6,9 @@
 ;   order    members keep document order; a duplicated name answers the first
 ;   refuse   a refused document: Null, the code, the offset, the message
 ;   big      a document of 2000 objects, parsed under poison
-; Expected: access numbers order refuse big done
+;   owned    the tree keeps its own copy: the source overwritten after the
+;            parse changes nothing; escaped strings and names decoded in place
+; Expected: access numbers order refuse big owned done
 
 package scaly 0.1.0
 package json 0.1.0
@@ -64,7 +66,7 @@ if ok
     Console.print "numbers "
 
 let obj JsonValue.parse("{\"z\":1,\"a\":2,\"m\":3,\"a\":4}").value
-if obj.length() <> 4 or obj.key_at(0).equals(String("z")) = false or obj.key_at(3).equals(String("a")) = false
+if obj.length() <> 4 or obj.key_at(0).equals(String("z").as_slice()) = false or obj.key_at(3).equals(String("a").as_slice()) = false
     set ok: false
 if obj.value_at(2).as_i64() <> 3 or obj.get("a").as_i64() <> 2 or obj.key_at(9).length <> 0
     set ok: false
@@ -115,6 +117,36 @@ else
 }
 if ok
     Console.print "big "
+
+let host Page.allocate_page()
+let src_text "{\"k\\u00e9y\":\"a\\nb\\\"c\",\"n\":-12.5e3,\"plain\":\"xyz\"}"
+var src allocate_slice[u8]^host(host, src_text.length)
+set i: 0
+while i < src.length
+{
+    src.put(i, src_text.as_slice()[i])
+    set i: i + 1
+}
+let owned JsonValue.parse(src)
+set i: 0
+while i < src.length
+{
+    src.put(i, 0x58)
+    set i: i + 1
+}
+let ov owned.value
+var want_key StringBuilder()
+want_key.append("k")
+want_key.append(0xC3 as char)
+want_key.append(0xA9 as char)
+want_key.append("y")
+let wk want_key.to_string()
+if owned.ok() = false or ov.key_at(0).equals(wk.as_slice()) = false or ov.get(wk.as_slice()).as_string().equals("a\nb\"c") = false
+    set ok: false
+if ov.get("n").number_text().equals("-12.5e3") = false or ov.get("plain").text().equals("xyz") = false
+    set ok: false
+if ok
+    Console.print "owned "
 
 if ok
     Console.print "done"

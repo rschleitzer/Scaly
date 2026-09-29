@@ -335,15 +335,23 @@ define JsonReader
         JsonToken.Invalid
     }
 
+    ; The scanners work on locals: a loop whose index and bound are locals
+    ; proves each byte's bounds check by its own condition, and LLVM drops it.
+    ; Through `pos` and `source` (fields, memory) it could not, and the check
+    ; per byte of whitespace was half of a pretty-printed document's parse
+    ; (the 2026-09-29 profile).
     procedure skip_ws(mutable this)
     {
-        while pos < source.length
+        let src source
+        var p pos
+        while p < src.length
         {
-            let c source[pos]
+            let c src[p]
             if c <> 0x20 and c <> 0x0A and c <> 0x0D and c <> 0x09
-                return
-            set pos: pos + 1
+                break
+            set p: p + 1
         }
+        set pos: p
     }
 
     function in_object(this) returns bool
@@ -479,69 +487,74 @@ define JsonReader
     ; one and [start, end) holds the text between them.
     procedure scan_string(mutable this) returns bool
     {
-        set pos: pos + 1
-        set start: pos
+        let src source
+        var p pos + 1
+        set start: p
         set escaped: false
-        while pos < source.length
+        while p < src.length
         {
-            let c source[pos]
+            let c src[p]
+            ; the common byte first
+            if c >= 0x20 and c <> 0x22 and c <> 0x5C
+            {
+                set p: p + 1
+                continue
+            }
             if c = 0x22
             {
-                set end: pos
-                set pos: pos + 1
+                set end: p
+                set pos: p + 1
                 return true
             }
             if c < 0x20
             {
+                set pos: p
                 this.fail(JSON_CONTROL)
                 return false
             }
-            if c = 0x5C                                     ; '\'
+            ; a backslash
+            set escaped: true
+            if p + 1 >= src.length
             {
-                set escaped: true
-                if pos + 1 >= source.length
+                set pos: p + 1
+                this.fail(JSON_END)
+                return false
+            }
+            let e src[p + 1]
+            if e = 0x75                                     ; 'u'
+            {
+                if p + 6 > src.length
                 {
-                    set pos: pos + 1
+                    set pos: src.length
                     this.fail(JSON_END)
                     return false
                 }
-                let e source[pos + 1]
-                if e = 0x75                                 ; 'u'
+                var k: size_t 2
+                while k < 6
                 {
-                    if pos + 6 > source.length
+                    if JsonReader.hex_digit(src[p + k]) < 0
                     {
-                        set pos: source.length
-                        this.fail(JSON_END)
+                        set pos: p + k
+                        this.fail(JSON_ESCAPE)
                         return false
                     }
-                    var k: size_t 2
-                    while k < 6
-                    {
-                        if JsonReader.hex_digit(source[pos + k]) < 0
-                        {
-                            set pos: pos + k
-                            this.fail(JSON_ESCAPE)
-                            return false
-                        }
-                        set k: k + 1
-                    }
-                    set pos: pos + 6
+                    set k: k + 1
                 }
-                else
-                {
-                    match e
-                        case 0x22 case 0x5C case 0x2F case 0x62 case 0x66 case 0x6E case 0x72 case 0x74: set pos: pos + 2
-                        else
-                        {
-                            set pos: pos + 1
-                            this.fail(JSON_ESCAPE)
-                            return false
-                        }
-                }
+                set p: p + 6
             }
             else
-                set pos: pos + 1
+            {
+                match e
+                    case 0x22 case 0x5C case 0x2F case 0x62 case 0x66 case 0x6E case 0x72 case 0x74: set p: p + 2
+                    else
+                    {
+                        set pos: p + 1
+                        this.fail(JSON_ESCAPE)
+                        return false
+                    }
+            }
         }
+        set pos: p
         this.fail(JSON_END)
         false
     }
@@ -549,54 +562,143 @@ define JsonReader
     ; -? (0 | [1-9][0-9]*) (. [0-9]+)? ([eE] [+-]? [0-9]+)?
     procedure scan_number(mutable this) returns bool
     {
-        set start: pos
+        let src source
+        var p pos
+        set start: p
         set integral: true
-        if source[pos] = 0x2D
-            set pos: pos + 1
-        if this.digit_at(pos) = false
-            return this.number_fails()
-        if source[pos] = 0x30
+        if src[p] = 0x2D
+            set p: p + 1
+        if JsonReader.digit_at(src, p) = false
+            return this.number_fails(p)
+        if src[p] = 0x30
         {
-            set pos: pos + 1
-            if this.digit_at(pos)
-                return this.number_fails()
+            set p: p + 1
+            if JsonReader.digit_at(src, p)
+                return this.number_fails(p)
         }
         else
-            this.digits()
-        if pos < source.length and source[pos] = 0x2E       ; '.'
+            set p: JsonReader.digits_end(src, p)
+        if p < src.length and src[p] = 0x2E                 ; '.'
         {
             set integral: false
-            set pos: pos + 1
-            if this.digit_at(pos) = false
-                return this.number_fails()
-            this.digits()
+            set p: p + 1
+            if JsonReader.digit_at(src, p) = false
+                return this.number_fails(p)
+            set p: JsonReader.digits_end(src, p)
         }
-        if pos < source.length and (source[pos] = 0x65 or source[pos] = 0x45)   ; 'e' 'E'
+        if p < src.length and (src[p] = 0x65 or src[p] = 0x45)     ; 'e' 'E'
         {
             set integral: false
-            set pos: pos + 1
-            if pos < source.length and (source[pos] = 0x2B or source[pos] = 0x2D)
-                set pos: pos + 1
-            if this.digit_at(pos) = false
-                return this.number_fails()
-            this.digits()
+            set p: p + 1
+            if p < src.length and (src[p] = 0x2B or src[p] = 0x2D)
+                set p: p + 1
+            if JsonReader.digit_at(src, p) = false
+                return this.number_fails(p)
+            set p: JsonReader.digits_end(src, p)
         }
-        set end: pos
+        set end: p
+        set pos: p
         true
     }
 
-    procedure number_fails(mutable this) returns bool
+    procedure number_fails(mutable this, at: size_t) returns bool
     {
+        set pos: at
         this.fail(JSON_NUMBER)
         false
     }
 
-    function digit_at(this, at: size_t) returns bool
-        at < source.length and source[at] >= 0x30 and source[at] <= 0x39
+    function digit_at(src: Slice[u8], at: size_t) returns bool
+        at < src.length and src[at] >= 0x30 and src[at] <= 0x39
 
-    procedure digits(mutable this)
+    ; The end of the run of digits that starts at p.
+    function digits_end(src: Slice[u8], p: size_t) returns size_t
     {
-        while this.digit_at(pos)
-            set pos: pos + 1
+        var q p
+        while q < src.length and src[q] >= 0x30 and src[q] <= 0x39
+            set q: q + 1
+        q
+    }
+
+    ; Decode the escapes of doc[from, to) IN PLACE, from `from` on: the
+    ; decoded text is never longer than its escaped form (\uXXXX, six bytes,
+    ; becomes at most three; a surrogate pair, twelve, becomes four), so the
+    ; write position never passes the read position. The decoded length.
+    procedure decode_in_place(mutable doc: Slice[u8], from: size_t, to: size_t) returns size_t
+    {
+        var r from
+        var w from
+        while r < to
+        {
+            let c doc[r]
+            if c <> 0x5C
+            {
+                doc.put(w, c)
+                set w: w + 1
+                set r: r + 1
+                continue
+            }
+            let e doc[r + 1]
+            if e <> 0x75                                    ; not 'u'
+            {
+                doc.put(w, JsonReader.unescape(e))
+                set w: w + 1
+                set r: r + 2
+                continue
+            }
+            var cp JsonReader.hex4(doc, r + 2)
+            set r: r + 6
+            if cp >= 0xD800 and cp <= 0xDBFF
+            {
+                if r + 6 <= to and doc[r] = 0x5C and doc[r + 1] = 0x75
+                {
+                    let low JsonReader.hex4(doc, r + 2)
+                    if low >= 0xDC00 and low <= 0xDFFF
+                    {
+                        set cp: 0x10000 + ((cp - 0xD800) << 10) + (low - 0xDC00)
+                        set r: r + 6
+                    }
+                    else
+                        set cp: 0xFFFD
+                }
+                else
+                    set cp: 0xFFFD
+            }
+            else
+            {
+                if cp >= 0xDC00 and cp <= 0xDFFF
+                    set cp: 0xFFFD
+            }
+            set w: JsonReader.put_utf8(doc, w, cp)
+        }
+        w - from
+    }
+
+    ; cp as UTF-8 into doc at w; the position after it.
+    procedure put_utf8(mutable doc: Slice[u8], w: size_t, cp: i64) returns size_t
+    {
+        if cp < 0x80
+        {
+            doc.put(w, cp as u8)
+            return w + 1
+        }
+        if cp < 0x800
+        {
+            doc.put(w, (0xC0 | (cp >> 6)) as u8)
+            doc.put(w + 1, (0x80 | (cp & 0x3F)) as u8)
+            return w + 2
+        }
+        if cp < 0x10000
+        {
+            doc.put(w, (0xE0 | (cp >> 12)) as u8)
+            doc.put(w + 1, (0x80 | ((cp >> 6) & 0x3F)) as u8)
+            doc.put(w + 2, (0x80 | (cp & 0x3F)) as u8)
+            return w + 3
+        }
+        doc.put(w, (0xF0 | (cp >> 18)) as u8)
+        doc.put(w + 1, (0x80 | ((cp >> 12) & 0x3F)) as u8)
+        doc.put(w + 2, (0x80 | ((cp >> 6) & 0x3F)) as u8)
+        doc.put(w + 3, (0x80 | (cp & 0x3F)) as u8)
+        w + 4
     }
 }

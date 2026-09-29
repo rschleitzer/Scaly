@@ -58,7 +58,7 @@ define String @resident true (data: pointer[u8](null))
     function get_iterator(this: String) @page true @direct true @deep true returns StringIterator linked
 
     ; Get a non-owning slice view of the string data
-    function as_slice(this: String) @page true @direct true @ret_param_0 true @deep true returns Slice[u8] linked
+    function as_slice(this: String) @ret_param_0 true @deep true returns Slice[u8] linked
 
     ; Check if string contains a character
     function contains(this: String, c: u8) @ret_nonlocal true @deep true returns bool linked

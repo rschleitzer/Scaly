@@ -25,9 +25,9 @@ define StringBuilder
 
     procedure append(mutable this: StringBuilder, string: String) @ret_nonlocal true @deep true linked
 
-    procedure append(mutable this: StringBuilder, c_string: pointer[const_char]) @persists true @deep true linked
+    procedure append(mutable this: StringBuilder, c_string: pointer[const_char]) @deep true linked
 
-    procedure append(mutable this: StringBuilder, start: pointer[char], length: size_t) @persists true @ret_nonlocal true @deep true linked
+    procedure append(mutable this: StringBuilder, start: pointer[char], length: size_t) @ret_nonlocal true @deep true linked
 
     ; Decimal formatting overloads — string interpolation desugars an
     ; embedded expression to a plain `append`, so the numeric conversions

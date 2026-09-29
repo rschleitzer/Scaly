@@ -84,7 +84,7 @@ define JsonReader
     procedure skip(mutable this) @ret_param_0 true @deep true returns bool linked
 
     ; The last Key, Text or Number token as it stands in the source.
-    function text(this) @page true @direct true @ret_param_0 true @deep true returns Slice[u8] linked
+    function text(this) @ret_param_0 true @deep true returns Slice[u8] linked
 
     ; The last Key or Text token, its escapes decoded.
     function string(this) @page true @direct true @ret_caller true @deep true returns String linked
@@ -97,9 +97,9 @@ define JsonReader
     ; The byte offset at which the document was refused.
     function error_offset(this) @ret_param_0 true @deep true returns size_t linked
 
-    function error_message(this) @page true @direct true @ret_nonlocal true @deep true returns Slice[char] linked
+    function error_message(this) @ret_nonlocal true @deep true returns Slice[char] linked
 
-    function message(code: int) @page true @direct true @ret_nonlocal true @deep true returns Slice[char] linked
+    function message(code: int) @ret_nonlocal true @deep true returns Slice[char] linked
 
     ; The text of a Key or Text token (quotes stripped) with its escapes
     ; decoded to UTF-8; a lone surrogate becomes U+FFFD. The scanner has
@@ -121,6 +121,11 @@ define JsonReader
 
     procedure fail(mutable this, code: int) @page true @direct true @deep true returns JsonToken linked
 
+    ; The scanners work on locals: a loop whose index and bound are locals
+    ; proves each byte's bounds check by its own condition, and LLVM drops it.
+    ; Through `pos` and `source` (fields, memory) it could not, and the check
+    ; per byte of whitespace was half of a pretty-printed document's parse
+    ; (the 2026-09-29 profile).
     procedure skip_ws(mutable this) @deep true linked
 
     function in_object(this) @ret_param_0 true @deep true returns bool linked
@@ -143,9 +148,19 @@ define JsonReader
     ; -? (0 | [1-9][0-9]*) (. [0-9]+)? ([eE] [+-]? [0-9]+)?
     procedure scan_number(mutable this) @ret_nonlocal true @deep true returns bool linked
 
-    procedure number_fails(mutable this) @ret_nonlocal true @deep true returns bool linked
+    procedure number_fails(mutable this, at: size_t) @ret_nonlocal true @deep true returns bool linked
 
-    function digit_at(this, at: size_t) @ret_nonlocal true @deep true returns bool linked
+    function digit_at(src: Slice[u8], at: size_t) @ret_nonlocal true @deep true returns bool linked
 
-    procedure digits(mutable this) @deep true linked
+    ; The end of the run of digits that starts at p.
+    function digits_end(src: Slice[u8], p: size_t) @ret_nonlocal true @deep true returns size_t linked
+
+    ; Decode the escapes of doc[from, to) IN PLACE, from `from` on: the
+    ; decoded text is never longer than its escaped form (\uXXXX, six bytes,
+    ; becomes at most three; a surrogate pair, twelve, becomes four), so the
+    ; write position never passes the read position. The decoded length.
+    procedure decode_in_place(mutable doc: Slice[u8], from: size_t, to: size_t) @ret_nonlocal true @deep true returns size_t linked
+
+    ; cp as UTF-8 into doc at w; the position after it.
+    procedure put_utf8(mutable doc: Slice[u8], w: size_t, cp: i64) @ret_nonlocal true @deep true returns size_t linked
 }

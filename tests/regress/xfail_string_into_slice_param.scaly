@@ -1,0 +1,12 @@
+; Regression (2026-09-29): a String VALUE handed to a `Slice[...]` parameter of
+; a generic instance's method compiled at rc 0 -- report_method_arg_types#
+; skips generic receivers (their T cannot be substituted safely) -- and the
+; String record went through as the view: `v.equals(String("abc"))` answered
+; false for equal text. Planner.report_string_into_slice# decides the one pair
+; that needs no T. A string LITERAL still materializes (string_literal_slice_arg).
+; xfail: is a String where a Slice is expected
+
+let s String("abc")
+let v s.as_slice()
+if v.equals(String("abc"))
+    print "equal"

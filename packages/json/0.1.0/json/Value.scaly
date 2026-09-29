@@ -1,9 +1,12 @@
-; The value tree, built from the reader's tokens. A number keeps its source
-; text: as_i64 answers only where the text is an integer in range, as_f64
-; goes through strtod, number_text is the text itself (a FHIR decimal keeps
-; its trailing zeros). Strings are decoded. An array's items and an object's
-; members are views over a buffer on the parser's caller page; the members
-; keep document order, and get() takes the first of a duplicated name.
+; The value tree, built from the reader's tokens. parse() copies the document
+; ONCE onto its caller's page, and every string, member name and number of
+; the tree is a view into that copy -- escapes decoded in place -- so the tree
+; owns what it shows and allocates nothing per string. A number keeps its
+; source text: as_i64 answers only where the text is an integer in range,
+; as_f64 goes through strtod, number_text is the text itself (a FHIR decimal
+; keeps its trailing zeros). An array's items and an object's members are
+; exact-size buffers on the same page; the members keep document order, and
+; get() takes the first of a duplicated name.
 ;
 ; Every accessor answers the empty value of its kind for a value of another
 ; kind (false, 0, the empty String, Null), so a chain like
@@ -15,20 +18,25 @@ use json.Reader.JsonToken
 
 ; strtod(3) — fixed prototype, errno not consulted.
 function strtod(s: pointer[const_char], endp: pointer[pointer[u8]]) returns f64 extern
+; memcpy(3): the document's copy
+procedure memcpy(mutable dest: pointer[void], src: pointer[void], count: size_t) returns pointer[void] extern
 
-define JsonMember (key: String, value: JsonValue)
+define JsonMember (key: Slice[u8], value: JsonValue)
 
 ; The views as records: a union's payload is a type NAME, not a generic
 ; instance (the grammar has no `Slice[...]` in that position).
 define JsonArray (items: Slice[JsonValue])
 define JsonObject (members: Slice[JsonMember])
+; a number's text and a string's decoded bytes, views into the document copy
+define JsonNumber (text: Slice[u8])
+define JsonString (bytes: Slice[u8])
 
 define JsonValue union
 (
     Null
     Bool: bool
-    Number: String
-    Text: String
+    Number: JsonNumber
+    Text: JsonString
     Array: JsonArray
     Object: JsonObject
 )
@@ -96,23 +104,34 @@ define JsonValue union
                 return false
     }
 
+    ; A string's text as a String of its own (a copy); text() is the view.
     function as_string(this) returns String
     {
         choose this
             when t: Text
-                return t
+                return String(t.bytes.data as pointer[const_char], t.bytes.length)
             else
                 return String()
     }
 
-    ; A number's source text, the empty String for anything else.
-    function number_text(this) returns String
+    ; A string's decoded text as a view into the tree, empty for anything else.
+    function text(this) returns Slice[u8]
+    {
+        choose this
+            when t: Text
+                return t.bytes
+            else
+                return Slice[u8]()
+    }
+
+    ; A number's source text as a view into the tree, empty for anything else.
+    function number_text(this) returns Slice[u8]
     {
         choose this
             when n: Number
-                return n
+                return n.text
             else
-                return String()
+                return Slice[u8]()
     }
 
     ; A number without fraction or exponent whose value fits an i64.
@@ -120,7 +139,7 @@ define JsonValue union
     {
         choose this
             when n: Number
-                return JsonValue.integer_fits(n.as_slice())
+                return JsonValue.integer_fits(n.text)
             else
                 return false
     }
@@ -131,21 +150,32 @@ define JsonValue union
         choose this
             when n: Number
             {
-                let text n.as_slice()
-                if JsonValue.integer_fits(text)
-                    return JsonValue.integer_value(text)
+                if JsonValue.integer_fits(n.text)
+                    return JsonValue.integer_value(n.text)
                 return 0
             }
             else
                 return 0
     }
 
-    ; The nearest double to a number, 0 for anything else.
+    ; The nearest double to a number, 0 for anything else. strtod wants a
+    ; terminated text, and the view is not: a local copy.
     function as_f64(this) returns f64
     {
         choose this
             when n: Number
-                return strtod(n.to_c_string(), null as pointer[pointer[u8]])
+            {
+                let text n.text
+                var buf Vector[u8](text.length + 1)
+                var i: size_t 0
+                while i < text.length
+                {
+                    buf.put(i, text[i])
+                    set i: i + 1
+                }
+                buf.put(text.length, 0)
+                return strtod(buf.data as pointer[const_char], null as pointer[pointer[u8]])
+            }
             else
                 return 0.0
     }
@@ -186,7 +216,7 @@ define JsonValue union
                 while i < o.members.length
                 {
                     let m o.members[i]
-                    if m.key.as_slice().equals(key)
+                    if m.key.equals(key)
                         return m.value
                     set i: i + 1
                 }
@@ -204,7 +234,7 @@ define JsonValue union
                 var i: size_t 0
                 while i < o.members.length
                 {
-                    if o.members[i].key.as_slice().equals(key)
+                    if o.members[i].key.equals(key)
                         return true
                     set i: i + 1
                 }
@@ -214,18 +244,18 @@ define JsonValue union
                 return false
     }
 
-    ; An object's i-th member name / value, in document order.
-    function key_at(this, i: size_t) returns String
+    ; An object's i-th member name (a view) / value, in document order.
+    function key_at(this, i: size_t) returns Slice[u8]
     {
         choose this
             when o: Object
             {
                 if i < o.members.length
                     return o.members[i].key
-                return String()
+                return Slice[u8]()
             }
             else
-                return String()
+                return Slice[u8]()
     }
 
     function value_at(this, i: size_t) returns JsonValue
@@ -245,12 +275,21 @@ define JsonValue union
     ; parsing
 
     ; Parse a whole document. On a refused one the result carries the
-    ; reader's code and offset and a Null value.
+    ; reader's code and offset and a Null value. The tree is independent of
+    ; source: it lives on the caller's page with its own copy of the text.
     procedure parse(source: Slice[u8]) returns JsonParsed
     {
-        var r JsonReader.create(source)
+        var copy Vector[u8]#(source.length)
+        var doc copy.as_slice()
+        if source.length > 0
+            memcpy(doc.data as pointer[void], source.data as pointer[void], source.length)
+        ; one stack each for the items and members of the containers still
+        ; open; a closing container moves its run into an exact-size buffer
+        var values Array[JsonValue]()
+        var members Array[JsonMember]()
+        var r JsonReader.create(doc)
         let first r.next()
-        let v JsonValue.build(r, first)
+        let v JsonValue.build(r, doc, values, members, first)
         if r.failed() = false
             r.next()
         if r.failed()
@@ -259,17 +298,17 @@ define JsonValue union
     }
 
     ; The value that begins with token; the rest of it is read from r.
-    procedure build(mutable r: ref[JsonReader], token: JsonToken) returns JsonValue
+    procedure build(mutable r: ref[JsonReader], mutable doc: Slice[u8], mutable values: ref[Array[JsonValue]], mutable members: ref[Array[JsonMember]], token: JsonToken) returns JsonValue
     {
         choose token
             when bo: ObjectStart
-                return JsonValue.build_object(r)
+                return JsonValue.build_object(r, doc, values, members)
             when ba: ArrayStart
-                return JsonValue.build_array(r)
+                return JsonValue.build_array(r, doc, values, members)
             when t: StringValue
-                return JsonValue.Text(r.string())
+                return JsonValue.Text(JsonString(JsonValue.string_view(r, doc)))
             when n: NumberValue
-                return JsonValue.Number(String(r.text().data as pointer[const_char], r.text().length))
+                return JsonValue.Number(JsonNumber(r.text()))
             when yes: TrueValue
                 return JsonValue.Bool(true)
             when no: FalseValue
@@ -278,41 +317,51 @@ define JsonValue union
                 return JsonValue.Null
     }
 
-    procedure build_object(mutable r: ref[JsonReader]) returns JsonValue
+    ; The last Key or Text token as a view into doc: as it stands, or with
+    ; its escapes decoded in place.
+    procedure string_view(r: ref[JsonReader], mutable doc: Slice[u8]) returns Slice[u8]
     {
-        var members List[JsonMember]()
-        var count: size_t 0
+        if r.escaped = false
+            return doc.subslice(r.start, r.end)
+        let n JsonReader.decode_in_place(doc, r.start, r.end)
+        doc.subslice(r.start, r.start + n)
+    }
+
+    procedure build_object(mutable r: ref[JsonReader], mutable doc: Slice[u8], mutable values: ref[Array[JsonValue]], mutable members: ref[Array[JsonMember]]) returns JsonValue
+    {
+        let base members.length
         repeat
         {
             let t r.next()
             choose t
                 when k: MemberName
                 {
-                    let key r.string()
+                    let key JsonValue.string_view(r, doc)
                     let first r.next()
-                    let value JsonValue.build(r, first)
+                    let value JsonValue.build(r, doc, values, members, first)
                     members.add(JsonMember(key, value))
-                    set count: count + 1
                 }
                 else
                     break
         }
+        let count members.length - base
+        if count = 0
+            return JsonValue.Object(JsonObject(null))
         ; built on the caller's page, which the returned value carries on
         var store Vector[JsonMember]#(count)
-        var it members.get_iterator()
         var i: size_t 0
-        while let m it.next()
+        while i < count
         {
-            store.put(i, *m)
+            store.put(i, members[base + i])
             set i: i + 1
         }
+        set members.length: base
         JsonValue.Object(JsonObject(store.as_slice()))
     }
 
-    procedure build_array(mutable r: ref[JsonReader]) returns JsonValue
+    procedure build_array(mutable r: ref[JsonReader], mutable doc: Slice[u8], mutable values: ref[Array[JsonValue]], mutable members: ref[Array[JsonMember]]) returns JsonValue
     {
-        var items List[JsonValue]()
-        var count: size_t 0
+        let base values.length
         repeat
         {
             let t r.next()
@@ -325,18 +374,21 @@ define JsonValue union
                     break
                 else
                 {
-                    items.add(JsonValue.build(r, t))
-                    set count: count + 1
+                    let item JsonValue.build(r, doc, values, members, t)
+                    values.add(item)
                 }
         }
+        let count values.length - base
+        if count = 0
+            return JsonValue.Array(JsonArray(null))
         var store Vector[JsonValue]#(count)
-        var it items.get_iterator()
         var i: size_t 0
-        while let v it.next()
+        while i < count
         {
-            store.put(i, *v)
+            store.put(i, values[base + i])
             set i: i + 1
         }
+        set values.length: base
         JsonValue.Array(JsonArray(store.as_slice()))
     }
 

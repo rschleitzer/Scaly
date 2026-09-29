@@ -15464,6 +15464,21 @@ define Planner
                                     if Planner.lifetime_is_local(rt.life)
                                         if this.rr_result_not_local((*match_ref), call_args, fn_name)
                                             set rt: PlannedType(rt.loc, rt.name, rt.mangled_name, rt.generics, Lifetime.Unspecified(Unspecified()), rt.origin, rt.array_size, rt.variable)
+                        ; The same question for a PAGE-FREE callee that hands back
+                        ; an argument (class 3/5): with a page the result started
+                        ; Local and the residence could only lift that; without one
+                        ; it started unstamped, and a view into a frame-local buffer
+                        ; (`a.as_slice()` on a local Array, kept by a callee) passed
+                        ; every escape check once the view accessors lost their page
+                        ; (2026-09-29). It lives where that argument lives.
+                        ; Views only: they are what lost the page, so they keep the
+                        ; judgement they had with it; any other page-free call keeps
+                        ; its unstamped result as before (a Vector.get on a copy of
+                        ; a parameter's vector is not frame-local).
+                        if residence.rr_armed and call_requires_page = false and match_ref <> null and rt.name = "Slice"
+                            if (*match_ref).return_class = 3 or (*match_ref).return_class = 5
+                                if this.rr_result_not_local((*match_ref), call_args, fn_name) = false
+                                    set rt: PlannedType(rt.loc, rt.name, rt.mangled_name, rt.generics, Lifetime.Local(scalyc.compiler.Model.Local(Span(0, 0))), rt.origin, rt.array_size, rt.variable)
                         ; Page inference (put/add into an escaping receiver): an
                         ; INLINE construction passed as a put/add VALUE argument
                         ; into a receiver container that escapes (returned or
@@ -29372,6 +29387,58 @@ define Planner
         ;
         ; Record and CONTINUE, like the arity gate: add_diagnostic is fatal at
         ; the cli.scaly gate, so resolution proceeds exactly as it did before.
+        ; A String VALUE handed to a `Slice[...]` parameter of a generic
+        ; instance's method (`view.equals(String("abc"))`): the String record
+        ; went through as the view -- a pointer read as a length -- and the
+        ; comparison answered nonsense at rc 0 (2026-09-29, the json package's
+        ; tests). It needs no T: the parameter's type is a Slice whatever T is,
+        ; and a String converts to one only as a string LITERAL, which
+        ; materializes and is left alone.
+        procedure report_string_into_slice(mutable this: Planner, f: Function, method_name: String, arg_ops: Vector[PlannedOperand])
+        {
+            var param_start: size_t 0
+            if f.input.length > 0
+            {
+                let first_ptr f.input.get 0
+                if first_ptr <> null and first_ptr.name <> null and (*first_ptr.name) = "this"
+                    set param_start: 1
+            }
+            var j: size_t 0
+            while j < arg_ops.length and j + param_start < f.input.length
+            {
+                let p_ptr f.input.get(j + param_start)
+                let a_ptr arg_ops.get j
+                if p_ptr <> null and a_ptr <> null and p_ptr.type <> null
+                {
+                    let pt (*p_ptr.type)
+                    let a (*a_ptr)
+                    var literal false
+                    choose a.expr
+                        when pc: scalyc.compiler.Plan.PlannedConstant
+                        {
+                            choose pc.value
+                                when sc: StringConstant
+                                    set literal: true
+                                else
+                                    0
+                        }
+                        else
+                            0
+                    if literal = false and Planner.join_dotted_name(pt.name) = "Slice" and a.result_type.name = "String"
+                    {
+                        var sb StringBuilder()
+                        sb.append "argument "
+                        sb.append(j + 1)
+                        sb.append " of "
+                        sb.append method_name
+                        sb.append " is a String where a Slice is expected: pass its view (s.as_slice())"
+                        this.add_diagnostic(a.loc, String^this(sb.to_string()))
+                    }
+                }
+                set j: j + 1
+            }
+        }
+
         procedure report_method_arg_types(
             mutable this: Planner,
             mutable f: Function,
@@ -29382,12 +29449,16 @@ define Planner
             loc: Span
         )
         {
-            ; (b) a generic receiver instance — see the note above.
+            ; (b) a generic receiver instance — see the note above. One pair is
+            ; decided without T, though: a String is never a Slice.
             if lookup_st.generics <> null
             {
                 let tg_gens (*lookup_st.generics)
                 if tg_gens.length > 0
+                {
+                    this.report_string_into_slice(f, method_name, arg_ops)
                     return
+                }
             }
 
             var param_start: size_t 0
@@ -56134,6 +56205,13 @@ define Planner
             return Planner.body_may_allocate(func)
         }
 
+        ; A Slice return is a VIEW, handed back by value: the struct needs no
+        ; storage from the caller, and what it points at is either the
+        ; caller's own (a parameter's, a field's) or something the body built
+        ; -- which body_may_allocate answers, as for an NPO return above.
+        if joined = "Slice"
+            return Planner.body_may_allocate(func)
+
         true
     }
 
@@ -57747,7 +57825,12 @@ define Planner
 
     function ops_may_allocate(ops: Vector[Operand]) returns bool
     {
-        if Planner.ops_are_construction(ops)
+        ; A Slice construction is a VIEW -- a length and a pointer, on the
+        ; stack -- and allocates nothing itself; its components are asked
+        ; below like any operand's (2026-09-29: String.as_slice and every
+        ; other view accessor took a caller page for it, and each call from a
+        ; routine without a page forced a frame page).
+        if Planner.ops_are_construction(ops) and Planner.ops_construct_view(ops) = false
             return true
         var i: size_t 0
         while i < ops.length
@@ -57759,6 +57842,39 @@ define Planner
         }
         false
     }
+    ; The head is one of the runtime's `scaly_panic_*` traps.
+    function ops_head_is_panic(ops: Vector[Operand]) returns bool
+    {
+        let head_ptr ops.get 0
+        if head_ptr = null
+            return false
+        choose (*head_ptr).expression
+            when t: scalyc.compiler.Model.Type
+            {
+                if t.name.length <> 1
+                    return false
+                let n_ptr t.name.get 0
+                if n_ptr = null
+                    return false
+                return (*n_ptr).starts_with("scaly_panic_")
+            }
+            else
+                return false
+    }
+
+    ; The head of a construction names Slice: a view, never an owner.
+    function ops_construct_view(ops: Vector[Operand]) returns bool
+    {
+        let head_ptr ops.get 0
+        if head_ptr = null
+            return false
+        choose (*head_ptr).expression
+            when t: scalyc.compiler.Model.Type
+                return Planner.join_dotted_name(t.name) = "Slice"
+            else
+                return false
+    }
+
     ; The construction/call SHAPE: Type head without member access, an optional
     ; Matrix of generic arguments, then a Tuple.
     function ops_are_construction(ops: Vector[Operand]) returns bool
@@ -57784,6 +57900,11 @@ define Planner
         if head_is_type = false
             return false
         if head_is_ctor_name = false
+            return false
+        ; the runtime's traps (`scaly_panic_oob`, `scaly_panic_string`, ...)
+        ; never return and build nothing for the caller -- the TaskPlanner
+        ; reads them as no effect for the same reason
+        if Planner.ops_head_is_panic(ops)
             return false
         var tuple_index: size_t 1
         let maybe_matrix ops.get 1

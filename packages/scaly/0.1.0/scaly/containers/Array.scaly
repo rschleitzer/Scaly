@@ -116,9 +116,21 @@ define Array[T]
     }
 
     procedure add(mutable this: Array[T], items: Vector[T])
+        this.add_run(items.length, items.data)
+
+    ; A view appended in one copy. Without it a caller wrapped the view in a
+    ; borrowed Vector, and a Vector built for a call lives on a frame page:
+    ; every StringBuilder.append of a String forced one (2026-09-29, the json
+    ; writer's profile).
+    procedure add(mutable this: Array[T], items: Slice[T])
+        this.add_run(items.length, items.data)
+
+    ; n elements from data appended in one copy (the body of both adds above,
+    ; and StringBuilder's appends, which hold a pointer and a length).
+    procedure add_run(mutable this: Array[T], n: size_t, items_data: pointer[T])
     {
-        var new_length length + items.length
-        ; Unsigned-wraparound check: items.length > 0 should grow the
+        var new_length length + n
+        ; Unsigned-wraparound check: n > 0 should grow the
         ; total. If new_length wraps below the existing length we'd
         ; under-size the allocation below and OOB-write the memcpy.
         ;
@@ -127,7 +139,7 @@ define Array[T]
         ; through the one panic site (exit 22, catchable as
         ; `when e: SizeOverflow`); the check itself is unchanged.
         if new_length < length
-            scaly_panic_size("Array.add", items.length, length)
+            scaly_panic_size("Array.add", n, length)
 
         let size sizeof T
         if (buffer = null) || (new_length > capacity)
@@ -167,10 +179,10 @@ define Array[T]
         ; (`let location buffer + length`). Found 2026-08-08 by the first
         ; caller with a wider element (opensp's follow sets, pointer[CmNode]):
         ; an instant SIGSEGV, since the write lands sizeof-T times too far out.
-        if items.length > 0
-            memcpy(buffer + length, items.data, items.length * size)
+        if n > 0
+            memcpy(buffer + length, items_data, n * size)
 
-        set length: length + items.length
+        set length: length + n
     }
 
     function get(this: Array[T], i: size_t) returns ref[T]?

@@ -16,6 +16,8 @@ use json.Value.JsonValue
 use json.Value.JsonMember
 use json.Value.JsonArray
 use json.Value.JsonObject
+use json.Value.JsonNumber
+use json.Value.JsonString
 
 define JsonWriter
 @resident true @inplace true (
@@ -27,7 +29,7 @@ define JsonWriter
     init() linked
 
     ; The document so far.
-    function bytes(this) @page true @direct true @ret_param_0 true @deep true returns Slice[u8] linked
+    function bytes(this) @ret_param_0 true @deep true returns Slice[u8] linked
 
     function to_string(this) @page true @direct true @ret_caller true @deep true returns String linked
 
@@ -94,5 +96,5 @@ define JsonWriter
 
     procedure byte(mutable this, b: u8) @persists true @ret_nonlocal true @deep true linked
 
-    procedure append(mutable this, s: Slice[u8]) @ret_nonlocal true @deep true linked
+    procedure append(mutable this, s: Slice[u8]) @persists true @deep true linked
 }

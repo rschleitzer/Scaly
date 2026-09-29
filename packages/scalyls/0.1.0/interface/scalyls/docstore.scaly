@@ -60,7 +60,7 @@ define docstore
 {
     ; Borrowed view over the malloc'd table: a slot is reached through `at(i)`
     ; (bounds-checked, answers ref[DocSlot]) instead of pointer arithmetic.
-    procedure doc_view() @page true @direct true @ret_nonlocal true @deep true returns Slice[DocSlot] reads doc_slots linked
+    procedure doc_view() @ret_nonlocal true @deep true returns Slice[DocSlot] reads doc_slots linked
 
     ; Record the workspace root (a filesystem path) as a fresh malloc'd copy,
     ; freeing any previous one. Empty path leaves it null.

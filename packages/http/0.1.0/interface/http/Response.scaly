@@ -70,4 +70,4 @@ define Response
     procedure send_int(mutable this, v: i64) @ret_nonlocal true @deep true io linked
 }
 
-function reason_phrase(code: int) @page true @direct true @ret_nonlocal true @deep true returns Slice[u8] linked
+function reason_phrase(code: int) @ret_nonlocal true @deep true returns Slice[u8] linked

@@ -16,6 +16,8 @@ use json.Value.JsonValue
 use json.Value.JsonMember
 use json.Value.JsonArray
 use json.Value.JsonObject
+use json.Value.JsonNumber
+use json.Value.JsonString
 
 define JsonWriter
 (
@@ -145,9 +147,9 @@ define JsonWriter
             when b: Bool
                 this.boolean(b)
             when num: Number
-                this.number(num.as_slice())
+                this.number(num.text)
             when t: Text
-                this.text(t.as_slice())
+                this.text(t.bytes)
             when a: Array
             {
                 this.begin_array()
@@ -166,7 +168,7 @@ define JsonWriter
                 while i < o.members.length
                 {
                     let m o.members[i]
-                    this.key(m.key.as_slice())
+                    this.key(m.key)
                     this.value(m.value)
                     set i: i + 1
                 }
@@ -200,18 +202,25 @@ define JsonWriter
     procedure quoted(mutable this, s: Slice[u8])
     {
         this.byte(0x22)
+        let src s
+        let n src.length
         var i: size_t 0
-        while i < s.length
+        while i < n
         {
             ; the run of bytes that need no escape, in one copy
             var j i
-            while j < s.length and JsonWriter.plain(s[j])
+            while j < n
+            {
+                let c src[j]
+                if c < 0x20 or c = 0x22 or c = 0x5C
+                    break
                 set j: j + 1
+            }
             if j > i
-                this.append(s.subslice(i, j))
-            if j >= s.length
+                this.append(src.subslice(i, j))
+            if j >= n
                 break
-            this.escape(s[j])
+            this.escape(src[j])
             set i: j + 1
         }
         this.byte(0x22)
@@ -308,9 +317,9 @@ define JsonWriter
                     sb.append("false")
             }
             when num: Number
-                sb.append(num)
+                sb.append(num.text.data as pointer[char], num.text.length)
             when t: Text
-                JsonWriter.append_quoted(sb, t.as_slice())
+                JsonWriter.append_quoted(sb, t.bytes)
             when a: Array
             {
                 sb.append(0x5B as char)
@@ -333,7 +342,7 @@ define JsonWriter
                     if i > 0
                         sb.append(0x2C as char)
                     let m o.members[i]
-                    JsonWriter.append_quoted(sb, m.key.as_slice())
+                    JsonWriter.append_quoted(sb, m.key)
                     sb.append(0x3A as char)
                     JsonWriter.append_value(sb, m.value)
                     set i: i + 1
@@ -354,7 +363,8 @@ define JsonWriter
 
     procedure append(mutable this, s: Slice[u8])
     {
-        if s.length > 0
-            buffer.add(Vector[u8](s.length, s.data))
+        if s.length = 0
+            return
+        buffer.add(s)
     }
 }

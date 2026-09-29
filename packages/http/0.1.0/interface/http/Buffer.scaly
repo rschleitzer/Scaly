@@ -19,10 +19,10 @@ define ByteBuf
     function capacity(this) @ret_param_0 true @deep true returns size_t linked
 
     ; The filled part.
-    function bytes(this) @page true @direct true @ret_param_0 true @deep true returns Slice[u8] linked
+    function bytes(this) @ret_param_0 true @deep true returns Slice[u8] linked
 
     ; The unfilled part — where a read goes.
-    function spare(this) @page true @direct true @ret_param_0 true @deep true returns Slice[u8] linked
+    function spare(this) @ret_param_0 true @deep true returns Slice[u8] linked
 
     procedure clear(mutable this) @deep true linked
 

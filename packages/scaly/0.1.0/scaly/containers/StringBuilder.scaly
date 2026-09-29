@@ -43,7 +43,7 @@ define StringBuilder
         buffer.add character
 
     procedure append(mutable this: StringBuilder, string: String)
-        buffer.add(Vector[char](string.get_length(), string.get_buffer()))
+        buffer.add_run(string.get_length(), string.get_buffer() as pointer[char])
 
     procedure append(mutable this: StringBuilder, c_string: pointer[const_char])
     {
@@ -51,13 +51,11 @@ define StringBuilder
         if length = 0
             return
 
-        buffer.add(Vector[char](length, c_string as pointer[char]))
+        buffer.add_run(length, c_string as pointer[char])
     }
 
     procedure append(mutable this: StringBuilder, start: pointer[char], length: size_t)
-    {
-        buffer.add(Vector[char](length, start))
-    }
+        buffer.add_run(length, start)
 
     ; Decimal formatting overloads — string interpolation desugars an
     ; embedded expression to a plain `append`, so the numeric conversions

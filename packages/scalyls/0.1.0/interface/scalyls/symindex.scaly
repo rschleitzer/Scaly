@@ -103,8 +103,8 @@ define symindex
     ; `at(i)` (bounds-checked, answers ref[IdxSlot]) instead of pointer
     ; arithmetic. Inside the namespace, so `symindex.idx_view()` and the
     ; definition mangle alike.
-    procedure idx_view() @page true @direct true @ret_nonlocal true @deep true returns Slice[IdxSlot] reads idx_slots linked
-    procedure dir_view() @page true @direct true @ret_nonlocal true @deep true returns Slice[DirSlot] reads dir_slots linked
+    procedure idx_view() @ret_nonlocal true @deep true returns Slice[IdxSlot] reads idx_slots linked
+    procedure dir_view() @ret_nonlocal true @deep true returns Slice[DirSlot] reads dir_slots linked
 
     ; Lazily allocate + zero the slot array on first use. A malloc failure
     ; leaves idx_slots null; callers then treat every file as a cache miss.

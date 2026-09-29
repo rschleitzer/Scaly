@@ -5304,6 +5304,15 @@ define Planner
         ;
         ; Record and CONTINUE, like the arity gate: add_diagnostic is fatal at
         ; the cli.scaly gate, so resolution proceeds exactly as it did before.
+        ; A String VALUE handed to a `Slice[...]` parameter of a generic
+        ; instance's method (`view.equals(String("abc"))`): the String record
+        ; went through as the view -- a pointer read as a length -- and the
+        ; comparison answered nonsense at rc 0 (2026-09-29, the json package's
+        ; tests). It needs no T: the parameter's type is a Slice whatever T is,
+        ; and a String converts to one only as a string LITERAL, which
+        ; materializes and is left alone.
+        procedure report_string_into_slice(mutable this: Planner, f: Function, method_name: String, arg_ops: Vector[PlannedOperand]) @deep true linked
+
         procedure report_method_arg_types(
             mutable this: Planner,
             mutable f: Function,
@@ -8837,6 +8846,12 @@ define Planner
     function root_bit(root: String, fields: Array[String], params: Array[String]) @ret_nonlocal true @deep true returns u64 linked
 
     function ops_may_allocate(ops: Vector[Operand]) @ret_nonlocal true @deep true returns bool linked
+    ; The head is one of the runtime's `scaly_panic_*` traps.
+    function ops_head_is_panic(ops: Vector[Operand]) @deep true returns bool linked
+
+    ; The head of a construction names Slice: a view, never an owner.
+    function ops_construct_view(ops: Vector[Operand]) @ret_caller true @deep true returns bool linked
+
     ; The construction/call SHAPE: Type head without member access, an optional
     ; Matrix of generic arguments, then a Tuple.
     function ops_are_construction(ops: Vector[Operand]) @ret_nonlocal true @deep true returns bool linked

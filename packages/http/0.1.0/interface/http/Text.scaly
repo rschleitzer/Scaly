@@ -28,7 +28,7 @@ function is_space(b: u8) @ret_nonlocal true @deep true returns bool linked
 function has_space(s: Slice[u8]) @ret_nonlocal true @deep true returns bool linked
 
 ; s without leading and trailing spaces and tabs.
-function trim(s: Slice[u8]) @page true @direct true @ret_param_0 true @deep true returns Slice[u8] linked
+function trim(s: Slice[u8]) @ret_param_0 true @deep true returns Slice[u8] linked
 
 ; s equals the lower-case lit, ignoring ASCII case in s.
 function equals_lower(s: Slice[u8], lit: Slice[u8]) @ret_nonlocal true @deep true returns bool linked

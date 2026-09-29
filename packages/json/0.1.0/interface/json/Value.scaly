@@ -1,9 +1,12 @@
-; The value tree, built from the reader's tokens. A number keeps its source
-; text: as_i64 answers only where the text is an integer in range, as_f64
-; goes through strtod, number_text is the text itself (a FHIR decimal keeps
-; its trailing zeros). Strings are decoded. An array's items and an object's
-; members are views over a buffer on the parser's caller page; the members
-; keep document order, and get() takes the first of a duplicated name.
+; The value tree, built from the reader's tokens. parse() copies the document
+; ONCE onto its caller's page, and every string, member name and number of
+; the tree is a view into that copy -- escapes decoded in place -- so the tree
+; owns what it shows and allocates nothing per string. A number keeps its
+; source text: as_i64 answers only where the text is an integer in range,
+; as_f64 goes through strtod, number_text is the text itself (a FHIR decimal
+; keeps its trailing zeros). An array's items and an object's members are
+; exact-size buffers on the same page; the members keep document order, and
+; get() takes the first of a duplicated name.
 ;
 ; Every accessor answers the empty value of its kind for a value of another
 ; kind (false, 0, the empty String, Null), so a chain like
@@ -15,20 +18,25 @@ use json.Reader.JsonToken
 
 ; strtod(3) — fixed prototype, errno not consulted.
 function strtod(s: pointer[const_char], endp: pointer[pointer[u8]]) returns f64 extern
+; memcpy(3): the document's copy
+procedure memcpy(mutable dest: pointer[void], src: pointer[void], count: size_t) returns pointer[void] extern
 
-define JsonMember (key: String, value: JsonValue)
+define JsonMember (key: Slice[u8], value: JsonValue)
 
 ; The views as records: a union's payload is a type NAME, not a generic
 ; instance (the grammar has no `Slice[...]` in that position).
 define JsonArray (items: Slice[JsonValue])
 define JsonObject (members: Slice[JsonMember])
+; a number's text and a string's decoded bytes, views into the document copy
+define JsonNumber (text: Slice[u8])
+define JsonString (bytes: Slice[u8])
 
 define JsonValue union
 (
     Null
     Bool: bool
-    Number: String
-    Text: String
+    Number: JsonNumber
+    Text: JsonString
     Array: JsonArray
     Object: JsonObject
 )
@@ -47,10 +55,14 @@ define JsonValue union
 
     function as_bool(this) @ret_param_0 true @deep true returns bool linked
 
-    function as_string(this) @page true @direct true @ret_param_0 true @deep true returns String linked
+    ; A string's text as a String of its own (a copy); text() is the view.
+    function as_string(this) @page true @direct true @ret_caller true @deep true returns String linked
 
-    ; A number's source text, the empty String for anything else.
-    function number_text(this) @page true @direct true @ret_param_0 true @deep true returns String linked
+    ; A string's decoded text as a view into the tree, empty for anything else.
+    function text(this) @ret_param_0 true @deep true returns Slice[u8] linked
+
+    ; A number's source text as a view into the tree, empty for anything else.
+    function number_text(this) @ret_param_0 true @deep true returns Slice[u8] linked
 
     ; A number without fraction or exponent whose value fits an i64.
     function is_integer(this) @ret_nonlocal true @deep true returns bool linked
@@ -58,7 +70,8 @@ define JsonValue union
     ; The value of an integer number (is_integer), 0 for anything else.
     function as_i64(this) @ret_nonlocal true @deep true returns i64 linked
 
-    ; The nearest double to a number, 0 for anything else.
+    ; The nearest double to a number, 0 for anything else. strtod wants a
+    ; terminated text, and the view is not: a local copy.
     function as_f64(this) @ret_nonlocal true @deep true returns f64 linked
 
     ; An array's item or an object's member count, 0 for anything else.
@@ -72,8 +85,8 @@ define JsonValue union
 
     function has(this, key: Slice[u8]) @ret_nonlocal true @deep true returns bool linked
 
-    ; An object's i-th member name / value, in document order.
-    function key_at(this, i: size_t) @page true @direct true @ret_param_0 true @deep true returns String linked
+    ; An object's i-th member name (a view) / value, in document order.
+    function key_at(this, i: size_t) @ret_param_0 true @deep true returns Slice[u8] linked
 
     function value_at(this, i: size_t) @page true @direct true @deep true returns JsonValue linked
 
@@ -81,15 +94,20 @@ define JsonValue union
     ; parsing
 
     ; Parse a whole document. On a refused one the result carries the
-    ; reader's code and offset and a Null value.
+    ; reader's code and offset and a Null value. The tree is independent of
+    ; source: it lives on the caller's page with its own copy of the text.
     procedure parse(source: Slice[u8]) @page true @direct true @deep true returns JsonParsed linked
 
     ; The value that begins with token; the rest of it is read from r.
-    procedure build(mutable r: ref[JsonReader], token: JsonToken) @page true @direct true @deep true returns JsonValue linked
+    procedure build(mutable r: ref[JsonReader], mutable doc: Slice[u8], mutable values: ref[Array[JsonValue]], mutable members: ref[Array[JsonMember]], token: JsonToken) @page true @direct true @deep true returns JsonValue linked
 
-    procedure build_object(mutable r: ref[JsonReader]) @page true @direct true @ret_caller true @deep true returns JsonValue linked
+    ; The last Key or Text token as a view into doc: as it stands, or with
+    ; its escapes decoded in place.
+    procedure string_view(r: ref[JsonReader], mutable doc: Slice[u8]) @ret_param_1 true @deep true returns Slice[u8] linked
 
-    procedure build_array(mutable r: ref[JsonReader]) @page true @direct true @ret_caller true @deep true returns JsonValue linked
+    procedure build_object(mutable r: ref[JsonReader], mutable doc: Slice[u8], mutable values: ref[Array[JsonValue]], mutable members: ref[Array[JsonMember]]) @page true @direct true @ret_caller true @deep true returns JsonValue linked
+
+    procedure build_array(mutable r: ref[JsonReader], mutable doc: Slice[u8], mutable values: ref[Array[JsonValue]], mutable members: ref[Array[JsonMember]]) @page true @direct true @ret_caller true @deep true returns JsonValue linked
 
     ; ------------------------------------------------------------------
     ; integers
@@ -112,5 +130,5 @@ define JsonParsed
 {
     function ok(this) @ret_param_0 true @deep true returns bool linked
 
-    function message(this) @page true @direct true @ret_nonlocal true @deep true returns Slice[char] linked
+    function message(this) @ret_nonlocal true @deep true returns Slice[char] linked
 }
