@@ -1,0 +1,29 @@
+; Regression (2026-09-29): a name holding a digit before T, K or V lost its
+; body at rc 0. The emitter tells an uninstantiated template by a one-letter
+; name in the mangling (`1T`), and scanned the BYTES for it, so `7L1Table`
+; (the concept L1Table) matched: every function whose signature carried
+; one, and every function NAMED like `h1Tail`, was emitted as the empty stub
+; (`ret 0`). is_uninstantiated_template# now reads the mangling's lengths.
+
+define L1Table(var hits: int)
+
+procedure touch(mutable t: ref[L1Table]) returns int
+{
+    set t.hits: t.hits + 1
+    t.hits * 10
+}
+
+function h1Tail(x: int) returns int
+    x + 7
+
+function v2Kind(x: int) returns int
+    x * 3
+
+var t L1Table(4)
+let a touch(&t)
+let b h1Tail(5)
+let c v2Kind(6)
+if a = 50 and t.hits = 5 and b = 12 and c = 18
+    print "PASS"
+else
+    print "FAIL `a` `t.hits` `b` `c`"

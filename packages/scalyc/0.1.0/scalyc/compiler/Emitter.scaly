@@ -5536,47 +5536,57 @@ define Emitter
             let n mangled.get_length()
             if n <= 2
                 return false
+            ; The name is read as the mangling writes it: a source name is its
+            ; length and that many characters, so a one-letter name is `1X`
+            ; with the 1 a LENGTH. A byte scan for `1T` also matched inside a
+            ; longer name -- `7L1Table`, the concept L1Table -- and every
+            ; function whose signature carried one lost its body to the empty
+            ; stub, at rc 0 (2026-09-29, the production-stack L1 cache).
             var i: size_t 2
             while i < n
             {
                 let c mangled.get i
-                ; A one-letter name is a type parameter (the Planner's rule,
-                ; is_generic_type_param_name). T, K and V anywhere, as always;
-                ; every other letter only at a TYPE position -- after I
-                ; (template arguments), R or P (reference, pointer) or E (a
-                ; parameter after the nested name) -- because elsewhere the
-                ; mangling spells the same shape without a type: `C1E` is
-                ; every constructor, `…Conv1CEv` the method LLVMCallConv.C.
-                ; With T/K/V alone, a template over `S` passed for a real
-                ; function and its unresolved body reached the emitter:
-                ; `Emitter: unknown unary operator: =`, no file, no line
-                ; (2026-09-29, the https connection loop). A real one-letter
-                ; concept is told apart by signature_has_resolved_letter#.
-                var is_param: bool false
-                if c = ("T" as char) or c = ("K" as char) or c = ("V" as char)
-                    set is_param: true
-                else if c >= ("A" as char) and c <= ("Z" as char)
+                if c < ("0" as char) or c > ("9" as char)
                 {
-                    let at mangled.get(i - 2)
-                    set is_param: at = ("I" as char) or at = ("R" as char) or at = ("P" as char) or at = ("E" as char)
+                    set i: i + 1
+                    continue
                 }
-                if is_param
+                ; C1 / D0 ...: a constructor or destructor, not a length
+                let before mangled.get(i - 1)
+                if before = ("C" as char) or before = ("D" as char)
                 {
-                    let prev mangled.get(i - 1)
-                    if prev = ("1" as char)
+                    set i: i + 1
+                    continue
+                }
+                var length: size_t 0
+                while i < n and mangled.get(i) >= ("0" as char) and mangled.get(i) <= ("9" as char)
+                {
+                    set length: length * 10 + ((mangled.get(i) - ("0" as char)) as size_t)
+                    set i: i + 1
+                }
+                if length = 1 and i < n
+                {
+                    ; A one-letter name is a type parameter (the Planner's
+                    ; rule, is_generic_type_param_name). T, K and V anywhere,
+                    ; as always; every other letter only at a TYPE position --
+                    ; after I (template arguments), R or P (reference,
+                    ; pointer) or E (a parameter after the nested name). With
+                    ; T/K/V alone, a template over `S` passed for a real
+                    ; function and its unresolved body reached the emitter:
+                    ; `Emitter: unknown unary operator: =`, no file, no line
+                    ; (2026-09-29, the https connection loop). A real
+                    ; one-letter concept is told apart by
+                    ; signature_has_resolved_letter#.
+                    let letter mangled.get i
+                    if letter = ("T" as char) or letter = ("K" as char) or letter = ("V" as char)
+                        return true
+                    if letter >= ("A" as char) and letter <= ("Z" as char)
                     {
-                        let prev2 mangled.get(i - 2)
-                        var prev2_digit: bool false
-                        if prev2 >= ("0" as char)
-                        {
-                            if prev2 <= ("9" as char)
-                                set prev2_digit: true
-                        }
-                        if prev2_digit = false
+                        if before = ("I" as char) or before = ("R" as char) or before = ("P" as char) or before = ("E" as char)
                             return true
                     }
                 }
-                set i: i + 1
+                set i: i + length
             }
             false
         }
