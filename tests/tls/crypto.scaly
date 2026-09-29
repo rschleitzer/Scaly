@@ -1,0 +1,75 @@
+; The tls package's Crypto module against published vectors: SHA-256 of
+; "abc" (FIPS 180-2), HMAC-SHA-256 test case 2 of RFC 4231, PBKDF2-HMAC-
+; SHA-256 of "password"/"salt" at 1 and 4096 iterations, and 32 random bytes
+; that are not all zero.
+; Expected: sha256 hmac pbkdf2-1 pbkdf2-4096 random
+
+package scaly 0.1.0
+package tls 0.1.0
+
+
+procedure hex(b: Slice[u8]) returns String
+{
+    var sb StringBuilder()
+    var i: size_t 0
+    while i < b.length
+    {
+        let v b[i]
+        let hi v / 16
+        let lo v % 16
+        if hi < 10
+            sb.append(((hi + 48) as char))
+        else
+            sb.append(((hi + 87) as char))
+        if lo < 10
+            sb.append(((lo + 48) as char))
+        else
+            sb.append(((lo + 87) as char))
+        set i: i + 1
+    }
+    sb.to_string()
+}
+
+procedure check(what: String, got: Slice[u8], want: String) returns bool
+{
+    let h hex(got)
+    if h.equals(want) = false
+    {
+        print "`what` got `h`"
+        return false
+    }
+    Console.print "`what` "
+    true
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var out u8[32]
+    let o Slice[u8](32, &out[0])
+    sha256("abc", o)
+    if check("sha256", o, "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad") = false
+        return 1
+    hmac_sha256("Jefe", "what do ya want for nothing?", o)
+    if check("hmac", o, "5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843") = false
+        return 2
+    if pbkdf2_sha256("password", "salt", 1, o) = false or check("pbkdf2-1", o, "120fb6cffcf8b32c43e7225256c4f837a86548c92ccc35480805987cb70be17b") = false
+        return 3
+    if pbkdf2_sha256("password", "salt", 4096, o) = false or check("pbkdf2-4096", o, "c5e478d59288c841aa530db6845c4c8d962893a001ce4e11a4963873aa98134a") = false
+        return 4
+    var r u8[32]
+    let rs Slice[u8](32, &r[0])
+    if random_bytes(rs) = false
+        return 5
+    var any false
+    var i: size_t 0
+    while i < 32
+    {
+        if rs[i] <> 0
+            set any: true
+        set i: i + 1
+    }
+    if any = false
+        return 6
+    Console.print "random"
+    0
+}

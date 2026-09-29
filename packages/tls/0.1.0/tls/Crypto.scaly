@@ -1,0 +1,45 @@
+; The hashes and key derivations a protocol above TLS asks for — SCRAM-SHA-256
+; in Postgres' authentication (ROADMAP-http.md, stage C) — bound to
+; libcrypto, which every program of this package links anyway. Direct
+; externs (no shim): pointers, `int` lengths and `size_t` counts only.
+;
+; Every output goes into a buffer the caller hands in, at least
+; SHA256_SIZE bytes where a digest is written.
+
+define EvpMdOpaque()
+define EvpMd pointer[EvpMdOpaque]
+
+procedure EVP_sha256() returns EvpMd extern
+procedure SHA256(data: pointer[void], count: size_t, mutable md: pointer[void]) returns pointer[void] extern
+procedure HMAC(md: EvpMd, key: pointer[void], key_len: i32, data: pointer[void], data_len: size_t, mutable out: pointer[void], mutable out_len: pointer[u32]) returns pointer[void] extern
+procedure PKCS5_PBKDF2_HMAC(pass: pointer[void], pass_len: i32, salt: pointer[void], salt_len: i32, iterations: i32, md: EvpMd, key_len: i32, mutable out: pointer[void]) returns i32 extern
+procedure RAND_bytes(mutable buf: pointer[void], num: i32) returns i32 extern
+
+define SHA256_SIZE: size_t 32
+
+; SHA-256 of data into out[0..32).
+procedure sha256(data: Slice[u8], mutable out: Slice[u8])
+{
+    if out.length < SHA256_SIZE
+        return
+    SHA256(data.data as pointer[void], data.length, out.data as pointer[void])
+}
+
+; HMAC-SHA-256 of data under key into out[0..32).
+procedure hmac_sha256(key: Slice[u8], data: Slice[u8], mutable out: Slice[u8])
+{
+    if out.length < SHA256_SIZE
+        return
+    var n: u32 0
+    HMAC(EVP_sha256(), key.data as pointer[void], key.length as i32, data.data as pointer[void], data.length, out.data as pointer[void], &n)
+}
+
+; PBKDF2 with HMAC-SHA-256: out.length bytes derived from password and salt
+; in the given number of iterations; false when libcrypto refuses.
+procedure pbkdf2_sha256(password: Slice[u8], salt: Slice[u8], iterations: int, mutable out: Slice[u8]) returns bool
+    PKCS5_PBKDF2_HMAC(password.data as pointer[void], password.length as i32, salt.data as pointer[void], salt.length as i32, iterations as i32, EVP_sha256(), out.length as i32, out.data as pointer[void]) = 1
+
+; Fill out with cryptographically strong random bytes; false when the
+; generator could not be seeded.
+procedure random_bytes(mutable out: Slice[u8]) returns bool
+    RAND_bytes(out.data as pointer[void], out.length as i32) = 1
