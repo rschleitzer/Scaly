@@ -4,7 +4,7 @@
 ; takes a connection, runs its query (parking on the socket while the
 ; scheduler runs other requests) and gives it back. A thread opens at most
 ; max_connections / threads of them; a task that finds none idle and the
-; limit reached yields until one is given back.
+; limit reached suspends until one is given back.
 ;
 ; The server comes from DATABASE_URL (postgres://user:password@host:port/db)
 ; and the bound from DATABASE_MAX_CONN, read once per thread.
@@ -26,6 +26,13 @@ define PgPool
     var idle: Array[ref[PgConn]]
     var open_count: int
     limit: int
+    ; tasks suspended for a connection, first come first served from
+    ; waiter_head on, and what release handed each in the same order: a
+    ; connection, or null for a counted place to open one in
+    var waiters: Array[ref[SchedTask]]
+    var waiter_head: size_t
+    var handed: Array[ref[PgConn]?]
+    var handed_head: size_t
 )
 
 ; This thread's pool, made at its first acquire.
@@ -105,13 +112,27 @@ procedure pool() returns ref[PgPool] mutable pg_pool
     var per max / (TaskPool.ncpu() as i64)
     if per < 1
         set per: 1
-    let made &PgPool^host(config, Array[ref[PgConn]]^host(), 0, per as int)
+    let made &PgPool^host(config, Array[ref[PgConn]]^host(), 0, per as int, Array[ref[SchedTask]]^host(), 0, Array[ref[PgConn]?]^host(), 0)
     set pg_pool: made
     made
 }
 
+; Open one connection in a place this thread's pool has counted; null
+; (and the place given back) when the server cannot be reached.
+procedure open_one(mutable p: ref[PgPool]) returns ref[PgConn]?
+{
+    var h String(p.config.host)
+    let c PgConn.connect(h, p.config.port, p.config.user.as_slice(), p.config.password.as_slice(), p.config.database.as_slice())
+    if c = null
+        set p.open_count: p.open_count - 1
+    c
+}
+
 ; A connection of this thread's pool, null when the server cannot be
-; reached. Give it back with release.
+; reached. Give it back with release. When none is idle and the pool is
+; full, the task SUSPENDS in a first-come queue until release hands it one
+; -- a yield loop here kept the ready queue full and starved the very
+; I/O it waited for (2026-09-29, async-db at 512 connections).
 procedure acquire() returns ref[PgConn]? mutable pg_pool
 {
     let p pool()
@@ -126,25 +147,60 @@ procedure acquire() returns ref[PgConn]? mutable pg_pool
         if p.open_count < p.limit
         {
             set p.open_count: p.open_count + 1
-            var h String(p.config.host)
-            let c PgConn.connect(h, p.config.port, p.config.user.as_slice(), p.config.password.as_slice(), p.config.database.as_slice())
-            if c = null
-                set p.open_count: p.open_count - 1
-            return c
+            return open_one(p)
         }
-        Scheduler.yield()
+        let me Scheduler.running()
+        if me = null
+        {
+            ; the main context: no task runs that could give one back
+            Scheduler.yield()
+            continue
+        }
+        p.waiters.add(me)
+        Scheduler.suspend()
+        ; release handed this task a connection, or a counted place to
+        ; open one in (null)
+        let got: ref[PgConn]? p.handed.at(p.handed_head)
+        set p.handed_head: p.handed_head + 1
+        if p.handed_head = p.handed.length
+        {
+            set p.handed.length: 0
+            set p.handed_head: 0
+        }
+        if got <> null
+            return got
+        return open_one(p)
     }
 }
 
-; Give a connection back; one that broke is closed and its place freed.
+; Give a connection back: to the first suspended task when one waits,
+; else to the idle list. One that broke is closed; its place goes to the
+; waiter, or is freed.
 procedure release(mutable c: ref[PgConn]) mutable pg_pool
 {
     let p pool()
+    var keep: ref[PgConn]? null
     if c.is_open()
+        set keep: c
+    else
+        c.close()
+    if p.waiter_head < p.waiters.length
     {
-        p.idle.add(c)
+        let t p.waiters.at(p.waiter_head)
+        set p.waiter_head: p.waiter_head + 1
+        if p.waiter_head = p.waiters.length
+        {
+            set p.waiters.length: 0
+            set p.waiter_head: 0
+        }
+        p.handed.add(keep)
+        Scheduler.resume(t)
         return
     }
-    c.close()
+    if keep <> null
+    {
+        p.idle.add(keep)
+        return
+    }
     set p.open_count: p.open_count - 1
 }

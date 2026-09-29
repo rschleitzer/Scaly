@@ -1,0 +1,61 @@
+; A task waiting in a yield loop for another task's I/O. The poller ran
+; only when the ready queue drained, and the spinner kept it full, so the
+; reader parked on its socket was never woken and the spinner never saw
+; the flag: a hang at full CPU (2026-09-29, the pg pool under HttpArena's
+; async-db). step polls without waiting after 61 yields while I/O is
+; outstanding.
+;   reader   accepts a connection and reads its byte, then sets the flag
+;   writer   connects and writes one byte
+;   spinner  yields until the flag is set
+; Expected: read spun done
+; Timeout: 30
+
+mutable listener_fd: int 0
+mutable port: int 0
+mutable got: bool false
+
+procedure reader() mutable got
+{
+    let listener TcpListener(listener_fd as i32)
+    var c listener.accept()
+    if c.is_open() = false
+        exit 21
+    var buf u8[4]
+    let view Slice[u8](4, &buf[0])
+    if c.read(view) <> 1
+        exit 22
+    Console.print "read "
+    set got: true
+    c.close()
+}
+
+procedure writer()
+{
+    var s TcpStream.connect("127.0.0.1", port)
+    if s.is_open() = false
+        exit 23
+    s.write("x")
+    s.close()
+}
+
+procedure spinner()
+{
+    while got = false
+        Scheduler.yield()
+    Console.print "spun "
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutable listener_fd, port
+{
+    let l TcpListener.listen(0)
+    set listener_fd: l.fd as int
+    set port: l.port()
+    let page Page.allocate_page()
+    Scheduler.create(page)
+    Scheduler.spawn(&reader)
+    Scheduler.spawn(&spinner)
+    Scheduler.spawn(&writer)
+    Scheduler.run()
+    print "done"
+    0
+}

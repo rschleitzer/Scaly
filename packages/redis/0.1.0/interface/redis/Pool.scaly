@@ -3,7 +3,7 @@
 ; no lock; a task takes a connection, runs its command (parking on the
 ; socket while the scheduler runs other requests) and gives it back. A
 ; thread opens at most max_connections / threads of them; a task that finds
-; none idle and the limit reached yields until one is given back.
+; none idle and the limit reached suspends until one is given back.
 ;
 ; The server comes from REDIS_URL (redis://host:port, the port defaulting
 ; to 6379; a user, password or database in the URL is not used) and the
@@ -18,6 +18,12 @@ define RedisPool
     var idle: Array[ref[RedisConn]]
     var open_count: int
     limit: int
+    ; tasks suspended for a connection and what redis_release handed
+    ; each, as in pg's pool
+    var waiters: Array[ref[SchedTask]]
+    var waiter_head: size_t
+    var handed: Array[ref[RedisConn]?]
+    var handed_head: size_t
 )
 
 ; This thread's pool, made at its first acquire.
@@ -31,9 +37,18 @@ procedure redis_env(name: pointer[const_char]) @page true @direct true @ret_para
 ; This thread's pool, made from the environment on first use.
 procedure redis_pool_of_thread() @deep true returns ref[RedisPool] io mutable redis_pool reads redis_pool linked
 
+; Open one connection in a place this thread's pool has counted; null
+; (and the place given back) when the server cannot be reached.
+procedure redis_open_one(mutable p: ref[RedisPool]) @page true @direct true @deep true returns ref[RedisConn]? io linked
+
 ; A connection of this thread's pool, null when the server cannot be
-; reached. Give it back with redis_release.
+; reached. Give it back with redis_release. When none is idle and the pool is
+; full, the task SUSPENDS in a first-come queue until redis_release hands it one
+; -- a yield loop here kept the ready queue full and starved the very
+; I/O it waited for (2026-09-29, async-db at 512 connections).
 procedure redis_acquire() @page true @direct true @deep true returns ref[RedisConn]? io mutable redis_pool reads redis_pool linked
 
-; Give a connection back; one that broke is closed and its place freed.
+; Give a connection back: to the first suspended task when one waits,
+; else to the idle list. One that broke is closed; its place goes to the
+; waiter, or is freed.
 procedure redis_release(mutable c: ref[RedisConn]) @deep true io mutable redis_pool reads redis_pool linked

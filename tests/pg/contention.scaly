@@ -1,0 +1,48 @@
+; The pg pool under contention (DATABASE_URL): 200 tasks on one scheduler
+; query through a pool of a few connections (DATABASE_MAX_CONN unset: 32
+; over the thread count). A task that finds none idle suspends until one
+; is handed back. Regression (2026-09-29): it waited in a yield loop, the
+; ready queue never drained, the poller never ran, and the replies that
+; would have given a connection back were never read -- HttpArena's
+; async-db answered nothing at 512 connections, at full CPU.
+; Expected: 200
+
+package scaly 0.1.0
+package tls 0.1.0
+package pg 0.1.0
+
+use pg.Conn.PgConn
+
+mutable finished: int 0
+
+procedure one() mutable finished, pg_pool
+{
+    let got acquire()
+    if got = null
+        return
+    var c got as ref[PgConn]
+    if c.prepare("one", "SELECT 1") = false
+    {
+        release(c)
+        return
+    }
+    c.start("one")
+    if c.run() and c.next_row() and c.column_int(0) = 1
+        set finished: finished + 1
+    release(c)
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutable finished
+{
+    let page Page.allocate_page()
+    Scheduler.create(page)
+    var i 0
+    while i < 200
+    {
+        Scheduler.spawn_arg(&one, null)
+        set i: i + 1
+    }
+    Scheduler.run()
+    print "`finished`"
+    0
+}

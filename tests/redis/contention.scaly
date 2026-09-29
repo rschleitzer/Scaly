@@ -1,0 +1,42 @@
+; The redis pool under contention (REDIS_URL, REDIS_MAX_CONN=1 set by the
+; test itself: one connection per thread): 200 tasks on one
+; scheduler GET through it. A task that finds none idle suspends until one
+; is handed back; before 2026-09-29 it spun in a yield loop that starved
+; the poller (see tests/pg/contention.scaly).
+; Expected: 200
+
+package scaly 0.1.0
+package redis 0.1.0
+
+use redis.Conn.RedisConn
+
+mutable finished: int 0
+
+procedure setenv(name: pointer[const_char], value: pointer[const_char], overwrite: i32) returns i32 extern
+
+procedure one() mutable finished, redis_pool
+{
+    let got redis_acquire()
+    if got = null
+        return
+    var c got as ref[RedisConn]
+    if c.set_px("scaly:test:contention", "1", 1000)
+        set finished: finished + 1
+    redis_release(c)
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutable finished
+{
+    setenv("REDIS_MAX_CONN", "1", 1)
+    let page Page.allocate_page()
+    Scheduler.create(page)
+    var i 0
+    while i < 200
+    {
+        Scheduler.spawn_arg(&one, null)
+        set i: i + 1
+    }
+    Scheduler.run()
+    print "`finished`"
+    0
+}

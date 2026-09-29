@@ -809,6 +809,8 @@ define Scheduler
     var free_tasks: ref[SchedTask]?  ; finished detached tasks, for reuse
     var watches: pointer[size_t]     ; IoWatch record addresses, by fd
     var watch_cap: size_t
+    var yields: int                  ; Scheduler.yield calls since step last polled
+    var main_woke: bool              ; step's poll took the main context's event
 )
 {
     ; Create the scheduler on the given page and make it current. All
@@ -851,6 +853,19 @@ define Scheduler
     ; Give up the current time slice: requeue the running task at the
     ; tail and return to the dispatcher. A no-op on the main context.
     procedure yield() @ret_nonlocal true @deep true linked
+
+    ; The running task, null on the main context.
+    procedure running() @ret_nonlocal true @deep true returns ref[SchedTask]? linked
+
+    ; Block the running task until Scheduler.resume readies it again: the
+    ; wait of a queue its caller keeps (a connection pool's tasks awaiting
+    ; a connection), where a yield loop would spin. The caller has put the
+    ; task (Scheduler.running()) where its waker finds it. A no-op on the
+    ; main context.
+    procedure suspend() @deep true linked
+
+    ; Ready a task that suspend() blocked, from its own thread.
+    procedure resume(mutable t: ref[SchedTask]) @deep true linked
 
     ; Let ms milliseconds pass (monotonic clock), colorless like Io: a
     ; task parks on the scheduler's timer list and the dispatcher runs

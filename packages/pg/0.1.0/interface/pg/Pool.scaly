@@ -4,7 +4,7 @@
 ; takes a connection, runs its query (parking on the socket while the
 ; scheduler runs other requests) and gives it back. A thread opens at most
 ; max_connections / threads of them; a task that finds none idle and the
-; limit reached yields until one is given back.
+; limit reached suspends until one is given back.
 ;
 ; The server comes from DATABASE_URL (postgres://user:password@host:port/db)
 ; and the bound from DATABASE_MAX_CONN, read once per thread.
@@ -26,6 +26,13 @@ define PgPool
     var idle: Array[ref[PgConn]]
     var open_count: int
     limit: int
+    ; tasks suspended for a connection, first come first served from
+    ; waiter_head on, and what release handed each in the same order: a
+    ; connection, or null for a counted place to open one in
+    var waiters: Array[ref[SchedTask]]
+    var waiter_head: size_t
+    var handed: Array[ref[PgConn]?]
+    var handed_head: size_t
 )
 
 ; This thread's pool, made at its first acquire.
@@ -43,9 +50,18 @@ procedure strlen(s: pointer[const_char]) returns size_t extern
 ; This thread's pool, made from the environment on first use.
 procedure pool() @deep true returns ref[PgPool] io mutable pg_pool reads pg_pool linked
 
+; Open one connection in a place this thread's pool has counted; null
+; (and the place given back) when the server cannot be reached.
+procedure open_one(mutable p: ref[PgPool]) @page true @direct true @deep true returns ref[PgConn]? io linked
+
 ; A connection of this thread's pool, null when the server cannot be
-; reached. Give it back with release.
+; reached. Give it back with release. When none is idle and the pool is
+; full, the task SUSPENDS in a first-come queue until release hands it one
+; -- a yield loop here kept the ready queue full and starved the very
+; I/O it waited for (2026-09-29, async-db at 512 connections).
 procedure acquire() @page true @direct true @deep true returns ref[PgConn]? io mutable pg_pool reads pg_pool linked
 
-; Give a connection back; one that broke is closed and its place freed.
+; Give a connection back: to the first suspended task when one waits,
+; else to the idle list. One that broke is closed; its place goes to the
+; waiter, or is freed.
 procedure release(mutable c: ref[PgConn]) @deep true io mutable pg_pool reads pg_pool linked

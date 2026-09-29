@@ -34,7 +34,9 @@ fi
 
 # Per-test comment lines: "; Expected:" = exact stdout, optional
 # "; ExpectedExit:" = exit code (default 0), optional "; ExpectedErr:" =
-# substring that must appear on stderr (for crash-diagnostic tests).
+# substring that must appear on stderr (for crash-diagnostic tests),
+# optional "; Timeout: <s>" = killed after that many seconds (a test whose
+# failure mode is a hang; the kill's rc 142 is then the verdict).
 pass=0; fail=0; failures=()
 for f in tests/fiber/*.scaly; do
   t=$(basename "$f" .scaly)
@@ -45,7 +47,12 @@ for f in tests/fiber/*.scaly; do
   if ! "$STAGE" -o "$bin" "$f" >/dev/null 2>&1; then
     fail=$((fail+1)); failures+=("$t(compile)"); continue
   fi
-  out=$("$bin" 2>"/tmp/fiber_$t.err"); rc=$?
+  limit=$(sed -n 's/^; Timeout: //p' "$f")
+  if [ -n "$limit" ]; then
+    out=$(perl -e 'alarm shift; exec @ARGV' "$limit" "$bin" 2>"/tmp/fiber_$t.err"); rc=$?
+  else
+    out=$("$bin" 2>"/tmp/fiber_$t.err"); rc=$?
+  fi
   ok=1
   [ "$rc" = "$want_rc" ] || ok=0
   [ "$out" = "$expected" ] || ok=0

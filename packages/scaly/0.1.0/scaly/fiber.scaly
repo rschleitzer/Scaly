@@ -1042,6 +1042,8 @@ define Scheduler
     var free_tasks: ref[SchedTask]?  ; finished detached tasks, for reuse
     var watches: pointer[size_t]     ; IoWatch record addresses, by fd
     var watch_cap: size_t
+    var yields: int                  ; Scheduler.yield calls since step last polled
+    var main_woke: bool              ; step's poll took the main context's event
 )
 {
     ; Create the scheduler on the given page and make it current. All
@@ -1049,7 +1051,7 @@ define Scheduler
     ; so they survive any spawning fiber's region teardown.
     procedure create(host: ref[Page]) returns ref[Scheduler]
     {
-        let s &Scheduler^host(host, null, null, 0, (0 - 1) as i32, 0, (0 - 1) as i32, 0, 0, null, null, 0, null, null, 0)
+        let s &Scheduler^host(host, null, null, 0, (0 - 1) as i32, 0, (0 - 1) as i32, 0, 0, null, null, 0, null, null, 0, 0, false)
         set current_scheduler: s as pointer[void]
         s
     }
@@ -1159,9 +1161,38 @@ define Scheduler
         let me current_task as ref[SchedTask]?
         if me <> null
         {
+            let s current_scheduler as ref[Scheduler]
+            set s.yields: s.yields + 1
             Scheduler.enqueue(me)
             Fiber.yield()
         }
+    }
+
+    ; The running task, null on the main context.
+    procedure running() returns ref[SchedTask]?
+        current_task as ref[SchedTask]?
+
+    ; Block the running task until Scheduler.resume readies it again: the
+    ; wait of a queue its caller keeps (a connection pool's tasks awaiting
+    ; a connection), where a yield loop would spin. The caller has put the
+    ; task (Scheduler.running()) where its waker finds it. A no-op on the
+    ; main context.
+    procedure suspend()
+    {
+        let me current_task as ref[SchedTask]?
+        if me = null
+            return
+        let s current_scheduler as ref[Scheduler]
+        set s.blocked: s.blocked + 1
+        Fiber.yield()
+    }
+
+    ; Ready a task that suspend() blocked, from its own thread.
+    procedure resume(mutable t: ref[SchedTask])
+    {
+        let s current_scheduler as ref[Scheduler]
+        Scheduler.enqueue(t)
+        set s.blocked: s.blocked - 1
     }
 
     ; Let ms milliseconds pass (monotonic clock), colorless like Io: a
@@ -1380,6 +1411,21 @@ define Scheduler
         let t Scheduler.dequeue()
         if t = null
             return false
+        ; The poller runs when the ready queue drains, and a task waiting in
+        ; a yield loop keeps it from draining: a request waiting so for a
+        ; pooled connection starved the I/O that would have given one back,
+        ; at full CPU (2026-09-29, HttpArena's async-db at 512 connections:
+        ; 0 requests). After 61 yields with I/O outstanding, step polls
+        ; without waiting; an event of the main context's own park is kept
+        ; for it in main_woke. Counted by yields, not dispatches: a server
+        ; whose tasks only park never pays for it (a poll every 61
+        ; dispatches cost 1.5 % of baseline and pipelined).
+        if sc.yields >= 61 and sc.io_waiting > 0
+        {
+            set sc.yields: 0
+            if Scheduler.poll_io_by(scaly_eio_now_ns())
+                set sc.main_woke: true
+        }
         set current_task: t as pointer[void]
         let more Fiber.resume(t.fiber)
         set current_task: null
@@ -1873,6 +1919,7 @@ define Io
             ; count is undone here.
             let sm current_scheduler as ref[Scheduler]
             set sm.io_waiting: sm.io_waiting + 1
+            set sm.main_woke: false
             repeat
             {
                 if not Scheduler.step()
@@ -1882,6 +1929,12 @@ define Io
                         set sm.io_waiting: sm.io_waiting - 1
                         return
                     }
+                }
+                if sm.main_woke
+                {
+                    set sm.main_woke: false
+                    set sm.io_waiting: sm.io_waiting - 1
+                    return
                 }
             }
         }
