@@ -244,7 +244,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 @stack_top = thread_local global ptr null
 @dead_buckets_reclaimed = thread_local global i64 0
 @"14OVERSIZED_KEPT" = internal constant i64 4
-@"20OVERSIZED_KEPT_BYTES" = internal constant i64 16777216
+@"20OVERSIZED_KEPT_BYTES" = internal constant i64 2097152
 @oversized_kept = thread_local global ptr null
 @oversized_kept_count = thread_local global i64 0
 @oversized_kept_bytes = thread_local global i64 0
@@ -254,7 +254,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 @"11BUCKET_SIZE" = internal constant i64 262144
 @"11BUCKET_MASK" = internal constant i64 262143
 @"15BITMAP_ALL_FREE" = internal constant i64 9223372036854775807
-@"17IDLE_BUCKETS_KEPT" = internal constant i64 8
+@"17IDLE_BUCKETS_KEPT" = internal constant i64 2
 @"11BUCKET_DEAD" = internal constant i64 1
 @trace_enabled = thread_local global i64 0
 @trace_atexit_registered = thread_local global i64 0
@@ -904,7 +904,7 @@ if.end14:                                         ; preds = %land.rhs, %if.end9
 land.rhs:                                         ; preds = %if.end9
   %global.load16 = load i64, ptr @oversized_kept_bytes, align 8
   %add = add i64 %global.load16, %call12
-  %le = icmp ule i64 %add, 16777216
+  %le = icmp ule i64 %add, 2097152
   br i1 %le, label %if.then13, label %if.end14
 
 if.then23:                                        ; preds = %if.end
@@ -2521,12 +2521,12 @@ while.body:                                       ; preds = %lor.end
 
 while.exit:                                       ; preds = %lor.end
   %idle26 = load i64, ptr %idle, align 8
-  %lt27 = icmp ult i64 %idle26, 8
+  %lt27 = icmp ult i64 %idle26, 2
   br i1 %lt27, label %if.then28, label %if.end29
 
 lor.rhs:                                          ; preds = %while.cond
   %idle12 = load i64, ptr %idle, align 8
-  %lt = icmp ult i64 %idle12, 8
+  %lt = icmp ult i64 %idle12, 2
   br label %lor.end
 
 lor.end:                                          ; preds = %lor.rhs, %while.cond

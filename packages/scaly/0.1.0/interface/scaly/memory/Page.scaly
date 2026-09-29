@@ -25,11 +25,12 @@ mutable dead_buckets_reclaimed: i64 linked
 ; minor faults for 100 parses of a 1.7 MB document; macOS keeps such blocks
 ; itself, which is why no Mac measurement saw it. Chained through
 ; next_page, the size in current_page (as allocate_oversized records it);
-; at most OVERSIZED_KEPT blocks and OVERSIZED_KEPT_BYTES together, freed at
+; at most OVERSIZED_KEPT blocks and OVERSIZED_KEPT_BYTES together (2 MB: a
+; server has a scheduler thread per core, each with its own), freed at
 ; thread exit (scaly_thread_release_buckets). Not under SCALY_POISON: there
 ; a released block goes back at once, as it always did.
 define OVERSIZED_KEPT: size_t 4
-define OVERSIZED_KEPT_BYTES: size_t 0x1000000
+define OVERSIZED_KEPT_BYTES: size_t 0x200000
 mutable oversized_kept: pointer[Page] linked
 mutable oversized_kept_count: size_t linked
 mutable oversized_kept_bytes: size_t linked

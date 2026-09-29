@@ -38,8 +38,10 @@ define BUCKET_SIZE   size_t PAGE_SIZE * BUCKET_PAGES
 define BUCKET_MASK   size_t BUCKET_SIZE - 1
 define BITMAP_ALL_FREE u64 0x7FFFFFFFFFFFFFFF  ; bits 0..62 set (page 0 is header)
 ; Empty heap buckets a thread's chain keeps before one goes back to the
-; system (release_idle_bucket): 2 MB of pages ready for the next region.
-define IDLE_BUCKETS_KEPT size_t 8
+; system (release_idle_bucket): 512 KB of pages ready for the next region.
+; 8 (2 MB) cost HttpArena's limited-conn ~12 MiB and ~2 % against none,
+; measured 2026-09-29 in the container; 2 measured level with none.
+define IDLE_BUCKETS_KEPT size_t 2
 
 ; Bucket headers sit at offset 0 of each bucket.
 define StackBucketHeader
