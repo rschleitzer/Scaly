@@ -1,0 +1,120 @@
+; The https package (ROADMAP-http.md stage D): the http package's connection
+; loop over a TlsStream, started on an ephemeral port; main is the client.
+;   pipelined  two requests in ONE TLS write come back as two responses in
+;              order, on the same connection
+;   404-close  a request with Connection: close for a path nothing serves
+;              answers 404 and the server ends the connection (a close_notify)
+;   stopped    shutdown, and wait returns
+; Expected: pipelined 3|72 404-close stopped
+
+package scaly 0.1.0
+package http 0.1.0
+package tls 0.1.0
+package https 0.1.0
+
+use http.Request.Request
+use http.Response.Response
+use http.Router.Router
+use tls.Tls.TlsContext
+use tls.Tls.TlsStream
+
+procedure sum(req: ref[Request], mutable res: ref[Response])
+{
+    var total parse_int_prefix(req.query_param("a")) + parse_int_prefix(req.query_param("b"))
+    if req.body.length > 0
+        set total: total + parse_int_prefix(trim(req.body))
+    res.send_int(total)
+}
+
+; Read from s until `want` complete responses are in, and answer their
+; status codes and bodies as "status:body" joined by "|"; stops early at
+; the end of the stream.
+procedure responses(mutable s: ref[TlsStream], want: int) returns String
+{
+    let host Page.allocate_page()
+    var buf allocate_slice[u8]^host(host, 8192)
+    var have: size_t 0
+    var out StringBuilder()
+    var got 0
+    var at: size_t 0
+    while got < want
+    {
+        let e head_end(buf.subslice(at, have))
+        if e > 0
+        {
+            var head Request.empty()
+            set head.fields: buf.subslice(at, at + e)
+            let n parse_decimal(head.header("content-length"))
+            if n >= 0 and at + e + (n as size_t) <= have
+            {
+                if got > 0
+                    out.append("|" as char)
+                let status buf.subslice(at + 9, at + 12)
+                out.append(String(status.data as pointer[const_char], status.length))
+                out.append(":" as char)
+                let body buf.subslice(at + e, at + e + (n as size_t))
+                out.append(String(body.data as pointer[const_char], body.length))
+                set at: at + e + (n as size_t)
+                set got: got + 1
+                continue
+            }
+        }
+        let r s.read(buf.slice_from(have))
+        if r <= 0
+            break
+        set have: have + (r as size_t)
+    }
+    out.to_string()
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    if argc < 3
+    {
+        print "usage: https <cert.pem> <key.pem>"
+        return 2
+    }
+    var context TlsContext.server(String(*(argv + 1)), String(*(argv + 2)))
+    if context.valid() = false
+    {
+        print "no server context"
+        return 1
+    }
+    var app Router.create(Page.allocate_page())
+    app.any("/sum", &sum)
+    var l TcpListener.listen(0)
+    let server https.Server.start(app, l, context)
+
+    var client TlsContext.client()
+    var s TlsStream.connect(client, TcpStream.connect("127.0.0.1", l.port()))
+    if s.is_open() = false
+    {
+        print "handshake failed"
+        return 3
+    }
+    s.write("GET /sum?a=1&b=2 HTTP/1.1\r\nHost: t\r\n\r\nPOST /sum?a=30&b=40 HTTP/1.1\r\nHost: t\r\nTransfer-Encoding: chunked\r\n\r\n1\r\n2\r\n0\r\n\r\n")
+    let two responses(&s, 2)
+    if two.equals("200:3|200:72") = false
+    {
+        print "got `two`"
+        return 4
+    }
+    Console.print "pipelined 3|72 "
+
+    s.write("GET /nothing HTTP/1.1\r\nConnection: close\r\n\r\n")
+    let nf responses(&s, 1)
+    var b u8[16]
+    if nf.equals("404:") = false or s.read(Slice[u8](16, &b[0])) <> 0
+    {
+        print "got `nf`"
+        return 5
+    }
+    s.close()
+    Console.print "404-close "
+
+    server.shutdown()
+    server.wait()
+    l.close()
+    Console.print "stopped"
+    0
+}

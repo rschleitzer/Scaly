@@ -1,0 +1,117 @@
+; TLS over a TcpStream through OpenSSL 3 (libssl, libcrypto), bound
+; directly: every function used takes pointers, `int` flags and `size_t`
+; counts (the `_ex` forms of read and write), so no C shim is needed
+; (CLAUDE.md, the containment rule) and no `long` crosses the boundary --
+; the protocol-version switch is SSL_CTX_set_options, which takes and
+; answers a uint64_t, not the SSL_CTX_ctrl macro behind
+; SSL_CTX_set_min_proto_version. A program using this module links with
+; -lssl -lcrypto.
+;
+; OpenSSL never touches the socket. Each connection has two MEMORY BIOs: the
+; bytes read from the TcpStream are written into the one OpenSSL reads, and
+; what OpenSSL writes into the other goes out through the TcpStream. So the
+; TLS layer rides on the runtime's own evented I/O (io_uring or epoll, a
+; fiber parking on readiness), and OpenSSL's "want read" means exactly one
+; thing: read more bytes from the stream.
+;
+; TLS 1.3 only: the versions below it are switched off on every context.
+
+
+define SslMethodOpaque()
+define SslMethod pointer[SslMethodOpaque]
+define SslCtxOpaque()
+define SslCtxRef pointer[SslCtxOpaque]
+define SslOpaque()
+define SslRef pointer[SslOpaque]
+define BioMethodOpaque()
+define BioMethod pointer[BioMethodOpaque]
+define BioOpaque()
+define BioRef pointer[BioOpaque]
+
+; Each binding declares what it writes: a `procedure` extern writes exactly
+; the parameters it marks `mutable` (an object's own state, an output buffer
+; and its count), and the write census takes that as the contract.
+procedure TLS_server_method() returns SslMethod extern
+procedure TLS_client_method() returns SslMethod extern
+procedure SSL_CTX_new(method: SslMethod) returns SslCtxRef extern
+procedure SSL_CTX_free(mutable ctx: SslCtxRef) extern
+procedure SSL_CTX_use_certificate_chain_file(mutable ctx: SslCtxRef, file: pointer[const_char]) returns i32 extern
+procedure SSL_CTX_use_PrivateKey_file(mutable ctx: SslCtxRef, file: pointer[const_char], filetype: i32) returns i32 extern
+procedure SSL_CTX_check_private_key(ctx: SslCtxRef) returns i32 extern
+procedure SSL_CTX_set_options(mutable ctx: SslCtxRef, options: u64) returns u64 extern
+procedure SSL_new(mutable ctx: SslCtxRef) returns SslRef extern
+procedure SSL_free(mutable ssl: SslRef) extern
+procedure SSL_set_accept_state(mutable ssl: SslRef) extern
+procedure SSL_set_connect_state(mutable ssl: SslRef) extern
+procedure SSL_set_bio(mutable ssl: SslRef, mutable rbio: BioRef, mutable wbio: BioRef) extern
+procedure SSL_do_handshake(mutable ssl: SslRef) returns i32 extern
+procedure SSL_read_ex(mutable ssl: SslRef, mutable buf: pointer[void], num: size_t, mutable readbytes: pointer[size_t]) returns i32 extern
+procedure SSL_write_ex(mutable ssl: SslRef, buf: pointer[void], num: size_t, mutable written: pointer[size_t]) returns i32 extern
+procedure SSL_get_error(ssl: SslRef, ret: i32) returns i32 extern
+procedure SSL_shutdown(mutable ssl: SslRef) returns i32 extern
+procedure BIO_s_mem() returns BioMethod extern
+procedure BIO_new(method: BioMethod) returns BioRef extern
+procedure BIO_write_ex(mutable bio: BioRef, data: pointer[void], dlen: size_t, mutable written: pointer[size_t]) returns i32 extern
+procedure BIO_read_ex(mutable bio: BioRef, mutable data: pointer[void], dlen: size_t, mutable readbytes: pointer[size_t]) returns i32 extern
+procedure BIO_ctrl_pending(mutable bio: BioRef) returns size_t extern
+
+define SSL_FILETYPE_PEM: i32 1
+define SSL_ERROR_WANT_READ: i32 2
+define SSL_ERROR_WANT_WRITE: i32 3
+define SSL_ERROR_ZERO_RETURN: i32 6
+; SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_2 | SSL_OP_NO_TLSv1_1
+define TLS13_ONLY: u64 0x1E000000
+
+; What moves between the TcpStream and a memory BIO at a time: a TLS record
+; is at most 16 KB of payload plus its overhead.
+define TLS_CHUNK: size_t 17408
+
+; A TLS context: a server's certificate chain and key, or a client's
+; defaults. It is not valid() when a file could not be read or the key does
+; not match the certificate.
+define TlsContext(var ctx: SslCtxRef)
+{
+    ; A server context from a PEM certificate chain and its PEM key.
+    procedure server(cert_file: String, key_file: String) @page true @direct true @ret_caller true @deep true returns TlsContext io linked
+
+    ; A client context. It does not verify the server's certificate: its
+    ; one use so far is talking to our own server in a test.
+    procedure client() @page true @direct true @ret_caller true @deep true returns TlsContext io linked
+
+    function valid(this) @ret_param_0 true @deep true returns bool linked
+
+    procedure free(mutable this) @deep true io linked
+}
+
+; A TLS connection over a TcpStream. Not is_open() when the handshake
+; failed; the TcpStream is closed then too.
+define TlsStream(var ssl: SslRef, var rbio: BioRef, var wbio: BioRef, var tcp: TcpStream)
+{
+    ; The server side of the handshake on tcp.
+    procedure accept(mutable context: TlsContext, mutable tcp: TcpStream) @page true @direct true @deep true returns TlsStream io linked
+
+    ; The client side of the handshake on tcp.
+    procedure connect(mutable context: TlsContext, mutable tcp: TcpStream) @page true @direct true @deep true returns TlsStream io linked
+
+    procedure start(mutable context: TlsContext, mutable tcp: TcpStream, server: bool) @page true @direct true @deep true returns TlsStream io linked
+
+    function is_open(this) @ret_param_0 true @deep true returns bool linked
+
+    ; Read up to buf.length bytes of plaintext into buf: the count, 0 at the
+    ; end of the stream (a close_notify, or the peer's TCP end), -1 on an
+    ; error.
+    procedure read(mutable this, mutable buf: Slice[u8]) @ret_nonlocal true @deep true returns int io linked
+
+    ; Write ALL of data; false on an error.
+    procedure write(mutable this, data: Slice[u8]) @ret_nonlocal true @deep true returns bool io linked
+
+    ; Send the close_notify, free the connection, close the TcpStream.
+    procedure close(mutable this) @ret_nonlocal true @deep true io linked
+
+    ; Everything OpenSSL has written into wbio, out through the TcpStream.
+    procedure flush(mutable this) @ret_nonlocal true @deep true returns bool io linked
+
+    ; One read from the TcpStream into rbio: the count, 0 at its end, -1 on
+    ; an error.
+    procedure feed(mutable this) @ret_nonlocal true @deep true returns int io linked
+}

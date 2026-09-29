@@ -1,0 +1,50 @@
+; Serving HTTPS: every connection is accepted by TCP, handshaken by TLS
+; (tls.Tls.TlsStream.accept) and then served by the http package's own
+; loop, generic over the stream (http.Server.serve_connection) -- routing,
+; pipelining and keep-alive exactly as over plain TCP.
+
+use http.Router.Router
+use tls.Tls.TlsContext
+use tls.Tls.TlsStream
+use tls.Tls.SslCtxRef
+
+; What every connection task reads: set once, before the first connection.
+shared atomic https_router: u64 0
+shared atomic https_context: u64 0
+
+procedure https_connection()
+{
+    var tcp TcpStream.of_task()
+    tcp.set_nodelay(true)
+    var context TlsContext((scaly_atomic_load_u64(&https_context) as size_t) as SslCtxRef)
+    var s TlsStream.accept(context, tcp)
+    if s.is_open() = false
+        return
+    let router (scaly_atomic_load_u64(&https_router) as size_t) as ref[Router]
+    serve_connection[TlsStream](&s, router)
+}
+
+; Serve router over TLS on every interface, both families, over all cores
+; (as http.Server.serve does over TCP): false at once when the port cannot
+; be listened on or the context is not valid.
+procedure serve(router: ref[Router], port: int, context: TlsContext) returns bool
+{
+    if context.valid() = false
+        return false
+    scaly_atomic_store_u64(&https_router, router as u64)
+    scaly_atomic_store_u64(&https_context, context.ctx as u64)
+    var l TcpListener.listen_any(port)
+    if l.is_open() = false
+        return false
+    l.serve(&https_connection)
+    true
+}
+
+; Serve like serve, on a listener the caller made, and return at once with
+; the TcpServer (shutdown, wait).
+procedure start(router: ref[Router], l: TcpListener, context: TlsContext) returns TcpServer
+{
+    scaly_atomic_store_u64(&https_router, router as u64)
+    scaly_atomic_store_u64(&https_context, context.ctx as u64)
+    l.start(&https_connection)
+}

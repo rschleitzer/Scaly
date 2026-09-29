@@ -1,0 +1,17 @@
+; where the lines of this interface stand in the package's sources,
+; written by compiler/Interface.scaly: after a file's path, the interface
+; line starting at the first byte is the source's line starting at the second
+tls/Tls.scaly
+4209 4624
+4448 4958
+4523 5017
+4578 5138
+4971 5530
+5157 5716
+5308 6931
+5385 6992
+5659 7897
+5808 8277
+5954 8607
+6117 9075
+6295 9499

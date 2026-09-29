@@ -59,12 +59,21 @@ procedure http_connection()
 {
     var c TcpStream.of_task()
     c.set_nodelay(true)
+    let router (scaly_atomic_load_u64(&http_router) as size_t) as ref[Router]
+    serve_connection[TcpStream](&c, router)
+}
+
+; The loop of one connection over any stream that reads into a Slice (the
+; count, 0 at the end, -1 on an error), writes a Slice whole and closes: a
+; TcpStream here, a TlsStream in the https package -- which is why it takes
+; the router rather than reading this module's global.
+procedure serve_connection[S](mutable c: ref[S], router: ref[Router])
+{
     let host Page.allocate_page()
     var inb ByteBuf.create(host, IN_SIZE)
     let outb &ByteBuf^host(host, allocate_slice[u8]^host(host, OUT_SIZE), 0)
     let req &Request^host(null, null, null, null, null, null, 1, true, null)
     let res Response.create(host, outb)
-    let router (scaly_atomic_load_u64(&http_router) as size_t) as ref[Router]
     var open true
     while open
     {

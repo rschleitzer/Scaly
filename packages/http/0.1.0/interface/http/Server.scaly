@@ -48,6 +48,69 @@ procedure refuse(mutable res: ref[Response], code: int) @ret_nonlocal true @deep
 ; Every connection: read, answer what is complete, write, keep the rest.
 procedure http_connection() @ret_nonlocal true @deep true io reads http_router linked
 
+; The loop of one connection over any stream that reads into a Slice (the
+; count, 0 at the end, -1 on an error), writes a Slice whole and closes: a
+; TcpStream here, a TlsStream in the https package -- which is why it takes
+; the router rather than reading this module's global.
+procedure serve_connection[S](mutable c: ref[S], router: ref[Router])
+{
+    let host Page.allocate_page()
+    var inb ByteBuf.create(host, IN_SIZE)
+    let outb &ByteBuf^host(host, allocate_slice[u8]^host(host, OUT_SIZE), 0)
+    let req &Request^host(null, null, null, null, null, null, 1, true, null)
+    let res Response.create(host, outb)
+    var open true
+    while open
+    {
+        let n c.read(inb.spare())
+        if n <= 0
+            break
+        inb.advance(n as size_t)
+        if TcpServer.current().stopping()
+            set open: false
+        ; answer every complete request in the buffer
+        var done: size_t 0
+        repeat
+        {
+            var view inb.bytes().slice_from(done)
+            if view.length = 0
+                break
+            let r parse_request(view, req)
+            if r = PARSE_INCOMPLETE
+                break
+            if r < 0
+            {
+                refuse(res, refusal_status(r))
+                set open: false
+                break
+            }
+            dispatch(router, req, res)
+            set done: done + (r as size_t)
+            if req.keep_alive = false
+            {
+                set open: false
+                break
+            }
+        }
+        if outb.length > 0
+        {
+            if c.write(outb.bytes()) = false
+                set open: false
+            outb.clear()
+        }
+        inb.consume(done)
+        if inb.length = inb.capacity()
+        {
+            if inb.capacity() >= MAX_HEAD + MAX_BODY
+                break
+            inb.reserve(inb.capacity())
+        }
+    }
+    c.close()
+    host.deallocate_extensions()
+    Page.release_page(host)
+}
+
 ; Serve router on every interface, both families, over all cores. Runs for
 ; as long as the process (or until a handler shuts the server down) and
 ; then answers true; false at once when the port cannot be listened on.
