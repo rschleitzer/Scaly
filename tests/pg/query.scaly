@@ -8,7 +8,9 @@
 ;   fortunes  SELECT id, message FROM fortune: 200 rows, row 11 the script
 ;   error     a statement on a missing table fails with the server's message,
 ;             and the connection answers the next query
-; Expected: items empty fortunes error again
+;   update    an UPDATE that leaves the row as it was names 1 affected row,
+;             one of a missing id 0
+; Expected: items empty fortunes error again update
 
 package scaly 0.1.0
 package tls 0.1.0
@@ -88,7 +90,18 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
     c.start("fortunes")
     if c.run() = false or c.next_row() = false
         return 12
-    Console.print "again"
+    Console.print "again "
+    if c.prepare("touch", "UPDATE items SET quantity = quantity WHERE id = $1") = false
+        return 13
+    c.start("touch")
+    c.param_int(1)
+    if c.run() = false or c.affected() <> 1
+        return 14
+    c.start("touch")
+    c.param_int(999999)
+    if c.run() = false or c.affected() <> 0
+        return 15
+    Console.print "update"
     release(c)
     0
 }

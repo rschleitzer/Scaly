@@ -19,7 +19,7 @@
 #             the one the tscaly lane starts with
 #   lsp       tests/lsp/run.sh
 #   ports     one dazzle CLI build shared by all 14 dazzle suites (DAZZLE_PREBUILT),
-#             which run side by side; then onsgmls, the SGML corpus, opensp, http, json, compress, tls, pg, cmscratch
+#             which run side by side; then onsgmls, the SGML corpus, opensp, http, json, compress, tls, pg, redis, cmscratch
 #   tscaly    tests/run.sh at stage 2 (its corpus contains stage 1's), then the
 #             two case yardsticks side by side — the longest lane
 #   vscode    only with BAR_VSCODE_SCENARIO and BAR_VSCODE_BASELINE set: the bench
@@ -148,6 +148,7 @@ lane_ports() {
   step compress tests/compress/run.sh "$BIN" || rc=1
   step tls tests/tls/run.sh "$BIN" || rc=1
   step pg tests/pg/run.sh "$BIN" || rc=1
+  step redis tests/redis/run.sh "$BIN" || rc=1
   step cmscratch tests/sgml/cmscratch/run.sh || rc=1
   return $rc
 }

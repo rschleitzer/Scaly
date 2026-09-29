@@ -1,0 +1,34 @@
+; where the lines of this interface stand in the package's sources,
+; written by compiler/Interface.scaly: after a file's path, the interface
+; line starting at the first byte is the source's line starting at the second
+redis/Buf.scaly
+428 459
+531 556
+658 679
+711 736
+841 879
+963 1326
+1031 1597
+1112 1740
+1207 2315
+redis/Conn.scaly
+1061 1397
+1138 1451
+1213 1574
+1365 1840
+1449 2112
+1531 2845
+1679 3336
+1891 3845
+2117 4948
+2317 5179
+2457 5301
+2670 5604
+2847 5923
+3027 6177
+redis/Pool.scaly
+718 689
+924 893
+1177 1203
+1353 2602
+1598 3319

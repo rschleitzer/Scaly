@@ -354,6 +354,30 @@ define PgConn
         false
     }
 
+    ; The row count the last run()'s CommandComplete names ("UPDATE 3": 3),
+    ; 0 when it names none.
+    function affected(this) returns i64
+    {
+        let b inb.bytes()
+        var at: size_t 0
+        while at + 5 <= b.length
+        {
+            let t b[at]
+            let len be_i32(b, at + 1) as size_t
+            if t = 67
+            {
+                ; the tag's last word; its NUL ends decimal_of
+                let tag b.subslice(at + 5, at + 1 + len)
+                var i tag.length
+                while i > 0 and tag[i - 1] <> 32
+                    set i: i - 1
+                return decimal_of(tag.slice_from(i))
+            }
+            set at: at + 1 + len
+        }
+        0
+    }
+
     ; Column i of the current row as text; empty for NULL.
     function column(this, i: int) returns Slice[u8]
     {

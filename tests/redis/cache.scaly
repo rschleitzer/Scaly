@@ -1,0 +1,55 @@
+; The redis package against a live server (REDIS_URL): a pooled
+; connection, the three commands of a cache-aside L2 and a value larger
+; than one read.
+;   miss     GET of a key nobody set: absent
+;   set      SET … PX 1000, then GET answers the value
+;   del      DEL, then GET answers absent again
+;   big      a 100 000-byte value comes back whole
+;   expire   a value SET with PX 50 is gone 150 ms later
+; Expected: miss set del big expire
+
+package scaly 0.1.0
+package redis 0.1.0
+
+use redis.Conn.RedisConn
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutable redis_pool
+{
+    let got redis_acquire()
+    if got = null
+    {
+        print "no connection"
+        return 1
+    }
+    var c got as ref[RedisConn]
+    c.del("scaly:test:key")
+    if c.get("scaly:test:key")
+        return 2
+    Console.print "miss "
+    if c.set_px("scaly:test:key", "{\"id\":7}", 1000) = false
+        return 3
+    if c.get("scaly:test:key") = false or c.value().equals("{\"id\":7}") = false
+        return 4
+    Console.print "set "
+    if c.del("scaly:test:key") = false or c.get("scaly:test:key")
+        return 5
+    Console.print "del "
+    var big Vector[u8](100000)
+    var i: size_t 0
+    while i < 100000
+    {
+        big.put(i, (i % 26 + 97) as u8)
+        set i: i + 1
+    }
+    if c.set_px("scaly:test:big", big.as_slice(), 1000) = false or c.get("scaly:test:big") = false or c.value().equals(big.as_slice()) = false
+        return 6
+    Console.print "big "
+    if c.set_px("scaly:test:short", "x", 50) = false
+        return 7
+    Scheduler.sleep(150)
+    if c.get("scaly:test:short")
+        return 8
+    Console.print "expire"
+    redis_release(c)
+    0
+}

@@ -5,13 +5,18 @@
 #
 # The Docker build context is staged from the WORKING TREE, not the whole
 # repository (the test corpora alone are gigabytes): the seed, the tools the
-# seed build calls, the scaly/scalyc/http/json/compress/tls/https/pg packages and
+# seed build calls, the scaly/scalyc/http/json/compress/tls/https/pg/redis packages and
 # the arena and trainer programs. To run it under HttpArena's own scripts, put a frameworks/scaly/
 # directory in an HttpArena checkout holding meta.json and a build.sh that
 # calls this one:
 #
 #   frameworks/scaly/build.sh:   exec /path/to/Scaly/tools/bench/httparena/build.sh
 #   scripts/validate.sh scaly
+#
+# The gateway profiles are framework directories of their own beside this
+# file, copied to frameworks/ as they are: scaly_nginx (gateway-64 and
+# production-stack behind nginx) and scaly_caddy (gateway-h3 behind Caddy).
+# Their server service is the image this script builds, so it runs first.
 #
 # Profile-guided (the author's decision, 2026-09-28): an instrumented arena is
 # built first (Dockerfile target pgo-train) and trained by
@@ -35,7 +40,7 @@ mkdir -p "$CTX/packages" "$CTX/tools/bench/http" "$CTX/pgo"
 cp -R seed "$CTX/"
 # the tools directory without the benchmark programs and their build output
 ( cd tools && find . -maxdepth 1 -type f -exec cp {} "$CTX/tools/" \; )
-cp -R packages/scaly packages/scalyc packages/http packages/json packages/compress packages/tls packages/https packages/pg "$CTX/packages/"
+cp -R packages/scaly packages/scalyc packages/http packages/json packages/compress packages/tls packages/https packages/pg packages/redis "$CTX/packages/"
 cp tools/bench/http/arena.scaly tools/bench/http/train.scaly "$CTX/tools/bench/http/"
 rm -f "$CTX"/seed/r_*.ll
 if [ "${SCALY_PGO:-1}" != 0 ]; then

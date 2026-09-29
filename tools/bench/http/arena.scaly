@@ -20,6 +20,13 @@
 ;                                in, SumReply{result} out (stage E)
 ;   GET      /ws                 WebSocket: every text or binary message echoed
 ;                                (echo-ws*, stage F)
+;   GET      /public/baseline, /public/json/{count}   baseline and json for
+;                                the production-stack profile, behind its edge
+;   GET/POST /api/items/{id}     an item row, cache-aside through an in-process
+;                                L1, Redis (REDIS_URL) and Postgres, X-Cache HIT
+;                                or MISS; POST updates the row and drops both
+;                                cached copies (production-stack, stage C)
+;   GET      /api/me             the user named by X-User-Id, the same way
 ;   GET      /shutdown           ends the server (only with SCALY_ARENA_TRAIN set,
 ;                                the PGO training run)
 ;
@@ -30,7 +37,9 @@
 ; E), with the certificate and key the harness mounts (/certs/server.crt and
 ; /certs/server.key, else TLS_CERT and TLS_KEY); without a readable pair
 ; both stay closed. Every plain port serves HTTP/2 by prior knowledge
-; beside HTTP/1.1 (the h2c port for baseline-h2c and json-h2c).
+; beside HTTP/1.1 (the h2c port for baseline-h2c and json-h2c). A port
+; given as 0 stays closed: behind a gateway (compose.gateway.yml) only the
+; first port is opened, the proxy holds 8443.
 ;
 ; The dataset (DATASET_PATH, default /data/dataset.json) is read ONCE, parsed
 ; with the json package into records, and serialized per request by a
@@ -44,6 +53,7 @@ package compress 0.1.0
 package tls 0.1.0
 package https 0.1.0
 package pg 0.1.0
+package redis 0.1.0
 
 use http.Request.Request
 use http.Response.Response
@@ -55,6 +65,7 @@ use tls.Tls.TlsContext
 use pg.Conn.PgConn
 use http.Buffer.ByteBuf
 use http.WebSocket.WebSocket
+use redis.Conn.RedisConn
 
 ; One dataset entry, as the benchmark's validation reads it back.
 define Item
@@ -286,6 +297,397 @@ procedure async_db(req: ref[Request], mutable res: ref[Response]) mutable pg_poo
     res.send("application/json", w.bytes())
 }
 
+; ── production-stack: cache-aside over an L1 in this process, Redis (L2)
+; and Postgres ──────────────────────────────────────────────────────────────
+;
+; The L1 is one slot per id, shared by every scheduler thread and read
+; without a lock: a sequence lock whose every word is an atomic access, so a
+; torn read is detected, never undefined. A writer makes the sequence odd,
+; writes, makes it even; a reader copies the slot and keeps the copy only
+; when the sequence was even before and unchanged after. A slot's words: the
+; sequence, the expiry (monotonic ns), the value's length, then its bytes
+; (little-endian in the words, up to L1_VALUE_BYTES; a longer value is not
+; kept in L1).
+
+define L1_SLOT_WORDS: size_t 32
+define L1_VALUE_BYTES: size_t 232
+
+define L1Table
+(
+    words: pointer[u64]
+    capacity: size_t
+    ttl_ns: i64
+)
+
+function calloc(count: size_t, size: size_t) returns pointer[void] extern
+
+; A table for ids 0 .. capacity - 1, its entries living ttl_ms; made once in
+; main, before any scheduler runs.
+procedure l1_table(host: ref[Page], capacity: size_t, ttl_ms: i64) returns ref[L1Table]
+    &L1Table^host(calloc(capacity * L1_SLOT_WORDS, 8) as pointer[u64], capacity, ttl_ms * 1000000)
+
+; The live value of id copied into out: its length, -1 when there is none
+; (absent, expired, being written, or out of range).
+procedure l1_get(mutable t: ref[L1Table], id: i64, mutable out: Slice[u8]) returns i64
+{
+    if id < 0 or (id as size_t) >= t.capacity
+        return 0 - 1
+    let slot t.words + (id as size_t) * L1_SLOT_WORDS
+    let s1 scaly_atomic_load_u64(slot)
+    if s1 = 0 or (s1 & 1) <> 0
+        return 0 - 1
+    if (scaly_atomic_load_u64(slot + 1) as i64) < scaly_eio_now_ns()
+        return 0 - 1
+    let n scaly_atomic_load_u64(slot + 2) as size_t
+    if n > L1_VALUE_BYTES or n > out.length
+        return 0 - 1
+    var w: size_t 0
+    while w * 8 < n
+    {
+        let v scaly_atomic_load_u64(slot + 3 + w)
+        var k: size_t 0
+        while k < 8 and w * 8 + k < n
+        {
+            out.put(w * 8 + k, ((v >> ((k * 8) as u64)) & 255) as u8)
+            set k: k + 1
+        }
+        set w: w + 1
+    }
+    if scaly_atomic_load_u64(slot) <> s1
+        return 0 - 1
+    n as i64
+}
+
+; Keep value for id; skipped when another thread is writing the slot.
+procedure l1_put(mutable t: ref[L1Table], id: i64, value: Slice[u8])
+{
+    if id < 0 or (id as size_t) >= t.capacity or value.length > L1_VALUE_BYTES
+        return
+    let slot t.words + (id as size_t) * L1_SLOT_WORDS
+    let s scaly_atomic_load_u64(slot)
+    if (s & 1) <> 0 or scaly_atomic_cas_u64(slot, s, s + 1) <> s
+        return
+    scaly_atomic_store_u64(slot + 1, (scaly_eio_now_ns() + t.ttl_ns) as u64)
+    scaly_atomic_store_u64(slot + 2, value.length as u64)
+    var w: size_t 0
+    while w * 8 < value.length
+    {
+        var v: u64 0
+        var k: size_t 0
+        while k < 8 and w * 8 + k < value.length
+        {
+            set v: v | ((value[w * 8 + k] as u64) << ((k * 8) as u64))
+            set k: k + 1
+        }
+        scaly_atomic_store_u64(slot + 3 + w, v)
+        set w: w + 1
+    }
+    scaly_atomic_store_u64(slot, s + 2)
+}
+
+; Drop id's value; waits out a writer (a few stores on another thread).
+procedure l1_remove(mutable t: ref[L1Table], id: i64)
+{
+    if id < 0 or (id as size_t) >= t.capacity
+        return
+    let slot t.words + (id as size_t) * L1_SLOT_WORDS
+    repeat
+    {
+        let s scaly_atomic_load_u64(slot)
+        if (s & 1) = 0 and scaly_atomic_cas_u64(slot, s, s + 1) = s
+        {
+            scaly_atomic_store_u64(slot + 1, 0)
+            scaly_atomic_store_u64(slot, s + 2)
+            return
+        }
+    }
+}
+
+; The two L1 tables, made in main before the schedulers start.
+shared item_l1: ref[L1Table]? null
+shared user_l1: ref[L1Table]? null
+
+; The cache key prefix:id into out.
+procedure cache_key(mutable out: ref[ByteBuf], prefix: Slice[u8], id: i64)
+{
+    out.clear()
+    out.append(prefix)
+    out.append_int(id)
+}
+
+; The value of key from Redis onto out (true), or false when Redis lacks it
+; or cannot be reached.
+procedure l2_get(key: Slice[u8], mutable out: ref[ByteBuf]) returns bool mutable redis_pool
+{
+    let got redis_acquire()
+    if got = null
+        return false
+    var c got as ref[RedisConn]
+    var found c.get(key)
+    if found
+    {
+        out.clear()
+        out.append(c.value())
+    }
+    redis_release(c)
+    found
+}
+
+procedure l2_set(key: Slice[u8], value: Slice[u8], ttl_ms: i64) mutable redis_pool
+{
+    let got redis_acquire()
+    if got = null
+        return
+    var c got as ref[RedisConn]
+    c.set_px(key, value, ttl_ms)
+    redis_release(c)
+}
+
+procedure l2_del(key: Slice[u8]) mutable redis_pool
+{
+    let got redis_acquire()
+    if got = null
+        return
+    var c got as ref[RedisConn]
+    c.del(key)
+    redis_release(c)
+}
+
+; A cached answer: its JSON with X-Cache, HIT or MISS.
+procedure send_cached(mutable res: ref[Response], hit: bool, body: Slice[u8])
+{
+    if hit
+        res.header("X-Cache", "HIT")
+    else
+        res.header("X-Cache", "MISS")
+    res.send("application/json", body)
+}
+
+; The item row as the profile's JSON onto out; false when there is none.
+procedure item_from_db(id: i64, mutable out: ref[ByteBuf]) returns bool mutable pg_pool
+{
+    let got acquire()
+    if got = null
+        return false
+    var c got as ref[PgConn]
+    var found false
+    if c.prepare("item", "SELECT id, name, category, price, quantity, active, rating_score, rating_count FROM items WHERE id = $1 LIMIT 1")
+    {
+        c.start("item")
+        c.param_int(id)
+        if c.run() and c.next_row()
+        {
+            var w JsonWriter()
+            w.begin_object()
+            w.key("id")
+            w.integer(c.column_int(0))
+            w.key("name")
+            w.text(c.column(1))
+            w.key("category")
+            w.text(c.column(2))
+            w.key("price")
+            w.integer(c.column_int(3))
+            w.key("quantity")
+            w.integer(c.column_int(4))
+            w.key("active")
+            w.boolean(c.column_bool(5))
+            w.key("rating")
+            w.begin_object()
+            w.key("score")
+            w.integer(c.column_int(6))
+            w.key("count")
+            w.integer(c.column_int(7))
+            w.end_object()
+            w.end_object()
+            out.clear()
+            out.append(w.bytes())
+            set found: true
+        }
+    }
+    release(c)
+    found
+}
+
+procedure user_from_db(id: i64, mutable out: ref[ByteBuf]) returns bool mutable pg_pool
+{
+    let got acquire()
+    if got = null
+        return false
+    var c got as ref[PgConn]
+    var found false
+    if c.prepare("user", "SELECT id, name, email, plan FROM users WHERE id = $1 LIMIT 1")
+    {
+        c.start("user")
+        c.param_int(id)
+        if c.run() and c.next_row()
+        {
+            var w JsonWriter()
+            w.begin_object()
+            w.key("id")
+            w.integer(c.column_int(0))
+            w.key("name")
+            w.text(c.column(1))
+            w.key("email")
+            w.text(c.column(2))
+            w.key("plan")
+            w.text(c.column(3))
+            w.end_object()
+            out.clear()
+            out.append(w.bytes())
+            set found: true
+        }
+    }
+    release(c)
+    found
+}
+
+define ITEM_TTL_MS: i64 1000
+define USER_TTL_MS: i64 30000
+
+; GET /api/items/{id}: L1, then L2, then Postgres, filling both on the way
+; back (X-Cache: HIT from either cache, MISS from the database).
+procedure api_item_get(req: ref[Request], mutable res: ref[Response]) mutable pg_pool, redis_pool, item_l1
+{
+    let id parse_int_prefix(req.param("id"))
+    var copy u8[232]
+    let local Slice[u8](232, &copy[0])
+    let table item_l1
+    if table <> null
+    {
+        let n l1_get(table, id, local)
+        if n >= 0
+        {
+            send_cached(res, true, local.slice_to(n as size_t))
+            return
+        }
+    }
+    let host Page.allocate_page()
+    var key ByteBuf.create(host, 32)
+    cache_key(&key, "item:", id)
+    var value ByteBuf.create(host, 256)
+    if l2_get(key.bytes(), &value)
+    {
+        if table <> null
+            l1_put(table, id, value.bytes())
+        send_cached(res, true, value.bytes())
+        Page.release_page(host)
+        return
+    }
+    if item_from_db(id, &value) = false
+    {
+        res.set_status(404)
+        res.send_empty()
+        Page.release_page(host)
+        return
+    }
+    l2_set(key.bytes(), value.bytes(), ITEM_TTL_MS)
+    if table <> null
+        l1_put(table, id, value.bytes())
+    send_cached(res, false, value.bytes())
+    Page.release_page(host)
+}
+
+; POST /api/items/{id}: {name, price, quantity} into the row, then the
+; cached copies dropped in both caches; 204.
+procedure api_item_post(req: ref[Request], mutable res: ref[Response]) mutable pg_pool, redis_pool, item_l1
+{
+    let id parse_int_prefix(req.param("id"))
+    let parsed JsonValue.parse(req.body)
+    if parsed.ok() = false or parsed.value.is_object() = false
+    {
+        res.set_status(400)
+        res.send_empty()
+        return
+    }
+    let doc parsed.value
+    let got acquire()
+    if got = null
+    {
+        res.set_status(503)
+        res.send_empty()
+        return
+    }
+    var c got as ref[PgConn]
+    var affected: i64 0
+    if c.prepare("item_update", "UPDATE items SET name = $1, price = $2, quantity = $3 WHERE id = $4")
+    {
+        c.start("item_update")
+        c.param_text(doc.get("name").text())
+        c.param_int(doc.get("price").as_i64())
+        c.param_int(doc.get("quantity").as_i64())
+        c.param_int(id)
+        if c.run()
+            set affected: c.affected()
+    }
+    release(c)
+    if affected = 0
+    {
+        res.set_status(404)
+        res.send_empty()
+        return
+    }
+    let table item_l1
+    if table <> null
+        l1_remove(table, id)
+    let host Page.allocate_page()
+    var k ByteBuf.create(host, 32)
+    cache_key(&k, "item:", id)
+    l2_del(k.bytes())
+    Page.release_page(host)
+    res.set_status(204)
+    res.send_empty()
+}
+
+; GET /api/me: the user the edge authenticated (X-User-Id), cache-aside
+; like the items with a 30 s life.
+procedure api_me(req: ref[Request], mutable res: ref[Response]) mutable pg_pool, redis_pool, user_l1
+{
+    let uid_text req.header("x-user-id")
+    if uid_text.length = 0
+    {
+        res.set_status(401)
+        res.send_empty()
+        return
+    }
+    let id parse_int_prefix(uid_text)
+    var copy u8[232]
+    let local Slice[u8](232, &copy[0])
+    let table user_l1
+    if table <> null
+    {
+        let n l1_get(table, id, local)
+        if n >= 0
+        {
+            send_cached(res, true, local.slice_to(n as size_t))
+            return
+        }
+    }
+    let host Page.allocate_page()
+    var key ByteBuf.create(host, 32)
+    cache_key(&key, "user:", id)
+    var value ByteBuf.create(host, 256)
+    if l2_get(key.bytes(), &value)
+    {
+        if table <> null
+            l1_put(table, id, value.bytes())
+        send_cached(res, true, value.bytes())
+        Page.release_page(host)
+        return
+    }
+    if user_from_db(id, &value) = false
+    {
+        res.set_status(404)
+        res.send_empty()
+        Page.release_page(host)
+        return
+    }
+    l2_set(key.bytes(), value.bytes(), USER_TTL_MS)
+    if table <> null
+        l1_put(table, id, value.bytes())
+    send_cached(res, false, value.bytes())
+    Page.release_page(host)
+}
+
 ; Does message a sort before message b (bytes, which for UTF-8 is code
 ; point order)?
 function sorts_before(a: Slice[u8], b: Slice[u8]) returns bool
@@ -428,7 +830,7 @@ procedure shutdown(req: ref[Request], mutable res: ref[Response])
     TcpServer.current().shutdown()
 }
 
-procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutable dataset
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutable dataset, item_l1, user_l1
 {
     var port 8080
     if argc > 1
@@ -464,6 +866,16 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
     app.post("/echo", &echo)
     app.post("/benchmark.BenchmarkService/GetSum", &get_sum)
     app.get("/ws", &ws_upgrade)
+    ; production-stack, behind its edge (compose.production-stack.yml)
+    app.get("/public/baseline", &baseline)
+    app.get("/public/json/{count}", &json_items)
+    app.get("/api/items/{id}", &api_item_get)
+    app.post("/api/items/{id}", &api_item_post)
+    app.get("/api/me", &api_me)
+    app.waits("/api/items/{id}")
+    app.waits("/api/me")
+    set item_l1: l1_table(data_host, 100001, ITEM_TTL_MS)
+    set user_l1: l1_table(data_host, 1024, USER_TTL_MS)
     if getenv("SCALY_ARENA_TRAIN") <> null
         app.get("/shutdown", &shutdown)
     var cert String("/certs/server.crt")
@@ -476,7 +888,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
         set key: String(env_key)
     }
     let context TlsContext.server(cert, key)
-    if context.valid()
+    if context.valid() and tls_port > 0
     {
         let tl TcpListener.listen_any(tls_port)
         if tl.is_open()
@@ -485,7 +897,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
             print "arena: cannot listen on port `tls_port`"
     }
     var h2_context TlsContext.server(cert, key)
-    if h2_context.valid()
+    if h2_context.valid() and h2_port > 0
     {
         h2_context.prefer_h2()
         let hl TcpListener.listen_any(h2_port)
@@ -497,11 +909,14 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
         if start_h3(app, h2_port, cert, key) = false
             print "arena: no HTTP/3 on port `h2_port` (an OpenSSL without a QUIC server?)"
     }
-    let cl TcpListener.listen_any(h2c_port)
-    if cl.is_open()
-        start(app, cl)
-    else
-        print "arena: cannot listen on port `h2c_port`"
+    if h2c_port > 0
+    {
+        let cl TcpListener.listen_any(h2c_port)
+        if cl.is_open()
+            start(app, cl)
+        else
+            print "arena: cannot listen on port `h2c_port`"
+    }
     if serve(app, port) = false
     {
         print "arena: cannot listen on port `port`"

@@ -94,6 +94,10 @@ define PgConn
     ; Advance to the next DataRow of the last run(); false after the last.
     procedure next_row(mutable this) @ret_nonlocal true @deep true returns bool linked
 
+    ; The row count the last run()'s CommandComplete names ("UPDATE 3": 3),
+    ; 0 when it names none.
+    function affected(this) @ret_nonlocal true @deep true returns i64 linked
+
     ; Column i of the current row as text; empty for NULL.
     function column(this, i: int) @page true @direct true @ret_param_0 true @deep true returns Slice[u8] linked
 

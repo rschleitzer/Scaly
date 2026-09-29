@@ -1,0 +1,98 @@
+# production-stack: the nginx edge (TLS, HTTP/2, /static from disk, JWT
+# verification of every /api/* call through the shared authsvc), Redis as
+# the L2 cache, and the Scaly server with its L1 in-process, over Postgres.
+#
+# The cpuset split on the reference's 64 logical CPUs is the reference
+# entry's (edge 30, cache 2, authsvc 8, server 24). All four run on the
+# host network: the edge 8443, authsvc 9090, the server 8080, Redis 6379.
+
+services:
+  edge:
+    build: ./proxy-production
+    network_mode: host
+    cpuset: "0-14,64-78"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${CERTS_DIR}:/certs:ro
+      - ${DATA_DIR}/static:/data/static:ro
+    depends_on:
+      authsvc:
+        condition: service_healthy
+      server:
+        condition: service_started
+
+  cache:
+    image: redis:7-alpine
+    network_mode: host
+    cpuset: "15,79"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${DATA_DIR}/redis-seed.txt:/seed.txt:ro
+      - ${DATA_DIR}/redis-entrypoint.sh:/entrypoint.sh:ro
+    entrypoint: ["sh", "/entrypoint.sh"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6379", "ping"]
+      interval: 30s
+      timeout: 2s
+      retries: 3
+      start_period: 30s
+      start_interval: 1s
+
+  authsvc:
+    build: ../_shared/authsvc
+    network_mode: host
+    cpuset: "16-19,80-83"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - JWT_SECRET=httparena-bench-secret-do-not-use-in-production
+      - AUTHSVC_LISTEN=0.0.0.0:9090
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9090/_health"]
+      interval: 30s
+      timeout: 2s
+      retries: 3
+      start_period: 30s
+      start_interval: 1s
+
+  # The Scaly entry's own image (tools/bench/httparena/build.sh), started
+  # with the first port only -- the edge holds 8443.
+  server:
+    image: httparena-scaly
+    pull_policy: never
+    command: ["/arena", "8080", "0", "0", "0"]
+    network_mode: host
+    cpuset: "20-31,84-95"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_MAX_CONN=256
+      - REDIS_URL=redis://127.0.0.1:6379
+    volumes:
+      - ${DATA_DIR}/dataset.json:/data/dataset.json:ro
+    depends_on:
+      cache:
+        condition: service_healthy

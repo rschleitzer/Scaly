@@ -56,6 +56,7 @@ RUN mkdir -p /ir \
  && scalyc/build/scalyc -S --no-prelude -o /ir/tls.ll packages/tls/0.1.0/tls.scaly \
  && scalyc/build/scalyc -S --no-prelude -o /ir/https.ll packages/https/0.1.0/https.scaly \
  && scalyc/build/scalyc -S --no-prelude -o /ir/pg.ll packages/pg/0.1.0/pg.scaly \
+ && scalyc/build/scalyc -S --no-prelude -o /ir/redis.ll packages/redis/0.1.0/redis.scaly \
  && scalyc/build/scalyc -S -o /ir/arena.ll tools/bench/http/arena.scaly \
  && scalyc/build/scalyc -S -o /ir/train.ll tools/bench/http/train.scaly
 
@@ -67,7 +68,7 @@ RUN TRIPLE=$(clang-20 -print-target-triple) \
  && PROFRT=$(find /usr/lib/llvm-20/lib/clang -name 'libclang_rt.profile*.a' | head -1) \
  && LTO_OPT_FLAGS="-mtriple=$TRIPLE -mcpu=native --pgo-kind=pgo-instr-gen-pipeline" \
     LTO_LLC_FLAGS="-mcpu=native" LINK_EXTRA="-Wl,-u,__llvm_profile_runtime $PROFRT -l:libdeflate.a /opt/openssl/lib/libssl.a /opt/openssl/lib/libcrypto.a" \
-    tools/link-lto.sh /arena_instr /ir/arena.ll /ir/https.ll /ir/http.ll /ir/pg.ll /ir/tls.ll /ir/json.ll /ir/compress.ll /ir/rt.ll \
+    tools/link-lto.sh /arena_instr /ir/arena.ll /ir/https.ll /ir/http.ll /ir/pg.ll /ir/redis.ll /ir/tls.ll /ir/json.ll /ir/compress.ll /ir/rt.ll \
  && tools/link-lto.sh /train /ir/train.ll /ir/http.ll /ir/rt.ll
 
 FROM build AS optimized
@@ -76,7 +77,7 @@ RUN TRIPLE=$(clang-20 -print-target-triple) \
  && PGO="" \
  && if [ -f /pgo/arena.profdata ]; then PGO="--pgo-kind=pgo-instr-use-pipeline --profile-file=/pgo/arena.profdata"; fi \
  && LTO_OPT_FLAGS="-mtriple=$TRIPLE -mcpu=native $PGO" LTO_LLC_FLAGS="-mcpu=native" LINK_EXTRA="-l:libdeflate.a /opt/openssl/lib/libssl.a /opt/openssl/lib/libcrypto.a" \
-    tools/link-lto.sh /arena /ir/arena.ll /ir/https.ll /ir/http.ll /ir/pg.ll /ir/tls.ll /ir/json.ll /ir/compress.ll /ir/rt.ll
+    tools/link-lto.sh /arena /ir/arena.ll /ir/https.ll /ir/http.ll /ir/pg.ll /ir/redis.ll /ir/tls.ll /ir/json.ll /ir/compress.ll /ir/rt.ll
 
 FROM ubuntu:24.04
 COPY --from=optimized /arena /arena

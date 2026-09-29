@@ -1,0 +1,39 @@
+; Connections pooled per scheduler thread, as pg pools its own: every
+; `mutable` global is thread-local, so each thread keeps its idle list with
+; no lock; a task takes a connection, runs its command (parking on the
+; socket while the scheduler runs other requests) and gives it back. A
+; thread opens at most max_connections / threads of them; a task that finds
+; none idle and the limit reached yields until one is given back.
+;
+; The server comes from REDIS_URL (redis://host:port, the port defaulting
+; to 6379; a user, password or database in the URL is not used) and the
+; bound from REDIS_MAX_CONN (default 256), read once per thread.
+
+use redis.Conn.RedisConn
+
+define RedisPool
+@resident true @inplace true (
+    host_name: String
+    port: int
+    var idle: Array[ref[RedisConn]]
+    var open_count: int
+    limit: int
+)
+
+; This thread's pool, made at its first acquire.
+mutable redis_pool: ref[RedisPool]? linked
+
+procedure strlen(s: pointer[const_char]) returns size_t extern
+
+; The environment variable name as bytes, empty when unset.
+procedure redis_env(name: pointer[const_char]) @page true @direct true @ret_param_0 true @deep true returns Slice[u8] io linked
+
+; This thread's pool, made from the environment on first use.
+procedure redis_pool_of_thread() @deep true returns ref[RedisPool] io mutable redis_pool reads redis_pool linked
+
+; A connection of this thread's pool, null when the server cannot be
+; reached. Give it back with redis_release.
+procedure redis_acquire() @page true @direct true @deep true returns ref[RedisConn]? io mutable redis_pool reads redis_pool linked
+
+; Give a connection back; one that broke is closed and its place freed.
+procedure redis_release(mutable c: ref[RedisConn]) @deep true io mutable redis_pool reads redis_pool linked

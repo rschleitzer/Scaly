@@ -1,0 +1,227 @@
+; One connection to a Redis server, speaking RESP2: a command goes out as an
+; array of bulk strings, its reply is read whole into the input buffer and
+; answered in place:
+;
+;   if c.get("item:7")        … c.value() …
+;   c.set_px("item:7", json, 1000)
+;   c.del("item:7")
+;
+; A value is a view into the input buffer, valid until the next command.
+; Everything a connection holds lives on its own page, released by close.
+
+use redis.Buf.RespBuf
+
+define RedisConn
+(
+    host: ref[Page]
+    var tcp: TcpStream
+    var inb: RespBuf
+    var outb: RespBuf
+    var open: bool
+    ; the reply of the last command: its type byte, and its line (a simple
+    ; string, an error, an integer) or bulk string as a span of inb
+    var kind: u8
+    var span_start: size_t
+    var span_length: size_t
+    ; a nil bulk string ($-1) came back
+    var nil: bool
+)
+{
+    ; Connect; null when the server cannot be reached. The connection lives
+    ; on a page of its own.
+    procedure connect(mutable host_name: String, port: int) returns ref[RedisConn]?
+    {
+        let page Page.allocate_page()
+        var tcp TcpStream.connect(host_name, port)
+        if tcp.is_open() = false
+        {
+            Page.release_page(page)
+            return null
+        }
+        tcp.set_nodelay(true)
+        &RedisConn^page(page, tcp, RespBuf.create(page, 4096), RespBuf.create(page, 1024), true, 0, 0, 0, false)
+    }
+
+    function is_open(this) returns bool
+        open
+
+    procedure close(mutable this)
+    {
+        set open: false
+        tcp.close()
+        Page.release_page(host)
+    }
+
+    ; A command of n arguments begins; each follows with arg / arg_int.
+    procedure begin(mutable this, n: i64)
+    {
+        outb.clear()
+        outb.append_byte(42)
+        outb.append_decimal(n)
+        outb.append_byte(13)
+        outb.append_byte(10)
+    }
+
+    procedure arg(mutable this, s: Slice[u8])
+    {
+        outb.append_byte(36)
+        outb.append_decimal(s.length as i64)
+        outb.append_byte(13)
+        outb.append_byte(10)
+        outb.append(s)
+        outb.append_byte(13)
+        outb.append_byte(10)
+    }
+
+    procedure arg_int(mutable this, v: i64)
+    {
+        var digits u8[24]
+        var n: size_t 0
+        var x v
+        var negative false
+        if x < 0
+        {
+            set negative: true
+            set x: (0 as i64) - x
+        }
+        repeat
+        {
+            set digits[n]: ((x % 10) as u8) + 48
+            set n: n + 1
+            set x: x / 10
+            if x = 0
+                break
+        }
+        var text u8[24]
+        var k: size_t 0
+        if negative
+        {
+            set text[0]: 45
+            set k: 1
+        }
+        while n > 0
+        {
+            set n: n - 1
+            set text[k]: digits[n]
+            set k: k + 1
+        }
+        this.arg(Slice[u8](k, &text[0]))
+    }
+
+    ; At least n bytes in inb, reading as needed.
+    procedure need(mutable this, n: size_t) returns bool
+    {
+        while inb.length < n
+        {
+            inb.reserve(n - inb.length)
+            if inb.spare().length < 1024
+                inb.reserve(4096)
+            let got tcp.read(inb.spare())
+            if got <= 0
+            {
+                set open: false
+                return false
+            }
+            inb.advance(got as size_t)
+        }
+        true
+    }
+
+    ; Where the line starting at `from` ends (its CR), reading as needed;
+    ; 0 when the stream ended.
+    procedure line_end(mutable this, from: size_t) returns size_t
+    {
+        var at from
+        repeat
+        {
+            if this.need(at + 2) = false
+                return 0
+            let b inb.bytes()
+            while at + 1 < b.length
+            {
+                if b[at] = 13 and b[at + 1] = 10
+                    return at
+                set at: at + 1
+            }
+        }
+    }
+
+    ; Send the command built with begin / arg and read its reply; false
+    ; when the connection failed (it is then closed for the pool).
+    procedure call(mutable this) returns bool
+    {
+        if open = false
+            return false
+        if tcp.write(outb.bytes()) = false
+        {
+            set open: false
+            return false
+        }
+        inb.clear()
+        set nil: false
+        let cr this.line_end(0)
+        if cr = 0
+            return false
+        let b inb.bytes()
+        set kind: b[0]
+        set span_start: 1
+        set span_length: cr - 1
+        if kind = 36
+        {
+            let n resp_decimal(b.subslice(1, cr))
+            if n < 0
+            {
+                set nil: true
+                set span_length: 0
+                return true
+            }
+            let start cr + 2
+            if this.need(start + (n as size_t) + 2) = false
+                return false
+            set span_start: start
+            set span_length: n as size_t
+        }
+        ; an array reply (none of the commands here send one) is not walked
+        true
+    }
+
+    ; The value of the last reply: a bulk string's bytes, or the text of a
+    ; simple string, an error or an integer.
+    function value(this) returns Slice[u8]
+        inb.bytes().subslice(span_start, span_start + span_length)
+
+    ; Did the last command fail at the server (an error reply)?
+    function failed(this) returns bool
+        kind = 45
+
+    ; GET key: true when it holds a value (then value()), false when it is
+    ; absent or the command failed.
+    procedure get(mutable this, key: Slice[u8]) returns bool
+    {
+        this.begin(2)
+        this.arg("GET")
+        this.arg(key)
+        this.call() and kind = 36 and nil = false
+    }
+
+    ; SET key value PX ms: false when it failed.
+    procedure set_px(mutable this, key: Slice[u8], v: Slice[u8], ms: i64) returns bool
+    {
+        this.begin(5)
+        this.arg("SET")
+        this.arg(key)
+        this.arg(v)
+        this.arg("PX")
+        this.arg_int(ms)
+        this.call() and kind = 43
+    }
+
+    ; DEL key: false when it failed (a key that was not there is no failure).
+    procedure del(mutable this, key: Slice[u8]) returns bool
+    {
+        this.begin(2)
+        this.arg("DEL")
+        this.arg(key)
+        this.call() and kind = 58
+    }
+}

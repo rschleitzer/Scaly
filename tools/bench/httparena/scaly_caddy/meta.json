@@ -1,0 +1,20 @@
+{
+  "display_name": "scaly-http + caddy",
+  "language": "Scaly",
+  "type": "experimental",
+  "engine": "scaly",
+  "mode": "standard",
+  "description": "The Scaly entry's server behind Caddy, serving HTTP/3 (QUIC) at the edge and forwarding the dynamic routes to the Scaly http package over HTTP/1.1.",
+  "repo": "https://github.com/rschleitzer/Scaly",
+  "enabled": true,
+  "completeness": {
+    "routing": true,
+    "middleware": true,
+    "request": true,
+    "response": true
+  },
+  "tests": [
+    "gateway-h3"
+  ],
+  "maintainers": []
+}

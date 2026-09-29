@@ -1,0 +1,42 @@
+# gateway-h3: Caddy (TLS, HTTP/3 and HTTP/2, /static from disk) in front of
+# the Scaly server, which answers the dynamic routes over HTTP/1.1.
+
+services:
+  proxy:
+    build: ./proxy
+    network_mode: host
+    cpuset: "0-19,64-83"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - ${CERTS_DIR}:/certs:ro
+      - ${DATA_DIR}/static:/data/static:ro
+    depends_on:
+      - server
+
+  # The Scaly entry's own image (tools/bench/httparena/build.sh builds
+  # httparena-scaly on the machine that runs it: its code is generated for
+  # that CPU), started with the first port only -- the edge holds 8443.
+  server:
+    image: httparena-scaly
+    pull_policy: never
+    command: ["/arena", "8080", "0", "0", "0"]
+    network_mode: host
+    cpuset: "20-31,84-95"
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_MAX_CONN=256
+    volumes:
+      - ${DATA_DIR}/dataset.json:/data/dataset.json:ro

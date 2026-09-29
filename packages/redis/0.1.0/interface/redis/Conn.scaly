@@ -1,0 +1,72 @@
+; One connection to a Redis server, speaking RESP2: a command goes out as an
+; array of bulk strings, its reply is read whole into the input buffer and
+; answered in place:
+;
+;   if c.get("item:7")        … c.value() …
+;   c.set_px("item:7", json, 1000)
+;   c.del("item:7")
+;
+; A value is a view into the input buffer, valid until the next command.
+; Everything a connection holds lives on its own page, released by close.
+
+use redis.Buf.RespBuf
+
+define RedisConn
+(
+    host: ref[Page]
+    var tcp: TcpStream
+    var inb: RespBuf
+    var outb: RespBuf
+    var open: bool
+    ; the reply of the last command: its type byte, and its line (a simple
+    ; string, an error, an integer) or bulk string as a span of inb
+    var kind: u8
+    var span_start: size_t
+    var span_length: size_t
+    ; a nil bulk string ($-1) came back
+    var nil: bool
+)
+{
+    ; Connect; null when the server cannot be reached. The connection lives
+    ; on a page of its own.
+    procedure connect(mutable host_name: String, port: int) @deep true returns ref[RedisConn]? io linked
+
+    function is_open(this) @ret_param_0 true @deep true returns bool linked
+
+    procedure close(mutable this) @ret_nonlocal true @deep true io linked
+
+    ; A command of n arguments begins; each follows with arg / arg_int.
+    procedure begin(mutable this, n: i64) @ret_nonlocal true @deep true linked
+
+    procedure arg(mutable this, s: Slice[u8]) @ret_nonlocal true @deep true linked
+
+    procedure arg_int(mutable this, v: i64) @ret_nonlocal true @deep true linked
+
+    ; At least n bytes in inb, reading as needed.
+    procedure need(mutable this, n: size_t) @ret_nonlocal true @deep true returns bool io linked
+
+    ; Where the line starting at `from` ends (its CR), reading as needed;
+    ; 0 when the stream ended.
+    procedure line_end(mutable this, from: size_t) @ret_nonlocal true @deep true returns size_t io linked
+
+    ; Send the command built with begin / arg and read its reply; false
+    ; when the connection failed (it is then closed for the pool).
+    procedure call(mutable this) @ret_nonlocal true @deep true returns bool io linked
+
+    ; The value of the last reply: a bulk string's bytes, or the text of a
+    ; simple string, an error or an integer.
+    function value(this) @ret_param_0 true @deep true returns Slice[u8] linked
+
+    ; Did the last command fail at the server (an error reply)?
+    function failed(this) @ret_param_0 true @deep true returns bool linked
+
+    ; GET key: true when it holds a value (then value()), false when it is
+    ; absent or the command failed.
+    procedure get(mutable this, key: Slice[u8]) @ret_nonlocal true @deep true returns bool io linked
+
+    ; SET key value PX ms: false when it failed.
+    procedure set_px(mutable this, key: Slice[u8], v: Slice[u8], ms: i64) @ret_nonlocal true @deep true returns bool io linked
+
+    ; DEL key: false when it failed (a key that was not there is no failure).
+    procedure del(mutable this, key: Slice[u8]) @ret_nonlocal true @deep true returns bool io linked
+}

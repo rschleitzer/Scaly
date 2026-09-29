@@ -189,6 +189,13 @@ define Response
         }
         else
         {
+            ; a 204 carries no body and may not name one (RFC 9110 8.6)
+            if status = 204
+            {
+                out.append("\r\n")
+                set sent: true
+                return
+            }
             if encoding.length > 0
             {
                 out.append("Content-Encoding: ")
