@@ -9,7 +9,11 @@
 ;   grow     4 KB of output: the buffer outgrows the bump range into its
 ;            own page
 ;   string   quote and stringify, the StringBuilder forms: the same text
-; Expected: build escape integer round grow string done
+;   blocks   the in-place path around its 16-byte steps: every length 0 to
+;            40, plain and with a quote, a backslash, a line feed or 0x01 at
+;            every position, and a two-byte UTF-8 character -- the same text
+;            as the StringBuilder form, in a writer that already holds text
+; Expected: build escape integer round grow string blocks done
 
 package scaly 0.1.0
 package json 0.1.0
@@ -17,6 +21,9 @@ package json 0.1.0
 use json.Value.JsonValue
 use json.Value.JsonParsed
 use json.Writer.JsonWriter
+
+; the blocks case's bytes: a plain one, then the ones that need care
+define SPECIALS: u8[] [0x61, 0x22, 0x5C, 0x0A, 0x01, 0xC3]
 
 procedure same(w: ref[JsonWriter], want: Slice[u8]) returns bool
 {
@@ -142,6 +149,58 @@ if JsonWriter.stringify(parsed.value).equals(canonical) = false
     set ok: false
 if ok
     Console.print "string "
+
+var blocks_ok true
+var n: size_t 0
+while n <= 40
+{
+    var at: size_t 0
+    while at <= n
+    {
+        var k: size_t 0
+        while k < 6
+        {
+            ; n bytes of 'b' with SPECIALS[k] at `at` (none when at = n);
+            ; 0xC3 is followed by 0xA9, a whole character
+            var sb StringBuilder()
+            var j: size_t 0
+            while j < n
+            {
+                if j = at
+                {
+                    sb.append(SPECIALS[k] as char)
+                    if SPECIALS[k] = 0xC3
+                        sb.append(0xA9 as char)
+                }
+                else
+                    sb.append("b")
+                set j: j + 1
+            }
+            let text sb.to_string()
+            var w JsonWriter()
+            w.begin_array()
+            w.text("x".as_slice())
+            w.text(text.as_slice())
+            w.end_array()
+            var want StringBuilder()
+            want.append("[\"x\",")
+            want.append(JsonWriter.quote(text.as_slice()))
+            want.append("]")
+            if w.to_string().equals(want.to_string()) = false
+            {
+                print "  blocks: length `n`, special `k` at `at`: `w.to_string()`"
+                set blocks_ok: false
+            }
+            set k: k + 1
+        }
+        set at: at + 1
+    }
+    set n: n + 1
+}
+if blocks_ok = false
+    set ok: false
+if ok
+    Console.print "blocks "
 
 if ok
     Console.print "done"

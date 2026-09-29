@@ -199,43 +199,63 @@ define JsonWriter
             this.byte(0x2C)                                 ; ','
     }
 
+    ; The string and its quotes written in place in one pass: the buffer is
+    ; extended by the whole literal first, and sixteen bytes a step are
+    ; stored and checked together. At the first byte that needs an escape
+    ; the buffer is cut back to it, and the rest goes byte by byte.
     procedure quoted(mutable this, s: Slice[u8])
     {
-        this.byte(0x22)
-        let src s
-        let n src.length
+        let n s.length
+        let start buffer.length
+        let out buffer.extend(n + 2)
+        out.put(0, 0x22)
         let quote u8x16.splat(0x22)
         let back u8x16.splat(0x5C)
         let space u8x16.splat(0x20)
         var i: size_t 0
+        while i + 16 <= n
+        {
+            let v u8x16.load(s, i)
+            v.store(out, i + 1)
+            let special ((v = quote) or (v = back) or (v < space)).bits()
+            if special <> 0
+            {
+                set i: i + (trailing_zeros(special) as size_t)
+                break
+            }
+            set i: i + 16
+        }
+        while i < n and JsonWriter.plain(s[i])
+        {
+            out.put(i + 1, s[i])
+            set i: i + 1
+        }
+        if i = n
+        {
+            out.put(n + 1, 0x22)
+            return
+        }
+        ; an escape at i: what stands before it stays
+        set buffer.length: start + 1 + i
+        this.quoted_rest(s, i)
+    }
+
+    ; The rest of a string from its first byte that needs an escape, and the
+    ; closing quote: runs of plain bytes in one copy.
+    procedure quoted_rest(mutable this, s: Slice[u8], from: size_t)
+    {
+        let n s.length
+        var i from
         while i < n
         {
-            ; the run of bytes that need no escape, found sixteen at a time,
-            ; then copied in one piece
             var j i
-            var found false
-            while found = false and j + 16 <= n
-            {
-                let v u8x16.load(src, j)
-                let special ((v = quote) or (v = back) or (v < space)).bits()
-                if special <> 0
-                {
-                    set j: j + (trailing_zeros(special) as size_t)
-                    set found: true
-                }
-                else
-                    set j: j + 16
-            }
-            if found = false
-            {
-                while j < n and JsonWriter.plain(src[j])
-                    set j: j + 1
-            }
+            while j < n and JsonWriter.plain(s[j])
+                set j: j + 1
             if j > i
-                this.append(src.subslice(i, j))
+                this.append(s.subslice(i, j))
             if j >= n
                 break
-            this.escape(src[j])
+            this.escape(s[j])
             set i: j + 1
         }
         this.byte(0x22)

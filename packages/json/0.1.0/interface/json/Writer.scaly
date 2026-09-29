@@ -70,7 +70,15 @@ define JsonWriter
     ; The comma before an element that is not its container's first.
     procedure separate(mutable this) @deep true linked
 
-    procedure quoted(mutable this, s: Slice[u8]) @ret_nonlocal true @deep true linked
+    ; The string and its quotes written in place in one pass: the buffer is
+    ; extended by the whole literal first, and sixteen bytes a step are
+    ; stored and checked together. At the first byte that needs an escape
+    ; the buffer is cut back to it, and the rest goes byte by byte.
+    procedure quoted(mutable this, s: Slice[u8]) @deep true linked
+
+    ; The rest of a string from its first byte that needs an escape, and the
+    ; closing quote: runs of plain bytes in one copy.
+    procedure quoted_rest(mutable this, s: Slice[u8], from: size_t) @ret_nonlocal true @deep true linked
 
     function plain(c: u8) @ret_nonlocal true @deep true returns bool linked
 

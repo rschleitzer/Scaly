@@ -141,9 +141,47 @@ define Array[T]
         if new_length < length
             scaly_panic_size("Array.add", n, length)
 
-        let size sizeof T
         if (buffer = null) || (new_length > capacity)
-            this.reallocate()
+            this.grow_to(new_length)
+
+        ; ★`buffer` is a `pointer[T]`, so `+` STRIDES BY sizeof T — the
+        ; destination is `buffer + length`, not `buffer + length * size`. The old
+        ; spelling multiplied the stride in a second time and so was correct
+        ; ONLY for a one-byte element; every caller in the tree was a
+        ; `Vector[char]` from StringBuilder, which is why it survived. The
+        ; single-element `add` two functions up has always had it right
+        ; (`let location buffer + length`). Found 2026-08-08 by the first
+        ; caller with a wider element (opensp's follow sets, pointer[CmNode]):
+        ; an instant SIGSEGV, since the write lands sizeof-T times too far out.
+        if n > 0
+            memcpy(buffer + length, items_data, n * sizeof T)
+
+        set length: length + n
+    }
+
+    ; n more elements at the end, answered as a view for the caller to fill:
+    ; one capacity check and no copy, for a producer that writes its elements
+    ; in place (the json writer's strings, 2026-09-29). The elements are NOT
+    ; initialized -- every one is written through the view before anything
+    ; reads it, or the length is set back.
+    procedure extend(mutable this: Array[T], n: size_t) returns Slice[T]
+    {
+        let at length
+        let new_length at + n
+        if new_length < at
+            scaly_panic_size("Array.extend", n, at)
+        if (buffer = null) || (new_length > capacity)
+            this.grow_to(new_length)
+        set length: new_length
+        Slice[T](n, buffer + at)
+    }
+
+    ; Room for new_length elements (the growth of add_run and extend; the
+    ; callers test first, so the common case makes no call).
+    procedure grow_to(mutable this: Array[T], new_length: size_t)
+    {
+        let size sizeof T
+        this.reallocate()
 
         if new_length > capacity
         {
@@ -169,20 +207,6 @@ define Array[T]
                 own_page.deallocate_exclusive_page old_exclusive_page
             }
         }
-
-        ; ★`buffer` is a `pointer[T]`, so `+` STRIDES BY sizeof T — the
-        ; destination is `buffer + length`, not `buffer + length * size`. The old
-        ; spelling multiplied the stride in a second time and so was correct
-        ; ONLY for a one-byte element; every caller in the tree was a
-        ; `Vector[char]` from StringBuilder, which is why it survived. The
-        ; single-element `add` two functions up has always had it right
-        ; (`let location buffer + length`). Found 2026-08-08 by the first
-        ; caller with a wider element (opensp's follow sets, pointer[CmNode]):
-        ; an instant SIGSEGV, since the write lands sizeof-T times too far out.
-        if n > 0
-            memcpy(buffer + length, items_data, n * size)
-
-        set length: length + n
     }
 
     function get(this: Array[T], i: size_t) returns ref[T]?
