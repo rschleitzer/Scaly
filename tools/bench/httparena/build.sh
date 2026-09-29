@@ -5,8 +5,8 @@
 #
 # The Docker build context is staged from the WORKING TREE, not the whole
 # repository (the test corpora alone are gigabytes): the seed, the tools the
-# seed build calls, the scaly/scalyc/http/json/compress packages and the arena and trainer
-# programs. To run it under HttpArena's own scripts, put a frameworks/scaly/
+# seed build calls, the scaly/scalyc/http/json/compress/tls/https packages and
+# the arena and trainer programs. To run it under HttpArena's own scripts, put a frameworks/scaly/
 # directory in an HttpArena checkout holding meta.json and a build.sh that
 # calls this one:
 #
@@ -35,7 +35,7 @@ mkdir -p "$CTX/packages" "$CTX/tools/bench/http" "$CTX/pgo"
 cp -R seed "$CTX/"
 # the tools directory without the benchmark programs and their build output
 ( cd tools && find . -maxdepth 1 -type f -exec cp {} "$CTX/tools/" \; )
-cp -R packages/scaly packages/scalyc packages/http packages/json packages/compress "$CTX/packages/"
+cp -R packages/scaly packages/scalyc packages/http packages/json packages/compress packages/tls packages/https "$CTX/packages/"
 cp tools/bench/http/arena.scaly tools/bench/http/train.scaly "$CTX/tools/bench/http/"
 rm -f "$CTX"/seed/r_*.ll
 if [ "${SCALY_PGO:-1}" != 0 ]; then

@@ -10,7 +10,12 @@
 ;   GET      /shutdown           ends the server (only with SCALY_ARENA_TRAIN set,
 ;                                the PGO training run)
 ;
-;   arena [port]                 (default 8080)
+;   arena [port [tls-port]]      (default 8080, 8081)
+;
+; The same routes answer over TLS 1.3 on the tls port (json-tls, stage D),
+; with the certificate and key the harness mounts (/certs/server.crt and
+; /certs/server.key, else TLS_CERT and TLS_KEY); without a readable pair the
+; tls port stays closed.
 ;
 ; The dataset (DATASET_PATH, default /data/dataset.json) is read ONCE, parsed
 ; with the json package into records, and serialized per request by a
@@ -21,6 +26,8 @@ package scaly 0.1.0
 package http 0.1.0
 package json 0.1.0
 package compress 0.1.0
+package tls 0.1.0
+package https 0.1.0
 
 use http.Request.Request
 use http.Response.Response
@@ -28,6 +35,7 @@ use http.Router.Router
 use json.Value.JsonValue
 use json.Value.JsonParsed
 use json.Writer.JsonWriter
+use tls.Tls.TlsContext
 
 ; One dataset entry, as the benchmark's validation reads it back.
 define Item
@@ -193,6 +201,9 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
     var port 8080
     if argc > 1
         set port: parse_int_prefix(String(*(argv + 1)).as_slice()) as int
+    var tls_port 8081
+    if argc > 2
+        set tls_port: parse_int_prefix(String(*(argv + 2)).as_slice()) as int
     let data_host Page.allocate_page()
     var path String("/data/dataset.json")
     let env_path getenv("DATASET_PATH")
@@ -207,6 +218,24 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
     app.get("/json/{count}", &json_items)
     if getenv("SCALY_ARENA_TRAIN") <> null
         app.get("/shutdown", &shutdown)
+    var cert String("/certs/server.crt")
+    var key String("/certs/server.key")
+    let env_cert getenv("TLS_CERT")
+    let env_key getenv("TLS_KEY")
+    if env_cert <> null and env_key <> null
+    {
+        set cert: String(env_cert)
+        set key: String(env_key)
+    }
+    let context TlsContext.server(cert, key)
+    if context.valid()
+    {
+        let tl TcpListener.listen_any(tls_port)
+        if tl.is_open()
+            https.Server.start(app, tl, context)
+        else
+            print "arena: cannot listen on port `tls_port`"
+    }
     if serve(app, port) = false
     {
         print "arena: cannot listen on port `port`"
