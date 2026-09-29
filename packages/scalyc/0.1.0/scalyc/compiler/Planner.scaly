@@ -25167,7 +25167,11 @@ define Planner
                 }
             }
 
-            var cond_holder Vector[PlannedOperand](planned_cond)
+            ; the COLLAPSED scrutinee: the emitter compares one operand, and
+            ; with the raw run `match i & 3` compared `i` (2026-09-29, the
+            ; http package's WebSocket test client; match_operator_scrutinee)
+            var cond_holder Vector[PlannedOperand](1)
+            cond_holder.put(0, collapsed_cond)
             var branches_holder Vector[PlannedBranch](branches_arr)
             PlannedMatch(m.span, &cond_holder, &branches_holder, alternative_ref)
         }

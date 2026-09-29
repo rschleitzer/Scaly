@@ -1,0 +1,25 @@
+; Regression (2026-09-29): a match whose scrutinee is an expression compared
+; only its FIRST operand: `match i & 3` matched `i`, the `& 3` dropped at
+; rc 0 (lane(5) answered 0). plan_match# collapsed the run to type it and
+; then stored the raw run, of which the emitter reads one operand.
+
+function lane(i: int) returns int
+{
+    var k 0
+    match i & 3
+        case 1: set k: 10
+        case 2: set k: 20
+    k
+}
+
+function parity(n: int) returns int
+{
+    match n % 2
+        case 0: return 100
+    7
+}
+
+if lane(5) = 10 and lane(6) = 20 and lane(4) = 0 and parity(4) = 100 and parity(3) = 7
+    print "PASS"
+else
+    print "FAIL"
