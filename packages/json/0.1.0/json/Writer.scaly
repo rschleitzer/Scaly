@@ -149,7 +149,13 @@ define JsonWriter
             when num: Number
                 this.number(num.text)
             when t: Text
-                this.text(t.bytes)
+            {
+                this.separate()
+                if t.verbatim
+                    this.verbatim(t.bytes)
+                else
+                    this.quoted(t.bytes)
+            }
             when a: Array
             {
                 this.begin_array()
@@ -168,7 +174,13 @@ define JsonWriter
                 while i < o.members.length
                 {
                     let m o.members[i]
-                    this.key(m.key)
+                    this.separate()
+                    if m.verbatim_key
+                        this.verbatim(m.key)
+                    else
+                        this.quoted(m.key)
+                    this.byte(0x3A)                         ; ':'
+                    set after_key: true
                     this.value(m.value)
                     set i: i + 1
                 }
@@ -197,6 +209,28 @@ define JsonWriter
             set first: false
         else
             this.byte(0x2C)                                 ; ','
+    }
+
+    ; A string parse marked verbatim, with its quotes: sixteen bytes a step
+    ; and no look at them. The last step reads up to fifteen bytes past the
+    ; string, which the document copy's padding holds, and writes as far
+    ; past the quotes, which the buffer is extended by and cut back from.
+    procedure verbatim(mutable this, s: Slice[u8])
+    {
+        let n s.length
+        let start buffer.length
+        let out buffer.extend(n + 17)
+        out.put(0, 0x22)
+        ; the view with its padding (JSON_PADDING)
+        let padded Slice[u8](n + 16, s.data)
+        var i: size_t 0
+        while i < n
+        {
+            u8x16.load(padded, i).store(out, i + 1)
+            set i: i + 16
+        }
+        out.put(n + 1, 0x22)
+        set buffer.length: start + n + 2
     }
 
     ; The string and its quotes written in place in one pass: the buffer is

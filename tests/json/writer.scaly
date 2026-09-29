@@ -13,7 +13,11 @@
 ;            40, plain and with a quote, a backslash, a line feed or 0x01 at
 ;            every position, and a two-byte UTF-8 character -- the same text
 ;            as the StringBuilder form, in a writer that already holds text
-; Expected: build escape integer round grow string blocks done
+;   verbatim parsed strings written back unlooked-at, sixteen bytes a step:
+;            every length 0 to 40 as the whole document (its last byte is
+;            the document's, the step reads into the padding), in an array
+;            and as a member name -- byte for byte the source
+; Expected: build escape integer round grow string blocks verbatim done
 
 package scaly 0.1.0
 package json 0.1.0
@@ -201,6 +205,47 @@ if blocks_ok = false
     set ok: false
 if ok
     Console.print "blocks "
+
+var verbatim_ok true
+set n: 0
+while n <= 40
+{
+    var body StringBuilder()
+    var j: size_t 0
+    while j < n
+    {
+        ; bytes that differ, so a step that lands wrong shows
+        body.append(((0x61 + (j % 26)) as u8) as char)
+        set j: j + 1
+    }
+    let b body.to_string()
+    var k: size_t 0
+    while k < 3
+    {
+        var doc StringBuilder()
+        if k = 0
+            doc.append("\"`b`\"")
+        if k = 1
+            doc.append("[\"`b`\",\"`b`\"]")
+        if k = 2
+            doc.append("{\"`b`\":\"`b`\"}")
+        let source doc.to_string()
+        let parsed JsonValue.parse(source.as_slice())
+        var w JsonWriter()
+        w.value(parsed.value)
+        if parsed.ok() = false or w.to_string().equals(source) = false
+        {
+            print "  verbatim: length `n` form `k`: `w.to_string()`"
+            set verbatim_ok: false
+        }
+        set k: k + 1
+    }
+    set n: n + 1
+}
+if verbatim_ok = false
+    set ok: false
+if ok
+    Console.print "verbatim "
 
 if ok
     Console.print "done"

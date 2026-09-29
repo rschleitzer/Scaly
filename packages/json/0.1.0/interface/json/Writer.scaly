@@ -70,6 +70,12 @@ define JsonWriter
     ; The comma before an element that is not its container's first.
     procedure separate(mutable this) @deep true linked
 
+    ; A string parse marked verbatim, with its quotes: sixteen bytes a step
+    ; and no look at them. The last step reads up to fifteen bytes past the
+    ; string, which the document copy's padding holds, and writes as far
+    ; past the quotes, which the buffer is extended by and cut back from.
+    procedure verbatim(mutable this, s: Slice[u8]) @deep true linked
+
     ; The string and its quotes written in place in one pass: the buffer is
     ; extended by the whole literal first, and sixteen bytes a step are
     ; stored and checked together. At the first byte that needs an escape

@@ -27,7 +27,13 @@ function strtod(s: pointer[const_char], endp: pointer[pointer[u8]]) returns f64 
 ; memcpy(3): the document's copy
 procedure memcpy(mutable dest: pointer[void], src: pointer[void], count: size_t) returns pointer[void] extern
 
-define JsonMember (key: Slice[u8], value: JsonValue)
+; How many bytes a parse's document copy carries past its end: a VERBATIM
+; string (below) may be read that far past any of its bytes, so the writer
+; copies it sixteen bytes a step with no loop for its tail.
+define JSON_PADDING: size_t 16
+
+; A member; verbatim_key as JsonString.verbatim, for the name.
+define JsonMember (key: Slice[u8], value: JsonValue, verbatim_key: bool)
 
 ; Where a parse puts its copy of the document and the buffers of its closed
 ; containers: the page this record lives on, which is the parse's caller
@@ -42,7 +48,9 @@ define JsonArena
 {
     init() linked
 
-    procedure keep_bytes(mutable this, items: Slice[u8]) @page true @direct true @deep true returns Slice[u8] linked
+    ; The document's copy, with JSON_PADDING zero bytes past its end (the
+    ; answer's length is the document's).
+    procedure keep_document(mutable this, items: Slice[u8]) @page true @direct true @deep true returns Slice[u8] linked
 
     procedure keep_values(mutable this, items: Slice[JsonValue]) @page true @direct true @deep true returns Slice[JsonValue] linked
 
@@ -55,7 +63,11 @@ define JsonArray (items: Slice[JsonValue])
 define JsonObject (members: Slice[JsonMember])
 ; a number's text and a string's decoded bytes, views into the document copy
 define JsonNumber (text: Slice[u8])
-define JsonString (bytes: Slice[u8])
+; verbatim: set by parse alone, for a string that had no escape -- its bytes
+; need none on the way out (a raw quote, backslash or control character
+; cannot be in them), and they lie in a document copy padded by JSON_PADDING.
+; The writer copies such a string without looking at it (yyjson's trick).
+define JsonString (bytes: Slice[u8], verbatim: bool)
 
 define JsonValue union
 (

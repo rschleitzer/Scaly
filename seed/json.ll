@@ -13,14 +13,14 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z5SliceIcE = type { i64, ptr }
 %_Z13SliceIteratorIcE = type { %_Z5SliceIcE, i64 }
 %_Z5SliceI10JsonMemberE = type { i64, ptr }
-%_Z10JsonMember = type { %_Z5SliceI2u8E, %_Z9JsonValue }
-%_Z9JsonValue = type { i8, <{ [2 x i64], [0 x i8] }> }
+%_Z10JsonMember = type { %_Z5SliceI2u8E, %_Z9JsonValue, i1 }
+%_Z9JsonValue = type { i8, <{ [3 x i64], [0 x i8] }> }
 %_Z13SliceIteratorI10JsonMemberE = type { %_Z5SliceI10JsonMemberE, i64 }
 %_Z5SliceI9JsonValueE = type { i64, ptr }
 %_Z13SliceIteratorI9JsonValueE = type { %_Z5SliceI9JsonValueE, i64 }
 %_Z9JsonArena = type { i8 }
 %_Z10JsonNumber = type { %_Z5SliceI2u8E }
-%_Z10JsonString = type { %_Z5SliceI2u8E }
+%_Z10JsonString = type { %_Z5SliceI2u8E, i1 }
 %_Z9JsonArray = type { %_Z5SliceI9JsonValueE }
 %_Z10JsonObject = type { %_Z5SliceI10JsonMemberE }
 %_Z6VectorI2u8E = type { i64, ptr }
@@ -78,6 +78,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 @"11STAGE_VALUE" = internal constant i64 0
 @"9STAGE_KEY" = internal constant i64 1
 @"14STAGE_COMPLETE" = internal constant i64 2
+@"12JSON_PADDING" = internal constant i64 16
 @.str = private unnamed_addr constant [9 x i8] c"Slice.at\00", align 1
 @.str.1 = private unnamed_addr constant [10 x i8] c"Slice.put\00", align 1
 @.str.2 = private unnamed_addr constant [8 x i8] c"Slice[]\00", align 1
@@ -143,11 +144,13 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 @.str.61 = private unnamed_addr constant [5 x i8] c"null\00", align 1
 @.simd.mem.62 = private unnamed_addr constant [10 x i8] c"SIMD load\00", align 1
 @.simd.mem.63 = private unnamed_addr constant [11 x i8] c"SIMD store\00", align 1
-@.str.64 = private unnamed_addr constant [4 x i8] c"u00\00", align 1
+@.simd.mem.64 = private unnamed_addr constant [10 x i8] c"SIMD load\00", align 1
+@.simd.mem.65 = private unnamed_addr constant [11 x i8] c"SIMD store\00", align 1
+@.str.66 = private unnamed_addr constant [4 x i8] c"u00\00", align 1
 @.sconst = private constant [5 x i8] c"\03u00\00"
-@.sconst.65 = private constant [6 x i8] c"\04null\00"
-@.sconst.66 = private constant [6 x i8] c"\04true\00"
-@.sconst.67 = private constant [7 x i8] c"\05false\00"
+@.sconst.67 = private constant [6 x i8] c"\04null\00"
+@.sconst.68 = private constant [6 x i8] c"\04true\00"
+@.sconst.69 = private constant [7 x i8] c"\05false\00"
 
 declare ptr @memcpy(...)
 
@@ -3927,28 +3930,59 @@ entry:
   ret %_Z5SliceI2u8E %tuple.val
 }
 
-define linkonce_odr void @_ZN9JsonArena10keep_bytesEPN4scaly6memory4PageE5SliceI2u8E(ptr noalias sret(%_Z5SliceI2u8E) %0, ptr %1, ptr %2, ptr %3) {
+define linkonce_odr void @_ZN9JsonArena13keep_documentEPN4scaly6memory4PageE5SliceI2u8E(ptr noalias sret(%_Z5SliceI2u8E) %0, ptr %1, ptr %2, ptr %3) {
 entry:
+  %arg.tmp14 = alloca %_Z5SliceI2u8E, align 8
+  %sret.result = alloca %_Z5SliceI2u8E, align 8
+  %arg.tmp = alloca %_Z5SliceI2u8E, align 8
+  %i = alloca i64, align 8
   %call = call ptr @_ZN4Page3getEPv(ptr %2)
-  %field.inplace = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %3, i32 0, i32 0
-  %field.val = load i64, ptr %field.inplace, align 8
-  %call1 = call %_Z5SliceI2u8E @_Z17allocate_slice2u8R4Pagem(ptr %call, i64 %field.val)
   %load.struct = load %_Z5SliceI2u8E, ptr %3, align 8
   %length = extractvalue %_Z5SliceI2u8E %load.struct, 0
-  %gt = icmp ugt i64 %length, 0
+  %add = add i64 %length, 16
+  %call1 = call %_Z5SliceI2u8E @_Z17allocate_slice2u8R4Pagem(ptr %call, i64 %add)
+  %load.struct2 = load %_Z5SliceI2u8E, ptr %3, align 8
+  %length3 = extractvalue %_Z5SliceI2u8E %load.struct2, 0
+  %gt = icmp ugt i64 %length3, 0
   br i1 %gt, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   %data = extractvalue %_Z5SliceI2u8E %call1, 1
-  %load.struct2 = load %_Z5SliceI2u8E, ptr %3, align 8
-  %data3 = extractvalue %_Z5SliceI2u8E %load.struct2, 1
-  %field.inplace4 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %3, i32 0, i32 0
-  %field.val5 = load i64, ptr %field.inplace4, align 8
-  %call6 = call ptr @memcpy(ptr %data, ptr %data3, i64 %field.val5)
+  %load.struct4 = load %_Z5SliceI2u8E, ptr %3, align 8
+  %data5 = extractvalue %_Z5SliceI2u8E %load.struct4, 1
+  %field.inplace = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %3, i32 0, i32 0
+  %field.val = load i64, ptr %field.inplace, align 8
+  %call6 = call ptr @memcpy(ptr %data, ptr %data5, i64 %field.val)
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %entry
-  store %_Z5SliceI2u8E %call1, ptr %0, align 1
+  %load.struct7 = load %_Z5SliceI2u8E, ptr %3, align 8
+  %length8 = extractvalue %_Z5SliceI2u8E %load.struct7, 0
+  store i64 %length8, ptr %i, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %while.body, %if.end
+  %i9 = load i64, ptr %i, align 8
+  %length10 = extractvalue %_Z5SliceI2u8E %call1, 0
+  %lt = icmp ult i64 %i9, %length10
+  br i1 %lt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  store %_Z5SliceI2u8E %call1, ptr %arg.tmp, align 1
+  %i11 = load i64, ptr %i, align 8
+  call void @_ZN5SliceI2u8E3putEm2u8(ptr %arg.tmp, i64 %i11, i8 0)
+  %i12 = load i64, ptr %i, align 8
+  %add13 = add i64 %i12, 1
+  store i64 %add13, ptr %i, align 1
+  br label %while.cond
+
+while.exit:                                       ; preds = %while.cond
+  store %_Z5SliceI2u8E %call1, ptr %arg.tmp14, align 1
+  %field.inplace15 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %3, i32 0, i32 0
+  %field.val16 = load i64, ptr %field.inplace15, align 8
+  call void @_ZN5SliceI2u8E8subsliceEmm(ptr noalias sret(%_Z5SliceI2u8E) %sret.result, ptr %arg.tmp14, i64 0, i64 %field.val16)
+  %sret.body = load %_Z5SliceI2u8E, ptr %sret.result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
   ret void
 }
 
@@ -9914,43 +9948,43 @@ if.end:                                           ; preds = %if.then, %entry
 
 define linkonce_odr void @_ZN9JsonValue5parseEPN4scaly6memory4PageE5SliceI2u8E(ptr noalias sret(%_Z10JsonParsed) %0, ptr %1, ptr %2) {
 entry:
-  %tuple461 = alloca %_Z10JsonParsed, align 8
-  %variant.ptr456 = alloca %_Z9JsonValue, align 8
-  %tuple437 = alloca %_Z9JsonArray, align 8
-  %variant.ptr435 = alloca %_Z9JsonValue, align 8
-  %sret.result428 = alloca %_Z5SliceI9JsonValueE, align 8
-  %sret.result427 = alloca %_Z5SliceI9JsonValueE, align 8
-  %sret.result425 = alloca %_Z5SliceI9JsonValueE, align 8
-  %tuple413 = alloca %_Z10JsonObject, align 8
-  %variant.ptr411 = alloca %_Z9JsonValue, align 8
-  %sret.result406 = alloca %_Z5SliceI10JsonMemberE, align 8
-  %sret.result405 = alloca %_Z5SliceI10JsonMemberE, align 8
-  %sret.result403 = alloca %_Z5SliceI10JsonMemberE, align 8
-  %arg.tmp381 = alloca %_Z10JsonMember, align 8
-  %tuple377 = alloca %_Z10JsonMember, align 8
-  %sret.result373 = alloca %_Z10JsonMember, align 8
-  %variant.ptr326 = alloca %_Z9JsonValue, align 8
-  %arg.tmp321 = alloca %_Z5SliceI2u8E, align 8
-  %tuple317 = alloca %_Z5SliceI2u8E, align 8
-  %variant.ptr309 = alloca %_Z9JsonValue, align 8
-  %arg.tmp304 = alloca %_Z5SliceI2u8E, align 8
-  %tuple300 = alloca %_Z5SliceI2u8E, align 8
-  %variant.ptr292 = alloca %_Z9JsonValue, align 8
-  %arg.tmp287 = alloca %_Z5SliceI2u8E, align 8
-  %tuple283 = alloca %_Z5SliceI2u8E, align 8
-  %tuple273 = alloca %_Z10JsonNumber, align 8
-  %sret.result270 = alloca %_Z5SliceI2u8E, align 8
-  %variant.ptr268 = alloca %_Z9JsonValue, align 8
-  %sret.result256 = alloca %_Z8JsonScan, align 8
-  %tuple241 = alloca %_Z10JsonString, align 8
-  %variant.ptr236 = alloca %_Z9JsonValue, align 8
-  %sret.result209 = alloca %_Z8JsonScan, align 8
-  %tuple172 = alloca %_Z9JsonArray, align 8
-  %variant.ptr170 = alloca %_Z9JsonValue, align 8
-  %tuple151 = alloca %_Z10JsonObject, align 8
-  %variant.ptr149 = alloca %_Z9JsonValue, align 8
+  %tuple472 = alloca %_Z10JsonParsed, align 8
+  %variant.ptr467 = alloca %_Z9JsonValue, align 8
+  %tuple448 = alloca %_Z9JsonArray, align 8
+  %variant.ptr446 = alloca %_Z9JsonValue, align 8
+  %sret.result439 = alloca %_Z5SliceI9JsonValueE, align 8
+  %sret.result438 = alloca %_Z5SliceI9JsonValueE, align 8
+  %sret.result436 = alloca %_Z5SliceI9JsonValueE, align 8
+  %tuple424 = alloca %_Z10JsonObject, align 8
+  %variant.ptr422 = alloca %_Z9JsonValue, align 8
+  %sret.result417 = alloca %_Z5SliceI10JsonMemberE, align 8
+  %sret.result416 = alloca %_Z5SliceI10JsonMemberE, align 8
+  %sret.result414 = alloca %_Z5SliceI10JsonMemberE, align 8
+  %arg.tmp392 = alloca %_Z10JsonMember, align 8
+  %tuple387 = alloca %_Z10JsonMember, align 8
+  %sret.result381 = alloca %_Z10JsonMember, align 8
+  %variant.ptr335 = alloca %_Z9JsonValue, align 8
+  %arg.tmp330 = alloca %_Z5SliceI2u8E, align 8
+  %tuple326 = alloca %_Z5SliceI2u8E, align 8
+  %variant.ptr318 = alloca %_Z9JsonValue, align 8
+  %arg.tmp313 = alloca %_Z5SliceI2u8E, align 8
+  %tuple309 = alloca %_Z5SliceI2u8E, align 8
+  %variant.ptr301 = alloca %_Z9JsonValue, align 8
+  %arg.tmp296 = alloca %_Z5SliceI2u8E, align 8
+  %tuple292 = alloca %_Z5SliceI2u8E, align 8
+  %tuple282 = alloca %_Z10JsonNumber, align 8
+  %sret.result279 = alloca %_Z5SliceI2u8E, align 8
+  %variant.ptr277 = alloca %_Z9JsonValue, align 8
+  %sret.result265 = alloca %_Z8JsonScan, align 8
+  %tuple249 = alloca %_Z10JsonString, align 8
+  %variant.ptr240 = alloca %_Z9JsonValue, align 8
+  %sret.result213 = alloca %_Z8JsonScan, align 8
+  %tuple176 = alloca %_Z9JsonArray, align 8
+  %variant.ptr174 = alloca %_Z9JsonValue, align 8
+  %tuple155 = alloca %_Z10JsonObject, align 8
+  %variant.ptr153 = alloca %_Z9JsonValue, align 8
   %arg.tmp = alloca %_Z10JsonMember, align 8
-  %tuple107 = alloca %_Z10JsonMember, align 8
+  %tuple110 = alloca %_Z10JsonMember, align 8
   %sret.result88 = alloca %_Z5SliceI2u8E, align 8
   %sret.result69 = alloca %_Z8JsonScan, align 8
   %close = alloca ptr, align 8
@@ -9987,7 +10021,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN9JsonArenaC1Ev(ptr %struct.region)
   store ptr %struct.region, ptr %arena, align 1
   %arena2 = load ptr, ptr %arena, align 8
-  call void @_ZN9JsonArena10keep_bytesEPN4scaly6memory4PageE5SliceI2u8E(ptr noalias sret(%_Z5SliceI2u8E) %sret.result, ptr null, ptr %arena2, ptr %2)
+  call void @_ZN9JsonArena13keep_documentEPN4scaly6memory4PageE5SliceI2u8E(ptr noalias sret(%_Z5SliceI2u8E) %sret.result, ptr null, ptr %arena2, ptr %2)
   store ptr %sret.result, ptr %doc, align 1
   %load.struct = load %_Z5SliceI2u8E, ptr %2, align 8
   %length = extractvalue %_Z5SliceI2u8E %load.struct, 0
@@ -10071,15 +10105,15 @@ frame.forced25:                                   ; preds = %frame.force24, %fra
   store i64 0, ptr %error_at, align 1
   br label %repeat.body
 
-repeat.body:                                      ; preds = %if.end400, %if.end397, %if.end162, %if.then161, %if.end142, %if.then141, %frame.forced25
+repeat.body:                                      ; preds = %if.end411, %if.end408, %if.end166, %if.then165, %if.end146, %if.then145, %frame.forced25
   %state39 = load i64, ptr %state, align 8
   %eq = icmp eq i64 %state39, 1
   br i1 %eq, label %if.then, label %if.end
 
-repeat.exit:                                      ; preds = %if.else420, %if.then385, %if.end357, %if.else324, %if.then262, %if.then218, %if.then133, %if.then119, %if.then94, %if.then75, %if.then46, %if.then41
-  %error452 = load i64, ptr %error, align 8
-  %ne453 = icmp ne i64 %error452, 0
-  br i1 %ne453, label %if.then454, label %if.end455
+repeat.exit:                                      ; preds = %if.else431, %if.then396, %if.end366, %if.else333, %if.then271, %if.then222, %if.then137, %if.then123, %if.then94, %if.then75, %if.then46, %if.then41
+  %error463 = load i64, ptr %error, align 8
+  %ne464 = icmp ne i64 %error463, 0
+  br i1 %ne464, label %if.then465, label %if.end466
 
 if.then:                                          ; preds = %repeat.body
   %t40 = load i64, ptr %t, align 8
@@ -10087,9 +10121,9 @@ if.then:                                          ; preds = %repeat.body
   br i1 %ge, label %if.then41, label %if.end42
 
 if.end:                                           ; preds = %if.end95, %repeat.body
-  %state113 = load i64, ptr %state, align 8
-  %eq114 = icmp eq i64 %state113, 0
-  br i1 %eq114, label %if.then115, label %if.end116
+  %state117 = load i64, ptr %state, align 8
+  %eq118 = icmp eq i64 %state117, 0
+  br i1 %eq118, label %if.then119, label %if.end120
 
 if.then41:                                        ; preds = %if.then
   store i64 1, ptr %error, align 1
@@ -10210,17 +10244,23 @@ if.end95:                                         ; preds = %lor.rhs96
   %variant.tag.ptr105 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr, i32 0, i32 0
   store i8 0, ptr %variant.tag.ptr105, align 1
   %variant.val106 = load %_Z9JsonValue, ptr %variant.ptr, align 1
+  %close107 = load ptr, ptr %close, align 8
+  %load.struct108 = load %_Z8JsonScan, ptr %close107, align 8
+  %flag = extractvalue %_Z8JsonScan %load.struct108, 2
+  %eq109 = icmp eq i1 %flag, false
   %field.load = load %_Z5SliceI2u8E, ptr %sret.result88, align 8
-  %tuple.field108 = getelementptr inbounds nuw %_Z10JsonMember, ptr %tuple107, i32 0, i32 0
-  store %_Z5SliceI2u8E %field.load, ptr %tuple.field108, align 1
-  %tuple.field109 = getelementptr inbounds nuw %_Z10JsonMember, ptr %tuple107, i32 0, i32 1
-  store %_Z9JsonValue %variant.val106, ptr %tuple.field109, align 1
-  %tuple.val110 = load %_Z10JsonMember, ptr %tuple107, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple107, i64 ptrtoint (ptr getelementptr (%_Z10JsonMember, ptr null, i32 1) to i64), i1 false)
+  %tuple.field111 = getelementptr inbounds nuw %_Z10JsonMember, ptr %tuple110, i32 0, i32 0
+  store %_Z5SliceI2u8E %field.load, ptr %tuple.field111, align 1
+  %tuple.field112 = getelementptr inbounds nuw %_Z10JsonMember, ptr %tuple110, i32 0, i32 1
+  store %_Z9JsonValue %variant.val106, ptr %tuple.field112, align 1
+  %tuple.field113 = getelementptr inbounds nuw %_Z10JsonMember, ptr %tuple110, i32 0, i32 2
+  store i1 %eq109, ptr %tuple.field113, align 1
+  %tuple.val114 = load %_Z10JsonMember, ptr %tuple110, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple110, i64 ptrtoint (ptr getelementptr (%_Z10JsonMember, ptr null, i32 1) to i64), i1 false)
   call void @_ZN5ArrayI10JsonMemberE3addE10JsonMember(ptr %members104, ptr %arg.tmp)
-  %doc111 = load ptr, ptr %doc, align 8
-  %call112 = call i64 @_ZN10JsonStream4takeE5SliceI2u8E(ptr %s, ptr %doc111)
-  store i64 %call112, ptr %t, align 1
+  %doc115 = load ptr, ptr %doc, align 8
+  %call116 = call i64 @_ZN10JsonStream4takeE5SliceI2u8E(ptr %s, ptr %doc115)
+  store i64 %call116, ptr %t, align 1
   store i64 0, ptr %state, align 1
   br label %if.end
 
@@ -10231,607 +10271,617 @@ lor.rhs96:                                        ; preds = %if.end62
   %ne102 = icmp ne i8 %call101, 58
   br i1 %ne102, label %if.then94, label %if.end95
 
-if.then115:                                       ; preds = %if.end
-  %t117 = load i64, ptr %t, align 8
-  %ge118 = icmp uge i64 %t117, %length
-  br i1 %ge118, label %if.then119, label %if.end120
+if.then119:                                       ; preds = %if.end
+  %t121 = load i64, ptr %t, align 8
+  %ge122 = icmp uge i64 %t121, %length
+  br i1 %ge122, label %if.then123, label %if.end124
 
-if.end116:                                        ; preds = %if.end186, %if.end
-  %open348 = load ptr, ptr %open, align 8
-  %load.struct349 = load %_Z5ArrayImE, ptr %open348, align 8
-  %length350 = extractvalue %_Z5ArrayImE %load.struct349, 0
-  %eq351 = icmp eq i64 %length350, 0
-  br i1 %eq351, label %if.then352, label %if.end353
+if.end120:                                        ; preds = %if.end190, %if.end
+  %open357 = load ptr, ptr %open, align 8
+  %load.struct358 = load %_Z5ArrayImE, ptr %open357, align 8
+  %length359 = extractvalue %_Z5ArrayImE %load.struct358, 0
+  %eq360 = icmp eq i64 %length359, 0
+  br i1 %eq360, label %if.then361, label %if.end362
 
-if.then119:                                       ; preds = %if.then115
+if.then123:                                       ; preds = %if.then119
   store i64 1, ptr %error, align 1
   store i64 %length, ptr %error_at, align 1
   br label %repeat.exit
 
-if.end120:                                        ; preds = %if.then115
-  %doc121 = load ptr, ptr %doc, align 8
-  %t122 = load i64, ptr %t, align 8
-  %call123 = call i8 @_ZN5SliceI2u8EixEm(ptr %doc121, i64 %t122)
-  %eq127 = icmp eq i8 %call123, 123
-  br i1 %eq127, label %if.then124, label %lor.rhs126
+if.end124:                                        ; preds = %if.then119
+  %doc125 = load ptr, ptr %doc, align 8
+  %t126 = load i64, ptr %t, align 8
+  %call127 = call i8 @_ZN5SliceI2u8EixEm(ptr %doc125, i64 %t126)
+  %eq131 = icmp eq i8 %call127, 123
+  br i1 %eq131, label %if.then128, label %lor.rhs130
 
-if.then124:                                       ; preds = %lor.rhs126, %if.end120
-  %open129 = load ptr, ptr %open, align 8
-  %load.struct130 = load %_Z5ArrayImE, ptr %open129, align 8
-  %length131 = extractvalue %_Z5ArrayImE %load.struct130, 0
-  %ge132 = icmp uge i64 %length131, 256
-  br i1 %ge132, label %if.then133, label %if.end134
+if.then128:                                       ; preds = %lor.rhs130, %if.end124
+  %open133 = load ptr, ptr %open, align 8
+  %load.struct134 = load %_Z5ArrayImE, ptr %open133, align 8
+  %length135 = extractvalue %_Z5ArrayImE %load.struct134, 0
+  %ge136 = icmp uge i64 %length135, 256
+  br i1 %ge136, label %if.then137, label %if.end138
 
-if.end125:                                        ; preds = %lor.rhs126
-  %eq184 = icmp eq i8 %call123, 34
-  br i1 %eq184, label %if.then185, label %if.else
+if.end129:                                        ; preds = %lor.rhs130
+  %eq188 = icmp eq i8 %call127, 34
+  br i1 %eq188, label %if.then189, label %if.else
 
-lor.rhs126:                                       ; preds = %if.end120
-  %eq128 = icmp eq i8 %call123, 91
-  br i1 %eq128, label %if.then124, label %if.end125
+lor.rhs130:                                       ; preds = %if.end124
+  %eq132 = icmp eq i8 %call127, 91
+  br i1 %eq132, label %if.then128, label %if.end129
 
-if.then133:                                       ; preds = %if.then124
+if.then137:                                       ; preds = %if.then128
   store i64 10, ptr %error, align 1
-  %t135 = load i64, ptr %t, align 8
-  store i64 %t135, ptr %error_at, align 1
+  %t139 = load i64, ptr %t, align 8
+  store i64 %t139, ptr %error_at, align 1
   br label %repeat.exit
 
-if.end134:                                        ; preds = %if.then124
-  %eq136 = icmp eq i8 %call123, 123
-  %doc137 = load ptr, ptr %doc, align 8
-  %call138 = call i64 @_ZN10JsonStream4takeE5SliceI2u8E(ptr %s, ptr %doc137)
-  store i64 %call138, ptr %t, align 1
-  br i1 %eq136, label %if.then139, label %if.end140
+if.end138:                                        ; preds = %if.then128
+  %eq140 = icmp eq i8 %call127, 123
+  %doc141 = load ptr, ptr %doc, align 8
+  %call142 = call i64 @_ZN10JsonStream4takeE5SliceI2u8E(ptr %s, ptr %doc141)
+  store i64 %call142, ptr %t, align 1
+  br i1 %eq140, label %if.then143, label %if.end144
 
-if.then139:                                       ; preds = %if.end134
-  %t143 = load i64, ptr %t, align 8
-  %lt144 = icmp ult i64 %t143, %length
-  br i1 %lt144, label %land.rhs, label %if.end142
+if.then143:                                       ; preds = %if.end138
+  %t147 = load i64, ptr %t, align 8
+  %lt148 = icmp ult i64 %t147, %length
+  br i1 %lt148, label %land.rhs, label %if.end146
 
-if.end140:                                        ; preds = %if.end134
-  %t164 = load i64, ptr %t, align 8
-  %lt165 = icmp ult i64 %t164, %length
-  br i1 %lt165, label %land.rhs163, label %if.end162
+if.end144:                                        ; preds = %if.end138
+  %t168 = load i64, ptr %t, align 8
+  %lt169 = icmp ult i64 %t168, %length
+  br i1 %lt169, label %land.rhs167, label %if.end166
 
-if.then141:                                       ; preds = %land.rhs
-  %variant.tag.ptr150 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr149, i32 0, i32 0
-  store i8 5, ptr %variant.tag.ptr150, align 1
-  %tuple.field152 = getelementptr inbounds nuw %_Z10JsonObject, ptr %tuple151, i32 0, i32 0
-  store %_Z5SliceI10JsonMemberE zeroinitializer, ptr %tuple.field152, align 1
-  %tuple.val153 = load %_Z10JsonObject, ptr %tuple151, align 8
-  %variant.data.ptr = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr149, i32 0, i32 1
-  store %_Z10JsonObject %tuple.val153, ptr %variant.data.ptr, align 1
-  %variant.val154 = load %_Z9JsonValue, ptr %variant.ptr149, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %v, ptr align 1 %variant.ptr149, i64 ptrtoint (ptr getelementptr (%_Z9JsonValue, ptr null, i32 1) to i64), i1 false)
-  %doc155 = load ptr, ptr %doc, align 8
-  %call156 = call i64 @_ZN10JsonStream4takeE5SliceI2u8E(ptr %s, ptr %doc155)
-  store i64 %call156, ptr %t, align 1
+if.then145:                                       ; preds = %land.rhs
+  %variant.tag.ptr154 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr153, i32 0, i32 0
+  store i8 5, ptr %variant.tag.ptr154, align 1
+  %tuple.field156 = getelementptr inbounds nuw %_Z10JsonObject, ptr %tuple155, i32 0, i32 0
+  store %_Z5SliceI10JsonMemberE zeroinitializer, ptr %tuple.field156, align 1
+  %tuple.val157 = load %_Z10JsonObject, ptr %tuple155, align 8
+  %variant.data.ptr = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr153, i32 0, i32 1
+  store %_Z10JsonObject %tuple.val157, ptr %variant.data.ptr, align 1
+  %variant.val158 = load %_Z9JsonValue, ptr %variant.ptr153, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %v, ptr align 1 %variant.ptr153, i64 ptrtoint (ptr getelementptr (%_Z9JsonValue, ptr null, i32 1) to i64), i1 false)
+  %doc159 = load ptr, ptr %doc, align 8
+  %call160 = call i64 @_ZN10JsonStream4takeE5SliceI2u8E(ptr %s, ptr %doc159)
+  store i64 %call160, ptr %t, align 1
   store i64 2, ptr %state, align 1
   br label %repeat.body
 
-if.end142:                                        ; preds = %land.rhs, %if.then139
-  %open157 = load ptr, ptr %open, align 8
-  %members158 = load ptr, ptr %members, align 8
-  %load.struct159 = load %_Z5ArrayI10JsonMemberE, ptr %members158, align 8
-  %length160 = extractvalue %_Z5ArrayI10JsonMemberE %load.struct159, 0
-  %shl = shl i64 %length160, 1
+if.end146:                                        ; preds = %land.rhs, %if.then143
+  %open161 = load ptr, ptr %open, align 8
+  %members162 = load ptr, ptr %members, align 8
+  %load.struct163 = load %_Z5ArrayI10JsonMemberE, ptr %members162, align 8
+  %length164 = extractvalue %_Z5ArrayI10JsonMemberE %load.struct163, 0
+  %shl = shl i64 %length164, 1
   %add = add i64 %shl, 1
-  call void @_ZN5ArrayImE3addEm(ptr %open157, i64 %add)
+  call void @_ZN5ArrayImE3addEm(ptr %open161, i64 %add)
   store i64 1, ptr %state, align 1
   br label %repeat.body
 
-land.rhs:                                         ; preds = %if.then139
-  %doc145 = load ptr, ptr %doc, align 8
-  %t146 = load i64, ptr %t, align 8
-  %call147 = call i8 @_ZN5SliceI2u8EixEm(ptr %doc145, i64 %t146)
-  %eq148 = icmp eq i8 %call147, 125
-  br i1 %eq148, label %if.then141, label %if.end142
+land.rhs:                                         ; preds = %if.then143
+  %doc149 = load ptr, ptr %doc, align 8
+  %t150 = load i64, ptr %t, align 8
+  %call151 = call i8 @_ZN5SliceI2u8EixEm(ptr %doc149, i64 %t150)
+  %eq152 = icmp eq i8 %call151, 125
+  br i1 %eq152, label %if.then145, label %if.end146
 
-if.then161:                                       ; preds = %land.rhs163
-  %variant.tag.ptr171 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr170, i32 0, i32 0
-  store i8 4, ptr %variant.tag.ptr171, align 1
-  %tuple.field173 = getelementptr inbounds nuw %_Z9JsonArray, ptr %tuple172, i32 0, i32 0
-  store %_Z5SliceI9JsonValueE zeroinitializer, ptr %tuple.field173, align 1
-  %tuple.val174 = load %_Z9JsonArray, ptr %tuple172, align 8
-  %variant.data.ptr175 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr170, i32 0, i32 1
-  store %_Z9JsonArray %tuple.val174, ptr %variant.data.ptr175, align 1
-  %variant.val176 = load %_Z9JsonValue, ptr %variant.ptr170, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %v, ptr align 1 %variant.ptr170, i64 ptrtoint (ptr getelementptr (%_Z9JsonValue, ptr null, i32 1) to i64), i1 false)
-  %doc177 = load ptr, ptr %doc, align 8
-  %call178 = call i64 @_ZN10JsonStream4takeE5SliceI2u8E(ptr %s, ptr %doc177)
-  store i64 %call178, ptr %t, align 1
+if.then165:                                       ; preds = %land.rhs167
+  %variant.tag.ptr175 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr174, i32 0, i32 0
+  store i8 4, ptr %variant.tag.ptr175, align 1
+  %tuple.field177 = getelementptr inbounds nuw %_Z9JsonArray, ptr %tuple176, i32 0, i32 0
+  store %_Z5SliceI9JsonValueE zeroinitializer, ptr %tuple.field177, align 1
+  %tuple.val178 = load %_Z9JsonArray, ptr %tuple176, align 8
+  %variant.data.ptr179 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr174, i32 0, i32 1
+  store %_Z9JsonArray %tuple.val178, ptr %variant.data.ptr179, align 1
+  %variant.val180 = load %_Z9JsonValue, ptr %variant.ptr174, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %v, ptr align 1 %variant.ptr174, i64 ptrtoint (ptr getelementptr (%_Z9JsonValue, ptr null, i32 1) to i64), i1 false)
+  %doc181 = load ptr, ptr %doc, align 8
+  %call182 = call i64 @_ZN10JsonStream4takeE5SliceI2u8E(ptr %s, ptr %doc181)
+  store i64 %call182, ptr %t, align 1
   store i64 2, ptr %state, align 1
   br label %repeat.body
 
-if.end162:                                        ; preds = %land.rhs163, %if.end140
-  %open179 = load ptr, ptr %open, align 8
-  %values180 = load ptr, ptr %values, align 8
-  %load.struct181 = load %_Z5ArrayI9JsonValueE, ptr %values180, align 8
-  %length182 = extractvalue %_Z5ArrayI9JsonValueE %load.struct181, 0
-  %shl183 = shl i64 %length182, 1
-  call void @_ZN5ArrayImE3addEm(ptr %open179, i64 %shl183)
+if.end166:                                        ; preds = %land.rhs167, %if.end144
+  %open183 = load ptr, ptr %open, align 8
+  %values184 = load ptr, ptr %values, align 8
+  %load.struct185 = load %_Z5ArrayI9JsonValueE, ptr %values184, align 8
+  %length186 = extractvalue %_Z5ArrayI9JsonValueE %load.struct185, 0
+  %shl187 = shl i64 %length186, 1
+  call void @_ZN5ArrayImE3addEm(ptr %open183, i64 %shl187)
   br label %repeat.body
 
-land.rhs163:                                      ; preds = %if.end140
-  %doc166 = load ptr, ptr %doc, align 8
-  %t167 = load i64, ptr %t, align 8
-  %call168 = call i8 @_ZN5SliceI2u8EixEm(ptr %doc166, i64 %t167)
-  %eq169 = icmp eq i8 %call168, 93
-  br i1 %eq169, label %if.then161, label %if.end162
+land.rhs167:                                      ; preds = %if.end144
+  %doc170 = load ptr, ptr %doc, align 8
+  %t171 = load i64, ptr %t, align 8
+  %call172 = call i8 @_ZN5SliceI2u8EixEm(ptr %doc170, i64 %t171)
+  %eq173 = icmp eq i8 %call172, 93
+  br i1 %eq173, label %if.then165, label %if.end166
 
-if.then185:                                       ; preds = %if.end125
-  %doc187 = load ptr, ptr %doc, align 8
-  %call188 = call i64 @_ZN10JsonStream4takeE5SliceI2u8E(ptr %s, ptr %doc187)
-  store i64 %call188, ptr %u, align 1
-  %u189 = load i64, ptr %u, align 8
-  %frame.page190 = load ptr, ptr %1, align 8
-  %frame.has_page191 = icmp ne ptr %frame.page190, null
-  br i1 %frame.has_page191, label %frame.forced193, label %frame.force192
+if.then189:                                       ; preds = %if.end129
+  %doc191 = load ptr, ptr %doc, align 8
+  %call192 = call i64 @_ZN10JsonStream4takeE5SliceI2u8E(ptr %s, ptr %doc191)
+  store i64 %call192, ptr %u, align 1
+  %u193 = load i64, ptr %u, align 8
+  %frame.page194 = load ptr, ptr %1, align 8
+  %frame.has_page195 = icmp ne ptr %frame.page194, null
+  br i1 %frame.has_page195, label %frame.forced197, label %frame.force196
 
-if.else:                                          ; preds = %if.end125
+if.else:                                          ; preds = %if.end129
   store i64 0, ptr %u, align 1
-  %eq253 = icmp eq i8 %call123, 45
-  br i1 %eq253, label %if.then249, label %lor.rhs252
+  %eq262 = icmp eq i8 %call127, 45
+  br i1 %eq262, label %if.then258, label %lor.rhs261
 
-if.end186:                                        ; preds = %if.end335, %if.end201
-  br label %if.end116
+if.end190:                                        ; preds = %if.end344, %if.end205
+  br label %if.end120
 
-frame.force192:                                   ; preds = %if.then185
-  %forced_page194 = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
-  br label %frame.forced193
+frame.force196:                                   ; preds = %if.then189
+  %forced_page198 = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
+  br label %frame.forced197
 
-frame.forced193:                                  ; preds = %frame.force192, %if.then185
-  %forced_page195 = phi ptr [ %frame.page190, %if.then185 ], [ %forced_page194, %frame.force192 ]
-  %tuple.region196 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page195, i64 ptrtoint (ptr getelementptr (%_Z8JsonScan, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z8JsonScan }, ptr null, i64 0, i32 1) to i64))
-  %tuple.field197 = getelementptr inbounds nuw %_Z8JsonScan, ptr %tuple.region196, i32 0, i32 0
-  store i64 0, ptr %tuple.field197, align 1
-  %tuple.field198 = getelementptr inbounds nuw %_Z8JsonScan, ptr %tuple.region196, i32 0, i32 1
-  store i64 %u189, ptr %tuple.field198, align 1
-  %tuple.field199 = getelementptr inbounds nuw %_Z8JsonScan, ptr %tuple.region196, i32 0, i32 2
-  store i1 false, ptr %tuple.field199, align 1
-  store ptr %tuple.region196, ptr %close, align 1
-  %u203 = load i64, ptr %u, align 8
-  %ge204 = icmp uge i64 %u203, %length
-  br i1 %ge204, label %if.then200, label %lor.rhs202
+frame.forced197:                                  ; preds = %frame.force196, %if.then189
+  %forced_page199 = phi ptr [ %frame.page194, %if.then189 ], [ %forced_page198, %frame.force196 ]
+  %tuple.region200 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page199, i64 ptrtoint (ptr getelementptr (%_Z8JsonScan, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z8JsonScan }, ptr null, i64 0, i32 1) to i64))
+  %tuple.field201 = getelementptr inbounds nuw %_Z8JsonScan, ptr %tuple.region200, i32 0, i32 0
+  store i64 0, ptr %tuple.field201, align 1
+  %tuple.field202 = getelementptr inbounds nuw %_Z8JsonScan, ptr %tuple.region200, i32 0, i32 1
+  store i64 %u193, ptr %tuple.field202, align 1
+  %tuple.field203 = getelementptr inbounds nuw %_Z8JsonScan, ptr %tuple.region200, i32 0, i32 2
+  store i1 false, ptr %tuple.field203, align 1
+  store ptr %tuple.region200, ptr %close, align 1
+  %u207 = load i64, ptr %u, align 8
+  %ge208 = icmp uge i64 %u207, %length
+  br i1 %ge208, label %if.then204, label %lor.rhs206
 
-if.then200:                                       ; preds = %lor.rhs202, %frame.forced193
-  %doc210 = load ptr, ptr %doc, align 8
-  %t211 = load i64, ptr %t, align 8
-  call void @_ZN10JsonReader12string_closeEPN4scaly6memory4PageE5SliceI2u8Em(ptr noalias sret(%_Z8JsonScan) %sret.result209, ptr null, ptr %doc210, i64 %t211)
-  %set.dest212 = load ptr, ptr %close, align 8
-  %set.thru213 = load %_Z8JsonScan, ptr %sret.result209, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest212, ptr align 1 %sret.result209, i64 ptrtoint (ptr getelementptr (%_Z8JsonScan, ptr null, i32 1) to i64), i1 false)
-  %close214 = load ptr, ptr %close, align 8
-  %load.struct215 = load %_Z8JsonScan, ptr %close214, align 8
-  %code216 = extractvalue %_Z8JsonScan %load.struct215, 0
-  %ne217 = icmp ne i64 %code216, 0
-  br i1 %ne217, label %if.then218, label %if.end219
+if.then204:                                       ; preds = %lor.rhs206, %frame.forced197
+  %doc214 = load ptr, ptr %doc, align 8
+  %t215 = load i64, ptr %t, align 8
+  call void @_ZN10JsonReader12string_closeEPN4scaly6memory4PageE5SliceI2u8Em(ptr noalias sret(%_Z8JsonScan) %sret.result213, ptr null, ptr %doc214, i64 %t215)
+  %set.dest216 = load ptr, ptr %close, align 8
+  %set.thru217 = load %_Z8JsonScan, ptr %sret.result213, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %set.dest216, ptr align 1 %sret.result213, i64 ptrtoint (ptr getelementptr (%_Z8JsonScan, ptr null, i32 1) to i64), i1 false)
+  %close218 = load ptr, ptr %close, align 8
+  %load.struct219 = load %_Z8JsonScan, ptr %close218, align 8
+  %code220 = extractvalue %_Z8JsonScan %load.struct219, 0
+  %ne221 = icmp ne i64 %code220, 0
+  br i1 %ne221, label %if.then222, label %if.end223
 
-if.end201:                                        ; preds = %while.exit228, %lor.rhs202
-  %variant.tag.ptr237 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr236, i32 0, i32 0
-  store i8 3, ptr %variant.tag.ptr237, align 1
-  %doc238 = load ptr, ptr %doc, align 8
-  %t239 = load i64, ptr %t, align 8
-  %close240 = load ptr, ptr %close, align 8
-  call void @_ZN9JsonValue11string_textE5SliceI2u8Em8JsonScan(ptr noalias sret(%_Z5SliceI2u8E) %sret.result88, ptr %doc238, i64 %t239, ptr %close240)
-  %field.load242 = load %_Z5SliceI2u8E, ptr %sret.result88, align 8
-  %tuple.field243 = getelementptr inbounds nuw %_Z10JsonString, ptr %tuple241, i32 0, i32 0
-  store %_Z5SliceI2u8E %field.load242, ptr %tuple.field243, align 1
-  %tuple.val244 = load %_Z10JsonString, ptr %tuple241, align 8
-  %variant.data.ptr245 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr236, i32 0, i32 1
-  store %_Z10JsonString %tuple.val244, ptr %variant.data.ptr245, align 1
-  %variant.val246 = load %_Z9JsonValue, ptr %variant.ptr236, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %v, ptr align 1 %variant.ptr236, i64 ptrtoint (ptr getelementptr (%_Z9JsonValue, ptr null, i32 1) to i64), i1 false)
-  %doc247 = load ptr, ptr %doc, align 8
-  %call248 = call i64 @_ZN10JsonStream4takeE5SliceI2u8E(ptr %s, ptr %doc247)
-  store i64 %call248, ptr %t, align 1
+if.end205:                                        ; preds = %while.exit232, %lor.rhs206
+  %variant.tag.ptr241 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr240, i32 0, i32 0
+  store i8 3, ptr %variant.tag.ptr241, align 1
+  %doc242 = load ptr, ptr %doc, align 8
+  %t243 = load i64, ptr %t, align 8
+  %close244 = load ptr, ptr %close, align 8
+  call void @_ZN9JsonValue11string_textE5SliceI2u8Em8JsonScan(ptr noalias sret(%_Z5SliceI2u8E) %sret.result88, ptr %doc242, i64 %t243, ptr %close244)
+  %close245 = load ptr, ptr %close, align 8
+  %load.struct246 = load %_Z8JsonScan, ptr %close245, align 8
+  %flag247 = extractvalue %_Z8JsonScan %load.struct246, 2
+  %eq248 = icmp eq i1 %flag247, false
+  %field.load250 = load %_Z5SliceI2u8E, ptr %sret.result88, align 8
+  %tuple.field251 = getelementptr inbounds nuw %_Z10JsonString, ptr %tuple249, i32 0, i32 0
+  store %_Z5SliceI2u8E %field.load250, ptr %tuple.field251, align 1
+  %tuple.field252 = getelementptr inbounds nuw %_Z10JsonString, ptr %tuple249, i32 0, i32 1
+  store i1 %eq248, ptr %tuple.field252, align 1
+  %tuple.val253 = load %_Z10JsonString, ptr %tuple249, align 8
+  %variant.data.ptr254 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr240, i32 0, i32 1
+  store %_Z10JsonString %tuple.val253, ptr %variant.data.ptr254, align 1
+  %variant.val255 = load %_Z9JsonValue, ptr %variant.ptr240, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %v, ptr align 1 %variant.ptr240, i64 ptrtoint (ptr getelementptr (%_Z9JsonValue, ptr null, i32 1) to i64), i1 false)
+  %doc256 = load ptr, ptr %doc, align 8
+  %call257 = call i64 @_ZN10JsonStream4takeE5SliceI2u8E(ptr %s, ptr %doc256)
+  store i64 %call257, ptr %t, align 1
   store i64 2, ptr %state, align 1
-  br label %if.end186
+  br label %if.end190
 
-lor.rhs202:                                       ; preds = %frame.forced193
-  %doc205 = load ptr, ptr %doc, align 8
-  %u206 = load i64, ptr %u, align 8
-  %call207 = call i8 @_ZN5SliceI2u8EixEm(ptr %doc205, i64 %u206)
-  %ne208 = icmp ne i8 %call207, 34
-  br i1 %ne208, label %if.then200, label %if.end201
+lor.rhs206:                                       ; preds = %frame.forced197
+  %doc209 = load ptr, ptr %doc, align 8
+  %u210 = load i64, ptr %u, align 8
+  %call211 = call i8 @_ZN5SliceI2u8EixEm(ptr %doc209, i64 %u210)
+  %ne212 = icmp ne i8 %call211, 34
+  br i1 %ne212, label %if.then204, label %if.end205
 
-if.then218:                                       ; preds = %if.then200
-  %close220 = load ptr, ptr %close, align 8
-  %load.struct221 = load %_Z8JsonScan, ptr %close220, align 8
-  %code222 = extractvalue %_Z8JsonScan %load.struct221, 0
-  store i64 %code222, ptr %error, align 1
-  %close223 = load ptr, ptr %close, align 8
-  %load.struct224 = load %_Z8JsonScan, ptr %close223, align 8
-  %at225 = extractvalue %_Z8JsonScan %load.struct224, 1
-  store i64 %at225, ptr %error_at, align 1
+if.then222:                                       ; preds = %if.then204
+  %close224 = load ptr, ptr %close, align 8
+  %load.struct225 = load %_Z8JsonScan, ptr %close224, align 8
+  %code226 = extractvalue %_Z8JsonScan %load.struct225, 0
+  store i64 %code226, ptr %error, align 1
+  %close227 = load ptr, ptr %close, align 8
+  %load.struct228 = load %_Z8JsonScan, ptr %close227, align 8
+  %at229 = extractvalue %_Z8JsonScan %load.struct228, 1
+  store i64 %at229, ptr %error_at, align 1
   br label %repeat.exit
 
-if.end219:                                        ; preds = %if.then200
-  br label %while.cond226
+if.end223:                                        ; preds = %if.then204
+  br label %while.cond230
 
-while.cond226:                                    ; preds = %while.body227, %if.end219
-  %u229 = load i64, ptr %u, align 8
-  %close230 = load ptr, ptr %close, align 8
-  %load.struct231 = load %_Z8JsonScan, ptr %close230, align 8
-  %at232 = extractvalue %_Z8JsonScan %load.struct231, 1
-  %lt233 = icmp ult i64 %u229, %at232
-  br i1 %lt233, label %while.body227, label %while.exit228
+while.cond230:                                    ; preds = %while.body231, %if.end223
+  %u233 = load i64, ptr %u, align 8
+  %close234 = load ptr, ptr %close, align 8
+  %load.struct235 = load %_Z8JsonScan, ptr %close234, align 8
+  %at236 = extractvalue %_Z8JsonScan %load.struct235, 1
+  %lt237 = icmp ult i64 %u233, %at236
+  br i1 %lt237, label %while.body231, label %while.exit232
 
-while.body227:                                    ; preds = %while.cond226
-  %doc234 = load ptr, ptr %doc, align 8
-  %call235 = call i64 @_ZN10JsonStream4takeE5SliceI2u8E(ptr %s, ptr %doc234)
-  store i64 %call235, ptr %u, align 1
-  br label %while.cond226
+while.body231:                                    ; preds = %while.cond230
+  %doc238 = load ptr, ptr %doc, align 8
+  %call239 = call i64 @_ZN10JsonStream4takeE5SliceI2u8E(ptr %s, ptr %doc238)
+  store i64 %call239, ptr %u, align 1
+  br label %while.cond230
 
-while.exit228:                                    ; preds = %while.cond226
-  br label %if.end201
+while.exit232:                                    ; preds = %while.cond230
+  br label %if.end205
 
-if.then249:                                       ; preds = %lor.end, %if.else
-  %doc257 = load ptr, ptr %doc, align 8
-  %t258 = load i64, ptr %t, align 8
-  call void @_ZN10JsonReader10number_endEPN4scaly6memory4PageE5SliceI2u8Em(ptr noalias sret(%_Z8JsonScan) %sret.result256, ptr null, ptr %doc257, i64 %t258)
-  %load.struct259 = load %_Z8JsonScan, ptr %sret.result256, align 8
-  %code260 = extractvalue %_Z8JsonScan %load.struct259, 0
-  %ne261 = icmp ne i64 %code260, 0
-  br i1 %ne261, label %if.then262, label %if.end263
+if.then258:                                       ; preds = %lor.end, %if.else
+  %doc266 = load ptr, ptr %doc, align 8
+  %t267 = load i64, ptr %t, align 8
+  call void @_ZN10JsonReader10number_endEPN4scaly6memory4PageE5SliceI2u8Em(ptr noalias sret(%_Z8JsonScan) %sret.result265, ptr null, ptr %doc266, i64 %t267)
+  %load.struct268 = load %_Z8JsonScan, ptr %sret.result265, align 8
+  %code269 = extractvalue %_Z8JsonScan %load.struct268, 0
+  %ne270 = icmp ne i64 %code269, 0
+  br i1 %ne270, label %if.then271, label %if.end272
 
-if.else250:                                       ; preds = %lor.end
-  %doc281 = load ptr, ptr %doc, align 8
-  %t282 = load i64, ptr %t, align 8
-  %tuple.field284 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple283, i32 0, i32 0
-  store i64 4, ptr %tuple.field284, align 1
-  %tuple.field285 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple283, i32 0, i32 1
-  store ptr @.str.56, ptr %tuple.field285, align 1
-  %tuple.val286 = load %_Z5SliceI2u8E, ptr %tuple283, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp287, ptr align 1 %tuple283, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
-  %call288 = call i1 @_ZN9JsonValue10literal_atE5SliceI2u8Em5SliceI2u8E(ptr %doc281, i64 %t282, ptr %arg.tmp287)
-  br i1 %call288, label %if.then289, label %if.else290
+if.else259:                                       ; preds = %lor.end
+  %doc290 = load ptr, ptr %doc, align 8
+  %t291 = load i64, ptr %t, align 8
+  %tuple.field293 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple292, i32 0, i32 0
+  store i64 4, ptr %tuple.field293, align 1
+  %tuple.field294 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple292, i32 0, i32 1
+  store ptr @.str.56, ptr %tuple.field294, align 1
+  %tuple.val295 = load %_Z5SliceI2u8E, ptr %tuple292, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp296, ptr align 1 %tuple292, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
+  %call297 = call i1 @_ZN9JsonValue10literal_atE5SliceI2u8Em5SliceI2u8E(ptr %doc290, i64 %t291, ptr %arg.tmp296)
+  br i1 %call297, label %if.then298, label %if.else299
 
-if.end251:                                        ; preds = %if.end291, %if.end263
-  %doc332 = load ptr, ptr %doc, align 8
-  %call333 = call i64 @_ZN10JsonStream4takeE5SliceI2u8E(ptr %s, ptr %doc332)
-  store i64 %call333, ptr %t, align 1
+if.end260:                                        ; preds = %if.end300, %if.end272
+  %doc341 = load ptr, ptr %doc, align 8
+  %call342 = call i64 @_ZN10JsonStream4takeE5SliceI2u8E(ptr %s, ptr %doc341)
+  store i64 %call342, ptr %t, align 1
   %end = load i64, ptr %u, align 8
-  %lt338 = icmp ult i64 %end, %length
-  br i1 %lt338, label %land.rhs337, label %if.end335
+  %lt347 = icmp ult i64 %end, %length
+  br i1 %lt347, label %land.rhs346, label %if.end344
 
-lor.rhs252:                                       ; preds = %if.else
-  %ge254 = icmp uge i8 %call123, 48
-  br i1 %ge254, label %lor.rhs255, label %lor.end
+lor.rhs261:                                       ; preds = %if.else
+  %ge263 = icmp uge i8 %call127, 48
+  br i1 %ge263, label %lor.rhs264, label %lor.end
 
-lor.rhs255:                                       ; preds = %lor.rhs252
-  %le = icmp ule i8 %call123, 57
+lor.rhs264:                                       ; preds = %lor.rhs261
+  %le = icmp ule i8 %call127, 57
   br label %lor.end
 
-lor.end:                                          ; preds = %lor.rhs255, %lor.rhs252
-  %lor.result = phi i1 [ false, %lor.rhs252 ], [ %le, %lor.rhs255 ]
-  br i1 %lor.result, label %if.then249, label %if.else250
+lor.end:                                          ; preds = %lor.rhs264, %lor.rhs261
+  %lor.result = phi i1 [ false, %lor.rhs261 ], [ %le, %lor.rhs264 ]
+  br i1 %lor.result, label %if.then258, label %if.else259
 
-if.then262:                                       ; preds = %if.then249
-  %load.struct264 = load %_Z8JsonScan, ptr %sret.result256, align 8
-  %code265 = extractvalue %_Z8JsonScan %load.struct264, 0
-  store i64 %code265, ptr %error, align 1
-  %load.struct266 = load %_Z8JsonScan, ptr %sret.result256, align 8
-  %at267 = extractvalue %_Z8JsonScan %load.struct266, 1
-  store i64 %at267, ptr %error_at, align 1
+if.then271:                                       ; preds = %if.then258
+  %load.struct273 = load %_Z8JsonScan, ptr %sret.result265, align 8
+  %code274 = extractvalue %_Z8JsonScan %load.struct273, 0
+  store i64 %code274, ptr %error, align 1
+  %load.struct275 = load %_Z8JsonScan, ptr %sret.result265, align 8
+  %at276 = extractvalue %_Z8JsonScan %load.struct275, 1
+  store i64 %at276, ptr %error_at, align 1
   br label %repeat.exit
 
-if.end263:                                        ; preds = %if.then249
-  %variant.tag.ptr269 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr268, i32 0, i32 0
-  store i8 2, ptr %variant.tag.ptr269, align 1
-  %doc271 = load ptr, ptr %doc, align 8
-  %t272 = load i64, ptr %t, align 8
-  %field.inplace = getelementptr inbounds nuw %_Z8JsonScan, ptr %sret.result256, i32 0, i32 1
+if.end272:                                        ; preds = %if.then258
+  %variant.tag.ptr278 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr277, i32 0, i32 0
+  store i8 2, ptr %variant.tag.ptr278, align 1
+  %doc280 = load ptr, ptr %doc, align 8
+  %t281 = load i64, ptr %t, align 8
+  %field.inplace = getelementptr inbounds nuw %_Z8JsonScan, ptr %sret.result265, i32 0, i32 1
   %field.val = load i64, ptr %field.inplace, align 8
-  call void @_ZN5SliceI2u8E8subsliceEmm(ptr noalias sret(%_Z5SliceI2u8E) %sret.result270, ptr %doc271, i64 %t272, i64 %field.val)
-  %field.load274 = load %_Z5SliceI2u8E, ptr %sret.result270, align 8
-  %tuple.field275 = getelementptr inbounds nuw %_Z10JsonNumber, ptr %tuple273, i32 0, i32 0
-  store %_Z5SliceI2u8E %field.load274, ptr %tuple.field275, align 1
-  %tuple.val276 = load %_Z10JsonNumber, ptr %tuple273, align 8
-  %variant.data.ptr277 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr268, i32 0, i32 1
-  store %_Z10JsonNumber %tuple.val276, ptr %variant.data.ptr277, align 1
-  %variant.val278 = load %_Z9JsonValue, ptr %variant.ptr268, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %v, ptr align 1 %variant.ptr268, i64 ptrtoint (ptr getelementptr (%_Z9JsonValue, ptr null, i32 1) to i64), i1 false)
-  %load.struct279 = load %_Z8JsonScan, ptr %sret.result256, align 8
-  %at280 = extractvalue %_Z8JsonScan %load.struct279, 1
-  store i64 %at280, ptr %u, align 1
-  br label %if.end251
+  call void @_ZN5SliceI2u8E8subsliceEmm(ptr noalias sret(%_Z5SliceI2u8E) %sret.result279, ptr %doc280, i64 %t281, i64 %field.val)
+  %field.load283 = load %_Z5SliceI2u8E, ptr %sret.result279, align 8
+  %tuple.field284 = getelementptr inbounds nuw %_Z10JsonNumber, ptr %tuple282, i32 0, i32 0
+  store %_Z5SliceI2u8E %field.load283, ptr %tuple.field284, align 1
+  %tuple.val285 = load %_Z10JsonNumber, ptr %tuple282, align 8
+  %variant.data.ptr286 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr277, i32 0, i32 1
+  store %_Z10JsonNumber %tuple.val285, ptr %variant.data.ptr286, align 1
+  %variant.val287 = load %_Z9JsonValue, ptr %variant.ptr277, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %v, ptr align 1 %variant.ptr277, i64 ptrtoint (ptr getelementptr (%_Z9JsonValue, ptr null, i32 1) to i64), i1 false)
+  %load.struct288 = load %_Z8JsonScan, ptr %sret.result265, align 8
+  %at289 = extractvalue %_Z8JsonScan %load.struct288, 1
+  store i64 %at289, ptr %u, align 1
+  br label %if.end260
 
-if.then289:                                       ; preds = %if.else250
-  %variant.tag.ptr293 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr292, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr293, align 1
-  %variant.data.ptr294 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr292, i32 0, i32 1
-  store i1 true, ptr %variant.data.ptr294, align 1
-  %variant.val295 = load %_Z9JsonValue, ptr %variant.ptr292, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %v, ptr align 1 %variant.ptr292, i64 ptrtoint (ptr getelementptr (%_Z9JsonValue, ptr null, i32 1) to i64), i1 false)
-  %t296 = load i64, ptr %t, align 8
-  %add297 = add i64 %t296, 4
-  store i64 %add297, ptr %u, align 1
-  br label %if.end291
+if.then298:                                       ; preds = %if.else259
+  %variant.tag.ptr302 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr301, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr302, align 1
+  %variant.data.ptr303 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr301, i32 0, i32 1
+  store i1 true, ptr %variant.data.ptr303, align 1
+  %variant.val304 = load %_Z9JsonValue, ptr %variant.ptr301, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %v, ptr align 1 %variant.ptr301, i64 ptrtoint (ptr getelementptr (%_Z9JsonValue, ptr null, i32 1) to i64), i1 false)
+  %t305 = load i64, ptr %t, align 8
+  %add306 = add i64 %t305, 4
+  store i64 %add306, ptr %u, align 1
+  br label %if.end300
 
-if.else290:                                       ; preds = %if.else250
-  %doc298 = load ptr, ptr %doc, align 8
-  %t299 = load i64, ptr %t, align 8
-  %tuple.field301 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple300, i32 0, i32 0
-  store i64 5, ptr %tuple.field301, align 1
-  %tuple.field302 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple300, i32 0, i32 1
-  store ptr @.str.57, ptr %tuple.field302, align 1
-  %tuple.val303 = load %_Z5SliceI2u8E, ptr %tuple300, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp304, ptr align 1 %tuple300, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
-  %call305 = call i1 @_ZN9JsonValue10literal_atE5SliceI2u8Em5SliceI2u8E(ptr %doc298, i64 %t299, ptr %arg.tmp304)
-  br i1 %call305, label %if.then306, label %if.else307
+if.else299:                                       ; preds = %if.else259
+  %doc307 = load ptr, ptr %doc, align 8
+  %t308 = load i64, ptr %t, align 8
+  %tuple.field310 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple309, i32 0, i32 0
+  store i64 5, ptr %tuple.field310, align 1
+  %tuple.field311 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple309, i32 0, i32 1
+  store ptr @.str.57, ptr %tuple.field311, align 1
+  %tuple.val312 = load %_Z5SliceI2u8E, ptr %tuple309, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp313, ptr align 1 %tuple309, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
+  %call314 = call i1 @_ZN9JsonValue10literal_atE5SliceI2u8Em5SliceI2u8E(ptr %doc307, i64 %t308, ptr %arg.tmp313)
+  br i1 %call314, label %if.then315, label %if.else316
 
-if.end291:                                        ; preds = %if.end308, %if.then289
-  br label %if.end251
+if.end300:                                        ; preds = %if.end317, %if.then298
+  br label %if.end260
 
-if.then306:                                       ; preds = %if.else290
-  %variant.tag.ptr310 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr309, i32 0, i32 0
-  store i8 1, ptr %variant.tag.ptr310, align 1
-  %variant.data.ptr311 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr309, i32 0, i32 1
-  store i1 false, ptr %variant.data.ptr311, align 1
-  %variant.val312 = load %_Z9JsonValue, ptr %variant.ptr309, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %v, ptr align 1 %variant.ptr309, i64 ptrtoint (ptr getelementptr (%_Z9JsonValue, ptr null, i32 1) to i64), i1 false)
-  %t313 = load i64, ptr %t, align 8
-  %add314 = add i64 %t313, 5
-  store i64 %add314, ptr %u, align 1
-  br label %if.end308
+if.then315:                                       ; preds = %if.else299
+  %variant.tag.ptr319 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr318, i32 0, i32 0
+  store i8 1, ptr %variant.tag.ptr319, align 1
+  %variant.data.ptr320 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr318, i32 0, i32 1
+  store i1 false, ptr %variant.data.ptr320, align 1
+  %variant.val321 = load %_Z9JsonValue, ptr %variant.ptr318, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %v, ptr align 1 %variant.ptr318, i64 ptrtoint (ptr getelementptr (%_Z9JsonValue, ptr null, i32 1) to i64), i1 false)
+  %t322 = load i64, ptr %t, align 8
+  %add323 = add i64 %t322, 5
+  store i64 %add323, ptr %u, align 1
+  br label %if.end317
 
-if.else307:                                       ; preds = %if.else290
-  %doc315 = load ptr, ptr %doc, align 8
-  %t316 = load i64, ptr %t, align 8
-  %tuple.field318 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple317, i32 0, i32 0
-  store i64 4, ptr %tuple.field318, align 1
-  %tuple.field319 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple317, i32 0, i32 1
-  store ptr @.str.58, ptr %tuple.field319, align 1
-  %tuple.val320 = load %_Z5SliceI2u8E, ptr %tuple317, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp321, ptr align 1 %tuple317, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
-  %call322 = call i1 @_ZN9JsonValue10literal_atE5SliceI2u8Em5SliceI2u8E(ptr %doc315, i64 %t316, ptr %arg.tmp321)
-  br i1 %call322, label %if.then323, label %if.else324
+if.else316:                                       ; preds = %if.else299
+  %doc324 = load ptr, ptr %doc, align 8
+  %t325 = load i64, ptr %t, align 8
+  %tuple.field327 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple326, i32 0, i32 0
+  store i64 4, ptr %tuple.field327, align 1
+  %tuple.field328 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple326, i32 0, i32 1
+  store ptr @.str.58, ptr %tuple.field328, align 1
+  %tuple.val329 = load %_Z5SliceI2u8E, ptr %tuple326, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp330, ptr align 1 %tuple326, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
+  %call331 = call i1 @_ZN9JsonValue10literal_atE5SliceI2u8Em5SliceI2u8E(ptr %doc324, i64 %t325, ptr %arg.tmp330)
+  br i1 %call331, label %if.then332, label %if.else333
 
-if.end308:                                        ; preds = %if.end325, %if.then306
-  br label %if.end291
+if.end317:                                        ; preds = %if.end334, %if.then315
+  br label %if.end300
 
-if.then323:                                       ; preds = %if.else307
-  %variant.tag.ptr327 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr326, i32 0, i32 0
-  store i8 0, ptr %variant.tag.ptr327, align 1
-  %variant.val328 = load %_Z9JsonValue, ptr %variant.ptr326, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %v, ptr align 1 %variant.ptr326, i64 ptrtoint (ptr getelementptr (%_Z9JsonValue, ptr null, i32 1) to i64), i1 false)
-  %t329 = load i64, ptr %t, align 8
-  %add330 = add i64 %t329, 4
-  store i64 %add330, ptr %u, align 1
-  br label %if.end325
+if.then332:                                       ; preds = %if.else316
+  %variant.tag.ptr336 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr335, i32 0, i32 0
+  store i8 0, ptr %variant.tag.ptr336, align 1
+  %variant.val337 = load %_Z9JsonValue, ptr %variant.ptr335, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %v, ptr align 1 %variant.ptr335, i64 ptrtoint (ptr getelementptr (%_Z9JsonValue, ptr null, i32 1) to i64), i1 false)
+  %t338 = load i64, ptr %t, align 8
+  %add339 = add i64 %t338, 4
+  store i64 %add339, ptr %u, align 1
+  br label %if.end334
 
-if.else324:                                       ; preds = %if.else307
+if.else333:                                       ; preds = %if.else316
   store i64 3, ptr %error, align 1
-  %t331 = load i64, ptr %t, align 8
-  store i64 %t331, ptr %error_at, align 1
+  %t340 = load i64, ptr %t, align 8
+  store i64 %t340, ptr %error_at, align 1
   br label %repeat.exit
 
-if.end325:                                        ; preds = %if.then323
-  br label %if.end308
+if.end334:                                        ; preds = %if.then332
+  br label %if.end317
 
-if.then334:                                       ; preds = %land.rhs336
-  %end347 = load i64, ptr %u, align 8
-  store i64 %end347, ptr %t, align 1
-  br label %if.end335
+if.then343:                                       ; preds = %land.rhs345
+  %end356 = load i64, ptr %u, align 8
+  store i64 %end356, ptr %t, align 1
+  br label %if.end344
 
-if.end335:                                        ; preds = %if.then334, %land.rhs336, %land.rhs337, %if.end251
+if.end344:                                        ; preds = %if.then343, %land.rhs345, %land.rhs346, %if.end260
   store i64 2, ptr %state, align 1
-  br label %if.end186
+  br label %if.end190
 
-land.rhs336:                                      ; preds = %land.rhs337
-  %doc342 = load ptr, ptr %doc, align 8
-  %end343 = load i64, ptr %u, align 8
-  %call344 = call i8 @_ZN5SliceI2u8EixEm(ptr %doc342, i64 %end343)
-  %call345 = call i1 @_ZN10JsonReader5is_wsE2u8(i8 %call344)
-  %eq346 = icmp eq i1 %call345, false
-  br i1 %eq346, label %if.then334, label %if.end335
+land.rhs345:                                      ; preds = %land.rhs346
+  %doc351 = load ptr, ptr %doc, align 8
+  %end352 = load i64, ptr %u, align 8
+  %call353 = call i8 @_ZN5SliceI2u8EixEm(ptr %doc351, i64 %end352)
+  %call354 = call i1 @_ZN10JsonReader5is_wsE2u8(i8 %call353)
+  %eq355 = icmp eq i1 %call354, false
+  br i1 %eq355, label %if.then343, label %if.end344
 
-land.rhs337:                                      ; preds = %if.end251
-  %t339 = load i64, ptr %t, align 8
-  %end340 = load i64, ptr %u, align 8
-  %ne341 = icmp ne i64 %t339, %end340
-  br i1 %ne341, label %land.rhs336, label %if.end335
+land.rhs346:                                      ; preds = %if.end260
+  %t348 = load i64, ptr %t, align 8
+  %end349 = load i64, ptr %u, align 8
+  %ne350 = icmp ne i64 %t348, %end349
+  br i1 %ne350, label %land.rhs345, label %if.end344
 
-if.then352:                                       ; preds = %if.end116
-  %t354 = load i64, ptr %t, align 8
-  %lt355 = icmp ult i64 %t354, %length
-  br i1 %lt355, label %if.then356, label %if.end357
+if.then361:                                       ; preds = %if.end120
+  %t363 = load i64, ptr %t, align 8
+  %lt364 = icmp ult i64 %t363, %length
+  br i1 %lt364, label %if.then365, label %if.end366
 
-if.end353:                                        ; preds = %if.end116
-  %open359 = load ptr, ptr %open, align 8
-  %open360 = load ptr, ptr %open, align 8
-  %load.struct361 = load %_Z5ArrayImE, ptr %open360, align 8
-  %length362 = extractvalue %_Z5ArrayImE %load.struct361, 0
-  %sub = sub i64 %length362, 1
-  %call363 = call i64 @_ZN5ArrayImEixEm(ptr %open359, i64 %sub)
-  %and = and i64 %call363, 1
-  %eq364 = icmp eq i64 %and, 1
-  br i1 %eq364, label %if.then365, label %if.else366
+if.end362:                                        ; preds = %if.end120
+  %open368 = load ptr, ptr %open, align 8
+  %open369 = load ptr, ptr %open, align 8
+  %load.struct370 = load %_Z5ArrayImE, ptr %open369, align 8
+  %length371 = extractvalue %_Z5ArrayImE %load.struct370, 0
+  %sub = sub i64 %length371, 1
+  %call372 = call i64 @_ZN5ArrayImEixEm(ptr %open368, i64 %sub)
+  %and = and i64 %call372, 1
+  %eq373 = icmp eq i64 %and, 1
+  br i1 %eq373, label %if.then374, label %if.else375
 
-if.then356:                                       ; preds = %if.then352
+if.then365:                                       ; preds = %if.then361
   store i64 2, ptr %error, align 1
-  %t358 = load i64, ptr %t, align 8
-  store i64 %t358, ptr %error_at, align 1
-  br label %if.end357
+  %t367 = load i64, ptr %t, align 8
+  store i64 %t367, ptr %error_at, align 1
+  br label %if.end366
 
-if.end357:                                        ; preds = %if.then356, %if.then352
+if.end366:                                        ; preds = %if.then365, %if.then361
   br label %repeat.exit
 
-if.then365:                                       ; preds = %if.end353
-  %members368 = load ptr, ptr %members, align 8
-  %load.struct369 = load %_Z5ArrayI10JsonMemberE, ptr %members368, align 8
-  %length370 = extractvalue %_Z5ArrayI10JsonMemberE %load.struct369, 0
-  %sub371 = sub i64 %length370, 1
-  %members372 = load ptr, ptr %members, align 8
-  %members374 = load ptr, ptr %members, align 8
-  call void @_ZN5ArrayI10JsonMemberEixEm(ptr noalias sret(%_Z10JsonMember) %sret.result373, ptr %members374, i64 %sub371)
-  %load.struct375 = load %_Z10JsonMember, ptr %sret.result373, align 8
-  %key = extractvalue %_Z10JsonMember %load.struct375, 0
-  %v376 = load %_Z9JsonValue, ptr %v, align 1
-  %tuple.field378 = getelementptr inbounds nuw %_Z10JsonMember, ptr %tuple377, i32 0, i32 0
-  store %_Z5SliceI2u8E %key, ptr %tuple.field378, align 1
-  %tuple.field379 = getelementptr inbounds nuw %_Z10JsonMember, ptr %tuple377, i32 0, i32 1
-  store %_Z9JsonValue %v376, ptr %tuple.field379, align 1
-  %tuple.val380 = load %_Z10JsonMember, ptr %tuple377, align 8
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp381, ptr align 1 %tuple377, i64 ptrtoint (ptr getelementptr (%_Z10JsonMember, ptr null, i32 1) to i64), i1 false)
-  call void @_ZN5ArrayI10JsonMemberE3putEm10JsonMember(ptr %members372, i64 %sub371, ptr %arg.tmp381)
-  br label %if.end367
+if.then374:                                       ; preds = %if.end362
+  %members377 = load ptr, ptr %members, align 8
+  %load.struct378 = load %_Z5ArrayI10JsonMemberE, ptr %members377, align 8
+  %length379 = extractvalue %_Z5ArrayI10JsonMemberE %load.struct378, 0
+  %sub380 = sub i64 %length379, 1
+  %members382 = load ptr, ptr %members, align 8
+  call void @_ZN5ArrayI10JsonMemberEixEm(ptr noalias sret(%_Z10JsonMember) %sret.result381, ptr %members382, i64 %sub380)
+  %members383 = load ptr, ptr %members, align 8
+  %load.struct384 = load %_Z10JsonMember, ptr %sret.result381, align 8
+  %key = extractvalue %_Z10JsonMember %load.struct384, 0
+  %v385 = load %_Z9JsonValue, ptr %v, align 1
+  %load.struct386 = load %_Z10JsonMember, ptr %sret.result381, align 8
+  %verbatim_key = extractvalue %_Z10JsonMember %load.struct386, 2
+  %tuple.field388 = getelementptr inbounds nuw %_Z10JsonMember, ptr %tuple387, i32 0, i32 0
+  store %_Z5SliceI2u8E %key, ptr %tuple.field388, align 1
+  %tuple.field389 = getelementptr inbounds nuw %_Z10JsonMember, ptr %tuple387, i32 0, i32 1
+  store %_Z9JsonValue %v385, ptr %tuple.field389, align 1
+  %tuple.field390 = getelementptr inbounds nuw %_Z10JsonMember, ptr %tuple387, i32 0, i32 2
+  store i1 %verbatim_key, ptr %tuple.field390, align 1
+  %tuple.val391 = load %_Z10JsonMember, ptr %tuple387, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp392, ptr align 1 %tuple387, i64 ptrtoint (ptr getelementptr (%_Z10JsonMember, ptr null, i32 1) to i64), i1 false)
+  call void @_ZN5ArrayI10JsonMemberE3putEm10JsonMember(ptr %members383, i64 %sub380, ptr %arg.tmp392)
+  br label %if.end376
 
-if.else366:                                       ; preds = %if.end353
-  %values382 = load ptr, ptr %values, align 8
-  call void @_ZN5ArrayI9JsonValueE3addE9JsonValue(ptr %values382, ptr %v)
-  br label %if.end367
+if.else375:                                       ; preds = %if.end362
+  %values393 = load ptr, ptr %values, align 8
+  call void @_ZN5ArrayI9JsonValueE3addE9JsonValue(ptr %values393, ptr %v)
+  br label %if.end376
 
-if.end367:                                        ; preds = %if.else366, %if.then365
-  %t383 = load i64, ptr %t, align 8
-  %ge384 = icmp uge i64 %t383, %length
-  br i1 %ge384, label %if.then385, label %if.end386
+if.end376:                                        ; preds = %if.else375, %if.then374
+  %t394 = load i64, ptr %t, align 8
+  %ge395 = icmp uge i64 %t394, %length
+  br i1 %ge395, label %if.then396, label %if.end397
 
-if.then385:                                       ; preds = %if.end367
+if.then396:                                       ; preds = %if.end376
   store i64 1, ptr %error, align 1
   store i64 %length, ptr %error_at, align 1
   br label %repeat.exit
 
-if.end386:                                        ; preds = %if.end367
-  %doc387 = load ptr, ptr %doc, align 8
-  %t388 = load i64, ptr %t, align 8
-  %call389 = call i8 @_ZN5SliceI2u8EixEm(ptr %doc387, i64 %t388)
-  %eq390 = icmp eq i8 %call389, 44
-  br i1 %eq390, label %if.then391, label %if.end392
+if.end397:                                        ; preds = %if.end376
+  %doc398 = load ptr, ptr %doc, align 8
+  %t399 = load i64, ptr %t, align 8
+  %call400 = call i8 @_ZN5SliceI2u8EixEm(ptr %doc398, i64 %t399)
+  %eq401 = icmp eq i8 %call400, 44
+  br i1 %eq401, label %if.then402, label %if.end403
 
-if.then391:                                       ; preds = %if.end386
-  %doc393 = load ptr, ptr %doc, align 8
-  %call394 = call i64 @_ZN10JsonStream4takeE5SliceI2u8E(ptr %s, ptr %doc393)
-  store i64 %call394, ptr %t, align 1
-  br i1 %eq364, label %if.then395, label %if.else396
+if.then402:                                       ; preds = %if.end397
+  %doc404 = load ptr, ptr %doc, align 8
+  %call405 = call i64 @_ZN10JsonStream4takeE5SliceI2u8E(ptr %s, ptr %doc404)
+  store i64 %call405, ptr %t, align 1
+  br i1 %eq373, label %if.then406, label %if.else407
 
-if.end392:                                        ; preds = %if.end386
-  %lshr = lshr i64 %call363, 1
-  br i1 %eq364, label %land.rhs401, label %if.else399
+if.end403:                                        ; preds = %if.end397
+  %lshr = lshr i64 %call372, 1
+  br i1 %eq373, label %land.rhs412, label %if.else410
 
-if.then395:                                       ; preds = %if.then391
+if.then406:                                       ; preds = %if.then402
   store i64 1, ptr %state, align 1
-  br label %if.end397
+  br label %if.end408
 
-if.else396:                                       ; preds = %if.then391
+if.else407:                                       ; preds = %if.then402
   store i64 0, ptr %state, align 1
-  br label %if.end397
+  br label %if.end408
 
-if.end397:                                        ; preds = %if.else396, %if.then395
-  %if.value = phi i64 [ 1, %if.then395 ], [ 0, %if.else396 ]
+if.end408:                                        ; preds = %if.else407, %if.then406
+  %if.value = phi i64 [ 1, %if.then406 ], [ 0, %if.else407 ]
   br label %repeat.body
 
-if.then398:                                       ; preds = %land.rhs401
-  %arena404 = load ptr, ptr %arena, align 8
-  %members407 = load ptr, ptr %members, align 8
-  call void @_ZN5ArrayI10JsonMemberE8as_sliceEv(ptr noalias sret(%_Z5SliceI10JsonMemberE) %sret.result406, ptr %members407)
+if.then409:                                       ; preds = %land.rhs412
+  %arena415 = load ptr, ptr %arena, align 8
+  %members418 = load ptr, ptr %members, align 8
+  call void @_ZN5ArrayI10JsonMemberE8as_sliceEv(ptr noalias sret(%_Z5SliceI10JsonMemberE) %sret.result417, ptr %members418)
   %base.deref = load ptr, ptr %members, align 8
-  %field.inplace408 = getelementptr inbounds nuw %_Z5ArrayI10JsonMemberE, ptr %base.deref, i32 0, i32 0
-  %field.val409 = load i64, ptr %field.inplace408, align 8
-  call void @_ZN5SliceI10JsonMemberE8subsliceEmm(ptr noalias sret(%_Z5SliceI10JsonMemberE) %sret.result405, ptr %sret.result406, i64 %lshr, i64 %field.val409)
-  call void @_ZN9JsonArena12keep_membersEPN4scaly6memory4PageE5SliceI10JsonMemberE(ptr noalias sret(%_Z5SliceI10JsonMemberE) %sret.result403, ptr null, ptr %arena404, ptr %sret.result405)
+  %field.inplace419 = getelementptr inbounds nuw %_Z5ArrayI10JsonMemberE, ptr %base.deref, i32 0, i32 0
+  %field.val420 = load i64, ptr %field.inplace419, align 8
+  call void @_ZN5SliceI10JsonMemberE8subsliceEmm(ptr noalias sret(%_Z5SliceI10JsonMemberE) %sret.result416, ptr %sret.result417, i64 %lshr, i64 %field.val420)
+  call void @_ZN9JsonArena12keep_membersEPN4scaly6memory4PageE5SliceI10JsonMemberE(ptr noalias sret(%_Z5SliceI10JsonMemberE) %sret.result414, ptr null, ptr %arena415, ptr %sret.result416)
   %ptr.load = load ptr, ptr %members, align 8
-  %length410 = getelementptr inbounds nuw %_Z5ArrayI10JsonMemberE, ptr %ptr.load, i32 0, i32 0
-  store i64 %lshr, ptr %length410, align 8
-  %variant.tag.ptr412 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr411, i32 0, i32 0
-  store i8 5, ptr %variant.tag.ptr412, align 1
-  %field.load414 = load %_Z5SliceI10JsonMemberE, ptr %sret.result403, align 8
-  %tuple.field415 = getelementptr inbounds nuw %_Z10JsonObject, ptr %tuple413, i32 0, i32 0
-  store %_Z5SliceI10JsonMemberE %field.load414, ptr %tuple.field415, align 1
-  %tuple.val416 = load %_Z10JsonObject, ptr %tuple413, align 8
-  %variant.data.ptr417 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr411, i32 0, i32 1
-  store %_Z10JsonObject %tuple.val416, ptr %variant.data.ptr417, align 1
-  %variant.val418 = load %_Z9JsonValue, ptr %variant.ptr411, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %v, ptr align 1 %variant.ptr411, i64 ptrtoint (ptr getelementptr (%_Z9JsonValue, ptr null, i32 1) to i64), i1 false)
-  br label %if.end400
+  %length421 = getelementptr inbounds nuw %_Z5ArrayI10JsonMemberE, ptr %ptr.load, i32 0, i32 0
+  store i64 %lshr, ptr %length421, align 8
+  %variant.tag.ptr423 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr422, i32 0, i32 0
+  store i8 5, ptr %variant.tag.ptr423, align 1
+  %field.load425 = load %_Z5SliceI10JsonMemberE, ptr %sret.result414, align 8
+  %tuple.field426 = getelementptr inbounds nuw %_Z10JsonObject, ptr %tuple424, i32 0, i32 0
+  store %_Z5SliceI10JsonMemberE %field.load425, ptr %tuple.field426, align 1
+  %tuple.val427 = load %_Z10JsonObject, ptr %tuple424, align 8
+  %variant.data.ptr428 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr422, i32 0, i32 1
+  store %_Z10JsonObject %tuple.val427, ptr %variant.data.ptr428, align 1
+  %variant.val429 = load %_Z9JsonValue, ptr %variant.ptr422, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %v, ptr align 1 %variant.ptr422, i64 ptrtoint (ptr getelementptr (%_Z9JsonValue, ptr null, i32 1) to i64), i1 false)
+  br label %if.end411
 
-if.else399:                                       ; preds = %land.rhs401, %if.end392
-  %eq423 = icmp eq i1 %eq364, false
-  br i1 %eq423, label %land.rhs422, label %if.else420
+if.else410:                                       ; preds = %land.rhs412, %if.end403
+  %eq434 = icmp eq i1 %eq373, false
+  br i1 %eq434, label %land.rhs433, label %if.else431
 
-if.end400:                                        ; preds = %if.end421, %if.then398
-  %open444 = load ptr, ptr %open, align 8
-  %load.struct445 = load %_Z5ArrayImE, ptr %open444, align 8
-  %length446 = extractvalue %_Z5ArrayImE %load.struct445, 0
-  %sub447 = sub i64 %length446, 1
-  %ptr.load448 = load ptr, ptr %open, align 8
-  %length449 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %ptr.load448, i32 0, i32 0
-  store i64 %sub447, ptr %length449, align 8
-  %doc450 = load ptr, ptr %doc, align 8
-  %call451 = call i64 @_ZN10JsonStream4takeE5SliceI2u8E(ptr %s, ptr %doc450)
-  store i64 %call451, ptr %t, align 1
+if.end411:                                        ; preds = %if.end432, %if.then409
+  %open455 = load ptr, ptr %open, align 8
+  %load.struct456 = load %_Z5ArrayImE, ptr %open455, align 8
+  %length457 = extractvalue %_Z5ArrayImE %load.struct456, 0
+  %sub458 = sub i64 %length457, 1
+  %ptr.load459 = load ptr, ptr %open, align 8
+  %length460 = getelementptr inbounds nuw %_Z5ArrayImE, ptr %ptr.load459, i32 0, i32 0
+  store i64 %sub458, ptr %length460, align 8
+  %doc461 = load ptr, ptr %doc, align 8
+  %call462 = call i64 @_ZN10JsonStream4takeE5SliceI2u8E(ptr %s, ptr %doc461)
+  store i64 %call462, ptr %t, align 1
   br label %repeat.body
 
-land.rhs401:                                      ; preds = %if.end392
-  %eq402 = icmp eq i8 %call389, 125
-  br i1 %eq402, label %if.then398, label %if.else399
+land.rhs412:                                      ; preds = %if.end403
+  %eq413 = icmp eq i8 %call400, 125
+  br i1 %eq413, label %if.then409, label %if.else410
 
-if.then419:                                       ; preds = %land.rhs422
-  %arena426 = load ptr, ptr %arena, align 8
-  %values429 = load ptr, ptr %values, align 8
-  call void @_ZN5ArrayI9JsonValueE8as_sliceEv(ptr noalias sret(%_Z5SliceI9JsonValueE) %sret.result428, ptr %values429)
-  %base.deref430 = load ptr, ptr %values, align 8
-  %field.inplace431 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueE, ptr %base.deref430, i32 0, i32 0
-  %field.val432 = load i64, ptr %field.inplace431, align 8
-  call void @_ZN5SliceI9JsonValueE8subsliceEmm(ptr noalias sret(%_Z5SliceI9JsonValueE) %sret.result427, ptr %sret.result428, i64 %lshr, i64 %field.val432)
-  call void @_ZN9JsonArena11keep_valuesEPN4scaly6memory4PageE5SliceI9JsonValueE(ptr noalias sret(%_Z5SliceI9JsonValueE) %sret.result425, ptr null, ptr %arena426, ptr %sret.result427)
-  %ptr.load433 = load ptr, ptr %values, align 8
-  %length434 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueE, ptr %ptr.load433, i32 0, i32 0
-  store i64 %lshr, ptr %length434, align 8
-  %variant.tag.ptr436 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr435, i32 0, i32 0
-  store i8 4, ptr %variant.tag.ptr436, align 1
-  %field.load438 = load %_Z5SliceI9JsonValueE, ptr %sret.result425, align 8
-  %tuple.field439 = getelementptr inbounds nuw %_Z9JsonArray, ptr %tuple437, i32 0, i32 0
-  store %_Z5SliceI9JsonValueE %field.load438, ptr %tuple.field439, align 1
-  %tuple.val440 = load %_Z9JsonArray, ptr %tuple437, align 8
-  %variant.data.ptr441 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr435, i32 0, i32 1
-  store %_Z9JsonArray %tuple.val440, ptr %variant.data.ptr441, align 1
-  %variant.val442 = load %_Z9JsonValue, ptr %variant.ptr435, align 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %v, ptr align 1 %variant.ptr435, i64 ptrtoint (ptr getelementptr (%_Z9JsonValue, ptr null, i32 1) to i64), i1 false)
-  br label %if.end421
+if.then430:                                       ; preds = %land.rhs433
+  %arena437 = load ptr, ptr %arena, align 8
+  %values440 = load ptr, ptr %values, align 8
+  call void @_ZN5ArrayI9JsonValueE8as_sliceEv(ptr noalias sret(%_Z5SliceI9JsonValueE) %sret.result439, ptr %values440)
+  %base.deref441 = load ptr, ptr %values, align 8
+  %field.inplace442 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueE, ptr %base.deref441, i32 0, i32 0
+  %field.val443 = load i64, ptr %field.inplace442, align 8
+  call void @_ZN5SliceI9JsonValueE8subsliceEmm(ptr noalias sret(%_Z5SliceI9JsonValueE) %sret.result438, ptr %sret.result439, i64 %lshr, i64 %field.val443)
+  call void @_ZN9JsonArena11keep_valuesEPN4scaly6memory4PageE5SliceI9JsonValueE(ptr noalias sret(%_Z5SliceI9JsonValueE) %sret.result436, ptr null, ptr %arena437, ptr %sret.result438)
+  %ptr.load444 = load ptr, ptr %values, align 8
+  %length445 = getelementptr inbounds nuw %_Z5ArrayI9JsonValueE, ptr %ptr.load444, i32 0, i32 0
+  store i64 %lshr, ptr %length445, align 8
+  %variant.tag.ptr447 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr446, i32 0, i32 0
+  store i8 4, ptr %variant.tag.ptr447, align 1
+  %field.load449 = load %_Z5SliceI9JsonValueE, ptr %sret.result436, align 8
+  %tuple.field450 = getelementptr inbounds nuw %_Z9JsonArray, ptr %tuple448, i32 0, i32 0
+  store %_Z5SliceI9JsonValueE %field.load449, ptr %tuple.field450, align 1
+  %tuple.val451 = load %_Z9JsonArray, ptr %tuple448, align 8
+  %variant.data.ptr452 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr446, i32 0, i32 1
+  store %_Z9JsonArray %tuple.val451, ptr %variant.data.ptr452, align 1
+  %variant.val453 = load %_Z9JsonValue, ptr %variant.ptr446, align 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %v, ptr align 1 %variant.ptr446, i64 ptrtoint (ptr getelementptr (%_Z9JsonValue, ptr null, i32 1) to i64), i1 false)
+  br label %if.end432
 
-if.else420:                                       ; preds = %land.rhs422, %if.else399
+if.else431:                                       ; preds = %land.rhs433, %if.else410
   store i64 6, ptr %error, align 1
-  %t443 = load i64, ptr %t, align 8
-  store i64 %t443, ptr %error_at, align 1
+  %t454 = load i64, ptr %t, align 8
+  store i64 %t454, ptr %error_at, align 1
   br label %repeat.exit
 
-if.end421:                                        ; preds = %if.then419
-  br label %if.end400
+if.end432:                                        ; preds = %if.then430
+  br label %if.end411
 
-land.rhs422:                                      ; preds = %if.else399
-  %eq424 = icmp eq i8 %call389, 93
-  br i1 %eq424, label %if.then419, label %if.else420
+land.rhs433:                                      ; preds = %if.else410
+  %eq435 = icmp eq i8 %call400, 93
+  br i1 %eq435, label %if.then430, label %if.else431
 
-if.then454:                                       ; preds = %repeat.exit
-  %variant.tag.ptr457 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr456, i32 0, i32 0
-  store i8 0, ptr %variant.tag.ptr457, align 1
-  %variant.val458 = load %_Z9JsonValue, ptr %variant.ptr456, align 1
-  %error459 = load i64, ptr %error, align 8
-  %error_at460 = load i64, ptr %error_at, align 8
-  %tuple.field462 = getelementptr inbounds nuw %_Z10JsonParsed, ptr %tuple461, i32 0, i32 0
-  store %_Z9JsonValue %variant.val458, ptr %tuple.field462, align 1
-  %tuple.field463 = getelementptr inbounds nuw %_Z10JsonParsed, ptr %tuple461, i32 0, i32 1
-  store i64 %error459, ptr %tuple.field463, align 1
-  %tuple.field464 = getelementptr inbounds nuw %_Z10JsonParsed, ptr %tuple461, i32 0, i32 2
-  store i64 %error_at460, ptr %tuple.field464, align 1
-  %tuple.val465 = load %_Z10JsonParsed, ptr %tuple461, align 8
+if.then465:                                       ; preds = %repeat.exit
+  %variant.tag.ptr468 = getelementptr inbounds nuw %_Z9JsonValue, ptr %variant.ptr467, i32 0, i32 0
+  store i8 0, ptr %variant.tag.ptr468, align 1
+  %variant.val469 = load %_Z9JsonValue, ptr %variant.ptr467, align 1
+  %error470 = load i64, ptr %error, align 8
+  %error_at471 = load i64, ptr %error_at, align 8
+  %tuple.field473 = getelementptr inbounds nuw %_Z10JsonParsed, ptr %tuple472, i32 0, i32 0
+  store %_Z9JsonValue %variant.val469, ptr %tuple.field473, align 1
+  %tuple.field474 = getelementptr inbounds nuw %_Z10JsonParsed, ptr %tuple472, i32 0, i32 1
+  store i64 %error470, ptr %tuple.field474, align 1
+  %tuple.field475 = getelementptr inbounds nuw %_Z10JsonParsed, ptr %tuple472, i32 0, i32 2
+  store i64 %error_at471, ptr %tuple.field475, align 1
+  %tuple.val476 = load %_Z10JsonParsed, ptr %tuple472, align 8
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  store %_Z10JsonParsed %tuple.val465, ptr %0, align 1
+  store %_Z10JsonParsed %tuple.val476, ptr %0, align 1
   ret void
 
-if.end455:                                        ; preds = %repeat.exit
-  %v466 = load %_Z9JsonValue, ptr %v, align 1
-  %tuple.field467 = getelementptr inbounds nuw %_Z10JsonParsed, ptr %tuple461, i32 0, i32 0
-  store %_Z9JsonValue %v466, ptr %tuple.field467, align 1
-  %tuple.field468 = getelementptr inbounds nuw %_Z10JsonParsed, ptr %tuple461, i32 0, i32 1
-  store i64 0, ptr %tuple.field468, align 1
-  %tuple.field469 = getelementptr inbounds nuw %_Z10JsonParsed, ptr %tuple461, i32 0, i32 2
-  store i64 0, ptr %tuple.field469, align 1
-  %tuple.val470 = load %_Z10JsonParsed, ptr %tuple461, align 8
+if.end466:                                        ; preds = %repeat.exit
+  %v477 = load %_Z9JsonValue, ptr %v, align 1
+  %tuple.field478 = getelementptr inbounds nuw %_Z10JsonParsed, ptr %tuple472, i32 0, i32 0
+  store %_Z9JsonValue %v477, ptr %tuple.field478, align 1
+  %tuple.field479 = getelementptr inbounds nuw %_Z10JsonParsed, ptr %tuple472, i32 0, i32 1
+  store i64 0, ptr %tuple.field479, align 1
+  %tuple.field480 = getelementptr inbounds nuw %_Z10JsonParsed, ptr %tuple472, i32 0, i32 2
+  store i64 0, ptr %tuple.field480, align 1
+  %tuple.val481 = load %_Z10JsonParsed, ptr %tuple472, align 8
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  store %_Z10JsonParsed %tuple.val470, ptr %0, align 1
+  store %_Z10JsonParsed %tuple.val481, ptr %0, align 1
   ret void
 }
 
@@ -11007,7 +11057,7 @@ while.exit:                                       ; preds = %if.then, %while.con
   br label %while.cond27
 
 simd.mem.oob:                                     ; preds = %while.body
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.simd.mem.62, i64 %i5, i64 %simd.len)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.simd.mem.64, i64 %i5, i64 %simd.len)
   unreachable
 
 simd.mem.ok:                                      ; preds = %while.body
@@ -11026,7 +11076,7 @@ simd.mem.ok:                                      ; preds = %while.body
   br i1 %simd.inrange16, label %simd.mem.ok18, label %simd.mem.oob17
 
 simd.mem.oob17:                                   ; preds = %simd.mem.ok
-  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.simd.mem.63, i64 %add8, i64 %simd.len10)
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.simd.mem.65, i64 %add8, i64 %simd.len10)
   unreachable
 
 simd.mem.ok18:                                    ; preds = %simd.mem.ok
@@ -11264,13 +11314,96 @@ entry:
   ret void
 }
 
+define linkonce_odr void @_ZN10JsonWriter8verbatimE5SliceI2u8E(ptr %0, ptr %1) {
+entry:
+  %load.struct = load %_Z5SliceI2u8E, ptr %1, align 8
+  %length = extractvalue %_Z5SliceI2u8E %load.struct, 0
+  %load.struct1 = load %_Z10JsonWriter, ptr %0, align 8
+  %buffer = extractvalue %_Z10JsonWriter %load.struct1, 0
+  %length2 = extractvalue %_Z5ArrayI2u8E %buffer, 0
+  %sret.result = alloca %_Z5SliceI2u8E, align 8
+  %field.inplace = getelementptr inbounds nuw %_Z10JsonWriter, ptr %0, i32 0, i32 0
+  %add = add i64 %length, 17
+  call void @_ZN5ArrayI2u8E6extendEm(ptr noalias sret(%_Z5SliceI2u8E) %sret.result, ptr %field.inplace, i64 %add)
+  call void @_ZN5SliceI2u8E3putEm2u8(ptr %sret.result, i64 0, i8 34)
+  %add3 = add i64 %length, 16
+  %load.struct4 = load %_Z5SliceI2u8E, ptr %1, align 8
+  %data = extractvalue %_Z5SliceI2u8E %load.struct4, 1
+  %tuple = alloca %_Z5SliceI2u8E, align 8
+  %tuple.field = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 0
+  store i64 %add3, ptr %tuple.field, align 1
+  %tuple.field5 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 1
+  store ptr %data, ptr %tuple.field5, align 1
+  %tuple.val = load %_Z5SliceI2u8E, ptr %tuple, align 8
+  %i = alloca i64, align 8
+  store i64 0, ptr %i, align 1
+  br label %while.cond
+
+while.cond:                                       ; preds = %simd.mem.ok18, %entry
+  %i6 = load i64, ptr %i, align 8
+  %lt = icmp ult i64 %i6, %length
+  br i1 %lt, label %while.body, label %while.exit
+
+while.body:                                       ; preds = %while.cond
+  %i7 = load i64, ptr %i, align 8
+  %simd.cont = extractvalue %_Z5SliceI2u8E %tuple.val, 0
+  %simd.cont8 = extractvalue %_Z5SliceI2u8E %tuple.val, 1
+  %simd.fits = icmp uge i64 %simd.cont, 16
+  %simd.room = sub i64 %simd.cont, 16
+  %simd.within = icmp ule i64 %i7, %simd.room
+  %simd.inrange = and i1 %simd.fits, %simd.within
+  br i1 %simd.inrange, label %simd.mem.ok, label %simd.mem.oob
+
+while.exit:                                       ; preds = %while.cond
+  %add22 = add i64 %length, 1
+  call void @_ZN5SliceI2u8E3putEm2u8(ptr %sret.result, i64 %add22, i8 34)
+  %add23 = add i64 %length2, %length
+  %add24 = add i64 %add23, 2
+  %buffer25 = getelementptr inbounds nuw %_Z10JsonWriter, ptr %0, i32 0, i32 0
+  %length26 = getelementptr inbounds nuw %_Z5ArrayI2u8E, ptr %buffer25, i32 0, i32 0
+  store i64 %add24, ptr %length26, align 8
+  ret void
+
+simd.mem.oob:                                     ; preds = %while.body
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.simd.mem.62, i64 %i7, i64 %simd.cont)
+  unreachable
+
+simd.mem.ok:                                      ; preds = %while.body
+  %simd.addr = getelementptr inbounds i8, ptr %simd.cont8, i64 %i7
+  %simd.load = load <16 x i8>, ptr %simd.addr, align 1
+  %i9 = load i64, ptr %i, align 8
+  %add10 = add i64 %i9, 1
+  %simd.cont11 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %sret.result, i32 0, i32 0
+  %simd.len = load i64, ptr %simd.cont11, align 8
+  %simd.cont12 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %sret.result, i32 0, i32 1
+  %simd.data = load ptr, ptr %simd.cont12, align 8
+  %simd.fits13 = icmp uge i64 %simd.len, 16
+  %simd.room14 = sub i64 %simd.len, 16
+  %simd.within15 = icmp ule i64 %add10, %simd.room14
+  %simd.inrange16 = and i1 %simd.fits13, %simd.within15
+  br i1 %simd.inrange16, label %simd.mem.ok18, label %simd.mem.oob17
+
+simd.mem.oob17:                                   ; preds = %simd.mem.ok
+  call void @_Z15scaly_panic_oobP10const_charmm(ptr @.simd.mem.63, i64 %add10, i64 %simd.len)
+  unreachable
+
+simd.mem.ok18:                                    ; preds = %simd.mem.ok
+  %simd.addr19 = getelementptr inbounds i8, ptr %simd.data, i64 %add10
+  store <16 x i8> %simd.load, ptr %simd.addr19, align 1
+  %i20 = load i64, ptr %i, align 8
+  %add21 = add i64 %i20, 16
+  store i64 %add21, ptr %i, align 1
+  br label %while.cond
+}
+
 define linkonce_odr void @_ZN10JsonWriter5valueE9JsonValue(ptr %0, ptr %1) {
 entry:
-  %arg.tmp29 = alloca %_Z5SliceI10JsonMemberE, align 8
-  %sret.result27 = alloca %_Z10JsonMember, align 8
-  %arg.tmp15 = alloca %_Z5SliceI9JsonValueE, align 8
+  %arg.tmp31 = alloca %_Z5SliceI10JsonMemberE, align 8
+  %sret.result29 = alloca %_Z10JsonMember, align 8
+  %arg.tmp17 = alloca %_Z5SliceI9JsonValueE, align 8
   %sret.result = alloca %_Z9JsonValue, align 8
   %i = alloca i64, align 8
+  %arg.tmp11 = alloca %_Z5SliceI2u8E, align 8
   %arg.tmp9 = alloca %_Z5SliceI2u8E, align 8
   %arg.tmp = alloca %_Z5SliceI2u8E, align 8
   %tag.ptr = getelementptr inbounds nuw %_Z9JsonValue, ptr %1, i32 0, i32 0
@@ -11280,11 +11413,11 @@ entry:
     i8 1, label %choose.when1
     i8 2, label %choose.when3
     i8 3, label %choose.when6
-    i8 4, label %choose.when10
-    i8 5, label %choose.when18
+    i8 4, label %choose.when12
+    i8 5, label %choose.when20
   ]
 
-choose.end:                                       ; preds = %choose.else, %while.exit23, %while.exit, %choose.when6, %choose.when3, %choose.when1, %choose.when
+choose.end:                                       ; preds = %choose.else, %while.exit25, %while.exit, %if.end, %choose.when3, %choose.when1, %choose.when
   ret void
 
 choose.else:                                      ; preds = %entry
@@ -11312,33 +11445,47 @@ choose.when3:                                     ; preds = %entry
 choose.when6:                                     ; preds = %entry
   %"variant.c_data().ptr7" = getelementptr inbounds nuw %_Z9JsonValue, ptr %1, i32 0, i32 1
   %variant.val8 = load %_Z10JsonString, ptr %"variant.c_data().ptr7", align 8
+  call void @_ZN10JsonWriter8separateEv(ptr %0)
+  %verbatim = extractvalue %_Z10JsonString %variant.val8, 1
+  br i1 %verbatim, label %if.then, label %if.else
+
+if.then:                                          ; preds = %choose.when6
   %bytes = extractvalue %_Z10JsonString %variant.val8, 0
   store %_Z5SliceI2u8E %bytes, ptr %arg.tmp9, align 1
-  call void @_ZN10JsonWriter4textE5SliceI2u8E(ptr %0, ptr %arg.tmp9)
+  call void @_ZN10JsonWriter8verbatimE5SliceI2u8E(ptr %0, ptr %arg.tmp9)
+  br label %if.end
+
+if.else:                                          ; preds = %choose.when6
+  %bytes10 = extractvalue %_Z10JsonString %variant.val8, 0
+  store %_Z5SliceI2u8E %bytes10, ptr %arg.tmp11, align 1
+  call void @_ZN10JsonWriter6quotedE5SliceI2u8E(ptr %0, ptr %arg.tmp11)
+  br label %if.end
+
+if.end:                                           ; preds = %if.else, %if.then
   br label %choose.end
 
-choose.when10:                                    ; preds = %entry
-  %"variant.c_data().ptr11" = getelementptr inbounds nuw %_Z9JsonValue, ptr %1, i32 0, i32 1
-  %variant.val12 = load %_Z9JsonArray, ptr %"variant.c_data().ptr11", align 8
+choose.when12:                                    ; preds = %entry
+  %"variant.c_data().ptr13" = getelementptr inbounds nuw %_Z9JsonValue, ptr %1, i32 0, i32 1
+  %variant.val14 = load %_Z9JsonArray, ptr %"variant.c_data().ptr13", align 8
   call void @_ZN10JsonWriter11begin_arrayEv(ptr %0)
   store i64 0, ptr %i, align 1
   br label %while.cond
 
-while.cond:                                       ; preds = %while.body, %choose.when10
-  %i13 = load i64, ptr %i, align 8
-  %items = extractvalue %_Z9JsonArray %variant.val12, 0
+while.cond:                                       ; preds = %while.body, %choose.when12
+  %i15 = load i64, ptr %i, align 8
+  %items = extractvalue %_Z9JsonArray %variant.val14, 0
   %length = extractvalue %_Z5SliceI9JsonValueE %items, 0
-  %lt = icmp ult i64 %i13, %length
+  %lt = icmp ult i64 %i15, %length
   br i1 %lt, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %items14 = extractvalue %_Z9JsonArray %variant.val12, 0
-  store %_Z5SliceI9JsonValueE %items14, ptr %arg.tmp15, align 1
-  %i16 = load i64, ptr %i, align 8
-  call void @_ZN5SliceI9JsonValueEixEm(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %arg.tmp15, i64 %i16)
+  %items16 = extractvalue %_Z9JsonArray %variant.val14, 0
+  store %_Z5SliceI9JsonValueE %items16, ptr %arg.tmp17, align 1
+  %i18 = load i64, ptr %i, align 8
+  call void @_ZN5SliceI9JsonValueEixEm(ptr noalias sret(%_Z9JsonValue) %sret.result, ptr %arg.tmp17, i64 %i18)
   call void @_ZN10JsonWriter5valueE9JsonValue(ptr %0, ptr %sret.result)
-  %i17 = load i64, ptr %i, align 8
-  %add = add i64 %i17, 1
+  %i19 = load i64, ptr %i, align 8
+  %add = add i64 %i19, 1
   store i64 %add, ptr %i, align 1
   br label %while.cond
 
@@ -11346,37 +11493,54 @@ while.exit:                                       ; preds = %while.cond
   call void @_ZN10JsonWriter9end_arrayEv(ptr %0)
   br label %choose.end
 
-choose.when18:                                    ; preds = %entry
-  %"variant.c_data().ptr19" = getelementptr inbounds nuw %_Z9JsonValue, ptr %1, i32 0, i32 1
-  %variant.val20 = load %_Z10JsonObject, ptr %"variant.c_data().ptr19", align 8
+choose.when20:                                    ; preds = %entry
+  %"variant.c_data().ptr21" = getelementptr inbounds nuw %_Z9JsonValue, ptr %1, i32 0, i32 1
+  %variant.val22 = load %_Z10JsonObject, ptr %"variant.c_data().ptr21", align 8
   call void @_ZN10JsonWriter12begin_objectEv(ptr %0)
   store i64 0, ptr %i, align 1
-  br label %while.cond21
+  br label %while.cond23
 
-while.cond21:                                     ; preds = %while.body22, %choose.when18
-  %i24 = load i64, ptr %i, align 8
-  %members = extractvalue %_Z10JsonObject %variant.val20, 0
-  %length25 = extractvalue %_Z5SliceI10JsonMemberE %members, 0
-  %lt26 = icmp ult i64 %i24, %length25
-  br i1 %lt26, label %while.body22, label %while.exit23
+while.cond23:                                     ; preds = %if.end35, %choose.when20
+  %i26 = load i64, ptr %i, align 8
+  %members = extractvalue %_Z10JsonObject %variant.val22, 0
+  %length27 = extractvalue %_Z5SliceI10JsonMemberE %members, 0
+  %lt28 = icmp ult i64 %i26, %length27
+  br i1 %lt28, label %while.body24, label %while.exit25
 
-while.body22:                                     ; preds = %while.cond21
-  %members28 = extractvalue %_Z10JsonObject %variant.val20, 0
-  store %_Z5SliceI10JsonMemberE %members28, ptr %arg.tmp29, align 1
-  %i30 = load i64, ptr %i, align 8
-  call void @_ZN5SliceI10JsonMemberEixEm(ptr noalias sret(%_Z10JsonMember) %sret.result27, ptr %arg.tmp29, i64 %i30)
-  %field.inplace = getelementptr inbounds nuw %_Z10JsonMember, ptr %sret.result27, i32 0, i32 0
-  call void @_ZN10JsonWriter3keyE5SliceI2u8E(ptr %0, ptr %field.inplace)
-  %field.inplace31 = getelementptr inbounds nuw %_Z10JsonMember, ptr %sret.result27, i32 0, i32 1
-  call void @_ZN10JsonWriter5valueE9JsonValue(ptr %0, ptr %field.inplace31)
+while.body24:                                     ; preds = %while.cond23
+  %members30 = extractvalue %_Z10JsonObject %variant.val22, 0
+  store %_Z5SliceI10JsonMemberE %members30, ptr %arg.tmp31, align 1
   %i32 = load i64, ptr %i, align 8
-  %add33 = add i64 %i32, 1
-  store i64 %add33, ptr %i, align 1
-  br label %while.cond21
+  call void @_ZN5SliceI10JsonMemberEixEm(ptr noalias sret(%_Z10JsonMember) %sret.result29, ptr %arg.tmp31, i64 %i32)
+  call void @_ZN10JsonWriter8separateEv(ptr %0)
+  %load.struct = load %_Z10JsonMember, ptr %sret.result29, align 8
+  %verbatim_key = extractvalue %_Z10JsonMember %load.struct, 2
+  br i1 %verbatim_key, label %if.then33, label %if.else34
 
-while.exit23:                                     ; preds = %while.cond21
+while.exit25:                                     ; preds = %while.cond23
   call void @_ZN10JsonWriter10end_objectEv(ptr %0)
   br label %choose.end
+
+if.then33:                                        ; preds = %while.body24
+  %field.inplace = getelementptr inbounds nuw %_Z10JsonMember, ptr %sret.result29, i32 0, i32 0
+  call void @_ZN10JsonWriter8verbatimE5SliceI2u8E(ptr %0, ptr %field.inplace)
+  br label %if.end35
+
+if.else34:                                        ; preds = %while.body24
+  %field.inplace36 = getelementptr inbounds nuw %_Z10JsonMember, ptr %sret.result29, i32 0, i32 0
+  call void @_ZN10JsonWriter6quotedE5SliceI2u8E(ptr %0, ptr %field.inplace36)
+  br label %if.end35
+
+if.end35:                                         ; preds = %if.else34, %if.then33
+  call void @_ZN10JsonWriter4byteE2u8(ptr %0, i8 58)
+  %after_key = getelementptr inbounds nuw %_Z10JsonWriter, ptr %0, i32 0, i32 2
+  store i1 true, ptr %after_key, align 1
+  %field.inplace37 = getelementptr inbounds nuw %_Z10JsonMember, ptr %sret.result29, i32 0, i32 1
+  call void @_ZN10JsonWriter5valueE9JsonValue(ptr %0, ptr %field.inplace37)
+  %i38 = load i64, ptr %i, align 8
+  %add39 = add i64 %i38, 1
+  store i64 %add39, ptr %i, align 1
+  br label %while.cond23
 }
 
 define linkonce_odr void @_ZN10JsonWriter3rawE5SliceI2u8E(ptr %0, ptr %1) {
@@ -11501,7 +11665,7 @@ if.else:                                          ; preds = %entry
   %tuple.field = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 0
   store i64 3, ptr %tuple.field, align 1
   %tuple.field1 = getelementptr inbounds nuw %_Z5SliceI2u8E, ptr %tuple, i32 0, i32 1
-  store ptr @.str.64, ptr %tuple.field1, align 1
+  store ptr @.str.66, ptr %tuple.field1, align 1
   %tuple.val = load %_Z5SliceI2u8E, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %arg.tmp, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z5SliceI2u8E, ptr null, i32 1) to i64), i1 false)
   call void @_ZN10JsonWriter6appendE5SliceI2u8E(ptr %0, ptr %arg.tmp)
@@ -11726,7 +11890,7 @@ choose.else:                                      ; preds = %entry
 
 choose.when:                                      ; preds = %entry
   %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z9JsonValue, ptr %1, i32 0, i32 1
-  store { ptr } { ptr @.sconst.65 }, ptr %arg.tmp, align 1
+  store { ptr } { ptr @.sconst.67 }, ptr %arg.tmp, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %0, ptr %arg.tmp)
   br label %choose.end
 
@@ -11736,12 +11900,12 @@ choose.when1:                                     ; preds = %entry
   br i1 %variant.val, label %if.then, label %if.else
 
 if.then:                                          ; preds = %choose.when1
-  store { ptr } { ptr @.sconst.66 }, ptr %arg.tmp3, align 1
+  store { ptr } { ptr @.sconst.68 }, ptr %arg.tmp3, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %0, ptr %arg.tmp3)
   br label %if.end
 
 if.else:                                          ; preds = %choose.when1
-  store { ptr } { ptr @.sconst.67 }, ptr %arg.tmp4, align 1
+  store { ptr } { ptr @.sconst.69 }, ptr %arg.tmp4, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %0, ptr %arg.tmp4)
   br label %if.end
 
