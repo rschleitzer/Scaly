@@ -59,8 +59,8 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z6VectorI9StatementE = type { i64, ptr }
 %_Z6Parser = type { %_Z5Lexer, %_Z6VectorI6StringE, %_Z7HashSetI6StringE }
 %_Z5Lexer = type { { ptr }, ptr, ptr, i64, i64, %_Z5Token, %_Z5SliceImE, i64, ptr }
-%_Z5Token = type { i8, [9 x i8] }
-%_Z11ParserError = type { i8, [24 x i8] }
+%_Z5Token = type { i8, <{ [1 x i64], [1 x i8] }> }
+%_Z11ParserError = type { i8, <{ [3 x i64], [0 x i8] }> }
 %_Z7Planner = type { { ptr }, %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, %_Z5ArrayImE, %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, i64, %_Z5ArrayI14TypeConstraintE, %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, %_Z5ArrayI12KeyValuePairI6String7ConceptEE, %_Z12ConceptIndex, ptr, %_Z5ArrayI16PlannedStructureE, %_Z5ArrayI12PlannedUnionE, %_Z5ArrayI6StringE, i1, i64, ptr, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6LambdaE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i64, i64, i1, i1, i1, %_Z5ArrayI15PlannedFunctionE, %_Z12ConceptIndex, %_Z5ArrayI13PlannedGlobalE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI12KeyValuePairI6String8FunctionEE, %_Z5ArrayI12KeyValuePairI6String6LambdaEE, %_Z13FunctionIndex, %_Z5ArrayI12KeyValuePairI6String8OperatorEE, %_Z13FunctionIndex, i1, %_Z6VectorI11PlannedTypeE, %_Z5ArrayI12KeyValuePairI6String6ModuleEE, %_Z5ArrayI12KeyValuePairI6String6ModuleEE, %_Z5ArrayI6StringE, %_Z5ArrayI17PlannerDiagnosticE, %_Z5ArrayI7ProgramE, ptr, ptr, ptr, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i64, %_Z5ArrayI12EscapeRecordE, ptr, ptr, ptr, ptr, i1, i1, i1, i64, i1, i1, ptr, ptr, ptr, %_Z5ArrayI6StringE, ptr, ptr, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i1, i1, %_Z5ArrayI6StringE, ptr, %_Z5ArrayImE, ptr, ptr, i1, i1, %_Z5ArrayI6StringE, i64, i1, i1, i64, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i64, i64, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, ptr, ptr, ptr, ptr, ptr, i64, ptr, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, { ptr }, { ptr }, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, i64, i64, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayImE, i1, %_Z12ConceptIndex, %_Z5ArrayI6StringE, i1, i64, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, ptr, { ptr }, ptr, ptr, i64, i64 }
 %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE = type { i64, i64, ptr }
 %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE = type { i64, i64, ptr }
@@ -104,7 +104,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z4ListI6VectorI7OperandEE = type { ptr, ptr }
 %_Z4NodeI6VectorI7OperandEE = type { %_Z6VectorI7OperandE, ptr }
 %_Z12ListIteratorI6VectorI7OperandEE = type { ptr }
-%_Z9Statement = type { i8, [96 x i8] }
+%_Z9Statement = type { i8, <{ [12 x i64], [0 x i8] }> }
 %_Z14VectorIteratorI9StatementE = type { ptr, i64 }
 %_Z5SliceI9StatementE = type { i64, ptr }
 %_Z13SliceIteratorI9StatementE = type { %_Z5SliceI9StatementE, i64 }
@@ -155,7 +155,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z4NodeI4ItemE = type { %_Z4Item, ptr }
 %_Z12ListIteratorI4ItemE = type { ptr }
 %_Z7Operand = type { %_Z4Span, %_Z10Expression, ptr }
-%_Z10Expression = type { i8, [152 x i8] }
+%_Z10Expression = type { i8, <{ [19 x i64], [0 x i8] }> }
 %_Z14VectorIteratorI7OperandE = type { ptr, i64 }
 %_Z5SliceI7OperandE = type { i64, ptr }
 %_Z13SliceIteratorI7OperandE = type { %_Z5SliceI7OperandE, i64 }
@@ -175,7 +175,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z4NodeI9ComponentE = type { %_Z9Component, ptr }
 %_Z12ListIteratorI9ComponentE = type { ptr }
 %_Z9Attribute = type { %_Z4Span, { ptr }, %_Z5Model }
-%_Z5Model = type { i8, [64 x i8] }
+%_Z5Model = type { i8, <{ [8 x i64], [0 x i8] }> }
 %_Z14VectorIteratorI9AttributeE = type { ptr, i64 }
 %_Z5SliceI9AttributeE = type { i64, ptr }
 %_Z13SliceIteratorI9AttributeE = type { %_Z5SliceI9AttributeE, i64 }
@@ -196,8 +196,8 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z12ListIteratorI16GenericParameterE = type { ptr }
 %_Z6VectorI8FunctionE = type { i64, ptr }
 %_Z8Function = type { %_Z4Span, i1, i1, { ptr }, %_Z6VectorI16GenericParameterE, ptr, %_Z6VectorI4ItemE, ptr, ptr, %_Z8Lifetime, %_Z14Implementation, %_Z6VectorI6StringE, %_Z6VectorI6StringE, %_Z6VectorI9AttributeE }
-%_Z8Lifetime = type { i8, [24 x i8] }
-%_Z14Implementation = type { i8, [32 x i8] }
+%_Z8Lifetime = type { i8, <{ [3 x i64], [0 x i8] }> }
+%_Z14Implementation = type { i8, <{ [4 x i64], [0 x i8] }> }
 %_Z14VectorIteratorI8FunctionE = type { ptr, i64 }
 %_Z5SliceI8FunctionE = type { i64, ptr }
 %_Z13SliceIteratorI8FunctionE = type { %_Z5SliceI8FunctionE, i64 }
@@ -233,7 +233,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z12ListIteratorI6VectorI12KeyValuePairI8Nameable8NameableEEE = type { ptr }
 %_Z6VectorI12KeyValuePairI8Nameable8NameableEE = type { i64, ptr }
 %_Z12KeyValuePairI1K8NameableE = type { ptr, %_Z8Nameable }
-%_Z8Nameable = type { i8, [184 x i8] }
+%_Z8Nameable = type { i8, <{ [23 x i64], [0 x i8] }> }
 %_Z14VectorIteratorI12KeyValuePairI8Nameable8NameableEE = type { ptr, i64 }
 %_Z5SliceI12KeyValuePairI8Nameable8NameableEE = type { i64, ptr }
 %_Z13SliceIteratorI12KeyValuePairI8Nameable8NameableEE = type { %_Z5SliceI12KeyValuePairI8Nameable8NameableEE, i64 }
@@ -305,7 +305,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z4ListI7VariantE = type { ptr, ptr }
 %_Z4NodeI7VariantE = type { %_Z7Variant, ptr }
 %_Z12ListIteratorI7VariantE = type { ptr }
-%_Z6Member = type { i8, [200 x i8] }
+%_Z6Member = type { i8, <{ [25 x i64], [0 x i8] }> }
 %_Z14VectorIteratorI6MemberE = type { ptr, i64 }
 %_Z5SliceI6MemberE = type { i64, ptr }
 %_Z13SliceIteratorI6MemberE = type { %_Z5SliceI6MemberE, i64 }
@@ -348,7 +348,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z4NodeI12KeyValuePairI6String11PlannedTypeEE = type { %_Z12KeyValuePairI6String11PlannedTypeE, ptr }
 %_Z12ListIteratorI12KeyValuePairI6String11PlannedTypeEE = type { ptr }
 %_Z13ArrayIteratorI12KeyValuePairI6String11PlannedTypeEE = type { ptr, i64 }
-%_Z14TypeConstraint = type { i8, [216 x i8] }
+%_Z14TypeConstraint = type { i8, <{ [27 x i64], [0 x i8] }> }
 %_Z6VectorI14TypeConstraintE = type { i64, ptr }
 %_Z14VectorIteratorI14TypeConstraintE = type { ptr, i64 }
 %_Z5SliceI14TypeConstraintE = type { i64, ptr }
@@ -368,7 +368,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z13ArrayIteratorI12KeyValuePairIm11PlannedTypeEE = type { ptr, i64 }
 %_Z12KeyValuePairI6String7ConceptE = type { { ptr }, %_Z7Concept }
 %_Z7Concept = type { %_Z4Span, { ptr }, %_Z6VectorI16GenericParameterE, %_Z6VectorI9AttributeE, %_Z10Definition }
-%_Z10Definition = type { i8, [120 x i8] }
+%_Z10Definition = type { i8, <{ [15 x i64], [0 x i8] }> }
 %_Z6VectorI12KeyValuePairI6String7ConceptEE = type { i64, ptr }
 %_Z14VectorIteratorI12KeyValuePairI6String7ConceptEE = type { ptr, i64 }
 %_Z5SliceI12KeyValuePairI6String7ConceptEE = type { i64, ptr }
@@ -406,7 +406,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z12ListIteratorI6LambdaE = type { ptr }
 %_Z13ArrayIteratorI6LambdaE = type { ptr, i64 }
 %_Z15PlannedFunction = type { %_Z4Span, i1, i1, { ptr }, { ptr }, ptr, ptr, ptr, ptr, %_Z8Lifetime, %_Z21PlannedImplementation, ptr, i1, i1, ptr, { ptr }, ptr }
-%_Z21PlannedImplementation = type { i8, [128 x i8] }
+%_Z21PlannedImplementation = type { i8, <{ [16 x i64], [0 x i8] }> }
 %_Z6VectorI15PlannedFunctionE = type { i64, ptr }
 %_Z14VectorIteratorI15PlannedFunctionE = type { ptr, i64 }
 %_Z5SliceI15PlannedFunctionE = type { i64, ptr }
@@ -534,7 +534,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z5SliceI1TE = type { i64, ptr }
 %_Z13SliceIteratorI1TE = type { %_Z5SliceI1TE, i64 }
 %_Z6VectorI17DeclarationSyntaxE = type { i64, ptr }
-%_Z17DeclarationSyntax = type { i8, [200 x i8] }
+%_Z17DeclarationSyntax = type { i8, <{ [25 x i64], [0 x i8] }> }
 %_Z14VectorIteratorI17DeclarationSyntaxE = type { ptr, i64 }
 %_Z5SliceI17DeclarationSyntaxE = type { i64, ptr }
 %_Z13SliceIteratorI17DeclarationSyntaxE = type { %_Z5SliceI17DeclarationSyntaxE, i64 }
@@ -543,10 +543,10 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z4ListI17DeclarationSyntaxE = type { ptr, ptr }
 %_Z4NodeI17DeclarationSyntaxE = type { %_Z17DeclarationSyntax, ptr }
 %_Z12ListIteratorI17DeclarationSyntaxE = type { ptr }
-%_Z12ExportSyntax = type { i8, [176 x i8] }
+%_Z12ExportSyntax = type { i8, <{ [22 x i64], [0 x i8] }> }
 %_Z16DefinitionSyntax = type { i64, i64, { ptr }, ptr, ptr, %_Z13ConceptSyntax }
-%_Z13ConceptSyntax = type { i8, [96 x i8] }
-%_Z12TargetSyntax = type { i8, [152 x i8] }
+%_Z13ConceptSyntax = type { i8, <{ [12 x i64], [0 x i8] }> }
+%_Z12TargetSyntax = type { i8, <{ [19 x i64], [0 x i8] }> }
 %_Z14FunctionSyntax = type { i64, i64, %_Z12TargetSyntax }
 %_Z15ProcedureSyntax = type { i64, i64, %_Z12TargetSyntax }
 %_Z14OperatorSyntax = type { i64, i64, %_Z12TargetSyntax }
@@ -561,7 +561,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z9UseSyntax = type { i64, i64, %_Z10NameSyntax }
 %_Z11TraitSyntax = type { i64, i64, %_Z10NameSyntax, ptr, ptr, ptr, ptr }
 %_Z11MacroSyntax = type { i64, i64, { ptr }, %_Z11ModelSyntax, ptr }
-%_Z11ModelSyntax = type { i8, [32 x i8] }
+%_Z11ModelSyntax = type { i8, <{ [4 x i64], [0 x i8] }> }
 %_Z11UnionSyntax = type { i64, i64, ptr, ptr }
 %_Z15NamespaceSyntax = type { i64, i64, ptr, ptr }
 %_Z11ClassSyntax = type { i64, i64, %_Z15StructureSyntax, ptr }
@@ -572,8 +572,8 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z15IntrinsicSyntax = type { i64, i64 }
 %_Z11NamedSyntax = type { i64, i64, { ptr }, %_Z13RoutineSyntax }
 %_Z13RoutineSyntax = type { i64, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, %_Z20ImplementationSyntax }
-%_Z20ImplementationSyntax = type { i8, [33 x i8] }
-%_Z12MemberSyntax = type { i8, [176 x i8] }
+%_Z20ImplementationSyntax = type { i8, <{ [4 x i64], [1 x i8] }> }
+%_Z12MemberSyntax = type { i8, <{ [22 x i64], [0 x i8] }> }
 %_Z10BodySyntax = type { i64, i64, ptr, ptr }
 %_Z6VectorI12MemberSyntaxE = type { i64, ptr }
 %_Z6VectorI13VariantSyntaxE = type { i64, ptr }
@@ -597,7 +597,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z4ListI13VariantSyntaxE = type { ptr, ptr }
 %_Z4NodeI13VariantSyntaxE = type { %_Z13VariantSyntax, ptr }
 %_Z12ListIteratorI13VariantSyntaxE = type { ptr }
-%_Z9JsonValue = type { i8, [16 x i8] }
+%_Z9JsonValue = type { i8, <{ [2 x i64], [0 x i8] }> }
 %_Z10JsonParsed = type { %_Z9JsonValue, i64, i64 }
 %_Z5SliceI9JsonValueE = type { i64, ptr }
 %_Z13SliceIteratorI9JsonValueE = type { %_Z5SliceI9JsonValueE, i64 }
@@ -614,9 +614,9 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z4ListI10ItemSyntaxE = type { ptr, ptr }
 %_Z4NodeI10ItemSyntaxE = type { %_Z10ItemSyntax, ptr }
 %_Z12ListIteratorI10ItemSyntaxE = type { ptr }
-%_Z18ParameterSetSyntax = type { i8, [72 x i8] }
+%_Z18ParameterSetSyntax = type { i8, <{ [9 x i64], [0 x i8] }> }
 %_Z16ParametersSyntax = type { i64, i64, ptr }
-%_Z10PartSyntax = type { i8, [152 x i8] }
+%_Z10PartSyntax = type { i8, <{ [19 x i64], [0 x i8] }> }
 %_Z11FieldSyntax = type { i64, i64, %_Z14PropertySyntax }
 %_Z14PropertySyntax = type { i64, i64, ptr, { ptr }, %_Z20TypeAnnotationSyntax, ptr, ptr }
 %_Z20TypeAnnotationSyntax = type { i64, i64, %_Z10TypeSyntax }
@@ -636,10 +636,10 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z6VectorI15ExtensionSyntaxE = type { i64, ptr }
 %_Z12ThrowsSyntax = type { i64, i64, %_Z10TypeSyntax, ptr }
 %_Z13ReturnsSyntax = type { i64, i64, %_Z10TypeSyntax, ptr }
-%_Z17BindingSpecSyntax = type { i8, [72 x i8] }
+%_Z17BindingSpecSyntax = type { i8, <{ [9 x i64], [0 x i8] }> }
 %_Z23BindingAnnotationSyntax = type { i64, i64, %_Z17BindingSpecSyntax }
 %_Z11ArraySyntax = type { i64, i64, ptr }
-%_Z12ActionSyntax = type { i8, [32 x i8] }
+%_Z12ActionSyntax = type { i8, <{ [4 x i64], [0 x i8] }> }
 %_Z12ExternSyntax = type { i64, i64 }
 %_Z17InstructionSyntax = type { i64, i64 }
 %_Z14VectorIteratorI21GenericArgumentSyntaxE = type { ptr, i64 }
@@ -666,7 +666,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z4Plan = type { %_Z13PlannedModule, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr }
 %_Z13PlannedModule = type { { ptr }, { ptr }, ptr, ptr, ptr, ptr }
 %_Z6VectorI16PlannedStatementE = type { i64, ptr }
-%_Z16PlannedStatement = type { i8, [128 x i8] }
+%_Z16PlannedStatement = type { i8, <{ [16 x i64], [0 x i8] }> }
 %_Z14VectorIteratorI16PlannedStatementE = type { ptr, i64 }
 %_Z5SliceI16PlannedStatementE = type { i64, ptr }
 %_Z13SliceIteratorI16PlannedStatementE = type { %_Z5SliceI16PlannedStatementE, i64 }
@@ -686,7 +686,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z6VectorI15PlannedOperatorE = type { i64, ptr }
 %_Z6VectorI14PlannedOperandE = type { i64, ptr }
 %_Z14PlannedOperand = type { %_Z4Span, %_Z17PlannedExpression, ptr, %_Z11PlannedType }
-%_Z17PlannedExpression = type { i8, [488 x i8] }
+%_Z17PlannedExpression = type { i8, <{ [61 x i64], [0 x i8] }> }
 %_Z14VectorIteratorI14PlannedOperandE = type { ptr, i64 }
 %_Z5SliceI14PlannedOperandE = type { i64, ptr }
 %_Z13SliceIteratorI14PlannedOperandE = type { %_Z5SliceI14PlannedOperandE, i64 }
@@ -729,7 +729,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z12PlannedTuple = type { %_Z4Span, ptr, %_Z11PlannedType, i1, %_Z8Lifetime, ptr }
 %_Z11PlannedCall = type { %_Z4Span, { ptr }, { ptr }, i1, i1, i1, i1, ptr, %_Z11PlannedType, %_Z8Lifetime, ptr, i1 }
 %_Z15PlannedConstant = type { %_Z8Constant }
-%_Z8Constant = type { i8, [24 x i8] }
+%_Z8Constant = type { i8, <{ [3 x i64], [0 x i8] }> }
 %_Z15PlannedVariable = type { %_Z4Span, { ptr }, %_Z11PlannedType, i1 }
 %_Z16PlannedGlobalRef = type { %_Z4Span, { ptr }, { ptr }, %_Z11PlannedType }
 %_Z13PlannedMatrix = type { %_Z4Span, ptr, %_Z11PlannedType, %_Z8Lifetime }
@@ -801,7 +801,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z12ListIteratorI15PlannedPropertyE = type { ptr }
 %_Z5Local = type { %_Z4Span }
 %_Z13VersionSyntax = type { i64, i64, %_Z7Literal, %_Z7Literal }
-%_Z7Literal = type { i8, [8 x i8] }
+%_Z7Literal = type { i8, <{ [1 x i64], [0 x i8] }> }
 %_Z5SliceI7DocSlotE = type { i64, ptr }
 %_Z7DocSlot = type { ptr, i64, ptr, i64, i1, i1 }
 %_Z13SliceIteratorI7DocSlotE = type { %_Z5SliceI7DocSlotE, i64 }
@@ -9369,7 +9369,7 @@ entry:
   ret void
 }
 
-declare void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }), ptr, ptr)
+declare void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, <{ [6 x i64], [0 x i8] }> }), ptr, ptr)
 
 define linkonce_odr void @_ZN11diagnostics11diag_objectEPN4scaly6memory4PageE6Stringm6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, i64 %3, ptr %4) {
 entry:
@@ -9552,7 +9552,7 @@ entry:
   %planner = alloca ptr, align 8
   %arg.tmp = alloca %_Z13ProgramSyntax, align 8
   %sret.result24 = alloca %_Z7Program, align 8
-  %sret.result21 = alloca { i8, [48 x i8] }, align 8
+  %sret.result21 = alloca { i8, <{ [6 x i64], [0 x i8] }> }, align 8
   %p = alloca ptr, align 8
   %first = alloca i1, align 1
   %sret.result11 = alloca { ptr }, align 8
@@ -9625,7 +9625,7 @@ frame.forced17:                                   ; preds = %frame.force16, %if.
   call void @_ZN6ParserC1E6String(ptr %struct.region20, ptr %sret.result6)
   store ptr %struct.region20, ptr %p, align 1
   %p22 = load ptr, ptr %p, align 8
-  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %sret.result21, ptr %frame, ptr %p22)
+  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, <{ [6 x i64], [0 x i8] }> }) %sret.result21, ptr %frame, ptr %p22)
   %tag = load i8, ptr %sret.result21, align 1
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result21, i8 1
   switch i8 %tag, label %choose.else [
@@ -9890,7 +9890,7 @@ entry:
   %planner = alloca ptr, align 8
   %arg.tmp = alloca %_Z13ProgramSyntax, align 8
   %sret.result28 = alloca %_Z7Program, align 8
-  %sret.result25 = alloca { i8, [48 x i8] }, align 8
+  %sret.result25 = alloca { i8, <{ [6 x i64], [0 x i8] }> }, align 8
   %p = alloca ptr, align 8
   %first = alloca i1, align 1
   %sret.result15 = alloca { ptr }, align 8
@@ -9971,7 +9971,7 @@ frame.forced21:                                   ; preds = %frame.force20, %if.
   call void @_ZN6ParserC1E6String(ptr %struct.region24, ptr %sret.result9)
   store ptr %struct.region24, ptr %p, align 1
   %p26 = load ptr, ptr %p, align 8
-  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %sret.result25, ptr %frame, ptr %p26)
+  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, <{ [6 x i64], [0 x i8] }> }) %sret.result25, ptr %frame, ptr %p26)
   %tag = load i8, ptr %sret.result25, align 1
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result25, i8 1
   switch i8 %tag, label %choose.else [
@@ -66671,7 +66671,7 @@ entry:
   %sret.result82 = alloca { ptr }, align 8
   %arg.tmp77 = alloca { ptr }, align 8
   %choose.union = alloca %_Z11ParserError, align 8
-  %sret.result70 = alloca { i8, [48 x i8] }, align 8
+  %sret.result70 = alloca { i8, <{ [6 x i64], [0 x i8] }> }, align 8
   %p = alloca ptr, align 8
   %extra = alloca ptr, align 8
   %arg.tmp62 = alloca { ptr }, align 8
@@ -66825,7 +66825,7 @@ frame.forced66:                                   ; preds = %frame.force65, %fra
   call void @_ZN6ParserC1E6String(ptr %struct.region69, ptr %3)
   store ptr %struct.region69, ptr %p, align 1
   %p71 = load ptr, ptr %p, align 8
-  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %sret.result70, ptr %frame, ptr %p71)
+  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, <{ [6 x i64], [0 x i8] }> }) %sret.result70, ptr %frame, ptr %p71)
   %tag = load i8, ptr %sret.result70, align 1
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result70, i8 1
   switch i8 %tag, label %choose.else [
@@ -68010,7 +68010,7 @@ if.end6:                                          ; preds = %if.end
 define linkonce_odr i64 @_ZN7symbols18parse_error_offsetE6String(ptr %0) {
 entry:
   %choose.union = alloca %_Z11ParserError, align 8
-  %sret.result = alloca { i8, [48 x i8] }, align 8
+  %sret.result = alloca { i8, <{ [6 x i64], [0 x i8] }> }, align 8
   %p = alloca ptr, align 8
   %frame = alloca { ptr, ptr }, align 8
   store ptr null, ptr %frame, align 8
@@ -68032,7 +68032,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN6ParserC1E6String(ptr %struct.region, ptr %0)
   store ptr %struct.region, ptr %p, align 1
   %p2 = load ptr, ptr %p, align 8
-  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %sret.result, ptr %frame, ptr %p2)
+  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, <{ [6 x i64], [0 x i8] }> }) %sret.result, ptr %frame, ptr %p2)
   %tag = load i8, ptr %sret.result, align 1
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
@@ -72344,7 +72344,7 @@ entry:
   %i = alloca i64, align 8
   %first = alloca i1, align 1
   %deref.tmp = alloca %_Z6VectorIcE, align 8
-  %sret.result = alloca { i8, [48 x i8] }, align 8
+  %sret.result = alloca { i8, <{ [6 x i64], [0 x i8] }> }, align 8
   %p = alloca ptr, align 8
   %sb = alloca ptr, align 8
   %frame = alloca { ptr, ptr }, align 8
@@ -72380,7 +72380,7 @@ frame.forced6:                                    ; preds = %frame.force5, %fram
   call void @_ZN6ParserC1E6String(ptr %struct.region9, ptr %2)
   store ptr %struct.region9, ptr %p, align 1
   %p10 = load ptr, ptr %p, align 8
-  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %sret.result, ptr %frame, ptr %p10)
+  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, <{ [6 x i64], [0 x i8] }> }) %sret.result, ptr %frame, ptr %p10)
   %tag = load i8, ptr %sret.result, align 1
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
@@ -80437,7 +80437,7 @@ entry:
   %i = alloca i64, align 8
   %first = alloca i1, align 1
   %deref.tmp = alloca %_Z6VectorIcE, align 8
-  %sret.result = alloca { i8, [48 x i8] }, align 8
+  %sret.result = alloca { i8, <{ [6 x i64], [0 x i8] }> }, align 8
   %p = alloca ptr, align 8
   %sb = alloca ptr, align 8
   %frame = alloca { ptr, ptr }, align 8
@@ -80473,7 +80473,7 @@ frame.forced6:                                    ; preds = %frame.force5, %fram
   call void @_ZN6ParserC1E6String(ptr %struct.region9, ptr %2)
   store ptr %struct.region9, ptr %p, align 1
   %p10 = load ptr, ptr %p, align 8
-  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %sret.result, ptr %frame, ptr %p10)
+  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, <{ [6 x i64], [0 x i8] }> }) %sret.result, ptr %frame, ptr %p10)
   %tag = load i8, ptr %sret.result, align 1
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
@@ -81529,7 +81529,7 @@ entry:
   %i = alloca i64, align 8
   %first = alloca i1, align 1
   %deref.tmp = alloca %_Z6VectorIcE, align 8
-  %sret.result = alloca { i8, [48 x i8] }, align 8
+  %sret.result = alloca { i8, <{ [6 x i64], [0 x i8] }> }, align 8
   %p = alloca ptr, align 8
   %sb = alloca ptr, align 8
   %frame = alloca { ptr, ptr }, align 8
@@ -81565,7 +81565,7 @@ frame.forced6:                                    ; preds = %frame.force5, %fram
   call void @_ZN6ParserC1E6String(ptr %struct.region9, ptr %2)
   store ptr %struct.region9, ptr %p, align 1
   %p10 = load ptr, ptr %p, align 8
-  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %sret.result, ptr %frame, ptr %p10)
+  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, <{ [6 x i64], [0 x i8] }> }) %sret.result, ptr %frame, ptr %p10)
   %tag = load i8, ptr %sret.result, align 1
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
@@ -82216,7 +82216,7 @@ entry:
   %deref.tmp17 = alloca %_Z17DeclarationSyntax, align 8
   %i = alloca i64, align 8
   %deref.tmp = alloca %_Z6VectorIcE, align 8
-  %sret.result = alloca { i8, [48 x i8] }, align 8
+  %sret.result = alloca { i8, <{ [6 x i64], [0 x i8] }> }, align 8
   %p = alloca ptr, align 8
   %sb = alloca ptr, align 8
   %frame = alloca { ptr, ptr }, align 8
@@ -82250,7 +82250,7 @@ frame.forced5:                                    ; preds = %frame.force4, %fram
   call void @_ZN6ParserC1E6String(ptr %struct.region8, ptr %2)
   store ptr %struct.region8, ptr %p, align 1
   %p9 = load ptr, ptr %p, align 8
-  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %sret.result, ptr %frame, ptr %p9)
+  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, <{ [6 x i64], [0 x i8] }> }) %sret.result, ptr %frame, ptr %p9)
   %tag = load i8, ptr %sret.result, align 1
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
@@ -91650,7 +91650,7 @@ entry:
   %deref.tmp13 = alloca %_Z17DeclarationSyntax, align 8
   %i = alloca i64, align 8
   %deref.tmp = alloca %_Z6VectorIcE, align 8
-  %sret.result = alloca { i8, [48 x i8] }, align 8
+  %sret.result = alloca { i8, <{ [6 x i64], [0 x i8] }> }, align 8
   %result = alloca { ptr }, align 8
   %p = alloca ptr, align 8
   %frame = alloca { ptr, ptr }, align 8
@@ -91672,7 +91672,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   store ptr %struct.region, ptr %p, align 1
   store { ptr } zeroinitializer, ptr %result, align 1
   %p2 = load ptr, ptr %p, align 8
-  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %sret.result, ptr %1, ptr %p2)
+  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, <{ [6 x i64], [0 x i8] }> }) %sret.result, ptr %1, ptr %p2)
   %tag = load i8, ptr %sret.result, align 1
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
@@ -92330,7 +92330,7 @@ entry:
   %deref.tmp13 = alloca %_Z17DeclarationSyntax, align 8
   %i = alloca i64, align 8
   %deref.tmp = alloca %_Z6VectorIcE, align 8
-  %sret.result = alloca { i8, [48 x i8] }, align 8
+  %sret.result = alloca { i8, <{ [6 x i64], [0 x i8] }> }, align 8
   %result = alloca { ptr }, align 8
   %p = alloca ptr, align 8
   %frame = alloca { ptr, ptr }, align 8
@@ -92352,7 +92352,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   store ptr %struct.region, ptr %p, align 1
   store { ptr } zeroinitializer, ptr %result, align 1
   %p2 = load ptr, ptr %p, align 8
-  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %sret.result, ptr %1, ptr %p2)
+  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, <{ [6 x i64], [0 x i8] }> }) %sret.result, ptr %1, ptr %p2)
   %tag = load i8, ptr %sret.result, align 1
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
@@ -92436,7 +92436,7 @@ entry:
   %deref.tmp13 = alloca %_Z17DeclarationSyntax, align 8
   %i = alloca i64, align 8
   %deref.tmp = alloca %_Z6VectorIcE, align 8
-  %sret.result = alloca { i8, [48 x i8] }, align 8
+  %sret.result = alloca { i8, <{ [6 x i64], [0 x i8] }> }, align 8
   %result = alloca { ptr }, align 8
   %p = alloca ptr, align 8
   %frame = alloca { ptr, ptr }, align 8
@@ -92458,7 +92458,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   store ptr %struct.region, ptr %p, align 1
   store { ptr } zeroinitializer, ptr %result, align 1
   %p2 = load ptr, ptr %p, align 8
-  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %sret.result, ptr %1, ptr %p2)
+  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, <{ [6 x i64], [0 x i8] }> }) %sret.result, ptr %1, ptr %p2)
   %tag = load i8, ptr %sret.result, align 1
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
@@ -92692,7 +92692,7 @@ entry:
   %deref.tmp13 = alloca %_Z17DeclarationSyntax, align 8
   %i = alloca i64, align 8
   %deref.tmp = alloca %_Z6VectorIcE, align 8
-  %sret.result = alloca { i8, [48 x i8] }, align 8
+  %sret.result = alloca { i8, <{ [6 x i64], [0 x i8] }> }, align 8
   %result = alloca { ptr }, align 8
   %p = alloca ptr, align 8
   %frame = alloca { ptr, ptr }, align 8
@@ -92714,7 +92714,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   store ptr %struct.region, ptr %p, align 1
   store { ptr } zeroinitializer, ptr %result, align 1
   %p2 = load ptr, ptr %p, align 8
-  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %sret.result, ptr %1, ptr %p2)
+  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, <{ [6 x i64], [0 x i8] }> }) %sret.result, ptr %1, ptr %p2)
   %tag = load i8, ptr %sret.result, align 1
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
@@ -95770,7 +95770,7 @@ entry:
   %deref.tmp13 = alloca %_Z17DeclarationSyntax, align 8
   %i = alloca i64, align 8
   %deref.tmp = alloca %_Z6VectorIcE, align 8
-  %sret.result = alloca { i8, [48 x i8] }, align 8
+  %sret.result = alloca { i8, <{ [6 x i64], [0 x i8] }> }, align 8
   %result = alloca { ptr }, align 8
   %p = alloca ptr, align 8
   %frame = alloca { ptr, ptr }, align 8
@@ -95792,7 +95792,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   store ptr %struct.region, ptr %p, align 1
   store { ptr } zeroinitializer, ptr %result, align 1
   %p2 = load ptr, ptr %p, align 8
-  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %sret.result, ptr %1, ptr %p2)
+  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, <{ [6 x i64], [0 x i8] }> }) %sret.result, ptr %1, ptr %p2)
   %tag = load i8, ptr %sret.result, align 1
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
@@ -96488,7 +96488,7 @@ entry:
   %deref.tmp14 = alloca %_Z17DeclarationSyntax, align 8
   %i = alloca i64, align 8
   %deref.tmp = alloca %_Z6VectorIcE, align 8
-  %sret.result = alloca { i8, [48 x i8] }, align 8
+  %sret.result = alloca { i8, <{ [6 x i64], [0 x i8] }> }, align 8
   %result = alloca { ptr }, align 8
   %p = alloca ptr, align 8
   %frame = alloca { ptr, ptr }, align 8
@@ -96511,7 +96511,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   store ptr %struct.region, ptr %p, align 1
   store { ptr } zeroinitializer, ptr %result, align 1
   %p2 = load ptr, ptr %p, align 8
-  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %sret.result, ptr %1, ptr %p2)
+  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, <{ [6 x i64], [0 x i8] }> }) %sret.result, ptr %1, ptr %p2)
   %tag = load i8, ptr %sret.result, align 1
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
@@ -101881,7 +101881,7 @@ entry:
   %deref.tmp13 = alloca %_Z17DeclarationSyntax, align 8
   %i = alloca i64, align 8
   %deref.tmp = alloca %_Z6VectorIcE, align 8
-  %sret.result = alloca { i8, [48 x i8] }, align 8
+  %sret.result = alloca { i8, <{ [6 x i64], [0 x i8] }> }, align 8
   %result = alloca { ptr }, align 8
   %p = alloca ptr, align 8
   %frame = alloca { ptr, ptr }, align 8
@@ -101903,7 +101903,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   store ptr %struct.region, ptr %p, align 1
   store { ptr } zeroinitializer, ptr %result, align 1
   %p2 = load ptr, ptr %p, align 8
-  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %sret.result, ptr %1, ptr %p2)
+  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, <{ [6 x i64], [0 x i8] }> }) %sret.result, ptr %1, ptr %p2)
   %tag = load i8, ptr %sret.result, align 1
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
@@ -102971,7 +102971,7 @@ entry:
   %deref.tmp17 = alloca %_Z17DeclarationSyntax, align 8
   %i = alloca i64, align 8
   %deref.tmp = alloca %_Z6VectorIcE, align 8
-  %sret.result = alloca { i8, [48 x i8] }, align 8
+  %sret.result = alloca { i8, <{ [6 x i64], [0 x i8] }> }, align 8
   %sb = alloca ptr, align 8
   %p = alloca ptr, align 8
   %frame = alloca { ptr, ptr }, align 8
@@ -103006,7 +103006,7 @@ frame.forced5:                                    ; preds = %frame.force4, %fram
   store ptr %struct.region8, ptr %sb, align 1
   call void @_ZN7symbols17line_cursor_beginE6String(ptr %2)
   %p9 = load ptr, ptr %p, align 8
-  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %sret.result, ptr %frame, ptr %p9)
+  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, <{ [6 x i64], [0 x i8] }> }) %sret.result, ptr %frame, ptr %p9)
   %tag = load i8, ptr %sret.result, align 1
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
@@ -115068,7 +115068,7 @@ entry:
   %deref.tmp13 = alloca %_Z17DeclarationSyntax, align 8
   %i = alloca i64, align 8
   %deref.tmp = alloca %_Z6VectorIcE, align 8
-  %sret.result = alloca { i8, [48 x i8] }, align 8
+  %sret.result = alloca { i8, <{ [6 x i64], [0 x i8] }> }, align 8
   %result = alloca { ptr }, align 8
   %p = alloca ptr, align 8
   %frame = alloca { ptr, ptr }, align 8
@@ -115090,7 +115090,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   store ptr %struct.region, ptr %p, align 1
   store { ptr } zeroinitializer, ptr %result, align 1
   %p2 = load ptr, ptr %p, align 8
-  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %sret.result, ptr %1, ptr %p2)
+  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, <{ [6 x i64], [0 x i8] }> }) %sret.result, ptr %1, ptr %p2)
   %tag = load i8, ptr %sret.result, align 1
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
@@ -116094,7 +116094,7 @@ entry:
   %deref.tmp17 = alloca %_Z17DeclarationSyntax, align 8
   %i = alloca i64, align 8
   %deref.tmp = alloca %_Z6VectorIcE, align 8
-  %sret.result = alloca { i8, [48 x i8] }, align 8
+  %sret.result = alloca { i8, <{ [6 x i64], [0 x i8] }> }, align 8
   %p = alloca ptr, align 8
   %sb = alloca ptr, align 8
   %frame = alloca { ptr, ptr }, align 8
@@ -116128,7 +116128,7 @@ frame.forced5:                                    ; preds = %frame.force4, %fram
   call void @_ZN6ParserC1E6String(ptr %struct.region8, ptr %2)
   store ptr %struct.region8, ptr %p, align 1
   %p9 = load ptr, ptr %p, align 8
-  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %sret.result, ptr %frame, ptr %p9)
+  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, <{ [6 x i64], [0 x i8] }> }) %sret.result, ptr %frame, ptr %p9)
   %tag = load i8, ptr %sret.result, align 1
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
@@ -123643,7 +123643,7 @@ entry:
   %arg.tmp14 = alloca %_Z13ProgramSyntax, align 8
   %arg.tmp = alloca { ptr }, align 8
   %sret.result13 = alloca %_Z7Program, align 8
-  %sret.result = alloca { i8, [48 x i8] }, align 8
+  %sret.result = alloca { i8, <{ [6 x i64], [0 x i8] }> }, align 8
   %result = alloca { ptr }, align 8
   %p = alloca ptr, align 8
   %frame = alloca { ptr, ptr }, align 8
@@ -123700,7 +123700,7 @@ frame.forced:                                     ; preds = %frame.force, %if.en
   store ptr %struct.region, ptr %p, align 1
   store { ptr } zeroinitializer, ptr %result, align 1
   %p11 = load ptr, ptr %p, align 8
-  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %sret.result, ptr %1, ptr %p11)
+  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, <{ [6 x i64], [0 x i8] }> }) %sret.result, ptr %1, ptr %p11)
   %tag = load i8, ptr %sret.result, align 1
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
@@ -124587,7 +124587,7 @@ entry:
   %arg.tmp = alloca %_Z13ProgramSyntax, align 8
   %sret.result6 = alloca %_Z7Program, align 8
   %sret.result5 = alloca { ptr }, align 8
-  %sret.result2 = alloca { i8, [48 x i8] }, align 8
+  %sret.result2 = alloca { i8, <{ [6 x i64], [0 x i8] }> }, align 8
   %result = alloca { ptr }, align 8
   %p = alloca ptr, align 8
   %frame = alloca { ptr, ptr }, align 8
@@ -124621,7 +124621,7 @@ frame.forced:                                     ; preds = %frame.force, %if.en
   store ptr %struct.region, ptr %p, align 1
   store { ptr } zeroinitializer, ptr %result, align 1
   %p3 = load ptr, ptr %p, align 8
-  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %sret.result2, ptr %1, ptr %p3)
+  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, <{ [6 x i64], [0 x i8] }> }) %sret.result2, ptr %1, ptr %p3)
   %tag = load i8, ptr %sret.result2, align 1
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result2, i8 1
   switch i8 %tag, label %choose.else [
@@ -144513,12 +144513,12 @@ entry:
   %planner = alloca ptr, align 8
   %arg.tmp = alloca %_Z13ProgramSyntax, align 8
   %sret.result37 = alloca %_Z7Program, align 8
-  %sret.result27 = alloca { i8, [48 x i8] }, align 8
+  %sret.result27 = alloca { i8, <{ [6 x i64], [0 x i8] }> }, align 8
   %rp2 = alloca ptr, align 8
   %sret.result17 = alloca { ptr }, align 8
   %sret.result13 = alloca { ptr }, align 8
   %sret.result10 = alloca { ptr }, align 8
-  %sret.result = alloca { i8, [48 x i8] }, align 8
+  %sret.result = alloca { i8, <{ [6 x i64], [0 x i8] }> }, align 8
   %dp = alloca ptr, align 8
   %sb = alloca ptr, align 8
   %frame = alloca { ptr, ptr }, align 8
@@ -144552,7 +144552,7 @@ frame.forced5:                                    ; preds = %frame.force4, %fram
   call void @_ZN6ParserC1E6String(ptr %struct.region8, ptr %3)
   store ptr %struct.region8, ptr %dp, align 1
   %dp9 = load ptr, ptr %dp, align 8
-  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %sret.result, ptr %1, ptr %dp9)
+  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, <{ [6 x i64], [0 x i8] }> }) %sret.result, ptr %1, ptr %dp9)
   %tag = load i8, ptr %sret.result, align 1
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
@@ -144622,7 +144622,7 @@ frame.forced23:                                   ; preds = %frame.force22, %if.
   call void @_ZN6ParserC1E6String(ptr %struct.region26, ptr %sret.result13)
   store ptr %struct.region26, ptr %rp2, align 1
   %rp228 = load ptr, ptr %rp2, align 8
-  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %sret.result27, ptr %1, ptr %rp228)
+  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, <{ [6 x i64], [0 x i8] }> }) %sret.result27, ptr %1, ptr %rp228)
   %tag29 = load i8, ptr %sret.result27, align 1
   %throws.data.ptr30 = getelementptr inbounds i8, ptr %sret.result27, i8 1
   switch i8 %tag29, label %choose.else32 [
@@ -147025,7 +147025,7 @@ if.end7:                                          ; preds = %if.then6, %if.then3
 
 define linkonce_odr void @_ZN8codelens20declaration_fragmentEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2, ptr %3) {
 entry:
-  %sret.result9 = alloca { i8, [48 x i8] }, align 8
+  %sret.result9 = alloca { i8, <{ [6 x i64], [0 x i8] }> }, align 8
   %result = alloca ptr, align 8
   %arg.tmp = alloca { ptr }, align 8
   %p = alloca ptr, align 8
@@ -147063,7 +147063,7 @@ frame.forced5:                                    ; preds = %frame.force4, %fram
   call void @_ZN6StringC1E6String(ptr %struct.region8, ptr %arg.tmp)
   store ptr %struct.region8, ptr %result, align 1
   %p10 = load ptr, ptr %p, align 8
-  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %sret.result9, ptr %1, ptr %p10)
+  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, <{ [6 x i64], [0 x i8] }> }) %sret.result9, ptr %1, ptr %p10)
   %tag = load i8, ptr %sret.result9, align 1
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result9, i8 1
   switch i8 %tag, label %choose.else [
@@ -147222,7 +147222,7 @@ entry:
   %planner = alloca ptr, align 8
   %arg.tmp18 = alloca %_Z13ProgramSyntax, align 8
   %sret.result17 = alloca %_Z7Program, align 8
-  %sret.result14 = alloca { i8, [48 x i8] }, align 8
+  %sret.result14 = alloca { i8, <{ [6 x i64], [0 x i8] }> }, align 8
   %p = alloca ptr, align 8
   %result = alloca ptr, align 8
   %arg.tmp = alloca { ptr }, align 8
@@ -147282,7 +147282,7 @@ frame.forced10:                                   ; preds = %frame.force9, %fram
   call void @_ZN6ParserC1E6String(ptr %struct.region13, ptr %sret.result1)
   store ptr %struct.region13, ptr %p, align 1
   %p15 = load ptr, ptr %p, align 8
-  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %sret.result14, ptr %1, ptr %p15)
+  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, <{ [6 x i64], [0 x i8] }> }) %sret.result14, ptr %1, ptr %p15)
   %tag = load i8, ptr %sret.result14, align 1
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result14, i8 1
   switch i8 %tag, label %choose.else [
@@ -147347,7 +147347,7 @@ entry:
   %planner = alloca ptr, align 8
   %arg.tmp12 = alloca %_Z13ProgramSyntax, align 8
   %sret.result11 = alloca %_Z7Program, align 8
-  %sret.result = alloca { i8, [48 x i8] }, align 8
+  %sret.result = alloca { i8, <{ [6 x i64], [0 x i8] }> }, align 8
   %p = alloca ptr, align 8
   %frame = alloca { ptr, ptr }, align 8
   store ptr null, ptr %frame, align 8
@@ -147393,7 +147393,7 @@ frame.forced5:                                    ; preds = %frame.force4, %fram
   call void @_ZN6ParserC1E6String(ptr %struct.region8, ptr %3)
   store ptr %struct.region8, ptr %p, align 1
   %p9 = load ptr, ptr %p, align 8
-  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %sret.result, ptr %1, ptr %p9)
+  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, <{ [6 x i64], [0 x i8] }> }) %sret.result, ptr %1, ptr %p9)
   %tag = load i8, ptr %sret.result, align 1
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [
@@ -147705,7 +147705,7 @@ if.end47:                                         ; preds = %if.then42
 define linkonce_odr i1 @_ZN8codelens24has_top_level_statementsE6String(ptr %0) {
 entry:
   %deref.tmp = alloca %_Z6VectorIcE, align 8
-  %sret.result = alloca { i8, [48 x i8] }, align 8
+  %sret.result = alloca { i8, <{ [6 x i64], [0 x i8] }> }, align 8
   %p = alloca ptr, align 8
   %frame = alloca { ptr, ptr }, align 8
   store ptr null, ptr %frame, align 8
@@ -147725,7 +147725,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN6ParserC1E6String(ptr %struct.region, ptr %0)
   store ptr %struct.region, ptr %p, align 1
   %p2 = load ptr, ptr %p, align 8
-  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, [48 x i8] }) %sret.result, ptr %frame, ptr %p2)
+  call void @_ZN6Parser13parse_programEPN4scaly6memory4PageE(ptr noalias sret({ i8, <{ [6 x i64], [0 x i8] }> }) %sret.result, ptr %frame, ptr %p2)
   %tag = load i8, ptr %sret.result, align 1
   %throws.data.ptr = getelementptr inbounds i8, ptr %sret.result, i8 1
   switch i8 %tag, label %choose.else [

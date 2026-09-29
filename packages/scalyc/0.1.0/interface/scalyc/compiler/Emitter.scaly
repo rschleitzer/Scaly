@@ -1362,12 +1362,22 @@ define Emitter
         ; Emit LLVM type for a PlannedUnion (tagged union)
         procedure emit_union_type(mutable this, mutable union_type: PlannedUnion) @direct true @deep true returns LLVMTypeRef linked
 
+        ; The data field of a union: data_size bytes at alignment 1, as a
+        ; PACKED struct of i64 words and the bytes left over rather than one
+        ; [N x i8]. LLVM copies a first-class aggregate one ELEMENT at a time,
+        ; so a union's [16 x i8] cost sixteen byte stores, each behind a shift,
+        ; per copy -- the json tree builder spent a third of its time there
+        ; (2026-09-29); <{ [2 x i64], [0 x i8] }> costs two. Same size, same
+        ; alignment, same offsets.
+        procedure union_data_type(mutable this, data_size: size_t) @direct true @ret_caller true @deep true returns LLVMTypeRef linked
+
         ; ========================================================================
         ; Function Declaration
         ; ========================================================================
 
         ; s149: Build the Result-wrapper LLVM type for a throws function.
-        ; Shape: { i8 status, [N x i8] data } where N = max(sizeof T, 8).
+        ; Shape: { i8 status, N data bytes } where N = max(sizeof T, 8), the
+        ; bytes laid out like a union's (union_data_type#).
         ; The status byte (0 = Success, 1 = Throw) is independent from the
         ; inner variant tag of T, fixing the stage-0/stage-1 collision when T
         ; is a union and the Success variant has tag != 0.

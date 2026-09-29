@@ -4810,6 +4810,8 @@ define Emitter
                 return 2
             if kind = LLVMTypeKind.ArrayKind()
                 return llvm_type_abi_align(LLVMGetElementType t)
+            if kind = LLVMTypeKind.Struct() and LLVMIsPackedStruct(t) <> 0
+                return 1
             if kind = LLVMTypeKind.Struct()
             {
                 var max_a: size_t 1
@@ -4877,7 +4879,10 @@ define Emitter
                 {
                     let ft LLVMStructGetTypeAtIndex(t, i)
                     let fs llvm_type_abi_size ft
-                    let fa llvm_type_abi_align ft
+                    var fa llvm_type_abi_align ft
+                    ; a packed struct places its fields back to back
+                    if LLVMIsPackedStruct(t) <> 0
+                        set fa: 1
                     let aligned abi_align_to(offset, fa)
                     set offset: aligned + fs
                     if fa > sa
@@ -4962,7 +4967,7 @@ define Emitter
             ; Always emit both fields — stage-0 emits { i8, [0 x i8] }
             ; even for payload-less unions, and construction/choose sites
             ; GEP field 1 unconditionally, so the data field must exist.
-            let data_array_type LLVMArrayType2(i8_type, data_size)
+            let data_array_type this.union_data_type(data_size)
 
             var element_types Vector[LLVMTypeRef](2)
             element_types.put(0, i8_type)       ; tag field
@@ -4973,12 +4978,31 @@ define Emitter
             llvm_union
         }
 
+        ; The data field of a union: data_size bytes at alignment 1, as a
+        ; PACKED struct of i64 words and the bytes left over rather than one
+        ; [N x i8]. LLVM copies a first-class aggregate one ELEMENT at a time,
+        ; so a union's [16 x i8] cost sixteen byte stores, each behind a shift,
+        ; per copy -- the json tree builder spent a third of its time there
+        ; (2026-09-29); <{ [2 x i64], [0 x i8] }> costs two. Same size, same
+        ; alignment, same offsets.
+        procedure union_data_type(mutable this, data_size: size_t) returns LLVMTypeRef
+        {
+            let i8_type LLVMInt8TypeInContext(context)
+            if data_size < 8
+                return LLVMArrayType2(i8_type, data_size)
+            var parts Vector[LLVMTypeRef](2)
+            parts.put(0, LLVMArrayType2(LLVMInt64TypeInContext(context), data_size / 8))
+            parts.put(1, LLVMArrayType2(i8_type, data_size % 8))
+            LLVMStructTypeInContext(context, parts.data, 2, 1)
+        }
+
         ; ========================================================================
         ; Function Declaration
         ; ========================================================================
 
         ; s149: Build the Result-wrapper LLVM type for a throws function.
-        ; Shape: { i8 status, [N x i8] data } where N = max(sizeof T, 8).
+        ; Shape: { i8 status, N data bytes } where N = max(sizeof T, 8), the
+        ; bytes laid out like a union's (union_data_type#).
         ; The status byte (0 = Success, 1 = Throw) is independent from the
         ; inner variant tag of T, fixing the stage-0/stage-1 collision when T
         ; is a union and the Success variant has tag != 0.
@@ -5078,7 +5102,9 @@ define Emitter
                 set data_size: 8
 
             let i8_ty LLVMInt8TypeInContext(context)
-            let data_arr_ty LLVMArrayType2(i8_ty, data_size)
+            ; the words-and-bytes shape of a union's data field: a Result is
+            ; copied as a whole at every throwing call
+            let data_arr_ty this.union_data_type(data_size)
             var fields Vector[LLVMTypeRef](2)
             fields.put(0, i8_ty)
             fields.put(1, data_arr_ty)

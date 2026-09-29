@@ -245,6 +245,7 @@ function LLVMArrayType2(element_type: LLVMTypeRef, element_count: size_t) return
 function LLVMStructTypeInContext(context: LLVMContextRef, element_types: pointer[LLVMTypeRef], element_count: u32, packed: i32) returns LLVMTypeRef extern
 function LLVMStructCreateNamed(context: LLVMContextRef, name: pointer[const_char]) returns LLVMTypeRef extern
 procedure LLVMStructSetBody(struct_type: LLVMTypeRef, element_types: pointer[LLVMTypeRef], element_count: u32, packed: i32) extern
+function LLVMIsPackedStruct(struct_type: LLVMTypeRef) returns i32 extern
 
 ; Data layout / size queries — s149 Result wrapper sizing
 function LLVMGetModuleDataLayout(mod: LLVMModuleRef) returns LLVMTargetDataRef extern
