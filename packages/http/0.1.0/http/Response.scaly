@@ -9,6 +9,7 @@
 ;   res.send("application/json", body)             ; ends the response
 
 use http.Buffer.ByteBuf
+use http.Request.Request
 
 ; "HTTP/1.1 200 OK\r\nDate: " (23), the date (DATE_LENGTH), "\r\n".
 define HEAD_OK_LENGTH: size_t 54
@@ -41,6 +42,7 @@ define Response
     head_ok: Slice[u8]           ; "HTTP/1.1 200 OK\r\nDate: <date>\r\n", HEAD_OK_LENGTH
     var head_only: bool          ; a HEAD request: everything but the body
     trailers: ref[ByteBuf]       ; "name: value\r\n" lines sent after the body (HTTP/2 only)
+    var websocket: pointer[void] ; the message handler of an accepted WebSocket upgrade
 )
 {
     ; A connection's response on its page, writing into out: the 200 head
@@ -50,7 +52,7 @@ define Response
         var head allocate_slice[u8]^host(host, HEAD_OK_LENGTH)
         init_head_ok(head)
         let trailers &ByteBuf^host(host, allocate_slice[u8]^host(host, 64), 0)
-        &Response^host(out, 200, false, false, false, head.subslice(HEAD_OK_DATE_AT, HEAD_OK_DATE_AT + DATE_LENGTH), 0 - 1, head, false, trailers)
+        &Response^host(out, 200, false, false, false, head.subslice(HEAD_OK_DATE_AT, HEAD_OK_DATE_AT + DATE_LENGTH), 0 - 1, head, false, trailers, null)
     }
 
     ; Ready for the next response on the same connection.
@@ -61,7 +63,35 @@ define Response
         set sent: false
         set close: close_after
         set head_only: false
+        set websocket: null
         trailers.clear()
+    }
+
+    ; Accept a WebSocket upgrade (RFC 6455 4.2): 101 with the accept key, and
+    ; the connection hands every message to `handler` (http.WebSocket) once
+    ; this response is out. A request that is no upgrade -- no `Upgrade:
+    ; websocket`, no `Connection: Upgrade`, no key, a version other than 13
+    ; -- answers 400 instead, and false.
+    procedure accept_websocket(mutable this, req: ref[Request], mutable handler: pointer[void]) returns bool
+    {
+        let key trim(req.header("sec-websocket-key"))
+        if key.length = 0 or has_token(req.header("upgrade"), "websocket") = false or has_token(req.header("connection"), "upgrade") = false or trim(req.header("sec-websocket-version")).equals("13") = false
+        {
+            this.set_status(400)
+            this.send_empty()
+            return false
+        }
+        var accept u8[28]
+        let a Slice[u8](28, &accept[0])
+        websocket_accept(key, a)
+        this.set_status(101)
+        this.header("Upgrade", "websocket")
+        this.header("Connection", "Upgrade")
+        this.header("Sec-WebSocket-Accept", a)
+        out.append("\r\n")
+        set sent: true
+        set websocket: handler
+        true
     }
 
     ; A trailer field (lowercase name), sent after the body when the response
@@ -221,6 +251,7 @@ define Response
 function reason_phrase(code: int) returns Slice[u8]
 {
     match code
+        case 101: return "Switching Protocols"
         case 200: return "OK"
         case 201: return "Created"
         case 204: return "No Content"

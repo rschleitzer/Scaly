@@ -1,0 +1,281 @@
+; The http package's WebSocket (ROADMAP-http.md stage F):
+;   sha1      RFC 3174's vectors: "", "abc" and the 56-byte message that
+;             needs a second padding block
+;   accept    RFC 6455 1.3's key and accept value
+;   upgrade   GET /ws answers 101 with that accept value
+;   echo      three text frames in ONE write come back in order; a 70 000-
+;             byte binary frame (a 64-bit length); a message in two
+;             fragments comes back whole; a ping is answered with its pong
+;   close     a close 1000 is answered with a close 1000
+;   400       GET /ws without the upgrade fields
+; Expected: sha1 accept upgrade echo close 400
+
+package scaly 0.1.0
+package http 0.1.0
+
+use http.Buffer.ByteBuf
+use http.Request.Request
+use http.Response.Response
+use http.Router.Router
+use http.WebSocket.WebSocket
+
+procedure on_message(mutable ws: ref[WebSocket], opcode: u8, payload: Slice[u8])
+    ws.send(opcode, payload)
+
+procedure upgrade(req: ref[Request], mutable res: ref[Response])
+    res.accept_websocket(req, &on_message)
+
+procedure hex(b: Slice[u8]) returns String
+{
+    var sb StringBuilder()
+    var i: size_t 0
+    while i < b.length
+    {
+        let v b[i]
+        let digits: Slice[u8] "0123456789abcdef"
+        sb.append(digits[(v / 16) as size_t] as char)
+        sb.append(digits[(v % 16) as size_t] as char)
+        set i: i + 1
+    }
+    sb.to_string()
+}
+
+; A client frame (masked with a fixed key) onto out.
+procedure client_frame(mutable out: ref[ByteBuf], first: u8, payload: Slice[u8])
+{
+    out.append_byte(first)
+    let n payload.length
+    if n < 126
+        out.append_byte(128 | (n as u8))
+    else if n < 65536
+    {
+        out.append_byte(254)
+        out.append_byte(((n >> 8) & 255) as u8)
+        out.append_byte((n & 255) as u8)
+    }
+    else
+    {
+        out.append_byte(255)
+        var shift: size_t 56
+        repeat
+        {
+            out.append_byte(((n >> shift) & 255) as u8)
+            if shift = 0
+                break
+            set shift: shift - 8
+        }
+    }
+    out.append_byte(55)
+    out.append_byte(66)
+    out.append_byte(77)
+    out.append_byte(88)
+    var i: size_t 0
+    while i < n
+    {
+        var k: u8 55
+        let lane i & 3
+        match lane
+            case 1: set k: 66
+            case 2: set k: 77
+            case 3: set k: 88
+        out.append_byte(payload[i] xor k)
+        set i: i + 1
+    }
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var d u8[20]
+    let digest Slice[u8](20, &d[0])
+    sha1("", digest)
+    let e1 hex(digest)
+    sha1("abc", digest)
+    let e2 hex(digest)
+    sha1("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq", digest)
+    let e3 hex(digest)
+    if e1.equals("da39a3ee5e6b4b0d3255bfef95601890afd80709") = false or e2.equals("a9993e364706816aba3e25717850c26c9cd0d89d") = false or e3.equals("84983e441c3bd26ebaae4aa1f95129e5e54670f1") = false
+    {
+        print "sha1: `e1` `e2` `e3`"
+        return 1
+    }
+    Console.print "sha1 "
+    var a u8[28]
+    let accept Slice[u8](28, &a[0])
+    websocket_accept("dGhlIHNhbXBsZSBub25jZQ==", accept)
+    if accept.equals("s3pPLMBiTxaQ9kYGzzhZRbK+xOo=") = false
+    {
+        print "accept: `String(accept.data as pointer[const_char], 28)`"
+        return 2
+    }
+    Console.print "accept "
+
+    var app Router.create(Page.allocate_page())
+    app.get("/ws", &upgrade)
+    var l TcpListener.listen(0)
+    let server start(app, l)
+    let host Page.allocate_page()
+
+    var s TcpStream.connect("127.0.0.1", l.port())
+    s.write("GET /ws HTTP/1.1\r\nHost: t\r\nUpgrade: websocket\r\nConnection: keep-alive, Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\n\r\n")
+    var inb ByteBuf.create(host, 4096)
+    ; the 101 head
+    var head_end: size_t 0
+    while head_end = 0
+    {
+        let n s.read(inb.spare())
+        if n <= 0
+        {
+            print "upgrade: connection ended"
+            return 3
+        }
+        inb.advance(n as size_t)
+        let b inb.bytes()
+        var i: size_t 0
+        while i + 3 < b.length
+        {
+            if b[i] = 13 and b[i + 1] = 10 and b[i + 2] = 13 and b[i + 3] = 10
+            {
+                set head_end: i + 4
+                break
+            }
+            set i: i + 1
+        }
+    }
+    let head String(inb.bytes().data as pointer[const_char], head_end)
+    if head.contains(String("101 Switching Protocols")) = false or head.contains(String("Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=")) = false
+    {
+        print "upgrade: `head`"
+        return 4
+    }
+    inb.consume(head_end)
+    Console.print "upgrade "
+
+    var out ByteBuf.create(host, 1024)
+    client_frame(&out, 129, "one")
+    client_frame(&out, 129, "two")
+    client_frame(&out, 129, "three")
+    var big Vector[u8](70000)
+    var i: size_t 0
+    while i < 70000
+    {
+        big.put(i, (i % 253) as u8)
+        set i: i + 1
+    }
+    client_frame(&out, 130, big.as_slice())
+    client_frame(&out, 1, "hel")
+    client_frame(&out, 128, "lo")
+    client_frame(&out, 137, "ping!")
+    var cb u8[2]
+    var close_body Slice[u8](2, &cb[0])
+    close_body.put(0, 3)
+    close_body.put(1, 232)
+    client_frame(&out, 136, close_body)
+    s.write(out.bytes())
+
+    ; read every server frame until the close
+    var got StringBuilder()
+    var big_ok false
+    var closed false
+    while closed = false
+    {
+        var at: size_t 0
+        let b inb.bytes()
+        repeat
+        {
+            if at + 2 > b.length
+                break
+            let opcode b[at] & 15
+            var n (b[at + 1] & 127) as size_t
+            var h: size_t 2
+            if n = 126
+            {
+                if at + 4 > b.length
+                    break
+                set n: ((b[at + 2] as size_t) << 8) | (b[at + 3] as size_t)
+                set h: 4
+            }
+            else if n = 127
+            {
+                if at + 10 > b.length
+                    break
+                set n: 0
+                var k: size_t 0
+                while k < 8
+                {
+                    set n: (n << 8) | (b[at + 2 + k] as size_t)
+                    set k: k + 1
+                }
+                set h: 10
+            }
+            if at + h + n > b.length
+                break
+            let payload b.subslice(at + h, at + h + n)
+            set at: at + h + n
+            if opcode = 1
+            {
+                got.append(String(payload.data as pointer[const_char], payload.length))
+                got.append("|" as char)
+            }
+            if opcode = 2
+                set big_ok: payload.equals(big.as_slice())
+            if opcode = 10
+            {
+                got.append("pong:")
+                got.append(String(payload.data as pointer[const_char], payload.length))
+                got.append("|" as char)
+            }
+            if opcode = 8
+            {
+                set closed: true
+                if payload.length <> 2 or payload[0] <> 3 or payload[1] <> 232
+                {
+                    print "close: code `hex(payload)`"
+                    return 5
+                }
+                break
+            }
+        }
+        inb.consume(at)
+        if closed
+            break
+        if inb.length = inb.capacity()
+            inb.reserve(inb.capacity())
+        let n s.read(inb.spare())
+        if n <= 0
+        {
+            print "echo: ended early after `got.to_string()`"
+            return 6
+        }
+        inb.advance(n as size_t)
+    }
+    let echoed got.to_string()
+    if echoed.equals(String("one|two|three|hello|pong:ping!|")) = false or big_ok = false
+    {
+        print "echo: `echoed` big `big_ok`"
+        return 7
+    }
+    Console.print "echo close "
+    s.close()
+
+    var p TcpStream.connect("127.0.0.1", l.port())
+    p.write("GET /ws HTTP/1.1\r\nHost: t\r\nConnection: close\r\n\r\n")
+    var reply ByteBuf.create(host, 512)
+    repeat
+    {
+        let n p.read(reply.spare())
+        if n <= 0
+            break
+        reply.advance(n as size_t)
+    }
+    p.close()
+    if reply.bytes().starts_with("HTTP/1.1 400") = false
+    {
+        print "400: `String(reply.bytes().data as pointer[const_char], reply.length)`"
+        return 8
+    }
+    Console.print "400"
+    server.shutdown()
+    server.wait()
+    l.close()
+    0
+}

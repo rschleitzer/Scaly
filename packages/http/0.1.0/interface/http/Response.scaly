@@ -9,6 +9,7 @@
 ;   res.send("application/json", body)             ; ends the response
 
 use http.Buffer.ByteBuf
+use http.Request.Request
 
 ; "HTTP/1.1 200 OK\r\nDate: " (23), the date (DATE_LENGTH), "\r\n".
 define HEAD_OK_LENGTH: size_t 54
@@ -30,6 +31,7 @@ define Response
     head_ok: Slice[u8]           ; "HTTP/1.1 200 OK\r\nDate: <date>\r\n", HEAD_OK_LENGTH
     var head_only: bool          ; a HEAD request: everything but the body
     trailers: ref[ByteBuf]       ; "name: value\r\n" lines sent after the body (HTTP/2 only)
+    var websocket: pointer[void] ; the message handler of an accepted WebSocket upgrade
 )
 {
     ; A connection's response on its page, writing into out: the 200 head
@@ -38,6 +40,13 @@ define Response
 
     ; Ready for the next response on the same connection.
     procedure reset(mutable this, close_after: bool) @ret_nonlocal true @deep true linked
+
+    ; Accept a WebSocket upgrade (RFC 6455 4.2): 101 with the accept key, and
+    ; the connection hands every message to `handler` (http.WebSocket) once
+    ; this response is out. A request that is no upgrade -- no `Upgrade:
+    ; websocket`, no `Connection: Upgrade`, no key, a version other than 13
+    ; -- answers 400 instead, and false.
+    procedure accept_websocket(mutable this, req: ref[Request], mutable handler: pointer[void]) @ret_nonlocal true @deep true returns bool io linked
 
     ; A trailer field (lowercase name), sent after the body when the response
     ; goes out over HTTP/2 -- gRPC's grpc-status. HTTP/1.1 leaves it out.

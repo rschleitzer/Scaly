@@ -18,6 +18,8 @@
 ;   POST     /echo               the request body, unchanged (8gbit)
 ;   POST     /benchmark.BenchmarkService/GetSum   unary gRPC: SumRequest{a, b}
 ;                                in, SumReply{result} out (stage E)
+;   GET      /ws                 WebSocket: every text or binary message echoed
+;                                (echo-ws*, stage F)
 ;   GET      /shutdown           ends the server (only with SCALY_ARENA_TRAIN set,
 ;                                the PGO training run)
 ;
@@ -52,6 +54,7 @@ use json.Writer.JsonWriter
 use tls.Tls.TlsContext
 use pg.Conn.PgConn
 use http.Buffer.ByteBuf
+use http.WebSocket.WebSocket
 
 ; One dataset entry, as the benchmark's validation reads it back.
 define Item
@@ -409,6 +412,13 @@ procedure get_sum(req: ref[Request], mutable res: ref[Response])
     grpc_reply(res, out.slice_to(n))
 }
 
+; A WebSocket message back as it came (echo-ws, -pipeline, -limited).
+procedure ws_echo(mutable ws: ref[WebSocket], opcode: u8, payload: Slice[u8])
+    ws.send(opcode, payload)
+
+procedure ws_upgrade(req: ref[Request], mutable res: ref[Response])
+    res.accept_websocket(req, &ws_echo)
+
 ; Ends the server — registered only in the PGO training run (SCALY_ARENA_TRAIN
 ; set, tools/bench/http/train.scaly), whose profile is written at a clean exit.
 procedure shutdown(req: ref[Request], mutable res: ref[Response])
@@ -450,6 +460,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
     app.get("/static/{path...}", &static_file)
     app.post("/echo", &echo)
     app.post("/benchmark.BenchmarkService/GetSum", &get_sum)
+    app.get("/ws", &ws_upgrade)
     if getenv("SCALY_ARENA_TRAIN") <> null
         app.get("/shutdown", &shutdown)
     var cert String("/certs/server.crt")

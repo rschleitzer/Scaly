@@ -1,0 +1,415 @@
+; WebSocket (RFC 6455, ROADMAP-http.md stage F): a handler accepts the
+; upgrade, the connection answers 101 and from then on reads frames, hands
+; every complete text or binary message to a message handler and writes what
+; it sends; pings are answered, a close is answered with the same code.
+;
+;   procedure on_message(mutable ws: ref[WebSocket], opcode: u8, payload: Slice[u8])
+;       ws.send(opcode, payload)                      ; an echo
+;
+;   procedure ws(req: ref[Request], mutable res: ref[Response])
+;       res.accept_websocket(req, &on_message)        ; 400 when it is no upgrade
+;
+;   app.get("/ws", &ws)
+;
+; Every frame a read brought is handled before anything is written, and the
+; replies leave in one write: pipelined messages cost one syscall each way.
+; The accept key's SHA-1 is written here (a hash of the key the client sent,
+; nothing it protects), so the http package links no cryptography.
+
+use http.Buffer.ByteBuf
+use http.Request.Request
+use http.Response.Response
+
+define WS_OP_CONTINUATION: u8 0
+define WS_OP_TEXT: u8 1
+define WS_OP_BINARY: u8 2
+define WS_OP_CLOSE: u8 8
+define WS_OP_PING: u8 9
+define WS_OP_PONG: u8 10
+; the largest message the connection assembles
+define WS_MAX_MESSAGE: size_t 16777216
+
+define WS_BASE64: u8[] [65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 43, 47]
+
+function rotl(x: u32, n: u32) returns u32
+    (x << n) | (x >> ((32 as u32) - n))
+
+; One 64-byte block into the SHA-1 state h[0..5).
+procedure sha1_block(mutable h: Slice[u32], block: Slice[u8], mutable w: Slice[u32])
+{
+    var t: size_t 0
+    while t < 16
+    {
+        w.put(t, ((block[4 * t] as u32) << 24) | ((block[4 * t + 1] as u32) << 16) | ((block[4 * t + 2] as u32) << 8) | (block[4 * t + 3] as u32))
+        set t: t + 1
+    }
+    while t < 80
+    {
+        w.put(t, rotl(w[t - 3] xor w[t - 8] xor w[t - 14] xor w[t - 16], 1))
+        set t: t + 1
+    }
+    var a h[0]
+    var b h[1]
+    var c h[2]
+    var d h[3]
+    var e h[4]
+    set t: 0
+    while t < 80
+    {
+        var f: u32 0
+        var k: u32 0
+        if t < 20
+        {
+            set f: (b & c) | ((b xor (0xFFFFFFFF as u32)) & d)
+            set k: 0x5A827999 as u32
+        }
+        else if t < 40
+        {
+            set f: b xor c xor d
+            set k: 0x6ED9EBA1 as u32
+        }
+        else if t < 60
+        {
+            set f: (b & c) | (b & d) | (c & d)
+            set k: 0x8F1BBCDC as u32
+        }
+        else
+        {
+            set f: b xor c xor d
+            set k: 0xCA62C1D6 as u32
+        }
+        let temp rotl(a, 5) + f + e + k + w[t]
+        set e: d
+        set d: c
+        set c: rotl(b, 30)
+        set b: a
+        set a: temp
+        set t: t + 1
+    }
+    h.put(0, h[0] + a)
+    h.put(1, h[1] + b)
+    h.put(2, h[2] + c)
+    h.put(3, h[3] + d)
+    h.put(4, h[4] + e)
+}
+
+; SHA-1 (RFC 3174) of data into out[0..20).
+procedure sha1(data: Slice[u8], mutable out: Slice[u8])
+{
+    var hs u32[5]
+    var h Slice[u32](5, &hs[0])
+    h.put(0, 0x67452301 as u32)
+    h.put(1, 0xEFCDAB89 as u32)
+    h.put(2, 0x98BADCFE as u32)
+    h.put(3, 0x10325476 as u32)
+    h.put(4, 0xC3D2E1F0 as u32)
+    var ws u32[80]
+    var w Slice[u32](80, &ws[0])
+    var at: size_t 0
+    while at + 64 <= data.length
+    {
+        sha1_block(h, data.subslice(at, at + 64), w)
+        set at: at + 64
+    }
+    ; the rest, the 0x80, zeros and the bit length, in one or two blocks
+    var tail u8[128]
+    var last Slice[u8](128, &tail[0])
+    var i: size_t 0
+    while i < 128
+    {
+        last.put(i, 0)
+        set i: i + 1
+    }
+    let rest data.length - at
+    set i: 0
+    while i < rest
+    {
+        last.put(i, data[at + i])
+        set i: i + 1
+    }
+    last.put(rest, 128)
+    var n: size_t 64
+    if rest >= 56
+        set n: 128
+    let bits (data.length as u64) * 8
+    set i: 0
+    while i < 8
+    {
+        last.put(n - 1 - i, ((bits >> (8 * (i as u64))) & 255) as u8)
+        set i: i + 1
+    }
+    sha1_block(h, last.subslice(0, 64), w)
+    if n = 128
+        sha1_block(h, last.subslice(64, 128), w)
+    set i: 0
+    while i < 5
+    {
+        let v h[i]
+        out.put(4 * i, ((v >> 24) & 255) as u8)
+        out.put(4 * i + 1, ((v >> 16) & 255) as u8)
+        out.put(4 * i + 2, ((v >> 8) & 255) as u8)
+        out.put(4 * i + 3, (v & 255) as u8)
+        set i: i + 1
+    }
+}
+
+; Sec-WebSocket-Accept for a Sec-WebSocket-Key: base64 of the SHA-1 of the
+; key and the protocol's GUID, 28 bytes into out.
+procedure websocket_accept(key: Slice[u8], mutable out: Slice[u8])
+{
+    var joined u8[128]
+    var j Slice[u8](128, &joined[0])
+    let guid: Slice[u8] "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+    if key.length + guid.length > 128
+        return
+    var i: size_t 0
+    while i < key.length
+    {
+        j.put(i, key[i])
+        set i: i + 1
+    }
+    var g: size_t 0
+    while g < guid.length
+    {
+        j.put(i + g, guid[g])
+        set g: g + 1
+    }
+    var digest u8[20]
+    let d Slice[u8](20, &digest[0])
+    sha1(j.slice_to(key.length + guid.length), d)
+    ; 20 bytes: six groups of three, then two bytes and one '='
+    var o: size_t 0
+    set i: 0
+    while i < 18
+    {
+        let v ((d[i] as u64) << 16) | ((d[i + 1] as u64) << 8) | (d[i + 2] as u64)
+        out.put(o, WS_BASE64[((v >> 18) & 63) as size_t])
+        out.put(o + 1, WS_BASE64[((v >> 12) & 63) as size_t])
+        out.put(o + 2, WS_BASE64[((v >> 6) & 63) as size_t])
+        out.put(o + 3, WS_BASE64[(v & 63) as size_t])
+        set o: o + 4
+        set i: i + 3
+    }
+    let v ((d[18] as u64) << 16) | ((d[19] as u64) << 8)
+    out.put(o, WS_BASE64[((v >> 18) & 63) as size_t])
+    out.put(o + 1, WS_BASE64[((v >> 12) & 63) as size_t])
+    out.put(o + 2, WS_BASE64[((v >> 6) & 63) as size_t])
+    out.put(o + 3, 61)
+}
+
+; Does the field value hold `token` (ASCII, any case) among its comma-
+; separated items -- `Connection: keep-alive, Upgrade`?
+function has_token(value: Slice[u8], token: Slice[u8]) returns bool
+{
+    var at: size_t 0
+    while at < value.length
+    {
+        var end at
+        while end < value.length and value[end] <> 44
+            set end: end + 1
+        let item trim(value.subslice(at, end))
+        if item.length = token.length
+        {
+            var same true
+            var i: size_t 0
+            while i < item.length
+            {
+                var c item[i]
+                if c >= 65 and c <= 90
+                    set c: c + 32
+                if c <> token[i]
+                    set same: false
+                set i: i + 1
+            }
+            if same
+                return true
+        }
+        set at: end + 1
+    }
+    false
+}
+
+; One side of an accepted WebSocket: what a message handler sends goes out
+; after the frames of the current read are handled.
+define WebSocket
+(
+    out: ref[ByteBuf]
+    var closing: bool
+)
+{
+    ; A frame from the server (never masked), final.
+    procedure send(mutable this, opcode: u8, payload: Slice[u8])
+    {
+        if closing
+            return
+        out.append_byte(128 | opcode)
+        let n payload.length
+        if n < 126
+            out.append_byte(n as u8)
+        else if n < 65536
+        {
+            out.append_byte(126)
+            out.append_byte(((n >> 8) & 255) as u8)
+            out.append_byte((n & 255) as u8)
+        }
+        else
+        {
+            out.append_byte(127)
+            var shift: size_t 56
+            repeat
+            {
+                out.append_byte(((n >> shift) & 255) as u8)
+                if shift = 0
+                    break
+                set shift: shift - 8
+            }
+        }
+        out.append(payload)
+    }
+
+    procedure send_text(mutable this, text: Slice[u8])
+        this.send(WS_OP_TEXT, text)
+
+    ; Close with `code` (1000: normal) and end the connection after it.
+    procedure close(mutable this, code: u64)
+    {
+        if closing
+            return
+        var body u8[2]
+        let b Slice[u8](2, &body[0])
+        b.put(0, ((code >> 8) & 255) as u8)
+        b.put(1, (code & 255) as u8)
+        this.send(WS_OP_CLOSE, b)
+        set closing: true
+    }
+}
+
+; The WebSocket loop of a connection whose upgrade was accepted: inb holds
+; what arrived after the upgrade request, out the connection's output.
+procedure serve_websocket[S](mutable c: ref[S], handler: pointer[void], host: ref[Page], mutable inb: ref[ByteBuf], mutable out: ref[ByteBuf])
+{
+    let ws &WebSocket^host(out, false)
+    ; a fragmented message being assembled, and its opcode
+    let message &ByteBuf^host(host, allocate_slice[u8]^host(host, 256), 0)
+    var message_opcode: u8 0
+    var open true
+    while open
+    {
+        var at: size_t 0
+        repeat
+        {
+            let b inb.bytes()
+            if at + 2 > b.length
+                break
+            let fin (b[at] & 128) <> 0
+            let opcode b[at] & 15
+            let masked (b[at + 1] & 128) <> 0
+            var n (b[at + 1] & 127) as size_t
+            var head: size_t 2
+            if n = 126
+            {
+                if at + 4 > b.length
+                    break
+                set n: ((b[at + 2] as size_t) << 8) | (b[at + 3] as size_t)
+                set head: 4
+            }
+            else if n = 127
+            {
+                if at + 10 > b.length
+                    break
+                set n: 0
+                var k: size_t 0
+                while k < 8
+                {
+                    set n: (n << 8) | (b[at + 2 + k] as size_t)
+                    set k: k + 1
+                }
+                set head: 10
+            }
+            if masked = false or n > WS_MAX_MESSAGE
+            {
+                ws.close(1002)
+                set open: false
+                break
+            }
+            if at + head + 4 + n > b.length
+            {
+                inb.reserve(head + 4 + n)
+                break
+            }
+            ; unmask in place
+            let key_at at + head
+            let start key_at + 4
+            var i: size_t 0
+            while i < n
+            {
+                inb.data.put(start + i, b[start + i] xor b[key_at + (i & 3)])
+                set i: i + 1
+            }
+            let payload inb.bytes().subslice(start, start + n)
+            set at: start + n
+            if opcode = WS_OP_PING
+                ws.send(WS_OP_PONG, payload)
+            else if opcode = WS_OP_CLOSE
+            {
+                ; answer with the client's code (1000 when it gave none)
+                if payload.length >= 2
+                    ws.close(((payload[0] as u64) << 8) | (payload[1] as u64))
+                else
+                    ws.close(1000)
+                set open: false
+                break
+            }
+            else if opcode = WS_OP_CONTINUATION
+            {
+                message.append(payload)
+                if fin
+                {
+                    let f handler
+                    f(ws, message_opcode, message.bytes())
+                    message.clear()
+                }
+            }
+            else if opcode = WS_OP_TEXT or opcode = WS_OP_BINARY
+            {
+                if fin
+                {
+                    let f handler
+                    f(ws, opcode, payload)
+                }
+                else
+                {
+                    message.clear()
+                    message.append(payload)
+                    set message_opcode: opcode
+                }
+            }
+            else if opcode <> WS_OP_PONG
+            {
+                ws.close(1002)
+                set open: false
+                break
+            }
+            if ws.closing
+            {
+                set open: false
+                break
+            }
+        }
+        inb.consume(at)
+        if out.length > 0
+        {
+            if c.write(out.bytes()) = false
+                break
+            out.clear()
+        }
+        if open = false
+            break
+        if inb.length = inb.capacity()
+            inb.reserve(inb.capacity())
+        let got c.read(inb.spare())
+        if got <= 0
+            break
+        inb.advance(got as size_t)
+    }
+}

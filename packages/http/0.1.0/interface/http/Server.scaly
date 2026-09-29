@@ -99,6 +99,8 @@ procedure serve_connection[S](mutable c: ref[S], router: ref[Router])
             }
             dispatch(router, req, res)
             set done: done + (r as size_t)
+            if res.websocket <> null
+                break
             if req.keep_alive = false
             {
                 set open: false
@@ -112,6 +114,13 @@ procedure serve_connection[S](mutable c: ref[S], router: ref[Router])
             outb.clear()
         }
         inb.consume(done)
+        ; an accepted WebSocket upgrade: the 101 is out, the rest of the
+        ; connection is frames
+        if open and res.websocket <> null
+        {
+            serve_websocket[S](c, res.websocket, host, &inb, outb)
+            break
+        }
         if inb.length = inb.capacity()
         {
             if inb.capacity() >= MAX_HEAD + MAX_BODY

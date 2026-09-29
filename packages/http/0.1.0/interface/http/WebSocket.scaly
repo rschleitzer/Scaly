@@ -1,0 +1,195 @@
+; WebSocket (RFC 6455, ROADMAP-http.md stage F): a handler accepts the
+; upgrade, the connection answers 101 and from then on reads frames, hands
+; every complete text or binary message to a message handler and writes what
+; it sends; pings are answered, a close is answered with the same code.
+;
+;   procedure on_message(mutable ws: ref[WebSocket], opcode: u8, payload: Slice[u8])
+;       ws.send(opcode, payload)                      ; an echo
+;
+;   procedure ws(req: ref[Request], mutable res: ref[Response])
+;       res.accept_websocket(req, &on_message)        ; 400 when it is no upgrade
+;
+;   app.get("/ws", &ws)
+;
+; Every frame a read brought is handled before anything is written, and the
+; replies leave in one write: pipelined messages cost one syscall each way.
+; The accept key's SHA-1 is written here (a hash of the key the client sent,
+; nothing it protects), so the http package links no cryptography.
+
+use http.Buffer.ByteBuf
+use http.Request.Request
+use http.Response.Response
+
+define WS_OP_CONTINUATION: u8 0
+define WS_OP_TEXT: u8 1
+define WS_OP_BINARY: u8 2
+define WS_OP_CLOSE: u8 8
+define WS_OP_PING: u8 9
+define WS_OP_PONG: u8 10
+; the largest message the connection assembles
+define WS_MAX_MESSAGE: size_t 16777216
+
+define WS_BASE64: u8[] [65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 43, 47]
+
+function rotl(x: u32, n: u32) @ret_nonlocal true @deep true returns u32 linked
+
+; One 64-byte block into the SHA-1 state h[0..5).
+procedure sha1_block(mutable h: Slice[u32], block: Slice[u8], mutable w: Slice[u32]) @ret_nonlocal true @deep true linked
+
+; SHA-1 (RFC 3174) of data into out[0..20).
+procedure sha1(data: Slice[u8], mutable out: Slice[u8]) @deep true linked
+
+; Sec-WebSocket-Accept for a Sec-WebSocket-Key: base64 of the SHA-1 of the
+; key and the protocol's GUID, 28 bytes into out.
+procedure websocket_accept(key: Slice[u8], mutable out: Slice[u8]) @deep true linked
+
+; Does the field value hold `token` (ASCII, any case) among its comma-
+; separated items -- `Connection: keep-alive, Upgrade`?
+function has_token(value: Slice[u8], token: Slice[u8]) @ret_nonlocal true @deep true returns bool linked
+
+; One side of an accepted WebSocket: what a message handler sends goes out
+; after the frames of the current read are handled.
+define WebSocket
+(
+    out: ref[ByteBuf]
+    var closing: bool
+)
+{
+    ; A frame from the server (never masked), final.
+    procedure send(mutable this, opcode: u8, payload: Slice[u8]) @deep true linked
+
+    procedure send_text(mutable this, text: Slice[u8]) @ret_nonlocal true @deep true linked
+
+    ; Close with `code` (1000: normal) and end the connection after it.
+    procedure close(mutable this, code: u64) @deep true linked
+}
+
+; The WebSocket loop of a connection whose upgrade was accepted: inb holds
+; what arrived after the upgrade request, out the connection's output.
+procedure serve_websocket[S](mutable c: ref[S], handler: pointer[void], host: ref[Page], mutable inb: ref[ByteBuf], mutable out: ref[ByteBuf])
+{
+    let ws &WebSocket^host(out, false)
+    ; a fragmented message being assembled, and its opcode
+    let message &ByteBuf^host(host, allocate_slice[u8]^host(host, 256), 0)
+    var message_opcode: u8 0
+    var open true
+    while open
+    {
+        var at: size_t 0
+        repeat
+        {
+            let b inb.bytes()
+            if at + 2 > b.length
+                break
+            let fin (b[at] & 128) <> 0
+            let opcode b[at] & 15
+            let masked (b[at + 1] & 128) <> 0
+            var n (b[at + 1] & 127) as size_t
+            var head: size_t 2
+            if n = 126
+            {
+                if at + 4 > b.length
+                    break
+                set n: ((b[at + 2] as size_t) << 8) | (b[at + 3] as size_t)
+                set head: 4
+            }
+            else if n = 127
+            {
+                if at + 10 > b.length
+                    break
+                set n: 0
+                var k: size_t 0
+                while k < 8
+                {
+                    set n: (n << 8) | (b[at + 2 + k] as size_t)
+                    set k: k + 1
+                }
+                set head: 10
+            }
+            if masked = false or n > WS_MAX_MESSAGE
+            {
+                ws.close(1002)
+                set open: false
+                break
+            }
+            if at + head + 4 + n > b.length
+            {
+                inb.reserve(head + 4 + n)
+                break
+            }
+            ; unmask in place
+            let key_at at + head
+            let start key_at + 4
+            var i: size_t 0
+            while i < n
+            {
+                inb.data.put(start + i, b[start + i] xor b[key_at + (i & 3)])
+                set i: i + 1
+            }
+            let payload inb.bytes().subslice(start, start + n)
+            set at: start + n
+            if opcode = WS_OP_PING
+                ws.send(WS_OP_PONG, payload)
+            else if opcode = WS_OP_CLOSE
+            {
+                ; answer with the client's code (1000 when it gave none)
+                if payload.length >= 2
+                    ws.close(((payload[0] as u64) << 8) | (payload[1] as u64))
+                else
+                    ws.close(1000)
+                set open: false
+                break
+            }
+            else if opcode = WS_OP_CONTINUATION
+            {
+                message.append(payload)
+                if fin
+                {
+                    let f handler
+                    f(ws, message_opcode, message.bytes())
+                    message.clear()
+                }
+            }
+            else if opcode = WS_OP_TEXT or opcode = WS_OP_BINARY
+            {
+                if fin
+                {
+                    let f handler
+                    f(ws, opcode, payload)
+                }
+                else
+                {
+                    message.clear()
+                    message.append(payload)
+                    set message_opcode: opcode
+                }
+            }
+            else if opcode <> WS_OP_PONG
+            {
+                ws.close(1002)
+                set open: false
+                break
+            }
+            if ws.closing
+            {
+                set open: false
+                break
+            }
+        }
+        inb.consume(at)
+        if out.length > 0
+        {
+            if c.write(out.bytes()) = false
+                break
+            out.clear()
+        }
+        if open = false
+            break
+        if inb.length = inb.capacity()
+            inb.reserve(inb.capacity())
+        let got c.read(inb.spare())
+        if got <= 0
+            break
+        inb.advance(got as size_t)
+    }
+}

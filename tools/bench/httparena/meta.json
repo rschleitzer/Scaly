@@ -31,7 +31,10 @@
     "baseline-h2c",
     "json-h2c",
     "unary-grpc",
-    "unary-grpc-tls"
+    "unary-grpc-tls",
+    "echo-ws",
+    "echo-ws-pipeline",
+    "echo-ws-limited"
   ],
   "maintainers": []
 }

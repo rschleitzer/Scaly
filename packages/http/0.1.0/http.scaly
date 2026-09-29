@@ -19,6 +19,7 @@ define http
     module Hpack
     module Router
     module Static
+    module WebSocket
     module Server
     module H2
     module Grpc
