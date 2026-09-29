@@ -44803,7 +44803,13 @@ define Planner
         ; (a procedure called for its effect, a builder whose return value is not
         ; needed), and a bare variable or literal as a statement, while equally
         ; dead, is not a shape that has cost anyone anything here.
-        procedure report_effect_free_statement(mutable this: Planner, stmt: PlannedStatement)
+        ;
+        ; The LAST statement is judged too (`last`), for the one shape that is
+        ; never a value: an operator call with NO NAME, the leftover of a
+        ; failed collapse. `print sb.to_string()` as a procedure's last
+        ; statement emitted nothing at rc 0 while the same line one statement
+        ; earlier was refused (2026-09-29, found by the json package's tests).
+        procedure report_effect_free_statement(mutable this: Planner, stmt: PlannedStatement, last: bool)
         {
             choose stmt
                 when a: PlannedAction
@@ -44822,7 +44828,7 @@ define Planner
                                     choose s0.expr
                                         when oc: PlannedCall
                                         {
-                                            if oc.is_operator
+                                            if oc.is_operator and (last = false or oc.name.get_length() = 0)
                                             {
                                                 var esb StringBuilder()
                                                 if oc.name.get_length() = 0
@@ -45279,8 +45285,10 @@ define Planner
                         ; Same non-last precision, other question: does this
                         ; statement do anything at all? See
                         ; report_effect_free_statement#.
-                        this.report_effect_free_statement(pl)
+                        this.report_effect_free_statement(pl, false)
                     }
+                    else
+                        this.report_effect_free_statement(pl, true)
                     result.put(i, pl)
 
                     ; An assignment ends whatever a guard proved.
@@ -53678,6 +53686,8 @@ define Planner
             return Planner.simd_type(name)
         if name = "int"
             return Planner.make_int_type()
+        if name = "u64"
+            return Planner.make_primitive_type("u64", "3u64")
         Planner.make_bool_type()
     }
 
@@ -53705,6 +53715,8 @@ define Planner
             match m
                 case "any" case "all": return String("bool")
                 case "count": return String("int")
+                ; lane i as bit i, zero-extended (ROADMAP-simd.md phase 5)
+                case "bits": return String("u64")
                 case "select": return String("?")
             return String()
         }

@@ -1,0 +1,20 @@
+; Regression: the parenless-chain drop (xfail_parenless_chain_dropped) as a
+; routine's LAST statement. The effect-free gate judged non-last statements
+; only -- the last may be an implicit return -- so `print sb.to_string()`
+; closing a procedure emitted neither call at rc 0 while the same line one
+; statement earlier was refused (2026-09-29, a probe for the json package
+; printed nothing). An operator call with no name is never a value: it is
+; judged in every position.
+;
+; xfail: this statement did not resolve to a call
+
+package scaly 0.1.0
+
+procedure show()
+{
+    var sb StringBuilder()
+    sb.append("x")
+    print sb.to_string()
+}
+
+show()

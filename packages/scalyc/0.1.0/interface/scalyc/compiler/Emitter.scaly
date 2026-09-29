@@ -1972,6 +1972,13 @@ define Emitter
         ;   scaly_atomic_load_u64(p) / scaly_atomic_store_u64(p, v)
         ;   scaly_atomic_or_u64 / and_u64 / add_u64 (p, v) returns OLD value
         ;   scaly_atomic_cas_u64(p, expected, desired) returns OLD value
+        ; The bit counts of a u64, declared in the stdlib (scaly/memory/bits)
+        ; as externs no object defines: lowered here to llvm.cttz / ctlz /
+        ; ctpop, a zero input defined (64 for the zero counts). Pure LLVM
+        ; intrinsics, so no C shim (the containment rule's a/b/c do not
+        ; apply). Null when the callee is not one of them.
+        procedure emit_bits_call(mutable this, mutable call: PlannedCall) @direct true @deep true returns LLVMValueRef linked
+
         procedure emit_atomic_call(mutable this, mutable call: PlannedCall) @direct true @deep true returns LLVMValueRef linked
 
         ; M2.3b: scaly_call_ptr(fn, arg) returns pointer[void] — an indirect

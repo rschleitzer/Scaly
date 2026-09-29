@@ -4247,6 +4247,9 @@ define WriteCensus
             ; the abort path
             if name = "exit" or name = "abort"
                 return true
+            ; the bit counts (scaly/memory/bits), lowered to LLVM intrinsics
+            match name
+                case "scaly_bits_trailing_zeros" case "scaly_bits_leading_zeros" case "scaly_bits_count_ones": return true
             false
         }
 

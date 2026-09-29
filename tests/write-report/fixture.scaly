@@ -97,4 +97,4 @@ function via_alias(b: ref[Box]) returns int
 }
 
 let b Box()
-print b.peek()
+print "`b.peek()`"

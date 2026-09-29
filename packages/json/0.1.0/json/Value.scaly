@@ -14,7 +14,13 @@
 ; between the steps.
 
 use json.Reader.JsonReader
-use json.Reader.JsonToken
+use json.Reader.JsonScan
+use json.Reader.JsonStream
+
+; What stage 2 expects at its token.
+define STAGE_VALUE: int 0
+define STAGE_KEY: int 1
+define STAGE_COMPLETE: int 2
 
 ; strtod(3) — fixed prototype, errno not consulted.
 function strtod(s: pointer[const_char], endp: pointer[pointer[u8]]) returns f64 extern
@@ -274,122 +280,308 @@ define JsonValue union
     ; ------------------------------------------------------------------
     ; parsing
 
-    ; Parse a whole document. On a refused one the result carries the
-    ; reader's code and offset and a Null value. The tree is independent of
-    ; source: it lives on the caller's page with its own copy of the text.
+    ; Parse a whole document. On a refused one the result carries the code
+    ; and offset JsonReader would report and a Null value. The tree is
+    ; independent of source: it lives on the caller's page with its own copy
+    ; of the text.
+    ;
+    ; Stage 2 (after simdjson): one loop over stage 1's structural positions
+    ; (JsonStream), its state in locals -- what is expected next, the token
+    ; position t, the value just completed. The items and members of the
+    ; containers still open wait on two scratch stacks; a closing container
+    ; moves its run into an exact-size buffer. A member is pushed with its
+    ; name as soon as the colon is seen and gets its value when that is
+    ; complete, so an open object's pending member is always the last.
     procedure parse(source: Slice[u8]) returns JsonParsed
     {
         var copy Vector[u8]#(source.length)
         var doc copy.as_slice()
-        if source.length > 0
-            memcpy(doc.data as pointer[void], source.data as pointer[void], source.length)
-        ; one stack each for the items and members of the containers still
-        ; open; a closing container moves its run into an exact-size buffer
+        let n source.length
+        if n > 0
+            memcpy(doc.data as pointer[void], source.data as pointer[void], n)
         var values Array[JsonValue]()
         var members Array[JsonMember]()
-        var r JsonReader.create(doc)
-        let first r.next()
-        let v JsonValue.build(r, doc, values, members, first)
-        if r.failed() = false
-            r.next()
-        if r.failed()
-            return JsonParsed(JsonValue.Null, r.error, r.error_at)
+        ; per open container: its run's start on its stack, times two, plus
+        ; one for an object
+        var open Array[size_t]()
+        var s JsonStream(0, 0, 0, 0, 0, 0)
+        var state STAGE_VALUE
+        var t s.take(doc)
+        var v JsonValue.Null
+        var error JSON_OK
+        var error_at: size_t 0
+        repeat
+        {
+            if state = STAGE_VALUE
+            {
+                ; a value begins at t
+                if t >= n
+                {
+                    set error: JSON_END
+                    set error_at: n
+                    break
+                }
+                let c doc[t]
+                if c = 0x7B or c = 0x5B                     ; '{' '['
+                {
+                    if open.length >= MAX_DEPTH
+                    {
+                        set error: JSON_DEPTH
+                        set error_at: t
+                        break
+                    }
+                    let is_object c = 0x7B
+                    set t: s.take(doc)
+                    if is_object
+                    {
+                        if t < n and doc[t] = 0x7D          ; '}'
+                        {
+                            set v: JsonValue.Object(JsonObject(null))
+                            set t: s.take(doc)
+                            set state: STAGE_COMPLETE
+                            continue
+                        }
+                        open.add((members.length << 1) + 1)
+                        set state: STAGE_KEY
+                        continue
+                    }
+                    if t < n and doc[t] = 0x5D              ; ']'
+                    {
+                        set v: JsonValue.Array(JsonArray(null))
+                        set t: s.take(doc)
+                        set state: STAGE_COMPLETE
+                        continue
+                    }
+                    open.add(values.length << 1)
+                    continue
+                }
+                if c = 0x22                                 ; '"'
+                {
+                    ; its closing quote: the next structural position when
+                    ; the string has neither escape nor control character,
+                    ; else the byte scanner's (string_text says why the
+                    ; stream is taken up to it first)
+                    var u s.take(doc)
+                    var close JsonScan(JSON_OK, u, false)
+                    if u >= n or doc[u] <> 0x22
+                    {
+                        set close: JsonReader.string_close(doc, t)
+                        if close.code <> JSON_OK
+                        {
+                            set error: close.code
+                            set error_at: close.at
+                            break
+                        }
+                        while u < close.at
+                            set u: s.take(doc)
+                    }
+                    set v: JsonValue.Text(JsonString(JsonValue.string_text(doc, t, close)))
+                    set t: s.take(doc)
+                    set state: STAGE_COMPLETE
+                    continue
+                }
+                var end: size_t 0
+                if c = 0x2D or (c >= 0x30 and c <= 0x39)    ; '-' or a digit
+                {
+                    let num JsonReader.number_end(doc, t)
+                    if num.code <> JSON_OK
+                    {
+                        set error: num.code
+                        set error_at: num.at
+                        break
+                    }
+                    set v: JsonValue.Number(JsonNumber(doc.subslice(t, num.at)))
+                    set end: num.at
+                }
+                else
+                {
+                    if JsonValue.literal_at(doc, t, "true")
+                    {
+                        set v: JsonValue.Bool(true)
+                        set end: t + 4
+                    }
+                    else
+                    {
+                        if JsonValue.literal_at(doc, t, "false")
+                        {
+                            set v: JsonValue.Bool(false)
+                            set end: t + 5
+                        }
+                        else
+                        {
+                            if JsonValue.literal_at(doc, t, "null")
+                            {
+                                set v: JsonValue.Null
+                                set end: t + 4
+                            }
+                            else
+                            {
+                                set error: JSON_VALUE
+                                set error_at: t
+                                break
+                            }
+                        }
+                    }
+                }
+                ; a scalar that runs on into scalar bytes (`12x`, `truex`)
+                ; ends where the pull reader sees the byte after it: that
+                ; byte is no structural position, and the separator test
+                ; refuses it
+                set t: s.take(doc)
+                if end < n and t <> end and JsonReader.is_ws(doc[end]) = false
+                    set t: end
+                set state: STAGE_COMPLETE
+                continue
+            }
+            if state = STAGE_KEY
+            {
+                ; a member name at t, then its colon
+                if t >= n
+                {
+                    set error: JSON_END
+                    set error_at: n
+                    break
+                }
+                if doc[t] <> 0x22
+                {
+                    set error: JSON_KEY
+                    set error_at: t
+                    break
+                }
+                var u s.take(doc)
+                var close JsonScan(JSON_OK, u, false)
+                if u >= n or doc[u] <> 0x22
+                {
+                    set close: JsonReader.string_close(doc, t)
+                    if close.code <> JSON_OK
+                    {
+                        set error: close.code
+                        set error_at: close.at
+                        break
+                    }
+                    while u < close.at
+                        set u: s.take(doc)
+                }
+                let key JsonValue.string_text(doc, t, close)
+                set t: s.take(doc)
+                if t >= n or doc[t] <> 0x3A                 ; ':'
+                {
+                    set error: JSON_COLON
+                    set error_at: t
+                    break
+                }
+                members.add(JsonMember(key, JsonValue.Null))
+                set t: s.take(doc)
+                set state: STAGE_VALUE
+                continue
+            }
+            ; STAGE_COMPLETE: v is complete, t is the token after it
+            if open.length = 0
+            {
+                if t < n
+                {
+                    set error: JSON_TRAILING
+                    set error_at: t
+                }
+                break
+            }
+            let top open[open.length - 1]
+            let in_object (top & 1) = 1
+            if in_object
+            {
+                let last members.length - 1
+                members.put(last, JsonMember(members[last].key, v))
+            }
+            else
+                values.add(v)
+            if t >= n
+            {
+                set error: JSON_END
+                set error_at: n
+                break
+            }
+            let c doc[t]
+            if c = 0x2C                                     ; ','
+            {
+                set t: s.take(doc)
+                if in_object
+                    set state: STAGE_KEY
+                else
+                    set state: STAGE_VALUE
+                continue
+            }
+            let run top >> 1
+            if in_object and c = 0x7D                       ; '}'
+            {
+                let count members.length - run
+                ; built on the caller's page, which the returned value carries on
+                var store Vector[JsonMember]#(count)
+                var i: size_t 0
+                while i < count
+                {
+                    store.put(i, members[run + i])
+                    set i: i + 1
+                }
+                set members.length: run
+                set v: JsonValue.Object(JsonObject(store.as_slice()))
+            }
+            else
+            {
+                if in_object = false and c = 0x5D           ; ']'
+                {
+                    let count values.length - run
+                    var store Vector[JsonValue]#(count)
+                    var i: size_t 0
+                    while i < count
+                    {
+                        store.put(i, values[run + i])
+                        set i: i + 1
+                    }
+                    set values.length: run
+                    set v: JsonValue.Array(JsonArray(store.as_slice()))
+                }
+                else
+                {
+                    set error: JSON_SEPARATOR
+                    set error_at: t
+                    break
+                }
+            }
+            set open.length: open.length - 1
+            set t: s.take(doc)
+        }
+        if error <> JSON_OK
+            return JsonParsed(JsonValue.Null, error, error_at)
         JsonParsed(v, JSON_OK, 0)
     }
 
-    ; The value that begins with token; the rest of it is read from r.
-    procedure build(mutable r: ref[JsonReader], mutable doc: Slice[u8], mutable values: ref[Array[JsonValue]], mutable members: ref[Array[JsonMember]], token: JsonToken) returns JsonValue
+    ; The text of the string that opens at doc[open] and closes at close.at,
+    ; its escapes decoded in place. Its closing quote was TAKEN from the
+    ; stream before, which classified every block the string touches: stage
+    ; 1 must never see decoded bytes -- an escaped quote would become a real
+    ; one.
+    procedure string_text(mutable doc: Slice[u8], open: size_t, close: JsonScan) returns Slice[u8]
     {
-        choose token
-            when bo: ObjectStart
-                return JsonValue.build_object(r, doc, values, members)
-            when ba: ArrayStart
-                return JsonValue.build_array(r, doc, values, members)
-            when t: StringValue
-                return JsonValue.Text(JsonString(JsonValue.string_view(r, doc)))
-            when n: NumberValue
-                return JsonValue.Number(JsonNumber(r.text()))
-            when yes: TrueValue
-                return JsonValue.Bool(true)
-            when no: FalseValue
-                return JsonValue.Bool(false)
-            else
-                return JsonValue.Null
+        if close.flag = false
+            return doc.subslice(open + 1, close.at)
+        let n JsonReader.decode_in_place(doc, open + 1, close.at)
+        doc.subslice(open + 1, open + 1 + n)
     }
 
-    ; The last Key or Text token as a view into doc: as it stands, or with
-    ; its escapes decoded in place.
-    procedure string_view(r: ref[JsonReader], mutable doc: Slice[u8]) returns Slice[u8]
+    ; word stands at doc[at] (byte by byte: a call to memcmp cost more than
+    ; the four compares).
+    function literal_at(doc: Slice[u8], at: size_t, word: Slice[u8]) returns bool
     {
-        if r.escaped = false
-            return doc.subslice(r.start, r.end)
-        let n JsonReader.decode_in_place(doc, r.start, r.end)
-        doc.subslice(r.start, r.start + n)
-    }
-
-    procedure build_object(mutable r: ref[JsonReader], mutable doc: Slice[u8], mutable values: ref[Array[JsonValue]], mutable members: ref[Array[JsonMember]]) returns JsonValue
-    {
-        let base members.length
-        repeat
-        {
-            let t r.next()
-            choose t
-                when k: MemberName
-                {
-                    let key JsonValue.string_view(r, doc)
-                    let first r.next()
-                    let value JsonValue.build(r, doc, values, members, first)
-                    members.add(JsonMember(key, value))
-                }
-                else
-                    break
-        }
-        let count members.length - base
-        if count = 0
-            return JsonValue.Object(JsonObject(null))
-        ; built on the caller's page, which the returned value carries on
-        var store Vector[JsonMember]#(count)
+        if at + word.length > doc.length
+            return false
         var i: size_t 0
-        while i < count
+        while i < word.length
         {
-            store.put(i, members[base + i])
+            if doc[at + i] <> word[i]
+                return false
             set i: i + 1
         }
-        set members.length: base
-        JsonValue.Object(JsonObject(store.as_slice()))
-    }
-
-    procedure build_array(mutable r: ref[JsonReader], mutable doc: Slice[u8], mutable values: ref[Array[JsonValue]], mutable members: ref[Array[JsonMember]]) returns JsonValue
-    {
-        let base values.length
-        repeat
-        {
-            let t r.next()
-            choose t
-                when e: ArrayEnd
-                    break
-                when i: Invalid
-                    break
-                when d: End
-                    break
-                else
-                {
-                    let item JsonValue.build(r, doc, values, members, t)
-                    values.add(item)
-                }
-        }
-        let count values.length - base
-        if count = 0
-            return JsonValue.Array(JsonArray(null))
-        var store Vector[JsonValue]#(count)
-        var i: size_t 0
-        while i < count
-        {
-            store.put(i, values[base + i])
-            set i: i + 1
-        }
-        set values.length: base
-        JsonValue.Array(JsonArray(store.as_slice()))
+        true
     }
 
     ; ------------------------------------------------------------------

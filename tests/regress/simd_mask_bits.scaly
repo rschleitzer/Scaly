@@ -1,0 +1,23 @@
+; SIMD phase 5 (2026-09-29): a mask's bits() -- lane i as bit i, zero-extended
+; to u64 -- and the bit counts trailing_zeros / leading_zeros / count_ones
+; (scaly/memory/bits, lowered to llvm.cttz / ctlz / ctpop). The walk the JSON
+; reader's scanners make: find the special bytes of a block, visit them in
+; order by clearing the lowest set bit.
+; Expected: PASS
+
+let block u8x16.load("ab\"cd\\ef ghijklm".as_slice(), 0)
+let special (block = u8x16.splat(0x22)) or (block = u8x16.splat(0x5C))
+var bits special.bits()
+var seen: u64 0
+var order: u64 0
+while bits <> 0
+{
+    set order: (order * 100) + trailing_zeros(bits)
+    set bits: bits & (bits - 1)
+    set seen: seen + 1
+}
+let wide u8x32.splat(1) = u8x32.splat(1)
+if order = 205 and seen = 2 and trailing_zeros(0) = 64 and leading_zeros(1) = 63 and count_ones(0xF0F0) = 8 and wide.bits() = 0xFFFFFFFF
+    print "PASS"
+else
+    print "FAIL `order` `seen`"

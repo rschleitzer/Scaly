@@ -204,17 +204,32 @@ define JsonWriter
         this.byte(0x22)
         let src s
         let n src.length
+        let quote u8x16.splat(0x22)
+        let back u8x16.splat(0x5C)
+        let space u8x16.splat(0x20)
         var i: size_t 0
         while i < n
         {
-            ; the run of bytes that need no escape, in one copy
+            ; the run of bytes that need no escape, found sixteen at a time,
+            ; then copied in one piece
             var j i
-            while j < n
+            var found false
+            while found = false and j + 16 <= n
             {
-                let c src[j]
-                if c < 0x20 or c = 0x22 or c = 0x5C
-                    break
-                set j: j + 1
+                let v u8x16.load(src, j)
+                let special ((v = quote) or (v = back) or (v < space)).bits()
+                if special <> 0
+                {
+                    set j: j + (trailing_zeros(special) as size_t)
+                    set found: true
+                }
+                else
+                    set j: j + 16
+            }
+            if found = false
+            {
+                while j < n and JsonWriter.plain(src[j])
+                    set j: j + 1
             }
             if j > i
                 this.append(src.subslice(i, j))

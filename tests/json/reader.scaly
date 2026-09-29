@@ -5,7 +5,10 @@
 ;            tighter limit holds)
 ;   skip     skipping a member's value, a container to its closer
 ;   decode   escapes, a surrogate pair, a lone surrogate
-; Expected: tokens refuse depth skip decode done
+;   blocks   the string scanner at every position around its 16-byte steps:
+;            a control character refused at its offset, an escape decoded,
+;            whitespace of every length before a value
+; Expected: tokens refuse depth skip decode blocks done
 
 package scaly 0.1.0
 package json 0.1.0
@@ -102,6 +105,25 @@ procedure refused(source: Slice[u8], code: int, at: size_t) returns bool
         return false
     }
     true
+}
+
+; A string of n bytes of 'a' in quotes with `special` at position at, or
+; none when at = n (the text of the document, with its quotes).
+procedure string_doc(n: size_t, at: size_t, special: Slice[u8]) returns String
+{
+    var sb StringBuilder()
+    sb.append(0x22 as char)
+    var i: size_t 0
+    while i < n
+    {
+        if i = at
+            sb.append(special.data as pointer[char], special.length)
+        else
+            sb.append("a")
+        set i: i + 1
+    }
+    sb.append(0x22 as char)
+    sb.to_string()
 }
 
 procedure nested(n: size_t) returns String
@@ -218,6 +240,75 @@ else
 }
 if ok
     Console.print "decode "
+
+var blocks_ok true
+var n: size_t 1
+while n <= 40
+{
+    var at: size_t 0
+    while at < n
+    {
+        let raw string_doc(n, at, "\\n")
+        let control raw.as_slice()
+        ; the raw document has a line feed at 1 + at when special is a real LF:
+        ; build that one by hand from the escaped one
+        var bad StringBuilder()
+        var k: size_t 0
+        while k < n
+        {
+            if k = at
+                bad.append(0x0A as char)
+            else
+                bad.append("a")
+            set k: k + 1
+        }
+        let bad_text "\"`bad.to_string()`\""
+        if refused(bad_text.as_slice(), 8, 1 + at) = false
+            set blocks_ok: false
+        var r JsonReader.create(control)
+        choose r.next()
+            when t: StringValue
+            {
+                let d r.string()
+                if d.length <> n or d.get(at) <> 0x0A
+                    set blocks_ok: false
+            }
+            else
+                set blocks_ok: false
+        set at: at + 1
+    }
+    set n: n + 1
+}
+var w: size_t 0
+while w <= 40
+{
+    var sb StringBuilder()
+    var k: size_t 0
+    while k < w
+    {
+        if k % 3 = 0
+            sb.append(0x0A as char)
+        else
+            sb.append(" ")
+        set k: k + 1
+    }
+    sb.append("123 ")
+    let doc sb.to_string()
+    var r JsonReader.create(doc.as_slice())
+    choose r.next()
+        when t: NumberValue
+        {
+            if String(r.text().data as pointer[const_char], r.text().length).equals("123") = false
+                set blocks_ok: false
+        }
+        else
+            set blocks_ok: false
+    set w: w + 1
+}
+if blocks_ok = false
+    set ok: false
+if ok
+    Console.print "blocks "
 
 if ok
     Console.print "done"

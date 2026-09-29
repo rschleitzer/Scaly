@@ -10088,6 +10088,46 @@ define Emitter
         ;   scaly_atomic_load_u64(p) / scaly_atomic_store_u64(p, v)
         ;   scaly_atomic_or_u64 / and_u64 / add_u64 (p, v) returns OLD value
         ;   scaly_atomic_cas_u64(p, expected, desired) returns OLD value
+        ; The bit counts of a u64, declared in the stdlib (scaly/memory/bits)
+        ; as externs no object defines: lowered here to llvm.cttz / ctlz /
+        ; ctpop, a zero input defined (64 for the zero counts). Pure LLVM
+        ; intrinsics, so no C shim (the containment rule's a/b/c do not
+        ; apply). Null when the callee is not one of them.
+        procedure emit_bits_call(mutable this, mutable call: PlannedCall) returns LLVMValueRef
+        {
+            if call.mangled_name.starts_with("scaly_bits_") = false
+                return null
+            if call.args = null or call.args.length <> 1
+                return null
+            let a0 call.args.get 0
+            if a0 = null
+                return null
+            let x emit_operand(a0.unwrap())
+            let i64t LLVMInt64TypeInContext(context)
+            if call.mangled_name = "scaly_bits_count_ones"
+            {
+                let f this.simd_intrinsic(String("llvm.ctpop.i64"), i64t, i64t)
+                var a1 Vector[LLVMValueRef](1)
+                a1.put(0, x)
+                return LLVMBuildCall2(builder, LLVMGlobalGetValueType(f), f, a1.data, 1, "bits.ones")
+            }
+            var name String("")
+            if call.mangled_name = "scaly_bits_trailing_zeros"
+                set name: String("llvm.cttz.i64")
+            if call.mangled_name = "scaly_bits_leading_zeros"
+                set name: String("llvm.ctlz.i64")
+            if name.get_length() = 0
+                return null
+            var ps Vector[LLVMTypeRef](2)
+            ps.put(0, i64t)
+            ps.put(1, LLVMInt1TypeInContext(context))
+            let f this.simd_intrinsic_n(name, i64t, ps)
+            var a2 Vector[LLVMValueRef](2)
+            a2.put(0, x)
+            a2.put(1, LLVMConstInt(LLVMInt1TypeInContext(context), 0, 0))
+            LLVMBuildCall2(builder, LLVMGlobalGetValueType(f), f, a2.data, 2, "bits.zeros")
+        }
+
         procedure emit_atomic_call(mutable this, mutable call: PlannedCall) returns LLVMValueRef
         {
             if call.mangled_name.starts_with("scaly_atomic_") = false
@@ -11121,6 +11161,11 @@ define Emitter
             let atomic_val emit_atomic_call call
             if atomic_val <> null
                 return atomic_val
+
+            ; scaly_bits_* lower to the bit-counting intrinsics, likewise
+            let bits_val emit_bits_call call
+            if bits_val <> null
+                return bits_val
 
             ; M2.3b: scaly_call_ptr lowers to an indirect ptr(ptr) call.
             let indirect_val emit_ptr_call call
@@ -13390,6 +13435,15 @@ define Emitter
                     var a1 Vector[LLVMValueRef](1)
                     a1.put(0, vals[0])
                     return LLVMBuildCall2(builder, LLVMGlobalGetValueType(f), f, a1.data, 1, "simd.reduce")
+                }
+                ; lane i as bit i: the mask bitcast to iN, zero-extended to 64 bits
+                case "simd.bits":
+                {
+                    let mt LLVMTypeOf(vals[0])
+                    let n LLVMGetVectorSize(mt) as size_t
+                    let it LLVMIntTypeInContext(context, n as u32)
+                    let bits LLVMBuildBitCast(builder, vals[0], it, "simd.bits")
+                    return LLVMBuildZExt(builder, bits, i64_ty, "simd.bits64")
                 }
                 case "simd.count":
                 {

@@ -1,0 +1,21 @@
+; Bit counts of a u64. The compiler lowers the three externs to LLVM's
+; llvm.cttz / llvm.ctlz / llvm.ctpop (Emitter.emit_bits_call#) -- no object
+; defines them -- so a scan over a bitmap (a SIMD mask's bits(), a bucket
+; bitmap) costs one instruction per step on every target.
+
+function scaly_bits_trailing_zeros(x: u64) returns u64 extern
+function scaly_bits_leading_zeros(x: u64) returns u64 extern
+function scaly_bits_count_ones(x: u64) returns u64 extern
+
+; The zero bits below the lowest set bit: the index of the first set lane of
+; a mask's bits(). 64 for 0.
+function trailing_zeros(x: u64) returns u64
+    scaly_bits_trailing_zeros(x)
+
+; The zero bits above the highest set bit. 64 for 0.
+function leading_zeros(x: u64) returns u64
+    scaly_bits_leading_zeros(x)
+
+; The set bits.
+function count_ones(x: u64) returns u64
+    scaly_bits_count_ones(x)

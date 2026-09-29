@@ -51,6 +51,153 @@ define JsonToken union
     NullValue
 )
 
+; What a scanner answers: JSON_OK and the position after a number or of a
+; string's closing quote, or the code and offset of the refusal. flag: a
+; number has neither fraction nor exponent, a string has an escape.
+define JsonScan (code: int, at: size_t, flag: bool)
+
+; Stage 1 (after simdjson), for JsonValue.parse: each 64-byte block of the
+; source classified into ONE bitmap of structural positions -- every
+; unescaped quote, every operator outside a string, the first byte of every
+; run of scalar bytes outside a string (a number, a literal, garbage), and
+; every backslash and raw control character inside a string. take() hands
+; them out in order; blocks are classified as it reaches them, so the stream
+; allocates nothing and stays in registers.
+;
+; The tree builder never looks at whitespace: from a whitespace byte outside
+; a string, the first byte that is not whitespace is a quote or an operator,
+; or a scalar byte whose predecessor is whitespace -- a structural position
+; each. And the two stages agree on what is inside a string up to the first
+; error: stage 2 opens a string only at a quote stage 1 listed, closes it at
+; the next unescaped quote as stage 1 does, and refuses any other quote.
+define JsonStream
+(
+    ; the positions of the block [base, to) not taken yet
+    var bits: u64
+    var base: size_t
+    var to: size_t
+    ; carried into the next block: its first byte is escaped, inside a
+    ; string, preceded by a scalar byte
+    var escape_carry: u64
+    var string_carry: u64
+    var scalar_carry: u64
+)
+{
+    ; The next structural position; src.length when none is left.
+    procedure take(mutable this, src: Slice[u8]) returns size_t
+    {
+        while bits = 0
+        {
+            if to >= src.length
+                return src.length
+            let next JsonStream.classify(src, JsonStream(bits, base, to, escape_carry, string_carry, scalar_carry))
+            set bits: next.bits
+            set base: next.base
+            set to: next.to
+            set escape_carry: next.escape_carry
+            set string_carry: next.string_carry
+            set scalar_carry: next.scalar_carry
+        }
+        let at base + (trailing_zeros(bits) as size_t)
+        set bits: bits & (bits - 1)
+        at
+    }
+
+    ; The stream after classifying the block at s.to (sixteen bytes a
+    ; compare; the last, short block byte by byte).
+    function classify(src: Slice[u8], s: JsonStream) returns JsonStream
+    {
+        let base s.to
+        var quote: u64 0
+        var back: u64 0
+        var blank: u64 0
+        var op: u64 0
+        var ctl: u64 0
+        if base + 64 <= src.length
+        {
+            var k: u64 0
+            while k < 64
+            {
+                let v u8x16.load(src, base + (k as size_t))
+                set quote: quote | ((v = u8x16.splat(0x22)).bits() << k)
+                set back: back | ((v = u8x16.splat(0x5C)).bits() << k)
+                set blank: blank | (((v = u8x16.splat(0x20)) or (v = u8x16.splat(0x0A)) or (v = u8x16.splat(0x0D)) or (v = u8x16.splat(0x09))).bits() << k)
+                ; '{' '[' and '}' ']' differ by 0x20 only
+                let folded v | u8x16.splat(0x20)
+                set op: op | (((folded = u8x16.splat(0x7B)) or (folded = u8x16.splat(0x7D)) or (v = u8x16.splat(0x3A)) or (v = u8x16.splat(0x2C))).bits() << k)
+                set ctl: ctl | ((v < u8x16.splat(0x20)).bits() << k)
+                set k: k + 16
+            }
+        }
+        else
+        {
+            var i: size_t 0
+            while base + i < src.length
+            {
+                let c src[base + i]
+                let bit (1 as u64) << (i as u64)
+                match c
+                    case 0x22: set quote: quote | bit
+                    case 0x5C: set back: back | bit
+                    case 0x7B case 0x7D case 0x5B case 0x5D case 0x3A case 0x2C: set op: op | bit
+                    else
+                    {
+                        if JsonReader.is_ws(c)
+                            set blank: blank | bit
+                    }
+                if c < 0x20
+                    set ctl: ctl | bit
+                set i: i + 1
+            }
+            ; past the end: whitespace, which is never structural
+            while i < 64
+            {
+                set blank: blank | ((1 as u64) << (i as u64))
+                set i: i + 1
+            }
+        }
+        ; the escaped bytes: a backslash escapes the next byte unless it is
+        ; itself escaped (backslashes are rare: one step per backslash)
+        var escaped s.escape_carry
+        var escape_carry: u64 0
+        var b back & (escaped xor 0xFFFFFFFFFFFFFFFF)
+        while b <> 0
+        {
+            let at trailing_zeros(b)
+            if at = 63
+            {
+                set escape_carry: 1
+                break
+            }
+            let next (1 as u64) << (at + 1)
+            set escaped: escaped | next
+            set b: b & (next xor 0xFFFFFFFFFFFFFFFF)
+            set b: b & (b - 1)
+        }
+        let q quote & (escaped xor 0xFFFFFFFFFFFFFFFF)
+        ; inside a string: from an opening quote up to (not including) its
+        ; closing one
+        let inside JsonStream.prefix_xor(q) xor s.string_carry
+        let outside inside xor 0xFFFFFFFFFFFFFFFF
+        let scalar (blank | op | q | inside) xor 0xFFFFFFFFFFFFFFFF
+        let scalar_start scalar & (((scalar << 1) | s.scalar_carry) xor 0xFFFFFFFFFFFFFFFF)
+        let bits q | (op & outside) | scalar_start | ((back | ctl) & inside)
+        JsonStream(bits, base, base + 64, escape_carry, (0 as u64) - (inside >> 63), scalar >> 63)
+    }
+
+    ; Bit i: the XOR of bits 0 to i of x.
+    function prefix_xor(x: u64) returns u64
+    {
+        var y x
+        set y: y xor (y << 1)
+        set y: y xor (y << 2)
+        set y: y xor (y << 4)
+        set y: y xor (y << 8)
+        set y: y xor (y << 16)
+        y xor (y << 32)
+    }
+}
+
 define JsonReader
 (
     source: Slice[u8]
@@ -354,6 +501,9 @@ define JsonReader
         set pos: p
     }
 
+    function is_ws(c: u8) returns bool
+        c = 0x20 or c = 0x0A or c = 0x0D or c = 0x09
+
     function in_object(this) returns bool
     {
         let level depth - 1
@@ -487,57 +637,71 @@ define JsonReader
     ; one and [start, end) holds the text between them.
     procedure scan_string(mutable this) returns bool
     {
-        let src source
-        var p pos + 1
-        set start: p
-        set escaped: false
+        let s JsonReader.string_close(source, pos)
+        if s.code <> JSON_OK
+        {
+            set pos: s.at
+            this.fail(s.code)
+            return false
+        }
+        set start: pos + 1
+        set end: s.at
+        set escaped: s.flag
+        set pos: s.at + 1
+        true
+    }
+
+    ; The string whose opening quote is at src[open]: its closing quote, or
+    ; why and where it is refused. The first sixteen bytes byte by byte (half
+    ; the strings are shorter than ten), then sixteen a step to the next
+    ; quote, backslash or control character.
+    function string_close(src: Slice[u8], open: size_t) returns JsonScan
+    {
+        var p open + 1
+        var escaped false
+        let quote u8x16.splat(0x22)
+        let back u8x16.splat(0x5C)
+        let space u8x16.splat(0x20)
+        let simd_from p + 16
         while p < src.length
         {
+            while p >= simd_from and p + 16 <= src.length
+            {
+                let v u8x16.load(src, p)
+                let special ((v = quote) or (v = back) or (v < space)).bits()
+                if special <> 0
+                {
+                    set p: p + (trailing_zeros(special) as size_t)
+                    break
+                }
+                set p: p + 16
+            }
+            if p >= src.length
+                break
             let c src[p]
-            ; the common byte first
             if c >= 0x20 and c <> 0x22 and c <> 0x5C
             {
                 set p: p + 1
                 continue
             }
             if c = 0x22
-            {
-                set end: p
-                set pos: p + 1
-                return true
-            }
+                return JsonScan(JSON_OK, p, escaped)
             if c < 0x20
-            {
-                set pos: p
-                this.fail(JSON_CONTROL)
-                return false
-            }
+                return JsonScan(JSON_CONTROL, p, escaped)
             ; a backslash
             set escaped: true
             if p + 1 >= src.length
-            {
-                set pos: p + 1
-                this.fail(JSON_END)
-                return false
-            }
+                return JsonScan(JSON_END, p + 1, escaped)
             let e src[p + 1]
             if e = 0x75                                     ; 'u'
             {
                 if p + 6 > src.length
-                {
-                    set pos: src.length
-                    this.fail(JSON_END)
-                    return false
-                }
+                    return JsonScan(JSON_END, src.length, escaped)
                 var k: size_t 2
                 while k < 6
                 {
                     if JsonReader.hex_digit(src[p + k]) < 0
-                    {
-                        set pos: p + k
-                        this.fail(JSON_ESCAPE)
-                        return false
-                    }
+                        return JsonScan(JSON_ESCAPE, p + k, escaped)
                     set k: k + 1
                 }
                 set p: p + 6
@@ -546,35 +710,43 @@ define JsonReader
             {
                 match e
                     case 0x22 case 0x5C case 0x2F case 0x62 case 0x66 case 0x6E case 0x72 case 0x74: set p: p + 2
-                    else
-                    {
-                        set pos: p + 1
-                        this.fail(JSON_ESCAPE)
-                        return false
-                    }
+                    else: return JsonScan(JSON_ESCAPE, p + 1, escaped)
             }
         }
-        set pos: p
-        this.fail(JSON_END)
-        false
+        JsonScan(JSON_END, p, escaped)
     }
 
-    ; -? (0 | [1-9][0-9]*) (. [0-9]+)? ([eE] [+-]? [0-9]+)?
     procedure scan_number(mutable this) returns bool
     {
-        let src source
-        var p pos
-        set start: p
-        set integral: true
+        let s JsonReader.number_end(source, pos)
+        if s.code <> JSON_OK
+        {
+            set pos: s.at
+            this.fail(s.code)
+            return false
+        }
+        set start: pos
+        set end: s.at
+        set integral: s.flag
+        set pos: s.at
+        true
+    }
+
+    ; The number that begins at src[p], -? (0 | [1-9][0-9]*) (. [0-9]+)?
+    ; ([eE] [+-]? [0-9]+)?: the position after it, or where it is refused.
+    function number_end(src: Slice[u8], from: size_t) returns JsonScan
+    {
+        var p from
+        var integral true
         if src[p] = 0x2D
             set p: p + 1
         if JsonReader.digit_at(src, p) = false
-            return this.number_fails(p)
+            return JsonScan(JSON_NUMBER, p, false)
         if src[p] = 0x30
         {
             set p: p + 1
             if JsonReader.digit_at(src, p)
-                return this.number_fails(p)
+                return JsonScan(JSON_NUMBER, p, false)
         }
         else
             set p: JsonReader.digits_end(src, p)
@@ -583,7 +755,7 @@ define JsonReader
             set integral: false
             set p: p + 1
             if JsonReader.digit_at(src, p) = false
-                return this.number_fails(p)
+                return JsonScan(JSON_NUMBER, p, false)
             set p: JsonReader.digits_end(src, p)
         }
         if p < src.length and (src[p] = 0x65 or src[p] = 0x45)     ; 'e' 'E'
@@ -593,28 +765,28 @@ define JsonReader
             if p < src.length and (src[p] = 0x2B or src[p] = 0x2D)
                 set p: p + 1
             if JsonReader.digit_at(src, p) = false
-                return this.number_fails(p)
+                return JsonScan(JSON_NUMBER, p, false)
             set p: JsonReader.digits_end(src, p)
         }
-        set end: p
-        set pos: p
-        true
-    }
-
-    procedure number_fails(mutable this, at: size_t) returns bool
-    {
-        set pos: at
-        this.fail(JSON_NUMBER)
-        false
+        JsonScan(JSON_OK, p, integral)
     }
 
     function digit_at(src: Slice[u8], at: size_t) returns bool
         at < src.length and src[at] >= 0x30 and src[at] <= 0x39
 
-    ; The end of the run of digits that starts at p.
+    ; The end of the run of digits that starts at p, sixteen bytes a step
+    ; (a coordinate's fraction has fifteen digits, a tweet's id eighteen).
     function digits_end(src: Slice[u8], p: size_t) returns size_t
     {
         var q p
+        while q + 16 <= src.length
+        {
+            ; a byte below '0' wraps around and is no digit either
+            let other ((u8x16.load(src, q) - u8x16.splat(0x30)) > u8x16.splat(9)).bits()
+            if other <> 0
+                return q + (trailing_zeros(other) as size_t)
+            set q: q + 16
+        }
         while q < src.length and src[q] >= 0x30 and src[q] <= 0x39
             set q: q + 1
         q

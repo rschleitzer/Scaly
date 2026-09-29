@@ -4,11 +4,11 @@
 scaly.scaly
 438 689
 scaly/memory.scaly
-243 482
-331 991
-422 1717
-501 2205
-571 2629
+259 498
+347 1007
+438 1733
+517 2221
+587 2645
 scaly/memory/PageList.scaly
 441 412
 621 646
@@ -150,6 +150,9 @@ scaly/memory/Region.scaly
 9136 18054
 9222 18140
 9509 18424
+scaly/memory/bits.scaly
+649 645
+783 774
 scaly/containers.scaly
 482 661
 558 1271

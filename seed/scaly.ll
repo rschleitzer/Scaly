@@ -4250,6 +4250,30 @@ entry:
   ret i1 %ne
 }
 
+declare i64 @scaly_bits_trailing_zeros(i64)
+
+declare i64 @scaly_bits_leading_zeros(i64)
+
+declare i64 @scaly_bits_count_ones(i64)
+
+define linkonce_odr i64 @_Z14trailing_zeros3u64(i64 %0) {
+entry:
+  %bits.zeros = call i64 @llvm.cttz.i64(i64 %0, i1 false)
+  ret i64 %bits.zeros
+}
+
+define linkonce_odr i64 @_Z13leading_zeros3u64(i64 %0) {
+entry:
+  %bits.zeros = call i64 @llvm.ctlz.i64(i64 %0, i1 false)
+  ret i64 %bits.zeros
+}
+
+define linkonce_odr i64 @_Z10count_ones3u64(i64 %0) {
+entry:
+  %bits.ones = call i64 @llvm.ctpop.i64(i64 %0)
+  ret i64 %bits.ones
+}
+
 define linkonce_odr ptr @_ZN6VectorIiE3getEm(ptr noalias %0, i64 %1) {
 entry:
   %load.struct = load %_Z6VectorIiE, ptr %0, align 8
@@ -46885,6 +46909,15 @@ entry:
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #2
 
+; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
+declare i64 @llvm.cttz.i64(i64, i1 immarg) #3
+
+; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
+declare i64 @llvm.ctlz.i64(i64, i1 immarg) #3
+
+; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
+declare i64 @llvm.ctpop.i64(i64) #3
+
 define linkonce_odr ptr @_Z3getPv(ptr %0) {
 entry:
   %page = call ptr @_ZN4Page3getEPv(ptr %0)
@@ -49933,3 +49966,4 @@ while.exit116:                                    ; preds = %while.cond114
 attributes #0 = { noreturn }
 attributes #1 = { cold noinline noreturn }
 attributes #2 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
+attributes #3 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }

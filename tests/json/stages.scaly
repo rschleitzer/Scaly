@@ -1,0 +1,303 @@
+; The json package's two parsers agree (ROADMAP-http.md stage B): the tree
+; builder (JsonValue.parse -- stage 2 over stage 1's structural bitmaps, 64
+; bytes a block) and the pull reader (JsonReader, byte by byte) answer the
+; same tokens with the same decoded text, or refuse with the same code at the
+; same offset:
+;   shifted    every seed document behind 0 to 70 spaces, so that every
+;              construct -- an escape, a quote, a number, a run of whitespace
+;              -- meets a block boundary at every one of its bytes
+;   mutated    every byte of every seed replaced by each of fourteen bytes
+;              (the structural ones, a backslash, a letter, a digit, a
+;              control character, whitespace), at two alignments
+;   truncated  every prefix of every seed, at two alignments
+;   deep       MAX_DEPTH nested arrays and one more
+; Expected: shifted mutated truncated deep done
+
+package scaly 0.1.0
+package json 0.1.0
+
+use json.Reader.JsonReader
+use json.Reader.JsonToken
+use json.Value.JsonValue
+use json.Value.JsonParsed
+use json.Value.JsonNumber
+use json.Value.JsonString
+use json.Value.JsonArray
+use json.Value.JsonObject
+use json.Value.JsonMember
+
+define EVIL: u8[] [0x22, 0x5C, 0x7B, 0x7D, 0x5B, 0x5D, 0x3A, 0x2C, 0x20, 0x0A, 0x01, 0x78, 0x35, 0x2D]
+
+procedure append_bytes(mutable sb: ref[StringBuilder], bytes: Slice[u8])
+    sb.append(bytes.data as pointer[char], bytes.length)
+
+; The pull reader's tokens, the decoded text of names, strings and numbers
+; in brackets, then `$` or `!code@offset`.
+procedure pull_trace(doc: Slice[u8]) returns String
+{
+    var r JsonReader.create(doc)
+    var sb StringBuilder()
+    repeat
+    {
+        let t r.next()
+        choose t
+            when a: End
+            {
+                sb.append("$")
+                break
+            }
+            when b: Invalid
+            {
+                sb.append("!`r.error`@`r.error_offset()`")
+                break
+            }
+            when c: ObjectStart
+                sb.append("{")
+            when d: ObjectEnd
+                sb.append("}")
+            when e: ArrayStart
+                sb.append("[")
+            when f: ArrayEnd
+                sb.append("]")
+            when g: MemberName
+            {
+                sb.append("k<")
+                sb.append(r.string())
+                sb.append(">")
+            }
+            when h: StringValue
+            {
+                sb.append("s<")
+                sb.append(r.string())
+                sb.append(">")
+            }
+            when i: NumberValue
+            {
+                sb.append("n<")
+                append_bytes(&sb, r.text())
+                sb.append(">")
+            }
+            when j: TrueValue
+                sb.append("t")
+            when k: FalseValue
+                sb.append("f")
+            when l: NullValue
+                sb.append("0")
+    }
+    sb.to_string()
+}
+
+procedure tree_append(mutable sb: ref[StringBuilder], v: JsonValue)
+{
+    choose v
+        when n: Null
+            sb.append("0")
+        when b: Bool
+        {
+            if b
+                sb.append("t")
+            else
+                sb.append("f")
+        }
+        when num: Number
+        {
+            sb.append("n<")
+            append_bytes(sb, num.text)
+            sb.append(">")
+        }
+        when t: Text
+        {
+            sb.append("s<")
+            append_bytes(sb, t.bytes)
+            sb.append(">")
+        }
+        when a: Array
+        {
+            sb.append("[")
+            var i: size_t 0
+            while i < a.items.length
+            {
+                tree_append(sb, a.items[i])
+                set i: i + 1
+            }
+            sb.append("]")
+        }
+        when o: Object
+        {
+            sb.append("{")
+            var i: size_t 0
+            while i < o.members.length
+            {
+                sb.append("k<")
+                append_bytes(sb, o.members[i].key)
+                sb.append(">")
+                tree_append(sb, o.members[i].value)
+                set i: i + 1
+            }
+            sb.append("}")
+        }
+}
+
+; The tree builder's account in the same words: the refusal alone, where the
+; pull reader says which tokens came before it.
+procedure tree_trace(doc: Slice[u8]) returns String
+{
+    let parsed JsonValue.parse(doc)
+    if parsed.ok() = false
+        return "!`parsed.error`@`parsed.offset`"
+    var sb StringBuilder()
+    tree_append(&sb, parsed.value)
+    sb.append("$")
+    sb.to_string()
+}
+
+; The two agree on doc; a disagreement is printed.
+procedure agree(doc: Slice[u8]) returns bool
+{
+    let pull pull_trace(doc)
+    let tree tree_trace(doc)
+    if tree.equals(pull)
+        return true
+    ; a refusal: the tokens before it are the pull reader's alone
+    let bang pull.last_index_of(0x21)
+    if tree.length > 0 and tree.get(0) = 0x21 and bang >= 0 and tree.equals(pull.substring(bang as size_t, pull.length - (bang as size_t)))
+        return true
+    print "  disagree on `String(doc.data as pointer[const_char], doc.length)`"
+    print "    pull `pull`"
+    print "    tree `tree`"
+    false
+}
+
+procedure shifted(text: Slice[u8], by: size_t) returns String
+{
+    var sb StringBuilder()
+    var i: size_t 0
+    while i < by
+    {
+        sb.append(" ")
+        set i: i + 1
+    }
+    append_bytes(&sb, text)
+    sb.to_string()
+}
+
+procedure replaced(text: Slice[u8], at: size_t, b: u8) returns String
+{
+    var sb StringBuilder()
+    append_bytes(&sb, text.subslice(0, at))
+    sb.append(b as char)
+    append_bytes(&sb, text.subslice(at + 1, text.length))
+    sb.to_string()
+}
+
+procedure nested(n: size_t) returns String
+{
+    var sb StringBuilder()
+    var i: size_t 0
+    while i < n
+    {
+        sb.append("[")
+        set i: i + 1
+    }
+    set i: 0
+    while i < n
+    {
+        sb.append("]")
+        set i: i + 1
+    }
+    sb.to_string()
+}
+
+procedure seeds() returns List[String]
+{
+    var l List[String]()
+    l.add(String("{\"a\":[1,-2.5e+3,0,true,false,null],\"b\":{},\"c\":[],\"d\":\"x\"}"))
+    l.add(String("  {\n\t\"name\" : \"line\\nbreak \\\"quoted\\\" back\\\\slash\\\\\" ,\r\n  \"u\": \"\\u00e9\\ud83d\\ude00\\udc00\\/\" }  "))
+    l.add(String("[\"\\\\\\\\\\\"\",\"\\\\\",\"a\\\\\\\"b\",\"\\\"\\\"\\\"\",\"\"]"))
+    l.add(String("{\"long\":\"abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\",\"n\":12345678901234567890.5}"))
+    l.add(String("[[[{\"k\":[[],{}]}]],-0,0.5,1E9,2e-1,-12]"))
+    l.add(String("{\"a\" : [ 1 , 2 , 3 ] , \"b\" : \"   spaced   \" , \"c\" : { \"d\" : null } }"))
+    l.add(String("\"just a string with \\t tab\""))
+    l.add(String("  123456  "))
+    l
+}
+
+var ok true
+
+; every seed behind 0 to 70 spaces
+let docs seeds()
+var cases 0
+var it docs.get_iterator()
+while let doc it.next()
+{
+    var by: size_t 0
+    while by <= 70
+    {
+        let d shifted(doc.as_slice(), by)
+        if agree(d.as_slice()) = false
+            set ok: false
+        set cases: cases + 1
+        set by: by + 1
+    }
+}
+if ok
+    Console.print "shifted "
+
+; every byte replaced, at the alignments 0 and 61
+set it: docs.get_iterator()
+while let doc it.next()
+{
+    var align: size_t 0
+    while align <= 61
+    {
+        let base shifted(doc.as_slice(), align)
+        var at: size_t align
+        while at < base.length
+        {
+            var e: size_t 0
+            while e < 14
+            {
+                let d replaced(base.as_slice(), at, EVIL[e])
+                if agree(d.as_slice()) = false
+                    set ok: false
+                set e: e + 1
+            }
+            set at: at + 1
+        }
+        set align: align + 61
+    }
+}
+if ok
+    Console.print "mutated "
+
+; every prefix, at the alignments 0 and 61
+set it: docs.get_iterator()
+while let doc it.next()
+{
+    var align: size_t 0
+    while align <= 61
+    {
+        let base shifted(doc.as_slice(), align)
+        var n: size_t 0
+        while n <= base.length
+        {
+            if agree(base.as_slice().subslice(0, n)) = false
+                set ok: false
+            set n: n + 1
+        }
+        set align: align + 61
+    }
+}
+if ok
+    Console.print "truncated "
+
+let limit JsonReader.create("").max_depth
+let deep nested(limit)
+let too_deep nested(limit + 1)
+if agree(deep.as_slice()) = false or agree(too_deep.as_slice()) = false or JsonValue.parse(too_deep.as_slice()).ok()
+    set ok: false
+if ok
+    Console.print "deep "
+
+if ok
+    Console.print "done"

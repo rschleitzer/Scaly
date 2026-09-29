@@ -51,6 +51,49 @@ define JsonToken union
     NullValue
 )
 
+; What a scanner answers: JSON_OK and the position after a number or of a
+; string's closing quote, or the code and offset of the refusal. flag: a
+; number has neither fraction nor exponent, a string has an escape.
+define JsonScan (code: int, at: size_t, flag: bool)
+
+; Stage 1 (after simdjson), for JsonValue.parse: each 64-byte block of the
+; source classified into ONE bitmap of structural positions -- every
+; unescaped quote, every operator outside a string, the first byte of every
+; run of scalar bytes outside a string (a number, a literal, garbage), and
+; every backslash and raw control character inside a string. take() hands
+; them out in order; blocks are classified as it reaches them, so the stream
+; allocates nothing and stays in registers.
+;
+; The tree builder never looks at whitespace: from a whitespace byte outside
+; a string, the first byte that is not whitespace is a quote or an operator,
+; or a scalar byte whose predecessor is whitespace -- a structural position
+; each. And the two stages agree on what is inside a string up to the first
+; error: stage 2 opens a string only at a quote stage 1 listed, closes it at
+; the next unescaped quote as stage 1 does, and refuses any other quote.
+define JsonStream
+(
+    ; the positions of the block [base, to) not taken yet
+    var bits: u64
+    var base: size_t
+    var to: size_t
+    ; carried into the next block: its first byte is escaped, inside a
+    ; string, preceded by a scalar byte
+    var escape_carry: u64
+    var string_carry: u64
+    var scalar_carry: u64
+)
+{
+    ; The next structural position; src.length when none is left.
+    procedure take(mutable this, src: Slice[u8]) @ret_args_3 true @deep true returns size_t linked
+
+    ; The stream after classifying the block at s.to (sixteen bytes a
+    ; compare; the last, short block byte by byte).
+    function classify(src: Slice[u8], s: JsonStream) @page true @direct true @ret_param_1 true @deep true returns JsonStream linked
+
+    ; Bit i: the XOR of bits 0 to i of x.
+    function prefix_xor(x: u64) @ret_nonlocal true @deep true returns u64 linked
+}
+
 define JsonReader
 (
     source: Slice[u8]
@@ -128,6 +171,8 @@ define JsonReader
     ; (the 2026-09-29 profile).
     procedure skip_ws(mutable this) @deep true linked
 
+    function is_ws(c: u8) @ret_nonlocal true @deep true returns bool linked
+
     function in_object(this) @ret_param_0 true @deep true returns bool linked
 
     ; Open a container at the cursor: an object when is_object.
@@ -145,14 +190,22 @@ define JsonReader
     ; one and [start, end) holds the text between them.
     procedure scan_string(mutable this) @ret_nonlocal true @deep true returns bool linked
 
-    ; -? (0 | [1-9][0-9]*) (. [0-9]+)? ([eE] [+-]? [0-9]+)?
+    ; The string whose opening quote is at src[open]: its closing quote, or
+    ; why and where it is refused. The first sixteen bytes byte by byte (half
+    ; the strings are shorter than ten), then sixteen a step to the next
+    ; quote, backslash or control character.
+    function string_close(src: Slice[u8], open: size_t) @page true @direct true @deep true returns JsonScan linked
+
     procedure scan_number(mutable this) @ret_nonlocal true @deep true returns bool linked
 
-    procedure number_fails(mutable this, at: size_t) @ret_nonlocal true @deep true returns bool linked
+    ; The number that begins at src[p], -? (0 | [1-9][0-9]*) (. [0-9]+)?
+    ; ([eE] [+-]? [0-9]+)?: the position after it, or where it is refused.
+    function number_end(src: Slice[u8], from: size_t) @page true @direct true @deep true returns JsonScan linked
 
     function digit_at(src: Slice[u8], at: size_t) @ret_nonlocal true @deep true returns bool linked
 
-    ; The end of the run of digits that starts at p.
+    ; The end of the run of digits that starts at p, sixteen bytes a step
+    ; (a coordinate's fraction has fifteen digits, a tweet's id eighteen).
     function digits_end(src: Slice[u8], p: size_t) @ret_nonlocal true @deep true returns size_t linked
 
     ; Decode the escapes of doc[from, to) IN PLACE, from `from` on: the

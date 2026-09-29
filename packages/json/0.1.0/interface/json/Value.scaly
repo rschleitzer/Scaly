@@ -14,7 +14,13 @@
 ; between the steps.
 
 use json.Reader.JsonReader
-use json.Reader.JsonToken
+use json.Reader.JsonScan
+use json.Reader.JsonStream
+
+; What stage 2 expects at its token.
+define STAGE_VALUE: int 0
+define STAGE_KEY: int 1
+define STAGE_COMPLETE: int 2
 
 ; strtod(3) — fixed prototype, errno not consulted.
 function strtod(s: pointer[const_char], endp: pointer[pointer[u8]]) returns f64 extern
@@ -93,21 +99,30 @@ define JsonValue union
     ; ------------------------------------------------------------------
     ; parsing
 
-    ; Parse a whole document. On a refused one the result carries the
-    ; reader's code and offset and a Null value. The tree is independent of
-    ; source: it lives on the caller's page with its own copy of the text.
+    ; Parse a whole document. On a refused one the result carries the code
+    ; and offset JsonReader would report and a Null value. The tree is
+    ; independent of source: it lives on the caller's page with its own copy
+    ; of the text.
+    ;
+    ; Stage 2 (after simdjson): one loop over stage 1's structural positions
+    ; (JsonStream), its state in locals -- what is expected next, the token
+    ; position t, the value just completed. The items and members of the
+    ; containers still open wait on two scratch stacks; a closing container
+    ; moves its run into an exact-size buffer. A member is pushed with its
+    ; name as soon as the colon is seen and gets its value when that is
+    ; complete, so an open object's pending member is always the last.
     procedure parse(source: Slice[u8]) @page true @direct true @deep true returns JsonParsed linked
 
-    ; The value that begins with token; the rest of it is read from r.
-    procedure build(mutable r: ref[JsonReader], mutable doc: Slice[u8], mutable values: ref[Array[JsonValue]], mutable members: ref[Array[JsonMember]], token: JsonToken) @page true @direct true @deep true returns JsonValue linked
+    ; The text of the string that opens at doc[open] and closes at close.at,
+    ; its escapes decoded in place. Its closing quote was TAKEN from the
+    ; stream before, which classified every block the string touches: stage
+    ; 1 must never see decoded bytes -- an escaped quote would become a real
+    ; one.
+    procedure string_text(mutable doc: Slice[u8], open: size_t, close: JsonScan) @ret_param_0 true @deep true returns Slice[u8] linked
 
-    ; The last Key or Text token as a view into doc: as it stands, or with
-    ; its escapes decoded in place.
-    procedure string_view(r: ref[JsonReader], mutable doc: Slice[u8]) @ret_param_1 true @deep true returns Slice[u8] linked
-
-    procedure build_object(mutable r: ref[JsonReader], mutable doc: Slice[u8], mutable values: ref[Array[JsonValue]], mutable members: ref[Array[JsonMember]]) @page true @direct true @ret_caller true @deep true returns JsonValue linked
-
-    procedure build_array(mutable r: ref[JsonReader], mutable doc: Slice[u8], mutable values: ref[Array[JsonValue]], mutable members: ref[Array[JsonMember]]) @page true @direct true @ret_caller true @deep true returns JsonValue linked
+    ; word stands at doc[at] (byte by byte: a call to memcmp cost more than
+    ; the four compares).
+    function literal_at(doc: Slice[u8], at: size_t, word: Slice[u8]) @ret_nonlocal true @deep true returns bool linked
 
     ; ------------------------------------------------------------------
     ; integers

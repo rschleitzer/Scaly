@@ -6922,7 +6922,13 @@ define Planner
         ; (a procedure called for its effect, a builder whose return value is not
         ; needed), and a bare variable or literal as a statement, while equally
         ; dead, is not a shape that has cost anyone anything here.
-        procedure report_effect_free_statement(mutable this: Planner, stmt: PlannedStatement) @ret_nonlocal true @deep true linked
+        ;
+        ; The LAST statement is judged too (`last`), for the one shape that is
+        ; never a value: an operator call with NO NAME, the leftover of a
+        ; failed collapse. `print sb.to_string()` as a procedure's last
+        ; statement emitted nothing at rc 0 while the same line one statement
+        ; earlier was refused (2026-09-29, found by the json package's tests).
+        procedure report_effect_free_statement(mutable this: Planner, stmt: PlannedStatement, last: bool) @ret_nonlocal true @deep true linked
 
         ; plan_statements: batch plan_statement over a Model.Block's statements.
         ; Does this statement LEAVE the enclosing block unconditionally?
