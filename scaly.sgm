@@ -526,7 +526,7 @@
     <content link = Attribute             multiple optional property = attributes
 
 <syntax id = TypeAnnotation
-    <content colon
+    <content link = colon_sign
     <content link = Type                                    property = type
 
 <syntax id = Mutability                            abstract
@@ -717,6 +717,7 @@
 <punctuation id = right_curly       value = "}"
 <punctuation id = left_bracket      value = "["
 <punctuation id = right_bracket     value = "]"
+<punctuation id = colon_sign        value = ":"
 <punctuation id = hash              value = "#"
 <punctuation id = caret             value = "^"
 <punctuation id = backslash         value = "\\"

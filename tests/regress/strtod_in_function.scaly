@@ -1,0 +1,16 @@
+; Regression (2026-09-29): the write census had no mask for strtod, so it
+; counted every argument as written and a `function` could not hand it a
+; pointer derived from a parameter (rc 4, "writes what its parameters reach").
+; strtod reads the text and stores through its SECOND argument only
+; (WriteCensus.extern_writes#: 2).
+; Expected: PASS
+
+function strtod(s: pointer[const_char], endp: pointer[pointer[u8]]) returns f64 extern
+
+function number_of(text: String) returns f64
+    strtod(text.to_c_string(), null as pointer[pointer[u8]])
+
+if number_of(String("2.5")) = 2.5 and number_of(String("-1e3")) = 0.0 - 1000.0
+    print "PASS"
+else
+    print "FAIL"

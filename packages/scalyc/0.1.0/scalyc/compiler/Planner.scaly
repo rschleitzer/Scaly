@@ -9199,6 +9199,81 @@ define Planner
         ; Overload note: prefer a static whose arity matches the argument count;
         ; otherwise take the first same-named static (mirrors s155's name-only
         ; pick for the single-overload common case).
+        ; Among the statics of `c` named `fn_name` whose ARITY matches the
+        ; call, the one whose parameter TYPES do: exact first, then compatible,
+        ; then with the char/literal fold -- the three passes lookup_method#
+        ; runs for a this-method. Both static paths took the first arity match
+        ; alone, so `W.name_of(s)` with a String ran `name_of(s: Slice[u8])`
+        ; when that was declared first, handing it the String record as a view
+        ; (rc 0; scalyls' JsonWriter.quote(name) died in Slice.operator[],
+        ; 2026-09-29). With one arity match nothing is asked, so every call that
+        ; resolved before resolves the same; with no type match the first arity
+        ; match stays.
+        procedure refine_static_overload(mutable this: Planner, c: Concept, fn_name: String, arg_types: Vector[PlannedType], arg_ops: Vector[PlannedOperand], chosen: ref[Function]) returns ref[Function]
+        {
+            var members_ref: ref[Vector[Member]]? null
+            choose c.definition
+                when st: Structure
+                    set members_ref: &^this st.members
+                when un: Union
+                    set members_ref: &^this un.members
+                when ns: Namespace
+                    set members_ref: &^this ns.members
+                else
+                    0
+            if members_ref = null
+                return chosen
+            let members (*members_ref)
+            ; pass 0 counts the arity matches; 1 exact, 2 compatible, 3 folded
+            var arity_matches: size_t 0
+            var pass: size_t 0
+            while pass < 4
+            {
+                var mi: size_t 0
+                while mi < members.length
+                {
+                    let m_ptr members.get mi
+                    if m_ptr <> null
+                    {
+                        let m (*m_ptr)
+                        choose m
+                            when f: Function
+                            {
+                                if f.name = fn_name and f.input.length = arg_types.length and Planner.function_is_static(f)
+                                {
+                                    if pass = 0
+                                        set arity_matches: arity_matches + 1
+                                    else
+                                    {
+                                        var cand f
+                                        if this.method_params_match(cand, arg_types, pass = 1, pass = 3, arg_ops)
+                                            return &^this f
+                                    }
+                                }
+                            }
+                            else
+                                0
+                    }
+                    set mi: mi + 1
+                }
+                if arity_matches < 2
+                    return chosen
+                set pass: pass + 1
+            }
+            chosen
+        }
+
+        ; A function without a leading `this` parameter.
+        function function_is_static(f: Function) returns bool
+        {
+            if f.input.length = 0
+                return true
+            let i0 f.input.get 0
+            if i0 <> null and i0.name <> null and (*i0.name) = "this"
+                return false
+            true
+        }
+
         procedure resolve_static_method_on(
             mutable this: Planner,
             struct_name: String,
@@ -9271,6 +9346,8 @@ define Planner
 
             if static_fn = null
                 return null
+            if static_arity_seen
+                set static_fn: this.refine_static_overload(smc, fn_name, arg_types, arg_ops, static_fn)
 
             let sfn (*static_fn)
             if static_arity_seen = false
@@ -9328,7 +9405,11 @@ define Planner
             )
             var s_rt: PlannedType Planner.make_void_type()
             if sfn.returns_ <> null
+            {
                 set s_rt: this.plan_type((*sfn.returns_))
+                ; the sret slot of a record returned by value (see lookup_method#)
+                this.ensure_type_layout(s_rt)
+            }
             var s_throws: ref[PlannedType]? null
             var s_can_throw: bool false
             if sfn.throws_ <> null
@@ -14733,6 +14814,8 @@ define Planner
 
                                         if static_fn <> null
                                         {
+                                            if static_arity_seen
+                                                set static_fn: this.refine_static_overload(smc, suffix, arg_types, arg_ops, static_fn)
                                             let sfn (*static_fn)
                                             if static_arity_seen = false
                                             {
@@ -14803,7 +14886,12 @@ define Planner
                                             )
                                             var s_rt: PlannedType Planner.make_void_type()
                                             if sfn.returns_ <> null
+                                            {
                                                 set s_rt: this.plan_type((*sfn.returns_))
+                                                ; the sret slot of a record returned by
+                                                ; value (see lookup_method#)
+                                                this.ensure_type_layout(s_rt)
+                                            }
                                             var s_throws: ref[PlannedType]? null
                                             var s_can_throw: bool false
                                             if sfn.throws_ <> null
@@ -15582,6 +15670,8 @@ define Planner
                                                         0
                                                 if is_tuple
                                                 {
+                                                    ; the hops BEFORE the method (`mk().inner.get(1)`)
+                                                    set result: this.apply_call_result_hops(result, prev_ma, prev_ma.length - 1)
                                                     ; the hop, its arguments and their coercions:
                                                     ; plan_chained_method_call# (one statement here,
                                                     ; the s178 rule)
@@ -15670,6 +15760,8 @@ define Planner
                                         tail_final
                                     )
                                 }
+                                else
+                                    set result: this.apply_call_result_hops(result, tail_ma, tail_ma.length)
                             }
                         }
 
@@ -18364,6 +18456,14 @@ define Planner
             {
                 let rt (*f.returns_)
                 set return_type: this.plan_type(rt)
+                ; A record returned BY VALUE sizes the caller's sret slot, so
+                ; its layout must exist in this root even where no field of it
+                ; is read here -- as check_function_match# ensures for a free
+                ; function. Without it a method's `{ ptr }` placeholder took 8
+                ; bytes while the callee copied the whole record over the
+                ; caller's frame: a program calling http's ByteBuf.create or
+                ; json's writer died in Page::allocate (2026-09-29).
+                this.ensure_type_layout(return_type)
             }
 
             ; Skip leading 'this' in the parameter list.
@@ -22014,6 +22114,69 @@ define Planner
             let chained this.make_planned_call(next_args.loc, method_name, m.mangled_name, m.return_type, new_args, m.requires_page_param)
             set found: true
             PlannedOperand(next_args.loc, PlannedExpression.Call chained, null, m.return_type)
+        }
+
+        ; The hops of a member chain on a CALL RESULT that the chaining loop
+        ; does not consume. `mk().inner.get(1)` handed the loop `get` alone,
+        ; and `name().length` (a parenless method) is no property, so the tail
+        ; path attached nothing: both dropped their hops at rc 0 -- the first
+        ; ran Outer.get where Inner.get was written, the second compared the
+        ; String itself (2026-09-29). Walked one hop at a time on the running
+        ; result: a property extends its member chain, anything else is a
+        ; zero-argument method call, which plan_chained_method_call# reports
+        ; when it does not resolve.
+        procedure apply_call_result_hops(mutable this: Planner, mutable result: PlannedOperand, hops: Vector[PlannedMemberAccess], count: size_t) returns PlannedOperand
+        {
+            var cur result
+            var i: size_t 0
+            while i < count
+            {
+                let h_ptr hops.get i
+                if h_ptr = null
+                    return cur
+                var hop_name String^this((*h_ptr).name)
+                var names Vector[String](1)
+                names.put(0, hop_name)
+                let chain this.resolve_member_access(cur.result_type, names, cur.loc)
+                var prop: ref[PlannedMemberAccess]? null
+                if chain.length = 1
+                {
+                    let c0 chain.get 0
+                    if c0 <> null and c0.is_method = false and c0.result_type.name <> "void"
+                        set prop: c0
+                }
+                if prop <> null
+                {
+                    var arr Array[PlannedMemberAccess]()
+                    if cur.member_access <> null
+                    {
+                        let prev (*cur.member_access)
+                        var k: size_t 0
+                        while k < prev.length
+                        {
+                            let pk prev.get k
+                            if pk <> null
+                                arr.add((*pk))
+                            set k: k + 1
+                        }
+                    }
+                    arr.add((*prop))
+                    let holder &Vector[PlannedMemberAccess]^this(arr)
+                    set cur: PlannedOperand(cur.loc, cur.expr, holder, (*prop).result_type)
+                }
+                else
+                {
+                    let void_ty Planner.make_void_type()
+                    let empty_tuple PlannedTuple(cur.loc, null, void_ty, false, Lifetime.Unspecified(Unspecified()), null)
+                    let tuple_op PlannedOperand(cur.loc, PlannedExpression.Tuple empty_tuple, null, void_ty)
+                    var found false
+                    set cur: this.plan_chained_method_call(cur, hop_name, tuple_op, &found)
+                    if found = false
+                        return cur
+                }
+                set i: i + 1
+            }
+            cur
         }
 
         ; A CHAINED call as the right side of a binary operator (`a or

@@ -1,0 +1,57 @@
+; Regression (2026-09-29): a line feed after a payload-less variant was read as
+; the COLON of a type annotation. The lexer hands `:` and a bare line feed out
+; as the same Colon token, and a Variant is a name with an optional annotation,
+; so
+;     Null
+;     Bool: bool
+; was the variant Null OF TYPE Bool, then `bool: Number` ..., every later
+; variant shifted by one: `when n: Number` bound n with the type `Number` (the
+; lookup matches a payload TYPE name first), rc 0 wherever nothing was called
+; on the binding. A parameter list without commas had the same hole (`this`,
+; a line feed, `k: int` read as `this: k`). The grammar says it now: a type
+; annotation opens with the SIGN `:` (scaly.sgm, punctuation colon_sign), which
+; Lexer.parse_punctuation# accepts only from a colon written in the source (a
+; colon ending its line included), never from a bare line feed.
+; Expected: PASS
+
+define Shape union
+(
+    Empty
+    Dot: int
+    Name: String
+    Nothing
+    Pair: int
+)
+
+define Acc (v: int)
+{
+    function plus(
+        this
+        k: int
+    ) returns int
+        v + k
+}
+
+function width(s: Slice[u8]) returns size_t
+    s.length
+
+function measure(s: Shape) returns size_t
+{
+    choose s
+        when e: Empty
+            return 100
+        when d: Dot
+            return d as size_t
+        when n: Name
+            return width(n.as_slice())
+        when z: Nothing
+            return 200
+        when p: Pair
+            return (p * 2) as size_t
+}
+
+let a Acc(40)
+if measure(Shape.Empty) = 100 and measure(Shape.Dot(7)) = 7 and measure(Shape.Name(String("abcd"))) = 4 and measure(Shape.Nothing) = 200 and measure(Shape.Pair(5)) = 10 and a.plus(2) = 42
+    print "PASS"
+else
+    print "FAIL"

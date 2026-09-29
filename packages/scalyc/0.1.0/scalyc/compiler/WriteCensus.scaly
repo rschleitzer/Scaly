@@ -4295,6 +4295,10 @@ define WriteCensus
                 return 0
             if name = "strdup"
                 return 0
+            ; strtod reads the text and stores the end of the number through
+            ; its second argument
+            if name = "strtod"
+                return 2
             if name = "access"
                 return 0
             if name = "fopen"

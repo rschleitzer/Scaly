@@ -1,0 +1,28 @@
+; Regression (2026-09-29): two same-named STATICS of equal arity were told
+; apart by nothing but declaration order. Both static paths (the qualified
+; `W.name_of(s)` in collapse_operand_sequence# and the sibling call in
+; resolve_static_method_on#) took the first arity match, so a String went to
+; `name_of(s: Slice[u8])` declared first -- the String record read as a view,
+; rc 0 (scalyls' JsonWriter.quote(name) died in Slice.operator[]).
+; Planner.refine_static_overload# asks the parameter types when more than one
+; arity match exists: exact, compatible, folded, as lookup_method# does. A
+; string literal takes the String overload, as `sb.append "["` does.
+; Expected: PASS
+
+define W (x: int)
+{
+    function name_of(s: Slice[u8]) returns size_t
+        s.length + 1000
+
+    function name_of(s: String) returns size_t
+        s.length + 2000
+
+    function sibling(s: String) returns size_t
+        name_of(s)
+}
+
+let s String("abc")
+if W.name_of(s) = 2003 and W.name_of(s.as_slice()) = 1003 and W.sibling(s) = 2003 and W.name_of("ab") = 2002
+    print "PASS"
+else
+    print "FAIL `W.name_of(s)` `W.name_of(s.as_slice())` `W.sibling(s)` `W.name_of(\"ab\")`"

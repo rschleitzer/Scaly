@@ -22,7 +22,8 @@ define lexer
     ; Token types
     define EmptyToken()
     define InvalidToken()
-    define ColonToken()
+    ; line_feed: the separator was a line feed alone, no ':' in the source
+    define ColonToken(line_feed: bool)
     define IdentifierToken(name: String)
     define AttributeToken(name: String)
     define PunctuationToken(sign: u8)

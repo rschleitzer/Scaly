@@ -1,0 +1,25 @@
+; Regression (2026-09-29): a record from ANOTHER package returned BY VALUE,
+; in a root that never reads one of its fields, had no layout: the caller's
+; sret slot was the `{ ptr }` placeholder (8 bytes) while the callee copied
+; the whole record into it, over the caller's frame record. A program calling
+; http's ByteBuf.create (or the json writer, when it still returned by value)
+; died in Page::allocate with the page 0x78. check_function_match# ensured the
+; layout for a free function; the two static paths (resolve_static_method_on#
+; and the one in collapse_operand_sequence#) and lookup_method# did not.
+;
+; An IR gate: the package lives in its own SCALY_HOME and is loaded through
+; its generated interface (bodies `linked`), and the evidence is the sret type.
+; Only STATIC calls: a method call on the value laid the record out already.
+; After changing the home's package, regenerate its interface:
+;   (cd tests/regress/sret_cross_package_home && scalyc --no-prelude \
+;     --emit-interface -o packages/srp/0.1.0/interface packages/srp/0.1.0/srp.scaly)
+; env: SCALY_HOME=tests/regress/sret_cross_package_home
+; args: --no-prelude
+; expect-ir: %_Z3Rec = type { i64, i64, i64 }
+; expect-ir: declare void @_ZN3Rec4makeEPN4scaly6memory4PageEi(ptr noalias sret(%_Z3Rec), ptr, i64)
+
+package srp 0.1.0
+use srp.rec.Rec
+
+let r Rec.make(1)
+var s Rec.make(2)

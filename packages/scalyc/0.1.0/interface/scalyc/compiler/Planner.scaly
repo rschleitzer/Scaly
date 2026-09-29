@@ -3003,6 +3003,21 @@ define Planner
         ; Overload note: prefer a static whose arity matches the argument count;
         ; otherwise take the first same-named static (mirrors s155's name-only
         ; pick for the single-overload common case).
+        ; Among the statics of `c` named `fn_name` whose ARITY matches the
+        ; call, the one whose parameter TYPES do: exact first, then compatible,
+        ; then with the char/literal fold -- the three passes lookup_method#
+        ; runs for a this-method. Both static paths took the first arity match
+        ; alone, so `W.name_of(s)` with a String ran `name_of(s: Slice[u8])`
+        ; when that was declared first, handing it the String record as a view
+        ; (rc 0; scalyls' JsonWriter.quote(name) died in Slice.operator[],
+        ; 2026-09-29). With one arity match nothing is asked, so every call that
+        ; resolved before resolves the same; with no type match the first arity
+        ; match stays.
+        procedure refine_static_overload(mutable this: Planner, c: Concept, fn_name: String, arg_types: Vector[PlannedType], arg_ops: Vector[PlannedOperand], chosen: ref[Function]) @deep true returns ref[Function] io linked
+
+        ; A function without a leading `this` parameter.
+        function function_is_static(f: Function) @ret_nonlocal true @deep true returns bool linked
+
         procedure resolve_static_method_on(
             mutable this: Planner,
             struct_name: String,
@@ -3895,6 +3910,17 @@ define Planner
         ; cstr / char-and-Slice coercions as the non-chained path. False (after
         ; a diagnostic) when the method does not resolve.
         procedure plan_chained_method_call(mutable this: Planner, result: PlannedOperand, mutable method_name: String, next_args: PlannedOperand, mutable found: ref[bool]) @page true @direct true @stores true @deep true @deep_this_2 true returns PlannedOperand io linked
+
+        ; The hops of a member chain on a CALL RESULT that the chaining loop
+        ; does not consume. `mk().inner.get(1)` handed the loop `get` alone,
+        ; and `name().length` (a parenless method) is no property, so the tail
+        ; path attached nothing: both dropped their hops at rc 0 -- the first
+        ; ran Outer.get where Inner.get was written, the second compared the
+        ; String itself (2026-09-29). Walked one hop at a time on the running
+        ; result: a property extends its member chain, anything else is a
+        ; zero-argument method call, which plan_chained_method_call# reports
+        ; when it does not resolve.
+        procedure apply_call_result_hops(mutable this: Planner, mutable result: PlannedOperand, hops: Vector[PlannedMemberAccess], count: size_t) @page true @direct true @stores true @deep true @deep_this_2 true returns PlannedOperand io linked
 
         ; A CHAINED call as the right side of a binary operator (`a or
         ; this.acc().m(x)`): the call-fold folded ONE argument tuple, and the

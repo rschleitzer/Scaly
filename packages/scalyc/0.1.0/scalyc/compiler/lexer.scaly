@@ -22,7 +22,8 @@ define lexer
     ; Token types
     define EmptyToken()
     define InvalidToken()
-    define ColonToken()
+    ; line_feed: the separator was a line feed alone, no ':' in the source
+    define ColonToken(line_feed: bool)
     define IdentifierToken(name: String)
     define AttributeToken(name: String)
     define PunctuationToken(sign: u8)
@@ -220,11 +221,12 @@ define lexer
                 ; As two, `case 1:` with its statement on the next line took
                 ; the empty statement before the line feed as the arm and ran
                 ; the next line unconditionally -- rc 0, every value matched.
+                ; It stays a SOURCE colon (line_feed false): the colon of a
+                ; type annotation may end its line.
                 skip_whitespace false
                 if current <> null and *current = 10
-                    set token: scan_line_feed()
-                else
-                    set token: Token.Colon(ColonToken())
+                    scan_line_feed()
+                set token: Token.Colon(ColonToken(false))
                 skip_whitespace false
                 return
             }
@@ -284,7 +286,7 @@ define lexer
             {
                 skip_whitespace false
                 if current = null
-                    return Token.Colon(ColonToken())
+                    return Token.Colon(ColonToken(true))
 
                 let c *current
 
@@ -308,7 +310,7 @@ define lexer
                     continue
                 }
 
-                return Token.Colon(ColonToken())
+                return Token.Colon(ColonToken(true))
             }
         }
 
@@ -918,6 +920,19 @@ define lexer
                 when punct: Punctuation
                 {
                     if punct.sign = c
+                    {
+                        empty()
+                        return true
+                    }
+                }
+                ; ':' lexes as a Colon, the separator a line feed is too; as a
+                ; SIGN (a type annotation's) only one written in the source
+                ; counts. Taken from a bare line feed, `Null` + a line feed +
+                ; `Bool: bool` in a union was the variant Null OF TYPE Bool,
+                ; every later variant shifted by one (rc 0).
+                when colon: Colon
+                {
+                    if c = 58 and colon.line_feed = false
                     {
                         empty()
                         return true

@@ -1,0 +1,44 @@
+; Regression (2026-09-29): the member hops after a CALL RESULT that the
+; chaining loop of collapse_operand_sequence# did not consume were dropped at
+; rc 0. `mk().inner.get(1)` handed the loop `get` alone and called Outer.get
+; (100) where Inner.get (6) was written; `name().length` (a parenless method,
+; no property) attached nothing, so `let n name().length` bound the String
+; itself and `name().length <> 3` failed far away as `String.equals(int)`, at a
+; position in another file. Planner.apply_call_result_hops# walks them one at
+; a time: a property extends the member chain, anything else is a
+; zero-argument method call.
+; Expected: PASS
+
+define Inner (v: int)
+{
+    function get(this, k: int) returns int
+        v + k
+}
+
+define Outer (inner: Inner  w: int)
+{
+    function get(this, k: int) returns int
+        w * k
+
+    function twice(this) returns int
+        w * 2
+}
+
+function mk() returns Outer
+    Outer(Inner(5), 100)
+
+function name() returns String
+    String("abc")
+
+var ok true
+if mk().inner.get(1) <> 6
+    set ok: false
+if mk().get(1) <> 100 or mk().inner.v <> 5 or mk().twice <> 200
+    set ok: false
+let n name().length
+if n <> 3 or name().length <> 3 or name().length() <> 3
+    set ok: false
+if ok
+    print "PASS"
+else
+    print "FAIL"

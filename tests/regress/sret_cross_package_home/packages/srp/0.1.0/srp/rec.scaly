@@ -1,0 +1,9 @@
+; Three words, returned by value: the caller's sret slot must be 24 bytes.
+define Rec (a: int  b: int  c: int)
+{
+    function make(n: int) returns Rec
+        Rec(n, n + 1, n + 2)
+
+    function next(this) returns Rec
+        Rec(a + 1, b + 1, c + 1)
+}

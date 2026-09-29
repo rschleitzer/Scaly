@@ -1,0 +1,7 @@
+; Three words, returned by value: the caller's sret slot must be 24 bytes.
+define Rec (a: int  b: int  c: int)
+{
+    function make(n: int) @page true @direct true @ret_nonlocal true @deep true returns Rec linked
+
+    function next(this) @page true @direct true @ret_param_0 true @deep true returns Rec linked
+}
