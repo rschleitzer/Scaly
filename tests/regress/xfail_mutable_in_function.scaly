@@ -1,0 +1,9 @@
+; A `function` writes nothing, so a `mutable` parameter on one contradicts its
+; keyword -- on an extern it read like a contract the write census never
+; consults (only a `procedure ... extern` declares its writes). It compiled
+; silently until 2026-09-29; Planner.report_mutable_in_function#.
+; xfail: marks a parameter mutable, but a function writes nothing
+
+function strncpy(mutable dest: pointer[char], src: pointer[const_char], n: size_t) returns pointer[char] extern
+
+print "compiled"

@@ -111,6 +111,9 @@ use scalyc.compiler.Planner.*
 use scaly.os.File
 use scalyc.compiler.ConceptIndex.ConceptIndex
 
+; extern_contract#: an extern that declares nothing about its writes
+define EXTERN_UNDECLARED: u64 0xFFFFFFFFFFFFFFFF
+
 ; Dedupe table size: a power of two (the probe mask is DD_CAP - 1). The table
 ; stops admitting new keys at half load and every later site is recorded
 ; undeduplicated, so a root with more than 131072 sites still reports, only
@@ -191,6 +194,9 @@ define PointerCensus
         ; root's plan.functions, so `memcpy` from the stdlib would otherwise
         ; read as unresolved.
         extern_names: Array[String]
+        ; What each extern of extern_names DECLARES it writes (extern_contract#),
+        ; EXTERN_UNDECLARED for one that does not say
+        extern_writes: Array[u64]
         ; is_extern_name#'s set over extern_names (it scanned them all per
         ; ask, from every write-census walk; 2026-09-26)
         var extern_set: ConceptIndex
@@ -258,6 +264,7 @@ define PointerCensus
             set plan_structures: null
             set init_slots: Vector[size_t]^this(DD_CAP)
             set extern_names: Array[String]^this()
+            set extern_writes: Array[u64]^this()
             set extern_set: ConceptIndex()
             set n_arg_extern: 0
             set n_arg_unresolved: 0
@@ -722,14 +729,15 @@ define PointerCensus
                 else
                     0
             if is_extern
-                this.remember_extern(f.name)
+                this.remember_extern(f.name, PointerCensus.extern_contract(f))
             this.walk_model_signature(f.input, f.returns_, is_extern, f.name, f.span.start)
         }
 
-        procedure remember_extern(mutable this: PointerCensus, name: String)
+        procedure remember_extern(mutable this: PointerCensus, name: String, writes: u64)
         {
             let copy String^this(name)
             extern_names.add copy
+            extern_writes.add writes
             if (extern_names.length + 1) * 2 > extern_set.cap
             {
                 var ncap: size_t 1024
@@ -749,6 +757,48 @@ define PointerCensus
 
         function is_extern_name(this: PointerCensus, name: String) returns bool
             extern_set.lookup(name) >= 0
+
+        ; An extern DECLARES what it writes by being a `procedure`: exactly the
+        ; parameters it marks `mutable` (bit i: parameter i), none when it marks
+        ; none. A `function ... extern` says nothing -- the name table
+        ; (WriteCensus.extern_writes#) or, failing that, every argument.
+        ; (2026-09-29, the author: the extern declares its contract itself.)
+        function extern_contract(f: Function) returns u64
+        {
+            if f.pure
+                return EXTERN_UNDECLARED
+            var m: u64 0
+            var i: size_t 0
+            while i < f.input.length
+            {
+                let it_ptr f.input.get i
+                if it_ptr <> null
+                {
+                    let it (*it_ptr)
+                    var k: size_t 0
+                    while k < it.attributes.length
+                    {
+                        let a_ptr it.attributes.get k
+                        if a_ptr <> null and (*a_ptr).name = "mutable" and i < 61
+                            set m: m | ((1 as u64) << (i as u64))
+                        set k: k + 1
+                    }
+                }
+                set i: i + 1
+            }
+            m
+        }
+
+        ; The declared contract of the extern `name`, EXTERN_UNDECLARED when it
+        ; has none (or is not an extern). The first declaration of a name wins,
+        ; as for is_extern_name#.
+        function extern_declared_writes(this: PointerCensus, name: String) returns u64
+        {
+            let at extern_set.lookup(name)
+            if at < 0
+                return EXTERN_UNDECLARED
+            extern_writes[at as size_t]
+        }
 
         ; Dependency packages: only their extern NAMES are wanted.
         procedure collect_externs_module(mutable this: PointerCensus, m: Module)
@@ -778,7 +828,7 @@ define PointerCensus
                         {
                             choose f.implementation
                                 when e: Extern
-                                    this.remember_extern(f.name)
+                                    this.remember_extern(f.name, PointerCensus.extern_contract(f))
                                 else
                                     0
                         }

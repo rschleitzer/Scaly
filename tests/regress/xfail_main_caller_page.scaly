@@ -1,0 +1,16 @@
+; Regression (2026-09-29): a `#` in `procedure main(argc, argv)` gave main a
+; caller page -- its symbol became `_Z4mainPN4scaly6memory4PageEi...` while
+; the Emitter still exported it as the C entry point, so the runtime's
+; (argc, argv) filled the page slot and the program died at its first
+; allocation: SIGSEGV in scaly_force_frame, rc 139, not a word (the http
+; arena's `set path: String#(env_path)`). Planner.report_entry_caller_page#.
+; xfail: main is the program's entry and no caller hands it a page
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var name String("fallback")
+    if argc > 1
+        set name: String#(*(argv + 1))
+    print name
+    0
+}

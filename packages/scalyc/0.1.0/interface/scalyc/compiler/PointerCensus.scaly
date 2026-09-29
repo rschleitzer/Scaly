@@ -111,6 +111,9 @@ use scalyc.compiler.Planner.*
 use scaly.os.File
 use scalyc.compiler.ConceptIndex.ConceptIndex
 
+; extern_contract#: an extern that declares nothing about its writes
+define EXTERN_UNDECLARED: u64 0xFFFFFFFFFFFFFFFF
+
 ; Dedupe table size: a power of two (the probe mask is DD_CAP - 1). The table
 ; stops admitting new keys at half load and every later site is recorded
 ; undeduplicated, so a root with more than 131072 sites still reports, only
@@ -191,6 +194,9 @@ define PointerCensus
         ; root's plan.functions, so `memcpy` from the stdlib would otherwise
         ; read as unresolved.
         extern_names: Array[String]
+        ; What each extern of extern_names DECLARES it writes (extern_contract#),
+        ; EXTERN_UNDECLARED for one that does not say
+        extern_writes: Array[u64]
         ; is_extern_name#'s set over extern_names (it scanned them all per
         ; ask, from every write-census walk; 2026-09-26)
         var extern_set: ConceptIndex
@@ -301,9 +307,21 @@ define PointerCensus
 
         procedure walk_model_function(mutable this: PointerCensus, f: Function) @ret_nonlocal true @deep true linked
 
-        procedure remember_extern(mutable this: PointerCensus, name: String) @deep true linked
+        procedure remember_extern(mutable this: PointerCensus, name: String, writes: u64) @persists true @deep true linked
 
         function is_extern_name(this: PointerCensus, name: String) @ret_param_0 true @deep true returns bool linked
+
+        ; An extern DECLARES what it writes by being a `procedure`: exactly the
+        ; parameters it marks `mutable` (bit i: parameter i), none when it marks
+        ; none. A `function ... extern` says nothing -- the name table
+        ; (WriteCensus.extern_writes#) or, failing that, every argument.
+        ; (2026-09-29, the author: the extern declares its contract itself.)
+        function extern_contract(f: Function) @deep true returns u64 linked
+
+        ; The declared contract of the extern `name`, EXTERN_UNDECLARED when it
+        ; has none (or is not an extern). The first declaration of a name wins,
+        ; as for is_extern_name#.
+        function extern_declared_writes(this: PointerCensus, name: String) @deep true returns u64 linked
 
         ; Dependency packages: only their extern NAMES are wanted.
         procedure collect_externs_module(mutable this: PointerCensus, m: Module) @deep true linked

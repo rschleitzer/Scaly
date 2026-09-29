@@ -4252,7 +4252,10 @@ define WriteCensus
 
         ; The argument positions a C function writes, from its documented
         ; contract; every extern NOT named here writes all of them (the LLVM-C
-        ; API mutates through every handle it is given).
+        ; API mutates through every handle it is given). Asked only for a
+        ; `function ... extern`: a `procedure ... extern` DECLARES its writes
+        ; with `mutable` marks (PointerCensus.extern_contract#), and a new
+        ; binding declares rather than growing this table.
         ; a SIMD vector stored into a container or through a pointer: the
         ; intrinsic writes its argument 1 (ROADMAP-simd.md phase 2)
         function is_simd_store(name: String) returns bool
@@ -4328,7 +4331,10 @@ define WriteCensus
             if call.args = null
                 return
             set in_atomic_op: call.name.starts_with(String("scaly_atomic_"))
-            let written WriteCensus.extern_writes(call.name)
+            let census pc as ref[PointerCensus]
+            var written census.extern_declared_writes(call.name)
+            if written = EXTERN_UNDECLARED
+                set written: WriteCensus.extern_writes(call.name)
             var m: u64 0
             var i: size_t 0
             while i < call.args.length

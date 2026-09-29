@@ -7277,6 +7277,19 @@ define Planner
         ; untyped parameter now, and the one thing its author can have meant
         ; is the page -- say so at the declaration. A TYPED `page:
         ; pointer[Page]` is an ordinary explicit parameter.
+        ; main is the C entry point, called by the runtime with (argc, argv):
+        ; a caller page -- which a `#` or a built return gives any other
+        ; routine -- took argc's register, and main died at its first
+        ; allocation (SIGSEGV in scaly_force_frame, rc 139, not a word; the
+        ; http arena's `String#(env_path)`, 2026-09-29).
+        procedure report_entry_caller_page(mutable this: Planner, f: Function) @ret_nonlocal true @deep true linked
+
+        ; A `function` writes nothing, so a `mutable` parameter on one is a
+        ; contradiction -- for an extern it would be a contract the census never
+        ; reads (only a `procedure ... extern` declares its writes,
+        ; PointerCensus.extern_contract#). It compiled silently until 2026-09-29.
+        procedure report_mutable_in_function(mutable this: Planner, f: Function) @deep true linked
+
         procedure report_declared_caller_page(mutable this: Planner, input: Vector[Item]) @deep true linked
 
         procedure plan_function(

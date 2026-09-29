@@ -1,0 +1,13 @@
+; The other half of extern_declares_writes: a `function ... extern` declares
+; nothing about its writes, strncpy is in no table, so every argument counts
+; as written -- copy_into, which does not mark src `mutable`, is refused.
+; xfail: writes src
+
+function strncpy(dest: pointer[char], src: pointer[const_char], n: size_t) returns pointer[char] extern
+
+procedure copy_into(mutable dest: Slice[u8], src: Slice[u8])
+    strncpy(dest.data as pointer[char], src.data as pointer[const_char], src.length)
+
+let host Page.allocate_page()
+var dest allocate_slice[u8]^host(host, 5)
+copy_into(dest, String("hello").as_slice())

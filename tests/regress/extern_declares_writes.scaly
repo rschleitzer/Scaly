@@ -1,0 +1,24 @@
+; Regression (2026-09-29): an extern DECLARES what it writes. Declared a
+; `procedure`, it writes exactly the parameters it marks `mutable`, and the
+; write census takes that as its contract (PointerCensus.extern_contract#) --
+; before, only a name table in the compiler knew a C function's contract, and
+; every extern not in it counted as writing all its arguments, so a caller
+; had to mark `mutable` what the C function only reads. A `function ... extern`
+; still says nothing and keeps the table / all-arguments reading
+; (xfail_extern_undeclared_writes).
+; Expected: PASS
+
+procedure strncpy(mutable dest: pointer[char], src: pointer[const_char], n: size_t) returns pointer[char] extern
+
+; src is only read: the declaration says so, no `mutable` needed here
+procedure copy_into(mutable dest: Slice[u8], src: Slice[u8])
+    strncpy(dest.data as pointer[char], src.data as pointer[const_char], src.length)
+
+let host Page.allocate_page()
+var dest allocate_slice[u8]^host(host, 5)
+let src String("hello")
+copy_into(dest, src.as_slice())
+if dest.equals(src.as_slice())
+    print "PASS"
+else
+    print "FAIL"

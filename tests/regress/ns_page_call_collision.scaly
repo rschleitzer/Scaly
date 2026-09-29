@@ -35,9 +35,11 @@ define fancy
         fancy.is_special#(42)
 }
 
+; main calls WITHOUT `#`: a `#` here gave main itself a caller page, which the
+; runtime's C entry never passes (xfail_main_caller_page, 2026-09-29).
 procedure main() returns int
 {
-    if fancy.run#()
+    if fancy.run()
         print("PASS")
     return 0
 }
