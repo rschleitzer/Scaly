@@ -1,0 +1,223 @@
+; The json package's pull reader (ROADMAP-http.md stage B):
+;   tokens   a document's token sequence, with the text of names and numbers
+;   refuse   what RFC 8259 does not allow, each with its code and offset
+;   depth    MAX_DEPTH nested arrays pass, one more is refused (and a
+;            tighter limit holds)
+;   skip     skipping a member's value, a container to its closer
+;   decode   escapes, a surrogate pair, a lone surrogate
+; Expected: tokens refuse depth skip decode done
+
+package scaly 0.1.0
+package json 0.1.0
+
+use json.Reader.JsonReader
+use json.Reader.JsonToken
+
+; the decode case's expected bytes
+define WANT_BYTES: u8[] [0x73, 0x3C, 0x22, 0x5C, 0x2F, 0x08, 0x0C, 0x0A, 0x0D, 0x09, 0xC3, 0xA9, 0xF0, 0x9F, 0x98, 0x80, 0xEF, 0xBF, 0xBD, 0x78, 0x3E, 0x24]
+
+; One letter per token, the text of names and numbers in brackets.
+procedure trace(source: Slice[u8]) returns String
+{
+    var r JsonReader.create(source)
+    var sb StringBuilder()
+    repeat
+    {
+        let t r.next()
+        choose t
+            when a: End
+            {
+                sb.append("$")
+                break
+            }
+            when b: Invalid
+            {
+                sb.append("!")
+                break
+            }
+            when c: ObjectStart
+                sb.append("{")
+            when d: ObjectEnd
+                sb.append("}")
+            when e: ArrayStart
+                sb.append("[")
+            when f: ArrayEnd
+                sb.append("]")
+            when g: MemberName
+            {
+                sb.append("k<")
+                sb.append(r.string())
+                sb.append(">")
+            }
+            when h: StringValue
+            {
+                sb.append("s<")
+                sb.append(r.string())
+                sb.append(">")
+            }
+            when i: NumberValue
+            {
+                sb.append("n<")
+                sb.append(String(r.text().data as pointer[const_char], r.text().length))
+                if r.is_integral()
+                    sb.append("i")
+                sb.append(">")
+            }
+            when j: TrueValue
+                sb.append("t")
+            when k: FalseValue
+                sb.append("f")
+            when l: NullValue
+                sb.append("0")
+    }
+    sb.to_string()
+}
+
+; Read to the end: the error code (0 = accepted) and its offset.
+procedure refusal(source: Slice[u8], mutable offset: ref[size_t]) returns int
+{
+    var r JsonReader.create(source)
+    repeat
+    {
+        let t r.next()
+        choose t
+            when a: End
+                break
+            when b: Invalid
+                break
+            else
+                0
+    }
+    set offset: r.error_offset()
+    r.error
+}
+
+procedure refused(source: Slice[u8], code: int, at: size_t) returns bool
+{
+    var offset: size_t 0
+    let got refusal(source, &offset)
+    if got <> code or offset <> at
+    {
+        print "  `String(source.data as pointer[const_char], source.length)`: code `got` at `offset`, expected `code` at `at`"
+        return false
+    }
+    true
+}
+
+procedure nested(n: size_t) returns String
+{
+    var sb StringBuilder()
+    var i: size_t 0
+    while i < n
+    {
+        sb.append("[")
+        set i: i + 1
+    }
+    set i: 0
+    while i < n
+    {
+        sb.append("]")
+        set i: i + 1
+    }
+    sb.to_string()
+}
+
+var ok true
+
+let doc " { \"a\" : [1, -2.5e+3, 0, \"x\\ty\"], \"b\":{}, \"c\":[], \"d\":true,\"e\":false,\"f\":null } "
+let got trace(doc.as_slice())
+if got.equals("{k<a>[n<1i>n<-2.5e+3>n<0i>s<x\ty>]k<b>{}k<c>[]k<d>tk<e>fk<f>0}$") = false
+{
+    print "tokens: `got`"
+    set ok: false
+}
+if trace("42").equals("n<42i>$") = false or trace("\"s\"").equals("s<s>$") = false
+    set ok: false
+if ok
+    Console.print "tokens "
+
+; code, offset: 1 end, 2 trailing, 3 value, 4 key, 5 colon, 6 separator,
+; 7 number, 8 control, 9 escape
+if refused("", 1, 0) = false or refused("   ", 1, 3) = false or refused("[1,2", 1, 4) = false
+    set ok: false
+if refused("{\"a\":1", 1, 6) = false or refused("\"abc", 1, 4) = false
+    set ok: false
+if refused("1 2", 2, 2) = false or refused("{} x", 2, 3) = false
+    set ok: false
+if refused("[1,]", 3, 3) = false or refused("tru", 3, 0) = false or refused("[nul]", 3, 1) = false
+    set ok: false
+if refused("{1:2}", 4, 1) = false or refused("{\"a\":1,}", 4, 7) = false
+    set ok: false
+if refused("{\"a\" 1}", 5, 5) = false
+    set ok: false
+if refused("[1 2]", 6, 3) = false or refused("{\"a\":1]", 6, 6) = false
+    set ok: false
+if refused("01", 7, 1) = false or refused("-", 7, 1) = false or refused("1.", 7, 2) = false
+    set ok: false
+if refused("1e", 7, 2) = false or refused(".5", 3, 0) = false or refused("+1", 3, 0) = false
+    set ok: false
+if refused("\"a\tb\"", 8, 2) = false
+    set ok: false
+if refused("\"\\x\"", 9, 2) = false or refused("\"\\u12g4\"", 9, 5) = false
+    set ok: false
+if refused("[1e5, -0, 0.25, 1E-7]", 0, 0) = false
+    set ok: false
+if ok
+    Console.print "refuse "
+
+let deep_ok nested(256)
+let deep_bad nested(257)
+if refused(deep_ok.as_slice(), 0, 0) = false or refused(deep_bad.as_slice(), 10, 256) = false
+    set ok: false
+var limited JsonReader.create_limited("[[[1]]]", 2)
+limited.next()
+limited.next()
+limited.next()
+if limited.error <> 10
+    set ok: false
+if ok
+    Console.print "depth "
+
+var r JsonReader.create("{\"skip\":{\"x\":[1,{\"y\":2}],\"z\":3},\"keep\":7,\"s\":5}")
+r.next()                                    ; {
+r.next()                                    ; "skip"
+r.next()                                    ; {
+if r.skip() = false
+    set ok: false
+r.next()                                    ; "keep"
+if r.string().equals("keep") = false
+    set ok: false
+r.next()                                    ; 7
+if String(r.text().data as pointer[const_char], r.text().length).equals("7") = false
+    set ok: false
+r.next()                                    ; "s"
+r.next()                                    ; 5
+if r.skip() = false                         ; a scalar: nothing to skip
+    set ok: false
+choose r.next()
+    when e: ObjectEnd
+        0
+    else
+        set ok: false
+if ok
+    Console.print "skip "
+
+; \" \\ \/ \b \f \n \r \t, U+00E9, the pair for U+1F600, a lone high surrogate
+let esc trace("\"\\\"\\\\\\/\\b\\f\\n\\r\\t\\u00e9\\ud83d\\ude00\\ud800x\"")
+if esc.length <> 22
+    set ok: false
+else
+{
+    var i: size_t 0
+    while i < 22
+    {
+        if esc.get(i) <> WANT_BYTES[i]
+            set ok: false
+        set i: i + 1
+    }
+}
+if ok
+    Console.print "decode "
+
+if ok
+    Console.print "done"

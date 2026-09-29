@@ -1,0 +1,615 @@
+; The pull reader: one token per next(), strictly by RFC 8259. A document
+; is ONE value with only whitespace around it; a number follows the RFC's
+; grammar (no leading zero, no bare `.`, no `+`), a string may carry no raw
+; control character and only the eight escapes plus \uXXXX. The first
+; violation ends the document with Invalid, and the reader keeps its code
+; and byte offset; every later next() answers the same token again.
+;
+; The reader allocates nothing: a Key, Text or Number token is the byte range
+; text() of the source (a string without its quotes, escapes undecoded), and
+; string() decodes it. The open containers are a bit stack in four words,
+; which bounds nesting at MAX_DEPTH — the recursion a hostile `[[[[…` would
+; otherwise drive through a fiber's stack.
+
+define MAX_DEPTH: size_t 256
+
+; What next() is looking for.
+define EXPECT_VALUE: int 0          ; document start, after ':', after ',' in an array
+define EXPECT_VALUE_OR_END: int 1   ; after '['
+define EXPECT_KEY: int 2            ; after ',' in an object
+define EXPECT_KEY_OR_END: int 3     ; after '{'
+define EXPECT_SEPARATOR: int 4      ; after a value inside a container: ',' or its closer
+define EXPECT_EOF: int 5            ; the document's value is complete
+define READER_DONE: int 6           ; End or Invalid was answered
+
+; Why a document was refused (JsonReader.message has the words).
+define JSON_OK: int 0
+define JSON_END: int 1
+define JSON_TRAILING: int 2
+define JSON_VALUE: int 3
+define JSON_KEY: int 4
+define JSON_COLON: int 5
+define JSON_SEPARATOR: int 6
+define JSON_NUMBER: int 7
+define JSON_CONTROL: int 8
+define JSON_ESCAPE: int 9
+define JSON_DEPTH: int 10
+
+; A comma after each variant: a payload-less variant followed by a bare line
+; feed would read the next line as its TYPE (the line feed is a colon).
+define JsonToken union
+(
+    End,
+    Invalid,
+    ObjectStart,
+    ObjectEnd,
+    ArrayStart,
+    ArrayEnd,
+    MemberName,
+    StringValue,
+    NumberValue,
+    TrueValue,
+    FalseValue,
+    NullValue,
+)
+
+define JsonReader
+(
+    source: Slice[u8]
+    max_depth: size_t
+    var depth: size_t
+    ; bit i set: open level i is an object, clear: an array
+    var levels0: u64
+    var levels1: u64
+    var levels2: u64
+    var levels3: u64
+    var pos: size_t
+    var state: int
+    ; the last Key, Text or Number token: source[start, end)
+    var start: size_t
+    var end: size_t
+    var escaped: bool
+    var integral: bool
+    var error: int
+    var error_at: size_t
+)
+{
+    function create(source: Slice[u8]) returns JsonReader
+        JsonReader(source, MAX_DEPTH, 0, 0, 0, 0, 0, 0, EXPECT_VALUE, 0, 0, false, false, JSON_OK, 0)
+
+    ; A tighter nesting bound than MAX_DEPTH (a larger one is clamped).
+    function create_limited(source: Slice[u8], max_depth: size_t) returns JsonReader
+    {
+        var limit max_depth
+        if limit > MAX_DEPTH
+            set limit: MAX_DEPTH
+        JsonReader(source, limit, 0, 0, 0, 0, 0, 0, EXPECT_VALUE, 0, 0, false, false, JSON_OK, 0)
+    }
+
+    procedure next(mutable this) returns JsonToken
+    {
+        repeat
+        {
+            if state = READER_DONE
+            {
+                if error <> JSON_OK
+                    return JsonToken.Invalid
+                return JsonToken.End
+            }
+            this.skip_ws()
+            if pos >= source.length
+            {
+                if state = EXPECT_EOF
+                {
+                    set state: READER_DONE
+                    return JsonToken.End
+                }
+                return this.fail(JSON_END)
+            }
+            let c source[pos]
+            if state = EXPECT_EOF
+                return this.fail(JSON_TRAILING)
+            if state = EXPECT_SEPARATOR
+            {
+                let in_object this.in_object()
+                if c = 0x2C                                 ; ','
+                {
+                    set pos: pos + 1
+                    if in_object
+                        set state: EXPECT_KEY
+                    else
+                        set state: EXPECT_VALUE
+                    continue
+                }
+                if in_object and c = 0x7D                   ; '}'
+                {
+                    this.close()
+                    return JsonToken.ObjectEnd
+                }
+                if in_object = false and c = 0x5D           ; ']'
+                {
+                    this.close()
+                    return JsonToken.ArrayEnd
+                }
+                return this.fail(JSON_SEPARATOR)
+            }
+            if state = EXPECT_KEY_OR_END and c = 0x7D
+            {
+                this.close()
+                return JsonToken.ObjectEnd
+            }
+            if state = EXPECT_VALUE_OR_END and c = 0x5D
+            {
+                this.close()
+                return JsonToken.ArrayEnd
+            }
+            if state = EXPECT_KEY or state = EXPECT_KEY_OR_END
+            {
+                if c <> 0x22                                ; '"'
+                    return this.fail(JSON_KEY)
+                if this.scan_string() = false
+                    return JsonToken.Invalid
+                this.skip_ws()
+                if pos >= source.length or source[pos] <> 0x3A     ; ':'
+                    return this.fail(JSON_COLON)
+                set pos: pos + 1
+                set state: EXPECT_VALUE
+                return JsonToken.MemberName
+            }
+            return this.value(c)
+        }
+    }
+
+    ; Skip the value whose first token next() answered last: a container to
+    ; its closer, a scalar not at all. Answers false on a refused document.
+    procedure skip(mutable this) returns bool
+    {
+        if state <> EXPECT_KEY_OR_END and state <> EXPECT_VALUE_OR_END
+            return error = JSON_OK
+        let floor depth
+        repeat
+        {
+            let t this.next()
+            choose t
+                when i: Invalid
+                    return false
+                when e: End
+                    return true
+                else
+                {
+                    if depth < floor
+                        return true
+                }
+        }
+    }
+
+    ; The last Key, Text or Number token as it stands in the source.
+    function text(this) returns Slice[u8]
+        source.subslice(start, end)
+
+    ; The last Key or Text token, its escapes decoded.
+    function string(this) returns String
+        JsonReader.decode(source.subslice(start, end), escaped)
+
+    ; The last Number token has neither fraction nor exponent.
+    function is_integral(this) returns bool
+        integral
+
+    function failed(this) returns bool
+        error <> JSON_OK
+
+    ; The byte offset at which the document was refused.
+    function error_offset(this) returns size_t
+        error_at
+
+    function error_message(this) returns Slice[char]
+        JsonReader.message(error)
+
+    function message(code: int) returns Slice[char]
+    {
+        match code
+            case JSON_OK: return "no error"
+            case JSON_END: return "unexpected end of the document"
+            case JSON_TRAILING: return "characters after the document's value"
+            case JSON_VALUE: return "a value was expected"
+            case JSON_KEY: return "a member name (a string) was expected"
+            case JSON_COLON: return "':' was expected after the member name"
+            case JSON_SEPARATOR: return "',' or the closing bracket was expected"
+            case JSON_NUMBER: return "malformed number"
+            case JSON_CONTROL: return "raw control character in a string"
+            case JSON_ESCAPE: return "invalid escape in a string"
+            case JSON_DEPTH: return "nesting too deep"
+            else: return "unknown error"
+    }
+
+    ; The text of a Key or Text token (quotes stripped) with its escapes
+    ; decoded to UTF-8; a lone surrogate becomes U+FFFD. The scanner has
+    ; checked every escape, so none is malformed here.
+    function decode(raw: Slice[u8], escaped: bool) returns String
+    {
+        if escaped = false
+            return String(raw.data as pointer[const_char], raw.length)
+        var sb StringBuilder()
+        var i: size_t 0
+        while i < raw.length
+        {
+            ; the run up to the next backslash in one append
+            var j i
+            while j < raw.length and raw[j] <> 0x5C
+                set j: j + 1
+            if j > i
+                sb.append(raw.subslice(i, j).data as pointer[char], j - i)
+            if j >= raw.length
+                break
+            let e raw[j + 1]
+            set i: j + 2
+            if e = 0x75                                     ; 'u'
+            {
+                var cp JsonReader.hex4(raw, i)
+                set i: i + 4
+                if cp >= 0xD800 and cp <= 0xDBFF
+                {
+                    if i + 6 <= raw.length and raw[i] = 0x5C and raw[i + 1] = 0x75
+                    {
+                        let low JsonReader.hex4(raw, i + 2)
+                        if low >= 0xDC00 and low <= 0xDFFF
+                        {
+                            set cp: 0x10000 + ((cp - 0xD800) << 10) + (low - 0xDC00)
+                            set i: i + 6
+                        }
+                        else
+                            set cp: 0xFFFD
+                    }
+                    else
+                        set cp: 0xFFFD
+                }
+                else
+                {
+                    if cp >= 0xDC00 and cp <= 0xDFFF
+                        set cp: 0xFFFD
+                }
+                JsonReader.append_utf8(sb, cp)
+            }
+            else
+                sb.append(JsonReader.unescape(e) as char)
+        }
+        sb.to_string()
+    }
+
+    ; The byte an escape letter stands for (checked by the scanner).
+    function unescape(e: u8) returns u8
+    {
+        match e
+            case 0x62: return 0x08                          ; \b
+            case 0x66: return 0x0C                          ; \f
+            case 0x6E: return 0x0A                          ; \n
+            case 0x72: return 0x0D                          ; \r
+            case 0x74: return 0x09                          ; \t
+            else: return e                                  ; \" \\ \/
+    }
+
+    function hex4(raw: Slice[u8], at: size_t) returns i64
+    {
+        var v: i64 0
+        var k: size_t 0
+        while k < 4
+        {
+            set v: (v << 4) + JsonReader.hex_digit(raw[at + k])
+            set k: k + 1
+        }
+        v
+    }
+
+    ; The value of a hex digit, -1 for anything else.
+    function hex_digit(c: u8) returns i64
+    {
+        if c >= 0x30 and c <= 0x39
+            return (c - 0x30) as i64
+        if c >= 0x61 and c <= 0x66
+            return ((c - 0x61) + 10) as i64
+        if c >= 0x41 and c <= 0x46
+            return ((c - 0x41) + 10) as i64
+        0 - 1
+    }
+
+    procedure append_utf8(mutable sb: ref[StringBuilder], cp: i64)
+    {
+        if cp < 0x80
+        {
+            sb.append(cp as char)
+            return
+        }
+        if cp < 0x800
+        {
+            sb.append((0xC0 | (cp >> 6)) as char)
+            sb.append((0x80 | (cp & 0x3F)) as char)
+            return
+        }
+        if cp < 0x10000
+        {
+            sb.append((0xE0 | (cp >> 12)) as char)
+            sb.append((0x80 | ((cp >> 6) & 0x3F)) as char)
+            sb.append((0x80 | (cp & 0x3F)) as char)
+            return
+        }
+        sb.append((0xF0 | (cp >> 18)) as char)
+        sb.append((0x80 | ((cp >> 12) & 0x3F)) as char)
+        sb.append((0x80 | ((cp >> 6) & 0x3F)) as char)
+        sb.append((0x80 | (cp & 0x3F)) as char)
+    }
+
+    ; ------------------------------------------------------------------
+    ; the scanner
+
+    procedure fail(mutable this, code: int) returns JsonToken
+    {
+        set error: code
+        set error_at: pos
+        set state: READER_DONE
+        JsonToken.Invalid
+    }
+
+    procedure skip_ws(mutable this)
+    {
+        while pos < source.length
+        {
+            let c source[pos]
+            if c <> 0x20 and c <> 0x0A and c <> 0x0D and c <> 0x09
+                return
+            set pos: pos + 1
+        }
+    }
+
+    function in_object(this) returns bool
+    {
+        let level depth - 1
+        let bit (1 as u64) << ((level & 63) as u64)
+        let word level >> 6
+        if word = 0
+            return (levels0 & bit) <> 0
+        if word = 1
+            return (levels1 & bit) <> 0
+        if word = 2
+            return (levels2 & bit) <> 0
+        (levels3 & bit) <> 0
+    }
+
+    ; Open a container at the cursor: an object when is_object.
+    procedure open(mutable this, is_object: bool) returns bool
+    {
+        if depth >= max_depth
+        {
+            this.fail(JSON_DEPTH)
+            return false
+        }
+        let bit (1 as u64) << ((depth & 63) as u64)
+        let word depth >> 6
+        if word = 0
+        {
+            if is_object
+                set levels0: levels0 | bit
+            else
+                set levels0: levels0 & (bit xor 0xFFFFFFFFFFFFFFFF)
+        }
+        else
+        {
+            if word = 1
+            {
+                if is_object
+                    set levels1: levels1 | bit
+                else
+                    set levels1: levels1 & (bit xor 0xFFFFFFFFFFFFFFFF)
+            }
+            else
+            {
+                if word = 2
+                {
+                    if is_object
+                        set levels2: levels2 | bit
+                    else
+                        set levels2: levels2 & (bit xor 0xFFFFFFFFFFFFFFFF)
+                }
+                else
+                {
+                    if is_object
+                        set levels3: levels3 | bit
+                    else
+                        set levels3: levels3 & (bit xor 0xFFFFFFFFFFFFFFFF)
+                }
+            }
+        }
+        set depth: depth + 1
+        set pos: pos + 1
+        true
+    }
+
+    procedure close(mutable this)
+    {
+        set depth: depth - 1
+        set pos: pos + 1
+        this.after_value()
+    }
+
+    procedure after_value(mutable this)
+    {
+        if depth = 0
+            set state: EXPECT_EOF
+        else
+            set state: EXPECT_SEPARATOR
+    }
+
+    procedure value(mutable this, c: u8) returns JsonToken
+    {
+        if c = 0x7B                                         ; '{'
+        {
+            if this.open(true) = false
+                return JsonToken.Invalid
+            set state: EXPECT_KEY_OR_END
+            return JsonToken.ObjectStart
+        }
+        if c = 0x5B                                         ; '['
+        {
+            if this.open(false) = false
+                return JsonToken.Invalid
+            set state: EXPECT_VALUE_OR_END
+            return JsonToken.ArrayStart
+        }
+        if c = 0x22                                         ; '"'
+        {
+            if this.scan_string() = false
+                return JsonToken.Invalid
+            this.after_value()
+            return JsonToken.StringValue
+        }
+        if c = 0x2D or (c >= 0x30 and c <= 0x39)            ; '-' or a digit
+        {
+            if this.scan_number() = false
+                return JsonToken.Invalid
+            this.after_value()
+            return JsonToken.NumberValue
+        }
+        if this.literal("true")
+            return JsonToken.TrueValue
+        if this.literal("false")
+            return JsonToken.FalseValue
+        if this.literal("null")
+            return JsonToken.NullValue
+        this.fail(JSON_VALUE)
+    }
+
+    procedure literal(mutable this, word: Slice[u8]) returns bool
+    {
+        if pos + word.length > source.length
+            return false
+        if source.subslice(pos, pos + word.length).equals(word) = false
+            return false
+        set pos: pos + word.length
+        this.after_value()
+        true
+    }
+
+    ; The cursor is on the opening quote; on success it is past the closing
+    ; one and [start, end) holds the text between them.
+    procedure scan_string(mutable this) returns bool
+    {
+        set pos: pos + 1
+        set start: pos
+        set escaped: false
+        while pos < source.length
+        {
+            let c source[pos]
+            if c = 0x22
+            {
+                set end: pos
+                set pos: pos + 1
+                return true
+            }
+            if c < 0x20
+            {
+                this.fail(JSON_CONTROL)
+                return false
+            }
+            if c = 0x5C                                     ; '\'
+            {
+                set escaped: true
+                if pos + 1 >= source.length
+                {
+                    set pos: pos + 1
+                    this.fail(JSON_END)
+                    return false
+                }
+                let e source[pos + 1]
+                if e = 0x75                                 ; 'u'
+                {
+                    if pos + 6 > source.length
+                    {
+                        set pos: source.length
+                        this.fail(JSON_END)
+                        return false
+                    }
+                    var k: size_t 2
+                    while k < 6
+                    {
+                        if JsonReader.hex_digit(source[pos + k]) < 0
+                        {
+                            set pos: pos + k
+                            this.fail(JSON_ESCAPE)
+                            return false
+                        }
+                        set k: k + 1
+                    }
+                    set pos: pos + 6
+                }
+                else
+                {
+                    match e
+                        case 0x22 case 0x5C case 0x2F case 0x62 case 0x66 case 0x6E case 0x72 case 0x74: set pos: pos + 2
+                        else
+                        {
+                            set pos: pos + 1
+                            this.fail(JSON_ESCAPE)
+                            return false
+                        }
+                }
+            }
+            else
+                set pos: pos + 1
+        }
+        this.fail(JSON_END)
+        false
+    }
+
+    ; -? (0 | [1-9][0-9]*) (. [0-9]+)? ([eE] [+-]? [0-9]+)?
+    procedure scan_number(mutable this) returns bool
+    {
+        set start: pos
+        set integral: true
+        if source[pos] = 0x2D
+            set pos: pos + 1
+        if this.digit_at(pos) = false
+            return this.number_fails()
+        if source[pos] = 0x30
+        {
+            set pos: pos + 1
+            if this.digit_at(pos)
+                return this.number_fails()
+        }
+        else
+            this.digits()
+        if pos < source.length and source[pos] = 0x2E       ; '.'
+        {
+            set integral: false
+            set pos: pos + 1
+            if this.digit_at(pos) = false
+                return this.number_fails()
+            this.digits()
+        }
+        if pos < source.length and (source[pos] = 0x65 or source[pos] = 0x45)   ; 'e' 'E'
+        {
+            set integral: false
+            set pos: pos + 1
+            if pos < source.length and (source[pos] = 0x2B or source[pos] = 0x2D)
+                set pos: pos + 1
+            if this.digit_at(pos) = false
+                return this.number_fails()
+            this.digits()
+        }
+        set end: pos
+        true
+    }
+
+    procedure number_fails(mutable this) returns bool
+    {
+        this.fail(JSON_NUMBER)
+        false
+    }
+
+    function digit_at(this, at: size_t) returns bool
+        at < source.length and source[at] >= 0x30 and source[at] <= 0x39
+
+    procedure digits(mutable this)
+    {
+        while this.digit_at(pos)
+            set pos: pos + 1
+    }
+}

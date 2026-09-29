@@ -1,0 +1,90 @@
+; The writer: appends a document to a growable byte buffer on a page its
+; owner names, the way http's ByteBuf holds a connection's output. The
+; separators are its business — the caller says begin_object, key, a value,
+; end_object, and the commas and colons follow. Strings are escaped by RFC
+; 8259: the quote, the backslash and every control character; the named
+; escapes where the RFC has one, \u00XX for the rest. A number given as
+; text goes out VERBATIM (number_text of a parsed value, a FHIR decimal).
+;
+; Commas need no stack: `first` is true exactly between an opening bracket
+; and the container's first element, and a closed container is itself the
+; element that its parent's next one follows.
+
+use json.Value.JsonValue
+use json.Value.JsonMember
+use json.Value.JsonArray
+use json.Value.JsonObject
+
+; memcpy(3)
+function memcpy(dest: pointer[void], src: pointer[void], count: size_t) returns pointer[void] extern
+
+define JsonWriter
+(
+    host: ref[Page]
+    var data: Slice[u8]
+    var length: size_t
+    var first: bool
+    var after_key: bool
+)
+{
+    ; The writer lives on the page that owns its buffer.
+    procedure create(host: ref[Page], capacity: size_t) @ret_explicit_0 true @deep true returns ref[JsonWriter] linked
+
+    ; The document so far.
+    function bytes(this) @page true @direct true @ret_param_0 true @deep true returns Slice[u8] linked
+
+    function to_string(this) @page true @direct true @ret_caller true @deep true returns String linked
+
+    ; Start a new document in the same buffer.
+    procedure clear(mutable this) @deep true linked
+
+    procedure begin_object(mutable this) @deep true linked
+
+    procedure end_object(mutable this) @deep true linked
+
+    procedure begin_array(mutable this) @deep true linked
+
+    procedure end_array(mutable this) @deep true linked
+
+    ; A member name; the member's value is the next thing written.
+    procedure key(mutable this, name: Slice[u8]) @deep true linked
+
+    procedure text(mutable this, s: Slice[u8]) @ret_nonlocal true @deep true linked
+
+    procedure integer(mutable this, n: i64) @deep true linked
+
+    ; A number given as its text, written as it stands (the caller vouches
+    ; for its grammar).
+    procedure number(mutable this, text: Slice[u8]) @ret_nonlocal true @deep true linked
+
+    procedure boolean(mutable this, b: bool) @ret_nonlocal true @deep true linked
+
+    procedure null_value(mutable this) @ret_nonlocal true @deep true linked
+
+    ; A whole tree.
+    procedure value(mutable this, v: JsonValue) @ret_nonlocal true @deep true linked
+
+    ; Bytes that already are JSON, as a value (the caller vouches for them).
+    procedure raw(mutable this, json: Slice[u8]) @ret_nonlocal true @deep true linked
+
+    ; ------------------------------------------------------------------
+
+    ; The comma before an element that is not its container's first.
+    procedure separate(mutable this) @deep true linked
+
+    procedure quoted(mutable this, s: Slice[u8]) @ret_nonlocal true @deep true linked
+
+    function plain(c: u8) @ret_nonlocal true @deep true returns bool linked
+
+    procedure escape(mutable this, c: u8) @ret_nonlocal true @deep true linked
+
+    function hex_digit(v: u8) @ret_nonlocal true @deep true returns u8 linked
+
+    procedure byte(mutable this, b: u8) @persists true @deep true linked
+
+    procedure append(mutable this, s: Slice[u8]) @deep true linked
+
+    ; Room for n more bytes: at least double on growth. The old block stays
+    ; with the page, which dies with its owner.
+    procedure reserve(mutable this, n: size_t) @deep true linked
+}

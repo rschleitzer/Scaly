@@ -1,0 +1,122 @@
+; The value tree, built from the reader's tokens. A number keeps its source
+; text: as_i64 answers only where the text is an integer in range, as_f64
+; goes through strtod, number_text is the text itself (a FHIR decimal keeps
+; its trailing zeros). Strings are decoded. An array's items and an object's
+; members are views over a buffer on the parser's caller page; the members
+; keep document order, and get() takes the first of a duplicated name.
+;
+; Every accessor answers the empty value of its kind for a value of another
+; kind (false, 0, the empty String, Null), so a chain like
+; msg.get("params").get("textDocument").get("uri").as_string() needs no test
+; between the steps.
+
+use json.Reader.JsonReader
+use json.Reader.JsonToken
+
+; strtod(3) — fixed prototype, errno not consulted.
+function strtod(s: pointer[const_char], endp: pointer[pointer[u8]]) returns f64 extern
+
+define JsonMember (key: String, value: JsonValue)
+
+; The views as records: a union's payload is a type NAME, not a generic
+; instance (the grammar has no `Slice[...]` in that position).
+define JsonArray (items: Slice[JsonValue])
+define JsonObject (members: Slice[JsonMember])
+
+; `Null,` with its comma: without it the line feed would be read as the
+; colon of a type annotation, making Null a variant OF TYPE Bool.
+define JsonValue union
+(
+    Null,
+    Bool: bool
+    Number: String
+    Text: String
+    Array: JsonArray
+    Object: JsonObject
+)
+{
+    ; Null as a value where a union is expected: a qualified unit variant
+    ; passes as a return, not yet as an argument or a component.
+    function null_value() @page true @direct true @deep true returns JsonValue linked
+
+    function is_null(this) @ret_nonlocal true @deep true returns bool linked
+
+    function is_bool(this) @ret_nonlocal true @deep true returns bool linked
+
+    function is_number(this) @ret_nonlocal true @deep true returns bool linked
+
+    function is_text(this) @ret_nonlocal true @deep true returns bool linked
+
+    function is_array(this) @ret_nonlocal true @deep true returns bool linked
+
+    function is_object(this) @ret_nonlocal true @deep true returns bool linked
+
+    function as_bool(this) @ret_param_0 true @deep true returns bool linked
+
+    function as_string(this) @page true @direct true @ret_param_0 true @deep true returns String linked
+
+    ; A number's source text, the empty String for anything else.
+    function number_text(this) @page true @direct true @ret_param_0 true @deep true returns String linked
+
+    ; A number without fraction or exponent whose value fits an i64.
+    function is_integer(this) @ret_nonlocal true @deep true returns bool linked
+
+    ; The value of an integer number (is_integer), 0 for anything else.
+    function as_i64(this) @ret_nonlocal true @deep true returns i64 linked
+
+    ; The nearest double to a number, 0 for anything else.
+    function as_f64(this) @ret_nonlocal true @deep true returns f64 linked
+
+    ; An array's item or an object's member count, 0 for anything else.
+    function length(this) @ret_param_0 true @deep true returns size_t linked
+
+    ; An array's i-th item, Null past its end or for anything else.
+    function item(this, i: size_t) @page true @direct true @deep true returns JsonValue linked
+
+    ; An object's member of that name, Null if it has none.
+    function get(this, key: Slice[u8]) @page true @direct true @deep true returns JsonValue linked
+
+    function has(this, key: Slice[u8]) @ret_nonlocal true @deep true returns bool linked
+
+    ; An object's i-th member name / value, in document order.
+    function key_at(this, i: size_t) @page true @direct true @ret_param_0 true @deep true returns String linked
+
+    function value_at(this, i: size_t) @page true @direct true @deep true returns JsonValue linked
+
+    ; ------------------------------------------------------------------
+    ; parsing
+
+    ; Parse a whole document. On a refused one the result carries the
+    ; reader's code and offset and a Null value.
+    procedure parse(source: Slice[u8]) @page true @direct true @deep true returns JsonParsed linked
+
+    ; The value that begins with token; the rest of it is read from r.
+    procedure build(mutable r: ref[JsonReader], token: JsonToken) @page true @direct true @deep true returns JsonValue linked
+
+    procedure build_object(mutable r: ref[JsonReader]) @page true @direct true @ret_caller true @deep true returns JsonValue linked
+
+    procedure build_array(mutable r: ref[JsonReader]) @page true @direct true @ret_caller true @deep true returns JsonValue linked
+
+    ; ------------------------------------------------------------------
+    ; integers
+
+    ; text is an integer (no fraction, no exponent) within i64.
+    function integer_fits(text: Slice[u8]) @ret_nonlocal true @deep true returns bool linked
+
+    ; The value of text, which integer_fits.
+    function integer_value(text: Slice[u8]) @ret_nonlocal true @deep true returns i64 linked
+}
+
+; What JsonValue.parse answers: the value, or why and where the document
+; was refused.
+define JsonParsed
+(
+    value: JsonValue
+    error: int
+    offset: size_t
+)
+{
+    function ok(this) @ret_param_0 true @deep true returns bool linked
+
+    function message(this) @page true @direct true @ret_nonlocal true @deep true returns Slice[char] linked
+}

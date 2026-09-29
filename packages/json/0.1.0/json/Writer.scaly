@@ -1,0 +1,284 @@
+; The writer: appends a document to a growable byte buffer on a page its
+; owner names, the way http's ByteBuf holds a connection's output. The
+; separators are its business — the caller says begin_object, key, a value,
+; end_object, and the commas and colons follow. Strings are escaped by RFC
+; 8259: the quote, the backslash and every control character; the named
+; escapes where the RFC has one, \u00XX for the rest. A number given as
+; text goes out VERBATIM (number_text of a parsed value, a FHIR decimal).
+;
+; Commas need no stack: `first` is true exactly between an opening bracket
+; and the container's first element, and a closed container is itself the
+; element that its parent's next one follows.
+
+use json.Value.JsonValue
+use json.Value.JsonMember
+use json.Value.JsonArray
+use json.Value.JsonObject
+
+; memcpy(3)
+function memcpy(dest: pointer[void], src: pointer[void], count: size_t) returns pointer[void] extern
+
+define JsonWriter
+(
+    host: ref[Page]
+    var data: Slice[u8]
+    var length: size_t
+    var first: bool
+    var after_key: bool
+)
+{
+    ; The writer lives on the page that owns its buffer.
+    procedure create(host: ref[Page], capacity: size_t) returns ref[JsonWriter]
+    {
+        let d allocate_slice[u8]^host(host, capacity)
+        &JsonWriter^host(host, d, 0, true, false)
+    }
+
+    ; The document so far.
+    function bytes(this) returns Slice[u8]
+        data.slice_to(length)
+
+    function to_string(this) returns String
+        String(data.data as pointer[const_char], length)
+
+    ; Start a new document in the same buffer.
+    procedure clear(mutable this)
+    {
+        set length: 0
+        set first: true
+        set after_key: false
+    }
+
+    procedure begin_object(mutable this)
+    {
+        this.separate()
+        this.byte(0x7B)                                     ; '{'
+        set first: true
+    }
+
+    procedure end_object(mutable this)
+    {
+        this.byte(0x7D)                                     ; '}'
+        set first: false
+    }
+
+    procedure begin_array(mutable this)
+    {
+        this.separate()
+        this.byte(0x5B)                                     ; '['
+        set first: true
+    }
+
+    procedure end_array(mutable this)
+    {
+        this.byte(0x5D)                                     ; ']'
+        set first: false
+    }
+
+    ; A member name; the member's value is the next thing written.
+    procedure key(mutable this, name: Slice[u8])
+    {
+        this.separate()
+        this.quoted(name)
+        this.byte(0x3A)                                     ; ':'
+        set after_key: true
+    }
+
+    procedure text(mutable this, s: Slice[u8])
+    {
+        this.separate()
+        this.quoted(s)
+    }
+
+    procedure integer(mutable this, n: i64)
+    {
+        this.separate()
+        var digits u8[20]
+        var v: u64 n as u64
+        if n < 0
+        {
+            this.byte(0x2D)                                 ; '-'
+            set v: (0 as u64) - v
+        }
+        var at: size_t 20
+        repeat
+        {
+            set at: at - 1
+            set digits[at]: ((v % 10) as u8) + 0x30
+            set v: v / 10
+            if v = 0
+                break
+        }
+        this.reserve(20 - at)
+        while at < 20
+        {
+            data.put(length, digits[at])
+            set length: length + 1
+            set at: at + 1
+        }
+    }
+
+    ; A number given as its text, written as it stands (the caller vouches
+    ; for its grammar).
+    procedure number(mutable this, text: Slice[u8])
+    {
+        this.separate()
+        this.append(text)
+    }
+
+    procedure boolean(mutable this, b: bool)
+    {
+        this.separate()
+        if b
+            this.append("true")
+        else
+            this.append("false")
+    }
+
+    procedure null_value(mutable this)
+    {
+        this.separate()
+        this.append("null")
+    }
+
+    ; A whole tree.
+    procedure value(mutable this, v: JsonValue)
+    {
+        choose v
+            when n: Null
+                this.null_value()
+            when b: Bool
+                this.boolean(b)
+            when num: Number
+                this.number(num.as_slice())
+            when t: Text
+                this.text(t.as_slice())
+            when a: Array
+            {
+                this.begin_array()
+                var i: size_t 0
+                while i < a.items.length
+                {
+                    this.value(a.items[i])
+                    set i: i + 1
+                }
+                this.end_array()
+            }
+            when o: Object
+            {
+                this.begin_object()
+                var i: size_t 0
+                while i < o.members.length
+                {
+                    let m o.members[i]
+                    this.key(m.key.as_slice())
+                    this.value(m.value)
+                    set i: i + 1
+                }
+                this.end_object()
+            }
+    }
+
+    ; Bytes that already are JSON, as a value (the caller vouches for them).
+    procedure raw(mutable this, json: Slice[u8])
+    {
+        this.separate()
+        this.append(json)
+    }
+
+    ; ------------------------------------------------------------------
+
+    ; The comma before an element that is not its container's first.
+    procedure separate(mutable this)
+    {
+        if after_key
+        {
+            set after_key: false
+            return
+        }
+        if first
+            set first: false
+        else
+            this.byte(0x2C)                                 ; ','
+    }
+
+    procedure quoted(mutable this, s: Slice[u8])
+    {
+        this.byte(0x22)
+        var i: size_t 0
+        while i < s.length
+        {
+            ; the run of bytes that need no escape, in one copy
+            var j i
+            while j < s.length and JsonWriter.plain(s[j])
+                set j: j + 1
+            if j > i
+                this.append(s.subslice(i, j))
+            if j >= s.length
+                break
+            this.escape(s[j])
+            set i: j + 1
+        }
+        this.byte(0x22)
+    }
+
+    function plain(c: u8) returns bool
+        c >= 0x20 and c <> 0x22 and c <> 0x5C
+
+    procedure escape(mutable this, c: u8)
+    {
+        this.byte(0x5C)
+        match c
+            case 0x22: this.byte(0x22)
+            case 0x5C: this.byte(0x5C)
+            case 0x08: this.byte(0x62)                      ; \b
+            case 0x0C: this.byte(0x66)                      ; \f
+            case 0x0A: this.byte(0x6E)                      ; \n
+            case 0x0D: this.byte(0x72)                      ; \r
+            case 0x09: this.byte(0x74)                      ; \t
+            else
+            {
+                this.append("u00")
+                this.byte(JsonWriter.hex_digit(c >> 4))
+                this.byte(JsonWriter.hex_digit(c & 0x0F))
+            }
+    }
+
+    function hex_digit(v: u8) returns u8
+    {
+        if v < 10
+            return v + 0x30
+        v + 0x57                                            ; 'a' - 10
+    }
+
+    procedure byte(mutable this, b: u8)
+    {
+        this.reserve(1)
+        data.put(length, b)
+        set length: length + 1
+    }
+
+    procedure append(mutable this, s: Slice[u8])
+    {
+        if s.length = 0
+            return
+        this.reserve(s.length)
+        memcpy(data.slice_from(length).data as pointer[void], s.data as pointer[void], s.length)
+        set length: length + s.length
+    }
+
+    ; Room for n more bytes: at least double on growth. The old block stays
+    ; with the page, which dies with its owner.
+    procedure reserve(mutable this, n: size_t)
+    {
+        if length + n <= data.length
+            return
+        var cap data.length * 2
+        if cap < length + n
+            set cap: length + n
+        let fresh allocate_slice[u8]^host(host, cap)
+        if length > 0
+            memcpy(fresh.data as pointer[void], data.data as pointer[void], length)
+        set data: fresh
+    }
+}

@@ -1,0 +1,153 @@
+; The pull reader: one token per next(), strictly by RFC 8259. A document
+; is ONE value with only whitespace around it; a number follows the RFC's
+; grammar (no leading zero, no bare `.`, no `+`), a string may carry no raw
+; control character and only the eight escapes plus \uXXXX. The first
+; violation ends the document with Invalid, and the reader keeps its code
+; and byte offset; every later next() answers the same token again.
+;
+; The reader allocates nothing: a Key, Text or Number token is the byte range
+; text() of the source (a string without its quotes, escapes undecoded), and
+; string() decodes it. The open containers are a bit stack in four words,
+; which bounds nesting at MAX_DEPTH — the recursion a hostile `[[[[…` would
+; otherwise drive through a fiber's stack.
+
+define MAX_DEPTH: size_t 256
+
+; What next() is looking for.
+define EXPECT_VALUE: int 0          ; document start, after ':', after ',' in an array
+define EXPECT_VALUE_OR_END: int 1   ; after '['
+define EXPECT_KEY: int 2            ; after ',' in an object
+define EXPECT_KEY_OR_END: int 3     ; after '{'
+define EXPECT_SEPARATOR: int 4      ; after a value inside a container: ',' or its closer
+define EXPECT_EOF: int 5            ; the document's value is complete
+define READER_DONE: int 6           ; End or Invalid was answered
+
+; Why a document was refused (JsonReader.message has the words).
+define JSON_OK: int 0
+define JSON_END: int 1
+define JSON_TRAILING: int 2
+define JSON_VALUE: int 3
+define JSON_KEY: int 4
+define JSON_COLON: int 5
+define JSON_SEPARATOR: int 6
+define JSON_NUMBER: int 7
+define JSON_CONTROL: int 8
+define JSON_ESCAPE: int 9
+define JSON_DEPTH: int 10
+
+; A comma after each variant: a payload-less variant followed by a bare line
+; feed would read the next line as its TYPE (the line feed is a colon).
+define JsonToken union
+(
+    End,
+    Invalid,
+    ObjectStart,
+    ObjectEnd,
+    ArrayStart,
+    ArrayEnd,
+    MemberName,
+    StringValue,
+    NumberValue,
+    TrueValue,
+    FalseValue,
+    NullValue,
+)
+
+define JsonReader
+(
+    source: Slice[u8]
+    max_depth: size_t
+    var depth: size_t
+    ; bit i set: open level i is an object, clear: an array
+    var levels0: u64
+    var levels1: u64
+    var levels2: u64
+    var levels3: u64
+    var pos: size_t
+    var state: int
+    ; the last Key, Text or Number token: source[start, end)
+    var start: size_t
+    var end: size_t
+    var escaped: bool
+    var integral: bool
+    var error: int
+    var error_at: size_t
+)
+{
+    function create(source: Slice[u8]) @page true @direct true @deep true returns JsonReader linked
+
+    ; A tighter nesting bound than MAX_DEPTH (a larger one is clamped).
+    function create_limited(source: Slice[u8], max_depth: size_t) @page true @direct true @deep true returns JsonReader linked
+
+    procedure next(mutable this) @page true @direct true @deep true returns JsonToken linked
+
+    ; Skip the value whose first token next() answered last: a container to
+    ; its closer, a scalar not at all. Answers false on a refused document.
+    procedure skip(mutable this) @ret_param_0 true @deep true returns bool linked
+
+    ; The last Key, Text or Number token as it stands in the source.
+    function text(this) @page true @direct true @ret_param_0 true @deep true returns Slice[u8] linked
+
+    ; The last Key or Text token, its escapes decoded.
+    function string(this) @page true @direct true @ret_caller true @deep true returns String linked
+
+    ; The last Number token has neither fraction nor exponent.
+    function is_integral(this) @ret_param_0 true @deep true returns bool linked
+
+    function failed(this) @ret_param_0 true @deep true returns bool linked
+
+    ; The byte offset at which the document was refused.
+    function error_offset(this) @ret_param_0 true @deep true returns size_t linked
+
+    function error_message(this) @page true @direct true @ret_nonlocal true @deep true returns Slice[char] linked
+
+    function message(code: int) @page true @direct true @ret_nonlocal true @deep true returns Slice[char] linked
+
+    ; The text of a Key or Text token (quotes stripped) with its escapes
+    ; decoded to UTF-8; a lone surrogate becomes U+FFFD. The scanner has
+    ; checked every escape, so none is malformed here.
+    function decode(raw: Slice[u8], escaped: bool) @page true @direct true @ret_caller true @deep true returns String linked
+
+    ; The byte an escape letter stands for (checked by the scanner).
+    function unescape(e: u8) @ret_nonlocal true @deep true returns u8 linked
+
+    function hex4(raw: Slice[u8], at: size_t) @ret_nonlocal true @deep true returns i64 linked
+
+    ; The value of a hex digit, -1 for anything else.
+    function hex_digit(c: u8) @ret_nonlocal true @deep true returns i64 linked
+
+    procedure append_utf8(mutable sb: ref[StringBuilder], cp: i64) @deep true linked
+
+    ; ------------------------------------------------------------------
+    ; the scanner
+
+    procedure fail(mutable this, code: int) @page true @direct true @deep true returns JsonToken linked
+
+    procedure skip_ws(mutable this) @deep true linked
+
+    function in_object(this) @ret_param_0 true @deep true returns bool linked
+
+    ; Open a container at the cursor: an object when is_object.
+    procedure open(mutable this, is_object: bool) @ret_nonlocal true @deep true returns bool linked
+
+    procedure close(mutable this) @ret_nonlocal true @deep true linked
+
+    procedure after_value(mutable this) @deep true linked
+
+    procedure value(mutable this, c: u8) @page true @direct true @deep true returns JsonToken linked
+
+    procedure literal(mutable this, word: Slice[u8]) @ret_nonlocal true @deep true returns bool linked
+
+    ; The cursor is on the opening quote; on success it is past the closing
+    ; one and [start, end) holds the text between them.
+    procedure scan_string(mutable this) @ret_nonlocal true @deep true returns bool linked
+
+    ; -? (0 | [1-9][0-9]*) (. [0-9]+)? ([eE] [+-]? [0-9]+)?
+    procedure scan_number(mutable this) @ret_nonlocal true @deep true returns bool linked
+
+    procedure number_fails(mutable this) @ret_nonlocal true @deep true returns bool linked
+
+    function digit_at(this, at: size_t) @ret_nonlocal true @deep true returns bool linked
+
+    procedure digits(mutable this) @deep true linked
+}

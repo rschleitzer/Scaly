@@ -1,0 +1,137 @@
+; The json package's writer (ROADMAP-http.md stage B):
+;   build    objects, arrays, nesting and empty containers: the commas and
+;            colons are the writer's business
+;   escape   quote, backslash, the named escapes, \u00XX for the other
+;            control characters; UTF-8 passes through
+;   integer  0, both i64 limits
+;   round    parse, write, compare: the canonical text comes back byte for
+;            byte, a decimal's trailing zero and an exponent included
+;   grow     a buffer that starts at 8 bytes, grown through the page
+; Expected: build escape integer round grow done
+
+package scaly 0.1.0
+package json 0.1.0
+
+use json.Value.JsonValue
+use json.Value.JsonParsed
+use json.Writer.JsonWriter
+
+procedure same(w: ref[JsonWriter], want: Slice[u8]) returns bool
+{
+    let got w.bytes()
+    if got.equals(want)
+        return true
+    print "  got  `String(got.data as pointer[const_char], got.length)`"
+    print "  want `String(want.data as pointer[const_char], want.length)`"
+    false
+}
+
+var ok true
+let host Page.allocate_page()
+let w JsonWriter.create(host, 256)
+
+w.begin_object()
+w.key("id")
+w.integer(7)
+w.key("name")
+w.text("Widget")
+w.key("tags")
+w.begin_array()
+w.text("a")
+w.text("b")
+w.end_array()
+w.key("empty")
+w.begin_object()
+w.end_object()
+w.key("none")
+w.begin_array()
+w.end_array()
+w.key("nested")
+w.begin_array()
+w.begin_object()
+w.key("x")
+w.boolean(true)
+w.end_object()
+w.begin_object()
+w.key("y")
+w.null_value()
+w.end_object()
+w.end_array()
+w.key("price")
+w.number("1.50")
+w.key("raw")
+w.raw("[1,2]")
+w.end_object()
+if same(w, "{\"id\":7,\"name\":\"Widget\",\"tags\":[\"a\",\"b\"],\"empty\":{},\"none\":[],\"nested\":[{\"x\":true},{\"y\":null}],\"price\":1.50,\"raw\":[1,2]}") = false
+    set ok: false
+if ok
+    Console.print "build "
+
+; the bytes Scaly has no escape for, appended by value
+var sb StringBuilder()
+sb.append("q\"b\\s/n\nr\rt\tb")
+sb.append(0x08 as char)
+sb.append("f")
+sb.append(0x0C as char)
+let first sb.to_string()
+var sb2 StringBuilder()
+sb2.append(0x01 as char)
+sb2.append(0x1F as char)
+sb2.append(0x7F as char)
+sb2.append(" é")
+let second sb2.to_string()
+w.clear()
+w.begin_array()
+w.text(first.as_slice())
+w.text(second.as_slice())
+w.end_array()
+var want StringBuilder()
+want.append("[\"q\\\"b\\\\s/n\\nr\\rt\\tb\\bf\\f\",\"\\u0001\\u001f")
+want.append(0x7F as char)
+want.append(" é\"]")
+let want_text want.to_string()
+if same(w, want_text.as_slice()) = false
+    set ok: false
+if ok
+    Console.print "escape "
+
+w.clear()
+w.begin_array()
+w.integer(0)
+w.integer(0 - 1)
+w.integer(9223372036854775807)
+w.integer((0 - 9223372036854775807) - 1)
+w.end_array()
+if same(w, "[0,-1,9223372036854775807,-9223372036854775808]") = false
+    set ok: false
+if ok
+    Console.print "integer "
+
+let canonical "{\"a\":[1,-2.50,3e+7,true,false,null],\"b\":{\"c\":\"\\u0001\\\"\\n\",\"d\":[]},\"e\":\"é\"}"
+let parsed JsonValue.parse(canonical.as_slice())
+w.clear()
+w.value(parsed.value)
+if parsed.ok() = false or same(w, canonical.as_slice()) = false
+    set ok: false
+if ok
+    Console.print "round "
+
+let small JsonWriter.create(host, 8)
+small.begin_array()
+var i: i64 0
+while i < 1000
+{
+    small.integer(i)
+    set i: i + 1
+}
+small.end_array()
+let back JsonValue.parse(small.bytes())
+if back.ok() = false or back.value.length() <> 1000 or back.value.item(999).as_i64() <> 999
+    set ok: false
+if small.to_string().length() <> 3891
+    set ok: false
+if ok
+    Console.print "grow "
+
+if ok
+    Console.print "done"

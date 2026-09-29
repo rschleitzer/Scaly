@@ -1,0 +1,16 @@
+; json — RFC 8259 JSON: a pull reader, a value tree built on it, and a
+; writer that appends into a growable byte buffer.
+;
+; ROADMAP-http.md, stage B: the language server's JSON-RPC traffic, the
+; HttpArena JSON endpoint and, later, FHIR resources. A number keeps its
+; SOURCE TEXT, so a FHIR decimal (`1.50`) goes out as it came in; the
+; conversions to i64 and f64 are accessors. The modules, in dependency order:
+
+package scaly 0.1.0
+
+define json
+{
+    module Reader
+    module Value
+    module Writer
+}

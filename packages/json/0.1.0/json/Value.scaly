@@ -1,0 +1,432 @@
+; The value tree, built from the reader's tokens. A number keeps its source
+; text: as_i64 answers only where the text is an integer in range, as_f64
+; goes through strtod, number_text is the text itself (a FHIR decimal keeps
+; its trailing zeros). Strings are decoded. An array's items and an object's
+; members are views over a buffer on the parser's caller page; the members
+; keep document order, and get() takes the first of a duplicated name.
+;
+; Every accessor answers the empty value of its kind for a value of another
+; kind (false, 0, the empty String, Null), so a chain like
+; msg.get("params").get("textDocument").get("uri").as_string() needs no test
+; between the steps.
+
+use json.Reader.JsonReader
+use json.Reader.JsonToken
+
+; strtod(3) — fixed prototype, errno not consulted.
+function strtod(s: pointer[const_char], endp: pointer[pointer[u8]]) returns f64 extern
+
+define JsonMember (key: String, value: JsonValue)
+
+; The views as records: a union's payload is a type NAME, not a generic
+; instance (the grammar has no `Slice[...]` in that position).
+define JsonArray (items: Slice[JsonValue])
+define JsonObject (members: Slice[JsonMember])
+
+; `Null,` with its comma: without it the line feed would be read as the
+; colon of a type annotation, making Null a variant OF TYPE Bool.
+define JsonValue union
+(
+    Null,
+    Bool: bool
+    Number: String
+    Text: String
+    Array: JsonArray
+    Object: JsonObject
+)
+{
+    ; Null as a value where a union is expected: a qualified unit variant
+    ; passes as a return, not yet as an argument or a component.
+    function null_value() returns JsonValue
+        JsonValue.Null
+
+    function is_null(this) returns bool
+    {
+        choose this
+            when n: Null
+                return true
+            else
+                return false
+    }
+
+    function is_bool(this) returns bool
+    {
+        choose this
+            when b: Bool
+                return true
+            else
+                return false
+    }
+
+    function is_number(this) returns bool
+    {
+        choose this
+            when n: Number
+                return true
+            else
+                return false
+    }
+
+    function is_text(this) returns bool
+    {
+        choose this
+            when t: Text
+                return true
+            else
+                return false
+    }
+
+    function is_array(this) returns bool
+    {
+        choose this
+            when a: Array
+                return true
+            else
+                return false
+    }
+
+    function is_object(this) returns bool
+    {
+        choose this
+            when o: Object
+                return true
+            else
+                return false
+    }
+
+    function as_bool(this) returns bool
+    {
+        choose this
+            when b: Bool
+                return b
+            else
+                return false
+    }
+
+    function as_string(this) returns String
+    {
+        choose this
+            when t: Text
+                return t
+            else
+                return String()
+    }
+
+    ; A number's source text, the empty String for anything else.
+    function number_text(this) returns String
+    {
+        choose this
+            when n: Number
+                return n
+            else
+                return String()
+    }
+
+    ; A number without fraction or exponent whose value fits an i64.
+    function is_integer(this) returns bool
+    {
+        choose this
+            when n: Number
+                return JsonValue.integer_fits(n.as_slice())
+            else
+                return false
+    }
+
+    ; The value of an integer number (is_integer), 0 for anything else.
+    function as_i64(this) returns i64
+    {
+        choose this
+            when n: Number
+            {
+                let text n.as_slice()
+                if JsonValue.integer_fits(text)
+                    return JsonValue.integer_value(text)
+                return 0
+            }
+            else
+                return 0
+    }
+
+    ; The nearest double to a number, 0 for anything else.
+    function as_f64(this) returns f64
+    {
+        choose this
+            when n: Number
+            {
+                ; strtod wants a terminated copy, and it is a local one: the
+                ; write census has no mask for strtod and counts every argument
+                ; it is handed as written
+                let text n.as_slice()
+                var buf Vector[u8](text.length + 1)
+                var i: size_t 0
+                while i < text.length
+                {
+                    buf.put(i, text[i])
+                    set i: i + 1
+                }
+                buf.put(text.length, 0)
+                return strtod(buf.data as pointer[const_char], null as pointer[pointer[u8]])
+            }
+            else
+                return 0.0
+    }
+
+    ; An array's item or an object's member count, 0 for anything else.
+    function length(this) returns size_t
+    {
+        choose this
+            when a: Array
+                return a.items.length
+            when o: Object
+                return o.members.length
+            else
+                return 0
+    }
+
+    ; An array's i-th item, Null past its end or for anything else.
+    function item(this, i: size_t) returns JsonValue
+    {
+        choose this
+            when a: Array
+            {
+                if i < a.items.length
+                    return a.items[i]
+                return JsonValue.Null
+            }
+            else
+                return JsonValue.Null
+    }
+
+    ; An object's member of that name, Null if it has none.
+    function get(this, key: Slice[u8]) returns JsonValue
+    {
+        choose this
+            when o: Object
+            {
+                var i: size_t 0
+                while i < o.members.length
+                {
+                    let m o.members[i]
+                    if m.key.as_slice().equals(key)
+                        return m.value
+                    set i: i + 1
+                }
+                return JsonValue.Null
+            }
+            else
+                return JsonValue.Null
+    }
+
+    function has(this, key: Slice[u8]) returns bool
+    {
+        choose this
+            when o: Object
+            {
+                var i: size_t 0
+                while i < o.members.length
+                {
+                    if o.members[i].key.as_slice().equals(key)
+                        return true
+                    set i: i + 1
+                }
+                return false
+            }
+            else
+                return false
+    }
+
+    ; An object's i-th member name / value, in document order.
+    function key_at(this, i: size_t) returns String
+    {
+        choose this
+            when o: Object
+            {
+                if i < o.members.length
+                    return o.members[i].key
+                return String()
+            }
+            else
+                return String()
+    }
+
+    function value_at(this, i: size_t) returns JsonValue
+    {
+        choose this
+            when o: Object
+            {
+                if i < o.members.length
+                    return o.members[i].value
+                return JsonValue.Null
+            }
+            else
+                return JsonValue.Null
+    }
+
+    ; ------------------------------------------------------------------
+    ; parsing
+
+    ; Parse a whole document. On a refused one the result carries the
+    ; reader's code and offset and a Null value.
+    procedure parse(source: Slice[u8]) returns JsonParsed
+    {
+        var r JsonReader.create(source)
+        let first r.next()
+        let v JsonValue.build(r, first)
+        if r.failed() = false
+            r.next()
+        if r.failed()
+            return JsonParsed(JsonValue.null_value(), r.error, r.error_at)
+        JsonParsed(v, JSON_OK, 0)
+    }
+
+    ; The value that begins with token; the rest of it is read from r.
+    procedure build(mutable r: ref[JsonReader], token: JsonToken) returns JsonValue
+    {
+        choose token
+            when bo: ObjectStart
+                return JsonValue.build_object(r)
+            when ba: ArrayStart
+                return JsonValue.build_array(r)
+            when t: StringValue
+                return JsonValue.Text(r.string())
+            when n: NumberValue
+                return JsonValue.Number(String(r.text().data as pointer[const_char], r.text().length))
+            when yes: TrueValue
+                return JsonValue.Bool(true)
+            when no: FalseValue
+                return JsonValue.Bool(false)
+            else
+                return JsonValue.Null
+    }
+
+    procedure build_object(mutable r: ref[JsonReader]) returns JsonValue
+    {
+        var members List[JsonMember]()
+        var count: size_t 0
+        repeat
+        {
+            let t r.next()
+            choose t
+                when k: MemberName
+                {
+                    let key r.string()
+                    let first r.next()
+                    let value JsonValue.build(r, first)
+                    members.add(JsonMember(key, value))
+                    set count: count + 1
+                }
+                else
+                    break
+        }
+        ; built on the caller's page, which the returned value carries on
+        var store Vector[JsonMember]#(count)
+        var it members.get_iterator()
+        var i: size_t 0
+        while let m it.next()
+        {
+            store.put(i, *m)
+            set i: i + 1
+        }
+        JsonValue.Object(JsonObject(store.as_slice()))
+    }
+
+    procedure build_array(mutable r: ref[JsonReader]) returns JsonValue
+    {
+        var items List[JsonValue]()
+        var count: size_t 0
+        repeat
+        {
+            let t r.next()
+            choose t
+                when e: ArrayEnd
+                    break
+                when i: Invalid
+                    break
+                when d: End
+                    break
+                else
+                {
+                    items.add(JsonValue.build(r, t))
+                    set count: count + 1
+                }
+        }
+        var store Vector[JsonValue]#(count)
+        var it items.get_iterator()
+        var i: size_t 0
+        while let v it.next()
+        {
+            store.put(i, *v)
+            set i: i + 1
+        }
+        JsonValue.Array(JsonArray(store.as_slice()))
+    }
+
+    ; ------------------------------------------------------------------
+    ; integers
+
+    ; text is an integer (no fraction, no exponent) within i64.
+    function integer_fits(text: Slice[u8]) returns bool
+    {
+        if text.length = 0
+            return false
+        var i: size_t 0
+        var limit: u64 0x7FFFFFFFFFFFFFFF
+        if text[0] = 0x2D
+        {
+            set i: 1
+            set limit: 0x8000000000000000
+        }
+        if i >= text.length
+            return false
+        var v: u64 0
+        while i < text.length
+        {
+            let c text[i]
+            if c < 0x30 or c > 0x39
+                return false
+            let d (c - 0x30) as u64
+            if v > (limit - d) / 10
+                return false
+            set v: (v * 10) + d
+            set i: i + 1
+        }
+        true
+    }
+
+    ; The value of text, which integer_fits.
+    function integer_value(text: Slice[u8]) returns i64
+    {
+        var i: size_t 0
+        var negative false
+        if text[0] = 0x2D
+        {
+            set i: 1
+            set negative: true
+        }
+        var v: u64 0
+        while i < text.length
+        {
+            set v: (v * 10) + ((text[i] - 0x30) as u64)
+            set i: i + 1
+        }
+        if negative
+            return ((0 as u64) - v) as i64
+        v as i64
+    }
+}
+
+; What JsonValue.parse answers: the value, or why and where the document
+; was refused.
+define JsonParsed
+(
+    value: JsonValue
+    error: int
+    offset: size_t
+)
+{
+    function ok(this) returns bool
+        error = JSON_OK
+
+    function message(this) returns Slice[char]
+        JsonReader.message(error)
+}
