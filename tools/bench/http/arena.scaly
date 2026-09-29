@@ -7,6 +7,11 @@
 ;   GET      /json/{count}?m=    the first count items of the dataset, each with
 ;                                total = price * quantity * m, gzip-compressed
 ;                                when Accept-Encoding allows it (stage B)
+;   GET      /async-db?min=&max=&limit=   the items priced between min and max
+;                                (default 10, 50), at most limit (1..50, default
+;                                50), from Postgres (DATABASE_URL; stage C)
+;   GET      /fortunes           the fortune table and one row added per
+;                                request, sorted by message, as an HTML table
 ;   GET      /shutdown           ends the server (only with SCALY_ARENA_TRAIN set,
 ;                                the PGO training run)
 ;
@@ -28,6 +33,7 @@ package json 0.1.0
 package compress 0.1.0
 package tls 0.1.0
 package https 0.1.0
+package pg 0.1.0
 
 use http.Request.Request
 use http.Response.Response
@@ -36,6 +42,8 @@ use json.Value.JsonValue
 use json.Value.JsonParsed
 use json.Writer.JsonWriter
 use tls.Tls.TlsContext
+use pg.Conn.PgConn
+use http.Buffer.ByteBuf
 
 ; One dataset entry, as the benchmark's validation reads it back.
 define Item
@@ -187,6 +195,194 @@ procedure load_dataset(host: ref[Page], path: String) returns bool mutable datas
     true
 }
 
+; The async-db statement, prepared once per pooled connection.
+function items_sql() returns Slice[u8]
+    "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3"
+
+; An integer query parameter, `otherwise` when it is absent.
+function query_int(req: ref[Request], name: Slice[u8], otherwise: i64) returns i64
+{
+    let text req.query_param(name)
+    if text.length = 0
+        return otherwise
+    parse_int_prefix(text)
+}
+
+; The items priced between min and max, at most limit of them, as the json
+; profile shapes them (without its total); the tags are the JSONB column's
+; text, already JSON. No database, or an error: an empty list.
+procedure async_db(req: ref[Request], mutable res: ref[Response]) mutable pg_pool
+{
+    let min query_int(req, "min", 10)
+    let max query_int(req, "max", 50)
+    var limit query_int(req, "limit", 50)
+    if limit < 1
+        set limit: 1
+    if limit > 50
+        set limit: 50
+    var w JsonWriter()
+    w.begin_object()
+    w.key("items")
+    w.begin_array()
+    var count: i64 0
+    let got acquire()
+    if got <> null
+    {
+        var c got as ref[PgConn]
+        if c.prepare("items", items_sql())
+        {
+            c.start("items")
+            c.param_int(min)
+            c.param_int(max)
+            c.param_int(limit)
+            if c.run()
+            {
+                while c.next_row()
+                {
+                    w.begin_object()
+                    w.key("id")
+                    w.integer(c.column_int(0))
+                    w.key("name")
+                    w.text(c.column(1))
+                    w.key("category")
+                    w.text(c.column(2))
+                    w.key("price")
+                    w.integer(c.column_int(3))
+                    w.key("quantity")
+                    w.integer(c.column_int(4))
+                    w.key("active")
+                    w.boolean(c.column_bool(5))
+                    w.key("tags")
+                    w.raw(c.column(6))
+                    w.key("rating")
+                    w.begin_object()
+                    w.key("score")
+                    w.integer(c.column_int(7))
+                    w.key("count")
+                    w.integer(c.column_int(8))
+                    w.end_object()
+                    w.end_object()
+                    set count: count + 1
+                }
+            }
+        }
+        release(c)
+    }
+    w.end_array()
+    w.key("count")
+    w.integer(count)
+    w.end_object()
+    res.send("application/json", w.bytes())
+}
+
+; Does message a sort before message b (bytes, which for UTF-8 is code
+; point order)?
+function sorts_before(a: Slice[u8], b: Slice[u8]) returns bool
+{
+    var i: size_t 0
+    while i < a.length and i < b.length
+    {
+        if a[i] <> b[i]
+            return a[i] < b[i]
+        set i: i + 1
+    }
+    a.length < b.length
+}
+
+; s into out with &, <, >, " and ' escaped for HTML.
+procedure append_escaped(mutable out: ref[ByteBuf], s: Slice[u8])
+{
+    var from: size_t 0
+    var i: size_t 0
+    while i < s.length
+    {
+        let c s[i]
+        if c = 38 or c = 60 or c = 62 or c = 34 or c = 39
+        {
+            out.append(s.subslice(from, i))
+            match c
+                case 38: out.append("&amp;")
+                case 60: out.append("&lt;")
+                case 62: out.append("&gt;")
+                case 34: out.append("&quot;")
+                case 39: out.append("&#39;")
+            set from: i + 1
+        }
+        set i: i + 1
+    }
+    out.append(s.slice_from(from))
+}
+
+; The fortune table plus one row added here, sorted by message, rendered
+; with every message escaped — the TechEmpower Fortunes page.
+procedure fortunes(req: ref[Request], mutable res: ref[Response]) mutable pg_pool
+{
+    let got acquire()
+    if got = null
+    {
+        res.set_status(500)
+        res.send_empty()
+        return
+    }
+    var c got as ref[PgConn]
+    var ok c.prepare("fortunes", "SELECT id, message FROM fortune")
+    if ok
+    {
+        c.start("fortunes")
+        set ok: c.run()
+    }
+    if ok = false
+    {
+        release(c)
+        res.set_status(500)
+        res.send_empty()
+        return
+    }
+    let host Page.allocate_page()
+    var ids Array[i64]^host()
+    var messages Array[Slice[u8]]^host()
+    while c.next_row()
+    {
+        ids.add(c.column_int(0))
+        messages.add(c.column(1))
+    }
+    ids.add(0)
+    messages.add("Additional fortune added at request time.")
+    ; insertion sort of an index: two hundred rows, mostly in id order
+    let n ids.length
+    var order Array[size_t]^host()
+    var i: size_t 0
+    while i < n
+    {
+        var j i
+        order.add(i)
+        while j > 0 and sorts_before(messages.at(i), messages.at(order.at(j - 1)))
+        {
+            order.put(j, order.at(j - 1))
+            set j: j - 1
+        }
+        order.put(j, i)
+        set i: i + 1
+    }
+    var out ByteBuf.create(host, 32768)
+    out.append("<!DOCTYPE html><html><head><title>Fortunes</title></head><body><table><tr><th>id</th><th>message</th></tr>")
+    set i: 0
+    while i < n
+    {
+        let k order.at(i)
+        out.append("<tr><td>")
+        out.append_int(ids.at(k))
+        out.append("</td><td>")
+        append_escaped(&out, messages.at(k))
+        out.append("</td></tr>")
+        set i: i + 1
+    }
+    out.append("</table></body></html>")
+    res.send("text/html; charset=utf-8", out.bytes())
+    release(c)
+    Page.release_page(host)
+}
+
 ; Ends the server — registered only in the PGO training run (SCALY_ARENA_TRAIN
 ; set, tools/bench/http/train.scaly), whose profile is written at a clean exit.
 procedure shutdown(req: ref[Request], mutable res: ref[Response])
@@ -216,6 +412,8 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
     app.get("/pipeline", &pipeline)
     app.get("/delay/{ms}", &delay)
     app.get("/json/{count}", &json_items)
+    app.get("/async-db", &async_db)
+    app.get("/fortunes", &fortunes)
     if getenv("SCALY_ARENA_TRAIN") <> null
         app.get("/shutdown", &shutdown)
     var cert String("/certs/server.crt")

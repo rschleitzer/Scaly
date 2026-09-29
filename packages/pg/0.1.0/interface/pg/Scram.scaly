@@ -1,0 +1,62 @@
+; SCRAM-SHA-256 (RFC 5802, RFC 7677) as the client side of Postgres'
+; SASL authentication — the default of postgres:18. The hashes come from
+; the tls package (libcrypto); base64 is written here.
+;
+;   client-first   n,,n=,r=<client nonce>        (the user is the startup's)
+;   server-first   r=<nonce>,s=<salt>,i=<iterations>
+;   client-final   c=biws,r=<nonce>,p=<proof>    (biws = base64 of "n,,")
+;   server-final   v=<server signature>
+;
+; SaltedPassword = PBKDF2(password, salt, i), ClientKey = HMAC(SaltedPassword,
+; "Client Key"), StoredKey = SHA-256(ClientKey), and with AuthMessage =
+; client-first-bare "," server-first "," client-final-without-proof the proof
+; is ClientKey XOR HMAC(StoredKey, AuthMessage); the server proves itself with
+; HMAC(HMAC(SaltedPassword, "Server Key"), AuthMessage).
+
+use pg.Buf.PgBuf
+
+define BASE64_ALPHABET: u8[] [65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 43, 47]
+
+; src in base64 (with padding), appended to out.
+procedure base64_encode(src: Slice[u8], mutable out: ref[PgBuf]) @ret_nonlocal true @deep true linked
+
+; The value of one base64 digit, 64 for padding, 65 for anything else.
+function base64_digit(c: u8) @ret_nonlocal true @deep true returns u64 linked
+
+; src decoded from base64, appended to out; false on a malformed input.
+procedure base64_decode(src: Slice[u8], mutable out: ref[PgBuf]) @ret_nonlocal true @deep true returns bool linked
+
+; The value of attribute `name` (one letter) in a SCRAM message: the bytes
+; after "<name>=" up to the next ',', empty when it is absent.
+function scram_attribute(msg: Slice[u8], name: u8) @ret_param_0 true @deep true returns Slice[u8] linked
+
+; The client's side of one SCRAM exchange: the messages it sends and the
+; server signature it expects, built on the connection's page.
+define ScramClient
+(
+    host: ref[Page]
+    var first_bare: PgBuf
+    var final_message: PgBuf
+    var server_signature: PgBuf
+)
+{
+    ; A fresh exchange with a random nonce; the client-first message is
+    ; "n,," followed by first_bare().
+    procedure start(host: ref[Page]) @page true @direct true @ret_explicit_0 true @deep true returns ScramClient linked
+
+    ; An exchange with a given user and nonce: the test vectors of RFC 7677
+    ; (Postgres takes the user from the startup and sends an empty one).
+    procedure with_nonce(host: ref[Page], user: Slice[u8], nonce: Slice[u8]) @page true @direct true @ret_explicit_0 true @deep true returns ScramClient linked
+
+    function first_bare_bytes(this) @ret_param_0 true @deep true returns Slice[u8] linked
+
+    ; From the server-first message, the client-final message (final_bytes)
+    ; and the signature the server must answer with; false when the server's
+    ; message is malformed or does not extend our nonce.
+    procedure answer(mutable this, password: Slice[u8], server_first: Slice[u8]) @ret_nonlocal true @deep true returns bool linked
+
+    function final_bytes(this) @ret_param_0 true @deep true returns Slice[u8] linked
+
+    ; Does the server-final message carry the signature answer() expects?
+    function verify(this, server_final: Slice[u8]) @ret_param_1 true @deep true returns bool linked
+}

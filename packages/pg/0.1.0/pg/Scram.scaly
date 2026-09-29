@@ -1,0 +1,216 @@
+; SCRAM-SHA-256 (RFC 5802, RFC 7677) as the client side of Postgres'
+; SASL authentication — the default of postgres:18. The hashes come from
+; the tls package (libcrypto); base64 is written here.
+;
+;   client-first   n,,n=,r=<client nonce>        (the user is the startup's)
+;   server-first   r=<nonce>,s=<salt>,i=<iterations>
+;   client-final   c=biws,r=<nonce>,p=<proof>    (biws = base64 of "n,,")
+;   server-final   v=<server signature>
+;
+; SaltedPassword = PBKDF2(password, salt, i), ClientKey = HMAC(SaltedPassword,
+; "Client Key"), StoredKey = SHA-256(ClientKey), and with AuthMessage =
+; client-first-bare "," server-first "," client-final-without-proof the proof
+; is ClientKey XOR HMAC(StoredKey, AuthMessage); the server proves itself with
+; HMAC(HMAC(SaltedPassword, "Server Key"), AuthMessage).
+
+use pg.Buf.PgBuf
+
+define BASE64_ALPHABET: u8[] [65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 43, 47]
+
+; src in base64 (with padding), appended to out.
+procedure base64_encode(src: Slice[u8], mutable out: ref[PgBuf])
+{
+    var i: size_t 0
+    while i + 3 <= src.length
+    {
+        let v ((src[i] as u64) << 16) | ((src[i + 1] as u64) << 8) | (src[i + 2] as u64)
+        out.append_byte(BASE64_ALPHABET[((v >> 18) & 63) as size_t])
+        out.append_byte(BASE64_ALPHABET[((v >> 12) & 63) as size_t])
+        out.append_byte(BASE64_ALPHABET[((v >> 6) & 63) as size_t])
+        out.append_byte(BASE64_ALPHABET[(v & 63) as size_t])
+        set i: i + 3
+    }
+    let rest src.length - i
+    if rest = 1
+    {
+        let v (src[i] as u64) << 16
+        out.append_byte(BASE64_ALPHABET[((v >> 18) & 63) as size_t])
+        out.append_byte(BASE64_ALPHABET[((v >> 12) & 63) as size_t])
+        out.append_byte(61)
+        out.append_byte(61)
+    }
+    if rest = 2
+    {
+        let v ((src[i] as u64) << 16) | ((src[i + 1] as u64) << 8)
+        out.append_byte(BASE64_ALPHABET[((v >> 18) & 63) as size_t])
+        out.append_byte(BASE64_ALPHABET[((v >> 12) & 63) as size_t])
+        out.append_byte(BASE64_ALPHABET[((v >> 6) & 63) as size_t])
+        out.append_byte(61)
+    }
+}
+
+; The value of one base64 digit, 64 for padding, 65 for anything else.
+function base64_digit(c: u8) returns u64
+{
+    if c >= 65 and c <= 90
+        return (c - 65) as u64
+    if c >= 97 and c <= 122
+        return ((c - 97) as u64) + 26
+    if c >= 48 and c <= 57
+        return ((c - 48) as u64) + 52
+    if c = 43
+        return 62
+    if c = 47
+        return 63
+    if c = 61
+        return 64
+    65
+}
+
+; src decoded from base64, appended to out; false on a malformed input.
+procedure base64_decode(src: Slice[u8], mutable out: ref[PgBuf]) returns bool
+{
+    if src.length % 4 <> 0
+        return false
+    var i: size_t 0
+    while i < src.length
+    {
+        let a base64_digit(src[i])
+        let b base64_digit(src[i + 1])
+        let c base64_digit(src[i + 2])
+        let d base64_digit(src[i + 3])
+        if a > 63 or b > 63 or c > 64 or d > 64
+            return false
+        out.append_byte((((a << 2) | (b >> 4)) & 255) as u8)
+        if c < 64
+        {
+            out.append_byte((((b << 4) | (c >> 2)) & 255) as u8)
+            if d < 64
+                out.append_byte((((c << 6) | d) & 255) as u8)
+        }
+        set i: i + 4
+    }
+    true
+}
+
+; The value of attribute `name` (one letter) in a SCRAM message: the bytes
+; after "<name>=" up to the next ',', empty when it is absent.
+function scram_attribute(msg: Slice[u8], name: u8) returns Slice[u8]
+{
+    var at: size_t 0
+    while at + 1 < msg.length
+    {
+        var end at
+        while end < msg.length and msg[end] <> 44
+            set end: end + 1
+        if msg[at] = name and msg[at + 1] = 61
+            return msg.subslice(at + 2, end)
+        set at: end + 1
+    }
+    msg.slice_to(0)
+}
+
+; The client's side of one SCRAM exchange: the messages it sends and the
+; server signature it expects, built on the connection's page.
+define ScramClient
+(
+    host: ref[Page]
+    var first_bare: PgBuf
+    var final_message: PgBuf
+    var server_signature: PgBuf
+)
+{
+    ; A fresh exchange with a random nonce; the client-first message is
+    ; "n,," followed by first_bare().
+    procedure start(host: ref[Page]) returns ScramClient
+    {
+        var raw u8[18]
+        let r Slice[u8](18, &raw[0])
+        random_bytes(r)
+        var nonce PgBuf.create(host, 32)
+        base64_encode(r, &nonce)
+        ScramClient.with_nonce(host, "", nonce.bytes())
+    }
+
+    ; An exchange with a given user and nonce: the test vectors of RFC 7677
+    ; (Postgres takes the user from the startup and sends an empty one).
+    procedure with_nonce(host: ref[Page], user: Slice[u8], nonce: Slice[u8]) returns ScramClient
+    {
+        var bare PgBuf.create(host, 64)
+        bare.append("n=")
+        bare.append(user)
+        bare.append(",r=")
+        bare.append(nonce)
+        ScramClient(host, bare, PgBuf.create(host, 128), PgBuf.create(host, 64))
+    }
+
+    function first_bare_bytes(this) returns Slice[u8]
+        first_bare.bytes()
+
+    ; From the server-first message, the client-final message (final_bytes)
+    ; and the signature the server must answer with; false when the server's
+    ; message is malformed or does not extend our nonce.
+    procedure answer(mutable this, password: Slice[u8], server_first: Slice[u8]) returns bool
+    {
+        let nonce scram_attribute(server_first, 114)
+        let salt64 scram_attribute(server_first, 115)
+        let iterations decimal_of(scram_attribute(server_first, 105))
+        let ours scram_attribute(first_bare.bytes(), 114)
+        if nonce.starts_with(ours) = false or iterations <= 0
+            return false
+        var salt PgBuf.create(host, 32)
+        if base64_decode(salt64, &salt) = false
+            return false
+        var salted_raw u8[32]
+        let salted Slice[u8](32, &salted_raw[0])
+        if pbkdf2_sha256(password, salt.bytes(), iterations as int, salted) = false
+            return false
+        var client_key_raw u8[32]
+        let client_key Slice[u8](32, &client_key_raw[0])
+        hmac_sha256(salted, "Client Key", client_key)
+        var stored_raw u8[32]
+        let stored Slice[u8](32, &stored_raw[0])
+        sha256(client_key, stored)
+
+        final_message.clear()
+        final_message.append("c=biws,r=")
+        final_message.append(nonce)
+        var auth PgBuf.create(host, 256)
+        auth.append(first_bare.bytes())
+        auth.append_byte(44)
+        auth.append(server_first)
+        auth.append_byte(44)
+        auth.append(final_message.bytes())
+
+        var signature_raw u8[32]
+        let signature Slice[u8](32, &signature_raw[0])
+        hmac_sha256(stored, auth.bytes(), signature)
+        var proof_raw u8[32]
+        let proof Slice[u8](32, &proof_raw[0])
+        var i: size_t 0
+        while i < 32
+        {
+            proof.put(i, client_key[i] xor signature[i])
+            set i: i + 1
+        }
+        final_message.append(",p=")
+        base64_encode(proof, &final_message)
+
+        var server_key_raw u8[32]
+        let server_key Slice[u8](32, &server_key_raw[0])
+        hmac_sha256(salted, "Server Key", server_key)
+        var expected_raw u8[32]
+        let expected Slice[u8](32, &expected_raw[0])
+        hmac_sha256(server_key, auth.bytes(), expected)
+        server_signature.clear()
+        base64_encode(expected, &server_signature)
+        true
+    }
+
+    function final_bytes(this) returns Slice[u8]
+        final_message.bytes()
+
+    ; Does the server-final message carry the signature answer() expects?
+    function verify(this, server_final: Slice[u8]) returns bool
+        scram_attribute(server_final, 118).equals(server_signature.bytes())
+}

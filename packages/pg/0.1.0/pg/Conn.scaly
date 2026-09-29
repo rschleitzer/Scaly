@@ -1,0 +1,389 @@
+; One connection to a Postgres server: the startup and authentication
+; (SCRAM-SHA-256, or a cleartext password when the server asks for one),
+; statements prepared once per connection, and queries through the extended
+; protocol — Bind with text parameters, Execute, Sync — whose rows are read
+; whole into the input buffer and walked in place:
+;
+;   if c.prepare("items", "SELECT … WHERE price BETWEEN $1 AND $2 LIMIT $3")
+;   c.start("items")  c.param_int(10)  c.param_int(50)  c.param_int(20)
+;   if c.run()
+;       while c.next_row()
+;           … c.column(0) … c.column_int(3) …
+;
+; A column is a view into the input buffer, valid until the next query.
+; Everything a connection holds lives on its own page, released by close.
+
+use pg.Buf.PgBuf
+use pg.Scram.ScramClient
+
+define PgConn
+(
+    host: ref[Page]
+    var tcp: TcpStream
+    var inb: PgBuf
+    var outb: PgBuf
+    var open: bool
+    ; the read position in inb while messages are taken off it
+    var rpos: size_t
+    ; the payload of the message next_message() answered last
+    var msg_start: size_t
+    var msg_length: size_t
+    ; row iteration over the buffered answer of the last run()
+    var walk: size_t
+    var row_start: size_t
+    ; the Bind message being built by start/param_*
+    var bind_at: size_t
+    var param_count_at: size_t
+    var param_count: i64
+    ; where the ErrorResponse of the last operation stands in inb (0: none)
+    var error_at: size_t
+    var error_length: size_t
+    ; the statements prepared on this connection
+    var prepared: Array[String]
+)
+{
+    ; Connect and authenticate; not is_open() when the server cannot be
+    ; reached or refuses. The connection lives on a page of its own.
+    procedure connect(mutable host_name: String, port: int, user: Slice[u8], password: Slice[u8], database: Slice[u8]) returns ref[PgConn]?
+    {
+        let page Page.allocate_page()
+        var tcp TcpStream.connect(host_name, port)
+        if tcp.is_open() = false
+        {
+            Page.release_page(page)
+            return null
+        }
+        tcp.set_nodelay(true)
+        let c &PgConn^page(page, tcp, PgBuf.create(page, 8192), PgBuf.create(page, 1024), true, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Array[String]^page())
+        if c.startup(user, password, database) = false
+        {
+            c.close()
+            return null
+        }
+        c
+    }
+
+    function is_open(this) returns bool
+        open
+
+    ; The server's message of the last failed operation (its 'M' field),
+    ; empty when there was none.
+    function error_message(this) returns Slice[u8]
+    {
+        if error_at = 0
+            return inb.bytes().slice_to(0)
+        let e inb.bytes().subslice(error_at, error_at + error_length)
+        var at: size_t 0
+        while at < e.length and e[at] <> 0
+        {
+            var end at + 1
+            while end < e.length and e[end] <> 0
+                set end: end + 1
+            if e[at] = 77
+                return e.subslice(at + 1, end)
+            set at: end + 1
+        }
+        e.slice_to(0)
+    }
+
+    procedure close(mutable this)
+    {
+        if open
+        {
+            outb.clear()
+            let at outb.begin(88)
+            outb.finish(at)
+            tcp.write(outb.bytes())
+        }
+        set open: false
+        tcp.close()
+        Page.release_page(host)
+    }
+
+    ; Send what outb holds; false (and closed) on an error.
+    procedure flush(mutable this) returns bool
+    {
+        if open = false
+            return false
+        if tcp.write(outb.bytes()) = false
+        {
+            set open: false
+            return false
+        }
+        outb.clear()
+        true
+    }
+
+    ; At least n bytes after rpos in inb, reading as needed.
+    procedure need(mutable this, n: size_t) returns bool
+    {
+        while inb.length - rpos < n
+        {
+            inb.reserve(n)
+            if inb.spare().length < 4096
+                inb.reserve(8192)
+            let got tcp.read(inb.spare())
+            if got <= 0
+            {
+                set open: false
+                return false
+            }
+            inb.advance(got as size_t)
+        }
+        true
+    }
+
+    ; The next message's type byte (0 when the stream ended); its payload is
+    ; inb[msg_start, msg_start + msg_length).
+    procedure next_message(mutable this) returns u8
+    {
+        if this.need(5) = false
+            return 0
+        let t inb.bytes()[rpos]
+        let len be_i32(inb.bytes(), rpos + 1)
+        if len < 4
+        {
+            set open: false
+            return 0
+        }
+        if this.need(1 + (len as size_t)) = false
+            return 0
+        set msg_start: rpos + 5
+        set msg_length: (len as size_t) - 4
+        set rpos: rpos + 1 + (len as size_t)
+        t
+    }
+
+    function payload(this) returns Slice[u8]
+        inb.bytes().subslice(msg_start, msg_start + msg_length)
+
+    ; Start a new exchange: nothing of the previous answer is kept.
+    procedure reset_input(mutable this)
+    {
+        inb.clear()
+        set rpos: 0
+        set error_at: 0
+        set error_length: 0
+    }
+
+    ; Read up to ReadyForQuery; false when an ErrorResponse came (kept for
+    ; error_message) or the stream ended.
+    procedure drain(mutable this) returns bool
+    {
+        var ok true
+        repeat
+        {
+            let t this.next_message()
+            if t = 0
+                return false
+            if t = 69
+            {
+                set ok: false
+                set error_at: msg_start
+                set error_length: msg_length
+            }
+            if t = 90
+                return ok
+        }
+    }
+
+    procedure startup(mutable this, user: Slice[u8], password: Slice[u8], database: Slice[u8]) returns bool
+    {
+        this.reset_input()
+        outb.clear()
+        outb.append_i32(0)
+        outb.append_i32(196608)
+        outb.append_cstr("user")
+        outb.append_cstr(user)
+        outb.append_cstr("database")
+        outb.append_cstr(database)
+        outb.append_byte(0)
+        outb.put_i32(0, outb.length as i64)
+        if this.flush() = false
+            return false
+        var scram ScramClient.start(host)
+        repeat
+        {
+            let t this.next_message()
+            if t = 0
+                return false
+            if t = 69
+            {
+                set error_at: msg_start
+                set error_length: msg_length
+                return false
+            }
+            if t = 90
+                return true
+            if t = 82
+            {
+                let p this.payload()
+                let code be_i32(p, 0)
+                if code = 3
+                {
+                    let at outb.begin(112)
+                    outb.append_cstr(password)
+                    outb.finish(at)
+                    if this.flush() = false
+                        return false
+                }
+                if code = 10
+                {
+                    let at outb.begin(112)
+                    outb.append_cstr("SCRAM-SHA-256")
+                    outb.append_i32((3 + scram.first_bare_bytes().length) as i64)
+                    outb.append("n,,")
+                    outb.append(scram.first_bare_bytes())
+                    outb.finish(at)
+                    if this.flush() = false
+                        return false
+                }
+                if code = 11
+                {
+                    if scram.answer(password, p.slice_from(4)) = false
+                        return false
+                    let at outb.begin(112)
+                    outb.append(scram.final_bytes())
+                    outb.finish(at)
+                    if this.flush() = false
+                        return false
+                }
+                if code = 12 and scram.verify(p.slice_from(4)) = false
+                    return false
+                if code <> 0 and code <> 3 and code <> 10 and code <> 11 and code <> 12
+                    return false
+            }
+        }
+    }
+
+    ; Prepare sql as the statement `name` unless this connection has; false
+    ; when the server refuses it.
+    procedure prepare(mutable this, name: Slice[u8], sql: Slice[u8]) returns bool
+    {
+        var i: size_t 0
+        while i < prepared.length
+        {
+            if prepared.at(i).as_slice().equals(name)
+                return true
+            set i: i + 1
+        }
+        this.reset_input()
+        outb.clear()
+        let at outb.begin(80)
+        outb.append_cstr(name)
+        outb.append_cstr(sql)
+        outb.append_i16(0)
+        outb.finish(at)
+        let sync outb.begin(83)
+        outb.finish(sync)
+        if this.flush() = false or this.drain() = false
+            return false
+        prepared.add(String^host(name.data as pointer[const_char], name.length))
+        true
+    }
+
+    ; Begin a query of the prepared statement `name`; the parameters follow
+    ; with param_text / param_int, then run.
+    procedure start(mutable this, name: Slice[u8])
+    {
+        outb.clear()
+        set bind_at: outb.begin(66)
+        outb.append_byte(0)
+        outb.append_cstr(name)
+        outb.append_i16(0)
+        set param_count_at: outb.length
+        outb.append_i16(0)
+        set param_count: 0
+    }
+
+    procedure param_text(mutable this, v: Slice[u8])
+    {
+        outb.append_i32(v.length as i64)
+        outb.append(v)
+        set param_count: param_count + 1
+    }
+
+    procedure param_int(mutable this, v: i64)
+    {
+        let at outb.length
+        outb.append_i32(0)
+        outb.append_decimal(v)
+        outb.put_i32(at, (outb.length - at - 4) as i64)
+        set param_count: param_count + 1
+    }
+
+    ; Send the query and read its whole answer; false on an error. The rows
+    ; are then walked with next_row.
+    procedure run(mutable this) returns bool
+    {
+        outb.data.put(param_count_at, ((param_count >> 8) & 255) as u8)
+        outb.data.put(param_count_at + 1, (param_count & 255) as u8)
+        outb.append_i16(0)
+        outb.finish(bind_at)
+        let ex outb.begin(69)
+        outb.append_byte(0)
+        outb.append_i32(0)
+        outb.finish(ex)
+        let sync outb.begin(83)
+        outb.finish(sync)
+        this.reset_input()
+        if this.flush() = false or this.drain() = false
+            return false
+        set walk: 0
+        true
+    }
+
+    ; Advance to the next DataRow of the last run(); false after the last.
+    procedure next_row(mutable this) returns bool
+    {
+        let b inb.bytes()
+        while walk + 5 <= b.length
+        {
+            let t b[walk]
+            let len be_i32(b, walk + 1) as size_t
+            let at walk + 5
+            set walk: walk + 1 + len
+            if t = 68
+            {
+                set row_start: at
+                return true
+            }
+            if t = 90
+                return false
+        }
+        false
+    }
+
+    ; Column i of the current row as text; empty for NULL.
+    function column(this, i: int) returns Slice[u8]
+    {
+        let b inb.bytes()
+        let n be_u16(b, row_start)
+        if (i as i64) >= n
+            return b.slice_to(0)
+        var at row_start + 2
+        var k 0
+        while k < i
+        {
+            let len be_i32(b, at)
+            set at: at + 4
+            if len > 0
+                set at: at + (len as size_t)
+            set k: k + 1
+        }
+        let len be_i32(b, at)
+        if len < 0
+            return b.slice_to(0)
+        b.subslice(at + 4, at + 4 + (len as size_t))
+    }
+
+    function column_int(this, i: int) returns i64
+        decimal_of(this.column(i))
+
+    ; A boolean column: Postgres' text form is "t" or "f".
+    function column_bool(this, i: int) returns bool
+    {
+        let c this.column(i)
+        c.length > 0 and c[0] = 116
+    }
+}

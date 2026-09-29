@@ -1,0 +1,51 @@
+; Connections pooled per scheduler thread. A request's task never leaves
+; the scheduler its connection was handed to, and every `mutable` global is
+; thread-local, so each thread keeps its own idle list with no lock: a task
+; takes a connection, runs its query (parking on the socket while the
+; scheduler runs other requests) and gives it back. A thread opens at most
+; max_connections / threads of them; a task that finds none idle and the
+; limit reached yields until one is given back.
+;
+; The server comes from DATABASE_URL (postgres://user:password@host:port/db)
+; and the bound from DATABASE_MAX_CONN, read once per thread.
+
+use pg.Conn.PgConn
+
+define PgConfig
+(
+    host: String
+    port: int
+    user: String
+    password: String
+    database: String
+)
+
+define PgPool
+@resident true @inplace true (
+    config: PgConfig
+    var idle: Array[ref[PgConn]]
+    var open_count: int
+    limit: int
+)
+
+; This thread's pool, made at its first acquire.
+mutable pg_pool: ref[PgPool]? linked
+
+; Parse postgres://user:password@host:port/database onto host; the port
+; defaults to 5432, a missing part reads empty.
+procedure parse_database_url(host: ref[Page], url: Slice[u8]) @page true @direct true @ret_explicit_0 true @deep true returns PgConfig linked
+
+; The environment variable name as bytes, empty when unset.
+procedure env_bytes(name: pointer[const_char]) @page true @direct true @ret_param_0 true @deep true returns Slice[u8] io linked
+
+procedure strlen(s: pointer[const_char]) returns size_t extern
+
+; This thread's pool, made from the environment on first use.
+procedure pool() @deep true returns ref[PgPool] io mutable pg_pool reads pg_pool linked
+
+; A connection of this thread's pool, null when the server cannot be
+; reached. Give it back with release.
+procedure acquire() @page true @direct true @deep true returns ref[PgConn]? io mutable pg_pool reads pg_pool linked
+
+; Give a connection back; one that broke is closed and its place freed.
+procedure release(mutable c: ref[PgConn]) @deep true io mutable pg_pool reads pg_pool linked

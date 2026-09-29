@@ -1,0 +1,150 @@
+; Connections pooled per scheduler thread. A request's task never leaves
+; the scheduler its connection was handed to, and every `mutable` global is
+; thread-local, so each thread keeps its own idle list with no lock: a task
+; takes a connection, runs its query (parking on the socket while the
+; scheduler runs other requests) and gives it back. A thread opens at most
+; max_connections / threads of them; a task that finds none idle and the
+; limit reached yields until one is given back.
+;
+; The server comes from DATABASE_URL (postgres://user:password@host:port/db)
+; and the bound from DATABASE_MAX_CONN, read once per thread.
+
+use pg.Conn.PgConn
+
+define PgConfig
+(
+    host: String
+    port: int
+    user: String
+    password: String
+    database: String
+)
+
+define PgPool
+(
+    config: PgConfig
+    var idle: Array[ref[PgConn]]
+    var open_count: int
+    limit: int
+)
+
+; This thread's pool, made at its first acquire.
+mutable pg_pool: ref[PgPool]? null
+
+; Parse postgres://user:password@host:port/database onto host; the port
+; defaults to 5432, a missing part reads empty.
+procedure parse_database_url(host: ref[Page], url: Slice[u8]) returns PgConfig
+{
+    var s url
+    var i: size_t 0
+    while i + 2 < s.length and (s[i] <> 58 or s[i + 1] <> 47 or s[i + 2] <> 47)
+        set i: i + 1
+    if i + 2 < s.length
+        set s: s.slice_from(i + 3)
+    var at: size_t 0
+    while at < s.length and s[at] <> 64
+        set at: at + 1
+    var userinfo s.slice_to(0)
+    if at < s.length
+    {
+        set userinfo: s.slice_to(at)
+        set s: s.slice_from(at + 1)
+    }
+    var colon: size_t 0
+    while colon < userinfo.length and userinfo[colon] <> 58
+        set colon: colon + 1
+    let user userinfo.slice_to(colon)
+    var password userinfo.slice_to(0)
+    if colon < userinfo.length
+        set password: userinfo.slice_from(colon + 1)
+    var slash: size_t 0
+    while slash < s.length and s[slash] <> 47
+        set slash: slash + 1
+    let hostport s.slice_to(slash)
+    var database s.slice_to(0)
+    if slash < s.length
+        set database: s.slice_from(slash + 1)
+    var pc: size_t 0
+    while pc < hostport.length and hostport[pc] <> 58
+        set pc: pc + 1
+    let host_name hostport.slice_to(pc)
+    var port 5432
+    if pc < hostport.length
+        set port: decimal_of(hostport.slice_from(pc + 1)) as int
+    PgConfig(
+        String^host(host_name.data as pointer[const_char], host_name.length),
+        port,
+        String^host(user.data as pointer[const_char], user.length),
+        String^host(password.data as pointer[const_char], password.length),
+        String^host(database.data as pointer[const_char], database.length)
+    )
+}
+
+; The environment variable name as bytes, empty when unset.
+procedure env_bytes(name: pointer[const_char]) returns Slice[u8]
+{
+    let v getenv(name)
+    if v = null
+        return Slice[u8](0, null)
+    Slice[u8](strlen(v), v as pointer[u8])
+}
+
+procedure strlen(s: pointer[const_char]) returns size_t extern
+
+; This thread's pool, made from the environment on first use.
+procedure pool() returns ref[PgPool] mutable pg_pool
+{
+    let existing pg_pool
+    if existing <> null
+        return existing as ref[PgPool]
+    let host Page.allocate_page()
+    let config parse_database_url(host, env_bytes("DATABASE_URL"))
+    var max decimal_of(env_bytes("DATABASE_MAX_CONN"))
+    if max <= 0
+        set max: 32
+    var per max / (TaskPool.ncpu() as i64)
+    if per < 1
+        set per: 1
+    let made &PgPool^host(config, Array[ref[PgConn]]^host(), 0, per as int)
+    set pg_pool: made
+    made
+}
+
+; A connection of this thread's pool, null when the server cannot be
+; reached. Give it back with release.
+procedure acquire() returns ref[PgConn]? mutable pg_pool
+{
+    let p pool()
+    repeat
+    {
+        if p.idle.length > 0
+        {
+            let c p.idle.at(p.idle.length - 1)
+            set p.idle.length: p.idle.length - 1
+            return c
+        }
+        if p.open_count < p.limit
+        {
+            set p.open_count: p.open_count + 1
+            var h String(p.config.host)
+            let c PgConn.connect(h, p.config.port, p.config.user.as_slice(), p.config.password.as_slice(), p.config.database.as_slice())
+            if c = null
+                set p.open_count: p.open_count - 1
+            return c
+        }
+        Scheduler.yield()
+    }
+}
+
+; Give a connection back; one that broke is closed and its place freed.
+procedure release(mutable c: ref[PgConn]) mutable pg_pool
+{
+    let p pool()
+    if c.is_open()
+    {
+        p.idle.add(c)
+        return
+    }
+    c.close()
+    set p.open_count: p.open_count - 1
+}

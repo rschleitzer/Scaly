@@ -1,0 +1,41 @@
+; The pg package's SCRAM-SHA-256 against the example of RFC 7677 section 3
+; (user "user", password "pencil"): the client-final message it builds and
+; the server-final message it accepts, and one it must refuse. No server.
+; Expected: client-final server-final refused
+
+package scaly 0.1.0
+package tls 0.1.0
+package pg 0.1.0
+
+use pg.Scram.ScramClient
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    let host Page.allocate_page()
+    var s ScramClient.with_nonce(host, "user", "rOprNGfwEbeRWgbNEkqO")
+    if s.answer("pencil", "r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,s=W22ZaJ0SNY7soEsUEjb6gQ==,i=4096") = false
+    {
+        print "answer refused"
+        return 1
+    }
+    let want: Slice[u8] "c=biws,r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,p=dHzbZapWIk4jUhN+Ute9ytag9zjfMHgsqmmiz7AndVQ="
+    if s.final_bytes().equals(want) = false
+    {
+        print "client-final wrong"
+        return 2
+    }
+    Console.print "client-final "
+    if s.verify("v=6rriTRBi23WpRR/wtup+mMhUZUn/dB5nLTJRsjl95G4=") = false
+    {
+        print "server-final not accepted"
+        return 3
+    }
+    Console.print "server-final "
+    if s.verify("v=6rriTRBi23WpRR/wtup+mMhUZUn/dB5nLTJRsjl95G5=")
+    {
+        print "a wrong signature accepted"
+        return 4
+    }
+    Console.print "refused"
+    0
+}

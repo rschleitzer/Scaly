@@ -1,0 +1,20 @@
+; pg — a Postgres client over the frontend/backend protocol version 3
+; (ROADMAP-http.md, stage C): the startup, SCRAM-SHA-256 authentication
+; with the tls package's hashes, prepared statements through the extended
+; query protocol with text parameters and text results, and a pool of
+; connections per scheduler thread. The modules, in dependency order: the
+; message buffer, SCRAM, the connection, the pool.
+;
+; A connection is a TcpStream like any other, so a query parks its task on
+; the runtime's evented I/O and the scheduler runs other requests meanwhile.
+
+package scaly 0.1.0
+package tls 0.1.0
+
+define pg
+{
+    module Buf
+    module Scram
+    module Conn
+    module Pool
+}

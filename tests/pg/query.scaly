@@ -1,0 +1,94 @@
+; The pg package against a live server (DATABASE_URL, HttpArena's seed: the
+; items and fortune tables): a pooled connection, a prepared statement run
+; three times with text parameters, an empty result, a second statement on
+; the same connection, and an error the connection survives.
+;   items     WHERE price BETWEEN 10 AND 50 LIMIT 5: five rows, each price
+;             in the range, tags a JSON array, active a boolean
+;   empty     BETWEEN 9999 AND 9999: no row
+;   fortunes  SELECT id, message FROM fortune: 200 rows, row 11 the script
+;   error     a statement on a missing table fails with the server's message,
+;             and the connection answers the next query
+; Expected: items empty fortunes error again
+
+package scaly 0.1.0
+package tls 0.1.0
+package pg 0.1.0
+
+use pg.Conn.PgConn
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutable pg_pool
+{
+    let got acquire()
+    if got = null
+    {
+        print "no connection"
+        return 1
+    }
+    var c got as ref[PgConn]
+    if c.prepare("items", "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3") = false
+    {
+        print "prepare: `String(c.error_message().data as pointer[const_char], c.error_message().length)`"
+        return 2
+    }
+    c.start("items")
+    c.param_int(10)
+    c.param_int(50)
+    c.param_int(5)
+    if c.run() = false
+        return 3
+    var rows 0
+    while c.next_row()
+    {
+        let price c.column_int(3)
+        let tags c.column(6)
+        if price < 10 or price > 50 or tags.length < 2 or tags[0] <> 91
+        {
+            print "row `rows`: price `price`"
+            return 4
+        }
+        set rows: rows + 1
+    }
+    if rows <> 5
+    {
+        print "items: `rows` rows"
+        return 5
+    }
+    Console.print "items "
+    c.start("items")
+    c.param_int(9999)
+    c.param_int(9999)
+    c.param_int(50)
+    if c.run() = false or c.next_row()
+        return 6
+    Console.print "empty "
+    if c.prepare("fortunes", "SELECT id, message FROM fortune") = false
+        return 7
+    c.start("fortunes")
+    if c.run() = false
+        return 8
+    var n 0
+    var script false
+    while c.next_row()
+    {
+        if c.column_int(0) = 11 and c.column(1).starts_with("<script>")
+            set script: true
+        set n: n + 1
+    }
+    if n <> 200 or script = false
+    {
+        print "fortunes: `n`"
+        return 9
+    }
+    Console.print "fortunes "
+    if c.prepare("missing", "SELECT x FROM no_such_table")
+        return 10
+    if c.error_message().length = 0
+        return 11
+    Console.print "error "
+    c.start("fortunes")
+    if c.run() = false or c.next_row() = false
+        return 12
+    Console.print "again"
+    release(c)
+    0
+}
