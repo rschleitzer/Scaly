@@ -8661,11 +8661,85 @@ define Emitter
                 let chain_ref op.member_access.unwrap()
                 let chain chain_ref
                 if chain.length > 0
+                {
+                    set value: load_extra_reference_levels(op.expr, value)
                     set value: emit_member_access_chain(value, chain, op.result_type)
+                }
 
             }
 
             value
+        }
+
+        ; A reference to a reference is a slot holding an address: the
+        ; element `Array[ref[Rec]].at(i)` answers (ref[ref[Rec]]), a
+        ; `ref[ref[Rec]?]` cell. A field read through one must load that
+        ; address first -- member access loaded the RECORD straight from the
+        ; slot, and `list.at(0).id` answered the element's address, rc 0
+        ; (2026-09-29, the http package's stream and cache lists;
+        ; ref_to_ref_member). One load per reference level beyond the first.
+        procedure load_extra_reference_levels(mutable this, expr: PlannedExpression, mutable value: LLVMValueRef) returns LLVMValueRef
+        {
+            if value = null
+                return value
+            var t: PlannedType Planner.make_void_type()
+            var known false
+            choose expr
+                when v: Variable
+                {
+                    set t: v.variable_type
+                    set known: true
+                }
+                when c: Call
+                {
+                    set t: c.result_type
+                    set known: true
+                }
+                else
+                    0
+            if known = false
+                return value
+            this.load_reference_levels_of(t, value)
+        }
+
+        ; The address a value of type t leads to after its reference levels
+        ; beyond the first are loaded (load_extra_reference_levels#).
+        procedure load_reference_levels_of(mutable this, type: PlannedType, mutable value: LLVMValueRef) returns LLVMValueRef
+        {
+            var t: PlannedType type
+            var current value
+            repeat
+            {
+                if t.name <> "ref" and t.name <> "pointer"
+                    break
+                if t.generics = null
+                    break
+                let gs (*t.generics)
+                if gs.length <> 1
+                    break
+                let inner_ptr gs.get 0
+                if inner_ptr = null
+                    break
+                var inner: PlannedType (*inner_ptr)
+                ; `ref[T]?` is Option[ref[T]], the same address in the slot
+                if is_npo_option(inner) and inner.generics <> null
+                {
+                    let ogs (*inner.generics)
+                    if ogs.length = 1
+                    {
+                        let o0 ogs.get 0
+                        if o0 <> null
+                            set inner: (*o0)
+                    }
+                }
+                if inner.name <> "ref" and inner.name <> "pointer"
+                    break
+                if LLVMGetTypeKind(LLVMTypeOf(current)) <> LLVMTypeKind.Pointer()
+                    break
+                set current: LLVMBuildLoad2(builder, LLVMPointerTypeInContext(context, 0), current, "ref.slot")
+                set t: inner
+            }
+            current
         }
 
         ; Emit member access chain (e.g., person.address.city)
@@ -11365,7 +11439,10 @@ define Emitter
                     if sret_element_ty = null
                         set sret_element_ty: get_or_create_struct_placeholder(call.result_type.name, call.result_type.mangled_name)
                 }
-                set sret_slot: acquire_temp(sret_element_ty, "sret.result")
+                if call_can_throw_sret = false
+                    set sret_slot: resident_sret_slot(sret_element_ty)
+                if sret_slot = null
+                    set sret_slot: acquire_temp(sret_element_ty, "sret.result")
             }
 
             ; Build arguments
@@ -11676,6 +11753,9 @@ define Emitter
                                                                             set current_ptr: LLVMBuildLoad2(builder, LLVMPointerTypeInContext(context, 0), current_ptr, "base.deref")
                                                                     }
                                                                 }
+                                                                ; a reference to a reference: the slot holds the address
+                                                                if v.name <> "this"
+                                                                    set current_ptr: this.load_reference_levels_of(v.variable_type, current_ptr)
                                                                 let in_place this.inplace_chain_ptr(chain, current_ptr, current_struct_ty)
                                                                 if in_place <> null
                                                                 {
@@ -14050,6 +14130,53 @@ define Emitter
         ; `Thing.Alpha^host(...)` carries its sigil on `union_type.life` and
         ; used to land on a stack `alloca` with the sigil dropped in silence —
         ; the same class as the 2026-08-29 tuple-path fix, one bahn over.
+        ; The sret slot of a call whose result allocates through its own
+        ; address AFTER construction (PlannedStructure.inplace: an Array or a
+        ; StringBuilder, or a record holding one by value) on the routine's
+        ; frame page; null for any other type, which keeps its stack slot --
+        ; a String or a Vector asks its own address only in its inits, which
+        ; ran in the callee, and stays a stack value. A binding of the
+        ; result names this slot, so on the stack `var h Holder.create(host)`
+        ; handed Array.add a stack address to take its page from -- SIGSEGV
+        ; at the first growth, older than the stack slots of record sets
+        ; (2026-09-29, the http package's HPACK header list;
+        ; resident_sret_result).
+        procedure resident_sret_slot(mutable this, mutable struct_type: LLVMTypeRef) returns LLVMValueRef
+        {
+            if LLVMGetTypeKind(struct_type) <> LLVMTypeKind.Struct()
+                return null
+            let name_c LLVMGetStructName(struct_type)
+            if name_c = null
+                return null
+            let ps find_planned_structure(String(name_c), String())
+            if ps = null or ps.inplace = false
+                return null
+            let page get_or_create_local_page()
+            if page = null
+                return null
+            var alloc_func LLVMGetNamedFunction(llvm_module, "_ZN4Page8allocateEmm")
+            if alloc_func = null
+            {
+                var decl_params Vector[LLVMTypeRef](3)
+                decl_params.put(0, LLVMPointerTypeInContext(context, 0))
+                decl_params.put(1, LLVMInt64TypeInContext context)
+                decl_params.put(2, LLVMInt64TypeInContext context)
+                let decl_ty LLVMFunctionType(LLVMPointerTypeInContext(context, 0), decl_params.data, 3, 0)
+                set alloc_func: LLVMAddFunction(llvm_module, "_ZN4Page8allocateEmm", decl_ty)
+                LLVMSetLinkage(alloc_func, LLVMLinkage.External())
+            }
+            var args Vector[LLVMValueRef](3)
+            args.put(0, page)
+            args.put(1, LLVMSizeOf(struct_type))
+            args.put(2, LLVMAlignOf(struct_type))
+            var params Vector[LLVMTypeRef](3)
+            params.put(0, LLVMPointerTypeInContext(context, 0))
+            params.put(1, LLVMInt64TypeInContext context)
+            params.put(2, LLVMInt64TypeInContext context)
+            let call_ty LLVMFunctionType(LLVMPointerTypeInContext(context, 0), params.data, 3, 0)
+            LLVMBuildCall2(builder, call_ty, alloc_func, args.data, 3, "sret.page")
+        }
+
         ; report_lost_resident_page#: exit 24 when a construction of a
         ; page-resident record (PlannedStructure.resident) is about to fall
         ; back to the stack because the page it names does not exist here.
@@ -21630,6 +21757,9 @@ define Emitter
                         }
                     }
                 }
+                ; a reference to a reference: the slot holds the address
+                if is_this = false
+                    set current_ptr: this.load_reference_levels_of(var_ty, current_ptr)
                 ; Inner generic = struct type for GEP.
                 if var_ty.generics <> null
                 {

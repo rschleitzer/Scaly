@@ -1,0 +1,37 @@
+; Regression (2026-09-29): a field read through a reference to a reference
+; -- the element Array[ref[Rec]].at(i) answers is ref[ref[Rec]], a slot
+; holding the record's address -- loaded the RECORD straight from the slot:
+; `r.id` answered the element's address and `.tag` 0, rc 0; handed on as an
+; argument (`box_n(r.box)`, the ADDRESS path) the field was read from the
+; slot as well. Found in the http package's HTTP/2 stream list and
+; static-file cache, whose lookups never matched.
+; Emitter.load_extra_reference_levels# / load_reference_levels_of#. (The
+; chained form `list.at(1).id` is refused, loudly: method not found.)
+
+define Box(n: int)
+define Rec(id: int  tag: int  box: ref[Box])
+
+procedure first_id(list: ref[Array[ref[Rec]]]) returns int
+{
+    let r list.at(0)
+    r.id
+}
+
+function box_n(b: ref[Box]) returns int
+    b.n
+
+let host Page.allocate_page()
+let box &Box^host(33)
+var list Array[ref[Rec]]()
+let a &Rec^host(41, 7, box)
+list.add(a)
+let b &Rec^host(5, 9, box)
+list.add(b)
+let direct list.at(1)
+var opt Array[ref[Rec]?]()
+opt.add(a)
+let cell opt.at(0)
+if first_id(&list) = 41 and direct.tag = 9 and direct.id = 5 and cell.tag = 7 and box_n(direct.box) = 33
+    print "PASS"
+else
+    print "FAIL"

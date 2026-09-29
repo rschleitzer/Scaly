@@ -4787,6 +4787,14 @@ define Planner
         ; suppress a diagnostic.
         function types_equal_unqualified(a: PlannedType, b: PlannedType) @ret_nonlocal true @deep true returns bool linked
 
+        ; A subscript's index read as its value when it is a reference to a
+        ; scalar: `block[at]` with `at: ref[size_t]` indexed by the ADDRESS
+        ; (a bounds trap on a Slice or an Array, pointer arithmetic with an
+        ; address on a pointer), because none of the declared-type positions
+        ; deref_ref_into_pointee# serves is a subscript's (2026-09-29, the
+        ; http package's HPACK decoder; ref_index_subscript).
+        procedure subscript_index_value(mutable this, mutable op: PlannedOperand) @page true @direct true @deep true returns PlannedOperand linked
+
         ; Peel ONE `pointer`/`ref` wrapper off `t` into `out`, answering
         ; whether there was one to peel.
         procedure type_strip_one_reference(t: PlannedType, mutable out: ref[PlannedType]) @ret_nonlocal true @deep true @deep_into_1_1 true returns bool linked

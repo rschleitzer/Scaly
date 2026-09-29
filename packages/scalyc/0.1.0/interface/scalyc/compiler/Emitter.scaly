@@ -1854,6 +1854,19 @@ define Emitter
         ; Emit a single operand
         procedure emit_operand(mutable this, mutable op: PlannedOperand) @direct true @deep true returns LLVMValueRef linked
 
+        ; A reference to a reference is a slot holding an address: the
+        ; element `Array[ref[Rec]].at(i)` answers (ref[ref[Rec]]), a
+        ; `ref[ref[Rec]?]` cell. A field read through one must load that
+        ; address first -- member access loaded the RECORD straight from the
+        ; slot, and `list.at(0).id` answered the element's address, rc 0
+        ; (2026-09-29, the http package's stream and cache lists;
+        ; ref_to_ref_member). One load per reference level beyond the first.
+        procedure load_extra_reference_levels(mutable this, expr: PlannedExpression, mutable value: LLVMValueRef) @direct true @deep true returns LLVMValueRef linked
+
+        ; The address a value of type t leads to after its reference levels
+        ; beyond the first are loaded (load_extra_reference_levels#).
+        procedure load_reference_levels_of(mutable this, type: PlannedType, mutable value: LLVMValueRef) @direct true @deep true returns LLVMValueRef linked
+
         ; Emit member access chain (e.g., person.address.city)
         procedure emit_member_access_chain(mutable this, mutable base_value: LLVMValueRef, mutable chain: Vector[PlannedMemberAccess], result_type: PlannedType) @direct true @deep true returns LLVMValueRef linked
 
@@ -2275,6 +2288,19 @@ define Emitter
         ; `Thing.Alpha^host(...)` carries its sigil on `union_type.life` and
         ; used to land on a stack `alloca` with the sigil dropped in silence —
         ; the same class as the 2026-08-29 tuple-path fix, one bahn over.
+        ; The sret slot of a call whose result allocates through its own
+        ; address AFTER construction (PlannedStructure.inplace: an Array or a
+        ; StringBuilder, or a record holding one by value) on the routine's
+        ; frame page; null for any other type, which keeps its stack slot --
+        ; a String or a Vector asks its own address only in its inits, which
+        ; ran in the callee, and stays a stack value. A binding of the
+        ; result names this slot, so on the stack `var h Holder.create(host)`
+        ; handed Array.add a stack address to take its page from -- SIGSEGV
+        ; at the first growth, older than the stack slots of record sets
+        ; (2026-09-29, the http package's HPACK header list;
+        ; resident_sret_result).
+        procedure resident_sret_slot(mutable this, mutable struct_type: LLVMTypeRef) @direct true @ret_caller true @deep true returns LLVMValueRef linked
+
         ; report_lost_resident_page#: exit 24 when a construction of a
         ; page-resident record (PlannedStructure.resident) is about to fall
         ; back to the stack because the page it names does not exist here.

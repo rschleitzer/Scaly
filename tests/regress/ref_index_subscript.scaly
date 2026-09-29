@@ -1,0 +1,23 @@
+; Regression (2026-09-29): a subscript whose index is a reference to a scalar
+; indexed by the ADDRESS: `a[i]` with `i: ref[size_t]` trapped out of bounds
+; on a Slice and an Array (index 6170783008, length 3), and on a pointer it
+; would have walked that many elements. Planner.subscript_index_value#.
+
+function pick(a: Slice[u8], i: ref[size_t]) returns u8
+    a[i]
+
+function pick_arr(a: Array[int], i: ref[size_t]) returns int
+    a[i]
+
+function pick_ptr(p: pointer[int], i: ref[size_t]) returns int
+    p[i]
+
+var arr Array[int]()
+arr.add(10)
+arr.add(20)
+var k: size_t 1
+let s: Slice[u8] "xyz"
+if pick(s, &k) = 121 and pick_arr(arr, &k) = 20 and pick_ptr(arr.get_buffer(), &k) = 20
+    print "PASS"
+else
+    print "FAIL"

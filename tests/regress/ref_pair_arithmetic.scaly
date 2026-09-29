@@ -1,0 +1,23 @@
+; Regression (2026-09-29): an arithmetic operator between two references to
+; a scalar read neither -- each side was loaded only against the OTHER
+; side's type, which was a reference too -- and `a.at(0) + a.at(1)` emitted
+; `add ptr %0, %1`: invalid IR that the in-process -o path built at rc 0,
+; printing 0 for 3 + 4. Planner.deref_scalar_ref_pair#. A comparison of two
+; references stays an identity test.
+
+function sum2(a: Array[int]) returns int
+    a.at(0) + a.at(1)
+
+function diff2(a: Array[int]) returns int
+    a.at(1) - a.at(0)
+
+function one_side(a: Array[int]) returns int
+    a.at(0) * 5
+
+var a Array[int]()
+a.add(3)
+a.add(4)
+if sum2(a) = 7 and diff2(a) = 1 and one_side(a) = 15
+    print "PASS"
+else
+    print "FAIL `sum2(a)` `diff2(a)` `one_side(a)`"

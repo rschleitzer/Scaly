@@ -637,6 +637,7 @@ define PlannedStructure
     alignment: size_t
     origin: ref[InstantiationInfo]?
     resident: bool                       ; derives its page from its own address (concept_needs_this_residency)
+    inplace: bool                        ; ... and does so AFTER construction: a member or a by-value field (Array, StringBuilder)
 )
 
 define PlannedUnion

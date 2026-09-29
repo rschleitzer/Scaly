@@ -12143,7 +12143,7 @@ define Planner
                                                                         let pel (*pel_ref)
                                                                         if pel.name <> "void"
                                                                         {
-                                                                            let pidx_op this.collapse_operand_sequence(row)
+                                                                            let pidx_op this.subscript_index_value(this.collapse_operand_sequence(row))
                                                                             let plus_ty PlannedType(sx_op.loc, String("+"), String(""), null, Lifetime.Unspecified(Unspecified()), null, String(""), null)
                                                                             var padd_arr Array[PlannedOperand]()
                                                                             padd_arr.add recv_op
@@ -12182,7 +12182,7 @@ define Planner
                                                                 ; a SIMD lane `v[i]` (ROADMAP-simd.md)
                                                                 if ptr_fused = false and Planner.is_simd_type_name(recv_op.result_type.name)
                                                                 {
-                                                                    let lidx_op this.collapse_operand_sequence(row)
+                                                                    let lidx_op this.subscript_index_value(this.collapse_operand_sequence(row))
                                                                     var lane_args Vector[PlannedOperand](2)
                                                                     lane_args.put(0, recv_op)
                                                                     lane_args.put(1, lidx_op)
@@ -12200,7 +12200,7 @@ define Planner
                                                                 if sm_ref <> null
                                                                 {
                                                                     let m (*sm_ref)
-                                                                    let idx_op this.collapse_operand_sequence(row)
+                                                                    let idx_op this.subscript_index_value(this.collapse_operand_sequence(row))
                                                                     this.ensure_type_layout(recv_op.result_type)
                                                                     this.ensure_type_layout(m.return_type)
                                                                     var sub_args Vector[PlannedOperand](2)
@@ -16564,6 +16564,23 @@ define Planner
                         if Planner.is_scalar_value_type_name(result.result_type.name)
                             if Planner.operand_derefs_to_pointee(result.result_type, rhs)
                                 set rhs: this.deref_ref_into_pointee(result.result_type, rhs)
+                        ; Both sides references to a scalar: each is its value.
+                        ; The two rules above read one side against the OTHER's
+                        ; type, a reference here, so neither was read and
+                        ; `a.at(0) + a.at(1)` emitted `add ptr %0, %1` --
+                        ; invalid IR the in-process -o path builds without a
+                        ; word, rc 0 and a wrong sum (2026-09-29, the http
+                        ; package's HPACK header list; ref_pair_arithmetic).
+                        if result.result_type.name = "ref" and rhs.result_type.name = "ref"
+                        {
+                            var lt: PlannedType result.result_type
+                            var rt: PlannedType rhs.result_type
+                            if Planner.type_strip_one_reference(result.result_type, &lt) and Planner.type_strip_one_reference(rhs.result_type, &rt) and Planner.is_scalar_value_type_name(lt.name) and Planner.is_scalar_value_type_name(rt.name)
+                            {
+                                set result: this.deref_ref_into_pointee(lt, result)
+                                set rhs: this.deref_ref_into_pointee(rt, rhs)
+                            }
+                        }
                     }
 
                     ; Integer literal beside an integer-typed operand in a
@@ -28045,6 +28062,22 @@ define Planner
                 set i: i + 1
             }
             true
+        }
+
+        ; A subscript's index read as its value when it is a reference to a
+        ; scalar: `block[at]` with `at: ref[size_t]` indexed by the ADDRESS
+        ; (a bounds trap on a Slice or an Array, pointer arithmetic with an
+        ; address on a pointer), because none of the declared-type positions
+        ; deref_ref_into_pointee# serves is a subscript's (2026-09-29, the
+        ; http package's HPACK decoder; ref_index_subscript).
+        procedure subscript_index_value(mutable this, mutable op: PlannedOperand) returns PlannedOperand
+        {
+            if op.result_type.name <> "ref"
+                return op
+            var inner: PlannedType op.result_type
+            if Planner.type_strip_one_reference(op.result_type, &inner) = false or Planner.is_scalar_value_type_name(inner.name) = false
+                return op
+            this.deref_ref_into_pointee(inner, op)
         }
 
         ; Peel ONE `pointer`/`ref` wrapper off `t` into `out`, answering
@@ -49316,7 +49349,8 @@ define Planner
                 total_size,
                 total_align,
                 null,
-                this.structure_is_resident(s, name)
+                this.structure_is_resident(s, name),
+                this.structure_inplace_residency(s, 0)
             )
             this.record_structure(result)
             result
@@ -49453,7 +49487,8 @@ define Planner
                 total_size,
                 total_align,
                 null,
-                this.structure_is_resident(s, name)
+                this.structure_is_resident(s, name),
+                this.structure_inplace_residency(s, 0)
             )
             this.record_structure(result)
             result

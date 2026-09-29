@@ -1,0 +1,33 @@
+; Regression (2026-09-29): a record holding an Array by value -- resident: it
+; must live on a page, because Array.add takes its page from its own
+; address -- returned BY VALUE from a factory landed in the caller's stack
+; sret slot, and the binding named that slot: the first growth of the Array
+; took a stack address for its page, SIGSEGV. Emitter.resident_sret_slot#
+; puts such a result on the frame page.
+
+define Holder(var items: Array[size_t])
+{
+    procedure create(host: ref[Page]) returns Holder
+        Holder(Array[size_t]^host())
+
+    procedure push(mutable this, v: size_t)
+        items.add(v)
+}
+
+procedure fill(mutable h: ref[Holder])
+{
+    var i: size_t 0
+    while i < 1000
+    {
+        h.push(i)
+        set i: i + 1
+    }
+}
+
+let host Page.allocate_page()
+var h Holder.create(host)
+fill(&h)
+if h.items.length = 1000 and h.items.at(999) = 999
+    print "PASS"
+else
+    print "FAIL"
