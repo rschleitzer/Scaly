@@ -30,6 +30,17 @@ define H2_MAX_FRAME: size_t 16777215
 define H2_DEFAULT_WINDOW: i64 65535
 define H2_OWN_WINDOW: i64 1048576
 define H2_CONN_WINDOW_BOOST: i64 16711680
+; What the connection's output buffer holds before it is written: past it
+; no more frames are taken from the input until the output went out, so
+; the buffer holds this plus one response. Without it the answers to a
+; whole read's worth of requests (h2load's 32 streams of static files, up to
+; 200 KB each) stood in it at once: 0.9-1.2 GiB for static-h2 at 512
+; connections (2026-09-29). Measured on that profile: 64 KiB 430-510 MiB at
+; 5-10 % less throughput (more, smaller writes), 256 KiB 520-710 MiB at the
+; unbudgeted throughput. Holding back DATA as pending responses instead --
+; each body copied onto a page of its own and freed when sent -- measured
+; 6 GiB and a quarter less: the copies churned the allocator.
+define H2_FLUSH_AT: size_t 262144
 
 ; The client connection preface (RFC 9113 3.4).
 function h2_preface() returns Slice[u8]
@@ -402,6 +413,11 @@ define H2Conn
         true
     }
 
+    ; Has the output reached its budget (frames_in then stops taking input)?
+    ; A method, so that the generic serve_h2 need not name the constant.
+    function over_budget(this) returns bool
+        frames.length >= H2_FLUSH_AT
+
     ; Send what waits for window, in arrival order, as far as it goes.
     procedure push_pending(mutable this)
     {
@@ -602,7 +618,7 @@ define H2Conn
             ; reference would hand over the array slot's address
             var job: ref[H2Job] jobs.at(i)
             let page job.page
-            let own_out &ByteBuf^page(page, allocate_slice[u8]^page(page, 4096), 0)
+            let own_out &ByteBuf^page(page, allocate_slice[u8]^page(page, 4096), 0, false)
             set job.outb: own_out
             set job.req: &Request^page(null, null, null, null, null, null, 1, true, null)
             set job.res: Response.create(page, own_out)
@@ -690,7 +706,7 @@ define H2Conn
     procedure frames_in(mutable this, input: Slice[u8], router: ref[Router], mutable req: ref[Request], mutable res: ref[Response], mutable outb: ref[ByteBuf]) returns size_t
     {
         var at: size_t 0
-        while closing = false and at + H2_FRAME_HEAD <= input.length
+        while closing = false and frames.length < H2_FLUSH_AT and at + H2_FRAME_HEAD <= input.length
         {
             let length be24(input, at)
             if length > H2_MAX_FRAME
@@ -889,12 +905,29 @@ procedure serve_h2[S](mutable c: ref[S], router: ref[Router], host: ref[Page], m
             inb.consume(24)
             set preface_done: true
         }
-        if preface_done
+        ; the frames that arrived, a round at a time while frames_in stops at
+        ; the output budget: each round's output is written before the next
+        ; round is made, without reading in between
+        var failed false
+        repeat
         {
-            let used h.frames_in(inb.bytes(), router, req, res, outb)
-            inb.consume(used)
-            h.run_jobs(router, req, res, outb)
+            if preface_done
+            {
+                let used h.frames_in(inb.bytes(), router, req, res, outb)
+                inb.consume(used)
+                h.run_jobs(router, req, res, outb)
+            }
+            if preface_done = false or h.over_budget() = false or h.closing
+                break
+            if c.write(h.frames.bytes()) = false
+            {
+                set failed: true
+                break
+            }
+            h.frames.clear()
         }
+        if failed
+            break
         if h.frames.length > 0
         {
             if c.write(h.frames.bytes()) = false

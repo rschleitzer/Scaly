@@ -70,7 +70,7 @@ procedure serve_websocket[S](mutable c: ref[S], handler: pointer[void], host: re
 {
     let ws &WebSocket^host(out, false)
     ; a fragmented message being assembled, and its opcode
-    let message &ByteBuf^host(host, allocate_slice[u8]^host(host, 256), 0)
+    let message &ByteBuf^host(host, allocate_slice[u8]^host(host, 256), 0, false)
     var message_opcode: u8 0
     var open true
     while open

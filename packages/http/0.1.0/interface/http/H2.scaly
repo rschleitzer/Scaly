@@ -30,6 +30,17 @@ define H2_MAX_FRAME: size_t 16777215
 define H2_DEFAULT_WINDOW: i64 65535
 define H2_OWN_WINDOW: i64 1048576
 define H2_CONN_WINDOW_BOOST: i64 16711680
+; What the connection's output buffer holds before it is written: past it
+; no more frames are taken from the input until the output went out, so
+; the buffer holds this plus one response. Without it the answers to a
+; whole read's worth of requests (h2load's 32 streams of static files, up to
+; 200 KB each) stood in it at once: 0.9-1.2 GiB for static-h2 at 512
+; connections (2026-09-29). Measured on that profile: 64 KiB 430-510 MiB at
+; 5-10 % less throughput (more, smaller writes), 256 KiB 520-710 MiB at the
+; unbudgeted throughput. Holding back DATA as pending responses instead --
+; each body copied onto a page of its own and freed when sent -- measured
+; 6 GiB and a quarter less: the copies churned the allocator.
+define H2_FLUSH_AT: size_t 262144
 
 ; The client connection preface (RFC 9113 3.4).
 function h2_preface() @ret_nonlocal true @deep true returns Slice[u8] linked
@@ -173,6 +184,10 @@ define H2Conn
     ; it is all out.
     procedure push_data(mutable this, mutable p: ref[H2Pending]) @ret_nonlocal true @deep true returns bool linked
 
+    ; Has the output reached its budget (frames_in then stops taking input)?
+    ; A method, so that the generic serve_h2 need not name the constant.
+    function over_budget(this) @ret_param_0 true @deep true returns bool linked
+
     ; Send what waits for window, in arrival order, as far as it goes.
     procedure push_pending(mutable this) @deep true linked
 
@@ -232,12 +247,29 @@ procedure serve_h2[S](mutable c: ref[S], router: ref[Router], host: ref[Page], m
             inb.consume(24)
             set preface_done: true
         }
-        if preface_done
+        ; the frames that arrived, a round at a time while frames_in stops at
+        ; the output budget: each round's output is written before the next
+        ; round is made, without reading in between
+        var failed false
+        repeat
         {
-            let used h.frames_in(inb.bytes(), router, req, res, outb)
-            inb.consume(used)
-            h.run_jobs(router, req, res, outb)
+            if preface_done
+            {
+                let used h.frames_in(inb.bytes(), router, req, res, outb)
+                inb.consume(used)
+                h.run_jobs(router, req, res, outb)
+            }
+            if preface_done = false or h.over_budget() = false or h.closing
+                break
+            if c.write(h.frames.bytes()) = false
+            {
+                set failed: true
+                break
+            }
+            h.frames.clear()
         }
+        if failed
+            break
         if h.frames.length > 0
         {
             if c.write(h.frames.bytes()) = false

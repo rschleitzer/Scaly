@@ -1,8 +1,11 @@
 ; A growable byte buffer on a page the owner names: a connection's input
-; and output. The PAGE owns the bytes (hence a Slice, never a Vector): a
-; growth takes a larger block on the same page and leaves the old one to
-; the page, so a connection that once carried a large body keeps the peak
-; until it ends, and the page dies with the connection.
+; and output. The PAGE owns the bytes (hence a Slice, never a Vector). A
+; small growth takes a larger block on the same page and leaves the old one
+; to it; past 1 KiB the buffer gets a page of its own (as Array's does) and
+; the one it replaces goes back at once -- before 2026-09-29 every
+; doubling stayed until the connection ended, and an HTTP/2 connection that
+; had framed a few static files held all its old blocks. `owned` says the
+; current block is such a page of its own.
 
 ; memmove(3) — the input buffer slides its unconsumed tail to the front.
 function memmove(dest: pointer[void], src: pointer[void], count: size_t) returns pointer[void] extern
@@ -12,6 +15,7 @@ define ByteBuf
     host: ref[Page]
     var data: Slice[u8]
     var length: size_t
+    var owned: bool
 )
 {
     procedure create(host: ref[Page], capacity: size_t) @page true @direct true @ret_explicit_0 true @deep true returns ByteBuf linked
@@ -29,8 +33,11 @@ define ByteBuf
     ; n more bytes are filled (a read wrote them into spare()).
     procedure advance(mutable this, n: size_t) @deep true linked
 
-    ; Make room for n more bytes: at least double on growth.
-    procedure reserve(mutable this, n: size_t) @deep true linked
+    ; Make room for n more bytes: at least double on growth. The test stays
+    ; small enough to inline into every append; the growth is out of line.
+    procedure reserve(mutable this, n: size_t) @ret_nonlocal true @deep true linked
+
+    procedure grow(mutable this, n: size_t) @ret_nonlocal true @deep true linked
 
     ; Drop the first n bytes, sliding the rest to the front.
     procedure consume(mutable this, n: size_t) @deep true linked

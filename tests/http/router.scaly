@@ -137,7 +137,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
     app.delete("/{type}/{id}", &update)
 
     var buf allocate_slice[u8]^host(host, 4096)
-    let out &ByteBuf^host(host, allocate_slice[u8]^host(host, 4096), 0)
+    let out &ByteBuf^host(host, allocate_slice[u8]^host(host, 4096), 0, false)
     let req &Request^host(null, null, null, null, null, null, 1, true, null)
     let res Response.create(host, out)
 

@@ -64,7 +64,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
         return 4
     Console.print "accepts "
 
-    let out &ByteBuf^host(host, allocate_slice[u8]^host(host, 4096), 0)
+    let out &ByteBuf^host(host, allocate_slice[u8]^host(host, 4096), 0, false)
     let res Response.create(host, out)
     res.reset(false)
     res.send_encoded("application/json", "gzip", "xyz")

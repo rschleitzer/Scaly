@@ -51,7 +51,7 @@ define Response
     {
         var head allocate_slice[u8]^host(host, HEAD_OK_LENGTH)
         init_head_ok(head)
-        let trailers &ByteBuf^host(host, allocate_slice[u8]^host(host, 64), 0)
+        let trailers &ByteBuf^host(host, allocate_slice[u8]^host(host, 64), 0, false)
         &Response^host(out, 200, false, false, false, head.subslice(HEAD_OK_DATE_AT, HEAD_OK_DATE_AT + DATE_LENGTH), 0 - 1, head, false, trailers, null)
     }
 
