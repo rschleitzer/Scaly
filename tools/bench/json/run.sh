@@ -59,7 +59,8 @@ if ${CXX:-clang++} -std=c++17 -O3 $NATIVE "${INC[@]+"${INC[@]}"}" tools/bench/js
      "${LIBS[@]+"${LIBS[@]}"}" -lsimdjson -lyyjson -o "$TMP/cppbench" 2> "$TMP/cpp.log"; then
   CPP="$TMP/cppbench"
 else
-  echo "run.sh: SKIP simdjson/yyjson (not installed: $(head -1 "$TMP/cpp.log"))"
+  echo "run.sh: SKIP simdjson/yyjson (the C++ side did not build):"
+  grep -E "error|fatal" "$TMP/cpp.log" | head -5
 fi
 
 # STAGES=1: the json package's parse taken apart as well (stages.scaly)
@@ -67,6 +68,13 @@ if [ "${STAGES:-0}" = 1 ]; then
   "$BIN" -S -mcpu=native -o "$TMP/stages.ll" tools/bench/json/stages.scaly
   LTO_OPT_FLAGS="-mtriple=$TRIPLE -mcpu=native" LTO_LLC_FLAGS="-mcpu=native" \
     tools/link-lto.sh "$TMP/stages" "$TMP/stages.ll" "$TMP/json.ll" "$TMP/rt.ll"
+fi
+
+# JSONBENCH_KEEP=<dir>: the binaries stay there for a profiler afterwards
+if [ -n "${JSONBENCH_KEEP:-}" ]; then
+  mkdir -p "$JSONBENCH_KEEP"
+  cp "$TMP/bench" "$JSONBENCH_KEEP/"
+  [ -x "$TMP/stages" ] && cp "$TMP/stages" "$JSONBENCH_KEEP/"
 fi
 
 for f in canada citm_catalog twitter fhir_bundle; do

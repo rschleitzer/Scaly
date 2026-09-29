@@ -46,4 +46,29 @@ jobs:
         env:
           CXX: clang++-20
           STAGES: 1
+          JSONBENCH_KEEP: ${{ runner.temp }}/keep
         run: tools/bench/json/run.sh
+
+      # Where the json package's time goes on this CPU: page faults and
+      # peak memory per stage (GNU time), then cycles, instructions and a
+      # sampled profile (perf, where the runner allows it).
+      - name: Profile
+        continue-on-error: true
+        run: |
+          K="$RUNNER_TEMP/keep"; D=/tmp/scaly-jsonbench
+          sudo apt-get install -y time linux-tools-common "linux-tools-$(uname -r)" > /dev/null 2>&1 || true
+          for f in citm_catalog twitter; do
+            for m in copy classify tokens parse; do
+              echo "== $f $m"
+              /usr/bin/time -v "$K/stages" "$D/$f.json" 20 $m 2>&1 | grep -E "MB/s|Minor|Maximum resident"
+            done
+          done
+          sudo sysctl -w kernel.perf_event_paranoid=1 > /dev/null 2>&1 || true
+          if command -v perf > /dev/null 2>&1; then
+            perf stat -e task-clock,page-faults,cycles,instructions "$K/stages" "$D/twitter.json" 20 classify 2>&1 | tail -12
+            perf stat -e task-clock,page-faults,cycles,instructions "$K/stages" "$D/twitter.json" 20 parse 2>&1 | tail -12
+            perf record -F 4000 -o "$RUNNER_TEMP/p.data" "$K/stages" "$D/twitter.json" 60 parse > /dev/null 2>&1
+            perf report -i "$RUNNER_TEMP/p.data" --stdio --no-children --sort symbol 2>/dev/null | grep -v '^#' | grep -v '^$' | head -30
+          else
+            echo "no perf on this runner"
+          fi
