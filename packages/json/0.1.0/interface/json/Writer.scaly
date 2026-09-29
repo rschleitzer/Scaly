@@ -19,6 +19,13 @@ use json.Value.JsonObject
 use json.Value.JsonNumber
 use json.Value.JsonString
 
+; A container the tree writer has open: its items (an array) or members (an
+; object, the other one empty), and the element it wrote last.
+; How much a tree write reserves at a time.
+define JSON_BLOCK: size_t 4096
+
+define JsonWriteFrame (items: Slice[JsonValue], members: Slice[JsonMember], at: size_t)
+
 define JsonWriter
 @resident true @inplace true (
     var buffer: Array[u8]
@@ -59,8 +66,14 @@ define JsonWriter
 
     procedure null_value(mutable this) @ret_nonlocal true @deep true linked
 
-    ; A whole tree.
-    procedure value(mutable this, v: JsonValue) @ret_nonlocal true @deep true linked
+    ; A whole tree, as one element of whatever is open. One loop over the
+    ; tree with the open containers on a stack (the tree writes its own
+    ; commas): a call per value and the separator state per value were half
+    ; of a write (the 2026-09-29 profile). The loop writes through a local
+    ; cursor into a block it reserved (Array.extend) -- one register compare
+    ; per byte, the length and capacity in memory touched once per block;
+    ; verbatim strings and numbers are copied inline, sixteen bytes a step.
+    procedure value(mutable this, v: JsonValue) @deep true linked
 
     ; Bytes that already are JSON, as a value (the caller vouches for them).
     procedure raw(mutable this, json: Slice[u8]) @ret_nonlocal true @deep true linked
@@ -69,12 +82,6 @@ define JsonWriter
 
     ; The comma before an element that is not its container's first.
     procedure separate(mutable this) @deep true linked
-
-    ; A string parse marked verbatim, with its quotes: sixteen bytes a step
-    ; and no look at them. The last step reads up to fifteen bytes past the
-    ; string, which the document copy's padding holds, and writes as far
-    ; past the quotes, which the buffer is extended by and cut back from.
-    procedure verbatim(mutable this, s: Slice[u8]) @deep true linked
 
     ; The string and its quotes written in place in one pass: the buffer is
     ; extended by the whole literal first, and sixteen bytes a step are

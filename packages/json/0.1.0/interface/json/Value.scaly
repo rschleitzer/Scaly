@@ -61,8 +61,9 @@ define JsonArena
 ; instance (the grammar has no `Slice[...]` in that position).
 define JsonArray (items: Slice[JsonValue])
 define JsonObject (members: Slice[JsonMember])
-; a number's text and a string's decoded bytes, views into the document copy
-define JsonNumber (text: Slice[u8])
+; a number's text and a string's decoded bytes, views into the document copy;
+; a number parse read is verbatim (as JsonString's below) without a test
+define JsonNumber (text: Slice[u8], verbatim: bool)
 ; verbatim: set by parse alone, for a string that had no escape -- its bytes
 ; need none on the way out (a raw quote, backslash or control character
 ; cannot be in them), and they lie in a document copy padded by JSON_PADDING.

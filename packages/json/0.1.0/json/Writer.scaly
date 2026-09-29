@@ -19,6 +19,13 @@ use json.Value.JsonObject
 use json.Value.JsonNumber
 use json.Value.JsonString
 
+; A container the tree writer has open: its items (an array) or members (an
+; object, the other one empty), and the element it wrote last.
+; How much a tree write reserves at a time.
+define JSON_BLOCK: size_t 4096
+
+define JsonWriteFrame (items: Slice[JsonValue], members: Slice[JsonMember], at: size_t)
+
 define JsonWriter
 (
     var buffer: Array[u8]
@@ -138,54 +145,267 @@ define JsonWriter
         this.append("null")
     }
 
-    ; A whole tree.
+    ; A whole tree, as one element of whatever is open. One loop over the
+    ; tree with the open containers on a stack (the tree writes its own
+    ; commas): a call per value and the separator state per value were half
+    ; of a write (the 2026-09-29 profile). The loop writes through a local
+    ; cursor into a block it reserved (Array.extend) -- one register compare
+    ; per byte, the length and capacity in memory touched once per block;
+    ; verbatim strings and numbers are copied inline, sixteen bytes a step.
     procedure value(mutable this, v: JsonValue)
     {
-        choose v
-            when n: Null
-                this.null_value()
-            when b: Bool
-                this.boolean(b)
-            when num: Number
-                this.number(num.text)
-            when t: Text
+        this.separate()
+        var open Array[JsonWriteFrame]()
+        ; the empty half of a frame (a plain `let`: a Slice constructed as an
+        ; argument would force a frame per container)
+        let no_items Slice[JsonValue](0, null)
+        let no_members Slice[JsonMember](0, null)
+        ; the block: buffer[base, base + block.length), written up to p
+        var base buffer.length
+        var block buffer.extend(JSON_BLOCK)
+        var p: size_t 0
+        var cur v
+        ; cur is a member's value whose name is still to be written
+        var named false
+        let no_key Slice[u8](0, null)
+        var name JsonMember(no_key, JsonValue.Null, false)
+        repeat
+        {
+            if named
             {
-                this.separate()
-                if t.verbatim
-                    this.verbatim(t.bytes)
+                let n name.key.length
+                if p + n + 19 > block.length
+                {
+                    set buffer.length: base + p
+                    set base: buffer.length
+                    set block: buffer.extend(n + 19 + JSON_BLOCK)
+                    set p: 0
+                }
+                if name.verbatim_key
+                {
+                    block.put(p, 0x22)
+                    let padded Slice[u8](n + 16, name.key.data)
+                    var i: size_t 0
+                    while i < n
+                    {
+                        u8x16.load(padded, i).store(block, p + 1 + i)
+                        set i: i + 16
+                    }
+                    block.put(p + 1 + n, 0x22)
+                    block.put(p + 2 + n, 0x3A)              ; ':'
+                    set p: p + n + 3
+                }
                 else
-                    this.quoted(t.bytes)
-            }
-            when a: Array
-            {
-                this.begin_array()
-                var i: size_t 0
-                while i < a.items.length
                 {
-                    this.value(a.items[i])
-                    set i: i + 1
+                    set buffer.length: base + p
+                    this.quoted(name.key)
+                    this.byte(0x3A)
+                    set base: buffer.length
+                    set block: buffer.extend(JSON_BLOCK)
+                    set p: 0
                 }
-                this.end_array()
+                set named: false
             }
-            when o: Object
+            ; room for the longest fixed piece: a closer, a comma and a
+            ; literal, or a name's colon
+            if p + 16 > block.length
             {
-                this.begin_object()
-                var i: size_t 0
-                while i < o.members.length
+                set buffer.length: base + p
+                set base: buffer.length
+                set block: buffer.extend(JSON_BLOCK)
+                set p: 0
+            }
+            ; write cur; a container that is not empty opens and cur becomes
+            ; its first element
+            var opened false
+            choose cur
+                when n: Null
                 {
-                    let m o.members[i]
-                    this.separate()
-                    if m.verbatim_key
-                        this.verbatim(m.key)
+                    block.put(p, 0x6E)
+                    block.put(p + 1, 0x75)
+                    block.put(p + 2, 0x6C)
+                    block.put(p + 3, 0x6C)
+                    set p: p + 4
+                }
+                when b: Bool
+                {
+                    if b
+                    {
+                        block.put(p, 0x74)
+                        block.put(p + 1, 0x72)
+                        block.put(p + 2, 0x75)
+                        block.put(p + 3, 0x65)
+                        set p: p + 4
+                    }
                     else
-                        this.quoted(m.key)
-                    this.byte(0x3A)                         ; ':'
-                    set after_key: true
-                    this.value(m.value)
-                    set i: i + 1
+                    {
+                        block.put(p, 0x66)
+                        block.put(p + 1, 0x61)
+                        block.put(p + 2, 0x6C)
+                        block.put(p + 3, 0x73)
+                        block.put(p + 4, 0x65)
+                        set p: p + 5
+                    }
                 }
-                this.end_object()
+                when num: Number
+                {
+                    let n num.text.length
+                    if p + n + 18 > block.length
+                    {
+                        set buffer.length: base + p
+                        set base: buffer.length
+                        set block: buffer.extend(n + 18 + JSON_BLOCK)
+                        set p: 0
+                    }
+                    if num.verbatim
+                    {
+                        let padded Slice[u8](n + 16, num.text.data)
+                        var i: size_t 0
+                        while i < n
+                        {
+                            u8x16.load(padded, i).store(block, p + i)
+                            set i: i + 16
+                        }
+                    }
+                    else
+                    {
+                        var i: size_t 0
+                        while i < n
+                        {
+                            block.put(p + i, num.text[i])
+                            set i: i + 1
+                        }
+                    }
+                    set p: p + n
+                }
+                when t: Text
+                {
+                    let n t.bytes.length
+                    if t.verbatim
+                    {
+                        if p + n + 18 > block.length
+                        {
+                            set buffer.length: base + p
+                            set base: buffer.length
+                            set block: buffer.extend(n + 18 + JSON_BLOCK)
+                            set p: 0
+                        }
+                        block.put(p, 0x22)
+                        let padded Slice[u8](n + 16, t.bytes.data)
+                        var i: size_t 0
+                        while i < n
+                        {
+                            u8x16.load(padded, i).store(block, p + 1 + i)
+                            set i: i + 16
+                        }
+                        block.put(p + 1 + n, 0x22)
+                        set p: p + n + 2
+                    }
+                    else
+                    {
+                        ; the escaping writer goes through the buffer itself
+                        set buffer.length: base + p
+                        this.quoted(t.bytes)
+                        set base: buffer.length
+                        set block: buffer.extend(JSON_BLOCK)
+                        set p: 0
+                    }
+                }
+                when a: Array
+                {
+                    if a.items.length = 0
+                    {
+                        block.put(p, 0x5B)
+                        block.put(p + 1, 0x5D)
+                        set p: p + 2
+                    }
+                    else
+                    {
+                        block.put(p, 0x5B)                  ; '['
+                        set p: p + 1
+                        open.add(JsonWriteFrame(a.items, no_members, 0))
+                        set cur: a.items[0]
+                        set opened: true
+                    }
+                }
+                when o: Object
+                {
+                    if o.members.length = 0
+                    {
+                        block.put(p, 0x7B)
+                        block.put(p + 1, 0x7D)
+                        set p: p + 2
+                    }
+                    else
+                    {
+                        block.put(p, 0x7B)                  ; '{'
+                        set p: p + 1
+                        open.add(JsonWriteFrame(no_items, o.members, 0))
+                        set name: o.members[0]
+                        set named: true
+                        set cur: o.members[0].value
+                        set opened: true
+                    }
+                }
+            if opened
+                continue
+            ; cur is written: the next element of the innermost open
+            ; container, or its closer (and so on outwards)
+            var next false
+            while next = false and open.length > 0
+            {
+                if p + 2 > block.length
+                {
+                    set buffer.length: base + p
+                    set base: buffer.length
+                    set block: buffer.extend(JSON_BLOCK)
+                    set p: 0
+                }
+                let top open.length - 1
+                let f open[top]
+                let at f.at + 1
+                if f.members.length > 0
+                {
+                    if at < f.members.length
+                    {
+                        block.put(p, 0x2C)                  ; ','
+                        set p: p + 1
+                        set name: f.members[at]
+                        set named: true
+                        set cur: f.members[at].value
+                        open.put(top, JsonWriteFrame(f.items, f.members, at))
+                        set next: true
+                    }
+                    else
+                    {
+                        block.put(p, 0x7D)                  ; '}'
+                        set p: p + 1
+                        set open.length: top
+                    }
+                }
+                else
+                {
+                    if at < f.items.length
+                    {
+                        block.put(p, 0x2C)                  ; ','
+                        set p: p + 1
+                        set cur: f.items[at]
+                        open.put(top, JsonWriteFrame(f.items, f.members, at))
+                        set next: true
+                    }
+                    else
+                    {
+                        block.put(p, 0x5D)                  ; ']'
+                        set p: p + 1
+                        set open.length: top
+                    }
+                }
             }
+            if next = false
+                break
+        }
+        set buffer.length: base + p
+        set first: false
     }
 
     ; Bytes that already are JSON, as a value (the caller vouches for them).
@@ -209,28 +429,6 @@ define JsonWriter
             set first: false
         else
             this.byte(0x2C)                                 ; ','
-    }
-
-    ; A string parse marked verbatim, with its quotes: sixteen bytes a step
-    ; and no look at them. The last step reads up to fifteen bytes past the
-    ; string, which the document copy's padding holds, and writes as far
-    ; past the quotes, which the buffer is extended by and cut back from.
-    procedure verbatim(mutable this, s: Slice[u8])
-    {
-        let n s.length
-        let start buffer.length
-        let out buffer.extend(n + 17)
-        out.put(0, 0x22)
-        ; the view with its padding (JSON_PADDING)
-        let padded Slice[u8](n + 16, s.data)
-        var i: size_t 0
-        while i < n
-        {
-            u8x16.load(padded, i).store(out, i + 1)
-            set i: i + 16
-        }
-        out.put(n + 1, 0x22)
-        set buffer.length: start + n + 2
     }
 
     ; The string and its quotes written in place in one pass: the buffer is

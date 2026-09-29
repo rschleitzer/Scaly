@@ -16,7 +16,8 @@
 ;   verbatim parsed strings written back unlooked-at, sixteen bytes a step:
 ;            every length 0 to 40 as the whole document (its last byte is
 ;            the document's, the step reads into the padding), in an array
-;            and as a member name -- byte for byte the source
+;            and as a member name, and a number of 1 to 40 digits alone and in
+;            an array -- byte for byte the source
 ; Expected: build escape integer round grow string blocks verbatim done
 
 package scaly 0.1.0
@@ -126,6 +127,46 @@ w.clear()
 w.value(parsed.value)
 if parsed.ok() = false or same(&w, canonical.as_slice()) = false
     set ok: false
+; nesting, empty containers at every position, scalar documents
+var shapes List[String]()
+shapes.add(String("[[],{},[{}],{\"a\":[]},{\"a\":{\"b\":[1,[2,[]]]}},[[[[]]]]]"))
+shapes.add(String("{\"x\":{},\"y\":[],\"z\":{\"w\":{\"v\":[{},[],null]}}}"))
+shapes.add(String("[]"))
+shapes.add(String("{}"))
+shapes.add(String("7"))
+shapes.add(String("\"s\""))
+shapes.add(String("[true]"))
+var shape_it shapes.get_iterator()
+while let shape shape_it.next()
+{
+    let sp JsonValue.parse(shape.as_slice())
+    w.clear()
+    w.value(sp.value)
+    if sp.ok() = false or same(&w, shape.as_slice()) = false
+    {
+        print "  round: `w.to_string()`"
+        set ok: false
+    }
+}
+; a tree as an element among others, and as a member's value
+let inner JsonValue.parse("{\"a\":[1,{}]}").value
+w.clear()
+w.begin_array()
+w.value(inner)
+w.integer(2)
+w.value(inner)
+w.end_array()
+if same(&w, "[{\"a\":[1,{}]},2,{\"a\":[1,{}]}]") = false
+    set ok: false
+w.clear()
+w.begin_object()
+w.key("k")
+w.value(inner)
+w.key("z")
+w.value(inner)
+w.end_object()
+if same(&w, "{\"k\":{\"a\":[1,{}]},\"z\":{\"a\":[1,{}]}}") = false
+    set ok: false
 if ok
     Console.print "round "
 
@@ -219,8 +260,17 @@ while n <= 40
         set j: j + 1
     }
     let b body.to_string()
+    ; n digits, none leading zero
+    var digits StringBuilder()
+    set j: 0
+    while j < n
+    {
+        digits.append((((0x31 + (j % 9)) as u8) as char))
+        set j: j + 1
+    }
+    let d digits.to_string()
     var k: size_t 0
-    while k < 3
+    while k < 5
     {
         var doc StringBuilder()
         if k = 0
@@ -229,6 +279,15 @@ while n <= 40
             doc.append("[\"`b`\",\"`b`\"]")
         if k = 2
             doc.append("{\"`b`\":\"`b`\"}")
+        if k = 3
+            doc.append(d)
+        if k = 4
+            doc.append("[`d`,`d`]")
+        if n = 0 and k >= 3
+        {
+            set k: k + 1
+            continue
+        }
         let source doc.to_string()
         let parsed JsonValue.parse(source.as_slice())
         var w JsonWriter()
