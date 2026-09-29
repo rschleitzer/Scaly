@@ -1,0 +1,99 @@
+name: bench-http
+
+# The Scaly entry for HttpArena against tokio, actix and zix on an x86_64
+# runner (ROADMAP-http.md): HttpArena's own benchmark-lite.sh, every
+# framework in Docker, the load generators too. The dev box is an arm64 Mac,
+# where the harness runs under Docker Desktop and zrk -- the load generator
+# of 8gbit -- does not run at all (x86-only). GitHub's runners are 4 shared
+# vCPUs: the numbers compare the frameworks WITHIN one run, they are not the
+# board's. HttpArena is pinned to the commit the entry was validated
+# against; the entries are built from it as the board builds them, the
+# Scaly image by tools/bench/httparena/build.sh (profile-guided, for the
+# runner's CPU).
+#
+# Manual only, like seed.yml: `gh workflow run bench-http`
+# (`-f frameworks="scaly tokio"` to run fewer).
+on:
+  workflow_dispatch:
+    inputs:
+      frameworks:
+        description: frameworks to run, space-separated
+        default: scaly tokio actix zix
+
+env:
+  HTTPARENA_COMMIT: 484dea6
+
+jobs:
+  bench:
+    name: x86_64-linux-gnu
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: The CPU
+        run: |
+          lscpu | grep -E 'Model name|^CPU\(s\)'
+          free -g | head -2
+
+      - name: HttpArena
+        run: |
+          git clone --filter=blob:none https://github.com/MDA2AV/HttpArena.git "$RUNNER_TEMP/ha"
+          git -C "$RUNNER_TEMP/ha" checkout -q "$HTTPARENA_COMMIT"
+          echo "HA=$RUNNER_TEMP/ha" >> "$GITHUB_ENV"
+
+      # The entry's directory: meta.json and a build.sh that builds the
+      # image from this checkout. benchmark-lite.sh refuses a meta.json that
+      # subscribes to a profile outside its subset, so every framework's
+      # list is cut to that subset here.
+      - name: Framework entries
+        run: |
+          mkdir -p "$HA/frameworks/scaly"
+          cp tools/bench/httparena/meta.json "$HA/frameworks/scaly/meta.json"
+          printf '#!/bin/bash\nHTTPARENA_DATA=%s/data exec %s/tools/bench/httparena/build.sh\n' "$HA" "$GITHUB_WORKSPACE" > "$HA/frameworks/scaly/build.sh"
+          chmod +x "$HA/frameworks/scaly/build.sh"
+          lite=$(sed -n '/^PROFILE_ORDER=(/,/^)/p' "$HA/scripts/benchmark-lite.sh" | tr -d '()' | sed 's/PROFILE_ORDER=//' | tr -s ' \n' ' ')
+          echo "lite profiles: $lite"
+          for fw in ${{ inputs.frameworks }}; do
+            python3 - "$HA/frameworks/$fw/meta.json" $lite <<'EOF'
+          import json, sys
+          path, known = sys.argv[1], set(sys.argv[2:])
+          m = json.load(open(path))
+          m["tests"] = [t for t in m["tests"] if t in known]
+          json.dump(m, open(path, "w"), indent=2)
+          print(path, m["tests"])
+          EOF
+          done
+
+      # benchmark-lite builds gcannon, h2load, h2load-h3 and wrk itself;
+      # zrk (8gbit) it only names
+      - name: zrk
+        run: docker build -q -t zrk:local -f "$HA/docker/zrk.Dockerfile" "$HA/docker"
+
+      - name: Benchmark
+        run: |
+          cd "$HA"
+          for fw in ${{ inputs.frameworks }}; do
+            echo "::group::$fw"
+            bash scripts/benchmark-lite.sh "$fw" 2>&1 | tee "$RUNNER_TEMP/lite_$fw.log" | grep -E '^=== |\[FAIL\]|\[warn\]'
+            echo "::endgroup::"
+          done
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "| framework | profile | best |"
+            echo "|---|---|---|"
+            for f in "$RUNNER_TEMP"/lite_*.log; do
+              [ -f "$f" ] || continue
+              awk '/^=== [^ ]+ \/ [^ ]+ \/ / { fw = $2; p = $4 }
+                   /^=== Best:/ { sub(/^=== Best: /, ""); sub(/ ===$/, ""); print "| " fw " | " p " | " $0 " |" }' "$f"
+            done
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bench-http-logs
+          path: ${{ runner.temp }}/lite_*.log
