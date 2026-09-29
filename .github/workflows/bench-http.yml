@@ -1,6 +1,6 @@
 name: bench-http
 
-# The Scaly entry for HttpArena against tokio, actix and zix on an x86_64
+# The Scaly entry for HttpArena against the board's leaders on an x86_64
 # runner (ROADMAP-http.md): HttpArena's own benchmark-lite.sh, every
 # framework in Docker, the load generators too. The dev box is an arm64 Mac,
 # where the harness runs under Docker Desktop and zrk -- the load generator
@@ -12,13 +12,18 @@ name: bench-http
 # runner's CPU).
 #
 # Manual only, like seed.yml: `gh workflow run bench-http`
-# (`-f frameworks="scaly tokio"` to run fewer).
+# (`-f frameworks="scaly tokio"` to run fewer). The others, by where they
+# stand on the board at the pinned commit: zix (first in baseline,
+# pipelined, json-comp, async-db), tokio (pipelined, limited-conn), actix
+# (the one framework covering json-comp, async-db and h2 at once), nginx
+# (second in baseline-h3, fourth in static-h3, with h2), cardigan (first in
+# unary-grpc, second in baseline-h2) and tokio-ws (second in echo-ws).
 on:
   workflow_dispatch:
     inputs:
       frameworks:
         description: frameworks to run, space-separated
-        default: scaly tokio actix zix
+        default: scaly zix tokio actix nginx cardigan tokio-ws
 
 env:
   HTTPARENA_COMMIT: 484dea6
