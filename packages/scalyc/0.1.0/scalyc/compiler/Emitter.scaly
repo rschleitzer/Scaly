@@ -307,6 +307,11 @@ define Emitter
         ; needed.
         var tail_loop_block: LLVMBasicBlockRef
         tail_loop_phis: ref[Array[LLVMValueRef]]?
+        ; The names of this function's variables an initializer has named so
+        ; far (emit_binding): a `let q r` binds q to r's current object, so a
+        ; `set r:` after it must not reuse storage q may still see
+        ; (emit_action, the record set)
+        record_aliased: ref[Array[String]]?
         ; Per by-value-struct parameter (null handle for the others): a DEDICATED
         ; entry alloca the back edge copies the next iteration's value into, plus a
         ; staging slot used only when one back edge copies MORE than one parameter
@@ -465,6 +470,7 @@ define Emitter
             set current_frame_parent: null
             set tail_loop_block: null
             set tail_loop_phis: Array[LLVMValueRef]^this()
+            set record_aliased: Array[String]^this()
             set tail_loop_shadows: Array[LLVMValueRef]^this()
             set tail_loop_stages: Array[LLVMValueRef]^this()
             set tail_loop_slot_types: Array[LLVMTypeRef]^this()
@@ -6899,6 +6905,7 @@ define Emitter
             set tail_loop_stages.length: 0
             set tail_loop_slot_types.length: 0
             set tail_loop_mangled: String()
+            set record_aliased.length: 0
 
             ; 4.4: the promotion classifier keys its foundation-containment
             ; rule on the owning source file.
@@ -20898,7 +20905,22 @@ define Emitter
                                         let val_ty LLVMTypeOf(value)
                                         if val_ty <> null
                                         {
-                                            if LLVMGetTypeKind(val_ty) = LLVMTypeKind.Struct()
+                                            ; A `set` of a record variable nothing has
+                                            ; aliased (record_aliased): its own stack slot
+                                            ; per set site, not a copy on the frame page
+                                            ; each time -- a record `var` set to a call's
+                                            ; result in a loop allocated per iteration
+                                            ; (the json parser's closing quote, 2026-09-29).
+                                            ; Aliased, the page copy stays: a `let q r`
+                                            ; holds the OLD object, and a slot this site
+                                            ; reuses could be that object on its next run.
+                                            if LLVMGetTypeKind(val_ty) = LLVMTypeKind.Struct() and this.record_aliased_has(variable.name) = false
+                                            {
+                                                let slot entry_alloca(val_ty, "set.slot")
+                                                copy_struct_value(slot, value, val_ty)
+                                                set store_val: slot
+                                            }
+                                            else if LLVMGetTypeKind(val_ty) = LLVMTypeKind.Struct()
                                             {
                                                 var copy_page current_region.local_page
                                                 if copy_page = null
@@ -21843,9 +21865,59 @@ define Emitter
             is_signed_type op0.result_type
         }
 
+        ; The variables an initializer names -- an operand, or an argument of
+        ; a call among its operands -- go on record_aliased: the binding may
+        ; hold their current object (a `let q r` of a record does).
+        procedure note_record_aliases(mutable this, ops: ref[Vector[PlannedOperand]])
+        {
+            var i: size_t 0
+            while i < ops.length
+            {
+                let op ops[i]
+                choose op.expr
+                    when v: Variable
+                        record_aliased.add(v.name)
+                    when c: Call
+                    {
+                        if c.args <> null
+                        {
+                            let args c.args as ref[Vector[PlannedOperand]]
+                            var k: size_t 0
+                            while k < args.length
+                            {
+                                let a args[k]
+                                choose a.expr
+                                    when av: Variable
+                                        record_aliased.add(av.name)
+                                    else
+                                        0
+                                set k: k + 1
+                            }
+                        }
+                    }
+                    else
+                        0
+                set i: i + 1
+            }
+        }
+
+        function record_aliased_has(this, name: String) returns bool
+        {
+            var i: size_t 0
+            while i < record_aliased.length
+            {
+                if record_aliased[i].equals(name)
+                    return true
+                set i: i + 1
+            }
+            false
+        }
+
         procedure emit_binding(mutable this, mutable binding: PlannedBinding) returns bool
         {
             var value: LLVMValueRef null
+            if binding.operation <> null
+                this.note_record_aliases(binding.operation as ref[Vector[PlannedOperand]])
 
             ; Route 3: the left binding of a fork-join pair arrives computed.
             if fj_preset <> null

@@ -134136,6 +134136,8 @@ if.end10:                                         ; preds = %if.then4
 define linkonce_odr void @_ZN8semantic12walk_operandEPN4scaly6memory4PageE14PlannedOperandmm(ptr noalias sret(%_Z13ResolveResult) %0, ptr %1, ptr %2, i64 %3, i64 %4) {
 entry:
   %tuple = alloca %_Z13ResolveResult, align 8
+  %set.slot35 = alloca { ptr }, align 8
+  %set.slot = alloca { ptr }, align 8
   %self_type = alloca ptr, align 8
   %sret.result12 = alloca { ptr }, align 8
   %sret.result10 = alloca %_Z13ResolveResult, align 8
@@ -134217,117 +134219,95 @@ if.end23:                                         ; preds = %if.end
   br i1 %call26, label %if.then27, label %if.end28
 
 if.then27:                                        ; preds = %if.end23
-  %frame.page = load ptr, ptr %1, align 8
-  %frame.has_page = icmp ne ptr %frame.page, null
-  br i1 %frame.has_page, label %frame.forced, label %frame.force
-
-if.end28:                                         ; preds = %frame.forced, %if.end23
-  %eq32 = icmp eq i64 %3, 3
-  br i1 %eq32, label %land.rhs, label %if.end31
-
-frame.force:                                      ; preds = %if.then27
-  %forced_page = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
-  br label %frame.forced
-
-frame.forced:                                     ; preds = %frame.force, %if.then27
-  %forced_page29 = phi ptr [ %frame.page, %if.then27 ], [ %forced_page, %frame.force ]
-  %set.heap = call ptr @_ZN4Page8allocateEmm(ptr %forced_page29, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } zeroinitializer, ptr %set.heap, align 1
-  store ptr %set.heap, ptr %self_type, align 1
+  store { ptr } zeroinitializer, ptr %set.slot, align 1
+  store ptr %set.slot, ptr %self_type, align 1
   br label %if.end28
 
-if.then30:                                        ; preds = %land.rhs
-  %frame.page36 = load ptr, ptr %1, align 8
-  %frame.has_page37 = icmp ne ptr %frame.page36, null
-  br i1 %frame.has_page37, label %frame.forced39, label %frame.force38
+if.end28:                                         ; preds = %if.then27, %if.end23
+  %eq31 = icmp eq i64 %3, 3
+  br i1 %eq31, label %land.rhs, label %if.end30
 
-if.end31:                                         ; preds = %frame.forced39, %land.rhs, %if.end28
-  %load.struct43 = load %_Z13ResolveResult, ptr %sret.result, align 8
-  %found44 = extractvalue %_Z13ResolveResult %load.struct43, 0
-  br i1 %found44, label %if.then45, label %if.end46
+if.then29:                                        ; preds = %land.rhs
+  store { ptr } zeroinitializer, ptr %set.slot35, align 1
+  store ptr %set.slot35, ptr %self_type, align 1
+  br label %if.end30
+
+if.end30:                                         ; preds = %if.then29, %land.rhs, %if.end28
+  %load.struct36 = load %_Z13ResolveResult, ptr %sret.result, align 8
+  %found37 = extractvalue %_Z13ResolveResult %load.struct36, 0
+  br i1 %found37, label %if.then38, label %if.end39
 
 land.rhs:                                         ; preds = %if.end28
-  %field.inplace33 = getelementptr inbounds nuw %_Z14PlannedOperand, ptr %2, i32 0, i32 2
-  %deref.recv = load ptr, ptr %field.inplace33, align 8
-  %call34 = call i1 @_ZN8semantic13ends_in_fieldE6OptionIR6VectorI19PlannedMemberAccessEE(ptr %deref.recv)
-  %eq35 = icmp eq i1 %call34, false
-  br i1 %eq35, label %if.then30, label %if.end31
+  %field.inplace32 = getelementptr inbounds nuw %_Z14PlannedOperand, ptr %2, i32 0, i32 2
+  %deref.recv = load ptr, ptr %field.inplace32, align 8
+  %call33 = call i1 @_ZN8semantic13ends_in_fieldE6OptionIR6VectorI19PlannedMemberAccessEE(ptr %deref.recv)
+  %eq34 = icmp eq i1 %call33, false
+  br i1 %eq34, label %if.then29, label %if.end30
 
-frame.force38:                                    ; preds = %if.then30
-  %forced_page40 = call ptr @_Z17scaly_force_frameP5Frame(ptr %1)
-  br label %frame.forced39
-
-frame.forced39:                                   ; preds = %frame.force38, %if.then30
-  %forced_page41 = phi ptr [ %frame.page36, %if.then30 ], [ %forced_page40, %frame.force38 ]
-  %set.heap42 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page41, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
-  store { ptr } zeroinitializer, ptr %set.heap42, align 1
-  store ptr %set.heap42, ptr %self_type, align 1
-  br label %if.end31
-
-if.then45:                                        ; preds = %if.end31
-  %load.struct47 = load %_Z13ResolveResult, ptr %sret.result, align 8
-  %width = extractvalue %_Z13ResolveResult %load.struct47, 1
+if.then38:                                        ; preds = %if.end30
+  %load.struct40 = load %_Z13ResolveResult, ptr %sret.result, align 8
+  %width = extractvalue %_Z13ResolveResult %load.struct40, 1
   %lt = icmp ult i64 %width, %sub
-  br i1 %lt, label %if.then48, label %if.end49
+  br i1 %lt, label %if.then41, label %if.end42
 
-if.end46:                                         ; preds = %if.end49, %if.end31
-  %load.struct51 = load %_Z13ResolveResult, ptr %sret.result, align 8
-  %found52 = extractvalue %_Z13ResolveResult %load.struct51, 0
-  br i1 %found52, label %if.then53, label %if.end54
+if.end39:                                         ; preds = %if.end42, %if.end30
+  %load.struct44 = load %_Z13ResolveResult, ptr %sret.result, align 8
+  %found45 = extractvalue %_Z13ResolveResult %load.struct44, 0
+  br i1 %found45, label %if.then46, label %if.end47
 
-if.then48:                                        ; preds = %if.then45
-  %sret.body50 = load %_Z13ResolveResult, ptr %sret.result, align 8
+if.then41:                                        ; preds = %if.then38
+  %sret.body43 = load %_Z13ResolveResult, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.end49:                                         ; preds = %if.then45
-  br label %if.end46
+if.end42:                                         ; preds = %if.then38
+  br label %if.end39
 
-if.then53:                                        ; preds = %if.end46
-  %field.inplace55 = getelementptr inbounds nuw %_Z14PlannedOperand, ptr %2, i32 0, i32 1
-  %call56 = call i1 @_ZN8semantic16is_operator_callE17PlannedExpression(ptr %field.inplace55)
-  br i1 %call56, label %if.then57, label %if.end58
+if.then46:                                        ; preds = %if.end39
+  %field.inplace48 = getelementptr inbounds nuw %_Z14PlannedOperand, ptr %2, i32 0, i32 1
+  %call49 = call i1 @_ZN8semantic16is_operator_callE17PlannedExpression(ptr %field.inplace48)
+  br i1 %call49, label %if.then50, label %if.end51
 
-if.end54:                                         ; preds = %if.end58, %if.end46
-  %self_type60 = load ptr, ptr %self_type, align 8
-  %call61 = call i64 @_ZN6String10get_lengthEv(ptr %self_type60)
-  %gt62 = icmp ugt i64 %call61, 0
-  br i1 %gt62, label %if.then63, label %if.end64
+if.end47:                                         ; preds = %if.end51, %if.end39
+  %self_type53 = load ptr, ptr %self_type, align 8
+  %call54 = call i64 @_ZN6String10get_lengthEv(ptr %self_type53)
+  %gt55 = icmp ugt i64 %call54, 0
+  br i1 %gt55, label %if.then56, label %if.end57
 
-if.then57:                                        ; preds = %if.then53
-  %sret.body59 = load %_Z13ResolveResult, ptr %sret.result, align 8
+if.then50:                                        ; preds = %if.then46
+  %sret.body52 = load %_Z13ResolveResult, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.end58:                                         ; preds = %if.then53
-  br label %if.end54
+if.end51:                                         ; preds = %if.then46
+  br label %if.end47
 
-if.then63:                                        ; preds = %if.end54
-  %self_type65 = load ptr, ptr %self_type, align 8
-  %tuple.field66 = getelementptr inbounds nuw %_Z13ResolveResult, ptr %tuple, i32 0, i32 0
-  store i1 true, ptr %tuple.field66, align 1
-  %tuple.field67 = getelementptr inbounds nuw %_Z13ResolveResult, ptr %tuple, i32 0, i32 1
-  store i64 %sub, ptr %tuple.field67, align 1
-  %field.load68 = load { ptr }, ptr %self_type65, align 8
-  %tuple.field69 = getelementptr inbounds nuw %_Z13ResolveResult, ptr %tuple, i32 0, i32 2
-  store { ptr } %field.load68, ptr %tuple.field69, align 1
-  %tuple.val70 = load %_Z13ResolveResult, ptr %tuple, align 8
+if.then56:                                        ; preds = %if.end47
+  %self_type58 = load ptr, ptr %self_type, align 8
+  %tuple.field59 = getelementptr inbounds nuw %_Z13ResolveResult, ptr %tuple, i32 0, i32 0
+  store i1 true, ptr %tuple.field59, align 1
+  %tuple.field60 = getelementptr inbounds nuw %_Z13ResolveResult, ptr %tuple, i32 0, i32 1
+  store i64 %sub, ptr %tuple.field60, align 1
+  %field.load61 = load { ptr }, ptr %self_type58, align 8
+  %tuple.field62 = getelementptr inbounds nuw %_Z13ResolveResult, ptr %tuple, i32 0, i32 2
+  store { ptr } %field.load61, ptr %tuple.field62, align 1
+  %tuple.val63 = load %_Z13ResolveResult, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.end64:                                         ; preds = %if.end54
-  %load.struct71 = load %_Z13ResolveResult, ptr %sret.result, align 8
-  %found72 = extractvalue %_Z13ResolveResult %load.struct71, 0
-  br i1 %found72, label %if.then73, label %if.end74
+if.end57:                                         ; preds = %if.end47
+  %load.struct64 = load %_Z13ResolveResult, ptr %sret.result, align 8
+  %found65 = extractvalue %_Z13ResolveResult %load.struct64, 0
+  br i1 %found65, label %if.then66, label %if.end67
 
-if.then73:                                        ; preds = %if.end64
-  %sret.body75 = load %_Z13ResolveResult, ptr %sret.result, align 8
+if.then66:                                        ; preds = %if.end57
+  %sret.body68 = load %_Z13ResolveResult, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   ret void
 
-if.end74:                                         ; preds = %if.end64
+if.end67:                                         ; preds = %if.end57
   call void @_ZN8semantic4noneEPN4scaly6memory4PageE(ptr noalias sret(%_Z13ResolveResult) %tuple, ptr null)
-  %sret.body76 = load %_Z13ResolveResult, ptr %tuple, align 8
+  %sret.body69 = load %_Z13ResolveResult, ptr %tuple, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z13ResolveResult, ptr null, i32 1) to i64), i1 false)
   ret void
 }

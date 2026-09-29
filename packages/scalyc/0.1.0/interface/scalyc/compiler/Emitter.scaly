@@ -270,6 +270,11 @@ define Emitter
         ; needed.
         var tail_loop_block: LLVMBasicBlockRef
         tail_loop_phis: ref[Array[LLVMValueRef]]?
+        ; The names of this function's variables an initializer has named so
+        ; far (emit_binding): a `let q r` binds q to r's current object, so a
+        ; `set r:` after it must not reuse storage q may still see
+        ; (emit_action, the record set)
+        record_aliased: ref[Array[String]]?
         ; Per by-value-struct parameter (null handle for the others): a DEDICATED
         ; entry alloca the back edge copies the next iteration's value into, plus a
         ; staging slot used only when one back edge copies MORE than one parameter
@@ -2663,6 +2668,13 @@ define Emitter
         ; (the first collapsed operand); signed when nothing says otherwise, as
         ; is_signed_type# decides.
         function binding_initializer_is_signed(this, binding: PlannedBinding) @deep true returns bool linked
+
+        ; The variables an initializer names -- an operand, or an argument of
+        ; a call among its operands -- go on record_aliased: the binding may
+        ; hold their current object (a `let q r` of a record does).
+        procedure note_record_aliases(mutable this, ops: ref[Vector[PlannedOperand]]) @deep true linked
+
+        function record_aliased_has(this, name: String) @ret_nonlocal true @deep true returns bool linked
 
         procedure emit_binding(mutable this, mutable binding: PlannedBinding) @ret_nonlocal true @deep true returns bool linked
 

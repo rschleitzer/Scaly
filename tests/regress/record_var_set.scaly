@@ -1,0 +1,51 @@
+; A record `var` set to a value that is no construction (a call's result):
+; the variable is rebound to a copy, never overwritten in place, because a
+; `let q r` holds r's CURRENT object and must keep it. Since 2026-09-29 the
+; copy of a variable no initializer has named goes to a stack slot of its
+; set site instead of the frame page (record_var_set_ir); a named one keeps
+; the page copy. Pinned: the alias keeps the old value, a loop's sets each
+; see their own, and an alias taken between two sets of one iteration keeps
+; the first while the site before it runs again next time.
+; Expected: PASS
+
+define R (a: int, b: size_t, c: bool)
+
+function f(x: int) returns R
+    R(x, 1, true)
+
+var ok true
+
+var r R(1, 2, false)
+let q r
+set r: f(7)
+if q.a <> 1 or r.a <> 7
+    set ok: false
+
+var s R(0, 0, false)
+var sum 0
+var i 0
+while i < 5
+{
+    set s: f(i)
+    set sum: sum + s.a
+    set i: i + 1
+}
+if sum <> 10 or s.a <> 4
+    set ok: false
+
+var t R(0, 0, false)
+var j 0
+while j < 3
+{
+    set t: f(j)
+    let old t
+    set t: f(j + 100)
+    if old.a <> j or t.a <> j + 100
+        set ok: false
+    set j: j + 1
+}
+
+if ok
+    print "PASS"
+else
+    print "FAIL"
