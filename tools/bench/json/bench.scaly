@@ -1,0 +1,134 @@
+; bench — the json package's parser and writer on one core, timed on the files
+; the Rust parsers read (tools/bench/json/run.sh, ROADMAP-http.md stage B).
+;
+;   bench <file> [iterations] [parse|write]   (default 20, both)
+;
+; A phase named alone runs only that phase (for a profiler).
+;
+; Five rounds of `iterations` parses, and five of as many writes of the tree
+; parsed once; the best round of each counts. A parse's tree lives on the
+; frame of parse_once and dies with it, as a request's would. Throughput is
+; the FILE's size per second in both directions, as serde-rs/json-benchmark
+; reports it.
+
+package scaly 0.1.0
+package json 0.1.0
+
+use json.Value.JsonValue
+use json.Value.JsonParsed
+use json.Writer.JsonWriter
+
+function scaly_eio_now_ns() returns i64 extern
+
+define ROUNDS: int 5
+
+; One parse; its tree dies with this frame. The answer keeps the work
+; observable: 0 for a refused document.
+procedure parse_once(source: Slice[u8]) returns size_t
+{
+    let parsed JsonValue.parse(source)
+    if parsed.ok() = false
+        return 0
+    parsed.value.length() + 1
+}
+
+; One write of v; the writer dies with this frame.
+procedure write_once(v: JsonValue) returns size_t
+{
+    var w JsonWriter()
+    w.value(v)
+    w.bytes().length
+}
+
+; MB/s for bytes processed iterations times in ns nanoseconds.
+function mb_per_s(bytes: size_t, iterations: int, ns: i64) returns i64
+{
+    if ns <= 0
+        return 0
+    ((bytes as i64) * (iterations as i64) * 1000) / ns
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    if argc < 2
+    {
+        print "usage: bench <file> [iterations]"
+        return 2
+    }
+    var iterations 20
+    if argc > 2
+        set iterations: parse_int(String(*(argv + 2)))
+    let path String(*(argv + 1))
+    var phase String("both")
+    if argc > 3
+        set phase: String(*(argv + 3))
+    let do_parse phase.equals("write") = false
+    let do_write phase.equals("parse") = false
+    let text File.read_to_string(path)
+    let source text.as_slice()
+    if source.length = 0
+    {
+        print "bench: cannot read `path`"
+        return 1
+    }
+
+    var best_parse: i64 0x7FFFFFFFFFFFFFFF
+    var sink: size_t 1
+    var r 0
+    while do_parse and r < ROUNDS
+    {
+        set sink: 0
+        let t0 scaly_eio_now_ns()
+        var i 0
+        while i < iterations
+        {
+            set sink: sink + parse_once(source)
+            set i: i + 1
+        }
+        let dt scaly_eio_now_ns() - t0
+        if dt < best_parse
+            set best_parse: dt
+        set r: r + 1
+    }
+    if sink = 0
+    {
+        print "bench: the json package refused `path`"
+        return 1
+    }
+
+    let parsed JsonValue.parse(source)
+    let tree parsed.value
+    var best_write: i64 0x7FFFFFFFFFFFFFFF
+    var written: size_t 0
+    set r: 0
+    while do_write and r < ROUNDS
+    {
+        let t0 scaly_eio_now_ns()
+        var i 0
+        while i < iterations
+        {
+            set written: written + write_once(tree)
+            set i: i + 1
+        }
+        let dt scaly_eio_now_ns() - t0
+        if dt < best_write
+            set best_write: dt
+        set r: r + 1
+    }
+
+    print "scaly-json parse `mb_per_s(source.length, iterations, best_parse)` MB/s  write `mb_per_s(source.length, iterations, best_write)` MB/s  (`written / ((iterations * ROUNDS) as size_t)` bytes out)"
+    0
+}
+
+; A decimal prefix of s, 0 for none.
+function parse_int(s: String) returns int
+{
+    var v 0
+    var i: size_t 0
+    while i < s.length and s.get(i) >= 0x30 and s.get(i) <= 0x39
+    {
+        set v: (v * 10) + ((s.get(i) - 0x30) as int)
+        set i: i + 1
+    }
+    v
+}
