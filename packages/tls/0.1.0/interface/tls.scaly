@@ -10,4 +10,5 @@ define tls
 {
     module Tls
     module Crypto
+    module Quic
 }

@@ -98,6 +98,103 @@ define H2Pending
     trailers: Slice[u8]
 )
 
+; Decoded request fields (HTTP/2 or HTTP/3) as HTTP/1.1 request text in
+; `text`: the request line from :method and :path, host from :authority,
+; the other fields but those HTTP/1.1 frames itself (a body's length is the
+; caller's); the blank line unless a body follows. False without :method
+; or :path.
+procedure fields_request_text(fields: ref[HeaderList], mutable text: ref[ByteBuf], has_body: bool) returns bool
+{
+    let method fields.get(":method")
+    let path fields.get(":path")
+    if method.length = 0 or path.length = 0
+        return false
+    text.clear()
+    text.append(method)
+    text.append_byte(32)
+    text.append(path)
+    text.append(" HTTP/1.1\r\n")
+    let authority fields.get(":authority")
+    if authority.length > 0
+    {
+        text.append("host: ")
+        text.append(authority)
+        text.append("\r\n")
+    }
+    var i: size_t 0
+    while i < fields.count()
+    {
+        let name fields.name(i)
+        if name.length > 0 and name[0] <> 58 and name.equals("host") = false and name.equals("content-length") = false and name.equals("transfer-encoding") = false and name.equals("connection") = false
+        {
+            text.append(name)
+            text.append(": ")
+            text.append(fields.value(i))
+            text.append("\r\n")
+        }
+        set i: i + 1
+    }
+    if has_body = false
+        text.append("\r\n")
+    true
+}
+
+; The status of HTTP/1.1 response text ("HTTP/1.1 200 ..."), 0 when there
+; is none.
+function response_status(response: Slice[u8]) returns i64
+{
+    if response.length <= 12
+        return 0
+    ((response[9] - 48) as i64) * 100 + ((response[10] - 48) as i64) * 10 + ((response[11] - 48) as i64)
+}
+
+; Where the field lines of HTTP/1.1 response text begin (after the status
+; line).
+function response_fields_at(response: Slice[u8]) returns size_t
+{
+    var at: size_t 0
+    while at + 1 < response.length and (response[at] <> 13 or response[at + 1] <> 10)
+        set at: at + 1
+    at + 2
+}
+
+; The next field line of HTTP/1.1 text at `at`: its name lowercased onto
+; `name` and its value's span; the position after the line, or 0 at the
+; blank line (or the end) that ends the fields.
+procedure next_field(lines: Slice[u8], at: size_t, mutable name: ref[ByteBuf], mutable value_start: ref[size_t], mutable value_end: ref[size_t]) returns size_t
+{
+    if at + 1 >= lines.length or (lines[at] = 13 and lines[at + 1] = 10)
+        return 0
+    var colon at
+    while colon < lines.length and lines[colon] <> 58
+        set colon: colon + 1
+    var eol colon
+    while eol + 1 < lines.length and (lines[eol] <> 13 or lines[eol + 1] <> 10)
+        set eol: eol + 1
+    if colon >= eol
+        return 0
+    name.clear()
+    var k at
+    while k < colon
+    {
+        var ch lines[k]
+        if ch >= 65 and ch <= 90
+            set ch: ch + 32
+        name.append_byte(ch)
+        set k: k + 1
+    }
+    var vstart colon + 1
+    while vstart < eol and lines[vstart] = 32
+        set vstart: vstart + 1
+    set value_start: vstart
+    set value_end: eol
+    eol + 2
+}
+
+; Is a field one HTTP/2 and HTTP/3 must not carry?
+function connection_specific(name: Slice[u8]) returns bool
+    name.equals("connection") or name.equals("keep-alive") or name.equals("transfer-encoding")
+
 ; A request waiting to be answered: its HTTP/1.1 text on a page of its own,
 ; and -- when it runs in a task of its own -- its own request, response and
 ; output buffer there.
@@ -276,40 +373,7 @@ define H2Conn
     ; The decoded header fields as HTTP/1.1 request text in `text`; false
     ; for a request without :method or :path.
     procedure request_text(mutable this, has_body: bool) returns bool
-    {
-        let method fields.get(":method")
-        let path fields.get(":path")
-        if method.length = 0 or path.length = 0
-            return false
-        text.clear()
-        text.append(method)
-        text.append_byte(32)
-        text.append(path)
-        text.append(" HTTP/1.1\r\n")
-        let authority fields.get(":authority")
-        if authority.length > 0
-        {
-            text.append("host: ")
-            text.append(authority)
-            text.append("\r\n")
-        }
-        var i: size_t 0
-        while i < fields.count()
-        {
-            let name fields.name(i)
-            if name.length > 0 and name[0] <> 58 and name.equals("host") = false and name.equals("content-length") = false and name.equals("transfer-encoding") = false and name.equals("connection") = false
-            {
-                text.append(name)
-                text.append(": ")
-                text.append(fields.value(i))
-                text.append("\r\n")
-            }
-            set i: i + 1
-        }
-        if has_body = false
-            text.append("\r\n")
-        true
-    }
+        fields_request_text(&fields, &text, has_body)
 
     ; Send as much of pending response p as the windows allow; true when
     ; it is all out.

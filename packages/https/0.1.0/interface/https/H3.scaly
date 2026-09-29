@@ -1,0 +1,89 @@
+; HTTP/3 (RFC 9114) over OpenSSL's QUIC server (tls.Quic), on a thread of
+; its own: one task drives the listener, its connections and their streams
+; in non-blocking mode. A request stream is answered once its FIN arrived:
+; its HEADERS (QPACK, static table only -- http.Qpack) and DATA frames become
+; HTTP/1.1 request text for the same router and handlers as every other
+; protocol, and the HTTP/1.1 response they write becomes a HEADERS and a
+; DATA frame, written as far as the stream takes them and continued on the
+; next round. Every connection gets a control stream with an empty
+; SETTINGS frame (a QPACK table capacity of 0 by default); the client's
+; control and QPACK streams are read and discarded.
+;
+; When a round finds nothing to do the task sleeps a millisecond, so the
+; timers inside OpenSSL's QUIC stack run and the poller serves the thread's
+; other tasks: the runtime has no park on a descriptor with a deadline yet.
+
+use http.Buffer.ByteBuf
+use http.Request.Request
+use http.Response.Response
+use http.Router.Router
+use http.Hpack.HeaderList
+use tls.Tls.SslRef
+use tls.Quic.QuicServer
+
+define H3Stream
+(
+    ssl: SslRef
+    page: ref[Page]
+    bidi: bool
+    var input: ByteBuf
+    var output: ByteBuf
+    var sent: size_t
+    ; the response is in `output` (or the stream was refused)
+    var answered: bool
+)
+
+define H3Conn
+@resident true @inplace true (
+    ssl: SslRef
+    page: ref[Page]
+    control: SslRef
+    var streams: Array[ref[H3Stream]]
+)
+
+; What the h3 thread serves: set once by start_h3, before the thread.
+shared atomic h3_router: u64 linked
+shared atomic h3_listener: u64 linked
+
+; A QUIC variable-length integer (RFC 9000 16) at s[at]: its value, and at
+; moved past it; -1 when the bytes end inside it.
+procedure quic_varint(s: Slice[u8], mutable at: ref[size_t]) @ret_param_0 true @deep true returns i64 linked
+
+procedure append_quic_varint(mutable out: ref[ByteBuf], v: u64) @ret_nonlocal true @deep true linked
+
+; The per-thread working state of the h3 task.
+define H3Work
+(
+    router: ref[Router]
+    var fields: HeaderList
+    var text: ByteBuf
+    var body: ByteBuf
+    var block: ByteBuf
+    var name: ByteBuf
+    req: ref[Request]
+    res: ref[Response]
+    outb: ref[ByteBuf]
+)
+
+; Answer a request stream whose FIN arrived: its response into s.output.
+procedure h3_answer(mutable w: ref[H3Work], mutable s: ref[H3Stream]) @deep true linked
+
+; Write what s has not sent yet, concluding the stream with the last of it;
+; true when all is out.
+procedure h3_flush(mutable s: ref[H3Stream]) @ret_nonlocal true @deep true returns bool io linked
+
+; Read what a stream has; true when its FIN (or an error) came. A request
+; stream keeps its bytes, the client's other streams are discarded.
+procedure h3_read(mutable s: ref[H3Stream], mutable progress: ref[bool]) @ret_nonlocal true @deep true returns bool io linked
+
+procedure h3_free_stream(mutable s: ref[H3Stream]) @ret_nonlocal true @deep true @deep_beyond_1 true io linked
+
+; The h3 task: every connection and stream, round after round.
+procedure h3_loop() @deep true io reads h3_listener linked
+
+procedure h3_thread(mutable arg: pointer[void]) @ret_nonlocal true @deep true returns pointer[void] io linked
+
+; Serve router over HTTP/3 on UDP `port` with the certificate and key, on
+; a thread of its own; false when the QUIC server cannot be made (no
+; OpenSSL with a QUIC server, 3.5 or later, or the port or files).
+procedure start_h3(router: ref[Router], port: int, cert_file: String, key_file: String) @ret_nonlocal true @deep true returns bool io reads h3_router linked

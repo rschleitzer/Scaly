@@ -29,6 +29,15 @@ if [ ${#SSL[@]} = 0 ] || ! command -v "$OPENSSL" > /dev/null 2>&1; then
   exit 0
 fi
 
+# The https package serves HTTP/3 through OpenSSL's QUIC server, which came
+# with 3.5: an older one (Ubuntu 24.04 ships 3.0) cannot link it.
+ver=$("$OPENSSL" version 2>/dev/null | awk '{print $2}')
+major=${ver%%.*}; rest=${ver#*.}; minor=${rest%%.*}
+if [ -z "$ver" ] || [ "${major:-0}" -lt 3 ] || { [ "$major" = 3 ] && [ "${minor:-0}" -lt 5 ]; }; then
+  echo "tls: SKIP (OpenSSL ${ver:-?}; the QUIC server of https needs 3.5 or later)"
+  exit 0
+fi
+
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 

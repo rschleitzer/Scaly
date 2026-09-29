@@ -17,6 +17,8 @@ define http
     module Response
     module HpackTables
     module Hpack
+    module QpackTables
+    module Qpack
     module Router
     module Static
     module WebSocket

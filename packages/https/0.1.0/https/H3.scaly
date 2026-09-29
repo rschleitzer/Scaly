@@ -1,0 +1,366 @@
+; HTTP/3 (RFC 9114) over OpenSSL's QUIC server (tls.Quic), on a thread of
+; its own: one task drives the listener, its connections and their streams
+; in non-blocking mode. A request stream is answered once its FIN arrived:
+; its HEADERS (QPACK, static table only -- http.Qpack) and DATA frames become
+; HTTP/1.1 request text for the same router and handlers as every other
+; protocol, and the HTTP/1.1 response they write becomes a HEADERS and a
+; DATA frame, written as far as the stream takes them and continued on the
+; next round. Every connection gets a control stream with an empty
+; SETTINGS frame (a QPACK table capacity of 0 by default); the client's
+; control and QPACK streams are read and discarded.
+;
+; When a round finds nothing to do the task sleeps a millisecond, so the
+; timers inside OpenSSL's QUIC stack run and the poller serves the thread's
+; other tasks: the runtime has no park on a descriptor with a deadline yet.
+
+use http.Buffer.ByteBuf
+use http.Request.Request
+use http.Response.Response
+use http.Router.Router
+use http.Hpack.HeaderList
+use tls.Tls.SslRef
+use tls.Quic.QuicServer
+
+define H3Stream
+(
+    ssl: SslRef
+    page: ref[Page]
+    bidi: bool
+    var input: ByteBuf
+    var output: ByteBuf
+    var sent: size_t
+    ; the response is in `output` (or the stream was refused)
+    var answered: bool
+)
+
+define H3Conn
+(
+    ssl: SslRef
+    page: ref[Page]
+    control: SslRef
+    var streams: Array[ref[H3Stream]]
+)
+
+; What the h3 thread serves: set once by start_h3, before the thread.
+shared atomic h3_router: u64 0
+shared atomic h3_listener: u64 0
+
+; A QUIC variable-length integer (RFC 9000 16) at s[at]: its value, and at
+; moved past it; -1 when the bytes end inside it.
+procedure quic_varint(s: Slice[u8], mutable at: ref[size_t]) returns i64
+{
+    var pos: size_t at
+    if pos >= s.length
+        return 0 - 1
+    let first s[pos]
+    let n (1 as size_t) << ((first >> 6) as size_t)
+    if pos + n > s.length
+        return 0 - 1
+    var v: u64 (first & 63) as u64
+    var k: size_t 1
+    while k < n
+    {
+        set v: (v << 8) | (s[pos + k] as u64)
+        set k: k + 1
+    }
+    set at: pos + n
+    v as i64
+}
+
+procedure append_quic_varint(mutable out: ref[ByteBuf], v: u64)
+{
+    if v < 64
+        out.append_byte(v as u8)
+    else if v < 16384
+    {
+        out.append_byte((64 | (v >> 8)) as u8)
+        out.append_byte((v & 255) as u8)
+    }
+    else if v < 1073741824
+    {
+        out.append_byte((128 | (v >> 24)) as u8)
+        out.append_byte(((v >> 16) & 255) as u8)
+        out.append_byte(((v >> 8) & 255) as u8)
+        out.append_byte((v & 255) as u8)
+    }
+    else
+    {
+        out.append_byte((192 | (v >> 56)) as u8)
+        var shift: u64 48
+        repeat
+        {
+            out.append_byte(((v >> shift) & 255) as u8)
+            if shift = 0
+                break
+            set shift: shift - 8
+        }
+    }
+}
+
+; The per-thread working state of the h3 task.
+define H3Work
+(
+    router: ref[Router]
+    var fields: HeaderList
+    var text: ByteBuf
+    var body: ByteBuf
+    var block: ByteBuf
+    var name: ByteBuf
+    req: ref[Request]
+    res: ref[Response]
+    outb: ref[ByteBuf]
+)
+
+; Answer a request stream whose FIN arrived: its response into s.output.
+procedure h3_answer(mutable w: ref[H3Work], mutable s: ref[H3Stream])
+{
+    set s.answered: true
+    let input s.input.bytes()
+    w.fields.clear()
+    w.body.clear()
+    var headers_seen false
+    var at: size_t 0
+    while at < input.length
+    {
+        let kind quic_varint(input, &at)
+        let length quic_varint(input, &at)
+        if kind < 0 or length < 0 or at + (length as size_t) > input.length
+            return
+        let payload input.subslice(at, at + (length as size_t))
+        set at: at + (length as size_t)
+        if kind = 1 and headers_seen = false
+        {
+            if qpack_decode(payload, &w.fields) = false
+                return
+            set headers_seen: true
+        }
+        if kind = 0
+            w.body.append(payload)
+    }
+    if headers_seen = false or fields_request_text(&w.fields, &w.text, w.body.length > 0) = false
+        return
+    if w.body.length > 0
+    {
+        w.text.append("content-length: ")
+        w.text.append_uint(w.body.length as u64)
+        w.text.append("\r\n\r\n")
+        w.text.append(w.body.bytes())
+    }
+    if parse_request(w.text.bytes(), w.req) <= 0
+        return
+    w.outb.clear()
+    dispatch(w.router, w.req, w.res)
+    let response w.outb.bytes()
+    ; the HEADERS frame: a field section of the status and the fields
+    w.block.clear()
+    qpack_begin(&w.block)
+    qpack_status(&w.block, response_status(response))
+    var pos response_fields_at(response)
+    var body_at response.length
+    repeat
+    {
+        var vs: size_t 0
+        var ve: size_t 0
+        let next next_field(response, pos, &w.name, &vs, &ve)
+        if next = 0
+        {
+            if pos + 1 < response.length
+                set body_at: pos + 2
+            break
+        }
+        if connection_specific(w.name.bytes()) = false
+            qpack_field(&w.block, w.name.bytes(), response.subslice(vs, ve))
+        set pos: next
+    }
+    append_quic_varint(&s.output, 1)
+    append_quic_varint(&s.output, w.block.length as u64)
+    s.output.append(w.block.bytes())
+    if body_at < response.length
+    {
+        let body response.slice_from(body_at)
+        append_quic_varint(&s.output, 0)
+        append_quic_varint(&s.output, body.length as u64)
+        s.output.append(body)
+    }
+    w.outb.clear()
+}
+
+; Write what s has not sent yet, concluding the stream with the last of it;
+; true when all is out.
+procedure h3_flush(mutable s: ref[H3Stream]) returns bool
+{
+    let out s.output.bytes()
+    while s.sent < out.length
+    {
+        var written: size_t 0
+        let rest out.slice_from(s.sent)
+        if SSL_write_ex2(s.ssl, rest.data as pointer[void], rest.length, SSL_WRITE_FLAG_CONCLUDE, &written) <> 1
+            return false
+        set s.sent: s.sent + written
+    }
+    if out.length = 0
+        SSL_stream_conclude(s.ssl, 0)
+    true
+}
+
+; Read what a stream has; true when its FIN (or an error) came. A request
+; stream keeps its bytes, the client's other streams are discarded.
+procedure h3_read(mutable s: ref[H3Stream], mutable progress: ref[bool]) returns bool
+{
+    var scratch u8[4096]
+    repeat
+    {
+        var got: size_t 0
+        var r: i32 0
+        if s.bidi
+        {
+            s.input.reserve(4096)
+            let spare s.input.spare()
+            set r: SSL_read_ex(s.ssl, spare.data as pointer[void], spare.length, &got)
+            if r = 1
+                s.input.advance(got)
+        }
+        else
+            set r: SSL_read_ex(s.ssl, &scratch[0] as pointer[void], 4096, &got)
+        if r = 1
+        {
+            set progress: true
+            continue
+        }
+        let e SSL_get_error(s.ssl, r)
+        if e = SSL_ERROR_WANT_READ
+            return false
+        return true
+    }
+}
+
+procedure h3_free_stream(mutable s: ref[H3Stream])
+{
+    SSL_free(s.ssl)
+    Page.release_page(s.page)
+}
+
+; The h3 task: every connection and stream, round after round.
+procedure h3_loop()
+{
+    var listener (scaly_atomic_load_u64(&h3_listener) as size_t) as SslRef
+    let router (scaly_atomic_load_u64(&h3_router) as size_t) as ref[Router]
+    let host Page.allocate_page()
+    let outb &ByteBuf^host(host, allocate_slice[u8]^host(host, 16384), 0)
+    let w &H3Work^host(router, HeaderList.create(host), ByteBuf.create(host, 1024), ByteBuf.create(host, 1024), ByteBuf.create(host, 1024), ByteBuf.create(host, 64), &Request^host(null, null, null, null, null, null, 1, true, null), Response.create(host, outb), outb)
+    let conns &Array[ref[H3Conn]]^host()
+    ; the control stream's opening: type 0 (control), SETTINGS with nothing
+    var settings u8[3]
+    let preamble Slice[u8](3, &settings[0])
+    preamble.put(0, 0)
+    preamble.put(1, 4)
+    preamble.put(2, 0)
+    repeat
+    {
+        var progress false
+        SSL_handle_events(listener)
+        repeat
+        {
+            var c SSL_accept_connection(listener, SSL_ACCEPT_NO_BLOCK)
+            if c = null
+                break
+            set progress: true
+            SSL_set_blocking_mode(c, 0)
+            SSL_set_default_stream_mode(c, SSL_DEFAULT_STREAM_MODE_NONE)
+            SSL_set_incoming_stream_policy(c, SSL_INCOMING_STREAM_POLICY_ACCEPT, 0)
+            var control SSL_new_stream(c, SSL_STREAM_FLAG_UNI)
+            if control <> null
+            {
+                var written: size_t 0
+                SSL_write_ex(control, preamble.data as pointer[void], 3, &written)
+            }
+            let page Page.allocate_page()
+            conns.add(&H3Conn^page(c, page, control, Array[ref[H3Stream]]^page()))
+        }
+        var i: size_t 0
+        while i < conns.length
+        {
+            var conn: ref[H3Conn] conns.at(i)
+            if quic_closed(conn.ssl)
+            {
+                var j: size_t 0
+                while j < conn.streams.length
+                {
+                    var s: ref[H3Stream] conn.streams.at(j)
+                    h3_free_stream(s)
+                    set j: j + 1
+                }
+                if conn.control <> null
+                    SSL_free(conn.control)
+                SSL_free(conn.ssl)
+                Page.release_page(conn.page)
+                conns.put(i, conns.at(conns.length - 1))
+                set conns.length: conns.length - 1
+                continue
+            }
+            repeat
+            {
+                let st SSL_accept_stream(conn.ssl, SSL_ACCEPT_NO_BLOCK)
+                if st = null
+                    break
+                set progress: true
+                let page Page.allocate_page()
+                let bidi SSL_get_stream_type(st) = SSL_STREAM_TYPE_BIDI
+                conn.streams.add(&H3Stream^page(st, page, bidi, ByteBuf.create(page, 1024), ByteBuf.create(page, 1024), 0, false))
+            }
+            var j: size_t 0
+            while j < conn.streams.length
+            {
+                var s: ref[H3Stream] conn.streams.at(j)
+                var done false
+                if s.answered = false
+                {
+                    if h3_read(s, &progress)
+                    {
+                        if s.bidi
+                            h3_answer(w, s)
+                        else
+                            set done: true
+                    }
+                }
+                if s.answered
+                    set done: h3_flush(s)
+                if done
+                {
+                    set progress: true
+                    h3_free_stream(s)
+                    conn.streams.put(j, conn.streams.at(conn.streams.length - 1))
+                    set conn.streams.length: conn.streams.length - 1
+                }
+                else
+                    set j: j + 1
+            }
+            set i: i + 1
+        }
+        if progress = false
+            Scheduler.sleep(1)
+    }
+}
+
+procedure h3_thread(mutable arg: pointer[void]) returns pointer[void]
+{
+    let page Page.allocate_page()
+    let sched Scheduler.create(page)
+    Scheduler.spawn_arg(&h3_loop, null)
+    Scheduler.run()
+    null
+}
+
+; Serve router over HTTP/3 on UDP `port` with the certificate and key, on
+; a thread of its own; false when the QUIC server cannot be made (no
+; OpenSSL with a QUIC server, 3.5 or later, or the port or files).
+procedure start_h3(router: ref[Router], port: int, cert_file: String, key_file: String) returns bool
+{
+    var server QuicServer.listen(port, cert_file, key_file)
+    if server.valid() = false
+        return false
+    scaly_atomic_store_u64(&h3_router, router as u64)
+    scaly_atomic_store_u64(&h3_listener, server.listener as u64)
+    Thread.spawn(&h3_thread, null)
+    true
+}

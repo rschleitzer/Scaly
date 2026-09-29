@@ -24,8 +24,16 @@
 FROM ubuntu:24.04 AS build
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
- && apt-get install -y --no-install-recommends llvm-20 llvm-20-dev clang-20 lld-20 libclang-rt-20-dev libdeflate-dev libssl-dev perl ca-certificates \
+ && apt-get install -y --no-install-recommends llvm-20 llvm-20-dev clang-20 lld-20 libclang-rt-20-dev libdeflate-dev perl make curl ca-certificates \
  && rm -rf /var/lib/apt/lists/*
+# OpenSSL with a QUIC server (3.5 or later; Ubuntu 24.04 ships 3.0) for the
+# tls and https packages -- TLS 1.3, h2 and HTTP/3 -- built static.
+RUN curl -fsSL https://github.com/openssl/openssl/releases/download/openssl-3.6.3/openssl-3.6.3.tar.gz | tar xz -C /tmp \
+ && cd /tmp/openssl-3.6.3 \
+ && CC=clang-20 ./Configure --prefix=/opt/openssl --libdir=lib no-shared no-tests no-docs \
+ && make -j"$(nproc)" \
+ && make install_sw \
+ && cd / && rm -rf /tmp/openssl-3.6.3
 # seed.sh and the compiler's own link invoke `clang`; libLLVM-20.so sits under
 # the versioned prefix; GNU BFD ld cannot link libLLVM-20, so `ld` is lld.
 ENV CLANG=clang-20
@@ -58,7 +66,7 @@ FROM build AS pgo-train
 RUN TRIPLE=$(clang-20 -print-target-triple) \
  && PROFRT=$(find /usr/lib/llvm-20/lib/clang -name 'libclang_rt.profile*.a' | head -1) \
  && LTO_OPT_FLAGS="-mtriple=$TRIPLE -mcpu=native --pgo-kind=pgo-instr-gen-pipeline" \
-    LTO_LLC_FLAGS="-mcpu=native" LINK_EXTRA="-Wl,-u,__llvm_profile_runtime $PROFRT -l:libdeflate.a -l:libssl.a -l:libcrypto.a" \
+    LTO_LLC_FLAGS="-mcpu=native" LINK_EXTRA="-Wl,-u,__llvm_profile_runtime $PROFRT -l:libdeflate.a /opt/openssl/lib/libssl.a /opt/openssl/lib/libcrypto.a" \
     tools/link-lto.sh /arena_instr /ir/arena.ll /ir/https.ll /ir/http.ll /ir/pg.ll /ir/tls.ll /ir/json.ll /ir/compress.ll /ir/rt.ll \
  && tools/link-lto.sh /train /ir/train.ll /ir/http.ll /ir/rt.ll
 
@@ -67,10 +75,10 @@ COPY pgo/ /pgo/
 RUN TRIPLE=$(clang-20 -print-target-triple) \
  && PGO="" \
  && if [ -f /pgo/arena.profdata ]; then PGO="--pgo-kind=pgo-instr-use-pipeline --profile-file=/pgo/arena.profdata"; fi \
- && LTO_OPT_FLAGS="-mtriple=$TRIPLE -mcpu=native $PGO" LTO_LLC_FLAGS="-mcpu=native" LINK_EXTRA="-l:libdeflate.a -l:libssl.a -l:libcrypto.a" \
+ && LTO_OPT_FLAGS="-mtriple=$TRIPLE -mcpu=native $PGO" LTO_LLC_FLAGS="-mcpu=native" LINK_EXTRA="-l:libdeflate.a /opt/openssl/lib/libssl.a /opt/openssl/lib/libcrypto.a" \
     tools/link-lto.sh /arena /ir/arena.ll /ir/https.ll /ir/http.ll /ir/pg.ll /ir/tls.ll /ir/json.ll /ir/compress.ll /ir/rt.ll
 
 FROM ubuntu:24.04
 COPY --from=optimized /arena /arena
-EXPOSE 8080 8081 8082 8443
+EXPOSE 8080 8081 8082 8443 8443/udp
 CMD ["/arena", "8080"]

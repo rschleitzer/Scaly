@@ -16,9 +16,9 @@ source tools/llvm-env.sh >/dev/null 2>&1
 scaly_need_archive pg "$BIN" || exit 1
 set -u
 
-SSL=()
+SSL=(); OPENSSL=openssl
 if command -v brew > /dev/null 2>&1 && p=$(brew --prefix openssl@3 2> /dev/null) && [ -e "$p/lib/libssl.dylib" ]; then
-  SSL=(-L"$p/lib" -lssl -lcrypto)
+  SSL=(-L"$p/lib" -lssl -lcrypto); OPENSSL="$p/bin/openssl"
 else
   for d in /usr/lib/x86_64-linux-gnu /usr/lib/aarch64-linux-gnu /usr/lib64 /usr/lib /usr/local/lib; do
     if ls "$d"/libssl.so* > /dev/null 2>&1; then SSL=(-L"$d" -lssl -lcrypto); break; fi
@@ -26,6 +26,14 @@ else
 fi
 if [ ${#SSL[@]} = 0 ]; then
   echo "pg: SKIP (no OpenSSL 3: brew install openssl@3 / apt install libssl-dev)"
+  exit 0
+fi
+
+# the tls archive carries the QUIC server's bindings (OpenSSL 3.5 or later)
+ver=$("$OPENSSL" version 2>/dev/null | awk '{print $2}')
+major=${ver%%.*}; rest=${ver#*.}; minor=${rest%%.*}
+if [ -z "$ver" ] || [ "${major:-0}" -lt 3 ] || { [ "$major" = 3 ] && [ "${minor:-0}" -lt 5 ]; }; then
+  echo "pg: SKIP (OpenSSL ${ver:-?}; the tls package needs 3.5 or later)"
   exit 0
 fi
 

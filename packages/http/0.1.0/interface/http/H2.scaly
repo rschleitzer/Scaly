@@ -71,6 +71,29 @@ define H2Pending
     trailers: Slice[u8]
 )
 
+; Decoded request fields (HTTP/2 or HTTP/3) as HTTP/1.1 request text in
+; `text`: the request line from :method and :path, host from :authority,
+; the other fields but those HTTP/1.1 frames itself (a body's length is the
+; caller's); the blank line unless a body follows. False without :method
+; or :path.
+procedure fields_request_text(fields: ref[HeaderList], mutable text: ref[ByteBuf], has_body: bool) @ret_nonlocal true @deep true returns bool linked
+
+; The status of HTTP/1.1 response text ("HTTP/1.1 200 ..."), 0 when there
+; is none.
+function response_status(response: Slice[u8]) @ret_param_0 true @deep true returns i64 linked
+
+; Where the field lines of HTTP/1.1 response text begin (after the status
+; line).
+function response_fields_at(response: Slice[u8]) @ret_nonlocal true @deep true returns size_t linked
+
+; The next field line of HTTP/1.1 text at `at`: its name lowercased onto
+; `name` and its value's span; the position after the line, or 0 at the
+; blank line (or the end) that ends the fields.
+procedure next_field(lines: Slice[u8], at: size_t, mutable name: ref[ByteBuf], mutable value_start: ref[size_t], mutable value_end: ref[size_t]) @ret_nonlocal true @deep true returns size_t linked
+
+; Is a field one HTTP/2 and HTTP/3 must not carry?
+function connection_specific(name: Slice[u8]) @ret_nonlocal true @deep true returns bool linked
+
 ; A request waiting to be answered: its HTTP/1.1 text on a page of its own,
 ; and -- when it runs in a task of its own -- its own request, response and
 ; output buffer there.

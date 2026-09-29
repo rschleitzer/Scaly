@@ -1,0 +1,190 @@
+; QPACK (RFC 9204), the header compression of HTTP/3, with the static table
+; only: the server announces a dynamic table capacity of 0 (the default of
+; SETTINGS_QPACK_MAX_TABLE_CAPACITY), so a client may not insert, every
+; field section says Required Insert Count 0, and no encoder or decoder
+; stream is ever needed. Strings are Huffman-coded as in HPACK
+; (http.Hpack's decoder); responses are sent as literals without Huffman.
+
+use http.Buffer.ByteBuf
+use http.Hpack.HeaderList
+
+; A field section decoded onto list; false when it is malformed or names the
+; dynamic table.
+procedure qpack_decode(block: Slice[u8], mutable list: ref[HeaderList]) returns bool
+{
+    var at: size_t 0
+    ; Required Insert Count (8-bit prefix) and Delta Base (sign + 7 bits)
+    let ric decode_integer(block, &at, 8)
+    if ric <> 0
+        return false
+    if decode_integer(block, &at, 7) < 0
+        return false
+    while at < block.length
+    {
+        let b block[at]
+        var ns: size_t 0
+        var nl: size_t 0
+        var vs: size_t 0
+        var vl: size_t 0
+        if (b & 128) <> 0
+        {
+            ; indexed field line, 6-bit index; T (0x40) must name the static table
+            if (b & 64) = 0
+                return false
+            let index decode_integer(block, &at, 6)
+            if index < 0 or index > 98
+                return false
+            set ns: list.bytes.length
+            let name qpack_static_name(index as u64)
+            list.bytes.append(name)
+            set nl: name.length
+            set vs: list.bytes.length
+            let value qpack_static_value(index as u64)
+            list.bytes.append(value)
+            set vl: value.length
+        }
+        else if (b & 64) <> 0
+        {
+            ; literal with a name reference, 4-bit index; T is 0x10
+            if (b & 16) = 0
+                return false
+            let index decode_integer(block, &at, 4)
+            if index < 0 or index > 98
+                return false
+            set ns: list.bytes.length
+            let name qpack_static_name(index as u64)
+            list.bytes.append(name)
+            set nl: name.length
+            if qpack_string(block, &at, 7, &list.bytes, &vs, &vl) = false
+                return false
+        }
+        else if (b & 32) <> 0
+        {
+            ; literal with a literal name: H is 0x08, a 3-bit length
+            if qpack_string(block, &at, 3, &list.bytes, &ns, &nl) = false
+                return false
+            if qpack_string(block, &at, 7, &list.bytes, &vs, &vl) = false
+                return false
+        }
+        else
+            return false
+        list.record(ns, nl, vs, vl)
+    }
+    true
+}
+
+; A string literal with an n-bit length prefix whose H flag is the bit just
+; above it, decoded onto out: its span. False when it is malformed.
+procedure qpack_string(block: Slice[u8], mutable at: ref[size_t], prefix_bits: u64, mutable out: ref[ByteBuf], mutable start: ref[size_t], mutable length: ref[size_t]) returns bool
+{
+    var pos: size_t at
+    if pos >= block.length
+        return false
+    let huffman ((block[pos] as u64) & ((1 as u64) << prefix_bits)) <> 0
+    let n decode_integer(block, &pos, prefix_bits)
+    if n < 0 or pos + (n as size_t) > block.length
+        return false
+    let raw block.subslice(pos, pos + (n as size_t))
+    set pos: pos + (n as size_t)
+    set at: pos
+    set start: out.length
+    if huffman
+    {
+        if huffman_decode(raw, out) = false
+            return false
+    }
+    else
+        out.append(raw)
+    set length: out.length - start
+    true
+}
+
+; The start of a response's field section: Required Insert Count 0, Delta
+; Base 0.
+procedure qpack_begin(mutable out: ref[ByteBuf])
+{
+    out.append_byte(0)
+    out.append_byte(0)
+}
+
+; The static entry of a :status, 0 for one the table does not hold.
+function qpack_status_index(status: i64) returns u64
+{
+    match status
+        case 103: return 24
+        case 200: return 25
+        case 304: return 26
+        case 404: return 27
+        case 503: return 28
+        case 100: return 63
+        case 204: return 64
+        case 206: return 65
+        case 302: return 66
+        case 400: return 67
+        case 403: return 68
+        case 421: return 69
+        case 425: return 70
+        case 500: return 71
+    0
+}
+
+procedure qpack_status(mutable out: ref[ByteBuf], status: i64)
+{
+    let index qpack_status_index(status)
+    if index > 0
+    {
+        encode_integer(out, 192, 6, index)
+        return
+    }
+    ; a literal with the name :status (24)
+    encode_integer(out, 80, 4, 24)
+    encode_integer(out, 0, 7, 3)
+    out.append_byte(((status / 100) % 10 + 48) as u8)
+    out.append_byte(((status / 10) % 10 + 48) as u8)
+    out.append_byte((status % 10 + 48) as u8)
+}
+
+; The static entry whose name a lowercase response field has, 0 for none
+; worth one (every index here is above 0).
+function qpack_name_index(name: Slice[u8]) returns u64
+{
+    if name.equals("content-type")
+        return 44
+    if name.equals("content-length")
+        return 4
+    if name.equals("date")
+        return 6
+    if name.equals("content-encoding")
+        return 42
+    if name.equals("vary")
+        return 59
+    if name.equals("server")
+        return 92
+    if name.equals("cache-control")
+        return 36
+    if name.equals("location")
+        return 12
+    if name.equals("set-cookie")
+        return 14
+    if name.equals("etag")
+        return 7
+    if name.equals("last-modified")
+        return 10
+    0
+}
+
+; A field line as a literal (not Huffman): with the static name when the
+; table has it, else with a literal name.
+procedure qpack_field(mutable out: ref[ByteBuf], name: Slice[u8], value: Slice[u8])
+{
+    let index qpack_name_index(name)
+    if index > 0
+        encode_integer(out, 80, 4, index)
+    else
+    {
+        encode_integer(out, 32, 3, name.length as u64)
+        out.append(name)
+    }
+    encode_integer(out, 0, 7, value.length as u64)
+    out.append(value)
+}

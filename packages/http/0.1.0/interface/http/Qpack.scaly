@@ -1,0 +1,34 @@
+; QPACK (RFC 9204), the header compression of HTTP/3, with the static table
+; only: the server announces a dynamic table capacity of 0 (the default of
+; SETTINGS_QPACK_MAX_TABLE_CAPACITY), so a client may not insert, every
+; field section says Required Insert Count 0, and no encoder or decoder
+; stream is ever needed. Strings are Huffman-coded as in HPACK
+; (http.Hpack's decoder); responses are sent as literals without Huffman.
+
+use http.Buffer.ByteBuf
+use http.Hpack.HeaderList
+
+; A field section decoded onto list; false when it is malformed or names the
+; dynamic table.
+procedure qpack_decode(block: Slice[u8], mutable list: ref[HeaderList]) @ret_nonlocal true @deep true returns bool linked
+
+; A string literal with an n-bit length prefix whose H flag is the bit just
+; above it, decoded onto out: its span. False when it is malformed.
+procedure qpack_string(block: Slice[u8], mutable at: ref[size_t], prefix_bits: u64, mutable out: ref[ByteBuf], mutable start: ref[size_t], mutable length: ref[size_t]) @ret_nonlocal true @deep true returns bool linked
+
+; The start of a response's field section: Required Insert Count 0, Delta
+; Base 0.
+procedure qpack_begin(mutable out: ref[ByteBuf]) @ret_nonlocal true @deep true linked
+
+; The static entry of a :status, 0 for one the table does not hold.
+function qpack_status_index(status: i64) @ret_nonlocal true @deep true returns u64 linked
+
+procedure qpack_status(mutable out: ref[ByteBuf], status: i64) @deep true linked
+
+; The static entry whose name a lowercase response field has, 0 for none
+; worth one (every index here is above 0).
+function qpack_name_index(name: Slice[u8]) @ret_nonlocal true @deep true returns u64 linked
+
+; A field line as a literal (not Huffman): with the static name when the
+; table has it, else with a literal name.
+procedure qpack_field(mutable out: ref[ByteBuf], name: Slice[u8], value: Slice[u8]) @ret_nonlocal true @deep true linked

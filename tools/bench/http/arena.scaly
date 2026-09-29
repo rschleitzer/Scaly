@@ -493,6 +493,9 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
             https.Server.start_h2(app, hl, h2_context)
         else
             print "arena: cannot listen on port `h2_port`"
+        ; HTTP/3 on the same port number, over UDP (baseline-h3, static-h3)
+        if start_h3(app, h2_port, cert, key) = false
+            print "arena: no HTTP/3 on port `h2_port` (an OpenSSL without a QUIC server?)"
     }
     let cl TcpListener.listen_any(h2c_port)
     if cl.is_open()

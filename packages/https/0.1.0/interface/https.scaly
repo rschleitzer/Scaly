@@ -10,4 +10,5 @@ package tls 0.1.0
 define https
 {
     module Server
+    module H3
 }
