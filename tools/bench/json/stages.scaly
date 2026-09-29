@@ -1,0 +1,266 @@
+; stages — where a parse's time goes: each stage of JsonValue.parse on its
+; own (tools/bench/json/run.sh with STAGES=1; ROADMAP-http.md stage B).
+;   stages <file> <iterations> <mode>
+; modes, each including what comes before it:
+;   copy      the padded copy of the document
+;   classify  stage 1 over every block
+;   take      stage 1 and every structural position taken
+;   tokens    stage 2 without the tree: closing quotes, number grammar and
+;             literals, no value built, no container stored
+;   parse     JsonValue.parse
+; Picoseconds per byte of the file, best of five rounds.
+
+package scaly 0.1.0
+package json 0.1.0
+
+use json.Value.JsonValue
+use json.Value.JsonParsed
+use json.Value.JsonArena
+use json.Reader.JsonReader
+use json.Reader.JsonStream
+use json.Reader.JsonScan
+
+function scaly_eio_now_ns() returns i64 extern
+
+procedure run_copy(source: Slice[u8]) returns size_t
+{
+    var arena JsonArena()
+    let doc arena.keep_document(source)
+    doc.length + 1
+}
+
+procedure run_classify(source: Slice[u8]) returns size_t
+{
+    var arena JsonArena()
+    let doc arena.keep_document(source)
+    var s JsonStream(0, 0, 0, 0, 0, 0)
+    var acc: u64 0
+    while s.to < doc.length
+    {
+        set s: JsonStream.classify(doc, s)
+        set acc: acc + count_ones(s.bits)
+    }
+    (acc as size_t) + 1
+}
+
+procedure run_take(source: Slice[u8]) returns size_t
+{
+    var arena JsonArena()
+    let doc arena.keep_document(source)
+    let n doc.length
+    var s JsonStream(0, 0, 0, 0, 0, 0)
+    var count: size_t 0
+    var t s.take(doc)
+    while t < n
+    {
+        set count: count + 1
+        set t: s.take(doc)
+    }
+    count + 1
+}
+
+; Stage 2 without the tree: the same state machine, closing quotes, number
+; grammar and literals; no value is built, no container stored.
+procedure run_tokens(source: Slice[u8]) returns size_t
+{
+    var arena JsonArena()
+    let doc arena.keep_document(source)
+    let n doc.length
+    var s JsonStream(0, 0, 0, 0, 0, 0)
+    var open Array[u8]()
+    var count: size_t 0
+    var state 0
+    var t s.take(doc)
+    repeat
+    {
+        if state = 1
+        {
+            if t >= n or doc[t] <> 0x22
+                return 0
+            var u s.take(doc)
+            if u >= n or doc[u] <> 0x22
+            {
+                let close JsonReader.string_close(doc, t)
+                if close.code <> 0
+                    return 0
+                while u < close.at
+                    set u: s.take(doc)
+            }
+            set t: s.take(doc)
+            if t >= n or doc[t] <> 0x3A
+                return 0
+            set t: s.take(doc)
+            set state: 0
+        }
+        if state = 0
+        {
+            if t >= n
+                return 0
+            let c doc[t]
+            set count: count + 1
+            if c = 0x7B or c = 0x5B
+            {
+                set t: s.take(doc)
+                if t < n and doc[t] = c + 2
+                {
+                    set t: s.take(doc)
+                    set state: 2
+                }
+                else
+                {
+                    if c = 0x7B
+                    {
+                        open.add(1)
+                        set state: 1
+                    }
+                    else
+                    {
+                        open.add(0)
+                        set state: 0
+                    }
+                    continue
+                }
+            }
+            else
+            {
+                if c = 0x22
+                {
+                    var u s.take(doc)
+                    if u >= n or doc[u] <> 0x22
+                    {
+                        let close JsonReader.string_close(doc, t)
+                        if close.code <> 0
+                            return 0
+                        while u < close.at
+                            set u: s.take(doc)
+                    }
+                    set t: s.take(doc)
+                }
+                else
+                {
+                    var end: size_t 0
+                    if c = 0x2D or (c >= 0x30 and c <= 0x39)
+                    {
+                        let num JsonReader.number_end(doc, t)
+                        if num.code <> 0
+                            return 0
+                        set end: num.at
+                    }
+                    else
+                    {
+                        if c = 0x66
+                            set end: t + 5
+                        else
+                            set end: t + 4
+                    }
+                    set t: s.take(doc)
+                    if end < n and t <> end and JsonReader.is_ws(doc[end]) = false
+                        set t: end
+                }
+                set state: 2
+            }
+        }
+        ; complete
+        if open.length = 0
+            break
+        if t >= n
+            return 0
+        let c doc[t]
+        if c = 0x2C
+        {
+            set t: s.take(doc)
+            if open[open.length - 1] = 1
+                set state: 1
+            else
+                set state: 0
+            continue
+        }
+        if c = 0x7D or c = 0x5D
+        {
+            set open.length: open.length - 1
+            set t: s.take(doc)
+            set state: 2
+            continue
+        }
+        return 0
+    }
+    count + 1
+}
+
+procedure run_parse(source: Slice[u8]) returns size_t
+{
+    let parsed JsonValue.parse(source)
+    if parsed.ok() = false
+        return 0
+    parsed.value.length() + 1
+}
+
+procedure run_once(mode: int, source: Slice[u8]) returns size_t
+{
+    match mode
+        case 0: return run_copy(source)
+        case 1: return run_classify(source)
+        case 2: return run_take(source)
+        case 3: return run_tokens(source)
+        else: return run_parse(source)
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    if argc < 4
+    {
+        print "usage: stages <file> <iterations> <copy|classify|take|tokens|parse>"
+        return 2
+    }
+    let text File.read_to_string(String(*(argv + 1)))
+    let source text.as_slice()
+    let iterations parse_int(String(*(argv + 2)))
+    let name String(*(argv + 3))
+    var mode 4
+    if name.equals("copy")
+        set mode: 0
+    if name.equals("classify")
+        set mode: 1
+    if name.equals("take")
+        set mode: 2
+    if name.equals("tokens")
+        set mode: 3
+    var best: i64 0x7FFFFFFFFFFFFFFF
+    var sink: size_t 0
+    var r 0
+    while r < 5
+    {
+        let t0 scaly_eio_now_ns()
+        var i 0
+        while i < iterations
+        {
+            set sink: sink + run_once(mode, source)
+            set i: i + 1
+        }
+        let dt scaly_eio_now_ns() - t0
+        if dt < best
+            set best: dt
+        set r: r + 1
+    }
+    if sink = 0
+    {
+        print "stages: refused"
+        return 1
+    }
+    let mbs ((source.length as i64) * (iterations as i64) * 1000) / best
+    let ns_per ((best / (iterations as i64)) * 1000) / (source.length as i64)
+    print "`name` `mbs` MB/s  (`ns_per` ps/byte)"
+    0
+}
+
+function parse_int(s: String) returns int
+{
+    var v 0
+    var i: size_t 0
+    while i < s.length and s.get(i) >= 0x30 and s.get(i) <= 0x39
+    {
+        set v: (v * 10) + ((s.get(i) - 0x30) as int)
+        set i: i + 1
+    }
+    v
+}

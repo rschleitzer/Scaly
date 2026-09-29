@@ -62,9 +62,19 @@ else
   echo "run.sh: SKIP simdjson/yyjson (not installed: $(head -1 "$TMP/cpp.log"))"
 fi
 
+# STAGES=1: the json package's parse taken apart as well (stages.scaly)
+if [ "${STAGES:-0}" = 1 ]; then
+  "$BIN" -S -mcpu=native -o "$TMP/stages.ll" tools/bench/json/stages.scaly
+  LTO_OPT_FLAGS="-mtriple=$TRIPLE -mcpu=native" LTO_LLC_FLAGS="-mcpu=native" \
+    tools/link-lto.sh "$TMP/stages" "$TMP/stages.ll" "$TMP/json.ll" "$TMP/rt.ll"
+fi
+
 for f in canada citm_catalog twitter fhir_bundle; do
   echo "== $f.json ($(wc -c < "$DATA/$f.json" | tr -d ' ') bytes, $ITER iterations)"
   "$TMP/bench" "$DATA/$f.json" "$ITER"
   "$RUST" "$DATA/$f.json" "$ITER"
   if [ -n "$CPP" ]; then "$CPP" "$DATA/$f.json" "$ITER"; fi
+  if [ "${STAGES:-0}" = 1 ]; then
+    for m in copy classify take tokens parse; do printf '  scaly-json '; "$TMP/stages" "$DATA/$f.json" "$ITER" $m; done
+  fi
 done

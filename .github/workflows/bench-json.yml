@@ -31,11 +31,19 @@ jobs:
       - name: The compiler, from the seed
         run: tools/build-from-seed.sh
 
+      # simdjson from the distribution; yyjson is not packaged for this
+      # Ubuntu, so its one source file is built for the host CPU
       - name: simdjson and yyjson
         run: |
-          sudo apt-get install -y libsimdjson-dev libyyjson-dev || echo "not packaged -- run.sh skips them by name"
+          sudo apt-get install -y libsimdjson-dev
+          curl -sSfL https://github.com/ibireme/yyjson/archive/refs/tags/0.10.0.tar.gz | tar xz -C "$RUNNER_TEMP"
+          clang-20 -O3 -march=native -c "$RUNNER_TEMP/yyjson-0.10.0/src/yyjson.c" -o "$RUNNER_TEMP/yyjson.o"
+          ar rcs "$RUNNER_TEMP/libyyjson.a" "$RUNNER_TEMP/yyjson.o"
+          echo "CPATH=$RUNNER_TEMP/yyjson-0.10.0/src" >> "$GITHUB_ENV"
+          echo "LIBRARY_PATH=$RUNNER_TEMP" >> "$GITHUB_ENV"
 
       - name: Benchmark
         env:
           CXX: clang++-20
+          STAGES: 1
         run: tools/bench/json/run.sh
