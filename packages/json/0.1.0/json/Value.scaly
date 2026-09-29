@@ -23,11 +23,9 @@ define JsonMember (key: String, value: JsonValue)
 define JsonArray (items: Slice[JsonValue])
 define JsonObject (members: Slice[JsonMember])
 
-; `Null,` with its comma: without it the line feed would be read as the
-; colon of a type annotation, making Null a variant OF TYPE Bool.
 define JsonValue union
 (
-    Null,
+    Null
     Bool: bool
     Number: String
     Text: String
@@ -35,11 +33,6 @@ define JsonValue union
     Object: JsonObject
 )
 {
-    ; Null as a value where a union is expected: a qualified unit variant
-    ; passes as a return, not yet as an argument or a component.
-    function null_value() returns JsonValue
-        JsonValue.Null
-
     function is_null(this) returns bool
     {
         choose this
@@ -152,21 +145,7 @@ define JsonValue union
     {
         choose this
             when n: Number
-            {
-                ; strtod wants a terminated copy, and it is a local one: the
-                ; write census has no mask for strtod and counts every argument
-                ; it is handed as written
-                let text n.as_slice()
-                var buf Vector[u8](text.length + 1)
-                var i: size_t 0
-                while i < text.length
-                {
-                    buf.put(i, text[i])
-                    set i: i + 1
-                }
-                buf.put(text.length, 0)
-                return strtod(buf.data as pointer[const_char], null as pointer[pointer[u8]])
-            }
+                return strtod(n.to_c_string(), null as pointer[pointer[u8]])
             else
                 return 0.0
     }
@@ -275,7 +254,7 @@ define JsonValue union
         if r.failed() = false
             r.next()
         if r.failed()
-            return JsonParsed(JsonValue.null_value(), r.error, r.error_at)
+            return JsonParsed(JsonValue.Null, r.error, r.error_at)
         JsonParsed(v, JSON_OK, 0)
     }
 

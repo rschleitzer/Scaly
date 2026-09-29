@@ -35,22 +35,20 @@ define JSON_CONTROL: int 8
 define JSON_ESCAPE: int 9
 define JSON_DEPTH: int 10
 
-; A comma after each variant: a payload-less variant followed by a bare line
-; feed would read the next line as its TYPE (the line feed is a colon).
 define JsonToken union
 (
-    End,
-    Invalid,
-    ObjectStart,
-    ObjectEnd,
-    ArrayStart,
-    ArrayEnd,
-    MemberName,
-    StringValue,
-    NumberValue,
-    TrueValue,
-    FalseValue,
-    NullValue,
+    End
+    Invalid
+    ObjectStart
+    ObjectEnd
+    ArrayStart
+    ArrayEnd
+    MemberName
+    StringValue
+    NumberValue
+    TrueValue
+    FalseValue
+    NullValue
 )
 
 define JsonReader
@@ -130,7 +128,7 @@ define JsonReader
     ; Open a container at the cursor: an object when is_object.
     procedure open(mutable this, is_object: bool) @ret_nonlocal true @deep true returns bool linked
 
-    procedure close(mutable this) @ret_nonlocal true @deep true linked
+    procedure close(mutable this, token: JsonToken) @page true @direct true @ret_param_1 true @deep true returns JsonToken linked
 
     procedure after_value(mutable this) @deep true linked
 

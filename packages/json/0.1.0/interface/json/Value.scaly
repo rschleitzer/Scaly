@@ -23,11 +23,9 @@ define JsonMember (key: String, value: JsonValue)
 define JsonArray (items: Slice[JsonValue])
 define JsonObject (members: Slice[JsonMember])
 
-; `Null,` with its comma: without it the line feed would be read as the
-; colon of a type annotation, making Null a variant OF TYPE Bool.
 define JsonValue union
 (
-    Null,
+    Null
     Bool: bool
     Number: String
     Text: String
@@ -35,10 +33,6 @@ define JsonValue union
     Object: JsonObject
 )
 {
-    ; Null as a value where a union is expected: a qualified unit variant
-    ; passes as a return, not yet as an argument or a component.
-    function null_value() @page true @direct true @deep true returns JsonValue linked
-
     function is_null(this) @ret_nonlocal true @deep true returns bool linked
 
     function is_bool(this) @ret_nonlocal true @deep true returns bool linked

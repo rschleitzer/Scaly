@@ -35,22 +35,20 @@ define JSON_CONTROL: int 8
 define JSON_ESCAPE: int 9
 define JSON_DEPTH: int 10
 
-; A comma after each variant: a payload-less variant followed by a bare line
-; feed would read the next line as its TYPE (the line feed is a colon).
 define JsonToken union
 (
-    End,
-    Invalid,
-    ObjectStart,
-    ObjectEnd,
-    ArrayStart,
-    ArrayEnd,
-    MemberName,
-    StringValue,
-    NumberValue,
-    TrueValue,
-    FalseValue,
-    NullValue,
+    End
+    Invalid
+    ObjectStart
+    ObjectEnd
+    ArrayStart
+    ArrayEnd
+    MemberName
+    StringValue
+    NumberValue
+    TrueValue
+    FalseValue
+    NullValue
 )
 
 define JsonReader
@@ -122,27 +120,15 @@ define JsonReader
                     continue
                 }
                 if in_object and c = 0x7D                   ; '}'
-                {
-                    this.close()
-                    return JsonToken.ObjectEnd
-                }
+                    return this.close(JsonToken.ObjectEnd)
                 if in_object = false and c = 0x5D           ; ']'
-                {
-                    this.close()
-                    return JsonToken.ArrayEnd
-                }
+                    return this.close(JsonToken.ArrayEnd)
                 return this.fail(JSON_SEPARATOR)
             }
             if state = EXPECT_KEY_OR_END and c = 0x7D
-            {
-                this.close()
-                return JsonToken.ObjectEnd
-            }
+                return this.close(JsonToken.ObjectEnd)
             if state = EXPECT_VALUE_OR_END and c = 0x5D
-            {
-                this.close()
-                return JsonToken.ArrayEnd
-            }
+                return this.close(JsonToken.ArrayEnd)
             if state = EXPECT_KEY or state = EXPECT_KEY_OR_END
             {
                 if c <> 0x22                                ; '"'
@@ -423,11 +409,12 @@ define JsonReader
         true
     }
 
-    procedure close(mutable this)
+    procedure close(mutable this, token: JsonToken) returns JsonToken
     {
         set depth: depth - 1
         set pos: pos + 1
         this.after_value()
+        token
     }
 
     procedure after_value(mutable this)

@@ -27,8 +27,7 @@ define JsonWriter
     var after_key: bool
 )
 {
-    ; The writer lives on the page that owns its buffer.
-    procedure create(host: ref[Page], capacity: size_t) @ret_explicit_0 true @deep true returns ref[JsonWriter] linked
+    procedure create(host: ref[Page], capacity: size_t) @page true @direct true @ret_explicit_0 true @deep true returns JsonWriter linked
 
     ; The document so far.
     function bytes(this) @page true @direct true @ret_param_0 true @deep true returns Slice[u8] linked
@@ -77,6 +76,22 @@ define JsonWriter
     function plain(c: u8) @ret_nonlocal true @deep true returns bool linked
 
     procedure escape(mutable this, c: u8) @ret_nonlocal true @deep true linked
+
+    ; The letter of c's named escape, 0 where only \u00XX will do.
+    function escape_letter(c: u8) @ret_nonlocal true @deep true returns u8 linked
+
+    ; s as a JSON string literal, for a document assembled by hand in a
+    ; StringBuilder (the language server's replies): the escapes of text().
+    function quote(s: Slice[u8]) @page true @direct true @ret_caller true @deep true returns String linked
+
+    function quote(s: String) @page true @direct true @ret_nonlocal true @deep true returns String linked
+
+    procedure append_quoted(mutable sb: ref[StringBuilder], s: Slice[u8]) @ret_nonlocal true @deep true linked
+
+    ; v as JSON text in a String -- what value() writes into the buffer.
+    function stringify(v: JsonValue) @page true @direct true @ret_caller true @deep true returns String linked
+
+    procedure append_value(mutable sb: ref[StringBuilder], v: JsonValue) @ret_nonlocal true @deep true linked
 
     function hex_digit(v: u8) @ret_nonlocal true @deep true returns u8 linked
 

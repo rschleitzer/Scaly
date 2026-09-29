@@ -29,9 +29,9 @@ let pos msg.get("params").get("position")
 if pos.get("line").as_i64() <> 3 or pos.get("character").as_i64() <> 14
     set ok: false
 ; missing members and wrong kinds
-if msg.get("nope").is_null() = false or msg.get("nope").get("deeper").as_string().length() <> 0
+if msg.get("nope").is_null() = false or msg.get("nope").get("deeper").as_string().length <> 0
     set ok: false
-if msg.get("id").as_string().length() <> 0 or msg.get("method").as_i64() <> 0 or msg.get("id").length() <> 0
+if msg.get("id").as_string().length <> 0 or msg.get("method").as_i64() <> 0 or msg.get("id").length() <> 0
     set ok: false
 let flags msg.get("flags")
 if flags.is_array() = false or flags.length() <> 3 or flags.item(0).as_bool() = false
@@ -66,7 +66,7 @@ if ok
 let obj JsonValue.parse("{\"z\":1,\"a\":2,\"m\":3,\"a\":4}").value
 if obj.length() <> 4 or obj.key_at(0).equals(String("z")) = false or obj.key_at(3).equals(String("a")) = false
     set ok: false
-if obj.value_at(2).as_i64() <> 3 or obj.get("a").as_i64() <> 2 or obj.key_at(9).length() <> 0
+if obj.value_at(2).as_i64() <> 3 or obj.get("a").as_i64() <> 2 or obj.key_at(9).length <> 0
     set ok: false
 if ok
     Console.print "order "

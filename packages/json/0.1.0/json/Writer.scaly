@@ -27,11 +27,10 @@ define JsonWriter
     var after_key: bool
 )
 {
-    ; The writer lives on the page that owns its buffer.
-    procedure create(host: ref[Page], capacity: size_t) returns ref[JsonWriter]
+    procedure create(host: ref[Page], capacity: size_t) returns JsonWriter
     {
         let d allocate_slice[u8]^host(host, capacity)
-        &JsonWriter^host(host, d, 0, true, false)
+        JsonWriter(host, d, 0, true, false)
     }
 
     ; The document so far.
@@ -228,19 +227,122 @@ define JsonWriter
     procedure escape(mutable this, c: u8)
     {
         this.byte(0x5C)
+        let letter JsonWriter.escape_letter(c)
+        if letter <> 0
+            this.byte(letter)
+        else
+        {
+            this.append("u00")
+            this.byte(JsonWriter.hex_digit(c >> 4))
+            this.byte(JsonWriter.hex_digit(c & 0x0F))
+        }
+    }
+
+    ; The letter of c's named escape, 0 where only \u00XX will do.
+    function escape_letter(c: u8) returns u8
+    {
         match c
-            case 0x22: this.byte(0x22)
-            case 0x5C: this.byte(0x5C)
-            case 0x08: this.byte(0x62)                      ; \b
-            case 0x0C: this.byte(0x66)                      ; \f
-            case 0x0A: this.byte(0x6E)                      ; \n
-            case 0x0D: this.byte(0x72)                      ; \r
-            case 0x09: this.byte(0x74)                      ; \t
+            case 0x22: return 0x22
+            case 0x5C: return 0x5C
+            case 0x08: return 0x62                          ; \b
+            case 0x0C: return 0x66                          ; \f
+            case 0x0A: return 0x6E                          ; \n
+            case 0x0D: return 0x72                          ; \r
+            case 0x09: return 0x74                          ; \t
+            else: return 0
+    }
+
+    ; s as a JSON string literal, for a document assembled by hand in a
+    ; StringBuilder (the language server's replies): the escapes of text().
+    function quote(s: Slice[u8]) returns String
+    {
+        var sb StringBuilder()
+        JsonWriter.append_quoted(sb, s)
+        sb.to_string()
+    }
+
+    function quote(s: String) returns String
+        JsonWriter.quote(s.as_slice())
+
+    procedure append_quoted(mutable sb: ref[StringBuilder], s: Slice[u8])
+    {
+        sb.append(0x22 as char)
+        var i: size_t 0
+        while i < s.length
+        {
+            let c s[i]
+            if JsonWriter.plain(c)
+                sb.append(c as char)
             else
             {
-                this.append("u00")
-                this.byte(JsonWriter.hex_digit(c >> 4))
-                this.byte(JsonWriter.hex_digit(c & 0x0F))
+                sb.append(0x5C as char)
+                let letter JsonWriter.escape_letter(c)
+                if letter <> 0
+                    sb.append(letter as char)
+                else
+                {
+                    sb.append("u00")
+                    sb.append(JsonWriter.hex_digit(c >> 4) as char)
+                    sb.append(JsonWriter.hex_digit(c & 0x0F) as char)
+                }
+            }
+            set i: i + 1
+        }
+        sb.append(0x22 as char)
+    }
+
+    ; v as JSON text in a String -- what value() writes into the buffer.
+    function stringify(v: JsonValue) returns String
+    {
+        var sb StringBuilder()
+        JsonWriter.append_value(sb, v)
+        sb.to_string()
+    }
+
+    procedure append_value(mutable sb: ref[StringBuilder], v: JsonValue)
+    {
+        choose v
+            when n: Null
+                sb.append("null")
+            when b: Bool
+            {
+                if b
+                    sb.append("true")
+                else
+                    sb.append("false")
+            }
+            when num: Number
+                sb.append(num)
+            when t: Text
+                JsonWriter.append_quoted(sb, t.as_slice())
+            when a: Array
+            {
+                sb.append(0x5B as char)
+                var i: size_t 0
+                while i < a.items.length
+                {
+                    if i > 0
+                        sb.append(0x2C as char)
+                    JsonWriter.append_value(sb, a.items[i])
+                    set i: i + 1
+                }
+                sb.append(0x5D as char)
+            }
+            when o: Object
+            {
+                sb.append(0x7B as char)
+                var i: size_t 0
+                while i < o.members.length
+                {
+                    if i > 0
+                        sb.append(0x2C as char)
+                    let m o.members[i]
+                    JsonWriter.append_quoted(sb, m.key.as_slice())
+                    sb.append(0x3A as char)
+                    JsonWriter.append_value(sb, m.value)
+                    set i: i + 1
+                }
+                sb.append(0x7D as char)
             }
     }
 
