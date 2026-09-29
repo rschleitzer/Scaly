@@ -76,12 +76,14 @@ if [ "$SCALY_COFF" != 1 ] && [ -f seed/scalyc.ll ] && [ -x /tmp/scalyc_seed_root
   tools/ctime.sh /tmp/ctime.o
   tools/panic.sh /tmp/panic.o
   rm -f /tmp/libscaly.a; ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o /tmp/ctime.o /tmp/panic.o
-elif [ -f seed/scalyc.ll ] && SCALYC_SEED_NO_SCALYLS=1 tools/build-from-seed.sh /tmp/scalyc_seed_root >/dev/null 2>&1; then
+elif [ -f seed/scalyc.ll ] && SCALYC_SEED_NO_SCALYLS=1 tools/build-from-seed.sh /tmp/scalyc_seed_root > /tmp/scalyc_seed_root.log 2>&1; then
   echo "bootstrap: ROOT = seed-built compiler -> /tmp/scalyc_seed_root"
   ROOT=/tmp/scalyc_seed_root
   root_key > /tmp/scalyc_seed_root.key
 else
   echo "bootstrap: FAIL — no usable seed (seed/scalyc.ll missing or build-from-seed failed)"
+  # the build's own words: a CI log shows nothing else of it
+  [ -f /tmp/scalyc_seed_root.log ] && tail -25 /tmp/scalyc_seed_root.log | sed 's/^/  /'
   exit 1
 fi
 
