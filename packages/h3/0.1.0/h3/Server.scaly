@@ -7,13 +7,27 @@
 ;
 ; A request stream is answered once its FIN arrived -- never inside an
 ; ngtcp2 callback, so that no handler runs in the middle of ngtcp2: its
-; HEADERS (QPACK, static table only -- http.Qpack) and DATA frames become
-; HTTP/1.1 request text for the same router and handlers as every other
-; protocol, and the HTTP/1.1 response they write becomes a HEADERS and a
-; DATA frame on the stream, which keeps it until the client acknowledged it
-; (ngtcp2 may send any of it again). Every connection opens a control stream
-; with an empty SETTINGS frame (a QPACK table capacity of 0 by default); the
-; client's control and QPACK streams are read and dropped.
+; HEADERS (QPACK -- http.Qpack) and DATA frames become a Request for the
+; same router and handlers as every other protocol, and the response they
+; write becomes a HEADERS and a DATA frame on the stream, which keeps it
+; until the client acknowledged it (ngtcp2 may send any of it again).
+;
+; Every connection opens a control stream with its SETTINGS. A QPACK
+; dynamic table is offered only on request (h3_offer_qpack_table, before
+; start_h3): it spares the server a tenth of its CPU in baseline-h3 and
+; costs the client more than that -- its encoder keeps the table and reads
+; a Section Acknowledgment per request -- so where the client is the
+; bottleneck, as in HttpArena, fewer requests are answered (2026-09-30).
+; Offered (with no blocked streams), the connection opens a QPACK decoder
+; stream too. The client's encoder stream fills the connection's table (a
+; QpackTable, made when that stream opens), and the decoder stream answers
+; with what RFC 9204 4.4 asks: an Insert Count Increment after inserts, a
+; Section Acknowledgment after a field section that named the table, a
+; Stream Cancellation for a request stream reset unanswered. A client whose
+; encoder indexes :authority and user-agent then sends them as one byte
+; each instead of a Huffman-coded literal on every request. The client's
+; control and QPACK decoder streams are read and dropped, and its encoder
+; stream too while no table is offered.
 ;
 ; Routing: an ID this server chose carries its connection's slot and
 ; generation in its first eight bytes, so a datagram finds its connection
@@ -31,6 +45,7 @@ use http.Request.Request
 use http.Response.Response
 use http.Router.Router
 use http.Hpack.HeaderList
+use http.Qpack.QpackTable
 use tls.Tls.SslCtxRef
 
 ; Our connection IDs: slot (4 bytes) and generation (4), then random.
@@ -62,6 +77,22 @@ define TRAIN_BYTES: size_t 65000
 ; What the h3 threads serve: set once by start_h3, before the threads.
 shared atomic h3_router: u64 0
 shared atomic h3_ctx: u64 0
+; The QPACK dynamic table capacity offered, 0 for none (the default).
+shared atomic h3_qpack_capacity: u64 0
+
+; Offer clients a QPACK dynamic table of capacity bytes (at most
+; QPACK_TABLE_CAPACITY; 0: none); before start_h3.
+procedure h3_offer_qpack_table(capacity: size_t)
+{
+    var c capacity
+    if c > QPACK_TABLE_CAPACITY
+        set c: QPACK_TABLE_CAPACITY
+    scaly_atomic_store_u64(&h3_qpack_capacity, c as u64)
+}
+
+; The QPACK dynamic table capacity offered.
+procedure h3_table_capacity() returns size_t
+    scaly_atomic_load_u64(&h3_qpack_capacity) as size_t
 
 ; A QUIC variable-length integer (RFC 9000 16) at s[at]: its value, and at
 ; moved past it; -1 when the bytes end inside it.
@@ -147,6 +178,9 @@ define QStream
     var in_sendq: bool
     ; its place in its connection's streams
     var index: size_t
+    ; a client's unidirectional stream: its type (RFC 9114 6.2), -1 until
+    ; it arrived
+    var kind: i64
 )
 
 ; A connection on a page of its own.
@@ -169,6 +203,12 @@ define QConn
     var sendq: Array[ref[QStream]]
     var readyq: Array[ref[QStream]]
     var gone: bool
+    ; the QPACK dynamic table, once the client's encoder stream opened
+    var table: ref[QpackTable]?
+    ; our QPACK decoder stream, and the instructions waiting for room in
+    ; its buffer (h3_decoder_move)
+    var decoder: ref[QStream]?
+    var backlog: ByteBuf
 )
 
 ; The per-thread working state of answering a request.
@@ -219,20 +259,28 @@ procedure h3_stream_open(mutable conn: pointer[void], stream_id: i64, mutable us
 procedure h3_new_stream(mutable c: ref[QConn], stream_id: i64) returns ref[QStream]
 {
     let page Page.allocate_page()
-    let s &QStream^page(stream_id, page, ByteBuf.create(page, 512), ByteBuf.create(page, 512), 0, 0, true, false, false, false, false, c.streams.length)
+    let s &QStream^page(stream_id, page, ByteBuf.create(page, 512), ByteBuf.create(page, 512), 0, 0, true, false, false, false, false, c.streams.length, 0 - 1)
     c.streams.add(s)
     s
 }
 
-; Stream data: kept for a request stream, dropped for the client's others;
-; the credit goes back at once. A FIN makes the request ready to answer.
+; Stream data: kept for a request stream, to h3_uni_data for the client's
+; unidirectional ones; the credit goes back at once. A FIN makes the request
+; ready to answer.
 procedure h3_stream_data(mutable conn: pointer[void], flags: u32, stream_id: i64, offset: u64, data: pointer[u8], datalen: size_t, mutable user_data: pointer[void], mutable stream_user_data: pointer[void]) returns i32
 {
     ngtcp2_conn_extend_max_stream_offset(conn, stream_id, datalen as u64)
     ngtcp2_conn_extend_max_offset(conn, datalen as u64)
-    if stream_user_data = null or (stream_id & 2) <> 0
+    if stream_user_data = null
         return 0
     var s stream_user_data as ref[QStream]
+    if (stream_id & 2) <> 0
+    {
+        if datalen = 0
+            return 0
+        var uc user_data as ref[QConn]
+        return h3_uni_data(uc, s, Slice[u8](datalen, data))
+    }
     if datalen > 0
         s.input.append(Slice[u8](datalen, data))
     if (flags & NGTCP2_STREAM_DATA_FLAG_FIN) <> 0 and s.complete = false
@@ -241,6 +289,48 @@ procedure h3_stream_data(mutable conn: pointer[void], flags: u32, stream_id: i64
         var c user_data as ref[QConn]
         c.readyq.add(s)
     }
+    0
+}
+
+; Data on a client's unidirectional stream, behind its type: the encoder
+; stream's instructions carried out (the Insert Count Increment they owe
+; into the backlog) when a table is offered, every other stream's bytes
+; dropped. Not 0 when an instruction is malformed or a second encoder
+; stream opens: ngtcp2 then ends the connection.
+procedure h3_uni_data(mutable c: ref[QConn], mutable s: ref[QStream], bytes: Slice[u8]) returns i32
+{
+    if s.kind >= 0 and (s.kind <> 2 or c.table = null)
+        return 0
+    s.input.append(bytes)
+    if s.kind < 0
+    {
+        var at: size_t 0
+        let kind quic_varint(s.input.bytes(), &at)
+        if kind < 0
+            return 0
+        set s.kind: kind
+        s.input.consume(at)
+        let offered h3_table_capacity()
+        if kind <> 2 or offered = 0
+        {
+            s.input.clear()
+            return 0
+        }
+        if c.table <> null
+            return NGTCP2_ERR_CALLBACK_FAILURE
+        set c.table: QpackTable.create(c.page, offered)
+    }
+    var found: ref[QpackTable]? c.table
+    if found = null
+        return NGTCP2_ERR_CALLBACK_FAILURE
+    var t found as ref[QpackTable]
+    let took t.encoder_instructions(s.input.bytes())
+    if took < 0
+        return NGTCP2_ERR_CALLBACK_FAILURE
+    s.input.consume(took as size_t)
+    let n t.increment()
+    if n > 0
+        encode_integer(&c.backlog, 0, 6, n)
     0
 }
 
@@ -266,7 +356,14 @@ procedure h3_stream_close(mutable conn: pointer[void], flags: u32, stream_id: i6
 {
     var c user_data as ref[QConn]
     if stream_user_data <> null
-        h3_drop_stream(c, stream_user_data as ref[QStream])
+    {
+        let s stream_user_data as ref[QStream]
+        ; a request stream reset before it was answered: its field section
+        ; will not be acknowledged (Stream Cancellation, RFC 9204 4.4.2)
+        if (stream_id & 3) = 0 and s.answered = false and c.table <> null
+            encode_integer(&c.backlog, 64, 6, stream_id as u64)
+        h3_drop_stream(c, s)
+    }
     if (stream_id & 3) = 0
         ngtcp2_conn_extend_max_streams_bidi(conn, 1)
     0
@@ -275,23 +372,84 @@ procedure h3_stream_close(mutable conn: pointer[void], flags: u32, stream_id: i6
 procedure h3_more_streams(mutable conn: pointer[void], max_streams: u64, mutable user_data: pointer[void]) returns i32
     0
 
-; The handshake is done: the control stream, with an empty SETTINGS frame.
+; The handshake is done: the control stream with its SETTINGS -- empty,
+; or the QPACK table capacity offered, with the QPACK decoder stream.
 procedure h3_handshake_completed(mutable conn: pointer[void], mutable user_data: pointer[void]) returns i32
 {
     var c user_data as ref[QConn]
+    var s h3_open_uni(conn, c, 0)
+    if s = null
+        return 0
+    var control s as ref[QStream]
+    let offered h3_table_capacity()
+    ; SETTINGS (4)
+    control.output.append_byte(4)
+    if offered = 0
+    {
+        control.output.append_byte(0)
+        return 0
+    }
+    ; QPACK_MAX_TABLE_CAPACITY (1); QPACK_BLOCKED_STREAMS stays 0
+    var setting ByteBuf.create(c.page, 16)
+    append_quic_varint(&setting, 1)
+    append_quic_varint(&setting, offered as u64)
+    append_quic_varint(&control.output, setting.length as u64)
+    control.output.append(setting.bytes())
+    set c.decoder: h3_open_uni(conn, c, 3)
+    0
+}
+
+; A unidirectional stream of ours with its type, queued: null when ngtcp2
+; opens none.
+procedure h3_open_uni(mutable conn: pointer[void], mutable c: ref[QConn], kind: u8) returns ref[QStream]?
+{
     var id: i64 0
     if ngtcp2_conn_open_uni_stream(conn, &id, null) <> 0
-        return 0
+        return null
     var s h3_new_stream(c, id)
     ngtcp2_conn_set_stream_user_data(conn, id, s as pointer[void])
-    ; type 0 (control), SETTINGS (4) of length 0
-    s.output.append_byte(0)
-    s.output.append_byte(4)
-    s.output.append_byte(0)
+    s.output.append_byte(kind)
     set s.finish: false
     set s.in_sendq: true
     c.sendq.add(s)
-    0
+    s
+}
+
+; The decoder instructions of the backlog onto our decoder stream, as far
+; as its buffer holds them without growing: ngtcp2 keeps pointing at the
+; bytes it sent until the client acknowledges them, and a grown buffer
+; moves (and may free the old one). Once all of them are acknowledged the
+; buffer starts over -- the stream lives as long as the connection.
+procedure h3_decoder_move(mutable c: ref[QConn])
+{
+    if c.backlog.length = 0
+        return
+    let found: ref[QStream]? c.decoder
+    if found = null
+    {
+        c.backlog.clear()
+        return
+    }
+    var d found as ref[QStream]
+    if d.acked = d.output.length and d.queued = d.output.length
+    {
+        d.output.clear()
+        set d.queued: 0
+        set d.acked: 0
+    }
+    var n c.backlog.length
+    let room d.output.capacity() - d.output.length
+    if n > room
+        set n: room
+    if n = 0
+        return
+    d.output.append(c.backlog.bytes().slice_to(n))
+    c.backlog.consume(n)
+    if d.in_sendq = false
+    {
+        set d.in_sendq: true
+        c.sendq.add(d)
+    }
 }
 
 ; A new ID of ours: its slot and generation where the random bytes began.
@@ -310,6 +468,9 @@ procedure h3_new_cid(mutable user_data: pointer[void], mutable cid: pointer[u8],
 ; response out of the budget, its page back.
 procedure h3_drop_stream(mutable c: ref[QConn], s: ref[QStream])
 {
+    let decoder: ref[QStream]? c.decoder
+    if decoder <> null and (decoder as pointer[void]) = (s as pointer[void])
+        set c.decoder: null
     if s.answered
     {
         var l c.listener as ref[QListener]
@@ -352,7 +513,7 @@ procedure h3_remove(mutable list: ref[Array[ref[QStream]]], s: ref[QStream])
 ; body fills the Request straight from its fields and the Response writes
 ; a QPACK field section (its qpack mode) -- no HTTP/1.1 text in either
 ; direction, which was a fifth of the samples in baseline-h3 (2026-09-30).
-procedure h3_answer(mutable w: ref[H3Work], mutable s: ref[QStream])
+procedure h3_answer(mutable w: ref[H3Work], mutable c: ref[QConn], mutable s: ref[QStream])
 {
     set s.answered: true
     set s.finish: true
@@ -371,8 +532,17 @@ procedure h3_answer(mutable w: ref[H3Work], mutable s: ref[QStream])
         set at: at + (length as size_t)
         if kind = 1 and headers_seen = false
         {
-            if qpack_decode(payload, &w.fields) = false
+            var ric: u64 0
+            if qpack_decode_table(payload, c.table, &w.fields, &ric) = false
                 return
+            if ric > 0
+            {
+                ; Section Acknowledgment
+                encode_integer(&c.backlog, 128, 7, s.id as u64)
+                var t: ref[QpackTable]? c.table
+                if t <> null
+                    t.acknowledged(ric)
+            }
             set headers_seen: true
         }
         if kind = 0
@@ -482,7 +652,7 @@ procedure h3_open(mutable l: ref[QListener], pkt: Slice[u8], addr: Slice[u8], no
         first.put(k, dcid[k])
         set k: k + 1
     }
-    var c &QConn^page(page, l as pointer[void], slot as u32, l.generation, null, null, null, remote, addr.length, first, dcid_length, Array[ref[QStream]]^page(), Array[ref[QStream]]^page(), Array[ref[QStream]]^page(), false)
+    var c &QConn^page(page, l as pointer[void], slot as u32, l.generation, null, null, null, remote, addr.length, first, dcid_length, Array[ref[QStream]]^page(), Array[ref[QStream]]^page(), Array[ref[QStream]]^page(), false, null, null, ByteBuf.create(page, 64))
     var conn: pointer[void] null
     if scaly_quic_conn_new(&conn, &dcid[0], dcid_length, &scid[0], scid_length, own.data, CID_LENGTH, l.local.data as pointer[void], l.local_length, remote.data as pointer[void], addr.length, version, now, MAX_DATA, MAX_STREAM_DATA, MAX_STREAMS_BIDI, IDLE_TIMEOUT_MS, c as pointer[void]) <> 0
     {
@@ -558,6 +728,7 @@ procedure h3_send_train(l: ref[QListener], c: ref[QConn], length: size_t, segmen
 ; was half of the server's samples in the kernel in static-h3 (2026-09-30).
 procedure h3_flush(mutable l: ref[QListener], mutable c: ref[QConn], now: u64) returns bool
 {
+    h3_decoder_move(c)
     var sent false
     var packets 0
     var train_length: size_t 0
@@ -660,7 +831,7 @@ procedure h3_answer_ready(mutable l: ref[QListener], mutable c: ref[QConn])
         var s: ref[QStream] c.readyq[0]
         c.readyq.put(0, c.readyq[c.readyq.length - 1])
         set c.readyq.length: c.readyq.length - 1
-        h3_answer(l.work, s)
+        h3_answer(l.work, c, s)
         set l.pending: l.pending + s.output.length
         if s.in_sendq = false
         {

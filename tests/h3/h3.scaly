@@ -5,8 +5,16 @@
 ;              answers 3; GET /big 100 000 bytes, each byte where it belongs
 ;              (many packets, more than one train of them); GET /nope a 404
 ;              without a body
+;   dynamic    the QPACK dynamic table (offered on request,
+;              h3_offer_qpack_table): the client's encoder stream sets a
+;              capacity and inserts (a literal name, a static name
+;              reference, a duplicate); once the server's decoder stream
+;              counted them (Insert Count Increment), a request names them
+;              relative to its Base and past it (post-base) and is answered
+;              from them; the server acknowledges that field section and no
+;              other
 ; Arguments: the certificate, its key, a UDP port.
-; Expected: handshake streams
+; Expected: handshake streams dynamic
 
 package scaly 0.1.0
 package http 0.1.0
@@ -22,6 +30,16 @@ use tls.Tls.SslCtxRef
 
 procedure sum(req: ref[Request], mutable res: ref[Response])
     res.send_int(parse_int_prefix(req.query_param("a")) + parse_int_prefix(req.query_param("b")))
+
+; The dynamic table's x-test, when host (from :authority, also an entry)
+; is localhost.
+procedure hdr(req: ref[Request], mutable res: ref[Response])
+{
+    if req.header("host").equals("localhost")
+        res.send_text(req.header("x-test"))
+    else
+        res.send_text("no host")
+}
 
 ; 100 000 bytes: byte i is i % 251.
 procedure big(req: ref[Request], mutable res: ref[Response])
@@ -45,11 +63,15 @@ define CStream
     var fin_sent: bool
     var response: ByteBuf
     var done: bool
+    ; the request ends with a FIN (the encoder stream does not)
+    var fin: bool
 )
 
 define Client
 (
     var streams: Array[ref[CStream]]
+    ; the server's unidirectional streams, what came on them
+    var uni: Array[ref[CStream]]
     var handshake: bool
 )
 
@@ -58,6 +80,25 @@ procedure c_stream_data(mutable conn: pointer[void], flags: u32, stream_id: i64,
     ngtcp2_conn_extend_max_stream_offset(conn, stream_id, datalen as u64)
     ngtcp2_conn_extend_max_offset(conn, datalen as u64)
     var c user_data as ref[Client]
+    if (stream_id & 3) = 3
+    {
+        var k: size_t 0
+        while k < c.uni.length
+        {
+            var u: ref[CStream] c.uni[k]
+            if u.id = stream_id
+            {
+                u.response.append(Slice[u8](datalen, data))
+                return 0
+            }
+            set k: k + 1
+        }
+        let page Page.allocate_page()
+        var u &CStream^page(stream_id, ByteBuf.create(page, 16), 0, true, ByteBuf.create(page, 256), false, false)
+        u.response.append(Slice[u8](datalen, data))
+        c.uni.add(u)
+        return 0
+    }
     var i: size_t 0
     while i < c.streams.length
     {
@@ -106,6 +147,63 @@ procedure request_frame(mutable out: ref[ByteBuf], path: Slice[u8])
     out.append(block.bytes())
 }
 
+; What the server's QPACK decoder stream said: the Insert Count Increments
+; summed, and the Section Acknowledgments' stream IDs added up with their
+; count (-1 before the stream came, or when an instruction is foreign).
+procedure decoder_said(c: ref[Client], mutable increments: ref[u64], mutable acks: ref[u64], mutable ack_ids: ref[u64]) returns bool
+{
+    set increments: 0
+    set acks: 0
+    set ack_ids: 0
+    var k: size_t 0
+    while k < c.uni.length
+    {
+        let u: ref[CStream] c.uni[k]
+        let bytes u.response.bytes()
+        if bytes.length > 0 and bytes[0] = 3
+        {
+            var at: size_t 1
+            while at < bytes.length
+            {
+                let b bytes[at]
+                if (b & 128) <> 0
+                {
+                    let id decode_integer(bytes, &at, 7)
+                    if id < 0
+                        return true
+                    set acks: acks + 1
+                    set ack_ids: ack_ids + (id as u64)
+                }
+                else if (b & 64) <> 0
+                    return false
+                else
+                {
+                    let n decode_integer(bytes, &at, 6)
+                    if n < 0
+                        return true
+                    set increments: increments + (n as u64)
+                }
+            }
+            return true
+        }
+        set k: k + 1
+    }
+    true
+}
+
+; A request stream and its HEADERS frame (block): queued with a FIN.
+procedure open_request(mutable conn: pointer[void], mutable client: ref[Client], block: Slice[u8])
+{
+    var id: i64 0
+    ngtcp2_conn_open_bidi_stream(conn, &id, null)
+    let page Page.allocate_page()
+    var s &CStream^page(id, ByteBuf.create(page, 256), 0, false, ByteBuf.create(page, 1024), false, true)
+    append_quic_varint(&s.request, 1)
+    append_quic_varint(&s.request, block.length as u64)
+    s.request.append(block)
+    client.streams.add(s)
+}
+
 ; A response's status and body (its HEADERS and DATA frames); status 0
 ; when it is malformed.
 procedure response_of(bytes: Slice[u8], mutable body: ref[ByteBuf]) returns i64
@@ -146,6 +244,8 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     var app Router.create(Page.allocate_page())
     app.get("/sum", &sum)
     app.get("/big", &big)
+    app.get("/hdr", &hdr)
+    h3_offer_qpack_table(4096)
     if start_h3(app, port, cert, key) = false
     {
         print "h3: the server did not start"
@@ -164,7 +264,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
         return 3
     }
     var ctx SSL_CTX_new(TLS_client_method())
-    var client &Client^host(Array[ref[CStream]]^host(), false)
+    var client &Client^host(Array[ref[CStream]]^host(), Array[ref[CStream]]^host(), false)
     var conn: pointer[void] null
     if scaly_quic_client_new(&conn, local.data as pointer[void], local_length, remote.data as pointer[void], remote_length, scaly_eio_now_ns() as u64, &c_stream_data, &c_stream_close, &c_handshake, client as pointer[void]) <> 0
     {
@@ -183,6 +283,8 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     var from allocate_slice[u8]^host(host, 128)
     let deadline scaly_eio_now_ns() + 10000000000
     var opened false
+    var dynamic_sent false
+    var dynamic_id: i64 0
     var finished false
     while finished = false and scaly_eio_now_ns() < deadline
     {
@@ -201,12 +303,64 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
                 var id: i64 0
                 ngtcp2_conn_open_bidi_stream(conn, &id, null)
                 let page Page.allocate_page()
-                var s &CStream^page(id, ByteBuf.create(page, 256), 0, false, ByteBuf.create(page, 1024), false)
+                var s &CStream^page(id, ByteBuf.create(page, 256), 0, false, ByteBuf.create(page, 1024), false, true)
                 request_frame(&s.request, path)
                 client.streams.add(s)
                 set k: k + 1
             }
+            ; the encoder stream: type 2, capacity 220, x-test: dyn (a
+            ; literal name), :authority localhost (static name 0), a
+            ; duplicate of x-test (relative index 1) -- absolute 0, 1, 2
+            var eid: i64 0
+            ngtcp2_conn_open_uni_stream(conn, &eid, null)
+            let ep Page.allocate_page()
+            var e &CStream^ep(eid, ByteBuf.create(ep, 64), 0, false, ByteBuf.create(ep, 16), true, false)
+            e.request.append_byte(2)
+            e.request.append_byte(63)
+            e.request.append_byte(189)
+            e.request.append_byte(1)
+            e.request.append_byte(70)
+            e.request.append("x-test")
+            e.request.append_byte(3)
+            e.request.append("dyn")
+            e.request.append_byte(192)
+            e.request.append_byte(9)
+            e.request.append("localhost")
+            e.request.append_byte(1)
+            client.streams.add(e)
             set opened: true
+        }
+        var increments: u64 0
+        var acks: u64 0
+        var ack_ids: u64 0
+        if decoder_said(client, &increments, &acks, &ack_ids) = false
+        {
+            print "dynamic: a foreign decoder instruction"
+            return 8
+        }
+        if increments >= 3 and dynamic_sent = false
+        {
+            ; Required Insert Count 3 (encoded 4), Base 1 (sign, delta 1);
+            ; GET, https, :path /hdr, x-test by relative index 0 (absolute
+            ; 0), :authority by post-base index 0 (absolute 1), and x-test
+            ; again with a post-base name reference (absolute 2), value two
+            let bp Page.allocate_page()
+            var block ByteBuf.create(bp, 64)
+            block.append_byte(4)
+            block.append_byte(129)
+            block.append_byte(209)
+            block.append_byte(215)
+            block.append_byte(81)
+            block.append_byte(4)
+            block.append("/hdr")
+            block.append_byte(128)
+            block.append_byte(16)
+            block.append_byte(1)
+            block.append_byte(3)
+            block.append("two")
+            open_request(conn, client, block.bytes())
+            set dynamic_id: client.streams[client.streams.length - 1].id
+            set dynamic_sent: true
         }
         ; write: every stream's request with its FIN, then what else is due
         repeat
@@ -227,7 +381,8 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
                     let rest s.request.bytes().slice_from(s.queued)
                     set data: rest.data
                     set length: rest.length
-                    set flags: flags | NGTCP2_WRITE_STREAM_FLAG_FIN
+                    if s.fin
+                        set flags: flags | NGTCP2_WRITE_STREAM_FLAG_FIN
                     break
                 }
                 set i: i + 1
@@ -259,21 +414,24 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
         let now2 scaly_eio_now_ns() as u64
         if ngtcp2_conn_get_expiry(conn) <= now2
             ngtcp2_conn_handle_expiry(conn, now2)
-        set finished: opened
+        set finished: opened and dynamic_sent
         var j: size_t 0
         while j < client.streams.length
         {
             let s: ref[CStream] client.streams[j]
-            if s.done = false
+            if s.done = false and s.fin
                 set finished: false
             set j: j + 1
         }
+        ; the section acknowledgment may come after the response
+        if finished and decoder_said(client, &increments, &acks, &ack_ids) and acks = 0
+            set finished: false
         if finished = false
             Scheduler.sleep(1)
     }
     if finished = false
     {
-        print "h3: not all responses came (handshake `client.handshake`)"
+        print "h3: not all responses came (handshake `client.handshake`, dynamic `dynamic_sent`)"
         return 6
     }
     let bh Page.allocate_page()
@@ -299,6 +457,19 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
         print "streams: sum `sum_status` big `big_status` (`big_body.length` bytes, pattern `pattern`) nope `nope_status`"
         return 7
     }
-    Console.print "streams"
+    Console.print "streams "
+    let s3: ref[CStream] client.streams[4]
+    var hdr_body ByteBuf.create(bh, 16)
+    let hdr_status response_of(s3.response.bytes(), &hdr_body)
+    var increments: u64 0
+    var acks: u64 0
+    var ack_ids: u64 0
+    decoder_said(client, &increments, &acks, &ack_ids)
+    if hdr_status <> 200 or hdr_body.bytes().equals("dyn") = false or increments <> 3 or acks <> 1 or ack_ids <> (dynamic_id as u64)
+    {
+        print "dynamic: status `hdr_status`, `hdr_body.length` bytes, increments `increments`, acks `acks` for `ack_ids` (stream `dynamic_id`)"
+        return 9
+    }
+    Console.print "dynamic"
     0
 }

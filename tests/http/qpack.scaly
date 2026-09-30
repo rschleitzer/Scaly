@@ -1,0 +1,213 @@
+; The http package's QPACK decoder against RFC 9204 Appendix B: a field
+; section with the static table only (B.1); then one dynamic table through
+; B.2 to B.5 -- the encoder stream's capacity and inserts with a static
+; name reference, a section naming them by post-base index (Required Insert
+; Count 2, Base 0), an insert with a literal name, a duplicate, a section
+; naming entries relative to its Base (Required Insert Count 4), and an
+; insert with a dynamic name reference that evicts the oldest entry (the
+; table's size 215 after it, the evicted entry no longer named). The Insert
+; Count Increments the decoder owes come out of increment(). Then the
+; encoder stream cut at every byte: what is complete is carried out, the
+; rest waits and completes the same table. Then a Huffman-coded insert, and
+; the malformed: a capacity above the one offered (4096), an entry with an LF, an
+; entry larger than the table, a section whose Required Insert Count is
+; above the inserts, one naming an evicted entry, and one naming the
+; dynamic table without one.
+; Expected: static dynamic split huffman malformed
+
+package scaly 0.1.0
+package http 0.1.0
+
+use http.Buffer.ByteBuf
+use http.Hpack.HeaderList
+use http.Hpack.HpackDecoder
+use http.Qpack.QpackTable
+
+function hex_value(c: u8) returns u8
+{
+    if c >= 97
+        return c - 87
+    c - 48
+}
+
+; The bytes a hex string spells, onto a fresh buffer of host.
+procedure unhex(host: ref[Page], hex: Slice[u8]) returns ByteBuf
+{
+    var out ByteBuf.create(host, hex.length / 2 + 1)
+    var i: size_t 0
+    while i + 1 < hex.length
+    {
+        out.append_byte(hex_value(hex[i]) * 16 + hex_value(hex[i + 1]))
+        set i: i + 2
+    }
+    out
+}
+
+; The fields of a list as "name=value" joined by " ".
+procedure fields(list: ref[HeaderList]) returns String
+{
+    var sb StringBuilder()
+    var i: size_t 0
+    while i < list.count()
+    {
+        if i > 0
+            sb.append(" " as char)
+        let n list.name(i)
+        let v list.value(i)
+        sb.append(String(n.data as pointer[const_char], n.length))
+        sb.append("=" as char)
+        sb.append(String(v.data as pointer[const_char], v.length))
+        set i: i + 1
+    }
+    sb.to_string()
+}
+
+; A field section decoded with t: its fields, and its Required Insert Count
+; through ric; "malformed" when it is.
+procedure section(t: ref[QpackTable]?, block: Slice[u8], mutable list: ref[HeaderList], mutable ric: ref[u64]) returns String
+{
+    list.clear()
+    if qpack_decode_table(block, t, list, ric) = false
+        return String("malformed")
+    fields(list)
+}
+
+; Dynamic entry `index` (absolute) as "name=value", "none" without one.
+procedure entry_of(t: ref[QpackTable], index: u64) returns String
+{
+    var name: Slice[u8] ""
+    var value: Slice[u8] ""
+    if t.entry(index, &name, &value) = false
+        return String("none")
+    "`String(name.data as pointer[const_char], name.length)`=`String(value.data as pointer[const_char], value.length)`"
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    let host Page.allocate_page()
+    var list HeaderList.create(host)
+    var ric: u64 0
+
+    ; B.1: a literal with a static name reference
+    let b1 unhex(host, "0000510b2f696e6465782e68746d6c")
+    if section(null, b1.bytes(), &list, &ric).equals(String(":path=/index.html")) = false or ric <> 0
+    {
+        print "static: `section(null, b1.bytes(), &list, &ric)`"
+        return 1
+    }
+    Console.print "static "
+
+    ; B.2: capacity 220, two inserts with static name references
+    let enc2 unhex(host, "3fbd01c00f7777772e6578616d706c652e636f6dc10c2f73616d706c652f70617468")
+    var t QpackTable.create(host, 4096)
+    if t.encoder_instructions(enc2.bytes()) <> (enc2.length as i64) or t.inserts <> 2 or t.increment() <> 2 or t.increment() <> 0
+    {
+        print "dynamic: B.2 encoder stream, `t.inserts` inserts"
+        return 2
+    }
+    let s4 unhex(host, "03811011")
+    let got4 section(t, s4.bytes(), &list, &ric)
+    if got4.equals(String(":authority=www.example.com :path=/sample/path")) = false or ric <> 2
+    {
+        print "dynamic: B.2 stream 4 `got4` (ric `ric`)"
+        return 3
+    }
+    t.acknowledged(ric)
+    ; B.3: an insert with a literal name
+    let enc3 unhex(host, "4a637573746f6d2d6b65790c637573746f6d2d76616c7565")
+    if t.encoder_instructions(enc3.bytes()) <> (enc3.length as i64) or t.increment() <> 1
+    {
+        print "dynamic: B.3 insert"
+        return 4
+    }
+    ; B.4: a duplicate (relative index 2: the :authority), then stream 8
+    let enc4 unhex(host, "02")
+    if t.encoder_instructions(enc4.bytes()) <> 1 or t.inserts <> 4
+    {
+        print "dynamic: B.4 duplicate"
+        return 5
+    }
+    let s8 unhex(host, "050080c181")
+    let got8 section(t, s8.bytes(), &list, &ric)
+    if got8.equals(String(":authority=www.example.com :path=/ custom-key=custom-value")) = false or ric <> 4
+    {
+        print "dynamic: B.4 stream 8 `got8` (ric `ric`)"
+        return 6
+    }
+    ; B.5: an insert with a dynamic name reference (relative 1) evicts entry 0
+    let enc5 unhex(host, "810d637573746f6d2d76616c756532")
+    if t.encoder_instructions(enc5.bytes()) <> (enc5.length as i64) or t.inserts <> 5 or t.table.size <> 215 or t.table.count <> 4
+    {
+        print "dynamic: B.5 insert, size `t.table.size` count `t.table.count`"
+        return 7
+    }
+    if entry_of(t, 0).equals(String("none")) = false or entry_of(t, 4).equals(String("custom-key=custom-value2")) = false or entry_of(t, 3).equals(String(":authority=www.example.com")) = false
+    {
+        print "dynamic: entries `entry_of(t, 0)` / `entry_of(t, 3)` / `entry_of(t, 4)`"
+        return 8
+    }
+    Console.print "dynamic "
+
+    ; the encoder stream of B.2 and B.3 cut at every byte
+    let whole unhex(host, "3fbd01c00f7777772e6578616d706c652e636f6dc10c2f73616d706c652f706174684a637573746f6d2d6b65790c637573746f6d2d76616c7565")
+    var k: size_t 0
+    while k <= whole.length
+    {
+        let page Page.allocate_page()
+        var u QpackTable.create(page, 4096)
+        let first u.encoder_instructions(whole.bytes().slice_to(k))
+        if first < 0 or (first as size_t) > k
+        {
+            print "split: cut at `k` took `first`"
+            return 9
+        }
+        let second u.encoder_instructions(whole.bytes().slice_from(first as size_t))
+        if second < 0 or (first + second) <> (whole.length as i64) or u.inserts <> 3 or entry_of(u, 2).equals(String("custom-key=custom-value")) = false
+        {
+            print "split: cut at `k`, `first` + `second` bytes, `u.inserts` inserts"
+            return 10
+        }
+        page.deallocate_extensions()
+        Page.release_page(page)
+        set k: k + 1
+    }
+    Console.print "split "
+
+    ; a Huffman-coded value (www.example.com) with the static name :authority
+    let hp Page.allocate_page()
+    var h QpackTable.create(hp, 4096)
+    let ench unhex(host, "3fbd01c08cf1e3c2e5f23a6ba0ab90f4ff")
+    if h.encoder_instructions(ench.bytes()) <> (ench.length as i64) or entry_of(h, 0).equals(String(":authority=www.example.com")) = false
+    {
+        print "huffman: `entry_of(h, 0)`"
+        return 11
+    }
+    Console.print "huffman "
+
+    ; capacity 4097, above the 4096 offered
+    let mp Page.allocate_page()
+    var m1 QpackTable.create(mp, 4096)
+    let bad1 unhex(host, "3fe21f")
+    ; an insert whose value holds an LF
+    var m2 QpackTable.create(mp, 4096)
+    let bad2 unhex(host, "3fbd01c003610a62")
+    ; an insert before any capacity: larger than the table
+    var m3 QpackTable.create(mp, 4096)
+    let bad3 unhex(host, "c0026162")
+    if m1.encoder_instructions(bad1.bytes()) <> (0 - 1) or m2.encoder_instructions(bad2.bytes()) <> (0 - 1) or m3.encoder_instructions(bad3.bytes()) <> (0 - 1)
+    {
+        print "malformed: encoder stream `m1.encoder_instructions(bad1.bytes())` `m2.encoder_instructions(bad2.bytes())` `m3.encoder_instructions(bad3.bytes())`"
+        return 12
+    }
+    ; Required Insert Count 6 with 5 inserts; entry 0 (evicted) by post-base
+    ; index from Base 0; the dynamic table without one
+    let ahead unhex(host, "0700c1")
+    let evicted unhex(host, "068410")
+    if section(t, ahead.bytes(), &list, &ric).equals(String("malformed")) = false or section(t, evicted.bytes(), &list, &ric).equals(String("malformed")) = false or section(null, s4.bytes(), &list, &ric).equals(String("malformed")) = false
+    {
+        print "malformed: sections"
+        return 13
+    }
+    Console.print "malformed"
+    0
+}

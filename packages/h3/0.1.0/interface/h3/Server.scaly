@@ -7,13 +7,27 @@
 ;
 ; A request stream is answered once its FIN arrived -- never inside an
 ; ngtcp2 callback, so that no handler runs in the middle of ngtcp2: its
-; HEADERS (QPACK, static table only -- http.Qpack) and DATA frames become
-; HTTP/1.1 request text for the same router and handlers as every other
-; protocol, and the HTTP/1.1 response they write becomes a HEADERS and a
-; DATA frame on the stream, which keeps it until the client acknowledged it
-; (ngtcp2 may send any of it again). Every connection opens a control stream
-; with an empty SETTINGS frame (a QPACK table capacity of 0 by default); the
-; client's control and QPACK streams are read and dropped.
+; HEADERS (QPACK -- http.Qpack) and DATA frames become a Request for the
+; same router and handlers as every other protocol, and the response they
+; write becomes a HEADERS and a DATA frame on the stream, which keeps it
+; until the client acknowledged it (ngtcp2 may send any of it again).
+;
+; Every connection opens a control stream with its SETTINGS. A QPACK
+; dynamic table is offered only on request (h3_offer_qpack_table, before
+; start_h3): it spares the server a tenth of its CPU in baseline-h3 and
+; costs the client more than that -- its encoder keeps the table and reads
+; a Section Acknowledgment per request -- so where the client is the
+; bottleneck, as in HttpArena, fewer requests are answered (2026-09-30).
+; Offered (with no blocked streams), the connection opens a QPACK decoder
+; stream too. The client's encoder stream fills the connection's table (a
+; QpackTable, made when that stream opens), and the decoder stream answers
+; with what RFC 9204 4.4 asks: an Insert Count Increment after inserts, a
+; Section Acknowledgment after a field section that named the table, a
+; Stream Cancellation for a request stream reset unanswered. A client whose
+; encoder indexes :authority and user-agent then sends them as one byte
+; each instead of a Huffman-coded literal on every request. The client's
+; control and QPACK decoder streams are read and dropped, and its encoder
+; stream too while no table is offered.
 ;
 ; Routing: an ID this server chose carries its connection's slot and
 ; generation in its first eight bytes, so a datagram finds its connection
@@ -31,6 +45,7 @@ use http.Request.Request
 use http.Response.Response
 use http.Router.Router
 use http.Hpack.HeaderList
+use http.Qpack.QpackTable
 use tls.Tls.SslCtxRef
 
 ; Our connection IDs: slot (4 bytes) and generation (4), then random.
@@ -62,6 +77,15 @@ define TRAIN_BYTES: size_t 65000
 ; What the h3 threads serve: set once by start_h3, before the threads.
 shared atomic h3_router: u64 linked
 shared atomic h3_ctx: u64 linked
+; The QPACK dynamic table capacity offered, 0 for none (the default).
+shared atomic h3_qpack_capacity: u64 linked
+
+; Offer clients a QPACK dynamic table of capacity bytes (at most
+; QPACK_TABLE_CAPACITY; 0: none); before start_h3.
+procedure h3_offer_qpack_table(capacity: size_t) @ret_nonlocal true @deep true reads h3_qpack_capacity linked
+
+; The QPACK dynamic table capacity offered.
+procedure h3_table_capacity() @ret_nonlocal true @deep true returns size_t reads h3_qpack_capacity linked
 
 ; A QUIC variable-length integer (RFC 9000 16) at s[at]: its value, and at
 ; moved past it; -1 when the bytes end inside it.
@@ -94,6 +118,9 @@ define QStream
     var in_sendq: bool
     ; its place in its connection's streams
     var index: size_t
+    ; a client's unidirectional stream: its type (RFC 9114 6.2), -1 until
+    ; it arrived
+    var kind: i64
 )
 
 ; A connection on a page of its own.
@@ -116,6 +143,12 @@ define QConn
     var sendq: Array[ref[QStream]]
     var readyq: Array[ref[QStream]]
     var gone: bool
+    ; the QPACK dynamic table, once the client's encoder stream opened
+    var table: ref[QpackTable]?
+    ; our QPACK decoder stream, and the instructions waiting for room in
+    ; its buffer (h3_decoder_move)
+    var decoder: ref[QStream]?
+    var backlog: ByteBuf
 )
 
 ; The per-thread working state of answering a request.
@@ -159,9 +192,17 @@ procedure h3_stream_open(mutable conn: pointer[void], stream_id: i64, mutable us
 
 procedure h3_new_stream(mutable c: ref[QConn], stream_id: i64) @deep true returns ref[QStream] linked
 
-; Stream data: kept for a request stream, dropped for the client's others;
-; the credit goes back at once. A FIN makes the request ready to answer.
-procedure h3_stream_data(mutable conn: pointer[void], flags: u32, stream_id: i64, offset: u64, data: pointer[u8], datalen: size_t, mutable user_data: pointer[void], mutable stream_user_data: pointer[void]) @ret_nonlocal true @deep true returns i32 io linked
+; Stream data: kept for a request stream, to h3_uni_data for the client's
+; unidirectional ones; the credit goes back at once. A FIN makes the request
+; ready to answer.
+procedure h3_stream_data(mutable conn: pointer[void], flags: u32, stream_id: i64, offset: u64, data: pointer[u8], datalen: size_t, mutable user_data: pointer[void], mutable stream_user_data: pointer[void]) @ret_nonlocal true @deep true returns i32 io reads h3_qpack_capacity linked
+
+; Data on a client's unidirectional stream, behind its type: the encoder
+; stream's instructions carried out (the Insert Count Increment they owe
+; into the backlog) when a table is offered, every other stream's bytes
+; dropped. Not 0 when an instruction is malformed or a second encoder
+; stream opens: ngtcp2 then ends the connection.
+procedure h3_uni_data(mutable c: ref[QConn], mutable s: ref[QStream], bytes: Slice[u8]) @deep true returns i32 reads h3_qpack_capacity linked
 
 ; The client acknowledged datalen more bytes of a stream.
 procedure h3_acked(mutable conn: pointer[void], stream_id: i64, offset: u64, datalen: u64, mutable user_data: pointer[void], mutable stream_user_data: pointer[void]) @ret_nonlocal true @deep true returns i32 linked
@@ -172,8 +213,20 @@ procedure h3_stream_close(mutable conn: pointer[void], flags: u32, stream_id: i6
 
 procedure h3_more_streams(mutable conn: pointer[void], max_streams: u64, mutable user_data: pointer[void]) @ret_nonlocal true @deep true returns i32 linked
 
-; The handshake is done: the control stream, with an empty SETTINGS frame.
-procedure h3_handshake_completed(mutable conn: pointer[void], mutable user_data: pointer[void]) @ret_nonlocal true @deep true returns i32 io linked
+; The handshake is done: the control stream with its SETTINGS -- empty,
+; or the QPACK table capacity offered, with the QPACK decoder stream.
+procedure h3_handshake_completed(mutable conn: pointer[void], mutable user_data: pointer[void]) @ret_nonlocal true @deep true returns i32 io reads h3_qpack_capacity linked
+
+; A unidirectional stream of ours with its type, queued: null when ngtcp2
+; opens none.
+procedure h3_open_uni(mutable conn: pointer[void], mutable c: ref[QConn], kind: u8) @page true @direct true @deep true returns ref[QStream]? io linked
+
+; The decoder instructions of the backlog onto our decoder stream, as far
+; as its buffer holds them without growing: ngtcp2 keeps pointing at the
+; bytes it sent until the client acknowledges them, and a grown buffer
+; moves (and may free the old one). Once all of them are acknowledged the
+; buffer starts over -- the stream lives as long as the connection.
+procedure h3_decoder_move(mutable c: ref[QConn]) @deep true @deep_this_1 true linked
 
 ; A new ID of ours: its slot and generation where the random bytes began.
 procedure h3_new_cid(mutable user_data: pointer[void], mutable cid: pointer[u8], cidlen: size_t) @ret_nonlocal true @deep true returns i32 linked
@@ -191,7 +244,7 @@ procedure h3_remove(mutable list: ref[Array[ref[QStream]]], s: ref[QStream]) @de
 ; body fills the Request straight from its fields and the Response writes
 ; a QPACK field section (its qpack mode) -- no HTTP/1.1 text in either
 ; direction, which was a fifth of the samples in baseline-h3 (2026-09-30).
-procedure h3_answer(mutable w: ref[H3Work], mutable s: ref[QStream]) @deep true linked
+procedure h3_answer(mutable w: ref[H3Work], mutable c: ref[QConn], mutable s: ref[QStream]) @deep true linked
 
 ; ---- the listener ---------------------------------------------------------
 

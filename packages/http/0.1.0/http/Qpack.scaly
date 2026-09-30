@@ -1,25 +1,284 @@
-; QPACK (RFC 9204), the header compression of HTTP/3, with the static table
-; only: the server announces a dynamic table capacity of 0 (the default of
-; SETTINGS_QPACK_MAX_TABLE_CAPACITY), so a client may not insert, every
-; field section says Required Insert Count 0, and no encoder or decoder
-; stream is ever needed. Strings are Huffman-coded as in HPACK
-; (http.Hpack's decoder); responses are sent as literals without Huffman.
+; QPACK (RFC 9204), the header compression of HTTP/3. The decoder keeps a
+; dynamic table (QpackTable) when the server offers one (h3 does on
+; request, h3_offer_qpack_table): the client's
+; encoder inserts on its encoder stream (encoder_instructions) and its field
+; sections name the entries (qpack_decode_table), the server answering on
+; its decoder stream (Insert Count Increment, Section Acknowledgment). It
+; allows no blocked streams (SETTINGS_QPACK_BLOCKED_STREAMS stays 0), so a
+; client names only entries the server acknowledged, and a field section
+; never waits for an insert. Strings are Huffman-coded as in HPACK
+; (http.Hpack's decoder); responses are sent with the static table only, as
+; literals without Huffman.
 
 use http.Buffer.ByteBuf
 use http.Hpack.HeaderList
+use http.Hpack.HpackDecoder
 
-; A field section decoded onto list; false when it is malformed or names the
-; dynamic table.
+; The largest dynamic table capacity a server may offer
+; (SETTINGS_QPACK_MAX_TABLE_CAPACITY): HpackDecoder's ring holds the
+; entries (at most 4096 / 32 of them).
+define QPACK_TABLE_CAPACITY: size_t 4096
+
+; The decoder's dynamic table of one connection.
+define QpackTable
+(
+    ; the entries: dynamic entry d (0 the newest) is table entry 62 + d
+    var table: HpackDecoder
+    ; the entries inserted so far (the Insert Count), and how many of them
+    ; the encoder knows arrived (the Known Received Count)
+    var inserts: u64
+    var known: u64
+    ; an entry's name and value while it is inserted: a name or a
+    ; duplicate taken from the table may move or go with the insert
+    var scratch: ByteBuf
+    ; the capacity offered (at most QPACK_TABLE_CAPACITY)
+    offered: size_t
+)
+{
+    ; A table on host for the capacity offered, its capacity 0 until the
+    ; encoder sets one.
+    procedure create(host: ref[Page], offered: size_t) returns ref[QpackTable]
+    {
+        var d HpackDecoder.create(host)
+        set d.limit: 0
+        var most offered
+        if most > QPACK_TABLE_CAPACITY
+            set most: QPACK_TABLE_CAPACITY
+        &QpackTable^host(d, 0, 0, ByteBuf.create(host, 256), most)
+    }
+
+    ; Dynamic entry with absolute index `index`: views of its name and
+    ; value (valid until the next insert); false for one not (or no longer)
+    ; in the table.
+    procedure entry(this, index: u64, mutable name: ref[Slice[u8]], mutable value: ref[Slice[u8]]) returns bool
+    {
+        if index >= inserts
+            return false
+        table.entry(62 + (inserts - 1 - index), name, value)
+    }
+
+    ; The encoder stream's complete instructions at the front of input
+    ; carried out (RFC 9204 4.3): the bytes they took -- the rest waits for
+    ; more -- or -1 when one is malformed (QPACK_ENCODER_STREAM_ERROR).
+    procedure encoder_instructions(mutable this, input: Slice[u8]) returns i64
+    {
+        var done: size_t 0
+        while done < input.length
+        {
+            let r this.encoder_instruction(input, done)
+            if r < 0
+                return 0 - 1
+            if r = 0
+                break
+            set done: r as size_t
+        }
+        done as i64
+    }
+
+    ; One instruction at input[at]: where it ends, 0 when input ends inside
+    ; it, -1 when it is malformed.
+    procedure encoder_instruction(mutable this, input: Slice[u8], at: size_t) returns i64
+    {
+        var pos: size_t at
+        let b input[pos]
+        if (b & 224) = 32
+        {
+            ; Set Dynamic Table Capacity (5-bit prefix)
+            let capacity qpack_integer(input, &pos, 5)
+            if capacity = 0 - 2
+                return 0
+            if capacity < 0 or (capacity as size_t) > offered
+                return 0 - 1
+            set table.limit: capacity as size_t
+            table.evict_to(0)
+            return pos as i64
+        }
+        scratch.clear()
+        var name_length: size_t 0
+        if (b & 128) <> 0 or (b & 224) = 0
+        {
+            ; Insert With Name Reference (6-bit index, T 0x40: static), or
+            ; Duplicate (5-bit relative index)
+            let insert (b & 128) <> 0
+            var index: i64 0
+            if insert
+                set index: qpack_integer(input, &pos, 6)
+            else
+                set index: qpack_integer(input, &pos, 5)
+            if index = 0 - 2
+                return 0
+            if index < 0
+                return 0 - 1
+            var name: Slice[u8] ""
+            var value: Slice[u8] ""
+            if insert and (b & 64) <> 0
+            {
+                if index > 98
+                    return 0 - 1
+                set name: qpack_static_name(index as u64)
+            }
+            else
+            {
+                ; relative to the Insert Count: 0 is the newest
+                if (index as u64) >= inserts or this.entry(inserts - 1 - (index as u64), &name, &value) = false
+                    return 0 - 1
+            }
+            scratch.append(name)
+            set name_length: name.length
+            if insert
+            {
+                let r qpack_entry_string(input, &pos, 7, &scratch)
+                if r <= 0
+                    return r
+            }
+            else
+                scratch.append(value)
+        }
+        else
+        {
+            ; Insert With Literal Name (H 0x20, a 5-bit length), its value
+            let r qpack_entry_string(input, &pos, 5, &scratch)
+            if r <= 0
+                return r
+            set name_length: scratch.length
+            let r2 qpack_entry_string(input, &pos, 7, &scratch)
+            if r2 <= 0
+                return r2
+        }
+        let all scratch.bytes()
+        if all.length + 32 > table.limit
+            return 0 - 1
+        table.insert(all.slice_to(name_length), all.slice_from(name_length))
+        set inserts: inserts + 1
+        pos as i64
+    }
+
+    ; The inserts the encoder does not know arrived, now known: the
+    ; increment of an Insert Count Increment, 0 for none to send.
+    procedure increment(mutable this) returns u64
+    {
+        let n inserts - known
+        set known: inserts
+        n
+    }
+
+    ; A field section with Required Insert Count ric was acknowledged.
+    procedure acknowledged(mutable this, ric: u64)
+    {
+        if ric > known
+            set known: ric
+    }
+}
+
+; An integer with an n-bit prefix at input[at] as decode_integer reads it,
+; but -2 when input ends inside it (more may come) and -1 only when it is
+; malformed: one that runs on past five continuation bytes.
+procedure qpack_integer(input: Slice[u8], mutable at: ref[size_t], prefix_bits: u64) returns i64
+{
+    var pos: size_t at
+    let v decode_integer(input, &pos, prefix_bits)
+    if v < 0
+    {
+        if input.length - at < 7
+            return 0 - 2
+        return 0 - 1
+    }
+    set at: pos
+    v
+}
+
+; A string of an encoder instruction with an n-bit length prefix whose H
+; flag is the bit just above it, decoded onto out: 1, 0 when input ends
+; inside it, -1 when it is malformed -- a bad Huffman code, or a CR, LF or
+; NUL, which no field may hold (HeaderList.literal) and a table entry
+; becomes one.
+procedure qpack_entry_string(input: Slice[u8], mutable at: ref[size_t], prefix_bits: u64, mutable out: ref[ByteBuf]) returns i64
+{
+    var pos: size_t at
+    if pos >= input.length
+        return 0
+    let huffman ((input[pos] as u64) & ((1 as u64) << prefix_bits)) <> 0
+    let n qpack_integer(input, &pos, prefix_bits)
+    if n = 0 - 2
+        return 0
+    if n < 0
+        return 0 - 1
+    if pos + (n as size_t) > input.length
+        return 0
+    let raw input.subslice(pos, pos + (n as size_t))
+    if huffman
+    {
+        out.reserve((raw.length * 8) / 5 + 1)
+        var w out.length
+        if huffman_decode_into(raw, out.data, &w, true) = false
+            return 0 - 1
+        set out.length: w
+    }
+    else
+    {
+        if field_bytes_ok(raw) = false
+            return 0 - 1
+        out.append(raw)
+    }
+    set at: pos + (n as size_t)
+    1
+}
+
+; A field section decoded onto list with the static table only; false when
+; it is malformed or names the dynamic table.
 procedure qpack_decode(block: Slice[u8], mutable list: ref[HeaderList]) returns bool
+{
+    var required: u64 0
+    qpack_decode_table(block, null, list, &required)
+}
+
+; A field section decoded onto list, naming the entries of table (none
+; without one): its Required Insert Count through required, for the
+; Section Acknowledgment it asks for when above 0. False when it is
+; malformed, or names an entry it may not (QPACK_DECOMPRESSION_FAILED).
+procedure qpack_decode_table(block: Slice[u8], table: ref[QpackTable]?, mutable list: ref[HeaderList], mutable required: ref[u64]) returns bool
 {
     list.room_for_block(block.length)
     var at: size_t 0
-    ; Required Insert Count (8-bit prefix) and Delta Base (sign + 7 bits)
-    let ric decode_integer(block, &at, 8)
-    if ric <> 0
+    ; Required Insert Count (8-bit prefix, RFC 9204 4.5.1.1) and Base
+    let encoded decode_integer(block, &at, 8)
+    if encoded < 0
         return false
-    if decode_integer(block, &at, 7) < 0
+    var ric: u64 0
+    if encoded > 0
+    {
+        if table = null
+            return false
+        let max_entries (table.offered / 32) as u64
+        let full 2 * max_entries
+        if (encoded as u64) > full
+            return false
+        let max_value table.inserts + max_entries
+        set ric: (max_value / full) * full + (encoded as u64) - 1
+        if ric > max_value
+        {
+            if ric <= full
+                return false
+            set ric: ric - full
+        }
+        ; no blocked streams: every entry it names arrived before it
+        if ric = 0 or ric > table.inserts
+            return false
+    }
+    set required: ric
+    if at >= block.length
         return false
+    let negative (block[at] & 128) <> 0
+    let delta decode_integer(block, &at, 7)
+    if delta < 0
+        return false
+    var base ric + (delta as u64)
+    if negative
+    {
+        if (delta as u64) + 1 > ric
+            return false
+        set base: ric - (delta as u64) - 1
+    }
     while at < block.length
     {
         let b block[at]
@@ -27,24 +286,35 @@ procedure qpack_decode(block: Slice[u8], mutable list: ref[HeaderList]) returns 
         var value: Slice[u8] ""
         if (b & 128) <> 0
         {
-            ; indexed field line, 6-bit index; T (0x40) must name the static table
-            if (b & 64) = 0
-                return false
+            ; indexed field line, 6-bit index; T (0x40): the static table,
+            ; else relative to Base
             let index decode_integer(block, &at, 6)
-            if index < 0 or index > 98
+            if index < 0
                 return false
-            set name: qpack_static_name(index as u64)
-            set value: qpack_static_value(index as u64)
+            if (b & 64) <> 0
+            {
+                if index > 98
+                    return false
+                set name: qpack_static_name(index as u64)
+                set value: qpack_static_value(index as u64)
+            }
+            else if (index as u64) >= base or qpack_dynamic(table, ric, base - 1 - (index as u64), &name, &value) = false
+                return false
         }
         else if (b & 64) <> 0
         {
             ; literal with a name reference, 4-bit index; T is 0x10
-            if (b & 16) = 0
-                return false
             let index decode_integer(block, &at, 4)
-            if index < 0 or index > 98
+            if index < 0
                 return false
-            set name: qpack_static_name(index as u64)
+            if (b & 16) <> 0
+            {
+                if index > 98
+                    return false
+                set name: qpack_static_name(index as u64)
+            }
+            else if (index as u64) >= base or qpack_dynamic(table, ric, base - 1 - (index as u64), &name, &value) = false
+                return false
             if qpack_string(block, &at, 7, list, &value) = false
                 return false
         }
@@ -56,11 +326,34 @@ procedure qpack_decode(block: Slice[u8], mutable list: ref[HeaderList]) returns 
             if qpack_string(block, &at, 7, list, &value) = false
                 return false
         }
+        else if (b & 16) <> 0
+        {
+            ; indexed field line with a post-base index (4-bit)
+            let index decode_integer(block, &at, 4)
+            if index < 0 or qpack_dynamic(table, ric, base + (index as u64), &name, &value) = false
+                return false
+        }
         else
-            return false
+        {
+            ; literal with a post-base name reference (3-bit index)
+            let index decode_integer(block, &at, 3)
+            if index < 0 or qpack_dynamic(table, ric, base + (index as u64), &name, &value) = false
+                return false
+            if qpack_string(block, &at, 7, list, &value) = false
+                return false
+        }
         list.add(name, value)
     }
     true
+}
+
+; Dynamic entry `index` (absolute) for a field section whose Required
+; Insert Count is ric: it must lie below ric and still be in the table.
+procedure qpack_dynamic(table: ref[QpackTable]?, ric: u64, index: u64, mutable name: ref[Slice[u8]], mutable value: ref[Slice[u8]]) returns bool
+{
+    if table = null or index >= ric
+        return false
+    table.entry(index, name, value)
 }
 
 ; A string literal with an n-bit length prefix whose H flag is the bit just
