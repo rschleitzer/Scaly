@@ -1,0 +1,20 @@
+; Regression: SCALY_POISON in the environment turns the runtime's poison mode
+; on by itself (root_pages.poison_from_env, read by the first bucket a
+; process creates): a released page reads 0xDD at once.
+;
+; Before 2026-09-30 only a program that called Page.enable_poison() itself
+; got it -- the dazzle, onsgmls and tscaly drivers did; the http, json,
+; compress, pg, redis and tls suites set the variable for test programs that
+; never read it, so every gate of theirs that said "under poison" ran without.
+; The same binary without the variable prints FAIL (the byte stays 7).
+; run-env: SCALY_POISON=1
+
+let keep Page.allocate_page()
+let p Page.allocate_page()
+let raw p as pointer[u8]
+set *(raw + 100): 7
+Page.release_page(p)
+if *(raw + 100) = 0xDD
+    print "PASS"
+else
+    print "FAIL"

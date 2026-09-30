@@ -880,8 +880,29 @@ procedure reset_page(p: ref[Page])
 ; Bucket creation
 ; --------------------------------------------------------------------------
 
+; Has the process read SCALY_POISON yet? The first bucket it creates does
+; (poison_from_env): that is the first allocation of any kind, made on the
+; main thread before another thread can exist, which is when a `shared`
+; cell may be written. Before 2026-09-30 only a program that called
+; Page.enable_poison() itself (the dazzle, onsgmls and tscaly drivers) ran
+; under poison; the http, json, compress, pg, redis and tls suites set the
+; variable for programs that never read it.
+shared poison_env_read: bool false
+
+; Poison mode (Page.page_poison) when SCALY_POISON is set, as the drivers
+; always read it -- once per process.
+procedure poison_from_env()
+{
+    if poison_env_read
+        return
+    set poison_env_read: true
+    if getenv("SCALY_POISON") <> null
+        set page_poison: true
+}
+
 procedure create_stack_bucket(mutable prev: pointer[StackBucketHeader]) returns pointer[StackBucketHeader]
 {
+    poison_from_env()
     let mem scaly_aligned_alloc(BUCKET_SIZE as i64, BUCKET_SIZE as i64)
     if mem = null
         scaly_panic_oom("Page.create_stack_bucket", BUCKET_SIZE)
@@ -897,6 +918,7 @@ procedure create_stack_bucket(mutable prev: pointer[StackBucketHeader]) returns 
 
 function create_heap_bucket() returns ref[HeapBucketHeader]
 {
+    poison_from_env()
     let mem scaly_aligned_alloc(BUCKET_SIZE as i64, BUCKET_SIZE as i64)
     if mem = null
         scaly_panic_oom("Page.create_heap_bucket", BUCKET_SIZE)

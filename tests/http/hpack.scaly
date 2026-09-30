@@ -132,9 +132,6 @@ procedure huffman_encode(s: Slice[u8], mutable out: ref[ByteBuf])
 
 procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
 {
-    ; SCALY_POISON in the runner does nothing by itself: the program turns
-    ; it on, while it is still single-threaded
-    Page.enable_poison()
     let host Page.allocate_page()
     var d HpackDecoder.create(host)
     var list HeaderList.create(host)

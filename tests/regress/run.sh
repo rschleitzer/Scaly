@@ -131,9 +131,14 @@ run_one() {
         # (simd_lookup_join / _portable, --portable-simd).
         arg_args=()
         while IFS= read -r a; do [ -n "$a" ] && arg_args+=($a); done < <(sed -n 's/^; args: //p' "$f")
+        # `; run-env: VAR=VALUE` (repeatable) sets environment for the PROGRAM
+        # (`; env:` is the compile's): a runtime switch read from it, such as
+        # SCALY_POISON (poison_from_env).
+        run_env=()
+        while IFS= read -r kv; do [ -n "$kv" ] && run_env+=("$kv"); done < <(sed -n 's/^; run-env: //p' "$f")
         crc=0
         "$STAGE" "${arg_args[@]}" -o "$bin" "$f" "${extra[@]}" > "$cerr" 2>&1 || crc=$?
-        out=$("$bin" 2>"$rerr"); rc=$?
+        out=$(env "${run_env[@]+"${run_env[@]}"}" "$bin" 2>"$rerr"); rc=$?
         if [ "$out" = "PASS" ]; then
           echo "PASS $t"
         else
