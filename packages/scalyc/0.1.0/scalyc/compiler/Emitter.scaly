@@ -8328,10 +8328,14 @@ define Emitter
             }
         }
 
-        ; Build the module in the ORC ThreadSafeContext's context, then JIT-execute
-        ; the named function and return its i64 result. The whole pipeline (TSC →
-        ; emit → LLJIT → lookup → indirect call) lives here so cli just hands off
-        ; the plan + target. Returns 127 on any JIT setup failure.
+        ; Build the module in a context of our own, hand that context to an ORC
+        ; ThreadSafeContext, then JIT-execute the named function and return its
+        ; i64 result. The whole pipeline (emit → TSC → LLJIT → lookup → indirect
+        ; call) lives here so cli just hands off the plan + target. Returns 127
+        ; on any JIT setup failure. LLVM 21 has no way from a ThreadSafeContext
+        ; back to its LLVMContext (LLVMOrcThreadSafeContextGetContext is gone),
+        ; so the context comes first and the ThreadSafeContext takes it over
+        ; (LLVMOrcCreateNewThreadSafeContextFromLLVMContext).
         ;
         ; tsc is created and used entirely within this one function: a
         ; ThreadSafeContext handle passed across a function boundary would hit
@@ -8349,8 +8353,7 @@ define Emitter
         ; when the program has no non-scaly dependencies (behavior unchanged).
         procedure jit_run(mutable this, mutable plan: Plan, mutable module_name: String, mutable fn_mangled: String, mutable dep_object_files: ref[Array[String]]?, dep_object_symbols: ref[Array[String]]) returns i64
         {
-            let tsc LLVMOrcCreateNewThreadSafeContext()
-            let jit_ctx LLVMOrcThreadSafeContextGetContext(tsc)
+            let jit_ctx LLVMContextCreate()
             set external_context: jit_ctx
             set has_external_context: true
 
@@ -8391,6 +8394,8 @@ define Emitter
             ; Bind the field to a local first: an implicit-this field as a
             ; multi-arg call argument is unresolvable here (s185 pattern).
             let jit_module llvm_module
+            ; the ThreadSafeContext owns jit_ctx from here on
+            let tsc LLVMOrcCreateNewThreadSafeContextFromLLVMContext(jit_ctx)
             let tsm LLVMOrcCreateNewThreadSafeModule(jit_module, tsc)
 
             ; Create the LLJIT with -O0 codegen. The default (null) builder uses

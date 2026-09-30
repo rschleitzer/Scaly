@@ -39,32 +39,32 @@ Install
 -------
 
 Scaly ships as its own LLVM IR and is built into a native binary on your
-machine, so you need **LLVM 20** and a C compiler first:
+machine, so you need **LLVM 21** and a C compiler first:
 
 ```sh
 # macOS
-brew install llvm@20
-# Ubuntu / Debian
-sudo apt update && sudo apt install llvm-20 lld-20 clang
+brew install llvm@21
+# Ubuntu 26.04 / Debian
+sudo apt update && sudo apt install llvm-21 lld-21 clang
 ```
 
 On Ubuntu, `lld` is the linker that matters: stock GNU ld (BFD) fails to link
-against libLLVM-20. The `apt update` is not decoration either — a stale package
+against libLLVM-21. The `apt update` is not decoration either — a stale package
 list names a revision the mirror has already superseded, and the install then
 dies with a wall of `404 Not Found` on the `.deb` URLs rather than with anything
 resembling "not found". If your mirror still 404s afterwards, take LLVM's own
 packages instead:
 
 ```sh
-wget -qO- https://apt.llvm.org/llvm.sh | sudo bash -s -- 20
+wget -qO- https://apt.llvm.org/llvm.sh | sudo bash -s -- 21
 ```
 
-Note that a `libLLVM-20.so` already on the machine proves nothing — plenty of
+Note that a `libLLVM-21.so` already on the machine proves nothing — plenty of
 distributions pull the runtime library in as some other package's dependency
-while `llc`, `opt` and `llvm-link` (the `llvm-20` package) are absent. Version 20
-is a hard requirement, not a floor — an older `llc` cannot even read the seed,
-which is written in LLVM 19+ syntax and stops LLVM 18 at the first
-`getelementptr inbounds nuw` with a bare `error: expected type`.
+while `llc`, `opt` and `llvm-link` (the `llvm-21` package) are absent. Version 21
+is a hard requirement, not a floor — the compiler links against libLLVM's C API,
+which drops and renames functions between major versions, so a libLLVM 20
+leaves `scalyc` with an undefined symbol at link time.
 
 Then run the installer — it puts `scalyc` on your `PATH` under `~/.scaly`, no
 `sudo`:
@@ -93,7 +93,7 @@ Building from source
 --------------------
 
 With a source checkout you can build the compiler directly from the committed
-seed (no C++ toolchain needed — just LLVM 20 + a C compiler):
+seed (no C++ toolchain needed — just LLVM 21 + a C compiler):
 
 ```sh
 tools/build-from-seed.sh        # -> scalyc/build/scalyc

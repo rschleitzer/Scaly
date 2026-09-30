@@ -1,6 +1,6 @@
 # The Scaly entry for HttpArena (ROADMAP-http.md): tools/bench/http/arena.scaly
 # on the http package, built from the committed seed the way CI's Linux leg
-# builds the compiler (.github/actions/llvm20), then copied alone into a
+# builds the compiler (.github/actions/llvm21), then copied alone into a
 # runtime image. The build context is not the repository: build.sh stages the
 # few directories the build reads, and runs the PGO training BETWEEN two
 # builds of this file:
@@ -21,17 +21,17 @@
 # so a package listed before its user loses every body only the user calls
 # (tls before https left TlsStream.read & co. undefined).
 
-FROM ubuntu:24.04 AS build
+FROM ubuntu:26.04 AS build
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
- && apt-get install -y --no-install-recommends llvm-20 llvm-20-dev clang-20 lld-20 libclang-rt-20-dev libdeflate-dev perl make curl ca-certificates \
+ && apt-get install -y --no-install-recommends llvm-21 llvm-21-dev clang-21 lld-21 libclang-rt-21-dev libdeflate-dev perl make curl ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 # OpenSSL 3.5 or later (Ubuntu 24.04 ships 3.0) for the tls, https and h3
 # packages -- TLS 1.3, h2, and HTTP/3's TLS through its QUIC TLS interface,
 # which ngtcp2's crypto helper drives -- built static.
 RUN curl -fsSL https://github.com/openssl/openssl/releases/download/openssl-3.6.3/openssl-3.6.3.tar.gz | tar xz -C /tmp \
  && cd /tmp/openssl-3.6.3 \
- && CC=clang-20 ./Configure --prefix=/opt/openssl --libdir=lib no-shared no-tests no-docs \
+ && CC=clang-21 ./Configure --prefix=/opt/openssl --libdir=lib no-shared no-tests no-docs \
  && make -j"$(nproc)" \
  && make install_sw \
  && cd / && rm -rf /tmp/openssl-3.6.3
@@ -44,16 +44,16 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/* \
  && curl -fsSL https://github.com/ngtcp2/ngtcp2/releases/download/v1.25.0/ngtcp2-1.25.0.tar.gz | tar xz -C /tmp \
  && cd /tmp/ngtcp2-1.25.0 \
- && CC=clang-20 PKG_CONFIG_PATH=/opt/openssl/lib/pkgconfig ./configure --prefix=/opt/ngtcp2 --enable-lib-only --disable-shared --with-openssl \
+ && CC=clang-21 PKG_CONFIG_PATH=/opt/openssl/lib/pkgconfig ./configure --prefix=/opt/ngtcp2 --enable-lib-only --disable-shared --with-openssl \
  && make -j"$(nproc)" \
  && make install \
  && cd / && rm -rf /tmp/ngtcp2-1.25.0
 # seed.sh and the compiler's own link invoke `clang`; libLLVM-20.so sits under
 # the versioned prefix; GNU BFD ld cannot link libLLVM-20, so `ld` is lld.
-ENV CLANG=clang-20
-ENV LD_LIBRARY_PATH=/usr/lib/llvm-20/lib
-RUN ln -sf /usr/bin/clang-20 /usr/local/bin/clang \
- && update-alternatives --install /usr/bin/ld ld /usr/bin/ld.lld-20 100
+ENV CLANG=clang-21
+ENV LD_LIBRARY_PATH=/usr/lib/llvm-21/lib
+RUN ln -sf /usr/bin/clang-21 /usr/local/bin/clang \
+ && update-alternatives --install /usr/bin/ld ld /usr/bin/ld.lld-21 100
 WORKDIR /scaly
 COPY . .
 # the compiler (no language server) and /tmp/libscaly.a, both from the seed
@@ -70,7 +70,7 @@ RUN mkdir -p /ir \
  && scalyc/build/scalyc -S --no-prelude -o /ir/tls.ll packages/tls/0.1.0/tls.scaly \
  && scalyc/build/scalyc -S --no-prelude -o /ir/https.ll packages/https/0.1.0/https.scaly \
  && scalyc/build/scalyc -S --no-prelude -o /ir/h3.ll packages/h3/0.1.0/h3.scaly \
- && clang-20 -O2 -c packages/h3/0.1.0/h3/ngtcp2_glue.c -I/opt/ngtcp2/include -I/opt/openssl/include -o /ir/ngtcp2_glue.o \
+ && clang-21 -O2 -c packages/h3/0.1.0/h3/ngtcp2_glue.c -I/opt/ngtcp2/include -I/opt/openssl/include -o /ir/ngtcp2_glue.o \
  && scalyc/build/scalyc -S --no-prelude -o /ir/pg.ll packages/pg/0.1.0/pg.scaly \
  && scalyc/build/scalyc -S --no-prelude -o /ir/redis.ll packages/redis/0.1.0/redis.scaly \
  && scalyc/build/scalyc -S -o /ir/arena.ll tools/bench/http/arena.scaly \
@@ -80,8 +80,8 @@ RUN mkdir -p /ir \
 # writer in with -u __llvm_profile_runtime, and a hand-made link must say so —
 # without it the instrumented arena counts and never writes.
 FROM build AS pgo-train
-RUN TRIPLE=$(clang-20 -print-target-triple) \
- && PROFRT=$(find /usr/lib/llvm-20/lib/clang -name 'libclang_rt.profile*.a' | head -1) \
+RUN TRIPLE=$(clang-21 -print-target-triple) \
+ && PROFRT=$(find /usr/lib/llvm-21/lib/clang -name 'libclang_rt.profile*.a' | head -1) \
  && LTO_OPT_FLAGS="-mtriple=$TRIPLE -mcpu=native --pgo-kind=pgo-instr-gen-pipeline" \
     LTO_LLC_FLAGS="-mcpu=native" LINK_EXTRA="-Wl,-u,__llvm_profile_runtime $PROFRT /ir/ngtcp2_glue.o /opt/ngtcp2/lib/libngtcp2_crypto_ossl.a /opt/ngtcp2/lib/libngtcp2.a -l:libdeflate.a /opt/openssl/lib/libssl.a /opt/openssl/lib/libcrypto.a" \
     tools/link-lto.sh /arena_instr /ir/arena.ll /ir/https.ll /ir/h3.ll /ir/http.ll /ir/pg.ll /ir/redis.ll /ir/tls.ll /ir/json.ll /ir/compress.ll /ir/rt.ll \
@@ -89,13 +89,13 @@ RUN TRIPLE=$(clang-20 -print-target-triple) \
 
 FROM build AS optimized
 COPY pgo/ /pgo/
-RUN TRIPLE=$(clang-20 -print-target-triple) \
+RUN TRIPLE=$(clang-21 -print-target-triple) \
  && PGO="" \
  && if [ -f /pgo/arena.profdata ]; then PGO="--pgo-kind=pgo-instr-use-pipeline --profile-file=/pgo/arena.profdata"; fi \
  && LTO_OPT_FLAGS="-mtriple=$TRIPLE -mcpu=native $PGO" LTO_LLC_FLAGS="-mcpu=native" LINK_EXTRA="/ir/ngtcp2_glue.o /opt/ngtcp2/lib/libngtcp2_crypto_ossl.a /opt/ngtcp2/lib/libngtcp2.a -l:libdeflate.a /opt/openssl/lib/libssl.a /opt/openssl/lib/libcrypto.a" \
     tools/link-lto.sh /arena /ir/arena.ll /ir/https.ll /ir/h3.ll /ir/http.ll /ir/pg.ll /ir/redis.ll /ir/tls.ll /ir/json.ll /ir/compress.ll /ir/rt.ll
 
-FROM ubuntu:24.04
+FROM ubuntu:26.04
 COPY --from=optimized /arena /arena
 EXPOSE 8080 8081 8082 8443 8443/udp
 CMD ["/arena", "8080"]

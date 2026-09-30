@@ -132,9 +132,9 @@ async function stopClient(): Promise<void> {
 function lldbDapCandidates(): string[] {
   return [
     "lldb-dap",
-    "lldb-dap-20",
-    "/opt/homebrew/opt/llvm@20/bin/lldb-dap",
-    "/usr/lib/llvm-20/bin/lldb-dap",
+    "lldb-dap-21",
+    "/opt/homebrew/opt/llvm@21/bin/lldb-dap",
+    "/usr/lib/llvm-21/bin/lldb-dap",
     "/Applications/Xcode.app/Contents/Developer/usr/bin/lldb-dap",
   ];
 }
@@ -182,7 +182,7 @@ class ScalyDebugAdapterFactory
     const adapter = resolveDebugAdapter();
     if (!adapter) {
       void vscode.window.showErrorMessage(
-        "Scaly: lldb-dap not found. Install LLVM 20 (or Xcode), or set scaly.debugAdapter.path."
+        "Scaly: lldb-dap not found. Install LLVM 21 (or Xcode), or set scaly.debugAdapter.path."
       );
       return undefined;
     }

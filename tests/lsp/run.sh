@@ -3,7 +3,7 @@
 #
 # The scalyls package depends on scalyc (the diagnostics pipeline), so the
 # whole compiler — including the LLVM-backed Emitter — links into every
-# scalyls consumer. Hence every link here passes -lLLVM-20.
+# scalyls consumer. Hence every link here passes -lLLVM-21.
 #
 # Usage: tests/lsp/run.sh [scalyc-binary] [mode]
 #   scalyc-binary  default /tmp/scalyc_stage2 (the canonical self-hosted stage)
@@ -23,18 +23,18 @@ SCALYC="${1:-/tmp/scalyc_stage2}"
 MODE="${2:-selfhosted}"
 export SCALYLS_MODE="$MODE"   # available to python blocks (no self-hosted gaps remain)
 
-# Resolve the LLVM-20 lib dir (Homebrew / apt). The diagnostics pipeline
+# Resolve the LLVM-21 lib dir (Homebrew / apt). The diagnostics pipeline
 # pulls in the LLVM-backed Emitter, so every link below needs it.
-LIBDIR="${LLVM20:+$LLVM20/lib}"   # the override tools/llvm-env.sh honors
+LIBDIR="${LLVM21:+$LLVM21/lib}"   # the override tools/llvm-env.sh honors
 if [ -z "$LIBDIR" ] && command -v brew >/dev/null 2>&1; then
-    LIBDIR="$(brew --prefix llvm@20 2>/dev/null)/lib"
+    LIBDIR="$(brew --prefix llvm@21 2>/dev/null)/lib"
 fi
-[ -d "$LIBDIR" ] || LIBDIR="/usr/lib/llvm-20/lib"
-[ -d "$LIBDIR" ] || LIBDIR="/opt/homebrew/opt/llvm@20/lib"
+[ -d "$LIBDIR" ] || LIBDIR="/usr/lib/llvm-21/lib"
+[ -d "$LIBDIR" ] || LIBDIR="/opt/homebrew/opt/llvm@21/lib"
 # -lm: the stdlib's tensor tape kernels call tanhf/expf/sqrtf/logf/powf, which
 # live in a separate libm on Linux (libSystem on macOS). LINK is appended after
 # the objects, as a left-to-right ELF linker requires.
-LINK=(-L"$LIBDIR" -lLLVM-20 -lm)
+LINK=(-L"$LIBDIR" -lLLVM-21 -lm)
 
 pass=0
 fail=0
@@ -61,7 +61,7 @@ bg_collect() {
 LSO=""        # dir holding the shared .o objects (selfhosted only)
 if [ "$MODE" = selfhosted ]; then
     set +u; source tools/llvm-env.sh >/dev/null; set -u
-    [ "${llvm_env_ok:-0}" = "1" ] || { echo "FAIL  llvm-env (need LLVM 20 for selfhosted)"; exit 1; }
+    [ "${llvm_env_ok:-0}" = "1" ] || { echo "FAIL  llvm-env (need LLVM 21 for selfhosted)"; exit 1; }
     echo "scalyls build: selfhosted 4-root via $SCALYC"
     LSO="$(mktemp -d)"
     trap 'rm -rf "$LSO"' EXIT

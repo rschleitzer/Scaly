@@ -37,7 +37,7 @@ OBJ=/tmp/win_undef_$$.o
 
 # shellcheck disable=SC1091
 source tools/llvm-env.sh > /dev/null 2>&1
-NM="${LLVM20:-/opt/homebrew/opt/llvm@20}/bin/llvm-nm"
+NM="${LLVM21:-/opt/homebrew/opt/llvm@21}/bin/llvm-nm"
 command -v llvm-nm > /dev/null 2>&1 && NM=$(command -v llvm-nm)
 
 "$SC" -c --target "$TRIPLE" --no-prelude --no-tests -o "$OBJ" \
@@ -294,7 +294,7 @@ fi
 echo
 echo "  provided by our Windows sources:   $(n "$COVERED")"
 echo "  provided by the MSVC CRT:          $(n "$HAVE")"
-echo "  provided by libLLVM 20 (LLVM-C):   $(n "$HAVE_LLVM")"
+echo "  provided by libLLVM 21 (LLVM-C):   $(n "$HAVE_LLVM")"
 echo "  emitted per program (build stamp): 1"
 echo
 if [ -n "$MISSING" ]; then

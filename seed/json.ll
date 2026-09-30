@@ -11279,6 +11279,9 @@ entry:
 
 define linkonce_odr void @_ZN10JsonWriter6quotedE5SliceI2u8E(ptr %0, ptr %1) {
 entry:
+  %sret.result103 = alloca %_Z5SliceI2u8E, align 8
+  %sret.result98 = alloca %_Z5SliceI2u8E, align 8
+  %j = alloca i64, align 8
   %load.struct = load %_Z5SliceI2u8E, ptr %1, align 8
   %length = extractvalue %_Z5SliceI2u8E %load.struct, 0
   %load.struct1 = load %_Z10JsonWriter, ptr %0, align 8
@@ -11312,7 +11315,9 @@ while.body:                                       ; preds = %while.cond
   br i1 %simd.inrange, label %simd.mem.ok, label %simd.mem.oob
 
 while.exit:                                       ; preds = %if.then, %while.cond
-  br label %while.cond27
+  %i27 = load i64, ptr %i, align 8
+  store i64 %i27, ptr %j, align 1
+  br label %while.cond28
 
 simd.mem.oob:                                     ; preds = %while.body
   call void @_Z15scaly_panic_oobP10const_charmm(ptr @.simd.mem.78, i64 %i5, i64 %simd.len)
@@ -11363,51 +11368,147 @@ if.end:                                           ; preds = %simd.mem.ok18
   store i64 %add26, ptr %i, align 1
   br label %while.cond
 
-while.cond27:                                     ; preds = %while.body28, %while.exit
-  %i30 = load i64, ptr %i, align 8
-  %lt = icmp ult i64 %i30, %length
+while.cond28:                                     ; preds = %if.end82, %while.exit
+  %j31 = load i64, ptr %j, align 8
+  %add32 = add i64 %j31, 8
+  %le33 = icmp ule i64 %add32, %length
+  br i1 %le33, label %while.body29, label %while.exit30
+
+while.body29:                                     ; preds = %while.cond28
+  %load.struct34 = load %_Z5SliceI2u8E, ptr %1, align 8
+  %data = extractvalue %_Z5SliceI2u8E %load.struct34, 1
+  %j35 = load i64, ptr %j, align 8
+  %ptr.add = getelementptr inbounds i8, ptr %data, i64 %j35
+  %deref = load i8, ptr %ptr.add, align 1
+  %as.zext = zext i8 %deref to i64
+  %ptr.add36 = getelementptr inbounds i8, ptr %ptr.add, i64 1
+  %deref37 = load i8, ptr %ptr.add36, align 1
+  %as.zext38 = zext i8 %deref37 to i64
+  %shl = shl i64 %as.zext38, 8
+  %or = or i64 %as.zext, %shl
+  %ptr.add39 = getelementptr inbounds i8, ptr %ptr.add, i64 2
+  %deref40 = load i8, ptr %ptr.add39, align 1
+  %as.zext41 = zext i8 %deref40 to i64
+  %shl42 = shl i64 %as.zext41, 16
+  %or43 = or i64 %or, %shl42
+  %ptr.add44 = getelementptr inbounds i8, ptr %ptr.add, i64 3
+  %deref45 = load i8, ptr %ptr.add44, align 1
+  %as.zext46 = zext i8 %deref45 to i64
+  %shl47 = shl i64 %as.zext46, 24
+  %or48 = or i64 %or43, %shl47
+  %ptr.add49 = getelementptr inbounds i8, ptr %ptr.add, i64 4
+  %deref50 = load i8, ptr %ptr.add49, align 1
+  %as.zext51 = zext i8 %deref50 to i64
+  %shl52 = shl i64 %as.zext51, 32
+  %or53 = or i64 %or48, %shl52
+  %ptr.add54 = getelementptr inbounds i8, ptr %ptr.add, i64 5
+  %deref55 = load i8, ptr %ptr.add54, align 1
+  %as.zext56 = zext i8 %deref55 to i64
+  %shl57 = shl i64 %as.zext56, 40
+  %or58 = or i64 %or53, %shl57
+  %ptr.add59 = getelementptr inbounds i8, ptr %ptr.add, i64 6
+  %deref60 = load i8, ptr %ptr.add59, align 1
+  %as.zext61 = zext i8 %deref60 to i64
+  %shl62 = shl i64 %as.zext61, 48
+  %or63 = or i64 %or58, %shl62
+  %ptr.add64 = getelementptr inbounds i8, ptr %ptr.add, i64 7
+  %deref65 = load i8, ptr %ptr.add64, align 1
+  %as.zext66 = zext i8 %deref65 to i64
+  %shl67 = shl i64 %as.zext66, 56
+  %or68 = or i64 %or63, %shl67
+  %xor = xor i64 %or68, 2459565876494606882
+  %xor69 = xor i64 %or68, 6655295901103053916
+  %sub = sub i64 %or68, 2314885530818453536
+  %xor70 = xor i64 %or68, -1
+  %and = and i64 %sub, %xor70
+  %sub71 = sub i64 %xor, 72340172838076673
+  %xor72 = xor i64 %xor, -1
+  %and73 = and i64 %sub71, %xor72
+  %sub74 = sub i64 %xor69, 72340172838076673
+  %xor75 = xor i64 %xor69, -1
+  %and76 = and i64 %sub74, %xor75
+  %or77 = or i64 %and, %and73
+  %or78 = or i64 %or77, %and76
+  %and79 = and i64 %or78, -9187201950435737472
+  %ne80 = icmp ne i64 %and79, 0
+  br i1 %ne80, label %if.then81, label %if.end82
+
+while.exit30:                                     ; preds = %if.then81, %while.cond28
+  br label %while.cond85
+
+if.then81:                                        ; preds = %while.body29
+  br label %while.exit30
+
+if.end82:                                         ; preds = %while.body29
+  %j83 = load i64, ptr %j, align 8
+  %add84 = add i64 %j83, 8
+  store i64 %add84, ptr %j, align 1
+  br label %while.cond28
+
+while.cond85:                                     ; preds = %while.body86, %while.exit30
+  %j88 = load i64, ptr %j, align 8
+  %lt = icmp ult i64 %j88, %length
   br i1 %lt, label %lor.rhs, label %lor.end
 
-while.body28:                                     ; preds = %lor.end
-  %i34 = load i64, ptr %i, align 8
-  %add35 = add i64 %i34, 1
-  %i36 = load i64, ptr %i, align 8
-  %call37 = call i8 @_ZN5SliceI2u8EixEm(ptr %1, i64 %i36)
-  call void @_ZN5SliceI2u8E3putEm2u8(ptr %sret.result, i64 %add35, i8 %call37)
-  %i38 = load i64, ptr %i, align 8
-  %add39 = add i64 %i38, 1
-  store i64 %add39, ptr %i, align 1
-  br label %while.cond27
+while.body86:                                     ; preds = %lor.end
+  %j92 = load i64, ptr %j, align 8
+  %add93 = add i64 %j92, 1
+  store i64 %add93, ptr %j, align 1
+  br label %while.cond85
 
-while.exit29:                                     ; preds = %lor.end
-  %i40 = load i64, ptr %i, align 8
-  %eq = icmp eq i64 %i40, %length
-  br i1 %eq, label %if.then41, label %if.end42
+while.exit87:                                     ; preds = %lor.end
+  %j94 = load i64, ptr %j, align 8
+  %i95 = load i64, ptr %i, align 8
+  %gt = icmp ugt i64 %j94, %i95
+  br i1 %gt, label %if.then96, label %if.end97
 
-lor.rhs:                                          ; preds = %while.cond27
-  %i31 = load i64, ptr %i, align 8
-  %call32 = call i8 @_ZN5SliceI2u8EixEm(ptr %1, i64 %i31)
-  %call33 = call i1 @_ZN10JsonWriter5plainE2u8(i8 %call32)
+lor.rhs:                                          ; preds = %while.cond85
+  %j89 = load i64, ptr %j, align 8
+  %call90 = call i8 @_ZN5SliceI2u8EixEm(ptr %1, i64 %j89)
+  %call91 = call i1 @_ZN10JsonWriter5plainE2u8(i8 %call90)
   br label %lor.end
 
-lor.end:                                          ; preds = %lor.rhs, %while.cond27
-  %lor.result = phi i1 [ false, %while.cond27 ], [ %call33, %lor.rhs ]
-  br i1 %lor.result, label %while.body28, label %while.exit29
+lor.end:                                          ; preds = %lor.rhs, %while.cond85
+  %lor.result = phi i1 [ false, %while.cond85 ], [ %call91, %lor.rhs ]
+  br i1 %lor.result, label %while.body86, label %while.exit87
 
-if.then41:                                        ; preds = %while.exit29
-  %add43 = add i64 %length, 1
-  call void @_ZN5SliceI2u8E3putEm2u8(ptr %sret.result, i64 %add43, i8 34)
+if.then96:                                        ; preds = %while.exit87
+  %i99 = load i64, ptr %i, align 8
+  %add100 = add i64 %i99, 1
+  call void @_ZN5SliceI2u8E10slice_fromEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI2u8E) %sret.result98, ptr null, ptr %sret.result, i64 %add100)
+  %load.struct101 = load %_Z5SliceI2u8E, ptr %sret.result98, align 8
+  %data102 = extractvalue %_Z5SliceI2u8E %load.struct101, 1
+  %i104 = load i64, ptr %i, align 8
+  call void @_ZN5SliceI2u8E10slice_fromEPN4scaly6memory4PageEm(ptr noalias sret(%_Z5SliceI2u8E) %sret.result103, ptr null, ptr %1, i64 %i104)
+  %load.struct105 = load %_Z5SliceI2u8E, ptr %sret.result103, align 8
+  %data106 = extractvalue %_Z5SliceI2u8E %load.struct105, 1
+  %j107 = load i64, ptr %j, align 8
+  %i108 = load i64, ptr %i, align 8
+  %sub109 = sub i64 %j107, %i108
+  %call110 = call ptr @memcpy(ptr %data102, ptr %data106, i64 %sub109)
+  br label %if.end97
+
+if.end97:                                         ; preds = %if.then96, %while.exit87
+  %j111 = load i64, ptr %j, align 8
+  store i64 %j111, ptr %i, align 1
+  %i112 = load i64, ptr %i, align 8
+  %eq = icmp eq i64 %i112, %length
+  br i1 %eq, label %if.then113, label %if.end114
+
+if.then113:                                       ; preds = %if.end97
+  %add115 = add i64 %length, 1
+  call void @_ZN5SliceI2u8E3putEm2u8(ptr %sret.result, i64 %add115, i8 34)
   ret void
 
-if.end42:                                         ; preds = %while.exit29
-  %add44 = add i64 %length2, 1
-  %i45 = load i64, ptr %i, align 8
-  %add46 = add i64 %add44, %i45
-  %buffer47 = getelementptr inbounds nuw %_Z10JsonWriter, ptr %0, i32 0, i32 0
-  %length48 = getelementptr inbounds nuw %_Z5ArrayI2u8E, ptr %buffer47, i32 0, i32 0
-  store i64 %add46, ptr %length48, align 8
-  %i49 = load i64, ptr %i, align 8
-  call void @_ZN10JsonWriter11quoted_restE5SliceI2u8Em(ptr %0, ptr %1, i64 %i49)
+if.end114:                                        ; preds = %if.end97
+  %add116 = add i64 %length2, 1
+  %i117 = load i64, ptr %i, align 8
+  %add118 = add i64 %add116, %i117
+  %buffer119 = getelementptr inbounds nuw %_Z10JsonWriter, ptr %0, i32 0, i32 0
+  %length120 = getelementptr inbounds nuw %_Z5ArrayI2u8E, ptr %buffer119, i32 0, i32 0
+  store i64 %add118, ptr %length120, align 8
+  %i121 = load i64, ptr %i, align 8
+  call void @_ZN10JsonWriter11quoted_restE5SliceI2u8Em(ptr %0, ptr %1, i64 %i121)
   ret void
 }
 
@@ -14376,7 +14477,7 @@ entry:
 declare void @_Z15scaly_panic_oobP10const_charmm(...) #0
 
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #1
+declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #1
 
 declare i32 @memcmp(...)
 

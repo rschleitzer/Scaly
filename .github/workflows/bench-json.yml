@@ -16,12 +16,12 @@ on:
 jobs:
   bench:
     name: x86_64-linux-gnu
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v5
 
-      - uses: ./.github/actions/llvm20
+      - uses: ./.github/actions/llvm21
 
       - name: The CPU
         run: |
@@ -37,7 +37,7 @@ jobs:
         run: |
           sudo apt-get install -y libsimdjson-dev
           curl -sSfL https://github.com/ibireme/yyjson/archive/refs/tags/0.10.0.tar.gz | tar xz -C "$RUNNER_TEMP"
-          clang-20 -O3 -march=native -c "$RUNNER_TEMP/yyjson-0.10.0/src/yyjson.c" -o "$RUNNER_TEMP/yyjson.o"
+          clang-21 -O3 -march=native -c "$RUNNER_TEMP/yyjson-0.10.0/src/yyjson.c" -o "$RUNNER_TEMP/yyjson.o"
           ar rcs "$RUNNER_TEMP/libyyjson.a" "$RUNNER_TEMP/yyjson.o"
           echo "CPATH=$RUNNER_TEMP/yyjson-0.10.0/src" >> "$GITHUB_ENV"
           echo "LIBRARY_PATH=$RUNNER_TEMP" >> "$GITHUB_ENV"

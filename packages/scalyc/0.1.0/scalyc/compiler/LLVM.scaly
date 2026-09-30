@@ -817,11 +817,11 @@ define LLVMOpaqueError()
 define LLVMErrorRef pointer[LLVMOpaqueError]
 
 ; ThreadSafeContext: the module being JITted MUST be built in the LLVMContext
-; owned by the ThreadSafeContext, otherwise addIRModule crashes. So we create
-; the TSC first, take its underlying LLVMContextRef as the emitter's context,
-; build the module, then wrap it back into a ThreadSafeModule.
-function LLVMOrcCreateNewThreadSafeContext() returns LLVMOrcThreadSafeContextRef extern
-function LLVMOrcThreadSafeContextGetContext(tsc: LLVMOrcThreadSafeContextRef) returns LLVMContextRef extern
+; the ThreadSafeContext owns, otherwise addIRModule crashes. LLVM 21 took away
+; LLVMOrcThreadSafeContextGetContext, so the emitter builds the module in a
+; context of its own and the ThreadSafeContext is made from that context
+; afterwards (it takes the context over), then wraps the module.
+function LLVMOrcCreateNewThreadSafeContextFromLLVMContext(ctx: LLVMContextRef) returns LLVMOrcThreadSafeContextRef extern
 function LLVMOrcCreateNewThreadSafeModule(m: LLVMModuleRef, tsc: LLVMOrcThreadSafeContextRef) returns LLVMOrcThreadSafeModuleRef extern
 
 ; LLJIT lifecycle. Pass a null builder handle to LLVMOrcCreateLLJIT for the

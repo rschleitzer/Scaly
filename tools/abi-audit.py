@@ -40,8 +40,8 @@ import sys
 from pathlib import Path
 
 DEFAULT_HEADER_DIRS = [
-    "/opt/homebrew/opt/llvm@20/include/llvm-c",
-    "/usr/lib/llvm-20/include/llvm-c",
+    "/opt/homebrew/opt/llvm@21/include/llvm-c",
+    "/usr/lib/llvm-21/include/llvm-c",
     "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include",
     "/usr/include",
 ]

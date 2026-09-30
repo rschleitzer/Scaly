@@ -3294,7 +3294,8 @@ if.then1:                                         ; preds = %if.end
 
 if.end2:                                          ; preds = %if.end
   store i64 1, ptr @trace_enabled, align 8
-  %call3 = call ptr @scaly_aligned_alloc(i64 8, i64 mul (i64 ptrtoint (ptr getelementptr (%_Z10TraceEntry, ptr null, i32 1) to i64), i64 8192))
+  %mul = mul i64 8192, ptrtoint (ptr getelementptr (%_Z10TraceEntry, ptr null, i32 1) to i64)
+  %call3 = call ptr @scaly_aligned_alloc(i64 8, i64 %mul)
   store ptr %call3, ptr @trace_entries, align 8
   %call4 = call i32 @atexit(ptr @_Z16scaly_trace_dumpv)
   ret void
@@ -3508,7 +3509,8 @@ if.end2:                                          ; preds = %if.end
   store i64 0, ptr %lock, align 8
   %count = getelementptr inbounds nuw %_Z15HeapTraceHeader, ptr %call3, i32 0, i32 1
   store i64 0, ptr %count, align 8
-  %call4 = call ptr @scaly_aligned_alloc(i64 8, i64 mul (i64 ptrtoint (ptr getelementptr (%_Z10TraceEntry, ptr null, i32 1) to i64), i64 8192))
+  %mul = mul i64 8192, ptrtoint (ptr getelementptr (%_Z10TraceEntry, ptr null, i32 1) to i64)
+  %call4 = call ptr @scaly_aligned_alloc(i64 8, i64 %mul)
   %entries = getelementptr inbounds nuw %_Z15HeapTraceHeader, ptr %call3, i32 0, i32 2
   store ptr %call4, ptr %entries, align 8
   store ptr %call3, ptr @heap_trace, align 8
@@ -30642,18 +30644,19 @@ if.end3:                                          ; preds = %if.end
   store i64 0, ptr %pub, align 8
   %bottom = getelementptr inbounds nuw %_Z9ForkDeque, ptr %call4, i32 0, i32 3
   store i64 0, ptr %bottom, align 8
-  %call5 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 mul (i64 ptrtoint (ptr getelementptr (%_Z8ForkSlot, ptr null, i32 1) to i64), i64 64), i64 8)
+  %mul = mul i64 64, ptrtoint (ptr getelementptr (%_Z8ForkSlot, ptr null, i32 1) to i64)
+  %call5 = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 %mul, i64 8)
   %slots = getelementptr inbounds nuw %_Z9ForkDeque, ptr %call4, i32 0, i32 4
   store ptr %call5, ptr %slots, align 8
   %index = getelementptr inbounds nuw %_Z9ForkDeque, ptr %call4, i32 0, i32 5
   store i64 %0, ptr %index, align 8
   %global.load6 = load ptr, ptr @fj_registry, align 8
   %as.ptrtoint = ptrtoint ptr %global.load6 to i64
-  %mul = mul i64 %0, 8
-  %add = add i64 %as.ptrtoint, %mul
+  %mul7 = mul i64 %0, 8
+  %add = add i64 %as.ptrtoint, %mul7
   %as.inttoptr = inttoptr i64 %add to ptr
-  %as.ptrtoint7 = ptrtoint ptr %call4 to i64
-  store atomic i64 %as.ptrtoint7, ptr %as.inttoptr seq_cst, align 8
+  %as.ptrtoint8 = ptrtoint ptr %call4 to i64
+  store atomic i64 %as.ptrtoint8, ptr %as.inttoptr seq_cst, align 8
   store ptr %call4, ptr @fj_deque, align 8
   ret ptr %call4
 }
@@ -48107,7 +48110,7 @@ entry:
 }
 
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #2
+declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #2
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
 declare i64 @llvm.cttz.i64(i64, i1 immarg) #3

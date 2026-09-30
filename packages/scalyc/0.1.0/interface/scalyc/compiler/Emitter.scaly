@@ -1787,10 +1787,14 @@ define Emitter
         ; caller must dispose; do NOT also call LLVMConsumeError.
         procedure report_jit_error(this, mutable err: LLVMErrorRef, ctx: Slice[char]) @ret_caller true @deep true io linked
 
-        ; Build the module in the ORC ThreadSafeContext's context, then JIT-execute
-        ; the named function and return its i64 result. The whole pipeline (TSC →
-        ; emit → LLJIT → lookup → indirect call) lives here so cli just hands off
-        ; the plan + target. Returns 127 on any JIT setup failure.
+        ; Build the module in a context of our own, hand that context to an ORC
+        ; ThreadSafeContext, then JIT-execute the named function and return its
+        ; i64 result. The whole pipeline (emit → TSC → LLJIT → lookup → indirect
+        ; call) lives here so cli just hands off the plan + target. Returns 127
+        ; on any JIT setup failure. LLVM 21 has no way from a ThreadSafeContext
+        ; back to its LLVMContext (LLVMOrcThreadSafeContextGetContext is gone),
+        ; so the context comes first and the ThreadSafeContext takes it over
+        ; (LLVMOrcCreateNewThreadSafeContextFromLLVMContext).
         ;
         ; tsc is created and used entirely within this one function: a
         ; ThreadSafeContext handle passed across a function boundary would hit

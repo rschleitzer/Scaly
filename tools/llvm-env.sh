@@ -1,12 +1,13 @@
-# Sourceable LLVM-20 environment detector for the seed pipeline.
+# Sourceable LLVM environment detector for the seed pipeline: LLVM_MAJOR
+# (21 since 2026-09-30, what Ubuntu 26.04 ships in its archive; 20 before).
 #   source tools/llvm-env.sh   ->  sets LLVM_PREFIX, LLC, LLVM_LIBDIR, LLVM_LIBNAME
-# Override any of them by exporting before sourcing (e.g. LLVM20=/path).
+# Override any of them by exporting before sourcing (e.g. LLVM21=/path).
 # Mirrors build.sh's prefix logic so the C++ bootstrap and the seed agree.
 # Safe under `set -u`: tools/link-lto.sh sources it with nounset on, and every
 # variable below may legitimately be unset on entry.
 
 # 0. The Windows box (Git Bash, the standalone LLVM installer). None of the
-#    probes below can find anything there — no brew, no /usr/lib/llvm-20, no
+#    probes below can find anything there — no brew, no /usr/lib/llvm-21, no
 #    llvm-config — and until 2026-09-20 the whole seed pipeline therefore did
 #    not START here, which looks like nothing at all (CLAUDE-tooling.md, "THE
 #    BAR'S SCRIPTS ARE POSIX-BOUND"). tools/win-env.sh derives the developer
@@ -38,17 +39,19 @@ case "$(uname -s)" in
     ;;
 esac
 
+LLVM_MAJOR=21
+
 # 1. LLVM prefix
 if [ -z "${LLVM_PREFIX:-}" ]; then
-  if [ -n "${LLVM20:-}" ]; then
-    LLVM_PREFIX="$LLVM20"
-  elif command -v brew >/dev/null 2>&1 && brew --prefix llvm@20 >/dev/null 2>&1; then
-    LLVM_PREFIX="$(brew --prefix llvm@20)"
-  elif [ -d /usr/lib/llvm-20 ]; then
-    LLVM_PREFIX=/usr/lib/llvm-20
-  elif command -v llvm-config-20 >/dev/null 2>&1; then
-    LLVM_PREFIX="$(llvm-config-20 --prefix)"
-  elif command -v llvm-config >/dev/null 2>&1 && [ "$(llvm-config --version | cut -d. -f1)" = "20" ]; then
+  if [ -n "${LLVM21:-}" ]; then
+    LLVM_PREFIX="$LLVM21"
+  elif command -v brew >/dev/null 2>&1 && brew --prefix "llvm@$LLVM_MAJOR" >/dev/null 2>&1; then
+    LLVM_PREFIX="$(brew --prefix "llvm@$LLVM_MAJOR")"
+  elif [ -d "/usr/lib/llvm-$LLVM_MAJOR" ]; then
+    LLVM_PREFIX="/usr/lib/llvm-$LLVM_MAJOR"
+  elif command -v "llvm-config-$LLVM_MAJOR" >/dev/null 2>&1; then
+    LLVM_PREFIX="$("llvm-config-$LLVM_MAJOR" --prefix)"
+  elif command -v llvm-config >/dev/null 2>&1 && [ "$(llvm-config --version | cut -d. -f1)" = "$LLVM_MAJOR" ]; then
     LLVM_PREFIX="$(llvm-config --prefix)"
   fi
 fi
@@ -66,33 +69,37 @@ LLVM_PREFIX=${LLVM_PREFIX:-}
 #    So a version skew here is not automatically wrong — but keep both at the
 #    same major unless a rung documents why not.
 #    ★The skew is ONE-DIRECTIONAL: llc may be AHEAD of libLLVM, never behind.
-#    An older llc cannot read a newer seed at all — today's carries 29 478
-#    `getelementptr inbounds nuw` (LLVM-19 syntax) and llc-18 stops at the first
-#    one with `error: expected type` under the `nuw` (measured 2026-08-14).
-#    Note the failure below reads `llc (LLVM 20) not found`, which looks like a
+#    An older llc cannot read a newer seed at all — the LLVM-20 seed carried
+#    29 478 `getelementptr inbounds nuw` (LLVM-19 syntax) and llc-18 stopped at
+#    the first one with `error: expected type` under the `nuw` (2026-08-14).
+#    ★★And AHEAD is not always safe either: LLVM 21 no longer reads a `mul`
+#    constant expression, which an LLVM-20 libLLVM folds `N * sizeof T` into —
+#    three of them in the LLVM-20 seed, so its tools could not build it
+#    (2026-09-30; the LLVM-21 seed has instructions there).
+#    Note the failure below reads `llc (LLVM 21) not found`, which looks like a
 #    PATH problem and is usually a missing PACKAGE: llc/opt/llvm-link ship in
-#    Ubuntu's `llvm-20`, NOT in `llvm-20-dev`, and libLLVM-20.so may already be
+#    Ubuntu's `llvm-21`, NOT in `llvm-21-dev`, and libLLVM-21.so may already be
 #    present as another package's dependency. See CLAUDE.md's Dependencies.
 if [ -z "${LLC:-}" ]; then
-  for cand in "$LLVM_PREFIX/bin/llc" "$LLVM_PREFIX/bin/llc-20" llc-20; do
+  for cand in "$LLVM_PREFIX/bin/llc" "$LLVM_PREFIX/bin/llc-$LLVM_MAJOR" "llc-$LLVM_MAJOR"; do
     if [ -n "$cand" ] && command -v "$cand" >/dev/null 2>&1; then LLC="$cand"; break; fi
   done
 fi
 
-# 3. lib dir + libLLVM name (so the final link finds -lLLVM-20)
+# 3. lib dir + libLLVM name (so the final link finds -lLLVM-21)
 LLVM_LIBDIR=${LLVM_LIBDIR:-$LLVM_PREFIX/lib}
-LLVM_LIBNAME=${LLVM_LIBNAME:-LLVM-20}
+LLVM_LIBNAME=${LLVM_LIBNAME:-LLVM-$LLVM_MAJOR}
 
 # 3b. opt + llvm-link (optional — used for the whole-program -O2 seed build;
 #     the pipeline falls back to per-module llc when either is missing, so
 #     their absence never fails validation).
 if [ -z "${OPT:-}" ]; then
-  for cand in "$LLVM_PREFIX/bin/opt" "$LLVM_PREFIX/bin/opt-20" opt-20; do
+  for cand in "$LLVM_PREFIX/bin/opt" "$LLVM_PREFIX/bin/opt-$LLVM_MAJOR" "opt-$LLVM_MAJOR"; do
     if [ -n "$cand" ] && command -v "$cand" >/dev/null 2>&1; then OPT="$cand"; break; fi
   done
 fi
 if [ -z "${LLVM_LINK:-}" ]; then
-  for cand in "$LLVM_PREFIX/bin/llvm-link" "$LLVM_PREFIX/bin/llvm-link-20" llvm-link-20; do
+  for cand in "$LLVM_PREFIX/bin/llvm-link" "$LLVM_PREFIX/bin/llvm-link-$LLVM_MAJOR" "llvm-link-$LLVM_MAJOR"; do
     if [ -n "$cand" ] && command -v "$cand" >/dev/null 2>&1; then LLVM_LINK="$cand"; break; fi
   done
 fi
@@ -101,7 +108,7 @@ fi
 #     one llc runs over the whole module as before). Not on the Windows box:
 #     its llc is a clang stand-in.
 if [ -z "${LLVM_SPLIT:-}" ] && [ "$SCALY_COFF" != "1" ]; then
-  for cand in "$LLVM_PREFIX/bin/llvm-split" "$LLVM_PREFIX/bin/llvm-split-20" llvm-split-20; do
+  for cand in "$LLVM_PREFIX/bin/llvm-split" "$LLVM_PREFIX/bin/llvm-split-$LLVM_MAJOR" "llvm-split-$LLVM_MAJOR"; do
     if [ -n "$cand" ] && command -v "$cand" >/dev/null 2>&1; then LLVM_SPLIT="$cand"; break; fi
   done
 fi
@@ -113,9 +120,9 @@ LLVM_SPLIT=${LLVM_SPLIT:-}
 
 # 4. report / validate
 llvm_env_ok=1
-[ -n "$LLVM_PREFIX" ] && [ -d "$LLVM_PREFIX" ] || { echo "llvm-env: LLVM-20 prefix not found (set LLVM20=/path)"; llvm_env_ok=0; }
-[ -n "$LLC" ] || { echo "llvm-env: llc (LLVM 20) not found on PATH or in \$LLVM_PREFIX/bin"; llvm_env_ok=0; }
+[ -n "$LLVM_PREFIX" ] && [ -d "$LLVM_PREFIX" ] || { echo "llvm-env: LLVM-$LLVM_MAJOR prefix not found (set LLVM$LLVM_MAJOR=/path)"; llvm_env_ok=0; }
+[ -n "$LLC" ] || { echo "llvm-env: llc (LLVM $LLVM_MAJOR) not found on PATH or in \$LLVM_PREFIX/bin"; llvm_env_ok=0; }
 if [ "$llvm_env_ok" = "1" ]; then
   echo "llvm-env: prefix=$LLVM_PREFIX  llc=$LLC  lib=$LLVM_LIBDIR (-l$LLVM_LIBNAME)"
 fi
-export LLVM_PREFIX LLC LLVM_LIBDIR LLVM_LIBNAME OPT LLVM_LINK LLVM_SPLIT SCALY_COFF
+export LLVM_MAJOR LLVM_PREFIX LLC LLVM_LIBDIR LLVM_LIBNAME OPT LLVM_LINK LLVM_SPLIT SCALY_COFF

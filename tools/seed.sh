@@ -28,12 +28,12 @@
 #   The "fabulous four" LP64 targets and how to install deps:
 #     (cmake went with the retired C++ stage-0; openjade became optional with
 #      stage 8 — ./mkp uses our own DSSSL engine and skips when none exists.)
-#     arm64-apple-darwin   brew install llvm@20
+#     arm64-apple-darwin   brew install llvm@21
 #     x86_64-apple-darwin  (Intel Mac)  same brew formula
-#     x86_64-linux-gnu     apt install llvm-20-dev clang-20 \
+#     x86_64-linux-gnu     apt install llvm-21-dev clang-21 \
 #                                      zlib1g-dev libzstd-dev
 #     aarch64-linux-gnu    same apt packages (arm64 Ubuntu)
-# Override LLVM detection with LLVM20=/path; see tools/llvm-env.sh.
+# Override LLVM detection with LLVM21=/path; see tools/llvm-env.sh.
 #
 # .ll artifacts are NOT checked into the repo: ~12MB, target DataLayout + LLVM
 # version baked in (union payload sizes computed at emission). One .ll set per
@@ -41,19 +41,19 @@
 set -e
 cd "$(dirname "$0")/.."
 source tools/llvm-env.sh
-[ "$llvm_env_ok" = "1" ] || { echo "SEED: FAIL — LLVM 20 not found"; exit 1; }
+[ "$llvm_env_ok" = "1" ] || { echo "SEED: FAIL — LLVM $LLVM_MAJOR not found"; exit 1; }
 
 CC=${1:-/tmp/scalyc_stage2}
 OUT=${2:-dist/seed}
 CLANG=${CLANG:-clang}
 
-# On Linux, stock GNU ld (BFD) fails to link libLLVM-20 ("failed to set dynamic
+# On Linux, stock GNU ld (BFD) fails to link libLLVM ("failed to set dynamic
 # section sizes: bad value"); lld handles it. Mirror tools/build-from-seed.sh so
 # seed.sh's OWN link steps (scalyc_seed, scalyls) work on Linux too. macOS ld64
 # links fine, so LINKARGS stays empty there.
 LINKARGS=()
 if [ "$(uname -s)" = "Linux" ]; then
-  for c in "$LLVM_PREFIX/bin/ld.lld" ld.lld ld.lld-20; do
+  for c in "$LLVM_PREFIX/bin/ld.lld" ld.lld "ld.lld-$LLVM_MAJOR"; do
     p=$(command -v "$c" 2>/dev/null || true)
     [ -n "$p" ] && { LINKARGS+=("-fuse-ld=$p"); break; }
   done
@@ -136,11 +136,11 @@ if ! tools/win-lto.sh --llvm "$OUT/scalyc_seed$SCALY_EXE" "$OUT/main.ll" "$OUT/s
   fail "link (undefined symbols)"
 fi
 else
-echo "seed: llc -> obj (LLVM 20) + link ($CLANG, no dynamic_lookup)"
+echo "seed: llc -> obj (LLVM $LLVM_MAJOR) + link ($CLANG, no dynamic_lookup)"
 llc_objs main scalyc scaly || fail "llc"
 # NO -Wl,-undefined,dynamic_lookup — a clean link proves zero undefined.
 # (The final link is plain object linking, so any clang/cc works. What is NOT
-# free is -lLLVM-20 below: libLLVM prints the IR, so its major must match the
+# free is -lLLVM-$LLVM_MAJOR below: libLLVM prints the IR, so its major must match the
 # one the seed was minted with. llc's own version is looser — see llvm-env.sh.)
 # fcontext.o supplies the fiber context-switch primitives that scaly.ll's
 # Fiber procedures reference (vendored assembly, host-arch-selected);

@@ -57,7 +57,7 @@ if [ "${SCALY_PGO:-1}" != 0 ]; then
     sleep 1
     /train 18090 3000
     wait $p
-    llvm-profdata-20 merge -o /pgo/arena.profdata /pgo/*.profraw
+    llvm-profdata-21 merge -o /pgo/arena.profdata /pgo/*.profraw
     rm -f /pgo/*.profraw'
   [ -s "$CTX/pgo/arena.profdata" ] || { echo "build.sh: no profile came out of the training run"; exit 1; }
 fi

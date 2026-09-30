@@ -71268,7 +71268,8 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %call = call ptr @malloc(i64 mul (i64 ptrtoint (ptr getelementptr (%_Z7IdxSlot, ptr null, i32 1) to i64), i64 4096))
+  %mul = mul i64 4096, ptrtoint (ptr getelementptr (%_Z7IdxSlot, ptr null, i32 1) to i64)
+  %call = call ptr @malloc(i64 %mul)
   store ptr %call, ptr @idx_slots, align 8
   %global.load1 = load ptr, ptr @idx_slots, align 8
   %eq2 = icmp eq ptr %global.load1, null
@@ -71668,7 +71669,8 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %call = call ptr @malloc(i64 mul (i64 ptrtoint (ptr getelementptr (%_Z7DirSlot, ptr null, i32 1) to i64), i64 16))
+  %mul = mul i64 16, ptrtoint (ptr getelementptr (%_Z7DirSlot, ptr null, i32 1) to i64)
+  %call = call ptr @malloc(i64 %mul)
   store ptr %call, ptr @dir_slots, align 8
   %global.load1 = load ptr, ptr @dir_slots, align 8
   %eq2 = icmp eq ptr %global.load1, null
@@ -152431,7 +152433,8 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  %call = call ptr @malloc(i64 mul (i64 ptrtoint (ptr getelementptr (%_Z7DocSlot, ptr null, i32 1) to i64), i64 256))
+  %mul = mul i64 256, ptrtoint (ptr getelementptr (%_Z7DocSlot, ptr null, i32 1) to i64)
+  %call = call ptr @malloc(i64 %mul)
   store ptr %call, ptr @doc_slots, align 8
   %global.load1 = load ptr, ptr @doc_slots, align 8
   %eq2 = icmp eq ptr %global.load1, null
@@ -159566,7 +159569,7 @@ declare void @_ZN13StringBuilderC1Ev(ptr)
 declare void @_ZN6StringC1Ev(ptr)
 
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #0
+declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #0
 
 declare void @_ZN6StringC1Em(ptr, i64)
 

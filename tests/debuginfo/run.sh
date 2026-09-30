@@ -199,8 +199,8 @@ fi
 #    key in editors/vscode/package.json cannot be caught by a typecheck and would
 #    otherwise fail at debug time in someone's editor.
 DAP=""
-for c in lldb-dap lldb-dap-20 /opt/homebrew/opt/llvm@20/bin/lldb-dap \
-         /usr/lib/llvm-20/bin/lldb-dap \
+for c in lldb-dap lldb-dap-21 /opt/homebrew/opt/llvm@21/bin/lldb-dap \
+         /usr/lib/llvm-21/bin/lldb-dap \
          /Applications/Xcode.app/Contents/Developer/usr/bin/lldb-dap; do
   p=$(command -v "$c" 2>/dev/null || true)
   [ -n "$p" ] && { DAP="$p"; break; }

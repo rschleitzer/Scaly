@@ -202,7 +202,7 @@ Settings:
 
 | Setting | Default | Meaning |
 |---|---|---|
-| `scaly.debugAdapter.path` | *(auto)* | Path to `lldb-dap`. Auto-detection tries `PATH`, then the LLVM 20 prefix, then Xcode's copy. |
+| `scaly.debugAdapter.path` | *(auto)* | Path to `lldb-dap`. Auto-detection tries `PATH`, then the LLVM 21 prefix, then Xcode's copy. |
 | `scaly.formatters.path` | *(auto)* | Path to `tools/lldb/scaly.py`. Derived from `scaly.home`, then `SCALY_HOME`, then the first workspace folder. |
 
 Outside the editor the same thing works from a terminal, which is often the

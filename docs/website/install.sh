@@ -5,10 +5,10 @@
 #
 # Installs the Scaly compiler (scalyc) into ~/.scaly with NO sudo. The compiler
 # ships as retargetable LLVM IR (a "seed"); this script turns it into a native
-# executable on your machine, so you need LLVM 20 and a C compiler present:
+# executable on your machine, so you need LLVM 21 and a C compiler present:
 #
-#   macOS         brew install llvm@20
-#   Ubuntu/Debian sudo apt install llvm-20 clang
+#   macOS         brew install llvm@21
+#   Ubuntu/Debian sudo apt install llvm-21 clang
 #
 # Then `scalyc -o hello hello.scaly` works from any directory.
 #
@@ -17,7 +17,7 @@
 #   SCALY_VERSION       version to fetch           (default 0.1.0)
 #   SCALY_INSTALL_BASE  base URL for downloads     (default https://scaly.io)
 #   SCALY_NO_MODIFY_PATH set to 1 to skip editing your shell profile
-#   LLVM20              path to an LLVM 20 install (skips autodetection)
+#   LLVM21              path to an LLVM 21 install (skips autodetection)
 #
 # Uninstall: rm -rf ~/.scaly  and remove the PATH line this script adds.
 set -eu
@@ -32,49 +32,49 @@ die()  { printf 'scaly-install: error: %s\n' "$1" >&2; exit 1; }
 have() { command -v "$1" >/dev/null 2>&1; }
 
 # ---------------------------------------------------------------------------
-# 1. Locate LLVM 20 (llc + libLLVM) and a C compiler. Mirrors tools/llvm-env.sh.
+# 1. Locate LLVM 21 (llc + libLLVM) and a C compiler. Mirrors tools/llvm-env.sh.
 # ---------------------------------------------------------------------------
 LLVM_PREFIX=""
-if [ -n "${LLVM20:-}" ]; then
-  LLVM_PREFIX="$LLVM20"
-elif have brew && brew --prefix llvm@20 >/dev/null 2>&1; then
-  LLVM_PREFIX="$(brew --prefix llvm@20)"
-elif [ -d /usr/lib/llvm-20 ]; then
-  LLVM_PREFIX=/usr/lib/llvm-20
-elif have llvm-config-20; then
-  LLVM_PREFIX="$(llvm-config-20 --prefix)"
+if [ -n "${LLVM21:-}" ]; then
+  LLVM_PREFIX="$LLVM21"
+elif have brew && brew --prefix llvm@21 >/dev/null 2>&1; then
+  LLVM_PREFIX="$(brew --prefix llvm@21)"
+elif [ -d /usr/lib/llvm-21 ]; then
+  LLVM_PREFIX=/usr/lib/llvm-21
+elif have llvm-config-21; then
+  LLVM_PREFIX="$(llvm-config-21 --prefix)"
 fi
 
 LLC=""
-for cand in "$LLVM_PREFIX/bin/llc" "$LLVM_PREFIX/bin/llc-20" llc-20; do
+for cand in "$LLVM_PREFIX/bin/llc" "$LLVM_PREFIX/bin/llc-21" llc-21; do
   if [ -n "$cand" ] && have "$cand"; then LLC="$cand"; break; fi
 done
 
 if [ -z "$LLVM_PREFIX" ] || [ ! -d "$LLVM_PREFIX" ] || [ -z "$LLC" ]; then
   cat >&2 <<EOF
-scaly-install: error: LLVM 20 not found.
-  The compiler is distributed as LLVM IR and needs LLVM 20 to build locally.
-    macOS:         brew install llvm@20
-    Ubuntu/Debian: sudo apt install llvm-20 clang
-  Then re-run, or set LLVM20=/path/to/llvm-20 if it lives somewhere custom.
+scaly-install: error: LLVM 21 not found.
+  The compiler is distributed as LLVM IR and needs LLVM 21 to build locally.
+    macOS:         brew install llvm@21
+    Ubuntu/Debian: sudo apt install llvm-21 clang
+  Then re-run, or set LLVM21=/path/to/llvm-21 if it lives somewhere custom.
 EOF
   exit 1
 fi
 LLVM_LIBDIR="${LLVM_LIBDIR:-$LLVM_PREFIX/lib}"
-LLVM_LIBNAME="${LLVM_LIBNAME:-LLVM-20}"
+LLVM_LIBNAME="${LLVM_LIBNAME:-LLVM-21}"
 
 CC="${CC:-}"
 if [ -z "$CC" ]; then
   # Probe unversioned names first, then the versioned ones apt ships
-  # (`apt install clang-20` provides clang-20, not clang/cc).
-  for c in cc clang gcc clang-20 gcc-18 cc-18; do if have "$c"; then CC="$c"; break; fi; done
+  # (`apt install clang-21` provides clang-21, not clang/cc).
+  for c in cc clang gcc clang-21 gcc-15 cc-15; do if have "$c"; then CC="$c"; break; fi; done
 fi
-[ -n "$CC" ] || die "no C compiler found (need cc/clang/gcc or clang-20 for the final link)"
+[ -n "$CC" ] || die "no C compiler found (need cc/clang/gcc or clang-21 for the final link)"
 
 have curl || have wget || die "need curl or wget to download the distribution"
 have tar || die "need tar to unpack the distribution"
 
-say "LLVM 20 at $LLVM_PREFIX (llc=$LLC); C compiler=$CC"
+say "LLVM 21 at $LLVM_PREFIX (llc=$LLC); C compiler=$CC"
 
 # ---------------------------------------------------------------------------
 # 2. Download + unpack the distribution into $PREFIX.
@@ -107,17 +107,17 @@ for f in main scalyc scaly; do
     || die "llc failed on seed/$f.ll"
 done
 
-# On Linux, stock GNU ld (BFD) can fail to link libLLVM-20; prefer lld.
+# On Linux, stock GNU ld (BFD) can fail to link libLLVM-21; prefer lld.
 LD_ARG=""
 if [ "$(uname -s)" = "Linux" ]; then
-  for c in "$LLVM_PREFIX/bin/ld.lld" ld.lld ld.lld-20; do
+  for c in "$LLVM_PREFIX/bin/ld.lld" ld.lld ld.lld-21; do
     if have "$c"; then LD_ARG="-fuse-ld=$c"; break; fi
   done
 fi
 # shellcheck disable=SC2086
 "$CC" $LD_ARG "$WORK/main.o" "$WORK/scalyc.o" "$WORK/scaly.o" \
   -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -o "$PREFIX/libexec/scalyc" \
-  || die "linking scalyc failed (is libLLVM-20 in $LLVM_LIBDIR?)"
+  || die "linking scalyc failed (is libLLVM-21 in $LLVM_LIBDIR?)"
 
 # ---------------------------------------------------------------------------
 # 4. Build the runtime archive the compiler links every program against.
@@ -137,7 +137,7 @@ cat > "$PREFIX/bin/scalyc" <<EOF
 #!/bin/sh
 # Scaly compiler wrapper — installed by https://scaly.io/install.sh
 export SCALY_HOME="\${SCALY_HOME:-$PREFIX}"
-# Link user programs with the C compiler the installer found (e.g. clang-20 on
+# Link user programs with the C compiler the installer found (e.g. clang-21 on
 # a box with no plain \`clang\`); the compiler defaults to \`clang\` otherwise.
 export SCALY_CC="\${SCALY_CC:-$CC}"
 if [ ! -f "\$SCALY_HOME/lib/libscaly.a" ]; then
@@ -168,7 +168,7 @@ if [ -f "$PREFIX/seed/scalyls.ll" ] && [ -f "$PREFIX/seed/scalyls_main.ll" ] && 
   "$CC" $LD_ARG "$WORK/scalyls_main.o" "$WORK/scalyls.o" "$WORK/json.o" \
     "$WORK/scalyc.o" "$WORK/scaly.o" \
     -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -o "$PREFIX/libexec/scalyls" \
-    || die "linking scalyls failed (is libLLVM-20 in $LLVM_LIBDIR?)"
+    || die "linking scalyls failed (is libLLVM-21 in $LLVM_LIBDIR?)"
   cat > "$PREFIX/bin/scalyls" <<EOF
 #!/bin/sh
 # Scaly language server wrapper — installed by https://scaly.io/install.sh

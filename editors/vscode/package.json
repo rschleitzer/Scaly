@@ -71,7 +71,7 @@
         "scaly.debugAdapter.path": {
           "type": "string",
           "default": "",
-          "description": "Path to the lldb-dap debug adapter. Empty auto-detects: PATH, then the LLVM 20 prefix, then Xcode's copy. lldb-dap ships with LLVM and with Xcode \u2014 nothing extra to install."
+          "description": "Path to the lldb-dap debug adapter. Empty auto-detects: PATH, then the LLVM 21 prefix, then Xcode's copy. lldb-dap ships with LLVM and with Xcode \u2014 nothing extra to install."
         },
         "scaly.formatters.path": {
           "type": "string",

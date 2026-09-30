@@ -78,14 +78,15 @@ on:
 jobs:
   seed:
     name: x86_64-linux-gnu
-    runs-on: ubuntu-latest
+    # 26.04: its archive has LLVM 21 (tools/llvm-env.sh); 24.04's stops at 20
+    runs-on: ubuntu-26.04
     steps:
       # v5 runs on Node 24; v4 was being force-migrated off the deprecated
       # Node 20 and warned on every run. v6/v7 exist — step up when something
       # needs them, not on principle.
       - uses: actions/checkout@v5
 
-      - uses: ./.github/actions/llvm20
+      - uses: ./.github/actions/llvm21
 
       - name: Build + verify seed (bootstrap, link, hello, AOT, fixed point)
         run: tools/seed.sh
@@ -100,7 +101,7 @@ jobs:
       # this rung needs NONE of the four substrate brocken (fcontext-Win64,
       # IOCP, Win32 externs, COFF toolchain). Emitting here rather than on the
       # Windows runner is deliberate: cross-emission needs a compiler linked
-      # against libLLVM 20, and that is already installed in this leg, so the
+      # against libLLVM 21, and that is already installed in this leg, so the
       # Windows job needs no LLVM toolchain of its own.
       - name: Cross-emit the Windows objects
         run: |
@@ -210,11 +211,11 @@ jobs:
   # /tmp/libscaly.a when it is absent, which it now always is.
   suites:
     name: x86_64-linux-gnu (suites)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: seed
     steps:
       - uses: actions/checkout@v5
-      - uses: ./.github/actions/llvm20
+      - uses: ./.github/actions/llvm21
 
       - name: Download the native compiler
         uses: actions/download-artifact@v7
@@ -879,12 +880,13 @@ jobs:
       # ★TWO Windows-specific conditions, both known BEFORE the first run
       # rather than after it:
       #
-      # (1) libLLVM must be **18**, and the runner's is 20. Everywhere else in
+      # (1) libLLVM must be the tree's major (**21**, tools/llvm-env.sh), and
+      #     the runner's is another. Everywhere else in
       #     this workflow "any clang links" holds, because a linker does not
       #     care — but the compiler CALLS this library, and what it emits is a
       #     function of the version. Rung 8 links dazzle against the runner's
       #     LLVM-C precisely because it never switches the JIT on; here the
-      #     version is load-bearing, so 18 is installed into its own directory
+      #     version is load-bearing, so 21 is unpacked into its own directory
       #     and the runner's stays where it is. Mixing the two questions into
       #     one round is what the rung discipline exists to prevent.
       # (2) ★The default stack is **1 MB on Windows against 8 on POSIX**, and
@@ -904,7 +906,7 @@ jobs:
         shell: bash
         run: |
           set -e
-          # --- LLVM 20: EXTRACTED, never installed --------------------------
+          # --- LLVM 21: EXTRACTED, never installed --------------------------
           # ★Running the official NSIS installer silently WORKS and then breaks
           # the runner: it delivered both files in 85 s and the very next line
           # died with `clang: command not found`. Installing a second LLVM on
@@ -919,40 +921,40 @@ jobs:
           # (checked name by name against the cross-emitted object — 0 missing),
           # so the link below has no LLVM-shaped unknown left in it.
           command -v 7z > /dev/null || { echo "rung 9: no 7z on this runner"; exit 1; }
-          url=https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.8/LLVM-20.1.8-win64.exe
+          url=https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.8/LLVM-21.1.8-win64.exe
           # -f, not just -sSL: without it curl answers 0 on an HTTP error and
-          # writes the error PAGE into llvm20.exe, so a moved asset would look
+          # writes the error PAGE into llvm21.exe, so a moved asset would look
           # like a broken archive. ~357 MB is the expected size.
-          curl -fsSL -o llvm20.exe "$url"
-          ls -l llvm20.exe
+          curl -fsSL -o llvm21.exe "$url"
+          ls -l llvm21.exe
           # ★Two spellings that are load-bearing under Git Bash. The extraction
-          # target is RELATIVE: an argument like `-o/c/llvm20` does not begin
+          # target is RELATIVE: an argument like `-o/c/llvm21` does not begin
           # with `/`, so MSYS leaves it alone and 7z then reads the POSIX path
-          # as `C:\c\llvm20`. And the two members are named with `-r` plus a
+          # as `C:\c\llvm21`. And the two members are named with `-r` plus a
           # bare filename rather than `bin/LLVM-C.dll`, which keeps any
           # separator question out of it while still preserving their paths.
-          7z x -bso0 -bsp0 llvm20.exe -ollvm20 -r "LLVM-C.dll" "LLVM-C.lib"
-          lib20="llvm20/lib"; bin20="llvm20/bin"
-          if [ ! -f "$lib20/LLVM-C.lib" ] || [ ! -f "$bin20/LLVM-C.dll" ]; then
+          7z x -bso0 -bsp0 llvm21.exe -ollvm21 -r "LLVM-C.dll" "LLVM-C.lib"
+          lib21="llvm21/lib"; bin21="llvm21/bin"
+          if [ ! -f "$lib21/LLVM-C.lib" ] || [ ! -f "$bin21/LLVM-C.dll" ]; then
             echo "rung 9: the archive did not yield the C library."
-            echo "        want $lib20/LLVM-C.lib and $bin20/LLVM-C.dll"
-            find llvm20 -type f | head -20
-            head -c 2 llvm20.exe | od -c | head -1
+            echo "        want $lib21/LLVM-C.lib and $bin21/LLVM-C.dll"
+            find llvm21 -type f | head -20
+            head -c 2 llvm21.exe | od -c | head -1
             exit 1
           fi
-          ls -l "$lib20/LLVM-C.lib" "$bin20/LLVM-C.dll"
-          echo "rung 9: LLVM-C 20 at $lib20"
+          ls -l "$lib21/LLVM-C.lib" "$bin21/LLVM-C.dll"
+          echo "rung 9: LLVM-C 21 at $lib21"
 
           # --- link ---------------------------------------------------------
           # libscaly.lib is the archive rung 3 built in this same job. The DLL
           # is COPIED beside the binary rather than put on PATH: prepending
-          # llvm20/bin would shadow the runner's clang with LLVM 18's for the
+          # llvm21/bin would shadow the runner's clang with LLVM 21's for the
           # rest of this step, which is a second change nobody asked for — and
           # the paragraph above is what that class of side effect costs.
-          cp "$bin20/LLVM-C.dll" .
+          cp "$bin21/LLVM-C.dll" .
           clang --target=x86_64-pc-windows-msvc \
                 scalyc_main_win.o scalyc_win.o libscaly.lib \
-                -lws2_32 -L"$lib20" -lLLVM-C \
+                -lws2_32 -L"$lib21" -lLLVM-C \
                 -Xlinker -stack:67108864,1048576 \
                 -o scalyc.exe
           ls -l scalyc.exe
@@ -1228,7 +1230,7 @@ jobs:
           clang --target=x86_64-pc-windows-msvc -O2 -fuse-ld=lld -flto=full \
                 seed_main.obj seed_scalyc.obj seed_scaly.obj \
                 pc.o eio_win.o ctime.o panic.o fcontext_win.o \
-                -lws2_32 -Lllvm20/lib -lLLVM-C \
+                -lws2_32 -Lllvm21/lib -lLLVM-C \
                 -Xlinker -stack:67108864,1048576 \
                 -Xlinker -errorlimit:0 \
                 -o scalyc_seed.exe

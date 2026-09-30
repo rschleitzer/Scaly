@@ -75,7 +75,7 @@ check_coff aarch64-pc-windows-msvc 64aa  arm64win
 # Windows box) it says SKIP by name.
 . tools/llvm-env.sh >/dev/null 2>&1 || true
 OBJDUMP=
-for cand in "$(dirname "${LLC:-/nonexistent/llc}")/llvm-objdump" "${LLVM_PREFIX:-/nonexistent}/bin/llvm-objdump" llvm-objdump-20; do
+for cand in "$(dirname "${LLC:-/nonexistent/llc}")/llvm-objdump" "${LLVM_PREFIX:-/nonexistent}/bin/llvm-objdump" "llvm-objdump-${LLVM_MAJOR:-21}"; do
   if command -v "$cand" >/dev/null 2>&1; then OBJDUMP=$cand; break; fi
 done
 check_cpu() {

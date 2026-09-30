@@ -85,12 +85,12 @@ case ":$PATH:" in
   *) PATH="$PATH:$SCALY_WIN_TOOLS" ;;
 esac
 # The tools the installer does not ship (llvm-dwarfdump for tests/debuginfo),
-# UNPACKED from the release tarball into %LOCALAPPDATA%\Programs\llvm-20.1.8
+# UNPACKED from the release tarball into %LOCALAPPDATA%\Programs\llvm-21.1.8
 # — never a second installer run (tests/win32/WINDOWS-BOX.md §1) — and at the
 # END of PATH: the installed clang stays the one that answers, and the LLC/OPT
 # stand-ins are named explicitly by tools/llvm-env.sh, so the real llc/opt in
 # there change nothing the bar measures.
-xtools="$(cygpath -u "${LOCALAPPDATA:-$HOME/AppData/Local}")/Programs/llvm-20.1.8/bin"
+xtools="$(cygpath -u "${LOCALAPPDATA:-$HOME/AppData/Local}")/Programs/llvm-21.1.8/bin"
 if [ -d "$xtools" ]; then
   case ":$PATH:" in *":$xtools:"*) ;; *) PATH="$PATH:$xtools" ;; esac
 fi
