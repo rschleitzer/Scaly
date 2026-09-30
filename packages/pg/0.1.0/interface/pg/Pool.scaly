@@ -3,13 +3,22 @@
 ; thread-local, so each thread keeps its own idle list with no lock: a task
 ; takes a connection, runs its query (parking on the socket while the
 ; scheduler runs other requests) and gives it back. A thread opens at most
-; max_connections / threads of them; a task that finds none idle and the
-; limit reached suspends until one is given back.
+; max_connections / threads of them, and never more than
+; PG_PER_THREAD_MAX; a task that finds none idle and the limit reached
+; suspends until one is given back.
 ;
 ; The server comes from DATABASE_URL (postgres://user:password@host:port/db)
 ; and the bound from DATABASE_MAX_CONN, read once per thread.
 
 use pg.Conn.PgConn
+
+; The most connections one thread opens. More only add server processes
+; that take turns on the same cores: HttpArena's async-db with postgres,
+; server and load generator on four shared cores, 256 connections 55.9 K
+; req/s, 32 60.0 K, 16 61.1 K; on ten cores 64 to 128 were level (93-95 K)
+; and 16 too few (62 K) -- eight a thread is near the best on both
+; (2026-09-30; genhttp-ioxide's pool stops at eight a reactor too).
+define PG_PER_THREAD_MAX: i64 8
 
 define PgConfig
 (
