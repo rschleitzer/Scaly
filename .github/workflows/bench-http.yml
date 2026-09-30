@@ -77,6 +77,13 @@ jobs:
           assert s.count(profiles) == 1 and s.count(order) == 1, "benchmark-lite.sh changed shape"
           s = s.replace(profiles, profiles + "".join('    [%s]="%s"\n' % e for e in extra))
           s = s.replace(order, "    echo-ws\n    " + " ".join(n for n, _ in extra) + "\n)")
+          # tini as the load generators' PID 1: `timeout 45` stops the docker
+          # client, which forwards SIGTERM to the container -- where h2load
+          # as PID 1 ignores it, and the client waits for good. bun's
+          # baseline-h2 held a run for 2 h 15 min so (2026-09-30).
+          flags = "    --rm --network host\n    --cpuset-cpus"
+          assert s.count(flags) == 1, "DOCKER_FLAGS changed shape"
+          s = s.replace(flags, "    --rm --init --network host\n    --cpuset-cpus")
           open(path, "w").write(s)
           EOF
           sed -n '/^PROFILE_ORDER=(/,/^)/p' "$HA/scripts/benchmark-lite.sh"
@@ -109,12 +116,25 @@ jobs:
       - name: zrk
         run: docker build -q -t zrk:local -f "$HA/docker/zrk.Dockerfile" "$HA/docker"
 
+      # Each entry gets at most 45 minutes (Scaly's, with its PGO build and
+      # every profile, takes about 30): a load generator or server that hangs
+      # costs that entry, not the job, and what it left running goes.
       - name: Benchmark
         run: |
           cd "$HA"
           for fw in ${{ inputs.frameworks }}; do
             echo "::group::$fw"
-            bash scripts/benchmark-lite.sh "$fw" 2>&1 | tee "$RUNNER_TEMP/lite_$fw.log" | grep -E '^=== |\[FAIL\]|\[warn\]'
+            # without -e: grep finding nothing (an entry that fails at once)
+            # must not end the step for the entries after it
+            set +e
+            timeout -k 60 45m bash scripts/benchmark-lite.sh "$fw" 2>&1 | tee "$RUNNER_TEMP/lite_$fw.log" | grep -E '^=== |\[FAIL\]|\[warn\]'
+            rc=${PIPESTATUS[0]}
+            set -e
+            if [ "$rc" = 124 ] || [ "$rc" = 137 ]; then
+              echo "::warning::$fw ran out of its 45 minutes"
+              echo "=== $fw ran out of its 45 minutes ===" >> "$RUNNER_TEMP/lite_$fw.log"
+            fi
+            docker ps -q | xargs -r docker rm -f > /dev/null 2>&1 || true
             echo "::endgroup::"
           done
 
