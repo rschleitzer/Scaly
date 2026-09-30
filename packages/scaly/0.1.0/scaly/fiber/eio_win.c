@@ -397,6 +397,16 @@ int scaly_eio_wait_timeout(int q, void** tags, int max, int ms)
     return scaly_eio_wait_ms(q, tags, max, ms);
 }
 
+/* The nanosecond wait of eio.c: IOCP waits in whole milliseconds, so the
+ * bound is rounded up (never early). */
+int scaly_eio_wait_timeout_ns(int q, void** tags, int max, long long ns)
+{
+    long long ms = ns <= 0 ? 0 : (ns + 999999LL) / 1000000LL;
+    if (ms > 2000000000LL)
+        ms = 2000000000LL;
+    return scaly_eio_wait_timeout(q, tags, max, (int)ms);
+}
+
 /* ---- cross-thread wake ------------------------------------------------
  *
  * No kernel object at all: PostQueuedCompletionStatus IS the wake, and it is

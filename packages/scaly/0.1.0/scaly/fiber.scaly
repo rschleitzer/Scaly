@@ -337,6 +337,7 @@ function scaly_eio_wait(q: i32, tags: pointer[pointer[void]], max: i32) returns 
 ; Like scaly_eio_wait but returns 0 if ms elapses before any event (the
 ; bounded wait behind cross-thread deadlock detection, M2.4 residual).
 function scaly_eio_wait_timeout(q: i32, tags: pointer[pointer[void]], max: i32, ms: i32) returns i32 extern
+function scaly_eio_wait_timeout_ns(q: i32, tags: pointer[pointer[void]], max: i32, ns: i64) returns i32 extern
 function scaly_eio_set_nonblocking(fd: i32) returns i32 extern
 procedure scaly_eio_read(fd: i32, buf: pointer[void], count: size_t) returns i64 extern
 procedure scaly_eio_write(fd: i32, buf: pointer[void], count: size_t) returns i64 extern
@@ -1532,14 +1533,15 @@ define Scheduler
         }
         if limit > 0
         {
+            ; to the nanosecond: rounded up to whole milliseconds, a 10 ms
+            ; sleep woke 1.9 ms late on Linux on the mean -- a wait that
+            ; ended a hair early waited a whole millisecond more (2026-09-30)
             let q Io.ensure_poll()
             let now scaly_eio_now_ns()
-            var ms: i64 0
+            var ns: i64 0
             if limit > now
-                set ms: (limit - now + 999999) / 1000000
-            if ms > 1000000000
-                set ms: 1000000000
-            set n: scaly_eio_wait_timeout(q, tagbuf as pointer[pointer[void]], 64 as i32, ms as i32)
+                set ns: limit - now
+            set n: scaly_eio_wait_timeout_ns(q, tagbuf as pointer[pointer[void]], 64 as i32, ns)
         }
         else
         {

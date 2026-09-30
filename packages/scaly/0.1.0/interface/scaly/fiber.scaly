@@ -337,6 +337,7 @@ function scaly_eio_wait(q: i32, tags: pointer[pointer[void]], max: i32) returns 
 ; Like scaly_eio_wait but returns 0 if ms elapses before any event (the
 ; bounded wait behind cross-thread deadlock detection, M2.4 residual).
 function scaly_eio_wait_timeout(q: i32, tags: pointer[pointer[void]], max: i32, ms: i32) returns i32 extern
+function scaly_eio_wait_timeout_ns(q: i32, tags: pointer[pointer[void]], max: i32, ns: i64) returns i32 extern
 function scaly_eio_set_nonblocking(fd: i32) returns i32 extern
 procedure scaly_eio_read(fd: i32, buf: pointer[void], count: size_t) returns i64 extern
 procedure scaly_eio_write(fd: i32, buf: pointer[void], count: size_t) returns i64 extern

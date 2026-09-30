@@ -158,9 +158,12 @@ int scaly_eio_watch(int q, int fd, void* tag)
     return kevent(q, ch, 2, 0, 0, 0) < 0 ? -1 : 0;
 }
 
-/* ms < 0 blocks until an event fires; ms >= 0 returns 0 if the timeout
- * elapses first (the deadlock-detection wait, milestone 2.4 residual). */
-static int scaly_eio_wait_ms(int q, void** tags, int max, int ms)
+/* ns < 0 blocks until an event fires; ns >= 0 returns 0 if the timeout
+ * elapses first. In nanoseconds down to the kernel (2026-09-30): a timer
+ * rounded up to whole milliseconds woke a 10 ms sleep 1-2 ms late, and a
+ * wait that ended a hair before its deadline waited a whole millisecond
+ * more -- HttpArena's async profile is a 10 ms sleep per request. */
+static int scaly_eio_wait_ns(int q, void** tags, int max, long long ns)
 {
     struct kevent evs[SCALY_EIO_MAX_EVENTS];
     struct kevent* chg = 0;
@@ -174,10 +177,10 @@ static int scaly_eio_wait_ms(int q, void** tags, int max, int ms)
         nchg = scaly_eio_nchanges;
         scaly_eio_nchanges = 0;
     }
-    if (ms >= 0)
+    if (ns >= 0)
     {
-        ts.tv_sec = ms / 1000;
-        ts.tv_nsec = (long)(ms % 1000) * 1000000L;
+        ts.tv_sec = (time_t)(ns / 1000000000LL);
+        ts.tv_nsec = (long)(ns % 1000000000LL);
         tsp = &ts;
     }
     do
@@ -201,12 +204,18 @@ static int scaly_eio_wait_ms(int q, void** tags, int max, int ms)
 
 int scaly_eio_wait(int q, void** tags, int max)
 {
-    return scaly_eio_wait_ms(q, tags, max, -1);
+    return scaly_eio_wait_ns(q, tags, max, -1);
 }
 
 int scaly_eio_wait_timeout(int q, void** tags, int max, int ms)
 {
-    return scaly_eio_wait_ms(q, tags, max, ms);
+    return scaly_eio_wait_ns(q, tags, max, ms < 0 ? -1 : (long long)ms * 1000000LL);
+}
+
+/* The poller's wait bounded in nanoseconds (Scheduler.poll_io_by's timers). */
+int scaly_eio_wait_timeout_ns(int q, void** tags, int max, long long ns)
+{
+    return scaly_eio_wait_ns(q, tags, max, ns < 0 ? 0 : ns);
 }
 
 /* Cross-thread wake channel (milestone 2.4, shim rule (a): EVFILT_USER is
@@ -409,7 +418,7 @@ static int scaly_ring_create(void)
 /* Submit what is queued; with wait, also wait for min_complete
  * completions, at most ms milliseconds (ms < 0: no bound). 0 on success
  * and on an expired timeout, -1 on a hard error. */
-static int scaly_ring_enter(struct scaly_ring* r, unsigned min_complete, int wait, int ms)
+static int scaly_ring_enter(struct scaly_ring* r, unsigned min_complete, int wait, long long ns)
 {
     struct io_uring_getevents_arg arg;
     struct __kernel_timespec ts;
@@ -420,10 +429,10 @@ static int scaly_ring_enter(struct scaly_ring* r, unsigned min_complete, int wai
     if (wait)
     {
         flags |= IORING_ENTER_GETEVENTS;
-        if (ms >= 0)
+        if (ns >= 0)
         {
-            ts.tv_sec = ms / 1000;
-            ts.tv_nsec = (long long)(ms % 1000) * 1000000LL;
+            ts.tv_sec = ns / 1000000000LL;
+            ts.tv_nsec = ns % 1000000000LL;
             memset(&arg, 0, sizeof arg);
             arg.ts = (unsigned long long)(size_t)&ts;
             flags |= IORING_ENTER_EXT_ARG;
@@ -490,14 +499,14 @@ static int scaly_ring_poll(struct scaly_ring* r, int fd, unsigned events, unsign
     return 0;
 }
 
-static int scaly_ring_wait(struct scaly_ring* r, void** tags, int max, int ms)
+static int scaly_ring_wait(struct scaly_ring* r, void** tags, int max, long long ns)
 {
     unsigned head = *r->cq_head;
     unsigned tail = __atomic_load_n(r->cq_tail, __ATOMIC_ACQUIRE);
     int out = 0;
     if (head == tail)
     {
-        if (scaly_ring_enter(r, 1, 1, ms) < 0)
+        if (scaly_ring_enter(r, 1, 1, ns) < 0)
             return -1;
         tail = __atomic_load_n(r->cq_tail, __ATOMIC_ACQUIRE);
     }
@@ -641,9 +650,37 @@ int scaly_eio_arm(int q, int fd, int for_write, void* tag)
     return rc;
 }
 
-/* ms < 0 blocks until an event fires; ms >= 0 returns 0 if the timeout
- * elapses first (the deadlock-detection wait, milestone 2.4 residual). */
-static int scaly_eio_wait_ms(int q, void** tags, int max, int ms)
+/* epoll_pwait2 (5.11) takes a timespec; before it, epoll_wait's whole
+ * milliseconds, rounded up. Remembered once the kernel says ENOSYS. */
+static int scaly_eio_no_pwait2 = 0;
+
+static int scaly_epoll_wait_ns(int q, struct epoll_event* evs, int max, long long ns)
+{
+    if (ns < 0)
+        return epoll_wait(q, evs, max, -1);
+#ifdef __NR_epoll_pwait2
+    if (!scaly_eio_no_pwait2)
+    {
+        struct timespec ts;
+        int n;
+        ts.tv_sec = (time_t)(ns / 1000000000LL);
+        ts.tv_nsec = (long)(ns % 1000000000LL);
+        n = (int)syscall(__NR_epoll_pwait2, q, evs, max, &ts, (void*)0, (size_t)0);
+        if (n >= 0 || errno != ENOSYS)
+            return n;
+        scaly_eio_no_pwait2 = 1;
+    }
+#endif
+    return epoll_wait(q, evs, max, (int)((ns + 999999LL) / 1000000LL));
+}
+
+/* ns < 0 blocks until an event fires; ns >= 0 returns 0 if the timeout
+ * elapses first. In nanoseconds down to the kernel (2026-09-30): a timer
+ * rounded up to whole milliseconds woke a 10 ms sleep 1.9 ms late on the
+ * mean (a wait that ended a hair before its deadline waited a whole
+ * millisecond more) -- HttpArena's async profile is a 10 ms sleep per
+ * request. */
+static int scaly_eio_wait_ns(int q, void** tags, int max, long long ns)
 {
     struct epoll_event evs[SCALY_EIO_MAX_EVENTS];
     struct scaly_ring* r = scaly_ring_of(q);
@@ -651,9 +688,9 @@ static int scaly_eio_wait_ms(int q, void** tags, int max, int ms)
     if (max > SCALY_EIO_MAX_EVENTS)
         max = SCALY_EIO_MAX_EVENTS;
     if (r != 0)
-        return scaly_ring_wait(r, tags, max, ms);
+        return scaly_ring_wait(r, tags, max, ns);
     do
-        n = epoll_wait(q, evs, max, ms);
+        n = scaly_epoll_wait_ns(q, evs, max, ns);
     while (n < 0 && errno == EINTR);
     for (i = 0; i < n; i++)
     {
@@ -673,12 +710,18 @@ static int scaly_eio_wait_ms(int q, void** tags, int max, int ms)
 
 int scaly_eio_wait(int q, void** tags, int max)
 {
-    return scaly_eio_wait_ms(q, tags, max, -1);
+    return scaly_eio_wait_ns(q, tags, max, -1);
 }
 
 int scaly_eio_wait_timeout(int q, void** tags, int max, int ms)
 {
-    return scaly_eio_wait_ms(q, tags, max, ms);
+    return scaly_eio_wait_ns(q, tags, max, ms < 0 ? -1 : (long long)ms * 1000000LL);
+}
+
+/* The poller's wait bounded in nanoseconds (Scheduler.poll_io_by's timers). */
+int scaly_eio_wait_timeout_ns(int q, void** tags, int max, long long ns)
+{
+    return scaly_eio_wait_ns(q, tags, max, ns < 0 ? 0 : ns);
 }
 
 /* Cross-thread wake channel (milestone 2.4): an eventfd reporting `tag`.
