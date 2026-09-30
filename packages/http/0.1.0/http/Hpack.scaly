@@ -17,31 +17,36 @@ define HPACK_TABLE_SIZE: size_t 4096
 define DYN_ENTRIES: size_t 128
 define DYN_BYTES: size_t 8192
 
-; A decoded header block: every field's name and value as spans of `bytes`.
+; A decoded header block: every field's name and value as VIEWS -- into
+; `bytes`, where the decoded literals stand, into the static table, or into
+; the HPACK decoder's dynamic table (valid until its next insert, before
+; which the list owns them: own_table). An indexed field costs no copy;
+; copying every one was 8 % of the server's samples in baseline-h2
+; (2026-09-30).
 define HeaderList
 (
     var bytes: ByteBuf
-    ; four per field: name start, name length, value start, value length
-    var spans: Array[size_t]
+    ; two per field: its name, then its value
+    var views: Array[Slice[u8]]
 )
 {
     procedure create(host: ref[Page]) returns HeaderList
-        HeaderList(ByteBuf.create(host, 1024), Array[size_t]^host())
+        HeaderList(ByteBuf.create(host, 1024), Array[Slice[u8]]^host())
 
     procedure clear(mutable this)
     {
         bytes.clear()
-        spans.clear()
+        views.clear()
     }
 
     function count(this) returns size_t
-        spans.length / 4
+        views.length / 2
 
     function name(this, i: size_t) returns Slice[u8]
-        bytes.bytes().subslice(spans.at(4 * i), spans.at(4 * i) + spans.at(4 * i + 1))
+        views[2 * i]
 
     function value(this, i: size_t) returns Slice[u8]
-        bytes.bytes().subslice(spans.at(4 * i + 2), spans.at(4 * i + 2) + spans.at(4 * i + 3))
+        views[2 * i + 1]
 
     ; The value of the first field named `name`, empty without one.
     function get(this, name: Slice[u8]) returns Slice[u8]
@@ -56,12 +61,103 @@ define HeaderList
         bytes.bytes().slice_to(0)
     }
 
-    procedure record(mutable this, name_start: size_t, name_length: size_t, value_start: size_t, value_length: size_t)
+    procedure add(mutable this, name: Slice[u8], value: Slice[u8])
     {
-        spans.add(name_start)
-        spans.add(name_length)
-        spans.add(value_start)
-        spans.add(value_length)
+        views.add(name)
+        views.add(value)
+    }
+
+    ; Room for n more bytes in `bytes`; when they move, the views into
+    ; them follow.
+    procedure room(mutable this, n: size_t)
+    {
+        let old_at bytes.data.data as size_t
+        let old_end old_at + bytes.length
+        bytes.reserve(n)
+        let new_at bytes.data.data as size_t
+        if new_at = old_at
+            return
+        var i: size_t 0
+        while i < views.length
+        {
+            let v views[i]
+            let a v.data as size_t
+            if v.length > 0 and a >= old_at and a < old_end
+                views.put(i, bytes.data.subslice(a - old_at, a - old_at + v.length))
+            set i: i + 1
+        }
+    }
+
+    ; Room for the literals of a header block of n bytes (a Huffman code
+    ; has at least 5 bits), made before it is decoded: `literal` never
+    ; grows `bytes`, so no view it handed out moves.
+    procedure room_for_block(mutable this, n: size_t)
+        this.room((n * 8) / 5 + 8)
+
+    ; A string literal's bytes (Huffman-coded or not) decoded behind the
+    ; others: their view, through s. False when they are malformed, when
+    ; room_for_block made too little room, and when they hold a CR, LF or
+    ; NUL: RFC 9113 8.2.1 and RFC 9114 4.2 make such a field malformed
+    ; (HTTP/2 ends the connection for it, 5.4.1) -- and in the HTTP/1.1 text
+    ; a request becomes, an LF would begin a field of the client's choosing.
+    ; Every literal passes here, and every dynamic table entry was one.
+    procedure literal(mutable this, raw: Slice[u8], huffman: bool, mutable s: ref[Slice[u8]]) returns bool
+    {
+        let start bytes.length
+        if huffman
+        {
+            if start + (raw.length * 8) / 5 + 1 > bytes.capacity()
+                return false
+            var w start
+            if huffman_decode_into(raw, bytes.data, &w) = false
+                return false
+            set bytes.length: w
+        }
+        else
+        {
+            if start + raw.length > bytes.capacity()
+                return false
+            bytes.append(raw)
+        }
+        let got bytes.bytes().slice_from(start)
+        if field_bytes_ok(got) = false
+            return false
+        set s: got
+        true
+    }
+
+    ; Every view into `table` (the dynamic table's bytes) copied into
+    ; `bytes`: before an insert, which may move or overwrite them.
+    procedure own_table(mutable this, table: Slice[u8])
+    {
+        let lo table.data as size_t
+        let hi lo + table.length
+        var need: size_t 0
+        var i: size_t 0
+        while i < views.length
+        {
+            let v views[i]
+            let a v.data as size_t
+            if v.length > 0 and a >= lo and a < hi
+                set need: need + v.length
+            set i: i + 1
+        }
+        if need = 0
+            return
+        this.room(need)
+        set i: 0
+        while i < views.length
+        {
+            let v views[i]
+            let a v.data as size_t
+            if v.length > 0 and a >= lo and a < hi
+            {
+                let at bytes.length
+                bytes.append(v)
+                views.put(i, bytes.bytes().subslice(at, at + v.length))
+            }
+            set i: i + 1
+        }
     }
 }
 
@@ -95,29 +191,80 @@ procedure decode_integer(block: Slice[u8], mutable at: ref[size_t], prefix_bits:
 ; an EOS inside the string or padding that is not a short run of ones.
 procedure huffman_decode(src: Slice[u8], mutable out: ref[ByteBuf]) returns bool
 {
-    ; bits: how many low bits of acc are still to decode. A symbol whose code
-    ; has at most 8 bits comes out of HUFF_FAST in one look; a longer one is
-    ; found length by length, as the code is canonical. Bit by bit, this was
-    ; a tenth of the server's samples in baseline-h2 (2026-09-30).
+    ; no code is shorter than 5 bits
+    out.reserve((src.length * 8) / 5 + 1)
+    var w out.length
+    let ok huffman_decode_into(src, out.data, &w)
+    set out.length: w
+    ok
+}
+
+; The same into room from w on (w moves past the bytes); room must hold
+; (src.length * 8) / 5 + 1 more bytes -- a single symbol from HUFF_PAIR is
+; written with a spare byte behind it.
+procedure huffman_decode_into(src: Slice[u8], mutable room: Slice[u8], mutable w: ref[size_t]) returns bool
+{
+    ; copies, kept in registers: a byte stored through room may alias
+    ; whatever a parameter points at, and the loop reloaded w and both
+    ; slices after every one (2026-09-30). Typed, since an untyped binding
+    ; of w would alias it.
+    var input: Slice[u8] src
+    var out: Slice[u8] room
+    var at: size_t w
+    ; bits: how many low bits of acc are still to decode. The codes at the
+    ; front of the next 11 bits -- two of them for most letters and digits --
+    ; come out of HUFF_PAIR in one look; at the end of the string the bits
+    ; are padded with ones (as the padding is) and only codes that lie
+    ; within the real ones are taken. A longer code is found length by
+    ; length, as the code is canonical. Bit by bit, this was a tenth of the
+    ; server's samples in baseline-h2; a symbol per look (8 bits), still
+    ; 9 % (2026-09-30).
     var acc: u64 0
     var bits: u64 0
     var i: size_t 0
     repeat
     {
-        while bits <= 56 and i < src.length
+        while bits <= 56 and i < input.length
         {
-            set acc: (acc << 8) | (src[i] as u64)
+            set acc: (acc << 8) | (input[i] as u64)
             set bits: bits + 8
             set i: i + 1
         }
-        if bits >= 8
+        if bits >= 11
         {
-            let e HUFF_FAST[((acc >> (bits - 8)) & 255) as size_t] as u64
+            let e HUFF_PAIR[((acc >> (bits - 11)) & 2047) as size_t] as u64
             if e <> 0
             {
-                out.append_byte((e & 255) as u8)
-                set bits: bits - (e >> 16)
+                out.put(at, (e & 255) as u8)
+                out.put(at + 1, ((e >> 8) & 255) as u8)
+                set at: at + ((e >> 24) & 3)
+                set bits: bits - ((e >> 20) & 15)
                 continue
+            }
+        }
+        else if bits >= 5
+        {
+            let pad 11 - bits
+            let e HUFF_PAIR[(((acc << pad) | (((1 as u64) << pad) - 1)) & 2047) as size_t] as u64
+            if e <> 0
+            {
+                let total (e >> 20) & 15
+                let first (e >> 16) & 15
+                if total <= bits
+                {
+                    out.put(at, (e & 255) as u8)
+                    out.put(at + 1, ((e >> 8) & 255) as u8)
+                    set at: at + ((e >> 24) & 3)
+                    set bits: bits - total
+                    continue
+                }
+                if first <= bits
+                {
+                    out.put(at, (e & 255) as u8)
+                    set at: at + 1
+                    set bits: bits - first
+                    continue
+                }
             }
         }
         var length: u64 5
@@ -131,8 +278,12 @@ procedure huffman_decode(src: Slice[u8], mutable out: ref[ByteBuf]) returns bool
             {
                 let symbol HUFF_SYMBOLS[(HUFF_OFFSET[length as size_t] as size_t) + ((code - first) as size_t)]
                 if symbol = 256
+                {
+                    set w: at
                     return false
-                out.append_byte(symbol as u8)
+                }
+                out.put(at, symbol as u8)
+                set at: at + 1
                 set bits: bits - length
                 set found: true
                 break
@@ -142,7 +293,8 @@ procedure huffman_decode(src: Slice[u8], mutable out: ref[ByteBuf]) returns bool
         if found
             continue
         ; no whole code left: the end, padded with fewer than 8 one bits
-        if i < src.length
+        set w: at
+        if i < input.length
             return false
         return bits < 8 and (acc & (((1 as u64) << bits) - 1)) = ((1 as u64) << bits) - 1
     }
@@ -256,88 +408,47 @@ define HpackDecoder
         set used: at + name.length + value.length
     }
 
-    ; Entry `index` of the combined table (1..61 static, then dynamic) copied
-    ; onto out: its name, and its value when with_value; the spans they got
-    ; through name_at/value_at. False for an index that names nothing.
-    procedure copy_entry(this, index: u64, mutable out: ref[ByteBuf], mutable name_start: ref[size_t], mutable name_length: ref[size_t], mutable value_start: ref[size_t], mutable value_length: ref[size_t], with_value: bool) returns bool
+    ; Entry `index` of the combined table (1..61 static, then dynamic): views
+    ; of its name and value -- a dynamic one's valid until the next insert.
+    ; False for an index that names nothing.
+    procedure entry(this, index: u64, mutable name: ref[Slice[u8]], mutable value: ref[Slice[u8]]) returns bool
     {
         if index = 0
             return false
-        var name: Slice[u8] ""
-        var value: Slice[u8] ""
         if index <= 61
         {
             set name: static_name(index)
             set value: static_value(index)
+            return true
         }
-        else
-        {
-            let d (index - 62) as size_t
-            if d >= count
-                return false
-            let s this.slot(d)
-            let at ring_start[s] as size_t
-            let nl ring_name[s] as size_t
-            set name: data.subslice(at, at + nl)
-            set value: data.subslice(at + nl, at + nl + (ring_value[s] as size_t))
-        }
-        set name_start: out.length
-        set name_length: name.length
-        out.append(name)
-        if with_value
-        {
-            set value_start: out.length
-            set value_length: value.length
-            out.append(value)
-        }
+        let d (index - 62) as size_t
+        if d >= count
+            return false
+        let s this.slot(d)
+        let at ring_start[s] as size_t
+        let nl ring_name[s] as size_t
+        set name: data.subslice(at, at + nl)
+        set value: data.subslice(at + nl, at + nl + (ring_value[s] as size_t))
         true
-    }
-
-    ; One string literal (RFC 7541 5.2) at block[at] decoded onto out: its
-    ; span. False when it is malformed, and for a CR, LF or NUL in it: RFC
-    ; 9113 8.2.1 makes such a field malformed, 5.4.1 lets the stream error
-    ; end the connection -- and so no such byte reaches a HeaderList or the
-    ; dynamic table, whose entries are all literals once checked here.
-    procedure read_string(this, block: Slice[u8], mutable at: ref[size_t], mutable out: ref[ByteBuf], mutable start: ref[size_t], mutable length: ref[size_t]) returns bool
-    {
-        if at >= block.length
-            return false
-        let huffman (block[at] & 128) <> 0
-        let n decode_integer(block, at, 7)
-        if n < 0 or at + (n as size_t) > block.length
-            return false
-        let raw block.subslice(at, at + (n as size_t))
-        set at: at + (n as size_t)
-        set start: out.length
-        if huffman
-        {
-            if huffman_decode(raw, out) = false
-                return false
-        }
-        else
-            out.append(raw)
-        set length: out.length - start
-        field_bytes_ok(out.bytes().slice_from(start))
     }
 
     ; Decode one complete header block onto list; false on a malformed
     ; block (a COMPRESSION_ERROR: the connection must end).
     procedure decode(mutable this, block: Slice[u8], mutable list: ref[HeaderList]) returns bool
     {
+        list.room_for_block(block.length)
         var at: size_t 0
         while at < block.length
         {
             let b block[at]
-            var ns: size_t 0
-            var nl: size_t 0
-            var vs: size_t 0
-            var vl: size_t 0
+            var name: Slice[u8] ""
+            var value: Slice[u8] ""
             if (b & 128) <> 0
             {
                 let index decode_integer(block, &at, 7)
-                if index <= 0 or this.copy_entry(index as u64, &list.bytes, &ns, &nl, &vs, &vl, true) = false
+                if index <= 0 or this.entry(index as u64, &name, &value) = false
                     return false
-                list.record(ns, nl, vs, vl)
+                list.add(name, value)
             }
             else if (b & 224) = 32
             {
@@ -360,23 +471,40 @@ define HpackDecoder
                     return false
                 if index = 0
                 {
-                    if this.read_string(block, &at, &list.bytes, &ns, &nl) = false
+                    if hpack_string(block, &at, list, &name) = false
                         return false
                 }
-                else if this.copy_entry(index as u64, &list.bytes, &ns, &nl, &vs, &vl, false) = false
+                else if this.entry(index as u64, &name, &value) = false
                     return false
-                if this.read_string(block, &at, &list.bytes, &vs, &vl) = false
+                if hpack_string(block, &at, list, &value) = false
                     return false
-                list.record(ns, nl, vs, vl)
+                list.add(name, value)
                 if indexing
                 {
-                    let all list.bytes.bytes()
-                    this.insert(all.subslice(ns, ns + nl), all.subslice(vs, vs + vl))
+                    ; the insert may move or overwrite the table's bytes
+                    list.own_table(data)
+                    let k list.count() - 1
+                    this.insert(list.name(k), list.value(k))
                 }
             }
         }
         true
     }
+}
+
+; One string literal (RFC 7541 5.2) at block[at] decoded onto list
+; (HeaderList.literal): its view, through s.
+procedure hpack_string(block: Slice[u8], mutable at: ref[size_t], mutable list: ref[HeaderList], mutable s: ref[Slice[u8]]) returns bool
+{
+    if at >= block.length
+        return false
+    let huffman (block[at] & 128) <> 0
+    let n decode_integer(block, at, 7)
+    if n < 0 or at + (n as size_t) > block.length
+        return false
+    let raw block.subslice(at, at + (n as size_t))
+    set at: at + (n as size_t)
+    list.literal(raw, huffman, s)
 }
 
 ; An integer with an n-bit prefix whose other bits are `flags`.

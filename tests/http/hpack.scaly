@@ -7,8 +7,13 @@
 ; Huffman decoder over every code: all 256 byte values encoded here from
 ; the code tables (codes of 5 to 30 bits, so both the 8-bit fast table and
 ; the length-by-length path), and every value alone at the end of a string
-; (each padding).
-; Expected: c41 c42 c43 table encoder huffman
+; (each padding). Then the views a decoded list holds: a block that
+; indexes a 3000-byte dynamic entry three times and then inserts, so that
+; the list first owns those views and its bytes grow on the way -- the
+; literal views already in it must follow (under poison, a stale one reads
+; 0xDD) -- and the new entry (1100 bytes) evicts the big one and is written
+; over its bytes; a later block reads it back from the table.
+; Expected: c41 c42 c43 table encoder huffman views
 
 package scaly 0.1.0
 package http 0.1.0
@@ -127,6 +132,9 @@ procedure huffman_encode(s: Slice[u8], mutable out: ref[ByteBuf])
 
 procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
 {
+    ; SCALY_POISON in the runner does nothing by itself: the program turns
+    ; it on, while it is still single-threaded
+    Page.enable_poison()
     let host Page.allocate_page()
     var d HpackDecoder.create(host)
     var list HeaderList.create(host)
@@ -186,6 +194,73 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
         }
         set v: v + 1
     }
-    Console.print "huffman"
+    Console.print "huffman "
+
+    ; a literal field with incremental indexing (a literal name)
+    var b1 ByteBuf.create(hh, 4096)
+    var big Vector[u8](3000)
+    set v: 0
+    while v < 3000
+    {
+        big.put(v, ((v % 26) + 97) as u8)
+        set v: v + 1
+    }
+    encode_integer(&b1, 64, 6, 0)
+    encode_string(&b1, "x-big")
+    encode_string(&b1, big.as_slice())
+    var vd HpackDecoder.create(hh)
+    var vl HeaderList.create(hh)
+    if vd.decode(b1.bytes(), &vl) = false or vl.count() <> 1
+    {
+        print "views: first block"
+        return 30
+    }
+    ; "a: b" as a literal (a view into the list's bytes), the big entry
+    ; three times, then an insert
+    var b2 ByteBuf.create(hh, 64)
+    encode_field(&b2, "a", "b")
+    encode_integer(&b2, 128, 7, 62)
+    encode_integer(&b2, 128, 7, 62)
+    encode_integer(&b2, 128, 7, 62)
+    var fresh Vector[u8](1100)
+    set v: 0
+    while v < 1100
+    {
+        fresh.put(v, 110)
+        set v: v + 1
+    }
+    encode_integer(&b2, 64, 6, 0)
+    encode_string(&b2, "x-new")
+    encode_string(&b2, fresh.as_slice())
+    vl.clear()
+    if vd.decode(b2.bytes(), &vl) = false or vl.count() <> 5
+    {
+        print "views: second block, `vl.count()` fields"
+        return 31
+    }
+    if vl.name(0).equals("a") = false or vl.value(0).equals("b") = false or vl.name(4).equals("x-new") = false or vl.value(4).equals(fresh.as_slice()) = false
+    {
+        print "views: the literals moved wrong"
+        return 32
+    }
+    var f: size_t 1
+    while f <= 3
+    {
+        if vl.name(f).equals("x-big") = false or vl.value(f).equals(big.as_slice()) = false
+        {
+            print "views: field `f`"
+            return 33
+        }
+        set f: f + 1
+    }
+    var b3 ByteBuf.create(hh, 64)
+    encode_integer(&b3, 128, 7, 62)
+    vl.clear()
+    if vd.decode(b3.bytes(), &vl) = false or vl.count() <> 1 or vl.name(0).equals("x-new") = false or vl.value(0).equals(fresh.as_slice()) = false
+    {
+        print "views: the table after the insert"
+        return 34
+    }
+    Console.print "views"
     0
 }

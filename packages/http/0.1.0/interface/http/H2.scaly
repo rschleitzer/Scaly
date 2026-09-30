@@ -91,10 +91,6 @@ define H2Pending
 ; or :path.
 procedure fields_request_text(fields: ref[HeaderList], mutable text: ref[ByteBuf], has_body: bool) @ret_nonlocal true @deep true returns bool linked
 
-; Do all decoded fields pass field_bytes_ok? (HPACK checks as it decodes;
-; the QPACK decoder of HTTP/3 does not.)
-function fields_fit_text(fields: ref[HeaderList]) @ret_nonlocal true @deep true returns bool linked
-
 ; Which pseudo-field a name is: 1 :method, 2 :path, 3 :authority, 0 any
 ; other.
 function pseudo_field(name: Slice[u8]) @ret_nonlocal true @deep true returns int linked
@@ -109,8 +105,8 @@ function framing_field(name: Slice[u8]) @ret_nonlocal true @deep true returns bo
 ; fields_request_text writes, without the text and the parse (together
 ; they were a tenth of the server's samples in baseline-h2, 2026-09-30).
 ; False where fields_request_text is: no :method or :path (a byte the text
-; cannot carry the HPACK decoder refused already); and for a method or
-; target with a space, or a head larger than parse_request takes.
+; cannot carry the decoder refused already, HeaderList.literal); and for a
+; method or target with a space, or a head larger than parse_request takes.
 procedure request_from_fields(fields: ref[HeaderList], mutable text: ref[ByteBuf], mutable req: ref[Request]) @ret_nonlocal true @deep true returns bool linked
 
 ; The status of HTTP/1.1 response text ("HTTP/1.1 200 ..."), 0 when there

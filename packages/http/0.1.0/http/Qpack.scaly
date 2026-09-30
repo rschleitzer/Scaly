@@ -12,6 +12,7 @@ use http.Hpack.HeaderList
 ; dynamic table.
 procedure qpack_decode(block: Slice[u8], mutable list: ref[HeaderList]) returns bool
 {
+    list.room_for_block(block.length)
     var at: size_t 0
     ; Required Insert Count (8-bit prefix) and Delta Base (sign + 7 bits)
     let ric decode_integer(block, &at, 8)
@@ -22,10 +23,8 @@ procedure qpack_decode(block: Slice[u8], mutable list: ref[HeaderList]) returns 
     while at < block.length
     {
         let b block[at]
-        var ns: size_t 0
-        var nl: size_t 0
-        var vs: size_t 0
-        var vl: size_t 0
+        var name: Slice[u8] ""
+        var value: Slice[u8] ""
         if (b & 128) <> 0
         {
             ; indexed field line, 6-bit index; T (0x40) must name the static table
@@ -34,14 +33,8 @@ procedure qpack_decode(block: Slice[u8], mutable list: ref[HeaderList]) returns 
             let index decode_integer(block, &at, 6)
             if index < 0 or index > 98
                 return false
-            set ns: list.bytes.length
-            let name qpack_static_name(index as u64)
-            list.bytes.append(name)
-            set nl: name.length
-            set vs: list.bytes.length
-            let value qpack_static_value(index as u64)
-            list.bytes.append(value)
-            set vl: value.length
+            set name: qpack_static_name(index as u64)
+            set value: qpack_static_value(index as u64)
         }
         else if (b & 64) <> 0
         {
@@ -51,31 +44,28 @@ procedure qpack_decode(block: Slice[u8], mutable list: ref[HeaderList]) returns 
             let index decode_integer(block, &at, 4)
             if index < 0 or index > 98
                 return false
-            set ns: list.bytes.length
-            let name qpack_static_name(index as u64)
-            list.bytes.append(name)
-            set nl: name.length
-            if qpack_string(block, &at, 7, &list.bytes, &vs, &vl) = false
+            set name: qpack_static_name(index as u64)
+            if qpack_string(block, &at, 7, list, &value) = false
                 return false
         }
         else if (b & 32) <> 0
         {
             ; literal with a literal name: H is 0x08, a 3-bit length
-            if qpack_string(block, &at, 3, &list.bytes, &ns, &nl) = false
+            if qpack_string(block, &at, 3, list, &name) = false
                 return false
-            if qpack_string(block, &at, 7, &list.bytes, &vs, &vl) = false
+            if qpack_string(block, &at, 7, list, &value) = false
                 return false
         }
         else
             return false
-        list.record(ns, nl, vs, vl)
+        list.add(name, value)
     }
     true
 }
 
 ; A string literal with an n-bit length prefix whose H flag is the bit just
-; above it, decoded onto out: its span. False when it is malformed.
-procedure qpack_string(block: Slice[u8], mutable at: ref[size_t], prefix_bits: u64, mutable out: ref[ByteBuf], mutable start: ref[size_t], mutable length: ref[size_t]) returns bool
+; above it, decoded onto list (HeaderList.literal): its view, through s.
+procedure qpack_string(block: Slice[u8], mutable at: ref[size_t], prefix_bits: u64, mutable list: ref[HeaderList], mutable s: ref[Slice[u8]]) returns bool
 {
     var pos: size_t at
     if pos >= block.length
@@ -87,16 +77,7 @@ procedure qpack_string(block: Slice[u8], mutable at: ref[size_t], prefix_bits: u
     let raw block.subslice(pos, pos + (n as size_t))
     set pos: pos + (n as size_t)
     set at: pos
-    set start: out.length
-    if huffman
-    {
-        if huffman_decode(raw, out) = false
-            return false
-    }
-    else
-        out.append(raw)
-    set length: out.length - start
-    true
+    list.literal(raw, huffman, s)
 }
 
 ; The start of a response's field section: Required Insert Count 0, Delta

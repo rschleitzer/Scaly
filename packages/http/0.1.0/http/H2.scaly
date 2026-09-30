@@ -120,7 +120,7 @@ procedure fields_request_text(fields: ref[HeaderList], mutable text: ref[ByteBuf
 {
     let method fields.get(":method")
     let path fields.get(":path")
-    if method.length = 0 or path.length = 0 or fields_fit_text(fields) = false
+    if method.length = 0 or path.length = 0
         return false
     text.clear()
     text.append(method)
@@ -149,20 +149,6 @@ procedure fields_request_text(fields: ref[HeaderList], mutable text: ref[ByteBuf
     }
     if has_body = false
         text.append("\r\n")
-    true
-}
-
-; Do all decoded fields pass field_bytes_ok? (HPACK checks as it decodes;
-; the QPACK decoder of HTTP/3 does not.)
-function fields_fit_text(fields: ref[HeaderList]) returns bool
-{
-    var i: size_t 0
-    while i < fields.count()
-    {
-        if field_bytes_ok(fields.name(i)) = false or field_bytes_ok(fields.value(i)) = false
-            return false
-        set i: i + 1
-    }
     true
 }
 
@@ -197,8 +183,8 @@ function framing_field(name: Slice[u8]) returns bool
 ; fields_request_text writes, without the text and the parse (together
 ; they were a tenth of the server's samples in baseline-h2, 2026-09-30).
 ; False where fields_request_text is: no :method or :path (a byte the text
-; cannot carry the HPACK decoder refused already); and for a method or
-; target with a space, or a head larger than parse_request takes.
+; cannot carry the decoder refused already, HeaderList.literal); and for a
+; method or target with a space, or a head larger than parse_request takes.
 procedure request_from_fields(fields: ref[HeaderList], mutable text: ref[ByteBuf], mutable req: ref[Request]) returns bool
 {
     var method: Slice[u8] ""

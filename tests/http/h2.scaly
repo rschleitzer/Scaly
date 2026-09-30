@@ -84,6 +84,9 @@ procedure request_block(mutable out: ref[ByteBuf], method: Slice[u8], path: Slic
 
 procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
 {
+    ; SCALY_POISON in the runner does nothing by itself: the program turns
+    ; it on, while it is still single-threaded
+    Page.enable_poison()
     var app Router.create(Page.allocate_page())
     app.get("/sum", &sum)
     app.get("/big", &big)

@@ -13,8 +13,8 @@ use http.Hpack.HeaderList
 procedure qpack_decode(block: Slice[u8], mutable list: ref[HeaderList]) @ret_nonlocal true @deep true returns bool linked
 
 ; A string literal with an n-bit length prefix whose H flag is the bit just
-; above it, decoded onto out: its span. False when it is malformed.
-procedure qpack_string(block: Slice[u8], mutable at: ref[size_t], prefix_bits: u64, mutable out: ref[ByteBuf], mutable start: ref[size_t], mutable length: ref[size_t]) @ret_nonlocal true @deep true returns bool linked
+; above it, decoded onto list (HeaderList.literal): its view, through s.
+procedure qpack_string(block: Slice[u8], mutable at: ref[size_t], prefix_bits: u64, mutable list: ref[HeaderList], mutable s: ref[Slice[u8]]) @ret_nonlocal true @deep true returns bool linked
 
 ; The start of a response's field section: Required Insert Count 0, Delta
 ; Base 0.
