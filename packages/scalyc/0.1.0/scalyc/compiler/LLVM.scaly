@@ -361,6 +361,8 @@ function LLVMAlignOf(type: LLVMTypeRef) returns LLVMValueRef extern
 
 ; Floating point constants
 function LLVMConstReal(real_type: LLVMTypeRef, value: double) returns LLVMValueRef extern
+function LLVMConstIntGetZExtValue(constant_val: LLVMValueRef) returns u64 extern
+procedure LLVMConstRealGetDouble(constant_val: LLVMValueRef, mutable loses_info: pointer[i32]) returns double extern
 
 ; Null pointer constant
 function LLVMConstNull(type: LLVMTypeRef) returns LLVMValueRef extern

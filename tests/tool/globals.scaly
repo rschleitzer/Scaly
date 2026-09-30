@@ -1,0 +1,10 @@
+; Module constants narrower than their literal (tests/tool/run.sh): each is
+; emitted in its OWN type. Before 2026-09-30 the initializer kept the
+; literal's width -- an i32 global with an i64 constant, which the IR text
+; hides -- and `scaly run` (the JIT's verifier) aborted on the first one.
+define SMALL: u32 0x0002
+define BYTE: u8 0x10
+define COUNT: u32 7
+define HALF: float 2.5
+
+print "`(SMALL as int) + (BYTE as int)` `COUNT as int` `(HALF * 2.0) as int`"

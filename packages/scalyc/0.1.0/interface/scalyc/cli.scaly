@@ -93,6 +93,8 @@ define Options
     tool_build: bool                ; `scaly build`: link against the cached package objects
     program_argc: int               ; `scaly run file args`: what the program's main receives
     program_argv: pointer[pointer[char]]
+    test_mode: bool                 ; `scaly test file [filter]`: run the test functions
+    test_filter: String             ; only tests whose name contains it
 )
 {
     init() linked
@@ -169,6 +171,17 @@ define cli
     ; stdlib is skipped — its symbols are already in the host scalyc image and
     ; resolve via the ORC process generator. Returns false on any dep failure.
     procedure compile_jit_dependencies(mutable model: ref[Program], mutable dep_objs: ref[Array[String]], mutable dep_syms: ref[Array[String]]) @ret_nonlocal true @deep true @deep_pageof_2 true returns bool io mutable modeler_error_count reads modeler_error_count linked
+
+    ; a test: named `test` or `test_<name>`, taking nothing, answering an int,
+    ; no caller page, not in a package the file uses, its name containing the
+    ; filter
+    function is_test_function(f: PlannedFunction, package_dirs: ref[Array[String]], filter: String) @ret_nonlocal true @deep true returns bool linked
+
+    function contains_string(names: ref[Array[String]], s: String) @ret_nonlocal true @deep true returns bool linked
+
+    ; the dotted name an Itanium symbol spells: `_ZN6opensp7StringC4testEv`
+    ; is opensp.StringC.test, `_Z4testv` is test
+    function label_of_test(mangled: String) @page true @direct true @ret_caller true @deep true returns String linked
 
     ; `<dir>/interface/<p>.scaly` -> `<dir>/<p>.scaly`; any other path as it is
     function source_root(file: String) @page true @direct true @deep true returns String linked

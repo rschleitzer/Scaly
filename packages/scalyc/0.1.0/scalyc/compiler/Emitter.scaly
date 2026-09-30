@@ -36,6 +36,9 @@ use scalyc.compiler.Planner.*
 ; same name that appears on the LLVM declaration.
 function dlopen(filename: pointer[const_char], flag: i32) returns pointer[void] extern
 function dlsym(handle: pointer[void], symbol: pointer[const_char]) returns pointer[void] extern
+; `scaly test` drains what a test printed through stdio before the tool writes
+; its verdict, so the two arrive in order
+function fflush(stream: pointer[void]) returns i32 extern
 
 define Emitter
 {
@@ -7672,7 +7675,7 @@ define Emitter
                     {
                         let init_value emit_operands global.value
                         if init_value <> null
-                            LLVMSetInitializer(gv, init_value)
+                            LLVMSetInitializer(gv, this.global_initializer_of_type(init_value, global_type))
                     }
 
                     ; s189: mutable module globals (stack_head etc.) need a
@@ -8383,7 +8386,7 @@ define Emitter
         ; the emitter crashed on them). dep_object_symbols: the mangled names those
         ; objects define, so emit_jit_stubs leaves them as declarations. Both null
         ; when the program has no non-scaly dependencies (behavior unchanged).
-        procedure jit_run(mutable this, mutable plan: Plan, mutable module_name: String, mutable fn_mangled: String, mutable dep_object_files: ref[Array[String]]?, dep_object_symbols: ref[Array[String]], program_argc: int, mutable program_argv: pointer[pointer[char]]) returns i64
+        procedure jit_run(mutable this, mutable plan: Plan, mutable module_name: String, mutable fn_mangled: String, mutable dep_object_files: ref[Array[String]]?, dep_object_symbols: ref[Array[String]], program_argc: int, mutable program_argv: pointer[pointer[char]], mutable test_names: ref[Array[String]]?, test_labels: ref[Array[String]]?) returns i64
         {
             let jit_ctx LLVMContextCreate()
             set external_context: jit_ctx
@@ -8414,6 +8417,9 @@ define Emitter
 
             ; A thread-local the JIT materializes itself has no TLV descriptor.
             jit_clear_thread_locals()
+            let dbg_dump getenv("SCALYC_JIT_DUMP")
+            if dbg_dump <> null
+                this.write_module_to_file(String(dbg_dump))
 
             let valid verify_module()
             if valid = false
@@ -8511,6 +8517,45 @@ define Emitter
             {
                 report_jit_error(add_err, "JIT: could not add module")
                 return 127
+            }
+
+            ; `scaly test`: every test function in turn, in this one session. A
+            ; test takes nothing and answers an int, 0 for passed; its name is
+            ; written before it runs, so a test that traps is named above the
+            ; trap's message. The answer is the number that failed.
+            if test_names <> null and test_labels <> null
+            {
+                var failed: i64 0
+                var ti: size_t 0
+                while ti < test_names.length
+                {
+                    let tn test_names.at ti
+                    let tl test_labels.at ti
+                    set ti: ti + 1
+                    Console.print "test "
+                    Console.print(tl.to_c_string())
+                    Console.print " ... "
+                    var taddr: u64 0
+                    let terr LLVMOrcLLJITLookup(jit, &taddr, tn.to_c_string())
+                    if terr <> null
+                    {
+                        report_jit_error(terr, "JIT: test lookup failed")
+                        set failed: failed + 1
+                        continue
+                    }
+                    let tentry taddr as pointer[void]
+                    let tr tentry()
+                    fflush(null)
+                    if tr = 0
+                        Console.println "ok"
+                    else
+                    {
+                        let msg "FAIL (answered `tr`)"
+                        Console.println(msg.to_c_string())
+                        set failed: failed + 1
+                    }
+                }
+                return failed
             }
 
             ; Look up the target function's address (ORC applies the global prefix).
@@ -8677,6 +8722,29 @@ define Emitter
             LLVMDisposeTargetMachine tm
 
             emit_err = 0
+        }
+
+        ; A scalar global's initializer in the global's OWN type. A literal folds
+        ; at its default width (`define ARC_IGNORE_DATA: u32 0x0002` gives an
+        ; i64 2, a float literal a double), and an `i32` global holding an i64
+        ; constant is invalid IR: LLVM prints its initializer without a type,
+        ; so the text reads `constant i32 2` and every path through a `.ll`
+        ; (the seed, llc, opt) re-parsed it right, while the in-process object
+        ; wrote eight bytes for the four-byte global and the JIT's verifier
+        ; aborted (`scaly test` on opensp, 2026-09-30).
+        procedure global_initializer_of_type(mutable this, mutable init_value: LLVMValueRef, mutable global_type: LLVMTypeRef) returns LLVMValueRef
+        {
+            let init_type LLVMTypeOf(init_value)
+            let gk LLVMGetTypeKind(global_type)
+            let ik LLVMGetTypeKind(init_type)
+            if gk = 8 and ik = 8 and LLVMGetIntTypeWidth(global_type) <> LLVMGetIntTypeWidth(init_type)
+                return LLVMConstInt(global_type, LLVMConstIntGetZExtValue(init_value) as size_t, 0)
+            if (gk = 2 or gk = 3) and (ik = 2 or ik = 3) and gk <> ik
+            {
+                var loses: i32 0
+                return LLVMConstReal(global_type, LLVMConstRealGetDouble(init_value, &loses as pointer[i32]))
+            }
+            init_value
         }
 
         ; Verify module

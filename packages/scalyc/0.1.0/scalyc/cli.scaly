@@ -93,6 +93,8 @@ define Options
     tool_build: bool                ; `scaly build`: link against the cached package objects
     program_argc: int               ; `scaly run file args`: what the program's main receives
     program_argv: pointer[pointer[char]]
+    test_mode: bool                 ; `scaly test file [filter]`: run the test functions
+    test_filter: String             ; only tests whose name contains it
 )
 {
     init()
@@ -134,6 +136,8 @@ define Options
         set tool_build: false
         set program_argc: 0
         set program_argv: null
+        set test_mode: false
+        set test_filter: String()
     }
 
     function has_error(this) returns bool
@@ -387,6 +391,7 @@ define cli
     {
         Console.println "Usage: scaly run <file> [arguments]     compile and run a program"
         Console.println "       scaly build <file> [-o <out>] [--release]   build an executable"
+        Console.println "       scaly test <file> [filter]       run its test functions"
         Console.println "       scalyc [options] <input file>"
         Console.println ""
         Console.println "Options:"
@@ -750,6 +755,63 @@ define cli
         }
 
         ; ================================================================
+        ; `scaly test`: the test functions of the file's own code (not of a
+        ; package it uses), run one after another in one JIT session
+        ; ================================================================
+        if opts.test_mode
+        {
+            var test_names Array[String]()
+            var test_labels Array[String]()
+            var package_dirs Array[String]()
+            var pdi: size_t 0
+            while pdi < model.packages.length
+            {
+                let pdp model.packages.get pdi
+                if pdp <> null
+                {
+                    let pslash pdp.file.last_index_of(47)
+                    if pslash > 0
+                        package_dirs.add(pdp.file.substring(0, (pslash + 1) as size_t))
+                }
+                set pdi: pdi + 1
+            }
+            if plan.functions <> null
+            {
+                for f in plan.functions
+                {
+                    if cli.is_test_function(f, &package_dirs, opts.test_filter) and cli.contains_string(&test_names, f.mangled_name) = false
+                    {
+                        test_names.add(String(f.mangled_name))
+                        test_labels.add(cli.label_of_test(f.mangled_name))
+                    }
+                }
+            }
+            if test_names.length = 0
+            {
+                Console.println "no tests: a test is a function or procedure named test or test_<name>, taking nothing and answering an int (0 for passed)"
+                return 0
+            }
+            var test_config EmitterConfig()
+            set test_config.emit_debug_info: false
+            var test_emitter Emitter.Emitter(test_config)
+            var test_dep_objs Array[String]()
+            var test_dep_syms Array[String]()
+            if cli.compile_jit_dependencies(&model, &test_dep_objs, &test_dep_syms) = false
+                return 4
+            let failed test_emitter.jit_run(plan, program_name, "", &test_dep_objs, &test_dep_syms, 0, null, &test_names, &test_labels)
+            let total test_names.length as int
+            if failed = 0
+            {
+                let summary "`total` passed"
+                Console.println(summary.to_c_string())
+                return 0
+            }
+            let summary "`failed as int` of `total` failed"
+            Console.println(summary.to_c_string())
+            return 1
+        }
+
+        ; ================================================================
         ; --run: JIT-compile and execute a function in-process (Phase 1:
         ; zero-arg, int-returning). The function's i64 return becomes the
         ; process exit code. Prelude stays ON (the JIT module carries the
@@ -784,7 +846,7 @@ define cli
             var run_dep_syms Array[String]()
             if cli.compile_jit_dependencies(&model, &run_dep_objs, &run_dep_syms) = false
                 return 4
-            let jit_rc jit_emitter.jit_run(plan, program_name, target_mangled, &run_dep_objs, &run_dep_syms, 0, null)
+            let jit_rc jit_emitter.jit_run(plan, program_name, target_mangled, &run_dep_objs, &run_dep_syms, 0, null, null, null)
             return jit_rc as int
         }
 
@@ -803,7 +865,7 @@ define cli
             var prog_dep_syms Array[String]()
             if cli.compile_jit_dependencies(&model, &prog_dep_objs, &prog_dep_syms) = false
                 return 4
-            let prog_rc prog_emitter.jit_run(plan, program_name, "main", &prog_dep_objs, &prog_dep_syms, opts.program_argc, opts.program_argv)
+            let prog_rc prog_emitter.jit_run(plan, program_name, "main", &prog_dep_objs, &prog_dep_syms, opts.program_argc, opts.program_argv, null, null)
             return prog_rc as int
         }
 
@@ -1129,6 +1191,79 @@ define cli
             set i: i + 1
         }
         true
+    }
+
+    ; a test: named `test` or `test_<name>`, taking nothing, answering an int,
+    ; no caller page, not in a package the file uses, its name containing the
+    ; filter
+    function is_test_function(f: PlannedFunction, package_dirs: ref[Array[String]], filter: String) returns bool
+    {
+        if f.name.equals("test") = false and f.name.starts_with("test_") = false
+            return false
+        if f.input <> null and f.input.length > 0
+            return false
+        if f.return_type = null or f.return_type.name.equals("int") = false
+            return false
+        if f.page_parameter <> null or f.mangled_name.contains(String("PN4scaly6memory4PageE"))
+            return false
+        var i: size_t 0
+        while i < package_dirs.length
+        {
+            let d package_dirs.at i
+            if f.file.starts_with(d)
+                return false
+            set i: i + 1
+        }
+        filter.get_length() = 0 or cli.label_of_test(f.mangled_name).contains(filter)
+    }
+
+    function contains_string(names: ref[Array[String]], s: String) returns bool
+    {
+        var i: size_t 0
+        while i < names.length
+        {
+            let n names.at i
+            if n.equals(s)
+                return true
+            set i: i + 1
+        }
+        false
+    }
+
+    ; the dotted name an Itanium symbol spells: `_ZN6opensp7StringC4testEv`
+    ; is opensp.StringC.test, `_Z4testv` is test
+    function label_of_test(mangled: String) returns String
+    {
+        let n mangled.get_length()
+        var i: size_t 2
+        var nested false
+        if n > 2 and mangled.get(2) = 78
+        {
+            set nested: true
+            set i: 3
+        }
+        var sb StringBuilder()
+        var first true
+        while i < n
+        {
+            let c mangled.get i
+            if c < 48 or c > 57
+                break
+            var len: size_t 0
+            while i < n and mangled.get(i) >= 48 and mangled.get(i) <= 57
+            {
+                set len: len * 10 + ((mangled.get(i) - 48) as size_t)
+                set i: i + 1
+            }
+            if first = false
+                sb.append("." as char)
+            sb.append(mangled.substring(i, len))
+            set i: i + len
+            set first: false
+            if nested = false
+                break
+        }
+        sb.to_string()
     }
 
     ; `<dir>/interface/<p>.scaly` -> `<dir>/<p>.scaly`; any other path as it is
@@ -1719,6 +1854,20 @@ define cli
                 set run_opts.program_argc: argc - 2
                 set run_opts.program_argv: argv + 2
                 return cli.run(run_opts)
+            }
+            if command.equals("test")
+            {
+                if argc < 3
+                {
+                    Console.println "Usage: scaly test <file> [filter]"
+                    return 1
+                }
+                var test_opts Options()
+                set test_opts.input_file: String(*(argv + 2))
+                set test_opts.test_mode: true
+                if argc > 3
+                    set test_opts.test_filter: String(*(argv + 3))
+                return cli.run(test_opts)
             }
             if command.equals("build")
             {

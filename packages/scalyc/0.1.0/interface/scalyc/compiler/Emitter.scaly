@@ -36,6 +36,9 @@ use scalyc.compiler.Planner.*
 ; same name that appears on the LLVM declaration.
 function dlopen(filename: pointer[const_char], flag: i32) returns pointer[void] extern
 function dlsym(handle: pointer[void], symbol: pointer[const_char]) returns pointer[void] extern
+; `scaly test` drains what a test printed through stdio before the tool writes
+; its verdict, so the two arrive in order
+function fflush(stream: pointer[void]) returns i32 extern
 
 define Emitter
 {
@@ -1826,7 +1829,7 @@ define Emitter
         ; the emitter crashed on them). dep_object_symbols: the mangled names those
         ; objects define, so emit_jit_stubs leaves them as declarations. Both null
         ; when the program has no non-scaly dependencies (behavior unchanged).
-        procedure jit_run(mutable this, mutable plan: Plan, mutable module_name: String, mutable fn_mangled: String, mutable dep_object_files: ref[Array[String]]?, dep_object_symbols: ref[Array[String]], program_argc: int, mutable program_argv: pointer[pointer[char]]) @deep true @deep_into_1_4 true returns i64 io linked
+        procedure jit_run(mutable this, mutable plan: Plan, mutable module_name: String, mutable fn_mangled: String, mutable dep_object_files: ref[Array[String]]?, dep_object_symbols: ref[Array[String]], program_argc: int, mutable program_argv: pointer[pointer[char]], mutable test_names: ref[Array[String]]?, test_labels: ref[Array[String]]?) @deep true @deep_into_1_4 true returns i64 io linked
 
         ; ========================================================================
         ; Module Output
@@ -1860,6 +1863,16 @@ define Emitter
         ; Write native object file via host target machine.
         ; LLVMObjectFile codegen type = 1. Reloc=PIC(2), OptLevel=None(0).
         procedure write_object_to_file(mutable this, mutable filename: String) @ret_caller true @deep true returns bool io linked
+
+        ; A scalar global's initializer in the global's OWN type. A literal folds
+        ; at its default width (`define ARC_IGNORE_DATA: u32 0x0002` gives an
+        ; i64 2, a float literal a double), and an `i32` global holding an i64
+        ; constant is invalid IR: LLVM prints its initializer without a type,
+        ; so the text reads `constant i32 2` and every path through a `.ll`
+        ; (the seed, llc, opt) re-parsed it right, while the in-process object
+        ; wrote eight bytes for the four-byte global and the JIT's verifier
+        ; aborted (`scaly test` on opensp, 2026-09-30).
+        procedure global_initializer_of_type(mutable this, mutable init_value: LLVMValueRef, mutable global_type: LLVMTypeRef) @direct true @deep true returns LLVMValueRef linked
 
         ; Verify module
         procedure verify_module(mutable this) @ret_caller true @deep true returns bool linked

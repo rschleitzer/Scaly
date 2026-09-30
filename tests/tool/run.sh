@@ -5,7 +5,8 @@
 #              fresh build cache, run with arguments
 #   cached     a second build compiles nothing: no cache file newer than the
 #              first build
-#   run        the same program through `scaly run`, arguments handed on
+#   run        the same program through `scaly run`, arguments handed on;
+#              tests/tool/globals.scaly, whose narrow constants aborted the JIT
 #   native     the cache holds the C and assembly files THIS target takes,
 #              chosen by name: one fcontext for this architecture, no
 #              `_windows` file on a POSIX host (eio_windows.c there instead)
@@ -13,6 +14,9 @@
 #              scaly come in through https's own declarations
 #   http       every tests/http program built with `scaly build` and run
 #              under poison against its "; Expected:" line
+#   test       `scaly test`: tests/tool/sums.scaly names its failing test and
+#              answers rc 1, a filter selects, the file's own statements do
+#              not run; opensp's forty test functions pass
 # The cache lives in a scratch directory (SCALY_CACHE); nothing is written
 # into the tree.
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -53,6 +57,8 @@ fi
 if scaly_jit_available 2>/dev/null; then
   out=$("$BIN" run tests/tool/hello.scaly three 2>&1)
   [ "$out" = "hello three" ] && ok || bad "run: got '$out'"
+  out=$("$BIN" run tests/tool/globals.scaly 2>&1)
+  [ "$out" = "18 7 5" ] && ok || bad "run globals: got '$(echo "$out" | tail -1)'"
 fi
 
 # native
@@ -85,6 +91,21 @@ for f in tests/http/*.scaly; do
   out=$(cd "$TMP" && SCALY_POISON=1 "./$t$SCALY_EXE" 2>/dev/null)
   [ "$out" = "$expected" ] && ok || bad "http $t: '$out'"
 done
+
+# test
+if scaly_jit_available 2>/dev/null; then
+  out=$("$BIN" test tests/tool/sums.scaly 2>&1); rc=$?
+  if [ "$rc" = 1 ] && echo "$out" | grep -q '^test test_wrong \.\.\. FAIL (answered 2)$' \
+     && echo "$out" | grep -q '^1 of 3 failed$' && ! echo "$out" | grep -q 'the program itself'; then
+    ok
+  else
+    bad "test: rc=$rc '$(echo "$out" | tr '\n' '|')'"
+  fi
+  out=$("$BIN" test tests/tool/sums.scaly sum 2>&1); rc=$?
+  [ "$rc" = 0 ] && [ "$out" = "$(printf 'test test_sum ... ok\n1 passed')" ] && ok || bad "test filter: rc=$rc '$out'"
+  out=$("$BIN" test packages/opensp/0.1.0/opensp.scaly 2>&1); rc=$?
+  [ "$rc" = 0 ] && echo "$out" | grep -q '^40 passed$' && ok || bad "test opensp: rc=$rc $(echo "$out" | tail -1)"
+fi
 
 echo "tool: $pass PASS, $fail FAIL"
 for x in "${failures[@]+"${failures[@]}"}"; do echo "  $x"; done
