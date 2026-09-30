@@ -3,7 +3,7 @@
 //
 // WHAT THIS EXISTS FOR. pingpong proves the switch WORKS: six jumps, correct
 // output. It cannot prove the switch is CORRECT, because it holds no live
-// float or vector state across a jump — if fcontext_x86_64_win.S had forgotten
+// float or vector state across a jump — if fcontext_x86_64_windows.S had forgotten
 // XMM6-15 entirely, pingpong would still be green. Those ten registers plus
 // RSI and RDI are exactly what Win64 adds to the SysV callee-saved set, so they
 // are the likeliest place for a mistake AND the one whose failure is a wrong
@@ -181,7 +181,7 @@ scaly_xmm_check:
 // jumps straight back. Written here rather than in C because a C function
 // would preserve exactly the registers we need it to destroy.
 //
-// Entry state, from the trampoline in fcontext_x86_64_win.S: RCX = the
+// Entry state, from the trampoline in fcontext_x86_64_windows.S: RCX = the
 // jumper's context, RSP%16 == 8 with 32 bytes of shadow space above the
 // return address. `sub 0x38` lands RSP 16-aligned again and reserves this
 // function's own shadow space for the call below.

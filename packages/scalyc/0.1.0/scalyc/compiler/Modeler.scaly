@@ -2839,17 +2839,83 @@ define Modeler
         pkg_path
     }
 
-    procedure handle_package_decl(pkg_syntax: PackageSyntax, mutable packages: ref[Array[Module]]) mutable modeler_error_count
+    ; A package's root file declares the packages it uses; they are loaded
+    ; before it, so a program names only the packages it uses itself
+    ; (ROADMAP-public.md, stage A). A root that does not parse is left to
+    ; build_referenced_module#, which reports it with its location.
+    procedure load_package_dependencies(mutable root_file: String, mutable packages: ref[Array[Module]], mutable versions: ref[Array[String]]) mutable modeler_error_count
     {
-        let pkg_name pkg_syntax.name.name
+        if File.exists(root_file) = false
+            return
+        var contents File.read_to_string(root_file)
+        if contents.get_length() = 0
+            return
+        var p Parser(contents)
+        choose p.parse_program()
+            when err: Error
+                return
+            when syntax: Success
+            {
+                if syntax.file.declarations = null
+                    return
+                let decl_syns (*syntax.file.declarations)
+                var i: size_t 0
+                while i < decl_syns.length
+                {
+                    let decl_ptr decl_syns.get i
+                    if decl_ptr <> null
+                    {
+                        let decl_syntax (*decl_ptr)
+                        choose decl_syntax
+                            when pkg_syntax: PackageSyntax
+                                handle_package_decl(pkg_syntax, packages, versions)
+                            else
+                            {
+                                ; not a package
+                            }
+                    }
+                    set i: i + 1
+                }
+            }
+    }
+
+    procedure handle_package_decl(pkg_syntax: PackageSyntax, mutable packages: ref[Array[Module]], mutable versions: ref[Array[String]]) mutable modeler_error_count
+    {
+        ; the name lives on the page of the parser that read it -- for a
+        ; dependency's root (load_package_dependencies#) a page released when
+        ; that root is done -- and the module keeps it, so it is copied onto
+        ; the page the module goes to
+        let pkg_name String#(pkg_syntax.name.name)
         var version_str "0.1.0"
         if pkg_syntax.version <> null
             set version_str: format_version(pkg_syntax.version.unwrap())
 
+        ; A package reached twice -- declared by the program and by a package
+        ; it uses -- is loaded once. `versions` holds "name version" for every
+        ; package loaded or being loaded, so a cycle ends here as well. Two
+        ; versions of one package cannot share a compilation: the version
+        ; selects the directory only, and no mangled name carries it.
+        let key "`pkg_name` `version_str`"
+        var vi: size_t 0
+        while vi < versions.length
+        {
+            let v versions.get vi
+            if v <> null and v.starts_with("`pkg_name` ")
+            {
+                if v.equals(key) = false
+                    report_load_error("error: package `pkg_name` is required in two versions, `v.substring(pkg_name.get_length() + 1, v.get_length() - pkg_name.get_length() - 1)` and `version_str`; one compilation takes one version of a package")
+                return
+            }
+            set vi: vi + 1
+        }
+        versions.add key
+
         ; Search path: <SCALY_HOME/>packages/<name>/<version>/
         let pkg_path "`scaly_home_base()`packages/`pkg_name`/`version_str`"
+        let root_dir interface_or_source(pkg_path, pkg_name)
+        load_package_dependencies("`root_dir`/`pkg_name`.scaly", packages, versions)
 
-        let loaded build_referenced_module(interface_or_source(pkg_path, pkg_name), pkg_name, false)
+        let loaded build_referenced_module(root_dir, pkg_name, false)
         ; A declared package whose root loaded to a fully empty stub was not
         ; found (a PARSE failure inside an existing root reports its own
         ; file:line:col error and lands here too — the extra line is harmless).
@@ -3186,6 +3252,7 @@ define Modeler
     {
         reset_errors()
         var packages Array[Module]()
+        var versions Array[String]()
         if syntax.file.declarations <> null
         {
             let decl_syns (*syntax.file.declarations)
@@ -3198,7 +3265,7 @@ define Modeler
                     let decl_syntax (*decl_ptr)
                     choose decl_syntax
                         when pkg_syntax: PackageSyntax
-                            handle_package_decl(pkg_syntax, &packages)
+                            handle_package_decl(pkg_syntax, &packages, &versions)
                         else
                         {
                             ; not a package

@@ -25,6 +25,7 @@ function unlink(path: pointer[const_char]) returns i32 extern
 
 ; Compiler module imports
 use scalyc.compiler.Modeler
+use scalyc.tool
 use scalyc.compiler.Model.Program
 use scalyc.compiler.Planner
 use scalyc.compiler.TaskPlanner
@@ -88,6 +89,10 @@ define Options
     target_cpu: String              ; -mcpu=<name>|native: the CPU codegen tunes for (empty = generic)
     opt_level: int                  ; -O0..-O3: LLVM pipeline for object emission (default 0)
     portable_simd: bool             ; --portable-simd: no target form for a SIMD operation (the seed)
+    library: bool                   ; a package object for the build cache (tool.package_objects)
+    tool_build: bool                ; `scaly build`: link against the cached package objects
+    program_argc: int               ; `scaly run file args`: what the program's main receives
+    program_argv: pointer[pointer[char]]
 )
 {
     init()
@@ -125,6 +130,10 @@ define Options
         set target_cpu: String()
         set opt_level: 0
         set portable_simd: false
+        set library: false
+        set tool_build: false
+        set program_argc: 0
+        set program_argv: null
     }
 
     function has_error(this) returns bool
@@ -252,6 +261,10 @@ define cli
                 {
                     set opts.opt_level: 3
                 }
+                else if arg = "--release"
+                {
+                    set opts.opt_level: 2
+                }
                 else if arg = "--jit"
                 {
                     set opts.jit_program: true
@@ -372,7 +385,9 @@ define cli
     ; Print usage information
     procedure print_usage()
     {
-        Console.println "Usage: scalyc [options] <input file>"
+        Console.println "Usage: scaly run <file> [arguments]     compile and run a program"
+        Console.println "       scaly build <file> [-o <out>] [--release]   build an executable"
+        Console.println "       scalyc [options] <input file>"
         Console.println ""
         Console.println "Options:"
         Console.println "  -h, --help     Show this help message"
@@ -769,7 +784,7 @@ define cli
             var run_dep_syms Array[String]()
             if cli.compile_jit_dependencies(&model, &run_dep_objs, &run_dep_syms) = false
                 return 4
-            let jit_rc jit_emitter.jit_run(plan, program_name, target_mangled, &run_dep_objs, &run_dep_syms)
+            let jit_rc jit_emitter.jit_run(plan, program_name, target_mangled, &run_dep_objs, &run_dep_syms, 0, null)
             return jit_rc as int
         }
 
@@ -788,7 +803,7 @@ define cli
             var prog_dep_syms Array[String]()
             if cli.compile_jit_dependencies(&model, &prog_dep_objs, &prog_dep_syms) = false
                 return 4
-            let prog_rc prog_emitter.jit_run(plan, program_name, "main", &prog_dep_objs, &prog_dep_syms)
+            let prog_rc prog_emitter.jit_run(plan, program_name, "main", &prog_dep_objs, &prog_dep_syms, opts.program_argc, opts.program_argv)
             return prog_rc as int
         }
 
@@ -804,6 +819,7 @@ define cli
         set config.opt_level: opts.opt_level
         set config.portable_simd: opts.portable_simd
         set config.page_size: planner.page_size_constant()
+        set config.library_linkage: opts.library
 
         var emitter Emitter.Emitter(config)
         if opts.debug
@@ -858,6 +874,31 @@ define cli
         {
             Console.println "Error: -o <file> required for linking"
             return 7
+        }
+
+        ; `scaly build`: the packages the program uses, as objects out of the
+        ; build cache (built there the first time) -- in place of the runtime
+        ; archive a script had to prepare. Their names and roots are copied
+        ; out of the model first: building a package runs a compilation of its
+        ; own in this process.
+        var package_objects Array[String]()
+        if opts.tool_build
+        {
+            var pkg_names Array[String]()
+            var pkg_roots Array[String]()
+            var pi: size_t 0
+            while pi < model.packages.length
+            {
+                let pkp model.packages.get pi
+                if pkp <> null
+                {
+                    pkg_names.add(String(pkp.name))
+                    pkg_roots.add(String(pkp.file))
+                }
+                set pi: pi + 1
+            }
+            if tool.package_objects(&pkg_names, &pkg_roots, opts.target_triple, &package_objects) = false
+                return 9
         }
 
         ; ★Stage 7: the link step is the one place the compiler has to know
@@ -926,8 +967,27 @@ define cli
         ; runtime archive must follow the package archive (libscalyc*.a),
         ; whose members reference get/Page::allocate/String. macOS ld64 is
         ; order-insensitive, so this reorder is a no-op there (fixpoint-safe).
-        cmd_builder.append " "
-        cmd_builder.append(runtime_archive_path(coff))
+        if opts.tool_build
+        {
+            ; dependents before what they use, the stdlib last, as the
+            ; archive order the runtime archive keeps
+            var oi package_objects.length
+            while oi > 0
+            {
+                set oi: oi - 1
+                let op package_objects.get oi
+                if op <> null
+                {
+                    cmd_builder.append " "
+                    cmd_builder.append((*op))
+                }
+            }
+        }
+        else
+        {
+            cmd_builder.append " "
+            cmd_builder.append(runtime_archive_path(coff))
+        }
 
         ; Forward -L<path> entries.
         var li: size_t 0
@@ -1640,6 +1700,35 @@ define cli
     ; Main entry point
     procedure main(argc: int, mutable argv: pointer[pointer[char]]) returns int mutable modeler_error_count
     {
+        ; the one tool's commands (ROADMAP-public.md): `scaly run file args`,
+        ; `scaly build file [options]`; anything else is the compiler's flags
+        if argc >= 2
+        {
+            let command String(*(argv + 1))
+            if command.equals("run")
+            {
+                if argc < 3
+                {
+                    Console.println "Usage: scaly run <file> [arguments]"
+                    return 1
+                }
+                var run_opts Options()
+                set run_opts.input_file: String(*(argv + 2))
+                set run_opts.jit_program: true
+                ; the program's argv[0] is its file, as a shell would give it
+                set run_opts.program_argc: argc - 2
+                set run_opts.program_argv: argv + 2
+                return cli.run(run_opts)
+            }
+            if command.equals("build")
+            {
+                var build_opts cli.parse_args(argc - 1, argv + 1)
+                set build_opts.tool_build: true
+                if build_opts.output_file.get_length() = 0 and build_opts.has_input()
+                    set build_opts.output_file: cli.extract_program_name(build_opts.input_file)
+                return cli.run(build_opts)
+            }
+        }
         var opts cli.parse_args(argc, argv)
         return cli.run(opts)
     }

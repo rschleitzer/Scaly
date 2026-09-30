@@ -25,9 +25,9 @@ if [ ! -x "$SCALYC" ]; then echo "win-archive: no compiler at $SCALYC" >&2; exit
 "$SCALYC" -S --no-prelude --no-tests -o "$OUT/libscaly_win.ll" packages/scaly/0.1.0/scaly.scaly
 sed 's/^define linkonce_odr /define weak_odr /' "$OUT/libscaly_win.ll" > "$OUT/libscaly_win_weak.ll"
 clang --target=$T -c -O2 -Wno-override-module -o "$OUT/libscaly_win.o" "$OUT/libscaly_win_weak.ll"
-clang --target=$T -c "$P/fiber/fcontext_x86_64_win.S" -o "$OUT/fcontext_win.o"
-clang --target=$T -O2 -Wall -Wextra -Werror -c "$P/fiber/eio_win.c"      -o "$OUT/eio_win.o"
-clang --target=$T -O2 -Wall -Wextra -Werror -c "$P/win32/posixcompat.c"  -o "$OUT/pc.o"
+clang --target=$T -c "$P/fiber/fcontext_x86_64_windows.S" -o "$OUT/fcontext_win.o"
+clang --target=$T -O2 -Wall -Wextra -Werror -c "$P/fiber/eio_windows.c"      -o "$OUT/eio_win.o"
+clang --target=$T -O2 -Wall -Wextra -Werror -c "$P/win32/posixcompat_windows.c"  -o "$OUT/pc.o"
 clang --target=$T -O2 -Wall -Wextra -Werror -c "$P/time/ctime.c"         -o "$OUT/ctime.o"
 clang --target=$T -O2 -Wall -Wextra -Werror -c "$P/memory/panic.c"       -o "$OUT/panic.o"
 rm -f "$OUT/libscaly.lib"

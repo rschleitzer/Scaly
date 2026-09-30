@@ -3,7 +3,7 @@
 # /tmp/posixcompat.o). Windows-only by construction: it defines the POSIX
 # names the MSVC CRT lacks or gets wrong (`creat`, `close`, `dlopen`, the
 # aligned-alloc pair, the stack-limit question — see the header of
-# packages/scaly/0.1.0/scaly/win32/posixcompat.c), so on any other host there
+# packages/scaly/0.1.0/scaly/win32/posixcompat_windows.c), so on any other host there
 # is nothing to compile and the script refuses rather than emitting an empty
 # object something would link without noticing.
 # The sibling scripts (tools/fcontext.sh, eio.sh, ctime.sh, panic.sh) select
@@ -20,4 +20,4 @@ case "$(uname -s)" in
   MINGW*|MSYS*|CYGWIN*|Windows*) ;;
   *) echo "posixcompat: FAIL — Windows-only shim; host is $(uname -s)" >&2; exit 1 ;;
 esac
-${CLANG:-clang} -O2 -c packages/scaly/0.1.0/scaly/win32/posixcompat.c -o "$OUT"
+${CLANG:-clang} -O2 -c packages/scaly/0.1.0/scaly/win32/posixcompat_windows.c -o "$OUT"

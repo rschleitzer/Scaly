@@ -75,6 +75,7 @@ define Emitter
         skip_tests: bool            ; --no-tests: omit test/test_* functions
         page_size: size_t           ; the stdlib's PAGE_SIZE; 0 = no page-fit check
         portable_simd: bool         ; --portable-simd: SIMD lowered target-neutrally (the seed)
+        library_linkage: bool       ; a package archive: linkonce_odr bodies kept as weak_odr before -O
     )
     {
         init()
@@ -88,6 +89,7 @@ define Emitter
             set skip_tests: false
             set page_size: 0
             set portable_simd: false
+            set library_linkage: false
         }
     }
 
@@ -7830,6 +7832,9 @@ define Emitter
             let stamp_main LLVMGetNamedFunction(llvm_module, "main" as pointer[const_char])
             if stamp_main <> null and LLVMIsDeclaration(stamp_main) = 0
                 emit_build_stamp()
+            let pkg_stamp LLVMGetNamedGlobal(llvm_module, "scaly_package_stamp" as pointer[const_char])
+            if pkg_stamp <> null and LLVMIsDeclaration(pkg_stamp) = 0
+                emit_package_stamp(pkg_stamp)
 
             ; -mcpu: every function carries the CPU and its features, as clang's
             ; do -- an intrinsic of a feature (pshufb) is only selectable in a
@@ -7947,10 +7952,48 @@ define Emitter
             let existing LLVMGetNamedFunction(llvm_module, "scaly_build_stamp" as pointer[const_char])
             if existing <> null
                 return
+            let hash this.module_text_hash()
+            if hash = 0
+                return
 
+            clear_debug_location()
+            let saved_block LLVMGetInsertBlock(builder)
+            let i64_type LLVMInt64TypeInContext(context)
+            let stamp_type LLVMFunctionType(i64_type, null as pointer[LLVMTypeRef], 0, 0)
+            let stamp_fn LLVMAddFunction(llvm_module, "scaly_build_stamp" as pointer[const_char], stamp_type)
+            let block LLVMAppendBasicBlockInContext(context, stamp_fn, "entry" as pointer[const_char])
+            LLVMPositionBuilderAtEnd(builder, block)
+            let cval LLVMConstInt(i64_type, hash as size_t, 0)
+            LLVMBuildRet(builder, cval)
+            if saved_block <> null
+                LLVMPositionBuilderAtEnd(builder, saved_block)
+        }
+
+        ; A module that DEFINES the global `scaly_package_stamp` (a `shared u64`,
+        ; 0 in its source) gets the FNV-1a-64 of its pre-stamp IR as the
+        ; initializer, as emit_build_stamp# computes for a program. The
+        ; compiler defines it (tool.scaly) to key its build cache by the code
+        ; that does the compiling: a rebuilt compiler must not reuse objects an
+        ; older one emitted (ROADMAP-public.md, stage A). A global and not a
+        ; function because a compiler that does not know this leaves it 0 and
+        ; still links -- the bootstrap needs no second seed.
+        procedure emit_package_stamp(mutable this, mutable global_var: LLVMValueRef)
+        {
+            let hash this.module_text_hash()
+            if hash = 0
+                return
+            let cval LLVMConstInt(LLVMInt64TypeInContext(context), hash as size_t, 0)
+            LLVMSetInitializer(global_var, cval)
+        }
+
+        ; the FNV-1a-64 of the module's IR text without the lines that name
+        ; the checkout or the target (stamp_line_skipped#); 0 when the text
+        ; cannot be had
+        procedure module_text_hash(mutable this) returns u64
+        {
             let text LLVMPrintModuleToString(llvm_module)
             if text = null
-                return
+                return 0
 
             var hash: u64 0xcbf29ce484222325
             var i: size_t 0
@@ -7972,18 +8015,7 @@ define Emitter
                 set i: i + 1
             }
             LLVMDisposeMessage text
-
-            clear_debug_location()
-            let saved_block LLVMGetInsertBlock(builder)
-            let i64_type LLVMInt64TypeInContext(context)
-            let stamp_type LLVMFunctionType(i64_type, null as pointer[LLVMTypeRef], 0, 0)
-            let stamp_fn LLVMAddFunction(llvm_module, "scaly_build_stamp" as pointer[const_char], stamp_type)
-            let block LLVMAppendBasicBlockInContext(context, stamp_fn, "entry" as pointer[const_char])
-            LLVMPositionBuilderAtEnd(builder, block)
-            let cval LLVMConstInt(i64_type, hash as size_t, 0)
-            LLVMBuildRet(builder, cval)
-            if saved_block <> null
-                LLVMPositionBuilderAtEnd(builder, saved_block)
+            hash
         }
 
         ; Append empty stub bodies for any function declarations whose
@@ -8351,7 +8383,7 @@ define Emitter
         ; the emitter crashed on them). dep_object_symbols: the mangled names those
         ; objects define, so emit_jit_stubs leaves them as declarations. Both null
         ; when the program has no non-scaly dependencies (behavior unchanged).
-        procedure jit_run(mutable this, mutable plan: Plan, mutable module_name: String, mutable fn_mangled: String, mutable dep_object_files: ref[Array[String]]?, dep_object_symbols: ref[Array[String]]) returns i64
+        procedure jit_run(mutable this, mutable plan: Plan, mutable module_name: String, mutable fn_mangled: String, mutable dep_object_files: ref[Array[String]]?, dep_object_symbols: ref[Array[String]], program_argc: int, mutable program_argv: pointer[pointer[char]]) returns i64
         {
             let jit_ctx LLVMContextCreate()
             set external_context: jit_ctx
@@ -8493,8 +8525,10 @@ define Emitter
             ; Indirect-call the resolved address as i64() (the language feature
             ; added for this: a call on a pointer[void] local lowers to an
             ; indirect LLVMBuildCall2 in emit_call).
+            ; a program's main takes (argc, argv) -- `scaly run file args` hands
+            ; them on; --run's zero-argument function ignores them (C ABI)
             let entry addr as pointer[void]
-            let result entry()
+            let result entry(program_argc, program_argv)
             result
         }
 
@@ -8597,6 +8631,21 @@ define Emitter
             let tm this.create_target_machine(target, triple, tm_level)
             if tm = null
                 return false
+
+            ; A package archive has no main to anchor it: every generic and
+            ; inline body is linkonce_odr, and GlobalDCE deletes them all under
+            ; -O. As weak_odr they survive and still merge at the link, which
+            ; is what tools/build-from-seed.sh does with `sed` on the text.
+            if config.library_linkage
+            {
+                var lf LLVMGetFirstFunction(llvm_module)
+                while lf <> null
+                {
+                    if LLVMGetLinkage(lf) = 3
+                        LLVMSetLinkage(lf, 6)
+                    set lf: LLVMGetNextFunction(lf)
+                }
+            }
 
             if config.opt_level > 0
             {

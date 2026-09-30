@@ -101,9 +101,9 @@ define Tape
 {
     init () linked
 
-    procedure add_node(mutable this: Tape, kind: int, in_a: int, in_b: int, in_c: int, r: int, n: int) @ret_param_0 true @deep true returns int linked
+    procedure add_node(mutable this: Tape, kind: int, in_a: int, in_b: int, in_c: int, r: int, n: int) @page true @stores true @ret_param_0 true @deep true returns int linked
 
-    procedure leaf(mutable this: Tape, r: int, n: int) @ret_param_0 true @deep true returns int linked
+    procedure leaf(mutable this: Tape, r: int, n: int) @page true @stores true @ret_param_0 true @deep true returns int linked
 
     procedure set_value(mutable this: Tape, id: int, i: int, v: float) @ret_nonlocal true @deep true linked
 
@@ -125,32 +125,32 @@ define Tape
 
     function node_cols(this: Tape, id: int) @ret_param_0 true @deep true returns int linked
 
-    procedure matmul(mutable this: Tape, x: int, y: int) @ret_param_0 true @deep true returns int linked
+    procedure matmul(mutable this: Tape, x: int, y: int) @page true @stores true @ret_param_0 true @deep true returns int linked
 
-    procedure gelu(mutable this: Tape, x: int) @ret_param_0 true @deep true returns int linked
+    procedure gelu(mutable this: Tape, x: int) @page true @stores true @ret_param_0 true @deep true returns int linked
 
-    procedure softmax(mutable this: Tape, x: int) @ret_param_0 true @deep true returns int linked
+    procedure softmax(mutable this: Tape, x: int) @page true @stores true @ret_param_0 true @deep true returns int linked
 
-    procedure layernorm(mutable this: Tape, x: int, gamma: int, beta: int, e: float) @ret_param_0 true @deep true returns int linked
+    procedure layernorm(mutable this: Tape, x: int, gamma: int, beta: int, e: float) @page true @stores true @ret_param_0 true @deep true returns int linked
 
-    procedure embedding(mutable this: Tape, table: int, ids: Vector[i64], tokens: int) @ret_param_0 true @deep true @deep_this_4 true @deep_whole_4 true @deep_pageof_1 true returns int linked
+    procedure embedding(mutable this: Tape, table: int, ids: Vector[i64], tokens: int) @page true @stores true @ret_param_0 true @deep true @deep_this_4 true @deep_whole_4 true @deep_pageof_1 true returns int linked
 
-    procedure wsum(mutable this: Tape, x: int, w: Vector[float]) @ret_param_0 true @deep true @deep_this_4 true @deep_whole_4 true @deep_pageof_1 true returns int linked
+    procedure wsum(mutable this: Tape, x: int, w: Vector[float]) @page true @stores true @ret_param_0 true @deep true @deep_this_4 true @deep_whole_4 true @deep_pageof_1 true returns int linked
 
     ; Fused softmax + negative log-likelihood, averaged over rows:
     ; value = mean_i(logsumexp(x_i) - x_i[target_i]). targets holds one
     ; token id per row of the logits node.
-    procedure crossentropy(mutable this: Tape, logits: int, targets: Vector[i64]) @ret_param_0 true @deep true @deep_this_4 true @deep_whole_4 true @deep_pageof_1 true returns int linked
+    procedure crossentropy(mutable this: Tape, logits: int, targets: Vector[i64]) @page true @stores true @ret_param_0 true @deep true @deep_this_4 true @deep_whole_4 true @deep_pageof_1 true returns int linked
 
     ; Elementwise sum of two same-shape nodes — residual connections
     ; and positional embeddings. x and y may be the same node.
-    procedure add(mutable this: Tape, x: int, y: int) @ret_param_0 true @deep true returns int linked
+    procedure add(mutable this: Tape, x: int, y: int) @page true @stores true @ret_param_0 true @deep true returns int linked
 
     ; Broadcast sum: x is (B*yr) x n, y is yr x n; out row i adds
     ; y row (i mod yr). Adds one shared positional-embedding block to
     ; every window of a batched activation. Backward accumulates dy
     ; across the B repeats (shared slots — bwd stays sequential).
-    procedure add_bcast(mutable this: Tape, x: int, y: int) @ret_param_0 true @deep true returns int linked
+    procedure add_bcast(mutable this: Tape, x: int, y: int) @page true @stores true @ret_param_0 true @deep true returns int linked
 
     ; Fused causal multi-head self-attention: q/k/v are T x D nodes
     ; (D = hs * dh, D divisible by hs); per head, out row i is
@@ -158,7 +158,7 @@ define Tape
     ; The node's aux buffer holds the per-head probabilities in
     ; [0, hs*T*win) (forward writes them, backward reads them) and a ds
     ; scratch half in [hs*T*win, 2*hs*T*win) written by backward pass 1.
-    procedure attention(mutable this: Tape, q: int, k: int, v: int, hs: int) @ret_nonlocal true @deep true returns int linked
+    procedure attention(mutable this: Tape, q: int, k: int, v: int, hs: int) @page true @stores true @ret_nonlocal true @deep true returns int linked
 
     ; Batched causal attention: the T rows are nwin = T/win consecutive
     ; windows of `win` rows each; a query attends only to keys in its
@@ -166,7 +166,7 @@ define Tape
     ; case `attention` uses (probabilities index identically, so that
     ; path stays numerically exact). Column extent per query is win, so
     ; the aux buffer is hs*T*win doubled for the ds scratch.
-    procedure attention_windowed(mutable this: Tape, q: int, k: int, v: int, hs: int, win: int) @ret_param_0 true @deep true returns int linked
+    procedure attention_windowed(mutable this: Tape, q: int, k: int, v: int, hs: int, win: int) @page true @stores true @ret_param_0 true @deep true returns int linked
 
     ; Sample a token from one row of a node's values (logits): softmax
     ; at temperature temp (must be > 0), then walk the CDF with the

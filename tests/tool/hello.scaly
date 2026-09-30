@@ -1,0 +1,16 @@
+; The one tool's first program (tests/tool/run.sh): `scaly run` and
+; `scaly build` hand it its arguments as a shell would, argv[0] its file.
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    var sb StringBuilder()
+    sb.append "hello"
+    var i 1
+    while i < argc
+    {
+        sb.append " "
+        sb.append(String(*(argv + i)))
+        set i: i + 1
+    }
+    print(sb.to_string())
+    0
+}

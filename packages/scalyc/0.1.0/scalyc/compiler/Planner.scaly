@@ -52042,29 +52042,47 @@ define Planner
             if head_ptr = null or args_ptr = null
                 return false
             let head (*head_ptr)
+            let callee Planner.called_name(head)
+            if callee.get_length() = 0
+                return false
             var argc_ok false
             choose (*args_ptr).expression
                 when tup: Tuple
                     set argc_ok: true
                 else
                     0
+            ; `xs.add k`, `keep xs`: a parenless call of ONE argument, which the
+            ; language admits only as the whole sequence -- read as the
+            ; residence walk reads it (rr_parenless_argument#). Until 2026-09-30
+            ; only the parenthesised form counted: a routine that handed its
+            ; parameter to a `xs.add k` store got no page, and the key lived on
+            ; its frame (tests/regress/store_forwarded_parenless.scaly).
+            var parenless false
             if argc_ok = false
-                return false
-            let callee Planner.called_name(head)
-            if callee.get_length() = 0
-                return false
+            {
+                if ops.length <> 2 or Planner.rr_parenless_argument(ops, 1, callee) = false
+                    return false
+                set parenless: true
+            }
+            var one Vector[Operand](1)
+            one.put(0, (*args_ptr))
             ; seed: a put/add of a BUILT value on the receiver's own state
             match callee
                 case "put" case "add"
                 {
-                    if this.tuple_stores_build(f, owner, (*args_ptr))
+                    if parenless
+                    {
+                        if this.stored_value_builds(f, owner, one, 0)
+                            set store_acc: store_acc | Planner.root_bit(Planner.ops_root_name(ops, true), fields, params)
+                    }
+                    else if this.tuple_stores_build(f, owner, (*args_ptr))
                         set store_acc: store_acc | Planner.root_bit(Planner.ops_root_name(ops, true), fields, params)
                     return false
                 }
             ; propagation: the callee stores into some of its positions; where
             ; we hand it state of ours there -- our receiver, a field of it, a
             ; parameter -- we store into that state too
-            var argc: size_t 0
+            var argc: size_t 1
             choose (*args_ptr).expression
                 when tup: Tuple
                     set argc: tup.components.length
@@ -52096,7 +52114,10 @@ define Planner
                     }
                 }
                 else
-                    0
+                {
+                    if (cm & 2) <> 0
+                        set store_acc: store_acc | Planner.root_bit(Planner.ops_root_name(one, false), fields, params)
+                }
             false
         }
 

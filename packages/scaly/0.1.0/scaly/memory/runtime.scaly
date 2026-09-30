@@ -125,6 +125,13 @@ function rewind(stream: pointer[OpaqueFile]) extern
 ; Directory functions (dirent.h)
 function opendir(name: pointer[const_char]) returns pointer[OpaqueDir] extern
 function closedir(dirp: pointer[OpaqueDir]) returns i32 extern
+; Directory entries go through the eio shim: struct dirent differs per libc,
+; and Windows has FindFirstFile instead (containment rule (a)). next writes
+; the entry's name NUL-terminated into buf and answers its length, -1 at the
+; end; is_dir is 1 for a directory. See scaly/fiber/eio.c.
+function scaly_eio_dir_open(path: pointer[const_char]) returns pointer[OpaqueDir] extern
+procedure scaly_eio_dir_next(dir: pointer[OpaqueDir], mutable buf: pointer[char], cap: size_t, mutable is_dir: pointer[i32]) returns int extern
+function scaly_eio_dir_close(dir: pointer[OpaqueDir]) returns i32 extern
 
 ; File system functions (unistd.h)
 function access(path: pointer[const_char], mode: int) returns i32 extern

@@ -1515,3 +1515,55 @@ void scaly_aligned_free(void* p)
 {
     free(p);
 }
+
+/* ---- DIRECTORY ENTRIES, shim category (a) --------------------------------
+ *
+ * struct dirent's layout, and whether d_type is filled at all, differ per
+ * libc, so the Scaly side cannot read an entry through a direct readdir
+ * extern. It asks for the NEXT NAME instead: scaly_eio_dir_next writes it
+ * NUL-terminated into buf, answers its length and sets *is_dir; -1 is the
+ * end. "." and ".." are never answered, and a name that does not fit cap is
+ * skipped. The handle is the DIR* itself. First user: the one tool finding a
+ * package's files (ROADMAP-public.md, stage A).
+ */
+#include <dirent.h>
+#include <sys/stat.h>
+#include <string.h>
+
+void* scaly_eio_dir_open(const char* path)
+{
+    return (void*)opendir(path);
+}
+
+long long scaly_eio_dir_next(void* dir, char* buf, size_t cap, int* is_dir)
+{
+    DIR* d = (DIR*)dir;
+    struct dirent* e;
+    while ((e = readdir(d)) != NULL) {
+        size_t n = strlen(e->d_name);
+        if (e->d_name[0] == '.' && (n == 1 || (n == 2 && e->d_name[1] == '.')))
+            continue;
+        if (n + 1 > cap)
+            continue;
+        memcpy(buf, e->d_name, n + 1);
+        int kind = -1;
+#ifdef DT_DIR
+        if (e->d_type == DT_DIR)
+            kind = 1;
+        else if (e->d_type == DT_REG)
+            kind = 0;
+#endif
+        if (kind < 0) {
+            struct stat st;
+            kind = fstatat(dirfd(d), e->d_name, &st, 0) == 0 && S_ISDIR(st.st_mode) ? 1 : 0;
+        }
+        *is_dir = kind;
+        return (long long)n;
+    }
+    return -1;
+}
+
+int scaly_eio_dir_close(void* dir)
+{
+    return closedir((DIR*)dir);
+}

@@ -1,0 +1,69 @@
+; Regression (2026-09-30): a procedure that keeps a value it BUILT in state a
+; parameter reaches gets the caller page, and so must a caller that only
+; forwards that parameter (R8). R8's walk read a put/add only in the
+; parenthesised form: `xs.add k` -- the language's parenless call of one
+; argument -- seeded nothing, so `forward` got no page and every kept key
+; lived on its frame, released at its return: rc 0, garbage afterwards (a
+; poison abort). The same forward through a parenless call of the storing
+; procedure (`keep_one xs`) is the second shape. Planner.seq_hands_page#.
+; Found by the transitive package loader (Modeler.handle_package_decl#).
+; run-env: SCALY_POISON=1
+; Expected: PASS
+
+procedure keep(mutable xs: ref[Array[String]], n: int)
+{
+    let k "key`n`"
+    xs.add k
+}
+
+procedure keep_one(mutable xs: ref[Array[String]])
+{
+    let k "one"
+    let copy String(k)
+    xs.add copy
+}
+
+procedure forward_one(mutable xs: ref[Array[String]])
+{
+    keep_one xs
+}
+
+procedure forward(mutable xs: ref[Array[String]])
+{
+    var i 0
+    while i < 3
+    {
+        keep(xs, i)
+        set i: i + 1
+    }
+}
+
+procedure churn() returns int
+{
+    var total 0
+    var j 0
+    while j < 200
+    {
+        let s "noise`j`noise`j`"
+        set total: total + (s.get_length() as int)
+        set j: j + 1
+    }
+    total
+}
+
+var a Array[String]()
+forward(&a)
+forward_one(&a)
+let c churn()
+var ok true
+if a.length <> 4
+    set ok: false
+if a.length = 4
+{
+    if a[0].equals("key0") = false or a[2].equals("key2") = false or a[3].equals("one") = false
+        set ok: false
+}
+if ok
+    print "PASS"
+else
+    print "FAIL"

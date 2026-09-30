@@ -11,7 +11,7 @@
 # its own arm below rather than sharing the x86-64 file. Win64 differs from
 # SysV in its argument registers, in keeping XMM6-15 callee-saved, in shadow
 # space, and in the TIB stack bounds; the reasoning is written out at the top
-# of fcontext_x86_64_win.S. `uname -s` under Git Bash / MSYS reports
+# of fcontext_x86_64_windows.S. `uname -s` under Git Bash / MSYS reports
 # MINGW64_NT-* or MSYS_NT-*, which is what the pattern below matches.
 #
 # Usage: tools/fcontext.sh [output.o]
@@ -21,7 +21,7 @@ cd "$(dirname "$0")/.."
 OUT=${1:-/tmp/fcontext.o}
 FIB=packages/scaly/0.1.0/scaly/fiber
 case "$(uname -s)" in
-  MINGW*|MSYS*|CYGWIN*|Windows*) SRC=$FIB/fcontext_x86_64_win.S ;;
+  MINGW*|MSYS*|CYGWIN*|Windows*) SRC=$FIB/fcontext_x86_64_windows.S ;;
   *)
     case "${SCALY_ARCH:-$(uname -m)}" in
       arm64|aarch64) SRC=$FIB/fcontext_arm64.S ;;

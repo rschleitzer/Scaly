@@ -330,7 +330,7 @@ jobs:
       #
       # ★It compiles ALL THREE Windows C files, not just brocken 3's, and
       # keeps going past the first failure (2026-08-10). "Does it compile" is
-      # not a per-rung fact: the later rungs compile eio_win.c and ctime.c, so
+      # not a per-rung fact: the later rungs compile eio_windows.c and ctime.c, so
       # with `set -e` and one file per step a job reports ONE compile error per
       # CI round — and a round is 12-16 minutes. Since none of these files can
       # be compiled on the host that writes them, the round IS the compiler,
@@ -340,8 +340,8 @@ jobs:
         run: |
           set -u
           rc=0
-          for f in packages/scaly/0.1.0/scaly/win32/posixcompat.c \
-                   packages/scaly/0.1.0/scaly/fiber/eio_win.c \
+          for f in packages/scaly/0.1.0/scaly/win32/posixcompat_windows.c \
+                   packages/scaly/0.1.0/scaly/fiber/eio_windows.c \
                    packages/scaly/0.1.0/scaly/time/ctime.c \
                    packages/scaly/0.1.0/scaly/memory/panic.c; do
             o=$(basename "$f" .c).o
@@ -368,7 +368,7 @@ jobs:
         run: |
           set -e
           clang --target=x86_64-pc-windows-msvc \
-                -c packages/scaly/0.1.0/scaly/fiber/fcontext_x86_64_win.S \
+                -c packages/scaly/0.1.0/scaly/fiber/fcontext_x86_64_windows.S \
                 -o fcontext_win.o
           echo "--- symbols provided ---"
           llvm-nm --defined-only fcontext_win.o | sed 's/^/  /' \
@@ -386,9 +386,9 @@ jobs:
         run: |
           set -e
           clang --target=x86_64-pc-windows-msvc -O2 -Wall -Wextra -Werror \
-                -c packages/scaly/0.1.0/scaly/fiber/eio_win.c -o eio_win.o
+                -c packages/scaly/0.1.0/scaly/fiber/eio_windows.c -o eio_win.o
           clang --target=x86_64-pc-windows-msvc -O2 -Wall -Wextra -Werror \
-                -c packages/scaly/0.1.0/scaly/win32/posixcompat.c -o pc.o
+                -c packages/scaly/0.1.0/scaly/win32/posixcompat_windows.c -o pc.o
           clang --target=x86_64-pc-windows-msvc -O2 \
                 tests/win32/eio_smoke.c eio_win.o pc.o \
                 -o eio_smoke.exe -lws2_32
@@ -512,7 +512,7 @@ jobs:
           diff -u want.txt got.txt
 
       # Rung 4 — brocken 1, RUN at last. Everything before this only assembled
-      # and linked fcontext_x86_64_win.S; nothing called it. pingpong is the
+      # and linked fcontext_x86_64_windows.S; nothing called it. pingpong is the
       # milestone-1.1 demonstrator and drives scaly_make_context /
       # scaly_jump_context directly, six switches deep, so it is the first
       # thing that exercises the Win64 half of the ABI the file had to get
@@ -563,7 +563,7 @@ jobs:
       # Windows handler runs at all depends on where the recursion first enters
       # the guard page: the dispatch spills its CONTEXT record (XSAVE area
       # included, so it grows with the runner's CPU) below that point, into the
-      # band posixcompat.c's mmap reserves. One program at one layout lands in
+      # band posixcompat_windows.c's mmap reserves. One program at one layout lands in
       # one place, which is why guard_overflow was a flake that a rerun on
       # another runner "fixed" (2026-09-26). The sweep moves the landing point
       # through k = 0..95 small frames; every one must report and exit 108.

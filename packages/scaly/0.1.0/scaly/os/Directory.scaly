@@ -40,8 +40,36 @@ procedure dir_remove_worker(arg: pointer[void]) returns pointer[void]
     null
 }
 
+; one name in a directory (Directory.list)
+define DirectoryEntry
+(
+    name: String
+    is_directory: bool
+)
+
 define Directory
 {
+    ; The entries of a directory, "." and ".." left out, in the order the
+    ; file system gives them; a directory that cannot be read has none.
+    procedure list(mutable path: String) returns Array[DirectoryEntry]
+    {
+        var entries Array[DirectoryEntry]()
+        let dir scaly_eio_dir_open(path.to_c_string())
+        if dir = null
+            return entries
+        var buf char[4096]
+        var is_dir: i32 0
+        repeat
+        {
+            let n scaly_eio_dir_next(dir, &buf[0] as pointer[char], 4096, &is_dir as pointer[i32])
+            if n < 0
+                break
+            entries.add(DirectoryEntry(String(&buf[0] as pointer[const_char]), is_dir <> 0))
+        }
+        scaly_eio_dir_close dir
+        entries
+    }
+
     ; Check if a path exists (file or directory). Colorless (milestone
     ; 2.5): offloads inside a task, blocks otherwise.
     procedure exists(mutable path: String) returns bool

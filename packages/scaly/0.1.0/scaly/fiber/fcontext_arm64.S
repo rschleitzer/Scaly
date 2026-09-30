@@ -19,7 +19,7 @@
 //   needs the stack's low address for the TIB bounds it has to swap on every
 //   switch. One declaration serves every target because one seed does, so the
 //   argument is passed unconditionally; here it costs a register nothing
-//   reads. See fcontext_x86_64_win.S.
+//   reads. See fcontext_x86_64_windows.S.
 //
 //   Carves a fresh frame below stack_top. The first jump into it enters fn
 //   with x0 = the jumper's context. fn must never return (lr is a trap).

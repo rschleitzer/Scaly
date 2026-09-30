@@ -1,0 +1,92 @@
+; tool.scaly - the build side of the one tool (ROADMAP-public.md, stage A)
+;
+; `scaly build` links a program against OBJECTS of the packages it uses, each
+; compiled once into a cache and found again by a key over everything that
+; went into it: the compiling compiler (scaly_package_stamp, which the Emitter
+; defines for this library from its own IR), the target, the flavour, and every
+; file of the package. A package's C and assembly files are compiled by the
+; tool as well; which of them a target takes is said by their names
+; (native_name#). Nothing is written into the project, and no script is run.
+
+use scaly.containers.String
+use scaly.containers.StringBuilder
+use scaly.os.File
+use scaly.os.Console
+use scaly.os.Directory
+use scaly.os.Directory.DirectoryEntry
+use scaly.memory.root_pages.getenv
+use scalyc.cli
+use scalyc.cli.Options
+
+; the compiler's own identity: the Emitter sets it to the hash of this
+; package's IR when it compiles the compiler (emit_package_stamp#); a compiler
+; that does not know the rule leaves it 0, which keys a cache of its own
+shared scaly_package_stamp: u64 linked
+function getpid() returns i32 extern
+function system(command: pointer[const_char]) returns i32 extern
+function rename(old_path: pointer[const_char], new_path: pointer[const_char]) returns i32 extern
+function LLVMGetDefaultTargetTriple() returns pointer[char] extern
+procedure LLVMDisposeMessage(message: pointer[char]) extern
+
+; a native file's name, read: `fcontext_x86_64_windows` is `fcontext` for
+; x86_64 on Windows (tool.native_name#)
+define NativeName
+(
+    base: String
+    os: String
+    arch: String
+)
+
+define tool
+{
+    ; where compiled packages are kept: $SCALY_CACHE, else ~/.scaly/cache
+    ; (%USERPROFILE% where there is no HOME)
+    procedure cache_root() @page true @direct true @ret_caller true @deep true returns String io linked
+
+    ; create a directory and every missing one above it; true when it exists
+    procedure ensure_directory(mutable path: String) @ret_nonlocal true @deep true returns bool io linked
+
+    ; every file of a package, relative to its directory: the tree without
+    ; `interface/` (generated from the sources) and without a name that
+    ; starts with `_` or `.` -- no module can be named so, and tscaly's
+    ; `_submodules` holds another project's tree
+    procedure package_files(mutable dir: String, prefix: String, mutable files: ref[Array[String]]) @page true @direct true @stores true @deep true io linked
+
+    function fnv_string(h: u64, s: String) @ret_nonlocal true @deep true returns u64 linked
+
+    ; the cache key of a package: the compiling compiler, the target, the
+    ; flavour, and every file with its path -- summed, so the order the file
+    ; system lists them in does not matter
+    procedure package_key(mutable dir: String, files: ref[Array[String]], triple: String, flavour: String) @ret_nonlocal true @deep true returns u64 io reads scaly_package_stamp linked
+
+    function hex16(k: u64) @page true @direct true @ret_caller true @deep true returns String linked
+
+    ; a native file's stem read as base name and target tags: `_windows`,
+    ; `_linux`, `_darwin` name the system, `_arm64` (`_aarch64`) and `_x86_64`
+    ; the architecture, stripped from the end in any order
+    function native_name(stem: String) @page true @direct true @deep true returns NativeName linked
+
+    function triple_arch(triple: String) @page true @direct true @ret_caller true @deep true returns String linked
+
+    function triple_os(triple: String) @page true @direct true @ret_caller true @deep true returns String linked
+
+    ; the C and assembly files of a package this target takes: of the files
+    ; that share a base name, the most specific one whose tags all match --
+    ; eio.c everywhere but on Windows, where eio_windows.c replaces it
+    procedure select_native(files: ref[Array[String]], triple: String, mutable chosen: ref[Array[String]]) @page true @direct true @stores true @deep true linked
+
+    ; the host's triple, or the one --target named
+    procedure target_triple(given: String) @page true @direct true @ret_caller true @deep true returns String io linked
+
+    ; move a finished file into place: a second build of the same key at the
+    ; same time finds either no file or a whole one
+    procedure publish(mutable tmp: String, mutable final: String) @ret_nonlocal true @deep true returns bool io linked
+
+    ; The objects of every package a program uses, each built into the cache
+    ; the first time it is needed: the package's Scaly code as one object at
+    ; -O2 (library linkage, cli.run with --no-prelude --no-tests), and the C
+    ; and assembly files its target takes. `names` and `roots` pair a
+    ; package's name with its root file. False when one of them does not build;
+    ; what went wrong is printed where it happened.
+    procedure package_objects(names: ref[Array[String]], roots: ref[Array[String]], given_triple: String, mutable objects: ref[Array[String]]) @page true @direct true @stores true @ret_nonlocal true @deep true returns bool io mutable modeler_error_count reads scaly_package_stamp linked
+}

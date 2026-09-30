@@ -1,0 +1,420 @@
+; tool.scaly - the build side of the one tool (ROADMAP-public.md, stage A)
+;
+; `scaly build` links a program against OBJECTS of the packages it uses, each
+; compiled once into a cache and found again by a key over everything that
+; went into it: the compiling compiler (scaly_package_stamp, which the Emitter
+; defines for this library from its own IR), the target, the flavour, and every
+; file of the package. A package's C and assembly files are compiled by the
+; tool as well; which of them a target takes is said by their names
+; (native_name#). Nothing is written into the project, and no script is run.
+
+use scaly.containers.String
+use scaly.containers.StringBuilder
+use scaly.os.File
+use scaly.os.Console
+use scaly.os.Directory
+use scaly.os.Directory.DirectoryEntry
+use scaly.memory.root_pages.getenv
+use scalyc.cli
+use scalyc.cli.Options
+
+; the compiler's own identity: the Emitter sets it to the hash of this
+; package's IR when it compiles the compiler (emit_package_stamp#); a compiler
+; that does not know the rule leaves it 0, which keys a cache of its own
+shared scaly_package_stamp: u64 0
+function getpid() returns i32 extern
+function system(command: pointer[const_char]) returns i32 extern
+function rename(old_path: pointer[const_char], new_path: pointer[const_char]) returns i32 extern
+function LLVMGetDefaultTargetTriple() returns pointer[char] extern
+procedure LLVMDisposeMessage(message: pointer[char]) extern
+
+; a native file's name, read: `fcontext_x86_64_windows` is `fcontext` for
+; x86_64 on Windows (tool.native_name#)
+define NativeName
+(
+    base: String
+    os: String
+    arch: String
+)
+
+define tool
+{
+    ; where compiled packages are kept: $SCALY_CACHE, else ~/.scaly/cache
+    ; (%USERPROFILE% where there is no HOME)
+    procedure cache_root() returns String
+    {
+        let own getenv "SCALY_CACHE"
+        if own <> null
+        {
+            let s String(own)
+            if s.get_length() > 0
+                return String(own)
+        }
+        var home getenv "HOME"
+        if home = null
+            set home: getenv("USERPROFILE")
+        if home = null
+            return String(".scaly-cache")
+        let h String(home)
+        "`h`/.scaly/cache"
+    }
+
+    ; create a directory and every missing one above it; true when it exists
+    procedure ensure_directory(mutable path: String) returns bool
+    {
+        if Directory.is_directory(path)
+            return true
+        var i: size_t 1
+        while i < path.get_length()
+        {
+            let c path.get i
+            if c = 47 or c = 92
+            {
+                var prefix path.substring(0, i)
+                if Directory.is_directory(prefix) = false
+                    Directory.create(prefix)
+            }
+            set i: i + 1
+        }
+        Directory.create(path)
+        Directory.is_directory(path)
+    }
+
+    ; every file of a package, relative to its directory: the tree without
+    ; `interface/` (generated from the sources) and without a name that
+    ; starts with `_` or `.` -- no module can be named so, and tscaly's
+    ; `_submodules` holds another project's tree
+    procedure package_files(mutable dir: String, prefix: String, mutable files: ref[Array[String]])
+    {
+        let entries Directory.list(dir)
+        var i: size_t 0
+        while i < entries.length
+        {
+            let e entries.at i
+            set i: i + 1
+            let c e.name.get(0)
+            if c = 95 or c = 46
+                continue
+            if e.is_directory
+            {
+                if prefix.get_length() = 0 and e.name.equals("interface")
+                    continue
+                tool.package_files("`dir`/`e.name`", "`prefix``e.name`/", files)
+            }
+            else
+                files.add("`prefix``e.name`")
+        }
+    }
+
+    function fnv_string(h: u64, s: String) returns u64
+    {
+        var r h
+        let n s.get_length()
+        var i: size_t 0
+        while i < n
+        {
+            set r: (r xor (s.get(i) as u64)) * 0x100000001b3
+            set i: i + 1
+        }
+        r
+    }
+
+    ; the cache key of a package: the compiling compiler, the target, the
+    ; flavour, and every file with its path -- summed, so the order the file
+    ; system lists them in does not matter
+    procedure package_key(mutable dir: String, files: ref[Array[String]], triple: String, flavour: String) returns u64
+    {
+        var h: u64 0xcbf29ce484222325
+        set h: (h xor scaly_package_stamp) * 0x100000001b3
+        set h: tool.fnv_string(h, triple)
+        set h: tool.fnv_string(h, flavour)
+        var sum: u64 0
+        var i: size_t 0
+        while i < files.length
+        {
+            let f files.at i
+            let content File.read_to_string("`dir`/`f`")
+            var fh tool.fnv_string(0xcbf29ce484222325, f)
+            set fh: tool.fnv_string(fh * 0x100000001b3, content)
+            set sum: sum + fh
+            set i: i + 1
+        }
+        (h xor sum) * 0x100000001b3
+    }
+
+    function hex16(k: u64) returns String
+    {
+        var sb StringBuilder()
+        var i: u64 0
+        while i < 16
+        {
+            let d (k >> ((15 - i) * 4)) & 15
+            if d < 10
+                sb.append((48 + d) as char)
+            else
+                sb.append((87 + d) as char)
+            set i: i + 1
+        }
+        sb.to_string()
+    }
+
+    ; a native file's stem read as base name and target tags: `_windows`,
+    ; `_linux`, `_darwin` name the system, `_arm64` (`_aarch64`) and `_x86_64`
+    ; the architecture, stripped from the end in any order
+    function native_name(stem: String) returns NativeName
+    {
+        var base stem
+        var os String()
+        var arch String()
+        var again true
+        while again
+        {
+            set again: false
+            let n base.get_length()
+            if os.get_length() = 0 and base.ends_with("_windows")
+            {
+                set os: String("windows")
+                set base: base.substring(0, n - 8)
+                set again: true
+            }
+            else if os.get_length() = 0 and base.ends_with("_linux")
+            {
+                set os: String("linux")
+                set base: base.substring(0, n - 6)
+                set again: true
+            }
+            else if os.get_length() = 0 and base.ends_with("_darwin")
+            {
+                set os: String("darwin")
+                set base: base.substring(0, n - 7)
+                set again: true
+            }
+            else if arch.get_length() = 0 and base.ends_with("_x86_64")
+            {
+                set arch: String("x86_64")
+                set base: base.substring(0, n - 7)
+                set again: true
+            }
+            else if arch.get_length() = 0 and base.ends_with("_arm64")
+            {
+                set arch: String("arm64")
+                set base: base.substring(0, n - 6)
+                set again: true
+            }
+            else if arch.get_length() = 0 and base.ends_with("_aarch64")
+            {
+                set arch: String("arm64")
+                set base: base.substring(0, n - 8)
+                set again: true
+            }
+        }
+        NativeName(base, os, arch)
+    }
+
+    function triple_arch(triple: String) returns String
+    {
+        if triple.starts_with("arm64") or triple.starts_with("aarch64")
+            return String("arm64")
+        if triple.starts_with("x86_64") or triple.starts_with("amd64")
+            return String("x86_64")
+        String("other")
+    }
+
+    function triple_os(triple: String) returns String
+    {
+        if triple.contains(String("windows"))
+            return String("windows")
+        if triple.contains(String("linux"))
+            return String("linux")
+        if triple.contains(String("darwin")) or triple.contains(String("apple"))
+            return String("darwin")
+        String("other")
+    }
+
+    ; the C and assembly files of a package this target takes: of the files
+    ; that share a base name, the most specific one whose tags all match --
+    ; eio.c everywhere but on Windows, where eio_windows.c replaces it
+    procedure select_native(files: ref[Array[String]], triple: String, mutable chosen: ref[Array[String]])
+    {
+        let os tool.triple_os(triple)
+        let arch tool.triple_arch(triple)
+        var bases Array[String]()
+        var scores Array[int]()
+        var picks Array[String]()
+        var i: size_t 0
+        while i < files.length
+        {
+            let f files.at i
+            set i: i + 1
+            var ext: size_t 0
+            if f.ends_with(".c") or f.ends_with(".S") or f.ends_with(".s")
+                set ext: 2
+            if ext = 0
+                continue
+            let nn tool.native_name(f.substring(0, f.get_length() - ext))
+            if nn.os.get_length() > 0 and nn.os.equals(os) = false
+                continue
+            if nn.arch.get_length() > 0 and nn.arch.equals(arch) = false
+                continue
+            var score 0
+            if nn.os.get_length() > 0
+                set score: score + 1
+            if nn.arch.get_length() > 0
+                set score: score + 1
+            var found false
+            var j: size_t 0
+            while j < bases.length
+            {
+                let b bases.at j
+                if b.equals(nn.base)
+                {
+                    set found: true
+                    let s scores.at j
+                    if score > s
+                    {
+                        scores.put(j, score)
+                        picks.put(j, String(f))
+                    }
+                }
+                set j: j + 1
+            }
+            if found = false
+            {
+                bases.add(String(nn.base))
+                scores.add(score)
+                picks.add(String(f))
+            }
+        }
+        var k: size_t 0
+        while k < picks.length
+        {
+            let p picks.at k
+            chosen.add(String(p))
+            set k: k + 1
+        }
+    }
+
+    ; the host's triple, or the one --target named
+    procedure target_triple(given: String) returns String
+    {
+        if given.get_length() > 0
+            return String(given)
+        let t LLVMGetDefaultTargetTriple()
+        let s String(t as pointer[const_char])
+        LLVMDisposeMessage t
+        String(s)
+    }
+
+    ; move a finished file into place: a second build of the same key at the
+    ; same time finds either no file or a whole one
+    procedure publish(mutable tmp: String, mutable final: String) returns bool
+    {
+        rename(tmp.to_c_string(), final.to_c_string()) = 0
+    }
+
+    ; The objects of every package a program uses, each built into the cache
+    ; the first time it is needed: the package's Scaly code as one object at
+    ; -O2 (library linkage, cli.run with --no-prelude --no-tests), and the C
+    ; and assembly files its target takes. `names` and `roots` pair a
+    ; package's name with its root file. False when one of them does not build;
+    ; what went wrong is printed where it happened.
+    procedure package_objects(names: ref[Array[String]], roots: ref[Array[String]], given_triple: String, mutable objects: ref[Array[String]]) returns bool mutable modeler_error_count
+    {
+        let cache tool.cache_root()
+        if tool.ensure_directory(cache) = false
+        {
+            Console.println("Error: cannot create the build cache `cache`")
+            return false
+        }
+        let triple tool.target_triple(given_triple)
+        var i: size_t 0
+        while i < roots.length
+        {
+            let rp roots.at i
+            let np names.at i
+            set i: i + 1
+            let root String(rp)
+            let slash root.last_index_of(47)
+            if slash < 0
+                continue
+            let dir root.substring(0, slash as size_t)
+            let vslash dir.last_index_of(47)
+            var version String("0")
+            if vslash >= 0
+                set version: dir.substring((vslash + 1) as size_t, dir.get_length() - ((vslash + 1) as size_t))
+            var files Array[String]()
+            tool.package_files(dir, "", &files)
+            let key tool.package_key(dir, &files, triple, "O2")
+            let base "`cache`/`np`-`version`-`tool.hex16(key)`"
+            let obj "`base`.o"
+            if File.exists(obj) = false
+            {
+                let tmp "`obj`.`getpid() as int`.tmp"
+                var o Options()
+                set o.input_file: String(root)
+                set o.output_file: String(tmp)
+                set o.compile_only: true
+                set o.no_prelude: true
+                set o.no_tests: true
+                set o.opt_level: 2
+                set o.library: true
+                set o.target_triple: String(given_triple)
+                if cli.run(o) <> 0
+                {
+                    Console.println("Error: package `np` did not build")
+                    return false
+                }
+                tool.publish(tmp, obj)
+            }
+            objects.add(String(obj))
+            var natives Array[String]()
+            tool.select_native(&files, triple, &natives)
+            var k: size_t 0
+            while k < natives.length
+            {
+                let nf natives.at k
+                set k: k + 1
+                var flat StringBuilder()
+                var fi: size_t 0
+                while fi < nf.get_length()
+                {
+                    let fc nf.get fi
+                    if fc = 47
+                        flat.append("-" as char)
+                    else
+                        flat.append(fc as char)
+                    set fi: fi + 1
+                }
+                let nobj "`base`-`flat.to_string()`.o"
+                if File.exists(nobj) = false
+                {
+                    let ntmp "`nobj`.`getpid() as int`.tmp"
+                    var cmd StringBuilder()
+                    cmd.append("\"")
+                    cmd.append(cli.link_compiler())
+                    cmd.append("\" -O2 -c \"")
+                    cmd.append(dir)
+                    cmd.append("/")
+                    cmd.append(nf)
+                    cmd.append("\" -o \"")
+                    cmd.append(ntmp)
+                    cmd.append("\"")
+                    if given_triple.get_length() > 0
+                    {
+                        cmd.append(" --target=")
+                        cmd.append(given_triple)
+                    }
+                    let cmd_str cmd.to_string()
+                    if system(cmd_str.to_c_string()) <> 0
+                    {
+                        Console.println("Error: `dir`/`nf` did not compile")
+                        return false
+                    }
+                    tool.publish(ntmp, nobj)
+                }
+                objects.add(String(nobj))
+            }
+        }
+        true
+    }
+}

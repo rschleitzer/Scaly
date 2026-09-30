@@ -1,0 +1,12 @@
+; A program names only the package it uses itself (tests/tool/run.sh): https
+; declares http and tls, and those declare scaly -- all four are loaded, each
+; once, dependencies first (Modeler.handle_package_decl#).
+package https 0.1.0
+
+use http.Request.Request
+use http.Response.Response
+
+procedure hello(req: ref[Request], mutable res: ref[Response])
+    res.send_text("hi")
+
+print "transitive"

@@ -18,7 +18,7 @@
 //   needs the stack's low address for the TIB bounds it has to swap on every
 //   switch. One declaration serves every target because one seed does, so the
 //   argument is passed unconditionally; on SysV that costs a register nothing
-//   reads. See fcontext_x86_64_win.S.
+//   reads. See fcontext_x86_64_windows.S.
 //
 //   Carves a fresh frame below stack_top. The first jump lands on the
 //   trampoline, which pushes the trap address as fn's return address (also

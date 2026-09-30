@@ -1,5 +1,5 @@
 ; The overflow report, with the landing position moved (Windows' emergency
-; band, win32/posixcompat.c). Whether the Windows handler gets to run depends on
+; band, win32/posixcompat_windows.c). Whether the Windows handler gets to run depends on
 ; where the recursion first enters the guard page: the exception dispatch
 ; spills its CONTEXT record below that point, and the band has to hold it.
 ; Argument k: k small frames before the half-KB recursion, which shifts the

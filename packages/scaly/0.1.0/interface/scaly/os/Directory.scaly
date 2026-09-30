@@ -18,8 +18,19 @@ procedure dir_create_worker(arg: pointer[void]) @ret_nonlocal true @deep true re
 
 procedure dir_remove_worker(arg: pointer[void]) @ret_nonlocal true @deep true returns pointer[void] io linked
 
+; one name in a directory (Directory.list)
+define DirectoryEntry
+(
+    name: String
+    is_directory: bool
+)
+
 define Directory
 {
+    ; The entries of a directory, "." and ".." left out, in the order the
+    ; file system gives them; a directory that cannot be read has none.
+    procedure list(mutable path: String) @page true @direct true @ret_nonlocal true @deep true returns Array[DirectoryEntry] io linked
+
     ; Check if a path exists (file or directory). Colorless (milestone
     ; 2.5): offloads inside a task, blocks otherwise.
     procedure exists(mutable path: String) @deep true returns bool io linked

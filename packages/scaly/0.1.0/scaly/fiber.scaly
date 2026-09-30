@@ -424,7 +424,7 @@ procedure scaly_stack_guard(base: pointer[void], len: size_t) returns i32 extern
 ; and pointer-sized on all four LP64 targets — carried as size_t.
 procedure pthread_create(thread: pointer[size_t], attr: pointer[void], start: pointer[void], arg: pointer[void]) returns i32 extern
 procedure pthread_join(thread: size_t, retval: pointer[pointer[void]]) returns i32 extern
-; The sized spawn is a shim (scaly/fiber/eio.c, eio_win.c): pthread_attr_t is
+; The sized spawn is a shim (scaly/fiber/eio.c, eio_windows.c): pthread_attr_t is
 ; OS-specific, and a Win64 thread's reservation needs a flag pthread has no
 ; word for. stack_size 0 = the platform default. The stack limit is the same
 ; shim the planner's nesting guard asks (declared identically there).

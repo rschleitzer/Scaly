@@ -166,7 +166,7 @@ ALL=$(printf '%s\n' "$ALL" | while read -r s
 # directive — and rung 5's 90 green programs are the standing proof that it does.
 # ★`creat` is deliberately NOT in this list even though the CRT has it: reaching
 # `_creat` through oldnames ENDS THE PROCESS on a POSIX 0666 mode, so
-# win32/posixcompat.c defines `creat` itself and it must be attributed there.
+# win32/posixcompat_windows.c defines `creat` itself and it must be attributed there.
 # A name being present in the CRT is not the same as it being usable.
 # ★`__chkstk` is not a library call anyone wrote: the compiler emits it to probe
 # a stack frame larger than a page, and the CRT defines it.
@@ -207,7 +207,7 @@ LLVMLIB='^LLVM'
 HAVE_LLVM=$(printf '%s\n' "$ALL" | grep -E "$LLVMLIB")
 
 # What our own Windows sources DEFINE. Read by grep rather than by compiling
-# them, because the host that runs this cannot: posixcompat.c and eio_win.c
+# them, because the host that runs this cannot: posixcompat_windows.c and eio_windows.c
 # need the Windows SDK. That makes this an advisory answer, not a linker's —
 # but it answers "is anything unprovided" NOW, before the archive plumbing
 # exists, and a symbol missing here is missing either way.
@@ -217,15 +217,15 @@ HAVE_LLVM=$(printf '%s\n' "$ALL" | grep -E "$LLVMLIB")
 # scaly_catch_*/scaly_panic_* symbols were reported MISSING and this tool said
 # INCOMPLETE — an advisory that is red for a known reason hides the next symbol
 # that is missing for a real one.
-WIN_C="packages/scaly/0.1.0/scaly/fiber/eio_win.c
-packages/scaly/0.1.0/scaly/win32/posixcompat.c
+WIN_C="packages/scaly/0.1.0/scaly/fiber/eio_windows.c
+packages/scaly/0.1.0/scaly/win32/posixcompat_windows.c
 packages/scaly/0.1.0/scaly/time/ctime.c
 packages/scaly/0.1.0/scaly/memory/panic.c"
-WIN_S="packages/scaly/0.1.0/scaly/fiber/fcontext_x86_64_win.S"
+WIN_S="packages/scaly/0.1.0/scaly/fiber/fcontext_x86_64_windows.S"
 
 # A definition is a non-indented line naming a function, whose body opens
 # either on the SAME line or on the next non-blank one. Both shapes are
-# required, not just Allman: eio_win.c writes its two tcp_listen wrappers as
+# required, not just Allman: eio_windows.c writes its two tcp_listen wrappers as
 # one-liners, and a detector that missed them reported them MISSING — a false
 # alarm that would send the next reader implementing something that exists.
 # Prototypes (ending in ';') are excluded, as are control-flow keywords, which

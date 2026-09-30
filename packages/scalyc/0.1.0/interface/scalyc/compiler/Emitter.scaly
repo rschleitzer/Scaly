@@ -75,6 +75,7 @@ define Emitter
         skip_tests: bool            ; --no-tests: omit test/test_* functions
         page_size: size_t           ; the stdlib's PAGE_SIZE; 0 = no page-fit check
         portable_simd: bool         ; --portable-simd: SIMD lowered target-neutrally (the seed)
+        library_linkage: bool       ; a package archive: linkonce_odr bodies kept as weak_odr before -O
     )
     {
         init() linked
@@ -1712,6 +1713,21 @@ define Emitter
 
         procedure emit_build_stamp(mutable this) @deep true linked
 
+        ; A module that DEFINES the global `scaly_package_stamp` (a `shared u64`,
+        ; 0 in its source) gets the FNV-1a-64 of its pre-stamp IR as the
+        ; initializer, as emit_build_stamp# computes for a program. The
+        ; compiler defines it (tool.scaly) to key its build cache by the code
+        ; that does the compiling: a rebuilt compiler must not reuse objects an
+        ; older one emitted (ROADMAP-public.md, stage A). A global and not a
+        ; function because a compiler that does not know this leaves it 0 and
+        ; still links -- the bootstrap needs no second seed.
+        procedure emit_package_stamp(mutable this, mutable global_var: LLVMValueRef) @deep true linked
+
+        ; the FNV-1a-64 of the module's IR text without the lines that name
+        ; the checkout or the target (stamp_line_skipped#); 0 when the text
+        ; cannot be had
+        procedure module_text_hash(mutable this) @ret_nonlocal true @deep true returns u64 linked
+
         ; Append empty stub bodies for any function declarations whose
         ; mangled name embeds a literal-T template parameter. Walks the
         ; module's function list via LLVMGetFirstFunction / LLVMGetNextFunction.
@@ -1810,7 +1826,7 @@ define Emitter
         ; the emitter crashed on them). dep_object_symbols: the mangled names those
         ; objects define, so emit_jit_stubs leaves them as declarations. Both null
         ; when the program has no non-scaly dependencies (behavior unchanged).
-        procedure jit_run(mutable this, mutable plan: Plan, mutable module_name: String, mutable fn_mangled: String, mutable dep_object_files: ref[Array[String]]?, dep_object_symbols: ref[Array[String]]) @deep true @deep_into_1_4 true returns i64 io linked
+        procedure jit_run(mutable this, mutable plan: Plan, mutable module_name: String, mutable fn_mangled: String, mutable dep_object_files: ref[Array[String]]?, dep_object_symbols: ref[Array[String]], program_argc: int, mutable program_argv: pointer[pointer[char]]) @deep true @deep_into_1_4 true returns i64 io linked
 
         ; ========================================================================
         ; Module Output

@@ -21,7 +21,7 @@
 
 /* The shim's API; there is no header for it (the consumers are Scaly extern
  * declarations), so the prototypes are restated here. They must match
- * eio_win.c exactly — a mismatch is precisely what this test should catch. */
+ * eio_windows.c exactly — a mismatch is precisely what this test should catch. */
 int       scaly_eio_create(void);
 int       scaly_eio_arm(int q, int fd, int for_write, void* tag);
 int       scaly_eio_wait(int q, void** tags, int max);
