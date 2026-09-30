@@ -43,6 +43,12 @@ define HeaderList
     ; The value of the first field named `name`, empty without one.
     function get(this, name: Slice[u8]) @ret_param_0 true @deep true returns Slice[u8] linked
 
+    ; The value of the first field named lname (lowercase) as the HTTP/1.1
+    ; text of a translated request would carry it (Request.header without
+    ; that text): host is :authority, the other pseudo-fields and the fields
+    ; HTTP/1.1 frames itself are none.
+    function header(this, lname: Slice[u8]) @page true @direct true @ret_args_3 true @deep true returns Slice[u8] linked
+
     procedure add(mutable this, name: Slice[u8], value: Slice[u8]) @persists true @ret_nonlocal true @deep true @deep_this_6 true @deep_whole_6 true linked
 
     ; Room for n more bytes in `bytes`; when they move, the views into
@@ -68,6 +74,15 @@ define HeaderList
     procedure own_table(mutable this, table: Slice[u8]) @deep true linked
 }
 
+; Which pseudo-field a name is: 1 :method, 2 :path, 3 :authority, 0 any
+; other -- told apart by length and second byte, so that a comparison runs
+; only to confirm (each was a memcmp call, 2026-09-30).
+function pseudo_field(name: Slice[u8]) @ret_nonlocal true @deep true returns int linked
+
+; Is a (lowercase) field one HTTP/1.1 frames itself, which the text of a
+; translated request leaves out?
+function framing_field(name: Slice[u8]) @ret_param_0 true @deep true returns bool linked
+
 ; An integer with an n-bit prefix (RFC 7541 5.1) at block[at]; at moves
 ; past it. -1 when the block ends inside it or it overflows.
 procedure decode_integer(block: Slice[u8], mutable at: ref[size_t], prefix_bits: u64) @ret_param_0 true @deep true returns i64 linked
@@ -78,8 +93,10 @@ procedure huffman_decode(src: Slice[u8], mutable out: ref[ByteBuf]) @ret_nonloca
 
 ; The same into room from w on (w moves past the bytes); room must hold
 ; (src.length * 8) / 5 + 1 more bytes -- a single symbol from HUFF_PAIR is
-; written with a spare byte behind it.
-procedure huffman_decode_into(src: Slice[u8], mutable room: Slice[u8], mutable w: ref[size_t]) @deep true returns bool linked
+; written with a spare byte behind it. A field (field_only) also fails on a
+; CR, LF or NUL (HeaderList.literal): their codes have 13 and 30 bits, so
+; only the slow path can meet them and the fast one checks nothing.
+procedure huffman_decode_into(src: Slice[u8], mutable room: Slice[u8], mutable w: ref[size_t], field_only: bool) @deep true returns bool linked
 
 ; Can a field's name or value stand in HTTP/1.1 text? Not with a CR, an LF
 ; or a NUL (RFC 9113 8.2.1, RFC 9114 4.2): in the text an LF would begin a

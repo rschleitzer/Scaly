@@ -56,7 +56,7 @@ function be24(s: Slice[u8], at: size_t) @ret_param_0 true @deep true returns siz
 function be31(s: Slice[u8], at: size_t) @ret_param_0 true @deep true returns u64 linked
 
 ; A frame's head: length, type, flags, stream.
-procedure frame_head(mutable out: ref[ByteBuf], length: size_t, kind: u8, flags: u8, stream: u64) @ret_nonlocal true @deep true linked
+procedure frame_head(mutable out: ref[ByteBuf], length: size_t, kind: u8, flags: u8, stream: u64) @deep true linked
 
 procedure append_u32(mutable out: ref[ByteBuf], v: u64) @ret_nonlocal true @deep true linked
 
@@ -91,23 +91,17 @@ define H2Pending
 ; or :path.
 procedure fields_request_text(fields: ref[HeaderList], mutable text: ref[ByteBuf], has_body: bool) @ret_nonlocal true @deep true returns bool linked
 
-; Which pseudo-field a name is: 1 :method, 2 :path, 3 :authority, 0 any
-; other.
-function pseudo_field(name: Slice[u8]) @ret_nonlocal true @deep true returns int linked
-
-; Is a (lowercase) field one HTTP/1.1 frames itself, which the text of a
-; translated request leaves out?
-function framing_field(name: Slice[u8]) @ret_nonlocal true @deep true returns bool linked
-
 ; A request without a body straight from its decoded fields: method,
-; target, path and query as views into them, the other fields as the lines
-; of req.fields in `text` -- what parse_request makes of the text
-; fields_request_text writes, without the text and the parse (together
-; they were a tenth of the server's samples in baseline-h2, 2026-09-30).
-; False where fields_request_text is: no :method or :path (a byte the text
-; cannot carry the decoder refused already, HeaderList.literal); and for a
-; method or target with a space, or a head larger than parse_request takes.
-procedure request_from_fields(fields: ref[HeaderList], mutable text: ref[ByteBuf], mutable req: ref[Request]) @ret_nonlocal true @deep true returns bool linked
+; target, path and query as views into them, and the fields themselves as
+; req.list, which Request.header reads -- what parse_request makes of the
+; text fields_request_text writes, without the text and the parse (they
+; were a tenth of the server's samples in baseline-h2; writing the fields
+; out as text for handlers that mostly read none, another 3 %;
+; 2026-09-30). False where fields_request_text is: no :method or :path (a
+; byte the text cannot carry the decoder refused already,
+; HeaderList.literal); and for a method or target with a space, or a head
+; larger than parse_request takes.
+procedure request_from_fields(fields: ref[HeaderList], mutable req: ref[Request]) @ret_nonlocal true @deep true @deep_into_1_1 true returns bool linked
 
 ; The status of HTTP/1.1 response text ("HTTP/1.1 200 ..."), 0 when there
 ; is none.

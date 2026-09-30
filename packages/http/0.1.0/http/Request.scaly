@@ -12,6 +12,8 @@
 ; A Request is a set of VIEWS into the connection's input buffer, valid until
 ; the connection reads or consumes again — while its handler runs.
 
+use http.Hpack.HeaderList
+
 ; parse_request's answers besides a byte count.
 define PARSE_INCOMPLETE: i64 0
 define PARSE_BAD: i64 -1              ; 400
@@ -50,10 +52,13 @@ define Request
     var minor: int               ; HTTP/1.minor
     var keep_alive: bool
     var pattern: Slice[u8]       ; the matched route's pattern (Router.handle)
+    ; HTTP/2 without text: the decoded fields, which header() reads when set
+    ; (fields is empty then; request_from_fields)
+    var list: ref[HeaderList]?
 )
 {
     procedure empty() returns Request
-        Request(null, null, null, null, null, null, 1, true, null)
+        Request(null, null, null, null, null, null, 1, true, null, null)
 
     ; The value of path parameter name of the matched route ("/{type}/{id}":
     ; req.param("id")), raw — see percent_decode; empty when there is none.
@@ -67,6 +72,9 @@ define Request
     ; insensitive, the name given in lower case); empty when absent.
     function header(this, lname: Slice[u8]) returns Slice[u8]
     {
+        let decoded list
+        if decoded <> null
+            return decoded.header(lname)
         var i: size_t 0
         while i < fields.length
         {
@@ -265,6 +273,7 @@ procedure parse_request(mutable buf: Slice[u8], mutable req: ref[Request]) retur
     let mc version[7]
     if mc < 48 or mc > 57
         return PARSE_BAD
+    set req.list: null
     set req.method: line.slice_to(sp1 as size_t)
     set req.target: rest.slice_to(sp2 as size_t)
     set req.minor: (mc - 48) as int

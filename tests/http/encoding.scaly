@@ -55,7 +55,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
 
     let host Page.allocate_page()
     var buf allocate_slice[u8]^host(host, 4096)
-    let req &Request^host(null, null, null, null, null, null, 1, true, null)
+    let req &Request^host(null, null, null, null, null, null, 1, true, null, null)
     if accepts(buf, req, "Accept-Encoding: gzip, br") = false or accepts(buf, req, "accept-encoding: br;q=1, gzip;q=0.1") = false
         return 2
     if accepts(buf, req, "Accept-Encoding: gzip;q=0") or accepts(buf, req, "Accept-Encoding: br") or accepts(buf, req, "Host: x")

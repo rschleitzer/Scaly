@@ -61,6 +61,27 @@ define HeaderList
         bytes.bytes().slice_to(0)
     }
 
+    ; The value of the first field named lname (lowercase) as the HTTP/1.1
+    ; text of a translated request would carry it (Request.header without
+    ; that text): host is :authority, the other pseudo-fields and the fields
+    ; HTTP/1.1 frames itself are none.
+    function header(this, lname: Slice[u8]) returns Slice[u8]
+    {
+        if lname.equals("host")
+            return trim(this.get(":authority"))
+        if framing_field(lname) or (lname.length > 0 and lname[0] = 58)
+            return lname.slice_to(0)
+        var i: size_t 0
+        while i < this.count()
+        {
+            let n this.name(i)
+            if n.length > 0 and n[0] <> 58 and equals_lower(n, lname)
+                return trim(this.value(i))
+            set i: i + 1
+        }
+        lname.slice_to(0)
+    }
+
     procedure add(mutable this, name: Slice[u8], value: Slice[u8])
     {
         views.add(name)
@@ -109,20 +130,17 @@ define HeaderList
             if start + (raw.length * 8) / 5 + 1 > bytes.capacity()
                 return false
             var w start
-            if huffman_decode_into(raw, bytes.data, &w) = false
+            if huffman_decode_into(raw, bytes.data, &w, true) = false
                 return false
             set bytes.length: w
         }
         else
         {
-            if start + raw.length > bytes.capacity()
+            if start + raw.length > bytes.capacity() or field_bytes_ok(raw) = false
                 return false
             bytes.append(raw)
         }
-        let got bytes.bytes().slice_from(start)
-        if field_bytes_ok(got) = false
-            return false
-        set s: got
+        set s: bytes.bytes().slice_from(start)
         true
     }
 
@@ -161,6 +179,34 @@ define HeaderList
     }
 }
 
+; Which pseudo-field a name is: 1 :method, 2 :path, 3 :authority, 0 any
+; other -- told apart by length and second byte, so that a comparison runs
+; only to confirm (each was a memcmp call, 2026-09-30).
+function pseudo_field(name: Slice[u8]) returns int
+{
+    if name.length < 5 or name[0] <> 58
+        return 0
+    if name.length = 7 and name[1] = 109 and name.equals(":method")
+        return 1
+    if name.length = 5 and name.equals(":path")
+        return 2
+    if name.length = 10 and name.equals(":authority")
+        return 3
+    0
+}
+
+; Is a (lowercase) field one HTTP/1.1 frames itself, which the text of a
+; translated request leaves out?
+function framing_field(name: Slice[u8]) returns bool
+{
+    match name.length
+        case 4: return name.equals("host")
+        case 10: return name[0] = 99 and name.equals("connection")
+        case 14: return name.equals("content-length")
+        case 17: return name.equals("transfer-encoding")
+    false
+}
+
 ; An integer with an n-bit prefix (RFC 7541 5.1) at block[at]; at moves
 ; past it. -1 when the block ends inside it or it overflows.
 procedure decode_integer(block: Slice[u8], mutable at: ref[size_t], prefix_bits: u64) returns i64
@@ -194,15 +240,17 @@ procedure huffman_decode(src: Slice[u8], mutable out: ref[ByteBuf]) returns bool
     ; no code is shorter than 5 bits
     out.reserve((src.length * 8) / 5 + 1)
     var w out.length
-    let ok huffman_decode_into(src, out.data, &w)
+    let ok huffman_decode_into(src, out.data, &w, false)
     set out.length: w
     ok
 }
 
 ; The same into room from w on (w moves past the bytes); room must hold
 ; (src.length * 8) / 5 + 1 more bytes -- a single symbol from HUFF_PAIR is
-; written with a spare byte behind it.
-procedure huffman_decode_into(src: Slice[u8], mutable room: Slice[u8], mutable w: ref[size_t]) returns bool
+; written with a spare byte behind it. A field (field_only) also fails on a
+; CR, LF or NUL (HeaderList.literal): their codes have 13 and 30 bits, so
+; only the slow path can meet them and the fast one checks nothing.
+procedure huffman_decode_into(src: Slice[u8], mutable room: Slice[u8], mutable w: ref[size_t], field_only: bool) returns bool
 {
     ; copies, kept in registers: a byte stored through room may alias
     ; whatever a parameter points at, and the loop reloaded w and both
@@ -277,7 +325,7 @@ procedure huffman_decode_into(src: Slice[u8], mutable room: Slice[u8], mutable w
             if n > 0 and code >= first and code - first < n
             {
                 let symbol HUFF_SYMBOLS[(HUFF_OFFSET[length as size_t] as size_t) + ((code - first) as size_t)]
-                if symbol = 256
+                if symbol = 256 or (field_only and (symbol = 0 or symbol = 10 or symbol = 13))
                 {
                     set w: at
                     return false

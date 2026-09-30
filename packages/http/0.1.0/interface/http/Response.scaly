@@ -22,6 +22,14 @@ use http.Request.Request
 define HEAD_OK_LENGTH: size_t 54
 define HEAD_OK_DATE_AT: size_t 23
 
+; The HPACK twin of head_ok: :status 200 (static entry 8, 0x88), then the
+; date as a literal with the indexed name date (entry 33: 0x0f 0x12) and a
+; length of 29 (0x1d), the date itself filled in once per second.
+define HPACK_OK_LENGTH: size_t 33
+define HPACK_OK_DATE_AT: size_t 4
+
+procedure init_hpack_ok(mutable h: Slice[u8]) @ret_nonlocal true @deep true linked
+
 ; Fill a connection's head_ok block with its fixed parts; the date in the
 ; middle is Response.date, a view formatted in place once per second.
 procedure init_head_ok(mutable h: Slice[u8]) @ret_nonlocal true @deep true linked
@@ -42,6 +50,7 @@ define Response
     var hpack: bool              ; HTTP/2: the head is an HPACK block
     var block_at: size_t         ; where the HPACK block starts in out
     var body_at: size_t          ; where the body starts in out (HPACK)
+    hpack_ok: Slice[u8]          ; the HPACK :status 200 and date (init_hpack_ok)
 )
 {
     ; A connection's response on its page, writing into out: the 200 head

@@ -12,6 +12,8 @@
 ; A Request is a set of VIEWS into the connection's input buffer, valid until
 ; the connection reads or consumes again — while its handler runs.
 
+use http.Hpack.HeaderList
+
 ; parse_request's answers besides a byte count.
 define PARSE_INCOMPLETE: i64 0
 define PARSE_BAD: i64 -1              ; 400
@@ -40,6 +42,9 @@ define Request
     var minor: int               ; HTTP/1.minor
     var keep_alive: bool
     var pattern: Slice[u8]       ; the matched route's pattern (Router.handle)
+    ; HTTP/2 without text: the decoded fields, which header() reads when set
+    ; (fields is empty then; request_from_fields)
+    var list: ref[HeaderList]?
 )
 {
     procedure empty() @page true @direct true @ret_nonlocal true @deep true returns Request linked
@@ -52,7 +57,7 @@ define Request
 
     ; The value of the first header field of that name (ASCII case-
     ; insensitive, the name given in lower case); empty when absent.
-    function header(this, lname: Slice[u8]) @page true @direct true @ret_param_0 true @deep true returns Slice[u8] linked
+    function header(this, lname: Slice[u8]) @page true @direct true @deep true returns Slice[u8] linked
 
     ; Does the client accept the lower-case content coding (Accept-Encoding,
     ; RFC 9110 12.5.3): named with a weight above 0, or covered by `*` and

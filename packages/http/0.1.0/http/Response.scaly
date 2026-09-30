@@ -22,6 +22,20 @@ use http.Request.Request
 define HEAD_OK_LENGTH: size_t 54
 define HEAD_OK_DATE_AT: size_t 23
 
+; The HPACK twin of head_ok: :status 200 (static entry 8, 0x88), then the
+; date as a literal with the indexed name date (entry 33: 0x0f 0x12) and a
+; length of 29 (0x1d), the date itself filled in once per second.
+define HPACK_OK_LENGTH: size_t 33
+define HPACK_OK_DATE_AT: size_t 4
+
+procedure init_hpack_ok(mutable h: Slice[u8])
+{
+    h.put(0, 136)
+    h.put(1, 15)
+    h.put(2, 18)
+    h.put(3, 29)
+}
+
 ; Fill a connection's head_ok block with its fixed parts; the date in the
 ; middle is Response.date, a view formatted in place once per second.
 procedure init_head_ok(mutable h: Slice[u8])
@@ -53,6 +67,7 @@ define Response
     var hpack: bool              ; HTTP/2: the head is an HPACK block
     var block_at: size_t         ; where the HPACK block starts in out
     var body_at: size_t          ; where the body starts in out (HPACK)
+    hpack_ok: Slice[u8]          ; the HPACK :status 200 and date (init_hpack_ok)
 )
 {
     ; A connection's response on its page, writing into out: the 200 head
@@ -62,7 +77,9 @@ define Response
         var head allocate_slice[u8]^host(host, HEAD_OK_LENGTH)
         init_head_ok(head)
         let trailers &ByteBuf^host(host, allocate_slice[u8]^host(host, 64), 0, false)
-        &Response^host(out, 200, false, false, false, head.subslice(HEAD_OK_DATE_AT, HEAD_OK_DATE_AT + DATE_LENGTH), 0 - 1, head, false, trailers, null, false, 0, 0)
+        var hpack_head allocate_slice[u8]^host(host, HPACK_OK_LENGTH)
+        init_hpack_ok(hpack_head)
+        &Response^host(out, 200, false, false, false, head.subslice(HEAD_OK_DATE_AT, HEAD_OK_DATE_AT + DATE_LENGTH), 0 - 1, head, false, trailers, null, false, 0, 0, hpack_head)
     }
 
     ; Ready for the next response on the same connection.
@@ -151,12 +168,26 @@ define Response
         {
             format_date(date, now)
             set date_second: now
+            var d: size_t 0
+            while d < DATE_LENGTH
+            {
+                hpack_ok.put(HPACK_OK_DATE_AT + d, date[d])
+                set d: d + 1
+            }
         }
         if hpack
         {
+            ; the common case in one copy, as head_ok is for HTTP/1.1 (the
+            ; status and date encoded per response were 2 % of the server's
+            ; samples in baseline-h2, 2026-09-30)
             set block_at: out.length
+            if status = 200
+            {
+                out.append(hpack_ok)
+                return
+            }
             encode_status(out, status as i64)
-            encode_indexed_field(out, 33, date)
+            out.append(hpack_ok.slice_from(1))
             return
         }
         ; the common case in one copy: 200, the connection stays

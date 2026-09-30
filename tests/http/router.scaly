@@ -138,7 +138,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
 
     var buf allocate_slice[u8]^host(host, 4096)
     let out &ByteBuf^host(host, allocate_slice[u8]^host(host, 4096), 0, false)
-    let req &Request^host(null, null, null, null, null, null, 1, true, null)
+    let req &Request^host(null, null, null, null, null, null, 1, true, null, null)
     let res Response.create(host, out)
 
     answer(app, buf, req, res, out, "GET /metadata HTTP/1.1\r\n\r\n")

@@ -68,15 +68,21 @@ function be31(s: Slice[u8], at: size_t) returns u64
 ; A frame's head: length, type, flags, stream.
 procedure frame_head(mutable out: ref[ByteBuf], length: size_t, kind: u8, flags: u8, stream: u64)
 {
-    out.append_byte(((length >> 16) & 255) as u8)
-    out.append_byte(((length >> 8) & 255) as u8)
-    out.append_byte((length & 255) as u8)
-    out.append_byte(kind)
-    out.append_byte(flags)
-    out.append_byte(((stream >> 24) & 127) as u8)
-    out.append_byte(((stream >> 16) & 255) as u8)
-    out.append_byte(((stream >> 8) & 255) as u8)
-    out.append_byte((stream & 255) as u8)
+    ; room once, then the nine bytes through a copy of the view: an
+    ; append_byte each checked the room and stored the length nine times
+    out.reserve(H2_FRAME_HEAD)
+    var d: Slice[u8] out.data
+    let at: size_t out.length
+    d.put(at, ((length >> 16) & 255) as u8)
+    d.put(at + 1, ((length >> 8) & 255) as u8)
+    d.put(at + 2, (length & 255) as u8)
+    d.put(at + 3, kind)
+    d.put(at + 4, flags)
+    d.put(at + 5, ((stream >> 24) & 127) as u8)
+    d.put(at + 6, ((stream >> 16) & 255) as u8)
+    d.put(at + 7, ((stream >> 8) & 255) as u8)
+    d.put(at + 8, (stream & 255) as u8)
+    set out.length: at + H2_FRAME_HEAD
 }
 
 procedure append_u32(mutable out: ref[ByteBuf], v: u64)
@@ -152,44 +158,21 @@ procedure fields_request_text(fields: ref[HeaderList], mutable text: ref[ByteBuf
     true
 }
 
-; Which pseudo-field a name is: 1 :method, 2 :path, 3 :authority, 0 any
-; other.
-function pseudo_field(name: Slice[u8]) returns int
-{
-    if name.equals(":method")
-        return 1
-    if name.equals(":path")
-        return 2
-    if name.equals(":authority")
-        return 3
-    0
-}
-
-; Is a (lowercase) field one HTTP/1.1 frames itself, which the text of a
-; translated request leaves out?
-function framing_field(name: Slice[u8]) returns bool
-{
-    match name.length
-        case 4: return name.equals("host")
-        case 10: return name.equals("connection")
-        case 14: return name.equals("content-length")
-        case 17: return name.equals("transfer-encoding")
-    false
-}
-
 ; A request without a body straight from its decoded fields: method,
-; target, path and query as views into them, the other fields as the lines
-; of req.fields in `text` -- what parse_request makes of the text
-; fields_request_text writes, without the text and the parse (together
-; they were a tenth of the server's samples in baseline-h2, 2026-09-30).
-; False where fields_request_text is: no :method or :path (a byte the text
-; cannot carry the decoder refused already, HeaderList.literal); and for a
-; method or target with a space, or a head larger than parse_request takes.
-procedure request_from_fields(fields: ref[HeaderList], mutable text: ref[ByteBuf], mutable req: ref[Request]) returns bool
+; target, path and query as views into them, and the fields themselves as
+; req.list, which Request.header reads -- what parse_request makes of the
+; text fields_request_text writes, without the text and the parse (they
+; were a tenth of the server's samples in baseline-h2; writing the fields
+; out as text for handlers that mostly read none, another 3 %;
+; 2026-09-30). False where fields_request_text is: no :method or :path (a
+; byte the text cannot carry the decoder refused already,
+; HeaderList.literal); and for a method or target with a space, or a head
+; larger than parse_request takes.
+procedure request_from_fields(fields: ref[HeaderList], mutable req: ref[Request]) returns bool
 {
     var method: Slice[u8] ""
     var target: Slice[u8] ""
-    text.clear()
+    var head: size_t 0
     var i: size_t 0
     while i < fields.count()
     {
@@ -197,47 +180,44 @@ procedure request_from_fields(fields: ref[HeaderList], mutable text: ref[ByteBuf
         let value fields.value(i)
         if name.length = 0
             return false
-        if name[0] = 58
-        {
-            let kind pseudo_field(name)
-            if kind = 1
-                set method: value
-            else if kind = 2
-                set target: value
-            else if kind = 3 and value.length > 0
-            {
-                text.append("host: ")
-                text.append(value)
-                text.append("\r\n")
-            }
-        }
-        else if framing_field(name) = false
-        {
-            text.append(name)
-            text.append(": ")
-            text.append(value)
-            text.append("\r\n")
-        }
+        let kind pseudo_field(name)
+        if kind = 1
+            set method: value
+        else if kind = 2
+            set target: value
+        set head: head + name.length + value.length + 4
         set i: i + 1
     }
-    if method.length = 0 or target.length = 0 or index_of(method, 32) >= 0 or index_of(target, 32) >= 0
+    if method.length = 0 or target.length = 0 or head > MAX_HEAD
         return false
-    if text.length + method.length + target.length > MAX_HEAD
-        return false
+    var k: size_t 0
+    while k < method.length
+    {
+        if method[k] = 32
+            return false
+        set k: k + 1
+    }
+    ; one pass over the target: no space, and where the query begins
+    var q target.length
+    set k: 0
+    while k < target.length
+    {
+        let c target[k]
+        if c = 32
+            return false
+        if c = 63 and q = target.length
+            set q: k
+        set k: k + 1
+    }
     set req.method: method
     set req.target: target
-    let q index_of(target, 63)
-    if q >= 0
-    {
-        set req.path: target.slice_to(q as size_t)
-        set req.query: target.slice_from((q as size_t) + 1)
-    }
+    set req.path: target.slice_to(q)
+    if q < target.length
+        set req.query: target.slice_from(q + 1)
     else
-    {
-        set req.path: target
-        set req.query: target.slice_from(target.length)
-    }
-    set req.fields: text.bytes()
+        set req.query: target.slice_from(q)
+    set req.fields: target.slice_to(0)
+    set req.list: fields
     set req.body: target.slice_to(0)
     set req.minor: 1
     set req.keep_alive: true
@@ -738,7 +718,7 @@ define H2Conn
     ; one takes answer's way, as text for a task of its own.
     procedure answer_fields(mutable this, stream: u64, router: ref[Router], mutable req: ref[Request], mutable res: ref[Response], mutable outb: ref[ByteBuf])
     {
-        if request_from_fields(&fields, &text, req) = false
+        if request_from_fields(&fields, req) = false
         {
             this.reset_stream(stream, 1)
             return
@@ -776,7 +756,7 @@ define H2Conn
             let page job.page
             let own_out &ByteBuf^page(page, allocate_slice[u8]^page(page, 4096), 0, false)
             set job.outb: own_out
-            set job.req: &Request^page(null, null, null, null, null, null, 1, true, null)
+            set job.req: &Request^page(null, null, null, null, null, null, 1, true, null, null)
             let jres Response.create(page, own_out)
             set jres.hpack: true
             set job.res: jres

@@ -12,8 +12,11 @@
 ; the list first owns those views and its bytes grow on the way -- the
 ; literal views already in it must follow (under poison, a stale one reads
 ; 0xDD) -- and the new entry (1100 bytes) evicts the big one and is written
-; over its bytes; a later block reads it back from the table.
-; Expected: c41 c42 c43 table encoder huffman views
+; over its bytes; a later block reads it back from the table. Then a
+; Huffman-coded field value holding an LF, and one holding a NUL, fail the
+; block (their codes are long: the check sits in the slow path alone), and
+; HeaderList.header answers as the HTTP/1.1 text of the request would.
+; Expected: c41 c42 c43 table encoder huffman views fields
 
 package scaly 0.1.0
 package http 0.1.0
@@ -258,6 +261,51 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
         print "views: the table after the insert"
         return 34
     }
-    Console.print "views"
+    Console.print "views "
+
+    var bad: size_t 0
+    while bad < 2
+    {
+        var hb ByteBuf.create(hh, 64)
+        var hv ByteBuf.create(hh, 64)
+        var raw ByteBuf.create(hh, 16)
+        raw.append("a")
+        if bad = 0
+            raw.append_byte(10)
+        else
+            raw.append_byte(0)
+        raw.append("b")
+        huffman_encode(raw.bytes(), &hv)
+        encode_integer(&hb, 0, 4, 0)
+        encode_string(&hb, "x-bad")
+        encode_integer(&hb, 128, 7, hv.length as u64)
+        hb.append(hv.bytes())
+        var bd HpackDecoder.create(hh)
+        var bl HeaderList.create(hh)
+        if bd.decode(hb.bytes(), &bl)
+        {
+            print "fields: a Huffman-coded byte `raw.bytes()[1]` passed"
+            return 40
+        }
+        set bad: bad + 1
+    }
+    var fb ByteBuf.create(hh, 128)
+    encode_field(&fb, ":authority", "example.org")
+    encode_field(&fb, ":path", "/x")
+    encode_field(&fb, "x-probe", " spaced ")
+    encode_field(&fb, "content-length", "5")
+    var fd HpackDecoder.create(hh)
+    var fl HeaderList.create(hh)
+    if fd.decode(fb.bytes(), &fl) = false
+    {
+        print "fields: decode"
+        return 41
+    }
+    if fl.header("host").equals("example.org") = false or fl.header("x-probe").equals("spaced") = false or fl.header("X-Probe").length <> 0 or fl.header(":path").length <> 0 or fl.header("content-length").length <> 0 or fl.header("absent").length <> 0
+    {
+        print "fields: header lookup"
+        return 42
+    }
+    Console.print "fields"
     0
 }

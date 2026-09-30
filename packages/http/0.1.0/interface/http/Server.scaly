@@ -57,7 +57,7 @@ procedure serve_connection[S](mutable c: ref[S], router: ref[Router])
     let host Page.allocate_page()
     var inb ByteBuf.create(host, IN_SIZE)
     let outb &ByteBuf^host(host, allocate_slice[u8]^host(host, OUT_SIZE), 0, false)
-    let req &Request^host(null, null, null, null, null, null, 1, true, null)
+    let req &Request^host(null, null, null, null, null, null, 1, true, null, null)
     let res Response.create(host, outb)
     var open true
     var first true
