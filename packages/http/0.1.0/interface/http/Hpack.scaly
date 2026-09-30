@@ -49,6 +49,11 @@ procedure decode_integer(block: Slice[u8], mutable at: ref[size_t], prefix_bits:
 ; an EOS inside the string or padding that is not a short run of ones.
 procedure huffman_decode(src: Slice[u8], mutable out: ref[ByteBuf]) @ret_nonlocal true @deep true returns bool linked
 
+; Can a field's name or value stand in HTTP/1.1 text? Not with a CR, an LF
+; or a NUL (RFC 9113 8.2.1, RFC 9114 4.2): in the text an LF would begin a
+; field of the client's choosing.
+function field_bytes_ok(s: Slice[u8]) @ret_nonlocal true @deep true returns bool linked
+
 define HpackDecoder
 (
     ; the entries' bytes, name then value, oldest first
@@ -87,7 +92,10 @@ define HpackDecoder
     procedure copy_entry(this, index: u64, mutable out: ref[ByteBuf], mutable name_start: ref[size_t], mutable name_length: ref[size_t], mutable value_start: ref[size_t], mutable value_length: ref[size_t], with_value: bool) @ret_nonlocal true @deep true returns bool linked
 
     ; One string literal (RFC 7541 5.2) at block[at] decoded onto out: its
-    ; span. False when it is malformed.
+    ; span. False when it is malformed, and for a CR, LF or NUL in it: RFC
+    ; 9113 8.2.1 makes such a field malformed, 5.4.1 lets the stream error
+    ; end the connection -- and so no such byte reaches a HeaderList or the
+    ; dynamic table, whose entries are all literals once checked here.
     procedure read_string(this, block: Slice[u8], mutable at: ref[size_t], mutable out: ref[ByteBuf], mutable start: ref[size_t], mutable length: ref[size_t]) @ret_nonlocal true @deep true returns bool linked
 
     ; Decode one complete header block onto list; false on a malformed
@@ -110,6 +118,17 @@ function static_status_index(status: i64) @ret_nonlocal true @deep true returns 
 
 ; The static table index of a lowercase field name worth one, else 0.
 function static_name_index(name: Slice[u8]) @ret_nonlocal true @deep true returns u64 linked
+
+; A field whose name is static table entry index, as a literal without
+; indexing.
+procedure encode_indexed_field(mutable out: ref[ByteBuf], index: u64, value: Slice[u8]) @ret_nonlocal true @deep true linked
+
+; A field as a handler names it ("X-Cache"): the name lowercased, as HTTP/2
+; wants it; the fields that belong to one HTTP/1.1 connection are left out.
+procedure encode_header_field(mutable out: ref[ByteBuf], name: Slice[u8], value: Slice[u8]) @deep true linked
+
+; v in decimal at the front of out: the number of digits.
+procedure decimal_into(mutable out: Slice[u8], v: u64) @ret_nonlocal true @deep true returns size_t linked
 
 ; A field as a literal without indexing (RFC 7541 6.2.2); name lowercase.
 procedure encode_field(mutable out: ref[ByteBuf], name: Slice[u8], value: Slice[u8]) @ret_nonlocal true @deep true linked

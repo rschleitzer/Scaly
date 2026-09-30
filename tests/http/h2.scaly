@@ -17,9 +17,12 @@
 ;             connection's 256 KiB output budget, so the server stops taking
 ;             requests from its input, writes, and answers the rest in a
 ;             second round without reading
+;   malformed a field value carrying CR LF (which the translation into
+;             HTTP/1.1 text would have made a field of its own) ends the
+;             connection with GOAWAY before any answer (RFC 9113 8.2.1)
 ;   h1        the same port still answers HTTP/1.1, also when the first
 ;             read holds only "P" (the preface begins with it too)
-; Expected: h2 streams continued parallel budget h1
+; Expected: h2 streams continued parallel budget malformed h1
 
 package scaly 0.1.0
 package http 0.1.0
@@ -413,6 +416,49 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     }
     Console.print "budget "
     s2.close()
+
+    var s3 TcpStream.connect("127.0.0.1", l.port())
+    out.clear()
+    out.append(h2_preface())
+    frame_head(&out, 0, 4, 0, 0)
+    block.clear()
+    request_block(&block, "GET", "/sum?a=1&b=2")
+    encode_field(&block, "x-note", "a\r\nx-injected: 1")
+    frame_head(&out, block.length, 1, 5, 1)
+    out.append(block.bytes())
+    s3.write(out.bytes())
+    out.clear()
+    inb.clear()
+    ; read until a GOAWAY, an answer (HEADERS) or the end
+    var goaway false
+    var answered false
+    var at3: size_t 0
+    while goaway = false and answered = false
+    {
+        if inb.length = inb.capacity()
+            inb.reserve(inb.capacity())
+        let n s3.read(inb.spare())
+        if n <= 0
+            break
+        inb.advance(n as size_t)
+        let b3 inb.bytes()
+        while at3 + 9 <= b3.length and at3 + 9 + be24(b3, at3) <= b3.length
+        {
+            let kind b3[at3 + 3]
+            if kind = 7
+                set goaway: true
+            if kind = 1
+                set answered: true
+            set at3: at3 + 9 + be24(b3, at3)
+        }
+    }
+    s3.close()
+    if goaway = false or answered
+    {
+        print "malformed: goaway `goaway` answered `answered`"
+        return 12
+    }
+    Console.print "malformed "
 
     var h1 TcpStream.connect("127.0.0.1", l.port())
     h1.write("P")

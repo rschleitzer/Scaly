@@ -7,6 +7,13 @@
 ;   res.set_status(201)                           ; before anything else
 ;   res.header("x-cache", "HIT")                   ; any number of fields
 ;   res.send("application/json", body)             ; ends the response
+;
+; Over HTTP/2 (hpack set by the connection) the same calls write the header
+; block HPACK-coded instead -- :status, date, the fields, content-type and
+; -length -- and the body behind it (block_at .. body_at, then the body):
+; the connection frames them as they stand, where it used to parse the
+; HTTP/1.1 text back and encode it (2026-09-30: a fifth of the server's
+; samples in baseline-h2).
 
 use http.Buffer.ByteBuf
 use http.Request.Request
@@ -43,6 +50,9 @@ define Response
     var head_only: bool          ; a HEAD request: everything but the body
     trailers: ref[ByteBuf]       ; "name: value\r\n" lines sent after the body (HTTP/2 only)
     var websocket: pointer[void] ; the message handler of an accepted WebSocket upgrade
+    var hpack: bool              ; HTTP/2: the head is an HPACK block
+    var block_at: size_t         ; where the HPACK block starts in out
+    var body_at: size_t          ; where the body starts in out (HPACK)
 )
 {
     ; A connection's response on its page, writing into out: the 200 head
@@ -52,7 +62,7 @@ define Response
         var head allocate_slice[u8]^host(host, HEAD_OK_LENGTH)
         init_head_ok(head)
         let trailers &ByteBuf^host(host, allocate_slice[u8]^host(host, 64), 0, false)
-        &Response^host(out, 200, false, false, false, head.subslice(HEAD_OK_DATE_AT, HEAD_OK_DATE_AT + DATE_LENGTH), 0 - 1, head, false, trailers, null)
+        &Response^host(out, 200, false, false, false, head.subslice(HEAD_OK_DATE_AT, HEAD_OK_DATE_AT + DATE_LENGTH), 0 - 1, head, false, trailers, null, false, 0, 0)
     }
 
     ; Ready for the next response on the same connection.
@@ -64,6 +74,8 @@ define Response
         set close: close_after
         set head_only: false
         set websocket: null
+        set block_at: out.length
+        set body_at: out.length
         trailers.clear()
     }
 
@@ -74,6 +86,13 @@ define Response
     ; -- answers 400 instead, and false.
     procedure accept_websocket(mutable this, req: ref[Request], mutable handler: pointer[void]) returns bool
     {
+        ; an HTTP/2 stream is no connection to take over
+        if hpack
+        {
+            this.set_status(400)
+            this.send_empty()
+            return false
+        }
         let key trim(req.header("sec-websocket-key"))
         if key.length = 0 or has_token(req.header("upgrade"), "websocket") = false or has_token(req.header("connection"), "upgrade") = false or trim(req.header("sec-websocket-version")).equals("13") = false
         {
@@ -133,6 +152,13 @@ define Response
             format_date(date, now)
             set date_second: now
         }
+        if hpack
+        {
+            set block_at: out.length
+            encode_status(out, status as i64)
+            encode_indexed_field(out, 33, date)
+            return
+        }
         ; the common case in one copy: 200, the connection stays
         if status = 200 and close = false
         {
@@ -156,6 +182,11 @@ define Response
         if sent
             return
         this.start()
+        if hpack
+        {
+            encode_header_field(out, name, value)
+            return
+        }
         out.append(name)
         out.append(": ")
         out.append(value)
@@ -175,6 +206,24 @@ define Response
         if sent
             return
         this.start()
+        if hpack
+        {
+            if content_type.length > 0
+                encode_indexed_field(out, 31, content_type)
+            if encoding.length > 0
+                encode_indexed_field(out, 26, encoding)
+            if status <> 204 and status <> 304
+            {
+                var digits u8[24]
+                let n decimal_into(Slice[u8](24, &digits[0]), body.length as u64)
+                encode_indexed_field(out, 28, Slice[u8](n, &digits[0]))
+            }
+            set body_at: out.length
+            if head_only = false
+                out.append(body)
+            set sent: true
+            return
+        }
         ; the plain case in the appends it always took (baseline's hot path)
         if content_type.length > 0
         {

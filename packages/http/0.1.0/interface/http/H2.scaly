@@ -5,10 +5,12 @@
 ;
 ; A request is translated, not re-implemented: its header block (HPACK) and
 ; body become HTTP/1.1 request text, parse_request fills the connection's
-; Request from it and the router runs the handler as for HTTP/1.1; the
-; response the handler wrote as HTTP/1.1 text is taken apart into a HEADERS
-; frame (literals without indexing) and DATA frames. Every route, middleware
-; and handler therefore serves both protocols unchanged.
+; Request from it (a request without a body skips the text:
+; request_from_fields fills the Request the parse would) and the router
+; runs the handler as for HTTP/1.1. The Response, in its HPACK mode, writes
+; the header block (literals without indexing) and the body behind it, and
+; they go out as HEADERS and DATA frames as they stand. Every route,
+; middleware and handler therefore serves both protocols unchanged.
 ;
 ; Flow control: a response is sent as far as the connection's and its
 ; stream's send windows allow and the rest waits, copied onto a page of its
@@ -88,6 +90,28 @@ define H2Pending
 ; caller's); the blank line unless a body follows. False without :method
 ; or :path.
 procedure fields_request_text(fields: ref[HeaderList], mutable text: ref[ByteBuf], has_body: bool) @ret_nonlocal true @deep true returns bool linked
+
+; Do all decoded fields pass field_bytes_ok? (HPACK checks as it decodes;
+; the QPACK decoder of HTTP/3 does not.)
+function fields_fit_text(fields: ref[HeaderList]) @ret_nonlocal true @deep true returns bool linked
+
+; Which pseudo-field a name is: 1 :method, 2 :path, 3 :authority, 0 any
+; other.
+function pseudo_field(name: Slice[u8]) @ret_nonlocal true @deep true returns int linked
+
+; Is a (lowercase) field one HTTP/1.1 frames itself, which the text of a
+; translated request leaves out?
+function framing_field(name: Slice[u8]) @ret_nonlocal true @deep true returns bool linked
+
+; A request without a body straight from its decoded fields: method,
+; target, path and query as views into them, the other fields as the lines
+; of req.fields in `text` -- what parse_request makes of the text
+; fields_request_text writes, without the text and the parse (together
+; they were a tenth of the server's samples in baseline-h2, 2026-09-30).
+; False where fields_request_text is: no :method or :path (a byte the text
+; cannot carry the HPACK decoder refused already); and for a method or
+; target with a space, or a head larger than parse_request takes.
+procedure request_from_fields(fields: ref[HeaderList], mutable text: ref[ByteBuf], mutable req: ref[Request]) @ret_nonlocal true @deep true returns bool linked
 
 ; The status of HTTP/1.1 response text ("HTTP/1.1 200 ..."), 0 when there
 ; is none.
@@ -201,13 +225,23 @@ define H2Conn
     ; `lines`, after a :status when status is not 0.
     procedure headers_frame(mutable this, stream: u64, status: i64, lines: Slice[u8], from: size_t, end_stream: bool) @ret_param_3 true @deep true returns size_t linked
 
-    ; The HTTP/1.1 response in `response` as frames on `stream`, then the
-    ; trailer lines when there are any.
-    procedure respond(mutable this, stream: u64, mutable response: Slice[u8], mutable trailers: Slice[u8]) @deep true @deep_this_8 true linked
+    ; An HPACK-coded header block as a HEADERS frame on `stream`, and
+    ; CONTINUATION frames when it is larger than the peer's frame limit.
+    procedure block_frames(mutable this, stream: u64, block: Slice[u8], end_stream: bool) @deep true linked
+
+    ; The response res wrote into `out` (in HPACK mode: its header block,
+    ; then its body) as frames on `stream`, then its trailer lines when there
+    ; are any.
+    procedure respond(mutable this, stream: u64, mutable res: ref[Response], mutable out: Slice[u8]) @deep true linked
 
     ; Answer the request in `text` on `stream` -- at once, unless its route
     ; waits (Router.waits): that one is queued for run_jobs.
     procedure answer(mutable this, stream: u64, router: ref[Router], mutable req: ref[Request], mutable res: ref[Response], mutable outb: ref[ByteBuf]) @deep true @deep_this_4 true @deep_whole_4 true io linked
+
+    ; Answer the request without a body in `fields` on `stream`: at once,
+    ; from the fields (request_from_fields), unless its route waits -- that
+    ; one takes answer's way, as text for a task of its own.
+    procedure answer_fields(mutable this, stream: u64, router: ref[Router], mutable req: ref[Request], mutable res: ref[Response], mutable outb: ref[ByteBuf]) @deep true @deep_this_4 true @deep_whole_4 true io linked
 
     ; Answer the queued requests -- those whose route waits: each starts in
     ; a task of its own, the connection waits for them -- a millisecond at a
@@ -236,6 +270,7 @@ procedure self_block_start(mutable block: ref[ByteBuf], fragment: Slice[u8]) @re
 procedure serve_h2[S](mutable c: ref[S], router: ref[Router], host: ref[Page], mutable inb: ref[ByteBuf], mutable req: ref[Request], mutable res: ref[Response], mutable outb: ref[ByteBuf])
 {
     var h H2Conn.create(host)
+    set res.hpack: true
     h.greet()
     var preface_done false
     repeat

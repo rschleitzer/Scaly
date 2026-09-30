@@ -36,6 +36,9 @@ define Route
     handler: pointer[void]
     literals: int                ; literal segments: the more, the more specific
     var waits: bool              ; its handler waits (Router.waits)
+    ; the pattern's byte after its leading '/', which a path must share to
+    ; match -- -1 when a parameter (or nothing) stands there
+    lead: i64
 )
 
 define Hook
@@ -101,6 +104,16 @@ define Router
 
     procedure run_after(this, mutable req: ref[Request], mutable res: ref[Response]) @deep true linked
 }
+
+; The byte after a pattern's leading '/', -1 when a parameter or nothing
+; stands there (every path may match then).
+function pattern_lead(pattern: Slice[u8]) @ret_param_0 true @deep true returns i64 linked
+
+; Can path match route at all? The byte after the leading '/' decides for
+; most routes before match_pattern looks: the arena's two dozen routes were
+; matched in full twice per HTTP/2 request (2026-09-30: 8 % of the server's
+; samples in baseline-h2).
+function route_may_match(r: ref[Route], path: Slice[u8]) @ret_param_1 true @deep true returns bool linked
 
 ; Does path match pattern? Literal bytes must be equal; a parameter "{x}"
 ; takes one non-empty segment (up to the next '/'), a last one "{x...}"

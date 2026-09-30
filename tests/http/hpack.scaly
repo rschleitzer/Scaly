@@ -3,8 +3,12 @@
 ; reading entries the earlier ones put into the dynamic table (whose size
 ; after the third is 164), and a response block from the encoder decoded
 ; back (an indexed :status, a :status the static table does not hold, a
-; field with an indexed name and one with a literal name).
-; Expected: c41 c42 c43 table encoder
+; field with an indexed name and one with a literal name). Then the
+; Huffman decoder over every code: all 256 byte values encoded here from
+; the code tables (codes of 5 to 30 bits, so both the 8-bit fast table and
+; the length-by-length path), and every value alone at the end of a string
+; (each padding).
+; Expected: c41 c42 c43 table encoder huffman
 
 package scaly 0.1.0
 package http 0.1.0
@@ -71,6 +75,56 @@ procedure check(mutable d: ref[HpackDecoder], mutable list: ref[HeaderList], hex
     true
 }
 
+; The Huffman code of symbol: its bits in the low end of the result, its
+; length at code_length.
+procedure huffman_code(symbol: u64, mutable code_length: ref[u64]) returns u64
+{
+    var length: size_t 5
+    while length <= 30
+    {
+        let n HUFF_COUNT[length] as size_t
+        let off HUFF_OFFSET[length] as size_t
+        var k: size_t 0
+        while k < n
+        {
+            if (HUFF_SYMBOLS[off + k] as u64) = symbol
+            {
+                set code_length: length as u64
+                return (HUFF_FIRST[length] as u64) + (k as u64)
+            }
+            set k: k + 1
+        }
+        set length: length + 1
+    }
+    0
+}
+
+; The Huffman coding of the bytes of s onto out, padded with ones.
+procedure huffman_encode(s: Slice[u8], mutable out: ref[ByteBuf])
+{
+    var acc: u64 0
+    var bits: u64 0
+    var i: size_t 0
+    while i < s.length
+    {
+        var length: u64 0
+        let code huffman_code(s[i] as u64, &length)
+        set acc: (acc << length) | code
+        set bits: bits + length
+        while bits >= 8
+        {
+            out.append_byte(((acc >> (bits - 8)) & 255) as u8)
+            set bits: bits - 8
+        }
+        set i: i + 1
+    }
+    if bits > 0
+    {
+        let pad 8 - bits
+        out.append_byte((((acc << pad) | (((1 as u64) << pad) - 1)) & 255) as u8)
+    }
+}
+
 procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
 {
     let host Page.allocate_page()
@@ -100,6 +154,38 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
         print "encoder: `fields(&list)`"
         return 5
     }
-    Console.print "encoder"
+    Console.print "encoder "
+
+    let hh Page.allocate_page()
+    var all Vector[u8](256)
+    var v: size_t 0
+    while v < 256
+    {
+        all.put(v, v as u8)
+        set v: v + 1
+    }
+    var coded ByteBuf.create(hh, 1024)
+    var plain ByteBuf.create(hh, 1024)
+    huffman_encode(all.as_slice(), &coded)
+    if huffman_decode(coded.bytes(), &plain) = false or plain.bytes().equals(all.as_slice()) = false
+    {
+        print "huffman: all 256 values, `plain.length` decoded"
+        return 20
+    }
+    set v: 0
+    while v < 256
+    {
+        coded.clear()
+        plain.clear()
+        let one all.as_slice().subslice(v, v + 1)
+        huffman_encode(one, &coded)
+        if huffman_decode(coded.bytes(), &plain) = false or plain.bytes().equals(one) = false
+        {
+            print "huffman: value `v` alone"
+            return 21
+        }
+        set v: v + 1
+    }
+    Console.print "huffman"
     0
 }

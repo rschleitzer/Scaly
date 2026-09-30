@@ -5,10 +5,12 @@
 ;
 ; A request is translated, not re-implemented: its header block (HPACK) and
 ; body become HTTP/1.1 request text, parse_request fills the connection's
-; Request from it and the router runs the handler as for HTTP/1.1; the
-; response the handler wrote as HTTP/1.1 text is taken apart into a HEADERS
-; frame (literals without indexing) and DATA frames. Every route, middleware
-; and handler therefore serves both protocols unchanged.
+; Request from it (a request without a body skips the text:
+; request_from_fields fills the Request the parse would) and the router
+; runs the handler as for HTTP/1.1. The Response, in its HPACK mode, writes
+; the header block (literals without indexing) and the body behind it, and
+; they go out as HEADERS and DATA frames as they stand. Every route,
+; middleware and handler therefore serves both protocols unchanged.
 ;
 ; Flow control: a response is sent as far as the connection's and its
 ; stream's send windows allow and the rest waits, copied onto a page of its
@@ -118,7 +120,7 @@ procedure fields_request_text(fields: ref[HeaderList], mutable text: ref[ByteBuf
 {
     let method fields.get(":method")
     let path fields.get(":path")
-    if method.length = 0 or path.length = 0
+    if method.length = 0 or path.length = 0 or fields_fit_text(fields) = false
         return false
     text.clear()
     text.append(method)
@@ -147,6 +149,112 @@ procedure fields_request_text(fields: ref[HeaderList], mutable text: ref[ByteBuf
     }
     if has_body = false
         text.append("\r\n")
+    true
+}
+
+; Do all decoded fields pass field_bytes_ok? (HPACK checks as it decodes;
+; the QPACK decoder of HTTP/3 does not.)
+function fields_fit_text(fields: ref[HeaderList]) returns bool
+{
+    var i: size_t 0
+    while i < fields.count()
+    {
+        if field_bytes_ok(fields.name(i)) = false or field_bytes_ok(fields.value(i)) = false
+            return false
+        set i: i + 1
+    }
+    true
+}
+
+; Which pseudo-field a name is: 1 :method, 2 :path, 3 :authority, 0 any
+; other.
+function pseudo_field(name: Slice[u8]) returns int
+{
+    if name.equals(":method")
+        return 1
+    if name.equals(":path")
+        return 2
+    if name.equals(":authority")
+        return 3
+    0
+}
+
+; Is a (lowercase) field one HTTP/1.1 frames itself, which the text of a
+; translated request leaves out?
+function framing_field(name: Slice[u8]) returns bool
+{
+    match name.length
+        case 4: return name.equals("host")
+        case 10: return name.equals("connection")
+        case 14: return name.equals("content-length")
+        case 17: return name.equals("transfer-encoding")
+    false
+}
+
+; A request without a body straight from its decoded fields: method,
+; target, path and query as views into them, the other fields as the lines
+; of req.fields in `text` -- what parse_request makes of the text
+; fields_request_text writes, without the text and the parse (together
+; they were a tenth of the server's samples in baseline-h2, 2026-09-30).
+; False where fields_request_text is: no :method or :path (a byte the text
+; cannot carry the HPACK decoder refused already); and for a method or
+; target with a space, or a head larger than parse_request takes.
+procedure request_from_fields(fields: ref[HeaderList], mutable text: ref[ByteBuf], mutable req: ref[Request]) returns bool
+{
+    var method: Slice[u8] ""
+    var target: Slice[u8] ""
+    text.clear()
+    var i: size_t 0
+    while i < fields.count()
+    {
+        let name fields.name(i)
+        let value fields.value(i)
+        if name.length = 0
+            return false
+        if name[0] = 58
+        {
+            let kind pseudo_field(name)
+            if kind = 1
+                set method: value
+            else if kind = 2
+                set target: value
+            else if kind = 3 and value.length > 0
+            {
+                text.append("host: ")
+                text.append(value)
+                text.append("\r\n")
+            }
+        }
+        else if framing_field(name) = false
+        {
+            text.append(name)
+            text.append(": ")
+            text.append(value)
+            text.append("\r\n")
+        }
+        set i: i + 1
+    }
+    if method.length = 0 or target.length = 0 or index_of(method, 32) >= 0 or index_of(target, 32) >= 0
+        return false
+    if text.length + method.length + target.length > MAX_HEAD
+        return false
+    set req.method: method
+    set req.target: target
+    let q index_of(target, 63)
+    if q >= 0
+    {
+        set req.path: target.slice_to(q as size_t)
+        set req.query: target.slice_from((q as size_t) + 1)
+    }
+    else
+    {
+        set req.path: target
+        set req.query: target.slice_from(target.length)
+    }
+    set req.fields: text.bytes()
+    set req.body: target.slice_to(0)
+    set req.minor: 1
+    set req.keep_alive: true
     true
 }
 
@@ -536,27 +644,52 @@ define H2Conn
         after
     }
 
-    ; The HTTP/1.1 response in `response` as frames on `stream`, then the
-    ; trailer lines when there are any.
-    procedure respond(mutable this, stream: u64, mutable response: Slice[u8], mutable trailers: Slice[u8])
+    ; An HPACK-coded header block as a HEADERS frame on `stream`, and
+    ; CONTINUATION frames when it is larger than the peer's frame limit.
+    procedure block_frames(mutable this, stream: u64, block: Slice[u8], end_stream: bool)
     {
-        ; "HTTP/1.1 200 OK\r\n", then the fields, a blank line and the body
-        var status: i64 0
-        if response.length > 12
-            set status: ((response[9] - 48) as i64) * 100 + ((response[10] - 48) as i64) * 10 + ((response[11] - 48) as i64)
-        var at: size_t 0
-        while at + 1 < response.length and (response[at] <> 13 or response[at + 1] <> 10)
-            set at: at + 1
+        var off: size_t 0
+        repeat
+        {
+            var n block.length - off
+            if n > peer_max_frame
+                set n: peer_max_frame
+            var kind: u8 9
+            var flags: u8 0
+            if off = 0
+            {
+                set kind: 1
+                if end_stream
+                    set flags: 1
+            }
+            if off + n = block.length
+                set flags: flags | 4
+            frame_head(&frames, n, kind, flags, stream)
+            frames.append(block.subslice(off, off + n))
+            set off: off + n
+            if off >= block.length
+                break
+        }
+    }
+
+    ; The response res wrote into `out` (in HPACK mode: its header block,
+    ; then its body) as frames on `stream`, then its trailer lines when there
+    ; are any.
+    procedure respond(mutable this, stream: u64, mutable res: ref[Response], mutable out: Slice[u8])
+    {
+        var block_at res.block_at
+        var body_at res.body_at
+        if body_at > out.length
+            set body_at: out.length
+        if block_at > body_at
+            set block_at: body_at
+        let trailers res.trailers.bytes()
         let has_trailers trailers.length > 0
-        ; the body follows the blank line: whether the HEADERS end the stream
-        var blank at
-        while blank + 3 < response.length and (response[blank] <> 13 or response[blank + 1] <> 10 or response[blank + 2] <> 13 or response[blank + 3] <> 10)
-            set blank: blank + 1
-        let bodiless blank + 4 >= response.length and has_trailers = false
-        let body_at this.headers_frame(stream, status, response, at + 2, bodiless)
+        let body out.slice_from(body_at)
+        let bodiless body.length = 0 and has_trailers = false
+        this.block_frames(stream, out.subslice(block_at, body_at), bodiless)
         if bodiless
             return
-        var body response.slice_from(body_at)
         let page Page.allocate_page()
         var p &H2Pending^page(stream, page, body, 0, peer_window, has_trailers = false, trailers)
         if this.push_data(p)
@@ -567,7 +700,7 @@ define H2Conn
             return
         }
         ; the rest waits: its own copy of the body and the trailers, since
-        ; `response` and the trailers are reused
+        ; the output buffer and the trailers are reused
         let rest allocate_slice[u8]^page(page, body.length)
         memcpy(rest.data as pointer[void], body.data as pointer[void], body.length)
         let kept allocate_slice[u8]^page(page, trailers.length)
@@ -592,7 +725,7 @@ define H2Conn
             }
             outb.clear()
             dispatch(router, req, res)
-            this.respond(stream, outb.bytes(), res.trailers.bytes())
+            this.respond(stream, res, outb.bytes())
             outb.clear()
             return
         }
@@ -601,6 +734,32 @@ define H2Conn
         t.append(text.bytes())
         let job &H2Job^page(stream, page, t, router, null, null, null, false, false, null)
         jobs.add(job)
+    }
+
+    ; Answer the request without a body in `fields` on `stream`: at once,
+    ; from the fields (request_from_fields), unless its route waits -- that
+    ; one takes answer's way, as text for a task of its own.
+    procedure answer_fields(mutable this, stream: u64, router: ref[Router], mutable req: ref[Request], mutable res: ref[Response], mutable outb: ref[ByteBuf])
+    {
+        if request_from_fields(&fields, &text, req) = false
+        {
+            this.reset_stream(stream, 1)
+            return
+        }
+        if router.route_waits(req.method, req.path)
+        {
+            if this.request_text(false) = false
+            {
+                this.reset_stream(stream, 1)
+                return
+            }
+            this.answer(stream, router, req, res, outb)
+            return
+        }
+        outb.clear()
+        dispatch(router, req, res)
+        this.respond(stream, res, outb.bytes())
+        outb.clear()
     }
 
     ; Answer the queued requests -- those whose route waits: each starts in
@@ -621,7 +780,9 @@ define H2Conn
             let own_out &ByteBuf^page(page, allocate_slice[u8]^page(page, 4096), 0, false)
             set job.outb: own_out
             set job.req: &Request^page(null, null, null, null, null, null, 1, true, null)
-            set job.res: Response.create(page, own_out)
+            let jres Response.create(page, own_out)
+            set jres.hpack: true
+            set job.res: jres
             set job.waiting: true
             set job.outstanding: &outstanding
             set outstanding: outstanding + 1
@@ -640,7 +801,7 @@ define H2Conn
                 {
                     let jres job.res as ref[Response]
                     let jout job.outb as ref[ByteBuf]
-                    this.respond(job.id, jout.bytes(), jres.trailers.bytes())
+                    this.respond(job.id, jres, jout.bytes())
                 }
                 else
                     this.reset_stream(job.id, 1)
@@ -666,14 +827,14 @@ define H2Conn
             return false
         if stream > last_stream
             set last_stream: stream
-        if this.request_text(end_stream = false) = false
-        {
-            this.reset_stream(stream, 1)
-            return true
-        }
         if end_stream
         {
-            this.answer(stream, router, req, res, outb)
+            this.answer_fields(stream, router, req, res, outb)
+            return true
+        }
+        if this.request_text(true) = false
+        {
+            this.reset_stream(stream, 1)
             return true
         }
         ; the body follows in DATA frames: keep the head on a page of its own
@@ -894,6 +1055,7 @@ procedure self_block_start(mutable block: ref[ByteBuf], fragment: Slice[u8])
 procedure serve_h2[S](mutable c: ref[S], router: ref[Router], host: ref[Page], mutable inb: ref[ByteBuf], mutable req: ref[Request], mutable res: ref[Response], mutable outb: ref[ByteBuf])
 {
     var h H2Conn.create(host)
+    set res.hpack: true
     h.greet()
     var preface_done false
     repeat

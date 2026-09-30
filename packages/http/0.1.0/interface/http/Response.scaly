@@ -7,6 +7,13 @@
 ;   res.set_status(201)                           ; before anything else
 ;   res.header("x-cache", "HIT")                   ; any number of fields
 ;   res.send("application/json", body)             ; ends the response
+;
+; Over HTTP/2 (hpack set by the connection) the same calls write the header
+; block HPACK-coded instead -- :status, date, the fields, content-type and
+; -length -- and the body behind it (block_at .. body_at, then the body):
+; the connection frames them as they stand, where it used to parse the
+; HTTP/1.1 text back and encode it (2026-09-30: a fifth of the server's
+; samples in baseline-h2).
 
 use http.Buffer.ByteBuf
 use http.Request.Request
@@ -32,6 +39,9 @@ define Response
     var head_only: bool          ; a HEAD request: everything but the body
     trailers: ref[ByteBuf]       ; "name: value\r\n" lines sent after the body (HTTP/2 only)
     var websocket: pointer[void] ; the message handler of an accepted WebSocket upgrade
+    var hpack: bool              ; HTTP/2: the head is an HPACK block
+    var block_at: size_t         ; where the HPACK block starts in out
+    var body_at: size_t          ; where the body starts in out (HPACK)
 )
 {
     ; A connection's response on its page, writing into out: the 200 head
