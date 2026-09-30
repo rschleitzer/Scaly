@@ -12,22 +12,23 @@ name: bench-http
 # runner's CPU).
 #
 # Manual only, like seed.yml: `gh workflow run bench-http`
-# (`-f frameworks="scaly tokio"` to run fewer). The others, by where they
-# stand on the board at the pinned commit. Scaly's own pool, the frameworks
-# (flagship, emerging and experimental, scored together): swerver (first
-# of them in baseline, static-h2, static-h3 and unary-grpc), genhttp-ioxide
-# (first in baseline-h2), bun (first in baseline-h3), actix (one framework
-# covering json-comp, async-db and h2 at once). The upper bound, from the
-# other pools: the engines zix (first in baseline, pipelined, json-comp,
-# async-db), tokio (pipelined, limited-conn), cardigan (unary-grpc,
-# baseline-h2) and tokio-ws (echo-ws), and the infrastructure entry nginx
-# (baseline-h3, static-h3).
+# (`-f frameworks="scaly tokio"` to run others). By default Scaly's own
+# pool, the frameworks (flagship, emerging and experimental, scored
+# together), by where they stand on the board at the pinned commit: swerver
+# (first of them in baseline, static-h2, static-h3 and unary-grpc),
+# genhttp-ioxide (first in baseline-h2), bun (first in baseline-h3), actix
+# (one framework covering json-comp, async-db and h2 at once). The upper
+# bound, from the other pools, on request -- ten entries with the extra
+# profiles outrun the job's three hours (2026-09-30): the engines zix
+# (first in baseline, pipelined, json-comp, async-db), tokio (pipelined,
+# limited-conn), cardigan (unary-grpc, baseline-h2) and tokio-ws (echo-ws),
+# and the infrastructure entry nginx (baseline-h3, static-h3).
 on:
   workflow_dispatch:
     inputs:
       frameworks:
         description: frameworks to run, space-separated
-        default: scaly swerver genhttp-ioxide bun actix zix tokio nginx cardigan tokio-ws
+        default: scaly swerver genhttp-ioxide bun actix
 
 env:
   HTTPARENA_COMMIT: 484dea6
@@ -50,6 +51,34 @@ jobs:
           git clone --filter=blob:none https://github.com/MDA2AV/HttpArena.git "$RUNNER_TEMP/ha"
           git -C "$RUNNER_TEMP/ha" checkout -q "$HTTPARENA_COMMIT"
           echo "HA=$RUNNER_TEMP/ha" >> "$GITHUB_ENV"
+
+      # The scored profiles benchmark-lite.sh leaves out (ROADMAP-http.md,
+      # "The rest of the scored profiles"), in lite's style: no pinning, one
+      # connection count, async at 4096 connections instead of 32 000. The
+      # latency profiles stay out: their pinned 1M req/s is beyond a runner.
+      - name: Lite extras
+        run: |
+          python3 - "$HA/scripts/benchmark-lite.sh" <<'EOF'
+          import sys
+          path = sys.argv[1]
+          s = open(path).read()
+          extra = [
+              ("json-tls", "1|0||512|json-tls"),
+              ("static-tls", "1|200||512|static-tls"),
+              ("async", "1|0||4096|async"),
+              ("baseline-h2c", "1|0||512|h2c"),
+              ("json-h2c", "1|0||512|json-h2c"),
+              ("echo-ws-pipeline", "16|0||512|ws-echo"),
+              ("echo-ws-limited", "1|10||512|ws-echo"),
+          ]
+          profiles = '    [echo-ws]="1|0||512|ws-echo"\n'
+          order = "    echo-ws\n)"
+          assert s.count(profiles) == 1 and s.count(order) == 1, "benchmark-lite.sh changed shape"
+          s = s.replace(profiles, profiles + "".join('    [%s]="%s"\n' % e for e in extra))
+          s = s.replace(order, "    echo-ws\n    " + " ".join(n for n, _ in extra) + "\n)")
+          open(path, "w").write(s)
+          EOF
+          sed -n '/^PROFILE_ORDER=(/,/^)/p' "$HA/scripts/benchmark-lite.sh"
 
       # The entry's directory: meta.json and a build.sh that builds the
       # image from this checkout. benchmark-lite.sh refuses a meta.json that
