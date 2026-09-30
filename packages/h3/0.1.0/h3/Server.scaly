@@ -73,6 +73,9 @@ define TRAIN_SEGMENTS: int 64
 ; version of the trains lost a fortieth of them to it, and throughput
 ; halved while ngtcp2 waited to send them again).
 define TRAIN_BYTES: size_t 65000
+; How long after the last datagram in or out a thread keeps napping a
+; millisecond between rounds (h3_idle) before it waits in the poller.
+define H3_BUSY_NS: i64 50000000
 
 ; What the h3 threads serve: set once by start_h3, before the threads.
 shared atomic h3_router: u64 0
@@ -841,10 +844,61 @@ procedure h3_answer_ready(mutable l: ref[QListener], mutable c: ref[QConn])
     }
 }
 
-; The h3 task of a thread: every connection, round after round.
-procedure h3_loop()
+; A round with nothing received and nothing sent: the thread's ready tasks
+; run, else -- while there was traffic in the last H3_BUSY_NS -- it sleeps a
+; millisecond as before, so that a round takes the datagrams of a
+; millisecond at once: woken for every datagram, each round walking every
+; connection, baseline-h3 cost the server 16-18 % more CPU per request.
+; Quiet longer than that, it waits in the poller for a datagram or the
+; earliest timer of its connections (ngtcp2's expiry, pacing included), at
+; most a second: the socket is armed (oneshot, the main context's null tag)
+; and stays armed until a datagram fires it -- or a nap's poll may have
+; taken that event, so after a nap it is armed again (on io_uring each arm
+; is one more pending poll, all of them ending with the next datagram:
+; one per quiet spell at most). Until 2026-09-30 every
+; such round slept a millisecond: a thousand wake-ups a second on every
+; core, 17 % of a core with no client at all -- the standing cost
+; latency-10k charges, where HTTP/3 is idle.
+procedure h3_idle(fd: i32, l: ref[QListener], mutable armed: ref[bool], busy_at: i64)
 {
-    let fd ((Scheduler.task_arg() as size_t) as i64) as i32
+    if Scheduler.step()
+        return
+    if scaly_eio_now_ns() - busy_at < H3_BUSY_NS
+    {
+        Scheduler.sleep(1)
+        set armed: false
+        return
+    }
+    if armed = false
+    {
+        if scaly_eio_arm(Io.ensure_poll(), fd, 0, null) <> 0
+        {
+            Scheduler.sleep(1)
+            return
+        }
+        set armed: true
+    }
+    var deadline: u64 (scaly_eio_now_ns() + 1000000000) as u64
+    var i: size_t 0
+    while i < l.conns.length
+    {
+        let found: ref[QConn]? l.conns[i]
+        if found <> null
+        {
+            let e ngtcp2_conn_get_expiry(found.conn)
+            if e < deadline
+                set deadline: e
+        }
+        set i: i + 1
+    }
+    if Scheduler.poll_io_by(deadline as i64)
+        set armed: false
+}
+
+; The h3 loop of a thread, on its main context: every connection, round
+; after round.
+procedure h3_loop(fd: i32)
+{
     let ctx (scaly_atomic_load_u64(&h3_ctx) as size_t) as SslCtxRef
     let router (scaly_atomic_load_u64(&h3_router) as size_t) as ref[Router]
     let host Page.allocate_page()
@@ -856,6 +910,8 @@ procedure h3_loop()
     var local_length: size_t 0
     scaly_eio_sockname(fd, l.local.data as pointer[void], ADDR_CAP, &local_length)
     set l.local_length: local_length
+    var armed false
+    var busy_at: i64 0
     repeat
     {
         var got 0
@@ -895,8 +951,10 @@ procedure h3_loop()
             }
             set i: i + 1
         }
-        if got = 0 and active = false
-            Scheduler.sleep(1)
+        if got > 0 or active
+            set busy_at: now as i64
+        else
+            h3_idle(fd, l, &armed, busy_at)
     }
 }
 
@@ -904,8 +962,7 @@ procedure h3_thread(mutable arg: pointer[void]) returns pointer[void]
 {
     let page Page.allocate_page()
     let sched Scheduler.create(page)
-    Scheduler.spawn_arg(&h3_loop, arg)
-    Scheduler.run()
+    h3_loop(((arg as size_t) as i64) as i32)
     null
 }
 

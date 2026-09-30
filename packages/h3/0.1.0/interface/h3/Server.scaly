@@ -73,6 +73,9 @@ define TRAIN_SEGMENTS: int 64
 ; version of the trains lost a fortieth of them to it, and throughput
 ; halved while ngtcp2 waited to send them again).
 define TRAIN_BYTES: size_t 65000
+; How long after the last datagram in or out a thread keeps napping a
+; millisecond between rounds (h3_idle) before it waits in the poller.
+define H3_BUSY_NS: i64 50000000
 
 ; What the h3 threads serve: set once by start_h3, before the threads.
 shared atomic h3_router: u64 linked
@@ -273,10 +276,28 @@ procedure h3_flush(mutable l: ref[QListener], mutable c: ref[QConn], now: u64) @
 ; Answer a connection's complete requests, as the budget allows.
 procedure h3_answer_ready(mutable l: ref[QListener], mutable c: ref[QConn]) @deep true @deep_this_2 true linked
 
-; The h3 task of a thread: every connection, round after round.
-procedure h3_loop() @deep true io reads h3_ctx linked
+; A round with nothing received and nothing sent: the thread's ready tasks
+; run, else -- while there was traffic in the last H3_BUSY_NS -- it sleeps a
+; millisecond as before, so that a round takes the datagrams of a
+; millisecond at once: woken for every datagram, each round walking every
+; connection, baseline-h3 cost the server 16-18 % more CPU per request.
+; Quiet longer than that, it waits in the poller for a datagram or the
+; earliest timer of its connections (ngtcp2's expiry, pacing included), at
+; most a second: the socket is armed (oneshot, the main context's null tag)
+; and stays armed until a datagram fires it -- or a nap's poll may have
+; taken that event, so after a nap it is armed again (on io_uring each arm
+; is one more pending poll, all of them ending with the next datagram:
+; one per quiet spell at most). Until 2026-09-30 every
+; such round slept a millisecond: a thousand wake-ups a second on every
+; core, 17 % of a core with no client at all -- the standing cost
+; latency-10k charges, where HTTP/3 is idle.
+procedure h3_idle(fd: i32, l: ref[QListener], mutable armed: ref[bool], busy_at: i64) @deep true io linked
 
-procedure h3_thread(mutable arg: pointer[void]) @ret_nonlocal true @deep true returns pointer[void] io linked
+; The h3 loop of a thread, on its main context: every connection, round
+; after round.
+procedure h3_loop(fd: i32) @deep true io reads h3_ctx linked
+
+procedure h3_thread(mutable arg: pointer[void]) @ret_nonlocal true @deep true returns pointer[void] io reads h3_ctx linked
 
 ; ALPN for HTTP/3: h3 when the client offers it, else nothing.
 procedure h3_alpn_select(ssl: pointer[void], mutable selected: pointer[pointer[u8]], mutable selected_length: pointer[u8], offered: pointer[u8], offered_length: u32, arg: pointer[void]) @deep true returns i32 linked

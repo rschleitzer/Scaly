@@ -454,7 +454,8 @@ function scaly_aligned_alloc(alignment: i64, size: i64) returns pointer[void] ex
 ; a deadlock, never invents one); `blocked` counts threads currently
 ; inside a channel-motivated poller wait; `epoch` is bumped on every event
 ; that could wake such a waiter (a queued send, a close, a routed task).
-; A channel wait is BOUNDED (CHAN_DEADLOCK_MS): on timeout, if no channel
+; A channel wait is BOUNDED (CHAN_DEADLOCK_MS, doubling while nothing
+; happens up to CHAN_QUIET_MAX_MS -- Scheduler.quiet_ms): on timeout, if no channel
 ; event occurred while we waited (epoch unchanged) AND every live thread
 ; is blocked on a channel (`blocked >= threads`), no send/wake can ever
 ; arrive, so it is a genuine deadlock → exit 106. Sound because a thread
@@ -471,10 +472,17 @@ define DeadlockState
     epoch: u64
 )
 
-; Bounded channel-wait timeout: long enough that the idle re-check cost is
-; nil (a real wake pokes the poller and returns at once; the timeout only
-; bounds detection latency), short enough that a deadlock traps promptly.
+; Bounded channel-wait timeout: a real wake pokes the poller and returns at
+; once, so the timeout only bounds detection latency; short enough that a
+; deadlock traps promptly. A wait that times out with nothing moved doubles
+; the next one, up to CHAN_QUIET_MAX_MS, and any event brings it back: a
+; deadlock right after work still traps within CHAN_DEADLOCK_MS, one in a
+; process quiet for seconds within CHAN_QUIET_MAX_MS. Fixed at 100 ms, every
+; idle scheduler woke ten times a second: 37 threads of an idle HTTP server
+; spent 10 ms of CPU a second doing it (2026-09-30, the standing cost
+; HttpArena's latency-10k charges).
 define CHAN_DEADLOCK_MS i32 100
+define CHAN_QUIET_MAX_MS i32 3200
 
 ; Process-global — NOT thread_local (`shared` declaration, like the heap
 ; tracer). Allocated once, single-threaded, on first touch (the
@@ -1044,6 +1052,7 @@ define Scheduler
     var watch_cap: size_t
     var yields: int                  ; Scheduler.yield calls since step last polled
     var main_woke: bool              ; step's poll took the main context's event
+    var quiet_ms: i32                ; the next channel-motivated wait's bound
 )
 {
     ; Create the scheduler on the given page and make it current. All
@@ -1051,7 +1060,7 @@ define Scheduler
     ; so they survive any spawning fiber's region teardown.
     procedure create(host: ref[Page]) returns ref[Scheduler]
     {
-        let s &Scheduler^host(host, null, null, 0, (0 - 1) as i32, 0, (0 - 1) as i32, 0, 0, null, null, 0, null, null, 0, 0, false)
+        let s &Scheduler^host(host, null, null, 0, (0 - 1) as i32, 0, (0 - 1) as i32, 0, 0, null, null, 0, null, null, 0, 0, false, CHAN_DEADLOCK_MS)
         set current_scheduler: s as pointer[void]
         s
     }
@@ -1556,7 +1565,8 @@ define Scheduler
                 let tp &d.threads
                 let e0 scaly_atomic_load_u64(ep)
                 scaly_atomic_add_u64(bp, 1 as u64)
-                set n: scaly_eio_wait_timeout(s.eio, tagbuf as pointer[pointer[void]], 64 as i32, CHAN_DEADLOCK_MS)
+                set n: scaly_eio_wait_timeout(s.eio, tagbuf as pointer[pointer[void]], 64 as i32, s.quiet_ms)
+                var moved true
                 if n = 0
                 {
                     let e1 scaly_atomic_load_u64(ep)
@@ -1566,8 +1576,13 @@ define Scheduler
                         let nt scaly_atomic_load_u64(tp)
                         if nb >= nt
                             scaly_panic_deadlock("Scheduler.poll_io", 106 as i32)
+                        set moved: false
                     }
                 }
+                if moved
+                    set s.quiet_ms: CHAN_DEADLOCK_MS
+                else if s.quiet_ms < CHAN_QUIET_MAX_MS
+                    set s.quiet_ms: s.quiet_ms * 2
                 scaly_atomic_add_u64(bp, (0 as u64) - (1 as u64))
             }
         }

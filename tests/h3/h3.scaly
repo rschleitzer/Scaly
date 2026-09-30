@@ -13,8 +13,11 @@
 ;              relative to its Base and past it (post-base) and is answered
 ;              from them; the server acknowledges that field section and no
 ;              other
+;   quiet      300 ms without a datagram (the server's threads then wait in
+;              the poller instead of napping), and one more request, which
+;              must come back within 500 ms: the socket was armed again
 ; Arguments: the certificate, its key, a UDP port.
-; Expected: handshake streams dynamic
+; Expected: handshake streams dynamic quiet
 
 package scaly 0.1.0
 package http 0.1.0
@@ -285,6 +288,10 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
     var opened false
     var dynamic_sent false
     var dynamic_id: i64 0
+    var calm_at: i64 0
+    var quiet_sent false
+    var quiet_sent_at: i64 0
+    var quiet_took: i64 0
     var finished false
     while finished = false and scaly_eio_now_ns() < deadline
     {
@@ -426,6 +433,26 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
         ; the section acknowledgment may come after the response
         if finished and decoder_said(client, &increments, &acks, &ack_ids) and acks = 0
             set finished: false
+        if finished and quiet_sent = false
+        {
+            set finished: false
+            let t scaly_eio_now_ns()
+            if calm_at = 0
+                set calm_at: t
+            else if t - calm_at > 300000000
+            {
+                var qid: i64 0
+                ngtcp2_conn_open_bidi_stream(conn, &qid, null)
+                let qp Page.allocate_page()
+                var q &CStream^qp(qid, ByteBuf.create(qp, 256), 0, false, ByteBuf.create(qp, 1024), false, true)
+                request_frame(&q.request, "/sum?a=2&b=3")
+                client.streams.add(q)
+                set quiet_sent: true
+                set quiet_sent_at: t
+            }
+        }
+        if finished and quiet_took = 0
+            set quiet_took: scaly_eio_now_ns() - quiet_sent_at
         if finished = false
             Scheduler.sleep(1)
     }
@@ -470,6 +497,15 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
         print "dynamic: status `hdr_status`, `hdr_body.length` bytes, increments `increments`, acks `acks` for `ack_ids` (stream `dynamic_id`)"
         return 9
     }
-    Console.print "dynamic"
+    Console.print "dynamic "
+    let s5: ref[CStream] client.streams[5]
+    var quiet_body ByteBuf.create(bh, 16)
+    let quiet_status response_of(s5.response.bytes(), &quiet_body)
+    if quiet_status <> 200 or quiet_body.bytes().equals("5") = false or quiet_took > 500000000
+    {
+        print "quiet: status `quiet_status`, `quiet_body.length` bytes, after `quiet_took / 1000000` ms"
+        return 10
+    }
+    Console.print "quiet"
     0
 }
