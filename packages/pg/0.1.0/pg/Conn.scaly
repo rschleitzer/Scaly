@@ -16,6 +16,10 @@
 use pg.Buf.PgBuf
 use pg.Scram.ScramClient
 
+; The columns of a row next_row measures (column(i) walks the lengths for
+; one beyond them).
+define PG_ROW_INDEX: size_t 64
+
 define PgConn
 (
     host: ref[Page]
@@ -40,6 +44,14 @@ define PgConn
     var error_length: size_t
     ; the statements prepared on this connection
     var prepared: Array[String]
+    ; the current row's columns, measured once by next_row: where each
+    ; one's bytes start in inb and its length (-1: NULL), for the first
+    ; PG_ROW_INDEX of them -- column(i) walked every length before i, and
+    ; be_i32 was a tenth of the server's samples under async-db
+    ; (2026-09-30)
+    var col_start: Slice[u32]
+    var col_len: Slice[i32]
+    var col_count: size_t
 )
 {
     ; Connect and authenticate; not is_open() when the server cannot be
@@ -55,7 +67,7 @@ define PgConn
             return null
         }
         tcp.set_nodelay(true)
-        let c &PgConn^page(page, tcp, PgBuf.create(page, 8192), PgBuf.create(page, 1024), true, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Array[String]^page())
+        let c &PgConn^page(page, tcp, PgBuf.create(page, 8192), PgBuf.create(page, 1024), true, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Array[String]^page(), allocate_slice[u32]^page(page, PG_ROW_INDEX), allocate_slice[i32]^page(page, PG_ROW_INDEX), 0)
         if c.startup(user, password, database) = false
         {
             c.close()
@@ -348,6 +360,7 @@ define PgConn
             if t = 68
             {
                 set row_start: at
+                this.index_row(b)
                 return true
             }
             if t = 90
@@ -380,10 +393,39 @@ define PgConn
         0
     }
 
+    ; Measure the current row's columns once (the first PG_ROW_INDEX).
+    procedure index_row(mutable this, b: Slice[u8])
+    {
+        var n be_u16(b, row_start) as size_t
+        if n > col_start.length
+            set n: col_start.length
+        var at row_start + 2
+        var k: size_t 0
+        while k < n
+        {
+            let len be_i32(b, at)
+            col_start.put(k, (at + 4) as u32)
+            col_len.put(k, len as i32)
+            set at: at + 4
+            if len > 0
+                set at: at + (len as size_t)
+            set k: k + 1
+        }
+        set col_count: n
+    }
+
     ; Column i of the current row as text; empty for NULL.
     function column(this, i: int) returns Slice[u8]
     {
         let b inb.bytes()
+        if i >= 0 and (i as size_t) < col_count
+        {
+            let len col_len[i as size_t]
+            if len < 0
+                return b.slice_to(0)
+            let start col_start[i as size_t] as size_t
+            return b.subslice(start, start + (len as size_t))
+        }
         let n be_u16(b, row_start)
         if (i as i64) >= n
             return b.slice_to(0)

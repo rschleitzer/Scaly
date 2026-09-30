@@ -9,10 +9,12 @@
 ;   grow     4 KB of output: the buffer outgrows the bump range into its
 ;            own page
 ;   string   quote and stringify, the StringBuilder forms: the same text
-;   blocks   the in-place path around its 16-byte steps: every length 0 to
-;            40, plain and with a quote, a backslash, a line feed or 0x01 at
-;            every position, and a two-byte UTF-8 character -- the same text
-;            as the StringBuilder form, in a writer that already holds text
+;   blocks   the in-place path around its 16- and 8-byte steps: every length
+;            0 to 40, plain and with a quote, a backslash, a line feed, 0x01
+;            or 0x1F at every position, their plain neighbours (0x20, 0x21,
+;            0x23, 0x5B, 0x5D, 0x7F, 0xFF) and a two-byte UTF-8 character --
+;            the same text as the StringBuilder form, in a writer that
+;            already holds text
 ;   verbatim parsed strings written back unlooked-at, sixteen bytes a step:
 ;            every length 0 to 40 as the whole document (its last byte is
 ;            the document's, the step reads into the padding), in an array
@@ -28,7 +30,7 @@ use json.Value.JsonParsed
 use json.Writer.JsonWriter
 
 ; the blocks case's bytes: a plain one, then the ones that need care
-define SPECIALS: u8[] [0x61, 0x22, 0x5C, 0x0A, 0x01, 0xC3]
+define SPECIALS: u8[] [0x61, 0x22, 0x5C, 0x0A, 0x01, 0xC3, 0x1F, 0x20, 0x21, 0x23, 0x5B, 0x5D, 0x7F, 0xFF]
 
 procedure same(w: ref[JsonWriter], want: Slice[u8]) returns bool
 {
@@ -203,7 +205,7 @@ while n <= 40
     while at <= n
     {
         var k: size_t 0
-        while k < 6
+        while k < 14
         {
             ; n bytes of 'b' with SPECIALS[k] at `at` (none when at = n);
             ; 0xC3 is followed by 0xA9, a whole character

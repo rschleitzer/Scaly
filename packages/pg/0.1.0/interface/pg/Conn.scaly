@@ -16,6 +16,10 @@
 use pg.Buf.PgBuf
 use pg.Scram.ScramClient
 
+; The columns of a row next_row measures (column(i) walks the lengths for
+; one beyond them).
+define PG_ROW_INDEX: size_t 64
+
 define PgConn
 @resident true @inplace true (
     host: ref[Page]
@@ -40,6 +44,14 @@ define PgConn
     var error_length: size_t
     ; the statements prepared on this connection
     var prepared: Array[String]
+    ; the current row's columns, measured once by next_row: where each
+    ; one's bytes start in inb and its length (-1: NULL), for the first
+    ; PG_ROW_INDEX of them -- column(i) walked every length before i, and
+    ; be_i32 was a tenth of the server's samples under async-db
+    ; (2026-09-30)
+    var col_start: Slice[u32]
+    var col_len: Slice[i32]
+    var col_count: size_t
 )
 {
     ; Connect and authenticate; not is_open() when the server cannot be
@@ -97,6 +109,9 @@ define PgConn
     ; The row count the last run()'s CommandComplete names ("UPDATE 3": 3),
     ; 0 when it names none.
     function affected(this) @ret_nonlocal true @deep true returns i64 linked
+
+    ; Measure the current row's columns once (the first PG_ROW_INDEX).
+    procedure index_row(mutable this, b: Slice[u8]) @deep true linked
 
     ; Column i of the current row as text; empty for NULL.
     function column(this, i: int) @page true @direct true @ret_param_0 true @deep true returns Slice[u8] linked

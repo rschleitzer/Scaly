@@ -457,11 +457,36 @@ define JsonWriter
             }
             set i: i + 16
         }
-        while i < n and JsonWriter.plain(s[i])
+        ; the rest (a short string is all rest: keys, names): its plain
+        ; bytes counted, then copied in one go -- a put each, bounds
+        ; checked, made quoted a sixth of the server's samples under
+        ; async-db, thirteen strings a row (2026-09-30)
+        let bytes: Slice[u8] s
+        var j i
+        ; eight bytes a step while eight remain (SWAR on a little-endian
+        ; word): a byte below 0x20, a quote or a backslash sets the high bit
+        ; of some lane of `hits` -- exact about whether one is there, and
+        ; the byte loop below finds which. A byte at a time, nine
+        ; instructions each, was most of quoted's samples: keys and names
+        ; are short (2026-09-30).
+        while j + 8 <= n
         {
-            out.put(i + 1, s[i])
-            set i: i + 1
+            let p bytes.data + j
+            let w (*p as u64) | ((*(p + 1) as u64) << 8) | ((*(p + 2) as u64) << 16) | ((*(p + 3) as u64) << 24) | ((*(p + 4) as u64) << 32) | ((*(p + 5) as u64) << 40) | ((*(p + 6) as u64) << 48) | ((*(p + 7) as u64) << 56)
+            let quote w xor 0x2222222222222222
+            let back w xor 0x5C5C5C5C5C5C5C5C
+            let below (w - 0x2020202020202020) & (w xor 0xFFFFFFFFFFFFFFFF)
+            let q (quote - 0x0101010101010101) & (quote xor 0xFFFFFFFFFFFFFFFF)
+            let b (back - 0x0101010101010101) & (back xor 0xFFFFFFFFFFFFFFFF)
+            if ((below | q | b) & 0x8080808080808080) <> 0
+                break
+            set j: j + 8
         }
+        while j < n and JsonWriter.plain(bytes[j])
+            set j: j + 1
+        if j > i
+            memcpy(out.slice_from(i + 1).data as pointer[void], bytes.slice_from(i).data as pointer[void], j - i)
+        set i: j
         if i = n
         {
             out.put(n + 1, 0x22)
