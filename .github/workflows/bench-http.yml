@@ -17,18 +17,19 @@ name: bench-http
 # together), by where they stand on the board at the pinned commit: swerver
 # (first of them in baseline, static-h2, static-h3 and unary-grpc),
 # genhttp-ioxide (first in baseline-h2), bun (first in baseline-h3), actix
-# (one framework covering json-comp, async-db and h2 at once). The upper
-# bound, from the other pools, on request -- ten entries with the extra
-# profiles outrun the job's three hours (2026-09-30): the engines zix
-# (first in baseline, pipelined, json-comp, async-db), tokio (pipelined,
-# limited-conn), cardigan (unary-grpc, baseline-h2) and tokio-ws (echo-ws),
-# and the infrastructure entry nginx (baseline-h3, static-h3).
+# (one framework covering json-comp, async-db and h2 at once). And the upper
+# bound: the engine zix, first on the whole board in baseline, pipelined,
+# json-comp, async-db, static-h2 and baseline-h3. The rest of the other
+# pools on request -- ten entries with the extra profiles outrun the job's
+# three hours (2026-09-30): the engines tokio (pipelined, limited-conn),
+# cardigan (unary-grpc, baseline-h2) and tokio-ws (echo-ws), and the
+# infrastructure entry nginx (baseline-h3, static-h3).
 on:
   workflow_dispatch:
     inputs:
       frameworks:
         description: frameworks to run, space-separated
-        default: scaly swerver genhttp-ioxide bun actix
+        default: scaly zix swerver genhttp-ioxide bun actix
 
 env:
   HTTPARENA_COMMIT: 484dea6
