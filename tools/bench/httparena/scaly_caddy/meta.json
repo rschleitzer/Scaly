@@ -1,7 +1,7 @@
 {
   "display_name": "scaly-http + caddy",
   "language": "Scaly",
-  "type": "experimental",
+  "type": "emerging",
   "engine": "scaly",
   "mode": "standard",
   "description": "The Scaly entry's server behind Caddy, serving HTTP/3 (QUIC) at the edge and forwarding the dynamic routes to the Scaly http package over HTTP/1.1.",
