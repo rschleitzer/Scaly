@@ -50,8 +50,14 @@ define ADDR_CAP: size_t 128
 ; response at once: 64 connections of 64 streams of static files, static-h3
 ; at 2 GiB (2026-09-30).
 define H3_OUTPUT_BUDGET: size_t 4194304
-; Packets one connection sends in a round before the others get theirs.
+; Packets one connection sends in a round before the others get theirs,
+; and the most one train of them carries (Linux's UDP GSO: 64 segments).
 define PACKETS_PER_ROUND: int 64
+define TRAIN_SEGMENTS: int 64
+; A train is one UDP send of at most 64 KiB (more is EMSGSIZE; the first
+; version of the trains lost a fortieth of them to it, and throughput
+; halved while ngtcp2 waited to send them again).
+define TRAIN_BYTES: size_t 65000
 
 ; What the h3 threads serve: set once by start_h3, before the threads.
 shared atomic h3_router: u64 linked
@@ -86,6 +92,8 @@ define QStream
     var complete: bool
     var answered: bool
     var in_sendq: bool
+    ; its place in its connection's streams
+    var index: size_t
 )
 
 ; A connection on a page of its own.
@@ -138,6 +146,8 @@ define QListener
     var pending: size_t
     var rx: Slice[u8]
     var tx: Slice[u8]
+    ; a connection's packets of a round, back to back (h3_flush)
+    var train: Slice[u8]
     var addr: Slice[u8]
     work: ref[H3Work]
 )
@@ -170,14 +180,17 @@ procedure h3_new_cid(mutable user_data: pointer[void], mutable cid: pointer[u8],
 
 ; A stream's record gone: out of the connection's lists, its unacknowledged
 ; response out of the budget, its page back.
-procedure h3_drop_stream(mutable c: ref[QConn], s: ref[QStream]) @ret_nonlocal true @deep true @deep_beyond_2 true linked
+procedure h3_drop_stream(mutable c: ref[QConn], s: ref[QStream]) @ret_nonlocal true @deep true @deep_beyond_2 true @deep_this_1 true linked
 
 procedure h3_remove(mutable list: ref[Array[ref[QStream]]], s: ref[QStream]) @deep true @deep_this_1 true linked
 
 ; ---- answering ------------------------------------------------------------
 
 ; Answer a request stream whose FIN arrived: its response into s.output.
-; A malformed request gets no HEADERS, only the FIN.
+; A malformed request gets no HEADERS, only the FIN. A request without a
+; body fills the Request straight from its fields and the Response writes
+; a QPACK field section (its qpack mode) -- no HTTP/1.1 text in either
+; direction, which was a fifth of the samples in baseline-h3 (2026-09-30).
 procedure h3_answer(mutable w: ref[H3Work], mutable s: ref[QStream]) @deep true linked
 
 ; ---- the listener ---------------------------------------------------------
@@ -190,12 +203,18 @@ procedure h3_open(mutable l: ref[QListener], pkt: Slice[u8], addr: Slice[u8], no
 
 ; A connection gone: a CONNECTION_CLOSE unless it went quietly (idle,
 ; draining, dropped), its streams, TLS and ngtcp2 state, its page.
-procedure h3_close(mutable l: ref[QListener], mutable c: ref[QConn], quietly: bool, now: u64) @ret_nonlocal true @deep true @deep_beyond_2 true io linked
+procedure h3_close(mutable l: ref[QListener], mutable c: ref[QConn], quietly: bool, now: u64) @ret_nonlocal true @deep true @deep_beyond_2 true @deep_into_1_2 true io linked
 
 ; One datagram: to its connection, or a new one.
 procedure h3_receive(mutable l: ref[QListener], pkt: Slice[u8], addr: Slice[u8], now: u64) @deep true @deep_beyond_7 true @deep_this_1 true @deep_whole_1 true io linked
 
+; A train of a connection's packets out, in one call where the OS can.
+procedure h3_send_train(l: ref[QListener], c: ref[QConn], length: size_t, segment: size_t) @ret_nonlocal true @deep true io linked
+
 ; What a connection has to send, as far as a round goes: true when it sent.
+; Its packets go out in trains -- written back to back, all of one size
+; but the last, sent in one call (Linux's UDP GSO) -- where a sendto each
+; was half of the server's samples in the kernel in static-h3 (2026-09-30).
 procedure h3_flush(mutable l: ref[QListener], mutable c: ref[QConn], now: u64) @ret_nonlocal true @deep true @deep_beyond_2 true @deep_into_1_2 true returns bool io linked
 
 ; Answer a connection's complete requests, as the budget allows.

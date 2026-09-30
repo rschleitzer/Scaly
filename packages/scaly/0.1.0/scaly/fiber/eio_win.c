@@ -202,6 +202,19 @@ long long scaly_eio_udp_send(int fd, const void* buf, size_t len, const void* ad
     return -1;
 }
 
+long long scaly_eio_udp_send_train(int fd, const void* buf, size_t len, size_t segment,
+                                   const void* addr, size_t addrlen)
+{
+    (void)fd; (void)buf; (void)len; (void)segment; (void)addr; (void)addrlen;
+    return -1;
+}
+
+int scaly_eio_loopback6(int port, void* addr, size_t addrcap, size_t* len)
+{
+    (void)port; (void)addr; (void)addrcap; (void)len;
+    return -1;
+}
+
 int scaly_eio_sockname(int fd, void* addr, size_t addrcap, size_t* len)
 {
     (void)fd; (void)addr; (void)addrcap; (void)len;

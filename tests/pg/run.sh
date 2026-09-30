@@ -29,11 +29,12 @@ if [ ${#SSL[@]} = 0 ]; then
   exit 0
 fi
 
-# the tls archive carries the QUIC server's bindings (OpenSSL 3.5 or later)
+# the tls package needs OpenSSL 3 (3.5 only since h3 moved out of https,
+# 2026-09-30: h3's own suite asks for it)
 ver=$("$OPENSSL" version 2>/dev/null | awk '{print $2}')
-major=${ver%%.*}; rest=${ver#*.}; minor=${rest%%.*}
-if [ -z "$ver" ] || [ "${major:-0}" -lt 3 ] || { [ "$major" = 3 ] && [ "${minor:-0}" -lt 5 ]; }; then
-  echo "pg: SKIP (OpenSSL ${ver:-?}; the tls package needs 3.5 or later)"
+major=${ver%%.*}
+if [ -z "$ver" ] || [ "${major:-0}" -lt 3 ]; then
+  echo "pg: SKIP (OpenSSL ${ver:-?}; the tls package needs 3 or later)"
   exit 0
 fi
 

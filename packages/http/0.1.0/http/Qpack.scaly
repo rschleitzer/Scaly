@@ -169,3 +169,37 @@ procedure qpack_field(mutable out: ref[ByteBuf], name: Slice[u8], value: Slice[u
     encode_integer(out, 0, 7, value.length as u64)
     out.append(value)
 }
+
+; A field whose name is static table entry index, as a literal with that
+; name reference (RFC 9204 4.5.4, no Huffman).
+procedure qpack_indexed_field(mutable out: ref[ByteBuf], index: u64, value: Slice[u8])
+{
+    encode_integer(out, 80, 4, index)
+    encode_integer(out, 0, 7, value.length as u64)
+    out.append(value)
+}
+
+; A field as a handler names it ("X-Cache"): the name lowercased, as HTTP/3
+; wants it; the fields that belong to one HTTP/1.1 connection are left out.
+procedure qpack_header_field(mutable out: ref[ByteBuf], name: Slice[u8], value: Slice[u8])
+{
+    var low u8[256]
+    if name.length > 256
+    {
+        qpack_field(out, name, value)
+        return
+    }
+    let lower Slice[u8](name.length, &low[0])
+    var i: size_t 0
+    while i < name.length
+    {
+        var c name[i]
+        if c >= 65 and c <= 90
+            set c: c + 32
+        lower.put(i, c)
+        set i: i + 1
+    }
+    if connection_specific(lower)
+        return
+    qpack_field(out, lower, value)
+}

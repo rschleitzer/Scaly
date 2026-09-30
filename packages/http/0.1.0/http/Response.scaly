@@ -13,7 +13,8 @@
 ; -length -- and the body behind it (block_at .. body_at, then the body):
 ; the connection frames them as they stand, where it used to parse the
 ; HTTP/1.1 text back and encode it (2026-09-30: a fifth of the server's
-; samples in baseline-h2).
+; samples in baseline-h2). Over HTTP/3 (qpack) likewise, as a QPACK field
+; section.
 
 use http.Buffer.ByteBuf
 use http.Request.Request
@@ -34,6 +35,21 @@ procedure init_hpack_ok(mutable h: Slice[u8])
     h.put(1, 15)
     h.put(2, 18)
     h.put(3, 29)
+}
+
+; The QPACK twin (HTTP/3): an empty field section prefix (0x00 0x00),
+; :status 200 (static entry 25, 0xd9), the date as a literal with the name
+; reference date (entry 6: 0x56) and a length of 29 (0x1d).
+define QPACK_OK_LENGTH: size_t 34
+define QPACK_OK_DATE_AT: size_t 5
+
+procedure init_qpack_ok(mutable h: Slice[u8])
+{
+    h.put(0, 0)
+    h.put(1, 0)
+    h.put(2, 217)
+    h.put(3, 86)
+    h.put(4, 29)
 }
 
 ; Fill a connection's head_ok block with its fixed parts; the date in the
@@ -69,6 +85,8 @@ define Response
     var body_at: size_t          ; where the body starts in out (HPACK)
     hpack_ok: Slice[u8]          ; the HPACK :status 200 and date (init_hpack_ok)
     var ticked: bool             ; the connection reads the clock (tick), start need not
+    var qpack: bool              ; HTTP/3: the head is a QPACK field section
+    qpack_ok: Slice[u8]          ; the QPACK :status 200 and date (init_qpack_ok)
 )
 {
     ; A connection's response on its page, writing into out: the 200 head
@@ -80,7 +98,9 @@ define Response
         let trailers &ByteBuf^host(host, allocate_slice[u8]^host(host, 64), 0, false)
         var hpack_head allocate_slice[u8]^host(host, HPACK_OK_LENGTH)
         init_hpack_ok(hpack_head)
-        &Response^host(out, 200, false, false, false, head.subslice(HEAD_OK_DATE_AT, HEAD_OK_DATE_AT + DATE_LENGTH), 0 - 1, head, false, trailers, null, false, 0, 0, hpack_head, false)
+        var qpack_head allocate_slice[u8]^host(host, QPACK_OK_LENGTH)
+        init_qpack_ok(qpack_head)
+        &Response^host(out, 200, false, false, false, head.subslice(HEAD_OK_DATE_AT, HEAD_OK_DATE_AT + DATE_LENGTH), 0 - 1, head, false, trailers, null, false, 0, 0, hpack_head, false, false, qpack_head)
     }
 
     ; Ready for the next response on the same connection.
@@ -104,8 +124,8 @@ define Response
     ; -- answers 400 instead, and false.
     procedure accept_websocket(mutable this, req: ref[Request], mutable handler: pointer[void]) returns bool
     {
-        ; an HTTP/2 stream is no connection to take over
-        if hpack
+        ; an HTTP/2 or HTTP/3 stream is no connection to take over
+        if hpack or qpack
         {
             this.set_status(400)
             this.send_empty()
@@ -181,6 +201,19 @@ define Response
             out.append(hpack_ok.slice_from(1))
             return
         }
+        if qpack
+        {
+            set block_at: out.length
+            if status = 200
+            {
+                out.append(qpack_ok)
+                return
+            }
+            out.append(qpack_ok.slice_to(2))
+            qpack_status(out, status as i64)
+            out.append(qpack_ok.slice_from(3))
+            return
+        }
         ; the common case in one copy: 200, the connection stays
         if status = 200 and close = false
         {
@@ -219,6 +252,7 @@ define Response
         while d < DATE_LENGTH
         {
             hpack_ok.put(HPACK_OK_DATE_AT + d, date[d])
+            qpack_ok.put(QPACK_OK_DATE_AT + d, date[d])
             set d: d + 1
         }
     }
@@ -232,6 +266,11 @@ define Response
         if hpack
         {
             encode_header_field(out, name, value)
+            return
+        }
+        if qpack
+        {
+            qpack_header_field(out, name, value)
             return
         }
         out.append(name)
@@ -264,6 +303,24 @@ define Response
                 var digits u8[24]
                 let n decimal_into(Slice[u8](24, &digits[0]), body.length as u64)
                 encode_indexed_field(out, 28, Slice[u8](n, &digits[0]))
+            }
+            set body_at: out.length
+            if head_only = false
+                out.append(body)
+            set sent: true
+            return
+        }
+        if qpack
+        {
+            if content_type.length > 0
+                qpack_indexed_field(out, 44, content_type)
+            if encoding.length > 0
+                qpack_indexed_field(out, 42, encoding)
+            if status <> 204 and status <> 304
+            {
+                var digits u8[24]
+                let n decimal_into(Slice[u8](24, &digits[0]), body.length as u64)
+                qpack_indexed_field(out, 4, Slice[u8](n, &digits[0]))
             }
             set body_at: out.length
             if head_only = false

@@ -147,6 +147,7 @@ lane_ports() {
   step json tests/json/run.sh "$BIN" || rc=1
   step compress tests/compress/run.sh "$BIN" || rc=1
   step tls tests/tls/run.sh "$BIN" || rc=1
+  step h3 tests/h3/run.sh "$BIN" || rc=1
   step pg tests/pg/run.sh "$BIN" || rc=1
   step redis tests/redis/run.sh "$BIN" || rc=1
   step cmscratch tests/sgml/cmscratch/run.sh || rc=1

@@ -268,3 +268,110 @@ long long scaly_quic_close(void* conn, uint8_t* dest, size_t destlen, uint64_t n
     return ngtcp2_conn_write_connection_close((ngtcp2_conn*)conn, &ps.path, &pi, dest, destlen,
                                               &ccerr, now);
 }
+
+/* ---- a client, for the h3 suite (tests/h3) ---- */
+
+static ngtcp2_callbacks scaly_quic_client_cbs;
+
+static int scaly_quic_client_new_cid(ngtcp2_conn* conn, ngtcp2_cid* cid,
+                                     ngtcp2_stateless_reset_token* token, size_t cidlen,
+                                     void* user_data)
+{
+    (void)conn;
+    (void)user_data;
+    if (RAND_bytes(cid->data, (int)cidlen) != 1 || RAND_bytes(token->data, sizeof token->data) != 1)
+        return NGTCP2_ERR_CALLBACK_FAILURE;
+    cid->datalen = cidlen;
+    return 0;
+}
+
+/* A client connection from local to remote (struct sockaddr blobs), its
+ * data callbacks Scaly procedures as in scaly_quic_setup: 0 and the
+ * connection through pconn, or ngtcp2's negative error. */
+int scaly_quic_client_new(void** pconn, const void* local, size_t locallen, const void* remote,
+                          size_t remotelen, uint64_t now, void* recv_stream_data,
+                          void* stream_close, void* handshake_completed, void* user_data)
+{
+    ngtcp2_cid dcid, scid;
+    ngtcp2_settings settings;
+    ngtcp2_transport_params params;
+    ngtcp2_path path;
+    ngtcp2_conn* conn = NULL;
+    int rv;
+    if (ngtcp2_crypto_ossl_init() != 0)
+        return -1;
+    memset(&scaly_quic_client_cbs, 0, sizeof scaly_quic_client_cbs);
+    scaly_quic_client_cbs.client_initial = ngtcp2_crypto_client_initial_cb;
+    scaly_quic_client_cbs.recv_crypto_data = ngtcp2_crypto_recv_crypto_data_cb;
+    scaly_quic_client_cbs.encrypt = ngtcp2_crypto_encrypt_cb;
+    scaly_quic_client_cbs.decrypt = ngtcp2_crypto_decrypt_cb;
+    scaly_quic_client_cbs.hp_mask = ngtcp2_crypto_hp_mask_cb;
+    scaly_quic_client_cbs.recv_retry = ngtcp2_crypto_recv_retry_cb;
+    scaly_quic_client_cbs.update_key = ngtcp2_crypto_update_key_cb;
+    scaly_quic_client_cbs.delete_crypto_aead_ctx = ngtcp2_crypto_delete_crypto_aead_ctx_cb;
+    scaly_quic_client_cbs.delete_crypto_cipher_ctx = ngtcp2_crypto_delete_crypto_cipher_ctx_cb;
+    scaly_quic_client_cbs.get_path_challenge_data2 = ngtcp2_crypto_get_path_challenge_data2_cb;
+    scaly_quic_client_cbs.version_negotiation = ngtcp2_crypto_version_negotiation_cb;
+    scaly_quic_client_cbs.rand = scaly_quic_rand;
+    scaly_quic_client_cbs.get_new_connection_id2 = scaly_quic_client_new_cid;
+    scaly_quic_client_cbs.recv_stream_data = (ngtcp2_recv_stream_data)recv_stream_data;
+    scaly_quic_client_cbs.stream_close = (ngtcp2_stream_close)stream_close;
+    scaly_quic_client_cbs.handshake_completed = (ngtcp2_handshake_completed)handshake_completed;
+    dcid.datalen = 18;
+    scid.datalen = 8;
+    if (RAND_bytes(dcid.data, (int)dcid.datalen) != 1 || RAND_bytes(scid.data, (int)scid.datalen) != 1)
+        return -1;
+    ngtcp2_settings_default(&settings);
+    settings.initial_ts = now;
+    ngtcp2_transport_params_default(&params);
+    params.initial_max_streams_uni = 3;
+    params.initial_max_stream_data_bidi_local = 1 << 20;
+    params.initial_max_stream_data_uni = 1 << 20;
+    params.initial_max_data = 16 << 20;
+    path.local.addr = (ngtcp2_sockaddr*)local;
+    path.local.addrlen = (ngtcp2_socklen)locallen;
+    path.remote.addr = (ngtcp2_sockaddr*)remote;
+    path.remote.addrlen = (ngtcp2_socklen)remotelen;
+    path.user_data = NULL;
+    rv = ngtcp2_conn_client_new(&conn, &dcid, &scid, &path, NGTCP2_PROTO_VER_V1,
+                                &scaly_quic_client_cbs, &settings, &params, NULL, user_data);
+    if (rv != 0)
+        return rv;
+    *pconn = conn;
+    return 0;
+}
+
+/* The client's TLS session (ALPN h3): 0 and both handles, or -1. */
+int scaly_quic_client_tls_new(void* ssl_ctx, void* conn, void** pssl, void** poctx)
+{
+    static const unsigned char alpn[] = {2, 'h', '3'};
+    ngtcp2_crypto_ossl_ctx* octx = NULL;
+    ngtcp2_crypto_conn_ref* ref;
+    SSL* ssl = SSL_new((SSL_CTX*)ssl_ctx);
+    if (ssl == NULL)
+        return -1;
+    if (ngtcp2_crypto_ossl_ctx_new(&octx, NULL) != 0)
+    {
+        SSL_free(ssl);
+        return -1;
+    }
+    ngtcp2_crypto_ossl_ctx_set_ssl(octx, ssl);
+    ref = (ngtcp2_crypto_conn_ref*)malloc(sizeof *ref);
+    if (ref == NULL || ngtcp2_crypto_ossl_configure_client_session(ssl) != 0)
+    {
+        free(ref);
+        ngtcp2_crypto_ossl_ctx_del(octx);
+        SSL_free(ssl);
+        return -1;
+    }
+    ref->get_conn = scaly_quic_get_conn;
+    ref->user_data = conn;
+    SSL_set_app_data(ssl, ref);
+    SSL_set_connect_state(ssl);
+    SSL_set_alpn_protos(ssl, alpn, sizeof alpn);
+    ngtcp2_conn_set_tls_native_handle((ngtcp2_conn*)conn, octx);
+    *pssl = ssl;
+    *poctx = octx;
+    return 0;
+}
+

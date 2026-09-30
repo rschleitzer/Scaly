@@ -32,3 +32,11 @@ function qpack_name_index(name: Slice[u8]) @ret_nonlocal true @deep true returns
 ; A field line as a literal (not Huffman): with the static name when the
 ; table has it, else with a literal name.
 procedure qpack_field(mutable out: ref[ByteBuf], name: Slice[u8], value: Slice[u8]) @ret_nonlocal true @deep true linked
+
+; A field whose name is static table entry index, as a literal with that
+; name reference (RFC 9204 4.5.4, no Huffman).
+procedure qpack_indexed_field(mutable out: ref[ByteBuf], index: u64, value: Slice[u8]) @ret_nonlocal true @deep true linked
+
+; A field as a handler names it ("X-Cache"): the name lowercased, as HTTP/3
+; wants it; the fields that belong to one HTTP/1.1 connection are left out.
+procedure qpack_header_field(mutable out: ref[ByteBuf], name: Slice[u8], value: Slice[u8]) @deep true linked

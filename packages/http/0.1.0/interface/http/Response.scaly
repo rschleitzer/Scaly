@@ -13,7 +13,8 @@
 ; -length -- and the body behind it (block_at .. body_at, then the body):
 ; the connection frames them as they stand, where it used to parse the
 ; HTTP/1.1 text back and encode it (2026-09-30: a fifth of the server's
-; samples in baseline-h2).
+; samples in baseline-h2). Over HTTP/3 (qpack) likewise, as a QPACK field
+; section.
 
 use http.Buffer.ByteBuf
 use http.Request.Request
@@ -29,6 +30,14 @@ define HPACK_OK_LENGTH: size_t 33
 define HPACK_OK_DATE_AT: size_t 4
 
 procedure init_hpack_ok(mutable h: Slice[u8]) @ret_nonlocal true @deep true linked
+
+; The QPACK twin (HTTP/3): an empty field section prefix (0x00 0x00),
+; :status 200 (static entry 25, 0xd9), the date as a literal with the name
+; reference date (entry 6: 0x56) and a length of 29 (0x1d).
+define QPACK_OK_LENGTH: size_t 34
+define QPACK_OK_DATE_AT: size_t 5
+
+procedure init_qpack_ok(mutable h: Slice[u8]) @ret_nonlocal true @deep true linked
 
 ; Fill a connection's head_ok block with its fixed parts; the date in the
 ; middle is Response.date, a view formatted in place once per second.
@@ -52,6 +61,8 @@ define Response
     var body_at: size_t          ; where the body starts in out (HPACK)
     hpack_ok: Slice[u8]          ; the HPACK :status 200 and date (init_hpack_ok)
     var ticked: bool             ; the connection reads the clock (tick), start need not
+    var qpack: bool              ; HTTP/3: the head is a QPACK field section
+    qpack_ok: Slice[u8]          ; the QPACK :status 200 and date (init_qpack_ok)
 )
 {
     ; A connection's response on its page, writing into out: the 200 head

@@ -54,6 +54,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <netinet/udp.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -855,6 +856,90 @@ long long scaly_eio_udp_send(int fd, const void* buf, size_t len, const void* ad
     if (n < 0)
         return (errno == EAGAIN || errno == EWOULDBLOCK) ? -2 : -1;
     return (long long)n;
+}
+
+/* A train of datagrams to addr: len bytes, every one segment bytes but the
+ * last, which may be shorter. Linux sends it in one call (UDP GSO,
+ * UDP_SEGMENT); elsewhere, or where the kernel refuses GSO, one sendto
+ * each. The bytes that went (all of len, or fewer when the socket's buffer
+ * filled), -1 on an error. SCALY_UDP_GSO=0 sends one at a time. Rules (a)
+ * (UDP_SEGMENT and its cmsg are Linux's) and (c). */
+long long scaly_eio_udp_send_train(int fd, const void* buf, size_t len, size_t segment,
+                                   const void* addr, size_t addrlen)
+{
+    size_t off = 0;
+#if defined(__linux__) && defined(UDP_SEGMENT)
+    static __thread int no_gso = -1;
+    if (no_gso < 0)
+    {
+        const char* env = getenv("SCALY_UDP_GSO");
+        no_gso = env != NULL && env[0] == '0';
+    }
+    if (!no_gso && len > segment)
+    {
+        struct msghdr msg;
+        struct iovec iov;
+        char ctrl[CMSG_SPACE(sizeof(uint16_t))];
+        struct cmsghdr* cm;
+        ssize_t n;
+        memset(&msg, 0, sizeof msg);
+        memset(ctrl, 0, sizeof ctrl);
+        iov.iov_base = (void*)buf;
+        iov.iov_len = len;
+        msg.msg_name = (void*)addr;
+        msg.msg_namelen = (socklen_t)addrlen;
+        msg.msg_iov = &iov;
+        msg.msg_iovlen = 1;
+        msg.msg_control = ctrl;
+        msg.msg_controllen = sizeof ctrl;
+        cm = CMSG_FIRSTHDR(&msg);
+        cm->cmsg_level = SOL_UDP;
+        cm->cmsg_type = UDP_SEGMENT;
+        cm->cmsg_len = CMSG_LEN(sizeof(uint16_t));
+        *(uint16_t*)CMSG_DATA(cm) = (uint16_t)segment;
+        do
+            n = sendmsg(fd, &msg, 0);
+        while (n < 0 && errno == EINTR);
+        if (n >= 0)
+            return (long long)n;
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
+            return 0;
+        /* a kernel without GSO: never again; anything else (a train past
+         * the 64 KiB GSO takes: EMSGSIZE): this one a datagram at a time --
+         * never dropped, as ngtcp2 counts them sent */
+        if (errno == EIO || errno == ENOPROTOOPT || errno == EOPNOTSUPP)
+            no_gso = 1;
+    }
+#endif
+    while (off < len)
+    {
+        size_t k = len - off < segment ? len - off : segment;
+        ssize_t n;
+        do
+            n = sendto(fd, (const char*)buf + off, k, 0, (const struct sockaddr*)addr,
+                       (socklen_t)addrlen);
+        while (n < 0 && errno == EINTR);
+        if (n < 0)
+            return (errno == EAGAIN || errno == EWOULDBLOCK) ? (long long)off : -1;
+        off += k;
+    }
+    return (long long)off;
+}
+
+/* The IPv6 loopback address ::1 with port into addr (addrcap bytes), its
+ * length through len: 0, or -1. Rule (a): struct sockaddr_in6 is the OS's. */
+int scaly_eio_loopback6(int port, void* addr, size_t addrcap, size_t* len)
+{
+    struct sockaddr_in6 a;
+    if (addrcap < sizeof a)
+        return -1;
+    memset(&a, 0, sizeof a);
+    a.sin6_family = AF_INET6;
+    a.sin6_port = htons((unsigned short)port);
+    a.sin6_addr = in6addr_loopback;
+    memcpy(addr, &a, sizeof a);
+    *len = sizeof a;
+    return 0;
 }
 
 /* A socket's own address into addr (addrcap bytes), its length through

@@ -50,8 +50,14 @@ define ADDR_CAP: size_t 128
 ; response at once: 64 connections of 64 streams of static files, static-h3
 ; at 2 GiB (2026-09-30).
 define H3_OUTPUT_BUDGET: size_t 4194304
-; Packets one connection sends in a round before the others get theirs.
+; Packets one connection sends in a round before the others get theirs,
+; and the most one train of them carries (Linux's UDP GSO: 64 segments).
 define PACKETS_PER_ROUND: int 64
+define TRAIN_SEGMENTS: int 64
+; A train is one UDP send of at most 64 KiB (more is EMSGSIZE; the first
+; version of the trains lost a fortieth of them to it, and throughput
+; halved while ngtcp2 waited to send them again).
+define TRAIN_BYTES: size_t 65000
 
 ; What the h3 threads serve: set once by start_h3, before the threads.
 shared atomic h3_router: u64 0
@@ -139,6 +145,8 @@ define QStream
     var complete: bool
     var answered: bool
     var in_sendq: bool
+    ; its place in its connection's streams
+    var index: size_t
 )
 
 ; A connection on a page of its own.
@@ -191,6 +199,8 @@ define QListener
     var pending: size_t
     var rx: Slice[u8]
     var tx: Slice[u8]
+    ; a connection's packets of a round, back to back (h3_flush)
+    var train: Slice[u8]
     var addr: Slice[u8]
     work: ref[H3Work]
 )
@@ -209,7 +219,7 @@ procedure h3_stream_open(mutable conn: pointer[void], stream_id: i64, mutable us
 procedure h3_new_stream(mutable c: ref[QConn], stream_id: i64) returns ref[QStream]
 {
     let page Page.allocate_page()
-    let s &QStream^page(stream_id, page, ByteBuf.create(page, 512), ByteBuf.create(page, 512), 0, 0, true, false, false, false, false)
+    let s &QStream^page(stream_id, page, ByteBuf.create(page, 512), ByteBuf.create(page, 512), 0, 0, true, false, false, false, false, c.streams.length)
     c.streams.add(s)
     s
 }
@@ -305,9 +315,16 @@ procedure h3_drop_stream(mutable c: ref[QConn], s: ref[QStream])
         var l c.listener as ref[QListener]
         set l.pending: l.pending - (s.output.length - s.acked)
     }
-    h3_remove(&c.streams, s)
-    h3_remove(&c.sendq, s)
-    h3_remove(&c.readyq, s)
+    ; out of streams by its index, out of the queues only when it is in one
+    ; (a search of all three was 4 % of the samples in baseline-h3)
+    var last: ref[QStream] c.streams[c.streams.length - 1]
+    c.streams.put(s.index, last)
+    set last.index: s.index
+    set c.streams.length: c.streams.length - 1
+    if s.in_sendq
+        h3_remove(&c.sendq, s)
+    if s.complete and s.answered = false
+        h3_remove(&c.readyq, s)
     s.page.deallocate_extensions()
     Page.release_page(s.page)
 }
@@ -331,7 +348,10 @@ procedure h3_remove(mutable list: ref[Array[ref[QStream]]], s: ref[QStream])
 ; ---- answering ------------------------------------------------------------
 
 ; Answer a request stream whose FIN arrived: its response into s.output.
-; A malformed request gets no HEADERS, only the FIN.
+; A malformed request gets no HEADERS, only the FIN. A request without a
+; body fills the Request straight from its fields and the Response writes
+; a QPACK field section (its qpack mode) -- no HTTP/1.1 text in either
+; direction, which was a fifth of the samples in baseline-h3 (2026-09-30).
 procedure h3_answer(mutable w: ref[H3Work], mutable s: ref[QStream])
 {
     set s.answered: true
@@ -358,47 +378,40 @@ procedure h3_answer(mutable w: ref[H3Work], mutable s: ref[QStream])
         if kind = 0
             w.body.append(payload)
     }
-    if headers_seen = false or fields_request_text(&w.fields, &w.text, w.body.length > 0) = false
+    if headers_seen = false
         return
-    if w.body.length > 0
+    if w.body.length = 0
     {
+        if request_from_fields(&w.fields, w.req) = false
+            return
+    }
+    else
+    {
+        if fields_request_text(&w.fields, &w.text, true) = false
+            return
         w.text.append("content-length: ")
         w.text.append_uint(w.body.length as u64)
         w.text.append("\r\n\r\n")
         w.text.append(w.body.bytes())
+        if parse_request(w.text.bytes(), w.req) <= 0
+            return
     }
-    if parse_request(w.text.bytes(), w.req) <= 0
-        return
     w.outb.clear()
     dispatch(w.router, w.req, w.res)
-    let response w.outb.bytes()
-    ; the HEADERS frame: a field section of the status and the fields
-    w.block.clear()
-    qpack_begin(&w.block)
-    qpack_status(&w.block, response_status(response))
-    var pos response_fields_at(response)
-    var body_at response.length
-    repeat
-    {
-        var vs: size_t 0
-        var ve: size_t 0
-        let next next_field(response, pos, &w.name, &vs, &ve)
-        if next = 0
-        {
-            if pos + 1 < response.length
-                set body_at: pos + 2
-            break
-        }
-        if connection_specific(w.name.bytes()) = false
-            qpack_field(&w.block, w.name.bytes(), response.subslice(vs, ve))
-        set pos: next
-    }
+    let out w.outb.bytes()
+    var body_at: size_t w.res.body_at
+    if body_at > out.length
+        set body_at: out.length
+    var block_at: size_t w.res.block_at
+    if block_at > body_at
+        set block_at: body_at
+    let block out.subslice(block_at, body_at)
     append_quic_varint(&s.output, 1)
-    append_quic_varint(&s.output, w.block.length as u64)
-    s.output.append(w.block.bytes())
-    if body_at < response.length
+    append_quic_varint(&s.output, block.length as u64)
+    s.output.append(block)
+    let body out.slice_from(body_at)
+    if body.length > 0
     {
-        let body response.slice_from(body_at)
         append_quic_varint(&s.output, 0)
         append_quic_varint(&s.output, body.length as u64)
         s.output.append(body)
@@ -535,11 +548,21 @@ procedure h3_receive(mutable l: ref[QListener], pkt: Slice[u8], addr: Slice[u8],
         h3_close(l, c, rv = NGTCP2_ERR_DRAINING or rv = NGTCP2_ERR_DROP_CONN, now)
 }
 
+; A train of a connection's packets out, in one call where the OS can.
+procedure h3_send_train(l: ref[QListener], c: ref[QConn], length: size_t, segment: size_t)
+    scaly_eio_udp_send_train(l.fd, l.train.data as pointer[void], length, segment, c.remote.data as pointer[void], c.remote_length)
+
 ; What a connection has to send, as far as a round goes: true when it sent.
+; Its packets go out in trains -- written back to back, all of one size
+; but the last, sent in one call (Linux's UDP GSO) -- where a sendto each
+; was half of the server's samples in the kernel in static-h3 (2026-09-30).
 procedure h3_flush(mutable l: ref[QListener], mutable c: ref[QConn], now: u64) returns bool
 {
     var sent false
     var packets 0
+    var train_length: size_t 0
+    var segment: size_t 0
+    var segments 0
     var i: size_t 0
     repeat
     {
@@ -572,7 +595,8 @@ procedure h3_flush(mutable l: ref[QListener], mutable c: ref[QConn], now: u64) r
                 set flags: flags | NGTCP2_WRITE_STREAM_FLAG_FIN
         }
         var consumed: i64 0 - 1
-        let n scaly_quic_write(c.conn, l.tx.data, l.tx.length, &consumed, flags, stream_id, data, length, now)
+        let dest l.train.slice_from(train_length)
+        let n scaly_quic_write(c.conn, dest.data, TX_SIZE, &consumed, flags, stream_id, data, length, now)
         if s <> null and consumed >= 0
         {
             var t s as ref[QStream]
@@ -595,7 +619,26 @@ procedure h3_flush(mutable l: ref[QListener], mutable c: ref[QConn], now: u64) r
         }
         if n = 0
             break
-        scaly_eio_udp_send(l.fd, l.tx.data as pointer[void], n as size_t, c.remote.data as pointer[void], c.remote_length)
+        var size n as size_t
+        if train_length > 0 and size > segment
+        {
+            ; a longer packet cannot ride behind shorter ones: the train
+            ; goes, and this packet begins the next one
+            h3_send_train(l, c, train_length, segment)
+            memmove(l.train.data as pointer[void], dest.data as pointer[void], size)
+            set train_length: 0
+            set segments: 0
+        }
+        if train_length = 0
+            set segment: size
+        set train_length: train_length + size
+        set segments: segments + 1
+        if size < segment or segments >= TRAIN_SEGMENTS or train_length + TX_SIZE > TRAIN_BYTES
+        {
+            h3_send_train(l, c, train_length, segment)
+            set train_length: 0
+            set segments: 0
+        }
         set sent: true
         set packets: packets + 1
         if packets >= PACKETS_PER_ROUND
@@ -603,6 +646,8 @@ procedure h3_flush(mutable l: ref[QListener], mutable c: ref[QConn], now: u64) r
         ; a new packet: every stream may have room again
         set i: 0
     }
+    if train_length > 0
+        h3_send_train(l, c, train_length, segment)
     ngtcp2_conn_update_pkt_tx_time(c.conn, now)
     sent
 }
@@ -633,8 +678,10 @@ procedure h3_loop()
     let router (scaly_atomic_load_u64(&h3_router) as size_t) as ref[Router]
     let host Page.allocate_page()
     let outb &ByteBuf^host(host, allocate_slice[u8]^host(host, 16384), 0, false)
-    let w &H3Work^host(router, HeaderList.create(host), ByteBuf.create(host, 1024), ByteBuf.create(host, 1024), ByteBuf.create(host, 1024), ByteBuf.create(host, 64), &Request^host(null, null, null, null, null, null, 1, true, null, null), Response.create(host, outb), outb)
-    var l &QListener^host(host, fd, ctx, allocate_slice[u8]^host(host, ADDR_CAP), 0, Array[ref[QConn]?]^host(), 0, 0, allocate_slice[u8]^host(host, RX_SIZE), allocate_slice[u8]^host(host, TX_SIZE), allocate_slice[u8]^host(host, ADDR_CAP), w)
+    var res Response.create(host, outb)
+    set res.qpack: true
+    let w &H3Work^host(router, HeaderList.create(host), ByteBuf.create(host, 1024), ByteBuf.create(host, 1024), ByteBuf.create(host, 1024), ByteBuf.create(host, 64), &Request^host(null, null, null, null, null, null, 1, true, null, null), res, outb)
+    var l &QListener^host(host, fd, ctx, allocate_slice[u8]^host(host, ADDR_CAP), 0, Array[ref[QConn]?]^host(), 0, 0, allocate_slice[u8]^host(host, RX_SIZE), allocate_slice[u8]^host(host, TX_SIZE), allocate_slice[u8]^host(host, TX_SIZE * (TRAIN_SEGMENTS as size_t)), allocate_slice[u8]^host(host, ADDR_CAP), w)
     var local_length: size_t 0
     scaly_eio_sockname(fd, l.local.data as pointer[void], ADDR_CAP, &local_length)
     set l.local_length: local_length
