@@ -204,6 +204,10 @@ define H2Conn
     ; it is all out.
     procedure push_data(mutable this, mutable p: ref[H2Pending]) @ret_nonlocal true @deep true returns bool linked
 
+    ; Send body on stream from `sent` on, as far as the connection's window
+    ; and the stream's (`window`) allow; both move. True when it is all out.
+    procedure push_body(mutable this, id: u64, body: Slice[u8], mutable sent: ref[size_t], mutable window: ref[i64], end_stream: bool) @ret_nonlocal true @deep true returns bool linked
+
     ; Has the output reached its budget (frames_in then stops taking input)?
     ; A method, so that the generic serve_h2 need not name the constant.
     function over_budget(this) @ret_param_0 true @deep true returns bool linked

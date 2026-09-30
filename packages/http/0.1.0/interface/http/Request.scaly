@@ -67,8 +67,11 @@ define Request
     function query_param_nth(this, name: Slice[u8], nth: int) @page true @direct true @ret_param_0 true @deep true returns Slice[u8] linked
 
     ; The raw value of query parameter `name` (no percent-decoding); empty
-    ; when absent or empty.
-    function query_param(this, name: Slice[u8]) @page true @direct true @ret_param_0 true @deep true returns Slice[u8] linked
+    ; when absent or empty. One pass that compares the name in place: each
+    ; pair cut out with index_of and compared with equals -- memchr and
+    ; memcmp calls on a few bytes -- was 4 % of the server's samples in
+    ; baseline-h2 (2026-09-30).
+    function query_param(this, name: Slice[u8]) @ret_param_0 true @deep true returns Slice[u8] linked
 }
 
 ; The offset of the first byte past the head (the blank line included),

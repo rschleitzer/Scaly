@@ -483,26 +483,33 @@ define H2Conn
     ; Send as much of pending response p as the windows allow; true when
     ; it is all out.
     procedure push_data(mutable this, mutable p: ref[H2Pending]) returns bool
+        this.push_body(p.id, p.body, &p.sent, &p.window, p.end_stream)
+
+    ; Send body on stream from `sent` on, as far as the connection's window
+    ; and the stream's (`window`) allow; both move. True when it is all out.
+    procedure push_body(mutable this, id: u64, body: Slice[u8], mutable sent: ref[size_t], mutable window: ref[i64], end_stream: bool) returns bool
     {
-        while p.sent < p.body.length
+        while sent < body.length
         {
-            var n p.body.length - p.sent
+            var n body.length - sent
             if n > peer_max_frame
                 set n: peer_max_frame
             if (n as i64) > send_window
                 set n: send_window as size_t
-            if (n as i64) > p.window
-                set n: p.window as size_t
+            ; typed: `window as size_t` would cast the reference, an address
+            let stream_window: i64 window
+            if (n as i64) > stream_window
+                set n: stream_window as size_t
             if n = 0
                 return false
             var flags: u8 0
-            if p.sent + n = p.body.length and p.end_stream
+            if sent + n = body.length and end_stream
                 set flags: 1
-            frame_head(&frames, n, 0, flags, p.id)
-            frames.append(p.body.subslice(p.sent, p.sent + n))
-            set p.sent: p.sent + n
+            frame_head(&frames, n, 0, flags, id)
+            frames.append(body.subslice(sent, sent + n))
+            set sent: sent + n
             set send_window: send_window - (n as i64)
-            set p.window: p.window - (n as i64)
+            set window: window - (n as i64)
         }
         true
     }
@@ -676,23 +683,27 @@ define H2Conn
         this.block_frames(stream, out.subslice(block_at, body_at), bodiless)
         if bodiless
             return
-        let page Page.allocate_page()
-        var p &H2Pending^page(stream, page, body, 0, peer_window, has_trailers = false, trailers)
-        if this.push_data(p)
+        ; most responses fit the windows and go from where they stand; a page
+        ; only for one whose rest waits (a page taken and given back for
+        ; every response was 1 % of the server's samples in baseline-h2,
+        ; 2026-09-30)
+        var sent: size_t 0
+        var window: i64 peer_window
+        if this.push_body(stream, body, &sent, &window, has_trailers = false)
         {
             if has_trailers
                 this.headers_frame(stream, 0, trailers, 0, true)
-            Page.release_page(page)
             return
         }
         ; the rest waits: its own copy of the body and the trailers, since
         ; the output buffer and the trailers are reused
+        let page Page.allocate_page()
         let rest allocate_slice[u8]^page(page, body.length)
         memcpy(rest.data as pointer[void], body.data as pointer[void], body.length)
         let kept allocate_slice[u8]^page(page, trailers.length)
         if trailers.length > 0
             memcpy(kept.data as pointer[void], trailers.data as pointer[void], trailers.length)
-        var q &H2Pending^page(stream, page, rest, p.sent, p.window, has_trailers = false, kept)
+        var q &H2Pending^page(stream, page, rest, sent, window, has_trailers = false, kept)
         pending.add(q)
     }
 

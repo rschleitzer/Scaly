@@ -36,8 +36,12 @@ define Route
     handler: pointer[void]
     literals: int                ; literal segments: the more, the more specific
     var waits: bool              ; its handler waits (Router.waits)
-    ; the pattern's byte after its leading '/', which a path must share to
-    ; match -- -1 when a parameter (or nothing) stands there
+    ; the pattern's literal front: its bytes before the first parameter,
+    ; and whether that is all of it (a pattern without parameters)
+    prefix: size_t
+    exact: bool
+    ; the byte after the leading '/', -1 when a parameter (or nothing) stands
+    ; there: a byte compare that rules out most routes before any call
     lead: i64
 )
 
@@ -105,15 +109,17 @@ define Router
     procedure run_after(this, mutable req: ref[Request], mutable res: ref[Response]) @deep true linked
 }
 
-; The byte after a pattern's leading '/', -1 when a parameter or nothing
-; stands there (every path may match then).
-function pattern_lead(pattern: Slice[u8]) @ret_param_0 true @deep true returns i64 linked
+; The length of a pattern's literal front: its bytes before the first
+; parameter (all of them when it has none).
+function literal_prefix(pattern: Slice[u8]) @ret_param_0 true @deep true returns size_t linked
 
-; Can path match route at all? The byte after the leading '/' decides for
-; most routes before match_pattern looks: the arena's two dozen routes were
-; matched in full twice per HTTP/2 request (2026-09-30: 8 % of the server's
-; samples in baseline-h2).
-function route_may_match(r: ref[Route], path: Slice[u8]) @ret_param_1 true @deep true returns bool linked
+; Does path match route r? The byte after the leading '/' rules out most
+; routes; a pattern without parameters is the path or not -- one
+; comparison, a length first; one with parameters must have its literal
+; front at the path's front before match_pattern walks it. Matching every
+; route byte by byte was 6 % of the server's samples in baseline-h2
+; (2026-09-30).
+function route_matches(r: ref[Route], path: Slice[u8]) @ret_nonlocal true @deep true returns bool linked
 
 ; Does path match pattern? Literal bytes must be equal; a parameter "{x}"
 ; takes one non-empty segment (up to the next '/'), a last one "{x...}"

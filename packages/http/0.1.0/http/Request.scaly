@@ -163,27 +163,35 @@ define Request
     }
 
     ; The raw value of query parameter `name` (no percent-decoding); empty
-    ; when absent or empty.
+    ; when absent or empty. One pass that compares the name in place: each
+    ; pair cut out with index_of and compared with equals -- memchr and
+    ; memcmp calls on a few bytes -- was 4 % of the server's samples in
+    ; baseline-h2 (2026-09-30).
     function query_param(this, name: Slice[u8]) returns Slice[u8]
     {
         var i: size_t 0
         while i <= query.length
         {
+            var k: size_t 0
+            while k < name.length and i + k < query.length and query[i + k] = name[k]
+                set k: k + 1
+            if k = name.length
+            {
+                ; the pair is the name, or the name and '='
+                let after i + k
+                if after = query.length or query[after] = 38
+                    return query.subslice(after, after)
+                if query[after] = 61
+                {
+                    var e after + 1
+                    while e < query.length and query[e] <> 38
+                        set e: e + 1
+                    return query.subslice(after + 1, e)
+                }
+            }
             var e i
             while e < query.length and query[e] <> 38
                 set e: e + 1
-            let pair query.subslice(i, e)
-            let eq index_of(pair, 61)
-            if eq >= 0
-            {
-                if pair.slice_to(eq as size_t).equals(name)
-                    return pair.slice_from((eq as size_t) + 1)
-            }
-            else
-            {
-                if pair.equals(name)
-                    return pair.slice_to(0)
-            }
             set i: e + 1
         }
         query.slice_to(0)

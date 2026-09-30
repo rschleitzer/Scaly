@@ -36,8 +36,12 @@ define Route
     handler: pointer[void]
     literals: int                ; literal segments: the more, the more specific
     var waits: bool              ; its handler waits (Router.waits)
-    ; the pattern's byte after its leading '/', which a path must share to
-    ; match -- -1 when a parameter (or nothing) stands there
+    ; the pattern's literal front: its bytes before the first parameter,
+    ; and whether that is all of it (a pattern without parameters)
+    prefix: size_t
+    exact: bool
+    ; the byte after the leading '/', -1 when a parameter (or nothing) stands
+    ; there: a byte compare that rules out most routes before any call
     lead: i64
 )
 
@@ -60,7 +64,13 @@ define Router
 
     ; A route for method ("" for every method) on pattern.
     procedure add(mutable this, method: Slice[u8], pattern: Slice[u8], mutable handler: pointer[void])
-        routes.add(Route(method, pattern, handler, literal_segments(pattern), false, pattern_lead(pattern)))
+    {
+        let prefix literal_prefix(pattern)
+        var lead: i64 0 - 1
+        if prefix >= 2
+            set lead: pattern[1] as i64
+        routes.add(Route(method, pattern, handler, literal_segments(pattern), false, prefix, prefix = pattern.length, lead))
+    }
 
     procedure get(mutable this, pattern: Slice[u8], mutable handler: pointer[void])
         this.add("GET", pattern, handler)
@@ -105,7 +115,7 @@ define Router
         while i < routes.length
         {
             let r routes.at(i)
-            if r.waits and route_may_match(r, path) and (r.method.length = 0 or r.method.equals(method)) and match_pattern(r.pattern, path)
+            if r.waits and route_matches(r, path) and (r.method.length = 0 or r.method.equals(method))
                 return true
             set i: i + 1
         }
@@ -132,7 +142,7 @@ define Router
         while i < routes.length
         {
             let r routes.at(i)
-            if route_may_match(r, req.path) and match_pattern(r.pattern, req.path)
+            if route_matches(r, req.path)
             {
                 set path_matched: true
                 var fits r.method.length = 0 or req.method.equals(r.method)
@@ -236,24 +246,29 @@ define Router
     }
 }
 
-; The byte after a pattern's leading '/', -1 when a parameter or nothing
-; stands there (every path may match then).
-function pattern_lead(pattern: Slice[u8]) returns i64
+; The length of a pattern's literal front: its bytes before the first
+; parameter (all of them when it has none).
+function literal_prefix(pattern: Slice[u8]) returns size_t
 {
-    if pattern.length < 2 or pattern[0] <> 47 or pattern[1] = 123
-        return 0 - 1
-    pattern[1] as i64
+    let brace find_byte(pattern, 0, 123)
+    if brace < 0
+        return pattern.length
+    brace as size_t
 }
 
-; Can path match route at all? The byte after the leading '/' decides for
-; most routes before match_pattern looks: the arena's two dozen routes were
-; matched in full twice per HTTP/2 request (2026-09-30: 8 % of the server's
-; samples in baseline-h2).
-function route_may_match(r: ref[Route], path: Slice[u8]) returns bool
+; Does path match route r? The byte after the leading '/' rules out most
+; routes; a pattern without parameters is the path or not -- one
+; comparison, a length first; one with parameters must have its literal
+; front at the path's front before match_pattern walks it. Matching every
+; route byte by byte was 6 % of the server's samples in baseline-h2
+; (2026-09-30).
+function route_matches(r: ref[Route], path: Slice[u8]) returns bool
 {
-    if r.lead < 0
-        return true
-    path.length > 1 and (path[1] as i64) = r.lead
+    if r.lead >= 0 and (path.length < 2 or (path[1] as i64) <> r.lead)
+        return false
+    if r.exact
+        return path.equals(r.pattern)
+    path.starts_with(r.pattern.slice_to(r.prefix)) and match_pattern(r.pattern, path)
 }
 
 ; Does path match pattern? Literal bytes must be equal; a parameter "{x}"

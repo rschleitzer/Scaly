@@ -143,6 +143,14 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
         return 25
     if f.is_method("GET") = false or f.minor <> 1
         return 26
+    ; a name that begins another pair's name: that pair is not it
+    var g Request.empty()
+    let gtext: Slice[u8] "GET /q?ab=1&a2&a=7&fl HTTP/1.1\r\nHost: h\r\n\r\n"
+    load(buf, gtext)
+    if parse_request(buf.slice_to(gtext.length), &g) <> (gtext.length as i64)
+        return 27
+    if g.query_param("a").equals("7") = false or g.query_param("ab").equals("1") = false or g.query_param("f").length <> 0 or g.query_param("fl").length <> 0 or g.query_param("a2").length <> 0 or g.query_param("abc").length <> 0
+        return 28
     Console.print "fields "
 
     Console.print "done"
