@@ -52,6 +52,7 @@ package json 0.1.0
 package compress 0.1.0
 package tls 0.1.0
 package https 0.1.0
+package h3 0.1.0
 package pg 0.1.0
 package redis 0.1.0
 
@@ -915,7 +916,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
             print "arena: cannot listen on port `h2_port`"
         ; HTTP/3 on the same port number, over UDP (baseline-h3, static-h3)
         if start_h3(app, h2_port, cert, key) = false
-            print "arena: no HTTP/3 on port `h2_port` (an OpenSSL without a QUIC server?)"
+            print "arena: no HTTP/3 on port `h2_port` (no TLS context, or no UDP socket)"
     }
     if h2c_port > 0
     {

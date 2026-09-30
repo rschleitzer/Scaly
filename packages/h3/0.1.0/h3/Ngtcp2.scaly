@@ -1,0 +1,45 @@
+; ngtcp2 as h3 uses it: the calls that take pointers and integers only, and
+; the few of its constants the server reads. What needs ngtcp2's open
+; structs (settings, transport parameters, the callback table, a path) or
+; its macros over versioned symbols is in ngtcp2_glue.c, as scaly_quic_*.
+
+; ngtcp2_glue.c
+procedure scaly_quic_setup(recv_stream_data: pointer[void], acked_stream_data_offset: pointer[void], stream_open: pointer[void], stream_close: pointer[void], extend_max_remote_streams_bidi: pointer[void], handshake_completed: pointer[void], on_new_cid: pointer[void]) returns i32 extern
+procedure scaly_quic_conn_new(mutable pconn: pointer[pointer[void]], client_dcid: pointer[u8], client_dcidlen: size_t, client_scid: pointer[u8], client_scidlen: size_t, own_cid: pointer[u8], own_cidlen: size_t, local: pointer[void], locallen: size_t, remote: pointer[void], remotelen: size_t, version: u32, now: u64, max_data: u64, max_stream_data: u64, max_streams_bidi: u64, idle_timeout_ms: u64, user_data: pointer[void]) returns i32 extern
+procedure scaly_quic_tls_new(mutable ssl_ctx: pointer[void], mutable conn: pointer[void], mutable pssl: pointer[pointer[void]], mutable poctx: pointer[pointer[void]]) returns i32 extern
+procedure scaly_quic_tls_free(mutable ssl: pointer[void], mutable octx: pointer[void]) extern
+procedure scaly_quic_decode(pkt: pointer[u8], len: size_t, short_dcidlen: size_t, mutable version: pointer[u32], mutable dcid: pointer[pointer[u8]], mutable dcidlen: pointer[size_t]) returns i32 extern
+procedure scaly_quic_accept(pkt: pointer[u8], len: size_t, mutable version: pointer[u32], mutable dcid: pointer[u8], mutable dcidlen: pointer[size_t], mutable scid: pointer[u8], mutable scidlen: pointer[size_t]) returns i32 extern
+procedure scaly_quic_read(mutable conn: pointer[void], local: pointer[void], locallen: size_t, remote: pointer[void], remotelen: size_t, data: pointer[u8], len: size_t, now: u64) returns i32 extern
+procedure scaly_quic_write(mutable conn: pointer[void], mutable dest: pointer[u8], destlen: size_t, mutable pdatalen: pointer[i64], flags: u32, stream_id: i64, data: pointer[u8], datalen: size_t, now: u64) returns i64 extern
+procedure scaly_quic_close(mutable conn: pointer[void], mutable dest: pointer[u8], destlen: size_t, now: u64) returns i64 extern
+
+; libngtcp2
+procedure ngtcp2_conn_del(mutable conn: pointer[void]) extern
+procedure ngtcp2_conn_get_expiry(conn: pointer[void]) returns u64 extern
+procedure ngtcp2_conn_handle_expiry(mutable conn: pointer[void], now: u64) returns i32 extern
+procedure ngtcp2_conn_update_pkt_tx_time(mutable conn: pointer[void], now: u64) extern
+procedure ngtcp2_conn_extend_max_stream_offset(mutable conn: pointer[void], stream_id: i64, datalen: u64) returns i32 extern
+procedure ngtcp2_conn_extend_max_offset(mutable conn: pointer[void], datalen: u64) extern
+procedure ngtcp2_conn_extend_max_streams_bidi(mutable conn: pointer[void], n: size_t) extern
+procedure ngtcp2_conn_open_uni_stream(mutable conn: pointer[void], mutable pstream_id: pointer[i64], stream_user_data: pointer[void]) returns i32 extern
+procedure ngtcp2_conn_set_stream_user_data(mutable conn: pointer[void], stream_id: i64, stream_user_data: pointer[void]) returns i32 extern
+
+; libcrypto
+procedure RAND_bytes(mutable buf: pointer[u8], num: i32) returns i32 extern
+
+; the runtime's UDP (eio.c; -2: nothing waiting, or no room to send)
+procedure scaly_eio_udp_recv(fd: i32, mutable buf: pointer[void], len: size_t, mutable addr: pointer[void], addrcap: size_t, mutable addrlen: pointer[size_t]) returns i64 extern
+procedure scaly_eio_udp_send(fd: i32, buf: pointer[void], len: size_t, addr: pointer[void], addrlen: size_t) returns i64 extern
+procedure scaly_eio_sockname(fd: i32, mutable addr: pointer[void], addrcap: size_t, mutable len: pointer[size_t]) returns i32 extern
+
+define NGTCP2_ERR_STREAM_DATA_BLOCKED: i64 -208
+define NGTCP2_ERR_STREAM_SHUT_WR: i64 -219
+define NGTCP2_ERR_STREAM_NOT_FOUND: i64 -220
+define NGTCP2_ERR_DRAINING: i64 -224
+define NGTCP2_ERR_WRITE_MORE: i64 -230
+define NGTCP2_ERR_DROP_CONN: i64 -232
+define NGTCP2_ERR_IDLE_CLOSE: i64 -238
+define NGTCP2_STREAM_DATA_FLAG_FIN: u32 1
+define NGTCP2_WRITE_STREAM_FLAG_MORE: u32 1
+define NGTCP2_WRITE_STREAM_FLAG_FIN: u32 2

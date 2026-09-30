@@ -1,0 +1,58 @@
+; The UDP socket of an h3 listener: from OpenSSL's portable BIO_* calls,
+; so that no address-family constant (AF_INET6 is 10 on Linux, 30 on macOS)
+; is written in Scaly; SO_REUSEPORT through the runtime's shim.
+
+define BioAddrInfoOpaque()
+define BioAddrInfo pointer[BioAddrInfoOpaque]
+define BioAddrOpaque()
+define BioAddr pointer[BioAddrOpaque]
+
+procedure BIO_lookup_ex(host: pointer[const_char], service: pointer[const_char], lookup_type: i32, family: i32, socktype: i32, protocol: i32, mutable res: pointer[BioAddrInfo]) returns i32 extern
+procedure BIO_ADDRINFO_family(ai: BioAddrInfo) returns i32 extern
+procedure BIO_ADDRINFO_address(ai: BioAddrInfo) returns BioAddr extern
+procedure BIO_ADDRINFO_free(mutable ai: BioAddrInfo) extern
+procedure BIO_socket(domain: i32, socktype: i32, protocol: i32, options: i32) returns i32 extern
+procedure BIO_bind(sock: i32, addr: BioAddr, options: i32) returns i32 extern
+procedure BIO_socket_nbio(fd: i32, mode: i32) returns i32 extern
+procedure BIO_closesocket(sock: i32) returns i32 extern
+; SO_REUSEPORT on a socket not bound yet (the runtime's shim, whose constant
+; is the OS's): 0 when set, -1 where it cannot be.
+procedure scaly_eio_reuseport(fd: i32) returns i32 extern
+
+; BIO_lookup_ex: a server's address; SOCK_DGRAM (2 on Linux and macOS)
+define BIO_LOOKUP_SERVER: i32 1
+define SOCK_DGRAM: i32 2
+define BIO_SOCK_REUSEADDR: i32 1
+; A UDP socket bound to `port` on every interface (dual-stack where the
+; system allows it), non-blocking; -1 when it cannot be made. With spread
+; it takes SO_REUSEPORT, so that more of them bind the port and the kernel
+; spreads the clients over them.
+procedure quic_socket(port: int, spread: bool) returns i32
+{
+    var service StringBuilder()
+    service.append(port)
+    let s service.to_string()
+    var res: BioAddrInfo null
+    if BIO_lookup_ex("::", s.to_c_string(), BIO_LOOKUP_SERVER, 0, SOCK_DGRAM, 0, &res) <> 1 or res = null
+        return 0 - 1
+    let fd BIO_socket(BIO_ADDRINFO_family(res), SOCK_DGRAM, 0, 0)
+    if fd < 0
+    {
+        BIO_ADDRINFO_free(res)
+        return 0 - 1
+    }
+    if spread and scaly_eio_reuseport(fd) <> 0
+    {
+        BIO_ADDRINFO_free(res)
+        BIO_closesocket(fd)
+        return 0 - 1
+    }
+    let bound BIO_bind(fd, BIO_ADDRINFO_address(res), BIO_SOCK_REUSEADDR)
+    BIO_ADDRINFO_free(res)
+    if bound <> 1 or BIO_socket_nbio(fd, 1) <> 1
+    {
+        BIO_closesocket(fd)
+        return 0 - 1
+    }
+    fd
+}

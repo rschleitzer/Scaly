@@ -26,14 +26,28 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
  && apt-get install -y --no-install-recommends llvm-20 llvm-20-dev clang-20 lld-20 libclang-rt-20-dev libdeflate-dev perl make curl ca-certificates \
  && rm -rf /var/lib/apt/lists/*
-# OpenSSL with a QUIC server (3.5 or later; Ubuntu 24.04 ships 3.0) for the
-# tls and https packages -- TLS 1.3, h2 and HTTP/3 -- built static.
+# OpenSSL 3.5 or later (Ubuntu 24.04 ships 3.0) for the tls, https and h3
+# packages -- TLS 1.3, h2, and HTTP/3's TLS through its QUIC TLS interface,
+# which ngtcp2's crypto helper drives -- built static.
 RUN curl -fsSL https://github.com/openssl/openssl/releases/download/openssl-3.6.3/openssl-3.6.3.tar.gz | tar xz -C /tmp \
  && cd /tmp/openssl-3.6.3 \
  && CC=clang-20 ./Configure --prefix=/opt/openssl --libdir=lib no-shared no-tests no-docs \
  && make -j"$(nproc)" \
  && make install_sw \
  && cd / && rm -rf /tmp/openssl-3.6.3
+# ngtcp2 for HTTP/3 (packages/h3): QUIC itself, OpenSSL only for its TLS
+# 1.3 through ngtcp2's crypto helper (libngtcp2_crypto_ossl, OpenSSL 3.5 or
+# later). Until 2026-09-30 OpenSSL's own QUIC server did it all, and kept
+# every stream a client opened until the connection ended.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends pkg-config \
+ && rm -rf /var/lib/apt/lists/* \
+ && curl -fsSL https://github.com/ngtcp2/ngtcp2/releases/download/v1.25.0/ngtcp2-1.25.0.tar.gz | tar xz -C /tmp \
+ && cd /tmp/ngtcp2-1.25.0 \
+ && CC=clang-20 PKG_CONFIG_PATH=/opt/openssl/lib/pkgconfig ./configure --prefix=/opt/ngtcp2 --enable-lib-only --disable-shared --with-openssl \
+ && make -j"$(nproc)" \
+ && make install \
+ && cd / && rm -rf /tmp/ngtcp2-1.25.0
 # seed.sh and the compiler's own link invoke `clang`; libLLVM-20.so sits under
 # the versioned prefix; GNU BFD ld cannot link libLLVM-20, so `ld` is lld.
 ENV CLANG=clang-20
@@ -55,6 +69,8 @@ RUN mkdir -p /ir \
  && scalyc/build/scalyc -S --no-prelude -o /ir/compress.ll packages/compress/0.1.0/compress.scaly \
  && scalyc/build/scalyc -S --no-prelude -o /ir/tls.ll packages/tls/0.1.0/tls.scaly \
  && scalyc/build/scalyc -S --no-prelude -o /ir/https.ll packages/https/0.1.0/https.scaly \
+ && scalyc/build/scalyc -S --no-prelude -o /ir/h3.ll packages/h3/0.1.0/h3.scaly \
+ && clang-20 -O2 -c packages/h3/0.1.0/h3/ngtcp2_glue.c -I/opt/ngtcp2/include -I/opt/openssl/include -o /ir/ngtcp2_glue.o \
  && scalyc/build/scalyc -S --no-prelude -o /ir/pg.ll packages/pg/0.1.0/pg.scaly \
  && scalyc/build/scalyc -S --no-prelude -o /ir/redis.ll packages/redis/0.1.0/redis.scaly \
  && scalyc/build/scalyc -S -o /ir/arena.ll tools/bench/http/arena.scaly \
@@ -67,8 +83,8 @@ FROM build AS pgo-train
 RUN TRIPLE=$(clang-20 -print-target-triple) \
  && PROFRT=$(find /usr/lib/llvm-20/lib/clang -name 'libclang_rt.profile*.a' | head -1) \
  && LTO_OPT_FLAGS="-mtriple=$TRIPLE -mcpu=native --pgo-kind=pgo-instr-gen-pipeline" \
-    LTO_LLC_FLAGS="-mcpu=native" LINK_EXTRA="-Wl,-u,__llvm_profile_runtime $PROFRT -l:libdeflate.a /opt/openssl/lib/libssl.a /opt/openssl/lib/libcrypto.a" \
-    tools/link-lto.sh /arena_instr /ir/arena.ll /ir/https.ll /ir/http.ll /ir/pg.ll /ir/redis.ll /ir/tls.ll /ir/json.ll /ir/compress.ll /ir/rt.ll \
+    LTO_LLC_FLAGS="-mcpu=native" LINK_EXTRA="-Wl,-u,__llvm_profile_runtime $PROFRT /ir/ngtcp2_glue.o /opt/ngtcp2/lib/libngtcp2_crypto_ossl.a /opt/ngtcp2/lib/libngtcp2.a -l:libdeflate.a /opt/openssl/lib/libssl.a /opt/openssl/lib/libcrypto.a" \
+    tools/link-lto.sh /arena_instr /ir/arena.ll /ir/https.ll /ir/h3.ll /ir/http.ll /ir/pg.ll /ir/redis.ll /ir/tls.ll /ir/json.ll /ir/compress.ll /ir/rt.ll \
  && tools/link-lto.sh /train /ir/train.ll /ir/http.ll /ir/rt.ll
 
 FROM build AS optimized
@@ -76,8 +92,8 @@ COPY pgo/ /pgo/
 RUN TRIPLE=$(clang-20 -print-target-triple) \
  && PGO="" \
  && if [ -f /pgo/arena.profdata ]; then PGO="--pgo-kind=pgo-instr-use-pipeline --profile-file=/pgo/arena.profdata"; fi \
- && LTO_OPT_FLAGS="-mtriple=$TRIPLE -mcpu=native $PGO" LTO_LLC_FLAGS="-mcpu=native" LINK_EXTRA="-l:libdeflate.a /opt/openssl/lib/libssl.a /opt/openssl/lib/libcrypto.a" \
-    tools/link-lto.sh /arena /ir/arena.ll /ir/https.ll /ir/http.ll /ir/pg.ll /ir/redis.ll /ir/tls.ll /ir/json.ll /ir/compress.ll /ir/rt.ll
+ && LTO_OPT_FLAGS="-mtriple=$TRIPLE -mcpu=native $PGO" LTO_LLC_FLAGS="-mcpu=native" LINK_EXTRA="/ir/ngtcp2_glue.o /opt/ngtcp2/lib/libngtcp2_crypto_ossl.a /opt/ngtcp2/lib/libngtcp2.a -l:libdeflate.a /opt/openssl/lib/libssl.a /opt/openssl/lib/libcrypto.a" \
+    tools/link-lto.sh /arena /ir/arena.ll /ir/https.ll /ir/h3.ll /ir/http.ll /ir/pg.ll /ir/redis.ll /ir/tls.ll /ir/json.ll /ir/compress.ll /ir/rt.ll
 
 FROM ubuntu:24.04
 COPY --from=optimized /arena /arena

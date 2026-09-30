@@ -825,6 +825,49 @@ int scaly_eio_reuseport(int fd)
 #endif
 }
 
+/* One datagram from a non-blocking UDP socket into buf and its sender's
+ * address into addr (addrcap bytes, its length through addrlen): the byte
+ * count, -2 when none is waiting, -1 on an error. Shim rule (a): struct
+ * sockaddr and socklen_t are the OS's; (c): errno. The address stays an
+ * opaque blob on the Scaly side (h3 hands it to ngtcp2). */
+long long scaly_eio_udp_recv(int fd, void* buf, size_t len, void* addr, size_t addrcap,
+                             size_t* addrlen)
+{
+    socklen_t al = (socklen_t)addrcap;
+    ssize_t n;
+    do
+        n = recvfrom(fd, buf, len, 0, (struct sockaddr*)addr, &al);
+    while (n < 0 && errno == EINTR);
+    if (n < 0)
+        return (errno == EAGAIN || errno == EWOULDBLOCK) ? -2 : -1;
+    *addrlen = (size_t)al;
+    return (long long)n;
+}
+
+/* One datagram to addr (a blob scaly_eio_udp_recv gave): the byte count,
+ * -2 when the socket's buffer is full, -1 on an error. Rules (a), (c). */
+long long scaly_eio_udp_send(int fd, const void* buf, size_t len, const void* addr, size_t addrlen)
+{
+    ssize_t n;
+    do
+        n = sendto(fd, buf, len, 0, (const struct sockaddr*)addr, (socklen_t)addrlen);
+    while (n < 0 && errno == EINTR);
+    if (n < 0)
+        return (errno == EAGAIN || errno == EWOULDBLOCK) ? -2 : -1;
+    return (long long)n;
+}
+
+/* A socket's own address into addr (addrcap bytes), its length through
+ * len: 0, or -1. Rule (a). */
+int scaly_eio_sockname(int fd, void* addr, size_t addrcap, size_t* len)
+{
+    socklen_t al = (socklen_t)addrcap;
+    if (getsockname(fd, (struct sockaddr*)addr, &al) != 0)
+        return -1;
+    *len = (size_t)al;
+    return 0;
+}
+
 static int scaly_eio_tcp_listen_at(unsigned int ip_host_order, int port)
 {
     struct sockaddr_in addr;

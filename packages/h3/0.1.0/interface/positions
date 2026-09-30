@@ -1,0 +1,32 @@
+; where the lines of this interface stand in the package's sources,
+; written by compiler/Interface.scaly: after a file's path, the interface
+; line starting at the first byte is the source's line starting at the second
+h3/Server.scaly
+2815 2810
+2848 2838
+3083 3411
+3185 4142
+3310 4336
+3413 4565
+4079 5202
+5034 6128
+5692 6902
+5795 7187
+6202 8053
+6476 8604
+6809 9113
+6966 9239
+7190 9858
+7411 10219
+7655 10695
+7769 11078
+8062 13583
+8338 14363
+8603 16575
+8895 17384
+9114 18165
+9363 20562
+9541 21117
+9660 23569
+9771 23783
+10051 24182
