@@ -9,17 +9,22 @@
 ;   app.get("/static/{path...}", &asset)
 ;
 ; Contents are cached per scheduler thread (a request's task never leaves
-; its thread, so the cache needs no lock) and FOLLOW THE DISK: an entry
-; older than a second is read again before it is served, on a page of its
-; own that replaces the old one — a file replaced on disk is served within
-; about a second, and a file removed answers 404. A path that climbs out of
-; the directory ("..") or starts with '/' answers 404 as well.
+; its thread, so the cache needs no lock) and FOLLOW THE DISK: every request
+; asks what the file is now (a stat: size, mtime, inode) and an entry that
+; no longer matches is read again before it is served, on a page of its own
+; that replaces the old one -- a file replaced on disk is served with its new
+; bytes on the very next request, and a file removed answers 404. Until
+; 2026-09-30 an entry was read again once it was a second old: HttpArena's
+; rule is "replace a file and the next response must carry the new bytes",
+; and its validation's 2 s window is a tolerance, not a budget. A path that
+; climbs out of the directory ("..") or starts with '/' answers 404 as well.
 
 use http.Request.Request
 use http.Response.Response
 
-; How long a cached file is served before it is read again.
-define STATIC_TTL_NS: i64 1000000000
+; What a file is on disk (scaly/fiber/eio.c): out[0] size, out[1] mtime in
+; nanoseconds, out[2] inode, out[3] block size; -1 when there is no file.
+procedure scaly_eio_stat(path: pointer[const_char], fd: i32, mutable out: pointer[i64]) returns i32 extern
 
 define StaticEntry
 (
@@ -31,6 +36,10 @@ define StaticEntry
     var present: bool
     ; monotonic time of the last read, 0 before the first
     var loaded_at: i64
+    ; what the file was when it was read (size, mtime, inode; -1 absent)
+    var size: i64
+    var mtime: i64
+    var inode: i64
     var loading: bool
     ; whether `page` is the entry's own (false while it is the cache's)
     var owns_page: bool
@@ -183,9 +192,9 @@ procedure static_cache_here() returns ref[StaticCache] mutable static_cache
     made
 }
 
-; The cache entry of the file at path, read (again) when it is new or
-; older than STATIC_TTL_NS; while one task reads it the others serve what
-; is there, or wait for a first read.
+; The cache entry of the file at path, read (again) when it is new or the
+; file on disk is no longer what was read; while one task reads it the
+; others serve what is there, or wait for a first read.
 procedure static_entry(path: Slice[u8]) returns ref[StaticEntry] mutable static_cache
 {
     let cache static_cache_here()
@@ -204,22 +213,34 @@ procedure static_entry(path: Slice[u8]) returns ref[StaticEntry] mutable static_
     if found = null
     {
         let host cache.host
-        let made &StaticEntry^host(String^host(path.data as pointer[const_char], path.length), host, String^host(), false, 0, false, false)
+        let made &StaticEntry^host(String^host(path.data as pointer[const_char], path.length), host, String^host(), false, 0, 0 - 1, 0, 0, false, false)
         cache.entries.add(made)
         set found: made
     }
     var e found as ref[StaticEntry]
-    let now scaly_eio_now_ns()
-    if e.loading = false and (e.loaded_at = 0 or now - e.loaded_at > STATIC_TTL_NS)
-        load_entry(e)
+    ; the path's String was written by a content init, which ends it with a
+    ; NUL (what to_c_string relies on too): no copy per request
+    var st i64[4]
+    var size: i64 0 - 1
+    var mtime: i64 0
+    var inode: i64 0
+    if scaly_eio_stat(e.path.c_data(), 0 - 1, &st[0]) = 0
+    {
+        set size: st[0]
+        set mtime: st[1]
+        set inode: st[2]
+    }
+    if e.loading = false and (e.loaded_at = 0 or size <> e.size or mtime <> e.mtime or inode <> e.inode)
+        load_entry(e, size, mtime, inode)
     while e.loaded_at = 0
         Scheduler.yield()
     e
 }
 
 ; Read the entry's file onto a fresh page and put it in place of the old
-; one; a file that is not there reads as absent.
-procedure load_entry(mutable e: ref[StaticEntry])
+; one, with what the file was just before (a change after the stat shows on
+; the next request); a file that is not there reads as absent.
+procedure load_entry(mutable e: ref[StaticEntry], size: i64, mtime: i64, inode: i64)
 {
     set e.loading: true
     let fresh Page.allocate_page()
@@ -234,6 +255,9 @@ procedure load_entry(mutable e: ref[StaticEntry])
     set e.owns_page: true
     set e.content: content
     set e.present: present
+    set e.size: size
+    set e.mtime: mtime
+    set e.inode: inode
     set e.loaded_at: scaly_eio_now_ns()
     set e.loading: false
     ; with what grew from it: the content read onto it is an oversized block

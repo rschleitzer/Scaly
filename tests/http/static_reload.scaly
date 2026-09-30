@@ -1,13 +1,22 @@
-; The static cache reads a file anew, once a second, onto a page of its own
-; and gives the old page back -- with what grew from it: the content is an
-; oversized block of its own, which Page.release_page alone kept, a copy of
-; every file per second and thread (2026-09-30; the same form under HTTP/3's
-; streams was static-h3's 2 GiB). 200 reloads of a 64 KB file must leave
-; the bytes held where the first reload left them.
-; Expected: reload
+; The static cache reads a file anew onto a page of its own and gives the
+; old page back -- with what grew from it: the content is an oversized
+; block of its own, which Page.release_page alone kept, a copy of every file
+; per reload and thread (2026-09-30; the same form under HTTP/3's streams
+; was static-h3's 2 GiB). 200 reloads of a 64 KB file must leave the bytes
+; held where the first reload left them. Then it follows the disk on the
+; very next request: a file replaced by one of the same length is served
+; with its new bytes at once, and a file removed is absent at once
+; (HttpArena: "replace a file and the next response must carry the new
+; bytes").
+; Expected: reload follow
 
 package scaly 0.1.0
 package http 0.1.0
+
+use http.Static.StaticEntry
+
+; C's remove(3): the stdlib has no file removal
+procedure remove(path: pointer[const_char]) returns i32 extern
 
 procedure reload(times: int) mutable static_cache
 {
@@ -15,7 +24,7 @@ procedure reload(times: int) mutable static_cache
     var i 0
     while i < times
     {
-        load_entry(e)
+        load_entry(e, 0, 0, 0)
         set i: i + 1
     }
 }
@@ -41,6 +50,30 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
         print "reload: `grown` bytes more held after 200 reloads"
         return 1
     }
-    Console.print "reload"
+    Console.print "reload "
+
+    let small String("/tmp/scaly_http_reload/small.txt")
+    File.write_from_string(small, String("first version of the file"))
+    let a static_entry("/tmp/scaly_http_reload/small.txt")
+    if a.present = false or a.content.equals(String("first version of the file")) = false
+    {
+        print "follow: first read"
+        return 2
+    }
+    File.write_from_string(small, String("other version of the file"))
+    let b static_entry("/tmp/scaly_http_reload/small.txt")
+    if b.content.equals(String("other version of the file")) = false
+    {
+        print "follow: the replaced file was served stale"
+        return 3
+    }
+    remove(small.to_c_string())
+    let c static_entry("/tmp/scaly_http_reload/small.txt")
+    if c.present
+    {
+        print "follow: the removed file was still present"
+        return 4
+    }
+    Console.print "follow"
     0
 }

@@ -1305,31 +1305,30 @@ long long scaly_eio_now_ns(void)
     return ts.tv_sec * 1000000000LL + ts.tv_nsec;
 }
 
-/* Filesystem block size of a file — OpenSP's
- * PosixBaseStorageObject::getBlockSize (SP_STAT_BLKSIZE): st_blksize for
- * regular files, the 8192 default otherwise. The parser's read-block
- * boundary replication (data-token splits observable through the DSSSL
- * grove) needs the exact per-file value. Shim rule (a): struct stat's
- * layout is OS-specific. */
+/* What a file is on disk, for a cache that must follow it and for OpenSP's
+ * read-block quantum: out[0] its size, out[1] its mtime in nanoseconds,
+ * out[2] its inode, out[3] st_blksize for a regular file and 8192 otherwise
+ * (PosixBaseStorageObject::getBlockSize under SP_STAT_BLKSIZE -- the
+ * parser's read-block boundaries, which split data tokens, are observable
+ * through the DSSSL grove). stat(path) when there is a path, else
+ * fstat(fd). 0, or -1 when there is no such file (out untouched). Shim
+ * rule (a): struct stat's layout, and the name of its nanosecond mtime,
+ * are OS-specific. It replaces scaly_eio_blksize_path/_fd (2026-09-30). */
 #include <sys/stat.h>
-long long scaly_eio_blksize_path(const char *path)
+int scaly_eio_stat(const char *path, int fd, long long *out)
 {
     struct stat sb;
-    if (stat(path, &sb) < 0)
-        return 8192;
-    if (!S_ISREG(sb.st_mode))
-        return 8192;
-    return (long long)sb.st_blksize;
-}
-
-long long scaly_eio_blksize_fd(int fd)
-{
-    struct stat sb;
-    if (fstat(fd, &sb) < 0)
-        return 8192;
-    if (!S_ISREG(sb.st_mode))
-        return 8192;
-    return (long long)sb.st_blksize;
+    if ((path != 0 ? stat(path, &sb) : fstat(fd, &sb)) < 0)
+        return -1;
+    out[0] = (long long)sb.st_size;
+#if defined(__APPLE__)
+    out[1] = (long long)sb.st_mtimespec.tv_sec * 1000000000LL + sb.st_mtimespec.tv_nsec;
+#else
+    out[1] = (long long)sb.st_mtim.tv_sec * 1000000000LL + sb.st_mtim.tv_nsec;
+#endif
+    out[2] = (long long)sb.st_ino;
+    out[3] = S_ISREG(sb.st_mode) ? (long long)sb.st_blksize : 8192;
+    return 0;
 }
 
 /* 64-bit file position — replaces the direct `fseek`/`ftell` externs.

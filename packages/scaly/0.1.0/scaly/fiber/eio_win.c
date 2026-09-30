@@ -961,10 +961,22 @@ long long scaly_eio_now_ns(void)
          + ((c.QuadPart % f.QuadPart) * 1000000000LL) / f.QuadPart;
 }
 
-/* No st_blksize on Windows; the reference's SP_STAT_BLKSIZE default is what
- * the POSIX file falls back to for non-regular files anyway. */
-long long scaly_eio_blksize_path(const char* path) { (void)path; return 8192; }
-long long scaly_eio_blksize_fd(int fd)             { (void)fd;   return 8192; }
+/* scaly_eio_stat (see eio.c): size, mtime in nanoseconds, inode, block
+ * size. The CRT's _stat64 has the size and a mtime in whole seconds; there
+ * is no inode (0) and no st_blksize -- the reference's SP_STAT_BLKSIZE
+ * default is what the POSIX file falls back to for non-regular files
+ * anyway. */
+int scaly_eio_stat(const char* path, int fd, long long* out)
+{
+    struct _stat64 sb;
+    if ((path != 0 ? _stat64(path, &sb) : _fstat64(fd, &sb)) < 0)
+        return -1;
+    out[0] = (long long)sb.st_size;
+    out[1] = (long long)sb.st_mtime * 1000000000LL;
+    out[2] = 0;
+    out[3] = 8192;
+    return 0;
+}
 
 long long scaly_eio_tell(void* stream)
 {

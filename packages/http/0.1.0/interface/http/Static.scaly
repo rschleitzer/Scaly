@@ -9,17 +9,22 @@
 ;   app.get("/static/{path...}", &asset)
 ;
 ; Contents are cached per scheduler thread (a request's task never leaves
-; its thread, so the cache needs no lock) and FOLLOW THE DISK: an entry
-; older than a second is read again before it is served, on a page of its
-; own that replaces the old one — a file replaced on disk is served within
-; about a second, and a file removed answers 404. A path that climbs out of
-; the directory ("..") or starts with '/' answers 404 as well.
+; its thread, so the cache needs no lock) and FOLLOW THE DISK: every request
+; asks what the file is now (a stat: size, mtime, inode) and an entry that
+; no longer matches is read again before it is served, on a page of its own
+; that replaces the old one -- a file replaced on disk is served with its new
+; bytes on the very next request, and a file removed answers 404. Until
+; 2026-09-30 an entry was read again once it was a second old: HttpArena's
+; rule is "replace a file and the next response must carry the new bytes",
+; and its validation's 2 s window is a tolerance, not a budget. A path that
+; climbs out of the directory ("..") or starts with '/' answers 404 as well.
 
 use http.Request.Request
 use http.Response.Response
 
-; How long a cached file is served before it is read again.
-define STATIC_TTL_NS: i64 1000000000
+; What a file is on disk (scaly/fiber/eio.c): out[0] size, out[1] mtime in
+; nanoseconds, out[2] inode, out[3] block size; -1 when there is no file.
+procedure scaly_eio_stat(path: pointer[const_char], fd: i32, mutable out: pointer[i64]) returns i32 extern
 
 define StaticEntry
 (
@@ -31,6 +36,10 @@ define StaticEntry
     var present: bool
     ; monotonic time of the last read, 0 before the first
     var loaded_at: i64
+    ; what the file was when it was read (size, mtime, inode; -1 absent)
+    var size: i64
+    var mtime: i64
+    var inode: i64
     var loading: bool
     ; whether `page` is the entry's own (false while it is the cache's)
     var owns_page: bool
@@ -63,14 +72,15 @@ function quality_value(s: Slice[u8]) @ret_nonlocal true @deep true returns i64 l
 ; This thread's cache.
 procedure static_cache_here() @deep true returns ref[StaticCache] mutable static_cache reads static_cache linked
 
-; The cache entry of the file at path, read (again) when it is new or
-; older than STATIC_TTL_NS; while one task reads it the others serve what
-; is there, or wait for a first read.
+; The cache entry of the file at path, read (again) when it is new or the
+; file on disk is no longer what was read; while one task reads it the
+; others serve what is there, or wait for a first read.
 procedure static_entry(path: Slice[u8]) @deep true returns ref[StaticEntry] io mutable static_cache reads static_cache linked
 
 ; Read the entry's file onto a fresh page and put it in place of the old
-; one; a file that is not there reads as absent.
-procedure load_entry(mutable e: ref[StaticEntry]) @ret_nonlocal true @deep true @deep_beyond_1 true io linked
+; one, with what the file was just before (a change after the stat shows on
+; the next request); a file that is not there reads as absent.
+procedure load_entry(mutable e: ref[StaticEntry], size: i64, mtime: i64, inode: i64) @ret_nonlocal true @deep true @deep_beyond_1 true io linked
 
 ; Serve the file rel under root (see the module header): 200 with the file
 ; or a pre-compressed twin, 404 when there is none.
