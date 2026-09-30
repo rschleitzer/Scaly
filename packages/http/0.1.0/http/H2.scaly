@@ -446,6 +446,7 @@ define H2Conn
             let s streams.at(i)
             if s.id = id
             {
+                s.page.deallocate_extensions()
                 Page.release_page(s.page)
                 streams.put(i, streams.at(streams.length - 1))
                 set streams.length: streams.length - 1
@@ -510,6 +511,7 @@ define H2Conn
             {
                 if p.trailers.length > 0
                     this.headers_frame(p.id, 0, p.trailers, 0, true)
+                p.page.deallocate_extensions()
                 Page.release_page(p.page)
                 var j i
                 while j + 1 < pending.length
@@ -789,6 +791,7 @@ define H2Conn
         while k < jobs.length
         {
             let job jobs.at(k)
+            job.page.deallocate_extensions()
             Page.release_page(job.page)
             set k: k + 1
         }
@@ -1081,6 +1084,7 @@ procedure serve_h2[S](mutable c: ref[S], router: ref[Router], host: ref[Page], m
         if n <= 0
             break
         inb.advance(n as size_t)
+        res.tick()
         if TcpServer.current().stopping()
         {
             h.goaway(0)
@@ -1093,6 +1097,7 @@ procedure serve_h2[S](mutable c: ref[S], router: ref[Router], host: ref[Page], m
     while i < h.streams.length
     {
         let s h.streams.at(i)
+        s.page.deallocate_extensions()
         Page.release_page(s.page)
         set i: i + 1
     }
@@ -1100,6 +1105,7 @@ procedure serve_h2[S](mutable c: ref[S], router: ref[Router], host: ref[Page], m
     while i < h.pending.length
     {
         let p h.pending.at(i)
+        p.page.deallocate_extensions()
         Page.release_page(p.page)
         set i: i + 1
     }

@@ -570,6 +570,7 @@ procedure api_item_get(req: ref[Request], mutable res: ref[Response]) mutable pg
         if table <> null
             l1_put(table, id, value.bytes())
         send_cached(res, true, value.bytes())
+        host.deallocate_extensions()
         Page.release_page(host)
         return
     }
@@ -577,6 +578,7 @@ procedure api_item_get(req: ref[Request], mutable res: ref[Response]) mutable pg
     {
         res.set_status(404)
         res.send_empty()
+        host.deallocate_extensions()
         Page.release_page(host)
         return
     }
@@ -584,6 +586,7 @@ procedure api_item_get(req: ref[Request], mutable res: ref[Response]) mutable pg
     if table <> null
         l1_put(table, id, value.bytes())
     send_cached(res, false, value.bytes())
+    host.deallocate_extensions()
     Page.release_page(host)
 }
 
@@ -633,6 +636,7 @@ procedure api_item_post(req: ref[Request], mutable res: ref[Response]) mutable p
     var k ByteBuf.create(host, 32)
     cache_key(&k, "item:", id)
     l2_del(k.bytes())
+    host.deallocate_extensions()
     Page.release_page(host)
     res.set_status(204)
     res.send_empty()
@@ -671,6 +675,7 @@ procedure api_me(req: ref[Request], mutable res: ref[Response]) mutable pg_pool,
         if table <> null
             l1_put(table, id, value.bytes())
         send_cached(res, true, value.bytes())
+        host.deallocate_extensions()
         Page.release_page(host)
         return
     }
@@ -678,6 +683,7 @@ procedure api_me(req: ref[Request], mutable res: ref[Response]) mutable pg_pool,
     {
         res.set_status(404)
         res.send_empty()
+        host.deallocate_extensions()
         Page.release_page(host)
         return
     }
@@ -685,6 +691,7 @@ procedure api_me(req: ref[Request], mutable res: ref[Response]) mutable pg_pool,
     if table <> null
         l1_put(table, id, value.bytes())
     send_cached(res, false, value.bytes())
+    host.deallocate_extensions()
     Page.release_page(host)
 }
 
@@ -793,6 +800,7 @@ procedure fortunes(req: ref[Request], mutable res: ref[Response]) mutable pg_poo
     out.append("</table></body></html>")
     res.send("text/html; charset=utf-8", out.bytes())
     release(c)
+    host.deallocate_extensions()
     Page.release_page(host)
 }
 

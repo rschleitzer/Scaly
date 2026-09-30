@@ -67,6 +67,7 @@ procedure serve_connection[S](mutable c: ref[S], router: ref[Router])
         if n <= 0
             break
         inb.advance(n as size_t)
+        res.tick()
         ; HTTP/2: the client preface instead of a request line (h2c by prior
         ; knowledge, and h2 after ALPN -- the preface is all either sends).
         ; Fewer bytes than the preface that still match it decide nothing:

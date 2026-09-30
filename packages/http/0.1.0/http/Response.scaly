@@ -68,6 +68,7 @@ define Response
     var block_at: size_t         ; where the HPACK block starts in out
     var body_at: size_t          ; where the body starts in out (HPACK)
     hpack_ok: Slice[u8]          ; the HPACK :status 200 and date (init_hpack_ok)
+    var ticked: bool             ; the connection reads the clock (tick), start need not
 )
 {
     ; A connection's response on its page, writing into out: the 200 head
@@ -79,7 +80,7 @@ define Response
         let trailers &ByteBuf^host(host, allocate_slice[u8]^host(host, 64), 0, false)
         var hpack_head allocate_slice[u8]^host(host, HPACK_OK_LENGTH)
         init_hpack_ok(hpack_head)
-        &Response^host(out, 200, false, false, false, head.subslice(HEAD_OK_DATE_AT, HEAD_OK_DATE_AT + DATE_LENGTH), 0 - 1, head, false, trailers, null, false, 0, 0, hpack_head)
+        &Response^host(out, 200, false, false, false, head.subslice(HEAD_OK_DATE_AT, HEAD_OK_DATE_AT + DATE_LENGTH), 0 - 1, head, false, trailers, null, false, 0, 0, hpack_head, false)
     }
 
     ; Ready for the next response on the same connection.
@@ -163,18 +164,8 @@ define Response
         if started
             return
         set started: true
-        let now scaly_time_now()
-        if now <> date_second
-        {
-            format_date(date, now)
-            set date_second: now
-            var d: size_t 0
-            while d < DATE_LENGTH
-            {
-                hpack_ok.put(HPACK_OK_DATE_AT + d, date[d])
-                set d: d + 1
-            }
-        }
+        if ticked = false
+            this.clock(scaly_time_now())
         if hpack
         {
             ; the common case in one copy, as head_ok is for HTTP/1.1 (the
@@ -205,6 +196,31 @@ define Response
         if close
             out.append("\r\nConnection: close")
         out.append("\r\n")
+    }
+
+    ; The clock, once for a batch of responses: a connection loop calls it
+    ; after each read, and start then reads no clock of its own (one read
+    ; per response was 1.5 % of the server's CPU in pipelined on Linux,
+    ; 2026-09-30). A response nobody ticks reads it in start, as before.
+    procedure tick(mutable this)
+    {
+        this.clock(scaly_time_now())
+        set ticked: true
+    }
+
+    ; The date for second `now`, formatted when the second changed.
+    procedure clock(mutable this, now: i64)
+    {
+        if now = date_second
+            return
+        format_date(date, now)
+        set date_second: now
+        var d: size_t 0
+        while d < DATE_LENGTH
+        {
+            hpack_ok.put(HPACK_OK_DATE_AT + d, date[d])
+            set d: d + 1
+        }
     }
 
     ; One header field. After send it is ignored.

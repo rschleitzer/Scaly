@@ -33,6 +33,10 @@ procedure BIO_ADDRINFO_free(mutable ai: BioAddrInfo) extern
 procedure BIO_socket(domain: i32, socktype: i32, protocol: i32, options: i32) returns i32 extern
 procedure BIO_bind(sock: i32, addr: BioAddr, options: i32) returns i32 extern
 procedure BIO_socket_nbio(fd: i32, mode: i32) returns i32 extern
+procedure BIO_closesocket(sock: i32) returns i32 extern
+; SO_REUSEPORT on a socket not bound yet (the runtime's shim, whose constant
+; is the OS's): 0 when set, -1 where it cannot be.
+procedure scaly_eio_reuseport(fd: i32) returns i32 extern
 
 define SSL_ACCEPT_NO_BLOCK: u64 1
 define SSL_STREAM_FLAG_UNI: u64 1
@@ -56,8 +60,10 @@ procedure alpn_select_h3(ssl: SslRef, mutable selected: pointer[pointer[u8]], mu
 }
 
 ; A UDP socket bound to `port` on every interface (dual-stack where the
-; system allows it), non-blocking; -1 when it cannot be made.
-procedure quic_socket(port: int) returns i32
+; system allows it), non-blocking; -1 when it cannot be made. With spread
+; it takes SO_REUSEPORT, so that more of them bind the port and the kernel
+; spreads the clients over them.
+procedure quic_socket(port: int, spread: bool) returns i32
 {
     var service StringBuilder()
     service.append(port)
@@ -71,18 +77,28 @@ procedure quic_socket(port: int) returns i32
         BIO_ADDRINFO_free(res)
         return 0 - 1
     }
+    if spread and scaly_eio_reuseport(fd) <> 0
+    {
+        BIO_ADDRINFO_free(res)
+        BIO_closesocket(fd)
+        return 0 - 1
+    }
     let bound BIO_bind(fd, BIO_ADDRINFO_address(res), BIO_SOCK_REUSEADDR)
     BIO_ADDRINFO_free(res)
     if bound <> 1 or BIO_socket_nbio(fd, 1) <> 1
+    {
+        BIO_closesocket(fd)
         return 0 - 1
+    }
     fd
 }
 
 ; A QUIC server: its context (certificate, key, ALPN h3) and its listener
-; on a UDP port. Not valid() when either could not be made.
+; on a UDP port -- one of several on it with spread (quic_socket). Not
+; valid() when either could not be made.
 define QuicServer(var ctx: SslCtxRef, var listener: SslRef)
 {
-    procedure listen(port: int, cert_file: String, key_file: String) returns QuicServer
+    procedure listen(port: int, cert_file: String, key_file: String, spread: bool) returns QuicServer
     {
         let ctx SSL_CTX_new(OSSL_QUIC_server_method())
         if ctx = null
@@ -93,7 +109,7 @@ define QuicServer(var ctx: SslCtxRef, var listener: SslRef)
             return QuicServer(null, null)
         }
         SSL_CTX_set_alpn_select_cb(ctx, &alpn_select_h3, null)
-        let fd quic_socket(port)
+        let fd quic_socket(port, spread)
         if fd < 0
         {
             SSL_CTX_free(ctx)

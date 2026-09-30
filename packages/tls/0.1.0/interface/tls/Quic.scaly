@@ -33,6 +33,10 @@ procedure BIO_ADDRINFO_free(mutable ai: BioAddrInfo) extern
 procedure BIO_socket(domain: i32, socktype: i32, protocol: i32, options: i32) returns i32 extern
 procedure BIO_bind(sock: i32, addr: BioAddr, options: i32) returns i32 extern
 procedure BIO_socket_nbio(fd: i32, mode: i32) returns i32 extern
+procedure BIO_closesocket(sock: i32) returns i32 extern
+; SO_REUSEPORT on a socket not bound yet (the runtime's shim, whose constant
+; is the OS's): 0 when set, -1 where it cannot be.
+procedure scaly_eio_reuseport(fd: i32) returns i32 extern
 
 define SSL_ACCEPT_NO_BLOCK: u64 1
 define SSL_STREAM_FLAG_UNI: u64 1
@@ -51,14 +55,17 @@ define CONN_CLOSE_INFO_SIZE: size_t 40
 procedure alpn_select_h3(ssl: SslRef, mutable selected: pointer[pointer[u8]], mutable selected_length: pointer[u8], offered: pointer[u8], offered_length: u32, arg: pointer[void]) @deep true returns i32 linked
 
 ; A UDP socket bound to `port` on every interface (dual-stack where the
-; system allows it), non-blocking; -1 when it cannot be made.
-procedure quic_socket(port: int) @ret_caller true @deep true returns i32 io linked
+; system allows it), non-blocking; -1 when it cannot be made. With spread
+; it takes SO_REUSEPORT, so that more of them bind the port and the kernel
+; spreads the clients over them.
+procedure quic_socket(port: int, spread: bool) @ret_caller true @deep true returns i32 io linked
 
 ; A QUIC server: its context (certificate, key, ALPN h3) and its listener
-; on a UDP port. Not valid() when either could not be made.
+; on a UDP port -- one of several on it with spread (quic_socket). Not
+; valid() when either could not be made.
 define QuicServer(var ctx: SslCtxRef, var listener: SslRef)
 {
-    procedure listen(port: int, cert_file: String, key_file: String) @page true @direct true @ret_caller true @deep true returns QuicServer io linked
+    procedure listen(port: int, cert_file: String, key_file: String, spread: bool) @page true @direct true @ret_caller true @deep true returns QuicServer io linked
 
     function valid(this) @ret_param_0 true @deep true returns bool linked
 }

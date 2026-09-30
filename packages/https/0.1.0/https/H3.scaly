@@ -1,5 +1,7 @@
-; HTTP/3 (RFC 9114) over OpenSSL's QUIC server (tls.Quic), on a thread of
-; its own: one task drives the listener, its connections and their streams
+; HTTP/3 (RFC 9114) over OpenSSL's QUIC server (tls.Quic): a listener per
+; core on the same UDP port (SO_REUSEPORT: the kernel spreads the clients
+; over them; one listener where a second cannot be made), each on a thread
+; of its own, where one task drives it, its connections and their streams
 ; in non-blocking mode. A request stream is answered once its FIN arrived:
 ; its HEADERS (QPACK, static table only -- http.Qpack) and DATA frames become
 ; HTTP/1.1 request text for the same router and handlers as every other
@@ -41,9 +43,16 @@ define H3Conn
     var streams: Array[ref[H3Stream]]
 )
 
-; What the h3 thread serves: set once by start_h3, before the thread.
+; What the h3 threads serve: set once by start_h3, before the threads. Each
+; thread's listener is its spawn argument.
 shared atomic h3_router: u64 0
-shared atomic h3_listener: u64 0
+
+; The response bytes a thread's streams may hold unsent: past it no more
+; requests are answered until the clients took some -- their streams wait,
+; unread, under QUIC's flow control. Without it every stream held a copy of
+; its whole response: 64 connections of 64 streams of static files, static-h3
+; at 2 GiB (2026-09-30).
+define H3_OUTPUT_BUDGET: size_t 4194304
 
 ; A QUIC variable-length integer (RFC 9000 16) at s[at]: its value, and at
 ; moved past it; -1 when the bytes end inside it.
@@ -237,18 +246,21 @@ procedure h3_read(mutable s: ref[H3Stream], mutable progress: ref[bool]) returns
 procedure h3_free_stream(mutable s: ref[H3Stream])
 {
     SSL_free(s.ssl)
+    s.page.deallocate_extensions()
     Page.release_page(s.page)
 }
 
 ; The h3 task: every connection and stream, round after round.
 procedure h3_loop()
 {
-    var listener (scaly_atomic_load_u64(&h3_listener) as size_t) as SslRef
+    var listener Scheduler.task_arg() as SslRef
     let router (scaly_atomic_load_u64(&h3_router) as size_t) as ref[Router]
     let host Page.allocate_page()
     let outb &ByteBuf^host(host, allocate_slice[u8]^host(host, 16384), 0, false)
     let w &H3Work^host(router, HeaderList.create(host), ByteBuf.create(host, 1024), ByteBuf.create(host, 1024), ByteBuf.create(host, 1024), ByteBuf.create(host, 64), &Request^host(null, null, null, null, null, null, 1, true, null, null), Response.create(host, outb), outb)
     let conns &Array[ref[H3Conn]]^host()
+    ; the unsent response bytes of every answered stream (H3_OUTPUT_BUDGET)
+    var pending: size_t 0
     ; the control stream's opening: type 0 (control), SETTINGS with nothing
     var settings u8[3]
     let preamble Slice[u8](3, &settings[0])
@@ -287,12 +299,15 @@ procedure h3_loop()
                 while j < conn.streams.length
                 {
                     var s: ref[H3Stream] conn.streams.at(j)
+                    if s.answered
+                        set pending: pending - (s.output.length - s.sent)
                     h3_free_stream(s)
                     set j: j + 1
                 }
                 if conn.control <> null
                     SSL_free(conn.control)
                 SSL_free(conn.ssl)
+                conn.page.deallocate_extensions()
                 Page.release_page(conn.page)
                 conns.put(i, conns.at(conns.length - 1))
                 set conns.length: conns.length - 1
@@ -313,18 +328,25 @@ procedure h3_loop()
             {
                 var s: ref[H3Stream] conn.streams.at(j)
                 var done false
-                if s.answered = false
+                if s.answered = false and (s.bidi = false or pending < H3_OUTPUT_BUDGET)
                 {
                     if h3_read(s, &progress)
                     {
                         if s.bidi
+                        {
                             h3_answer(w, s)
+                            set pending: pending + s.output.length
+                        }
                         else
                             set done: true
                     }
                 }
                 if s.answered
+                {
+                    let before s.sent
                     set done: h3_flush(s)
+                    set pending: pending - (s.sent - before)
+                }
                 if done
                 {
                     set progress: true
@@ -346,21 +368,38 @@ procedure h3_thread(mutable arg: pointer[void]) returns pointer[void]
 {
     let page Page.allocate_page()
     let sched Scheduler.create(page)
-    Scheduler.spawn_arg(&h3_loop, null)
+    Scheduler.spawn_arg(&h3_loop, arg)
     Scheduler.run()
     null
 }
 
-; Serve router over HTTP/3 on UDP `port` with the certificate and key, on
-; a thread of its own; false when the QUIC server cannot be made (no
-; OpenSSL with a QUIC server, 3.5 or later, or the port or files).
+; Serve router over HTTP/3 on UDP `port` with the certificate and key: a
+; listener and a thread per core (one thread for all of HTTP/3 held
+; baseline-h3 at a core, 2026-09-30); false when the QUIC server cannot be
+; made (no OpenSSL with a QUIC server, 3.5 or later, or the port or files).
 procedure start_h3(router: ref[Router], port: int, cert_file: String, key_file: String) returns bool
 {
-    var server QuicServer.listen(port, cert_file, key_file)
-    if server.valid() = false
+    let cores scaly_eio_ncpu()
+    var first QuicServer.listen(port, cert_file, key_file, cores > 1)
+    var spread cores > 1
+    if first.valid() = false and spread
+    {
+        ; no SO_REUSEPORT (Windows): one listener
+        set first: QuicServer.listen(port, cert_file, key_file, false)
+        set spread: false
+    }
+    if first.valid() = false
         return false
     scaly_atomic_store_u64(&h3_router, router as u64)
-    scaly_atomic_store_u64(&h3_listener, server.listener as u64)
-    Thread.spawn(&h3_thread, null)
+    Thread.spawn(&h3_thread, first.listener as pointer[void])
+    var k 1
+    while spread and k < cores
+    {
+        let more QuicServer.listen(port, cert_file, key_file, true)
+        if more.valid() = false
+            break
+        Thread.spawn(&h3_thread, more.listener as pointer[void])
+        set k: k + 1
+    }
     true
 }

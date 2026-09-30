@@ -236,8 +236,13 @@ procedure load_entry(mutable e: ref[StaticEntry])
     set e.present: present
     set e.loaded_at: scaly_eio_now_ns()
     set e.loading: false
+    ; with what grew from it: the content read onto it is an oversized block
+    ; of its own, which release_page alone kept (2026-09-30)
     if had_own
+    {
+        old.deallocate_extensions()
         Page.release_page(old)
+    }
 }
 
 ; Serve the file rel under root (see the module header): 200 with the file

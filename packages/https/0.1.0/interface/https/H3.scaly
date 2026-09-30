@@ -1,5 +1,7 @@
-; HTTP/3 (RFC 9114) over OpenSSL's QUIC server (tls.Quic), on a thread of
-; its own: one task drives the listener, its connections and their streams
+; HTTP/3 (RFC 9114) over OpenSSL's QUIC server (tls.Quic): a listener per
+; core on the same UDP port (SO_REUSEPORT: the kernel spreads the clients
+; over them; one listener where a second cannot be made), each on a thread
+; of its own, where one task drives it, its connections and their streams
 ; in non-blocking mode. A request stream is answered once its FIN arrived:
 ; its HEADERS (QPACK, static table only -- http.Qpack) and DATA frames become
 ; HTTP/1.1 request text for the same router and handlers as every other
@@ -41,9 +43,16 @@ define H3Conn
     var streams: Array[ref[H3Stream]]
 )
 
-; What the h3 thread serves: set once by start_h3, before the thread.
+; What the h3 threads serve: set once by start_h3, before the threads. Each
+; thread's listener is its spawn argument.
 shared atomic h3_router: u64 linked
-shared atomic h3_listener: u64 linked
+
+; The response bytes a thread's streams may hold unsent: past it no more
+; requests are answered until the clients took some -- their streams wait,
+; unread, under QUIC's flow control. Without it every stream held a copy of
+; its whole response: 64 connections of 64 streams of static files, static-h3
+; at 2 GiB (2026-09-30).
+define H3_OUTPUT_BUDGET: size_t 4194304
 
 ; A QUIC variable-length integer (RFC 9000 16) at s[at]: its value, and at
 ; moved past it; -1 when the bytes end inside it.
@@ -79,11 +88,12 @@ procedure h3_read(mutable s: ref[H3Stream], mutable progress: ref[bool]) @ret_no
 procedure h3_free_stream(mutable s: ref[H3Stream]) @ret_nonlocal true @deep true @deep_beyond_1 true io linked
 
 ; The h3 task: every connection and stream, round after round.
-procedure h3_loop() @deep true io reads h3_listener linked
+procedure h3_loop() @deep true io reads h3_router linked
 
 procedure h3_thread(mutable arg: pointer[void]) @ret_nonlocal true @deep true returns pointer[void] io linked
 
-; Serve router over HTTP/3 on UDP `port` with the certificate and key, on
-; a thread of its own; false when the QUIC server cannot be made (no
-; OpenSSL with a QUIC server, 3.5 or later, or the port or files).
+; Serve router over HTTP/3 on UDP `port` with the certificate and key: a
+; listener and a thread per core (one thread for all of HTTP/3 held
+; baseline-h3 at a core, 2026-09-30); false when the QUIC server cannot be
+; made (no OpenSSL with a QUIC server, 3.5 or later, or the port or files).
 procedure start_h3(router: ref[Router], port: int, cert_file: String, key_file: String) @ret_nonlocal true @deep true returns bool io reads h3_router linked

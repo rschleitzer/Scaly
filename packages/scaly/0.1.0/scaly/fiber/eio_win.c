@@ -178,6 +178,15 @@ static int sc_is_listener(SOCKET s)
     return v != 0;
 }
 
+/* SO_REUSEPORT has no Windows counterpart (SO_REUSEADDR there lets a second
+ * socket take over a live port): one socket per port, so https.H3 serves
+ * on one listener here. */
+int scaly_eio_reuseport(int fd)
+{
+    (void)fd;
+    return -1;
+}
+
 /* ---- queue ------------------------------------------------------------ */
 
 int scaly_eio_create(void)

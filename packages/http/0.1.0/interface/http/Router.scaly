@@ -57,9 +57,23 @@ define Router
     host: ref[Page]
     var routes: Array[Route]
     var hooks: Array[Hook]
+    ; the routes by the byte after a path's leading '/': the indices of the
+    ; candidates for byte b stand in lead_routes from lead_start[b] to
+    ; lead_start[b + 1], in the order they were added -- a route with a
+    ; parameter (or nothing) there in every list. find and route_waits walk
+    ; those alone: walking every route was a quarter of the connection
+    ; loop's own samples in pipelined, on Linux (2026-09-30).
+    var lead_start: Array[size_t]
+    var lead_routes: Array[size_t]
 )
 {
     procedure create(host: ref[Page]) @ret_explicit_0 true @deep true returns ref[Router] linked
+
+    ; lead_start and lead_routes anew, after a route was added.
+    procedure index_leads(mutable this) @ret_nonlocal true @deep true linked
+
+    ; The list of candidates for path: lead_start's index.
+    function lead_of(this, path: Slice[u8]) @ret_param_1 true @deep true returns size_t linked
 
     ; A route for method ("" for every method) on pattern.
     procedure add(mutable this, method: Slice[u8], pattern: Slice[u8], mutable handler: pointer[void]) @persists true @ret_nonlocal true @deep true @deep_this_6 true @deep_whole_6 true linked

@@ -810,6 +810,21 @@ static void scaly_eio_sock_init(int fd)
 #endif
 }
 
+/* SO_REUSEPORT on a socket not bound yet: several sockets on one port and
+ * the kernel spreading the peers over them -- a QUIC listener per scheduler
+ * thread (https.H3). Shim rule (a): the constant's value is the OS's (15 on
+ * Linux, 0x200 on Darwin). 0 when set, -1 when it cannot be. */
+int scaly_eio_reuseport(int fd)
+{
+#ifdef SO_REUSEPORT
+    int one = 1;
+    return setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &one, sizeof one) == 0 ? 0 : -1;
+#else
+    (void)fd;
+    return -1;
+#endif
+}
+
 static int scaly_eio_tcp_listen_at(unsigned int ip_host_order, int port)
 {
     struct sockaddr_in addr;

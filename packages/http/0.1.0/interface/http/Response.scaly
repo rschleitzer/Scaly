@@ -51,6 +51,7 @@ define Response
     var block_at: size_t         ; where the HPACK block starts in out
     var body_at: size_t          ; where the body starts in out (HPACK)
     hpack_ok: Slice[u8]          ; the HPACK :status 200 and date (init_hpack_ok)
+    var ticked: bool             ; the connection reads the clock (tick), start need not
 )
 {
     ; A connection's response on its page, writing into out: the 200 head
@@ -81,6 +82,15 @@ define Response
     procedure set_close(mutable this) @deep true linked
 
     procedure start(mutable this) @deep true io linked
+
+    ; The clock, once for a batch of responses: a connection loop calls it
+    ; after each read, and start then reads no clock of its own (one read
+    ; per response was 1.5 % of the server's CPU in pipelined on Linux,
+    ; 2026-09-30). A response nobody ticks reads it in start, as before.
+    procedure tick(mutable this) @deep true io linked
+
+    ; The date for second `now`, formatted when the second changed.
+    procedure clock(mutable this, now: i64) @deep true linked
 
     ; One header field. After send it is ignored.
     procedure header(mutable this, name: Slice[u8], value: Slice[u8]) @deep true io linked

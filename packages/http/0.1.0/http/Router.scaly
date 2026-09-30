@@ -57,10 +57,48 @@ define Router
     host: ref[Page]
     var routes: Array[Route]
     var hooks: Array[Hook]
+    ; the routes by the byte after a path's leading '/': the indices of the
+    ; candidates for byte b stand in lead_routes from lead_start[b] to
+    ; lead_start[b + 1], in the order they were added -- a route with a
+    ; parameter (or nothing) there in every list. find and route_waits walk
+    ; those alone: walking every route was a quarter of the connection
+    ; loop's own samples in pipelined, on Linux (2026-09-30).
+    var lead_start: Array[size_t]
+    var lead_routes: Array[size_t]
 )
 {
     procedure create(host: ref[Page]) returns ref[Router]
-        &Router^host(host, Array[Route]^host(), Array[Hook]^host())
+        &Router^host(host, Array[Route]^host(), Array[Hook]^host(), Array[size_t]^host(), Array[size_t]^host())
+
+    ; lead_start and lead_routes anew, after a route was added.
+    procedure index_leads(mutable this)
+    {
+        lead_start.clear()
+        lead_routes.clear()
+        var b: i64 0
+        while b < 256
+        {
+            lead_start.add(lead_routes.length)
+            var i: size_t 0
+            while i < routes.length
+            {
+                let r routes.at(i)
+                if r.lead < 0 or r.lead = b
+                    lead_routes.add(i)
+                set i: i + 1
+            }
+            set b: b + 1
+        }
+        lead_start.add(lead_routes.length)
+    }
+
+    ; The list of candidates for path: lead_start's index.
+    function lead_of(this, path: Slice[u8]) returns size_t
+    {
+        if path.length < 2
+            return 0
+        path[1] as size_t
+    }
 
     ; A route for method ("" for every method) on pattern.
     procedure add(mutable this, method: Slice[u8], pattern: Slice[u8], mutable handler: pointer[void])
@@ -70,6 +108,7 @@ define Router
         if prefix >= 2
             set lead: pattern[1] as i64
         routes.add(Route(method, pattern, handler, literal_segments(pattern), false, prefix, prefix = pattern.length, lead))
+        this.index_leads()
     }
 
     procedure get(mutable this, pattern: Slice[u8], mutable handler: pointer[void])
@@ -111,13 +150,15 @@ define Router
     ; Does a request for method and path reach a route that waits?
     function route_waits(this, method: Slice[u8], path: Slice[u8]) returns bool
     {
-        var i: size_t 0
-        while i < routes.length
+        let b this.lead_of(path)
+        var k: size_t lead_start[b]
+        let end: size_t lead_start[b + 1]
+        while k < end
         {
-            let r routes.at(i)
+            let r routes.at(lead_routes[k])
             if r.waits and route_matches(r, path) and (r.method.length = 0 or r.method.equals(method))
                 return true
-            set i: i + 1
+            set k: k + 1
         }
         false
     }
@@ -138,10 +179,12 @@ define Router
         let head req.method.equals("HEAD")
         var best: ref[Route]? null
         var best_literals 0 - 1
-        var i: size_t 0
-        while i < routes.length
+        let b this.lead_of(req.path)
+        var k: size_t lead_start[b]
+        let end: size_t lead_start[b + 1]
+        while k < end
         {
-            let r routes.at(i)
+            let r routes.at(lead_routes[k])
             if route_matches(r, req.path)
             {
                 set path_matched: true
@@ -154,7 +197,7 @@ define Router
                     set best_literals: r.literals
                 }
             }
-            set i: i + 1
+            set k: k + 1
         }
         best
     }

@@ -109,6 +109,23 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
         return 14
     if refusal_status(answer(buf, "GET / HTTP/1.1\r\nNoColon\r\n\r\n")) <> 400
         return 15
+    ; the request line's parts and the name, as the one-pass scan reads them
+    var bi 0
+    while bi < 8
+    {
+        var t: Slice[u8] " GET / HTTP/1.1\r\n\r\n"
+        match bi
+            case 1: set t: "GET  HTTP/1.1\r\n\r\n"
+            case 2: set t: "GET / HTTP/1.10\r\n\r\n"
+            case 3: set t: "GET / HTTX/1.1\r\n\r\n"
+            case 4: set t: "GET / HTTP/1.a\r\n\r\n"
+            case 5: set t: "GET / HTTP/1.1\r\n: empty\r\n\r\n"
+            case 6: set t: "GET / HTTP/1.1 \r\n\r\n"
+            case 7: set t: "GET / HTTP/1.1\r\nBad\tName: x\r\n\r\n"
+        if refusal_status(answer(buf, t)) <> 400
+            return 18
+        set bi: bi + 1
+    }
     if refusal_status(answer(buf, "POST / HTTP/1.1\r\nContent-Length: 12x\r\n\r\n")) <> 400
         return 16
     if refusal_status(answer(buf, "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\nzz\r\n")) <> 400

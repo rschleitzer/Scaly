@@ -50,6 +50,7 @@ define PgConn
         var tcp TcpStream.connect(host_name, port)
         if tcp.is_open() = false
         {
+            page.deallocate_extensions()
             Page.release_page(page)
             return null
         }
@@ -97,6 +98,7 @@ define PgConn
         }
         set open: false
         tcp.close()
+        host.deallocate_extensions()
         Page.release_page(host)
     }
 

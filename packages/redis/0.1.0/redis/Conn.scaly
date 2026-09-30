@@ -35,6 +35,7 @@ define RedisConn
         var tcp TcpStream.connect(host_name, port)
         if tcp.is_open() = false
         {
+            page.deallocate_extensions()
             Page.release_page(page)
             return null
         }
@@ -49,6 +50,7 @@ define RedisConn
     {
         set open: false
         tcp.close()
+        host.deallocate_extensions()
         Page.release_page(host)
     }
 

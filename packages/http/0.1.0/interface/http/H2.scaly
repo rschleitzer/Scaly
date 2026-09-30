@@ -313,6 +313,7 @@ procedure serve_h2[S](mutable c: ref[S], router: ref[Router], host: ref[Page], m
         if n <= 0
             break
         inb.advance(n as size_t)
+        res.tick()
         if TcpServer.current().stopping()
         {
             h.goaway(0)
@@ -325,6 +326,7 @@ procedure serve_h2[S](mutable c: ref[S], router: ref[Router], host: ref[Page], m
     while i < h.streams.length
     {
         let s h.streams.at(i)
+        s.page.deallocate_extensions()
         Page.release_page(s.page)
         set i: i + 1
     }
@@ -332,6 +334,7 @@ procedure serve_h2[S](mutable c: ref[S], router: ref[Router], host: ref[Page], m
     while i < h.pending.length
     {
         let p h.pending.at(i)
+        p.page.deallocate_extensions()
         Page.release_page(p.page)
         set i: i + 1
     }

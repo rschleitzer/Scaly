@@ -1,0 +1,46 @@
+; The static cache reads a file anew, once a second, onto a page of its own
+; and gives the old page back -- with what grew from it: the content is an
+; oversized block of its own, which Page.release_page alone kept, a copy of
+; every file per second and thread (2026-09-30; the same form under HTTP/3's
+; streams was static-h3's 2 GiB). 200 reloads of a 64 KB file must leave
+; the bytes held where the first reload left them.
+; Expected: reload
+
+package scaly 0.1.0
+package http 0.1.0
+
+procedure reload(times: int) mutable static_cache
+{
+    let e static_entry("/tmp/scaly_http_reload/big.txt")
+    var i 0
+    while i < times
+    {
+        load_entry(e)
+        set i: i + 1
+    }
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutable static_cache
+{
+    Page.enable_statistics()
+    Directory.create(String("/tmp/scaly_http_reload"))
+    var sb StringBuilder()
+    var k 0
+    while k < 1024
+    {
+        sb.append("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde\n")
+        set k: k + 1
+    }
+    File.write_from_string(String("/tmp/scaly_http_reload/big.txt"), sb.to_string())
+    reload(1)
+    let before Page.bytes_held()
+    reload(200)
+    let grown Page.bytes_held() - before
+    if grown > 1000000
+    {
+        print "reload: `grown` bytes more held after 200 reloads"
+        return 1
+    }
+    Console.print "reload"
+    0
+}
