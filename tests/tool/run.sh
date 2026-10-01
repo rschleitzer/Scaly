@@ -17,6 +17,8 @@
 #   release    `scaly build --release`: hello and the http server as ONE module
 #              (package bitcode from the cache, linked and optimised in
 #              process), the binary smaller than the plain build's
+#   target     `--target x86_64-apple-darwin`, plain and --release: an x86_64
+#              binary that runs under Rosetta 2; SKIPs by name elsewhere
 #   pgo        `--pgo-train`, a run, `--pgo <profile>`: the same output
 #   repl       `scaly` alone: tests/tool/repl.session piped in under poison
 #              gives tests/tool/repl.expected byte for byte -- values kept,
@@ -144,6 +146,24 @@ if "$BIN" build tests/http/server.scaly --release -o "$TMP/server_rel$SCALY_EXE"
   [ "$out" = "$(sed -n 's/^; Expected: //p' tests/http/server.scaly)" ] && ok || bad "release http: '$out'"
 else
   bad "release http(build): $(tail -1 "$TMP/rel2.log")"
+fi
+
+# target: `scaly build --target` links for the target as well -- an x86_64
+# macOS program on an arm64 Mac, run under Rosetta 2 (the probe is
+# tests/target/rosetta.sh's: only running an x86_64 binary says it can run)
+echo 'int main(void){return 42;}' > "$TMP/probe.c"
+if [ "$(uname -s)" = Darwin ] && [ "$(uname -m)" = arm64 ] \
+   && clang -arch x86_64 "$TMP/probe.c" -o "$TMP/probe" 2> /dev/null && { "$TMP/probe"; [ $? = 42 ]; }; then
+  for mode in "" --release; do
+    if "$BIN" build tests/tool/hello.scaly $mode --target x86_64-apple-darwin -o "$TMP/hello_x86" > "$TMP/x86.log" 2>&1; then
+      out=$("$TMP/hello_x86" one two)
+      [ "$out" = "hello one two" ] && file "$TMP/hello_x86" | grep -q 'x86_64' && ok || bad "target $mode: '$out', $(file -b "$TMP/hello_x86")"
+    else
+      bad "target $mode(build): $(grep -v 'ld: warning' "$TMP/x86.log" | tail -2 | tr '\n' ' ')"
+    fi
+  done
+else
+  echo "SKIP target (needs an arm64 Mac with Rosetta 2 and a universal SDK)"
 fi
 
 # pgo: an instrumented build, its run writes a profile, the build with that
