@@ -20,6 +20,7 @@ let s "Hallo `p.x`"
 s
 0.1 + 0.2
 x + nope
+nope.a + nope.b
 print "done"
 :values
 :where x

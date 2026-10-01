@@ -14,6 +14,8 @@ scaly> it: String = "Hallo 3"
 scaly> it: f64 = 0.30000000000000004
 scaly> x + nope
     ^ unknown identifier: nope
+scaly> nope.a + nope.b
+^ unknown identifier: nope
 scaly> done
 scaly>   x: int
   n: int

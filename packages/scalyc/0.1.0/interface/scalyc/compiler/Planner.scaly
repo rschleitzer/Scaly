@@ -1827,7 +1827,11 @@ define Planner
         ; Record a HARD diagnostic with the construct's source position.
         ; Use this only on paths where the construct is certain to be
         ; dropped from the IR — cli.run fails the compile on these.
-        procedure add_diagnostic(mutable this: Planner, loc: Span, message: String) @persists true @ret_nonlocal true @deep true @deep_this_4 true @deep_whole_4 true linked
+        ; Said once: two checks can meet the same operand -- an unknown name in
+        ; a statement that is only an expression was reported by the operand
+        ; walk and again by the statement's own check (`nope + a` twice, same
+        ; line and column; since 2026-09-25, seen in the REPL 2026-10-01).
+        procedure add_diagnostic(mutable this: Planner, loc: Span, message: String) @persists true @deep true @deep_this_4 true @deep_whole_4 true linked
 
         function has_diagnostics(this: Planner) @ret_param_0 true @deep true returns bool linked
 

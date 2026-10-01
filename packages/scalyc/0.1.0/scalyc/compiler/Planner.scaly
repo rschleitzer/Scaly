@@ -3854,8 +3854,20 @@ define Planner
         ; Record a HARD diagnostic with the construct's source position.
         ; Use this only on paths where the construct is certain to be
         ; dropped from the IR — cli.run fails the compile on these.
+        ; Said once: two checks can meet the same operand -- an unknown name in
+        ; a statement that is only an expression was reported by the operand
+        ; walk and again by the statement's own check (`nope + a` twice, same
+        ; line and column; since 2026-09-25, seen in the REPL 2026-10-01).
         procedure add_diagnostic(mutable this: Planner, loc: Span, message: String)
         {
+            var i diagnostics.length
+            while i > 0
+            {
+                set i: i - 1
+                let d diagnostics.at i
+                if d.start = loc.start and d.message.equals(message) and d.file.equals(this.file)
+                    return
+            }
             diagnostics.add(PlannerDiagnostic(loc.start, message, this.file))
         }
 
