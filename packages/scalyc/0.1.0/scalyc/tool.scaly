@@ -452,7 +452,15 @@ define tool
             if File.exists(nobj) = false
             {
                 let ntmp "`nobj`.`getpid() as int`.tmp"
+                ; cmd.exe strips the first and the last quote of a line that
+                ; begins with one and holds more than two, so on a Windows
+                ; host the whole line takes a pair of its own. A cross build
+                ; names its triple and runs under a POSIX shell, which would
+                ; read that pair as an empty argument.
+                let cmd_wrap given_triple.get_length() = 0 and triple.contains(String("windows"))
                 var cmd StringBuilder()
+                if cmd_wrap
+                    cmd.append("\"")
                 cmd.append("\"")
                 cmd.append(cli.link_compiler())
                 cmd.append("\" -O2 -c \"")
@@ -468,6 +476,8 @@ define tool
                     cmd.append(" --target=")
                     cmd.append(given_triple)
                 }
+                if cmd_wrap
+                    cmd.append("\"")
                 let cmd_str cmd.to_string()
                 if system(cmd_str.to_c_string()) <> 0
                 {
