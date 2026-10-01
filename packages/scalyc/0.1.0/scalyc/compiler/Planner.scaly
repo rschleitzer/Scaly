@@ -10266,6 +10266,86 @@ define Planner
             out_ref
         }
 
+        ; A `ref[T]` component filling a field declared `T` is the VALUE, as a
+        ; `ref[T]` argument into a `T` parameter is (deref_ref_into_pointee#):
+        ; the same construction through an init# of that arity has always read
+        ; it, and only the positional path refused -- `Line(p, q)` with two
+        ; borrowed Points was "ref[Point] cannot fill Line.from" (2026-10-01,
+        ; met in the REPL, where every session value is a ref). Positional like
+        ; its twin above: a named component and anything but a lone operand are
+        ; left alone, and so is a GENERIC concept -- its field type is a
+        ; parameter there, and whether a T takes the reference is not known
+        ; from the declaration. Nothing that compiled before changes: the type
+        ; check below refused every such component.
+        procedure deref_ref_components(
+            mutable this: Planner,
+            mutable struct_name: String,
+            comps: ref[Vector[PlannedComponent]]?
+        ) returns ref[Vector[PlannedComponent]]?
+        {
+            if comps = null
+                return comps
+            let concept_ref this.lookup_concept(struct_name)
+            if concept_ref = null
+                return comps
+            let c (*concept_ref)
+            if c.parameters.length > 0
+                return comps
+            var out_ref: ref[Vector[PlannedComponent]]? comps
+            choose c.definition
+                when s: Structure
+                {
+                    let cv (*comps)
+                    var changed: bool false
+                    var built Array[PlannedComponent]()
+                    var ci: size_t 0
+                    while ci < cv.length
+                    {
+                        let cp cv.get ci
+                        if cp <> null
+                        {
+                            let cc (*cp)
+                            var nc_value: ref[Vector[PlannedOperand]]? cc.value
+                            if cc.name = null and ci < s.properties.length and cc.value <> null
+                            {
+                                let prop_ptr s.properties.get ci
+                                let vals (*cc.value)
+                                if prop_ptr <> null and prop_ptr.type <> null and vals.length = 1
+                                {
+                                    let ft this.plan_type((*prop_ptr.type))
+                                    let vp vals.get 0
+                                    if vp <> null and Planner.type_mentions_generic_param(ft) = false
+                                    {
+                                        let a (*vp)
+                                        if Planner.operand_derefs_to_pointee(ft, a)
+                                        {
+                                            var one_arr Array[PlannedOperand]()
+                                            one_arr.add(this.deref_ref_into_pointee(ft, a))
+                                            var one_vec Vector[PlannedOperand](one_arr)
+                                            set nc_value: &one_vec
+                                            set changed: true
+                                        }
+                                    }
+                                }
+                            }
+                            built.add(PlannedComponent(
+                                cc.loc, cc.name, nc_value, cc.attributes
+                            ))
+                        }
+                        set ci: ci + 1
+                    }
+                    if changed
+                    {
+                        var built_vec Vector[PlannedComponent](built)
+                        set out_ref: &built_vec
+                    }
+                    0
+                }
+                else
+                    0
+            out_ref
+        }
+
         ; report_component_type_mismatch#: the TUPLE path's type check, the
         ; counterpart of check_initializer_match# one level down.
         ;
@@ -13590,6 +13670,7 @@ define Planner
                             ; the defaults are filled so a defaulted field's
                             ; own literal is covered by the same walk.
                             set components_holder: this.coerce_string_components_to_cstr(fn_name, components_holder, ctor_struct_type)
+                            set components_holder: this.deref_ref_components(fn_name, components_holder)
 
                             ; The type check for this path. AFTER the coercion
                             ; above, whose whole job is to give a String

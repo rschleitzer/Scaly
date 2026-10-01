@@ -1,0 +1,41 @@
+; Regression (2026-10-01): a `ref[T]` handed to a POSITIONAL construction whose
+; field is declared `T` is the value it refers to -- as a ref[T] argument into
+; a T parameter has always been. Before, the positional path refused it
+; ("ref[Point] cannot fill Line.from"), while the same record with an init of
+; that arity took it. Met in the REPL, where every session value is a ref.
+; A field declared ref[T] still takes the reference itself (keeps_ref).
+; Expected: PASS
+
+define Point(var x: int, y: int)
+define Line(from: Point, to: Point, width: int)
+define Watch(at: ref[Point], n: int)
+
+function span(a: ref[Point], b: ref[Point], w: ref[int]) returns int
+{
+    let l Line(a, b, w)
+    (l.to.x - l.from.x) * l.width + (l.to.y - l.from.y)
+}
+
+procedure copies() returns bool
+{
+    var a Point(1, 2)
+    let l Line(&a, &a, 3)
+    set a.x: 50
+    l.from.x = 1 and l.to.y = 2
+}
+
+procedure keeps_ref() returns bool
+{
+    var a Point(1, 2)
+    let w Watch(&a, 0)
+    set a.x: 50
+    w.at.x = 50
+}
+
+var p Point(1, 2)
+var q Point(4, 6)
+var w 10
+if span(&p, &q, &w) = 34 and copies() and keeps_ref()
+    print "PASS"
+else
+    print "FAIL"

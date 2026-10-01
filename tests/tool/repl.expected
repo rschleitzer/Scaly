@@ -40,4 +40,5 @@ scaly>   ys: Array[int]
     its buffer  none yet
 scaly> scaly> m: Mixed = (flag: true, small: 7, name: "zwei", at: (x: 5, y: 6), ratio: 1.5, tags: Array[int])
 scaly> it: int = 13
+scaly> scaly> l: Line = (from: (x: 3, y: 4), to: (x: 5, y: 6))
 scaly> 

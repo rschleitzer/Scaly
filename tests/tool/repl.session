@@ -37,3 +37,5 @@ let ys Array[int]()
 define Mixed(flag: bool, small: i32, name: String, at: Point, ratio: double, tags: Array[int])
 let m Mixed(true, 7, "zwei", Point(5, 6), 1.5, Array[int]())
 m.at.y + m.small
+define Line(from: Point, to: Point)
+let l Line(p, m.at)

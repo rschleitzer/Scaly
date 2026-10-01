@@ -3247,6 +3247,23 @@ define Planner
             ctor_type: PlannedType
         ) @page true @direct true @deep true returns ref[Vector[PlannedComponent]]? io linked
 
+        ; A `ref[T]` component filling a field declared `T` is the VALUE, as a
+        ; `ref[T]` argument into a `T` parameter is (deref_ref_into_pointee#):
+        ; the same construction through an init# of that arity has always read
+        ; it, and only the positional path refused -- `Line(p, q)` with two
+        ; borrowed Points was "ref[Point] cannot fill Line.from" (2026-10-01,
+        ; met in the REPL, where every session value is a ref). Positional like
+        ; its twin above: a named component and anything but a lone operand are
+        ; left alone, and so is a GENERIC concept -- its field type is a
+        ; parameter there, and whether a T takes the reference is not known
+        ; from the declaration. Nothing that compiled before changes: the type
+        ; check below refused every such component.
+        procedure deref_ref_components(
+            mutable this: Planner,
+            mutable struct_name: String,
+            comps: ref[Vector[PlannedComponent]]?
+        ) @page true @direct true @deep true returns ref[Vector[PlannedComponent]]? io linked
+
         ; report_component_type_mismatch#: the TUPLE path's type check, the
         ; counterpart of check_initializer_match# one level down.
         ;
