@@ -263,6 +263,16 @@ define Parser
             }
             when node: Success
                 return DeclarationSyntax.Package(node)
+        choose parse_libraries()
+            when err: Error
+            {
+                choose err
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+                    when d: Different {}
+            }
+            when node: Success
+                return DeclarationSyntax.Libraries(node)
         choose parse_use()
             when err: Error
             {
@@ -2705,6 +2715,82 @@ define Parser
         let end lexer.position
 
         PackageSyntax(start, end, name, version)
+    }
+
+    procedure parse_libraries(mutable this: Parser) returns LibrariesSyntax throws ParserError
+    {
+        let start lexer.previous_position
+
+        if ~lexer.parse_keyword("extern")
+            throw ParserError.Different(DifferentSyntax())
+
+        let name lexer.parse_identifier(keywords)
+        if name.length() = 0
+            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected identifier"))
+
+        let more_start lexer.position
+        var more: ref[Vector[LibrarySyntax]]? null
+        choose parse_library_list()
+            when err: Error
+            {
+                choose err
+                    when d: Different {}
+                    when i: Invalid
+                        throw ParserError.Invalid(i)
+            }
+            when success: Success
+                set more: success
+
+        lexer.parse_colon()
+
+        let end lexer.position
+
+        LibrariesSyntax(start, end, name, more)
+    }
+
+    procedure parse_library_list(mutable this: Parser) returns ref[Vector[LibrarySyntax]]? throws ParserError
+    {
+        var acc List[LibrarySyntax]()
+        var parsing: bool true
+        while parsing
+        {
+            choose parse_library()
+                when err: Error
+                {
+                    ; Different = no more items; stop the list (or rethrow if the
+                    ; list is still empty, so the caller sees Different). Invalid =
+                    ; an item committed then hit a real syntax error; propagate it
+                    ; instead of silently truncating the list (e.g. a no-else if).
+                    choose err
+                        when i: Invalid
+                            throw ParserError.Invalid(i)
+                        when d: Different
+                        {
+                            if acc.head = null
+                                throw err
+                            set parsing: false
+                        }
+                }
+                when node: Success
+                    acc.add(node)
+        }
+        Vector[LibrarySyntax](acc)
+    }
+
+    procedure parse_library(mutable this: Parser) returns LibrarySyntax throws ParserError
+    {
+        let start lexer.previous_position
+
+        if ~lexer.parse_punctuation(",")
+            throw ParserError.Different(DifferentSyntax())
+
+        let name lexer.parse_identifier(keywords)
+        if name.length() = 0
+            throw ParserError.Invalid(InvalidSyntax(start, lexer.position, "expected identifier"))
+
+        let end lexer.position
+
+        LibrarySyntax(start, end, name)
     }
 
     procedure parse_version(mutable this: Parser) returns VersionSyntax throws ParserError

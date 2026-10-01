@@ -12,6 +12,7 @@
 <syntax id = Declaration                  multiple abstract
     <content link = Empty
     <content link = Package
+    <content link = Libraries
     <content link = Use
     <content link = Private
     <content link = Definition
@@ -314,6 +315,16 @@
     <content link = Name                                    property = name
     <content link = Version                        optional property = version
     <content colon                                 optional
+
+<syntax id = Libraries
+    <content link = extern
+    <content identifier                                     property = name
+    <content link = Library               multiple optional property = more
+    <content colon                                 optional
+
+<syntax id = Library                      multiple
+    <content link = comma
+    <content identifier                                     property = name
 
 <syntax id = Version
     <content literal                                        property = majorMinor

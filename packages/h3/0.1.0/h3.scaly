@@ -2,12 +2,16 @@
 ; ngtcp2 (ROADMAP-http.md, stage G), TLS 1.3 from OpenSSL through ngtcp2's
 ; crypto helper. Its own package, so that only a program serving HTTP/3
 ; links ngtcp2: it needs libngtcp2, libngtcp2_crypto_ossl, libssl and
-; libcrypto, and the object of h3/ngtcp2_glue.c (the C this binding cannot
-; do without -- see that file).
+; libcrypto (declared below and by tls), and h3/ngtcp2_glue.c (the C this
+; binding cannot do without -- see that file), which the tool compiles with
+; the include directories of those libraries.
 
 package scaly 0.1.0
 package http 0.1.0
 package tls 0.1.0
+
+; ngtcp2's crypto helper before ngtcp2; libssl and libcrypto come with tls
+extern ngtcp2_crypto_ossl, ngtcp2
 
 define h3
 {

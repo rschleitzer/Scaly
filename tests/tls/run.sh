@@ -2,7 +2,7 @@
 # tests/tls/run.sh [compiler] — the tls and https packages (ROADMAP-http.md,
 # stage D; TLS 1.3 through OpenSSL): make a self-signed RSA-2048
 # certificate for the run, build every test program here with `scaly build`
-# and libssl/libcrypto, run it under poison with the certificate and key as its
+# (libssl and libcrypto come from the tls package's `extern`), run it under poison with the certificate and key as its
 # arguments, and compare stdout with its "; Expected:" line.
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
@@ -49,7 +49,7 @@ for f in tests/tls/*.scaly; do
   t=$(basename "$f" .scaly)
   expected=$(sed -n 's/^; Expected: //p' "$f")
   bin="$TMP/$t$SCALY_EXE"
-  if ! "$BIN" build "$f" -o "$bin" "${SSL[@]}" > "$TMP/$t.log" 2>&1; then
+  if ! "$BIN" build "$f" -o "$bin" > "$TMP/$t.log" 2>&1; then
     fail=$((fail+1)); failures+=("$t(compile): $(head -1 "$TMP/$t.log")"); continue
   fi
   # a lost record stalls both sides of a handshake instead of failing it:

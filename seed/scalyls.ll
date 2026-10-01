@@ -74539,19 +74539,19 @@ entry:
   %tag.ptr = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %3, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
-    i8 5, label %choose.when
-    i8 6, label %choose.when1
-    i8 7, label %choose.when8
-    i8 4, label %choose.when15
-    i8 10, label %choose.when20
-    i8 11, label %choose.when28
-    i8 12, label %choose.when35
-    i8 3, label %choose.when43
+    i8 6, label %choose.when
+    i8 7, label %choose.when1
+    i8 8, label %choose.when8
+    i8 5, label %choose.when15
+    i8 11, label %choose.when20
+    i8 12, label %choose.when28
+    i8 13, label %choose.when35
+    i8 4, label %choose.when43
     i8 0, label %choose.when48
     i8 1, label %choose.when51
-    i8 2, label %choose.when54
-    i8 8, label %choose.when57
-    i8 9, label %choose.when60
+    i8 3, label %choose.when54
+    i8 9, label %choose.when57
+    i8 10, label %choose.when60
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -82749,19 +82749,19 @@ entry:
   %tag.ptr = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %3, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
-    i8 5, label %choose.when
-    i8 6, label %choose.when1
-    i8 7, label %choose.when7
-    i8 4, label %choose.when13
-    i8 10, label %choose.when17
-    i8 11, label %choose.when23
-    i8 12, label %choose.when26
-    i8 3, label %choose.when29
+    i8 6, label %choose.when
+    i8 7, label %choose.when1
+    i8 8, label %choose.when7
+    i8 5, label %choose.when13
+    i8 11, label %choose.when17
+    i8 12, label %choose.when23
+    i8 13, label %choose.when26
+    i8 4, label %choose.when29
     i8 0, label %choose.when34
     i8 1, label %choose.when37
-    i8 2, label %choose.when40
-    i8 8, label %choose.when43
-    i8 9, label %choose.when46
+    i8 3, label %choose.when40
+    i8 9, label %choose.when43
+    i8 10, label %choose.when46
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -89223,19 +89223,19 @@ entry:
   %tag.ptr = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %3, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
-    i8 5, label %choose.when
-    i8 6, label %choose.when1
-    i8 7, label %choose.when8
-    i8 4, label %choose.when15
-    i8 10, label %choose.when20
-    i8 11, label %choose.when23
-    i8 12, label %choose.when26
-    i8 3, label %choose.when29
+    i8 6, label %choose.when
+    i8 7, label %choose.when1
+    i8 8, label %choose.when8
+    i8 5, label %choose.when15
+    i8 11, label %choose.when20
+    i8 12, label %choose.when23
+    i8 13, label %choose.when26
+    i8 4, label %choose.when29
     i8 0, label %choose.when34
     i8 1, label %choose.when37
-    i8 2, label %choose.when40
-    i8 8, label %choose.when43
-    i8 9, label %choose.when46
+    i8 3, label %choose.when40
+    i8 9, label %choose.when43
+    i8 10, label %choose.when46
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -91334,19 +91334,19 @@ entry:
   %tag.ptr = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %3, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
-    i8 5, label %choose.when
-    i8 6, label %choose.when7
-    i8 7, label %choose.when22
-    i8 4, label %choose.when37
-    i8 10, label %choose.when42
-    i8 11, label %choose.when46
-    i8 12, label %choose.when53
-    i8 3, label %choose.when60
+    i8 6, label %choose.when
+    i8 7, label %choose.when7
+    i8 8, label %choose.when22
+    i8 5, label %choose.when37
+    i8 11, label %choose.when42
+    i8 12, label %choose.when46
+    i8 13, label %choose.when53
+    i8 4, label %choose.when60
     i8 0, label %choose.when65
     i8 1, label %choose.when68
-    i8 2, label %choose.when71
-    i8 8, label %choose.when74
-    i8 9, label %choose.when77
+    i8 3, label %choose.when71
+    i8 9, label %choose.when74
+    i8 10, label %choose.when77
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -96111,8 +96111,8 @@ entry:
   %tag.ptr = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %3, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
-    i8 4, label %choose.when
-    i8 3, label %choose.when1
+    i8 5, label %choose.when
+    i8 4, label %choose.when1
   ]
 
 choose.end:                                       ; No predecessors!
@@ -97417,8 +97417,8 @@ entry:
   %tag.ptr = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %3, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
-    i8 4, label %choose.when
-    i8 3, label %choose.when1
+    i8 5, label %choose.when
+    i8 4, label %choose.when1
   ]
 
 choose.end:                                       ; No predecessors!
@@ -98246,10 +98246,10 @@ entry:
   %tag.ptr = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %3, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
-    i8 5, label %choose.when
-    i8 6, label %choose.when1
-    i8 4, label %choose.when6
-    i8 3, label %choose.when11
+    i8 6, label %choose.when
+    i8 7, label %choose.when1
+    i8 5, label %choose.when6
+    i8 4, label %choose.when11
   ]
 
 choose.end:                                       ; No predecessors!
@@ -98637,19 +98637,19 @@ entry:
   %tag.ptr = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %3, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
-    i8 5, label %choose.when
-    i8 6, label %choose.when1
-    i8 7, label %choose.when4
-    i8 4, label %choose.when7
-    i8 10, label %choose.when10
-    i8 11, label %choose.when13
-    i8 12, label %choose.when16
-    i8 3, label %choose.when19
+    i8 6, label %choose.when
+    i8 7, label %choose.when1
+    i8 8, label %choose.when4
+    i8 5, label %choose.when7
+    i8 11, label %choose.when10
+    i8 12, label %choose.when13
+    i8 13, label %choose.when16
+    i8 4, label %choose.when19
     i8 0, label %choose.when24
     i8 1, label %choose.when27
-    i8 2, label %choose.when30
-    i8 8, label %choose.when33
-    i8 9, label %choose.when36
+    i8 3, label %choose.when30
+    i8 9, label %choose.when33
+    i8 10, label %choose.when36
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -99307,19 +99307,19 @@ entry:
   %tag.ptr = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %3, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
-    i8 5, label %choose.when
-    i8 6, label %choose.when3
-    i8 7, label %choose.when19
-    i8 4, label %choose.when35
-    i8 10, label %choose.when40
-    i8 11, label %choose.when62
-    i8 12, label %choose.when85
-    i8 3, label %choose.when109
+    i8 6, label %choose.when
+    i8 7, label %choose.when3
+    i8 8, label %choose.when19
+    i8 5, label %choose.when35
+    i8 11, label %choose.when40
+    i8 12, label %choose.when62
+    i8 13, label %choose.when85
+    i8 4, label %choose.when109
     i8 0, label %choose.when114
     i8 1, label %choose.when117
-    i8 2, label %choose.when120
-    i8 8, label %choose.when123
-    i8 9, label %choose.when126
+    i8 3, label %choose.when120
+    i8 9, label %choose.when123
+    i8 10, label %choose.when126
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -103364,19 +103364,19 @@ entry:
   %tag.ptr = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %4, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
-    i8 5, label %choose.when
-    i8 6, label %choose.when2
-    i8 7, label %choose.when8
-    i8 4, label %choose.when14
-    i8 10, label %choose.when19
-    i8 11, label %choose.when25
-    i8 12, label %choose.when38
-    i8 3, label %choose.when52
+    i8 6, label %choose.when
+    i8 7, label %choose.when2
+    i8 8, label %choose.when8
+    i8 5, label %choose.when14
+    i8 11, label %choose.when19
+    i8 12, label %choose.when25
+    i8 13, label %choose.when38
+    i8 4, label %choose.when52
     i8 0, label %choose.when57
     i8 1, label %choose.when60
-    i8 2, label %choose.when63
-    i8 8, label %choose.when66
-    i8 9, label %choose.when69
+    i8 3, label %choose.when63
+    i8 9, label %choose.when66
+    i8 10, label %choose.when69
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -104701,8 +104701,8 @@ entry:
   %tag.ptr = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %4, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
-    i8 4, label %choose.when
-    i8 3, label %choose.when1
+    i8 5, label %choose.when
+    i8 4, label %choose.when1
   ]
 
 choose.end:                                       ; No predecessors!
@@ -108731,19 +108731,19 @@ entry:
   %tag.ptr = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %4, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
-    i8 5, label %choose.when
-    i8 6, label %choose.when9
-    i8 7, label %choose.when18
-    i8 4, label %choose.when27
-    i8 10, label %choose.when32
-    i8 11, label %choose.when39
-    i8 12, label %choose.when53
-    i8 3, label %choose.when68
+    i8 6, label %choose.when
+    i8 7, label %choose.when9
+    i8 8, label %choose.when18
+    i8 5, label %choose.when27
+    i8 11, label %choose.when32
+    i8 12, label %choose.when39
+    i8 13, label %choose.when53
+    i8 4, label %choose.when68
     i8 0, label %choose.when73
     i8 1, label %choose.when76
-    i8 2, label %choose.when79
-    i8 8, label %choose.when82
-    i8 9, label %choose.when85
+    i8 3, label %choose.when79
+    i8 9, label %choose.when82
+    i8 10, label %choose.when85
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -118346,11 +118346,11 @@ entry:
   %tag.ptr = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %3, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
-    i8 5, label %choose.when
-    i8 6, label %choose.when1
-    i8 7, label %choose.when6
-    i8 4, label %choose.when11
-    i8 3, label %choose.when16
+    i8 6, label %choose.when
+    i8 7, label %choose.when1
+    i8 8, label %choose.when6
+    i8 5, label %choose.when11
+    i8 4, label %choose.when16
   ]
 
 choose.end:                                       ; No predecessors!
@@ -121001,19 +121001,19 @@ entry:
   %tag.ptr = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %3, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
-    i8 5, label %choose.when
-    i8 6, label %choose.when1
-    i8 7, label %choose.when6
-    i8 4, label %choose.when11
-    i8 10, label %choose.when16
-    i8 11, label %choose.when19
-    i8 12, label %choose.when22
-    i8 3, label %choose.when25
+    i8 6, label %choose.when
+    i8 7, label %choose.when1
+    i8 8, label %choose.when6
+    i8 5, label %choose.when11
+    i8 11, label %choose.when16
+    i8 12, label %choose.when19
+    i8 13, label %choose.when22
+    i8 4, label %choose.when25
     i8 0, label %choose.when30
     i8 1, label %choose.when33
-    i8 2, label %choose.when36
-    i8 8, label %choose.when39
-    i8 9, label %choose.when42
+    i8 3, label %choose.when36
+    i8 9, label %choose.when39
+    i8 10, label %choose.when42
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -127435,19 +127435,19 @@ entry:
   %tag.ptr = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %0, i32 0, i32 0
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
-    i8 5, label %choose.when
-    i8 6, label %choose.when1
-    i8 7, label %choose.when6
-    i8 11, label %choose.when11
-    i8 12, label %choose.when16
-    i8 4, label %choose.when21
-    i8 3, label %choose.when24
-    i8 10, label %choose.when29
+    i8 6, label %choose.when
+    i8 7, label %choose.when1
+    i8 8, label %choose.when6
+    i8 12, label %choose.when11
+    i8 13, label %choose.when16
+    i8 5, label %choose.when21
+    i8 4, label %choose.when24
+    i8 11, label %choose.when29
     i8 0, label %choose.when32
     i8 1, label %choose.when35
-    i8 2, label %choose.when38
-    i8 8, label %choose.when41
-    i8 9, label %choose.when44
+    i8 3, label %choose.when38
+    i8 9, label %choose.when41
+    i8 10, label %choose.when44
   ]
 
 choose.end:                                       ; preds = %choose.else
@@ -151130,18 +151130,18 @@ entry:
   %tag = load i8, ptr %tag.ptr, align 1
   switch i8 %tag, label %choose.else [
     i8 1, label %choose.when
-    i8 10, label %choose.when1
-    i8 4, label %choose.when6
+    i8 11, label %choose.when1
+    i8 5, label %choose.when6
     i8 0, label %choose.when38
-    i8 2, label %choose.when41
-    i8 3, label %choose.when44
-    i8 5, label %choose.when47
-    i8 6, label %choose.when50
-    i8 7, label %choose.when53
-    i8 8, label %choose.when56
-    i8 9, label %choose.when59
-    i8 11, label %choose.when62
-    i8 12, label %choose.when67
+    i8 3, label %choose.when41
+    i8 4, label %choose.when44
+    i8 6, label %choose.when47
+    i8 7, label %choose.when50
+    i8 8, label %choose.when53
+    i8 9, label %choose.when56
+    i8 10, label %choose.when59
+    i8 12, label %choose.when62
+    i8 13, label %choose.when67
   ]
 
 choose.end:                                       ; preds = %choose.else, %choose.end11

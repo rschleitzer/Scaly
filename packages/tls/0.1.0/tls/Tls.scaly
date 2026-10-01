@@ -4,8 +4,8 @@
 ; (CLAUDE.md, the containment rule) and no `long` crosses the boundary --
 ; the protocol-version switch is SSL_CTX_set_options, which takes and
 ; answers a uint64_t, not the SSL_CTX_ctrl macro behind
-; SSL_CTX_set_min_proto_version. A program using this module links with
-; -lssl -lcrypto.
+; SSL_CTX_set_min_proto_version. The package root declares `extern ssl,
+; crypto`; the tool finds and links them.
 ;
 ; OpenSSL never touches the socket. The bytes read from the TcpStream are
 ; written into a MEMORY BIO that OpenSSL reads; what OpenSSL writes goes

@@ -18,6 +18,9 @@ use scaly.memory.Page
 use scaly.memory.root_pages.getenv
 use scalyc.cli
 use scalyc.cli.Options
+use scalyc.compiler.lexer.*
+use scalyc.compiler.parser.*
+use scalyc.compiler.Syntax.*
 
 ; the compiler's own identity: the Emitter sets it to the hash of this
 ; package's IR when it compiles the compiler (emit_package_stamp#); a compiler
@@ -319,8 +322,11 @@ define tool
     ; and assembly files its target takes. `names` and `roots` pair a
     ; package's name with its root file. False when one of them does not build;
     ; what went wrong is printed where it happened.
-    procedure package_objects(names: ref[Array[String]], roots: ref[Array[String]], given_triple: String, mutable objects: ref[Array[String]]) returns bool mutable modeler_error_count
+    procedure package_objects(names: ref[Array[String]], roots: ref[Array[String]], program_file: String, given_triple: String, mutable objects: ref[Array[String]], mutable link_flags: ref[StringBuilder]) returns bool mutable modeler_error_count
     {
+        var include_flags StringBuilder()
+        tool.libraries_of(names, roots, program_file, link_flags, &include_flags)
+        let includes include_flags.to_string()
         let cache tool.cache_root()
         if tool.ensure_directory(cache) = false
         {
@@ -369,7 +375,7 @@ define tool
             }
             let obj_page Page.get(objects)
             objects.add(String^obj_page(obj))
-            if tool.native_objects(dir, &files, triple, base, given_triple, objects) = false
+            if tool.native_objects(dir, &files, triple, base, given_triple, includes, objects) = false
                 return false
         }
         true
@@ -377,7 +383,7 @@ define tool
 
     ; the C and assembly files of a package this target takes, each compiled
     ; into the cache beside the package's object (`<base>-<path>.o`)
-    procedure native_objects(mutable dir: String, files: ref[Array[String]], triple: String, base: String, given_triple: String, mutable objects: ref[Array[String]]) returns bool
+    procedure native_objects(mutable dir: String, files: ref[Array[String]], triple: String, base: String, given_triple: String, includes: String, mutable objects: ref[Array[String]]) returns bool
     {
         var natives Array[String]()
         tool.select_native(&files, triple, &natives)
@@ -397,7 +403,12 @@ define tool
                     flat.append(fc as char)
                 set fi: fi + 1
             }
-            let nobj "`base`-`flat.to_string()`.o"
+            ; the include flags are part of what was compiled: a header
+            ; directory that moves names another object
+            var tag String()
+            if includes.get_length() > 0
+                set tag: "-i`tool.hex16(tool.fnv_string(0xcbf29ce484222325, includes))`"
+            let nobj "`base`-`flat.to_string()``tag`.o"
             if File.exists(nobj) = false
             {
                 let ntmp "`nobj`.`getpid() as int`.tmp"
@@ -411,6 +422,7 @@ define tool
                 cmd.append("\" -o \"")
                 cmd.append(ntmp)
                 cmd.append("\"")
+                cmd.append(includes)
                 if given_triple.get_length() > 0
                 {
                     cmd.append(" --target=")
@@ -437,8 +449,14 @@ define tool
     ; cleared, cli.compile_dep_package_to_object), the names beside them in
     ; `<base>.jit.syms`. Before 2026-09-30 every run compiled them anew into
     ; one fixed /tmp path, which two runs at once overwrote.
-    procedure jit_package_objects(names: ref[Array[String]], roots: ref[Array[String]], mutable objects: ref[Array[String]], mutable symbols: ref[Array[String]]) returns bool mutable modeler_error_count
+    procedure jit_package_objects(names: ref[Array[String]], roots: ref[Array[String]], program_file: String, mutable objects: ref[Array[String]], mutable symbols: ref[Array[String]]) returns bool mutable modeler_error_count
     {
+        ; the C libraries go into this process, where the JIT looks symbols up
+        var link_flags StringBuilder()
+        var include_flags StringBuilder()
+        let libs tool.libraries_of(names, roots, program_file, &link_flags, &include_flags)
+        tool.load_libraries(&libs)
+        let includes include_flags.to_string()
         let cache tool.cache_root()
         if tool.ensure_directory(cache) = false
         {
@@ -509,9 +527,250 @@ define tool
             }
             let obj_page Page.get(objects)
             objects.add(String^obj_page(obj))
-            if tool.native_objects(dir, &files, triple, base, String(), objects) = false
+            if tool.native_objects(dir, &files, triple, base, String(), includes, objects) = false
                 return false
         }
         true
+    }
+
+    ; ---- C libraries (ROADMAP-public.md, stage B) ---------------------------
+    ;
+    ; A package says which C libraries it uses in its root file:
+    ;     extern ssl, crypto
+    ; and the tool finds them: in $SCALY_LIBRARY_PATH (directories, `:`-
+    ; separated, `;` on Windows), then where Homebrew puts them (every
+    ; `opt/<formula>/lib` -- the highest formula name when several have it:
+    ; openssl@3 before openssl@1.1 -- then its shared `lib`), else nowhere, and the linker's own
+    ; search path answers (a Linux distribution's /usr/lib/<triple>). A library
+    ; found in a directory adds `-L<dir>`, and `<dir>/../include` the `-I` the
+    ; package's C files are compiled with.
+
+    procedure add_library(mutable libs: ref[Array[String]], name: String)
+    {
+        var i: size_t 0
+        while i < libs.length
+        {
+            let l libs.at i
+            if l.equals(name)
+                return
+            set i: i + 1
+        }
+        let page Page.get(libs)
+        libs.add(String^page(name))
+    }
+
+    ; the C libraries a source file declares, in the order it names them
+    procedure declared_libraries(mutable file: String, mutable libs: ref[Array[String]])
+    {
+        if File.exists(file) = false
+            return
+        var contents File.read_to_string(file)
+        if contents.get_length() = 0
+            return
+        var p Parser(contents)
+        choose p.parse_program()
+            when err: Error
+                return
+            when syntax: Success
+            {
+                if syntax.file.declarations = null
+                    return
+                let decls (*syntax.file.declarations)
+                var i: size_t 0
+                while i < decls.length
+                {
+                    let dp decls.get i
+                    set i: i + 1
+                    if dp = null
+                        continue
+                    choose (*dp)
+                        when lib: LibrariesSyntax
+                        {
+                            tool.add_library(libs, lib.name)
+                            if lib.more <> null
+                            {
+                                let more (*lib.more)
+                                var k: size_t 0
+                                while k < more.length
+                                {
+                                    let mp more.get k
+                                    if mp <> null
+                                        tool.add_library(libs, mp.name)
+                                    set k: k + 1
+                                }
+                            }
+                        }
+                        else
+                        {
+                            ; not a library declaration
+                        }
+                }
+            }
+    }
+
+    ; does `dir` hold the library `name` in a form the linker takes
+    procedure dir_has_library(dir: String, name: String) returns bool
+    {
+        File.exists("`dir`/lib`name`.dylib") or File.exists("`dir`/lib`name`.so") or File.exists("`dir`/lib`name`.a") or File.exists("`dir`/`name`.lib")
+    }
+
+    ; the directory a library is found in, "" when only the linker's own
+    ; search path can answer
+    procedure find_library(name: String) returns String
+    {
+        let own getenv "SCALY_LIBRARY_PATH"
+        if own <> null
+        {
+            let list String(own)
+            var from: size_t 0
+            var at: size_t 0
+            let n list.get_length()
+            while at <= n
+            {
+                if at = n or list.get(at) = 58 or list.get(at) = 59
+                {
+                    if at > from
+                    {
+                        let d list.substring(from, at - from)
+                        if tool.dir_has_library(d, name)
+                            return String(d)
+                    }
+                    set from: at + 1
+                }
+                set at: at + 1
+            }
+        }
+        var bases Array[String]()
+        bases.add(String("/opt/homebrew"))
+        bases.add(String("/usr/local"))
+        var bi: size_t 0
+        while bi < bases.length
+        {
+            let b bases.at bi
+            set bi: bi + 1
+            var best String()
+            var best_formula String()
+            let entries Directory.list("`b`/opt")
+            var ei: size_t 0
+            while ei < entries.length
+            {
+                let e entries.at ei
+                set ei: ei + 1
+                let candidate "`b`/opt/`e.name`/lib"
+                if tool.dir_has_library(candidate, name) and tool.name_after(e.name, best_formula)
+                {
+                    set best: String(candidate)
+                    set best_formula: String(e.name)
+                }
+            }
+            if best.get_length() > 0
+                return String(best)
+            ; the shared `lib` last: it holds every linked formula, and as a
+            ; -L it shadows system libraries (llvm's libunwind over macOS's)
+            let lib_dir "`b`/lib"
+            if tool.dir_has_library(lib_dir, name)
+                return String(lib_dir)
+        }
+        String()
+    }
+
+    ; byte order: is `a` after `b`
+    function name_after(a: String, b: String) returns bool
+    {
+        let n a.get_length()
+        let m b.get_length()
+        var i: size_t 0
+        while i < n and i < m
+        {
+            if a.get(i) <> b.get(i)
+                return a.get(i) > b.get(i)
+            set i: i + 1
+        }
+        n > m
+    }
+
+    ; the link flags (`-L<dir> -l<name>`, a directory once) and the C include
+    ; flags (`-I<dir>`) of the libraries
+    procedure library_flags(libs: ref[Array[String]], mutable link_flags: ref[StringBuilder], mutable include_flags: ref[StringBuilder])
+    {
+        var dirs Array[String]()
+        var i: size_t 0
+        while i < libs.length
+        {
+            let l libs.at i
+            set i: i + 1
+            let d tool.find_library(l)
+            if d.get_length() > 0 and cli.contains_string(&dirs, d) = false
+            {
+                dirs.add(String(d))
+                link_flags.append(" \"-L")
+                link_flags.append(d)
+                link_flags.append("\"")
+                var inc "`d`/../include"
+                if Directory.is_directory(inc)
+                {
+                    include_flags.append(" \"-I")
+                    include_flags.append(inc)
+                    include_flags.append("\"")
+                }
+            }
+            link_flags.append(" -l")
+            link_flags.append(l)
+        }
+    }
+
+    ; the C libraries of a program: its own declarations first, then its
+    ; packages' from the last loaded (dependents) to the first (what they
+    ; use) -- the order a linker that reads left to right needs -- with the
+    ; link and include flags that find them
+    procedure libraries_of(names: ref[Array[String]], roots: ref[Array[String]], program_file: String, mutable link_flags: ref[StringBuilder], mutable include_flags: ref[StringBuilder]) returns Array[String]
+    {
+        var libs Array[String]()
+        var pf String(program_file)
+        tool.declared_libraries(pf, &libs)
+        var i roots.length
+        while i > 0
+        {
+            set i: i - 1
+            let rp roots.at i
+            var root String(rp)
+            tool.declared_libraries(root, &libs)
+        }
+        tool.library_flags(&libs, link_flags, include_flags)
+        libs
+    }
+
+    ; load each library into this process (scaly_eio_load_library); one that
+    ; does not load is said, and the JIT then names the symbol it misses
+    procedure load_libraries(libs: ref[Array[String]])
+    {
+        var i: size_t 0
+        while i < libs.length
+        {
+            let l libs.at i
+            set i: i + 1
+            let d tool.find_library(l)
+            var loaded false
+            var candidates Array[String]()
+            if d.get_length() > 0
+            {
+                candidates.add("`d`/lib`l`.dylib")
+                candidates.add("`d`/lib`l`.so")
+                candidates.add("`d`/`l`.dll")
+            }
+            candidates.add("lib`l`.dylib")
+            candidates.add("lib`l`.so")
+            candidates.add("`l`.dll")
+            var k: size_t 0
+            while k < candidates.length and loaded = false
+            {
+                let c candidates.at k
+                set k: k + 1
+                if scaly_eio_load_library(c.to_c_string()) = 0
+                    set loaded: true
+            }
+            if loaded = false
+                Console.println("warning: C library `l` could not be loaded")
+        }
     }
 }

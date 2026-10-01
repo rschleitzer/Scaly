@@ -18,6 +18,9 @@ use scaly.memory.Page
 use scaly.memory.root_pages.getenv
 use scalyc.cli
 use scalyc.cli.Options
+use scalyc.compiler.lexer.*
+use scalyc.compiler.parser.*
+use scalyc.compiler.Syntax.*
 
 ; the compiler's own identity: the Emitter sets it to the hash of this
 ; package's IR when it compiles the compiler (emit_package_stamp#); a compiler
@@ -89,11 +92,11 @@ define tool
     ; and assembly files its target takes. `names` and `roots` pair a
     ; package's name with its root file. False when one of them does not build;
     ; what went wrong is printed where it happened.
-    procedure package_objects(names: ref[Array[String]], roots: ref[Array[String]], given_triple: String, mutable objects: ref[Array[String]]) @ret_nonlocal true @deep true @deep_pageof_8 true returns bool io mutable modeler_error_count reads scaly_package_stamp linked
+    procedure package_objects(names: ref[Array[String]], roots: ref[Array[String]], program_file: String, given_triple: String, mutable objects: ref[Array[String]], mutable link_flags: ref[StringBuilder]) @ret_nonlocal true @deep true @deep_pageof_16 true returns bool io mutable modeler_error_count reads scaly_package_stamp linked
 
     ; the C and assembly files of a package this target takes, each compiled
     ; into the cache beside the package's object (`<base>-<path>.o`)
-    procedure native_objects(mutable dir: String, files: ref[Array[String]], triple: String, base: String, given_triple: String, mutable objects: ref[Array[String]]) @ret_nonlocal true @deep true @deep_pageof_32 true returns bool io linked
+    procedure native_objects(mutable dir: String, files: ref[Array[String]], triple: String, base: String, given_triple: String, includes: String, mutable objects: ref[Array[String]]) @ret_nonlocal true @deep true @deep_pageof_64 true returns bool io linked
 
     ; `scaly run` / `scaly test`: the packages a program uses, other than the
     ; stdlib (the tool's own image carries it), as objects the JIT adds, with
@@ -102,5 +105,46 @@ define tool
     ; cleared, cli.compile_dep_package_to_object), the names beside them in
     ; `<base>.jit.syms`. Before 2026-09-30 every run compiled them anew into
     ; one fixed /tmp path, which two runs at once overwrote.
-    procedure jit_package_objects(names: ref[Array[String]], roots: ref[Array[String]], mutable objects: ref[Array[String]], mutable symbols: ref[Array[String]]) @ret_nonlocal true @deep true @deep_pageof_12 true returns bool io mutable modeler_error_count reads scaly_package_stamp linked
+    procedure jit_package_objects(names: ref[Array[String]], roots: ref[Array[String]], program_file: String, mutable objects: ref[Array[String]], mutable symbols: ref[Array[String]]) @ret_nonlocal true @deep true @deep_pageof_24 true returns bool io mutable modeler_error_count reads scaly_package_stamp linked
+
+    ; ---- C libraries (ROADMAP-public.md, stage B) ---------------------------
+    ;
+    ; A package says which C libraries it uses in its root file:
+    ;     extern ssl, crypto
+    ; and the tool finds them: in $SCALY_LIBRARY_PATH (directories, `:`-
+    ; separated, `;` on Windows), then where Homebrew puts them (every
+    ; `opt/<formula>/lib` -- the highest formula name when several have it:
+    ; openssl@3 before openssl@1.1 -- then its shared `lib`), else nowhere, and the linker's own
+    ; search path answers (a Linux distribution's /usr/lib/<triple>). A library
+    ; found in a directory adds `-L<dir>`, and `<dir>/../include` the `-I` the
+    ; package's C files are compiled with.
+
+    procedure add_library(mutable libs: ref[Array[String]], name: String) @page true @direct true @deep true @deep_pageof_1 true linked
+
+    ; the C libraries a source file declares, in the order it names them
+    procedure declared_libraries(mutable file: String, mutable libs: ref[Array[String]]) @deep true io linked
+
+    ; does `dir` hold the library `name` in a form the linker takes
+    procedure dir_has_library(dir: String, name: String) @ret_nonlocal true @deep true returns bool io linked
+
+    ; the directory a library is found in, "" when only the linker's own
+    ; search path can answer
+    procedure find_library(name: String) @page true @direct true @ret_caller true @deep true returns String io linked
+
+    ; byte order: is `a` after `b`
+    function name_after(a: String, b: String) @deep true returns bool linked
+
+    ; the link flags (`-L<dir> -l<name>`, a directory once) and the C include
+    ; flags (`-I<dir>`) of the libraries
+    procedure library_flags(libs: ref[Array[String]], mutable link_flags: ref[StringBuilder], mutable include_flags: ref[StringBuilder]) @deep true io linked
+
+    ; the C libraries of a program: its own declarations first, then its
+    ; packages' from the last loaded (dependents) to the first (what they
+    ; use) -- the order a linker that reads left to right needs -- with the
+    ; link and include flags that find them
+    procedure libraries_of(names: ref[Array[String]], roots: ref[Array[String]], program_file: String, mutable link_flags: ref[StringBuilder], mutable include_flags: ref[StringBuilder]) @page true @direct true @ret_nonlocal true @deep true returns Array[String] io linked
+
+    ; load each library into this process (scaly_eio_load_library); one that
+    ; does not load is said, and the JIT then names the symbol it misses
+    procedure load_libraries(libs: ref[Array[String]]) @deep true io linked
 }

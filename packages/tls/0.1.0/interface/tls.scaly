@@ -6,6 +6,9 @@
 
 package scaly 0.1.0
 
+; libssl and libcrypto, found and linked by the tool (OpenSSL 3)
+extern ssl, crypto
+
 define tls
 {
     module Tls

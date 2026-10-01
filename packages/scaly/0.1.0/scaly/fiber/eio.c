@@ -1567,3 +1567,17 @@ int scaly_eio_dir_close(void* dir)
 {
     return closedir((DIR*)dir);
 }
+
+/* ---- LOADING A C LIBRARY INTO THE PROCESS, shim category (a) --------------
+ *
+ * `scaly run` / `scaly test` JIT a program whose packages name C libraries
+ * (`extern ssl, crypto`); their symbols must be visible to the JIT's lookup in
+ * this process, so each is loaded RTLD_GLOBAL -- a constant whose value
+ * differs per libc (0x8 on macOS, 0x100 on glibc). 0 for loaded, -1 not.
+ */
+#include <dlfcn.h>
+
+int scaly_eio_load_library(const char* path)
+{
+    return dlopen(path, RTLD_NOW | RTLD_GLOBAL) != NULL ? 0 : -1;
+}

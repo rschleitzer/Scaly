@@ -1,6 +1,6 @@
 #!/bin/bash
 # tests/pg/run.sh [compiler] — the pg package (ROADMAP-http.md, stage C):
-# build every test here with `scaly build` and libssl/libcrypto, run it
+# build every test here with `scaly build` (OpenSSL through tls's `extern`), run it
 # under poison and compare stdout with its "; Expected:" line. A test that
 # names DATABASE_URL in its header needs a server: it runs against
 # PGTEST_URL (e.g. HttpArena's seed in postgres:18) and SKIPs by name
@@ -46,7 +46,7 @@ for f in tests/pg/*.scaly; do
     skip=$((skip+1)); echo "  SKIP $t (no PGTEST_URL)"; continue
   fi
   bin="$TMP/$t$SCALY_EXE"
-  if ! "$BIN" build "$f" -o "$bin" "${SSL[@]}" > "$TMP/$t.log" 2>&1; then
+  if ! "$BIN" build "$f" -o "$bin" > "$TMP/$t.log" 2>&1; then
     fail=$((fail+1)); failures+=("$t(compile): $(head -1 "$TMP/$t.log")"); continue
   fi
   out=$(DATABASE_URL="${PGTEST_URL:-}" SCALY_POISON=1 perl -e 'alarm shift; exec @ARGV' 60 "$bin" 2>"$TMP/$t.err"); rc=$?

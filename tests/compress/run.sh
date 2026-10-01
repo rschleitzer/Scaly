@@ -1,7 +1,7 @@
 #!/bin/bash
 # tests/compress/run.sh [compiler] — the compress package (ROADMAP-http.md,
 # stage B; gzip over libdeflate): build every test program here with `scaly
-# build` and libdeflate, run it under poison, and compare stdout with its
+# build` (libdeflate through the package's `extern`), run it under poison, and compare stdout with its
 # "; Expected:" line.
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
@@ -34,7 +34,7 @@ for f in tests/compress/*.scaly; do
   t=$(basename "$f" .scaly)
   expected=$(sed -n 's/^; Expected: //p' "$f")
   bin="$TMP/$t$SCALY_EXE"
-  if ! "$BIN" build "$f" -o "$bin" "${DEFLATE[@]}" > "$TMP/$t.log" 2>&1; then
+  if ! "$BIN" build "$f" -o "$bin" > "$TMP/$t.log" 2>&1; then
     fail=$((fail+1)); failures+=("$t(compile): $(head -1 "$TMP/$t.log")"); continue
   fi
   out=$(SCALY_POISON=1 "$bin" 2>"$TMP/$t.err"); rc=$?

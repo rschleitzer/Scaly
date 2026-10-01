@@ -1235,6 +1235,8 @@ declare i64 @scaly_eio_dir_next(ptr, ptr, i64, ptr)
 
 declare i32 @scaly_eio_dir_close(ptr)
 
+declare i32 @scaly_eio_load_library(ptr)
+
 declare i32 @access(ptr, i64)
 
 declare i32 @unlink(ptr)

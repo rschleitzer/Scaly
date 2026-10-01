@@ -4,6 +4,8 @@
 
 package scaly 0.1.0
 
+extern deflate
+
 define compress
 {
     module Gzip

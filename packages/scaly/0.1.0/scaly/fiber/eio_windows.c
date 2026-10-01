@@ -1139,6 +1139,16 @@ int scaly_eio_dir_close(void* dir)
     return rc;
 }
 
+/* ---- LOADING A C LIBRARY INTO THE PROCESS --------------------------------
+ *
+ * The Windows half of eio.c's scaly_eio_load_library: a DLL stays loaded and
+ * the JIT's process lookup finds its exports.
+ */
+int scaly_eio_load_library(const char* path)
+{
+    return LoadLibraryA(path) != NULL ? 0 : -1;
+}
+
 #else
 typedef int scaly_eio_win_not_needed_on_this_target;
 #endif /* _WIN32 */

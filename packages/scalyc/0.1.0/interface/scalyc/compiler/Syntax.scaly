@@ -535,6 +535,21 @@ define VersionSyntax
     patch: Literal
 )
 
+define LibrarySyntax
+(
+    start: size_t
+    end: size_t
+    name: String
+)
+
+define LibrariesSyntax
+(
+    start: size_t
+    end: size_t
+    name: String
+    more: ref[Vector[LibrarySyntax]]?
+)
+
 define PackageSyntax
 (
     start: size_t
@@ -946,6 +961,7 @@ define PrivateSyntax
 define DeclarationSyntax union (
     Empty: EmptySyntax
     Package: PackageSyntax
+    Libraries: LibrariesSyntax
     Use: UseSyntax
     Private: PrivateSyntax
     Definition: DefinitionSyntax

@@ -796,7 +796,7 @@ define cli
             var test_emitter Emitter.Emitter(test_config)
             var test_dep_objs Array[String]()
             var test_dep_syms Array[String]()
-            if cli.compile_jit_dependencies(&model, &test_dep_objs, &test_dep_syms) = false
+            if cli.compile_jit_dependencies(&model, opts.input_file, &test_dep_objs, &test_dep_syms) = false
                 return 4
             let failed test_emitter.jit_run(plan, program_name, "", &test_dep_objs, &test_dep_syms, 0, null, &test_names, &test_labels)
             let total test_names.length as int
@@ -844,7 +844,7 @@ define cli
             var jit_emitter Emitter.Emitter(jit_config)
             var run_dep_objs Array[String]()
             var run_dep_syms Array[String]()
-            if cli.compile_jit_dependencies(&model, &run_dep_objs, &run_dep_syms) = false
+            if cli.compile_jit_dependencies(&model, opts.input_file, &run_dep_objs, &run_dep_syms) = false
                 return 4
             let jit_rc jit_emitter.jit_run(plan, program_name, target_mangled, &run_dep_objs, &run_dep_syms, 0, null, null, null)
             return jit_rc as int
@@ -863,7 +863,7 @@ define cli
             var prog_emitter Emitter.Emitter(prog_config)
             var prog_dep_objs Array[String]()
             var prog_dep_syms Array[String]()
-            if cli.compile_jit_dependencies(&model, &prog_dep_objs, &prog_dep_syms) = false
+            if cli.compile_jit_dependencies(&model, opts.input_file, &prog_dep_objs, &prog_dep_syms) = false
                 return 4
             let prog_rc prog_emitter.jit_run(plan, program_name, "main", &prog_dep_objs, &prog_dep_syms, opts.program_argc, opts.program_argv, null, null)
             return prog_rc as int
@@ -944,6 +944,7 @@ define cli
         ; out of the model first: building a package runs a compilation of its
         ; own in this process.
         var package_objects Array[String]()
+        var library_link_flags StringBuilder()
         if opts.tool_build
         {
             var pkg_names Array[String]()
@@ -966,7 +967,7 @@ define cli
                 pkg_names.add(String("scaly"))
                 pkg_roots.add("`Modeler.scaly_home_base()`packages/scaly/0.1.0/scaly.scaly")
             }
-            if tool.package_objects(&pkg_names, &pkg_roots, opts.target_triple, &package_objects) = false
+            if tool.package_objects(&pkg_names, &pkg_roots, opts.input_file, opts.target_triple, &package_objects, &library_link_flags) = false
                 return 9
         }
 
@@ -1084,6 +1085,11 @@ define cli
             set bi: bi + 1
         }
 
+        ; the C libraries the program's packages declare (`extern ssl,
+        ; crypto`), found by the tool
+        if opts.tool_build
+            cmd_builder.append(library_link_flags.to_string())
+
         ; libm, last of the -l flags. The runtime archive is ONE object, so a
         ; program that needs any runtime symbol pulls in the tensor tape kernels
         ; too, and those call tanhf/expf/sqrtf/logf/powf. macOS has them in
@@ -1162,7 +1168,7 @@ define cli
     ; functions resolve to the real bodies (see Emitter.jit_run). The `scaly`
     ; stdlib is skipped — its symbols are already in the host scalyc image and
     ; resolve via the ORC process generator. Returns false on any dep failure.
-    procedure compile_jit_dependencies(mutable model: ref[Program], mutable dep_objs: ref[Array[String]], mutable dep_syms: ref[Array[String]]) returns bool mutable modeler_error_count
+    procedure compile_jit_dependencies(mutable model: ref[Program], program_file: String, mutable dep_objs: ref[Array[String]], mutable dep_syms: ref[Array[String]]) returns bool mutable modeler_error_count
     {
         ; the packages other than the stdlib, whose symbols the host image
         ; carries; their objects come out of the build cache (tool.scaly)
@@ -1179,7 +1185,7 @@ define cli
             }
             set i: i + 1
         }
-        tool.jit_package_objects(&names, &roots, dep_objs, dep_syms)
+        tool.jit_package_objects(&names, &roots, program_file, dep_objs, dep_syms)
     }
 
     ; a test: named `test` or `test_<name>`, taking nothing, answering an int,

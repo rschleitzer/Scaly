@@ -170,7 +170,7 @@ define cli
     ; functions resolve to the real bodies (see Emitter.jit_run). The `scaly`
     ; stdlib is skipped — its symbols are already in the host scalyc image and
     ; resolve via the ORC process generator. Returns false on any dep failure.
-    procedure compile_jit_dependencies(mutable model: ref[Program], mutable dep_objs: ref[Array[String]], mutable dep_syms: ref[Array[String]]) @ret_nonlocal true @deep true @deep_pageof_2 true returns bool io mutable modeler_error_count reads scaly_package_stamp linked
+    procedure compile_jit_dependencies(mutable model: ref[Program], program_file: String, mutable dep_objs: ref[Array[String]], mutable dep_syms: ref[Array[String]]) @ret_nonlocal true @deep true @deep_pageof_6 true returns bool io mutable modeler_error_count reads scaly_package_stamp linked
 
     ; a test: named `test` or `test_<name>`, taking nothing, answering an int,
     ; no caller page, not in a package the file uses, its name containing the
