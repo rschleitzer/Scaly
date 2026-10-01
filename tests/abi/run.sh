@@ -71,12 +71,14 @@ cd "$(dirname "$0")/../.." || exit 1
 # therefore cannot be right on both. Measured 2026-08-14, the first time this
 # suite ran on Linux (CI's Linux leg does not run it):
 #   Darwin  7 positions — access, close, kill, mkdir, waitpid (fds, pids, modes)
+#           3 since 2026-10-01 — access, close, mkdir: the scalyls worker no longer
+#           declares kill and waitpid (scaly_proc_spawn_self / scaly_proc_reap)
 #   Linux   2 positions — signal (sig), waitpid (options)
 # Both sets are the same benign direction. The RESULT, consistency and LLP64
 # checks are NOT host-dependent in this way and stay at 0 everywhere; a finding
 # there is a real defect on any machine.
 case "$(uname -s)" in
-  Darwin) EXPECTED_PARAM_FINDINGS=7 ;;
+  Darwin) EXPECTED_PARAM_FINDINGS=3 ;;
   Linux)  EXPECTED_PARAM_FINDINGS=2 ;;
   # No pin for this host yet. Fail loudly rather than pass quietly: an
   # unpinned count is exactly the number that drifts unnoticed.
