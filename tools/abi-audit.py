@@ -149,6 +149,15 @@ def load_prototypes(dirs, want):
         if not Path(d).is_dir():
             continue
         for path in sorted(Path(d).rglob("*.h")):
+            # C++ trees under a C include root are not C prototypes. On Linux
+            # /usr/include holds libstdc++ (c++/15/bits/fs_ops.h declares
+            # `void rename(const path&, const path&)`) and LLVM's C++ API
+            # (llvm-21/llvm/ADT/APInt.h: `APInt trunc(unsigned)`), and both
+            # sort before stdio.h — measured 2026-10-01 as one RESULT and one
+            # PARAM finding against libc functions declared correctly.
+            if any(p == "c++" or re.fullmatch(r"llvm(-\d+)?", p)
+                   for p in path.relative_to(d).parts[:-1]):
+                continue
             try:
                 flat = clean_c(path.read_text(errors="replace"))
             except OSError:

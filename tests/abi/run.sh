@@ -74,12 +74,15 @@ cd "$(dirname "$0")/../.." || exit 1
 #           3 since 2026-10-01 — access, close, mkdir: the scalyls worker no longer
 #           declares kill and waitpid (scaly_proc_spawn_self / scaly_proc_reap)
 #   Linux   2 positions — signal (sig), waitpid (options)
+#           1 since 2026-10-01 — close (fd), measured in an ubuntu:26.04 container
+#           (aarch64): the worker's signal and waitpid are gone, and close shows
+#           now that tools/abi-audit.py skips the C++ trees under /usr/include
 # Both sets are the same benign direction. The RESULT, consistency and LLP64
 # checks are NOT host-dependent in this way and stay at 0 everywhere; a finding
 # there is a real defect on any machine.
 case "$(uname -s)" in
   Darwin) EXPECTED_PARAM_FINDINGS=3 ;;
-  Linux)  EXPECTED_PARAM_FINDINGS=2 ;;
+  Linux)  EXPECTED_PARAM_FINDINGS=1 ;;
   # No pin for this host yet. Fail loudly rather than pass quietly: an
   # unpinned count is exactly the number that drifts unnoticed.
   *)      EXPECTED_PARAM_FINDINGS="" ;;
