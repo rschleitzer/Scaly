@@ -254,7 +254,7 @@ jobs:
       # names the one the suites above ran on, and insists on io_uring.
       - name: Which I/O backend (io_uring expected)
         run: |
-          dist/seed/scalyc_seed -o /tmp/io_backend tests/fiber/io_backend.scaly
+          dist/seed/scalyc_seed build tests/fiber/io_backend.scaly -o /tmp/io_backend
           SCALY_EXPECT_BACKEND=io_uring /tmp/io_backend
 
       - name: The 10k demo (fiber-per-connection HTTP, milestone 1.6)

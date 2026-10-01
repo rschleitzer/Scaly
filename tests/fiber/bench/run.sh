@@ -29,22 +29,13 @@ if ! ulimit -n $NEED 2>/dev/null; then
   exit 0
 fi
 
-# Top up an older archive (see tests/fiber/run.sh).
-if [ -f /tmp/libscaly.a ] && ! ar t /tmp/libscaly.a 2>/dev/null | grep -q '^fcontext\.o$'; then
-  tools/fcontext.sh /tmp/fcontext.o && ar rcs /tmp/libscaly.a /tmp/fcontext.o
-fi
-if [ -f /tmp/libscaly.a ] && ! ar t /tmp/libscaly.a 2>/dev/null | grep -q '^eio\.o$'; then
-  tools/eio.sh /tmp/eio.o && ar rcs /tmp/libscaly.a /tmp/eio.o
-fi
-if [ -f /tmp/libscaly.a ] && ! ar t /tmp/libscaly.a 2>/dev/null | grep -q '^ctime\.o$'; then
-  tools/ctime.sh /tmp/ctime.o && ar rcs /tmp/libscaly.a /tmp/ctime.o
-  tools/panic.sh /tmp/panic.o && ar rcs /tmp/libscaly.a /tmp/panic.o
-fi
-
+# Built by the tool (`build`: the runtime out of the build cache). Until
+# 2026-10-01 this linked against /tmp/libscaly.a, which in CI existed only as a
+# side effect of the dazzle CLI's build script two steps earlier.
 f=tests/fiber/bench/http10k.scaly
 expected=$(sed -n 's/^; Expected: //p' "$f")
 bin=/tmp/fiber_http10k; rm -f "$bin"
-if ! "$STAGE" -o "$bin" "$f" >/dev/null 2>&1; then
+if ! "$STAGE" build "$f" -o "$bin" >/dev/null 2>&1; then
   echo "http10k: FAIL (compile)"
   exit 1
 fi
