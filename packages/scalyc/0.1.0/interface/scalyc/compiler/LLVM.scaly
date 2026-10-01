@@ -664,6 +664,11 @@ define LLVMPassBuilderOptionsRef pointer[LLVMOpaquePassBuilderOptions]
 function LLVMCreatePassBuilderOptions() returns LLVMPassBuilderOptionsRef extern
 function LLVMRunPasses(mod: LLVMModuleRef, passes: pointer[const_char], tm: LLVMTargetMachineRef, options: LLVMPassBuilderOptionsRef) returns LLVMErrorRef extern
 procedure LLVMDisposePassBuilderOptions(options: LLVMPassBuilderOptionsRef) extern
+; LLVM's own command-line options, set in process: the pass builder's C
+; options carry no profile file, the `pgo-instr-use` pass reads
+; -pgo-test-profile-file (`scaly build --pgo`)
+procedure LLVMParseCommandLineOptions(argc: i32, argv: pointer[pointer[const_char]], overview: pointer[const_char]) extern
+procedure LLVMGetVersion(mutable major: pointer[u32], mutable minor: pointer[u32], mutable patch: pointer[u32]) extern
 
 ; The DataLayout a target machine compiles for (caller owns the result)
 function LLVMCreateTargetDataLayout(machine: LLVMTargetMachineRef) returns LLVMTargetDataRef extern

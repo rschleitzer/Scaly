@@ -94,6 +94,8 @@ define Options
     tool_build: bool                ; `scaly build`: link against the cached package objects
     release: bool                   ; `scaly build --release`: the whole program as one module at -O2
     bitcode: bool                   ; with -c: write bitcode (a package for a release build)
+    pgo_train: bool                 ; `scaly build --pgo-train`: the release build instrumented
+    pgo_profile: String             ; `scaly build --pgo <file>`: the release build with a profile
     program_argc: int               ; `scaly run file args`: what the program's main receives
     program_argv: pointer[pointer[char]]
     test_mode: bool                 ; `scaly test file [filter]`: run the test functions
@@ -152,6 +154,17 @@ define cli
     ; falling back to `clang`. Unset → `clang`, exactly as before, so CI /
     ; bootstrap / AOT linking is byte-for-byte unchanged.
     procedure link_compiler() @page true @direct true @ret_caller true @deep true returns String io linked
+
+    ; A program of the LLVM this compiler is linked against: `clang-21` or
+    ; `llvm-profdata-21` on the PATH (a Linux distribution), else Homebrew's
+    ; keg, else the bare name. `honour_cc`: $SCALY_CC / $CC first, as the link
+    ; compiler everywhere else.
+    procedure llvm_program(name: String, honour_cc: bool) @page true @direct true @ret_caller true @deep true returns String io linked
+
+    ; The profile `--pgo` names as LLVM reads it. A `.profraw` -- what a
+    ; --pgo-train binary writes -- is indexed first (llvm-profdata merge, into
+    ; `<file>.profdata` beside it); "" after saying why it could not be.
+    procedure indexed_profile(mutable given: String) @page true @direct true @ret_caller true @deep true returns String io linked
 
     ; Run the compiler with parsed options
     ; Returns 0 on success, non-zero on error

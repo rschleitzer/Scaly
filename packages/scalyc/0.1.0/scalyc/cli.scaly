@@ -94,6 +94,8 @@ define Options
     tool_build: bool                ; `scaly build`: link against the cached package objects
     release: bool                   ; `scaly build --release`: the whole program as one module at -O2
     bitcode: bool                   ; with -c: write bitcode (a package for a release build)
+    pgo_train: bool                 ; `scaly build --pgo-train`: the release build instrumented
+    pgo_profile: String             ; `scaly build --pgo <file>`: the release build with a profile
     program_argc: int               ; `scaly run file args`: what the program's main receives
     program_argv: pointer[pointer[char]]
     test_mode: bool                 ; `scaly test file [filter]`: run the test functions
@@ -139,6 +141,8 @@ define Options
         set tool_build: false
         set release: false
         set bitcode: false
+        set pgo_train: false
+        set pgo_profile: String()
         set program_argc: 0
         set program_argv: null
         set test_mode: false
@@ -276,6 +280,26 @@ define cli
                     set opts.opt_level: 2
                     set opts.release: true
                 }
+                else if arg = "--pgo-train"
+                {
+                    set opts.opt_level: 2
+                    set opts.release: true
+                    set opts.pgo_train: true
+                }
+                else if arg = "--pgo"
+                {
+                    set i: i + 1
+                    if i < argc
+                    {
+                        set opts.opt_level: 2
+                        set opts.release: true
+                        set opts.pgo_profile: String(*(argv + i))
+                    }
+                    else
+                    {
+                        set opts.error_message: "--pgo requires a profile (.profdata, or the .profraw a --pgo-train binary wrote)"
+                    }
+                }
                 else if arg = "--jit"
                 {
                     set opts.jit_program: true
@@ -398,6 +422,8 @@ define cli
     {
         Console.println "Usage: scaly run <file> [arguments]     compile and run a program"
         Console.println "       scaly build <file> [-o <out>] [--release]   build an executable"
+        Console.println "             --pgo-train          ... instrumented: its run writes default.profraw ($LLVM_PROFILE_FILE)"
+        Console.println "             --pgo <profile>      ... optimised with that profile"
         Console.println "       scaly test <file> [filter]       run its test functions"
         Console.println "       scalyc [options] <input file>"
         Console.println ""
@@ -503,6 +529,65 @@ define cli
         if s.get_length() = 0
             return "clang"
         String(name)
+    }
+
+    ; A program of the LLVM this compiler is linked against: `clang-21` or
+    ; `llvm-profdata-21` on the PATH (a Linux distribution), else Homebrew's
+    ; keg, else the bare name. `honour_cc`: $SCALY_CC / $CC first, as the link
+    ; compiler everywhere else.
+    procedure llvm_program(name: String, honour_cc: bool) returns String
+    {
+        if honour_cc
+        {
+            var cc getenv "SCALY_CC"
+            if cc = null
+                set cc: getenv("CC")
+            if cc <> null
+            {
+                let s String(cc)
+                if s.get_length() > 0
+                    return String(s)
+            }
+        }
+        var major: u32 0
+        var minor: u32 0
+        var patch: u32 0
+        LLVMGetVersion(&major, &minor, &patch)
+        let m major as size_t
+        let versioned "`name`-`m`"
+        let probe "command -v `versioned` > /dev/null 2>&1"
+        if system(probe.to_c_string()) = 0
+            return String(versioned)
+        let arm "/opt/homebrew/opt/llvm@`m`/bin/`name`"
+        if File.exists(arm)
+            return String(arm)
+        let intel "/usr/local/opt/llvm@`m`/bin/`name`"
+        if File.exists(intel)
+            return String(intel)
+        String(name)
+    }
+
+    ; The profile `--pgo` names as LLVM reads it. A `.profraw` -- what a
+    ; --pgo-train binary writes -- is indexed first (llvm-profdata merge, into
+    ; `<file>.profdata` beside it); "" after saying why it could not be.
+    procedure indexed_profile(mutable given: String) returns String
+    {
+        if File.exists(given) = false
+        {
+            Console.println("Error: no profile `given`")
+            return String()
+        }
+        if given.ends_with(".profraw") = false
+            return String(given)
+        let merged "`given`.profdata"
+        let profdata cli.llvm_program("llvm-profdata", false)
+        let cmd "\"`profdata`\" merge -o \"`merged`\" \"`given`\""
+        if system(cmd.to_c_string()) <> 0
+        {
+            Console.println("Error: `profdata` merge failed; index the profile yourself and pass the .profdata")
+            return String()
+        }
+        String(merged)
     }
 
     ; Run the compiler with parsed options
@@ -894,6 +979,13 @@ define cli
         {
             set config.release: true
             set config.opt_level: 2
+            set config.pgo_train: opts.pgo_train
+            if opts.pgo_profile.get_length() > 0
+            {
+                set config.pgo_profile: cli.indexed_profile(opts.pgo_profile)
+                if config.pgo_profile.get_length() = 0
+                    return 9
+            }
         }
 
         var emitter Emitter.Emitter(config)
@@ -1034,7 +1126,15 @@ define cli
         }
 
         var cmd_builder StringBuilder()
-        cmd_builder.append(link_compiler())
+        ; an instrumented binary links the profile runtime of the LLVM that
+        ; instrumented it: that LLVM's own clang knows where it is
+        if opts.pgo_train and opts.tool_build
+        {
+            cmd_builder.append(cli.llvm_program("clang", true))
+            cmd_builder.append " -fprofile-instr-generate"
+        }
+        else
+            cmd_builder.append(link_compiler())
         cmd_builder.append " "
         cmd_builder.append tmp_obj
         ; Append the scaly stdlib static archive. Provides runtime

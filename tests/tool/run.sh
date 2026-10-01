@@ -17,6 +17,7 @@
 #   release    `scaly build --release`: hello and the http server as ONE module
 #              (package bitcode from the cache, linked and optimised in
 #              process), the binary smaller than the plain build's
+#   pgo        `--pgo-train`, a run, `--pgo <profile>`: the same output
 #   repl       `scaly` alone: tests/tool/repl.session piped in under poison
 #              gives tests/tool/repl.expected byte for byte -- values kept,
 #              a var changed by `set`, a record, an Array grown in a loop, a
@@ -135,6 +136,26 @@ if "$BIN" build tests/http/server.scaly --release -o "$TMP/server_rel$SCALY_EXE"
   [ "$out" = "$(sed -n 's/^; Expected: //p' tests/http/server.scaly)" ] && ok || bad "release http: '$out'"
 else
   bad "release http(build): $(tail -1 "$TMP/rel2.log")"
+fi
+
+# pgo: an instrumented build, its run writes a profile, the build with that
+# profile gives the same output. Needs the LLVM the compiler is linked against
+# as tools too (its clang for the profile runtime, llvm-profdata); SKIPs by
+# name where they are not installed.
+(
+  . tools/llvm-env.sh > /dev/null 2>&1
+  [ -x "${LLVM_PREFIX:-/nonexistent}/bin/llvm-profdata" ] || command -v "llvm-profdata-${LLVM_MAJOR:-0}" > /dev/null 2>&1
+) && have_pgo=1 || have_pgo=0
+if [ "$SCALY_COFF" = 1 ] || [ "$have_pgo" = 0 ]; then
+  echo "SKIP pgo (needs LLVM's clang and llvm-profdata)"
+elif "$BIN" build tests/tool/hello.scaly --pgo-train -o "$TMP/hello_train" > "$TMP/pgo.log" 2>&1 \
+     && LLVM_PROFILE_FILE="$TMP/hello.profraw" "$TMP/hello_train" one two > /dev/null 2>&1 \
+     && [ -s "$TMP/hello.profraw" ] \
+     && "$BIN" build tests/tool/hello.scaly --pgo "$TMP/hello.profraw" -o "$TMP/hello_pgo" >> "$TMP/pgo.log" 2>&1; then
+  out=$("$TMP/hello_pgo" one two)
+  [ "$out" = "hello one two" ] && ok || bad "pgo: got '$out'"
+else
+  bad "pgo: $(tail -3 "$TMP/pgo.log" | tr '\n' ' ')"
 fi
 
 # repl

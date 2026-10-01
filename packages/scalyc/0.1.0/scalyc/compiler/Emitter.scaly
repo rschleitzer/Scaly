@@ -81,6 +81,8 @@ define Emitter
         library_linkage: bool       ; a package archive: linkonce_odr bodies kept as weak_odr before -O
         keep_main_frame: bool       ; the REPL: main's frame page is the session's, never released
         release: bool               ; `scaly build --release`: one module of the whole program, internal definitions hidden
+        pgo_train: bool             ; `--pgo-train`: the release module instrumented, its run writes a profile
+        pgo_profile: String         ; `--pgo <file>`: the release module optimised with that profile (.profdata)
     )
     {
         init()
@@ -97,6 +99,8 @@ define Emitter
             set library_linkage: false
             set keep_main_frame: false
             set release: false
+            set pgo_train: false
+            set pgo_profile: String()
         }
     }
 
@@ -8683,6 +8687,16 @@ define Emitter
             LLVMLinkModules2(llvm_module, package_module) = 0
         }
 
+        ; hand LLVM the profile `pgo-instr-use` reads
+        procedure set_profile_file(mutable this)
+        {
+            let option "-pgo-test-profile-file=`config.pgo_profile`"
+            var args Vector[pointer[const_char]](2)
+            args.put(0, "scaly" as pointer[const_char])
+            args.put(1, option.to_c_string())
+            LLVMParseCommandLineOptions(2, args.data, null as pointer[const_char])
+        }
+
         ; main's definition as text, before the JIT takes the module
         procedure keep_main_ir(mutable this)
         {
@@ -8839,6 +8853,18 @@ define Emitter
                     set pipeline: ("default<O2>" as pointer[const_char])
                 if config.opt_level >= 3
                     set pipeline: ("default<O3>" as pointer[const_char])
+                ; Profile-guided: counters go in, or a profile is read, on the
+                ; module as emitted -- both at the same point, so the counts of
+                ; the trained binary fit the functions of this one. (The pass
+                ; builder places them after a first simplification; its C
+                ; options cannot ask for that.)
+                if config.release and config.pgo_train
+                    set pipeline: ("pgo-instr-gen,instrprof,default<O2>" as pointer[const_char])
+                else if config.release and config.pgo_profile.get_length() > 0
+                {
+                    this.set_profile_file()
+                    set pipeline: ("pgo-instr-use,default<O2>" as pointer[const_char])
+                }
                 let opt_err LLVMRunPasses(llvm_module, pipeline, tm, pb_opts)
                 LLVMDisposePassBuilderOptions pb_opts
                 if opt_err <> null

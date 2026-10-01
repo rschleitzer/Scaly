@@ -81,6 +81,8 @@ define Emitter
         library_linkage: bool       ; a package archive: linkonce_odr bodies kept as weak_odr before -O
         keep_main_frame: bool       ; the REPL: main's frame page is the session's, never released
         release: bool               ; `scaly build --release`: one module of the whole program, internal definitions hidden
+        pgo_train: bool             ; `--pgo-train`: the release module instrumented, its run writes a profile
+        pgo_profile: String         ; `--pgo <file>`: the release module optimised with that profile (.profdata)
     )
     {
         init() linked
@@ -1868,6 +1870,9 @@ define Emitter
         ; llvm-link, in process). False when the file cannot be read or does not
         ; link.
         procedure link_bitcode(mutable this, mutable filename: String) @ret_caller true @deep true returns bool io linked
+
+        ; hand LLVM the profile `pgo-instr-use` reads
+        procedure set_profile_file(mutable this) @ret_caller true @deep true linked
 
         ; main's definition as text, before the JIT takes the module
         procedure keep_main_ir(mutable this) @page true @stores true @deep true linked
