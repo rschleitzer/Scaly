@@ -79,11 +79,22 @@ case ";${LIB:-};${INCLUDE:-};" in
     ;;
 esac
 
-SCALY_WIN_TOOLS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/win"
+# ★Through cygpath, never a bare `pwd`: bash keeps the SPELLING of the directory
+# it was started in, and a shell launched by a Windows program (an IDE, an
+# agent, a CI step with `working-directory`) starts in `C:/repos/...`. As a PATH
+# entry that is two entries, `C` and `/repos/...`, and the first symptom is
+# `ar: command not found` a hundred lines into a bootstrap (met 2026-10-01).
+SCALY_WIN_TOOLS="$(cygpath -u "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")/win"
 case ":$PATH:" in
   *":$SCALY_WIN_TOOLS:"*) ;;
   *) PATH="$PATH:$SCALY_WIN_TOOLS" ;;
 esac
+for t in ar llc opt; do
+  if ! command -v "$t" >/dev/null 2>&1; then
+    echo "win-env: \`$t\` does not resolve although $SCALY_WIN_TOOLS is on PATH" >&2
+    return 1 2>/dev/null || exit 1
+  fi
+done
 # The tools the installer does not ship (llvm-dwarfdump for tests/debuginfo),
 # UNPACKED from the release tarball into %LOCALAPPDATA%\Programs\llvm-21.1.8
 # — never a second installer run (tests/win32/WINDOWS-BOX.md §1) — and at the
