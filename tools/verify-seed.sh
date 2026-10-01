@@ -25,7 +25,7 @@ ulimit -s 65520 2>/dev/null || true
 WORK=$(mktemp -d); trap 'rm -rf "$WORK"' EXIT
 
 echo "verify: hello.scaly"
-"$SC" -o "$WORK/hello" tests/aot/hello.scaly >/dev/null 2>&1 || fail "compile hello"
+"$SC" build tests/aot/hello.scaly -o "$WORK/hello" >/dev/null 2>&1 || fail "compile hello"
 out=$("$WORK/hello"); [ "$out" = "Hello, World!" ] || fail "hello output: '$out'"
 
 echo "verify: AOT corpus (self-check vs ; Expected:)"
@@ -37,7 +37,7 @@ for f in tests/aot/*.scaly; do
   t=$(basename "$f" .scaly)
   case " $SKIP " in *" $t "*) skipped=$((skipped+1)); continue;; esac
   total=$((total+1))
-  if ! "$SC" -o "$WORK/$t" "$f" >/dev/null 2>&1; then bad="$bad $t(compile)"; continue; fi
+  if ! "$SC" build "$f" -o "$WORK/$t" >/dev/null 2>&1; then bad="$bad $t(compile)"; continue; fi
   exp=$(grep -m1 '; Expected:' "$f" | sed -e 's/.*; Expected:[[:space:]]*//' -e 's/[[:space:]]*$//')
   if [ -n "$exp" ]; then
     got=$("$WORK/$t" 2>/dev/null || true)
