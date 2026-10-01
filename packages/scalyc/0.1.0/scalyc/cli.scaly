@@ -1181,10 +1181,13 @@ define cli
             {
                 set oi: oi - 1
                 let op package_objects.get oi
+                ; quoted: the cache lives under the home directory, and a
+                ; home directory may carry a space
                 if op <> null
                 {
-                    cmd_builder.append " "
+                    cmd_builder.append " \""
                     cmd_builder.append((*op))
+                    cmd_builder.append "\""
                 }
             }
         }
