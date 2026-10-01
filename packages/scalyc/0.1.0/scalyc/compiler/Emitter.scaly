@@ -80,6 +80,7 @@ define Emitter
         portable_simd: bool         ; --portable-simd: SIMD lowered target-neutrally (the seed)
         library_linkage: bool       ; a package archive: linkonce_odr bodies kept as weak_odr before -O
         keep_main_frame: bool       ; the REPL: main's frame page is the session's, never released
+        release: bool               ; `scaly build --release`: one module of the whole program, internal definitions hidden
     )
     {
         init()
@@ -95,6 +96,7 @@ define Emitter
             set portable_simd: false
             set library_linkage: false
             set keep_main_frame: false
+            set release: false
         }
     }
 
@@ -8650,6 +8652,37 @@ define Emitter
             tmp
         }
 
+        ; Write the module as bitcode: a package's form in the build cache for
+        ; `scaly build --release`, unoptimised and with its linkonce_odr bodies
+        ; as they are -- the whole-program link drops what nothing uses.
+        ; ★Verified first, and the verifier's findings printed: bitcode keeps
+        ; what the module holds in MEMORY, where the textual IR every other
+        ; path goes through re-reads a type from its context -- a module that
+        ; prints and assembles cleanly was written as bitcode LLVM's own reader
+        ; refused ("Invalid record", the http package, 2026-10-01).
+        procedure write_bitcode_to_file(mutable this, mutable filename: String) returns bool
+        {
+            if LLVMVerifyModule(llvm_module, 1, null as pointer[pointer[char]]) <> 0
+                return false
+            LLVMWriteBitcodeToFile(llvm_module, filename.to_c_string()) = 0
+        }
+
+        ; Link a package's bitcode into this module (tools/link-lto.sh's
+        ; llvm-link, in process). False when the file cannot be read or does not
+        ; link.
+        procedure link_bitcode(mutable this, mutable filename: String) returns bool
+        {
+            var buf: LLVMMemoryBufferRef null
+            if LLVMCreateMemoryBufferWithContentsOfFile(filename.to_c_string(), &buf, null as pointer[pointer[char]]) <> 0
+                return false
+            var package_module: LLVMModuleRef null
+            let parse_failed LLVMParseBitcodeInContext2(context, buf, &package_module)
+            LLVMDisposeMemoryBuffer(buf)
+            if parse_failed <> 0
+                return false
+            LLVMLinkModules2(llvm_module, package_module) = 0
+        }
+
         ; main's definition as text, before the JIT takes the module
         procedure keep_main_ir(mutable this)
         {
@@ -8775,6 +8808,23 @@ define Emitter
                     if LLVMGetLinkage(lf) = 3
                         LLVMSetLinkage(lf, 6)
                     set lf: LLVMGetNextFunction(lf)
+                }
+            }
+
+            ; A whole program in one module (link_bitcode#): what stays
+            ; linkonce_odr is the program's own and nobody outside will bind
+            ; it. Hidden, the linker binds calls to it directly -- as
+            ; interposable symbols even calls inside the binary go through
+            ; the stub table on Mach-O (17.6 % of the samples of the dazzle
+            ; engine, measured 2026-08-01; tools/link-lto.sh did this with sed).
+            if config.release
+            {
+                var hf LLVMGetFirstFunction(llvm_module)
+                while hf <> null
+                {
+                    if LLVMGetLinkage(hf) = 3 and LLVMIsDeclaration(hf) = 0
+                        LLVMSetVisibility(hf, 1)
+                    set hf: LLVMGetNextFunction(hf)
                 }
             }
 
@@ -11483,9 +11533,26 @@ define Emitter
                                     let ja_ptr ic_args.get jk
                                     if ja_ptr <> null
                                     {
-                                        let jav emit_operand(*ja_ptr)
+                                        ; The parameter's type is the VALUE's, not the
+                                        ; planned operand's: a record travels as a pointer
+                                        ; (a call result is its sret slot), and typed from
+                                        ; the plan the function type said `%Slice` where
+                                        ; the argument was `ptr`. The textual IR prints
+                                        ; each argument with its own type and read back
+                                        ; right; the module in memory was invalid, which
+                                        ; the bitcode of the http package showed
+                                        ; (WebSocket's `f(ws, opcode, message.bytes())`,
+                                        ; 2026-10-01). A record still in hand as a value
+                                        ; is spilled: the callee takes it by pointer.
+                                        var jav emit_operand(*ja_ptr)
+                                        if jav <> null and LLVMGetTypeKind(LLVMTypeOf jav) = LLVMTypeKind.Struct()
+                                        {
+                                            let jspill entry_alloca(LLVMTypeOf jav, "jit.arg")
+                                            LLVMBuildStore(builder, jav, jspill)
+                                            set jav: jspill
+                                        }
                                         jarg_vals.put(jk - 1, jav)
-                                        jarg_tys.put(jk - 1, map_type((*ja_ptr).result_type))
+                                        jarg_tys.put(jk - 1, LLVMTypeOf jav)
                                     }
                                     set jk: jk + 1
                                 }

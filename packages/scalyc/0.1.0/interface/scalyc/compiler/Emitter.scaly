@@ -80,6 +80,7 @@ define Emitter
         portable_simd: bool         ; --portable-simd: SIMD lowered target-neutrally (the seed)
         library_linkage: bool       ; a package archive: linkonce_odr bodies kept as weak_odr before -O
         keep_main_frame: bool       ; the REPL: main's frame page is the session's, never released
+        release: bool               ; `scaly build --release`: one module of the whole program, internal definitions hidden
     )
     {
         init() linked
@@ -1852,6 +1853,21 @@ define Emitter
         ; variable's own slot where it has one, else a spill (a let-bound record
         ; has no slot, and is never written). Gate address_of_record_field.
         procedure member_address_base(mutable this, op: PlannedOperand, mutable base: LLVMValueRef) @direct true @deep true returns LLVMValueRef linked
+
+        ; Write the module as bitcode: a package's form in the build cache for
+        ; `scaly build --release`, unoptimised and with its linkonce_odr bodies
+        ; as they are -- the whole-program link drops what nothing uses.
+        ; ★Verified first, and the verifier's findings printed: bitcode keeps
+        ; what the module holds in MEMORY, where the textual IR every other
+        ; path goes through re-reads a type from its context -- a module that
+        ; prints and assembles cleanly was written as bitcode LLVM's own reader
+        ; refused ("Invalid record", the http package, 2026-10-01).
+        procedure write_bitcode_to_file(mutable this, mutable filename: String) @ret_caller true @deep true returns bool io linked
+
+        ; Link a package's bitcode into this module (tools/link-lto.sh's
+        ; llvm-link, in process). False when the file cannot be read or does not
+        ; link.
+        procedure link_bitcode(mutable this, mutable filename: String) @ret_caller true @deep true returns bool io linked
 
         ; main's definition as text, before the JIT takes the module
         procedure keep_main_ir(mutable this) @page true @stores true @deep true linked

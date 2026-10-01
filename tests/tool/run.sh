@@ -14,6 +14,9 @@
 #              scaly come in through https's own declarations
 #   http       every tests/http program built with `scaly build` and run
 #              under poison against its "; Expected:" line
+#   release    `scaly build --release`: hello and the http server as ONE module
+#              (package bitcode from the cache, linked and optimised in
+#              process), the binary smaller than the plain build's
 #   repl       `scaly` alone: tests/tool/repl.session piped in under poison
 #              gives tests/tool/repl.expected byte for byte -- values kept,
 #              a var changed by `set`, a record, an Array grown in a loop, a
@@ -115,6 +118,23 @@ if scaly_jit_available 2>/dev/null; then
   [ "$rc" = 0 ] && [ "$out" = "$(printf 'test test_sum ... ok\n1 passed')" ] && ok || bad "test filter: rc=$rc '$out'"
   out=$("$BIN" test packages/opensp/0.1.0/opensp.scaly 2>&1); rc=$?
   [ "$rc" = 0 ] && echo "$out" | grep -q '^40 passed$' && ok || bad "test opensp: rc=$rc $(echo "$out" | tail -1)"
+fi
+
+# release: the whole program as one module -- the same output, and a binary
+# that holds what the program uses instead of the stdlib's whole object; a
+# program over a package (the http server) under poison
+if "$BIN" build tests/tool/hello.scaly --release -o "$TMP/hello_rel$SCALY_EXE" > "$TMP/rel.log" 2>&1; then
+  out=$("$TMP/hello_rel$SCALY_EXE" one two)
+  plain=$(wc -c < "$TMP/hello$SCALY_EXE"); rel=$(wc -c < "$TMP/hello_rel$SCALY_EXE")
+  [ "$out" = "hello one two" ] && [ "$rel" -lt "$plain" ] && ok || bad "release: got '$out', $rel bytes against $plain"
+else
+  bad "release: rc=$? $(tail -3 "$TMP/rel.log" | tr '\n' ' ')"
+fi
+if "$BIN" build tests/http/server.scaly --release -o "$TMP/server_rel$SCALY_EXE" > "$TMP/rel2.log" 2>&1; then
+  out=$(SCALY_POISON=1 "$TMP/server_rel$SCALY_EXE" 2>&1)
+  [ "$out" = "$(sed -n 's/^; Expected: //p' tests/http/server.scaly)" ] && ok || bad "release http: '$out'"
+else
+  bad "release http(build): $(tail -1 "$TMP/rel2.log")"
 fi
 
 # repl

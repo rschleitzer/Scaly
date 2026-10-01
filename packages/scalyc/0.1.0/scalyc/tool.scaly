@@ -7,6 +7,12 @@
 ; file of the package. A package's C and assembly files are compiled by the
 ; tool as well; which of them a target takes is said by their names
 ; (native_name#). Nothing is written into the project, and no script is run.
+;
+; `scaly build --release` (stage C) takes a package as unoptimised BITCODE out
+; of the same cache instead: the program's module links it in, dependents
+; first, and the whole program is optimised and emitted as one module
+; (Emitter.link_bitcode#, the release branch of write_object_to_file#) -- what
+; tools/link-lto.sh did with llvm-link, sed, opt and llc.
 
 use scaly.containers.String
 use scaly.containers.StringBuilder
@@ -322,7 +328,7 @@ define tool
     ; and assembly files its target takes. `names` and `roots` pair a
     ; package's name with its root file. False when one of them does not build;
     ; what went wrong is printed where it happened.
-    procedure package_objects(names: ref[Array[String]], roots: ref[Array[String]], program_file: String, given_triple: String, mutable objects: ref[Array[String]], mutable link_flags: ref[StringBuilder]) returns bool mutable modeler_error_count
+    procedure package_objects(names: ref[Array[String]], roots: ref[Array[String]], program_file: String, given_triple: String, release: bool, mutable objects: ref[Array[String]], mutable bitcode: ref[Array[String]], mutable link_flags: ref[StringBuilder]) returns bool mutable modeler_error_count
     {
         var include_flags StringBuilder()
         tool.libraries_of(names, roots, program_file, link_flags, &include_flags)
@@ -354,6 +360,36 @@ define tool
             let key tool.package_key(dir, &files, triple, "O2")
             let base "`cache`/`np`-`version`-`tool.hex16(key)`"
             let obj "`base`.o"
+            ; --release: the package as unoptimised bitcode, which the program's
+            ; module takes in whole (Emitter.link_bitcode#); its C and assembly
+            ; stay objects
+            if release
+            {
+                let bc "`base`.bc"
+                if File.exists(bc) = false
+                {
+                    let btmp "`bc`.`getpid() as int`.tmp"
+                    var bo Options()
+                    set bo.input_file: String(root)
+                    set bo.output_file: String(btmp)
+                    set bo.compile_only: true
+                    set bo.bitcode: true
+                    set bo.no_prelude: true
+                    set bo.no_tests: true
+                    set bo.target_triple: String(given_triple)
+                    if cli.run(bo) <> 0
+                    {
+                        Console.println("Error: package `np` did not build")
+                        return false
+                    }
+                    tool.publish(btmp, bc)
+                }
+                let bc_page Page.get(bitcode)
+                bitcode.add(String^bc_page(bc))
+                if tool.native_objects(dir, &files, triple, base, given_triple, includes, objects) = false
+                    return false
+                continue
+            }
             if File.exists(obj) = false
             {
                 let tmp "`obj`.`getpid() as int`.tmp"

@@ -285,6 +285,8 @@ function LLVMCountParams(func: LLVMValueRef) returns u32 extern
 
 ; Set linkage
 procedure LLVMSetLinkage(global: LLVMValueRef, linkage: i32) extern
+; LLVMVisibility: 0 default, 1 hidden, 2 protected
+procedure LLVMSetVisibility(global: LLVMValueRef, viz: i32) extern
 function LLVMGetLinkage(global: LLVMValueRef) returns i32 extern
 
 ; Comdats (stage 7). A `linkonce_odr` function needs one on COFF and MUST NOT
@@ -863,6 +865,12 @@ function LLVMOrcLLJITAddObjectFile(j: LLVMOrcLLJITRef, jd: LLVMOrcJITDylibRef, o
 ; Load a file into a MemoryBuffer (used to hand a dep-package object to the
 ; JIT). Returns an LLVMBool (0 = success); writes the buffer to *out.
 function LLVMCreateMemoryBufferWithContentsOfFile(path: pointer[const_char], out: pointer[LLVMMemoryBufferRef], msg: pointer[pointer[char]]) returns i32 extern
+procedure LLVMDisposeMemoryBuffer(buf: LLVMMemoryBufferRef) extern
+; `scaly build --release`: a package's cached bitcode read into the program's
+; context (LLVMBool, 0 = success; the buffer stays the caller's), and linked
+; into the program's module (LLVMBool, 0 = success; `src` is consumed)
+procedure LLVMParseBitcodeInContext2(context: LLVMContextRef, buf: LLVMMemoryBufferRef, mutable out_module: pointer[LLVMModuleRef]) returns i32 extern
+procedure LLVMLinkModules2(mutable dest: LLVMModuleRef, src: LLVMModuleRef) returns i32 extern
 ; LLVMOrcExecutorAddress is a bare u64 (a runtime code address), so the
 ; result is pointer[u64], NOT a wrapper-struct pointer.
 function LLVMOrcLLJITLookup(j: LLVMOrcLLJITRef, result: pointer[u64], name: pointer[const_char]) returns LLVMErrorRef extern

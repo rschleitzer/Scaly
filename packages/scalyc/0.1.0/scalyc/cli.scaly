@@ -92,6 +92,8 @@ define Options
     portable_simd: bool             ; --portable-simd: no target form for a SIMD operation (the seed)
     library: bool                   ; a package object for the build cache (tool.package_objects)
     tool_build: bool                ; `scaly build`: link against the cached package objects
+    release: bool                   ; `scaly build --release`: the whole program as one module at -O2
+    bitcode: bool                   ; with -c: write bitcode (a package for a release build)
     program_argc: int               ; `scaly run file args`: what the program's main receives
     program_argv: pointer[pointer[char]]
     test_mode: bool                 ; `scaly test file [filter]`: run the test functions
@@ -135,6 +137,8 @@ define Options
         set portable_simd: false
         set library: false
         set tool_build: false
+        set release: false
+        set bitcode: false
         set program_argc: 0
         set program_argv: null
         set test_mode: false
@@ -268,7 +272,9 @@ define cli
                 }
                 else if arg = "--release"
                 {
+                    ; -O2; under `scaly build` the whole program as one module
                     set opts.opt_level: 2
+                    set opts.release: true
                 }
                 else if arg = "--jit"
                 {
@@ -883,6 +889,12 @@ define cli
         set config.portable_simd: opts.portable_simd
         set config.page_size: planner.page_size_constant()
         set config.library_linkage: opts.library
+        ; --release: the program and its packages are optimised as one module
+        if opts.release and opts.tool_build
+        {
+            set config.release: true
+            set config.opt_level: 2
+        }
 
         var emitter Emitter.Emitter(config)
         if opts.debug
@@ -924,7 +936,11 @@ define cli
                 Console.println "Error: -c requires -o <file>"
                 return 6
             }
-            let obj_ok emitter.write_object_to_file opts.output_file
+            var obj_ok false
+            if opts.bitcode
+                set obj_ok: emitter.write_bitcode_to_file(opts.output_file)
+            else
+                set obj_ok: emitter.write_object_to_file(opts.output_file)
             if obj_ok = false
             {
                 Console.println "Error: Could not write object file"
@@ -945,6 +961,7 @@ define cli
         ; out of the model first: building a package runs a compilation of its
         ; own in this process.
         var package_objects Array[String]()
+        var package_bitcode Array[String]()
         var library_link_flags StringBuilder()
         if opts.tool_build
         {
@@ -968,8 +985,25 @@ define cli
                 pkg_names.add(String("scaly"))
                 pkg_roots.add("`Modeler.scaly_home_base()`packages/scaly/0.1.0/scaly.scaly")
             }
-            if tool.package_objects(&pkg_names, &pkg_roots, opts.input_file, opts.target_triple, &package_objects, &library_link_flags) = false
+            if tool.package_objects(&pkg_names, &pkg_roots, opts.input_file, opts.target_triple, opts.release, &package_objects, &package_bitcode, &library_link_flags) = false
                 return 9
+            ; --release: the packages' Scaly code joins the program's module;
+            ; what is left in package_objects is their C and assembly
+            ; ★Dependents before what they use, the stdlib last: the linker
+            ; takes a linkonce_odr body out of a source module only when the
+            ; destination already REFERENCES it, so a package linked before
+            ; its user leaves the user's calls into it undefined.
+            var bi package_bitcode.length
+            while bi > 0
+            {
+                set bi: bi - 1
+                let bc package_bitcode.at bi
+                if emitter.link_bitcode(bc) = false
+                {
+                    Console.println("Error: `bc` did not link into the program")
+                    return 9
+                }
+            }
         }
 
         ; ★Stage 7: the link step is the one place the compiler has to know

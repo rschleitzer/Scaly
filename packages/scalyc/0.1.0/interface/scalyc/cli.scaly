@@ -92,6 +92,8 @@ define Options
     portable_simd: bool             ; --portable-simd: no target form for a SIMD operation (the seed)
     library: bool                   ; a package object for the build cache (tool.package_objects)
     tool_build: bool                ; `scaly build`: link against the cached package objects
+    release: bool                   ; `scaly build --release`: the whole program as one module at -O2
+    bitcode: bool                   ; with -c: write bitcode (a package for a release build)
     program_argc: int               ; `scaly run file args`: what the program's main receives
     program_argv: pointer[pointer[char]]
     test_mode: bool                 ; `scaly test file [filter]`: run the test functions

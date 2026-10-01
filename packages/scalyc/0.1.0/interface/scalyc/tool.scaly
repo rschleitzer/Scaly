@@ -7,6 +7,12 @@
 ; file of the package. A package's C and assembly files are compiled by the
 ; tool as well; which of them a target takes is said by their names
 ; (native_name#). Nothing is written into the project, and no script is run.
+;
+; `scaly build --release` (stage C) takes a package as unoptimised BITCODE out
+; of the same cache instead: the program's module links it in, dependents
+; first, and the whole program is optimised and emitted as one module
+; (Emitter.link_bitcode#, the release branch of write_object_to_file#) -- what
+; tools/link-lto.sh did with llvm-link, sed, opt and llc.
 
 use scaly.containers.String
 use scaly.containers.StringBuilder
@@ -92,7 +98,7 @@ define tool
     ; and assembly files its target takes. `names` and `roots` pair a
     ; package's name with its root file. False when one of them does not build;
     ; what went wrong is printed where it happened.
-    procedure package_objects(names: ref[Array[String]], roots: ref[Array[String]], program_file: String, given_triple: String, mutable objects: ref[Array[String]], mutable link_flags: ref[StringBuilder]) @ret_nonlocal true @deep true @deep_pageof_16 true returns bool io mutable modeler_error_count reads scaly_package_stamp linked
+    procedure package_objects(names: ref[Array[String]], roots: ref[Array[String]], program_file: String, given_triple: String, release: bool, mutable objects: ref[Array[String]], mutable bitcode: ref[Array[String]], mutable link_flags: ref[StringBuilder]) @ret_nonlocal true @deep true @deep_pageof_96 true returns bool io mutable modeler_error_count reads scaly_package_stamp linked
 
     ; the C and assembly files of a package this target takes, each compiled
     ; into the cache beside the package's object (`<base>-<path>.o`)
