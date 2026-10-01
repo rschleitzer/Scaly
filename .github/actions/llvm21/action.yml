@@ -11,7 +11,7 @@ runs:
     - shell: bash
       run: |
         sudo apt-get update
-        sudo apt-get install -y llvm-21 llvm-21-dev clang-21 lld-21 python3
+        sudo apt-get install -y llvm-21 llvm-21-dev clang-21 lld-21 libclang-rt-21-dev python3
         # seed.sh links with $CLANG; Ubuntu ships clang-21, not a bare `clang`.
         echo "CLANG=clang-21" >> "$GITHUB_ENV"
         # libLLVM-21.so lives under the versioned prefix; put it on the loader

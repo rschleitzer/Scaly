@@ -182,6 +182,8 @@ elif "$BIN" build tests/tool/hello.scaly --pgo-train -o "$TMP/hello_train" > "$T
      && "$BIN" build tests/tool/hello.scaly --pgo "$TMP/hello.profraw" -o "$TMP/hello_pgo" >> "$TMP/pgo.log" 2>&1; then
   out=$("$TMP/hello_pgo" one two)
   [ "$out" = "hello one two" ] && ok || bad "pgo: got '$out'"
+elif grep -q 'libclang_rt.profile' "$TMP/pgo.log"; then
+  echo "SKIP pgo (LLVM's profile runtime is not installed: libclang-rt-<major>-dev)"
 else
   bad "pgo: $(tail -3 "$TMP/pgo.log" | tr '\n' ' ')"
 fi
