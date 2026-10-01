@@ -224,15 +224,15 @@ done
 # (The two scalyls roots were emitted by $OUT/scalyc_seed above, beside the
 # fixed-point re-emission.)
 if [ "$SCALY_COFF" = 1 ]; then
-# ★The Windows box: the scalyls ROOTS are emitted above (for the seed's own
-# target — they are seed files and reproduce here like the other three), but
-# the server is neither linked nor smoke-tested, and it is said by name: the
-# LTO route over these four roots stops at popen, pclose, fork, waitpid and
-# kill — scalyls' worker process model, which the Windows substrate has no
-# counterpart for (measured 2026-09-20, tools/build-from-seed.sh has the same
-# note). Porting the worker is a scalyls port, tests/win32/WINDOWS-BOX.md §4a.
-echo "seed: SKIP scalyls link + LSP smoke on the Windows box (worker.scaly: fork/popen/waitpid/kill)"
-SCALYLS_VERDICT="scalyls roots emitted, link + smoke SKIPPED (Windows box)"
+# ★The Windows box links the server over the same LTO route as the compiler
+# (tools/win-lto.sh), its two roots over the package IR. It was SKIPPED by name
+# until 2026-10-01: the worker forked, and the workspace walk ran `find`
+# through popen. The worker is this program started again now
+# (scaly_proc_spawn_self: CreateProcess here), the walk the stdlib's own.
+if ! tools/win-lto.sh --llvm "$OUT/scalyls$SCALY_EXE" "$OUT/scalyls_main.ll" "$OUT/scalyls.ll" "$OUT/json.ll" "$OUT/scalyc.ll" "$OUT/scaly.ll" > "$OUT/scalyls_link.log" 2>&1; then
+  cat "$OUT/scalyls_link.log"
+  fail "scalyls link (undefined symbols)"
+fi
 else
 llc_objs scalyls_main scalyls json || fail "llc scalyls"
 if ! "$CLANG" "${LINKARGS[@]}" "$OUT/scalyls_main.o" "$OUT/scalyls.o" "$OUT/json.o" "$OUT/scalyc.o" "$OUT/scaly.o" "$OUT/fcontext.o" "$OUT/eio.o" "$OUT/ctime.o" "$OUT/panic.o" \
@@ -240,17 +240,22 @@ if ! "$CLANG" "${LINKARGS[@]}" "$OUT/scalyls_main.o" "$OUT/scalyls.o" "$OUT/json
   grep -v 'reexported library' "$OUT/scalyls_link.log" || true
   fail "scalyls link (undefined symbols)"
 fi
+fi
 echo "seed: scalyls linked clean -> $OUT/scalyls"
 echo "seed: scalyls LSP smoke (initialize + documentSymbol)"
-python3 - "$OUT/scalyls" <<'PY' || fail "scalyls smoke"
+python3 - "$OUT/scalyls${SCALY_EXE:-}" <<'PY' || fail "scalyls smoke"
 import sys, json, subprocess, tempfile, os
 def frame(o):
     b = json.dumps(o).encode()
     return ("Content-Length: %d\r\n\r\n" % len(b)).encode() + b
 src = "function answer() returns int\n{\n    return 42\n}\n"
 fd, path = tempfile.mkstemp(suffix=".scaly"); os.write(fd, src.encode()); os.close(fd)
-uri = "file://" + path
-inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"rootUri":"file://"+os.path.dirname(path)}})
+# a Windows path takes the third slash: file:///C:/...
+def file_uri(p):
+    p = p.replace(os.sep, "/")
+    return "file://" + p if p.startswith("/") else "file:///" + p
+uri = file_uri(path)
+inp  = frame({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"rootUri":file_uri(os.path.dirname(path))}})
 inp += frame({"jsonrpc":"2.0","method":"initialized","params":{}})
 inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":uri,"languageId":"scaly","version":1,"text":src}}})
 inp += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/documentSymbol","params":{"textDocument":{"uri":uri}}})
@@ -277,7 +282,6 @@ if not got_init: sys.exit("bad initialize response")
 if not got_sym:  sys.exit("documentSymbol did not return the expected outline")
 PY
 SCALYLS_VERDICT="scalyls language server links + serves"
-fi
 
 echo "SEED: OK — compiler links clean, runs hello + AOT, reproduces itself"
 echo "          byte-identical; $SCALYLS_VERDICT"

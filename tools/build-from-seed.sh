@@ -63,16 +63,13 @@ if [ "$SCALY_COFF" = 1 ]; then
     echo "build-from-seed: OK — $OUT (from seed/, clang -flto=full + lld-link)"
     tools/win-archive.sh "$OUT" > /dev/null
     echo "build-from-seed: runtime archive /tmp/libscaly.lib ready"
-    # ★The language server is NOT built here, by name rather than by a failed
-    # link (measured 2026-09-20: the same LTO route over scalyls_main.ll +
-    # scalyls.ll + the two package roots stops at five undefined symbols —
-    # popen, pclose, fork, waitpid, kill — scalyls' worker process model, for
-    # which the Windows substrate has no counterpart). Porting the worker is a
-    # scalyls port, not a build-pipeline question; tests/win32/WINDOWS-BOX.md
-    # §4a carries it. The seed's scalyls roots stay valid — they are emitted
-    # for the seed's own target, not this box's.
-    if [ "${SCALYC_SEED_NO_SCALYLS:-0}" != "1" ]; then
-        echo "build-from-seed: SKIP scalyls on the Windows box (worker.scaly: fork/popen/waitpid/kill are not in the substrate)"
+    # The language server over the same route, its two roots over the package
+    # IR. (Skipped by name until 2026-10-01: the worker forked and the
+    # workspace walk ran `find` through popen; tools/seed.sh has the account.)
+    if [ "${SCALYC_SEED_NO_SCALYLS:-0}" != "1" ] && [ -f "$SEED/scalyls.ll" ] && [ -f "$SEED/scalyls_main.ll" ] && [ -f "$SEED/json.ll" ]; then
+        LSOUT="$(dirname "$OUT")/scalyls.exe"
+        tools/win-lto.sh --llvm "$LSOUT" "$SEED/scalyls_main.ll" "$SEED/scalyls.ll" "$SEED/json.ll" "$SEED/scalyc.ll" "$SEED/scaly.ll"
+        echo "build-from-seed: OK — $LSOUT (language server)"
     fi
     exit 0
 fi
