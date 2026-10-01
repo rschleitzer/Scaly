@@ -1842,6 +1842,17 @@ define Emitter
         ; when the program has no non-scaly dependencies (behavior unchanged).
         procedure jit_run(mutable this, mutable plan: Plan, mutable module_name: String, mutable fn_mangled: String, mutable dep_object_files: ref[Array[String]]?, dep_object_symbols: ref[Array[String]], program_argc: int, mutable program_argv: pointer[pointer[char]], mutable test_names: ref[Array[String]]?, test_labels: ref[Array[String]]?) @page true @stores true @deep true @deep_into_1_4 true returns i64 io linked
 
+        ; The base of `&X.field` as an ADDRESS. emit_expression answers a record
+        ; variable whose slot holds the record itself (a `var` in main, a `var v:
+        ; T p` copy, a let-bound record) as the loaded VALUE, and the GEP walk of
+        ; the address-of path wants a pointer: until 2026-10-01 it fell through
+        ; to the field's value -- `bump(&v.y)` handed `i64 4` to a ref[int]
+        ; parameter at rc 0, and `let r &v.y` on a let-bound record emitted
+        ; `load i64, i64 %y`, invalid IR only the JIT's verifier refused. The
+        ; variable's own slot where it has one, else a spill (a let-bound record
+        ; has no slot, and is never written). Gate address_of_record_field.
+        procedure member_address_base(mutable this, op: PlannedOperand, mutable base: LLVMValueRef) @direct true @deep true returns LLVMValueRef linked
+
         ; main's definition as text, before the JIT takes the module
         procedure keep_main_ir(mutable this) @page true @stores true @deep true linked
 

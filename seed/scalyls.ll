@@ -70067,7 +70067,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
 define linkonce_odr void @_ZN11diagnostics19member_module_filesEPN4scaly6memory4PageER6Member(ptr noalias sret({ ptr }) %0, ptr %1, ptr %2) {
 entry:
   %sret.result3 = alloca { ptr }, align 8
-  %addr.tmp = alloca %_Z10Definition, align 8
+  %addr.tmp = alloca %_Z7Concept, align 8
   %sret.result = alloca { ptr }, align 8
   %sb = alloca ptr, align 8
   %frame = alloca { ptr, ptr }, align 8
@@ -70108,9 +70108,9 @@ choose.when:                                      ; preds = %frame.forced
   %"variant.c_data().ptr" = getelementptr inbounds nuw %_Z6Member, ptr %2, i32 0, i32 1
   %variant.val = load %_Z7Concept, ptr %"variant.c_data().ptr", align 8
   %sb2 = load ptr, ptr %sb, align 8
-  %definition = extractvalue %_Z7Concept %variant.val, 4
-  store %_Z10Definition %definition, ptr %addr.tmp, align 1
-  call void @_ZN11diagnostics23definition_module_filesEPN4scaly6memory4PageER10Definition(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %addr.tmp)
+  store %_Z7Concept %variant.val, ptr %addr.tmp, align 8
+  %addr.gep = getelementptr inbounds nuw %_Z7Concept, ptr %addr.tmp, i32 0, i32 4
+  call void @_ZN11diagnostics23definition_module_filesEPN4scaly6memory4PageER10Definition(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %addr.gep)
   call void @_ZN13StringBuilder6appendE6String(ptr %sb2, ptr %sret.result)
   br label %choose.end
 }

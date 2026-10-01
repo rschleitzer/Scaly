@@ -1,0 +1,62 @@
+; Regression (2026-10-01): `&v.field` on a record variable whose slot holds the
+; record itself answered the field's VALUE. The address-of path GEPs from a
+; pointer base, and emit_expression hands such a variable back as the loaded
+; record, so the walk was skipped and the fallback returned the field:
+;   * a `var` at top level and a `var v: T p` copy: `bump(&v.y)` passed
+;     `i64 4` to a ref[int] parameter at rc 0 -- a crash at the first read;
+;   * a let-bound record: `let r &v.y` emitted `load i64, i64 %y`, invalid IR
+;     that only the JIT's verifier refused.
+; A `var v T(...)` inside a procedure was right (its slot holds a pointer).
+; Emitter.member_address_base# hands the walk the variable's slot, or a spill
+; for a let-bound record. Found by the REPL measuring field offsets.
+; Expected: PASS
+
+define Pair(x: int, y: int)
+define Outer(tag: i32, inner: Pair, name: String)
+
+procedure bump(mutable r: ref[int])
+{
+    set r: r + 1
+}
+
+function read(r: ref[int]) returns int
+    r
+
+procedure typed_copy() returns int
+{
+    let p Pair(3, 4)
+    var v: Pair p
+    bump(&v.y)
+    bump(&v.x)
+    v.x * 10 + v.y
+}
+
+procedure let_bound() returns int
+{
+    let v Pair(3, 4)
+    let r &v.y
+    read(r) + read(&v.x)
+}
+
+procedure in_procedure() returns int
+{
+    var v Pair(3, 4)
+    bump(&v.y)
+    v.y
+}
+
+procedure nested() returns int
+{
+    let o Outer(1, Pair(5, 6), "n")
+    var v: Outer o
+    bump(&v.inner.y)
+    v.inner.y
+}
+
+var top Pair(3, 4)
+bump(&top.y)
+
+if top.y = 5 and typed_copy() = 45 and let_bound() = 7 and in_procedure() = 5 and nested() = 7
+    print "PASS"
+else
+    print "FAIL"
