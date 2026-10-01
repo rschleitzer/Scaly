@@ -14,6 +14,7 @@ use scaly.os.File
 use scaly.os.Console
 use scaly.os.Directory
 use scaly.os.Directory.DirectoryEntry
+use scaly.memory.Page
 use scaly.memory.root_pages.getenv
 use scalyc.cli
 use scalyc.cli.Options
@@ -366,54 +367,150 @@ define tool
                 }
                 tool.publish(tmp, obj)
             }
-            objects.add(String(obj))
-            var natives Array[String]()
-            tool.select_native(&files, triple, &natives)
-            var k: size_t 0
-            while k < natives.length
+            let obj_page Page.get(objects)
+            objects.add(String^obj_page(obj))
+            if tool.native_objects(dir, &files, triple, base, given_triple, objects) = false
+                return false
+        }
+        true
+    }
+
+    ; the C and assembly files of a package this target takes, each compiled
+    ; into the cache beside the package's object (`<base>-<path>.o`)
+    procedure native_objects(mutable dir: String, files: ref[Array[String]], triple: String, base: String, given_triple: String, mutable objects: ref[Array[String]]) returns bool
+    {
+        var natives Array[String]()
+        tool.select_native(&files, triple, &natives)
+        var k: size_t 0
+        while k < natives.length
+        {
+            let nf natives.at k
+            set k: k + 1
+            var flat StringBuilder()
+            var fi: size_t 0
+            while fi < nf.get_length()
             {
-                let nf natives.at k
-                set k: k + 1
-                var flat StringBuilder()
-                var fi: size_t 0
-                while fi < nf.get_length()
-                {
-                    let fc nf.get fi
-                    if fc = 47
-                        flat.append("-" as char)
-                    else
-                        flat.append(fc as char)
-                    set fi: fi + 1
-                }
-                let nobj "`base`-`flat.to_string()`.o"
-                if File.exists(nobj) = false
-                {
-                    let ntmp "`nobj`.`getpid() as int`.tmp"
-                    var cmd StringBuilder()
-                    cmd.append("\"")
-                    cmd.append(cli.link_compiler())
-                    cmd.append("\" -O2 -c \"")
-                    cmd.append(dir)
-                    cmd.append("/")
-                    cmd.append(nf)
-                    cmd.append("\" -o \"")
-                    cmd.append(ntmp)
-                    cmd.append("\"")
-                    if given_triple.get_length() > 0
-                    {
-                        cmd.append(" --target=")
-                        cmd.append(given_triple)
-                    }
-                    let cmd_str cmd.to_string()
-                    if system(cmd_str.to_c_string()) <> 0
-                    {
-                        Console.println("Error: `dir`/`nf` did not compile")
-                        return false
-                    }
-                    tool.publish(ntmp, nobj)
-                }
-                objects.add(String(nobj))
+                let fc nf.get fi
+                if fc = 47
+                    flat.append("-" as char)
+                else
+                    flat.append(fc as char)
+                set fi: fi + 1
             }
+            let nobj "`base`-`flat.to_string()`.o"
+            if File.exists(nobj) = false
+            {
+                let ntmp "`nobj`.`getpid() as int`.tmp"
+                var cmd StringBuilder()
+                cmd.append("\"")
+                cmd.append(cli.link_compiler())
+                cmd.append("\" -O2 -c \"")
+                cmd.append(dir)
+                cmd.append("/")
+                cmd.append(nf)
+                cmd.append("\" -o \"")
+                cmd.append(ntmp)
+                cmd.append("\"")
+                if given_triple.get_length() > 0
+                {
+                    cmd.append(" --target=")
+                    cmd.append(given_triple)
+                }
+                let cmd_str cmd.to_string()
+                if system(cmd_str.to_c_string()) <> 0
+                {
+                    Console.println("Error: `dir`/`nf` did not compile")
+                    return false
+                }
+                tool.publish(ntmp, nobj)
+            }
+            let nobj_page Page.get(objects)
+            objects.add(String^nobj_page(nobj))
+        }
+        true
+    }
+
+    ; `scaly run` / `scaly test`: the packages a program uses, other than the
+    ; stdlib (the tool's own image carries it), as objects the JIT adds, with
+    ; the mangled names each defines (so the JIT's stubs leave them alone). The
+    ; objects are built once into the cache, flavour "jit" (thread-locals
+    ; cleared, cli.compile_dep_package_to_object), the names beside them in
+    ; `<base>.jit.syms`. Before 2026-09-30 every run compiled them anew into
+    ; one fixed /tmp path, which two runs at once overwrote.
+    procedure jit_package_objects(names: ref[Array[String]], roots: ref[Array[String]], mutable objects: ref[Array[String]], mutable symbols: ref[Array[String]]) returns bool mutable modeler_error_count
+    {
+        let cache tool.cache_root()
+        if tool.ensure_directory(cache) = false
+        {
+            Console.println("Error: cannot create the build cache `cache`")
+            return false
+        }
+        let triple tool.target_triple(String())
+        var i: size_t 0
+        while i < roots.length
+        {
+            let rp roots.at i
+            let np names.at i
+            set i: i + 1
+            let root String(rp)
+            let slash root.last_index_of(47)
+            if slash < 0
+                continue
+            let dir root.substring(0, slash as size_t)
+            let vslash dir.last_index_of(47)
+            var version String("0")
+            if vslash >= 0
+                set version: dir.substring((vslash + 1) as size_t, dir.get_length() - ((vslash + 1) as size_t))
+            var files Array[String]()
+            tool.package_files(dir, "", &files)
+            let key tool.package_key(dir, &files, triple, "jit")
+            let base "`cache`/`np`-`version`-`tool.hex16(key)`"
+            let obj "`base`.jit.o"
+            let syms "`base`.jit.syms"
+            if File.exists(obj) = false
+            {
+                let tmp "`obj`.`getpid() as int`.tmp"
+                let stmp "`syms`.`getpid() as int`.tmp"
+                var built Array[String]()
+                if cli.compile_dep_package_to_object(root, tmp, &built) = false
+                {
+                    Console.println("Error: package `np` did not build")
+                    return false
+                }
+                var text StringBuilder()
+                var bi: size_t 0
+                while bi < built.length
+                {
+                    let b built.at bi
+                    text.append(b)
+                    text.append("\n" as char)
+                    set bi: bi + 1
+                }
+                File.write_from_string(stmp, text.to_string())
+                tool.publish(stmp, syms)
+                tool.publish(tmp, obj)
+            }
+            let list File.read_to_string(syms)
+            var from: size_t 0
+            var at: size_t 0
+            let n list.get_length()
+            while at < n
+            {
+                if list.get(at) = 10
+                {
+                    if at > from
+                    {
+                        let sym_page Page.get(symbols)
+                        symbols.add(String^sym_page(list.substring(from, at - from)))
+                    }
+                    set from: at + 1
+                }
+                set at: at + 1
+            }
+            let obj_page Page.get(objects)
+            objects.add(String^obj_page(obj))
+            if tool.native_objects(dir, &files, triple, base, String(), objects) = false
+                return false
         }
         true
     }

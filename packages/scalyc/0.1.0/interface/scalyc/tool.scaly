@@ -14,6 +14,7 @@ use scaly.os.File
 use scaly.os.Console
 use scaly.os.Directory
 use scaly.os.Directory.DirectoryEntry
+use scaly.memory.Page
 use scaly.memory.root_pages.getenv
 use scalyc.cli
 use scalyc.cli.Options
@@ -88,5 +89,18 @@ define tool
     ; and assembly files its target takes. `names` and `roots` pair a
     ; package's name with its root file. False when one of them does not build;
     ; what went wrong is printed where it happened.
-    procedure package_objects(names: ref[Array[String]], roots: ref[Array[String]], given_triple: String, mutable objects: ref[Array[String]]) @page true @direct true @stores true @ret_nonlocal true @deep true returns bool io mutable modeler_error_count reads scaly_package_stamp linked
+    procedure package_objects(names: ref[Array[String]], roots: ref[Array[String]], given_triple: String, mutable objects: ref[Array[String]]) @ret_nonlocal true @deep true @deep_pageof_8 true returns bool io mutable modeler_error_count reads scaly_package_stamp linked
+
+    ; the C and assembly files of a package this target takes, each compiled
+    ; into the cache beside the package's object (`<base>-<path>.o`)
+    procedure native_objects(mutable dir: String, files: ref[Array[String]], triple: String, base: String, given_triple: String, mutable objects: ref[Array[String]]) @ret_nonlocal true @deep true @deep_pageof_32 true returns bool io linked
+
+    ; `scaly run` / `scaly test`: the packages a program uses, other than the
+    ; stdlib (the tool's own image carries it), as objects the JIT adds, with
+    ; the mangled names each defines (so the JIT's stubs leave them alone). The
+    ; objects are built once into the cache, flavour "jit" (thread-locals
+    ; cleared, cli.compile_dep_package_to_object), the names beside them in
+    ; `<base>.jit.syms`. Before 2026-09-30 every run compiled them anew into
+    ; one fixed /tmp path, which two runs at once overwrote.
+    procedure jit_package_objects(names: ref[Array[String]], roots: ref[Array[String]], mutable objects: ref[Array[String]], mutable symbols: ref[Array[String]]) @ret_nonlocal true @deep true @deep_pageof_12 true returns bool io mutable modeler_error_count reads scaly_package_stamp linked
 }

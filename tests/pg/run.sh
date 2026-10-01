@@ -1,7 +1,6 @@
 #!/bin/bash
 # tests/pg/run.sh [compiler] — the pg package (ROADMAP-http.md, stage C):
-# build the tls and pg archives the way tests/tls/run.sh does, link every
-# test here against them, the runtime archive and libssl/libcrypto, run it
+# build every test here with `scaly build` and libssl/libcrypto, run it
 # under poison and compare stdout with its "; Expected:" line. A test that
 # names DATABASE_URL in its header needs a server: it runs against
 # PGTEST_URL (e.g. HttpArena's seed in postgres:18) and SKIPs by name
@@ -11,9 +10,7 @@ ROOT="$(cd "$HERE/../.." && pwd)"
 BIN="${1:-$ROOT/scalyc/build/scalyc}"
 cd "$ROOT"
 
-source tools/llvm-env.sh >/dev/null 2>&1
 . tests/platform.sh || exit 1
-scaly_need_archive pg "$BIN" || exit 1
 set -u
 
 SSL=(); OPENSSL=openssl
@@ -41,19 +38,6 @@ fi
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
-archive() {
-  if ! "$BIN" -S --no-prelude -o "$TMP/$1.ll" packages/$1/0.1.0/$1.scaly > "$TMP/emit_$1.log" 2>&1; then
-    echo "pg: FAIL (emit $1)"; tail -8 "$TMP/emit_$1.log"; exit 1
-  fi
-  sed 's/^define linkonce_odr /define weak_odr /' "$TMP/$1.ll" > "$TMP/$1_weak.ll"
-  if ! "$LLC" -relocation-model=pic -O2 -filetype=obj "$TMP/$1_weak.ll" -o "$TMP/$1.o" > "$TMP/llc_$1.log" 2>&1; then
-    echo "pg: FAIL (llc $1)"; tail -8 "$TMP/llc_$1.log"; exit 1
-  fi
-  ar rcs "$TMP/lib$1.a" "$TMP/$1.o"
-}
-archive tls
-archive pg
-
 pass=0; fail=0; skip=0; failures=()
 for f in tests/pg/*.scaly; do
   t=$(basename "$f" .scaly)
@@ -62,7 +46,7 @@ for f in tests/pg/*.scaly; do
     skip=$((skip+1)); echo "  SKIP $t (no PGTEST_URL)"; continue
   fi
   bin="$TMP/$t$SCALY_EXE"
-  if ! "$BIN" -o "$bin" "$f" "$TMP/libpg.a" "$TMP/libtls.a" "${SSL[@]}" > "$TMP/$t.log" 2>&1; then
+  if ! "$BIN" build "$f" -o "$bin" "${SSL[@]}" > "$TMP/$t.log" 2>&1; then
     fail=$((fail+1)); failures+=("$t(compile): $(head -1 "$TMP/$t.log")"); continue
   fi
   out=$(DATABASE_URL="${PGTEST_URL:-}" SCALY_POISON=1 perl -e 'alarm shift; exec @ARGV' 60 "$bin" 2>"$TMP/$t.err"); rc=$?

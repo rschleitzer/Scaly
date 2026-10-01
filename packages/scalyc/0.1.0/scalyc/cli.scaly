@@ -959,6 +959,13 @@ define cli
                 }
                 set pi: pi + 1
             }
+            ; the runtime is every program's, whether it loaded the stdlib
+            ; (--no-prelude and no `package scaly` loads nothing)
+            if cli.contains_string(&pkg_names, String("scaly")) = false
+            {
+                pkg_names.add(String("scaly"))
+                pkg_roots.add("`Modeler.scaly_home_base()`packages/scaly/0.1.0/scaly.scaly")
+            }
             if tool.package_objects(&pkg_names, &pkg_roots, opts.target_triple, &package_objects) = false
                 return 9
         }
@@ -1157,40 +1164,22 @@ define cli
     ; resolve via the ORC process generator. Returns false on any dep failure.
     procedure compile_jit_dependencies(mutable model: ref[Program], mutable dep_objs: ref[Array[String]], mutable dep_syms: ref[Array[String]]) returns bool mutable modeler_error_count
     {
+        ; the packages other than the stdlib, whose symbols the host image
+        ; carries; their objects come out of the build cache (tool.scaly)
+        var names Array[String]()
+        var roots Array[String]()
         var i: size_t 0
         while i < model.packages.length
         {
             let pkg_ptr model.packages.get i
-            if pkg_ptr <> null
+            if pkg_ptr <> null and pkg_ptr.name.equals("scaly") = false
             {
-                let pkg (*pkg_ptr)
-                if pkg.name.equals("scaly") = false
-                {
-                    let obj_path "/tmp/scalyc_jitdep_`pkg.name`.o"
-                    if cli.compile_dep_package_to_object(pkg.file, obj_path, dep_syms) = false
-                    {
-                        Console.println "Error: could not compile dependency package for JIT"
-                        return false
-                    }
-                    ; Deep-copy onto the CALLER's page before handing the path
-                    ; over — the same anchoring the `syms` loop below documents.
-                    ; obj_path lives on this procedure's own region, which dies
-                    ; at `return`, so a shallow add leaves jit_run reading a
-                    ; freed buffer: it then opens a garbage path, LLVM takes its
-                    ; error branch, and because the call site passes null for
-                    ; LLVMCreateMemoryBufferWithContentsOfFile's OutMessage, the
-                    ; failure arrives as a SIGSEGV inside libLLVM rather than as
-                    ; a diagnostic. Latent for as long as nothing reused the
-                    ; freed page; the lazy region frames (2026-08-01) changed the
-                    ; arena layout and made it fire every run.
-                    let obj_page Page.get(dep_objs)
-                    let durable_obj String^obj_page(obj_path)
-                    dep_objs.add durable_obj
-                }
+                names.add(String(pkg_ptr.name))
+                roots.add(String(pkg_ptr.file))
             }
             set i: i + 1
         }
-        true
+        tool.jit_package_objects(&names, &roots, dep_objs, dep_syms)
     }
 
     ; a test: named `test` or `test_<name>`, taking nothing, answering an int,

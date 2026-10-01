@@ -1,17 +1,14 @@
 #!/bin/bash
 # tests/compress/run.sh [compiler] — the compress package (ROADMAP-http.md,
-# stage B; gzip over libdeflate): build its archive the way tests/opensp/run.sh
-# builds opensp's, link every test program here against it, the runtime
-# archive and libdeflate, run it under poison, and compare stdout with its
+# stage B; gzip over libdeflate): build every test program here with `scaly
+# build` and libdeflate, run it under poison, and compare stdout with its
 # "; Expected:" line.
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 BIN="${1:-$ROOT/scalyc/build/scalyc}"
 cd "$ROOT"
 
-source tools/llvm-env.sh >/dev/null 2>&1
 . tests/platform.sh || exit 1
-scaly_need_archive compress "$BIN" || exit 1
 set -u
 
 # libdeflate: Homebrew's prefix, else the system's library directories. A host
@@ -32,21 +29,12 @@ fi
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
-if ! "$BIN" -S --no-prelude -o "$TMP/compress.ll" packages/compress/0.1.0/compress.scaly > "$TMP/emit.log" 2>&1; then
-  echo "compress: FAIL (emit)"; tail -8 "$TMP/emit.log"; exit 1
-fi
-sed 's/^define linkonce_odr /define weak_odr /' "$TMP/compress.ll" > "$TMP/compress_weak.ll"
-if ! "$LLC" -relocation-model=pic -O2 -filetype=obj "$TMP/compress_weak.ll" -o "$TMP/compress.o" > "$TMP/llc.log" 2>&1; then
-  echo "compress: FAIL (llc)"; tail -8 "$TMP/llc.log"; exit 1
-fi
-ar rcs "$TMP/libcompress.a" "$TMP/compress.o"
-
 pass=0; fail=0; failures=()
 for f in tests/compress/*.scaly; do
   t=$(basename "$f" .scaly)
   expected=$(sed -n 's/^; Expected: //p' "$f")
   bin="$TMP/$t$SCALY_EXE"
-  if ! "$BIN" -o "$bin" "$f" "$TMP/libcompress.a" "${DEFLATE[@]}" > "$TMP/$t.log" 2>&1; then
+  if ! "$BIN" build "$f" -o "$bin" "${DEFLATE[@]}" > "$TMP/$t.log" 2>&1; then
     fail=$((fail+1)); failures+=("$t(compile): $(head -1 "$TMP/$t.log")"); continue
   fi
   out=$(SCALY_POISON=1 "$bin" 2>"$TMP/$t.err"); rc=$?

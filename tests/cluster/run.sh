@@ -10,29 +10,17 @@
 cd "$(dirname "$0")/../.." || exit 1
 . tests/platform.sh || exit 1
 STAGE=${1:-$SCALY_STAGE_DEFAULT}
-scaly_need_archive cluster "$STAGE" || exit 1
 OUT=${TMPDIR:-/tmp}
 
-# Top up an older archive that predates the fiber/eio objects (both are
-# self-contained; a missing archive fails the compile loudly anyway).
-if [ "$SCALY_COFF" = 0 ] && [ -f /tmp/libscaly.a ] && ! ar t /tmp/libscaly.a 2>/dev/null | grep -q '^fcontext\.o$'; then
-  tools/fcontext.sh /tmp/fcontext.o && ar rcs /tmp/libscaly.a /tmp/fcontext.o
-fi
-if [ "$SCALY_COFF" = 0 ] && [ -f /tmp/libscaly.a ] && ! ar t /tmp/libscaly.a 2>/dev/null | grep -q '^eio\.o$'; then
-  tools/eio.sh /tmp/eio.o && ar rcs /tmp/libscaly.a /tmp/eio.o
-fi
-if [ "$SCALY_COFF" = 0 ] && [ -f /tmp/libscaly.a ] && ! ar t /tmp/libscaly.a 2>/dev/null | grep -q '^ctime\.o$'; then
-  tools/ctime.sh /tmp/ctime.o && ar rcs /tmp/libscaly.a /tmp/ctime.o
-  tools/panic.sh /tmp/panic.o && ar rcs /tmp/libscaly.a /tmp/panic.o
-fi
-
+# Every program is built with the stage binary's `build` command: the runtime
+# comes out of the build cache.
 pass=0; fail=0; failures=()
 
 # ---- in-process round-trip: compare stdout to the "; Expected:" lines ----
 t=roundtrip
 expected=$(sed -n 's/^; Expected: //p' tests/cluster/$t.scaly)
 bin="$OUT/cluster_$t$SCALY_EXE"; rm -f "$bin"
-if ! "$STAGE" -o "$bin" tests/cluster/$t.scaly >/dev/null 2>&1; then
+if ! "$STAGE" build tests/cluster/$t.scaly -o "$bin" >/dev/null 2>&1; then
   fail=$((fail+1)); failures+=("$t(compile)")
 else
   "$bin" > "$OUT/cluster_$t.out" 2>/dev/null; rc=$?
@@ -48,7 +36,7 @@ fi
 ok=1
 for t in xproc_recv xproc_send; do
   rm -f "$OUT/cluster_$t$SCALY_EXE"
-  if ! "$STAGE" -o "$OUT/cluster_$t$SCALY_EXE" tests/cluster/$t.scaly >/dev/null 2>&1; then
+  if ! "$STAGE" build tests/cluster/$t.scaly -o "$OUT/cluster_$t$SCALY_EXE" >/dev/null 2>&1; then
     fail=$((fail+1)); failures+=("$t(compile)"); ok=0
   fi
 done
@@ -84,7 +72,7 @@ wait_marker() {
 # one cluster one build — different programs would refuse each other) ----
 t=pingpong
 rm -f "$OUT/cluster_$t$SCALY_EXE"
-if ! "$STAGE" -o "$OUT/cluster_$t$SCALY_EXE" tests/cluster/$t.scaly >/dev/null 2>&1; then
+if ! "$STAGE" build tests/cluster/$t.scaly -o "$OUT/cluster_$t$SCALY_EXE" >/dev/null 2>&1; then
   fail=$((fail+1)); failures+=("$t(compile)")
 else
   PINGPONG_ROLE=b "$OUT/cluster_$t$SCALY_EXE" > "$OUT/cluster_${t}_b.log" 2>&1 &
@@ -107,7 +95,7 @@ fi
 # ---- 7.3 kill -9 mid-run: survivor's receive nulls + monitor fires ----
 t=kill9
 rm -f "$OUT/cluster_$t$SCALY_EXE"
-if ! "$STAGE" -o "$OUT/cluster_$t$SCALY_EXE" tests/cluster/$t.scaly >/dev/null 2>&1; then
+if ! "$STAGE" build tests/cluster/$t.scaly -o "$OUT/cluster_$t$SCALY_EXE" >/dev/null 2>&1; then
   fail=$((fail+1)); failures+=("$t(compile)")
 else
   KILL9_ROLE=s "$OUT/cluster_$t$SCALY_EXE" > "$OUT/cluster_${t}_s.log" 2>&1 &
@@ -138,7 +126,7 @@ fi
 ok=1
 for t in stamp_a stamp_b; do
   rm -f "$OUT/cluster_$t$SCALY_EXE"
-  if ! "$STAGE" -o "$OUT/cluster_$t$SCALY_EXE" tests/cluster/$t.scaly >/dev/null 2>&1; then
+  if ! "$STAGE" build tests/cluster/$t.scaly -o "$OUT/cluster_$t$SCALY_EXE" >/dev/null 2>&1; then
     fail=$((fail+1)); failures+=("$t(compile)"); ok=0
   fi
 done
@@ -168,7 +156,7 @@ fi
 # gradients in rank order — identical arithmetic, so identical loss lines.
 t=train
 rm -f "$OUT/cluster_$t$SCALY_EXE"
-if ! "$STAGE" -o "$OUT/cluster_$t$SCALY_EXE" tests/cluster/$t.scaly >/dev/null 2>&1; then
+if ! "$STAGE" build tests/cluster/$t.scaly -o "$OUT/cluster_$t$SCALY_EXE" >/dev/null 2>&1; then
   fail=$((fail+1)); failures+=("$t(compile)")
 else
   BIN="$OUT/cluster_$t$SCALY_EXE"

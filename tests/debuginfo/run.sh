@@ -55,7 +55,7 @@ if [ -z "$DWARFDUMP" ]; then
 fi
 
 rm -rf "$OUT" "$OUT.dSYM" /tmp/debuginfo_nog.ll
-"$STAGE" -g -o "$OUT" "$SRC" >/tmp/debuginfo_build.log 2>&1
+"$STAGE" build "$SRC" -g -o "$OUT" >/tmp/debuginfo_build.log 2>&1
 if [ ! -x "$OUT" ]; then
   echo "debuginfo: FAIL — -g compile produced no binary"
   sed -n '1,20p' /tmp/debuginfo_build.log
