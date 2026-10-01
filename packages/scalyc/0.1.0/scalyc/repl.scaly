@@ -42,12 +42,16 @@ function fflush(stream: pointer[void]) returns i32 extern
 define REPL_SLOTS: int 4096
 
 ; one value of the session: its name, its type as Scaly source, its slot in
-; the table
+; the table; for `:where` its size, the cell that holds it (on a page of its
+; entry's own, the session page) and the frame page of the entry that bound it
 define ReplValue
 (
     name: String
     type_text: String
     slot: int
+    size: size_t
+    cell: pointer[void]
+    frame: pointer[void]
 )
 
 ; one statement of an entry: where it stands in the entry's text, and the
@@ -224,6 +228,7 @@ define repl
             Console.println "  let x <expr>      keep a value for the entries that follow (var to change it)"
             Console.println "  define / function / procedure / use / package   add to the session's definitions"
             Console.println "  :values           the values the session keeps"
+            Console.println "  :where x          where x and what it owns live"
             Console.println "  :defs             the session's definitions"
             Console.println "  :save <dir>       write the session as a program, <dir>/main.scaly"
             Console.println "  :quit             end the session (Ctrl-D too)"
@@ -241,6 +246,14 @@ define repl
                 let line "  `v.name`: `v.type_text`"
                 Console.println(line.to_c_string())
             }
+            return true
+        }
+        if text.starts_with(":where")
+        {
+            if text.get_length() > 7
+                repl.where(text.substring(7, text.get_length() - 7), values)
+            else
+                Console.println "  :where x -- the name of a value (:values)"
             return true
         }
         if text.equals(":defs")
@@ -281,6 +294,99 @@ define repl
         let msg "unknown command `text` -- :help"
         Console.println(msg.to_c_string())
         true
+    }
+
+    ; `:where name`: the value's cell, and the buffer a String, an Array, a
+    ; StringBuilder or a Vector owns -- each with the page it is on. A kept
+    ; value never lives on a stack: its entry's main copied it onto a page of
+    ; that entry (the session page), and what it had built by then stays on
+    ; that entry's frame page, which the session keeps; a buffer grown by a
+    ; later entry is allocated through the value's own address, so it lands on
+    ; the session page.
+    procedure where(name: String, values: ref[Array[ReplValue]])
+    {
+        var found: ref[ReplValue]? null
+        var i: size_t 0
+        while i < values.length
+        {
+            let c values.at i
+            if c.name.equals(name)
+                set found: c
+            set i: i + 1
+        }
+        if found = null
+        {
+            let msg "  no value `name` -- :values"
+            Console.println(msg.to_c_string())
+            return
+        }
+        let v found as ref[ReplValue]
+        let head "  `v.name`: `v.type_text`"
+        Console.println(head.to_c_string())
+        let cell_page repl.page_text(v.cell, v, values)
+        let line "    the value   `v.size` bytes, `cell_page`"
+        Console.println(line.to_c_string())
+        let words v.cell as pointer[size_t]
+        let t v.type_text
+        if t.equals("String")
+        {
+            let text v.cell as ref[String]
+            if text.get_length() = 0
+                Console.println "    its text    none"
+            else
+            {
+                let text_page repl.page_text(text.c_data() as pointer[void], v, values)
+                let l "    its text    `text.get_length()` bytes, `text_page`"
+                Console.println(l.to_c_string())
+            }
+        }
+        else if t.starts_with("Array[") or t.equals("StringBuilder")
+        {
+            ; Array is {length, capacity, buffer}; a StringBuilder is its Array
+            let buffer (*(words + 2)) as pointer[void]
+            if buffer = null
+                Console.println "    its buffer  none yet"
+            else
+            {
+                let buffer_page repl.page_text(buffer, v, values)
+                let l "    its buffer  `*words` of `*(words + 1)` elements, `buffer_page`"
+                Console.println(l.to_c_string())
+            }
+        }
+        else if t.starts_with("Vector[")
+        {
+            ; Vector is {length, data}
+            let buffer (*(words + 1)) as pointer[void]
+            if buffer = null
+                Console.println "    its buffer  none"
+            else
+            {
+                let buffer_page repl.page_text(buffer, v, values)
+                let l "    its buffer  `*words` elements, `buffer_page`"
+                Console.println(l.to_c_string())
+            }
+        }
+    }
+
+    ; the page `at` is on, said by what the session knows about it
+    procedure page_text(at: pointer[void], v: ref[ReplValue], values: ref[Array[ReplValue]]) returns String
+    {
+        let page Page.get(at) as pointer[void]
+        if page = (Page.get(v.cell) as pointer[void])
+            return String("on the session page of its entry")
+        if page = v.frame
+            return String("on the frame page of its entry")
+        var i: size_t 0
+        while i < values.length
+        {
+            let o values.at i
+            set i: i + 1
+            if page = (Page.get(o.cell) as pointer[void])
+                return "on the session page of `o.name`'s entry"
+            if page = o.frame
+                return "on the frame page of `o.name`'s entry"
+        }
+        String("on a page of its own")
     }
 
     ; the statements of an entry, with the names they bind
@@ -676,6 +782,7 @@ define repl
         }
         var tail StringBuilder()
         tail.append("    let repl_page Page.allocate_page()\n")
+        tail.append("    let repl_sizes argv as pointer[size_t]\n")
         var slots Array[int]()
         var types Array[String]()
         var ki: size_t 0
@@ -686,8 +793,9 @@ define repl
             var t String(probe.it_type)
             if name.equals("it") = false
                 set t: repl.type_of(&probe, name)
+            ; two slots: the cell, and the value's size for `:where`
             let slot: int next_slot
-            set next_slot: slot + 1
+            set next_slot: slot + 2
             slots.add(slot)
             types.add(String(t))
             ; through a var: `&x` of a let-bound scalar is no address (it has
@@ -699,7 +807,13 @@ define repl
             tail.append("    let repl_cell_`slot` repl_page.allocate(sizeof `t`, 8)\n")
             tail.append("    memcpy(repl_cell_`slot`, &repl_value_`slot` as pointer[void], sizeof `t`)\n")
             tail.append("    set *(repl_table + `slot`): repl_cell_`slot`\n")
+            tail.append("    set *(repl_sizes + `slot + 1`): sizeof `t`\n")
         }
+        ; the entry's frame page, by something that lives on it
+        let frame_slot: int next_slot
+        set next_slot: frame_slot + 1
+        tail.append("    var repl_anchor StringBuilder()\n")
+        tail.append("    set *(repl_table + `frame_slot`): Page.get(repl_anchor) as pointer[void]\n")
         var run_at: size_t 0
         let run_text run_body.to_string()
         let run_source repl.compose(all_defs, values, &stmts, run_text, tail.to_string(), false, &run_at)
@@ -728,7 +842,7 @@ define repl
             let slot: int slots.at vi
             let t types.at vi
             set vi: vi + 1
-            values.add(ReplValue(String(name), String(t), slot))
+            values.add(ReplValue(String(name), String(t), slot, (*(table + (slot + 1))) as size_t, *(table + slot), *(table + frame_slot)))
             let shown_text repl.show(name, t, *(table + slot))
             Console.println(shown_text.to_c_string())
         }

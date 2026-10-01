@@ -21,4 +21,21 @@ scaly>   x: int
   xs: Array[int]
   s: String
   it: f64
+scaly>   x: int
+    the value   8 bytes, on the session page of its entry
+scaly>   s: String
+    the value   8 bytes, on the session page of its entry
+    its text    7 bytes, on the frame page of its entry
+scaly>   xs: Array[int]
+    the value   24 bytes, on the session page of its entry
+    its buffer  5 of 8 elements, on the session page of its entry
+scaly>   no value nope -- :values
+scaly> big: Array[int]
+scaly>   ...>   ...>   ...> scaly>   big: Array[int]
+    the value   24 bytes, on the session page of its entry
+    its buffer  1000 of 1014 elements, on a page of its own
+scaly> ys: Array[int]
+scaly>   ys: Array[int]
+    the value   24 bytes, on the session page of its entry
+    its buffer  none yet
 scaly> 

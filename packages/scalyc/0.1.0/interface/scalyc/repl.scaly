@@ -42,12 +42,16 @@ function fflush(stream: pointer[void]) returns i32 extern
 define REPL_SLOTS: int 4096
 
 ; one value of the session: its name, its type as Scaly source, its slot in
-; the table
+; the table; for `:where` its size, the cell that holds it (on a page of its
+; entry's own, the session page) and the frame page of the entry that bound it
 define ReplValue
 (
     name: String
     type_text: String
     slot: int
+    size: size_t
+    cell: pointer[void]
+    frame: pointer[void]
 )
 
 ; one statement of an entry: where it stands in the entry's text, and the
@@ -90,6 +94,18 @@ define repl
 
     ; `:help`, `:quit`, `:values`, `:defs`, `:save <dir>`; false ends the session
     procedure command(text: String, mutable definitions: ref[StringBuilder], mutable history: ref[StringBuilder], values: ref[Array[ReplValue]]) @ret_nonlocal true @deep true returns bool io linked
+
+    ; `:where name`: the value's cell, and the buffer a String, an Array, a
+    ; StringBuilder or a Vector owns -- each with the page it is on. A kept
+    ; value never lives on a stack: its entry's main copied it onto a page of
+    ; that entry (the session page), and what it had built by then stays on
+    ; that entry's frame page, which the session keeps; a buffer grown by a
+    ; later entry is allocated through the value's own address, so it lands on
+    ; the session page.
+    procedure where(name: String, values: ref[Array[ReplValue]]) @deep true io linked
+
+    ; the page `at` is on, said by what the session knows about it
+    procedure page_text(at: pointer[void], v: ref[ReplValue], values: ref[Array[ReplValue]]) @page true @direct true @deep true returns String linked
 
     ; the statements of an entry, with the names they bind
     procedure entry_statements(syntax: ProgramSyntax, mutable out: ref[Array[ReplStatement]]) @page true @direct true @deep true linked

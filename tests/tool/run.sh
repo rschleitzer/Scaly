@@ -17,7 +17,8 @@
 #   repl       `scaly` alone: tests/tool/repl.session piped in under poison
 #              gives tests/tool/repl.expected byte for byte -- values kept,
 #              a var changed by `set`, a record, an Array grown in a loop, a
-#              braceless function, a float, an error with its caret
+#              braceless function, a float, an error with its caret, `:where`
+#              for a scalar, a String, an Array grown later and a large one
 #   repl-pty   the same binary at a TERMINAL (tests/tool/repl_pty.py drives a
 #              pty): the line editor, its history file, a second session;
 #              SKIPs by name on Windows

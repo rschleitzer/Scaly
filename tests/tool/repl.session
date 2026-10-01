@@ -22,3 +22,15 @@ s
 x + nope
 print "done"
 :values
+:where x
+:where s
+:where xs
+:where nope
+var big Array[int]()
+for i in 1000
+{
+    big.add i
+}
+:where big
+let ys Array[int]()
+:where ys
