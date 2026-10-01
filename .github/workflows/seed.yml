@@ -260,6 +260,15 @@ jobs:
       - name: The 10k demo (fiber-per-connection HTTP, milestone 1.6)
         run: tests/fiber/bench/run.sh dist/seed/scalyc_seed
 
+      # The one tool (ROADMAP-public.md): `scaly build` over the build cache,
+      # `--release` (the whole program as one module), `--pgo-train` / `--pgo`
+      # (libclang-rt-21-dev in the llvm21 action is for this), `run`, `test`,
+      # and the REPL through a pipe and through a pty. Until 2026-10-01 this
+      # suite ran on the developer's machine only, while the dazzle CLI,
+      # onsgmls, the bench builds and the HttpArena image are built by it.
+      - name: The one tool (build, --release, --pgo, run, test, REPL)
+        run: tests/tool/run.sh dist/seed/scalyc_seed
+
       # tools/seed.sh links scalyls from FRESHLY emitted IR; this is the only
       # place the COMMITTED seed/scalyls*.ll get linked and served — and it
       # keeps verify-seed.sh itself from silently going stale (its scalyls link
