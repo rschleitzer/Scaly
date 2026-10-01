@@ -52,6 +52,22 @@ define ReplValue
     size: size_t
     cell: pointer[void]
     frame: pointer[void]
+    ; a record's fields for show#: a run of the session's ReplField rows
+    first_field: size_t
+    field_count: size_t
+)
+
+; one row of a record value's shape: a field with its offset in the value
+; (kind 0), or the opening (1) and closing (2) of a field that is a record
+; itself. `path` and `slot` serve the entry that measures the offset.
+define ReplField
+(
+    name: String
+    type_text: String
+    path: String
+    kind: int
+    slot: int
+    offset: size_t
 )
 
 ; one statement of an entry: where it stands in the entry's text, and the
@@ -71,6 +87,10 @@ define ReplProbe
     var names: Array[String]
     var types: Array[String]
     var it_type: String
+    ; the records the plan lays out, one row per field: record, field, type
+    var rec_names: Array[String]
+    var rec_fields: Array[String]
+    var rec_types: Array[String]
 )
 
 define repl
@@ -85,6 +105,10 @@ define repl
         var next_slot 0
         var lines Array[String]()
         lineedit.load_history(&lines)
+        ; the shapes of the record values, and the last entry for :ir and :time
+        var fields Array[ReplField]()
+        var last_ir Array[String]()
+        var last_ns Array[int]()
         repeat
         {
             var entry StringBuilder()
@@ -105,7 +129,7 @@ define repl
                 continue
             if text.get(0) = 58
             {
-                if repl.command(text, &definitions, &history, &values) = false
+                if repl.command(text, &definitions, &history, &values, &last_ir, &last_ns) = false
                     return 0
                 continue
             }
@@ -114,7 +138,7 @@ define repl
                 Console.println "the session is full: :save it, then start a new one"
                 continue
             }
-            repl.run_entry(text, &definitions, &history, &values, table, &next_slot)
+            repl.run_entry(text, &definitions, &history, &values, table, &next_slot, &fields, &last_ir, &last_ns)
         }
         0
     }
@@ -217,8 +241,9 @@ define repl
         d
     }
 
-    ; `:help`, `:quit`, `:values`, `:defs`, `:save <dir>`; false ends the session
-    procedure command(text: String, mutable definitions: ref[StringBuilder], mutable history: ref[StringBuilder], values: ref[Array[ReplValue]]) returns bool
+    ; `:help`, `:quit`, `:values`, `:where x`, `:ir`, `:time`, `:defs`, `:save <dir>`;
+    ; false ends the session
+    procedure command(text: String, mutable definitions: ref[StringBuilder], mutable history: ref[StringBuilder], values: ref[Array[ReplValue]], last_ir: ref[Array[String]], last_ns: ref[Array[int]]) returns bool
     {
         if text.equals(":quit") or text.equals(":q")
             return false
@@ -229,6 +254,8 @@ define repl
             Console.println "  define / function / procedure / use / package   add to the session's definitions"
             Console.println "  :values           the values the session keeps"
             Console.println "  :where x          where x and what it owns live"
+            Console.println "  :ir               the LLVM IR of the last entry"
+            Console.println "  :time             how long the last entry took"
             Console.println "  :defs             the session's definitions"
             Console.println "  :save <dir>       write the session as a program, <dir>/main.scaly"
             Console.println "  :quit             end the session (Ctrl-D too)"
@@ -254,6 +281,30 @@ define repl
                 repl.where(text.substring(7, text.get_length() - 7), values)
             else
                 Console.println "  :where x -- the name of a value (:values)"
+            return true
+        }
+        if text.equals(":ir")
+        {
+            if last_ir.length = 0
+                Console.println "  no entry has run yet"
+            else
+            {
+                let ir last_ir.at 0
+                Console.print(ir.to_c_string())
+            }
+            return true
+        }
+        if text.equals(":time")
+        {
+            if last_ns.length < 2
+                Console.println "  the last entry did not run"
+            else
+            {
+                let ran repl.ms_text(last_ns[0])
+                let rest repl.ms_text(last_ns[1] - last_ns[0])
+                let line "  ran in `ran` ms; reading, planning and compiling took `rest` ms"
+                Console.println(line.to_c_string())
+            }
             return true
         }
         if text.equals(":defs")
@@ -368,6 +419,19 @@ define repl
         }
     }
 
+    ; nanoseconds as milliseconds with three decimals
+    procedure ms_text(ns: int) returns String
+    {
+        let us ns / 1000
+        let frac us % 1000
+        var pad String()
+        if frac < 10
+            set pad: String("00")
+        else if frac < 100
+            set pad: String("0")
+        "`us / 1000`.`pad``frac`"
+    }
+
     ; the page `at` is on, said by what the session knows about it
     procedure page_text(at: pointer[void], v: ref[ReplValue], values: ref[Array[ReplValue]]) returns String
     {
@@ -439,6 +503,32 @@ define repl
         false
     }
 
+    ; does `text` hold `name` as a word of its own (in code, a string or a
+    ; comment alike: one binding too many costs nothing, one too few an error)
+    function mentions(text: String, name: String) returns bool
+    {
+        let n text.get_length()
+        let m name.get_length()
+        if m = 0 or m > n
+            return false
+        var i: size_t 0
+        while i + m <= n
+        {
+            var k: size_t 0
+            while k < m and text.get(i + k) = name.get(k)
+                set k: k + 1
+            if k = m and (i = 0 or repl.word_char(text.get(i - 1)) = false) and (i + m = n or repl.word_char(text.get(i + m)) = false)
+                return true
+            set i: i + 1
+        }
+        false
+    }
+
+    function word_char(c: u8) returns bool
+    {
+        (c >= 48 and c <= 57) or (c >= 65 and c <= 90) or (c >= 97 and c <= 122) or c = 95
+    }
+
     ; a value a later one of the same name replaced
     function shadowed(values: ref[Array[ReplValue]], from: size_t, name: String) returns bool
     {
@@ -473,6 +563,9 @@ define repl
             let v values.at i
             set i: i + 1
             if repl.binds_name(stmts, v.name) or repl.shadowed(values, i, v.name)
+                continue
+            ; only what the entry names: its main, and `:ir`, stay the entry's
+            if repl.mentions(body, v.name) = false and repl.mentions(definitions, v.name) = false
                 continue
             sb.append("    let `v.name`: ref[`v.type_text`] (*(repl_table + `v.slot`)) as ref[`v.type_text`]\n")
         }
@@ -532,7 +625,7 @@ define repl
     ; either learn the types (`probe`) or emit it and run it in the JIT with the
     ; session's table as its argv. False after printing what is wrong. One
     ; procedure: the plan lives on the pages of the planner made here.
-    procedure process(source: String, entry_at: size_t, entry: String, mutable probe: ref[ReplProbe], run: bool, mutable table: pointer[pointer[void]]) returns bool mutable modeler_error_count
+    procedure process(source: String, entry_at: size_t, entry: String, mutable probe: ref[ReplProbe], run: bool, mutable table: pointer[pointer[void]], mutable last_ir: ref[Array[String]], mutable last_ns: ref[Array[int]]) returns bool mutable modeler_error_count
     {
         var p Parser(source)
         var syntax: ProgramSyntax
@@ -603,6 +696,9 @@ define repl
             return false
         emitter.jit_run(plan, "repl", "main", &dep_objs, &dep_syms, 0, table as pointer[pointer[char]], null, null)
         fflush(null)
+        last_ir.clear()
+        last_ir.add(String(emitter.main_ir))
+        last_ns.add(emitter.run_ns)
         true
     }
 
@@ -610,6 +706,8 @@ define repl
     ; and `it`'s when the entry ends in an expression with a value
     procedure learn(plan: ref[Plan], mutable out: ref[ReplProbe])
     {
+        if plan.structures <> null
+            repl.learn_records(plan.structures, out)
         if plan.functions = null
             return
         for f in plan.functions
@@ -635,6 +733,74 @@ define repl
                     else
                         0
             }
+        }
+    }
+
+    ; every plain record the plan lays out, a row per public field
+    procedure learn_records(structures: ref[Vector[PlannedStructure]], mutable out: ref[ReplProbe])
+    {
+        let page Page.get(out)
+        var i: size_t 0
+        while i < structures.length
+        {
+            let st structures.at i
+            set i: i + 1
+            if st.properties = null or st.is_generic_placeholder or st.name.index_of(91) >= 0
+                continue
+            let props st.properties as ref[Vector[PlannedProperty]]
+            var k: size_t 0
+            while k < props.length
+            {
+                let pr props.at k
+                set k: k + 1
+                if pr.is_private
+                    continue
+                let t Planner.get_readable_name(pr.prop_type)
+                out.rec_names.add(String^page(st.name))
+                out.rec_fields.add(String^page(pr.name))
+                out.rec_types.add(String^page(t))
+            }
+        }
+    }
+
+    ; is `t` a record show# takes apart: one the plan laid out, not a String
+    function is_record(probe: ref[ReplProbe], t: String) returns bool
+    {
+        if t.equals("String") or t.equals("StringBuilder")
+            return false
+        var i: size_t 0
+        while i < probe.rec_names.length
+        {
+            if probe.rec_names.at(i).equals(t)
+                return true
+            set i: i + 1
+        }
+        false
+    }
+
+    ; the rows of a record of type `t` reached as `path` from the value
+    procedure flatten(probe: ref[ReplProbe], t: String, path: String, depth: int, mutable out: ref[Array[ReplField]])
+    {
+        var i: size_t 0
+        while i < probe.rec_names.length
+        {
+            let at i
+            set i: i + 1
+            if probe.rec_names.at(at).equals(t) = false
+                continue
+            let f probe.rec_fields.at at
+            let ft probe.rec_types.at at
+            var sub String(f)
+            if path.get_length() > 0
+                set sub: "`path`.`f`"
+            if depth < 3 and repl.is_record(probe, ft)
+            {
+                out.add(ReplField(String(f), String(ft), String(sub), 1, 0, 0))
+                repl.flatten(probe, ft, sub, depth + 1, out)
+                out.add(ReplField(String(f), String(ft), String(sub), 2, 0, 0))
+            }
+            else
+                out.add(ReplField(String(f), String(ft), String(sub), 0, 0, 0))
         }
     }
 
@@ -706,8 +872,10 @@ define repl
     }
 
     ; one entry: declarations join the definitions, statements run
-    procedure run_entry(text: String, mutable definitions: ref[StringBuilder], mutable history: ref[StringBuilder], mutable values: ref[Array[ReplValue]], mutable table: pointer[pointer[void]], mutable next_slot: ref[int]) mutable modeler_error_count
+    procedure run_entry(text: String, mutable definitions: ref[StringBuilder], mutable history: ref[StringBuilder], mutable values: ref[Array[ReplValue]], mutable table: pointer[pointer[void]], mutable next_slot: ref[int], mutable fields: ref[Array[ReplField]], mutable last_ir: ref[Array[String]], mutable last_ns: ref[Array[int]]) mutable modeler_error_count
     {
+        let started scaly_eio_now_ns()
+        last_ns.clear()
         var p Parser(text)
         var syntax: ProgramSyntax
         choose p.parse_program()
@@ -744,8 +912,8 @@ define repl
         ; first planning: the types
         var entry_at: size_t 0
         let probe_source repl.compose(all_defs, values, &stmts, body, String(), true, &entry_at)
-        var probe ReplProbe(Array[String](), Array[String](), String())
-        if repl.process(probe_source, entry_at, body, &probe, false, table) = false
+        var probe ReplProbe(Array[String](), Array[String](), String(), Array[String](), Array[String](), Array[String]())
+        if repl.process(probe_source, entry_at, body, &probe, false, table, last_ir, last_ns) = false
             return
         if stmts.length = 0
         {
@@ -785,6 +953,10 @@ define repl
         tail.append("    let repl_sizes argv as pointer[size_t]\n")
         var slots Array[int]()
         var types Array[String]()
+        var pending Array[ReplField]()
+        var offset_slots Array[int]()
+        var firsts Array[int]()
+        var counts Array[int]()
         var ki: size_t 0
         while ki < shown.length
         {
@@ -808,6 +980,30 @@ define repl
             tail.append("    memcpy(repl_cell_`slot`, &repl_value_`slot` as pointer[void], sizeof `t`)\n")
             tail.append("    set *(repl_table + `slot`): repl_cell_`slot`\n")
             tail.append("    set *(repl_sizes + `slot + 1`): sizeof `t`\n")
+            ; a record: the entry measures where each field stands in it
+            var first pending.length
+            if repl.is_record(&probe, t)
+            {
+                repl.flatten(&probe, t, String(), 0, &pending)
+                tail.append("    let repl_ref_`slot` &repl_value_`slot`\n")
+            }
+            firsts.add(first as int)
+            counts.add((pending.length - first) as int)
+            while first < pending.length
+            {
+                let pf pending.at first
+                set first: first + 1
+                if pf.kind <> 0
+                {
+                    offset_slots.add(0)
+                    continue
+                }
+                let fslot: int next_slot
+                set next_slot: fslot + 1
+                offset_slots.add(fslot)
+                ; through a ref: `&v.f` on the var itself is no address
+                tail.append("    set *(repl_sizes + `fslot`): ((&repl_ref_`slot`.`pf.path` as pointer[void]) as size_t) - ((repl_ref_`slot` as pointer[void]) as size_t)\n")
+            }
         }
         ; the entry's frame page, by something that lives on it
         let frame_slot: int next_slot
@@ -817,8 +1013,8 @@ define repl
         var run_at: size_t 0
         let run_text run_body.to_string()
         let run_source repl.compose(all_defs, values, &stmts, run_text, tail.to_string(), false, &run_at)
-        var unused ReplProbe(Array[String](), Array[String](), String())
-        if repl.process(run_source, run_at, run_text, &unused, true, table) = false
+        var unused ReplProbe(Array[String](), Array[String](), String(), Array[String](), Array[String](), Array[String]())
+        if repl.process(run_source, run_at, run_text, &unused, true, table, last_ir, last_ns) = false
             return
 
         ; the session keeps what the entry bound; `it` is shown
@@ -842,84 +1038,136 @@ define repl
             let slot: int slots.at vi
             let t types.at vi
             set vi: vi + 1
-            values.add(ReplValue(String(name), String(t), slot, (*(table + (slot + 1))) as size_t, *(table + slot), *(table + frame_slot)))
-            let shown_text repl.show(name, t, *(table + slot))
+            ; the value's rows join the session's, with the offsets measured
+            let session_first fields.length
+            var fi firsts[vi - 1] as size_t
+            let fend fi + (counts[vi - 1] as size_t)
+            while fi < fend
+            {
+                let pf pending.at fi
+                var offset: size_t 0
+                if pf.kind = 0
+                    set offset: (*(table + offset_slots[fi])) as size_t
+                fields.add(ReplField(String(pf.name), String(pf.type_text), String(), pf.kind, 0, offset))
+                set fi: fi + 1
+            }
+            values.add(ReplValue(String(name), String(t), slot, (*(table + (slot + 1))) as size_t, *(table + slot), *(table + frame_slot), session_first, fields.length - session_first))
+            let shown_text repl.show(values.at(values.length - 1), fields)
             Console.println(shown_text.to_c_string())
         }
+        last_ns.add((scaly_eio_now_ns() - started) as int)
     }
 
-    ; `name: type = value` -- a value the REPL knows how to read, else the type
-    procedure show(name: String, t: String, cell: pointer[void]) returns String
+    ; `name: type = value` -- a value the REPL knows how to read, a record
+    ; field by field, else the type alone
+    procedure show(v: ref[ReplValue], fields: ref[Array[ReplField]]) returns String
     {
         var sb StringBuilder()
-        sb.append(name)
+        sb.append(v.name)
         sb.append(": ")
-        sb.append(t)
+        sb.append(v.type_text)
+        if v.field_count = 0
+        {
+            let text repl.value_text(v.type_text, v.cell)
+            if text.get_length() > 0
+            {
+                sb.append(" = ")
+                sb.append(text)
+            }
+            return sb.to_string()
+        }
+        sb.append(" = (")
+        var separate false
+        var i v.first_field
+        while i < v.first_field + v.field_count
+        {
+            let f fields.at i
+            set i: i + 1
+            if f.kind = 2
+            {
+                sb.append(")")
+                set separate: true
+                continue
+            }
+            if separate
+                sb.append(", ")
+            sb.append(f.name)
+            sb.append(": ")
+            if f.kind = 1
+            {
+                sb.append("(")
+                set separate: false
+                continue
+            }
+            let text repl.value_text(f.type_text, ((v.cell as pointer[u8]) + f.offset) as pointer[void])
+            if text.get_length() > 0
+                sb.append(text)
+            else
+                sb.append(f.type_text)
+            set separate: true
+        }
+        sb.append(")")
+        sb.to_string()
+    }
+
+    ; the value at `cell` as text; "" for a type the REPL cannot read
+    procedure value_text(t: String, cell: pointer[void]) returns String
+    {
+        var sb StringBuilder()
         match t
             case "int" case "i64"
             {
-                sb.append(" = ")
                 sb.append(*(cell as pointer[int]))
             }
             case "i32"
             {
-                sb.append(" = ")
                 sb.append((*(cell as pointer[i32])) as int)
             }
             case "i16"
             {
-                sb.append(" = ")
                 sb.append((*(cell as pointer[i16])) as int)
             }
             case "i8"
             {
-                sb.append(" = ")
                 sb.append((*(cell as pointer[i8])) as int)
             }
             case "u64" case "size_t"
             {
-                sb.append(" = ")
                 sb.append(*(cell as pointer[size_t]))
             }
             case "u32"
             {
-                sb.append(" = ")
                 sb.append((*(cell as pointer[u32])) as size_t)
             }
             case "u16"
             {
-                sb.append(" = ")
                 sb.append((*(cell as pointer[u16])) as size_t)
             }
             case "u8"
             {
-                sb.append(" = ")
                 sb.append((*(cell as pointer[u8])) as size_t)
             }
             case "bool"
             {
-                sb.append(" = ")
                 sb.append(*(cell as pointer[bool]))
             }
             case "char"
             {
-                sb.append(" = \"")
+                sb.append("\"")
                 sb.append(*(cell as pointer[char]))
                 sb.append("\"")
             }
             case "double" case "f64"
             {
-                sb.append(" = ")
                 sb.append(repl.double_text(*(cell as pointer[double])))
             }
             case "float" case "f32"
             {
-                sb.append(" = ")
                 sb.append(repl.double_text((*(cell as pointer[float])) as double))
             }
             case "String"
             {
-                sb.append(" = \"")
+                sb.append("\"")
                 sb.append(cell as ref[String])
                 sb.append("\"")
             }

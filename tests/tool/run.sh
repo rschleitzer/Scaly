@@ -19,6 +19,8 @@
 #              a var changed by `set`, a record, an Array grown in a loop, a
 #              braceless function, a float, an error with its caret, `:where`
 #              for a scalar, a String, an Array grown later and a large one
+#              and a record shown field by field, one nested in another;
+#              `:time` and `:ir` by the shape of their output
 #   repl-pty   the same binary at a TERMINAL (tests/tool/repl_pty.py drives a
 #              pty): the line editor, its history file, a second session;
 #              SKIPs by name on Windows
@@ -122,6 +124,20 @@ if scaly_jit_available 2>/dev/null; then
     ok
   else
     bad "repl: $(diff tests/tool/repl.expected "$TMP/repl.out" | head -5 | tr '\n' '|')"
+  fi
+fi
+
+# repl :time and :ir -- their output is not the same twice, so by its shape:
+# a time line, and main's definition holding the entry's addition and only the
+# one session value the entry names
+if scaly_jit_available 2>/dev/null; then
+  printf 'let x 40\nlet y 2\nx + 2\n:time\n:ir\n' | SCALY_POISON=1 "$BIN" > "$TMP/repl2.out" 2>&1
+  if grep -Eq 'ran in [0-9]+\.[0-9]{3} ms; reading, planning and compiling took [0-9]+\.[0-9]{3} ms' "$TMP/repl2.out" \
+     && grep -q 'define i64 @main(' "$TMP/repl2.out" && grep -Eq 'add i64 %[a-z0-9.]+, 2' "$TMP/repl2.out" \
+     && [ "$(grep -c 'unwrap.trap:' "$TMP/repl2.out")" = 1 ]; then
+    ok
+  else
+    bad "repl :time/:ir: $(tail -3 "$TMP/repl2.out" | tr '\n' '|')"
   fi
 fi
 

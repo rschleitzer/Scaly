@@ -52,6 +52,22 @@ define ReplValue
     size: size_t
     cell: pointer[void]
     frame: pointer[void]
+    ; a record's fields for show#: a run of the session's ReplField rows
+    first_field: size_t
+    field_count: size_t
+)
+
+; one row of a record value's shape: a field with its offset in the value
+; (kind 0), or the opening (1) and closing (2) of a field that is a record
+; itself. `path` and `slot` serve the entry that measures the offset.
+define ReplField
+(
+    name: String
+    type_text: String
+    path: String
+    kind: int
+    slot: int
+    offset: size_t
 )
 
 ; one statement of an entry: where it stands in the entry's text, and the
@@ -71,6 +87,10 @@ define ReplProbe
     var names: Array[String]
     var types: Array[String]
     var it_type: String
+    ; the records the plan lays out, one row per field: record, field, type
+    var rec_names: Array[String]
+    var rec_fields: Array[String]
+    var rec_types: Array[String]
 )
 
 define repl
@@ -92,8 +112,9 @@ define repl
     ; outside strings and comments
     function open_count(line: String) @ret_nonlocal true @deep true returns int linked
 
-    ; `:help`, `:quit`, `:values`, `:defs`, `:save <dir>`; false ends the session
-    procedure command(text: String, mutable definitions: ref[StringBuilder], mutable history: ref[StringBuilder], values: ref[Array[ReplValue]]) @ret_nonlocal true @deep true returns bool io linked
+    ; `:help`, `:quit`, `:values`, `:where x`, `:ir`, `:time`, `:defs`, `:save <dir>`;
+    ; false ends the session
+    procedure command(text: String, mutable definitions: ref[StringBuilder], mutable history: ref[StringBuilder], values: ref[Array[ReplValue]], last_ir: ref[Array[String]], last_ns: ref[Array[int]]) @ret_nonlocal true @deep true returns bool io linked
 
     ; `:where name`: the value's cell, and the buffer a String, an Array, a
     ; StringBuilder or a Vector owns -- each with the page it is on. A kept
@@ -104,6 +125,9 @@ define repl
     ; the session page.
     procedure where(name: String, values: ref[Array[ReplValue]]) @deep true io linked
 
+    ; nanoseconds as milliseconds with three decimals
+    procedure ms_text(ns: int) @page true @direct true @ret_caller true @deep true returns String linked
+
     ; the page `at` is on, said by what the session knows about it
     procedure page_text(at: pointer[void], v: ref[ReplValue], values: ref[Array[ReplValue]]) @page true @direct true @deep true returns String linked
 
@@ -111,6 +135,12 @@ define repl
     procedure entry_statements(syntax: ProgramSyntax, mutable out: ref[Array[ReplStatement]]) @page true @direct true @deep true linked
 
     function binds_name(stmts: ref[Array[ReplStatement]], name: String) @ret_nonlocal true @deep true returns bool linked
+
+    ; does `text` hold `name` as a word of its own (in code, a string or a
+    ; comment alike: one binding too many costs nothing, one too few an error)
+    function mentions(text: String, name: String) @ret_nonlocal true @deep true returns bool linked
+
+    function word_char(c: u8) @ret_nonlocal true @deep true returns bool linked
 
     ; a value a later one of the same name replaced
     function shadowed(values: ref[Array[ReplValue]], from: size_t, name: String) @ret_nonlocal true @deep true returns bool linked
@@ -128,21 +158,34 @@ define repl
     ; either learn the types (`probe`) or emit it and run it in the JIT with the
     ; session's table as its argv. False after printing what is wrong. One
     ; procedure: the plan lives on the pages of the planner made here.
-    procedure process(source: String, entry_at: size_t, entry: String, mutable probe: ref[ReplProbe], run: bool, mutable table: pointer[pointer[void]]) @ret_nonlocal true @deep true returns bool io mutable modeler_error_count reads modeler_error_count linked
+    procedure process(source: String, entry_at: size_t, entry: String, mutable probe: ref[ReplProbe], run: bool, mutable table: pointer[pointer[void]], mutable last_ir: ref[Array[String]], mutable last_ns: ref[Array[int]]) @page true @direct true @stores true @ret_nonlocal true @deep true returns bool io mutable modeler_error_count reads modeler_error_count linked
 
     ; what the first planning learned: the types of the names the entry binds,
     ; and `it`'s when the entry ends in an expression with a value
     procedure learn(plan: ref[Plan], mutable out: ref[ReplProbe]) @deep true linked
+
+    ; every plain record the plan lays out, a row per public field
+    procedure learn_records(structures: ref[Vector[PlannedStructure]], mutable out: ref[ReplProbe]) @deep true @deep_pageof_2 true linked
+
+    ; is `t` a record show# takes apart: one the plan laid out, not a String
+    function is_record(probe: ref[ReplProbe], t: String) @ret_nonlocal true @deep true returns bool linked
+
+    ; the rows of a record of type `t` reached as `path` from the value
+    procedure flatten(probe: ref[ReplProbe], t: String, path: String, depth: int, mutable out: ref[Array[ReplField]]) @page true @direct true @deep true linked
 
     procedure learn_statements(body: ref[Vector[PlannedStatement]], mutable out: ref[ReplProbe]) @deep true @deep_pageof_2 true linked
 
     procedure type_of(probe: ref[ReplProbe], name: String) @page true @direct true @ret_caller true @deep true returns String linked
 
     ; one entry: declarations join the definitions, statements run
-    procedure run_entry(text: String, mutable definitions: ref[StringBuilder], mutable history: ref[StringBuilder], mutable values: ref[Array[ReplValue]], mutable table: pointer[pointer[void]], mutable next_slot: ref[int]) @page true @direct true @deep true io mutable modeler_error_count reads modeler_error_count linked
+    procedure run_entry(text: String, mutable definitions: ref[StringBuilder], mutable history: ref[StringBuilder], mutable values: ref[Array[ReplValue]], mutable table: pointer[pointer[void]], mutable next_slot: ref[int], mutable fields: ref[Array[ReplField]], mutable last_ir: ref[Array[String]], mutable last_ns: ref[Array[int]]) @page true @direct true @stores true @deep true io mutable modeler_error_count reads modeler_error_count linked
 
-    ; `name: type = value` -- a value the REPL knows how to read, else the type
-    procedure show(name: String, t: String, cell: pointer[void]) @page true @direct true @ret_caller true @deep true returns String io linked
+    ; `name: type = value` -- a value the REPL knows how to read, a record
+    ; field by field, else the type alone
+    procedure show(v: ref[ReplValue], fields: ref[Array[ReplField]]) @page true @direct true @ret_caller true @deep true returns String io linked
+
+    ; the value at `cell` as text; "" for a type the REPL cannot read
+    procedure value_text(t: String, cell: pointer[void]) @page true @direct true @ret_caller true @deep true returns String io linked
 
     procedure double_text(value: double) @page true @direct true @ret_caller true @deep true returns String io linked
 }

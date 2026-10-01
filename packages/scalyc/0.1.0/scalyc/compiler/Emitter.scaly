@@ -413,6 +413,10 @@ define Emitter
         var fj_mode: i64
         var fj_self: String
         var fj_seen: bool
+        ; the REPL (config.keep_main_frame): main's IR as jit_run emitted it,
+        ; and how long main itself ran, for `:ir` and `:time`
+        var main_ir: String
+        var run_ns: int
         var fj_seq_fn: LLVMValueRef
         var fj_fj_fn: LLVMValueRef
         var fj_task_fn: LLVMValueRef
@@ -500,6 +504,8 @@ define Emitter
             set fj_mode: 0
             set fj_self: String()
             set fj_seen: false
+            set main_ir: String()
+            set run_ns: 0
             set fj_seq_fn: null
             set fj_fj_fn: null
             set fj_task_fn: null
@@ -8431,6 +8437,8 @@ define Emitter
                 Console.println "JIT: emission failed"
                 return 127
             }
+            if config.keep_main_frame
+                this.keep_main_ir()
 
             ; The JIT needs the host target backend registered (detectHost + codegen).
             ; The -c/-o path inits these in write_object_to_file, which --run bypasses;
@@ -8606,8 +8614,23 @@ define Emitter
             ; a program's main takes (argc, argv) -- `scaly run file args` hands
             ; them on; --run's zero-argument function ignores them (C ABI)
             let entry addr as pointer[void]
+            let run_start scaly_eio_now_ns()
             let result entry(program_argc, program_argv)
+            set run_ns: scaly_eio_now_ns() - run_start
             result
+        }
+
+        ; main's definition as text, before the JIT takes the module
+        procedure keep_main_ir(mutable this)
+        {
+            let f LLVMGetNamedFunction(llvm_module, "main")
+            if f = null
+                return
+            let text LLVMPrintValueToString(f)
+            if text = null
+                return
+            set main_ir: String(text as pointer[const_char])
+            LLVMDisposeMessage(text)
         }
 
         ; ========================================================================

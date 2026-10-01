@@ -34,3 +34,6 @@ for i in 1000
 :where big
 let ys Array[int]()
 :where ys
+define Mixed(flag: bool, small: i32, name: String, at: Point, ratio: double, tags: Array[int])
+let m Mixed(true, 7, "zwei", Point(5, 6), 1.5, Array[int]())
+m.at.y + m.small

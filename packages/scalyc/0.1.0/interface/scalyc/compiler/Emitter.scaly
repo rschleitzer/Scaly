@@ -374,6 +374,10 @@ define Emitter
         var fj_mode: i64
         var fj_self: String
         var fj_seen: bool
+        ; the REPL (config.keep_main_frame): main's IR as jit_run emitted it,
+        ; and how long main itself ran, for `:ir` and `:time`
+        var main_ir: String
+        var run_ns: int
         var fj_seq_fn: LLVMValueRef
         var fj_fj_fn: LLVMValueRef
         var fj_task_fn: LLVMValueRef
@@ -1836,7 +1840,10 @@ define Emitter
         ; the emitter crashed on them). dep_object_symbols: the mangled names those
         ; objects define, so emit_jit_stubs leaves them as declarations. Both null
         ; when the program has no non-scaly dependencies (behavior unchanged).
-        procedure jit_run(mutable this, mutable plan: Plan, mutable module_name: String, mutable fn_mangled: String, mutable dep_object_files: ref[Array[String]]?, dep_object_symbols: ref[Array[String]], program_argc: int, mutable program_argv: pointer[pointer[char]], mutable test_names: ref[Array[String]]?, test_labels: ref[Array[String]]?) @deep true @deep_into_1_4 true returns i64 io linked
+        procedure jit_run(mutable this, mutable plan: Plan, mutable module_name: String, mutable fn_mangled: String, mutable dep_object_files: ref[Array[String]]?, dep_object_symbols: ref[Array[String]], program_argc: int, mutable program_argv: pointer[pointer[char]], mutable test_names: ref[Array[String]]?, test_labels: ref[Array[String]]?) @page true @stores true @deep true @deep_into_1_4 true returns i64 io linked
+
+        ; main's definition as text, before the JIT takes the module
+        procedure keep_main_ir(mutable this) @page true @stores true @deep true linked
 
         ; ========================================================================
         ; Module Output

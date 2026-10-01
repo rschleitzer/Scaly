@@ -684,6 +684,9 @@ procedure LLVMDisposeMessage(message: pointer[char]) extern
 ; String representation of a type (dispose with LLVMDisposeMessage); the
 ; emitter's loud kind-mismatch abort names both operand types with it.
 function LLVMPrintTypeToString(ty: LLVMTypeRef) returns pointer[char] extern
+; String representation of a value -- a function prints as its definition
+; (dispose with LLVMDisposeMessage); the REPL's `:ir`
+function LLVMPrintValueToString(val: LLVMValueRef) returns pointer[char] extern
 
 ; ============================================================================
 ; Analysis/Verification
