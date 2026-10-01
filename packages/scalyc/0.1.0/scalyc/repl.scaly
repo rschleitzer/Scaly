@@ -20,6 +20,7 @@ use scaly.os.Directory
 use scaly.fiber.Io
 use scalyc.cli
 use scalyc.tool
+use scalyc.lineedit
 use scalyc.compiler.Modeler
 use scalyc.compiler.Model.Program
 use scalyc.compiler.Planner
@@ -78,10 +79,12 @@ define repl
         var values Array[ReplValue]()
         let table scaly_aligned_alloc(16, (8 * REPL_SLOTS) as i64) as pointer[pointer[void]]
         var next_slot 0
+        var lines Array[String]()
+        lineedit.load_history(&lines)
         repeat
         {
             var entry StringBuilder()
-            if repl.read_entry(&entry) = false
+            if repl.read_entry(&entry, &lines) = false
             {
                 Console.println ""
                 return 0
@@ -90,7 +93,7 @@ define repl
             ; `function f(a: int) returns int` waits for its body
             while repl.incomplete(entry.to_string())
             {
-                if repl.read_more(&entry) = false
+                if repl.read_more(&entry, &lines) = false
                     break
             }
             let text entry.to_string()
@@ -112,36 +115,25 @@ define repl
         0
     }
 
-    ; a line from stdin, more while braces, parentheses or brackets are open;
-    ; false at the end of the input
-    procedure read_entry(mutable out: ref[StringBuilder]) returns bool
+    ; a line, more while braces, parentheses or brackets are open; false at
+    ; the end of the input (lineedit.read_line edits it at a terminal)
+    procedure read_entry(mutable out: ref[StringBuilder], mutable history: ref[Array[String]]) returns bool
     {
         var depth 0
         var first true
         repeat
         {
-            if first
-                Console.print "scaly> "
-            else
-                Console.print "  ...> "
-            set first: false
             var line StringBuilder()
-            var c: u8 0
-            var any false
-            repeat
+            var prompt String("  ...> ")
+            if first
+                set prompt: String("scaly> ")
+            if lineedit.read_line(prompt, history, &line) = false
             {
-                let n Io.read(0, &c as pointer[void], 1)
-                if n <= 0
-                {
-                    if any = false and out.get_length() = 0
-                        return false
-                    break
-                }
-                set any: true
-                if c = 10
-                    break
-                line.append(c as char)
+                if first
+                    return false
+                return true
             }
+            set first: false
             let l line.to_string()
             if out.get_length() > 0
                 out.append("\n" as char)
@@ -175,20 +167,11 @@ define repl
 
     ; one more line onto an entry; false at the end of input or on an empty
     ; line (which gives up on the entry)
-    procedure read_more(mutable out: ref[StringBuilder]) returns bool
+    procedure read_more(mutable out: ref[StringBuilder], mutable history: ref[Array[String]]) returns bool
     {
-        Console.print "  ...> "
         var line StringBuilder()
-        var c: u8 0
-        repeat
-        {
-            let n Io.read(0, &c as pointer[void], 1)
-            if n <= 0
-                return false
-            if c = 10
-                break
-            line.append(c as char)
-        }
+        if lineedit.read_line(String("  ...> "), history, &line) = false
+            return false
         if line.get_length() = 0
             return false
         out.append("\n" as char)

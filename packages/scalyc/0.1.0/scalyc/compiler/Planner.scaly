@@ -1140,6 +1140,10 @@ define Planner
         ; receiver's state, bit k its k-th parameter -- and the accumulator
         ; the walk of one body fills
         store_page_masks: ref[Array[u64]]
+        ; the NAMES of the routines in store_page_names (store_key's part before
+        ; the `@`), for the Design-B flip: a call of such a routine keeps the
+        ; caller page whatever is done with its result
+        var store_name_index: ConceptIndex
         ; the MANGLED names of planned routines with a nonzero R8 mask, the
         ; mask, and whether argument 0 is the receiver -- what R8's net asks
         ; at a call
@@ -1473,6 +1477,7 @@ define Planner
             set transitive_page_names: Array[String]^this()
             set store_page_names: &Array[String]^this()
             set store_page_masks: &Array[u64]^this()
+            set store_name_index: ConceptIndex.create(4096)
             set store_mangled_recv: &Array[String]^this()
             set store_mangled_masks: &Array[u64]^this()
             set store_mangled_this: &Array[bool]^this()
@@ -9333,10 +9338,34 @@ define Planner
                     set mi: mi + 1
                 }
                 if arity_matches < 2
+                {
+                    this.report_static_arg_types(c, fn_name, arg_types, arg_ops, chosen)
                     return chosen
+                }
                 set pass: pass + 1
             }
+            this.report_static_arg_types(c, fn_name, arg_types, arg_ops, chosen)
             chosen
+        }
+
+        ; A qualified static or namespace call whose argument TYPES match no
+        ; static of that name and arity: both static paths select by name and
+        ; arity, so `tools.note(&lines, text)` handed an Array[String] to a
+        ; ref[StringBuilder] parameter at rc 0 -- emit_call builds the callee
+        ; type from the arguments, and the callee appended into the Array's
+        ; record (2026-10-01; found by the REPL, where a second local named
+        ; `history` took the first one's place in two calls). The same call on
+        ; a free function was always `function not found`. Judged as a method's
+        ; arguments are (report_arg_types_from#); a generic concept is left out
+        ; for the reason given there. Gate xfail_static_arg_type.
+        procedure report_static_arg_types(mutable this: Planner, c: Concept, fn_name: String, arg_types: Vector[PlannedType], arg_ops: Vector[PlannedOperand], chosen: ref[Function])
+        {
+            if c.parameters.length > 0 or arg_ops.length = 0 or arg_ops.length <> arg_types.length
+                return
+            if Planner.function_is_static(chosen) = false
+                return
+            var f: Function chosen
+            this.report_arg_types_from(f, c.name, fn_name, arg_types, arg_ops, arg_ops[0].loc, 0)
         }
 
         ; A function without a leading `this` parameter.
@@ -15507,7 +15536,18 @@ define Planner
                                     ; the sigiled source: there these are `#`-calls
                                     ; (Call life, not Unspecified), so the flip
                                     ; never fired for them anyway.
-                                    if rt.name <> "void" and Planner.result_owns_page_guts(rt)
+                                    ; ... and not for a routine that STORES
+                                    ; what it builds into its receiver's or a
+                                    ; parameter's state (R8): those values
+                                    ; outlive the call whatever happens to its
+                                    ; result, so the page is the caller's.
+                                    ; Until 2026-10-01 only a DISCARDED result
+                                    ; got it back (promote_discarded_pagecall#):
+                                    ; `if read_line(n, history) = false` kept
+                                    ; the line read on this frame, and the
+                                    ; history dangled (tests/regress/
+                                    ; store_call_in_condition.scaly).
+                                    if rt.name <> "void" and Planner.result_owns_page_guts(rt) and this.callee_stores(fn_name) = false
                                         set call_life: Lifetime.Local(scalyc.compiler.Model.Local(Span(0, 0)))
                                 else
                                     0
@@ -29613,6 +29653,24 @@ define Planner
             ; carries that case.
             if param_start = 0
                 return
+            this.report_arg_types_from(f, lookup_st.name, method_name, arg_types, arg_ops, loc, param_start)
+        }
+
+        ; The judge of report_method_arg_types#, for a parameter list that
+        ; starts at `param_start`: 1 for a method (its `this` is the receiver),
+        ; 0 for a QUALIFIED static or namespace call, whose arguments line up
+        ; with the declaration one to one (report_static_arg_types#).
+        procedure report_arg_types_from(
+            mutable this: Planner,
+            mutable f: Function,
+            owner_name: String,
+            method_name: String,
+            arg_types: Vector[PlannedType],
+            arg_ops: Vector[PlannedOperand],
+            loc: Span,
+            param_start: size_t
+        )
+        {
             if f.input.length - param_start <> arg_types.length
                 return
 
@@ -29704,7 +29762,7 @@ define Planner
                                     set reported: true
                                     var tsb StringBuilder()
                                     tsb.append "argument type mismatch for "
-                                    tsb.append lookup_st.name
+                                    tsb.append owner_name
                                     tsb.append "."
                                     tsb.append method_name
                                     tsb.append ": argument "
@@ -51329,6 +51387,38 @@ define Planner
             }
         }
 
+        ; store_name_index#: every routine R8 found storing, by name
+        procedure index_store_names(mutable this: Planner)
+        {
+            var i: size_t 0
+            while i < store_page_names.length
+            {
+                let kp store_page_names.get i
+                let mp store_page_masks.get i
+                if kp <> null and mp <> null and (*mp) <> 0
+                {
+                    let key (*kp)
+                    let at key.index_of(0x40)
+                    if at > 0
+                        store_name_index.insert_if_absent(String^this(key.substring(0, at as size_t)), i)
+                }
+                set i: i + 1
+            }
+        }
+
+        ; does a call of `fn_name` (its last dotted segment) reach a routine that
+        ; keeps values built on its page in its receiver's or a parameter's
+        ; state (R8)? By name: a routine of that name anywhere -- a page too
+        ; many rather than one too few
+        procedure callee_stores(this: Planner, fn_name: String) returns bool
+        {
+            var name fn_name
+            let dot fn_name.last_index_of(46)
+            if dot >= 0
+                set name: fn_name.substring((dot + 1) as size_t, fn_name.get_length() - ((dot + 1) as size_t))
+            store_name_index.lookup(name) >= 0
+        }
+
         procedure store_mask_of(mutable this: Planner, key: String) returns u64
         {
             var i: size_t 0
@@ -52562,6 +52652,7 @@ define Planner
                 }
             }
             this.build_store_page_set(all, owners)
+            this.index_store_names()
         }
     }
 

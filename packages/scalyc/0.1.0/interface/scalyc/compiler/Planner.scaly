@@ -1012,6 +1012,10 @@ define Planner
         ; receiver's state, bit k its k-th parameter -- and the accumulator
         ; the walk of one body fills
         store_page_masks: ref[Array[u64]]
+        ; the NAMES of the routines in store_page_names (store_key's part before
+        ; the `@`), for the Design-B flip: a call of such a routine keeps the
+        ; caller page whatever is done with its result
+        var store_name_index: ConceptIndex
         ; the MANGLED names of planned routines with a nonzero R8 mask, the
         ; mask, and whether argument 0 is the receiver -- what R8's net asks
         ; at a call
@@ -3047,6 +3051,18 @@ define Planner
         ; resolved before resolves the same; with no type match the first arity
         ; match stays.
         procedure refine_static_overload(mutable this: Planner, c: Concept, fn_name: String, arg_types: Vector[PlannedType], arg_ops: Vector[PlannedOperand], chosen: ref[Function]) @deep true returns ref[Function] io linked
+
+        ; A qualified static or namespace call whose argument TYPES match no
+        ; static of that name and arity: both static paths select by name and
+        ; arity, so `tools.note(&lines, text)` handed an Array[String] to a
+        ; ref[StringBuilder] parameter at rc 0 -- emit_call builds the callee
+        ; type from the arguments, and the callee appended into the Array's
+        ; record (2026-10-01; found by the REPL, where a second local named
+        ; `history` took the first one's place in two calls). The same call on
+        ; a free function was always `function not found`. Judged as a method's
+        ; arguments are (report_arg_types_from#); a generic concept is left out
+        ; for the reason given there. Gate xfail_static_arg_type.
+        procedure report_static_arg_types(mutable this: Planner, c: Concept, fn_name: String, arg_types: Vector[PlannedType], arg_ops: Vector[PlannedOperand], chosen: ref[Function]) @deep true io linked
 
         ; A function without a leading `this` parameter.
         function function_is_static(f: Function) @ret_nonlocal true @deep true returns bool linked
@@ -5362,6 +5378,21 @@ define Planner
             arg_types: Vector[PlannedType],
             arg_ops: Vector[PlannedOperand],
             loc: Span
+        ) @deep true io linked
+
+        ; The judge of report_method_arg_types#, for a parameter list that
+        ; starts at `param_start`: 1 for a method (its `this` is the receiver),
+        ; 0 for a QUALIFIED static or namespace call, whose arguments line up
+        ; with the declaration one to one (report_static_arg_types#).
+        procedure report_arg_types_from(
+            mutable this: Planner,
+            mutable f: Function,
+            owner_name: String,
+            method_name: String,
+            arg_types: Vector[PlannedType],
+            arg_ops: Vector[PlannedOperand],
+            loc: Span,
+            param_start: size_t
         ) @deep true io linked
 
         ; report_variant_arg_arity: a union ARM carries at most ONE payload, so
@@ -7757,6 +7788,15 @@ define Planner
         ; hands its own state to such a position. What it cannot resolve the planner's net
         ; reports (report_lost_store_page#).
         procedure build_store_page_set(mutable this: Planner, all: Array[Function], owners: Array[String]) @deep true io linked
+
+        ; store_name_index#: every routine R8 found storing, by name
+        procedure index_store_names(mutable this: Planner) @deep true linked
+
+        ; does a call of `fn_name` (its last dotted segment) reach a routine that
+        ; keeps values built on its page in its receiver's or a parameter's
+        ; state (R8)? By name: a routine of that name anywhere -- a page too
+        ; many rather than one too few
+        procedure callee_stores(this: Planner, fn_name: String) @ret_param_0 true @deep true returns bool linked
 
         procedure store_mask_of(mutable this: Planner, key: String) @ret_param_0 true @deep true returns u64 linked
 

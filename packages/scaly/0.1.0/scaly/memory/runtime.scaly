@@ -138,6 +138,11 @@ function scaly_eio_load_library(path: pointer[const_char]) returns i32 extern
 ; a double as the shortest %g text that reads back to it (eio.c: snprintf is
 ; variadic); the length written
 procedure scaly_eio_format_double(mutable buf: pointer[char], cap: size_t, value: double) returns i32 extern
+; the terminal for a line editor (eio.c: struct termios differs per libc;
+; Windows has console modes): is fd a terminal, raw mode on (0) / off
+function scaly_eio_term_isatty(fd: i32) returns i32 extern
+function scaly_eio_term_raw(fd: i32) returns i32 extern
+function scaly_eio_term_restore(fd: i32) returns i32 extern
 
 ; File system functions (unistd.h)
 function access(path: pointer[const_char], mode: int) returns i32 extern

@@ -1602,3 +1602,48 @@ int scaly_eio_format_double(char* buf, size_t cap, double value)
     }
     return n;
 }
+
+/* ---- THE TERMINAL'S RAW MODE, shim category (a) ----------------------------
+ *
+ * The REPL edits a line itself (arrows, history), which needs the terminal
+ * in raw mode while it reads: struct termios and its flags differ per libc.
+ * raw saves the mode it found and answers 0 (-1 when fd is no terminal);
+ * restore puts the saved mode back. Signals stay the REPL's own: Ctrl-C
+ * arrives as byte 3 while a line is edited, and the terminal's mode is back
+ * to normal whenever an entry runs.
+ */
+#include <termios.h>
+#include <unistd.h>
+
+static struct termios scaly_term_saved;
+static int scaly_term_raw_on = 0;
+
+int scaly_eio_term_isatty(int fd)
+{
+    return isatty(fd) ? 1 : 0;
+}
+
+int scaly_eio_term_raw(int fd)
+{
+    struct termios raw;
+    if (!isatty(fd) || tcgetattr(fd, &scaly_term_saved) != 0)
+        return -1;
+    raw = scaly_term_saved;
+    raw.c_iflag &= ~(tcflag_t)(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
+    raw.c_cflag |= CS8;
+    raw.c_lflag &= ~(tcflag_t)(ECHO | ICANON | IEXTEN | ISIG);
+    raw.c_cc[VMIN] = 1;
+    raw.c_cc[VTIME] = 0;
+    if (tcsetattr(fd, TCSAFLUSH, &raw) != 0)
+        return -1;
+    scaly_term_raw_on = 1;
+    return 0;
+}
+
+int scaly_eio_term_restore(int fd)
+{
+    if (!scaly_term_raw_on)
+        return 0;
+    scaly_term_raw_on = 0;
+    return tcsetattr(fd, TCSAFLUSH, &scaly_term_saved) == 0 ? 0 : -1;
+}

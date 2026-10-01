@@ -1,0 +1,369 @@
+; lineedit.scaly - the REPL's line editor (ROADMAP-public.md, stage R)
+;
+; At a terminal a line is edited in place: the cursor moves by characters
+; (UTF-8, so an umlaut is one step), the arrows walk the history, which
+; ~/.scaly/history keeps between sessions. The terminal is raw only while a
+; line is read (scaly_eio_term_raw, eio.c); input from a pipe is read as it
+; comes, which is what the test gate does.
+;
+;   left/right, Ctrl-B/F       a character        up/down, Ctrl-P/N   history
+;   Home/End, Ctrl-A/E         start / end        Backspace, Delete   delete
+;   Ctrl-K / Ctrl-U / Ctrl-W   kill to end / to start / the word before
+;   Tab                        four spaces        Ctrl-L              clear screen
+;   Ctrl-C                     drop the line      Ctrl-D (empty)      end of input
+
+use scaly.containers.String
+use scaly.containers.StringBuilder
+use scaly.os.File
+use scaly.fiber.Io
+use scaly.memory.root_pages.getenv
+use scalyc.tool
+
+define HISTORY_KEPT: int 1000
+
+define lineedit
+{
+    ; ~/.scaly/history ("" without a home)
+    procedure history_file() returns String
+    {
+        var home getenv "HOME"
+        if home = null
+            set home: getenv("USERPROFILE")
+        if home = null
+            return String()
+        let h String(home)
+        "`h`/.scaly/history"
+    }
+
+    ; the history a session starts with: the file's lines
+    procedure load_history(mutable history: ref[Array[String]])
+    {
+        let file lineedit.history_file()
+        if file.get_length() = 0 or File.exists(file) = false
+            return
+        let text File.read_to_string(file)
+        var from: size_t 0
+        var at: size_t 0
+        let n text.get_length()
+        while at < n
+        {
+            if text.get(at) = 10
+            {
+                if at > from
+                    history.add(text.substring(from, at - from))
+                set from: at + 1
+            }
+            set at: at + 1
+        }
+    }
+
+    ; keep a line: in memory, and the last HISTORY_KEPT in the file
+    procedure remember(mutable history: ref[Array[String]], line: String)
+    {
+        if line.get_length() = 0
+            return
+        if history.length > 0 and history.at(history.length - 1).equals(line)
+            return
+        history.add(String(line))
+        let file lineedit.history_file()
+        if file.get_length() = 0
+            return
+        let slash file.last_index_of(47)
+        if slash > 0
+            tool.ensure_directory(file.substring(0, slash as size_t))
+        var text StringBuilder()
+        var i: size_t 0
+        if history.length > HISTORY_KEPT as size_t
+            set i: history.length - HISTORY_KEPT as size_t
+        while i < history.length
+        {
+            let h history.at i
+            text.append(h)
+            text.append("\n" as char)
+            set i: i + 1
+        }
+        let all text.to_string()
+        File.write_from_string(file, all)
+    }
+
+    procedure write(text: String)
+    {
+        Io.write_all(1, text.c_data() as pointer[void], text.get_length())
+    }
+
+    ; the characters (not bytes) of text[0, end)
+    function width(text: String, end: size_t) returns size_t
+    {
+        var w: size_t 0
+        var i: size_t 0
+        while i < end
+        {
+            let c text.get i
+            if c < 128 or c >= 192
+                set w: w + 1
+            set i: i + 1
+        }
+        w
+    }
+
+    ; the byte before the character that ends at `at`
+    function char_start(text: String, at: size_t) returns size_t
+    {
+        if at = 0
+            return 0
+        var i at - 1
+        while i > 0 and text.get(i) >= 128 and text.get(i) < 192
+            set i: i - 1
+        i
+    }
+
+    ; the byte after the character that starts at `at`
+    function char_end(text: String, at: size_t) returns size_t
+    {
+        let n text.get_length()
+        if at >= n
+            return n
+        var i at + 1
+        while i < n and text.get(i) >= 128 and text.get(i) < 192
+            set i: i + 1
+        i
+    }
+
+    procedure redraw(prompt: String, line: String, cursor: size_t)
+    {
+        var sb StringBuilder()
+        sb.append("\r")
+        sb.append(prompt)
+        sb.append(line)
+        sb.append(27 as char)
+        sb.append("[K\r")
+        let col prompt.get_length() + lineedit.width(line, cursor)
+        if col > 0
+        {
+            sb.append(27 as char)
+            sb.append("[")
+            sb.append(col)
+            sb.append("C")
+        }
+        lineedit.write(sb.to_string())
+    }
+
+    procedure read_byte() returns int
+    {
+        var c: u8 0
+        let n Io.read(0, &c as pointer[void], 1)
+        if n <= 0
+            return 0 - 1
+        c as int
+    }
+
+    ; One line with its prompt into `out`; false at the end of the input.
+    ; Not at a terminal, the line is read as it comes.
+    procedure read_line(prompt: String, mutable history: ref[Array[String]], mutable out: ref[StringBuilder]) returns bool
+    {
+        if scaly_eio_term_isatty(0) = 0 or scaly_eio_term_raw(0) <> 0
+            return lineedit.read_plain(prompt, out)
+        lineedit.redraw(prompt, String(), 0)
+        var line String()
+        var cursor: size_t 0
+        var draft String()
+        var hi history.length
+        repeat
+        {
+            let b lineedit.read_byte()
+            if b < 0 or (b = 4 and line.get_length() = 0)
+            {
+                scaly_eio_term_restore(0)
+                lineedit.write("\r\n")
+                return false
+            }
+            if b = 13 or b = 10
+            {
+                scaly_eio_term_restore(0)
+                lineedit.write("\r\n")
+                lineedit.remember(history, line)
+                out.append(line)
+                return true
+            }
+            if b = 3
+            {
+                lineedit.write("^C\r\n")
+                set line: String()
+                set cursor: 0
+                set hi: history.length
+            }
+            else if b = 127 or b = 8
+            {
+                if cursor > 0
+                {
+                    let s lineedit.char_start(line, cursor)
+                    set line: "`line.substring(0, s)``line.substring(cursor, line.get_length() - cursor)`"
+                    set cursor: s
+                }
+            }
+            else if b = 4
+            {
+                let e lineedit.char_end(line, cursor)
+                set line: "`line.substring(0, cursor)``line.substring(e, line.get_length() - e)`"
+            }
+            else if b = 1
+                set cursor: 0
+            else if b = 5
+                set cursor: line.get_length()
+            else if b = 2
+                set cursor: lineedit.char_start(line, cursor)
+            else if b = 6
+                set cursor: lineedit.char_end(line, cursor)
+            else if b = 11
+                set line: line.substring(0, cursor)
+            else if b = 21
+            {
+                set line: line.substring(cursor, line.get_length() - cursor)
+                set cursor: 0
+            }
+            else if b = 23
+            {
+                var s cursor
+                while s > 0 and line.get(s - 1) = 32
+                    set s: s - 1
+                while s > 0 and line.get(s - 1) <> 32
+                    set s: s - 1
+                set line: "`line.substring(0, s)``line.substring(cursor, line.get_length() - cursor)`"
+                set cursor: s
+            }
+            else if b = 12
+            {
+                var cls StringBuilder()
+                cls.append(27 as char)
+                cls.append("[H")
+                cls.append(27 as char)
+                cls.append("[2J")
+                lineedit.write(cls.to_string())
+            }
+            else if b = 9
+            {
+                set line: "`line.substring(0, cursor)`    `line.substring(cursor, line.get_length() - cursor)`"
+                set cursor: cursor + 4
+            }
+            else if b = 16 or b = 14
+            {
+                let step lineedit.history_step(history, &hi, &draft, line, b = 16)
+                set line: step
+                set cursor: line.get_length()
+            }
+            else if b = 27
+            {
+                let b1 lineedit.read_byte()
+                if b1 = 91 or b1 = 79
+                {
+                    var b2 lineedit.read_byte()
+                    var number 0
+                    while b2 >= 48 and b2 <= 57
+                    {
+                        set number: number * 10 + (b2 - 48)
+                        set b2: lineedit.read_byte()
+                    }
+                    if b2 = 65 or b2 = 66
+                    {
+                        let step lineedit.history_step(history, &hi, &draft, line, b2 = 65)
+                        set line: step
+                        set cursor: line.get_length()
+                    }
+                    else if b2 = 67
+                        set cursor: lineedit.char_end(line, cursor)
+                    else if b2 = 68
+                        set cursor: lineedit.char_start(line, cursor)
+                    else if b2 = 72
+                        set cursor: 0
+                    else if b2 = 70
+                        set cursor: line.get_length()
+                    else if b2 = 126
+                    {
+                        if number = 3
+                        {
+                            let e lineedit.char_end(line, cursor)
+                            set line: "`line.substring(0, cursor)``line.substring(e, line.get_length() - e)`"
+                        }
+                        else if number = 1 or number = 7
+                            set cursor: 0
+                        else if number = 4 or number = 8
+                            set cursor: line.get_length()
+                    }
+                }
+            }
+            else if b >= 32
+            {
+                ; a whole UTF-8 character at once: its lead byte says how long
+                var piece StringBuilder()
+                piece.append(b as char)
+                var more 0
+                if b >= 240
+                    set more: 3
+                else if b >= 224
+                    set more: 2
+                else if b >= 192
+                    set more: 1
+                while more > 0
+                {
+                    let c lineedit.read_byte()
+                    if c < 0
+                        break
+                    piece.append(c as char)
+                    set more: more - 1
+                }
+                let p piece.to_string()
+                set line: "`line.substring(0, cursor)``p``line.substring(cursor, line.get_length() - cursor)`"
+                set cursor: cursor + p.get_length()
+            }
+            lineedit.redraw(prompt, line, cursor)
+        }
+        true
+    }
+
+    ; up (older) or down (newer) in the history; the line being written is
+    ; kept as the draft below the newest entry
+    procedure history_step(history: ref[Array[String]], mutable hi: ref[size_t], mutable draft: ref[String], line: String, older: bool) returns String
+    {
+        if older
+        {
+            if hi = 0
+                return String(line)
+            if hi = history.length
+                set draft: String(line)
+            set hi: hi - 1
+            let h history.at(hi)
+            return String(h)
+        }
+        if hi >= history.length
+            return String(line)
+        set hi: hi + 1
+        if hi = history.length
+            return String(draft)
+        let h history.at(hi)
+        String(h)
+    }
+
+    ; a line from a pipe or a file: the prompt, then the bytes up to the newline
+    procedure read_plain(prompt: String, mutable out: ref[StringBuilder]) returns bool
+    {
+        lineedit.write(prompt)
+        var line StringBuilder()
+        var any false
+        repeat
+        {
+            let b lineedit.read_byte()
+            if b < 0
+            {
+                if any = false
+                    return false
+                break
+            }
+            set any: true
+            if b = 10
+                break
+            line.append(b as char)
+        }
+        out.append(line.to_string())
+        true
+    }
+}

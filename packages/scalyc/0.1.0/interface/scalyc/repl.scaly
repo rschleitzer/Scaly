@@ -20,6 +20,7 @@ use scaly.os.Directory
 use scaly.fiber.Io
 use scalyc.cli
 use scalyc.tool
+use scalyc.lineedit
 use scalyc.compiler.Modeler
 use scalyc.compiler.Model.Program
 use scalyc.compiler.Planner
@@ -72,16 +73,16 @@ define repl
 {
     procedure main() @ret_nonlocal true @deep true returns int io mutable modeler_error_count reads modeler_error_count linked
 
-    ; a line from stdin, more while braces, parentheses or brackets are open;
-    ; false at the end of the input
-    procedure read_entry(mutable out: ref[StringBuilder]) @ret_nonlocal true @deep true returns bool io linked
+    ; a line, more while braces, parentheses or brackets are open; false at
+    ; the end of the input (lineedit.read_line edits it at a terminal)
+    procedure read_entry(mutable out: ref[StringBuilder], mutable history: ref[Array[String]]) @page true @stores true @ret_nonlocal true @deep true returns bool io linked
 
     ; does the parser stop at the very end of the text -- more is to come
     procedure incomplete(text: String) @deep true returns bool linked
 
     ; one more line onto an entry; false at the end of input or on an empty
     ; line (which gives up on the entry)
-    procedure read_more(mutable out: ref[StringBuilder]) @ret_nonlocal true @deep true returns bool io linked
+    procedure read_more(mutable out: ref[StringBuilder], mutable history: ref[Array[String]]) @page true @stores true @ret_nonlocal true @deep true returns bool io linked
 
     ; braces, parentheses and brackets a line opens minus those it closes,
     ; outside strings and comments

@@ -61,7 +61,7 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 %_Z5Lexer = type { { ptr }, ptr, ptr, i64, i64, %_Z5Token, %_Z5SliceImE, i64, ptr }
 %_Z5Token = type { i8, <{ [1 x i64], [1 x i8] }> }
 %_Z11ParserError = type { i8, <{ [3 x i64], [0 x i8] }> }
-%_Z7Planner = type { { ptr }, %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, %_Z5ArrayImE, %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, i64, %_Z5ArrayI14TypeConstraintE, %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, %_Z5ArrayI12KeyValuePairI6String7ConceptEE, %_Z12ConceptIndex, ptr, %_Z5ArrayI16PlannedStructureE, %_Z5ArrayI12PlannedUnionE, %_Z5ArrayI6StringE, i1, i64, ptr, i1, i64, { ptr }, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6LambdaE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i64, i64, i1, i1, i1, %_Z5ArrayI15PlannedFunctionE, %_Z12ConceptIndex, %_Z5ArrayI13PlannedGlobalE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI12KeyValuePairI6String8FunctionEE, %_Z5ArrayI12KeyValuePairI6String6LambdaEE, %_Z13FunctionIndex, %_Z5ArrayI12KeyValuePairI6String8OperatorEE, %_Z13FunctionIndex, i1, %_Z6VectorI11PlannedTypeE, %_Z5ArrayI12KeyValuePairI6String6ModuleEE, %_Z5ArrayI12KeyValuePairI6String6ModuleEE, %_Z5ArrayI6StringE, %_Z5ArrayI17PlannerDiagnosticE, %_Z5ArrayI7ProgramE, ptr, ptr, ptr, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i64, %_Z5ArrayI12EscapeRecordE, ptr, ptr, ptr, ptr, i1, i1, i1, i64, i1, i1, ptr, ptr, ptr, %_Z5ArrayI6StringE, ptr, ptr, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i1, i1, %_Z5ArrayI6StringE, ptr, %_Z5ArrayImE, ptr, ptr, i1, i1, %_Z5ArrayI6StringE, i64, i1, i1, i64, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i64, i64, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, ptr, ptr, ptr, ptr, ptr, i64, ptr, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, { ptr }, { ptr }, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, i64, i64, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayImE, i1, %_Z12ConceptIndex, %_Z5ArrayI6StringE, i1, i64, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, ptr, { ptr }, ptr, ptr, i64, i64 }
+%_Z7Planner = type { { ptr }, %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE, %_Z5ArrayImE, %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE, i64, %_Z5ArrayI14TypeConstraintE, %_Z5ArrayI12KeyValuePairIm11PlannedTypeEE, %_Z5ArrayI12KeyValuePairI6String7ConceptEE, %_Z12ConceptIndex, ptr, %_Z5ArrayI16PlannedStructureE, %_Z5ArrayI12PlannedUnionE, %_Z5ArrayI6StringE, i1, i64, ptr, i1, i64, { ptr }, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6LambdaE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i64, i64, i1, i1, i1, %_Z5ArrayI15PlannedFunctionE, %_Z12ConceptIndex, %_Z5ArrayI13PlannedGlobalE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI12KeyValuePairI6String8FunctionEE, %_Z5ArrayI12KeyValuePairI6String6LambdaEE, %_Z13FunctionIndex, %_Z5ArrayI12KeyValuePairI6String8OperatorEE, %_Z13FunctionIndex, i1, %_Z6VectorI11PlannedTypeE, %_Z5ArrayI12KeyValuePairI6String6ModuleEE, %_Z5ArrayI12KeyValuePairI6String6ModuleEE, %_Z5ArrayI6StringE, %_Z5ArrayI17PlannerDiagnosticE, %_Z5ArrayI7ProgramE, ptr, ptr, ptr, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i64, %_Z5ArrayI12EscapeRecordE, ptr, ptr, ptr, ptr, i1, i1, i1, i64, i1, i1, ptr, ptr, ptr, %_Z5ArrayI6StringE, ptr, ptr, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i1, i1, %_Z5ArrayI6StringE, ptr, %_Z5ArrayImE, ptr, ptr, i1, i1, %_Z5ArrayI6StringE, i64, i1, i1, i64, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i64, i64, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, ptr, ptr, %_Z12ConceptIndex, ptr, ptr, ptr, i64, ptr, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, { ptr }, { ptr }, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, i1, i64, i64, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayImE, %_Z5ArrayI6StringE, i1, %_Z5ArrayI6StringE, %_Z5ArrayImE, i1, %_Z12ConceptIndex, %_Z5ArrayI6StringE, i1, i64, %_Z5ArrayImE, %_Z5ArrayI6StringE, %_Z5ArrayI6StringE, ptr, { ptr }, ptr, ptr, i64, i64 }
 %_Z5ArrayI12KeyValuePairI6String12LocalBindingEE = type { i64, i64, ptr }
 %_Z5ArrayI12KeyValuePairI6String11PlannedTypeEE = type { i64, i64, ptr }
 %_Z5ArrayI14TypeConstraintE = type { i64, i64, ptr }
@@ -148337,15 +148337,15 @@ entry:
   %sret.result = alloca { ptr }, align 8
   call void @_ZN7symbols18inlay_hints_packedEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %4, ptr %5)
   %sret.result1 = alloca { ptr }, align 8
-  call void @_ZN10placehints8fragmentEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result1, ptr %frame, ptr %4, ptr %3, ptr %5)
+  call void @_ZN10placehints8fragmentEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %sret.result1, ptr %1, ptr %4, ptr %3, ptr %5)
   %call = call i64 @_ZN6String10get_lengthEv(ptr %sret.result1)
   %eq = icmp eq i64 %call, 0
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end:                                           ; preds = %entry
@@ -148354,9 +148354,9 @@ if.end:                                           ; preds = %entry
   br i1 %lt, label %if.then3, label %if.end4
 
 if.then3:                                         ; preds = %if.end
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body5 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end4:                                          ; preds = %if.end
@@ -150240,7 +150240,7 @@ if.then7:                                         ; preds = %if.end
   br i1 %eq, label %if.then10, label %if.end11
 
 if.end8:                                          ; preds = %if.end11, %if.end
-  call void @_ZN8codelens16planned_fragmentEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result14, ptr %frame, ptr %sret.result, ptr %3)
+  call void @_ZN8codelens16planned_fragmentEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result14, ptr %1, ptr %sret.result, ptr %3)
   %call15 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result14)
   %gt16 = icmp ugt i64 %call15, 0
   br i1 %gt16, label %if.then17, label %if.end18
@@ -150548,7 +150548,7 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilderC1Ev(ptr %struct.region)
   store ptr %struct.region, ptr %sb, align 1
   store i1 true, ptr %first, align 1
-  call void @_ZN8tasklens8fragmentEPN4scaly6memory4PageE4Planb6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %frame, ptr %2, i1 %3, ptr %4, ptr %5, ptr %6, ptr %7)
+  call void @_ZN8tasklens8fragmentEPN4scaly6memory4PageE4Planb6String6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i1 %3, ptr %4, ptr %5, ptr %6, ptr %7)
   %call = call i64 @_ZN6String10get_lengthEv(ptr %sret.result)
   %gt = icmp ugt i64 %call, 0
   br i1 %gt, label %if.then, label %if.end
@@ -150560,7 +150560,7 @@ if.then:                                          ; preds = %frame.forced
   br label %if.end
 
 if.end:                                           ; preds = %if.then, %frame.forced
-  call void @_ZN8instlens8fragmentEPN4scaly6memory4PageE4Planb6String6String(ptr noalias sret({ ptr }) %sret.result2, ptr %frame, ptr %2, i1 %3, ptr %6, ptr %7)
+  call void @_ZN8instlens8fragmentEPN4scaly6memory4PageE4Planb6String6String(ptr noalias sret({ ptr }) %sret.result2, ptr %1, ptr %2, i1 %3, ptr %6, ptr %7)
   %call3 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result2)
   %gt4 = icmp ugt i64 %call3, 0
   br i1 %gt4, label %if.then5, label %if.end6
@@ -150571,7 +150571,7 @@ if.then5:                                         ; preds = %if.end
   br i1 %eq, label %if.then8, label %if.end9
 
 if.end6:                                          ; preds = %if.end9, %if.end
-  call void @_ZN9storelens8fragmentEPN4scaly6memory4PageE4Plan6String6String(ptr noalias sret({ ptr }) %sret.result12, ptr %frame, ptr %2, ptr %6, ptr %7)
+  call void @_ZN9storelens8fragmentEPN4scaly6memory4PageE4Plan6String6String(ptr noalias sret({ ptr }) %sret.result12, ptr %1, ptr %2, ptr %6, ptr %7)
   %call13 = call i64 @_ZN6String10get_lengthEv(ptr %sret.result12)
   %gt14 = icmp ugt i64 %call13, 0
   br i1 %gt14, label %if.then15, label %if.end16

@@ -1170,6 +1170,50 @@ int scaly_eio_format_double(char* buf, size_t cap, double value)
     return n;
 }
 
+/* ---- THE TERMINAL'S RAW MODE ---------------------------------------------
+ *
+ * The Windows half of eio.c's raw mode: the console reads key by key, without
+ * echo, and arrows arrive as the same VT sequences a POSIX terminal sends
+ * (ENABLE_VIRTUAL_TERMINAL_INPUT); the output side understands them too.
+ */
+static DWORD scaly_term_saved_in;
+static DWORD scaly_term_saved_out;
+static int scaly_term_raw_on = 0;
+
+int scaly_eio_term_isatty(int fd)
+{
+    return _isatty(fd) ? 1 : 0;
+}
+
+int scaly_eio_term_raw(int fd)
+{
+    HANDLE in = GetStdHandle(STD_INPUT_HANDLE);
+    HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
+    DWORD mode;
+    (void)fd;
+    if (!GetConsoleMode(in, &scaly_term_saved_in) || !GetConsoleMode(out, &scaly_term_saved_out))
+        return -1;
+    mode = scaly_term_saved_in;
+    mode &= ~(DWORD)(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT);
+    mode |= ENABLE_VIRTUAL_TERMINAL_INPUT;
+    if (!SetConsoleMode(in, mode))
+        return -1;
+    SetConsoleMode(out, scaly_term_saved_out | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    scaly_term_raw_on = 1;
+    return 0;
+}
+
+int scaly_eio_term_restore(int fd)
+{
+    (void)fd;
+    if (!scaly_term_raw_on)
+        return 0;
+    scaly_term_raw_on = 0;
+    SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), scaly_term_saved_in);
+    SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), scaly_term_saved_out);
+    return 0;
+}
+
 #else
 typedef int scaly_eio_win_not_needed_on_this_target;
 #endif /* _WIN32 */

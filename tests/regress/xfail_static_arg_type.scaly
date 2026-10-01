@@ -1,0 +1,36 @@
+; Regression (2026-10-01): a QUALIFIED static or namespace call's argument
+; TYPES were never compared -- both static paths select by name and arity, and
+; refine_static_overload# asks the types only to choose between two arity
+; matches. `tools.note(&lines, text)` handed an Array[String] to a
+; ref[StringBuilder] parameter at rc 0; emit_call builds the callee type from
+; the arguments, so nothing downstream objects, and `append` then wrote into
+; the Array's record. The same call on a FREE function has always been
+; `function not found` (xfail_method_arg_type is the method twin).
+;
+; Found by the REPL: a second local named `history` (the line editor's
+; Array[String]) stood in for the first (the session's StringBuilder) in two
+; calls, and the history died at its second entry. Armed, the gate named six
+; live sites in the ports, three of them right by layout coincidence.
+;
+; xfail: argument type mismatch for tools.note: argument 1 is ref[Array[String]], expected ref[StringBuilder]
+
+define tools
+{
+    procedure note(mutable sb: ref[StringBuilder], text: String)
+    {
+        sb.append(text)
+    }
+}
+
+procedure session() returns bool
+{
+    var lines Array[String]()
+    lines.add(String("one"))
+    tools.note(&lines, String("x"))
+    lines.length = 1
+}
+
+if session()
+    print "PASS"
+else
+    print "FAIL"

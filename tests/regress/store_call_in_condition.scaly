@@ -1,0 +1,60 @@
+; Regression (2026-10-01): a page-taking call whose RESULT is used -- here in
+; an `if` condition -- was stamped Local by the Design-B flip, so the callee
+; got this frame's page even when it keeps what it builds in a parameter's
+; state (R8): `read_line` hands `history` on to `remember`, which adds a
+; String built on that page, and `read_entry` asks `if read_line(...) = false`.
+; The history lived on read_entry's frame and dangled at its return (a poison
+; abort on the next read). Only a DISCARDED result got the caller page back
+; (promote_discarded_pagecall#); the flip now leaves a call of a storing
+; routine alone (Planner.callee_stores#). Found by the REPL's line history.
+; run-env: SCALY_POISON=1
+; Expected: PASS
+
+procedure remember(mutable history: ref[Array[String]], line: String)
+{
+    history.add(String(line))
+}
+
+procedure read_line(n: int, mutable history: ref[Array[String]]) returns bool
+{
+    var line String()
+    set line: "entry`n`"
+    remember(history, line)
+    true
+}
+
+procedure read_entry(n: int, mutable out: ref[StringBuilder], mutable history: ref[Array[String]]) returns bool
+{
+    if read_line(n, history) = false
+        return false
+    true
+}
+
+procedure churn() returns int
+{
+    var total 0
+    var j 0
+    while j < 200
+    {
+        let s "noise`j`noise`j`"
+        set total: total + (s.get_length() as int)
+        set j: j + 1
+    }
+    total
+}
+
+procedure session() returns bool
+{
+    var history Array[String]()
+    var entry StringBuilder()
+    read_entry(0, &entry, &history)
+    read_entry(1, &entry, &history)
+    read_entry(2, &entry, &history)
+    let c churn()
+    history.length = 3 and history[0].equals("entry0") and history[2].equals("entry2")
+}
+
+if session()
+    print "PASS"
+else
+    print "FAIL"
