@@ -79,6 +79,7 @@ define Emitter
         page_size: size_t           ; the stdlib's PAGE_SIZE; 0 = no page-fit check
         portable_simd: bool         ; --portable-simd: SIMD lowered target-neutrally (the seed)
         library_linkage: bool       ; a package archive: linkonce_odr bodies kept as weak_odr before -O
+        keep_main_frame: bool       ; the REPL: main's frame page is the session's, never released
     )
     {
         init()
@@ -93,6 +94,7 @@ define Emitter
             set page_size: 0
             set portable_simd: false
             set library_linkage: false
+            set keep_main_frame: false
         }
     }
 
@@ -2142,6 +2144,19 @@ define Emitter
             function_local_page
         }
 
+        ; The REPL (scalyc/repl.scaly) runs every entry as a `main` whose frame
+        ; page holds what the entry built -- the session's values, which the
+        ; next entry reads. That one frame is never released; every other
+        ; function's is, so a loop of calls does not leak a page each.
+        procedure keeps_frame(mutable this) returns bool
+        {
+            if config.keep_main_frame = false or current_function = null
+                return false
+            var len: size_t 0
+            let name LLVMGetValueName2(current_function, &len as pointer[size_t])
+            len = 4 and name <> null and String(name as pointer[const_char]).equals("main")
+        }
+
         ; Give the returns already emitted into the current function (before the
         ; frame existed) their release call.
         ;
@@ -2153,6 +2168,8 @@ define Emitter
         procedure patch_prior_returns(mutable this, slot: LLVMValueRef)
         {
             if slot = null
+                return
+            if this.keeps_frame()
                 return
             let rel_fn get_release_frame_fn()
             let void_ty LLVMVoidTypeInContext(context)
@@ -2229,6 +2246,8 @@ define Emitter
             ; (Scaly `if cond STMT` runs STMT when cond is TRUE, so this
             ; returns exactly when the frame IS null.)
             if function_local_frame = null
+                return
+            if this.keeps_frame()
                 return
             let slot function_local_frame
             let ptr_ty LLVMPointerTypeInContext(context, 0)
@@ -7074,6 +7093,20 @@ define Emitter
                         set user_param_count: func.input.unwrap().length
                     if tail_loop_eligible(func, llvm_func, user_param_count, page_offset + sret_offset)
                         open_tail_loop(func, llvm_func, entry_block, func.mangled_name, user_param_count, page_offset + sret_offset)
+
+                    ; The REPL's main (keeps_frame#): its frame is a HEAP page
+                    ; from the start, as a keeping parfor chunk's is -- a
+                    ; stack-bucket root kept past the return would break that
+                    ; bucket's LIFO order under the REPL's own frames.
+                    if this.keeps_frame()
+                    {
+                        let kf get_local_frame()
+                        let kp_ty LLVMPointerTypeInContext(context, 0)
+                        let kap_ty LLVMFunctionType(kp_ty, null as pointer[LLVMTypeRef], 0, 0)
+                        let kap_fn get_parfor_runtime_fn("_ZN4Page13allocate_pageEv", kap_ty)
+                        let kpage LLVMBuildCall2(builder, kap_ty, kap_fn, null as pointer[LLVMValueRef], 0, "repl.page")
+                        LLVMBuildStore(builder, kpage, kf)
+                    }
 
                     ; Bind user parameters as local variables, offset by
                     ; the sret + page-param slots when present.

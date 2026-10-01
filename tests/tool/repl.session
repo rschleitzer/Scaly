@@ -1,0 +1,24 @@
+1 + 2
+let x 40
+x + 2
+var n 1
+set n: n * 10
+n
+define Point(x: int, y: int)
+let p Point(3, 4)
+p.x * p.x + p.y * p.y
+var xs Array[int]()
+for i in 5
+{
+    xs.add(i * i)
+}
+xs[4]
+function twice(v: int) returns int
+    v * 2
+twice(x)
+let s "Hallo `p.x`"
+s
+0.1 + 0.2
+x + nope
+print "done"
+:values

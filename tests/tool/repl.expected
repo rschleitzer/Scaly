@@ -1,0 +1,24 @@
+Scaly -- an expression shows its value, let x ... keeps one. :help
+scaly> it: int = 3
+scaly> x: int = 40
+scaly> it: int = 42
+scaly> n: int = 1
+scaly> scaly> it: int = 10
+scaly> scaly> p: Point
+scaly> it: int = 25
+scaly> xs: Array[int]
+scaly>   ...>   ...>   ...> scaly> it: int = 16
+scaly>   ...> scaly> it: int = 80
+scaly> s: String = "Hallo 3"
+scaly> it: String = "Hallo 3"
+scaly> it: f64 = 0.30000000000000004
+scaly> x + nope
+    ^ unknown identifier: nope
+scaly> done
+scaly>   x: int
+  n: int
+  p: Point
+  xs: Array[int]
+  s: String
+  it: f64
+scaly> 

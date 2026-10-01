@@ -3,6 +3,7 @@ package scaly 0.1.0
 define scalyc {
     module compiler
     module tool
+    module repl
     module cli
 
     procedure test() returns int mutable modeler_error_count

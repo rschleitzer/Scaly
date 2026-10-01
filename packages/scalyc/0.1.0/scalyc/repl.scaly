@@ -1,0 +1,838 @@
+; repl.scaly - `scaly` with no arguments: the REPL (ROADMAP-public.md, stage R)
+;
+; Every entry runs as a whole program in the in-process JIT: the session's
+; definitions, then a `main` that binds the session's values, runs the entry,
+; and copies what the entry bound into the session's table. A value stays
+; where the entry built it -- on that entry's main frame page, which the
+; Emitter keeps (EmitterConfig.keep_main_frame) -- and a later entry reads and
+; writes it through a `ref[T]` onto the copy, so nothing runs twice. An
+; expression is bound to `it` and shown with its type. Each entry is planned
+; twice: once to learn the types of what it binds, once with the copies.
+;
+; Commands start with `:` -- no Scaly statement does.
+
+use scaly.containers.String
+use scaly.containers.StringBuilder
+use scaly.memory.Page
+use scaly.os.Console
+use scaly.os.File
+use scaly.os.Directory
+use scaly.fiber.Io
+use scalyc.cli
+use scalyc.tool
+use scalyc.compiler.Modeler
+use scalyc.compiler.Model.Program
+use scalyc.compiler.Planner
+use scalyc.compiler.Planner.PlannerDiagnostic
+use scalyc.compiler.PointerCensus
+use scalyc.compiler.WriteCensus
+use scalyc.compiler.Plan.*
+use scalyc.compiler.Emitter
+use scalyc.compiler.Emitter.EmitterConfig
+use scalyc.compiler.lexer.*
+use scalyc.compiler.parser.*
+use scalyc.compiler.Syntax.*
+
+; what an entry printed through stdio arrives before the REPL's own output
+function fflush(stream: pointer[void]) returns i32 extern
+
+; every entry is compiled as the program "repl.scaly"; its diagnostics are
+; mapped back onto the entry
+define REPL_SLOTS: int 4096
+
+; one value of the session: its name, its type as Scaly source, its slot in
+; the table
+define ReplValue
+(
+    name: String
+    type_text: String
+    slot: int
+)
+
+; one statement of an entry: where it stands in the entry's text, and the
+; name it binds ("" when it binds none)
+define ReplStatement
+(
+    start: size_t
+    end: size_t
+    binds: String
+    is_operation: bool
+)
+
+; what the first planning learned: per bound name its type, and whether the
+; entry ends in an expression with a value (then `it` is its type)
+define ReplProbe
+(
+    var names: Array[String]
+    var types: Array[String]
+    var it_type: String
+)
+
+define repl
+{
+    procedure main() returns int mutable modeler_error_count
+    {
+        Console.println "Scaly -- an expression shows its value, let x ... keeps one. :help"
+        var definitions StringBuilder()
+        var history StringBuilder()
+        var values Array[ReplValue]()
+        let table scaly_aligned_alloc(16, (8 * REPL_SLOTS) as i64) as pointer[pointer[void]]
+        var next_slot 0
+        repeat
+        {
+            var entry StringBuilder()
+            if repl.read_entry(&entry) = false
+            {
+                Console.println ""
+                return 0
+            }
+            ; an entry the parser stops on at its very end is not complete:
+            ; `function f(a: int) returns int` waits for its body
+            while repl.incomplete(entry.to_string())
+            {
+                if repl.read_more(&entry) = false
+                    break
+            }
+            let text entry.to_string()
+            if text.get_length() = 0
+                continue
+            if text.get(0) = 58
+            {
+                if repl.command(text, &definitions, &history, &values) = false
+                    return 0
+                continue
+            }
+            if next_slot >= REPL_SLOTS - 64
+            {
+                Console.println "the session is full: :save it, then start a new one"
+                continue
+            }
+            repl.run_entry(text, &definitions, &history, &values, table, &next_slot)
+        }
+        0
+    }
+
+    ; a line from stdin, more while braces, parentheses or brackets are open;
+    ; false at the end of the input
+    procedure read_entry(mutable out: ref[StringBuilder]) returns bool
+    {
+        var depth 0
+        var first true
+        repeat
+        {
+            if first
+                Console.print "scaly> "
+            else
+                Console.print "  ...> "
+            set first: false
+            var line StringBuilder()
+            var c: u8 0
+            var any false
+            repeat
+            {
+                let n Io.read(0, &c as pointer[void], 1)
+                if n <= 0
+                {
+                    if any = false and out.get_length() = 0
+                        return false
+                    break
+                }
+                set any: true
+                if c = 10
+                    break
+                line.append(c as char)
+            }
+            let l line.to_string()
+            if out.get_length() > 0
+                out.append("\n" as char)
+            out.append(l)
+            set depth: depth + repl.open_count(l)
+            if depth <= 0
+                return true
+        }
+        true
+    }
+
+    ; does the parser stop at the very end of the text -- more is to come
+    procedure incomplete(text: String) returns bool
+    {
+        if text.get_length() = 0 or text.get(0) = 58
+            return false
+        var p Parser(text)
+        choose p.parse_program()
+            when err: Error
+            {
+                choose err
+                    when i: Invalid
+                        return i.start >= text.get_length()
+                    when d: Different
+                        return false
+            }
+            when program: Success
+                return false
+        false
+    }
+
+    ; one more line onto an entry; false at the end of input or on an empty
+    ; line (which gives up on the entry)
+    procedure read_more(mutable out: ref[StringBuilder]) returns bool
+    {
+        Console.print "  ...> "
+        var line StringBuilder()
+        var c: u8 0
+        repeat
+        {
+            let n Io.read(0, &c as pointer[void], 1)
+            if n <= 0
+                return false
+            if c = 10
+                break
+            line.append(c as char)
+        }
+        if line.get_length() = 0
+            return false
+        out.append("\n" as char)
+        out.append(line.to_string())
+        true
+    }
+
+    ; braces, parentheses and brackets a line opens minus those it closes,
+    ; outside strings and comments
+    function open_count(line: String) returns int
+    {
+        var d 0
+        var in_string false
+        var i: size_t 0
+        let n line.get_length()
+        while i < n
+        {
+            let c line.get i
+            if in_string
+            {
+                if c = 92
+                    set i: i + 1
+                else if c = 34
+                    set in_string: false
+            }
+            else
+            {
+                if c = 34
+                    set in_string: true
+                else if c = 59
+                    return d
+                else if c = 123 or c = 40 or c = 91
+                    set d: d + 1
+                else if c = 125 or c = 41 or c = 93
+                    set d: d - 1
+            }
+            set i: i + 1
+        }
+        d
+    }
+
+    ; `:help`, `:quit`, `:values`, `:defs`, `:save <dir>`; false ends the session
+    procedure command(text: String, mutable definitions: ref[StringBuilder], mutable history: ref[StringBuilder], values: ref[Array[ReplValue]]) returns bool
+    {
+        if text.equals(":quit") or text.equals(":q")
+            return false
+        if text.equals(":help") or text.equals(":h")
+        {
+            Console.println "  <expression>      evaluate it, show it: type = value"
+            Console.println "  let x <expr>      keep a value for the entries that follow (var to change it)"
+            Console.println "  define / function / procedure / use / package   add to the session's definitions"
+            Console.println "  :values           the values the session keeps"
+            Console.println "  :defs             the session's definitions"
+            Console.println "  :save <dir>       write the session as a program, <dir>/main.scaly"
+            Console.println "  :quit             end the session (Ctrl-D too)"
+            return true
+        }
+        if text.equals(":values")
+        {
+            var i: size_t 0
+            while i < values.length
+            {
+                let v values.at i
+                set i: i + 1
+                if repl.shadowed(values, i, v.name)
+                    continue
+                let line "  `v.name`: `v.type_text`"
+                Console.println(line.to_c_string())
+            }
+            return true
+        }
+        if text.equals(":defs")
+        {
+            let d definitions.to_string()
+            Console.println(d.to_c_string())
+            return true
+        }
+        if text.starts_with(":save")
+        {
+            var dir String("session")
+            if text.get_length() > 6
+                set dir: text.substring(6, text.get_length() - 6)
+            if tool.ensure_directory(dir) = false
+            {
+                let msg "cannot create `dir`"
+                Console.println(msg.to_c_string())
+                return true
+            }
+            var program StringBuilder()
+            program.append("; written by the Scaly REPL (:save)\n")
+            program.append(definitions.to_string())
+            program.append("\n")
+            program.append(history.to_string())
+            let file "`dir`/main.scaly"
+            if File.write_from_string(file, program.to_string())
+            {
+                let msg "wrote `file` -- scaly run `file`"
+                Console.println(msg.to_c_string())
+            }
+            else
+            {
+                let msg "cannot write `file`"
+                Console.println(msg.to_c_string())
+            }
+            return true
+        }
+        let msg "unknown command `text` -- :help"
+        Console.println(msg.to_c_string())
+        true
+    }
+
+    ; the statements of an entry, with the names they bind
+    procedure entry_statements(syntax: ProgramSyntax, mutable out: ref[Array[ReplStatement]])
+    {
+        if syntax.statements = null
+            return
+        let stmts (*syntax.statements)
+        var i: size_t 0
+        while i < stmts.length
+        {
+            let sp stmts.get i
+            set i: i + 1
+            if sp = null
+                continue
+            choose (*sp)
+                when e: EmptySyntax
+                    0
+                when o: OperationSyntax
+                    out.add(ReplStatement(o.start, o.end, String(), true))
+                when l: LetSyntax
+                    out.add(ReplStatement(l.start, l.end, String(l.binding.name), false))
+                when v: VarSyntax
+                    out.add(ReplStatement(v.start, v.end, String(v.binding.name), false))
+                when m: MutableSyntax
+                    out.add(ReplStatement(m.start, m.end, String(), false))
+                when st: SetSyntax
+                    out.add(ReplStatement(st.start, st.end, String(), false))
+                when c: ContinueSyntax
+                    out.add(ReplStatement(c.start, c.end, String(), false))
+                when b: BreakSyntax
+                    out.add(ReplStatement(b.start, b.end, String(), false))
+                when r: ReturnSyntax
+                    out.add(ReplStatement(r.start, r.end, String(), false))
+                when t: ThrowSyntax
+                    out.add(ReplStatement(t.start, t.end, String(), false))
+        }
+    }
+
+    function binds_name(stmts: ref[Array[ReplStatement]], name: String) returns bool
+    {
+        var i: size_t 0
+        while i < stmts.length
+        {
+            let s stmts.at i
+            if s.binds.equals(name)
+                return true
+            set i: i + 1
+        }
+        false
+    }
+
+    ; a value a later one of the same name replaced
+    function shadowed(values: ref[Array[ReplValue]], from: size_t, name: String) returns bool
+    {
+        var i from
+        while i < values.length
+        {
+            let v values.at i
+            if v.name.equals(name)
+                return true
+            set i: i + 1
+        }
+        false
+    }
+
+    ; the program an entry runs as: the definitions, then main -- the table,
+    ; the session's values (those the entry does not bind anew), the entry's
+    ; statements, and `tail` (the copies, on the second planning)
+    procedure compose(definitions: String, values: ref[Array[ReplValue]], stmts: ref[Array[ReplStatement]], body: String, tail: String, probing: bool, mutable entry_at: ref[size_t]) returns String
+    {
+        var sb StringBuilder()
+        sb.append(definitions)
+        ; the probe's main returns nothing and ends with the entry: a last
+        ; statement's value is no discarded result, and its type is planned
+        if probing
+            sb.append("\nprocedure main(argc: int, argv: pointer[pointer[const_char]])\n{\n")
+        else
+            sb.append("\nprocedure main(argc: int, argv: pointer[pointer[const_char]]) returns int\n{\n")
+        sb.append("    let repl_table argv as pointer[pointer[void]]\n")
+        var i: size_t 0
+        while i < values.length
+        {
+            let v values.at i
+            set i: i + 1
+            if repl.binds_name(stmts, v.name) or repl.shadowed(values, i, v.name)
+                continue
+            sb.append("    let `v.name`: ref[`v.type_text`] (*(repl_table + `v.slot`)) as ref[`v.type_text`]\n")
+        }
+        set entry_at: sb.get_length()
+        sb.append(body)
+        sb.append("\n")
+        sb.append(tail)
+        if probing
+            sb.append("}\n")
+        else
+            sb.append("    0\n}\n")
+        sb.to_string()
+    }
+
+    ; print a diagnostic: inside the entry with its line and a caret, else
+    ; as the compiler said it
+    procedure report(source: String, at: size_t, entry_at: size_t, entry: String, message: String)
+    {
+        if at >= entry_at and at <= entry_at + entry.get_length()
+        {
+            let off at - entry_at
+            var line_start: size_t 0
+            var line_no 1
+            var i: size_t 0
+            while i < off
+            {
+                if entry.get(i) = 10
+                {
+                    set line_start: i + 1
+                    set line_no: line_no + 1
+                }
+                set i: i + 1
+            }
+            var line_end line_start
+            while line_end < entry.get_length() and entry.get(line_end) <> 10
+                set line_end: line_end + 1
+            let text entry.substring(line_start, line_end - line_start)
+            Console.println(text.to_c_string())
+            var caret StringBuilder()
+            var k line_start
+            while k < off
+            {
+                caret.append(" ")
+                set k: k + 1
+            }
+            caret.append("^ ")
+            caret.append(message)
+            let c caret.to_string()
+            Console.println(c.to_c_string())
+            return
+        }
+        let m "error: `message`"
+        Console.println(m.to_c_string())
+    }
+
+    ; compile an entry's program: parse, model, plan, the purity gate; then
+    ; either learn the types (`probe`) or emit it and run it in the JIT with the
+    ; session's table as its argv. False after printing what is wrong. One
+    ; procedure: the plan lives on the pages of the planner made here.
+    procedure process(source: String, entry_at: size_t, entry: String, mutable probe: ref[ReplProbe], run: bool, mutable table: pointer[pointer[void]]) returns bool mutable modeler_error_count
+    {
+        var p Parser(source)
+        var syntax: ProgramSyntax
+        choose p.parse_program()
+            when err: Error
+            {
+                choose err
+                    when i: Invalid
+                        repl.report(source, i.start, entry_at, entry, i.message)
+                    when d: Different
+                        Console.println "error: cannot read this"
+                return false
+            }
+            when program: Success
+                set syntax: program
+        var model Modeler.build_program(String("repl.scaly"), "repl", syntax, true)
+        if Modeler.had_errors()
+            return false
+        var planner Planner.Planner(String("repl.scaly"))
+        cli.register_packages(&planner, &model)
+        let plan planner.plan_program model
+        if plan = null
+        {
+            Console.println "error: the planner gave up"
+            return false
+        }
+        if planner.has_diagnostics()
+        {
+            var di: size_t 0
+            while di < planner.diagnostics.length
+            {
+                let d planner.diagnostics.at di
+                repl.report(source, d.start, entry_at, entry, d.message)
+                set di: di + 1
+            }
+            return false
+        }
+        var census PointerCensus.PointerCensus()
+        var gate WriteCensus.WriteCensus()
+        set gate.check_mode: true
+        set gate.diagnostics: true
+        gate.analyze(plan, &model, &census)
+        if gate.n_violations > 0
+        {
+            var vi: size_t 0
+            while vi < gate.report_texts.length
+            {
+                let t gate.report_texts.at vi
+                let m "error: `t`"
+                Console.println(m.to_c_string())
+                set vi: vi + 1
+            }
+            return false
+        }
+        gate.mark_stub_purity(plan)
+        if run = false
+        {
+            repl.learn(plan, probe)
+            return true
+        }
+        var config EmitterConfig()
+        set config.emit_debug_info: false
+        set config.keep_main_frame: true
+        var emitter Emitter.Emitter(config)
+        var dep_objs Array[String]()
+        var dep_syms Array[String]()
+        if cli.compile_jit_dependencies(&model, String("repl.scaly"), &dep_objs, &dep_syms) = false
+            return false
+        emitter.jit_run(plan, "repl", "main", &dep_objs, &dep_syms, 0, table as pointer[pointer[char]], null, null)
+        fflush(null)
+        true
+    }
+
+    ; what the first planning learned: the types of the names the entry binds,
+    ; and `it`'s when the entry ends in an expression with a value
+    procedure learn(plan: ref[Plan], mutable out: ref[ReplProbe])
+    {
+        if plan.functions = null
+            return
+        for f in plan.functions
+        {
+            if f.name.equals("main") and f.file.equals(String("repl.scaly"))
+            {
+                choose f.impl
+                    when a: PlannedAction
+                    {
+                        if a.source <> null and a.source.length > 0
+                        {
+                            let op a.source.at 0
+                            choose op.expr
+                                when b: PlannedBlock
+                                {
+                                    if b.statements <> null
+                                        repl.learn_statements(b.statements, out)
+                                }
+                                else
+                                    0
+                        }
+                    }
+                    else
+                        0
+            }
+        }
+    }
+
+    procedure learn_statements(body: ref[Vector[PlannedStatement]], mutable out: ref[ReplProbe])
+    {
+        var last_type String()
+        var last_is_action false
+        var i: size_t 0
+        while i < body.length
+        {
+            let s body.at i
+            set i: i + 1
+            set last_is_action: false
+            choose s
+                when b: PlannedBinding
+                {
+                    if b.binding_item.name <> null
+                    {
+                        let name String(*b.binding_item.name)
+                        var t String()
+                        if b.binding_item.item_type <> null
+                            set t: Planner.get_readable_name(*b.binding_item.item_type)
+                        else if b.operation <> null and b.operation.length > 0
+                        {
+                            let last b.operation.at(b.operation.length - 1)
+                            set t: Planner.get_readable_name(last.result_type)
+                        }
+                        let page Page.get(out)
+                        out.names.add(String^page(name))
+                        out.types.add(String^page(t))
+                    }
+                }
+                when a: PlannedAction
+                {
+                    if a.target = null or a.target.length = 0
+                    {
+                        set last_is_action: true
+                        set last_type: Planner.get_readable_name(a.result_type)
+                    }
+                }
+                else
+                    0
+        }
+        if last_is_action and last_type.get_length() > 0 and last_type.equals("void") = false
+        {
+            ; `n` of a session value is a ref[int]: `it` holds the int
+            let page Page.get(out)
+            if last_type.starts_with("ref[") and last_type.ends_with("]")
+                set out.it_type: String^page(last_type.substring(4, last_type.get_length() - 5))
+            else
+                set out.it_type: String^page(last_type)
+        }
+    }
+
+    procedure type_of(probe: ref[ReplProbe], name: String) returns String
+    {
+        var i probe.names.length
+        while i > 0
+        {
+            set i: i - 1
+            let n probe.names.at i
+            if n.equals(name)
+            {
+                let t probe.types.at i
+                return String(t)
+            }
+        }
+        String()
+    }
+
+    ; one entry: declarations join the definitions, statements run
+    procedure run_entry(text: String, mutable definitions: ref[StringBuilder], mutable history: ref[StringBuilder], mutable values: ref[Array[ReplValue]], mutable table: pointer[pointer[void]], mutable next_slot: ref[int]) mutable modeler_error_count
+    {
+        var p Parser(text)
+        var syntax: ProgramSyntax
+        choose p.parse_program()
+            when err: Error
+            {
+                choose err
+                    when i: Invalid
+                        repl.report(text, i.start, 0, text, i.message)
+                    when d: Different
+                        Console.println "error: cannot read this"
+                return
+            }
+            when program: Success
+                set syntax: program
+        var stmts Array[ReplStatement]()
+        repl.entry_statements(syntax, &stmts)
+        var decl_end text.get_length()
+        if stmts.length > 0
+        {
+            let s0 stmts.at 0
+            set decl_end: s0.start
+        }
+        let decls text.substring(0, decl_end)
+        let body text.substring(decl_end, text.get_length() - decl_end)
+        var defs StringBuilder()
+        defs.append(definitions.to_string())
+        if decls.get_length() > 0
+        {
+            defs.append(decls)
+            defs.append("\n")
+        }
+        let all_defs defs.to_string()
+
+        ; first planning: the types
+        var entry_at: size_t 0
+        let probe_source repl.compose(all_defs, values, &stmts, body, String(), true, &entry_at)
+        var probe ReplProbe(Array[String](), Array[String](), String())
+        if repl.process(probe_source, entry_at, body, &probe, false, table) = false
+            return
+        if stmts.length = 0
+        {
+            definitions.append(decls)
+            definitions.append("\n")
+            return
+        }
+
+        ; second planning: the entry with its copies into the table
+        var run_body StringBuilder()
+        var shown Array[String]()
+        var si: size_t 0
+        while si < stmts.length
+        {
+            let s stmts.at si
+            set si: si + 1
+            let piece text.substring(s.start, s.end - s.start)
+            ; print and println answer the bytes they wrote: not a value to show
+            let printing piece.starts_with("print") or piece.starts_with("Console.print")
+            if si = stmts.length and s.is_operation and probe.it_type.get_length() > 0 and printing = false
+            {
+                run_body.append("let it: `probe.it_type` ")
+                run_body.append(piece)
+                run_body.append("\n")
+                shown.add(String("it"))
+            }
+            else
+            {
+                run_body.append(piece)
+                run_body.append("\n")
+                if s.binds.get_length() > 0
+                    shown.add(String(s.binds))
+            }
+        }
+        var tail StringBuilder()
+        tail.append("    let repl_page Page.allocate_page()\n")
+        var slots Array[int]()
+        var types Array[String]()
+        var ki: size_t 0
+        while ki < shown.length
+        {
+            let name shown.at ki
+            set ki: ki + 1
+            var t String(probe.it_type)
+            if name.equals("it") = false
+                set t: repl.type_of(&probe, name)
+            let slot: int next_slot
+            set next_slot: slot + 1
+            slots.add(slot)
+            types.add(String(t))
+            ; through a var: `&x` of a let-bound scalar is no address (it has
+            ; no slot), a var always has one
+            tail.append("    var repl_value_`slot`: `t` `name`\n")
+            ; the copy goes onto a heap PAGE of the entry's own, never released:
+            ; an Array or a StringBuilder finds its page from its own address
+            ; when it grows (`xs.add` in a later entry)
+            tail.append("    let repl_cell_`slot` repl_page.allocate(sizeof `t`, 8)\n")
+            tail.append("    memcpy(repl_cell_`slot`, &repl_value_`slot` as pointer[void], sizeof `t`)\n")
+            tail.append("    set *(repl_table + `slot`): repl_cell_`slot`\n")
+        }
+        var run_at: size_t 0
+        let run_text run_body.to_string()
+        let run_source repl.compose(all_defs, values, &stmts, run_text, tail.to_string(), false, &run_at)
+        var unused ReplProbe(Array[String](), Array[String](), String())
+        if repl.process(run_source, run_at, run_text, &unused, true, table) = false
+            return
+
+        ; the session keeps what the entry bound; `it` is shown
+        if decls.get_length() > 0
+        {
+            definitions.append(decls)
+            definitions.append("\n")
+        }
+        var hi: size_t 0
+        while hi < stmts.length
+        {
+            let s stmts.at hi
+            set hi: hi + 1
+            history.append(text.substring(s.start, s.end - s.start))
+            history.append("\n")
+        }
+        var vi: size_t 0
+        while vi < shown.length
+        {
+            let name shown.at vi
+            let slot: int slots.at vi
+            let t types.at vi
+            set vi: vi + 1
+            values.add(ReplValue(String(name), String(t), slot))
+            let shown_text repl.show(name, t, *(table + slot))
+            Console.println(shown_text.to_c_string())
+        }
+    }
+
+    ; `name: type = value` -- a value the REPL knows how to read, else the type
+    procedure show(name: String, t: String, cell: pointer[void]) returns String
+    {
+        var sb StringBuilder()
+        sb.append(name)
+        sb.append(": ")
+        sb.append(t)
+        match t
+            case "int" case "i64"
+            {
+                sb.append(" = ")
+                sb.append(*(cell as pointer[int]))
+            }
+            case "i32"
+            {
+                sb.append(" = ")
+                sb.append((*(cell as pointer[i32])) as int)
+            }
+            case "i16"
+            {
+                sb.append(" = ")
+                sb.append((*(cell as pointer[i16])) as int)
+            }
+            case "i8"
+            {
+                sb.append(" = ")
+                sb.append((*(cell as pointer[i8])) as int)
+            }
+            case "u64" case "size_t"
+            {
+                sb.append(" = ")
+                sb.append(*(cell as pointer[size_t]))
+            }
+            case "u32"
+            {
+                sb.append(" = ")
+                sb.append((*(cell as pointer[u32])) as size_t)
+            }
+            case "u16"
+            {
+                sb.append(" = ")
+                sb.append((*(cell as pointer[u16])) as size_t)
+            }
+            case "u8"
+            {
+                sb.append(" = ")
+                sb.append((*(cell as pointer[u8])) as size_t)
+            }
+            case "bool"
+            {
+                sb.append(" = ")
+                sb.append(*(cell as pointer[bool]))
+            }
+            case "char"
+            {
+                sb.append(" = \"")
+                sb.append(*(cell as pointer[char]))
+                sb.append("\"")
+            }
+            case "double" case "f64"
+            {
+                sb.append(" = ")
+                sb.append(repl.double_text(*(cell as pointer[double])))
+            }
+            case "float" case "f32"
+            {
+                sb.append(" = ")
+                sb.append(repl.double_text((*(cell as pointer[float])) as double))
+            }
+            case "String"
+            {
+                sb.append(" = \"")
+                sb.append(cell as ref[String])
+                sb.append("\"")
+            }
+        sb.to_string()
+    }
+
+    procedure double_text(value: double) returns String
+    {
+        var buf char[40]
+        let n scaly_eio_format_double(&buf[0] as pointer[char], 40, value)
+        String(&buf[0] as pointer[const_char])
+    }
+}

@@ -26,6 +26,7 @@ function unlink(path: pointer[const_char]) returns i32 extern
 ; Compiler module imports
 use scalyc.compiler.Modeler
 use scalyc.tool
+use scalyc.repl
 use scalyc.compiler.Model.Program
 use scalyc.compiler.Planner
 use scalyc.compiler.TaskPlanner
@@ -1830,8 +1831,11 @@ define cli
     ; Main entry point
     procedure main(argc: int, mutable argv: pointer[pointer[char]]) returns int mutable modeler_error_count
     {
-        ; the one tool's commands (ROADMAP-public.md): `scaly run file args`,
-        ; `scaly build file [options]`; anything else is the compiler's flags
+        ; the one tool's commands (ROADMAP-public.md): `scaly` alone is the
+        ; REPL, `scaly run file args`, `scaly build file [options]`, `scaly
+        ; test file [filter]`; anything else is the compiler's flags
+        if argc = 1
+            return repl.main()
         if argc >= 2
         {
             let command String(*(argv + 1))

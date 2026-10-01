@@ -135,6 +135,9 @@ function scaly_eio_dir_close(dir: pointer[OpaqueDir]) returns i32 extern
 ; load a C library into the process for the JIT's lookup (eio.c: RTLD_GLOBAL
 ; differs per libc, Windows has LoadLibrary); 0 loaded, -1 not
 function scaly_eio_load_library(path: pointer[const_char]) returns i32 extern
+; a double as the shortest %g text that reads back to it (eio.c: snprintf is
+; variadic); the length written
+procedure scaly_eio_format_double(mutable buf: pointer[char], cap: size_t, value: double) returns i32 extern
 
 ; File system functions (unistd.h)
 function access(path: pointer[const_char], mode: int) returns i32 extern

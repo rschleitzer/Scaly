@@ -1,0 +1,131 @@
+; repl.scaly - `scaly` with no arguments: the REPL (ROADMAP-public.md, stage R)
+;
+; Every entry runs as a whole program in the in-process JIT: the session's
+; definitions, then a `main` that binds the session's values, runs the entry,
+; and copies what the entry bound into the session's table. A value stays
+; where the entry built it -- on that entry's main frame page, which the
+; Emitter keeps (EmitterConfig.keep_main_frame) -- and a later entry reads and
+; writes it through a `ref[T]` onto the copy, so nothing runs twice. An
+; expression is bound to `it` and shown with its type. Each entry is planned
+; twice: once to learn the types of what it binds, once with the copies.
+;
+; Commands start with `:` -- no Scaly statement does.
+
+use scaly.containers.String
+use scaly.containers.StringBuilder
+use scaly.memory.Page
+use scaly.os.Console
+use scaly.os.File
+use scaly.os.Directory
+use scaly.fiber.Io
+use scalyc.cli
+use scalyc.tool
+use scalyc.compiler.Modeler
+use scalyc.compiler.Model.Program
+use scalyc.compiler.Planner
+use scalyc.compiler.Planner.PlannerDiagnostic
+use scalyc.compiler.PointerCensus
+use scalyc.compiler.WriteCensus
+use scalyc.compiler.Plan.*
+use scalyc.compiler.Emitter
+use scalyc.compiler.Emitter.EmitterConfig
+use scalyc.compiler.lexer.*
+use scalyc.compiler.parser.*
+use scalyc.compiler.Syntax.*
+
+; what an entry printed through stdio arrives before the REPL's own output
+function fflush(stream: pointer[void]) returns i32 extern
+
+; every entry is compiled as the program "repl.scaly"; its diagnostics are
+; mapped back onto the entry
+define REPL_SLOTS: int 4096
+
+; one value of the session: its name, its type as Scaly source, its slot in
+; the table
+define ReplValue
+(
+    name: String
+    type_text: String
+    slot: int
+)
+
+; one statement of an entry: where it stands in the entry's text, and the
+; name it binds ("" when it binds none)
+define ReplStatement
+(
+    start: size_t
+    end: size_t
+    binds: String
+    is_operation: bool
+)
+
+; what the first planning learned: per bound name its type, and whether the
+; entry ends in an expression with a value (then `it` is its type)
+define ReplProbe
+@resident true @inplace true (
+    var names: Array[String]
+    var types: Array[String]
+    var it_type: String
+)
+
+define repl
+{
+    procedure main() @ret_nonlocal true @deep true returns int io mutable modeler_error_count reads modeler_error_count linked
+
+    ; a line from stdin, more while braces, parentheses or brackets are open;
+    ; false at the end of the input
+    procedure read_entry(mutable out: ref[StringBuilder]) @ret_nonlocal true @deep true returns bool io linked
+
+    ; does the parser stop at the very end of the text -- more is to come
+    procedure incomplete(text: String) @deep true returns bool linked
+
+    ; one more line onto an entry; false at the end of input or on an empty
+    ; line (which gives up on the entry)
+    procedure read_more(mutable out: ref[StringBuilder]) @ret_nonlocal true @deep true returns bool io linked
+
+    ; braces, parentheses and brackets a line opens minus those it closes,
+    ; outside strings and comments
+    function open_count(line: String) @ret_nonlocal true @deep true returns int linked
+
+    ; `:help`, `:quit`, `:values`, `:defs`, `:save <dir>`; false ends the session
+    procedure command(text: String, mutable definitions: ref[StringBuilder], mutable history: ref[StringBuilder], values: ref[Array[ReplValue]]) @ret_nonlocal true @deep true returns bool io linked
+
+    ; the statements of an entry, with the names they bind
+    procedure entry_statements(syntax: ProgramSyntax, mutable out: ref[Array[ReplStatement]]) @page true @direct true @deep true linked
+
+    function binds_name(stmts: ref[Array[ReplStatement]], name: String) @ret_nonlocal true @deep true returns bool linked
+
+    ; a value a later one of the same name replaced
+    function shadowed(values: ref[Array[ReplValue]], from: size_t, name: String) @ret_nonlocal true @deep true returns bool linked
+
+    ; the program an entry runs as: the definitions, then main -- the table,
+    ; the session's values (those the entry does not bind anew), the entry's
+    ; statements, and `tail` (the copies, on the second planning)
+    procedure compose(definitions: String, values: ref[Array[ReplValue]], stmts: ref[Array[ReplStatement]], body: String, tail: String, probing: bool, mutable entry_at: ref[size_t]) @page true @direct true @ret_caller true @deep true returns String linked
+
+    ; print a diagnostic: inside the entry with its line and a caret, else
+    ; as the compiler said it
+    procedure report(source: String, at: size_t, entry_at: size_t, entry: String, message: String) @deep true io linked
+
+    ; compile an entry's program: parse, model, plan, the purity gate; then
+    ; either learn the types (`probe`) or emit it and run it in the JIT with the
+    ; session's table as its argv. False after printing what is wrong. One
+    ; procedure: the plan lives on the pages of the planner made here.
+    procedure process(source: String, entry_at: size_t, entry: String, mutable probe: ref[ReplProbe], run: bool, mutable table: pointer[pointer[void]]) @ret_nonlocal true @deep true returns bool io mutable modeler_error_count reads modeler_error_count linked
+
+    ; what the first planning learned: the types of the names the entry binds,
+    ; and `it`'s when the entry ends in an expression with a value
+    procedure learn(plan: ref[Plan], mutable out: ref[ReplProbe]) @deep true linked
+
+    procedure learn_statements(body: ref[Vector[PlannedStatement]], mutable out: ref[ReplProbe]) @deep true @deep_pageof_2 true linked
+
+    procedure type_of(probe: ref[ReplProbe], name: String) @page true @direct true @ret_caller true @deep true returns String linked
+
+    ; one entry: declarations join the definitions, statements run
+    procedure run_entry(text: String, mutable definitions: ref[StringBuilder], mutable history: ref[StringBuilder], mutable values: ref[Array[ReplValue]], mutable table: pointer[pointer[void]], mutable next_slot: ref[int]) @page true @direct true @deep true io mutable modeler_error_count reads modeler_error_count linked
+
+    ; `name: type = value` -- a value the REPL knows how to read, else the type
+    procedure show(name: String, t: String, cell: pointer[void]) @page true @direct true @ret_caller true @deep true returns String io linked
+
+    procedure double_text(value: double) @page true @direct true @ret_caller true @deep true returns String io linked
+}

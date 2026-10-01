@@ -1149,6 +1149,27 @@ int scaly_eio_load_library(const char* path)
     return LoadLibraryA(path) != NULL ? 0 : -1;
 }
 
+/* ---- A DOUBLE AS TEXT (the Windows twin of eio.c's), shim category (b) -----------------------------------
+ *
+ * snprintf is variadic, and a fixed-prototype extern drops variadic arguments
+ * on arm64. The REPL shows a floating-point value the way a reader expects
+ * it: the SHORTEST %g form that reads back to the same double (0.1, not
+ * 0.10000000000000001). Answers the length written, at most cap - 1.
+ */
+int scaly_eio_format_double(char* buf, size_t cap, double value)
+{
+    int precision;
+    int n = 0;
+    for (precision = 1; precision <= 17; precision++) {
+        n = snprintf(buf, cap, "%.*g", precision, value);
+        if (n < 0 || (size_t)n >= cap)
+            return 0;
+        if (strtod(buf, NULL) == value)
+            break;
+    }
+    return n;
+}
+
 #else
 typedef int scaly_eio_win_not_needed_on_this_target;
 #endif /* _WIN32 */

@@ -14,6 +14,10 @@
 #              scaly come in through https's own declarations
 #   http       every tests/http program built with `scaly build` and run
 #              under poison against its "; Expected:" line
+#   repl       `scaly` alone: tests/tool/repl.session piped in under poison
+#              gives tests/tool/repl.expected byte for byte -- values kept,
+#              a var changed by `set`, a record, an Array grown in a loop, a
+#              braceless function, a float, an error with its caret
 #   test       `scaly test`: tests/tool/sums.scaly names its failing test and
 #              answers rc 1, a filter selects, the file's own statements do
 #              not run; opensp's forty test functions pass
@@ -105,6 +109,16 @@ if scaly_jit_available 2>/dev/null; then
   [ "$rc" = 0 ] && [ "$out" = "$(printf 'test test_sum ... ok\n1 passed')" ] && ok || bad "test filter: rc=$rc '$out'"
   out=$("$BIN" test packages/opensp/0.1.0/opensp.scaly 2>&1); rc=$?
   [ "$rc" = 0 ] && echo "$out" | grep -q '^40 passed$' && ok || bad "test opensp: rc=$rc $(echo "$out" | tail -1)"
+fi
+
+# repl
+if scaly_jit_available 2>/dev/null; then
+  SCALY_POISON=1 "$BIN" < tests/tool/repl.session > "$TMP/repl.out" 2>&1
+  if cmp -s "$TMP/repl.out" tests/tool/repl.expected; then
+    ok
+  else
+    bad "repl: $(diff tests/tool/repl.expected "$TMP/repl.out" | head -5 | tr '\n' '|')"
+  fi
 fi
 
 echo "tool: $pass PASS, $fail FAIL"

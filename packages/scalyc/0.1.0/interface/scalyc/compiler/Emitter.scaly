@@ -79,6 +79,7 @@ define Emitter
         page_size: size_t           ; the stdlib's PAGE_SIZE; 0 = no page-fit check
         portable_simd: bool         ; --portable-simd: SIMD lowered target-neutrally (the seed)
         library_linkage: bool       ; a package archive: linkonce_odr bodies kept as weak_odr before -O
+        keep_main_frame: bool       ; the REPL: main's frame page is the session's, never released
     )
     {
         init() linked
@@ -775,6 +776,12 @@ define Emitter
         ; asking for a page. The runtime helper is small enough that opt/LTO
         ; inlines its fast path; an -O0 build keeps one call per demand.
         procedure get_or_create_local_page(mutable this) @direct true @ret_param_0 true @deep true returns LLVMValueRef linked
+
+        ; The REPL (scalyc/repl.scaly) runs every entry as a `main` whose frame
+        ; page holds what the entry built -- the session's values, which the
+        ; next entry reads. That one frame is never released; every other
+        ; function's is, so a loop of calls does not leak a page each.
+        procedure keeps_frame(mutable this) @ret_caller true @deep true returns bool linked
 
         ; Give the returns already emitted into the current function (before the
         ; frame existed) their release call.

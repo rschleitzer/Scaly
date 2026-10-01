@@ -57,6 +57,12 @@ if [ "$(uname -s)" = "Linux" ]; then
     p=$(command -v "$c" 2>/dev/null || true)
     [ -n "$p" ] && { LINKARGS+=("-fuse-ld=$p"); break; }
   done
+  # Export the runtime to the in-process JIT (`--jit`, `scaly run`/`test`): an
+  # ELF executable puts a global in .dynsym, where ORC's dlsym looks, only when
+  # told to -- as tools/build-from-seed.sh does. Without it every JIT lookup of
+  # a runtime symbol failed on Linux (the opensp suite, 2026-10-01: "Failed to
+  # materialize symbols", 40 of 40), while macOS exports by default.
+  LINKARGS+=("-rdynamic")
 fi
 
 mkdir -p "$OUT"

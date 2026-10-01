@@ -26,6 +26,7 @@ function unlink(path: pointer[const_char]) returns i32 extern
 ; Compiler module imports
 use scalyc.compiler.Modeler
 use scalyc.tool
+use scalyc.repl
 use scalyc.compiler.Model.Program
 use scalyc.compiler.Planner
 use scalyc.compiler.TaskPlanner
