@@ -328,7 +328,7 @@ define tool
     ; and assembly files its target takes. `names` and `roots` pair a
     ; package's name with its root file. False when one of them does not build;
     ; what went wrong is printed where it happened.
-    procedure package_objects(names: ref[Array[String]], roots: ref[Array[String]], program_file: String, given_triple: String, release: bool, mutable objects: ref[Array[String]], mutable bitcode: ref[Array[String]], mutable link_flags: ref[StringBuilder]) returns bool mutable modeler_error_count
+    procedure package_objects(names: ref[Array[String]], roots: ref[Array[String]], program_file: String, given_triple: String, cpu: String, release: bool, mutable objects: ref[Array[String]], mutable bitcode: ref[Array[String]], mutable link_flags: ref[StringBuilder]) returns bool mutable modeler_error_count
     {
         var include_flags StringBuilder()
         tool.libraries_of(names, roots, program_file, link_flags, &include_flags)
@@ -357,7 +357,9 @@ define tool
                 set version: dir.substring((vslash + 1) as size_t, dir.get_length() - ((vslash + 1) as size_t))
             var files Array[String]()
             tool.package_files(dir, "", &files)
-            let key tool.package_key(dir, &files, triple, "O2")
+            ; -mcpu is part of what a package is compiled for: it reaches the
+            ; IR (a SIMD operation's target form, every function's attribute)
+            let key tool.package_key(dir, &files, triple, "O2`cpu`")
             let base "`cache`/`np`-`version`-`tool.hex16(key)`"
             let obj "`base`.o"
             ; --release: the package as unoptimised bitcode, which the program's
@@ -377,6 +379,7 @@ define tool
                     set bo.no_prelude: true
                     set bo.no_tests: true
                     set bo.target_triple: String(given_triple)
+                    set bo.target_cpu: String(cpu)
                     if cli.run(bo) <> 0
                     {
                         Console.println("Error: package `np` did not build")
@@ -402,6 +405,7 @@ define tool
                 set o.opt_level: 2
                 set o.library: true
                 set o.target_triple: String(given_triple)
+                set o.target_cpu: String(cpu)
                 if cli.run(o) <> 0
                 {
                     Console.println("Error: package `np` did not build")

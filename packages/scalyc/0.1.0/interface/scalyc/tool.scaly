@@ -98,7 +98,7 @@ define tool
     ; and assembly files its target takes. `names` and `roots` pair a
     ; package's name with its root file. False when one of them does not build;
     ; what went wrong is printed where it happened.
-    procedure package_objects(names: ref[Array[String]], roots: ref[Array[String]], program_file: String, given_triple: String, release: bool, mutable objects: ref[Array[String]], mutable bitcode: ref[Array[String]], mutable link_flags: ref[StringBuilder]) @ret_nonlocal true @deep true @deep_pageof_96 true returns bool io mutable modeler_error_count reads scaly_package_stamp linked
+    procedure package_objects(names: ref[Array[String]], roots: ref[Array[String]], program_file: String, given_triple: String, cpu: String, release: bool, mutable objects: ref[Array[String]], mutable bitcode: ref[Array[String]], mutable link_flags: ref[StringBuilder]) @ret_nonlocal true @deep true @deep_pageof_192 true returns bool io mutable modeler_error_count reads scaly_package_stamp linked
 
     ; the C and assembly files of a package this target takes, each compiled
     ; into the cache beside the package's object (`<base>-<path>.o`)

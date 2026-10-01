@@ -7628,6 +7628,12 @@ define Emitter
         {
             if config.skip_tests = false
                 return false
+            ; a test takes nothing (cli.is_test_function#): a METHOD of that
+            ; name is the package's own code -- tscaly's `SemverRange.test(
+            ; this, version)` was dropped from the package object the tool
+            ; builds, and the program did not link (2026-10-01)
+            if func.input <> null and func.input.length > 0
+                return false
             if func.name = "test"
                 return true
             func.name.starts_with("test_")

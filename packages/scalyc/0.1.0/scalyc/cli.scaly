@@ -1077,7 +1077,7 @@ define cli
                 pkg_names.add(String("scaly"))
                 pkg_roots.add("`Modeler.scaly_home_base()`packages/scaly/0.1.0/scaly.scaly")
             }
-            if tool.package_objects(&pkg_names, &pkg_roots, opts.input_file, opts.target_triple, opts.release, &package_objects, &package_bitcode, &library_link_flags) = false
+            if tool.package_objects(&pkg_names, &pkg_roots, opts.input_file, opts.target_triple, opts.target_cpu, opts.release, &package_objects, &package_bitcode, &library_link_flags) = false
                 return 9
             ; --release: the packages' Scaly code joins the program's module;
             ; what is left in package_objects is their C and assembly

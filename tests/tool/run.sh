@@ -121,6 +121,14 @@ if scaly_jit_available 2>/dev/null; then
   [ "$rc" = 0 ] && echo "$out" | grep -q '^40 passed$' && ok || bad "test opensp: rc=$rc $(echo "$out" | tail -1)"
 fi
 
+# no-tests method: a method named `test` is not a test
+if "$BIN" build tests/tool/testmethod.scaly --no-tests -o "$TMP/testmethod$SCALY_EXE" > "$TMP/testmethod.log" 2>&1; then
+  out=$("$TMP/testmethod$SCALY_EXE")
+  [ "$out" = "PASS" ] && ok || bad "no-tests method: got '$out'"
+else
+  bad "no-tests method: $(tail -2 "$TMP/testmethod.log" | tr '\n' ' ')"
+fi
+
 # release: the whole program as one module -- the same output, and a binary
 # that holds what the program uses instead of the stdlib's whole object; a
 # program over a package (the http server) under poison

@@ -1,0 +1,22 @@
+; `--no-tests` omits test FUNCTIONS (`test`, `test_*`, taking nothing) -- not a
+; method that happens to be named so. The tool builds every package with the
+; flag; until 2026-10-01 the method below was dropped with the tests and the
+; program did not link (tscaly's SemverRange.test).
+
+define Range(low: int, high: int)
+{
+    function test(this, value: int) returns bool
+        value >= low and value <= high
+}
+
+function test_helper(value: int) returns int
+    value + 1
+
+function test() returns int
+    0
+
+let r Range(1, 9)
+if r.test(5) and r.test(10) = false and test_helper(1) = 2
+    print "PASS"
+else
+    print "FAIL"

@@ -13,7 +13,7 @@
 # FHIR bundle (Synthea, smart-on-fhir/generated-sample-data), downloaded into
 # a cache outside the tree: $JSONBENCH_DATA, default $TMPDIR/scaly-jsonbench.
 #
-# The Scaly side is one whole-program module (tools/link-lto.sh, opt -O2) for
+# The Scaly side is one whole-program module (`scaly build --release`) for
 # the host CPU, the Rust side a fat-LTO release for the host CPU: both as the
 # HttpArena image builds its entry.
 set -eu
@@ -31,19 +31,14 @@ for f in canada citm_catalog twitter; do
 done
 fetch fhir_bundle.json "https://raw.githubusercontent.com/smart-on-fhir/generated-sample-data/master/R4/SYNTHEA/Addie_Tremblay_4c875c3c-b4d6-4f6d-aabe-5ddc24892adc.json"
 
-source tools/llvm-env.sh > /dev/null 2>&1
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
-# the IR carries no triple (one seed for every target): name the host's
-TRIPLE=$(${CLANG:-clang} -print-target-triple)
 # -mcpu=native reaches the IR since SIMD phase 6: a SIMD operation takes the
 # form this CPU's features allow (pshufb on x86_64), as the Rust side's
-# target-cpu=native does
-"$BIN" -S -mcpu=native --no-prelude --no-tests -o "$TMP/rt.ll" packages/scaly/0.1.0/scaly.scaly
-"$BIN" -S -mcpu=native --no-prelude -o "$TMP/json.ll" packages/json/0.1.0/json.scaly
-"$BIN" -S -mcpu=native -o "$TMP/bench.ll" tools/bench/json/bench.scaly
-LTO_OPT_FLAGS="-mtriple=$TRIPLE -mcpu=native" LTO_LLC_FLAGS="-mcpu=native" \
-  tools/link-lto.sh "$TMP/bench" "$TMP/bench.ll" "$TMP/json.ll" "$TMP/rt.ll"
+# target-cpu=native does; the tool compiles the packages for it too.
+# (Until 2026-10-01 three -S emissions and tools/link-lto.sh; measured equal
+# on all four files, the binaries the same size to the byte.)
+"$BIN" build tools/bench/json/bench.scaly --release -mcpu=native -o "$TMP/bench"
 ( cd tools/bench/json/rust && RUSTFLAGS="-C target-cpu=native" cargo build --release -q )
 RUST="$ROOT/tools/bench/json/rust/target/release/jsonbench"
 CPP=""
@@ -65,9 +60,7 @@ fi
 
 # STAGES=1: the json package's parse taken apart as well (stages.scaly)
 if [ "${STAGES:-0}" = 1 ]; then
-  "$BIN" -S -mcpu=native -o "$TMP/stages.ll" tools/bench/json/stages.scaly
-  LTO_OPT_FLAGS="-mtriple=$TRIPLE -mcpu=native" LTO_LLC_FLAGS="-mcpu=native" \
-    tools/link-lto.sh "$TMP/stages" "$TMP/stages.ll" "$TMP/json.ll" "$TMP/rt.ll"
+  "$BIN" build tools/bench/json/stages.scaly --release -mcpu=native -o "$TMP/stages"
 fi
 
 # JSONBENCH_KEEP=<dir>: the binaries stay there for a profiler afterwards
