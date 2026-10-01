@@ -18,6 +18,9 @@
 #              gives tests/tool/repl.expected byte for byte -- values kept,
 #              a var changed by `set`, a record, an Array grown in a loop, a
 #              braceless function, a float, an error with its caret
+#   repl-pty   the same binary at a TERMINAL (tests/tool/repl_pty.py drives a
+#              pty): the line editor, its history file, a second session;
+#              SKIPs by name on Windows
 #   test       `scaly test`: tests/tool/sums.scaly names its failing test and
 #              answers rc 1, a filter selects, the file's own statements do
 #              not run; opensp's forty test functions pass
@@ -118,6 +121,16 @@ if scaly_jit_available 2>/dev/null; then
     ok
   else
     bad "repl: $(diff tests/tool/repl.expected "$TMP/repl.out" | head -5 | tr '\n' '|')"
+  fi
+fi
+
+# repl at a terminal: the line editor through a pty (python's, POSIX only)
+if scaly_jit_available 2>/dev/null; then
+  if [ "$SCALY_COFF" = 1 ] || ! command -v python3 > /dev/null 2>&1; then
+    echo "SKIP repl-pty (needs a pty and python3)"
+  else
+    out=$(python3 tests/tool/repl_pty.py "$BIN" "$TMP" 2>&1); rc=$?
+    [ "$rc" = 0 ] && ok || bad "repl-pty: $(echo "$out" | tail -2 | tr '\n' '|')"
   fi
 fi
 
