@@ -19,9 +19,19 @@
 ; and re-spawns a fresh worker on the next request. The parent thus never
 ; dies from a compiler bug.
 ;
-; The worker is persistent (one fork, many requests) rather than fork-per-
-; request: the pipeline is stateless per document, and the page leak that
+; The worker is persistent (one child, many requests) rather than one child
+; per request: the pipeline is stateless per document, and the page leak that
 ; would have made a long-lived worker grow without bound is fixed.
+;
+; The child is THIS PROGRAM STARTED AGAIN in worker mode (`--scalyls-worker` as
+; its first argument, the two pipe ends after it; main.scaly asks
+; worker.run_if_worker# before it does anything else) -- fork + exec on POSIX,
+; CreateProcess on Windows, behind one question of the OS shim
+; (scaly_proc_spawn_self, scaly/fiber/eio.c). It was a bare fork until
+; 2026-10-01: Windows has none, and a forked child that carries on without
+; exec is a copy of a process whose other threads do not exist in it. The
+; worker needs nothing of the parent's memory -- its request loop runs on a
+; thread of its own, and every global of this package is thread-local.
 ;
 ; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no
 ; else). One statement per line. CR/LF are numeric bytes (rpc handles the
@@ -39,37 +49,16 @@ use scalyls.tasklens
 use scalyls.codelens
 use scalyls.placehints
 
-; POSIX process / pipe primitives (libc). Declared here rather than in the
-; scaly package so no scaly/scalyc source is touched (fixpoint-safe).
-function fork() returns i32 extern
-; pipe fills two C `int` (32-bit) fds. Scaly `int` is 64-bit, so the fd
-; pair MUST be an i32[2] (an int[2] would be 2x8 bytes and splice both fds
-; into one garbage i64). The fd values themselves are small and widen
-; cleanly into `int` when handed to read/write/close.
-function pipe(fds: pointer[i32]) returns i32 extern
+; The process primitives, as questions the OS shim answers (scaly/fiber/eio.c
+; and eio_windows.c say what each one promises). Declared here rather than in
+; the scaly package: only this package asks them.
+procedure scaly_proc_spawn_self(mode: pointer[const_char], mutable out_pid: pointer[i64], mutable out_write_fd: pointer[i32], mutable out_read_fd: pointer[i32]) returns i32 extern
+procedure scaly_proc_worker_fds(argc: int, argv: pointer[pointer[char]], mode: pointer[const_char], mutable in_fd: pointer[i32], mutable out_fd: pointer[i32]) returns i32 extern
+procedure scaly_proc_reap(pid: i64) returns i32 extern
+procedure scaly_proc_wait_readable(fd: i32, timeout: i32) returns i32 extern
+procedure scaly_proc_stdio_binary() extern
 function close(fd: int) returns i32 extern
-function waitpid(pid: int, status: pointer[i32], options: int) returns i32 extern
-function kill(pid: int, sig: int) returns i32 extern
-; poll: the C prototype is `int poll(struct pollfd *, nfds_t, int)`, and
-; nfds_t is 32 bits on macOS (unsigned int) but 64 on glibc (unsigned long).
-; ONE seed serves every target, so the width cannot be per-OS: `u64` is the
-; portable choice, because the caller then writes the WHOLE register and a
-; 32-bit callee reads the correct low half. `timeout` and the RESULT are
-; plain C `int`, i.e. 32 bits on both.
-; This declaration must stay type-identical to the one in scaly/fiber.scaly:
-; both modules are linked into this binary, and they used to disagree --
-; `declare i32 @poll(ptr, i32, i32)` against `declare i64 @poll(ptr, i64,
-; i64)` -- so this call read a 64-bit result from a function that returns 32,
-; with the upper half undefined.
-function poll(fds: pointer[pollfd], nfds: u64, timeout: i32) returns i32 extern
-function signal(sig: int, handler: pointer[void]) returns pointer[void] extern
 function setenv(name: pointer[const_char], value: pointer[const_char], overwrite: i32) returns i32 extern
-
-; `pollfd` itself is declared in the PRELUDE (scaly/fiber.scaly), which also
-; declares poll: a top-level `define` mangles without its module, so a second
-; one here would collide with it silently in the whole-stack link.
-
-define POLLIN i16 1
 
 ; The worker's stack, independent of the stack the CLIENT started the server
 ; with (2026-09-25). The pipeline plans the whole package a document belongs
@@ -86,8 +75,6 @@ define WORKER_STACK_BYTES size_t 67108864
 
 ; The two pipe ends the request loop serves, handed to its thread.
 define WorkerFds (in_fd: int  out_fd: int)
-define SIGKILL int 9
-define SIGPIPE int 13
 
 ; Wait at most this long for the worker to answer one PER-DOCUMENT request
 ; before declaring it hung and killing it (milliseconds). Which kinds land
@@ -177,19 +164,30 @@ define worker
     ; the diagnostics it owes, which is what turns one analysis per keystroke
     ; into one per typing burst (docstore.mark_dirty# has the measurement).
     ;
-    ; It lives HERE because `poll` / `pollfd` / `POLLIN` are declared in this
-    ; module for the worker pipes, and a C symbol gets ONE declaration per tree —
-    ; two that disagree is precisely what tests/abi/run.sh check 3 exists to
-    ; catch. The answer is exact rather than approximate because rpc.read_byte#
-    ; reads stdin with a raw one-byte `read`, unbuffered: nothing can be sitting
-    ; in a userspace buffer where a poll of the fd would not see it.
+    ; It lives HERE because the readiness question is declared in this module
+    ; for the worker pipes. The answer is exact rather than approximate because
+    ; rpc.read_byte# reads stdin with a raw one-byte `read`, unbuffered: nothing
+    ; can be sitting in a userspace buffer where a poll of the fd would not see
+    ; it. On Windows a stdin that is no pipe (a console, a file) answers "cannot
+    ; tell", read here as "nothing waiting": the owed diagnostics run at once.
     procedure stdin_has_input() returns bool
     {
-        var pfd pollfd(0 as i32, POLLIN, 0)
-        let pr poll(&pfd, 1 as u64, 0 as i32)
+        let pr scaly_proc_wait_readable(0 as i32, 0 as i32)
         if pr > 0
             return true
         false
+    }
+
+    ; The whole life of a worker process, when this process is one: main asks
+    ; before it does anything else. False in the server itself.
+    procedure run_if_worker(argc: int, argv: pointer[pointer[char]]) returns bool mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig
+    {
+        var in_fd: i32 0
+        var out_fd: i32 0
+        if scaly_proc_worker_fds(argc, argv, "--scalyls-worker", &in_fd as pointer[i32], &out_fd as pointer[i32]) = 0
+            return false
+        worker.serve_on_worker_stack(in_fd, out_fd)
+        true
     }
 
     ; ====================================================================
@@ -505,56 +503,24 @@ define worker
     ; Parent side: spawn / kill / analyze.
     ; ====================================================================
 
-    ; Fork a fresh worker and record its pid + pipe fds. On any failure
+    ; Start a fresh worker and record its pid + pipe fds. On any failure
     ; worker_pid stays 0 (analyze then falls back to a clear payload).
+    ;
+    ; The shim sees to the three things the fork used to do by hand: SIGPIPE
+    ; is ignored (writing to a dead worker must be an error, not the parent's
+    ; death), the child keeps none of the parent's pipe ends, and its stdin
+    ; and stdout are the null device -- if it held the editor's stdout, the
+    ; client would never see end of file when the parent exits, and would hang.
     procedure spawn() mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
     {
-        ; Writing to a dead worker's pipe must NOT kill the parent with
-        ; SIGPIPE — that would defeat the whole isolation. Ignore it so the
-        ; write returns an error instead; analyze then respawns. Set once in
-        ; the parent (re-setting on respawn is harmless); the child inherits
-        ; the disposition, which is fine.
-        signal(SIGPIPE, 1 as pointer[void])  ; SIG_IGN
-
-        var p2c i32[2]                       ; parent -> child
-        if pipe(p2c as pointer[i32]) <> 0
+        var pid: i64 0
+        var to_worker: i32 0
+        var from_worker: i32 0
+        if scaly_proc_spawn_self("--scalyls-worker", &pid as pointer[i64], &to_worker as pointer[i32], &from_worker as pointer[i32]) <> 0
             return
-        var c2p i32[2]                       ; child -> parent
-        if pipe(c2p as pointer[i32]) <> 0
-            return
-
-        let pid fork()
-        if pid = 0
-        {
-            ; Child: keep p2c read end + c2p write end; drop the others.
-            ; CRUCIAL: also drop the inherited editor stdin/stdout (fd 0/1).
-            ; The worker talks only over the pipes; if it kept fd 1 open the
-            ; editor's stdout pipe would never see EOF when the parent exits
-            ; (the child would still hold a write end) and the client would
-            ; hang. stderr (fd 2) stays open for crash output.
-            close 0
-            close 1
-            close(*(p2c + 1))
-            close(*(c2p + 0))
-            let rc worker.serve_on_worker_stack(*(p2c + 0), *(c2p + 1))
-            exit rc
-            return
-        }
-        if pid < 0                        ; fork failed
-        {
-            close(*(p2c + 0))
-            close(*(p2c + 1))
-            close(*(c2p + 0))
-            close(*(c2p + 1))
-            return
-        }
-
-        ; Parent: keep p2c write end + c2p read end; drop the others.
-        close(*(p2c + 0))
-        close(*(c2p + 1))
         set worker_pid: pid
-        set worker_in:  *(p2c + 1)
-        set worker_out: *(c2p + 0)
+        set worker_in:  to_worker
+        set worker_out: from_worker
     }
 
     procedure ensure() mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid
@@ -569,12 +535,7 @@ define worker
     {
         if worker_pid > 0
         {
-            kill(worker_pid, SIGKILL)
-            ; i32, not int: waitpid writes FOUR bytes through this pointer
-            ; (C `int *status`), so an i64 slot would leave four bytes of the
-            ; local unwritten and the declaration would not resolve.
-            var status i32 0
-            waitpid(worker_pid, &status, 0)
+            scaly_proc_reap(worker_pid)
         }
         if worker_in > 0
             close worker_in
@@ -888,8 +849,7 @@ define worker
             ; never does. See WORKSPACE_TIMEOUT_MS for why one shared budget
             ; made the search unable to ever complete.
             let budget worker.budget_for_kind(kind_str)
-            var pfd pollfd(worker_out as i32, POLLIN, 0)
-            let pr poll(&pfd, 1 as u64, budget)
+            let pr scaly_proc_wait_readable(worker_out as i32, budget)
 
             ; poll == 0 (timeout) or < 0 (error): the pipeline hung. Kill it
             ; and give up — retrying would just hang again.

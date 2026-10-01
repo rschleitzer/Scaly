@@ -49,13 +49,9 @@ use scalyls.semantic
 
 use scalyc.compiler.parser
 
-; libc stream primitives for enumerating sibling .scaly files when a
-; go-to-definition target is not in the current file. Declared here (not in
-; the scaly package) so no scaly/scalyc source is touched (fixpoint-safe).
-; popen runs `/bin/sh -c <cmd>` — portable across macOS + Linux, sidestepping
-; the platform-specific `struct dirent` layout that raw readdir would need.
-function popen(command: pointer[const_char], mode: pointer[const_char]) returns pointer[OpaqueFile] extern
-function pclose(stream: pointer[OpaqueFile]) returns i32 extern
+; Whether a path is itself a symbolic link (the OS shim, scaly/fiber/eio.c):
+; the workspace walk does not descend through one (list_scaly_walk#).
+procedure scaly_eio_is_symlink(path: pointer[const_char]) returns i32 extern
 ; fgetc returns a C `int` (32-bit). It MUST be i32, not Scaly's 64-bit int:
 ; at EOF the C -1 (0xFFFFFFFF) would zero-extend to 4294967295 in a 64-bit
 ; register, so an i64 `c < 0` EOF test never fires and the read loop spins
@@ -9024,10 +9020,39 @@ define symbols
         ""
     }
 
-    ; Run `find -H '<dir>' -name '*.scaly'` and return its stdout (newline-
-    ; separated absolute paths) with a guaranteed trailing LF. "" on failure.
-    ; The quote bytes are emitted as 0x27 (the lexer treats a `'` as the start
-    ; of a string-identifier token, so it must not appear in a "..." literal).
+    ; One directory of list_scaly_files#'s walk, its subdirectories after it.
+    procedure list_scaly_walk(mutable dir: String, mutable sb: ref[StringBuilder])
+    {
+        let entries Directory.list(dir)
+        var i: size_t 0
+        while i < entries.length
+        {
+            let e entries.at i
+            set i: i + 1
+            let path "`dir`/`e.name`"
+            if e.name.ends_with(".scaly")
+            {
+                sb.append(path)
+                sb.append("\n" as char)
+            }
+            if e.is_directory and e.name.equals("interface") = false and scaly_eio_is_symlink(path.to_c_string()) = 0
+                symbols.list_scaly_walk(path, sb)
+        }
+    }
+
+    ; Every `*.scaly` under `dir`: newline-separated paths, each `dir` plus the
+    ; way down, with a guaranteed trailing LF, in the order the file system
+    ; gives them, a directory's own entry before what lies below it.
+    ;
+    ; It was `find -H '<dir>' -name '*.scaly' -not -path '*/interface/*'`
+    ; through popen until 2026-10-01 and keeps that command's answer: nothing
+    ; under a directory named `interface` is listed (a package's generated
+    ; interface restates its sources in fewer lines, compiler/Interface.scaly),
+    ; and a symbolic link is followed when it is `dir` itself and never below
+    ; it, so a link inside the tree makes no cycle and no file counts twice.
+    ; A walk of our own because Windows has no such `find`; it also spares the
+    ; shell every listing used to fork. What follows is the account of the
+    ; command, kept for the rule it found.
     ;
     ; ★★★The `-H` is load-bearing and was missing until 2026-08-14: `find` does
     ; NOT follow a symlink that is its own STARTING POINT, so a walk root
@@ -9051,7 +9076,7 @@ define symbols
     procedure list_scaly_files(dir: String) returns String mutable dir_slots, prof_list
     {
         ; ★Answered from this request's cache when possible. The body below
-        ; runs `find` through popen, i.e. it forks a SHELL — and the cross-file
+        ; ran `find` through popen, i.e. it forked a SHELL — and the cross-file
         ; scans call this per CALL SITE, for two directories each. Measured
         ; 2026-08-12 on an inlayHint over packages/opensp: ~80 shell spawns per
         ; request, which was the bulk of its 4.7 s, not the file reading it
@@ -9061,45 +9086,15 @@ define symbols
             return symindex.get_listing dir
 
         set prof_list: prof_list + 1
-        var cmd StringBuilder()
-        cmd.append "find -H "
-        cmd.append("'" as char)
-        var di: size_t 0
-        let dn dir.get_length()
-        while di < dn
-        {
-            cmd.append(dir.get(di) as char)
-            set di: di + 1
-        }
-        cmd.append("'" as char)
-        cmd.append " -name "
-        cmd.append("'" as char)
-        cmd.append "*.scaly"
-        cmd.append("'" as char)
-        ; a package's generated interface restates its sources in fewer lines
-        ; (compiler/Interface.scaly): the sources beside it are the files
-        cmd.append " -not -path "
-        cmd.append("'" as char)
-        cmd.append "*/interface/*"
-        cmd.append("'" as char)
-        cmd.append " 2>/dev/null"
-        let cmd_str cmd.to_string()
-
-        let f popen(cmd_str.to_c_string(), "r")
-        if f = null
-            return ""
-
         var sb StringBuilder()
-        var keep true
-        while keep
+        ; `-not -path` judged the whole path, the root included
+        if dir.contains(String("/interface/")) = false and dir.ends_with("/interface") = false
         {
-            let c fgetc f
-            if c < 0
-                set keep: false
-            if c >= 0
-                sb.append(c as char)
+            var root String(dir)
+            if root.ends_with("/")
+                set root: symbols.substring(root, 0, root.get_length() - 1)
+            symbols.list_scaly_walk(root, &sb)
         }
-        pclose f
         sb.append("\n" as char)                    ; trailing LF
         let listing sb.to_string()
         symindex.put_listing(dir, listing)
@@ -9119,17 +9114,40 @@ define symbols
         sb.to_string()
     }
 
+    ; An ASCII letter: what names a Windows drive.
+    function is_drive_letter(c: u8) returns bool
+        (c >= 65 and c <= 90) or (c >= 97 and c <= 122)
+
     ; Strip a leading "file://" from a uri to get the filesystem path.
+    ;
+    ; A path with a Windows drive arrives behind a THIRD slash, and VS Code
+    ; escapes its colon: `file:///C:/x` and `file:///c%3A/x` are both `C:/x`.
+    ; Read by the spelling, not by the host: one seed serves every target, and
+    ; no POSIX path begins `/C:/`. Before 2026-10-01 the path came out `/C:/x`,
+    ; which names nothing, and every cross-file answer was the open file alone.
     function uri_to_path(uri: String) returns String
     {
-        if uri.starts_with("file://")
-            return symbols.substring(uri, 7, uri.get_length())
-        uri
+        if uri.starts_with("file://") = false
+            return uri
+        let n uri.get_length()
+        if n > 11 and uri.get(7) = 47 and symbols.is_drive_letter(uri.get(8))
+        {
+            if uri.get(9) = 58
+                return symbols.substring(uri, 8, n)
+            if uri.get(9) = 37 and uri.get(10) = 51 and (uri.get(11) = 65 or uri.get(11) = 97)
+                return "`symbols.substring(uri, 8, 9)`:`symbols.substring(uri, 12, n)`"
+        }
+        symbols.substring(uri, 7, n)
     }
 
-    ; Wrap a filesystem path back into a "file://" uri.
+    ; Wrap a filesystem path back into a "file://" uri; a path that begins
+    ; with a drive takes the third slash (uri_to_path#).
     function path_to_uri(path: String) returns String
+    {
+        if path.get_length() > 2 and symbols.is_drive_letter(path.get(0)) and path.get(1) = 58
+            return "file:///`path`"
         "file://`path`"
+    }
 
     ; The directory portion of `path` (everything before the last '/'), or "".
     function dir_of(path: String) returns String

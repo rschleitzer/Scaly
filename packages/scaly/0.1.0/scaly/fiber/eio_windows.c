@@ -1214,6 +1214,196 @@ int scaly_eio_term_restore(int fd)
     return 0;
 }
 
+/* ---- A CHILD THAT RUNS THIS PROGRAM AGAIN ---------------------------------
+ *
+ * The Windows half of the block eio.c documents at the same place:
+ * CreateProcess on this executable, the mode word and the child's two pipe
+ * HANDLEs (hexadecimal) on its command line.
+ *
+ * ★The child inherits EXACTLY four handles (PROC_THREAD_ATTRIBUTE_HANDLE_LIST),
+ * not every inheritable one: a child that held the parent's own stdout — the
+ * editor's pipe — would keep it open after the parent is gone, and the client
+ * would wait for an end of file that never comes.
+ * ★CREATE_NO_WINDOW: an editor starts the server without a console, and a
+ * console program started from there would otherwise open one of its own.
+ * ★The "pid" is the process HANDLE: it is what TerminateProcess and the wait
+ * take, and it stays valid until scaly_proc_reap closes it.
+ */
+int scaly_proc_spawn_self(const char* mode, long long* out_pid, int* out_write_fd, int* out_read_fd)
+{
+    enum { SELF_CAP = 2048, CMD_CAP = SELF_CAP + 128 };
+    wchar_t* self = NULL;
+    wchar_t* cmd = NULL;
+    SECURITY_ATTRIBUTES sa;
+    HANDLE c_in_r = NULL, p_in_w = NULL, p_out_r = NULL, c_out_w = NULL;
+    HANDLE nul = INVALID_HANDLE_VALUE, err = NULL;
+    HANDLE list[4];
+    DWORD nlist = 0;
+    SIZE_T attr_size = 0;
+    LPPROC_THREAD_ATTRIBUTE_LIST attrs = NULL;
+    STARTUPINFOEXW si;
+    PROCESS_INFORMATION pi;
+    DWORD n;
+    int wfd, rfd;
+    int ok = 0;
+
+    sa.nLength = sizeof sa;
+    sa.lpSecurityDescriptor = NULL;
+    sa.bInheritHandle = TRUE;
+
+    self = (wchar_t*)malloc(SELF_CAP * sizeof(wchar_t));
+    cmd = (wchar_t*)malloc(CMD_CAP * sizeof(wchar_t));
+    if (self == NULL || cmd == NULL)
+        goto done;
+    n = GetModuleFileNameW(NULL, self, SELF_CAP);
+    if (n == 0 || n >= SELF_CAP)
+        goto done;
+
+    if (!CreatePipe(&c_in_r, &p_in_w, &sa, 65536))
+        goto done;
+    if (!CreatePipe(&p_out_r, &c_out_w, &sa, 65536))
+        goto done;
+    SetHandleInformation(p_in_w, HANDLE_FLAG_INHERIT, 0);
+    SetHandleInformation(p_out_r, HANDLE_FLAG_INHERIT, 0);
+    nul = CreateFileW(L"NUL", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
+                      &sa, OPEN_EXISTING, 0, NULL);
+    if (nul == INVALID_HANDLE_VALUE)
+        goto done;
+    /* stderr as an inheritable duplicate; a process without one gets NUL */
+    if (!DuplicateHandle(GetCurrentProcess(), GetStdHandle(STD_ERROR_HANDLE), GetCurrentProcess(),
+                         &err, 0, TRUE, DUPLICATE_SAME_ACCESS))
+        err = NULL;
+
+    list[nlist++] = c_in_r;
+    list[nlist++] = c_out_w;
+    list[nlist++] = nul;
+    if (err != NULL)
+        list[nlist++] = err;
+    InitializeProcThreadAttributeList(NULL, 1, 0, &attr_size);
+    attrs = (LPPROC_THREAD_ATTRIBUTE_LIST)malloc(attr_size);
+    if (attrs == NULL || !InitializeProcThreadAttributeList(attrs, 1, 0, &attr_size)) {
+        free(attrs);
+        attrs = NULL;
+        goto done;
+    }
+    if (!UpdateProcThreadAttribute(attrs, 0, PROC_THREAD_ATTRIBUTE_HANDLE_LIST, list,
+                                   nlist * sizeof(HANDLE), NULL, NULL))
+        goto done;
+
+    _snwprintf(cmd, CMD_CAP, L"\"%ls\" %hs %llx %llx", self, mode,
+               (unsigned long long)(uintptr_t)c_in_r, (unsigned long long)(uintptr_t)c_out_w);
+    cmd[CMD_CAP - 1] = 0;
+
+    memset(&si, 0, sizeof si);
+    si.StartupInfo.cb = sizeof si;
+    si.StartupInfo.dwFlags = STARTF_USESTDHANDLES;
+    si.StartupInfo.hStdInput = nul;
+    si.StartupInfo.hStdOutput = nul;
+    si.StartupInfo.hStdError = err != NULL ? err : nul;
+    si.lpAttributeList = attrs;
+    if (!CreateProcessW(self, cmd, NULL, NULL, TRUE, EXTENDED_STARTUPINFO_PRESENT | CREATE_NO_WINDOW,
+                        NULL, NULL, &si.StartupInfo, &pi))
+        goto done;
+    CloseHandle(pi.hThread);
+
+    /* the descriptors own the parent's ends from here on */
+    wfd = _open_osfhandle((intptr_t)p_in_w, _O_BINARY);
+    rfd = _open_osfhandle((intptr_t)p_out_r, _O_BINARY | _O_RDONLY);
+    if (wfd < 0 || rfd < 0) {
+        TerminateProcess(pi.hProcess, 1);
+        CloseHandle(pi.hProcess);
+        if (wfd >= 0) { _close(wfd); p_in_w = NULL; }
+        if (rfd >= 0) { _close(rfd); p_out_r = NULL; }
+        goto done;
+    }
+    p_in_w = NULL;
+    p_out_r = NULL;
+    *out_pid = (long long)(intptr_t)pi.hProcess;
+    *out_write_fd = wfd;
+    *out_read_fd = rfd;
+    ok = 1;
+
+done:
+    if (attrs != NULL) {
+        DeleteProcThreadAttributeList(attrs);
+        free(attrs);
+    }
+    if (c_in_r != NULL) CloseHandle(c_in_r);
+    if (c_out_w != NULL) CloseHandle(c_out_w);
+    if (p_in_w != NULL) CloseHandle(p_in_w);
+    if (p_out_r != NULL) CloseHandle(p_out_r);
+    if (nul != INVALID_HANDLE_VALUE) CloseHandle(nul);
+    if (err != NULL) CloseHandle(err);
+    free(self);
+    free(cmd);
+    return ok ? 0 : -1;
+}
+
+int scaly_proc_worker_fds(long long argc, char** argv, const char* mode, int* in_fd, int* out_fd)
+{
+    HANDLE hin, hout;
+    if (argc < 4 || strcmp(argv[1], mode) != 0)
+        return 0;
+    hin = (HANDLE)(uintptr_t)strtoull(argv[2], NULL, 16);
+    hout = (HANDLE)(uintptr_t)strtoull(argv[3], NULL, 16);
+    *in_fd = _open_osfhandle((intptr_t)hin, _O_BINARY | _O_RDONLY);
+    *out_fd = _open_osfhandle((intptr_t)hout, _O_BINARY);
+    return 1;
+}
+
+int scaly_proc_reap(long long pid)
+{
+    HANDLE h = (HANDLE)(intptr_t)pid;
+    TerminateProcess(h, 1);
+    WaitForSingleObject(h, INFINITE);
+    CloseHandle(h);
+    return 0;
+}
+
+/* An anonymous pipe cannot be waited on, only asked (PeekNamedPipe), so a
+ * positive timeout is a loop of short naps. A broken pipe counts as readable,
+ * as POLLHUP does: the read that follows answers end of file. Anything that
+ * is not a pipe (a console, a file) is -1 — "cannot tell", which the callers
+ * read as "nothing waiting". */
+int scaly_proc_wait_readable(int fd, int timeout_ms)
+{
+    intptr_t h = _get_osfhandle(fd);
+    ULONGLONG start = GetTickCount64();
+    DWORD nap = 1;
+    if (h == -1 || h == -2)
+        return -1;
+    for (;;) {
+        DWORD avail = 0;
+        if (!PeekNamedPipe((HANDLE)h, NULL, 0, NULL, &avail, NULL)) {
+            DWORD e = GetLastError();
+            return e == ERROR_BROKEN_PIPE || e == ERROR_HANDLE_EOF ? 1 : -1;
+        }
+        if (avail > 0)
+            return 1;
+        if (timeout_ms == 0)
+            return 0;
+        if (timeout_ms > 0 && GetTickCount64() - start >= (ULONGLONG)timeout_ms)
+            return 0;
+        Sleep(nap);
+        if (nap < 8)
+            nap++;
+    }
+}
+
+/* The CRT opens stdin and stdout in TEXT mode: "\n" goes out as "\r\n" and a
+ * Ctrl-Z byte ends the input — both fatal to a protocol framed by byte counts. */
+void scaly_proc_stdio_binary(void)
+{
+    _setmode(0, _O_BINARY);
+    _setmode(1, _O_BINARY);
+}
+
+int scaly_eio_is_symlink(const char* path)
+{
+    DWORD a = GetFileAttributesA(path);
+    return a != INVALID_FILE_ATTRIBUTES && (a & FILE_ATTRIBUTE_REPARSE_POINT) != 0 ? 1 : 0;
+}
+
 #else
 typedef int scaly_eio_win_not_needed_on_this_target;
 #endif /* _WIN32 */

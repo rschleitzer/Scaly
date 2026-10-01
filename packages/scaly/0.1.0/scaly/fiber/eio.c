@@ -1647,3 +1647,153 @@ int scaly_eio_term_restore(int fd)
     scaly_term_raw_on = 0;
     return tcsetattr(fd, TCSAFLUSH, &scaly_term_saved) == 0 ? 0 : -1;
 }
+
+/* ---- A CHILD THAT RUNS THIS PROGRAM AGAIN, shim category (a) --------------
+ *
+ * A program that isolates dangerous work in a child (scalyls' worker) starts
+ * ITSELF again, with a mode word and the two pipe ends as arguments; `main`
+ * asks scaly_proc_worker_fds whether it is that child. One model for every
+ * target: here it is fork + execv, on Windows CreateProcess (eio_windows.c) —
+ * Windows has no fork, and a forked child that carries on WITHOUT exec keeps
+ * a copy of a process whose other threads do not exist in it.
+ *
+ * In C because finding one's own executable is per OS (_NSGetExecutablePath,
+ * /proc/self/exe, GetModuleFileName), and because the child's handles are
+ * file descriptors here and HANDLEs there, so the Scaly side asks questions:
+ *
+ *   scaly_proc_spawn_self   start the child; its pid, the parent's write end
+ *                           (requests) and read end (answers). 0, or -1.
+ *                           The child's stdin and stdout are the null device:
+ *                           it talks over the pipes only, and a stray print
+ *                           must not reach the parent's own stdout. stderr is
+ *                           inherited (crash output).
+ *   scaly_proc_worker_fds   1 when this process is such a child (argv[1] is
+ *                           `mode`), with its read and write end; else 0.
+ *   scaly_proc_reap         kill the child and collect it.
+ *   scaly_proc_wait_readable  poll(2) on ONE descriptor: > 0 readable or the
+ *                           other side is gone, 0 timeout, < 0 error. A
+ *                           question of its own because Windows' poll answers
+ *                           for sockets only (posixcompat_windows.c).
+ *   scaly_proc_stdio_binary nothing here; Windows opens stdin and stdout in
+ *                           text mode, which rewrites the line ends of a
+ *                           framed protocol.
+ *   scaly_eio_is_symlink    1 when the path itself is a symbolic link — a
+ *                           tree walk that must not follow one asks before it
+ *                           descends (scaly_eio_dir_next answers is_dir for
+ *                           the link's TARGET).
+ */
+#include <poll.h>
+#include <stdint.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+#endif
+
+static int scaly_proc_self_path(char* buf, size_t cap)
+{
+#ifdef __APPLE__
+    uint32_t n = (uint32_t)cap;
+    return _NSGetExecutablePath(buf, &n) == 0 ? 0 : -1;
+#else
+    ssize_t n = readlink("/proc/self/exe", buf, cap - 1);
+    if (n <= 0)
+        return -1;
+    buf[n] = 0;
+    return 0;
+#endif
+}
+
+int scaly_proc_spawn_self(const char* mode, long long* out_pid, int* out_write_fd, int* out_read_fd)
+{
+    char self[4096];
+    char a_in[16];
+    char a_out[16];
+    int p2c[2];
+    int c2p[2];
+    pid_t pid;
+
+    if (scaly_proc_self_path(self, sizeof self) != 0)
+        return -1;
+    /* writing to a dead child must be an error, not the parent's death */
+    signal(SIGPIPE, SIG_IGN);
+    if (pipe(p2c) != 0)
+        return -1;
+    if (pipe(c2p) != 0) {
+        close(p2c[0]);
+        close(p2c[1]);
+        return -1;
+    }
+    snprintf(a_in, sizeof a_in, "%d", p2c[0]);
+    snprintf(a_out, sizeof a_out, "%d", c2p[1]);
+
+    pid = fork();
+    if (pid < 0) {
+        close(p2c[0]);
+        close(p2c[1]);
+        close(c2p[0]);
+        close(c2p[1]);
+        return -1;
+    }
+    if (pid == 0) {
+        /* between fork and exec: async-signal-safe calls only */
+        char* argv[5];
+        int nul = open("/dev/null", O_RDWR);
+        if (nul >= 0) {
+            dup2(nul, 0);
+            dup2(nul, 1);
+            if (nul > 1)
+                close(nul);
+        }
+        close(p2c[1]);
+        close(c2p[0]);
+        argv[0] = self;
+        argv[1] = (char*)mode;
+        argv[2] = a_in;
+        argv[3] = a_out;
+        argv[4] = NULL;
+        execv(self, argv);
+        _exit(127);
+    }
+    close(p2c[0]);
+    close(c2p[1]);
+    *out_pid = (long long)pid;
+    *out_write_fd = p2c[1];
+    *out_read_fd = c2p[0];
+    return 0;
+}
+
+int scaly_proc_worker_fds(long long argc, char** argv, const char* mode, int* in_fd, int* out_fd)
+{
+    if (argc < 4 || strcmp(argv[1], mode) != 0)
+        return 0;
+    *in_fd = atoi(argv[2]);
+    *out_fd = atoi(argv[3]);
+    return 1;
+}
+
+int scaly_proc_reap(long long pid)
+{
+    int status = 0;
+    kill((pid_t)pid, SIGKILL);
+    return waitpid((pid_t)pid, &status, 0) < 0 ? -1 : 0;
+}
+
+int scaly_proc_wait_readable(int fd, int timeout_ms)
+{
+    struct pollfd p;
+    p.fd = fd;
+    p.events = POLLIN;
+    p.revents = 0;
+    return poll(&p, 1, timeout_ms);
+}
+
+void scaly_proc_stdio_binary(void)
+{
+}
+
+int scaly_eio_is_symlink(const char* path)
+{
+    struct stat st;
+    return lstat(path, &st) == 0 && S_ISLNK(st.st_mode) ? 1 : 0;
+}

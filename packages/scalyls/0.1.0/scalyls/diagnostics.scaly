@@ -865,15 +865,9 @@ define diagnostics
     ; Non-file URIs are returned unchanged.
     function strip_uri(uri: String) returns String
     {
-        ; A non-file:// URI is returned unchanged. The stripped result is the
-        ; trailing implicit return (an explicit `return uri.substring(rp,...)`
-        ; trips the escape checker's return-of-page-call false positive).
-        if uri.starts_with("file://") = false
-            return uri
-
-        ; 7 == length of "file://"
-        let len uri.get_length()
-        uri.substring(7, len - 7)
+        ; one reading of a file uri for the whole server, Windows drives
+        ; included (symbols.uri_to_path#)
+        symbols.uri_to_path(uri)
     }
 
     ; `"key":`

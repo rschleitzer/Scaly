@@ -49,13 +49,9 @@ use scalyls.semantic
 
 use scalyc.compiler.parser
 
-; libc stream primitives for enumerating sibling .scaly files when a
-; go-to-definition target is not in the current file. Declared here (not in
-; the scaly package) so no scaly/scalyc source is touched (fixpoint-safe).
-; popen runs `/bin/sh -c <cmd>` — portable across macOS + Linux, sidestepping
-; the platform-specific `struct dirent` layout that raw readdir would need.
-function popen(command: pointer[const_char], mode: pointer[const_char]) returns pointer[OpaqueFile] extern
-function pclose(stream: pointer[OpaqueFile]) returns i32 extern
+; Whether a path is itself a symbolic link (the OS shim, scaly/fiber/eio.c):
+; the workspace walk does not descend through one (list_scaly_walk#).
+procedure scaly_eio_is_symlink(path: pointer[const_char]) returns i32 extern
 ; fgetc returns a C `int` (32-bit). It MUST be i32, not Scaly's 64-bit int:
 ; at EOF the C -1 (0xFFFFFFFF) would zero-extend to 4294967295 in a 64-bit
 ; register, so an i64 `c < 0` EOF test never fires and the read loop spins
@@ -1955,10 +1951,22 @@ define symbols
     ; when `path` is not under a packages/ directory.
     function packages_dir_from_path(path: String) @page true @direct true @ret_caller true @deep true returns String linked
 
-    ; Run `find -H '<dir>' -name '*.scaly'` and return its stdout (newline-
-    ; separated absolute paths) with a guaranteed trailing LF. "" on failure.
-    ; The quote bytes are emitted as 0x27 (the lexer treats a `'` as the start
-    ; of a string-identifier token, so it must not appear in a "..." literal).
+    ; One directory of list_scaly_files#'s walk, its subdirectories after it.
+    procedure list_scaly_walk(mutable dir: String, mutable sb: ref[StringBuilder]) @deep true io linked
+
+    ; Every `*.scaly` under `dir`: newline-separated paths, each `dir` plus the
+    ; way down, with a guaranteed trailing LF, in the order the file system
+    ; gives them, a directory's own entry before what lies below it.
+    ;
+    ; It was `find -H '<dir>' -name '*.scaly' -not -path '*/interface/*'`
+    ; through popen until 2026-10-01 and keeps that command's answer: nothing
+    ; under a directory named `interface` is listed (a package's generated
+    ; interface restates its sources in fewer lines, compiler/Interface.scaly),
+    ; and a symbolic link is followed when it is `dir` itself and never below
+    ; it, so a link inside the tree makes no cycle and no file counts twice.
+    ; A walk of our own because Windows has no such `find`; it also spares the
+    ; shell every listing used to fork. What follows is the account of the
+    ; command, kept for the rule it found.
     ;
     ; ★★★The `-H` is load-bearing and was missing until 2026-08-14: `find` does
     ; NOT follow a symlink that is its own STARTING POINT, so a walk root
@@ -1984,11 +1992,21 @@ define symbols
     ; Bytes [start,end) of `s` as a new String.
     function substring(s: String, start: size_t, end: size_t) @page true @direct true @ret_caller true @deep true returns String linked
 
+    ; An ASCII letter: what names a Windows drive.
+    function is_drive_letter(c: u8) @ret_nonlocal true @deep true returns bool linked
+
     ; Strip a leading "file://" from a uri to get the filesystem path.
+    ;
+    ; A path with a Windows drive arrives behind a THIRD slash, and VS Code
+    ; escapes its colon: `file:///C:/x` and `file:///c%3A/x` are both `C:/x`.
+    ; Read by the spelling, not by the host: one seed serves every target, and
+    ; no POSIX path begins `/C:/`. Before 2026-10-01 the path came out `/C:/x`,
+    ; which names nothing, and every cross-file answer was the open file alone.
     function uri_to_path(uri: String) @page true @direct true @deep true returns String linked
 
-    ; Wrap a filesystem path back into a "file://" uri.
-    function path_to_uri(path: String) @page true @direct true @ret_caller true @deep true returns String linked
+    ; Wrap a filesystem path back into a "file://" uri; a path that begins
+    ; with a drive takes the third slash (uri_to_path#).
+    function path_to_uri(path: String) @page true @direct true @deep true returns String linked
 
     ; The directory portion of `path` (everything before the last '/'), or "".
     function dir_of(path: String) @page true @direct true @ret_caller true @deep true returns String linked

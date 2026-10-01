@@ -19,9 +19,19 @@
 ; and re-spawns a fresh worker on the next request. The parent thus never
 ; dies from a compiler bug.
 ;
-; The worker is persistent (one fork, many requests) rather than fork-per-
-; request: the pipeline is stateless per document, and the page leak that
+; The worker is persistent (one child, many requests) rather than one child
+; per request: the pipeline is stateless per document, and the page leak that
 ; would have made a long-lived worker grow without bound is fixed.
+;
+; The child is THIS PROGRAM STARTED AGAIN in worker mode (`--scalyls-worker` as
+; its first argument, the two pipe ends after it; main.scaly asks
+; worker.run_if_worker# before it does anything else) -- fork + exec on POSIX,
+; CreateProcess on Windows, behind one question of the OS shim
+; (scaly_proc_spawn_self, scaly/fiber/eio.c). It was a bare fork until
+; 2026-10-01: Windows has none, and a forked child that carries on without
+; exec is a copy of a process whose other threads do not exist in it. The
+; worker needs nothing of the parent's memory -- its request loop runs on a
+; thread of its own, and every global of this package is thread-local.
 ;
 ; CONTROL-FLOW NOTE: `if COND STMT` runs STMT when COND is TRUE (no
 ; else). One statement per line. CR/LF are numeric bytes (rpc handles the
@@ -39,37 +49,16 @@ use scalyls.tasklens
 use scalyls.codelens
 use scalyls.placehints
 
-; POSIX process / pipe primitives (libc). Declared here rather than in the
-; scaly package so no scaly/scalyc source is touched (fixpoint-safe).
-function fork() returns i32 extern
-; pipe fills two C `int` (32-bit) fds. Scaly `int` is 64-bit, so the fd
-; pair MUST be an i32[2] (an int[2] would be 2x8 bytes and splice both fds
-; into one garbage i64). The fd values themselves are small and widen
-; cleanly into `int` when handed to read/write/close.
-function pipe(fds: pointer[i32]) returns i32 extern
+; The process primitives, as questions the OS shim answers (scaly/fiber/eio.c
+; and eio_windows.c say what each one promises). Declared here rather than in
+; the scaly package: only this package asks them.
+procedure scaly_proc_spawn_self(mode: pointer[const_char], mutable out_pid: pointer[i64], mutable out_write_fd: pointer[i32], mutable out_read_fd: pointer[i32]) returns i32 extern
+procedure scaly_proc_worker_fds(argc: int, argv: pointer[pointer[char]], mode: pointer[const_char], mutable in_fd: pointer[i32], mutable out_fd: pointer[i32]) returns i32 extern
+procedure scaly_proc_reap(pid: i64) returns i32 extern
+procedure scaly_proc_wait_readable(fd: i32, timeout: i32) returns i32 extern
+procedure scaly_proc_stdio_binary() extern
 function close(fd: int) returns i32 extern
-function waitpid(pid: int, status: pointer[i32], options: int) returns i32 extern
-function kill(pid: int, sig: int) returns i32 extern
-; poll: the C prototype is `int poll(struct pollfd *, nfds_t, int)`, and
-; nfds_t is 32 bits on macOS (unsigned int) but 64 on glibc (unsigned long).
-; ONE seed serves every target, so the width cannot be per-OS: `u64` is the
-; portable choice, because the caller then writes the WHOLE register and a
-; 32-bit callee reads the correct low half. `timeout` and the RESULT are
-; plain C `int`, i.e. 32 bits on both.
-; This declaration must stay type-identical to the one in scaly/fiber.scaly:
-; both modules are linked into this binary, and they used to disagree --
-; `declare i32 @poll(ptr, i32, i32)` against `declare i64 @poll(ptr, i64,
-; i64)` -- so this call read a 64-bit result from a function that returns 32,
-; with the upper half undefined.
-function poll(fds: pointer[pollfd], nfds: u64, timeout: i32) returns i32 extern
-function signal(sig: int, handler: pointer[void]) returns pointer[void] extern
 function setenv(name: pointer[const_char], value: pointer[const_char], overwrite: i32) returns i32 extern
-
-; `pollfd` itself is declared in the PRELUDE (scaly/fiber.scaly), which also
-; declares poll: a top-level `define` mangles without its module, so a second
-; one here would collide with it silently in the whole-stack link.
-
-define POLLIN i16 1
 
 ; The worker's stack, independent of the stack the CLIENT started the server
 ; with (2026-09-25). The pipeline plans the whole package a document belongs
@@ -86,8 +75,6 @@ define WORKER_STACK_BYTES size_t 67108864
 
 ; The two pipe ends the request loop serves, handed to its thread.
 define WorkerFds (in_fd: int  out_fd: int)
-define SIGKILL int 9
-define SIGPIPE int 13
 
 ; Wait at most this long for the worker to answer one PER-DOCUMENT request
 ; before declaring it hung and killing it (milliseconds). Which kinds land
@@ -172,13 +159,17 @@ define worker
     ; the diagnostics it owes, which is what turns one analysis per keystroke
     ; into one per typing burst (docstore.mark_dirty# has the measurement).
     ;
-    ; It lives HERE because `poll` / `pollfd` / `POLLIN` are declared in this
-    ; module for the worker pipes, and a C symbol gets ONE declaration per tree —
-    ; two that disagree is precisely what tests/abi/run.sh check 3 exists to
-    ; catch. The answer is exact rather than approximate because rpc.read_byte#
-    ; reads stdin with a raw one-byte `read`, unbuffered: nothing can be sitting
-    ; in a userspace buffer where a poll of the fd would not see it.
+    ; It lives HERE because the readiness question is declared in this module
+    ; for the worker pipes. The answer is exact rather than approximate because
+    ; rpc.read_byte# reads stdin with a raw one-byte `read`, unbuffered: nothing
+    ; can be sitting in a userspace buffer where a poll of the fd would not see
+    ; it. On Windows a stdin that is no pipe (a console, a file) answers "cannot
+    ; tell", read here as "nothing waiting": the owed diagnostics run at once.
     procedure stdin_has_input() @ret_nonlocal true @deep true returns bool io linked
+
+    ; The whole life of a worker process, when this process is one: main asks
+    ; before it does anything else. False in the server itself.
+    procedure run_if_worker(argc: int, argv: pointer[pointer[char]]) @ret_nonlocal true @deep true returns bool io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig linked
 
     ; ====================================================================
     ; Child side: read framed {uri,text} requests, emit framed payloads.
@@ -219,8 +210,14 @@ define worker
     ; Parent side: spawn / kill / analyze.
     ; ====================================================================
 
-    ; Fork a fresh worker and record its pid + pipe fds. On any failure
+    ; Start a fresh worker and record its pid + pipe fds. On any failure
     ; worker_pid stays 0 (analyze then falls back to a clear payload).
+    ;
+    ; The shim sees to the three things the fork used to do by hand: SIGPIPE
+    ; is ignored (writing to a dead worker must be an error, not the parent's
+    ; death), the child keeps none of the parent's pipe ends, and its stdin
+    ; and stdout are the null device -- if it held the editor's stdout, the
+    ; client would never see end of file when the parent exits, and would hang.
     procedure spawn() @deep true io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
 
     procedure ensure() @deep true io mutable dir_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid reads worker_pid linked
