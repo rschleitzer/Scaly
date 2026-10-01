@@ -3,7 +3,7 @@
 #   source tools/llvm-env.sh   ->  sets LLVM_PREFIX, LLC, LLVM_LIBDIR, LLVM_LIBNAME
 # Override any of them by exporting before sourcing (e.g. LLVM21=/path).
 # Mirrors build.sh's prefix logic so the C++ bootstrap and the seed agree.
-# Safe under `set -u`: tools/link-lto.sh sources it with nounset on, and every
+# Safe under `set -u`: scripts source it with nounset on, and every
 # variable below may legitimately be unset on entry.
 
 # 0. The Windows box (Git Bash, the standalone LLVM installer). None of the
@@ -16,8 +16,8 @@
 #      LLC / OPT     tools/win/llc and tools/win/opt — `clang -c` and
 #                    `clang -emit-llvm` under the spelling the scripts use;
 #                    the installer ships neither tool (nor llvm-link, which
-#                    stays EMPTY: tools/link-lto.sh then falls back to its
-#                    archive link, and the seed builds go through
+#                    stays EMPTY: the port binaries take their archive link
+#                    there, and the seed builds go through
 #                    tools/win-lto.sh, i.e. clang -flto=full + lld-link)
 #      LLVM_LIBDIR   in the 8.3 spelling: cli.scaly hands -L through system()
 #                    UNQUOTED and `Program Files` has a space

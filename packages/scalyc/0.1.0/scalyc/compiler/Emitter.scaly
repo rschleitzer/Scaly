@@ -8693,6 +8693,40 @@ define Emitter
             LLVMLinkModules2(llvm_module, package_module) = 0
         }
 
+        ; The release pipeline around the profile passes. The pass builder
+        ; puts them after a first simplification and a small inlining round
+        ; (PassBuilder's addPreInlinerPasses), which its C options cannot ask
+        ; for; `before` spells that round out. `after` is what the builder adds
+        ; behind a profile it reads. $SCALYC_PGO_BEFORE / $SCALYC_PGO_AFTER
+        ; replace them (empty: none) -- for measuring, not for a build.
+        procedure pgo_passes(mutable this, profile_passes: String) returns String
+        {
+            var before String("function(lower-expect,simplifycfg,sroa,early-cse),cgscc(inline,function(sroa<modify-cfg>,early-cse,simplifycfg,instcombine<no-verify-fixpoint>)),globaldce")
+            var after String()
+            if config.pgo_train = false
+                set after: String("pgo-icall-prom")
+            let env_before getenv("SCALYC_PGO_BEFORE")
+            if env_before <> null
+                set before: String(env_before)
+            let env_after getenv("SCALYC_PGO_AFTER")
+            if env_after <> null and config.pgo_train = false
+                set after: String(env_after)
+            var sb StringBuilder()
+            if before.get_length() > 0
+            {
+                sb.append(before)
+                sb.append(",")
+            }
+            sb.append(profile_passes)
+            if after.get_length() > 0
+            {
+                sb.append(",")
+                sb.append(after)
+            }
+            sb.append(",default<O2>")
+            sb.to_string()
+        }
+
         ; hand LLVM the profile `pgo-instr-use` reads
         procedure set_profile_file(mutable this)
         {
@@ -8859,18 +8893,19 @@ define Emitter
                     set pipeline: ("default<O2>" as pointer[const_char])
                 if config.opt_level >= 3
                     set pipeline: ("default<O3>" as pointer[const_char])
-                ; Profile-guided: counters go in, or a profile is read, on the
-                ; module as emitted -- both at the same point, so the counts of
-                ; the trained binary fit the functions of this one. (The pass
-                ; builder places them after a first simplification; its C
-                ; options cannot ask for that.)
+                ; Profile-guided: the counters go in, or the profile is read,
+                ; at the same point of the same pipeline, so the counts of the
+                ; trained binary fit the functions of this one
+                var pgo_pipeline String()
                 if config.release and config.pgo_train
-                    set pipeline: ("pgo-instr-gen,instrprof,default<O2>" as pointer[const_char])
+                    set pgo_pipeline: this.pgo_passes("pgo-instr-gen,instrprof")
                 else if config.release and config.pgo_profile.get_length() > 0
                 {
                     this.set_profile_file()
-                    set pipeline: ("pgo-instr-use,default<O2>" as pointer[const_char])
+                    set pgo_pipeline: this.pgo_passes("pgo-instr-use")
                 }
+                if pgo_pipeline.get_length() > 0
+                    set pipeline: pgo_pipeline.to_c_string()
                 let opt_err LLVMRunPasses(llvm_module, pipeline, tm, pb_opts)
                 LLVMDisposePassBuilderOptions pb_opts
                 if opt_err <> null

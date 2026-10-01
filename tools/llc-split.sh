@@ -4,8 +4,8 @@
 # opt still runs over the whole module first, so inlining across the parts is
 # untouched; what the split costs is code placement — measured on the tscaly
 # bench binary 1-2 % slower at run time, 4 % larger. So the compiler's own build
-# (tools/build-from-seed.sh) uses it, and tools/link-lto.sh only on LTO_SPLIT=<n>
-# — never for a binary that is measured against another compiler.
+# (tools/build-from-seed.sh) uses it — never a binary that is measured against
+# another compiler (`scaly build --release` emits one object).
 #
 #   tools/llc-split.sh <n|auto> <input .bc/.ll> <out prefix> [llc args...]
 #

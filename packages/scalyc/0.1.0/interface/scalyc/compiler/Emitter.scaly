@@ -1871,6 +1871,14 @@ define Emitter
         ; link.
         procedure link_bitcode(mutable this, mutable filename: String) @ret_caller true @deep true returns bool io linked
 
+        ; The release pipeline around the profile passes. The pass builder
+        ; puts them after a first simplification and a small inlining round
+        ; (PassBuilder's addPreInlinerPasses), which its C options cannot ask
+        ; for; `before` spells that round out. `after` is what the builder adds
+        ; behind a profile it reads. $SCALYC_PGO_BEFORE / $SCALYC_PGO_AFTER
+        ; replace them (empty: none) -- for measuring, not for a build.
+        procedure pgo_passes(mutable this, profile_passes: String) @page true @direct true @ret_caller true @deep true returns String io linked
+
         ; hand LLVM the profile `pgo-instr-use` reads
         procedure set_profile_file(mutable this) @ret_caller true @deep true linked
 
