@@ -1246,6 +1246,17 @@ define cli
         else
             cmd_builder.append " -lm"
 
+        ; `scaly build --target <triple>`: the link is for that target too.
+        ; Until 2026-10-01 only the objects were -- the program and the
+        ; packages' C files -- and the link ran for the host: "symbol(s) not
+        ; found for architecture arm64" for an x86_64 build on an arm64 Mac.
+        ; (A target of another system still needs its headers and libraries.)
+        if opts.tool_build and opts.target_triple.get_length() > 0
+        {
+            cmd_builder.append " --target="
+            cmd_builder.append opts.target_triple
+        }
+
         cmd_builder.append " -o "
         cmd_builder.append opts.output_file
         let cmd_str cmd_builder.to_string()
