@@ -72,6 +72,10 @@ jobs:
         shell: bash
         run: |
           . tools/win-env.sh
+          # GitHub runs `shell: bash` with -e -o pipefail: the first check that
+          # is MEANT to fail (the compiler refusing a command) ended the first
+          # balloon after one verdict. Every check is judged by hand here.
+          set +e +o pipefail
           set -u
           export SCALY_CACHE="$PWD/wt_cache"
           W=wt; mkdir -p $W
