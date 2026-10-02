@@ -22,6 +22,8 @@ ROOT="$(cd "$HERE/../../.." && pwd)"
 ITER=${1:-20}
 DATA=${JSONBENCH_DATA:-${TMPDIR:-/tmp}/scaly-jsonbench}
 BIN="$ROOT/scalyc/build/scalyc"
+# the tool beside the compiler: scaly for REPL/run/build/test, scalyc for the flags
+SCALY=$("$ROOT/tools/scaly-of.sh" "$BIN")
 cd "$ROOT"
 
 mkdir -p "$DATA"
@@ -38,7 +40,7 @@ trap 'rm -rf "$TMP"' EXIT
 # target-cpu=native does; the tool compiles the packages for it too.
 # (Until 2026-10-01 three -S emissions and tools/link-lto.sh; measured equal
 # on all four files, the binaries the same size to the byte.)
-"$BIN" build tools/bench/json/bench.scaly --release -mcpu=native -o "$TMP/bench"
+"$SCALY" build tools/bench/json/bench.scaly --release -mcpu=native -o "$TMP/bench"
 ( cd tools/bench/json/rust && RUSTFLAGS="-C target-cpu=native" cargo build --release -q )
 RUST="$ROOT/tools/bench/json/rust/target/release/jsonbench"
 CPP=""
@@ -60,7 +62,7 @@ fi
 
 # STAGES=1: the json package's parse taken apart as well (stages.scaly)
 if [ "${STAGES:-0}" = 1 ]; then
-  "$BIN" build tools/bench/json/stages.scaly --release -mcpu=native -o "$TMP/stages"
+  "$SCALY" build tools/bench/json/stages.scaly --release -mcpu=native -o "$TMP/stages"
 fi
 
 # JSONBENCH_KEEP=<dir>: the binaries stay there for a profiler afterwards

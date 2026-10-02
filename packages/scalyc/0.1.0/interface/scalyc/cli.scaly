@@ -120,7 +120,10 @@ define cli
     ; argv: argument vector (C-style array of char pointers)
     function parse_args(argc: int, argv: pointer[pointer[char]]) @page true @direct true @deep true returns Options linked
 
-    ; Print usage information
+    ; Usage of `scaly`, the tool (its root is scaly_main.scaly)
+    procedure print_tool_usage() @ret_nonlocal true @deep true io linked
+
+    ; Print usage information (scalyc, the compiler)
     procedure print_usage() @ret_nonlocal true @deep true io linked
 
     ; The directory for the compiler's own scratch object. POSIX has /tmp;
@@ -274,8 +277,16 @@ define cli
 
     function extract_program_name(file_path: String) @page true @direct true @deep true returns String linked
 
-    ; Main entry point
+    ; Entry point of scalyc, the compiler: a command line like a C
+    ; compiler's (-o, -c, -S, -O2, -L, -l) and nothing else. The REPL and the
+    ; commands run, build and test belong to `scaly` (tool_main#).
     procedure main(argc: int, mutable argv: pointer[pointer[char]]) @ret_nonlocal true @deep true returns int io mutable modeler_error_count reads modeler_error_count linked
+
+    ; Entry point of `scaly`, the tool (ROADMAP-public.md): alone it is the
+    ; REPL, `scaly run file args`, `scaly build file [options]`, `scaly test
+    ; file [filter]`. Anything else is answered with the usage -- a bare file
+    ; or a flag is scalyc's command line, not this one's.
+    procedure tool_main(argc: int, mutable argv: pointer[pointer[char]]) @ret_nonlocal true @deep true returns int io mutable modeler_error_count reads modeler_error_count linked
 
     ; Test function
     procedure test() @ret_nonlocal true @deep true returns int io mutable modeler_error_count reads modeler_error_count linked

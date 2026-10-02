@@ -17,12 +17,12 @@ set -e
 cd "$(dirname "$0")/.."
 
 SRC=${1:-dist/seed}
-for f in main scalyc scaly; do
+for f in main scaly_main scalyc scaly; do
     [ -f "$SRC/$f.ll" ] || { echo "install-seed: FAIL — $SRC/$f.ll not found; run tools/seed.sh first"; exit 1; }
 done
 
-cp "$SRC/main.ll" "$SRC/scalyc.ll" "$SRC/scaly.ll" seed/
-SUM_FILES="main.ll scalyc.ll scaly.ll"
+cp "$SRC/main.ll" "$SRC/scaly_main.ll" "$SRC/scalyc.ll" "$SRC/scaly.ll" seed/
+SUM_FILES="main.ll scaly_main.ll scalyc.ll scaly.ll"
 
 # scalyls language server seed (optional — present when tools/seed.sh emitted
 # it, self-hosted. A separate program with TWO roots (scalyls_main.ll +

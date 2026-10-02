@@ -128,7 +128,7 @@ llc_objs() {
 }
 C=packages/scalyc/0.1.0 L=packages/scalyls/0.1.0
 echo "seed: emitting .ll with $CC --no-tests --portable-simd --target $SEED_TARGET"
-emit_roots "$CC" main=$C/main.scaly scalyc=$C/scalyc.scaly scaly=packages/scaly/0.1.0/scaly.scaly || fail "emission"
+emit_roots "$CC" main=$C/main.scaly scaly_main=$C/scaly_main.scaly scalyc=$C/scalyc.scaly scaly=packages/scaly/0.1.0/scaly.scaly || fail "emission"
 
 if [ "$SCALY_COFF" = 1 ]; then
 # ★The Windows box: the seed text is Mach-O-targeted and carries no COMDATs,
@@ -141,9 +141,14 @@ if ! tools/win-lto.sh --llvm "$OUT/scalyc_seed$SCALY_EXE" "$OUT/main.ll" "$OUT/s
   tail -40 "$OUT/link.log"
   fail "link (undefined symbols)"
 fi
+# the tool beside it: its own root over the same two packages
+if ! tools/win-lto.sh --llvm "$OUT/scaly_seed$SCALY_EXE" "$OUT/scaly_main.ll" "$OUT/scalyc.ll" "$OUT/scaly.ll" > "$OUT/tool_link.log" 2>&1; then
+  tail -40 "$OUT/tool_link.log"
+  fail "link scaly (undefined symbols)"
+fi
 else
 echo "seed: llc -> obj (LLVM $LLVM_MAJOR) + link ($CLANG, no dynamic_lookup)"
-llc_objs main scalyc scaly || fail "llc"
+llc_objs main scaly_main scalyc scaly || fail "llc"
 # NO -Wl,-undefined,dynamic_lookup — a clean link proves zero undefined.
 # (The final link is plain object linking, so any clang/cc works. What is NOT
 # free is -lLLVM-$LLVM_MAJOR below: libLLVM prints the IR, so its major must match the
@@ -162,8 +167,14 @@ if ! "$CLANG" "${LINKARGS[@]}" "$OUT/main.o" "$OUT/scalyc.o" "$OUT/scaly.o" "$OU
   grep -v 'reexported library' "$OUT/link.log" || true
   fail "link (undefined symbols)"
 fi
+# The tool beside it (tools/scaly-of.sh): its own root over the same objects.
+if ! "$CLANG" "${LINKARGS[@]}" "$OUT/scaly_main.o" "$OUT/scalyc.o" "$OUT/scaly.o" "$OUT/fcontext.o" "$OUT/eio.o" "$OUT/ctime.o" "$OUT/panic.o" \
+     -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -lm -o "$OUT/scaly_seed" 2> "$OUT/tool_link.log"; then
+  grep -v 'reexported library' "$OUT/tool_link.log" || true
+  fail "link scaly (undefined symbols)"
 fi
-echo "seed: linked clean -> $OUT/scalyc_seed"
+fi
+echo "seed: linked clean -> $OUT/scalyc_seed, $OUT/scaly_seed"
 
 # The seed compiler's four jobs are independent of each other and run side by
 # side: hello + the AOT corpus, and the re-emission of the three compiler roots.
@@ -172,12 +183,18 @@ echo "seed: hello.scaly, AOT corpus, fixed-point re-emission, scalyls roots"
 ( "$OUT/scalyc_seed" -o "$OUT/hello" tests/aot/hello.scaly || { echo "compile hello"; exit 1; }
   out=$("$OUT/hello")
   [ "$out" = "Hello, World!" ] || { echo "hello output: '$out'"; exit 1; }
+  # the tool: one program through its JIT (not on the Windows box, where the
+  # in-process JIT does not work -- its link above is the check there)
+  if [ "$SCALY_COFF" != 1 ]; then
+    out=$("$OUT/scaly_seed" run tests/tool/hello.scaly a b)
+    [ "$out" = "hello a b" ] || { echo "scaly run output: '$out'"; exit 1; }
+  fi
   # `| tail -1` keeps the summary line only — so check the SCRIPT's status, not
   # the pipeline's (which is tail's, always 0).
   tools/aot_corpus.sh "$OUT/scalyc_seed" seed | tail -1
   [ "${PIPESTATUS[0]}" = "0" ] || { echo "AOT corpus"; exit 1; }
 ) > "$OUT/aot.log" 2>&1 & aot_pid=$!
-emit_roots "$OUT/scalyc_seed" r_main=$C/main.scaly r_scalyc=$C/scalyc.scaly r_scaly=packages/scaly/0.1.0/scaly.scaly & reemit_pid=$!
+emit_roots "$OUT/scalyc_seed" r_main=$C/main.scaly r_scaly_main=$C/scaly_main.scaly r_scalyc=$C/scalyc.scaly r_scaly=packages/scaly/0.1.0/scaly.scaly & reemit_pid=$!
 emit_roots "$OUT/scalyc_seed" scalyls_main=$L/main.scaly scalyls=$L/scalyls.scaly json=packages/json/0.1.0/json.scaly & ls_pid=$!
 wait $aot_pid; aot_rc=$?
 cat "$OUT/aot.log"; rm -f "$OUT/aot.log"
@@ -185,7 +202,7 @@ cat "$OUT/aot.log"; rm -f "$OUT/aot.log"
 wait $reemit_pid || fail "re-emission"
 wait $ls_pid || fail "scalyls emission"
 echo "seed: fixed-point self-reproduction"
-for f in main scalyc scaly; do
+for f in main scaly_main scalyc scaly; do
   cmp -s "$OUT/r_$f.ll" "$OUT/$f.ll" || fail "fixed point: $f.ll differs"
 done
 

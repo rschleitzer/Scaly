@@ -10,6 +10,8 @@
 cd "$(dirname "$0")/../.." || exit 1
 . tests/platform.sh || exit 1
 STAGE=${1:-$SCALY_STAGE_DEFAULT}
+# the tool beside the compiler: scaly for REPL/run/build/test, scalyc for the flags
+SCALY=$(tools/scaly-of.sh "$STAGE")
 OUT=${TMPDIR:-/tmp}
 
 # Every program is built with the stage binary's `build` command: the runtime
@@ -20,7 +22,7 @@ pass=0; fail=0; failures=()
 t=roundtrip
 expected=$(sed -n 's/^; Expected: //p' tests/cluster/$t.scaly)
 bin="$OUT/cluster_$t$SCALY_EXE"; rm -f "$bin"
-if ! "$STAGE" build tests/cluster/$t.scaly -o "$bin" >/dev/null 2>&1; then
+if ! "$SCALY" build tests/cluster/$t.scaly -o "$bin" >/dev/null 2>&1; then
   fail=$((fail+1)); failures+=("$t(compile)")
 else
   "$bin" > "$OUT/cluster_$t.out" 2>/dev/null; rc=$?
@@ -36,7 +38,7 @@ fi
 ok=1
 for t in xproc_recv xproc_send; do
   rm -f "$OUT/cluster_$t$SCALY_EXE"
-  if ! "$STAGE" build tests/cluster/$t.scaly -o "$OUT/cluster_$t$SCALY_EXE" >/dev/null 2>&1; then
+  if ! "$SCALY" build tests/cluster/$t.scaly -o "$OUT/cluster_$t$SCALY_EXE" >/dev/null 2>&1; then
     fail=$((fail+1)); failures+=("$t(compile)"); ok=0
   fi
 done
@@ -72,7 +74,7 @@ wait_marker() {
 # one cluster one build — different programs would refuse each other) ----
 t=pingpong
 rm -f "$OUT/cluster_$t$SCALY_EXE"
-if ! "$STAGE" build tests/cluster/$t.scaly -o "$OUT/cluster_$t$SCALY_EXE" >/dev/null 2>&1; then
+if ! "$SCALY" build tests/cluster/$t.scaly -o "$OUT/cluster_$t$SCALY_EXE" >/dev/null 2>&1; then
   fail=$((fail+1)); failures+=("$t(compile)")
 else
   PINGPONG_ROLE=b "$OUT/cluster_$t$SCALY_EXE" > "$OUT/cluster_${t}_b.log" 2>&1 &
@@ -95,7 +97,7 @@ fi
 # ---- 7.3 kill -9 mid-run: survivor's receive nulls + monitor fires ----
 t=kill9
 rm -f "$OUT/cluster_$t$SCALY_EXE"
-if ! "$STAGE" build tests/cluster/$t.scaly -o "$OUT/cluster_$t$SCALY_EXE" >/dev/null 2>&1; then
+if ! "$SCALY" build tests/cluster/$t.scaly -o "$OUT/cluster_$t$SCALY_EXE" >/dev/null 2>&1; then
   fail=$((fail+1)); failures+=("$t(compile)")
 else
   KILL9_ROLE=s "$OUT/cluster_$t$SCALY_EXE" > "$OUT/cluster_${t}_s.log" 2>&1 &
@@ -126,7 +128,7 @@ fi
 ok=1
 for t in stamp_a stamp_b; do
   rm -f "$OUT/cluster_$t$SCALY_EXE"
-  if ! "$STAGE" build tests/cluster/$t.scaly -o "$OUT/cluster_$t$SCALY_EXE" >/dev/null 2>&1; then
+  if ! "$SCALY" build tests/cluster/$t.scaly -o "$OUT/cluster_$t$SCALY_EXE" >/dev/null 2>&1; then
     fail=$((fail+1)); failures+=("$t(compile)"); ok=0
   fi
 done
@@ -156,7 +158,7 @@ fi
 # gradients in rank order — identical arithmetic, so identical loss lines.
 t=train
 rm -f "$OUT/cluster_$t$SCALY_EXE"
-if ! "$STAGE" build tests/cluster/$t.scaly -o "$OUT/cluster_$t$SCALY_EXE" >/dev/null 2>&1; then
+if ! "$SCALY" build tests/cluster/$t.scaly -o "$OUT/cluster_$t$SCALY_EXE" >/dev/null 2>&1; then
   fail=$((fail+1)); failures+=("$t(compile)")
 else
   BIN="$OUT/cluster_$t$SCALY_EXE"

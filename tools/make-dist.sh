@@ -18,7 +18,7 @@ VERSION="${1:-0.1.0}"
 OUT="dist"
 TARBALL="$OUT/scaly-$VERSION.tar.gz"
 
-for f in main scalyc scaly; do
+for f in main scaly_main scalyc scaly; do
   [ -f "seed/$f.ll" ] || { echo "make-dist: FAIL — seed/$f.ll missing (run tools/seed.sh + install-seed.sh)"; exit 1; }
 done
 [ -f LICENSE ] || { echo "make-dist: FAIL — LICENSE missing"; exit 1; }
@@ -29,7 +29,7 @@ trap 'rm -rf "$STAGE"' EXIT
 
 # seed/ (the compiler IR)
 mkdir -p "$STAGE/seed"
-cp seed/main.ll seed/scalyc.ll seed/scaly.ll "$STAGE/seed/"
+cp seed/main.ll seed/scaly_main.ll seed/scalyc.ll seed/scaly.ll "$STAGE/seed/"
 
 # scalyls language server seed (optional — a separate program with two roots;
 # install.sh links them with the compiler seed objects into

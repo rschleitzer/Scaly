@@ -31,6 +31,8 @@
 cd "$(dirname "$0")/../.." || exit 1
 . tests/platform.sh || exit 1
 STAGE=${1:-$SCALY_STAGE_DEFAULT}
+# the tool beside the compiler: scaly for REPL/run/build/test, scalyc for the flags
+SCALY=$(tools/scaly-of.sh "$STAGE")
 SRC=tests/debuginfo/probe.scaly
 OUT=/tmp/debuginfo_probe$SCALY_EXE
 pass=0; fail=0; failures=()
@@ -55,7 +57,7 @@ if [ -z "$DWARFDUMP" ]; then
 fi
 
 rm -rf "$OUT" "$OUT.dSYM" /tmp/debuginfo_nog.ll
-"$STAGE" build "$SRC" -g -o "$OUT" >/tmp/debuginfo_build.log 2>&1
+"$SCALY" build "$SRC" -g -o "$OUT" >/tmp/debuginfo_build.log 2>&1
 if [ ! -x "$OUT" ]; then
   echo "debuginfo: FAIL — -g compile produced no binary"
   sed -n '1,20p' /tmp/debuginfo_build.log

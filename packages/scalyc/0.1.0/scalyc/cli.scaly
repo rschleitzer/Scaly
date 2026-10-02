@@ -417,15 +417,25 @@ define cli
         opts
     }
 
-    ; Print usage information
-    procedure print_usage()
+    ; Usage of `scaly`, the tool (its root is scaly_main.scaly)
+    procedure print_tool_usage()
     {
-        Console.println "Usage: scaly run <file> [arguments]     compile and run a program"
+        Console.println "Usage: scaly                            the REPL"
+        Console.println "       scaly run <file> [arguments]     compile and run a program"
         Console.println "       scaly build <file> [-o <out>] [--release]   build an executable"
         Console.println "             --pgo-train          ... instrumented: its run writes default.profraw ($LLVM_PROFILE_FILE)"
         Console.println "             --pgo <profile>      ... optimised with that profile"
+        Console.println "             --target <t>, -g, -mcpu=<cpu>, -L<path>, -l<name>   as scalyc takes them"
         Console.println "       scaly test <file> [filter]       run its test functions"
-        Console.println "       scalyc [options] <input file>"
+        Console.println ""
+        Console.println "The compiler with a command line like a C compiler's is scalyc,"
+        Console.println "the language server scalyls."
+    }
+
+    ; Print usage information (scalyc, the compiler)
+    procedure print_usage()
+    {
+        Console.println "Usage: scalyc [options] <input file>"
         Console.println ""
         Console.println "Options:"
         Console.println "  -h, --help     Show this help message"
@@ -596,7 +606,10 @@ define cli
     {
         if opts.show_help
         {
-            print_usage()
+            if opts.tool_build
+                print_tool_usage()
+            else
+                print_usage()
             return 0
         }
 
@@ -609,7 +622,10 @@ define cli
         if opts.has_input() = false
         {
             Console.println "Error: No input file specified"
-            print_usage()
+            if opts.tool_build
+                print_tool_usage()
+            else
+                print_usage()
             return 1
         }
 
@@ -1976,57 +1992,74 @@ define cli
         file_path.substring(start as size_t, (end - start) as size_t)
     }
 
-    ; Main entry point
+    ; Entry point of scalyc, the compiler: a command line like a C
+    ; compiler's (-o, -c, -S, -O2, -L, -l) and nothing else. The REPL and the
+    ; commands run, build and test belong to `scaly` (tool_main#).
     procedure main(argc: int, mutable argv: pointer[pointer[char]]) returns int mutable modeler_error_count
     {
-        ; the one tool's commands (ROADMAP-public.md): `scaly` alone is the
-        ; REPL, `scaly run file args`, `scaly build file [options]`, `scaly
-        ; test file [filter]`; anything else is the compiler's flags
         if argc = 1
-            return repl.main()
-        if argc >= 2
         {
-            let command String(*(argv + 1))
-            if command.equals("run")
-            {
-                if argc < 3
-                {
-                    Console.println "Usage: scaly run <file> [arguments]"
-                    return 1
-                }
-                var run_opts Options()
-                set run_opts.input_file: String(*(argv + 2))
-                set run_opts.jit_program: true
-                ; the program's argv[0] is its file, as a shell would give it
-                set run_opts.program_argc: argc - 2
-                set run_opts.program_argv: argv + 2
-                return cli.run(run_opts)
-            }
-            if command.equals("test")
-            {
-                if argc < 3
-                {
-                    Console.println "Usage: scaly test <file> [filter]"
-                    return 1
-                }
-                var test_opts Options()
-                set test_opts.input_file: String(*(argv + 2))
-                set test_opts.test_mode: true
-                if argc > 3
-                    set test_opts.test_filter: String(*(argv + 3))
-                return cli.run(test_opts)
-            }
-            if command.equals("build")
-            {
-                var build_opts cli.parse_args(argc - 1, argv + 1)
-                set build_opts.tool_build: true
-                if build_opts.output_file.get_length() = 0 and build_opts.has_input()
-                    set build_opts.output_file: cli.extract_program_name(build_opts.input_file)
-                return cli.run(build_opts)
-            }
+            print_usage()
+            return 1
         }
         var opts cli.parse_args(argc, argv)
         return cli.run(opts)
+    }
+
+    ; Entry point of `scaly`, the tool (ROADMAP-public.md): alone it is the
+    ; REPL, `scaly run file args`, `scaly build file [options]`, `scaly test
+    ; file [filter]`. Anything else is answered with the usage -- a bare file
+    ; or a flag is scalyc's command line, not this one's.
+    procedure tool_main(argc: int, mutable argv: pointer[pointer[char]]) returns int mutable modeler_error_count
+    {
+        if argc = 1
+            return repl.main()
+        let command String(*(argv + 1))
+        if command.equals("run")
+        {
+            if argc < 3
+            {
+                Console.println "Usage: scaly run <file> [arguments]"
+                return 1
+            }
+            var run_opts Options()
+            set run_opts.input_file: String(*(argv + 2))
+            set run_opts.jit_program: true
+            ; the program's argv[0] is its file, as a shell would give it
+            set run_opts.program_argc: argc - 2
+            set run_opts.program_argv: argv + 2
+            return cli.run(run_opts)
+        }
+        if command.equals("test")
+        {
+            if argc < 3
+            {
+                Console.println "Usage: scaly test <file> [filter]"
+                return 1
+            }
+            var test_opts Options()
+            set test_opts.input_file: String(*(argv + 2))
+            set test_opts.test_mode: true
+            if argc > 3
+                set test_opts.test_filter: String(*(argv + 3))
+            return cli.run(test_opts)
+        }
+        if command.equals("build")
+        {
+            var build_opts cli.parse_args(argc - 1, argv + 1)
+            set build_opts.tool_build: true
+            if build_opts.output_file.get_length() = 0 and build_opts.has_input()
+                set build_opts.output_file: cli.extract_program_name(build_opts.input_file)
+            return cli.run(build_opts)
+        }
+        if command.equals("-h") or command.equals("--help") or command.equals("help")
+        {
+            print_tool_usage()
+            return 0
+        }
+        Console.println("scaly: unknown command `command`")
+        print_tool_usage()
+        return 1
     }
 
     ; Test function

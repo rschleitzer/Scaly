@@ -1,8 +1,17 @@
 #!/bin/bash
-# Build scalyc from the committed .ll seed — NO C++ toolchain required.
+# Build scalyc from the committed .ll seed — NO C++ toolchain required — and
+# beside it scaly (the tool) and scalyls (the language server).
+#
+# Three programs, each with its own root and its code linked statically:
+#   scalyc    main.ll        the compiler, a C compiler's command line
+#   scaly     scaly_main.ll  the tool: REPL, run, build, test
+#   scalyls   scalyls_main.ll + scalyls.ll + json.ll   the language server
+# all over scalyc.ll + scaly.ll. scaly lands beside the compiler under the name
+# tools/scaly-of.sh gives. SCALYC_SEED_NO_SCALYLS=1 leaves the language server
+# out, SCALYC_SEED_NO_TOOL=1 the tool (a bootstrap ROOT needs neither).
 #
 # The seed is the self-hosted Scaly compiler shipped as its own emitted LLVM IR
-# (main.ll + scalyc.ll + scaly.ll under seed/). A SINGLE seed serves every 64-bit
+# (under seed/). A SINGLE seed serves every 64-bit
 # little-endian LP64 target: the IR carries no target triple and bakes layout in
 # from fixed LP64 constants, so llc retargets it and the built compiler reads its
 # host triple at runtime. This script turns that IR into a working `scalyc` using
@@ -60,6 +69,11 @@ fi
 if [ "$SCALY_COFF" = 1 ]; then
     OUT="${OUT%.exe}.exe"
     tools/win-lto.sh --llvm "$OUT" "$SEED/main.ll" "$SEED/scalyc.ll" "$SEED/scaly.ll"
+    if [ "${SCALYC_SEED_NO_TOOL:-0}" != "1" ] && [ -f "$SEED/scaly_main.ll" ]; then
+        TOOLOUT="$(tools/scaly-of.sh "${OUT%.exe}").exe"
+        tools/win-lto.sh --llvm "$TOOLOUT" "$SEED/scaly_main.ll" "$SEED/scalyc.ll" "$SEED/scaly.ll"
+        echo "build-from-seed: OK — $TOOLOUT (the tool)"
+    fi
     echo "build-from-seed: OK — $OUT (from seed/, clang -flto=full + lld-link)"
     tools/win-archive.sh "$OUT" > /dev/null
     echo "build-from-seed: runtime archive /tmp/libscaly.lib ready"
@@ -163,6 +177,39 @@ build_scalyls() {
         -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -lm -o "$LSOUT"
     echo "build-from-seed: OK — $LSOUT (language server)"
 }
+# scaly, the tool: the compiler's recipe with its own root. It runs programs
+# through the in-process JIT (`scaly run`, `scaly test`, the REPL), so it takes
+# the same two textual edits around opt that keep the runtime JIT-visible (see
+# the compiler's block below for why). Beside the compiler chain in the
+# whole-program route, after it in the per-object one.
+build_tool() {
+    TOOLOUT="$(tools/scaly-of.sh "$OUT")"
+    mkdir -p "$(dirname "$TOOLOUT")"
+    if [ "$use_opt" = "1" ]; then
+        for f in scaly_main scalyc scaly; do
+            sed 's/^define linkonce_odr /define weak_odr /' "$SEED/$f.ll" > "$WORK/tool_${f}_weak.ll"
+        done
+        "$LLVM_LINK" -S "$WORK/tool_scaly_main_weak.ll" "$WORK/tool_scalyc_weak.ll" "$WORK/tool_scaly_weak.ll" -o "$WORK/tool_linked.ll"
+        "$OPT" -O2 -S "$WORK/tool_linked.ll" -o "$WORK/tool_opt.ll"
+        sed '/^define /s/\(local_\)\?unnamed_addr //g' "$WORK/tool_opt.ll" > "$WORK/tool_export.ll"
+        tools/llc-split.sh "${SCALYC_LLC_SPLIT:-auto}" "$WORK/tool_export.ll" "$WORK/tool_all" \
+            -relocation-model=pic -filetype=obj > "$WORK/tool_objs.txt"
+        TOOL_OBJS=()
+        while IFS= read -r o; do TOOL_OBJS+=("$o"); done < "$WORK/tool_objs.txt"
+    else
+        "$LLC" -relocation-model=pic -filetype=obj "$SEED/scaly_main.ll" -o "$WORK/scaly_main.o"
+        TOOL_OBJS=("$WORK/scaly_main.o" "$WORK/scalyc.o" "$WORK/scaly.o")
+    fi
+    ${CLANG:-clang} "${LINKARGS[@]}" "${TOOL_OBJS[@]}" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" "$WORK/panic.o" \
+        -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -lm -o "$TOOLOUT"
+    echo "build-from-seed: OK — $TOOLOUT (the tool)"
+}
+WANT_TOOL=0
+if [ "${SCALYC_SEED_NO_TOOL:-0}" != "1" ] && [ -f "$SEED/scaly_main.ll" ]; then WANT_TOOL=1; fi
+tool_pid=""
+if [ "$WANT_TOOL" = 1 ] && [ "$use_opt" = 1 ]; then
+    build_tool > "$WORK/tool.log" 2>&1 & tool_pid=$!
+fi
 WANT_SCALYLS=0
 if [ "${SCALYC_SEED_NO_SCALYLS:-0}" != "1" ] && [ -f "$SEED/scalyls.ll" ] && [ -f "$SEED/scalyls_main.ll" ] && [ -f "$SEED/json.ll" ]; then WANT_SCALYLS=1; fi
 ls_pid=""
@@ -277,6 +324,14 @@ cp "$WORK/ctime.o" /tmp/ctime.o
 cp "$WORK/panic.o" /tmp/panic.o
 rm -f /tmp/libscaly.a; ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o /tmp/ctime.o /tmp/panic.o
 echo "build-from-seed: runtime archive /tmp/libscaly.a ready"
+
+if [ -n "$tool_pid" ]; then
+    wait "$tool_pid" && tool_rc=0 || tool_rc=$?
+    cat "$WORK/tool.log"
+    [ "$tool_rc" = 0 ] || exit "$tool_rc"
+elif [ "$WANT_TOOL" = 1 ]; then
+    build_tool
+fi
 
 if [ -n "$ls_pid" ]; then
     wait "$ls_pid" && ls_rc=0 || ls_rc=$?

@@ -49,12 +49,20 @@ LINK="-L$LLVM_LIBDIR -l$LLVM_LIBNAME -lm"
 # line (`-Xlinker -stack:67108864,1048576`, -lLLVM-C, -lws2_32, the archive).
 # `ar` is llvm-ar there (tools/win/ar, on PATH from tools/win-env.sh); a
 # `.a` archive is read by its magic, not its suffix.
+# ★Every stage is TWO programs over one package archive: scalyc (the compiler,
+# main.scaly) and its sibling scaly (the tool: REPL, run, build, test --
+# scaly_main.scaly), named alike but for the `c` (tools/scaly-of.sh). A suite
+# handed a stage compiler finds the tool beside it.
 link_stage() {
+  local tool; tool=$(tools/scaly-of.sh "$2")
   if [ "$SCALY_COFF" = 1 ]; then
     "$1" -c -o "$2_main.o" packages/scalyc/0.1.0/main.scaly
     tools/win-link.sh --llvm --runtime "$2$SCALY_EXE" "$2_main.o" "$3"
+    "$1" -c -o "${tool}_main.o" packages/scalyc/0.1.0/scaly_main.scaly
+    tools/win-link.sh --llvm --runtime "$tool$SCALY_EXE" "${tool}_main.o" "$3"
   else
     "$1" -o "$2" packages/scalyc/0.1.0/main.scaly "$3" $LINK
+    "$1" -o "$tool" packages/scalyc/0.1.0/scaly_main.scaly "$3" $LINK
   fi
 }
 
@@ -76,7 +84,7 @@ if [ "$SCALY_COFF" != 1 ] && [ -f seed/scalyc.ll ] && [ -x /tmp/scalyc_seed_root
   tools/ctime.sh /tmp/ctime.o
   tools/panic.sh /tmp/panic.o
   rm -f /tmp/libscaly.a; ar rcs /tmp/libscaly.a /tmp/libscaly.o /tmp/fcontext.o /tmp/eio.o /tmp/ctime.o /tmp/panic.o
-elif [ -f seed/scalyc.ll ] && SCALYC_SEED_NO_SCALYLS=1 tools/build-from-seed.sh /tmp/scalyc_seed_root > /tmp/scalyc_seed_root.log 2>&1; then
+elif [ -f seed/scalyc.ll ] && SCALYC_SEED_NO_SCALYLS=1 SCALYC_SEED_NO_TOOL=1 tools/build-from-seed.sh /tmp/scalyc_seed_root > /tmp/scalyc_seed_root.log 2>&1; then
   echo "bootstrap: ROOT = seed-built compiler -> /tmp/scalyc_seed_root"
   ROOT=/tmp/scalyc_seed_root
   root_key > /tmp/scalyc_seed_root.key
@@ -93,7 +101,7 @@ echo "bootstrap: ROOT -> stage1"
 # to leave the OLD /tmp/sc0.o in place, the archive took it, and a freshly
 # linked stage1 was the old compiler, rc 0 (found 2026-09-26 with --stage1,
 # where no second compile catches it). Both products are checked below.
-rm -f "/tmp/scalyc_stage1${SCALY_EXE:-}" /tmp/sc0.o
+rm -f "/tmp/scalyc_stage1${SCALY_EXE:-}" "/tmp/scaly_stage1${SCALY_EXE:-}" /tmp/sc0.o
 # The self-hosted ROOT compiling main.scaly emits only main + external refs to
 # the compiler package; the package must be compiled to an archive and linked
 # (the same two-step as stage1 -> stage2).
@@ -102,11 +110,11 @@ rm -f "/tmp/scalyc_stage1${SCALY_EXE:-}" /tmp/sc0.o
   rm -f /tmp/libscalyc0.a; ar rcs /tmp/libscalyc0.a /tmp/sc0.o
   link_stage "$ROOT" /tmp/scalyc_stage1 /tmp/libscalyc0.a
 ) 2>&1 | grep -v 'ld: warning' || true
-[ -f /tmp/sc0.o ] && [ -x "/tmp/scalyc_stage1${SCALY_EXE:-}" ] \
+[ -f /tmp/sc0.o ] && [ -x "/tmp/scalyc_stage1${SCALY_EXE:-}" ] && [ -x "/tmp/scaly_stage1${SCALY_EXE:-}" ] \
   || { echo "bootstrap: FAIL — the ROOT could not build stage1 from the tree (errors above)"; exit 1; }
 
 if [ "$STAGE1_ONLY" = 1 ]; then
-  rm -f "/tmp/scalyc_stage2${SCALY_EXE:-}"
+  rm -f "/tmp/scalyc_stage2${SCALY_EXE:-}" "/tmp/scaly_stage2${SCALY_EXE:-}"
   if [ "$SCALY_COFF" = 1 ]; then
     tools/win-archive.sh /tmp/scalyc_stage1 > /dev/null
   else
@@ -149,12 +157,12 @@ fi
 
 echo "bootstrap: stage1 -> stage2"
 # A failed link must not leave the previous stage2 behind to be tested instead.
-rm -f /tmp/scalyc_stage2
+rm -f /tmp/scalyc_stage2 /tmp/scaly_stage2
 ( ulimit -s 65520
   [ "$SCALY_COFF" = 1 ] && /tmp/scalyc_stage1 -c -o /tmp/sc1.o packages/scalyc/0.1.0/scalyc.scaly
   rm -f /tmp/libscalyc1.a; ar rcs /tmp/libscalyc1.a /tmp/sc1.o
   link_stage /tmp/scalyc_stage1 /tmp/scalyc_stage2 /tmp/libscalyc1.a
 ) 2>&1 | grep -v 'ld: warning' || true
 
-[ -x /tmp/scalyc_stage2 ] || { echo "bootstrap: FAIL — stage2 not produced"; exit 1; }
-echo "bootstrap: OK -> /tmp/scalyc_stage2"
+[ -x /tmp/scalyc_stage2 ] && [ -x /tmp/scaly_stage2 ] || { echo "bootstrap: FAIL — stage2 not produced"; exit 1; }
+echo "bootstrap: OK -> /tmp/scalyc_stage2 (+ /tmp/scaly_stage2, the tool)"

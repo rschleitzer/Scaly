@@ -12,10 +12,12 @@
 cd "$(dirname "$0")/../.." || exit 1
 . tests/platform.sh || exit 1
 STAGE=${1:-$SCALY_STAGE_DEFAULT}
+# the tool beside the compiler: scaly for REPL/run/build/test, scalyc for the flags
+SCALY=$(tools/scaly-of.sh "$STAGE")
 # Every fixture is built with the stage's `build` command, its runtime out of
 # the build cache. Build one program first, alone: the fixtures run in parallel,
 # and each would otherwise compile the runtime into an empty cache at once.
-"$STAGE" build tests/tool/hello.scaly -o "/tmp/rt_warm_$$$SCALY_EXE" > /dev/null 2>&1
+"$SCALY" build tests/tool/hello.scaly -o "/tmp/rt_warm_$$$SCALY_EXE" > /dev/null 2>&1
 rm -f "/tmp/rt_warm_$$$SCALY_EXE"
 # One fixture per call, its verdict as ONE line on stdout (`PASS name` or
 # `FAIL name: detail`), so the fixtures run in parallel (REGRESS_JOBS, default
@@ -46,7 +48,7 @@ run_one() {
       # "prelude not found" — the wrong reason for an xfail to pass.
       arg_args=()
       while IFS= read -r a; do [ -n "$a" ] && arg_args+=($a); done < <(sed -n 's/^; args: //p' "$f")
-      err=$(env "${env_args[@]}" "$STAGE" build "$f" "${arg_args[@]}" -o "$bin" 2>&1); rc=$?
+      err=$(env "${env_args[@]}" "$SCALY" build "$f" "${arg_args[@]}" -o "$bin" 2>&1); rc=$?
       if [ $rc -ne 0 ] && printf '%s' "$err" | grep -qF "$want"; then
         echo "PASS $t"
       else
@@ -101,7 +103,7 @@ run_one() {
         # unrelated abort with the same code cannot satisfy the test.
         want_rc=$(sed -n 's/^; expect-rc: //p' "$f" | head -1)
         crc=0
-        "$STAGE" build "$f" -o "$bin" "${extra[@]}" >/dev/null 2>&1 || crc=$?
+        "$SCALY" build "$f" -o "$bin" "${extra[@]}" >/dev/null 2>&1 || crc=$?
         if [ $crc -ne 0 ]; then
           report_fail "$t: compile failed rc=$crc"
         else
@@ -141,7 +143,7 @@ run_one() {
         run_env=()
         while IFS= read -r kv; do [ -n "$kv" ] && run_env+=("$kv"); done < <(sed -n 's/^; run-env: //p' "$f")
         crc=0
-        "$STAGE" build "$f" "${arg_args[@]}" -o "$bin" "${extra[@]}" > "$cerr" 2>&1 || crc=$?
+        "$SCALY" build "$f" "${arg_args[@]}" -o "$bin" "${extra[@]}" > "$cerr" 2>&1 || crc=$?
         out=$(env "${run_env[@]+"${run_env[@]}"}" "$bin" 2>"$rerr"); rc=$?
         if [ "$out" = "PASS" ]; then
           echo "PASS $t"
@@ -157,7 +159,7 @@ run_one() {
   esac
 }
 export -f run_one report_fail
-export STAGE SCALY_EXE
+export STAGE SCALY SCALY_EXE
 JOBS=${REGRESS_JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)}
 res=$(mktemp)
 ls tests/regress/*.scaly | xargs -P "$JOBS" -I{} bash -c 'run_one "$1"' _ {} > "$res"

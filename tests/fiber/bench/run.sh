@@ -7,6 +7,8 @@
 # Usage: tests/fiber/bench/run.sh [stage-binary]   (default /tmp/scalyc_stage2)
 cd "$(dirname "$0")/../../.." || exit 1
 STAGE=${1:-/tmp/scalyc_stage2}
+# the tool beside the compiler: scaly for REPL/run/build/test, scalyc for the flags
+SCALY=$(tools/scaly-of.sh "$STAGE")
 
 NEED=20500
 hard=$(ulimit -Hn)
@@ -35,7 +37,7 @@ fi
 f=tests/fiber/bench/http10k.scaly
 expected=$(sed -n 's/^; Expected: //p' "$f")
 bin=/tmp/fiber_http10k; rm -f "$bin"
-if ! "$STAGE" build "$f" -o "$bin" >/dev/null 2>&1; then
+if ! "$SCALY" build "$f" -o "$bin" >/dev/null 2>&1; then
   echo "http10k: FAIL (compile)"
   exit 1
 fi

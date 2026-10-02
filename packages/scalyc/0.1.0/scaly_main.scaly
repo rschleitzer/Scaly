@@ -1,0 +1,15 @@
+; scaly_main.scaly - Entry point of `scaly`, the tool.
+;
+; The REPL and the commands run, build and test (cli.tool_main#). The
+; compiler with a C compiler's command line is scalyc (main.scaly), the
+; language server scalyls (packages/scalyls); the three are built from one
+; seed in one build and each links its code statically.
+
+package scaly 0.1.0
+package scalyc 0.1.0
+use scalyc.cli
+
+procedure main(argc: int, mutable argv: pointer[pointer[char]]) returns int mutable modeler_error_count
+{
+    return cli.tool_main(argc, argv)
+}

@@ -51,7 +51,7 @@ RUN ln -sf /usr/bin/clang-21 /usr/local/bin/clang \
  && update-alternatives --install /usr/bin/ld ld /usr/bin/ld.lld-21 100
 WORKDIR /scaly
 COPY . .
-# the compiler (no language server) and /tmp/libscaly.a, both from the seed
+# the compiler and the tool (no language server) and /tmp/libscaly.a, from the seed
 RUN SCALYC_SEED_NO_SCALYLS=1 tools/build-from-seed.sh
 # The arena is built by the one tool: `scaly build --release` takes every
 # package as bitcode out of its cache and links, optimises and emits the whole
@@ -67,14 +67,14 @@ RUN mkdir -p /opt/static/lib \
 # --pgo-train links with clang-21, whose driver adds the profile runtime of
 # the LLVM that instrumented the module.
 FROM build AS pgo-train
-RUN scalyc/build/scalyc build tools/bench/http/arena.scaly --pgo-train -mcpu=native -o /arena_instr \
- && scalyc/build/scalyc build tools/bench/http/train.scaly --release -o /train
+RUN scalyc/build/scaly build tools/bench/http/arena.scaly --pgo-train -mcpu=native -o /arena_instr \
+ && scalyc/build/scaly build tools/bench/http/train.scaly --release -o /train
 
 FROM build AS optimized
 COPY pgo/ /pgo/
 RUN PGO="--release" \
  && if [ -f /pgo/arena.profdata ]; then PGO="--pgo /pgo/arena.profdata"; fi \
- && scalyc/build/scalyc build tools/bench/http/arena.scaly $PGO -mcpu=native -o /arena
+ && scalyc/build/scaly build tools/bench/http/arena.scaly $PGO -mcpu=native -o /arena
 
 FROM ubuntu:26.04
 COPY --from=optimized /arena /arena

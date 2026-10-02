@@ -9,6 +9,8 @@
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 BIN="${1:-$ROOT/scalyc/build/scalyc}"
+# the tool beside the compiler: scaly for REPL/run/build/test, scalyc for the flags
+SCALY=$("$ROOT/tools/scaly-of.sh" "$BIN")
 cd "$ROOT"
 
 . tests/platform.sh || exit 1
@@ -50,7 +52,7 @@ for f in tests/h3/*.scaly; do
   bin="$TMP/$t$SCALY_EXE"
   # h3, http, tls, the glue C file and the C libraries (`extern` in the
   # package roots) all come from the tool
-  if ! "$BIN" build "$f" -o "$bin" > "$TMP/$t.log" 2>&1; then
+  if ! "$SCALY" build "$f" -o "$bin" > "$TMP/$t.log" 2>&1; then
     fail=$((fail+1)); failures+=("$t(compile): $(head -1 "$TMP/$t.log")"); continue
   fi
   port=$((20000 + RANDOM % 30000))

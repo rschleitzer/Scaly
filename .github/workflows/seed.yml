@@ -193,7 +193,10 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: scalyc-x86_64-linux-gnu
-          path: dist/seed/scalyc_seed
+          # the compiler and the tool beside it (tools/scaly-of.sh)
+          path: |
+            dist/seed/scalyc_seed
+            dist/seed/scaly_seed
           if-no-files-found: error
 
   # ★THE SUITES ARE A SEPARATE JOB, and the reason is latency, not tidiness
@@ -224,7 +227,7 @@ jobs:
           path: dist/seed
       - name: Make it executable
         # An artifact round-trip does not preserve the mode bit.
-        run: chmod +x dist/seed/scalyc_seed
+        run: chmod +x dist/seed/scalyc_seed dist/seed/scaly_seed
 
       # OpenSP port REALPASS gate (dazzle epic, Part I). AOT-compiles the opensp
       # package into an archive and links + runs its unit harness so
@@ -254,7 +257,7 @@ jobs:
       # names the one the suites above ran on, and insists on io_uring.
       - name: Which I/O backend (io_uring expected)
         run: |
-          dist/seed/scalyc_seed build tests/fiber/io_backend.scaly -o /tmp/io_backend
+          dist/seed/scaly_seed build tests/fiber/io_backend.scaly -o /tmp/io_backend
           SCALY_EXPECT_BACKEND=io_uring /tmp/io_backend
 
       - name: The 10k demo (fiber-per-connection HTTP, milestone 1.6)

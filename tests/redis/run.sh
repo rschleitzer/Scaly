@@ -8,6 +8,8 @@
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 BIN="${1:-$ROOT/scalyc/build/scalyc}"
+# the tool beside the compiler: scaly for REPL/run/build/test, scalyc for the flags
+SCALY=$("$ROOT/tools/scaly-of.sh" "$BIN")
 cd "$ROOT"
 
 . tests/platform.sh || exit 1
@@ -24,7 +26,7 @@ for f in tests/redis/*.scaly; do
     skip=$((skip+1)); echo "  SKIP $t (no REDISTEST_URL)"; continue
   fi
   bin="$TMP/$t$SCALY_EXE"
-  if ! "$BIN" build "$f" -o "$bin" > "$TMP/$t.log" 2>&1; then
+  if ! "$SCALY" build "$f" -o "$bin" > "$TMP/$t.log" 2>&1; then
     fail=$((fail+1)); failures+=("$t(compile): $(head -1 "$TMP/$t.log")"); continue
   fi
   out=$(REDIS_URL="${REDISTEST_URL:-}" SCALY_POISON=1 perl -e 'alarm shift; exec @ARGV' 60 "$bin" 2>"$TMP/$t.err"); rc=$?

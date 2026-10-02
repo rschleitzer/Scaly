@@ -16,6 +16,8 @@ set -e
 cd "$(dirname "$0")/.."
 
 SC=${1:-scalyc/build/scalyc}
+# the tool beside the compiler: scaly for REPL/run/build/test, scalyc for the flags
+SCALY=$(tools/scaly-of.sh "$SC")
 fail() { echo "VERIFY: FAIL — $1"; exit 1; }
 [ -x "$SC" ] || fail "compiler $SC not found (run tools/build-from-seed.sh first)"
 
@@ -25,7 +27,7 @@ ulimit -s 65520 2>/dev/null || true
 WORK=$(mktemp -d); trap 'rm -rf "$WORK"' EXIT
 
 echo "verify: hello.scaly"
-"$SC" build tests/aot/hello.scaly -o "$WORK/hello" >/dev/null 2>&1 || fail "compile hello"
+"$SCALY" build tests/aot/hello.scaly -o "$WORK/hello" >/dev/null 2>&1 || fail "compile hello"
 out=$("$WORK/hello"); [ "$out" = "Hello, World!" ] || fail "hello output: '$out'"
 
 echo "verify: AOT corpus (self-check vs ; Expected:)"
@@ -37,7 +39,7 @@ for f in tests/aot/*.scaly; do
   t=$(basename "$f" .scaly)
   case " $SKIP " in *" $t "*) skipped=$((skipped+1)); continue;; esac
   total=$((total+1))
-  if ! "$SC" build "$f" -o "$WORK/$t" >/dev/null 2>&1; then bad="$bad $t(compile)"; continue; fi
+  if ! "$SCALY" build "$f" -o "$WORK/$t" >/dev/null 2>&1; then bad="$bad $t(compile)"; continue; fi
   exp=$(grep -m1 '; Expected:' "$f" | sed -e 's/.*; Expected:[[:space:]]*//' -e 's/[[:space:]]*$//')
   if [ -n "$exp" ]; then
     got=$("$WORK/$t" 2>/dev/null || true)
@@ -116,11 +118,11 @@ fi
 # time on a high-RAM machine:  VERIFY_FIXEDPOINT=1 tools/verify-seed.sh
 if [ -n "$VERIFY_FIXEDPOINT" ]; then
   echo "verify: fixed point vs committed seed/ (re-emit; high memory)"
-  for f in main scalyc; do
+  for f in main scaly_main scalyc; do
     "$SC" -S --no-tests -o "$WORK/$f.ll" packages/scalyc/0.1.0/$f.scaly >/dev/null 2>&1 || fail "re-emit $f.ll"
   done
   "$SC" -S --no-tests -o "$WORK/scaly.ll" packages/scaly/0.1.0/scaly.scaly >/dev/null 2>&1 || fail "re-emit scaly.ll"
-  for f in main scalyc scaly; do
+  for f in main scaly_main scalyc scaly; do
     cmp -s "$WORK/$f.ll" "seed/$f.ll" || fail "fixed point: $f.ll differs from committed seed"
   done
   echo "VERIFY: OK — hello + AOT $pass/$total + regress + fixed point byte-identical to seed/"

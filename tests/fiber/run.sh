@@ -11,6 +11,8 @@ cd "$(dirname "$0")/../.." || exit 1
 # ---- platform (tests/platform.sh): binaries carry .exe on the Windows box.
 . tests/platform.sh || exit 1
 STAGE=${1:-$SCALY_STAGE_DEFAULT}
+# the tool beside the compiler: scaly for REPL/run/build/test, scalyc for the flags
+SCALY=$(tools/scaly-of.sh "$STAGE")
 
 # Per-test comment lines: "; Expected:" = exact stdout, optional
 # "; ExpectedExit:" = exit code (default 0), optional "; ExpectedErr:" =
@@ -24,7 +26,7 @@ for f in tests/fiber/*.scaly; do
   want_rc=$(sed -n 's/^; ExpectedExit: //p' "$f"); want_rc=${want_rc:-0}
   want_err=$(sed -n 's/^; ExpectedErr: //p' "$f")
   bin=/tmp/fiber_$t$SCALY_EXE; rm -f "$bin"
-  if ! "$STAGE" build "$f" -o "$bin" >/dev/null 2>&1; then
+  if ! "$SCALY" build "$f" -o "$bin" >/dev/null 2>&1; then
     fail=$((fail+1)); failures+=("$t(compile)"); continue
   fi
   limit=$(sed -n 's/^; Timeout: //p' "$f")
