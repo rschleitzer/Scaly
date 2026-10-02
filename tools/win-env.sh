@@ -54,6 +54,24 @@ if ! command -v clang >/dev/null 2>&1; then
   return 1 2>/dev/null || exit 1
 fi
 
+# The triple every script here builds for: what the INSTALLED clang targets by
+# default -- aarch64-pc-windows-msvc with the arm64 LLVM (LLVM-<v>-woa64.exe),
+# x86_64-pc-windows-msvc otherwise. The toolchain decides, not `uname -m`: a
+# Git Bash on an arm64 machine may itself be an emulated x64 program.
+# (2026-10-02; until then the six scripts each spelled the x64 triple.)
+# Before LIB: the library directories below are per architecture.
+if [ -z "${SCALY_WIN_TRIPLE:-}" ]; then
+  case "$(clang -dumpmachine 2>/dev/null)" in
+    aarch64*|arm64*) SCALY_WIN_TRIPLE=aarch64-pc-windows-msvc ;;
+    *)               SCALY_WIN_TRIPLE=x86_64-pc-windows-msvc ;;
+  esac
+fi
+export SCALY_WIN_TRIPLE
+case "$SCALY_WIN_TRIPLE" in
+  aarch64*) winarch=arm64 ;;
+  *)        winarch=x64 ;;
+esac
+
 case ";${LIB:-};${INCLUDE:-};" in
   *"Windows Kits"*) ;;
   *)
@@ -73,7 +91,7 @@ case ";${LIB:-};${INCLUDE:-};" in
     fi
     sdkver=$(basename "$sdklib")
     sdkinc="/c/Program Files (x86)/Windows Kits/10/Include/$sdkver"
-    LIB="${LIB:+$LIB;}$(cygpath -w "${msvc}lib/x64");$(cygpath -w "${sdklib}um/x64");$(cygpath -w "${sdklib}ucrt/x64")"
+    LIB="${LIB:+$LIB;}$(cygpath -w "${msvc}lib/$winarch");$(cygpath -w "${sdklib}um/$winarch");$(cygpath -w "${sdklib}ucrt/$winarch")"
     INCLUDE="${INCLUDE:+$INCLUDE;}$(cygpath -w "${msvc}include");$(cygpath -w "$sdkinc/ucrt");$(cygpath -w "$sdkinc/um");$(cygpath -w "$sdkinc/shared")"
     export LIB INCLUDE
     ;;
@@ -85,18 +103,6 @@ esac
 # entry that is two entries, `C` and `/repos/...`, and the first symptom is
 # `ar: command not found` a hundred lines into a bootstrap (met 2026-10-01).
 SCALY_WIN_TOOLS="$(cygpath -u "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")/win"
-# The triple every script here builds for: what the INSTALLED clang targets by
-# default -- aarch64-pc-windows-msvc with the arm64 LLVM (LLVM-<v>-woa64.exe),
-# x86_64-pc-windows-msvc otherwise. The toolchain decides, not `uname -m`: a
-# Git Bash on an arm64 machine may itself be an emulated x64 program.
-# (2026-10-02; until then the six scripts each spelled the x64 triple.)
-if [ -z "${SCALY_WIN_TRIPLE:-}" ]; then
-  case "$(clang -dumpmachine 2>/dev/null)" in
-    aarch64*|arm64*) SCALY_WIN_TRIPLE=aarch64-pc-windows-msvc ;;
-    *)               SCALY_WIN_TRIPLE=x86_64-pc-windows-msvc ;;
-  esac
-fi
-export SCALY_WIN_TRIPLE
 case ":$PATH:" in
   *":$SCALY_WIN_TOOLS:"*) ;;
   *) PATH="$PATH:$SCALY_WIN_TOOLS" ;;

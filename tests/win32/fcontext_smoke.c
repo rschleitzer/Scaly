@@ -28,9 +28,24 @@ void      scaly_aligned_free(void* p);
 #define XMM_PAT(n)  (0x2222222200000000ULL + (n))
 #define ANTI_PAT(n) (0xEEEEEEEE00000000ULL + (n))
 
-static const char* const gpr_name[8] = {
+/* Eighteen registers on both processors, split differently: x64 has eight
+ * integer and ten vector ones (xmm_check.S), arm64 ten and eight
+ * (d8_check_arm64.S). */
+#if defined(_M_ARM64) || defined(__aarch64__)
+#define N_GPR 10
+#define VEC_NAME "d%d"
+#define VEC_FIRST 8
+static const char* const gpr_name[N_GPR] = {
+    "x19", "x20", "x21", "x22", "x23", "x24", "x25", "x26", "x27", "x28"
+};
+#else
+#define N_GPR 8
+#define VEC_NAME "xmm%d"
+#define VEC_FIRST 6
+static const char* const gpr_name[N_GPR] = {
     "rbx", "rbp", "rsi", "rdi", "r12", "r13", "r14", "r15"
 };
+#endif
 
 static int failures;
 
@@ -92,12 +107,12 @@ int main(void)
         printf("  round trip completed\n");
     }
 
-    for (i = 0; i < 8; i++)
+    for (i = 0; i < N_GPR; i++)
         expect(out[i], GPR_PAT(i), gpr_name[i]);
-    for (i = 0; i < 10; i++) {
+    for (i = 0; i < 18 - N_GPR; i++) {
         char nm[8];
-        snprintf(nm, sizeof nm, "xmm%d", 6 + i);
-        expect(out[8 + i], XMM_PAT(i), nm);
+        snprintf(nm, sizeof nm, VEC_NAME, VEC_FIRST + i);
+        expect(out[N_GPR + i], XMM_PAT(i), nm);
     }
 
     scaly_aligned_free(base);
