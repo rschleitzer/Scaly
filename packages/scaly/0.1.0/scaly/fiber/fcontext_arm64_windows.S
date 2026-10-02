@@ -1,9 +1,10 @@
 // Scaly fiber context switch — arm64 Windows (AAPCS64 as Windows uses it).
 //
-// ★WRITTEN 2026-10-02 ON A MAC AND NOT YET RUN. It assembles for
-// aarch64-pc-windows-msvc; whether a fiber switches, survives a stack
-// overflow report and unwinds on it is for the first Windows-on-arm64 machine
-// to say. tests/win32/WINDOWS-BOX.md has the plan.
+// ★Written 2026-10-02 on a Mac, run the same day on the first Windows-on-arm64
+// machine: a fiber switches, all eighteen callee-saved registers survive
+// (tests/win32/d8_check_arm64.S), the stack overflow report arrives in 96 of
+// 96 landing points, and a catch point on a fiber unwinds since the headroom
+// in scaly_make_context below. tests/win32/WINDOWS-BOX.md §8 has the account.
 //
 // A separate file from fcontext_arm64.S for ONE of the four reasons the x64
 // Windows file has (fcontext_x86_64_windows.S): the register conventions are
@@ -46,6 +47,13 @@ scaly_make_context:
     // x0 = stack top (high), x1 = entry fn, x2 = stack base (low)
     mov  x3, x0                         // keep the unaligned top for the TEB
     and  x0, x0, #0xFFFFFFFFFFFFFFF0    // 16-byte align down
+    // 16 bytes stay free above the entry function's frame. Without them its
+    // stack pointer at entry IS the TEB's StackBase, and that value is the
+    // target frame of a catch point in the entry function (`_setjmpex` takes
+    // llvm.sponentry): RtlUnwindEx refuses a frame that is not BELOW the
+    // base and raises STATUS_BAD_STACK (measured 2026-10-02,
+    // tests/fiber/panic_chain: the fiber's own `try` died 0xC0000028).
+    sub  x0, x0, #0x10
     sub  x0, x0, #0xd0                  // carve the context frame
     str  x1, [x0, #0xa0]                // pc = entry fn
     adr  x1, ctx_return
