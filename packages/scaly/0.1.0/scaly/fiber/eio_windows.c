@@ -1086,6 +1086,216 @@ void scaly_alloc_fail_after(long long n)
     scaly_alloc_fail_left = n;
 }
 
+/* ---- Large blocks are kept, not handed back --------------------------------
+ *
+ * Rule (a): this is about what THIS system's allocator does. The CRT passes a
+ * large block straight to the OS and returns it on free, so every new one is
+ * made of fresh pages the kernel zeroes at first touch. A program that builds
+ * and drops a region per unit of work pays that for all of its memory, every
+ * time: measured 2026-10-02 on the arm64 VM, one tscaly_dump over 400 small
+ * units asked for 17 GB in blocks of 64 KB to 16 MB (peak working set 54 MB)
+ * and spent 6.7 s in the kernel beside 4.7 s of its own, 3.3 million page
+ * faults; a 256 KB heap bucket alone cost 0.6 ms per round trip. POSIX
+ * allocators keep such blocks; here the shim does.
+ *
+ * A freed block of SC_BIG_MIN bytes or more goes into a cache instead of to
+ * the CRT, and the next request of the same rounded size and alignment takes
+ * it. scaly_aligned_free is not told a size, so the live big blocks stand in
+ * a table by address; a pointer that is not in it is a small block and goes
+ * to the CRT as before. Sizes are rounded up to a quarter of their power of
+ * two so that requests which differ by a page meet in one class.
+ *
+ * The cache holds at most SC_CACHE_CAP bytes; past that the blocks that have
+ * waited longest are really freed, and when the CRT cannot serve a request the cache is emptied and the
+ * request tried once more -- cached memory must never be the reason an
+ * allocation fails. A reused block holds what its last owner left, as on
+ * every other system. */
+#define SC_BIG_MIN   ((size_t)64 * 1024)
+#define SC_CACHE_CAP ((size_t)256 * 1024 * 1024)
+#define SC_TOMB      ((void*)(size_t)1)
+
+typedef struct sc_big { void* p; size_t size; size_t align; } sc_big;
+
+static SRWLOCK sc_big_lock = SRWLOCK_INIT;
+static sc_big* sc_live;                 /* open addressing by address */
+static size_t  sc_live_cap, sc_live_used, sc_live_tombs;
+static sc_big* sc_cache;                /* freed blocks, last in first out */
+static size_t  sc_cache_n, sc_cache_cap, sc_cache_bytes;
+
+static size_t sc_big_round(size_t size)
+{
+    size_t top = SC_BIG_MIN, step;
+    while (top <= size / 2)
+        top *= 2;
+    step = top / 4;
+    return (size + step - 1) / step * step;
+}
+
+static size_t sc_live_slot(size_t cap, void* p)
+{
+    size_t h = ((size_t)p >> 12) * (size_t)0x9E3779B97F4A7C15ull;
+    return (h >> 20) & (cap - 1);
+}
+
+/* Under the lock. Returns 0 when the table could not grow. */
+static int sc_live_insert(void* p, size_t size, size_t align)
+{
+    size_t i;
+    if ((sc_live_used + sc_live_tombs + 1) * 10 > sc_live_cap * 7) {
+        size_t ncap = sc_live_cap ? sc_live_cap : 1024, k;
+        sc_big* nt;
+        if ((sc_live_used + 1) * 10 > ncap * 5)
+            ncap *= 2;
+        nt = (sc_big*)calloc(ncap, sizeof(sc_big));
+        if (nt == NULL)
+            return 0;
+        for (k = 0; k < sc_live_cap; k++) {
+            if (sc_live[k].p != NULL && sc_live[k].p != SC_TOMB) {
+                size_t j = sc_live_slot(ncap, sc_live[k].p);
+                while (nt[j].p != NULL)
+                    j = (j + 1) & (ncap - 1);
+                nt[j] = sc_live[k];
+            }
+        }
+        free(sc_live);
+        sc_live = nt;
+        sc_live_cap = ncap;
+        sc_live_tombs = 0;
+    }
+    i = sc_live_slot(sc_live_cap, p);
+    while (sc_live[i].p != NULL && sc_live[i].p != SC_TOMB)
+        i = (i + 1) & (sc_live_cap - 1);
+    if (sc_live[i].p == SC_TOMB)
+        sc_live_tombs--;
+    sc_live[i].p = p;
+    sc_live[i].size = size;
+    sc_live[i].align = align;
+    sc_live_used++;
+    return 1;
+}
+
+/* Under the lock. Takes p out of the live table; 0 when it is not there. */
+static int sc_live_remove(void* p, sc_big* out)
+{
+    size_t i;
+    if (sc_live_cap == 0)
+        return 0;
+    i = sc_live_slot(sc_live_cap, p);
+    while (sc_live[i].p != NULL) {
+        if (sc_live[i].p == p) {
+            *out = sc_live[i];
+            sc_live[i].p = SC_TOMB;
+            sc_live_used--;
+            sc_live_tombs++;
+            return 1;
+        }
+        i = (i + 1) & (sc_live_cap - 1);
+    }
+    return 0;
+}
+
+/* Hand every cached block back to the CRT. Called without the lock. */
+static void sc_cache_flush(void)
+{
+    for (;;) {
+        void* p = NULL;
+        AcquireSRWLockExclusive(&sc_big_lock);
+        if (sc_cache_n > 0) {
+            sc_cache_n--;
+            p = sc_cache[sc_cache_n].p;
+            sc_cache_bytes -= sc_cache[sc_cache_n].size;
+        }
+        ReleaseSRWLockExclusive(&sc_big_lock);
+        if (p == NULL)
+            return;
+        _aligned_free(p);
+    }
+}
+
+static void* sc_big_alloc(size_t alignment, size_t size)
+{
+    size_t rounded = sc_big_round(size), k;
+    void* p = NULL;
+    int tracked;
+
+    AcquireSRWLockExclusive(&sc_big_lock);
+    for (k = sc_cache_n; k > 0; k--) {
+        if (sc_cache[k - 1].size == rounded && sc_cache[k - 1].align == alignment) {
+            p = sc_cache[k - 1].p;
+            /* closing the gap keeps the cache in the order it was filled,
+             * which is what the eviction in sc_big_free goes by */
+            memmove(&sc_cache[k - 1], &sc_cache[k], (sc_cache_n - k) * sizeof(sc_big));
+            sc_cache_n--;
+            sc_cache_bytes -= rounded;
+            break;
+        }
+    }
+    if (p == NULL) {
+        ReleaseSRWLockExclusive(&sc_big_lock);
+        p = _aligned_malloc(rounded, alignment);
+        if (p == NULL) {
+            sc_cache_flush();
+            p = _aligned_malloc(rounded, alignment);
+            if (p == NULL)
+                return NULL;
+        }
+        AcquireSRWLockExclusive(&sc_big_lock);
+    }
+    /* A block the table has no room for (it could not grow) stays untracked:
+     * its free finds nothing here and goes to the CRT, which is right. */
+    tracked = sc_live_insert(p, rounded, alignment);
+    ReleaseSRWLockExclusive(&sc_big_lock);
+    (void)tracked;
+    return p;
+}
+
+/* 1 when p was a live big block and has been dealt with. */
+static int sc_big_free(void* p)
+{
+    sc_big b;
+    int keep = 0;
+
+    AcquireSRWLockExclusive(&sc_big_lock);
+    if (!sc_live_remove(p, &b)) {
+        ReleaseSRWLockExclusive(&sc_big_lock);
+        return 0;
+    }
+    /* Make room by handing back the blocks that have waited LONGEST. Refusing
+     * the newcomer instead filled the cache with sizes nobody asked for again
+     * and then turned every later free away: over 800 corpus cases a full
+     * cache reused nothing more whether it held 256 MB or 1 GB (measured
+     * 2026-10-02, 8.3 and 8.2 s of kernel time). The lock is dropped around
+     * the CRT call, so the condition is asked again each time round. */
+    while (b.size <= SC_CACHE_CAP && sc_cache_n > 0 && sc_cache_bytes + b.size > SC_CACHE_CAP) {
+        void* oldest = sc_cache[0].p;
+        sc_cache_bytes -= sc_cache[0].size;
+        memmove(&sc_cache[0], &sc_cache[1], (sc_cache_n - 1) * sizeof(sc_big));
+        sc_cache_n--;
+        ReleaseSRWLockExclusive(&sc_big_lock);
+        _aligned_free(oldest);
+        AcquireSRWLockExclusive(&sc_big_lock);
+    }
+    if (sc_cache_bytes + b.size <= SC_CACHE_CAP) {
+        if (sc_cache_n == sc_cache_cap) {
+            size_t ncap = sc_cache_cap ? sc_cache_cap * 2 : 256;
+            sc_big* nc = (sc_big*)realloc(sc_cache, ncap * sizeof(sc_big));
+            if (nc != NULL) {
+                sc_cache = nc;
+                sc_cache_cap = ncap;
+            }
+        }
+        if (sc_cache_n < sc_cache_cap) {
+            sc_cache[sc_cache_n++] = b;
+            sc_cache_bytes += b.size;
+            keep = 1;
+        }
+    }
+    ReleaseSRWLockExclusive(&sc_big_lock);
+    if (!keep)
+        _aligned_free(p);
+    return 1;
+}
+
 void* scaly_aligned_alloc(size_t alignment, size_t size)
 {
     if (scaly_alloc_fail_left >= 0) {
@@ -1095,11 +1305,15 @@ void* scaly_aligned_alloc(size_t alignment, size_t size)
         }
         scaly_alloc_fail_left--;
     }
+    if (size >= SC_BIG_MIN)
+        return sc_big_alloc(alignment, size);
     return _aligned_malloc(size, alignment);   /* note the argument order */
 }
 
 void scaly_aligned_free(void* p)
 {
+    if (p != NULL && sc_big_free(p))
+        return;
     _aligned_free(p);
 }
 
