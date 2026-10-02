@@ -1,0 +1,88 @@
+; Regression (2026-10-02): a record `var` that lives on the frame page and is
+; returned was read AFTER the frame's release. `var specifier Slice[char]()`
+; is built on the frame page, the `set` copies into it, and the return turns
+; the pointer into the value -- by a load in front of `ret`, or by the memcpy
+; into the sret slot. The release call stood before both. Without poison the
+; released page still holds the value; under SCALY_POISON=1 the caller reads
+; 0xDD. Both return forms are here, each from a free routine (value in
+; registers) and from a method (sret). Found through tscaly's case yardsticks,
+; which differed from the reference under poison only
+; (NodeBuilder.get_specifier_for_module_symbol).
+; run-env: SCALY_POISON=1
+; Expected: PASS
+
+define Row (sym: int, spec: Slice[char])
+
+procedure pick_implicit(host: ref[Page], mutable rows: ref[Array[ref[Row]?]], list: ref[Array[Slice[char]]]) returns Slice[char]
+{
+    var specifier Slice[char]()
+    if (list.get_length() as int) > 0
+        set specifier: list[0]
+    let memo &Row^host(1, specifier)
+    rows.add(memo)
+    specifier
+}
+
+procedure pick_explicit(host: ref[Page], mutable rows: ref[Array[ref[Row]?]], list: ref[Array[Slice[char]]]) returns Slice[char]
+{
+    var specifier Slice[char]()
+    if (list.get_length() as int) > 0
+        set specifier: list[0]
+    let memo &Row^host(2, specifier)
+    rows.add(memo)
+    return specifier
+}
+
+define Picker (var seen: int)
+{
+    procedure pick(mutable this, host: ref[Page], mutable rows: ref[Array[ref[Row]?]], list: ref[Array[Slice[char]]]) returns Slice[char]
+    {
+        var specifier Slice[char]()
+        if (list.get_length() as int) > 0
+            set specifier: list[0]
+        let memo &Row^host(3, specifier)
+        rows.add(memo)
+        set this.seen: seen + 1
+        specifier
+    }
+
+    procedure pick_return(mutable this, host: ref[Page], mutable rows: ref[Array[ref[Row]?]], list: ref[Array[Slice[char]]]) returns Slice[char]
+    {
+        var specifier Slice[char]()
+        if (list.get_length() as int) > 0
+            set specifier: list[0]
+        let memo &Row^host(4, specifier)
+        rows.add(memo)
+        set this.seen: seen + 1
+        return specifier
+    }
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    let anchor String("probe")
+    let host Page.get(anchor.get_buffer() as pointer[void])
+    let list &Array[Slice[char]]^host()
+    let text: Slice[char] "some-dep"
+    list.add(text)
+    let rows &Array[ref[Row]?]^host()
+    var bad 0
+    let a pick_implicit(host, rows, list)
+    if a.length <> 8
+        set bad: bad + 1
+    let b pick_explicit(host, rows, list)
+    if b.length <> 8
+        set bad: bad + 1
+    var p Picker^host(0)
+    let c p.pick(host, rows, list)
+    if c.length <> 8
+        set bad: bad + 1
+    let d p.pick_return(host, rows, list)
+    if d.length <> 8
+        set bad: bad + 1
+    if bad = 0
+        Console.println "PASS"
+    else
+        Console.println "FAIL"
+    0
+}

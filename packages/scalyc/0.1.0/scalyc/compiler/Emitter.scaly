@@ -7244,9 +7244,8 @@ define Emitter
                         ; an EOF location instead; a function has no equivalent
                         ; reliable closing-brace offset here.)
 
-                        ; s196: release the function-local root page on the
-                        ; implicit-return path (no-op when none was allocated).
-                        emit_release_local_page()
+                        ; The release of the function-local root page comes at
+                        ; the END of this block (emit_release_before_return).
                         let func_ty LLVMGlobalGetValueType(llvm_func)
                         let llvm_rt LLVMGetReturnType(func_ty)
                         let void_ty LLVMVoidTypeInContext(context)
@@ -7447,6 +7446,10 @@ define Emitter
                                     LLVMBuildRet(builder, LLVMConstNull llvm_rt)
                             }
                         }
+                        ; s196: release the function-local root page on the
+                        ; implicit-return path (no-op when none was allocated),
+                        ; directly in front of the return just built.
+                        this.emit_release_before_return()
                     }
 
                     ; Seal any basic block that lacks a terminator. This
@@ -22810,7 +22813,43 @@ define Emitter
             ; match, this has emitted nothing and the normal path below runs.
             if emit_self_tail_jump(ret)
                 return true
+            let done this.emit_return_instruction(ret)
+            ; s196: release the function-local root page (no-op when none was
+            ; allocated) -- directly in front of the return just built.
+            this.emit_release_before_return()
+            done
+        }
 
+        ; The frame's release, placed in front of the return instruction the
+        ; current block ends with.
+        ;
+        ; ★It used to be emitted BEFORE the return value was handled
+        ; (2026-10-02). A record that lives on the frame page -- a `var` built
+        ; there and `set` later, as `var s Slice[char]()` is -- reaches the
+        ; return as a POINTER, and the load (or the memcpy into the sret slot)
+        ; that turns it into the returned value came after the release: a read
+        ; of a released page. Without poison the page still holds the value,
+        ; so nothing showed; under SCALY_POISON=1 the caller got 0xDD for a
+        ; length. Found through 48 case-yardstick failures of tscaly that
+        ; appeared only under poison (NodeBuilder.get_specifier_for_module_symbol
+        ; returns such a var). Gate tests/regress/return_frame_var.scaly.
+        procedure emit_release_before_return(mutable this)
+        {
+            let bb LLVMGetInsertBlock(builder)
+            let term LLVMGetBasicBlockTerminator(bb)
+            if term = null
+            {
+                emit_release_local_page()
+                return
+            }
+            LLVMPositionBuilderBefore(builder, term)
+            emit_release_local_page()
+            LLVMPositionBuilderAtEnd(builder, bb)
+        }
+
+        ; emit_return's body: the value, and the return instruction.
+        procedure emit_return_instruction(mutable this, mutable ret: PlannedReturn) returns bool
+        {
             ; Evaluate return value first (before cleanup)
             var ret_val: LLVMValueRef null
             if ret.result <> null
@@ -22819,12 +22858,6 @@ define Emitter
                     set ret_val: emit_operands(ret.result)
 
             }
-
-            ; s196: release the function-local root page before returning
-            ; (no-op when none was allocated). Replaces the old dead cleanup
-            ; that read the never-set current_region.local_page and used free()
-            ; instead of scaly_release_root_page.
-            emit_release_local_page()
 
             ; Create the return instruction. Querying the function's
             ; actual LLVM return type guards against the case where

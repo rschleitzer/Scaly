@@ -2809,6 +2809,24 @@ define Emitter
         ; Emit a return statement
         procedure emit_return(mutable this, mutable ret: PlannedReturn) @ret_nonlocal true @deep true returns bool linked
 
+        ; The frame's release, placed in front of the return instruction the
+        ; current block ends with.
+        ;
+        ; ★It used to be emitted BEFORE the return value was handled
+        ; (2026-10-02). A record that lives on the frame page -- a `var` built
+        ; there and `set` later, as `var s Slice[char]()` is -- reaches the
+        ; return as a POINTER, and the load (or the memcpy into the sret slot)
+        ; that turns it into the returned value came after the release: a read
+        ; of a released page. Without poison the page still holds the value,
+        ; so nothing showed; under SCALY_POISON=1 the caller got 0xDD for a
+        ; length. Found through 48 case-yardstick failures of tscaly that
+        ; appeared only under poison (NodeBuilder.get_specifier_for_module_symbol
+        ; returns such a var). Gate tests/regress/return_frame_var.scaly.
+        procedure emit_release_before_return(mutable this) @deep true linked
+
+        ; emit_return's body: the value, and the return instruction.
+        procedure emit_return_instruction(mutable this, mutable ret: PlannedReturn) @ret_nonlocal true @deep true returns bool linked
+
         ; Emit a throw statement
         procedure emit_throw(mutable this, mutable throw_stmt: PlannedThrow) @ret_nonlocal true @deep true returns bool linked
 

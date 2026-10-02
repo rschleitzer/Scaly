@@ -2534,9 +2534,9 @@ frame.forced16:                                   ; preds = %frame.force15, %if.
   %forced_page18 = phi ptr [ %frame.page13, %if.then11 ], [ %forced_page17, %frame.force15 ]
   %struct.region19 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page18, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6StringC1Ev(ptr %struct.region19)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %struct.region19, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region19, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then23:                                        ; preds = %if.end12
@@ -2573,9 +2573,9 @@ frame.forced36:                                   ; preds = %frame.force35, %if.
   %forced_page38 = phi ptr [ %frame.page33, %if.then31 ], [ %forced_page37, %frame.force35 ]
   %struct.region39 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page38, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6StringC1Ev(ptr %struct.region39)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body40 = load { ptr }, ptr %struct.region39, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region39, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 frame.force43:                                    ; preds = %if.end32
@@ -2593,9 +2593,9 @@ frame.forced44:                                   ; preds = %frame.force43, %if.
   %content_length50 = load i64, ptr %content_length, align 8
   call void @_ZN3rpc10read_exactEPvm(ptr %call49, i64 %content_length50)
   %body51 = load ptr, ptr %line, align 8
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body52 = load { ptr }, ptr %body51, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %body51, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -2701,9 +2701,9 @@ while.body17:                                     ; preds = %while.cond16
 while.exit18:                                     ; preds = %while.cond16
   %sb27 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb27)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then24:                                        ; preds = %while.body17
@@ -4270,9 +4270,9 @@ frame.forced16:                                   ; preds = %frame.force15, %if.
   %forced_page18 = phi ptr [ %frame.page13, %if.then11 ], [ %forced_page17, %frame.force15 ]
   %struct.region19 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page18, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6StringC1Ev(ptr %struct.region19)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %struct.region19, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region19, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then23:                                        ; preds = %if.end12
@@ -4309,9 +4309,9 @@ frame.forced36:                                   ; preds = %frame.force35, %if.
   %forced_page38 = phi ptr [ %frame.page33, %if.then31 ], [ %forced_page37, %frame.force35 ]
   %struct.region39 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page38, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   call void @_ZN6StringC1Ev(ptr %struct.region39)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body40 = load { ptr }, ptr %struct.region39, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region39, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 frame.force43:                                    ; preds = %if.end32
@@ -4329,9 +4329,9 @@ frame.forced44:                                   ; preds = %frame.force43, %if.
   %content_length50 = load i64, ptr %content_length, align 8
   call void @_ZN3rpc13read_exact_fdEiPvm(i64 %2, ptr %call49, i64 %content_length50)
   %body51 = load ptr, ptr %line, align 8
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body52 = load { ptr }, ptr %body51, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %body51, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -4467,9 +4467,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilder6appendEc(ptr %sb6, i8 58)
   %sb7 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb7)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -4506,9 +4506,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilder6appendEc(ptr %sb5, i8 34)
   %sb6 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb6)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -9788,9 +9788,9 @@ frame.forced:                                     ; preds = %frame.force, %while
   call void @_ZN13StringBuilder6appendEc(ptr %sb62, i8 125)
   %sb64 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result63, ptr %1, ptr %sb64)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result63, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result63, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -9838,9 +9838,9 @@ if.then:                                          ; preds = %frame.forced
   call void @_ZN13StringBuilder6appendE6String(ptr %sb2, ptr %sret.result3)
   %sb5 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result4, ptr %1, ptr %sb5)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result4, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result4, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end:                                           ; preds = %frame.forced
@@ -9853,9 +9853,9 @@ if.end:                                           ; preds = %frame.forced
 if.then9:                                         ; preds = %if.end
   %sb12 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result11, ptr %1, ptr %sb12)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body13 = load { ptr }, ptr %sret.result11, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result11, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end10:                                         ; preds = %if.end
@@ -9885,9 +9885,9 @@ frame.forced17:                                   ; preds = %frame.force16, %if.
 choose.end:                                       ; preds = %choose.else, %while.exit, %choose.when
   %sb59 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result58, ptr %1, ptr %sb59)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body60 = load { ptr }, ptr %sret.result58, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result58, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.else:                                      ; preds = %frame.forced17
@@ -10077,16 +10077,16 @@ while.body:                                       ; preds = %while.cond
 
 while.exit:                                       ; preds = %while.cond
   %found20 = load ptr, ptr %found, align 8
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body21 = load { ptr }, ptr %found20, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %found20, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then:                                          ; preds = %while.body
   %found3 = load ptr, ptr %found, align 8
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %found3, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %found3, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end:                                           ; preds = %while.body
@@ -10112,9 +10112,9 @@ frame.forced7:                                    ; preds = %frame.force6, %if.e
 
 if.then15:                                        ; preds = %frame.forced7
   %found17 = load ptr, ptr %found, align 8
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body18 = load { ptr }, ptr %found17, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %found17, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end16:                                         ; preds = %frame.forced7
@@ -10185,9 +10185,9 @@ frame.forced5:                                    ; preds = %frame.force4, %fram
 if.then:                                          ; preds = %frame.forced5
   %sb10 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result9, ptr %1, ptr %sb10)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result9, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result9, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end:                                           ; preds = %frame.forced5
@@ -10199,9 +10199,9 @@ if.end:                                           ; preds = %frame.forced5
 if.then13:                                        ; preds = %if.end
   %sb16 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result15, ptr %1, ptr %sb16)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body17 = load { ptr }, ptr %sret.result15, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result15, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end14:                                         ; preds = %if.end
@@ -10353,9 +10353,9 @@ if.then72:                                        ; preds = %frame.forced67
 if.end73:                                         ; preds = %if.then72, %frame.forced67
   %out77 = load ptr, ptr %planner, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result76, ptr %1, ptr %out77)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body78 = load { ptr }, ptr %sret.result76, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result76, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -68912,9 +68912,9 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %sb23 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result10, ptr %1, ptr %sb23)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result10, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result10, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then:                                          ; preds = %while.body
@@ -69356,9 +69356,9 @@ if.then154:                                       ; preds = %choose.end
 if.end155:                                        ; preds = %if.then154, %choose.end
   %sb159 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result84, ptr %1, ptr %sb159)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result84, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result84, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -69491,9 +69491,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilder6appendEc(ptr %sb56, i8 125)
   %sb58 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result57, ptr %1, ptr %sb58)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result57, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result57, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -69542,17 +69542,17 @@ if.end4:                                          ; preds = %if.then3, %if.then
   br label %if.end
 
 if.then7:                                         ; preds = %if.end
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end8:                                          ; preds = %if.end
   %cut9 = load i64, ptr %cut, align 8
   call void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %sret.result1, ptr %1, ptr %sret.result, i64 0, i64 %cut9)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body10 = load { ptr }, ptr %sret.result1, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -69606,9 +69606,9 @@ frame.forced:                                     ; preds = %frame.force, %if.en
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %sret.result)
   call void @_ZN13StringBuilder6appendEc(ptr %struct.region, i8 47)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result7, ptr %1, ptr %struct.region)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result7, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result7, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -69694,9 +69694,9 @@ while.body10:                                     ; preds = %while.cond9
 while.exit11:                                     ; preds = %while.cond9
   %sb27 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result26, ptr %1, ptr %sb27)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result26, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result26, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then20:                                        ; preds = %while.body10
@@ -69826,17 +69826,17 @@ if.end18:                                         ; preds = %while.exit26, %fram
   call void @_ZN13StringBuilder6appendEc(ptr %sb56, i8 10)
   %sb58 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result57, ptr %1, ptr %sb58)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body59 = load { ptr }, ptr %sret.result57, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result57, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then20:                                        ; preds = %if.then17
   %sb23 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result22, ptr %1, ptr %sb23)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result22, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result22, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end21:                                         ; preds = %if.then17
@@ -69941,9 +69941,9 @@ frame.forced:                                     ; preds = %frame.force, %if.th
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %2)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %struct.region)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 frame.force8:                                     ; preds = %if.end
@@ -69958,9 +69958,9 @@ frame.forced9:                                    ; preds = %frame.force8, %if.e
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region12, ptr %arg.tmp)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region12, ptr %2)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %struct.region12)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body13 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -70095,9 +70095,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilder6appendEc(ptr %sb57, i8 125)
   %sb59 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result58, ptr %1, ptr %sb59)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result58, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result58, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -70133,9 +70133,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
 choose.end:                                       ; preds = %choose.else, %choose.when
   %sb4 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result3, ptr %1, ptr %sb4)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result3, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result3, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.else:                                      ; preds = %frame.forced
@@ -70188,9 +70188,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
 choose.end:                                       ; preds = %choose.else, %while.exit9
   %sb25 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result24, ptr %1, ptr %sb25)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result24, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result24, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.else:                                      ; preds = %frame.forced
@@ -70691,9 +70691,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilder6appendEc(ptr %sb15, i8 125)
   %sb17 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result16, ptr %1, ptr %sb17)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result16, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result16, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -70732,9 +70732,9 @@ if.then2:                                         ; preds = %land.rhs
 
 if.end3:                                          ; preds = %if.end15, %land.rhs, %land.rhs4, %if.end
   call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 7, i64 %call1)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body30 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 land.rhs:                                         ; preds = %land.rhs4
@@ -70800,9 +70800,9 @@ frame.forced:                                     ; preds = %frame.force, %if.th
   call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result27, ptr %frame, ptr %2, i64 12, i64 %call1)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %sret.result27)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result28, ptr %1, ptr %struct.region)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body29 = load { ptr }, ptr %sret.result28, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result28, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -74886,9 +74886,9 @@ choose.end:                                       ; preds = %choose.else, %if.en
   call void @_ZN13StringBuilder6appendEc(ptr %sb39, i8 93)
   %sb40 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result19, ptr %1, ptr %sb40)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result19, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result19, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.else:                                      ; preds = %frame.forced6
@@ -75218,9 +75218,9 @@ while.exit:                                       ; preds = %while.cond
   call void @_ZN13StringBuilder6appendEc(ptr %sb49, i8 125)
   %sb51 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result50, ptr %1, ptr %sb51)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result50, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result50, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -75401,9 +75401,9 @@ if.end:                                           ; preds = %if.end5, %frame.for
   call void @_ZN13StringBuilder6appendEc(ptr %sb35, i8 93)
   %sb36 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb36)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then4:                                         ; preds = %if.then
@@ -75531,9 +75531,9 @@ if.end:                                           ; preds = %while.exit, %frame.
   call void @_ZN13StringBuilder6appendEc(ptr %sb31, i8 93)
   %sb32 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb32)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 while.cond:                                       ; preds = %if.end10, %if.then
@@ -75730,9 +75730,9 @@ if.end33:                                         ; preds = %if.end40, %if.end
   call void @_ZN13StringBuilder6appendEc(ptr %sb76, i8 93)
   %sb77 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb77)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then39:                                        ; preds = %if.then32
@@ -78582,9 +78582,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilder6appendEc(ptr %sb6, i8 58)
   %sb7 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb7)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -78649,9 +78649,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilder6appendEc(ptr %sb17, i8 125)
   %sb19 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result18, ptr %1, ptr %sb19)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result18, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result18, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -79039,9 +79039,9 @@ if.end:                                           ; preds = %if.then, %frame.for
   call void @_ZN13StringBuilder6appendEc(ptr %sb15, i8 125)
   %sb17 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result16, ptr %1, ptr %sb17)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result16, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result16, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -79551,9 +79551,9 @@ while.exit:                                       ; preds = %while.cond
   call void @_ZN13StringBuilder6appendEc(ptr %sb55, i8 93)
   %sb57 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result56, ptr %1, ptr %sb57)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result56, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result56, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 while.cond5:                                      ; preds = %if.end, %while.body
@@ -79806,9 +79806,9 @@ frame.forced:                                     ; preds = %frame.force, %if.en
   call void @_ZN13StringBuilder6appendEc(ptr %sb38, i8 125)
   %sb40 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result39, ptr %1, ptr %sb40)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result39, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result39, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -80135,9 +80135,9 @@ if.end:                                           ; preds = %if.then, %frame.for
   call void @_ZN13StringBuilder6appendEc(ptr %sb58, i8 125)
   %sb60 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result59, ptr %1, ptr %sb60)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result59, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result59, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -80370,9 +80370,9 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %sb6 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb6)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -80530,9 +80530,9 @@ while.exit:                                       ; preds = %while.cond
   call void @_ZN13StringBuilder6appendEc(ptr %sb31, i8 93)
   %sb32 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb32)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 while.cond5:                                      ; preds = %if.end, %while.body
@@ -80809,9 +80809,9 @@ frame.forced6:                                    ; preds = %frame.force5, %fram
   %text17 = load ptr, ptr %text, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result16, ptr %1, ptr %text17)
   call void @_ZN7symbols16edit_code_actionEPN4scaly6memory4PageE6String6Stringbmmmm6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, ptr %sret.result14, i1 true, i64 %4, i64 0, i64 %4, i64 0, ptr %sret.result16)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -80886,9 +80886,9 @@ frame.forced11:                                   ; preds = %frame.force10, %if.
   %struct.region14 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page13, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   store { ptr } zeroinitializer, ptr %arg.tmp15, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region14, ptr %arg.tmp15)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body16 = load { ptr }, ptr %struct.region14, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region14, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then19:                                        ; preds = %if.end7
@@ -80910,9 +80910,9 @@ frame.forced24:                                   ; preds = %frame.force23, %if.
   %struct.region27 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page26, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   store { ptr } zeroinitializer, ptr %arg.tmp15, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region27, ptr %arg.tmp15)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body28 = load { ptr }, ptr %struct.region27, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region27, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 frame.force31:                                    ; preds = %if.end20
@@ -80964,9 +80964,9 @@ frame.forced45:                                   ; preds = %frame.force44, %fra
   %text58 = load ptr, ptr %text, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result57, ptr %1, ptr %text58)
   call void @_ZN7symbols16edit_code_actionEPN4scaly6memory4PageE6String6Stringbmmmm6String(ptr noalias sret({ ptr }) %sret.result54, ptr %1, ptr %3, ptr %sret.result55, i1 true, i64 %4, i64 0, i64 %4, i64 %sub, ptr %sret.result57)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body59 = load { ptr }, ptr %sret.result54, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result54, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -81207,9 +81207,9 @@ frame.forced22:                                   ; preds = %frame.force21, %if.
   %struct.region25 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page24, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   store { ptr } zeroinitializer, ptr %arg.tmp26, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region25, ptr %arg.tmp26)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body27 = load { ptr }, ptr %struct.region25, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region25, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then30:                                        ; preds = %if.end18
@@ -81231,9 +81231,9 @@ frame.forced35:                                   ; preds = %frame.force34, %if.
   %struct.region38 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page37, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   store { ptr } zeroinitializer, ptr %arg.tmp26, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region38, ptr %arg.tmp26)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body39 = load { ptr }, ptr %struct.region38, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region38, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 frame.force42:                                    ; preds = %if.end31
@@ -81280,9 +81280,9 @@ frame.forced54:                                   ; preds = %frame.force53, %fra
   %text65 = load ptr, ptr %text, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result64, ptr %1, ptr %text65)
   call void @_ZN7symbols16edit_code_actionEPN4scaly6memory4PageE6String6Stringbmmmm6String(ptr noalias sret({ ptr }) %sret.result61, ptr %1, ptr %3, ptr %sret.result62, i1 true, i64 %4, i64 0, i64 %4, i64 %sub, ptr %sret.result64)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body66 = load { ptr }, ptr %sret.result61, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result61, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -81329,9 +81329,9 @@ frame.forced:                                     ; preds = %frame.force, %if.th
   %struct.region = call ptr @_ZN4Page8allocateEmm(ptr %forced_page1, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   store { ptr } zeroinitializer, ptr %arg.tmp, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region, ptr %arg.tmp)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %struct.region, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then5:                                         ; preds = %if.end
@@ -81356,9 +81356,9 @@ frame.forced10:                                   ; preds = %frame.force9, %if.t
   %struct.region13 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page12, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   store { ptr } zeroinitializer, ptr %arg.tmp, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region13, ptr %arg.tmp)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body14 = load { ptr }, ptr %struct.region13, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region13, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then18:                                        ; preds = %if.end6
@@ -81380,9 +81380,9 @@ frame.forced23:                                   ; preds = %frame.force22, %if.
   %struct.region26 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page25, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   store { ptr } zeroinitializer, ptr %arg.tmp27, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region26, ptr %arg.tmp27)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body28 = load { ptr }, ptr %struct.region26, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region26, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 frame.force31:                                    ; preds = %if.end19
@@ -81412,9 +81412,9 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %sb79 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %arg.tmp27, ptr %1, ptr %sb79)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body80 = load { ptr }, ptr %arg.tmp27, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %arg.tmp27, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 while.cond39:                                     ; preds = %if.end48, %while.body
@@ -81904,9 +81904,9 @@ if.end:                                           ; preds = %if.then, %frame.for
   call void @_ZN13StringBuilder6appendEc(ptr %sb91, i8 125)
   %sb93 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result92, ptr %1, ptr %sb93)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result92, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result92, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -82161,9 +82161,9 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %sb9 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb9)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then5:                                         ; preds = %while.body
@@ -82877,9 +82877,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilder6appendEc(ptr %sb15, i8 125)
   %sb17 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result16, ptr %1, ptr %sb17)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result16, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result16, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -83071,9 +83071,9 @@ choose.end:                                       ; preds = %choose.else, %if.en
   call void @_ZN13StringBuilder6appendEc(ptr %sb39, i8 93)
   %sb40 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result19, ptr %1, ptr %sb40)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result19, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result19, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.else:                                      ; preds = %frame.forced6
@@ -83237,9 +83237,9 @@ frame.forced:                                     ; preds = %frame.force, %if.en
   call void @_ZN13StringBuilder6appendEc(ptr %sb17, i8 125)
   %sb19 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result18, ptr %1, ptr %sb19)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result18, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result18, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -83448,9 +83448,9 @@ if.then:                                          ; preds = %frame.forced
 if.end:                                           ; preds = %if.end4, %frame.forced
   %sb34 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb34)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then3:                                         ; preds = %if.then
@@ -83573,9 +83573,9 @@ if.then:                                          ; preds = %frame.forced
 if.end:                                           ; preds = %while.exit, %frame.forced
   %sb30 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb30)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 while.cond:                                       ; preds = %if.end9, %if.then
@@ -83691,9 +83691,9 @@ if.then:                                          ; preds = %frame.forced
 if.end:                                           ; preds = %if.end7, %frame.forced
   %sb37 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb37)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then6:                                         ; preds = %if.then
@@ -83863,9 +83863,9 @@ while.body16:                                     ; preds = %while.cond15
 while.exit17:                                     ; preds = %while.cond15
   %sb25 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb25)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body26 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -84163,9 +84163,9 @@ choose.end:                                       ; preds = %choose.else, %if.en
   call void @_ZN13StringBuilder6appendEc(ptr %sb39, i8 93)
   %sb40 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result19, ptr %1, ptr %sb40)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result19, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result19, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.else:                                      ; preds = %frame.forced6
@@ -84326,9 +84326,9 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %sb29 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result28, ptr %1, ptr %sb29)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result28, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result28, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then:                                          ; preds = %while.body
@@ -84473,9 +84473,9 @@ frame.forced10:                                   ; preds = %frame.force9, %if.t
   %struct.region13 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page12, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   store { ptr } zeroinitializer, ptr %arg.tmp14, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region13, ptr %arg.tmp14)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body15 = load { ptr }, ptr %struct.region13, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region13, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then17:                                        ; preds = %if.end6
@@ -84485,9 +84485,9 @@ if.then17:                                        ; preds = %if.end6
 
 if.end18:                                         ; preds = %if.end6
   call void @_ZN7symbols19tagged_names_in_dirEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %arg.tmp14, ptr %1, ptr %sret.result2, ptr %arg.tmp)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body27 = load { ptr }, ptr %arg.tmp14, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %arg.tmp14, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 frame.force21:                                    ; preds = %if.then17
@@ -84499,9 +84499,9 @@ frame.forced22:                                   ; preds = %frame.force21, %if.
   %struct.region25 = call ptr @_ZN4Page8allocateEmm(ptr %forced_page24, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, { ptr } }, ptr null, i64 0, i32 1) to i64))
   store { ptr } zeroinitializer, ptr %arg.tmp14, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region25, ptr %arg.tmp14)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body26 = load { ptr }, ptr %struct.region25, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region25, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -84550,9 +84550,9 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %sb39 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb39)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then:                                          ; preds = %while.body
@@ -84668,9 +84668,9 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %sb62 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb62)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then:                                          ; preds = %while.body
@@ -84846,9 +84846,9 @@ frame.forced5:                                    ; preds = %frame.force4, %fram
 choose.end:                                       ; preds = %choose.else, %if.end, %choose.when
   %sb31 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result18, ptr %1, ptr %sb31)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result18, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result18, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.else:                                      ; preds = %frame.forced5
@@ -85481,9 +85481,9 @@ frame.forced:                                     ; preds = %frame.force, %if.en
   call void @_ZN13StringBuilder6appendEc(ptr %sb3, i8 10)
   %sb4 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb4)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body5 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -85538,9 +85538,9 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %sb24 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb24)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body25 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 while.cond5:                                      ; preds = %if.end14, %while.body
@@ -85639,9 +85639,9 @@ frame.forced:                                     ; preds = %frame.force, %if.en
   call void @_ZN13StringBuilder6appendEi(ptr %sb12, i64 %8)
   %sb13 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb13)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -85810,9 +85810,9 @@ while.exit:                                       ; preds = %while.cond
   call void @_ZN7nameset7destroyEP8NameSlot(ptr %call17)
   %sb502 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result501, ptr %1, ptr %sb502)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result501, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result501, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then:                                          ; preds = %while.body
@@ -88768,9 +88768,9 @@ if.then:                                          ; preds = %frame.forced
 if.end:                                           ; preds = %choose.end, %frame.forced
   %sb42 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb42)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.end:                                       ; preds = %choose.else, %choose.when39, %if.end4
@@ -88898,8 +88898,8 @@ if.then:                                          ; preds = %entry
   br i1 %frame.has_page, label %frame.forced, label %frame.force
 
 if.end:                                           ; preds = %entry
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 frame.force:                                      ; preds = %if.then
@@ -88947,9 +88947,9 @@ while.exit:                                       ; preds = %while.cond
   call void @_ZN13StringBuilder6appendEc(ptr %sb14, i8 10)
   %sb15 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb15)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -88980,9 +88980,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilder6appendEi(ptr %struct.region, i64 %3)
   call void @_ZN13StringBuilder6appendEc(ptr %struct.region, i8 10)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %struct.region)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -89011,9 +89011,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilder6appendEi(ptr %struct.region, i64 %2)
   call void @_ZN13StringBuilder6appendEc(ptr %struct.region, i8 10)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %struct.region)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -89056,9 +89056,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
 choose.end:                                       ; preds = %choose.else, %choose.when6, %choose.when
   %sb14 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result13, ptr %1, ptr %sb14)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result13, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result13, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.else:                                      ; preds = %frame.forced
@@ -89119,9 +89119,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilder6appendE6String(ptr %sb3, ptr %sret.result4)
   %sb7 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result6, ptr %1, ptr %sb7)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result6, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result6, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -89602,9 +89602,9 @@ while.body24:                                     ; preds = %while.cond23
 while.exit25:                                     ; preds = %while.cond23
   %sb33 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result32, ptr %1, ptr %sb33)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result32, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result32, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -89648,9 +89648,9 @@ if.then:                                          ; preds = %frame.forced
 if.end:                                           ; preds = %while.exit, %frame.forced
   %sb23 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb23)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 while.cond:                                       ; preds = %if.end9, %if.then
@@ -91064,9 +91064,9 @@ if.then:                                          ; preds = %frame.forced
 if.end:                                           ; preds = %if.end4, %frame.forced
   %sb27 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb27)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then3:                                         ; preds = %if.then
@@ -91439,8 +91439,8 @@ if.then76:                                        ; preds = %while.exit
   br i1 %frame.has_page, label %frame.forced, label %frame.force
 
 if.end77:                                         ; preds = %while.exit
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 frame.force:                                      ; preds = %if.then76
@@ -91457,9 +91457,9 @@ frame.forced:                                     ; preds = %frame.force, %if.th
   %best_end80 = load i64, ptr %best_end, align 8
   call void @_ZN13StringBuilder6appendEi(ptr %struct.region, i64 %best_end80)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %struct.region)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -91757,9 +91757,9 @@ if.end:                                           ; preds = %if.then, %frame.for
   call void @_ZN13StringBuilder6appendEc(ptr %sb26, i8 125)
   %sb28 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result27, ptr %1, ptr %sb28)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result27, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result27, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -91818,9 +91818,9 @@ if.then:                                          ; preds = %frame.forced
 if.end:                                           ; preds = %while.exit, %frame.forced
   %sb21 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result20, ptr %1, ptr %sb21)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result20, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result20, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 while.cond:                                       ; preds = %if.end10, %if.then
@@ -91919,9 +91919,9 @@ if.end:                                           ; preds = %choose.end, %frame.
   call void @_ZN13StringBuilder6appendEc(ptr %sb38, i8 41)
   %sb40 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result39, ptr %1, ptr %sb40)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result39, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result39, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.end:                                       ; preds = %choose.else, %choose.when32, %if.end5
@@ -92250,9 +92250,9 @@ if.then85:                                        ; preds = %if.end41
 if.end86:                                         ; preds = %if.then85, %if.end41
   %sb88 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb88)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -92352,9 +92352,9 @@ if.then24:                                        ; preds = %if.end14
 if.end25:                                         ; preds = %if.then24, %if.end14
   %sb35 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result34, ptr %1, ptr %sb35)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result34, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result34, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -92425,9 +92425,9 @@ if.then:                                          ; preds = %while.exit
 if.end:                                           ; preds = %if.end12, %while.exit
   %sb26 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb26)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then11:                                        ; preds = %if.then
@@ -92694,9 +92694,9 @@ if.then:                                          ; preds = %while.exit
 if.end:                                           ; preds = %while.exit34, %while.exit
   %sb43 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result42, ptr %1, ptr %sb43)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result42, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result42, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 while.cond32:                                     ; preds = %while.body33, %if.then
@@ -92897,9 +92897,9 @@ if.then:                                          ; preds = %frame.forced
 if.end:                                           ; preds = %if.end4, %frame.forced
   %sb34 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb34)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then3:                                         ; preds = %if.then
@@ -93022,9 +93022,9 @@ if.then:                                          ; preds = %frame.forced
 if.end:                                           ; preds = %while.exit, %frame.forced
   %sb30 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb30)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 while.cond:                                       ; preds = %if.end9, %if.then
@@ -93211,9 +93211,9 @@ if.then28:                                        ; preds = %if.end
 if.end29:                                         ; preds = %if.end36, %if.end
   %sb72 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb72)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then35:                                        ; preds = %if.then28
@@ -93518,9 +93518,9 @@ if.then:                                          ; preds = %frame.forced
 if.end:                                           ; preds = %while.exit, %frame.forced
   %sb21 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb21)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 while.cond:                                       ; preds = %if.end9, %if.then
@@ -93634,9 +93634,9 @@ frame.forced:                                     ; preds = %frame.force, %if.en
   call void @_ZN7symbols15append_fragmentER13StringBuilder6String(ptr %addr.heap10, ptr %sret.result1)
   %sb12 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result11, ptr %1, ptr %sb12)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body13 = load { ptr }, ptr %sret.result11, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result11, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -93818,9 +93818,9 @@ if.end:                                           ; preds = %choose.end, %frame.
   call void @_ZN13StringBuilder6appendEc(ptr %sb26, i8 41)
   %sb28 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result27, ptr %1, ptr %sb28)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result27, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result27, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.end:                                       ; preds = %choose.else, %choose.when21, %if.end5
@@ -93964,9 +93964,9 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %sb50 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result49, ptr %1, ptr %sb50)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body51 = load { ptr }, ptr %sret.result49, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result49, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then8:                                         ; preds = %while.body
@@ -94091,8 +94091,8 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end:                                           ; preds = %entry
@@ -94101,8 +94101,8 @@ if.end:                                           ; preds = %entry
   br i1 %eq2, label %if.then3, label %if.end4
 
 if.then3:                                         ; preds = %if.end
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end4:                                          ; preds = %if.end
@@ -94181,8 +94181,8 @@ frame.forced33:                                   ; preds = %frame.force32, %fra
   br i1 %lt, label %if.then40, label %if.end41
 
 if.then40:                                        ; preds = %frame.forced33
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end41:                                         ; preds = %frame.forced33
@@ -94190,16 +94190,16 @@ if.end41:                                         ; preds = %frame.forced33
   br i1 %lt42, label %if.then43, label %if.end44
 
 if.then43:                                        ; preds = %if.end41
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end44:                                         ; preds = %if.end41
   %call46 = call i64 @_ZN7symbols18position_to_offsetE6Stringmm(ptr %2, i64 %call29, i64 %call39)
   call void @_ZN7symbols11doc_commentEPN4scaly6memory4PageE6Stringm(ptr noalias sret({ ptr }) %sret.result45, ptr %1, ptr %2, i64 %call46)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result45, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result45, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -94237,8 +94237,8 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end:                                           ; preds = %entry
@@ -94315,9 +94315,9 @@ frame.forced11:                                   ; preds = %frame.force10, %fra
   call void @_ZN13StringBuilder6appendEc(ptr %sb34, i8 125)
   %sb36 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result35, ptr %1, ptr %sb36)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result35, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result35, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -94360,8 +94360,8 @@ frame.forced:                                     ; preds = %frame.force, %entry
 choose.end:                                       ; preds = %choose.else, %if.end, %choose.when
   %choose.value = phi { ptr } [ zeroinitializer, %choose.when ], [ undef, %if.end ], [ undef, %choose.else ]
   %result16 = load { ptr }, ptr %result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  store { ptr } %result16, ptr %0, align 1
   ret void
 
 choose.else:                                      ; preds = %frame.forced
@@ -94916,8 +94916,8 @@ if.then16:                                        ; preds = %while.exit
   br i1 %eq21, label %if.then22, label %if.end23
 
 if.end17:                                         ; preds = %if.end23, %while.exit
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then22:                                        ; preds = %if.then16
@@ -94995,9 +94995,9 @@ while.body46:                                     ; preds = %while.cond45
 while.exit47:                                     ; preds = %while.cond45
   %sb54 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb54)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -95040,8 +95040,8 @@ frame.forced:                                     ; preds = %frame.force, %entry
 choose.end:                                       ; preds = %choose.else, %if.end, %choose.when
   %choose.value = phi { ptr } [ zeroinitializer, %choose.when ], [ undef, %if.end ], [ undef, %choose.else ]
   %result16 = load { ptr }, ptr %result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  store { ptr } %result16, ptr %0, align 1
   ret void
 
 choose.else:                                      ; preds = %frame.forced
@@ -95146,8 +95146,8 @@ frame.forced:                                     ; preds = %frame.force, %entry
 choose.end:                                       ; preds = %choose.else, %if.end, %choose.when
   %choose.value = phi { ptr } [ zeroinitializer, %choose.when ], [ undef, %if.end ], [ undef, %choose.else ]
   %result16 = load { ptr }, ptr %result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  store { ptr } %result16, ptr %0, align 1
   ret void
 
 choose.else:                                      ; preds = %frame.forced
@@ -95402,8 +95402,8 @@ frame.forced:                                     ; preds = %frame.force, %entry
 choose.end:                                       ; preds = %choose.else, %if.end, %choose.when
   %choose.value = phi { ptr } [ zeroinitializer, %choose.when ], [ undef, %if.end ], [ undef, %choose.else ]
   %result16 = load { ptr }, ptr %result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  store { ptr } %result16, ptr %0, align 1
   ret void
 
 choose.else:                                      ; preds = %frame.forced
@@ -96169,9 +96169,9 @@ while.body45:                                     ; preds = %while.cond44
 while.exit46:                                     ; preds = %while.cond44
   %sb54 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb54)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -96770,9 +96770,9 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %entry
   call void @_ZN7symbols22packages_dir_from_pathEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result11, ptr %1, ptr %2)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body12 = load { ptr }, ptr %sret.result11, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result11, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 frame.force:                                      ; preds = %if.then
@@ -96809,9 +96809,9 @@ while.exit:                                       ; preds = %while.cond
   call void @_ZN13StringBuilder6appendE6String(ptr %sb8, ptr %arg.tmp)
   %sb10 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result9, ptr %1, ptr %sb10)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result9, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result9, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -96870,9 +96870,9 @@ if.end3:                                          ; preds = %if.end25, %land.rhs
   %sb33 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result32, ptr %1, ptr %sb33)
   call void @_ZN8symindex11put_listingE6String6String(ptr %2, ptr %sret.result32)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body34 = load { ptr }, ptr %sret.result32, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result32, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 land.rhs:                                         ; preds = %frame.forced7
@@ -97004,8 +97004,8 @@ if.then:                                          ; preds = %entry
   br i1 %frame.has_page, label %frame.forced, label %frame.force
 
 if.end:                                           ; preds = %entry
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 frame.force:                                      ; preds = %if.then
@@ -97043,9 +97043,9 @@ while.exit:                                       ; preds = %while.cond
   call void @_ZN13StringBuilder6appendEc(ptr %sb11, i8 93)
   %sb13 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result12, ptr %1, ptr %sb13)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result12, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result12, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -98407,8 +98407,8 @@ frame.forced:                                     ; preds = %frame.force, %entry
 choose.end:                                       ; preds = %choose.else, %if.end, %choose.when
   %choose.value = phi { ptr } [ zeroinitializer, %choose.when ], [ undef, %if.end ], [ undef, %choose.else ]
   %result16 = load { ptr }, ptr %result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  store { ptr } %result16, ptr %0, align 1
   ret void
 
 choose.else:                                      ; preds = %frame.forced
@@ -98935,16 +98935,16 @@ while.exit:                                       ; preds = %while.cond
   call void @_ZN13StringBuilder6appendEc(ptr %sb23, i8 93)
   %sb25 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result24, ptr %1, ptr %sb25)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result24, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result24, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.end31:                                     ; preds = %choose.else32, %choose.when33
   %choose.value40 = phi { ptr } [ %choose.arm.load39, %choose.when33 ], [ undef, %choose.else32 ]
   %nested = load { ptr }, ptr %members, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %members, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  store { ptr } %nested, ptr %0, align 1
   ret void
 
 choose.else32:                                    ; preds = %if.end
@@ -99126,8 +99126,8 @@ frame.forced:                                     ; preds = %frame.force, %entry
 choose.end:                                       ; preds = %choose.else, %if.end, %choose.when
   %choose.value = phi { ptr } [ zeroinitializer, %choose.when ], [ undef, %if.end ], [ undef, %choose.else ]
   %result17 = load { ptr }, ptr %result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  store { ptr } %result17, ptr %0, align 1
   ret void
 
 choose.else:                                      ; preds = %frame.forced
@@ -99282,9 +99282,9 @@ frame.forced:                                     ; preds = %frame.force, %if.en
   call void @_ZN13StringBuilder6appendEc(ptr %sb27, i8 125)
   %sb29 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result28, ptr %1, ptr %sb29)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result28, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result28, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -99751,8 +99751,8 @@ if.then:                                          ; preds = %entry
   br i1 %lt, label %if.then2, label %if.end3
 
 if.end:                                           ; preds = %if.end3, %entry
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then2:                                         ; preds = %if.then
@@ -99926,9 +99926,9 @@ frame.forced:                                     ; preds = %frame.force, %choos
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp66)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result67, ptr %1, ptr %struct.region)
   call void @_ZN7symbols8with_docEPN4scaly6memory4PageE6Stringm6String(ptr noalias sret({ ptr }) %sret.result61, ptr %1, ptr %2, i64 %field.val, ptr %sret.result67)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result61, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result61, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -100467,9 +100467,9 @@ if.end:                                           ; preds = %entry
   br i1 %eq2, label %if.then3, label %if.end4
 
 if.then3:                                         ; preds = %if.end
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body5 = load { ptr }, ptr %4, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %4, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end4:                                          ; preds = %if.end
@@ -100496,9 +100496,9 @@ frame.forced:                                     ; preds = %frame.force, %if.en
   call void @_ZN7symbols5fenceEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result8, ptr null)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %sret.result8)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result9, ptr %1, ptr %struct.region)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body10 = load { ptr }, ptr %sret.result9, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result9, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -100553,9 +100553,9 @@ if.end:                                           ; preds = %if.then, %frame.for
   %sb12 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result11, ptr %1, ptr %sb12)
   call void @_ZN7symbols8with_docEPN4scaly6memory4PageE6Stringm6String(ptr noalias sret({ ptr }) %sret.result10, ptr %1, ptr %2, i64 %call9, ptr %sret.result11)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result10, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result10, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -100843,9 +100843,9 @@ frame.forced:                                     ; preds = %frame.force, %if.en
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %sret.result16)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result19, ptr %1, ptr %struct.region)
   call void @_ZN7symbols8with_docEPN4scaly6memory4PageE6Stringm6String(ptr noalias sret({ ptr }) %sret.result12, ptr %1, ptr %2, i64 %field.val14, ptr %sret.result19)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body20 = load { ptr }, ptr %sret.result12, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result12, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -100927,9 +100927,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilder6appendE6String(ptr %sb5, ptr %3)
   %sb6 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb6)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -101068,9 +101068,9 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %sb51 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb51)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 while.cond4:                                      ; preds = %if.end, %while.body
@@ -101204,9 +101204,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilder6appendE6String(ptr %sb6, ptr %3)
   %sb7 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb7)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -101436,9 +101436,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilder6appendE6String(ptr %sb5, ptr %sret.result)
   %sb7 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result6, ptr %1, ptr %sb7)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result6, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result6, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -101474,8 +101474,8 @@ if.then:                                          ; preds = %entry
 
 if.end:                                           ; preds = %choose.end, %entry
   %result35 = load { ptr }, ptr %result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  store { ptr } %result35, ptr %0, align 1
   ret void
 
 choose.end:                                       ; preds = %choose.else, %if.end24, %if.end3
@@ -101827,9 +101827,9 @@ if.then26:                                        ; preds = %if.end16
 if.end27:                                         ; preds = %if.then26, %if.end16
   %sb37 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result36, ptr %1, ptr %sb37)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result36, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result36, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -103329,9 +103329,9 @@ while.body51:                                     ; preds = %while.cond50
 while.exit52:                                     ; preds = %while.cond50
   %sb61 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb61)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -103736,8 +103736,8 @@ if.then:                                          ; preds = %entry
   br i1 %frame.has_page, label %frame.forced, label %frame.force
 
 if.end:                                           ; preds = %entry
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 frame.force:                                      ; preds = %if.then
@@ -103751,9 +103751,9 @@ frame.forced:                                     ; preds = %frame.force, %if.th
   call void @_ZN13StringBuilder6appendEc(ptr %struct.region, i8 77)
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %sret.result)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result2, ptr %1, ptr %struct.region)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result2, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result2, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -104354,9 +104354,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilder6appendEc(ptr %sb17, i8 125)
   %sb19 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result18, ptr %1, ptr %sb19)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result18, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result18, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -104473,15 +104473,15 @@ if.end14:                                         ; preds = %if.end9
   br i1 %call16, label %if.then17, label %if.end18
 
 if.then17:                                        ; preds = %if.end14
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end18:                                         ; preds = %if.end14
   call void @_ZN7symbols11def_in_fileEPN4scaly6memory4PageE6String6String(ptr noalias sret({ ptr }) %sret.result19, ptr %1, ptr %sret.result10, ptr %5)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body20 = load { ptr }, ptr %sret.result19, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result19, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -104564,8 +104564,8 @@ frame.forced:                                     ; preds = %frame.force, %entry
 choose.end:                                       ; preds = %choose.else, %if.end, %choose.when
   %choose.value = phi { ptr } [ zeroinitializer, %choose.when ], [ undef, %if.end ], [ undef, %choose.else ]
   %result16 = load { ptr }, ptr %result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  store { ptr } %result16, ptr %0, align 1
   ret void
 
 choose.else:                                      ; preds = %frame.forced
@@ -105406,8 +105406,8 @@ while.body:                                       ; preds = %while.cond
   br i1 %eq, label %if.then, label %if.end
 
 while.exit:                                       ; preds = %while.cond
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then:                                          ; preds = %while.body
@@ -105605,9 +105605,9 @@ if.then97:                                        ; preds = %if.then91
   %j100 = load i64, ptr %j, align 8
   %add101 = add i64 %j100, 1
   call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %arg.tmp50, ptr %1, ptr %2, i64 %lstart99, i64 %add101)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %arg.tmp50, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %arg.tmp50, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end98:                                         ; preds = %if.then91
@@ -105668,9 +105668,9 @@ choose.end:                                       ; preds = %choose.else, %if.en
   call void @_ZN7symbols15line_cursor_endEv()
   %sb31 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result18, ptr %1, ptr %sb31)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result18, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result18, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.else:                                      ; preds = %frame.forced5
@@ -106019,9 +106019,9 @@ if.end4:                                          ; preds = %if.then3, %land.rhs
   %start13 = load i64, ptr %start, align 8
   %end14 = load i64, ptr %end, align 8
   call void @_ZN7symbols9substringEPN4scaly6memory4PageE6Stringmm(ptr noalias sret({ ptr }) %sret.result12, ptr %1, ptr %2, i64 %start13, i64 %end14)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result12, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result12, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 land.rhs:                                         ; preds = %if.end
@@ -106077,9 +106077,9 @@ if.end:                                           ; preds = %if.then, %frame.for
   call void @_ZN13StringBuilder6appendE6String(ptr %sb7, ptr %arg.tmp)
   %sb8 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb8)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -106229,8 +106229,8 @@ while.body:                                       ; preds = %while.cond
   br i1 %eq, label %if.then, label %if.end
 
 while.exit:                                       ; preds = %while.cond
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then:                                          ; preds = %while.body
@@ -106420,9 +106420,9 @@ while.body78:                                     ; preds = %while.cond77
 while.exit79:                                     ; preds = %while.cond77
   %sb88 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb88)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -106790,9 +106790,9 @@ while.exit129:                                    ; preds = %while.cond127
   call void @_ZN13StringBuilder6appendEc(ptr %sb158, i8 125)
   %sb160 = load ptr, ptr %work, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result159, ptr %1, ptr %sb160)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result159, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result159, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -107425,9 +107425,9 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %sb37 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result9, ptr %1, ptr %sb37)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result9, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result9, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then7:                                         ; preds = %while.body
@@ -107517,8 +107517,8 @@ if.then:                                          ; preds = %entry
   br i1 %frame.has_page, label %frame.forced, label %frame.force
 
 if.end:                                           ; preds = %entry
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 frame.force:                                      ; preds = %if.then
@@ -107564,9 +107564,9 @@ if.then13:                                        ; preds = %while.exit
 if.end14:                                         ; preds = %if.end17, %while.exit
   %sb30 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result18, ptr %1, ptr %sb30)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result18, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result18, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then16:                                        ; preds = %if.then13
@@ -107642,9 +107642,9 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %sb56 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %arg.tmp, ptr %1, ptr %sb56)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %arg.tmp, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %arg.tmp, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then:                                          ; preds = %while.body
@@ -107817,9 +107817,9 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %sb37 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result9, ptr %1, ptr %sb37)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result9, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result9, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then7:                                         ; preds = %while.body
@@ -108096,9 +108096,9 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %sb109 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb109)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then:                                          ; preds = %while.body
@@ -108354,8 +108354,8 @@ frame.forced:                                     ; preds = %frame.force, %if.en
   br i1 %eq4, label %if.then5, label %if.end6
 
 if.then5:                                         ; preds = %frame.forced
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end6:                                          ; preds = %frame.forced
@@ -108398,9 +108398,9 @@ while.exit:                                       ; preds = %while.cond
   call void @_ZN13StringBuilder6appendEc(ptr %sb22, i8 47)
   %sb23 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb23)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -109954,9 +109954,9 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %sb64 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb64)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then:                                          ; preds = %while.body
@@ -110142,9 +110142,9 @@ while.exit:                                       ; preds = %while.cond
   call void @_ZN13StringBuilder6appendEc(ptr %sb44, i8 93)
   %sb45 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result10, ptr %1, ptr %sb45)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result10, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result10, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then8:                                         ; preds = %while.body
@@ -110562,16 +110562,16 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %sb9 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result8, ptr %1, ptr %sb9)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result8, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result8, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.when10:                                    ; preds = %entry
   %"variant.c_data().ptr11" = getelementptr inbounds nuw %_Z12TargetSyntax, ptr %3, i32 0, i32 1
   %variant.val12 = load %_Z13RoutineSyntax, ptr %"variant.c_data().ptr11", align 8
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -110780,9 +110780,9 @@ while.exit61:                                     ; preds = %while.cond59
   call void @_ZN13StringBuilder6appendEc(ptr %sb69, i8 10)
   %sb71 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result70, ptr %1, ptr %sb71)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result70, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result70, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -111064,9 +111064,9 @@ if.then:                                          ; preds = %frame.forced
 if.end:                                           ; preds = %while.exit, %frame.forced
   %sb22 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb22)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 while.cond:                                       ; preds = %if.end9, %if.then
@@ -111157,9 +111157,9 @@ if.then:                                          ; preds = %frame.forced
 if.end:                                           ; preds = %if.end4, %frame.forced
   %sb27 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb27)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then3:                                         ; preds = %if.then
@@ -111308,9 +111308,9 @@ while.body15:                                     ; preds = %while.cond14
 while.exit16:                                     ; preds = %while.cond14
   %sb24 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb24)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body25 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -111354,9 +111354,9 @@ if.then:                                          ; preds = %frame.forced
 if.end:                                           ; preds = %while.exit, %frame.forced
   %sb23 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb23)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 while.cond:                                       ; preds = %if.end9, %if.then
@@ -111536,9 +111536,9 @@ if.then37:                                        ; preds = %if.end
 if.end38:                                         ; preds = %if.end45, %if.end
   %sb73 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb73)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then44:                                        ; preds = %if.then37
@@ -111701,9 +111701,9 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %sb23 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result22, ptr %1, ptr %sb23)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result22, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result22, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -111748,9 +111748,9 @@ choose.end:                                       ; preds = %choose.else, %if.en
   %choose.value = phi i64 [ 0, %choose.else ], [ undef, %if.end25 ]
   %sb60 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb60)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.else:                                      ; preds = %frame.forced
@@ -112126,9 +112126,9 @@ if.then:                                          ; preds = %frame.forced
 if.end:                                           ; preds = %choose.end, %frame.forced
   %sb66 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb66)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.end:                                       ; preds = %choose.else, %if.end54, %if.end6
@@ -112486,9 +112486,9 @@ while.exit12:                                     ; preds = %while.cond10
   call void @_ZN13StringBuilder6appendEc(ptr %sb20, i8 31)
   %sb21 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb21)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -112553,9 +112553,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilder6appendEc(ptr %sb17, i8 125)
   %sb19 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result18, ptr %1, ptr %sb19)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result18, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result18, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -112729,9 +112729,9 @@ while.exit:                                       ; preds = %while.cond
   call void @_ZN13StringBuilder6appendEc(ptr %sb8, i8 93)
   %sb9 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %arg.tmp, ptr %1, ptr %sb9)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %arg.tmp, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %arg.tmp, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -112842,9 +112842,9 @@ if.end18:                                         ; preds = %while.exit23, %if.e
   call void @_ZN13StringBuilder6appendEc(ptr %sb82, i8 93)
   %sb83 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result19, ptr %1, ptr %sb83)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result19, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result19, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 while.cond21:                                     ; preds = %if.end30, %if.then17
@@ -113056,8 +113056,8 @@ if.end14:                                         ; preds = %if.then13, %if.end1
   br label %if.end6
 
 if.then26:                                        ; preds = %while.exit
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } { ptr @.sconst.749 }, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end27:                                         ; preds = %while.exit
@@ -113070,16 +113070,16 @@ if.end27:                                         ; preds = %while.exit
 
 if.then32:                                        ; preds = %if.end27
   call void @_ZN7symbols11scan_tokensEPN4scaly6memory4PageE6String6String6Stringb6String(ptr noalias sret({ ptr }) %sret.result34, ptr %1, ptr %2, ptr %3, ptr %sret.result23, i1 true, ptr %sret.result30)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result34, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result34, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end33:                                         ; preds = %if.end27
   call void @_ZN7symbols20references_workspaceEPN4scaly6memory4PageE6String6String6String6String(ptr noalias sret({ ptr }) %sret.result34, ptr %1, ptr %2, ptr %3, ptr %sret.result23, ptr %sret.result)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body35 = load { ptr }, ptr %sret.result34, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result34, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -113965,9 +113965,9 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %sb92 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb92)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then7:                                         ; preds = %while.body
@@ -114192,9 +114192,9 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %sb149 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb149)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then:                                          ; preds = %while.body
@@ -114924,9 +114924,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilder6appendEc(ptr %sb47, i8 125)
   %sb49 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result48, ptr %1, ptr %sb49)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result48, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result48, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -115050,8 +115050,8 @@ if.end13:                                         ; preds = %if.then12, %if.end9
   br label %if.end5
 
 if.then24:                                        ; preds = %while.exit
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } { ptr @.sconst.766 }, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end25:                                         ; preds = %while.exit
@@ -115106,9 +115106,9 @@ frame.forced:                                     ; preds = %frame.force, %if.th
   call void @_ZN13StringBuilder6appendEc(ptr %sb42, i8 93)
   %sb44 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result43, ptr %1, ptr %sb44)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result43, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result43, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 while.cond46:                                     ; preds = %if.end55, %if.end37
@@ -115138,8 +115138,8 @@ if.end55:                                         ; preds = %while.body47
   br label %while.cond46
 
 if.then62:                                        ; preds = %while.exit30
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } { ptr @.sconst.767 }, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end63:                                         ; preds = %while.exit30
@@ -115149,8 +115149,8 @@ if.end63:                                         ; preds = %while.exit30
   br i1 %eq66, label %if.then67, label %if.end68
 
 if.then67:                                        ; preds = %if.end63
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } { ptr @.sconst.768 }, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end68:                                         ; preds = %if.end63
@@ -115160,8 +115160,8 @@ if.end68:                                         ; preds = %if.end63
   br i1 %eq71, label %if.then72, label %if.end73
 
 if.then72:                                        ; preds = %if.end68
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } { ptr @.sconst.769 }, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end73:                                         ; preds = %if.end68
@@ -115183,8 +115183,8 @@ while.body78:                                     ; preds = %while.cond77
   br i1 %call83, label %if.then84, label %if.end85
 
 while.exit79:                                     ; preds = %while.cond77
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } { ptr @.sconst.770 }, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then84:                                        ; preds = %while.body78
@@ -115216,9 +115216,9 @@ frame.forced89:                                   ; preds = %frame.force88, %if.
   call void @_ZN13StringBuilder6appendEc(ptr %sb97, i8 93)
   %sb99 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result98, ptr %1, ptr %sb99)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body100 = load { ptr }, ptr %sret.result98, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result98, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 while.cond103:                                    ; preds = %if.end112, %if.end85
@@ -115427,9 +115427,9 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %sb59 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result58, ptr %1, ptr %sb59)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result58, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result58, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then8:                                         ; preds = %while.body
@@ -115717,9 +115717,9 @@ if.end6:                                          ; preds = %while.exit, %if.end
   call void @_ZN13StringBuilder6appendEc(ptr %sb34, i8 93)
   %sb35 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result7, ptr %1, ptr %sb35)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result7, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result7, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 while.cond:                                       ; preds = %if.end14, %if.then5
@@ -115892,9 +115892,9 @@ while.exit:                                       ; preds = %while.cond
 if.then9:                                         ; preds = %while.body
   %at12 = load i64, ptr %at, align 8
   call void @_ZN7symbols12call_item_atEPN4scaly6memory4PageE6String6String6Stringm(ptr noalias sret({ ptr }) %sret.result11, ptr %1, ptr %2, ptr %3, ptr %4, i64 %at12)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body13 = load { ptr }, ptr %sret.result11, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result11, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end10:                                         ; preds = %while.body
@@ -115929,8 +115929,8 @@ if.end23:                                         ; preds = %while.body16
   br label %while.cond15
 
 if.then29:                                        ; preds = %while.exit
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end30:                                         ; preds = %while.exit
@@ -115940,8 +115940,8 @@ if.end30:                                         ; preds = %while.exit
   br i1 %eq33, label %if.then34, label %if.end35
 
 if.then34:                                        ; preds = %if.end30
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end35:                                         ; preds = %if.end30
@@ -115951,8 +115951,8 @@ if.end35:                                         ; preds = %if.end30
   br i1 %eq38, label %if.then39, label %if.end40
 
 if.then39:                                        ; preds = %if.end35
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end40:                                         ; preds = %if.end35
@@ -115974,16 +115974,16 @@ while.body45:                                     ; preds = %while.cond44
   br i1 %call50, label %if.then51, label %if.end52
 
 while.exit46:                                     ; preds = %while.cond44
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then51:                                        ; preds = %while.body45
   %dat54 = load i64, ptr %e, align 8
   call void @_ZN7symbols12call_item_atEPN4scaly6memory4PageE6String6String6Stringm(ptr noalias sret({ ptr }) %sret.result53, ptr %1, ptr %sret.result41, ptr %sret.result31, ptr %sret.result42, i64 %dat54)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body55 = load { ptr }, ptr %sret.result53, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result53, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end52:                                         ; preds = %while.body45
@@ -116073,9 +116073,9 @@ if.then:                                          ; preds = %frame.forced
   call void @_ZN13StringBuilder6appendEc(ptr %sb4, i8 93)
   %sb6 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result5, ptr %1, ptr %sb6)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result5, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result5, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end:                                           ; preds = %frame.forced
@@ -116114,9 +116114,9 @@ while.exit:                                       ; preds = %while.cond
   call void @_ZN13StringBuilder6appendEc(ptr %sb117, i8 93)
   %sb118 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result49, ptr %1, ptr %sb118)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body119 = load { ptr }, ptr %sret.result49, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result49, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then18:                                        ; preds = %while.body
@@ -116366,8 +116366,8 @@ if.end10:                                         ; preds = %if.end5
   br i1 %call12, label %if.then13, label %if.end14
 
 if.then13:                                        ; preds = %if.end10
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end14:                                         ; preds = %if.end10
@@ -116376,8 +116376,8 @@ if.end14:                                         ; preds = %if.end10
   br i1 %eq16, label %if.then17, label %if.end18
 
 if.then17:                                        ; preds = %if.end14
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end18:                                         ; preds = %if.end14
@@ -116399,16 +116399,16 @@ while.body:                                       ; preds = %while.cond
   br i1 %call25, label %if.then26, label %if.end27
 
 while.exit:                                       ; preds = %while.cond
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then26:                                        ; preds = %while.body
   %at29 = load i64, ptr %at, align 8
   call void @_ZN7symbols12call_item_atEPN4scaly6memory4PageE6String6String6Stringm(ptr noalias sret({ ptr }) %sret.result28, ptr %1, ptr %sret.result19, ptr %sret.result1, ptr %sret.result20, i64 %at29)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result28, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result28, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end27:                                         ; preds = %while.body
@@ -116586,9 +116586,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilder6appendEc(ptr %sb7, i8 125)
   %sb9 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result8, ptr %1, ptr %sb9)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result8, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result8, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -116713,9 +116713,9 @@ while.body25:                                     ; preds = %while.cond24
 while.exit26:                                     ; preds = %while.cond24
   %sb105 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %piece, ptr %1, ptr %sb105)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %piece, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %piece, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then31:                                        ; preds = %while.body25
@@ -117580,9 +117580,9 @@ while.exit:                                       ; preds = %while.cond
   call void @_ZN13StringBuilder6appendEc(ptr %sb18, i8 125)
   %sb20 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result19, ptr %1, ptr %sb20)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result19, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result19, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -117719,9 +117719,9 @@ if.end28:                                         ; preds = %while.exit33, %if.e
   call void @_ZN13StringBuilder6appendEc(ptr %sb97, i8 125)
   %sb98 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result29, ptr %1, ptr %sb98)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result29, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result29, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 while.cond31:                                     ; preds = %if.end40, %if.then27
@@ -117978,8 +117978,8 @@ if.end27:                                         ; preds = %if.then26, %if.end2
   br label %if.end17
 
 if.then39:                                        ; preds = %while.exit
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end40:                                         ; preds = %while.exit
@@ -117989,8 +117989,8 @@ if.end40:                                         ; preds = %while.exit
   br i1 %eq43, label %if.then44, label %if.end45
 
 if.then44:                                        ; preds = %if.end40
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end45:                                         ; preds = %if.end40
@@ -117998,8 +117998,8 @@ if.end45:                                         ; preds = %if.end40
   br i1 %call46, label %if.then47, label %if.end48
 
 if.then47:                                        ; preds = %if.end45
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end48:                                         ; preds = %if.end45
@@ -118008,8 +118008,8 @@ if.end48:                                         ; preds = %if.end45
   br i1 %eq50, label %if.then51, label %if.end52
 
 if.then51:                                        ; preds = %if.end48
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end52:                                         ; preds = %if.end48
@@ -118022,16 +118022,16 @@ if.end52:                                         ; preds = %if.end48
 
 if.then57:                                        ; preds = %if.end52
   call void @_ZN7symbols12rename_editsEPN4scaly6memory4PageE6String6String6String6String6String(ptr noalias sret({ ptr }) %sret.result59, ptr %1, ptr %2, ptr %3, ptr %sret.result41, ptr %sret.result33, ptr %sret.result55)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result59, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result59, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end58:                                         ; preds = %if.end52
   call void @_ZN7symbols16rename_workspaceEPN4scaly6memory4PageE6String6String6String6String6String(ptr noalias sret({ ptr }) %sret.result59, ptr %1, ptr %2, ptr %3, ptr %sret.result41, ptr %sret.result33, ptr %sret.result)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body60 = load { ptr }, ptr %sret.result59, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result59, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -118096,9 +118096,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilder6appendEc(ptr %sb17, i8 125)
   %sb19 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result18, ptr %1, ptr %sb19)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result18, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result18, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -118221,9 +118221,9 @@ while.body25:                                     ; preds = %while.cond24
 while.exit26:                                     ; preds = %while.cond24
   %sb96 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb96)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then31:                                        ; preds = %while.body25
@@ -118574,8 +118574,8 @@ if.end24:                                         ; preds = %while.exit
   br i1 %eq26, label %if.then27, label %if.end28
 
 if.then27:                                        ; preds = %if.end24
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end28:                                         ; preds = %if.end24
@@ -118583,15 +118583,15 @@ if.end28:                                         ; preds = %if.end24
   br i1 %call29, label %if.then30, label %if.end31
 
 if.then30:                                        ; preds = %if.end28
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end31:                                         ; preds = %if.end28
   call void @_ZN7symbols16identifier_rangeEPN4scaly6memory4PageE6Stringm(ptr noalias sret({ ptr }) %sret.result32, ptr %1, ptr %2, i64 %call21)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result32, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result32, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -119185,8 +119185,8 @@ frame.forced:                                     ; preds = %frame.force, %entry
 choose.end:                                       ; preds = %choose.else, %if.end, %choose.when
   %choose.value = phi { ptr } [ zeroinitializer, %choose.when ], [ undef, %if.end ], [ undef, %choose.else ]
   %result16 = load { ptr }, ptr %result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  store { ptr } %result16, ptr %0, align 1
   ret void
 
 choose.else:                                      ; preds = %frame.forced
@@ -119541,9 +119541,9 @@ while.exit26:                                     ; preds = %while.cond24
   call void @_ZN13StringBuilder6appendEc(ptr %sb34, i8 10)
   %sb36 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result35, ptr %1, ptr %sb36)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result35, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result35, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -119597,9 +119597,9 @@ while.exit:                                       ; preds = %while.cond
   call void @_ZN13StringBuilder6appendEc(ptr %sb9, i8 10)
   %sb10 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb10)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -119773,9 +119773,9 @@ while.body23:                                     ; preds = %while.cond22
 while.exit24:                                     ; preds = %while.cond22
   %sb33 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result32, ptr %1, ptr %sb33)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result32, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result32, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -119952,9 +119952,9 @@ if.then:                                          ; preds = %frame.forced
 if.end:                                           ; preds = %if.end4, %frame.forced
   %sb27 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb27)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then3:                                         ; preds = %if.then
@@ -120056,9 +120056,9 @@ if.then:                                          ; preds = %frame.forced
 if.end:                                           ; preds = %while.exit, %frame.forced
   %sb23 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb23)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 while.cond:                                       ; preds = %if.end9, %if.then
@@ -120223,9 +120223,9 @@ frame.forced5:                                    ; preds = %frame.force4, %fram
 choose.end:                                       ; preds = %choose.else, %if.end, %choose.when
   %sb31 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result18, ptr %1, ptr %sb31)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result18, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result18, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.else:                                      ; preds = %frame.forced5
@@ -120329,8 +120329,8 @@ while.body:                                       ; preds = %while.cond
   br label %while.cond4
 
 while.exit:                                       ; preds = %while.cond
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 while.cond4:                                      ; preds = %if.end, %while.body
@@ -120475,9 +120475,9 @@ while.body59:                                     ; preds = %while.cond58
 while.exit60:                                     ; preds = %while.cond58
   %sb69 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb69)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -120739,9 +120739,9 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %sb47 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb47)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then:                                          ; preds = %while.body
@@ -121198,9 +121198,9 @@ frame.forced13:                                   ; preds = %frame.force12, %whi
   call void @_ZN13StringBuilder6appendEc(ptr %sb53, i8 125)
   %sb55 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result54, ptr %1, ptr %sb55)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result54, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result54, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -121248,8 +121248,8 @@ if.end:                                           ; preds = %entry
   br i1 %eq, label %if.then4, label %if.end5
 
 if.then4:                                         ; preds = %if.end
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end5:                                          ; preds = %if.end
@@ -121315,9 +121315,9 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %sb57 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result21, ptr %1, ptr %sb57)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body58 = load { ptr }, ptr %sret.result21, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result21, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 while.cond27:                                     ; preds = %if.end36, %while.body
@@ -121430,9 +121430,9 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %sb89 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb89)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then:                                          ; preds = %while.body
@@ -121777,9 +121777,9 @@ while.exit47:                                     ; preds = %while.cond45
   call void @_ZN13StringBuilder6appendEc(ptr %sb171, i8 93)
   %sb172 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result132, ptr %1, ptr %sb172)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result132, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result132, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then54:                                        ; preds = %while.body46
@@ -122219,9 +122219,9 @@ frame.forced12:                                   ; preds = %frame.force11, %whi
   call void @_ZN13StringBuilder6appendEc(ptr %sb52, i8 125)
   %sb54 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result53, ptr %1, ptr %sb54)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result53, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result53, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -122340,9 +122340,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilder6appendEc(ptr %sb47, i8 125)
   %sb49 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result48, ptr %1, ptr %sb49)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result48, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result48, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -123541,9 +123541,9 @@ while.exit162:                                    ; preds = %while.cond160
   call void @_ZN13StringBuilder6appendEc(ptr %sb191, i8 125)
   %sb193 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result192, ptr %1, ptr %sb193)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result192, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result192, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -123590,9 +123590,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilder6appendEc(ptr %sb7, i8 125)
   %sb9 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result8, ptr %1, ptr %sb9)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result8, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result8, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -125031,8 +125031,8 @@ while.body:                                       ; preds = %while.cond
 
 while.exit:                                       ; preds = %while.cond
   %result34 = load { ptr }, ptr %result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  store { ptr } %result34, ptr %0, align 1
   ret void
 
 if.then6:                                         ; preds = %while.body
@@ -125975,8 +125975,8 @@ if.end178:                                        ; preds = %if.end189, %if.end1
   %tuple.field249 = getelementptr inbounds nuw %_Z8LineScan, ptr %tuple, i32 0, i32 6
   store i1 %block243, ptr %tuple.field249, align 1
   %tuple.val = load %_Z8LineScan, ptr %tuple, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple, i64 ptrtoint (ptr getelementptr (%_Z8LineScan, ptr null, i32 1) to i64), i1 false)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  store %_Z8LineScan %tuple.val, ptr %0, align 1
   ret void
 
 if.then184:                                       ; preds = %if.then177
@@ -126978,9 +126978,9 @@ while.body343:                                    ; preds = %while.cond342
 while.exit344:                                    ; preds = %while.cond342
   %sb375 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result109, ptr %1, ptr %sb375)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result109, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result109, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then352:                                       ; preds = %while.body343
@@ -127128,9 +127128,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilder6appendEc(ptr %sb36, i8 125)
   %sb38 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result37, ptr %1, ptr %sb38)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result37, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result37, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -127261,9 +127261,9 @@ while.exit:                                       ; preds = %while.cond
   call void @_ZN13StringBuilder6appendEc(ptr %sb170, i8 93)
   %sb172 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result171, ptr %1, ptr %sb172)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result171, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result171, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 while.cond6:                                      ; preds = %if.end, %while.body
@@ -127610,9 +127610,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilder6appendEc(ptr %sb6, i8 58)
   %sb7 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb7)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -127673,9 +127673,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilder6appendEc(ptr %sb15, i8 125)
   %sb17 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result16, ptr %1, ptr %sb17)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result16, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result16, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -127840,8 +127840,8 @@ frame.forced:                                     ; preds = %frame.force, %if.en
 
 choose.end:                                       ; preds = %choose.else, %if.end42
   %result47 = load { ptr }, ptr %result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  store { ptr } %result47, ptr %0, align 1
   ret void
 
 choose.else:                                      ; preds = %frame.forced
@@ -127849,8 +127849,8 @@ choose.else:                                      ; preds = %frame.forced
 
 choose.when:                                      ; preds = %frame.forced
   %throws.err.val = load %_Z11ParserError, ptr %throws.data.ptr, align 1
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.when12:                                    ; preds = %frame.forced
@@ -128085,9 +128085,9 @@ if.then:                                          ; preds = %frame.forced
   call void @_ZN13StringBuilder6appendE6String(ptr %sb3, ptr %sret.result)
   %sb5 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result4, ptr %1, ptr %sb5)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result4, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result4, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end:                                           ; preds = %frame.forced
@@ -128095,9 +128095,9 @@ if.end:                                           ; preds = %frame.forced
   call void @_ZN13StringBuilder6appendEc(ptr %sb6, i8 48)
   %sb8 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result7, ptr %1, ptr %sb8)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body9 = load { ptr }, ptr %sret.result7, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result7, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -128687,8 +128687,8 @@ if.end:                                           ; preds = %entry
   br i1 %eq3, label %if.then4, label %if.end5
 
 if.then4:                                         ; preds = %if.end
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end5:                                          ; preds = %if.end
@@ -128697,14 +128697,14 @@ if.end5:                                          ; preds = %if.end
 
 if.then7:                                         ; preds = %if.end5
   call void @_ZN8semantic12root_resolveEPN4scaly6memory4PageE6String6Stringmm10FileSyntax(ptr noalias sret({ ptr }) %sret.result9, ptr %1, ptr %sret.result, ptr %3, i64 %4, i64 %5, ptr %6)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result9, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result9, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end8:                                          ; preds = %if.end5
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -128731,8 +128731,8 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end:                                           ; preds = %entry
@@ -128761,8 +128761,8 @@ frame.forced:                                     ; preds = %frame.force, %if.en
 
 choose.end:                                       ; preds = %choose.else, %if.end17
   %result30 = load { ptr }, ptr %result, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  store { ptr } %result30, ptr %0, align 1
   ret void
 
 choose.else:                                      ; preds = %frame.forced
@@ -128770,8 +128770,8 @@ choose.else:                                      ; preds = %frame.forced
 
 choose.when:                                      ; preds = %frame.forced
   %throws.err.val = load %_Z11ParserError, ptr %throws.data.ptr, align 1
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.when4:                                     ; preds = %frame.forced
@@ -142064,9 +142064,9 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %if.then, %while.cond
   %sb29 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb29)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then:                                          ; preds = %while.body
@@ -142175,9 +142175,9 @@ frame.forced:                                     ; preds = %frame.force, %if.en
   call void @_ZN11TaskPlanner7analyzeE4Plan6String(ptr %tp5, ptr %2, ptr %4)
   %addr.heap = load ptr, ptr %tp, align 8
   call void @_ZN8tasklens11lenses_bodyEPN4scaly6memory4PageER11TaskPlannerb6String6String6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %addr.heap, i1 %3, ptr %5, ptr %6, ptr %7)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -142389,9 +142389,9 @@ if.then:                                          ; preds = %frame.forced
   call void @_ZN13StringBuilder6appendE6String(ptr %sb2, ptr %arg.tmp)
   %sb3 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb3)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end:                                           ; preds = %frame.forced
@@ -142413,9 +142413,9 @@ if.end7:                                          ; preds = %if.end
   call void @_ZN13StringBuilder6appendE6String(ptr %sb19, ptr %arg.tmp20)
   %sb22 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result21, ptr %1, ptr %sb22)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body23 = load { ptr }, ptr %sret.result21, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result21, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 while.cond:                                       ; preds = %while.body, %if.then6
@@ -142436,9 +142436,9 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %sb17 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result16, ptr %1, ptr %sb17)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body18 = load { ptr }, ptr %sret.result16, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result16, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -143016,8 +143016,8 @@ if.end89:                                         ; preds = %if.then88, %if.then
   br label %if.end83
 
 if.then95:                                        ; preds = %while.exit
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end96:                                         ; preds = %while.exit
@@ -143035,18 +143035,18 @@ if.end102:                                        ; preds = %if.end96
   br i1 %lt105, label %if.then106, label %if.end107
 
 if.then103:                                       ; preds = %if.then101
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end104:                                        ; preds = %if.then101
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } { ptr @.sconst.939 }, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then106:                                       ; preds = %if.end102
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end107:                                        ; preds = %if.end102
@@ -143091,9 +143091,9 @@ if.then121:                                       ; preds = %frame.forced111
 if.end122:                                        ; preds = %if.end132, %frame.forced111
   %sb136 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result135, ptr %1, ptr %sb136)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result135, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result135, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then131:                                       ; preds = %if.then121
@@ -143205,8 +143205,8 @@ if.end22:                                         ; preds = %while.exit
   br i1 %frame.has_page29, label %frame.forced31, label %frame.force30
 
 if.then23:                                        ; preds = %if.then21
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end24:                                         ; preds = %if.then21
@@ -143228,9 +143228,9 @@ frame.forced:                                     ; preds = %frame.force, %if.en
   store ptr @.scaly.empty.cstr, ptr %tuple.field26, align 1
   store { ptr } zeroinitializer, ptr %arg.tmp27, align 1
   call void @_ZN7symbols11lens_objectEPN4scaly6memory4PageE6Stringmm6String5SliceIcE6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %5, i64 0, i64 3, ptr %arg.tmp, ptr %tuple.region, ptr %arg.tmp27)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 frame.force30:                                    ; preds = %if.end22
@@ -143264,9 +143264,9 @@ while.body36:                                     ; preds = %while.cond35
 while.exit37:                                     ; preds = %if.then44, %while.cond35
   %sb75 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result48, ptr %1, ptr %sb75)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body76 = load { ptr }, ptr %sret.result48, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result48, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then44:                                        ; preds = %while.body36
@@ -144858,9 +144858,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
 if.then:                                          ; preds = %frame.forced
   %sb2 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb2)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end:                                           ; preds = %frame.forced
@@ -144886,9 +144886,9 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %sb22 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb22)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body23 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then8:                                         ; preds = %while.body
@@ -144969,9 +144969,9 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %out29 = load ptr, ptr %out, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %out29)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 while.cond4:                                      ; preds = %if.end, %while.body
@@ -145074,9 +145074,9 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %sb31 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb31)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 while.cond4:                                      ; preds = %if.end, %while.body
@@ -145288,9 +145288,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
 if.then:                                          ; preds = %frame.forced
   %sb2 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb2)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end:                                           ; preds = %frame.forced
@@ -145316,9 +145316,9 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %sb39 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %deref.tmp34, ptr %1, ptr %sb39)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body40 = load { ptr }, ptr %deref.tmp34, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %deref.tmp34, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then8:                                         ; preds = %while.body
@@ -146018,8 +146018,8 @@ choose.end:                                       ; No predecessors!
   ret void
 
 choose.else:                                      ; preds = %entry
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.when:                                      ; preds = %entry
@@ -146052,8 +146052,8 @@ if.then:                                          ; preds = %frame.forced
   br i1 %frame.has_page3, label %frame.forced5, label %frame.force4
 
 if.end:                                           ; preds = %frame.forced
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 frame.force4:                                     ; preds = %if.then
@@ -146066,9 +146066,9 @@ frame.forced5:                                    ; preds = %frame.force4, %if.t
   %name9 = extractvalue %_Z15PlannedVariable %variant.val, 1
   store { ptr } %name9, ptr %arg.tmp, align 1
   call void @_ZN6StringC1E6String(ptr %struct.region8, ptr %arg.tmp)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %struct.region8, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %struct.region8, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.when10:                                    ; preds = %entry
@@ -146079,8 +146079,8 @@ choose.when10:                                    ; preds = %entry
   br i1 %eq, label %if.then13, label %if.end14
 
 if.then13:                                        ; preds = %choose.when10
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end14:                                         ; preds = %choose.when10
@@ -146103,8 +146103,8 @@ while.body:                                       ; preds = %while.cond
   br i1 %ne, label %if.then19, label %if.end20
 
 while.exit:                                       ; preds = %while.cond
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then19:                                        ; preds = %while.body
@@ -146120,9 +146120,9 @@ if.end20:                                         ; preds = %if.end23, %while.bo
   br label %while.cond
 
 if.then22:                                        ; preds = %if.then19
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body24 = load { ptr }, ptr %arg.tmp, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %arg.tmp, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end23:                                         ; preds = %if.then19
@@ -146136,16 +146136,16 @@ choose.when26:                                    ; preds = %entry
   br i1 %eq29, label %if.then30, label %if.end31
 
 if.then30:                                        ; preds = %choose.when26
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end31:                                         ; preds = %choose.when26
   %value32 = extractvalue %_Z9PlannedAs %variant.val28, 2
   call void @_ZN9storelens16param_in_operandEPN4scaly6memory4PageE14PlannedOperand6String(ptr noalias sret({ ptr }) %arg.tmp, ptr %1, ptr %value32, ptr %3)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body33 = load { ptr }, ptr %arg.tmp, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %arg.tmp, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -148136,8 +148136,8 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end:                                           ; preds = %entry
@@ -148147,8 +148147,8 @@ if.end:                                           ; preds = %entry
   br i1 %lt, label %if.then6, label %if.end7
 
 if.then6:                                         ; preds = %if.end
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end7:                                          ; preds = %if.end
@@ -148158,8 +148158,8 @@ if.end7:                                          ; preds = %if.end
   br i1 %ge, label %if.then10, label %if.end11
 
 if.then10:                                        ; preds = %if.end7
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end11:                                         ; preds = %if.end7
@@ -148224,9 +148224,9 @@ frame.forced34:                                   ; preds = %frame.force33, %if.
   store ptr @.scaly.empty.cstr, ptr %tuple.field37, align 1
   store { ptr } zeroinitializer, ptr %arg.tmp38, align 1
   call void @_ZN7symbols11lens_objectEPN4scaly6memory4PageE6Stringmm6String5SliceIcE6String(ptr noalias sret({ ptr }) %sret.result30, ptr %1, ptr %4, i64 %call8, i64 3, ptr %sret.result28, ptr %tuple.region, ptr %arg.tmp38)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result30, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result30, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -148613,8 +148613,8 @@ if.end4:                                          ; preds = %if.end
   br i1 %eq7, label %if.then8, label %if.end9
 
 if.then8:                                         ; preds = %if.end4
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end9:                                          ; preds = %if.end4
@@ -148623,8 +148623,8 @@ if.end9:                                          ; preds = %if.end4
   br i1 %eq11, label %if.then12, label %if.end13
 
 if.then12:                                        ; preds = %if.end9
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end13:                                         ; preds = %if.end9
@@ -148664,9 +148664,9 @@ if.else:                                          ; preds = %frame.forced
 
 if.end18:                                         ; preds = %if.else, %if.then17
   %blob23 = load ptr, ptr %blob, align 8
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %blob23, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %blob23, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -148770,8 +148770,8 @@ if.end17:                                         ; preds = %if.then16, %while.e
   br i1 %lt21, label %if.then22, label %if.end23
 
 if.then22:                                        ; preds = %if.end17
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end23:                                         ; preds = %if.end17
@@ -148787,8 +148787,8 @@ if.end23:                                         ; preds = %if.end17
   br i1 %eq32, label %if.then33, label %if.end34
 
 if.then33:                                        ; preds = %if.end23
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end34:                                         ; preds = %if.end23
@@ -148796,8 +148796,8 @@ if.end34:                                         ; preds = %if.end23
   br i1 %eq35, label %if.then36, label %if.end37
 
 if.then36:                                        ; preds = %if.end34
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end37:                                         ; preds = %if.end34
@@ -148805,8 +148805,8 @@ if.end37:                                         ; preds = %if.end34
   br i1 %eq38, label %if.then39, label %if.end40
 
 if.then39:                                        ; preds = %if.end37
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end40:                                         ; preds = %if.end37
@@ -148814,8 +148814,8 @@ if.end40:                                         ; preds = %if.end37
   br i1 %eq41, label %if.then42, label %if.end43
 
 if.then42:                                        ; preds = %if.end40
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end43:                                         ; preds = %if.end40
@@ -148855,9 +148855,9 @@ while.body58:                                     ; preds = %while.cond57
 while.exit59:                                     ; preds = %while.cond57
   %sb114 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb114)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 while.cond62:                                     ; preds = %if.end71, %while.body58
@@ -149130,9 +149130,9 @@ choose.end:                                       ; preds = %choose.else, %if.en
   %sb71 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result13, ptr %1, ptr %sb71)
   call void @_ZN10placehints6dedupeEPN4scaly6memory4PageE6String(ptr noalias sret({ ptr }) %sret.result10, ptr %1, ptr %sret.result13)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body72 = load { ptr }, ptr %sret.result10, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result10, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.else:                                      ; preds = %frame.forced5
@@ -149142,9 +149142,9 @@ choose.when:                                      ; preds = %frame.forced5
   %throws.err.val = load %_Z11ParserError, ptr %throws.data.ptr, align 1
   %sb11 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result10, ptr %1, ptr %sb11)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result10, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result10, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.when12:                                    ; preds = %frame.forced5
@@ -149168,9 +149168,9 @@ if.end:                                           ; preds = %choose.end31, %choo
 if.then15:                                        ; preds = %if.then
   %sb18 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result17, ptr %1, ptr %sb18)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body19 = load { ptr }, ptr %sret.result17, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result17, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end16:                                         ; preds = %if.then
@@ -149703,9 +149703,9 @@ frame.forced:                                     ; preds = %frame.force, %if.en
   store { ptr } { ptr @.sconst.984 }, ptr %arg.tmp11, align 1
   call void @_ZN13StringBuilder6appendE6String(ptr %struct.region, ptr %arg.tmp11)
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %struct.region)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -149907,9 +149907,9 @@ if.end14:                                         ; preds = %if.then13, %while.e
   call void @_ZN13StringBuilder6appendEc(ptr %sb16, i8 93)
   %sb18 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result17, ptr %1, ptr %sb18)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body19 = load { ptr }, ptr %sret.result17, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result17, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -150198,9 +150198,9 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %out47 = load ptr, ptr %out, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %out47)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 while.cond4:                                      ; preds = %if.end, %while.body
@@ -151323,9 +151323,9 @@ if.then:                                          ; preds = %frame.forced
   call void @_ZN13StringBuilder6appendE6String(ptr %sb2, ptr %arg.tmp)
   %sb3 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb3)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end:                                           ; preds = %frame.forced
@@ -151352,9 +151352,9 @@ choose.when:                                      ; preds = %if.end
   call void @_ZN13StringBuilder6appendE6String(ptr %sb4, ptr %arg.tmp5)
   %sb7 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result6, ptr %1, ptr %sb7)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body8 = load { ptr }, ptr %sret.result6, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result6, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.when9:                                     ; preds = %if.end
@@ -151369,9 +151369,9 @@ choose.when9:                                     ; preds = %if.end
   call void @_ZN13StringBuilder6appendE6String(ptr %sb14, ptr %arg.tmp15)
   %sb17 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result16, ptr %1, ptr %sb17)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body18 = load { ptr }, ptr %sret.result16, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result16, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then20:                                        ; preds = %choose.end
@@ -151380,9 +151380,9 @@ if.then20:                                        ; preds = %choose.end
   call void @_ZN13StringBuilder6appendE6String(ptr %sb22, ptr %arg.tmp23)
   %sb25 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result24, ptr %1, ptr %sb25)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body26 = load { ptr }, ptr %sret.result24, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result24, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end21:                                         ; preds = %choose.end
@@ -151391,9 +151391,9 @@ if.end21:                                         ; preds = %choose.end
   call void @_ZN13StringBuilder6appendE6String(ptr %sb27, ptr %arg.tmp28)
   %sb30 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result29, ptr %1, ptr %sb30)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body31 = load { ptr }, ptr %sret.result29, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result29, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -151564,9 +151564,9 @@ if.then3:                                         ; preds = %if.end
 if.end4:                                          ; preds = %if.end7, %if.end
   %sb14 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result13, ptr %1, ptr %sb14)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result13, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result13, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then6:                                         ; preds = %if.then3
@@ -151640,9 +151640,9 @@ frame.forced5:                                    ; preds = %frame.force4, %fram
 choose.end:                                       ; preds = %choose.else, %choose.when11, %choose.when
   %choose.value = phi { ptr } [ %choose.arm.load, %choose.when11 ], [ undef, %choose.when ], [ undef, %choose.else ]
   %result12 = load ptr, ptr %result, align 8
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %result12, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result12, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.else:                                      ; preds = %frame.forced5
@@ -151765,9 +151765,9 @@ if.end18:                                         ; preds = %if.end22, %if.end8
   call void @_ZN13StringBuilder6appendEc(ptr %sb25, i8 93)
   %sb27 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result26, ptr %1, ptr %sb27)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result26, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result26, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then21:                                        ; preds = %if.then17
@@ -151815,8 +151815,8 @@ if.end:                                           ; preds = %entry
   br i1 %eq3, label %if.then4, label %if.end5
 
 if.then4:                                         ; preds = %if.end
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end5:                                          ; preds = %if.end
@@ -151858,9 +151858,9 @@ frame.forced10:                                   ; preds = %frame.force9, %fram
 
 choose.end:                                       ; preds = %choose.else, %if.end29, %choose.when
   %result33 = load ptr, ptr %result, align 8
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %result33, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result33, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.else:                                      ; preds = %frame.forced10
@@ -151969,9 +151969,9 @@ frame.forced5:                                    ; preds = %frame.force4, %fram
 
 choose.end:                                       ; preds = %choose.else, %if.end23, %choose.when
   %result26 = load ptr, ptr %result, align 8
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %result26, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %result26, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.else:                                      ; preds = %frame.forced5
@@ -152094,9 +152094,9 @@ if.then15:                                        ; preds = %if.end6
 if.end16:                                         ; preds = %if.end20, %if.end6
   %sb24 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result23, ptr %1, ptr %sb24)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result23, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result23, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then19:                                        ; preds = %if.then15
@@ -152228,9 +152228,9 @@ frame.forced:                                     ; preds = %frame.force, %if.th
 
 if.then35:                                        ; preds = %frame.forced
   call void @_ZN8codelens11banner_lensEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %arg.tmp32, ptr %1, ptr %2, ptr %sret.result31, ptr %sret.result29)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body37 = load { ptr }, ptr %arg.tmp32, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %arg.tmp32, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end36:                                         ; preds = %frame.forced
@@ -152242,8 +152242,8 @@ if.then39:                                        ; preds = %if.end17
   br i1 %call41, label %if.then42, label %if.end43
 
 if.end40:                                         ; preds = %if.end43, %if.end17
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then42:                                        ; preds = %if.then39
@@ -152259,9 +152259,9 @@ if.end43:                                         ; preds = %if.end47, %if.then3
 if.then46:                                        ; preds = %if.then42
   store { ptr } { ptr @.sconst.1008 }, ptr %arg.tmp48, align 1
   call void @_ZN8codelens11banner_lensEPN4scaly6memory4PageE6String6String6String(ptr noalias sret({ ptr }) %arg.tmp32, ptr %1, ptr %2, ptr %sret.result31, ptr %arg.tmp48)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body49 = load { ptr }, ptr %arg.tmp32, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %arg.tmp32, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end47:                                         ; preds = %if.then42
@@ -152419,9 +152419,9 @@ frame.forced12:                                   ; preds = %frame.force11, %fra
   %tuple.field15 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region, i32 0, i32 1
   store ptr @.str.1011, ptr %tuple.field15, align 1
   call void @_ZN7symbols11lens_objectEPN4scaly6memory4PageE6Stringmm6String5SliceIcE6String(ptr noalias sret({ ptr }) %sret.result8, ptr %1, ptr %2, i64 0, i64 3, ptr %sret.result6, ptr %tuple.region, ptr %sret.result)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result8, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result8, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -152504,9 +152504,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilder6appendE6String(ptr %sb4, ptr %3)
   %sb5 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb5)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -152541,9 +152541,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
 if.then:                                          ; preds = %frame.forced
   %sb2 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb2)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end:                                           ; preds = %frame.forced
@@ -152568,9 +152568,9 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %sb17 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb17)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body18 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then5:                                         ; preds = %while.body
@@ -152713,100 +152713,100 @@ if.then:                                          ; preds = %choose.when13
 if.end:                                           ; preds = %if.then, %choose.when13
   %declarations = extractvalue %_Z15NamespaceSyntax %variant.val15, 3
   call void @_ZN8codelens21declarations_fragmentEPN4scaly6memory4PageE6String6String6String6String6OptionIR6VectorI17DeclarationSyntaxEE(ptr noalias sret({ ptr }) %sret.result21, ptr %1, ptr %2, ptr %3, ptr %sret.result, ptr %5, ptr %declarations)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body22 = load { ptr }, ptr %sret.result21, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result21, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.when23:                                    ; preds = %choose.when6
   %"variant.c_data().ptr24" = getelementptr inbounds nuw %_Z13ConceptSyntax, ptr %choose.union, i32 0, i32 1
   %variant.val25 = load %_Z11ClassSyntax, ptr %"variant.c_data().ptr24", align 8
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.when26:                                    ; preds = %choose.when6
   %"variant.c_data().ptr27" = getelementptr inbounds nuw %_Z13ConceptSyntax, ptr %choose.union, i32 0, i32 1
   %variant.val28 = load %_Z11UnionSyntax, ptr %"variant.c_data().ptr27", align 8
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.when29:                                    ; preds = %choose.when6
   %"variant.c_data().ptr30" = getelementptr inbounds nuw %_Z13ConceptSyntax, ptr %choose.union, i32 0, i32 1
   %variant.val31 = load %_Z14ConstantSyntax, ptr %"variant.c_data().ptr30", align 8
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.when32:                                    ; preds = %choose.when6
   %"variant.c_data().ptr33" = getelementptr inbounds nuw %_Z13ConceptSyntax, ptr %choose.union, i32 0, i32 1
   %variant.val34 = load %_Z14DelegateSyntax, ptr %"variant.c_data().ptr33", align 8
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.when35:                                    ; preds = %choose.when6
   %"variant.c_data().ptr36" = getelementptr inbounds nuw %_Z13ConceptSyntax, ptr %choose.union, i32 0, i32 1
   %variant.val37 = load %_Z15IntrinsicSyntax, ptr %"variant.c_data().ptr36", align 8
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.when38:                                    ; preds = %entry
   %"variant.c_data().ptr39" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %6, i32 0, i32 1
   %variant.val40 = load %_Z11EmptySyntax, ptr %"variant.c_data().ptr39", align 8
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.when41:                                    ; preds = %entry
   %"variant.c_data().ptr42" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %6, i32 0, i32 1
   %variant.val43 = load %_Z9UseSyntax, ptr %"variant.c_data().ptr42", align 8
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.when44:                                    ; preds = %entry
   %"variant.c_data().ptr45" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %6, i32 0, i32 1
   %variant.val46 = load %_Z13PrivateSyntax, ptr %"variant.c_data().ptr45", align 8
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.when47:                                    ; preds = %entry
   %"variant.c_data().ptr48" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %6, i32 0, i32 1
   %variant.val49 = load %_Z14FunctionSyntax, ptr %"variant.c_data().ptr48", align 8
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.when50:                                    ; preds = %entry
   %"variant.c_data().ptr51" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %6, i32 0, i32 1
   %variant.val52 = load %_Z15ProcedureSyntax, ptr %"variant.c_data().ptr51", align 8
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.when53:                                    ; preds = %entry
   %"variant.c_data().ptr54" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %6, i32 0, i32 1
   %variant.val55 = load %_Z14OperatorSyntax, ptr %"variant.c_data().ptr54", align 8
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.when56:                                    ; preds = %entry
   %"variant.c_data().ptr57" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %6, i32 0, i32 1
   %variant.val58 = load %_Z11TraitSyntax, ptr %"variant.c_data().ptr57", align 8
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.when59:                                    ; preds = %entry
   %"variant.c_data().ptr60" = getelementptr inbounds nuw %_Z17DeclarationSyntax, ptr %6, i32 0, i32 1
   %variant.val61 = load %_Z11MacroSyntax, ptr %"variant.c_data().ptr60", align 8
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.when62:                                    ; preds = %entry
@@ -152818,9 +152818,9 @@ choose.when62:                                    ; preds = %entry
   %annotation = extractvalue %_Z13BindingSyntax %binding, 3
   store { ptr } { ptr @.sconst.1013 }, ptr %arg.tmp65, align 1
   call void @_ZN8codelens12storage_lensEPN4scaly6memory4PageE6Stringm6String6OptionIR23BindingAnnotationSyntaxE6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %start, ptr %sret.result16, ptr %annotation, ptr %arg.tmp65)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body66 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 choose.when67:                                    ; preds = %entry
@@ -152832,9 +152832,9 @@ choose.when67:                                    ; preds = %entry
   %annotation72 = extractvalue %_Z13BindingSyntax %binding71, 3
   store { ptr } { ptr @.sconst.1015 }, ptr %arg.tmp65, align 1
   call void @_ZN8codelens12storage_lensEPN4scaly6memory4PageE6Stringm6String6OptionIR23BindingAnnotationSyntaxE6String(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %2, i64 %start70, ptr %sret.result16, ptr %annotation72, ptr %arg.tmp65)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body73 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -152886,8 +152886,8 @@ if.end:                                           ; preds = %entry
   br i1 %eq3, label %if.then4, label %if.end5
 
 if.then4:                                         ; preds = %if.end
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end5:                                          ; preds = %if.end
@@ -152979,9 +152979,9 @@ frame.forced46:                                   ; preds = %frame.force45, %fra
   store ptr @.scaly.empty.cstr, ptr %tuple.field49, align 1
   store { ptr } zeroinitializer, ptr %arg.tmp50, align 1
   call void @_ZN7symbols11lens_objectEPN4scaly6memory4PageE6Stringmm6String5SliceIcE6String(ptr noalias sret({ ptr }) %sret.result40, ptr %1, ptr %2, i64 %field.val42, i64 7, ptr %sret.result38, ptr %tuple.region, ptr %arg.tmp50)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result40, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result40, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then53:                                        ; preds = %if.end27
@@ -153029,9 +153029,9 @@ frame.forced72:                                   ; preds = %frame.force71, %fra
   store ptr @.scaly.empty.cstr, ptr %tuple.field77, align 1
   store { ptr } zeroinitializer, ptr %arg.tmp78, align 1
   call void @_ZN7symbols11lens_objectEPN4scaly6memory4PageE6Stringmm6String5SliceIcE6String(ptr noalias sret({ ptr }) %sret.result66, ptr %1, ptr %2, i64 %field.val68, i64 7, ptr %sret.result64, ptr %tuple.region75, ptr %arg.tmp78)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body79 = load { ptr }, ptr %sret.result66, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result66, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 frame.force82:                                    ; preds = %if.end54
@@ -153068,9 +153068,9 @@ frame.forced96:                                   ; preds = %frame.force95, %fra
   %tuple.field101 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region99, i32 0, i32 1
   store ptr @.str.1025, ptr %tuple.field101, align 1
   call void @_ZN7symbols11lens_objectEPN4scaly6memory4PageE6Stringmm6String5SliceIcE6String(ptr noalias sret({ ptr }) %sret.result90, ptr %1, ptr %2, i64 %field.val92, i64 7, ptr %sret.result88, ptr %tuple.region99, ptr %sret.result38)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body102 = load { ptr }, ptr %sret.result90, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result90, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -153164,9 +153164,9 @@ frame.forced24:                                   ; preds = %frame.force23, %fra
   store ptr @.scaly.empty.cstr, ptr %tuple.field27, align 1
   store { ptr } zeroinitializer, ptr %arg.tmp28, align 1
   call void @_ZN7symbols11lens_objectEPN4scaly6memory4PageE6Stringmm6String5SliceIcE6String(ptr noalias sret({ ptr }) %sret.result19, ptr %1, ptr %2, i64 %field.val, i64 6, ptr %sret.result17, ptr %tuple.region, ptr %arg.tmp28)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result19, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result19, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 frame.force31:                                    ; preds = %if.end
@@ -153203,9 +153203,9 @@ frame.forced45:                                   ; preds = %frame.force44, %fra
   %tuple.field50 = getelementptr inbounds nuw %_Z5SliceIcE, ptr %tuple.region48, i32 0, i32 1
   store ptr @.str.1029, ptr %tuple.field50, align 1
   call void @_ZN7symbols11lens_objectEPN4scaly6memory4PageE6Stringmm6String5SliceIcE6String(ptr noalias sret({ ptr }) %sret.result39, ptr %1, ptr %2, i64 %field.val41, i64 6, ptr %sret.result37, ptr %tuple.region48, ptr %sret.result5)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body51 = load { ptr }, ptr %sret.result39, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result39, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -153289,9 +153289,9 @@ frame.forced19:                                   ; preds = %frame.force18, %fra
   store ptr @.scaly.empty.cstr, ptr %tuple.field24, align 1
   store { ptr } zeroinitializer, ptr %arg.tmp25, align 1
   call void @_ZN7symbols11lens_objectEPN4scaly6memory4PageE6Stringmm6String5SliceIcE6String(ptr noalias sret({ ptr }) %sret.result15, ptr %1, ptr %2, i64 %3, i64 %call, ptr %sret.result13, ptr %tuple.region22, ptr %arg.tmp25)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body26 = load { ptr }, ptr %sret.result15, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result15, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -153472,15 +153472,15 @@ while.body:                                       ; preds = %while.cond
   br i1 %call8, label %if.then9, label %if.end10
 
 while.exit:                                       ; preds = %while.cond
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then9:                                         ; preds = %while.body
   %dir11 = load ptr, ptr %dir, align 8
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body12 = load { ptr }, ptr %dir11, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %dir11, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end10:                                         ; preds = %while.body
@@ -153491,8 +153491,8 @@ if.end10:                                         ; preds = %while.body
   br i1 %call15, label %if.then16, label %if.end17
 
 if.then16:                                        ; preds = %if.end10
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end17:                                         ; preds = %if.end10
@@ -153501,8 +153501,8 @@ if.end17:                                         ; preds = %if.end10
   br i1 %le, label %if.then19, label %if.end20
 
 if.then19:                                        ; preds = %if.end17
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   store { ptr } zeroinitializer, ptr %0, align 1
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end20:                                         ; preds = %if.end17
@@ -153530,9 +153530,9 @@ entry:
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %2, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %2, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end:                                           ; preds = %entry
@@ -153542,17 +153542,17 @@ if.end:                                           ; preds = %entry
   br i1 %ge, label %if.then3, label %if.end4
 
 if.then3:                                         ; preds = %if.end
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body5 = load { ptr }, ptr %2, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %2, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end4:                                          ; preds = %if.end
   %sub = sub i64 %call2, %call1
   call void @_ZN6String9substringEPN4scaly6memory4PageEmm(ptr noalias sret({ ptr }) %arg.tmp, ptr %1, ptr %2, i64 %call1, i64 %sub)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body6 = load { ptr }, ptr %arg.tmp, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %arg.tmp, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -154993,9 +154993,9 @@ while.body:                                       ; preds = %while.cond
   br i1 %le, label %if.then, label %if.end
 
 while.exit:                                       ; preds = %while.cond
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body23 = load { ptr }, ptr %6, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %6, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then:                                          ; preds = %while.body
@@ -155048,9 +155048,9 @@ if.then12:                                        ; preds = %frame.forced
   call void @_Z11scaly_eputi3i64(i64 %as.sext)
   call void @_Z11scaly_eputsP10const_char(ptr @.str.1121)
   call void @_ZN6worker8shutdownEv()
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body17 = load { ptr }, ptr %6, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %6, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end13:                                         ; preds = %frame.forced
@@ -155061,9 +155061,9 @@ if.end13:                                         ; preds = %frame.forced
   br i1 %gt, label %if.then20, label %if.end21
 
 if.then20:                                        ; preds = %if.end13
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body22 = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end21:                                         ; preds = %if.end13
@@ -157606,9 +157606,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilder6appendEc(ptr %sb461, i8 125)
   %sb463 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result462, ptr %1, ptr %sb463)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result462, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result462, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -157697,9 +157697,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilder6appendEc(ptr %sb31, i8 125)
   %sb33 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result32, ptr %1, ptr %sb33)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result32, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result32, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -159655,9 +159655,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   br i1 %call, label %if.then, label %if.end
 
 if.then:                                          ; preds = %frame.forced
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result2, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result2, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end:                                           ; preds = %frame.forced
@@ -159783,9 +159783,9 @@ while.body57:                                     ; preds = %while.cond56
 while.exit58:                                     ; preds = %while.cond56
   %sb67 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result66, ptr %1, ptr %sb67)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body68 = load { ptr }, ptr %sret.result66, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result66, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -159891,9 +159891,9 @@ while.exit:                                       ; preds = %while.cond
   call void @_ZN13StringBuilder6appendEc(ptr %sb34, i8 125)
   %sb36 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result35, ptr %1, ptr %sb36)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result35, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result35, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -159964,9 +159964,9 @@ while.body:                                       ; preds = %while.cond
 while.exit:                                       ; preds = %while.cond
   %sb53 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result6, ptr %1, ptr %sb53)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result6, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result6, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.then:                                          ; preds = %while.body
@@ -160236,9 +160236,9 @@ if.end33:                                         ; preds = %if.then32, %if.end
   call void @_ZN13StringBuilder6appendEc(ptr %sb35, i8 125)
   %sb37 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result36, ptr %1, ptr %sb37)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result36, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result36, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -160345,9 +160345,9 @@ frame.forced:                                     ; preds = %frame.force, %if.en
   call void @_ZN13StringBuilder6appendEc(ptr %sb32, i8 125)
   %sb34 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result33, ptr %1, ptr %sb34)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result33, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result33, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -160526,9 +160526,9 @@ frame.forced35:                                   ; preds = %frame.force34, %if.
   call void @_ZN13StringBuilder6appendEc(ptr %sb70, i8 125)
   %sb72 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result71, ptr %1, ptr %sb72)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result71, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result71, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -160635,9 +160635,9 @@ if.end33:                                         ; preds = %if.then32, %if.end
   call void @_ZN13StringBuilder6appendEc(ptr %sb35, i8 125)
   %sb37 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result36, ptr %1, ptr %sb37)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result36, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result36, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -160676,9 +160676,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilder6appendEc(ptr %sb6, i8 58)
   %sb7 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb7)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -160783,9 +160783,9 @@ while.exit16:                                     ; preds = %while.cond14
   call void @_ZN13StringBuilder6appendEc(ptr %sb24, i8 125)
   %sb26 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result25, ptr %1, ptr %sb26)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body27 = load { ptr }, ptr %sret.result25, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result25, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -160961,9 +160961,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN13StringBuilder6appendEc(ptr %sb5, i8 34)
   %sb6 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb6)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 

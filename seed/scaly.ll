@@ -31438,9 +31438,9 @@ frame.forced5:                                    ; preds = %frame.force4, %if.e
 if.then12:                                        ; preds = %frame.forced5
   %path14 = load ptr, ptr %path, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret(%_Z6String) %sret.result, ptr %1, ptr %path14)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body15 = load %_Z6String, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 
 if.end13:                                         ; preds = %frame.forced5
@@ -31450,9 +31450,9 @@ if.end13:                                         ; preds = %frame.forced5
   call void @_ZN13StringBuilder6appendE6String(ptr %path17, ptr %3)
   %path18 = load ptr, ptr %path, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret(%_Z6String) %sret.result, ptr %1, ptr %path18)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body19 = load %_Z6String, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr (%_Z6String, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 

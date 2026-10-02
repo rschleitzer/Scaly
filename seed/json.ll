@@ -11125,8 +11125,8 @@ if.then413:                                       ; preds = %repeat.exit
   %tuple.field423 = getelementptr inbounds nuw %_Z10JsonParsed, ptr %tuple420, i32 0, i32 2
   store i64 %error_at419, ptr %tuple.field423, align 1
   %tuple.val424 = load %_Z10JsonParsed, ptr %tuple420, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple420, i64 ptrtoint (ptr getelementptr (%_Z10JsonParsed, ptr null, i32 1) to i64), i1 false)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  store %_Z10JsonParsed %tuple.val424, ptr %0, align 1
   ret void
 
 if.end414:                                        ; preds = %repeat.exit
@@ -11138,8 +11138,8 @@ if.end414:                                        ; preds = %repeat.exit
   %tuple.field428 = getelementptr inbounds nuw %_Z10JsonParsed, ptr %tuple420, i32 0, i32 2
   store i64 0, ptr %tuple.field428, align 1
   %tuple.val429 = load %_Z10JsonParsed, ptr %tuple420, align 8
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %tuple420, i64 ptrtoint (ptr getelementptr (%_Z10JsonParsed, ptr null, i32 1) to i64), i1 false)
   call void @_Z19scaly_release_frameP5Frame(ptr %frame)
-  store %_Z10JsonParsed %tuple.val429, ptr %0, align 1
   ret void
 }
 
@@ -14254,9 +14254,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN10JsonWriter13append_quotedER13StringBuilder5SliceI2u8E(ptr %sb2, ptr %2)
   %sb3 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb3)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
@@ -14451,9 +14451,9 @@ frame.forced:                                     ; preds = %frame.force, %entry
   call void @_ZN10JsonWriter12append_valueER13StringBuilder9JsonValue(ptr %sb2, ptr %2)
   %sb3 = load ptr, ptr %sb, align 8
   call void @_ZN13StringBuilder9to_stringEPN4scaly6memory4PageE(ptr noalias sret({ ptr }) %sret.result, ptr %1, ptr %sb3)
-  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   %sret.body = load { ptr }, ptr %sret.result, align 8
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %0, ptr align 1 %sret.result, i64 ptrtoint (ptr getelementptr ({ ptr }, ptr null, i32 1) to i64), i1 false)
+  call void @_Z19scaly_release_frameP5Frame(ptr %frame)
   ret void
 }
 
