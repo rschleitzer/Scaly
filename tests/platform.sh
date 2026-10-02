@@ -56,6 +56,14 @@ if [ "$SCALY_COFF" = 1 ]; then
   # assignments shell-local; the compiler and clang fall back to `TEMP`, the
   # same directory, which nothing in the tree assigns.
   export -n TMP
+  # ★Windows' installer detection judges an executable by its NAME: one that
+  # contains `setup`, `install`, `update` or `patch` and carries no manifest
+  # asks for elevation, and a start from bash is then `Permission denied`,
+  # rc 126. A test program named after its fixture meets that:
+  # rt_generic_operator_dis-patch-.exe (measured 2026-10-02 on the arm64 VM;
+  # the same file under another name printed PASS). RunAsInvoker tells the
+  # loader to start what it is given with the caller's rights.
+  export __COMPAT_LAYER=RunAsInvoker
 fi
 
 scaly_need_archive() {
