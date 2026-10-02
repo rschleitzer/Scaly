@@ -1,5 +1,8 @@
 ; The http package's static files (ROADMAP-http.md stage D) over TCP, from a
-; directory this test writes (/tmp/scaly_http_static):
+; directory this test writes (scaly_http_static, in the CURRENT directory -- the
+; runners start it in their scratch directory; it was /tmp/scaly_http_static
+; until 2026-10-02, which a native Windows program reads as \tmp on the current
+; drive, where there is no such directory):
 ;   br        Accept-Encoding "br;q=1, gzip;q=0.8": the .br twin, its coding
 ;             named, the original's media type
 ;   gzip      "gzip": the .gz twin
@@ -18,7 +21,7 @@ use http.Response.Response
 use http.Router.Router
 
 procedure asset(req: ref[Request], mutable res: ref[Response]) mutable static_cache
-    serve_file(req, res, "/tmp/scaly_http_static", req.param("path"))
+    serve_file(req, res, "scaly_http_static", req.param("path"))
 
 ; One request on a connection of its own: the whole response.
 procedure fetch(port: int, target: String, accept: String) returns String
@@ -55,12 +58,12 @@ function has(r: String, a: String, b: String, c: String) returns bool
 
 procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
 {
-    var dir String("/tmp/scaly_http_static")
+    var dir String("scaly_http_static")
     Directory.create(dir)
-    File.write_from_string(String("/tmp/scaly_http_static/app.js"), String("console.log(1)"))
-    File.write_from_string(String("/tmp/scaly_http_static/app.js.br"), String("BR-BODY"))
-    File.write_from_string(String("/tmp/scaly_http_static/app.js.gz"), String("GZ-BODY"))
-    File.write_from_string(String("/tmp/scaly_http_static/logo.webp"), String("WEBP-BODY"))
+    File.write_from_string(String("scaly_http_static/app.js"), String("console.log(1)"))
+    File.write_from_string(String("scaly_http_static/app.js.br"), String("BR-BODY"))
+    File.write_from_string(String("scaly_http_static/app.js.gz"), String("GZ-BODY"))
+    File.write_from_string(String("scaly_http_static/logo.webp"), String("WEBP-BODY"))
 
     var app Router.create(Page.allocate_page())
     app.get("/static/{path...}", &asset)
@@ -111,7 +114,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
         return 6
     }
     Console.print "404 "
-    File.write_from_string(String("/tmp/scaly_http_static/app.js.br"), String("BR-NEWER"))
+    File.write_from_string(String("scaly_http_static/app.js.br"), String("BR-NEWER"))
     Scheduler.sleep(1100)
     let h fetch(port, String("/static/app.js"), String("br"))
     if h.contains(String("\r\n\r\nBR-NEWER")) = false

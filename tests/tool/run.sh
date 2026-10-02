@@ -171,18 +171,19 @@ fi
 # pgo: an instrumented build, its run writes a profile, the build with that
 # profile gives the same output. Needs the LLVM the compiler is linked against
 # as tools too (its clang for the profile runtime, llvm-profdata); SKIPs by
-# name where they are not installed.
+# name where they are not installed. On Windows too since 2026-10-02 (the
+# win-tool balloon: it was skipped there by name and had never been tried).
 (
   . tools/llvm-env.sh > /dev/null 2>&1
   [ -x "${LLVM_PREFIX:-/nonexistent}/bin/llvm-profdata" ] || command -v "llvm-profdata-${LLVM_MAJOR:-0}" > /dev/null 2>&1
 ) && have_pgo=1 || have_pgo=0
-if [ "$SCALY_COFF" = 1 ] || [ "$have_pgo" = 0 ]; then
+if [ "$have_pgo" = 0 ]; then
   echo "SKIP pgo (needs LLVM's clang and llvm-profdata)"
-elif "$SCALY" build tests/tool/hello.scaly --pgo-train -o "$TMP/hello_train" > "$TMP/pgo.log" 2>&1 \
-     && LLVM_PROFILE_FILE="$TMP/hello.profraw" "$TMP/hello_train" one two > /dev/null 2>&1 \
+elif "$SCALY" build tests/tool/hello.scaly --pgo-train -o "$TMP/hello_train$SCALY_EXE" > "$TMP/pgo.log" 2>&1 \
+     && LLVM_PROFILE_FILE="$TMP/hello.profraw" "$TMP/hello_train$SCALY_EXE" one two > /dev/null 2>&1 \
      && [ -s "$TMP/hello.profraw" ] \
-     && "$SCALY" build tests/tool/hello.scaly --pgo "$TMP/hello.profraw" -o "$TMP/hello_pgo" >> "$TMP/pgo.log" 2>&1; then
-  out=$("$TMP/hello_pgo" one two)
+     && "$SCALY" build tests/tool/hello.scaly --pgo "$TMP/hello.profraw" -o "$TMP/hello_pgo$SCALY_EXE" >> "$TMP/pgo.log" 2>&1; then
+  out=$("$TMP/hello_pgo$SCALY_EXE" one two)
   [ "$out" = "hello one two" ] && ok || bad "pgo: got '$out'"
 elif grep -q 'libclang_rt.profile' "$TMP/pgo.log"; then
   echo "SKIP pgo (LLVM's profile runtime is not installed: libclang-rt-<major>-dev)"

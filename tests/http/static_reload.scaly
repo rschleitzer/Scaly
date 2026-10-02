@@ -20,7 +20,7 @@ procedure remove(path: pointer[const_char]) returns i32 extern
 
 procedure reload(times: int) mutable static_cache
 {
-    let e static_entry("/tmp/scaly_http_reload/big.txt")
+    let e static_entry("scaly_http_reload/big.txt")
     var i 0
     while i < times
     {
@@ -32,7 +32,7 @@ procedure reload(times: int) mutable static_cache
 procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutable static_cache
 {
     Page.enable_statistics()
-    Directory.create(String("/tmp/scaly_http_reload"))
+    Directory.create(String("scaly_http_reload"))
     var sb StringBuilder()
     var k 0
     while k < 1024
@@ -40,7 +40,7 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
         sb.append("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde\n")
         set k: k + 1
     }
-    File.write_from_string(String("/tmp/scaly_http_reload/big.txt"), sb.to_string())
+    File.write_from_string(String("scaly_http_reload/big.txt"), sb.to_string())
     reload(1)
     let before Page.bytes_held()
     reload(200)
@@ -52,23 +52,23 @@ procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int mutabl
     }
     Console.print "reload "
 
-    let small String("/tmp/scaly_http_reload/small.txt")
+    let small String("scaly_http_reload/small.txt")
     File.write_from_string(small, String("first version of the file"))
-    let a static_entry("/tmp/scaly_http_reload/small.txt")
+    let a static_entry("scaly_http_reload/small.txt")
     if a.present = false or a.content.equals(String("first version of the file")) = false
     {
         print "follow: first read"
         return 2
     }
     File.write_from_string(small, String("other version of the file"))
-    let b static_entry("/tmp/scaly_http_reload/small.txt")
+    let b static_entry("scaly_http_reload/small.txt")
     if b.content.equals(String("other version of the file")) = false
     {
         print "follow: the replaced file was served stale"
         return 3
     }
     remove(small.to_c_string())
-    let c static_entry("/tmp/scaly_http_reload/small.txt")
+    let c static_entry("scaly_http_reload/small.txt")
     if c.present
     {
         print "follow: the removed file was still present"

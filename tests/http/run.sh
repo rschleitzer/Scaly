@@ -26,7 +26,9 @@ for f in tests/http/*.scaly; do
   fi
   # a protocol test that loses a frame waits forever: 60 s and it is killed
   # (perl's alarm -- no `timeout` on macOS)
-  out=$(SCALY_POISON=1 perl -e 'alarm shift; exec @ARGV' 60 "$bin" 2>"$TMP/$t.err"); rc=$?
+  # in the scratch directory: static and static_reload write their files into
+  # the current one
+  out=$(cd "$TMP" && SCALY_POISON=1 perl -e 'alarm shift; exec @ARGV' 60 "$bin" 2>"$TMP/$t.err"); rc=$?
   if [ "$rc" = 0 ] && [ "$out" = "$expected" ]; then
     pass=$((pass+1))
   else
