@@ -591,7 +591,16 @@ define cli
             return String(given)
         let merged "`given`.profdata"
         let profdata cli.llvm_program("llvm-profdata", false)
-        let cmd "\"`profdata`\" merge -o \"`merged`\" \"`given`\""
+        ; cmd.exe strips the first and the last quote of a line that begins
+        ; with one and holds more than two, so on a Windows host the whole
+        ; line takes a pair of its own (as the tool's native compile does;
+        ; found by the win-tool balloon, 2026-10-02: the profile was written
+        ; and `llvm-profdata" merge -o "x` was not a command)
+        let host tool.target_triple(String())
+        var wrap ""
+        if host.contains(String("windows"))
+            set wrap: "\""
+        let cmd "`wrap`\"`profdata`\" merge -o \"`merged`\" \"`given`\"`wrap`"
         if system(cmd.to_c_string()) <> 0
         {
             Console.println("Error: `profdata` merge failed; index the profile yourself and pass the .profdata")
