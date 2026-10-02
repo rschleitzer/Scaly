@@ -972,20 +972,41 @@ long long scaly_eio_now_ns(void)
 }
 
 /* scaly_eio_stat (see eio.c): size, mtime in nanoseconds, inode, block
- * size. The CRT's _stat64 has the size and a mtime in whole seconds; there
- * is no inode (0) and no st_blksize -- the reference's SP_STAT_BLKSIZE
- * default is what the POSIX file falls back to for non-regular files
- * anyway. */
+ * size. There is no inode (0) and no st_blksize -- the reference's
+ * SP_STAT_BLKSIZE default is what the POSIX file falls back to for
+ * non-regular files anyway.
+ *
+ * ★A PATH is asked through GetFileAttributesEx, not the CRT's _stat64: the
+ * CRT hands the mtime out in WHOLE SECONDS, and with no inode either a file
+ * replaced by one of the same size within the second looked unchanged -- the
+ * http static cache served the old content (tests/http/static_reload, found
+ * by the win-tool balloon, 2026-10-02). FILETIME counts 100 ns since 1601;
+ * taken to the Unix epoch BEFORE the scaling, because 425 years of
+ * nanoseconds do not fit 63 bits. A descriptor keeps _fstat64: it may be a
+ * pipe or the console, which have no file time. */
 int scaly_eio_stat(const char* path, int fd, long long* out)
 {
-    struct _stat64 sb;
-    if ((path != 0 ? _stat64(path, &sb) : _fstat64(fd, &sb)) < 0)
-        return -1;
-    out[0] = (long long)sb.st_size;
-    out[1] = (long long)sb.st_mtime * 1000000000LL;
-    out[2] = 0;
-    out[3] = 8192;
-    return 0;
+    if (path != 0) {
+        WIN32_FILE_ATTRIBUTE_DATA d;
+        long long t;
+        if (!GetFileAttributesExA(path, GetFileExInfoStandard, &d))
+            return -1;
+        t = ((long long)d.ftLastWriteTime.dwHighDateTime << 32) | (long long)d.ftLastWriteTime.dwLowDateTime;
+        out[0] = ((long long)d.nFileSizeHigh << 32) | (long long)d.nFileSizeLow;
+        out[1] = (t - 116444736000000000LL) * 100LL;
+        out[2] = 0;
+        out[3] = 8192;
+        return 0;
+    } else {
+        struct _stat64 sb;
+        if (_fstat64(fd, &sb) < 0)
+            return -1;
+        out[0] = (long long)sb.st_size;
+        out[1] = (long long)sb.st_mtime * 1000000000LL;
+        out[2] = 0;
+        out[3] = 8192;
+        return 0;
+    }
 }
 
 long long scaly_eio_tell(void* stream)
