@@ -1269,8 +1269,16 @@ define cli
         ; drags in the IOCP backend: every `scaly_eio_*` entry point, the
         ; socket-vs-descriptor test in `close`, and the socketpair emulation
         ; live in ws2_32. Same argument, opposite library.
+        ; ★And a stack reserve (2026-10-02): a PE executable gets 1 MB unless
+        ; its header says otherwise, where a POSIX shell hands a process
+        ; 8 MB -- and a spawned thread takes its spawner's size
+        ; (Thread.spawn). tests/fiber/thread_deep_stack, 1.5 MB deep on a
+        ; thread, overflowed in every program this driver linked (raw
+        ; 0xC00000FD) while the corpus, linked with a reserve by its script,
+        ; passed it. 8 MB is the POSIX default; a reserve is address space,
+        ; not memory. `-stack:`, never `/STACK:` (tools/win-link.sh).
         if coff
-            cmd_builder.append " -lws2_32"
+            cmd_builder.append " -lws2_32 -Xlinker -stack:8388608"
         else
             cmd_builder.append " -lm"
 
