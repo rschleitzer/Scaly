@@ -1340,8 +1340,17 @@ define Scheduler
     ; are adjusted by its own drain_inject. The receiver armed the wake
     ; handle before parking, so the racy read of home.eio/home.wake sees
     ; initialized values (published by the channel lock).
+    ;
+    ; ★The handles are read BEFORE the push (2026-10-02): until the task is
+    ; on the inject stack it is parked, so its scheduler is alive; once it
+    ; is there the home thread may run it to its end, leave Scheduler.run
+    ; and release the page the scheduler lies on, and `home` is then memory
+    ; another thread has given back (the tcp_shutdown crash below, in its
+    ; narrower window).
     procedure inject_task(home: ref[Scheduler], mutable t: ref[SchedTask])
     {
+        let q home.eio
+        let w home.wake
         let hp &home.inject
         repeat
         {
@@ -1350,18 +1359,26 @@ define Scheduler
             if scaly_atomic_cas_u64(hp, h, t as u64) = h
                 break
         }
-        Scheduler.wake_remote(home)
+        Scheduler.wake_handles(q, w)
     }
 
     ; Poke a scheduler's wake handle so a poll_io blocked on it returns.
     ; Safe from any thread; a scheduler that never armed a wake (no
     ; channel receive yet) is simply not waiting — nothing to poke.
+    ; ★`home` must be ALIVE: call it only while something keeps the
+    ; scheduler's thread from finishing (a lock its receiver needs, a task
+    ; of it still parked). Otherwise read the handles while that holds and
+    ; poke with wake_handles afterwards.
     procedure wake_remote(home: ref[Scheduler])
     {
-        let q home.eio
+        Scheduler.wake_handles(home.eio, home.wake)
+    }
+
+    ; The poke itself, on handles read earlier.
+    procedure wake_handles(q: i32, w: i32)
+    {
         if q = ((0 - 1) as i32)
             return
-        let w home.wake
         if w = ((0 - 1) as i32)
             return
         scaly_eio_wake(q, w)
@@ -2724,6 +2741,17 @@ define Channel
                 deadlock_event()
                 let r Channel.pop_receiver(m)
                 let rs m.recv_sched
+                ; The receiving scheduler's handles are read UNDER the lock:
+                ; once it is released the receiver may take the message,
+                ; finish and release its scheduler (see close_sender).
+                var rq (0 - 1) as i32
+                var rw (0 - 1) as i32
+                if r = null and rs <> null and rs <> current_scheduler
+                {
+                    let remote rs as pointer[Scheduler]
+                    set rq: remote.eio
+                    set rw: remote.wake
+                }
                 Channel.release(m)
                 if r <> null
                 {
@@ -2733,11 +2761,7 @@ define Channel
                 ; No parked receiver — poke a possible main-context
                 ; waiter on the receiving thread (spurious pokes are
                 ; harmless: waiters re-check the queue on every wake).
-                if rs <> null
-                {
-                    if rs <> current_scheduler
-                        Scheduler.wake_remote(rs as pointer[Scheduler])
-                }
+                Scheduler.wake_handles(rq, rw)
                 return
             }
             ; Full: back-pressure until a receiver frees a slot.
@@ -2806,7 +2830,19 @@ define Channel
         var schain m.send_head
         set m.send_head: null
         set m.send_tail: null
+        ; ★The poke for a main-context receiver happens UNDER the lock
+        ; (2026-10-02). After the release every receiver may run: a parked
+        ; one is routed below, sees the close, ends, and its thread leaves
+        ; Scheduler.run and releases the page its scheduler lies on. The
+        ; poke used to come last and read that scheduler then -- an access
+        ; violation in 10 of 60 runs of tests/fiber/tcp_shutdown on the
+        ; first Windows-on-arm64 machine (tcp_acceptor closes the channels
+        ; of the other serving threads), a read of released memory
+        ; everywhere else. Under the lock no receiver has been told yet, and
+        ; one that is not parked needs this lock to see the close.
         let rs m.recv_sched
+        if rs <> null and rs <> current_scheduler
+            Scheduler.wake_remote(rs as pointer[Scheduler])
         Channel.release(m)
         while chain <> null
         {
@@ -2821,11 +2857,6 @@ define Channel
             set schain.next: null
             Channel.route(schain)
             set schain: nx
-        }
-        if rs <> null
-        {
-            if rs <> current_scheduler
-                Scheduler.wake_remote(rs as pointer[Scheduler])
         }
     }
 

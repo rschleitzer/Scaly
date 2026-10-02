@@ -909,12 +909,26 @@ define Scheduler
     ; are adjusted by its own drain_inject. The receiver armed the wake
     ; handle before parking, so the racy read of home.eio/home.wake sees
     ; initialized values (published by the channel lock).
+    ;
+    ; ★The handles are read BEFORE the push (2026-10-02): until the task is
+    ; on the inject stack it is parked, so its scheduler is alive; once it
+    ; is there the home thread may run it to its end, leave Scheduler.run
+    ; and release the page the scheduler lies on, and `home` is then memory
+    ; another thread has given back (the tcp_shutdown crash below, in its
+    ; narrower window).
     procedure inject_task(home: ref[Scheduler], mutable t: ref[SchedTask]) @ret_nonlocal true @deep true linked
 
     ; Poke a scheduler's wake handle so a poll_io blocked on it returns.
     ; Safe from any thread; a scheduler that never armed a wake (no
     ; channel receive yet) is simply not waiting — nothing to poke.
-    procedure wake_remote(home: ref[Scheduler]) @deep true linked
+    ; ★`home` must be ALIVE: call it only while something keeps the
+    ; scheduler's thread from finishing (a lock its receiver needs, a task
+    ; of it still parked). Otherwise read the handles while that holds and
+    ; poke with wake_handles afterwards.
+    procedure wake_remote(home: ref[Scheduler]) @ret_nonlocal true @deep true linked
+
+    ; The poke itself, on handles read earlier.
+    procedure wake_handles(q: i32, w: i32) @deep true linked
 
     ; Move every remotely-injected channel receiver to the ready queue
     ; (milestone 2.4). Runs only on the scheduler's own thread (start of
