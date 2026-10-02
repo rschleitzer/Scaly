@@ -142,6 +142,10 @@ define Emitter
         ; OBJECT FORMAT, not of the host — a cross-emit for Windows from a Mac
         ; must set it and a native Mac build must not.
         var target_is_coff: bool
+        ; The emission triple is AArch64, whatever --portable-simd says. Read
+        ; with target_is_coff by the catch point: the arm64 Windows CRT has
+        ; another one than the x64 CRT (get_setjmp_fn_coff).
+        var target_is_arm64: bool
         ; The emission triple is AArch64 and --portable-simd is off: the SIMD
         ; operations with a NEON form take it (ROADMAP-simd.md phase 6).
         ; Decided once in apply_target_layout.
@@ -1210,7 +1214,18 @@ define Emitter
         ; The COFF half of get_setjmp_fn: `i32 @_setjmp(ptr buf, ptr frame)`.
         ; Exactly what clang emits for a C `setjmp` on this target, read off
         ; its own output rather than guessed.
+        ;
+        ; ★The arm64 CRT has no `_setjmp` at all (2026-10-02, measured on the
+        ; first Windows-on-arm64 machine: `undefined symbol: _setjmp`, seven
+        ; corpus programs). Its catch point is `_setjmpex`, same two pointers,
+        ; and the second one is the stack pointer AT ENTRY of the catching
+        ; function (emit_catch_setjmp) -- again read off clang's output.
         procedure get_setjmp_fn_coff(mutable this) @direct true @ret_caller true @deep true returns LLVMValueRef linked
+
+        ; `declare ptr @llvm.sponentry.p0()` — the stack pointer at entry of
+        ; the current function, which is what arm64 Windows' `_setjmpex` wants
+        ; where x64's `_setjmp` wants the frame address.
+        procedure get_sponentry_fn(mutable this) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
         ; `declare ptr @llvm.frameaddress.p0(i32 immarg)` — the frame `_setjmp`
         ; wants. Declared by NAME and TYPE: LLVM recognises an intrinsic by its

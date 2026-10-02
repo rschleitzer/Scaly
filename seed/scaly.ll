@@ -614,17 +614,17 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 @.str.249 = private unnamed_addr constant [13 x i8] c"Array.extend\00", align 1
 @.str.250 = private unnamed_addr constant [9 x i8] c"Array.at\00", align 1
 @.str.251 = private unnamed_addr constant [10 x i8] c"Array.put\00", align 1
-@parfor.site.vol = private thread_local global i64 0
-@parfor.site.calns = private thread_local global i64 0
-@parfor.site.caliters = private thread_local global i64 0
+@parfor.site.vol = internal thread_local global i64 0
+@parfor.site.calns = internal thread_local global i64 0
+@parfor.site.caliters = internal thread_local global i64 0
 @parfor.site.p1k = private global i64 0
-@parfor.site.vol.253 = private thread_local global i64 0
-@parfor.site.calns.254 = private thread_local global i64 0
-@parfor.site.caliters.255 = private thread_local global i64 0
+@parfor.site.vol.253 = internal thread_local global i64 0
+@parfor.site.calns.254 = internal thread_local global i64 0
+@parfor.site.caliters.255 = internal thread_local global i64 0
 @parfor.site.p1k.256 = private global i64 0
-@parfor.site.vol.258 = private thread_local global i64 0
-@parfor.site.calns.259 = private thread_local global i64 0
-@parfor.site.caliters.260 = private thread_local global i64 0
+@parfor.site.vol.258 = internal thread_local global i64 0
+@parfor.site.calns.259 = internal thread_local global i64 0
+@parfor.site.caliters.260 = internal thread_local global i64 0
 @parfor.site.p1k.261 = private global i64 0
 @.str.262 = private unnamed_addr constant [10 x i8] c"Vector.at\00", align 1
 @.str.263 = private unnamed_addr constant [11 x i8] c"Vector.put\00", align 1
@@ -642,57 +642,57 @@ target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-n32:
 @.str.275 = private unnamed_addr constant [13 x i8] c"Array.extend\00", align 1
 @.str.276 = private unnamed_addr constant [9 x i8] c"Array.at\00", align 1
 @.str.277 = private unnamed_addr constant [10 x i8] c"Array.put\00", align 1
-@parfor.site.vol.279 = private thread_local global i64 0
-@parfor.site.calns.280 = private thread_local global i64 0
-@parfor.site.caliters.281 = private thread_local global i64 0
+@parfor.site.vol.279 = internal thread_local global i64 0
+@parfor.site.calns.280 = internal thread_local global i64 0
+@parfor.site.caliters.281 = internal thread_local global i64 0
 @parfor.site.p1k.282 = private global i64 0
-@parfor.site.vol.284 = private thread_local global i64 0
-@parfor.site.calns.285 = private thread_local global i64 0
-@parfor.site.caliters.286 = private thread_local global i64 0
+@parfor.site.vol.284 = internal thread_local global i64 0
+@parfor.site.calns.285 = internal thread_local global i64 0
+@parfor.site.caliters.286 = internal thread_local global i64 0
 @parfor.site.p1k.287 = private global i64 0
-@parfor.site.vol.289 = private thread_local global i64 0
-@parfor.site.calns.290 = private thread_local global i64 0
-@parfor.site.caliters.291 = private thread_local global i64 0
+@parfor.site.vol.289 = internal thread_local global i64 0
+@parfor.site.calns.290 = internal thread_local global i64 0
+@parfor.site.caliters.291 = internal thread_local global i64 0
 @parfor.site.p1k.292 = private global i64 0
-@parfor.site.vol.294 = private thread_local global i64 0
-@parfor.site.calns.295 = private thread_local global i64 0
-@parfor.site.caliters.296 = private thread_local global i64 0
+@parfor.site.vol.294 = internal thread_local global i64 0
+@parfor.site.calns.295 = internal thread_local global i64 0
+@parfor.site.caliters.296 = internal thread_local global i64 0
 @parfor.site.p1k.297 = private global i64 0
-@parfor.site.vol.299 = private thread_local global i64 0
-@parfor.site.calns.300 = private thread_local global i64 0
-@parfor.site.caliters.301 = private thread_local global i64 0
+@parfor.site.vol.299 = internal thread_local global i64 0
+@parfor.site.calns.300 = internal thread_local global i64 0
+@parfor.site.caliters.301 = internal thread_local global i64 0
 @parfor.site.p1k.302 = private global i64 0
-@parfor.site.vol.304 = private thread_local global i64 0
-@parfor.site.calns.305 = private thread_local global i64 0
-@parfor.site.caliters.306 = private thread_local global i64 0
+@parfor.site.vol.304 = internal thread_local global i64 0
+@parfor.site.calns.305 = internal thread_local global i64 0
+@parfor.site.caliters.306 = internal thread_local global i64 0
 @parfor.site.p1k.307 = private global i64 0
-@parfor.site.vol.309 = private thread_local global i64 0
-@parfor.site.calns.310 = private thread_local global i64 0
-@parfor.site.caliters.311 = private thread_local global i64 0
+@parfor.site.vol.309 = internal thread_local global i64 0
+@parfor.site.calns.310 = internal thread_local global i64 0
+@parfor.site.caliters.311 = internal thread_local global i64 0
 @parfor.site.p1k.312 = private global i64 0
-@parfor.site.vol.314 = private thread_local global i64 0
-@parfor.site.calns.315 = private thread_local global i64 0
-@parfor.site.caliters.316 = private thread_local global i64 0
+@parfor.site.vol.314 = internal thread_local global i64 0
+@parfor.site.calns.315 = internal thread_local global i64 0
+@parfor.site.caliters.316 = internal thread_local global i64 0
 @parfor.site.p1k.317 = private global i64 0
-@parfor.site.vol.319 = private thread_local global i64 0
-@parfor.site.calns.320 = private thread_local global i64 0
-@parfor.site.caliters.321 = private thread_local global i64 0
+@parfor.site.vol.319 = internal thread_local global i64 0
+@parfor.site.calns.320 = internal thread_local global i64 0
+@parfor.site.caliters.321 = internal thread_local global i64 0
 @parfor.site.p1k.322 = private global i64 0
-@parfor.site.vol.324 = private thread_local global i64 0
-@parfor.site.calns.325 = private thread_local global i64 0
-@parfor.site.caliters.326 = private thread_local global i64 0
+@parfor.site.vol.324 = internal thread_local global i64 0
+@parfor.site.calns.325 = internal thread_local global i64 0
+@parfor.site.caliters.326 = internal thread_local global i64 0
 @parfor.site.p1k.327 = private global i64 0
-@parfor.site.vol.329 = private thread_local global i64 0
-@parfor.site.calns.330 = private thread_local global i64 0
-@parfor.site.caliters.331 = private thread_local global i64 0
+@parfor.site.vol.329 = internal thread_local global i64 0
+@parfor.site.calns.330 = internal thread_local global i64 0
+@parfor.site.caliters.331 = internal thread_local global i64 0
 @parfor.site.p1k.332 = private global i64 0
-@parfor.site.vol.334 = private thread_local global i64 0
-@parfor.site.calns.335 = private thread_local global i64 0
-@parfor.site.caliters.336 = private thread_local global i64 0
+@parfor.site.vol.334 = internal thread_local global i64 0
+@parfor.site.calns.335 = internal thread_local global i64 0
+@parfor.site.caliters.336 = internal thread_local global i64 0
 @parfor.site.p1k.337 = private global i64 0
-@parfor.site.vol.339 = private thread_local global i64 0
-@parfor.site.calns.340 = private thread_local global i64 0
-@parfor.site.caliters.341 = private thread_local global i64 0
+@parfor.site.vol.339 = internal thread_local global i64 0
+@parfor.site.calns.340 = internal thread_local global i64 0
+@parfor.site.caliters.341 = internal thread_local global i64 0
 @parfor.site.p1k.342 = private global i64 0
 
 declare ptr @memcpy(...)
@@ -26901,32 +26901,32 @@ if.end3:                                          ; preds = %if.end
   br label %repeat.body
 }
 
-define linkonce_odr void @_ZN9Scheduler11wake_remoteER9Scheduler(ptr %0) {
+define linkonce_odr void @_ZN9Scheduler12wake_handlesE3i323i32(i32 %0, i32 %1) {
 entry:
-  %load.struct = load %_Z9Scheduler, ptr %0, align 8
-  %eio = extractvalue %_Z9Scheduler %load.struct, 4
-  %eq = icmp eq i32 %eio, -1
+  %eq = icmp eq i32 %0, -1
   br i1 %eq, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   ret void
 
 if.end:                                           ; preds = %entry
-  %load.struct1 = load %_Z9Scheduler, ptr %0, align 8
-  %wake = extractvalue %_Z9Scheduler %load.struct1, 6
-  %eq2 = icmp eq i32 %wake, -1
-  br i1 %eq2, label %if.then3, label %if.end4
+  %eq1 = icmp eq i32 %1, -1
+  br i1 %eq1, label %if.then2, label %if.end3
 
-if.then3:                                         ; preds = %if.end
+if.then2:                                         ; preds = %if.end
   ret void
 
-if.end4:                                          ; preds = %if.end
-  %call = call i32 @scaly_eio_wake(i32 %eio, i32 %wake)
+if.end3:                                          ; preds = %if.end
+  %call = call i32 @scaly_eio_wake(i32 %0, i32 %1)
   ret void
 }
 
 define linkonce_odr void @_ZN9Scheduler11inject_taskER9SchedulerR9SchedTask(ptr %0, ptr %1) {
 entry:
+  %load.struct = load %_Z9Scheduler, ptr %0, align 8
+  %eio = extractvalue %_Z9Scheduler %load.struct, 4
+  %load.struct1 = load %_Z9Scheduler, ptr %0, align 8
+  %wake = extractvalue %_Z9Scheduler %load.struct1, 6
   %addr.gep = getelementptr inbounds nuw %_Z9Scheduler, ptr %0, i32 0, i32 7
   br label %repeat.body
 
@@ -26942,7 +26942,7 @@ repeat.body:                                      ; preds = %if.end, %entry
   br i1 %eq, label %if.then, label %if.end
 
 repeat.exit:                                      ; preds = %if.then
-  call void @_ZN9Scheduler11wake_remoteER9Scheduler(ptr %0)
+  call void @_ZN9Scheduler12wake_handlesE3i323i32(i32 %eio, i32 %wake)
   ret void
 
 if.then:                                          ; preds = %repeat.body
@@ -26950,6 +26950,16 @@ if.then:                                          ; preds = %repeat.body
 
 if.end:                                           ; preds = %repeat.body
   br label %repeat.body
+}
+
+define linkonce_odr void @_ZN9Scheduler11wake_remoteER9Scheduler(ptr %0) {
+entry:
+  %field.inplace = getelementptr inbounds nuw %_Z9Scheduler, ptr %0, i32 0, i32 4
+  %field.val = load i32, ptr %field.inplace, align 4
+  %field.inplace1 = getelementptr inbounds nuw %_Z9Scheduler, ptr %0, i32 0, i32 6
+  %field.val2 = load i32, ptr %field.inplace1, align 4
+  call void @_ZN9Scheduler12wake_handlesE3i323i32(i32 %field.val, i32 %field.val2)
+  ret void
 }
 
 define linkonce_odr void @_ZN9Scheduler12drain_injectEv() {
@@ -28903,6 +28913,8 @@ if.end6:                                          ; preds = %if.then5, %if.then
 define linkonce_odr void @_ZN7Channel4sendEP7ChannelPv(ptr %0, ptr %1) {
 entry:
   %ran = alloca i1, align 1
+  %rw = alloca i32, align 4
+  %rq = alloca i32, align 4
   %room = alloca i1, align 1
   %call = call ptr @_ZN4Page3getEPv(ptr %1)
   %tuple.region = call ptr @_ZN4Page8allocateEmm(ptr %call, i64 ptrtoint (ptr getelementptr (%_Z11ChannelNode, ptr null, i32 1) to i64), i64 ptrtoint (ptr getelementptr ({ i1, %_Z11ChannelNode }, ptr null, i64 0, i32 1) to i64))
@@ -28927,7 +28939,7 @@ land.rhs:                                         ; preds = %entry
   %gt = icmp sgt i64 %capacity, 0
   br i1 %gt, label %if.then, label %if.end
 
-repeat.body:                                      ; preds = %if.end43, %if.end
+repeat.body:                                      ; preds = %if.end48, %if.end
   call void @_ZN7Channel7acquireEP7Channel(ptr %0)
   %load.struct3 = load %_Z7Channel, ptr %0, align 8
   %closed = extractvalue %_Z7Channel %load.struct3, 2
@@ -28971,8 +28983,8 @@ if.then16:                                        ; preds = %if.end7
   br i1 %eq, label %if.then19, label %if.else
 
 if.end17:                                         ; preds = %if.end7
-  %eq40 = icmp eq ptr %global.load, null
-  br i1 %eq40, label %if.then41, label %if.else42
+  %eq45 = icmp eq ptr %global.load, null
+  br i1 %eq45, label %if.then46, label %if.else47
 
 if.then19:                                        ; preds = %if.then16
   %head = getelementptr inbounds nuw %_Z7Channel, ptr %0, i32 0, i32 3
@@ -29000,107 +29012,118 @@ if.end20:                                         ; preds = %if.else, %if.then19
   %call28 = call ptr @_ZN7Channel12pop_receiverER7Channel(ptr %0)
   %load.struct29 = load %_Z7Channel, ptr %0, align 8
   %recv_sched = extractvalue %_Z7Channel %load.struct29, 7
-  call void @_ZN7Channel7releaseEP7Channel(ptr %0)
-  %ne30 = icmp ne ptr %call28, null
-  br i1 %ne30, label %if.then31, label %if.end32
+  store i32 -1, ptr %rq, align 1
+  store i32 -1, ptr %rw, align 1
+  %eq34 = icmp eq ptr %call28, null
+  br i1 %eq34, label %land.rhs33, label %if.end31
 
-if.then31:                                        ; preds = %if.end20
+if.then30:                                        ; preds = %land.rhs32
+  %load.struct38 = load %_Z9Scheduler, ptr %recv_sched, align 8
+  %eio = extractvalue %_Z9Scheduler %load.struct38, 4
+  store i32 %eio, ptr %rq, align 1
+  %load.struct39 = load %_Z9Scheduler, ptr %recv_sched, align 8
+  %wake = extractvalue %_Z9Scheduler %load.struct39, 6
+  store i32 %wake, ptr %rw, align 1
+  br label %if.end31
+
+if.end31:                                         ; preds = %if.then30, %land.rhs32, %land.rhs33, %if.end20
+  call void @_ZN7Channel7releaseEP7Channel(ptr %0)
+  %ne40 = icmp ne ptr %call28, null
+  br i1 %ne40, label %if.then41, label %if.end42
+
+land.rhs32:                                       ; preds = %land.rhs33
+  %global.load36 = load ptr, ptr @current_scheduler, align 8
+  %ne37 = icmp ne ptr %recv_sched, %global.load36
+  br i1 %ne37, label %if.then30, label %if.end31
+
+land.rhs33:                                       ; preds = %if.end20
+  %ne35 = icmp ne ptr %recv_sched, null
+  br i1 %ne35, label %land.rhs32, label %if.end31
+
+if.then41:                                        ; preds = %if.end31
   call void @_ZN7Channel5routeER9SchedTask(ptr %call28)
   ret void
 
-if.end32:                                         ; preds = %if.end20
-  %ne33 = icmp ne ptr %recv_sched, null
-  br i1 %ne33, label %if.then34, label %if.end35
-
-if.then34:                                        ; preds = %if.end32
-  %global.load36 = load ptr, ptr @current_scheduler, align 8
-  %ne37 = icmp ne ptr %recv_sched, %global.load36
-  br i1 %ne37, label %if.then38, label %if.end39
-
-if.end35:                                         ; preds = %if.end39, %if.end32
+if.end42:                                         ; preds = %if.end31
+  %rq43 = load i32, ptr %rq, align 4
+  %rw44 = load i32, ptr %rw, align 4
+  call void @_ZN9Scheduler12wake_handlesE3i323i32(i32 %rq43, i32 %rw44)
   ret void
 
-if.then38:                                        ; preds = %if.then34
-  call void @_ZN9Scheduler11wake_remoteER9Scheduler(ptr %recv_sched)
-  br label %if.end39
-
-if.end39:                                         ; preds = %if.then38, %if.then34
-  br label %if.end35
-
-if.then41:                                        ; preds = %if.end17
+if.then46:                                        ; preds = %if.end17
   call void @_ZN7Channel7releaseEP7Channel(ptr %0)
   store i1 false, ptr %ran, align 1
-  %global.load44 = load ptr, ptr @current_scheduler, align 8
-  %ne45 = icmp ne ptr %global.load44, null
-  br i1 %ne45, label %if.then46, label %if.end47
+  %global.load49 = load ptr, ptr @current_scheduler, align 8
+  %ne50 = icmp ne ptr %global.load49, null
+  br i1 %ne50, label %if.then51, label %if.end52
 
-if.else42:                                        ; preds = %if.end17
-  %next53 = getelementptr inbounds nuw %_Z9SchedTask, ptr %global.load, i32 0, i32 2
-  store ptr null, ptr %next53, align 8
-  %load.struct54 = load %_Z7Channel, ptr %0, align 8
-  %send_tail = extractvalue %_Z7Channel %load.struct54, 11
-  %eq55 = icmp eq ptr %send_tail, null
-  br i1 %eq55, label %if.then56, label %if.else57
+if.else47:                                        ; preds = %if.end17
+  %next58 = getelementptr inbounds nuw %_Z9SchedTask, ptr %global.load, i32 0, i32 2
+  store ptr null, ptr %next58, align 8
+  %load.struct59 = load %_Z7Channel, ptr %0, align 8
+  %send_tail = extractvalue %_Z7Channel %load.struct59, 11
+  %eq60 = icmp eq ptr %send_tail, null
+  br i1 %eq60, label %if.then61, label %if.else62
 
-if.end43:                                         ; preds = %unwrap.ok, %if.end51
+if.end48:                                         ; preds = %unwrap.ok, %if.end56
   br label %repeat.body
 
-if.then46:                                        ; preds = %if.then41
-  %call48 = call i1 @_ZN9Scheduler4stepEv()
-  store i1 %call48, ptr %ran, align 1
-  br label %if.end47
+if.then51:                                        ; preds = %if.then46
+  %call53 = call i1 @_ZN9Scheduler4stepEv()
+  store i1 %call53, ptr %ran, align 1
+  br label %if.end52
 
-if.end47:                                         ; preds = %if.then46, %if.then41
-  %ran49 = load i1, ptr %ran, align 1
-  %not = xor i1 %ran49, true
-  br i1 %not, label %if.then50, label %if.end51
+if.end52:                                         ; preds = %if.then51, %if.then46
+  %ran54 = load i1, ptr %ran, align 1
+  %not = xor i1 %ran54, true
+  br i1 %not, label %if.then55, label %if.end56
 
-if.then50:                                        ; preds = %if.end47
-  %call52 = call i32 @poll(ptr null, i64 0, i32 1)
-  br label %if.end51
+if.then55:                                        ; preds = %if.end52
+  %call57 = call i32 @poll(ptr null, i64 0, i32 1)
+  br label %if.end56
 
-if.end51:                                         ; preds = %if.then50, %if.end47
-  br label %if.end43
+if.end56:                                         ; preds = %if.then55, %if.end52
+  br label %if.end48
 
-if.then56:                                        ; preds = %if.else42
+if.then61:                                        ; preds = %if.else47
   %send_head = getelementptr inbounds nuw %_Z7Channel, ptr %0, i32 0, i32 10
   store ptr %global.load, ptr %send_head, align 8
-  %send_tail59 = getelementptr inbounds nuw %_Z7Channel, ptr %0, i32 0, i32 11
-  store ptr %global.load, ptr %send_tail59, align 8
-  br label %if.end58
+  %send_tail64 = getelementptr inbounds nuw %_Z7Channel, ptr %0, i32 0, i32 11
+  store ptr %global.load, ptr %send_tail64, align 8
+  br label %if.end63
 
-if.else57:                                        ; preds = %if.else42
-  %load.struct60 = load %_Z7Channel, ptr %0, align 8
-  %send_tail61 = extractvalue %_Z7Channel %load.struct60, 11
-  %next62 = getelementptr inbounds nuw %_Z9SchedTask, ptr %send_tail61, i32 0, i32 2
-  store ptr %global.load, ptr %next62, align 8
-  %send_tail63 = getelementptr inbounds nuw %_Z7Channel, ptr %0, i32 0, i32 11
-  store ptr %global.load, ptr %send_tail63, align 8
-  br label %if.end58
+if.else62:                                        ; preds = %if.else47
+  %load.struct65 = load %_Z7Channel, ptr %0, align 8
+  %send_tail66 = extractvalue %_Z7Channel %load.struct65, 11
+  %next67 = getelementptr inbounds nuw %_Z9SchedTask, ptr %send_tail66, i32 0, i32 2
+  store ptr %global.load, ptr %next67, align 8
+  %send_tail68 = getelementptr inbounds nuw %_Z7Channel, ptr %0, i32 0, i32 11
+  store ptr %global.load, ptr %send_tail68, align 8
+  br label %if.end63
 
-if.end58:                                         ; preds = %if.else57, %if.then56
+if.end63:                                         ; preds = %if.else62, %if.then61
   call void @_ZN7Channel7releaseEP7Channel(ptr %0)
-  %global.load64 = load ptr, ptr @current_scheduler, align 8
-  %unwrap.isnull = icmp eq ptr %global.load64, null
+  %global.load69 = load ptr, ptr @current_scheduler, align 8
+  %unwrap.isnull = icmp eq ptr %global.load69, null
   br i1 %unwrap.isnull, label %unwrap.trap, label %unwrap.ok
 
-unwrap.trap:                                      ; preds = %if.end58
+unwrap.trap:                                      ; preds = %if.end63
   call void @_Z16scaly_panic_nullP10const_char(ptr @.unwrap.at.189)
   unreachable
 
-unwrap.ok:                                        ; preds = %if.end58
-  %load.struct65 = load %_Z9Scheduler, ptr %global.load64, align 8
-  %blocked = extractvalue %_Z9Scheduler %load.struct65, 3
-  %add66 = add i64 %blocked, 1
-  %blocked67 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load64, i32 0, i32 3
-  store i64 %add66, ptr %blocked67, align 8
-  %load.struct68 = load %_Z9Scheduler, ptr %global.load64, align 8
-  %chan_parked = extractvalue %_Z9Scheduler %load.struct68, 8
-  %add69 = add i64 %chan_parked, 1
-  %chan_parked70 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load64, i32 0, i32 8
-  store i64 %add69, ptr %chan_parked70, align 8
+unwrap.ok:                                        ; preds = %if.end63
+  %load.struct70 = load %_Z9Scheduler, ptr %global.load69, align 8
+  %blocked = extractvalue %_Z9Scheduler %load.struct70, 3
+  %add71 = add i64 %blocked, 1
+  %blocked72 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load69, i32 0, i32 3
+  store i64 %add71, ptr %blocked72, align 8
+  %load.struct73 = load %_Z9Scheduler, ptr %global.load69, align 8
+  %chan_parked = extractvalue %_Z9Scheduler %load.struct73, 8
+  %add74 = add i64 %chan_parked, 1
+  %chan_parked75 = getelementptr inbounds nuw %_Z9Scheduler, ptr %global.load69, i32 0, i32 8
+  store i64 %add74, ptr %chan_parked75, align 8
   call void @_ZN5Fiber5yieldEv()
-  br label %if.end43
+  br label %if.end48
 }
 
 define linkonce_odr void @_ZN7Channel12close_senderEP7Channel(ptr %0) {
@@ -29142,64 +29165,61 @@ if.end:                                           ; preds = %entry
   store ptr null, ptr %send_tail, align 8
   %load.struct8 = load %_Z7Channel, ptr %0, align 8
   %recv_sched = extractvalue %_Z7Channel %load.struct8, 7
+  %ne = icmp ne ptr %recv_sched, null
+  br i1 %ne, label %land.rhs, label %if.end10
+
+if.then9:                                         ; preds = %land.rhs
+  call void @_ZN9Scheduler11wake_remoteER9Scheduler(ptr %recv_sched)
+  br label %if.end10
+
+if.end10:                                         ; preds = %if.then9, %land.rhs, %if.end
   call void @_ZN7Channel7releaseEP7Channel(ptr %0)
   br label %while.cond
 
-while.cond:                                       ; preds = %while.body, %if.end
-  %chain9 = load ptr, ptr %chain, align 8
-  %ne = icmp ne ptr %chain9, null
-  br i1 %ne, label %while.body, label %while.exit
+land.rhs:                                         ; preds = %if.end
+  %global.load = load ptr, ptr @current_scheduler, align 8
+  %ne11 = icmp ne ptr %recv_sched, %global.load
+  br i1 %ne11, label %if.then9, label %if.end10
+
+while.cond:                                       ; preds = %while.body, %if.end10
+  %chain12 = load ptr, ptr %chain, align 8
+  %ne13 = icmp ne ptr %chain12, null
+  br i1 %ne13, label %while.body, label %while.exit
 
 while.body:                                       ; preds = %while.cond
-  %chain10 = load ptr, ptr %chain, align 8
-  %load.struct11 = load %_Z9SchedTask, ptr %chain10, align 8
-  %next = extractvalue %_Z9SchedTask %load.struct11, 2
+  %chain14 = load ptr, ptr %chain, align 8
+  %load.struct15 = load %_Z9SchedTask, ptr %chain14, align 8
+  %next = extractvalue %_Z9SchedTask %load.struct15, 2
   %ptr.load = load ptr, ptr %chain, align 8
-  %next12 = getelementptr inbounds nuw %_Z9SchedTask, ptr %ptr.load, i32 0, i32 2
-  store ptr null, ptr %next12, align 8
-  %chain13 = load ptr, ptr %chain, align 8
-  call void @_ZN7Channel5routeER9SchedTask(ptr %chain13)
+  %next16 = getelementptr inbounds nuw %_Z9SchedTask, ptr %ptr.load, i32 0, i32 2
+  store ptr null, ptr %next16, align 8
+  %chain17 = load ptr, ptr %chain, align 8
+  call void @_ZN7Channel5routeER9SchedTask(ptr %chain17)
   store ptr %next, ptr %chain, align 1
   br label %while.cond
 
 while.exit:                                       ; preds = %while.cond
-  br label %while.cond14
+  br label %while.cond18
 
-while.cond14:                                     ; preds = %while.body15, %while.exit
-  %schain17 = load ptr, ptr %schain, align 8
-  %ne18 = icmp ne ptr %schain17, null
-  br i1 %ne18, label %while.body15, label %while.exit16
+while.cond18:                                     ; preds = %while.body19, %while.exit
+  %schain21 = load ptr, ptr %schain, align 8
+  %ne22 = icmp ne ptr %schain21, null
+  br i1 %ne22, label %while.body19, label %while.exit20
 
-while.body15:                                     ; preds = %while.cond14
-  %schain19 = load ptr, ptr %schain, align 8
-  %load.struct20 = load %_Z9SchedTask, ptr %schain19, align 8
-  %next21 = extractvalue %_Z9SchedTask %load.struct20, 2
-  %ptr.load22 = load ptr, ptr %schain, align 8
-  %next23 = getelementptr inbounds nuw %_Z9SchedTask, ptr %ptr.load22, i32 0, i32 2
-  store ptr null, ptr %next23, align 8
-  %schain24 = load ptr, ptr %schain, align 8
-  call void @_ZN7Channel5routeER9SchedTask(ptr %schain24)
-  store ptr %next21, ptr %schain, align 1
-  br label %while.cond14
+while.body19:                                     ; preds = %while.cond18
+  %schain23 = load ptr, ptr %schain, align 8
+  %load.struct24 = load %_Z9SchedTask, ptr %schain23, align 8
+  %next25 = extractvalue %_Z9SchedTask %load.struct24, 2
+  %ptr.load26 = load ptr, ptr %schain, align 8
+  %next27 = getelementptr inbounds nuw %_Z9SchedTask, ptr %ptr.load26, i32 0, i32 2
+  store ptr null, ptr %next27, align 8
+  %schain28 = load ptr, ptr %schain, align 8
+  call void @_ZN7Channel5routeER9SchedTask(ptr %schain28)
+  store ptr %next25, ptr %schain, align 1
+  br label %while.cond18
 
-while.exit16:                                     ; preds = %while.cond14
-  %ne25 = icmp ne ptr %recv_sched, null
-  br i1 %ne25, label %if.then26, label %if.end27
-
-if.then26:                                        ; preds = %while.exit16
-  %global.load = load ptr, ptr @current_scheduler, align 8
-  %ne28 = icmp ne ptr %recv_sched, %global.load
-  br i1 %ne28, label %if.then29, label %if.end30
-
-if.end27:                                         ; preds = %if.end30, %while.exit16
+while.exit20:                                     ; preds = %while.cond18
   ret void
-
-if.then29:                                        ; preds = %if.then26
-  call void @_ZN9Scheduler11wake_remoteER9Scheduler(ptr %recv_sched)
-  br label %if.end30
-
-if.end30:                                         ; preds = %if.then29, %if.then26
-  br label %if.end27
 }
 
 define linkonce_odr ptr @_ZN7Channel7receiveER7Channel(ptr %0) {

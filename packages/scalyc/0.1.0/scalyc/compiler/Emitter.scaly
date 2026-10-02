@@ -184,6 +184,10 @@ define Emitter
         ; OBJECT FORMAT, not of the host — a cross-emit for Windows from a Mac
         ; must set it and a native Mac build must not.
         var target_is_coff: bool
+        ; The emission triple is AArch64, whatever --portable-simd says. Read
+        ; with target_is_coff by the catch point: the arm64 Windows CRT has
+        ; another one than the x64 CRT (get_setjmp_fn_coff).
+        var target_is_arm64: bool
         ; The emission triple is AArch64 and --portable-simd is off: the SIMD
         ; operations with a NEON form take it (ROADMAP-simd.md phase 6).
         ; Decided once in apply_target_layout.
@@ -447,6 +451,7 @@ define Emitter
             set external_context: null
             set has_external_context: false
             set target_is_coff: false
+            set target_is_arm64: false
             set simd_neon: false
             set simd_ssse3: false
             set simd_avx2: false
@@ -600,7 +605,8 @@ define Emitter
             ; gets answered — once, not per function.
             set target_is_coff: triple_is_coff(triple)
             let triple_name String(triple)
-            set simd_neon: config.portable_simd = false and (triple_name.starts_with("aarch64") or triple_name.starts_with("arm64"))
+            set target_is_arm64: triple_name.starts_with("aarch64") or triple_name.starts_with("arm64")
+            set simd_neon: config.portable_simd = false and target_is_arm64
             if config.portable_simd = false and triple_name.starts_with("x86_64")
             {
                 let cpu config.target_cpu
@@ -4160,9 +4166,18 @@ define Emitter
         ; The COFF half of get_setjmp_fn: `i32 @_setjmp(ptr buf, ptr frame)`.
         ; Exactly what clang emits for a C `setjmp` on this target, read off
         ; its own output rather than guessed.
+        ;
+        ; ★The arm64 CRT has no `_setjmp` at all (2026-10-02, measured on the
+        ; first Windows-on-arm64 machine: `undefined symbol: _setjmp`, seven
+        ; corpus programs). Its catch point is `_setjmpex`, same two pointers,
+        ; and the second one is the stack pointer AT ENTRY of the catching
+        ; function (emit_catch_setjmp) -- again read off clang's output.
         procedure get_setjmp_fn_coff(mutable this) returns LLVMValueRef
         {
-            var fn LLVMGetNamedFunction(llvm_module, "_setjmp")
+            var sj_name "_setjmp" as pointer[const_char]
+            if target_is_arm64
+                set sj_name: "_setjmpex" as pointer[const_char]
+            var fn LLVMGetNamedFunction(llvm_module, sj_name)
             if fn = null
             {
                 let i32_ty LLVMInt32TypeInContext(context)
@@ -4171,10 +4186,25 @@ define Emitter
                 ptys.put(0, ptr_ty)
                 ptys.put(1, ptr_ty)
                 let fty LLVMFunctionType(i32_ty, ptys.data, 2, 0)
-                set fn: LLVMAddFunction(llvm_module, "_setjmp", fty)
+                set fn: LLVMAddFunction(llvm_module, sj_name, fty)
                 LLVMSetLinkage(fn, LLVMLinkage.External())
             }
             mark_returns_twice_callee(fn)
+            fn
+        }
+
+        ; `declare ptr @llvm.sponentry.p0()` — the stack pointer at entry of
+        ; the current function, which is what arm64 Windows' `_setjmpex` wants
+        ; where x64's `_setjmp` wants the frame address.
+        procedure get_sponentry_fn(mutable this) returns LLVMValueRef
+        {
+            var fn LLVMGetNamedFunction(llvm_module, "llvm.sponentry.p0")
+            if fn = null
+            {
+                let ptr_ty LLVMPointerTypeInContext(context, 0)
+                let fty LLVMFunctionType(ptr_ty, null as pointer[LLVMTypeRef], 0, 0)
+                set fn: LLVMAddFunction(llvm_module, "llvm.sponentry.p0", fty)
+            }
             fn
         }
 
@@ -4203,6 +4233,16 @@ define Emitter
         procedure emit_catch_setjmp(mutable this, mutable sj_fn: LLVMValueRef, mutable buf: LLVMValueRef) returns LLVMValueRef
         {
             let sj_ty LLVMGlobalGetValueType(sj_fn)
+            if target_is_coff and target_is_arm64
+            {
+                let sp_fn get_sponentry_fn()
+                let sp_ty LLVMGlobalGetValueType(sp_fn)
+                let entry_sp LLVMBuildCall2(builder, sp_ty, sp_fn, null as pointer[LLVMValueRef], 0, "catch.sp")
+                var sp_args Vector[LLVMValueRef](2)
+                sp_args.put(0, buf)
+                sp_args.put(1, entry_sp)
+                return LLVMBuildCall2(builder, sj_ty, sj_fn, sp_args.data, 2, "catch.sj")
+            }
             if target_is_coff
             {
                 let fa_fn get_frameaddress_fn()
@@ -18794,23 +18834,31 @@ define Emitter
             ; and ONE process-shared cell holding the published measured
             ; per-iteration cost (<<10; 0 = cold, >0 = promoted) — written
             ; rarely (at a fork, or when the calibration floor is reached),
-            ; read once per execution. Private linkage like the task fn:
+            ; read once per execution. Local to the module like the task fn:
             ; llvm-link renames on collision, opt strips the copies orphaned
             ; by linkonce_odr dedup.
+            ; ★The three thread-local ones are INTERNAL, not private
+            ; (2026-10-02): a private global has no symbol, so its TLS
+            ; relocation goes against the section plus an offset, and on
+            ; arm64 COFF LLVM 21 puts that offset into the `add ..., lsl #12`
+            ; of SECREL_HIGH12A -- offset 0x18 addressed 0x18000, an access
+            ; violation at the first parallel loop (seven corpus programs on
+            ; the first Windows-on-arm64 machine; clang does the same with
+            ; this IR). With a symbol the addend is zero.
             let sv_name "parfor.site.vol"
             let site_vol LLVMAddGlobal(llvm_module, i64_ty, sv_name.c_data())
             LLVMSetInitializer(site_vol, c0)
-            LLVMSetLinkage(site_vol, LLVMLinkage.Private())
+            LLVMSetLinkage(site_vol, LLVMLinkage.Internal())
             LLVMSetThreadLocal(site_vol, 1)
             let sc_name "parfor.site.calns"
             let site_calns LLVMAddGlobal(llvm_module, i64_ty, sc_name.c_data())
             LLVMSetInitializer(site_calns, c0)
-            LLVMSetLinkage(site_calns, LLVMLinkage.Private())
+            LLVMSetLinkage(site_calns, LLVMLinkage.Internal())
             LLVMSetThreadLocal(site_calns, 1)
             let si_name "parfor.site.caliters"
             let site_caliters LLVMAddGlobal(llvm_module, i64_ty, si_name.c_data())
             LLVMSetInitializer(site_caliters, c0)
-            LLVMSetLinkage(site_caliters, LLVMLinkage.Private())
+            LLVMSetLinkage(site_caliters, LLVMLinkage.Internal())
             LLVMSetThreadLocal(site_caliters, 1)
             let sp_name "parfor.site.p1k"
             let site_p1k LLVMAddGlobal(llvm_module, i64_ty, sp_name.c_data())
