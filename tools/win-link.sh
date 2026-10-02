@@ -30,7 +30,7 @@ set -eu
 cd "$(dirname "$0")/.."
 . tools/win-env.sh || exit 1
 source tools/llvm-env.sh > /dev/null
-T=x86_64-pc-windows-msvc
+T=${SCALY_WIN_TRIPLE:-x86_64-pc-windows-msvc}
 LLVM=0; RT=0; LTO=0
 while [ $# -gt 0 ]; do
   case "$1" in

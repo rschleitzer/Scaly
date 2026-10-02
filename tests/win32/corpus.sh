@@ -39,7 +39,7 @@ cd "$(dirname "$0")/../.." || exit 1
 MODE=${1:-}
 SUITES="aot fiber"
 TIMEOUT_S=60
-TRIPLE=x86_64-pc-windows-msvc
+TRIPLE=${SCALY_WIN_TRIPLE:-x86_64-pc-windows-msvc}
 
 # Objects are named <suite>__<test>.o so the run mode can find the source again
 # without a manifest.

@@ -21,7 +21,13 @@ cd "$(dirname "$0")/.."
 OUT=${1:-/tmp/fcontext.o}
 FIB=packages/scaly/0.1.0/scaly/fiber
 case "$(uname -s)" in
-  MINGW*|MSYS*|CYGWIN*|Windows*) SRC=$FIB/fcontext_x86_64_windows.S ;;
+  MINGW*|MSYS*|CYGWIN*|Windows*)
+    # by the toolchain's target (tools/win-env.sh), not by `uname -m`
+    . tools/win-env.sh || exit 1
+    case "$SCALY_WIN_TRIPLE" in
+      aarch64*) SRC=$FIB/fcontext_arm64_windows.S ;;
+      *)        SRC=$FIB/fcontext_x86_64_windows.S ;;
+    esac ;;
   *)
     case "${SCALY_ARCH:-$(uname -m)}" in
       arm64|aarch64) SRC=$FIB/fcontext_arm64.S ;;

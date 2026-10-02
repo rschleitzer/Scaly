@@ -20,4 +20,4 @@ while [ $# -gt 0 ]; do
   shift
 done
 [ -n "$IN" ] && [ -n "$OUT" ] || { echo "opt(win): usage: opt -O2 [-S] <in> -o <out>" >&2; exit 2; }
-exec clang --target=x86_64-pc-windows-msvc $OPTL $EMIT -emit-llvm -Wno-override-module "$IN" -o "$OUT"
+exec clang --target=${SCALY_WIN_TRIPLE:-x86_64-pc-windows-msvc} $OPTL $EMIT -emit-llvm -Wno-override-module "$IN" -o "$OUT"
