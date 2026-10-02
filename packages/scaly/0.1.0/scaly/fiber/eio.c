@@ -1374,6 +1374,18 @@ int scaly_eio_stat(const char *path, int fd, long long *out)
     return 0;
 }
 
+/* The wall clock in nanoseconds since the Unix epoch -- the clock a file's
+ * mtime (scaly_eio_stat) is taken from, so the two can be compared: a cache
+ * asks whether a file was written so recently that a second write could carry
+ * the same stamp (http's static files). Shim rule (a), as for the monotonic
+ * clock: the clock id's value is OS-specific. */
+long long scaly_eio_wall_ns(void)
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    return ts.tv_sec * 1000000000LL + ts.tv_nsec;
+}
+
 /* 64-bit file position — replaces the direct `fseek`/`ftell` externs.
  *
  * C's fseek/ftell carry `long` offsets, i.e. 64-bit on LP64 and 32-bit on

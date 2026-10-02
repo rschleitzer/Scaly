@@ -25,6 +25,15 @@ use http.Response.Response
 ; What a file is on disk (scaly/fiber/eio.c): out[0] size, out[1] mtime in
 ; nanoseconds, out[2] inode, out[3] block size; -1 when there is no file.
 procedure scaly_eio_stat(path: pointer[const_char], fd: i32, mutable out: pointer[i64]) returns i32 extern
+; The wall clock a file's mtime is taken from, in nanoseconds (eio.c).
+procedure scaly_eio_wall_ns() returns i64 extern
+; A file written this recently may be written AGAIN with the same stamp: a
+; file system stamps a write with a clock that ticks (15.6 ms on Windows, a
+; few on Linux), and a second write of the same size inside one tick changes
+; neither size nor mtime. git calls such an entry racy and does not trust it;
+; neither does load_entry#. Found 2026-10-02 on Windows, where a file replaced
+; right after its first read was served stale now and then.
+define STATIC_RACY_NS: i64 100000000
 
 define StaticEntry
 (

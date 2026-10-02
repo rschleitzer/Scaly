@@ -1009,6 +1009,18 @@ int scaly_eio_stat(const char* path, int fd, long long* out)
     }
 }
 
+/* scaly_eio_wall_ns (see eio.c): the system time as a FILETIME, taken to the
+ * Unix epoch as scaly_eio_stat takes a file's -- the same clock the file
+ * system stamps a write with. */
+long long scaly_eio_wall_ns(void)
+{
+    FILETIME ft;
+    long long t;
+    GetSystemTimeAsFileTime(&ft);
+    t = ((long long)ft.dwHighDateTime << 32) | (long long)ft.dwLowDateTime;
+    return (t - 116444736000000000LL) * 100LL;
+}
+
 long long scaly_eio_tell(void* stream)
 {
     return _ftelli64((FILE*)stream);
