@@ -1,0 +1,117 @@
+# A TRIAL BALLOON, not a habit: the three programs and the tool's builds on a
+# Windows runner. Dispatch by hand only — `gh workflow run win-tool`.
+#
+# ★Windows minutes are billed at twice the Linux rate and the month has 2000.
+# This job is one LLVM download, two LTO links and a handful of small builds;
+# run it when the Windows legs of the build scripts or the tool's Windows
+# paths changed and no Windows box is at hand, never per commit. The standing
+# Windows check is the `windows` job of seed.yml (link + run of cross-emitted
+# objects), which costs a few minutes.
+#
+# What it answers (2026-10-02, when the tool became a program of its own):
+#   1. tools/build-from-seed.sh on Windows: scalyc.exe AND scaly.exe beside it
+#      (the Windows legs were written on a Mac and had never run)
+#   2. `scaly build` plain — a program over the build cache
+#   3. `scaly build --release` — the whole program as one module
+#   4. `scaly build --pgo-train`, a run, `scaly build --pgo`
+#   5. tests/tool/run.sh, for what else the tool does there
+# Every check prints one verdict line and the job goes on, so one run says as
+# much as it can; it fails at the end if any check did.
+#
+# The toolchain is the dev box's: clang 21.1.8 from the standalone LLVM
+# archive, unpacked (never installed — seed.yml rung 9 has the reason) and put
+# FIRST on PATH for this job alone, with LLVM-C beside it.
+name: win-tool
+
+on:
+  workflow_dispatch:
+
+jobs:
+  balloon:
+    name: x86_64-pc-windows-msvc (the tool, by hand)
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: LLVM 21.1.8, unpacked
+        shell: bash
+        run: |
+          set -e
+          command -v 7z > /dev/null || { echo "no 7z on this runner"; exit 1; }
+          url=https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.8/LLVM-21.1.8-win64.exe
+          curl -fsSL -o llvm21.exe "$url"
+          ls -l llvm21.exe
+          # relative target: an argument that does not begin with `/` is left
+          # alone by MSYS (rung 9)
+          7z x -bso0 -bsp0 llvm21.exe -ollvm21
+          rm -f llvm21.exe
+          for f in bin/clang.exe bin/lld-link.exe bin/llvm-ar.exe bin/llvm-profdata.exe bin/LLVM-C.dll lib/LLVM-C.lib; do
+            [ -f "llvm21/$f" ] || { echo "the archive did not yield $f"; ls llvm21 | head -30; exit 1; }
+          done
+          ls llvm21/lib/clang/*/lib/windows/ | grep -i profile || echo "NOTE: no profile runtime found under lib/clang"
+          cygpath -w "$PWD/llvm21/bin" >> "$GITHUB_PATH"
+
+      - name: Toolchain
+        shell: bash
+        run: |
+          command -v clang; clang --version | head -2
+          command -v llvm-profdata
+
+      - name: Build scalyc and scaly from the seed
+        shell: bash
+        run: |
+          set -e
+          t0=$(date +%s)
+          SCALYC_SEED_NO_SCALYLS=1 tools/build-from-seed.sh
+          echo "build-from-seed: $(( $(date +%s) - t0 )) s"
+          ls -l scalyc/build/
+          [ -x scalyc/build/scalyc.exe ] && [ -x scalyc/build/scaly.exe ]
+
+      - name: The tool (plain, --release, --pgo), one verdict per check
+        shell: bash
+        run: |
+          . tools/win-env.sh
+          set -u
+          export SCALY_CACHE="$PWD/wt_cache"
+          W=wt; mkdir -p $W
+          S=scalyc/build/scaly.exe
+          fail=0
+          verdict() { if [ "$2" = 0 ]; then echo "PASS  $1"; else echo "FAIL  $1"; fail=1; fi; }
+          show() { echo "---- $1"; tail -25 "$1" || true; }
+
+          # the compiler still compiles by its flags, and refuses a command
+          scalyc/build/scalyc.exe -o $W/hello_c.exe tests/aot/hello.scaly > $W/c.log 2>&1 \
+            && [ "$($W/hello_c.exe | tr -d '\r')" = "Hello, World!" ]
+          rc=$?; verdict "scalyc -o (the flags)" $rc; [ $rc = 0 ] || show $W/c.log
+          scalyc/build/scalyc.exe build tests/tool/hello.scaly -o $W/no.exe > $W/no.log 2>&1
+          [ $? != 0 ]; verdict "scalyc refuses a command" $?
+
+          # 2. plain
+          $S build tests/tool/hello.scaly -o $W/hello.exe > $W/plain.log 2>&1 \
+            && [ "$($W/hello.exe one two | tr -d '\r')" = "hello one two" ]
+          rc=$?; verdict "scaly build" $rc; [ $rc = 0 ] || show $W/plain.log
+
+          # 3. --release
+          $S build tests/tool/hello.scaly --release -o $W/hello_rel.exe > $W/rel.log 2>&1 \
+            && [ "$($W/hello_rel.exe one two | tr -d '\r')" = "hello one two" ]
+          rc=$?; verdict "scaly build --release" $rc; [ $rc = 0 ] || show $W/rel.log
+
+          # 4. PGO: instrumented build, a run that writes the profile, the build with it
+          $S build tests/tool/hello.scaly --pgo-train -o $W/hello_train.exe > $W/train.log 2>&1
+          rc=$?; verdict "scaly build --pgo-train" $rc; [ $rc = 0 ] || show $W/train.log
+          if [ $rc = 0 ]; then
+            LLVM_PROFILE_FILE=$W/hello.profraw $W/hello_train.exe one two > $W/trainrun.log 2>&1 && [ -s $W/hello.profraw ]
+            rc=$?; verdict "the instrumented run writes a profile" $rc; [ $rc = 0 ] || { show $W/trainrun.log; ls -l $W; }
+          fi
+          if [ $rc = 0 ]; then
+            $S build tests/tool/hello.scaly --pgo $W/hello.profraw -o $W/hello_pgo.exe > $W/pgo.log 2>&1 \
+              && [ "$($W/hello_pgo.exe one two | tr -d '\r')" = "hello one two" ]
+            rc=$?; verdict "scaly build --pgo" $rc; [ $rc = 0 ] || show $W/pgo.log
+          fi
+
+          # 5. the suite, for what else it finds (it SKIPs pgo on Windows by name)
+          tests/tool/run.sh scalyc/build/scalyc > $W/suite.log 2>&1
+          rc=$?; verdict "tests/tool/run.sh" $rc; tail -30 $W/suite.log
+
+          exit $fail
