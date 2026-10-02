@@ -8,4 +8,6 @@
 # seed refresh used to cost the NEXT bootstrap a second build of the same
 # compiler (~40 s).
 cd "$(dirname "$0")/.."
-cat seed/main.ll seed/scalyc.ll seed/scaly.ll tools/build-from-seed.sh 2>/dev/null | shasum -a 256 | cut -c1-64
+# shasum is Perl's; a fresh Ubuntu has only coreutils' sha256sum (same digest).
+if command -v shasum >/dev/null 2>&1; then SHA256="shasum -a 256"; else SHA256="sha256sum"; fi
+cat seed/main.ll seed/scalyc.ll seed/scaly.ll tools/build-from-seed.sh 2>/dev/null | $SHA256 | cut -c1-64

@@ -50,10 +50,20 @@ if [ ! -f "$SEED/scalyc.ll" ]; then
     exit 1
 fi
 
+# shasum is a Perl script: a fresh Ubuntu (no perl's Digest::SHA) has only
+# coreutils' sha256sum, and the missing program read as "checksum mismatch"
+# (found 2026-10-02 in an ubuntu:26.04 container). Either checks the same file.
 if [ -f "$SEED/SHA256SUMS" ]; then
-    ( cd "$SEED" && shasum -a 256 -c SHA256SUMS >/dev/null ) \
-        && echo "seed checksums OK" \
-        || { echo "build-from-seed: FAIL — seed checksum mismatch"; exit 1; }
+    if command -v shasum >/dev/null 2>&1; then SHA256="shasum -a 256"
+    elif command -v sha256sum >/dev/null 2>&1; then SHA256="sha256sum"
+    else SHA256=""; fi
+    if [ -z "$SHA256" ]; then
+        echo "build-from-seed: seed checksums NOT checked (neither shasum nor sha256sum found)"
+    else
+        ( cd "$SEED" && $SHA256 -c SHA256SUMS >/dev/null ) \
+            && echo "seed checksums OK" \
+            || { echo "build-from-seed: FAIL — seed checksum mismatch"; exit 1; }
+    fi
 fi
 
 # ★The Windows box (SCALY_COFF=1 from tools/llvm-env.sh). Everything below
