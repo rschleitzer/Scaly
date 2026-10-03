@@ -21,7 +21,21 @@
 # windows-msvc` release: $SCALY_STATIC_LLVM_DIR, default
 # %LOCALAPPDATA%\Programs\llvm-21.1.8-static -- tests/win32/static-llvm.sh
 # fetches them there (WINDOWS-BOX.md §10 has what the link owes them).
-# No profile build yet: the programs are the seed recipe's.
+#
+# Two steps, as tools/make-bindist.sh:
+#   1. tools/build-from-seed.sh with $SCALY_STATIC_LLVM_DIR set: all three
+#      programs and the runtime archive.
+#   2. With a profile ($SCALY_PGO_PROFILE, or dist/scalyc.profdata when it
+#      exists -- tools/make-profile.sh makes it, here too), scalyc and scaly
+#      are built AGAIN from the compiler's sources by the tool of step 1:
+#      `scaly build --pgo <profile> --export`. The tool makes the ONE
+#      optimised object; the LINK is tools/win-link.sh's static branch, not
+#      the tool's own line -- LLVM's libraries, the JIT host's C runtime, the
+#      64 MB stack and the runtime's EXPORTS (what the in-process JIT finds
+#      the runtime by; the tool's own link exports nothing on Windows,
+#      WINDOWS-BOX.md §9). A driver handed over as $SCALY_CC does that.
+#      scalyls stays step 1's. Without a profile the programs of step 1 are
+#      packed, and the script says so.
 #
 # Usage: tools/make-bindist-windows.sh [version] [outdir]   (default 0.1.0 dist)
 set -e
@@ -39,6 +53,9 @@ case "$SCALY_WIN_TRIPLE" in
   *)        ARCH=x86_64 ;;
 esac
 ZIP="$OUT/scaly-$VERSION-windows-$ARCH.zip"
+PROFILE="${SCALY_PGO_PROFILE:-}"
+if [ -z "$PROFILE" ] && [ -f dist/scalyc.profdata ]; then PROFILE=dist/scalyc.profdata; fi
+if [ -n "$PROFILE" ] && [ ! -f "$PROFILE" ]; then echo "make-bindist-windows: FAIL — no profile $PROFILE"; exit 1; fi
 LIBS="${SCALY_STATIC_LLVM_DIR:-$(cygpath -u "${LOCALAPPDATA:-$HOME/AppData/Local}")/Programs/llvm-21.1.8-static}"
 [ -f "$LIBS/lib/LLVMCore.lib" ] || { echo "make-bindist-windows: FAIL — no LLVM static libraries in $LIBS (tests/win32/static-llvm.sh fetches them)"; exit 1; }
 
@@ -55,7 +72,54 @@ done
 rm -f "$STAGE"/libexec/*.def "$STAGE/build.log"
 cp "$(cygpath -u "${TMP:-${TEMP:-/tmp}}")/libscaly.lib" "$STAGE/lib/libscaly.lib"
 
-# 2. the stdlib's native files, ready-made
+# 2. the compiler and the tool again, from the sources, with the profile
+if [ -n "$PROFILE" ]; then
+  PGO="$STAGE/pgo"; mkdir -p "$PGO"
+  # The tool calls $SCALY_CC through cmd.exe: a .cmd that hands the line to a
+  # bash script. `-c` is a package's native file (clang's); anything else is
+  # the link, whose inputs go to win-link.sh and whose flags are dropped --
+  # win-link.sh writes that line.
+  cat > "$PGO/cc.sh" <<EOF
+#!/bin/bash
+for a in "\$@"; do [ "\$a" = "-c" ] && exec clang "\$@"; done
+out=""; inputs=(); exports=()
+while [ \$# -gt 0 ]; do
+  case "\$1" in
+    -o) shift; out="\$(cygpath -u "\$1")" ;;
+    -*) ;;
+    *) f="\$(cygpath -u "\$1")"; inputs+=("\$f"); exports+=(--export "\$f") ;;
+  esac
+  shift
+done
+cd "$PWD" && SCALY_STATIC_LLVM_DIR="$LIBS" exec tools/win-link.sh --llvm "\${exports[@]}" "\$out" "\${inputs[@]}"
+EOF
+  printf '@"%s" "%s" %%*\r\n' "$(cygpath -w "$(command -v bash)")" "$(cygpath -w "$PGO/cc.sh")" > "$PGO/cc.cmd"
+  for pair in main:scalyc scaly_main:scaly; do
+    root="${pair%%:*}"; prog="${pair##*:}"
+    SCALY_CC="$(cygpath -w "$PGO/cc.cmd")" SCALY_CACHE="$PGO/cache" SCALY_HOME= \
+      "$STAGE/libexec/scaly.exe" build "packages/scalyc/0.1.0/$root.scaly" --pgo "$PROFILE" --export \
+      -o "$PGO/$prog.exe" > "$PGO/$prog.log" 2>&1 \
+      || { tail -20 "$PGO/$prog.log"; echo "make-bindist-windows: FAIL — the profile build of $prog"; exit 1; }
+    stale=$(grep -c 'profile data may be out of date\|function control flow change detected' "$PGO/$prog.log" || true)
+    [ "$stale" = 0 ] || echo "make-bindist-windows: NOTE — $prog: $stale warnings of a profile that does not fit (tools/make-profile.sh)"
+  done
+  # they replace step 1's only when they can do what step 1's can: the same
+  # emission, and a program run in process (the reason for the exports)
+  "$STAGE/libexec/scalyc.exe" -S --no-prelude --no-tests -o "$PGO/a.ll" packages/scaly/0.1.0/scaly.scaly
+  "$PGO/scalyc.exe" -S --no-prelude --no-tests -o "$PGO/b.ll" packages/scaly/0.1.0/scaly.scaly
+  cmp -s "$PGO/a.ll" "$PGO/b.ll" || { echo "make-bindist-windows: FAIL — the profiled compiler emits differently"; exit 1; }
+  out=$(SCALY_CACHE="$PGO/cache" SCALY_HOME= "$PGO/scaly.exe" run tests/tool/hello.scaly one two 2>/dev/null || true)
+  [ "$out" = "hello one two" ] || { echo "make-bindist-windows: FAIL — the profiled tool cannot run a program in process: '$out'"; exit 1; }
+  mv "$PGO/scalyc.exe" "$STAGE/libexec/scalyc.exe"
+  mv "$PGO/scaly.exe" "$STAGE/libexec/scaly.exe"
+  rm -rf "$PGO"
+  BUILT="with the profile $PROFILE"
+else
+  echo "make-bindist-windows: NOTE — no profile (\$SCALY_PGO_PROFILE, dist/scalyc.profdata): the programs are the seed recipe's"
+  BUILT="without a profile"
+fi
+
+# 3. the stdlib's native files, ready-made
 mkdir -p "$STAGE/home/packages"
 cp -R packages/scaly "$STAGE/home/packages/"
 tools/native-objects.sh "$STAGE/libexec/scalyc.exe" "$STAGE/home" \
@@ -77,4 +141,4 @@ rm -f "$ZIP"
 ZIP_W="$(cygpath -w "$(cd "$OUT" && pwd)/$(basename "$ZIP")")"
 ( cd "$STAGE" && "$(cygpath -u "${SYSTEMROOT:-C:\\Windows}")/System32/tar.exe" -a -c -f "$ZIP_W" libexec lib packages ) \
   || { echo "make-bindist-windows: FAIL — the zip"; exit 1; }
-echo "make-bindist-windows: OK -> $ZIP ($(du -h "$ZIP" | cut -f1)), without a profile"
+echo "make-bindist-windows: OK -> $ZIP ($(du -h "$ZIP" | cut -f1)), $BUILT"
