@@ -3,6 +3,7 @@
 # `scaly build` and `scaly run` with no script, archive or -L behind them.
 #   build      tests/tool/hello.scaly built against the package objects of a
 #              fresh build cache, run with arguments
+#   spaced     the same build with a space in the output path
 #   cached     a second build compiles nothing: no cache file newer than the
 #              first build
 #   run        the same program through `scaly run`, arguments handed on;
@@ -59,6 +60,30 @@ if "$SCALY" build tests/tool/hello.scaly -o "$TMP/hello$SCALY_EXE" > "$TMP/build
   [ "$out" = "hello one two" ] && ok || bad "build: got '$out'"
 else
   bad "build: rc=$? $(tail -3 "$TMP/build.log" | tr '\n' ' ')"
+fi
+
+# spaced: an output path with a space reaches the linker as ONE argument
+mkdir -p "$TMP/out dir"
+if "$SCALY" build tests/tool/hello.scaly -o "$TMP/out dir/hello$SCALY_EXE" > "$TMP/spaced.log" 2>&1; then
+  out=$("$TMP/out dir/hello$SCALY_EXE" one two)
+  [ "$out" = "hello one two" ] && ok || bad "spaced: got '$out'"
+else
+  bad "spaced: rc=$? $(tail -3 "$TMP/spaced.log" | tr '\n' ' ')"
+fi
+
+# spaced-scratch (Windows): the compiler's scratch directory comes from TMP
+# there, and its object and the runtime archive are named on the link line
+if [ "$SCALY_COFF" = 1 ]; then
+  mkdir -p "$TMP/scratch dir"
+  cp /tmp/libscaly.lib "$TMP/scratch dir/"
+  if TMP="$TMP/scratch dir" TEMP="$TMP/scratch dir" "$BIN" -o "$TMP/out dir/hello_s$SCALY_EXE" tests/tool/hello.scaly > "$TMP/scratch.log" 2>&1; then
+    out=$("$TMP/out dir/hello_s$SCALY_EXE" one two)
+    [ "$out" = "hello one two" ] && ok || bad "spaced-scratch: got '$out'"
+  else
+    bad "spaced-scratch: rc=$? $(tail -3 "$TMP/scratch.log" | tr '\n' ' ')"
+  fi
+else
+  echo "SKIP spaced-scratch (the scratch directory is /tmp off Windows)"
 fi
 
 # cached
