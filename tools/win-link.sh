@@ -98,33 +98,6 @@ if [ "$LLVM" = 1 ] && [ -n "${SCALY_STATIC_LLVM_DIR:-}" ]; then
   sdir="$(cygpath -u "$SCALY_STATIC_LLVM_DIR")/lib"
   [ -f "$sdir/LLVMCore.lib" ] || { echo "win-link: no LLVMCore.lib in $sdir (\$SCALY_STATIC_LLVM_DIR)" >&2; exit 1; }
   args+=(-lucrt)
-  # ★SCALY_STATIC_LLVM_HEAP=rpmalloc (default: unset, the UCRT heap alone) puts
-  # LLVM's C++ allocations on rpmalloc all the same. It works -- both
-  # architectures, the suites, the JIT -- and bought 1-2 % of a large compile,
-  # inside the noise (WINDOWS-BOX.md §10), so it is not the default; kept as
-  # the switch that answers the question again. The rpmalloc member is taken OUT
-  # of LLVMSupport.lib, its `malloc`, `free` & co. renamed away so that it
-  # defines only the rp* names, and tools/win/static-llvm-new.cpp routes the
-  # C++ allocation operators to it. malloc/free stay ucrtbase's for everyone
-  # (see above); new/delete are LLVM's alone, a second heap that never meets
-  # the first. Both objects stand before the libraries: the operators must be
-  # defined before libcmt is asked, and rpmalloc's initializer runs early.
-  if [ "${SCALY_STATIC_LLVM_HEAP:-ucrt}" = rpmalloc ]; then
-    hw=$(mktemp -d)
-    trap 'rm -rf "$hw"' EXIT
-    member=$(llvm-ar t "$sdir/LLVMSupport.lib" | tr -d '\r' | grep 'rpmalloc\.c\.obj$' | head -1)
-    [ -n "$member" ] || { echo "win-link: no rpmalloc.c.obj in $sdir/LLVMSupport.lib (unset SCALY_STATIC_LLVM_HEAP links without it)" >&2; exit 1; }
-    llvm-ar p "$sdir/LLVMSupport.lib" "$member" > "$hw/rpmalloc_in.obj"
-    redef=()
-    for sym in malloc free calloc realloc _msize aligned_alloc cfree malloc_size malloc_usable_size \
-               memalign posix_memalign pvalloc reallocarray reallocf valloc \
-               _malloc_base _free_base _calloc_base _realloc_base _msize_base; do
-      redef+=(--redefine-sym "$sym=scaly_rp_unused_$sym")
-    done
-    llvm-objcopy "${redef[@]}" "$hw/rpmalloc_in.obj" "$hw/rpmalloc.obj"
-    clang --target=$T -O2 -fno-exceptions -c tools/win/static-llvm-new.cpp -o "$hw/new.obj"
-    args+=("$hw/rpmalloc.obj" "$hw/new.obj")
-  fi
   for lib in "$sdir"/LLVM*.lib; do
     [ "$(basename "$lib")" = "LLVM-C.lib" ] && continue
     args+=("$lib")
