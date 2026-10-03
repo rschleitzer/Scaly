@@ -427,6 +427,17 @@ define tool
     {
         var natives Array[String]()
         tool.select_native(&files, triple, &natives)
+        ; ★READY-MADE objects (ROADMAP-public.md, Windows the Rust way): what we
+        ; hand out carries, per system and architecture, the object of every
+        ; native file under `<package>/_native/<os>-<arch>/`, named as the cache
+        ; names it without the package's key. Where one is there it is linked
+        ; as it is and no C compiler is asked -- on Windows there may be none,
+        ; and the assembly is GNU syntax, which no MSVC tool reads. A name
+        ; beginning with `_` is no part of a package (above), so the directory
+        ; moves no cache key; a source tree has none and compiles as before.
+        ; Not for a file compiled against a C library's headers (`includes`):
+        ; that object belongs to the library found on THIS machine.
+        let ready_dir "`dir`/_native/`tool.triple_os(triple)`-`tool.triple_arch(triple)`"
         var k: size_t 0
         while k < natives.length
         {
@@ -449,6 +460,13 @@ define tool
             if includes.get_length() > 0
                 set tag: "-i`tool.hex16(tool.fnv_string(0xcbf29ce484222325, includes))`"
             let nobj "`base`-`flat.to_string()``tag`.o"
+            let ready "`ready_dir`/`flat.to_string()`.o"
+            if includes.get_length() = 0 and File.exists(ready)
+            {
+                let ready_page Page.get(objects)
+                objects.add(String^ready_page(ready))
+                continue
+            }
             if File.exists(nobj) = false
             {
                 let ntmp "`nobj`.`getpid() as int`.tmp"

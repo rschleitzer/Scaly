@@ -39,6 +39,12 @@
 #   test       `scaly test`: tests/tool/sums.scaly names its failing test and
 #              answers rc 1, a filter selects, the file's own statements do
 #              not run; opensp's forty test functions pass
+#   bare       Windows the Rust way (ROADMAP-public.md): a handed-out tree --
+#              the stdlib with its READY-MADE native objects
+#              (tools/native-objects.sh) -- builds a program, plain and
+#              --release, with NO clang on the PATH and neither LIB nor
+#              INCLUDE set: the Build Tools' link.exe is found and called by
+#              the compiler itself. SKIPs by name off Windows
 # The cache lives in a scratch directory (SCALY_CACHE); nothing is written
 # into the tree.
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -268,6 +274,34 @@ if scaly_jit_available 2>/dev/null; then
     out=$(python3 tests/tool/repl_pty.py "$SCALY" "$TMP" 2>&1); rc=$?
     [ "$rc" = 0 ] && ok || bad "repl-pty: $(echo "$out" | tail -2 | tr '\n' '|')"
   fi
+fi
+
+# bare: no clang, no LIB -- only the Build Tools, found by the compiler
+if [ "$SCALY_COFF" = 1 ]; then
+  home="$TMP/home"
+  mkdir -p "$home/packages"
+  cp -r packages/scaly "$home/packages/"
+  if tools/native-objects.sh "$BIN" "$home" > "$TMP/native.log" 2>&1; then
+    # Git Bash's own tools and Windows; the binary by its full path
+    bare_path="/usr/bin:/bin:$(cygpath -u "${SYSTEMROOT:-C:\\Windows}")/System32"
+    for flavour in "" "--release"; do
+      exe="$TMP/bare${flavour#--}$SCALY_EXE"
+      if ( unset LIB INCLUDE SCALY_CC CC; PATH="$bare_path" SCALY_HOME="$home" SCALY_CACHE="$TMP/bare-cache" \
+             "$SCALY" build tests/tool/hello.scaly $flavour -o "$exe" ) > "$TMP/bare.log" 2>&1; then
+        out=$("$exe" one two)
+        [ "$out" = "hello one two" ] && ok || bad "bare $flavour: got '$out'"
+      else
+        bad "bare $flavour: rc=$? $(tail -3 "$TMP/bare.log" | tr '\n' ' ')"
+      fi
+    done
+    # ... and no native file was compiled: the cache holds the package alone
+    n=$(ls "$TMP/bare-cache" 2>/dev/null | grep -c '\.[cS]\.o$')
+    [ "$n" = 0 ] && ok || bad "bare: $n native objects were compiled although ready-made ones were there"
+  else
+    bad "bare: native-objects: $(tail -2 "$TMP/native.log" | tr '\n' ' ')"
+  fi
+else
+  echo "SKIP bare (the Build Tools' linker is a Windows matter)"
 fi
 
 echo "tool: $pass PASS, $fail FAIL"
