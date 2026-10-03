@@ -134,6 +134,41 @@ if [ "$(uname -s)" = "Linux" ]; then
     LINKARGS+=("-rdynamic")
 fi
 
+# SCALY_STATIC_LLVM=1 links LLVM INTO the three programs instead of against
+# libLLVM's shared library — the programs we DISTRIBUTE (tools/make-bindist.sh):
+# they start on a machine that has no LLVM. The objects are the same; only the
+# link differs: llvm-config names the static libraries (Polly out — the
+# compiler uses none of it and Ubuntu ships it in a package of its own), a C++
+# driver brings the C++ runtime LLVM is written against, and what LLVM itself
+# wants from the system (zlib, zstd, libxml2) goes in statically where the
+# system does not carry it. Measured 2026-10-03: scalyc and scaly 69 MB each
+# on macOS (81 MB on Linux), emission byte-identical, and nothing left to load
+# but the system's own libraries. ★The minimum system is the one the LLVM
+# libraries were built for: Homebrew's say macOS 26, Ubuntu 26.04's glibc 2.43.
+LINKER=${CLANG:-clang}
+LLVM_LINK_ARGS=(-L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME")
+if [ "${SCALY_STATIC_LLVM:-0}" = "1" ]; then
+    LLVM_CONFIG=""
+    for c in "$LLVM_PREFIX/bin/llvm-config" "llvm-config-$LLVM_MAJOR"; do
+        command -v "$c" >/dev/null 2>&1 && { LLVM_CONFIG="$c"; break; }
+    done
+    [ -n "$LLVM_CONFIG" ] || { echo "build-from-seed: FAIL — SCALY_STATIC_LLVM needs llvm-config"; exit 1; }
+    static_libs=$("$LLVM_CONFIG" --link-static --libs all | sed 's/-lPolly[A-Za-z]*//g')
+    LINKER=${CLANGXX:-clang++}
+    if [ "$(uname -s)" = "Darwin" ]; then
+        # zlib and libxml2 are the system's (/usr/lib); zstd is Homebrew's and
+        # would be a library to bring along, so its archive is named outright.
+        zstd_a="$(brew --prefix zstd)/lib/libzstd.a"
+        [ -f "$zstd_a" ] || { echo "build-from-seed: FAIL — $zstd_a not found (brew install zstd)"; exit 1; }
+        # shellcheck disable=SC2206
+        LLVM_LINK_ARGS=(-L"$LLVM_LIBDIR" $static_libs "$zstd_a" -lz -lxml2 -Wl,-dead_strip_dylibs)
+    else
+        # shellcheck disable=SC2206
+        LLVM_LINK_ARGS=(-static-libstdc++ -static-libgcc -L"$LLVM_LIBDIR" $static_libs
+                        -Wl,-Bstatic -lz -lzstd -lxml2 -Wl,-Bdynamic -Wl,--as-needed)
+    fi
+fi
+
 # The fiber context-switch primitives (vendored assembly, selected by host
 # arch) and the evented-I/O backend shim (kqueue/epoll, selected by cpp) —
 # scaly's Fiber/Io procedures reference them, so every link that includes
@@ -183,8 +218,8 @@ build_scalyls() {
         fi
         SCALYLS_OBJS=("$WORK/scalyls_main.o" "$WORK/scalyls.o" "$WORK/json.o" "$WORK/scalyc.o" "$WORK/scaly.o")
     fi
-    ${CLANG:-clang} "${LINKARGS[@]}" "${SCALYLS_OBJS[@]}" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" "$WORK/panic.o" \
-        -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -lm -o "$LSOUT"
+    "$LINKER" "${LINKARGS[@]}" "${SCALYLS_OBJS[@]}" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" "$WORK/panic.o" \
+        "${LLVM_LINK_ARGS[@]}" -lm -o "$LSOUT"
     echo "build-from-seed: OK — $LSOUT (language server)"
 }
 # scaly, the tool: the compiler's recipe with its own root. It runs programs
@@ -210,8 +245,8 @@ build_tool() {
         "$LLC" -relocation-model=pic -filetype=obj "$SEED/scaly_main.ll" -o "$WORK/scaly_main.o"
         TOOL_OBJS=("$WORK/scaly_main.o" "$WORK/scalyc.o" "$WORK/scaly.o")
     fi
-    ${CLANG:-clang} "${LINKARGS[@]}" "${TOOL_OBJS[@]}" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" "$WORK/panic.o" \
-        -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -lm -o "$TOOLOUT"
+    "$LINKER" "${LINKARGS[@]}" "${TOOL_OBJS[@]}" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" "$WORK/panic.o" \
+        "${LLVM_LINK_ARGS[@]}" -lm -o "$TOOLOUT"
     echo "build-from-seed: OK — $TOOLOUT (the tool)"
 }
 WANT_TOOL=0
@@ -290,8 +325,8 @@ fi
 # still undefined, so the library must FOLLOW its references. Harmless on macOS
 # (/usr/lib/libm.dylib re-exports libSystem).
 mkdir -p "$(dirname "$OUT")"
-${CLANG:-clang} "${LINKARGS[@]}" "${SCALYC_OBJS[@]}" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" "$WORK/panic.o" \
-    -L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME" -lm -o "$OUT"
+"$LINKER" "${LINKARGS[@]}" "${SCALYC_OBJS[@]}" "$WORK/fcontext.o" "$WORK/eio.o" "$WORK/ctime.o" "$WORK/panic.o" \
+    "${LLVM_LINK_ARGS[@]}" -lm -o "$OUT"
 
 echo "build-from-seed: OK — $OUT (from seed/, no C++)"
 

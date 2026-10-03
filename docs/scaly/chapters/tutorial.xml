@@ -16,21 +16,27 @@
         installed: the tool, the compiler, the language server, and (in the
         next section) editor support in Visual Studio Code with syntax
         highlighting and a source-level debugger.</para>
-      <para>The quickest way to get the toolchain is the installer hosted on
-        scaly.io. Scaly ships as its own LLVM IR (a <emphasis>seed</emphasis>)
-        and is turned into native programs on your own machine, so first
-        install LLVM 21 and a C compiler:</para>
-      <programlisting>; macOS (install Homebrew first from https://brew.sh if you don't have it)
-brew install llvm@21
-
-; Ubuntu 26.04
-sudo apt install llvm-21 llvm-21-dev lld-21 clang</programlisting>
-      <para>Then run the installer. It downloads Scaly, builds it for your
-        machine — about half a minute — and puts three commands on your
-        <envar>PATH</envar> under <filename>~/.scaly</filename>; no
-        <command>sudo</command> is required:</para>
+      <para>Scaly is installed by one command. It needs no
+        <command>sudo</command> and puts everything under
+        <filename>~/.scaly</filename>:</para>
       <programlisting>curl -fsSL https://scaly.io/install.sh | sh</programlisting>
-      <para>The three commands are:</para>
+      <para>For macOS 26 on Apple silicon and for Ubuntu 26.04 and newer the
+        installer downloads the programs ready to run, which takes a few
+        seconds. The one thing Scaly asks of your machine is a C compiler: it
+        links the programs you build.</para>
+      <programlisting>; macOS
+xcode-select --install
+
+; Ubuntu
+sudo apt install clang</programlisting>
+      <para>On any other macOS or Linux the installer builds Scaly on your
+        machine instead. Scaly ships as its own LLVM IR (a
+        <emphasis>seed</emphasis>), so that route needs LLVM 21 —
+        <userinput>brew install llvm@21</userinput>, or
+        <userinput>sudo apt install llvm-21 llvm-21-dev lld-21 clang</userinput>
+        — and takes about half a minute; the installer says which of the two
+        it is doing.</para>
+      <para>Either way it puts three commands on your <envar>PATH</envar>:</para>
       <itemizedlist>
         <listitem>
           <para><command>scaly</command>, the tool you will use most:

@@ -1,10 +1,13 @@
 #!/bin/bash
 # Publish the public Scaly installer to scaly.io.
 #
-# Uploads two things:
+# Uploads:
 #   - install.sh           -> s3://scaly.io/install.sh       (the curl|sh bootstrap)
-#   - scaly-<ver>.tar.gz   -> s3://scaly.io/downloads/...     (seed + stdlib + LICENSE)
-# then invalidates the CloudFront cache for both. The tarball lives under the
+#   - scaly-<ver>.tar.gz   -> s3://scaly.io/downloads/...     (seed + packages + LICENSE)
+#   - scaly-<ver>-<system>-<machine>.tar.gz, every one found in dist/ — the
+#     programs for one system (tools/make-bindist.sh, run ON that system; this
+#     script builds none of them)
+# then invalidates the CloudFront cache for them. The tarball lives under the
 # /downloads/ prefix, which docs/deploy.sh excludes from its --delete sync, so a
 # routine docs deploy never removes it.
 #
@@ -29,6 +32,17 @@ aws s3 cp docs/website/install.sh "s3://scaly.io/install.sh" \
 aws s3 cp "$TARBALL" "s3://scaly.io/downloads/scaly-$VERSION.tar.gz" \
     --content-type 'application/gzip'
 
+# The programs, per system: whatever tools/make-bindist.sh left in dist/. A
+# system without one is built from the seed by the installer.
+BIN_PATHS=()
+for b in dist/scaly-"$VERSION"-*-*.tar.gz; do
+  [ -f "$b" ] || continue
+  echo "publish-install: uploading $b"
+  aws s3 cp "$b" "s3://scaly.io/downloads/$(basename "$b")" --content-type 'application/gzip'
+  BIN_PATHS+=("/downloads/$(basename "$b")")
+done
+[ "${#BIN_PATHS[@]}" -gt 0 ] || echo "publish-install: NOTE — no programs in dist/ (tools/make-bindist.sh); every system will build from the seed"
+
 # Publish the VS Code extension under a STABLE name so the tutorial's install
 # command never goes stale. Picks the newest committed .vsix; rebuild it with
 # `cd editors/vscode && npm run package` before publishing a new version.
@@ -40,7 +54,7 @@ if [ -n "$VSIX" ]; then
 fi
 
 aws cloudfront create-invalidation --distribution-id "$DIST_ID" \
-    --paths "/install.sh" "/downloads/scaly-$VERSION.tar.gz" "/downloads/scaly-vscode.vsix"
+    --paths "/install.sh" "/downloads/scaly-$VERSION.tar.gz" "/downloads/scaly-vscode.vsix" "${BIN_PATHS[@]}"
 
 echo "publish-install: OK"
 echo "  users install with:  curl -fsSL https://scaly.io/install.sh | sh"

@@ -1,12 +1,17 @@
 #!/bin/bash
 # tests/install/run.sh — the public installer (ROADMAP-public.md, stage F):
-# a tarball made of this tree (tools/make-dist.sh), installed by
-# docs/website/install.sh into a scratch prefix, and what a newcomer does with
-# the result, from a directory OUTSIDE the tree with SCALY_HOME unset.
+# the two archives made of this tree — the packages and the seed
+# (tools/make-dist.sh), the programs for this system with LLVM linked in
+# (tools/make-bindist.sh) — installed by docs/website/install.sh into a scratch
+# prefix, and what a newcomer does with the result, from a directory OUTSIDE
+# the tree with SCALY_HOME unset.
 #   payload    the tarball carries the seed and the standard packages and none
 #              of the compiler's, the language server's or the ports' sources
-#   install    the installer ends with rc 0 (its own check built and ran a
-#              program), leaves bin/ and toolchain/ and no toolchain.new
+#   programs   the archive of programs is built, and they load nothing but
+#              the system's own libraries (make-bindist checks it)
+#   install    the installer takes the READY-MADE programs and ends with rc 0
+#              (its own check ran and built a program), leaves bin/ and
+#              toolchain/ and no toolchain.new
 #   scalyc     `scalyc -o` links a program against the installed runtime archive
 #   build      `scaly build`, the program run with arguments
 #   run        `scaly run`, arguments handed on (the in-process JIT finds the
@@ -18,11 +23,13 @@
 #   test       `scaly test` names a failing test and answers rc 1
 #   repl       `scaly` alone answers an expression
 #   scalyls    the language server answers `initialize`
-#   again      a second installation over the first one succeeds
-# The installer repeats the recipe of tools/build-from-seed.sh; this suite is
+#   seed       a second installation over the first, offered programs that do
+#              not start: the installer says so, builds from the SEED, and the
+#              result runs and links
+# The installer's seed route repeats the recipe of tools/build-from-seed.sh; this suite is
 # what notices when the two have drifted apart (the installer on scaly.io did
 # not link for weeks in 2026-09 and nothing was red).
-# Not in the bar: it tests the INSTALLER, and costs three whole-program
+# Not in the bar: it tests the INSTALLER, and costs six whole-program
 # optimisations beside the lanes. Run it before tools/publish-install.sh.
 # Nothing is written into the tree; the user's ~/.scaly is not touched.
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -40,9 +47,10 @@ pass=0; fail=0; failures=()
 ok() { pass=$((pass+1)); }
 bad() { fail=$((fail+1)); failures+=("$1"); }
 
+# install <base directory> <log>
 install() {
-  SCALY_PREFIX="$PREFIX" SCALY_INSTALL_BASE="file://$TMP/base" SCALY_NO_MODIFY_PATH=1 \
-    sh "$ROOT/docs/website/install.sh" > "$1" 2>&1
+  SCALY_PREFIX="$PREFIX" SCALY_INSTALL_BASE="file://$1" SCALY_NO_MODIFY_PATH=1 \
+    sh "$ROOT/docs/website/install.sh" > "$2" 2>&1
 }
 
 # payload
@@ -61,10 +69,18 @@ else
   bad "payload: make-dist failed: $(tail -2 "$TMP/dist.log" | tr '\n' ' ')"
 fi
 
+# programs
+if "$ROOT/tools/make-bindist.sh" 0.1.0 "$TMP/base/downloads" > "$TMP/bindist.log" 2>&1; then
+  ok
+else
+  bad "programs: make-bindist failed: $(tail -3 "$TMP/bindist.log" | tr '\n' ' ')"
+fi
+
 # install
-if install "$TMP/install.log"; then
-  [ -x "$B/scaly" ] && [ -x "$B/scalyc" ] && [ -x "$B/scalyls" ] && [ -d "$PREFIX/toolchain/packages/scaly" ] \
-    && [ ! -e "$PREFIX/toolchain.new" ] && ok || bad "install: rc 0 but the prefix is incomplete"
+if install "$TMP/base" "$TMP/install.log"; then
+  grep -q 'installed the programs for' "$TMP/install.log" \
+    && [ -x "$B/scaly" ] && [ -x "$B/scalyc" ] && [ -x "$B/scalyls" ] && [ -d "$PREFIX/toolchain/packages/scaly" ] \
+    && [ ! -e "$PREFIX/toolchain.new" ] && ok || bad "install: rc 0 but not the ready-made programs, or the prefix is incomplete"
 else
   bad "install: rc=$? $(tail -4 "$TMP/install.log" | tr '\n' ' ')"
   echo "install: $pass PASS, $fail FAIL"
@@ -141,12 +157,21 @@ case "$out" in
   *) bad "scalyls: no answer to initialize: '$out'" ;;
 esac
 
-# again
-if install "$TMP/again.log"; then
-  [ ! -e "$PREFIX/toolchain.new" ] && [ "$("$B/scaly" run hello.scaly 2>/dev/null)" = "Hello, World!" ] \
-    && ok || bad "again: the second installation does not run"
+# seed: the same packages, and "programs" that cannot start
+mkdir -p "$TMP/base2/downloads" "$TMP/broken/libexec" "$TMP/broken/lib"
+cp "$TMP/base/downloads/scaly-0.1.0.tar.gz" "$TMP/base2/downloads/"
+printf '#!/bin/sh\nexit 1\n' > "$TMP/broken/libexec/scalyc"
+chmod 755 "$TMP/broken/libexec/scalyc"
+system="$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)"
+tar -czf "$TMP/base2/downloads/scaly-0.1.0-$system.tar.gz" -C "$TMP/broken" libexec lib
+if install "$TMP/base2" "$TMP/seed.log"; then
+  grep -q 'do not start on this system' "$TMP/seed.log" && grep -q 'from the seed' "$TMP/seed.log" \
+    && [ ! -e "$PREFIX/toolchain.new" ] \
+    && [ "$("$B/scaly" run hello.scaly 2>/dev/null)" = "Hello, World!" ] \
+    && "$B/scalyc" -o h_s hello.scaly > seed_scalyc.log 2>&1 && [ "$(./h_s)" = "Hello, World!" ] \
+    && ok || bad "seed: the installation from the seed does not run: $(tail -3 "$TMP/seed.log" | tr '\n' ' ')"
 else
-  bad "again: rc=$? $(tail -4 "$TMP/again.log" | tr '\n' ' ')"
+  bad "seed: rc=$? $(tail -4 "$TMP/seed.log" | tr '\n' ' ')"
 fi
 
 echo "install: $pass PASS, $fail FAIL"

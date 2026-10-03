@@ -181,32 +181,35 @@ cmp r_scaly.ll scaly.ll && echo "fixed point OK"
 ## 5. Publish the scaly.io installer
 
 End users install with `curl -fsSL https://scaly.io/install.sh | sh`
-(`docs/website/install.sh`). It downloads a tarball from `scaly.io/downloads/`
-and makes, under `~/.scaly`:
+(`docs/website/install.sh`). **We hand out programs with LLVM linked in
+statically; the seed is the fallback.** Two kinds of archive lie under
+`scaly.io/downloads/`:
 
-- `toolchain/libexec/` — **three programs** built from the seed: `scalyc`,
-  `scaly` (the tool) and `scalyls`, each its roots linked into one module and
-  optimised whole (`llvm-link`, `opt -O2`, `llc`), with the runtime's four
-  native files (fcontext, eio, ctime, panic) on every link;
-- `toolchain/lib/libscaly.a` — the runtime archive `scalyc -o` links against;
-- `toolchain/packages/` — the stdlib and the standard packages as sources;
-- `bin/` — one small script per program that sets `SCALY_HOME` and starts it.
+- `scaly-<version>.tar.gz` (`tools/make-dist.sh`) — the same for every system:
+  `seed/` with its `SHA256SUMS`, the sources of the stdlib and of the standard
+  packages (scaly, http, https, tls, json, compress, pg, redis, h3), `LICENSE`.
+  No sources of the compiler, the language server or the ports.
+- `scaly-<version>-<system>-<machine>.tar.gz` (`tools/make-bindist.sh`, run ON
+  that system) — `scalyc`, `scaly`, `scalyls` and `libscaly.a`. The minimum
+  system is the one the LLVM libraries were built for: **macOS 26, Ubuntu
+  26.04** (build the Linux archive on 26.04, not on something newer).
 
-It builds into `toolchain.new` and swaps only after its own check (a program
-built with `scaly build`, and run with `scaly run`) passed, so a failed run
-leaves the installed toolchain alone and a second run is the upgrade.
+The installer unpacks the first, takes the second when there is one and its
+programs start, and otherwise builds the three programs from the seed (LLVM 21
+required then). It installs into `~/.scaly/toolchain.new` and swaps only after
+its own check (`scaly run`, and `scaly build` where a C compiler exists), so a
+failed run leaves the installed toolchain alone and a second run is the upgrade.
 
-**Before publishing, run the installer's gate:**
+**Before publishing:**
 
 ```sh
-tests/install/run.sh     # tarball of THIS tree -> scratch prefix -> 12 checks, ~50 s
+tests/install/run.sh          # both archives of THIS tree -> scratch prefix, both routes, 13 checks, ~50 s
+tools/make-bindist.sh <version>   # on EACH system we hand programs out for; leaves dist/scaly-<version>-<system>-<machine>.tar.gz
 ```
 
-The installer repeats the recipe of `tools/build-from-seed.sh` in a script
-that has to stand alone, and nothing else notices when the two drift: the
-installer that was on scaly.io until 2026-10-03 linked none of the native
-files and stopped at the first link. For Linux, the same from a clean
-container (`ubuntu:26.04` with `llvm-21 llvm-21-dev lld-21 clang` and `curl`).
+For Linux, in a clean container (`ubuntu:26.04` with `llvm-21 llvm-21-dev
+lld-21 clang zlib1g-dev libzstd-dev libxml2-dev`); collect the archives of the
+other systems into `dist/` before the next step.
 
 Then, after refreshing `seed/`:
 
@@ -214,24 +217,17 @@ Then, after refreshing `seed/`:
 tools/publish-install.sh <version>      # e.g. 0.1.0
 ```
 
-This runs `tools/make-dist.sh` (bundles `seed/` with its `SHA256SUMS`, the
-sources of the stdlib and of the standard packages — scaly, http, https, tls,
-json, compress, pg, redis, h3 — and `LICENSE` into
-`dist/scaly-<version>.tar.gz`) and `aws s3 cp`s both
-`docs/website/install.sh` and that tarball to `s3://scaly.io/`, then invalidates
-CloudFront. The tarball lives under the `/downloads/` prefix, which
-`docs/deploy.sh` **excludes** from its whole-bucket `--delete` sync, so a routine
-docs deploy never removes it.
-
-This is a *different* artifact from the GitHub-release `.ll` files of section 3:
-the installer tarball also carries the **package sources** and `LICENSE`. It
-contains no sources of the compiler, the language server or the ports — their
-code travels as the seed (`tests/install/run.sh` checks the payload). After
-publishing, confirm the endpoints serve `200`:
+This runs `tools/make-dist.sh` and `aws s3 cp`s `docs/website/install.sh`,
+that tarball and every program archive found in `dist/` to `s3://scaly.io/`,
+then invalidates CloudFront. The archives live under the `/downloads/` prefix,
+which `docs/deploy.sh` **excludes** from its whole-bucket `--delete` sync, so a
+routine docs deploy never removes them. After publishing, confirm the endpoints
+serve `200`:
 
 ```sh
 curl -fsSL -o /dev/null -w '%{http_code}\n' https://scaly.io/install.sh
 curl -fsSL -I https://scaly.io/downloads/scaly-<version>.tar.gz
+curl -fsSL -I https://scaly.io/downloads/scaly-<version>-darwin-arm64.tar.gz
 ```
 
 ---
@@ -248,8 +244,8 @@ curl -fsSL -I https://scaly.io/downloads/scaly-<version>.tar.gz
       (~15 GB peak; once per release is enough since the IR is host-independent).
 - [ ] Package the one `.ll` trio + `SHA256SUMS` as `scaly-seed-<version>.tar.gz`
       (section 3) and attach it to the GitHub release.
-- [ ] Run the installer's gate (`tests/install/run.sh`, and the clean Ubuntu
-      container of section 5).
+- [ ] Run the installer's gate (`tests/install/run.sh`) and build the program
+      archive on each system (`tools/make-bindist.sh`, section 5).
 - [ ] Publish the scaly.io installer (`tools/publish-install.sh <version>`, section
       5) so `curl … | sh` ships the new seed; confirm `https://scaly.io/install.sh`
       and `/downloads/scaly-<version>.tar.gz` serve `200`.
