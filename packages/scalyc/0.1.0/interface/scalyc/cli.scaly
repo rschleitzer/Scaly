@@ -159,6 +159,39 @@ define cli
     ; bootstrap / AOT linking is byte-for-byte unchanged.
     procedure link_compiler() @page true @direct true @ret_caller true @deep true returns String io linked
 
+    ; ★Windows, Rust's way (ROADMAP-public.md, 2026-10-03): a program is linked
+    ; by the Visual Studio Build Tools' own linker, found HERE -- no `clang`, no
+    ; LLVM install, no developer prompt. The five procedures below find the
+    ; toolset (a developer prompt's VCToolsInstallDir, else every install
+    ; vswhere lists) and the Windows SDK (WindowsSdkDir, else its default
+    ; directory), each the newest version that holds the library asked for.
+    ; ★Not looked at: the registry (an SDK installed elsewhere than under
+    ; Program Files (x86) is found only through WindowsSdkDir).
+
+    ; a C compiler is NAMED ($SCALY_CC / $CC): it links, as everywhere else
+    procedure compiler_named() @ret_nonlocal true @deep true returns bool io linked
+
+    ; `a` is a newer dotted version than `b`, number by number: 14.51 after 14.9
+    function version_newer(a: String, b: String) @ret_nonlocal true @deep true returns bool linked
+
+    ; the newest version-named directory under `dir` that holds `probe`, ""
+    ; when there is none
+    procedure newest_version(dir: String, probe: String) @page true @direct true @ret_caller true @deep true returns String io linked
+
+    ; a path without its last separators (a quoted `...\` on a command line
+    ; escapes the quote) and with backslashes: cmd.exe starts a program by it
+    procedure windows_path(path: String) @page true @direct true @ret_caller true @deep true returns String linked
+
+    ; The head of a link.exe command for `triple`: the linker, the three
+    ; library directories (the toolset's, the SDK's um and ucrt) and the C
+    ; runtime the clang driver names for this target. "" when the Build Tools
+    ; or the SDK are not found; the caller then links as before.
+    procedure msvc_link_head(triple: String) @page true @direct true @ret_caller true @deep true returns String io linked
+
+    ; the tool's library flags (` "-L<dir>" -l<name>`, the clang spelling) as
+    ; link.exe reads them: ` "-libpath:<dir>" <name>.lib`
+    procedure msvc_library_flags(flags: String) @page true @direct true @ret_caller true @deep true returns String linked
+
     ; A program of the LLVM this compiler is linked against: `clang-21` or
     ; `llvm-profdata-21` on the PATH (a Linux distribution), else Homebrew's
     ; keg, else the bare name. `honour_cc`: $SCALY_CC / $CC first, as the link

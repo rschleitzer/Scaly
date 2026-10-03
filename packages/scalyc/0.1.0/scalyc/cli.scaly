@@ -553,6 +553,211 @@ define cli
         String(name)
     }
 
+    ; ★Windows, Rust's way (ROADMAP-public.md, 2026-10-03): a program is linked
+    ; by the Visual Studio Build Tools' own linker, found HERE -- no `clang`, no
+    ; LLVM install, no developer prompt. The five procedures below find the
+    ; toolset (a developer prompt's VCToolsInstallDir, else every install
+    ; vswhere lists) and the Windows SDK (WindowsSdkDir, else its default
+    ; directory), each the newest version that holds the library asked for.
+    ; ★Not looked at: the registry (an SDK installed elsewhere than under
+    ; Program Files (x86) is found only through WindowsSdkDir).
+
+    ; a C compiler is NAMED ($SCALY_CC / $CC): it links, as everywhere else
+    procedure compiler_named() returns bool
+    {
+        var name getenv "SCALY_CC"
+        if name = null
+            set name: getenv("CC")
+        if name = null
+            return false
+        let s String(name)
+        s.get_length() > 0
+    }
+
+    ; `a` is a newer dotted version than `b`, number by number: 14.51 after 14.9
+    function version_newer(a: String, b: String) returns bool
+    {
+        let la a.get_length()
+        let lb b.get_length()
+        var i: size_t 0
+        var j: size_t 0
+        while i < la or j < lb
+        {
+            var x: size_t 0
+            while i < la and a.get(i) <> 46
+            {
+                set x: x * 10 + (a.get(i) as size_t) - 48
+                set i: i + 1
+            }
+            var y: size_t 0
+            while j < lb and b.get(j) <> 46
+            {
+                set y: y * 10 + (b.get(j) as size_t) - 48
+                set j: j + 1
+            }
+            if x <> y
+                return x > y
+            set i: i + 1
+            set j: j + 1
+        }
+        false
+    }
+
+    ; the newest version-named directory under `dir` that holds `probe`, ""
+    ; when there is none
+    procedure newest_version(dir: String, probe: String) returns String
+    {
+        var best String()
+        var d String(dir)
+        let entries Directory.list(d)
+        var i: size_t 0
+        while i < entries.length
+        {
+            let e entries.at i
+            set i: i + 1
+            let c e.name.get(0)
+            if e.is_directory = false or c < 48 or c > 57
+                continue
+            let candidate "`dir`/`e.name`/`probe`"
+            if File.exists(candidate) and (best.get_length() = 0 or version_newer(e.name, best))
+                set best: String(e.name)
+        }
+        String(best)
+    }
+
+    ; a path without its last separators (a quoted `...\` on a command line
+    ; escapes the quote) and with backslashes: cmd.exe starts a program by it
+    procedure windows_path(path: String) returns String
+    {
+        var n path.get_length()
+        while n > 0 and (path.get(n - 1) = 92 or path.get(n - 1) = 47)
+            set n: n - 1
+        var sb StringBuilder()
+        var i: size_t 0
+        while i < n
+        {
+            let c path.get(i)
+            if c = 47
+                sb.append("\\" as char)
+            else
+                sb.append(c as char)
+            set i: i + 1
+        }
+        sb.to_string()
+    }
+
+    ; The head of a link.exe command for `triple`: the linker, the three
+    ; library directories (the toolset's, the SDK's um and ucrt) and the C
+    ; runtime the clang driver names for this target. "" when the Build Tools
+    ; or the SDK are not found; the caller then links as before.
+    procedure msvc_link_head(triple: String) returns String
+    {
+        let pf getenv "ProgramFiles(x86)"
+        if pf = null
+            return String()
+        let program_files String(pf)
+        var arch "x64"
+        if triple.contains(String("aarch64")) or triple.contains(String("arm64"))
+            set arch: "arm64"
+        if triple.contains(String("i686")) or triple.contains(String("i386"))
+            set arch: "x86"
+
+        var tools String()
+        let named getenv "VCToolsInstallDir"
+        if named <> null
+            set tools: windows_path(String(named))
+        if tools.get_length() = 0
+        {
+            let vswhere "`program_files`\\Microsoft Visual Studio\\Installer\\vswhere.exe"
+            if File.exists(vswhere) = false
+                return String()
+            let listing "`windows_scratch_dir()`/scalyc_vs_`getpid() as int`.txt"
+            ; the whole line in a pair of quotes of its own: cmd.exe strips
+            ; the first and the last of a line that begins with one
+            let ask "\"\"`vswhere`\" -utf8 -products * -property installationPath > \"`listing`\"\""
+            let ask_rc system(ask.to_c_string())
+            let found File.read_to_string(listing)
+            let gone unlink(listing.to_c_string())
+            let total found.get_length()
+            let cmt "lib/`arch`/libcmt.lib"
+            var start: size_t 0
+            while start < total and tools.get_length() = 0
+            {
+                var stop start
+                while stop < total and found.get(stop) <> 10 and found.get(stop) <> 13
+                    set stop: stop + 1
+                if stop > start
+                {
+                    let vs found.substring(start, stop - start)
+                    let msvc_dir "`vs`\\VC\\Tools\\MSVC"
+                    let version newest_version(msvc_dir, cmt)
+                    if version.get_length() > 0
+                        set tools: "`msvc_dir`\\`version`"
+                }
+                set start: stop + 1
+            }
+        }
+        if tools.get_length() = 0
+            return String()
+
+        ; the linker that runs natively where there is one (an arm64 host
+        ; runs the x64 one too, emulated)
+        var link "`tools`\\bin\\Hostx64\\`arch`\\link.exe"
+        let host tool.target_triple(String())
+        if host.contains(String("aarch64"))
+        {
+            let arm_link "`tools`\\bin\\Hostarm64\\`arch`\\link.exe"
+            if File.exists(arm_link)
+                set link: String(arm_link)
+        }
+        if File.exists(link) = false
+            return String()
+
+        var kits "`program_files`\\Windows Kits\\10"
+        let sdk_named getenv "WindowsSdkDir"
+        if sdk_named <> null
+            set kits: windows_path(String(sdk_named))
+        let kits_lib "`kits`\\Lib"
+        let kernel "um/`arch`/kernel32.lib"
+        let sdk newest_version(kits_lib, kernel)
+        if sdk.get_length() = 0
+            return String()
+        "\"`link`\" -nologo \"-libpath:`tools`\\lib\\`arch`\" \"-libpath:`kits_lib`\\`sdk`\\um\\`arch`\" \"-libpath:`kits_lib`\\`sdk`\\ucrt\\`arch`\" -defaultlib:libcmt -defaultlib:oldnames"
+    }
+
+    ; the tool's library flags (` "-L<dir>" -l<name>`, the clang spelling) as
+    ; link.exe reads them: ` "-libpath:<dir>" <name>.lib`
+    procedure msvc_library_flags(flags: String) returns String
+    {
+        var sb StringBuilder()
+        let n flags.get_length()
+        var i: size_t 0
+        while i < n
+        {
+            if i + 2 < n and flags.get(i) = 34 and flags.get(i + 1) = 45 and flags.get(i + 2) = 76
+            {
+                sb.append("\"-libpath:")
+                set i: i + 3
+                continue
+            }
+            if i + 2 < n and flags.get(i) = 32 and flags.get(i + 1) = 45 and flags.get(i + 2) = 108
+            {
+                sb.append(" ")
+                set i: i + 3
+                while i < n and flags.get(i) <> 32
+                {
+                    sb.append(flags.get(i) as char)
+                    set i: i + 1
+                }
+                sb.append(".lib")
+                continue
+            }
+            sb.append(flags.get(i) as char)
+            set i: i + 1
+        }
+        sb.to_string()
+    }
+
     ; A program of the LLVM this compiler is linked against: `clang-21` or
     ; `llvm-profdata-21` on the PATH (a Linux distribution), else Homebrew's
     ; keg, else the bare name. `honour_cc`: $SCALY_CC / $CC first, as the link
@@ -1163,16 +1368,36 @@ define cli
             return 8
         }
 
+        ; ★A COFF program is linked by the Build Tools' link.exe, called
+        ; directly (msvc_link_head above), unless a compiler is named or the
+        ; link is the instrumented one, whose profile runtime only clang knows.
+        ; Every flag below has its link.exe spelling beside the clang one.
+        var msvc_head String()
+        let instrumented opts.pgo_train and opts.tool_build
+        if coff and instrumented = false and compiler_named() = false
+            set msvc_head: msvc_link_head(tool.target_triple(opts.target_triple))
+        let msvc msvc_head.get_length() > 0
+
         var cmd_builder StringBuilder()
-        ; an instrumented binary links the profile runtime of the LLVM that
-        ; instrumented it: that LLVM's own clang knows where it is
-        if opts.pgo_train and opts.tool_build
+        if msvc
         {
-            cmd_builder.append(cli.llvm_program("clang", true))
-            cmd_builder.append " -fprofile-instr-generate"
+            ; the line begins with a quote (the linker's path), so it takes a
+            ; pair of its own: cmd.exe strips the first and the last
+            cmd_builder.append "\""
+            cmd_builder.append msvc_head
         }
         else
-            cmd_builder.append(link_compiler())
+        {
+            ; an instrumented binary links the profile runtime of the LLVM that
+            ; instrumented it: that LLVM's own clang knows where it is
+            if instrumented
+            {
+                cmd_builder.append(cli.llvm_program("clang", true))
+                cmd_builder.append " -fprofile-instr-generate"
+            }
+            else
+                cmd_builder.append(link_compiler())
+        }
         ; every PATH on this line is quoted: the scratch directory, the
         ; runtime archive and a library directory lie under a home or a
         ; program directory, and either may carry a space. The line begins
@@ -1255,7 +1480,10 @@ define cli
             let l_ptr opts.library_paths.get li
             if l_ptr <> null
             {
-                cmd_builder.append " \"-L"
+                if msvc
+                    cmd_builder.append " \"-libpath:"
+                else
+                    cmd_builder.append " \"-L"
                 cmd_builder.append((*l_ptr))
                 cmd_builder.append "\""
             }
@@ -1269,8 +1497,17 @@ define cli
             let b_ptr opts.libraries.get bi
             if b_ptr <> null
             {
-                cmd_builder.append " -l"
-                cmd_builder.append((*b_ptr))
+                if msvc
+                {
+                    cmd_builder.append " "
+                    cmd_builder.append((*b_ptr))
+                    cmd_builder.append ".lib"
+                }
+                else
+                {
+                    cmd_builder.append " -l"
+                    cmd_builder.append((*b_ptr))
+                }
             }
             set bi: bi + 1
         }
@@ -1278,7 +1515,12 @@ define cli
         ; the C libraries the program's packages declare (`extern ssl,
         ; crypto`), found by the tool
         if opts.tool_build
-            cmd_builder.append(library_link_flags.to_string())
+        {
+            if msvc
+                cmd_builder.append(msvc_library_flags(library_link_flags.to_string()))
+            else
+                cmd_builder.append(library_link_flags.to_string())
+        }
 
         ; libm, last of the -l flags. The runtime archive is ONE object, so a
         ; program that needs any runtime symbol pulls in the tensor tape kernels
@@ -1304,25 +1546,40 @@ define cli
         ; 0xC00000FD) while the corpus, linked with a reserve by its script,
         ; passed it. 8 MB is the POSIX default; a reserve is address space,
         ; not memory. `-stack:`, never `/STACK:` (tools/win-link.sh).
-        if coff
-            cmd_builder.append " -lws2_32 -Xlinker -stack:8388608"
+        if msvc
+            cmd_builder.append " ws2_32.lib -stack:8388608"
         else
-            cmd_builder.append " -lm"
+        {
+            if coff
+                cmd_builder.append " -lws2_32 -Xlinker -stack:8388608"
+            else
+                cmd_builder.append " -lm"
+        }
 
         ; `scaly build --target <triple>`: the link is for that target too.
         ; Until 2026-10-01 only the objects were -- the program and the
         ; packages' C files -- and the link ran for the host: "symbol(s) not
         ; found for architecture arm64" for an x86_64 build on an arm64 Mac.
         ; (A target of another system still needs its headers and libraries.)
-        if opts.tool_build and opts.target_triple.get_length() > 0
+        if opts.tool_build and opts.target_triple.get_length() > 0 and msvc = false
         {
             cmd_builder.append " --target="
             cmd_builder.append opts.target_triple
         }
 
-        cmd_builder.append " -o \""
-        cmd_builder.append opts.output_file
-        cmd_builder.append "\""
+        if msvc
+        {
+            cmd_builder.append " \"-out:"
+            cmd_builder.append opts.output_file
+            ; ... and the closing quote of the line's own pair
+            cmd_builder.append "\"\""
+        }
+        else
+        {
+            cmd_builder.append " -o \""
+            cmd_builder.append opts.output_file
+            cmd_builder.append "\""
+        }
         let cmd_str cmd_builder.to_string()
         let link_rc system(cmd_str.c_data())
 
@@ -1343,6 +1600,10 @@ define cli
         if link_rc <> 0
         {
             Console.println "Error: Linker failed"
+            ; a Windows host with neither the Build Tools nor a named compiler:
+            ; the line above came after cmd.exe's "clang is not recognized"
+            if coff and msvc = false and compiler_named() = false and getenv("ProgramFiles(x86)") <> null
+                Console.println "       (no Visual Studio Build Tools with a Windows SDK found: scaly build needs them to link; SCALY_CC names another compiler)"
             return 9
         }
 
