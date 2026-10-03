@@ -84,6 +84,12 @@ if [ -z "$CC" ]; then
   done
 fi
 if [ -n "$CC" ] && ! have "$CC"; then die "the C compiler $CC was not found"; fi
+# A macOS without the Command Line Tools has /usr/bin/clang, cc and gcc all the
+# same: placeholders that ask for the tools' installation and compile nothing.
+# xcode-select -p tells the two apart without raising that dialog.
+if [ "$OS" = "Darwin" ] && [ -n "$CC" ] && ! xcode-select -p >/dev/null 2>&1; then
+  case "$(command -v "$CC")" in /usr/bin/*) CC="" ;; esac
+fi
 
 prerequisites() {
   cat >&2 <<EOF
@@ -308,7 +314,29 @@ sed 's/^define linkonce_odr /define weak_odr /' "$WORK/libscaly.ll" > "$WORK/lib
 fi   # built from the seed
 
 # ---------------------------------------------------------------------------
-# 7. The new toolchain takes the old one's place, and the three commands are
+# 7. Prove it, BEFORE anything installed is touched: a program run through
+#    `scaly run`, and one built and run, by the programs of the new toolchain
+#    where it stands. (The first build also compiles the standard library into
+#    the cache -- its key holds no path, so the next build is quick.)
+# ---------------------------------------------------------------------------
+# The programs call `clang` to link and to compile a package's C files unless
+# $SCALY_CC or $CC names another; say so only where `clang` is not what was
+# found: the file CC in the toolchain, which a program reads as its SCALY_CC
+# when the variable is not set.
+if [ -n "$CC" ] && [ "$CC" != "clang" ]; then
+  printf '%s\n' "$CC" > "$NEW/CC"
+fi
+say "checking the installation"
+[ "$(cd "$WORK/check" && "$NEW/libexec/scaly" run hello.scaly 2>"$WORK/check/run.log")" = "Hello, World!" ] \
+  || { tail -20 "$WORK/check/run.log" >&2; die "the installed scaly could not run a program"; }
+if [ -n "$CC" ]; then
+  ( cd "$WORK/check" && "$NEW/libexec/scaly" build hello.scaly -o hello ) > "$WORK/check/build.log" 2>&1 \
+    || { tail -20 "$WORK/check/build.log" >&2; die "the installed scaly could not build a program"; }
+  [ "$("$WORK/check/hello")" = "Hello, World!" ] || die "the program the installed scaly built does not run"
+fi
+
+# ---------------------------------------------------------------------------
+# 8. The new toolchain takes the old one's place, and the three commands are
 #    LINKS to its programs. A program finds the packages beside itself
 #    (<toolchain>/libexec/<name> -> <toolchain>/packages, the link resolved
 #    first), so nothing sets SCALY_HOME; a SCALY_HOME that is set still wins.
@@ -318,13 +346,6 @@ fi   # built from the seed
 if [ -f "$PREFIX/seed/scalyc.ll" ]; then
   rm -rf "$PREFIX/seed" "$PREFIX/libexec" "$PREFIX/lib" "$PREFIX/packages/scaly" "$PREFIX/LICENSE" "$PREFIX/VERSION"
   rmdir "$PREFIX/packages" 2>/dev/null || true
-fi
-# The programs call `clang` to link and to compile a package's C files unless
-# $SCALY_CC or $CC names another; say so only where `clang` is not what was
-# found: the file CC in the toolchain, which a program reads as its SCALY_CC
-# when the variable is not set.
-if [ -n "$CC" ] && [ "$CC" != "clang" ]; then
-  printf '%s\n' "$CC" > "$NEW/CC"
 fi
 rm -rf "$TOOLCHAIN"
 mv "$NEW" "$TOOLCHAIN"
@@ -336,19 +357,7 @@ for name in scaly scalyc scalyls; do
   ln -s "../$(basename "$TOOLCHAIN")/libexec/$name" "$BINDIR/$name"
 done
 
-# ---------------------------------------------------------------------------
-# 8. Prove it: a program run through `scaly run`, and one built and run.
-#    (The first build also compiles the standard library into the cache, so
-#    the next one is quick.)
-# ---------------------------------------------------------------------------
-say "checking the installation"
-[ "$(cd "$WORK/check" && "$BINDIR/scaly" run hello.scaly 2>"$WORK/check/run.log")" = "Hello, World!" ] \
-  || { tail -20 "$WORK/check/run.log" >&2; die "the installed scaly could not run a program"; }
-if [ -n "$CC" ]; then
-  ( cd "$WORK/check" && "$BINDIR/scaly" build hello.scaly -o hello ) > "$WORK/check/build.log" 2>&1 \
-    || { tail -20 "$WORK/check/build.log" >&2; die "the installed scaly could not build a program"; }
-  [ "$("$WORK/check/hello")" = "Hello, World!" ] || die "the program the installed scaly built does not run"
-else
+if [ -z "$CC" ]; then
   say "NOTE: no C compiler found. scaly run, scaly test and the REPL work;"
   if [ "$OS" = "Darwin" ]; then
     say "      scaly build needs one to link:  xcode-select --install"
