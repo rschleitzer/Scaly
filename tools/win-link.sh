@@ -8,7 +8,9 @@
 #   --runtime  append the runtime archive, $TMP/libscaly.lib (Git Bash mounts
 #              $TMP as /tmp; tools/win-archive.sh builds it, cli.scaly's link
 #              driver looks for it there)
-#   --llvm     -L<llvm lib> -lLLVM-C, and LLVM-C.dll copied BESIDE the output:
+#   --llvm     (with $SCALY_STATIC_LLVM_DIR set, see below, LLVM's static
+#              libraries instead and no DLL) otherwise
+#              -L<llvm lib> -lLLVM-C, and LLVM-C.dll copied BESIDE the output:
 #              the compiler and the language server CALL the library, and a
 #              DLL beside the .exe is found before anything on PATH, so which
 #              LLVM answers is not decided by the shell that happened to start
@@ -60,7 +62,28 @@ if [ "$RT" = 1 ]; then
   args+=("$rt")
 fi
 args+=(-lws2_32)
-[ "$LLVM" = 1 ] && args+=(-L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME")
+# ★AN EXPERIMENT, not yet a route (tests/win32/static-llvm.sh, 2026-10-03):
+# with $SCALY_STATIC_LLVM_DIR naming an unpacked `clang+llvm-…-windows-msvc`
+# release, a --llvm link takes LLVM's STATIC libraries from its lib/ instead
+# of the import library of LLVM-C.dll, and copies no DLL -- the programs we
+# hand out are to load nothing of LLVM (macOS and Linux do it since the same
+# day, tools/build-from-seed.sh SCALY_STATIC_LLVM). Every LLVM*.lib but
+# LLVM-C.lib, which IS the DLL's import library; lld-link takes from an
+# archive only what is referenced. The system libraries are the ones LLVM's
+# Support asks for on Windows. Unset, nothing here changes.
+STATIC_LLVM=0
+if [ "$LLVM" = 1 ] && [ -n "${SCALY_STATIC_LLVM_DIR:-}" ]; then
+  STATIC_LLVM=1
+  sdir="$(cygpath -u "$SCALY_STATIC_LLVM_DIR")/lib"
+  [ -f "$sdir/LLVMCore.lib" ] || { echo "win-link: no LLVMCore.lib in $sdir (\$SCALY_STATIC_LLVM_DIR)" >&2; exit 1; }
+  for lib in "$sdir"/LLVM*.lib; do
+    [ "$(basename "$lib")" = "LLVM-C.lib" ] && continue
+    args+=("$lib")
+  done
+  args+=(-lpsapi -lshell32 -lole32 -luuid -ladvapi32 -lntdll)
+elif [ "$LLVM" = 1 ]; then
+  args+=(-L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME")
+fi
 # ★A JIT host takes the UCRT from ucrtbase.dll (the "hybrid" CRT: startup and
 # vcruntime static as everywhere, the C library dynamic). The JIT resolves
 # fopen, malloc & co. in that DLL, and the runtime's shims in this .exe must
@@ -97,7 +120,7 @@ args+=(-o "$OUT")
 mkdir -p "$(dirname "$OUT")"
 "${args[@]}"
 
-if [ "$LLVM" = 1 ]; then
+if [ "$LLVM" = 1 ] && [ "$STATIC_LLVM" = 0 ]; then
   dll="$LLVM_PREFIX/bin/LLVM-C.dll"
   [ -f "$dll" ] || { echo "win-link: no $dll beside the LLVM that linked $OUT" >&2; exit 1; }
   dest="$(dirname "$OUT")/LLVM-C.dll"
