@@ -25,8 +25,10 @@ if [ "${1:-}" = "--check" ]; then CHECK=1; shift; fi
 BIN="${1:-scalyc/build/scalyc}"
 PKGS="scaly opensp dazzle scalyc scalyls tscaly scalygpu http json compress tls pg https h3 redis"
 T="$(mktemp -d)"
-# One job per package, side by side under --check (tscaly alone takes ~35 s and
-# 6.5 GB; the others a few seconds each); the reports print in package order.
+# One job per package, side by side under --check — all but tscaly, which runs
+# alone after them (~35 s and 6.5 GB, where the others take a few seconds each
+# but scalyc, dazzle and opensp are 2-4 GB apiece: side by side with them it was
+# the peak of the whole bar); the reports print in package order.
 # Either way the interface is written into $T first, so a compile that fails
 # leaves the committed interface as it was.
 one() {
@@ -54,15 +56,18 @@ one() {
 # computed against the OLD dependency interface).
 rc=0
 if [ "$CHECK" = 1 ]; then
-  pids=""
+  BIG=tscaly
   for p in $PKGS; do
-    one "$p" > "$T/$p.log" 2>&1 & pids="$pids $!"
+    [ "$p" = "$BIG" ] && continue
+    one "$p" > "$T/$p.log" 2>&1 &
+    eval "pid_$p=$!"
   done
-  set -- $pids
   for p in $PKGS; do
-    wait "$1" || rc=1; shift
-    cat "$T/$p.log"
+    [ "$p" = "$BIG" ] && continue
+    eval "wait \$pid_$p" || rc=1
   done
+  one "$BIG" > "$T/$BIG.log" 2>&1 || rc=1
+  for p in $PKGS; do cat "$T/$p.log"; done
 else
   for p in $PKGS; do
     one "$p" || rc=1

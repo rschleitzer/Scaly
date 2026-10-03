@@ -15,10 +15,11 @@
 # Phase 2 runs in lanes, all at once; inside a lane the steps are in order:
 #   compiler  regress, selfhosted, target, fiber, escape, pointer-report,
 #             write-report, abi, debuginfo, then tools/interfaces.sh
-#             --check — last, so its 6.5 GB tscaly compilation does not overlap
-#             the one the tscaly lane starts with
-#   lsp       tests/lsp/run.sh
-#   ports     one dazzle CLI build shared by all 14 dazzle suites (DAZZLE_PREBUILT),
+#             --check — last, and only once the tscaly lane's first step is
+#             over, so its 6.5 GB tscaly compilation does not overlap the one
+#             that lane starts with
+#   lsp       tests/lsp/run.sh — once the tscaly lane has compiled its package
+#   ports     likewise; one dazzle CLI build shared by all 14 dazzle suites (DAZZLE_PREBUILT),
 #             which run side by side; then onsgmls, the SGML corpus, opensp, http, json, compress, tls, pg, redis, tool, cmscratch
 #   tscaly    tests/run.sh at stage 2 (its corpus contains stage 1's), then the
 #             two case yardsticks side by side — the longest lane
@@ -108,6 +109,20 @@ T1=$(date +%s)
 
 # ---- phase 2: the lanes ------------------------------------------------------
 
+# The tscaly lane opens with the largest compilation of the bar (the package,
+# 6.5 GB), and the lsp and ports lanes open with their own largest: three
+# whole-tree scalyls at ~2 GB each and the dazzle LTO build at 3 GB. All at
+# once that is past 16 GB (measured 2026-10-03 under a 16 GB cap: the package
+# compile, the dazzle build and three scalyls killed in the same second). So
+# those two lanes wait for the package compile: the suite redirects its first
+# PROGRAM build into tscaly_tokens-build.log the moment the package object is
+# done, and the `tscaly` step's own marker covers a suite that stopped before
+# it built anything. They are a tenth of the tscaly lane, so the wait is free.
+await_tscaly_build() {
+  while [ ! packages/tscaly/tests/out/tscaly_tokens-build.log -nt "$LOG/phase1.txt" ] \
+        && [ ! -e "$LOG/tscaly.stepped" ]; do sleep 2; done
+}
+
 lane_compiler() {
   local rc=0
   step regress tests/regress/run.sh "$BIN" || rc=1
@@ -119,6 +134,13 @@ lane_compiler() {
   step write-report tests/write-report/run.sh "$BIN" || rc=1
   step abi tests/abi/run.sh || rc=1
   step debuginfo tests/debuginfo/run.sh "$BIN" || rc=1
+  # ★"Last" was not enough: on a ten-core box this lane is here after 36 s,
+  # while the tscaly lane is still compiling — two 6.5 GB compilations beside
+  # the dazzle LTO build and the LSP suite, and 18 GB did not hold them
+  # (2026-10-03). The marker is written when that lane's `tscaly` step returns,
+  # passed or not; what runs beside this step then is the case yardsticks, and
+  # the tscaly lane stays the longest, so the wait costs the bar nothing.
+  while [ ! -e "$LOG/tscaly.stepped" ]; do sleep 2; done
   step interfaces tools/interfaces.sh --check "$BIN" || rc=1
   return $rc
 }
@@ -130,6 +152,7 @@ lane_lsp() {
   # themselves, so the lane only moves the ceiling.
   # SCALYLS_PREBUILT: the server phase 1's build step made from the same fresh
   # seed (opt -O2); the suite then skips its own -O2 build of the four roots.
+  await_tscaly_build
   step lsp env SCALYLS_BUDGET_MS=300000 SCALYLS_PREBUILT="$ROOT/scalyc/build/scalyls" tests/lsp/run.sh "$BIN"
 }
 
@@ -150,6 +173,7 @@ dazzle_all() {
 lane_ports() {
   ulimit -s 65520
   local rc=0
+  await_tscaly_build
   if step dazzle-build env DAZZLE_PREBUILT= tests/dazzle/build-cli.sh "$LOG/dazzle" "$BIN"; then
     step dazzle dazzle_all || rc=1
   else
@@ -203,7 +227,10 @@ tscaly_cases() {
 
 lane_tscaly() {
   ulimit -s 65520
-  step tscaly tscaly_stage || return 1
+  local rc=0
+  step tscaly tscaly_stage || rc=1
+  : > "$LOG/tscaly.stepped"   # lane_compiler's interfaces step waits for this
+  [ $rc = 0 ] || return 1
   if grep -qE 'UNEXPLAINED +[1-9]' "$LOG/tscaly.log"; then echo "tscaly: UNEXPLAINED units"; return 1; fi
   [ "$QUICK" = 1 ] && return 0
   step tscaly-cases tscaly_cases
