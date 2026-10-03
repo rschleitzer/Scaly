@@ -4,7 +4,10 @@
 # so that what we hand out loads no LLVM-C.dll? macOS and Linux do it since
 # 2026-10-03 (tools/make-bindist.sh); this is the same question for Windows,
 # written on a Mac; first run 2026-10-03 on the arm64 VM, all five steps OK
-# after one change to the link (tests/win32/WINDOWS-BOX.md §10). x64 not run.
+# after two changes (tests/win32/WINDOWS-BOX.md §10). x64 ran cross-linked on
+# that VM: SCALY_WIN_TRIPLE=x86_64-pc-windows-msvc, the x64 archive as [dir],
+# and a `clang` in front of PATH that adds --target=x86_64-pc-windows-msvc
+# (step 4 then compares with an arm64 compiler and reads DIFFERENT).
 #
 #   tests/win32/static-llvm.sh [dir]
 #

@@ -1765,6 +1765,11 @@ int scaly_eio_is_symlink(const char* path)
  * ★The LLVM C API is reached through GetProcAddress on LLVM-C.dll, because
  * this object is in every Scaly program and an ordinary program must not
  * depend on LLVM; only a JIT host has the DLL loaded when this runs.
+ * ★A JIT host with LLVM linked INTO it has no such DLL (the experiment of
+ * tests/win32/WINDOWS-BOX.md §10): there the three functions are looked up in
+ * the program itself, which exports them (tools/win-link.sh, the static
+ * branch). Without that the arena was silently off and the truncation above
+ * was back -- `scaly test` on opensp, 9 of 24 runs on x64.
  *
  * Allocation is a bump in pages, never freed: a JIT session lives as long as
  * the process. Sections are committed read-write, and at finalize the code
@@ -1783,6 +1788,12 @@ typedef void (*scaly_set_creator_fn)(void*, scaly_layer_creator_fn, void*);
 
 #define SCALY_JIT_ARENA (1024ull << 20)     /* reserved once, committed as used */
 #define SCALY_JIT_DATA_AT (256ull << 20)    /* code below, data above */
+
+static HMODULE scaly_jit_llvm(void)
+{
+    HMODULE llvm = GetModuleHandleA("LLVM-C.dll");
+    return llvm != NULL ? llvm : GetModuleHandleA(NULL);
+}
 
 static SRWLOCK scaly_jit_lock = SRWLOCK_INIT;
 static unsigned char* scaly_jit_base;
@@ -1861,7 +1872,7 @@ static void scaly_jit_destroy(void* cv)
 
 static void* scaly_jit_layer(void* unused, void* es, const char* triple)
 {
-    HMODULE llvm = GetModuleHandleA("LLVM-C.dll");
+    HMODULE llvm = scaly_jit_llvm();
     (void)unused; (void)triple;
     if (scaly_jit_base == NULL)
         scaly_jit_base = (unsigned char*)VirtualAlloc(NULL, SCALY_JIT_ARENA, MEM_RESERVE, PAGE_NOACCESS);
@@ -1882,7 +1893,7 @@ static void* scaly_jit_layer(void* unused, void* es, const char* triple)
 /* Called by the compiler's JIT set-up on a COFF host, with its LLJIT builder. */
 void scaly_jit_use_arena(void* builder)
 {
-    HMODULE llvm = GetModuleHandleA("LLVM-C.dll");
+    HMODULE llvm = scaly_jit_llvm();
     if (llvm == NULL || builder == NULL)
         return;
     scaly_set_creator_fn set = (scaly_set_creator_fn)(void*)GetProcAddress(llvm,

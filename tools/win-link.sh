@@ -82,9 +82,19 @@ args+=(-lws2_32)
 # under Emitter.emit, on hello world. With the UCRT's import library first the
 # rpmalloc member is never taken and there is ONE heap, ucrtbase's -- the same
 # one the JIT's code resolves (the comment on the hybrid CRT below).
+# ★The runtime's JIT arena (scaly_jit_use_arena, eio_windows.c) reaches three
+# functions of the C API through GetProcAddress -- on LLVM-C.dll, and with no
+# DLL on the program itself. So a static link EXPORTS them (STATIC_EXPORTS
+# below goes into the .def); an export is also the root that pulls them out
+# of LLVMOrcJIT.lib. Without it the arena is silently off and JIT sections
+# land out of each other's reach: `scaly test` on opensp died in 9 of 24 runs.
 STATIC_LLVM=0
+STATIC_EXPORTS=()
 if [ "$LLVM" = 1 ] && [ -n "${SCALY_STATIC_LLVM_DIR:-}" ]; then
   STATIC_LLVM=1
+  STATIC_EXPORTS=(LLVMOrcLLJITBuilderSetObjectLinkingLayerCreator
+                  LLVMOrcCreateRTDyldObjectLinkingLayerWithMCJITMemoryManagerLikeCallbacks
+                  LLVMOrcCreateRTDyldObjectLinkingLayerWithSectionMemoryManager)
   sdir="$(cygpath -u "$SCALY_STATIC_LLVM_DIR")/lib"
   [ -f "$sdir/LLVMCore.lib" ] || { echo "win-link: no LLVMCore.lib in $sdir (\$SCALY_STATIC_LLVM_DIR)" >&2; exit 1; }
   args+=(-lucrt)
@@ -123,6 +133,7 @@ if [ ${#EXPORTS[@]} -gt 0 ]; then
     llvm-nm --defined-only --extern-only "${EXPORTS[@]}" 2>/dev/null \
       | awk 'NF==3 && ($2=="T" || $2=="W") && $3 !~ /^[?.]/ && $3 !~ /^__/ {print "    " $3}' | sort -u
     echo "    atexit"
+    for e in ${STATIC_EXPORTS[@]+"${STATIC_EXPORTS[@]}"}; do echo "    $e"; done
   } > "$def"
   args+=(-Xlinker "-def:$(cygpath -w "$def")" -Xlinker -noimplib)
 fi
