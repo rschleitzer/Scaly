@@ -1165,8 +1165,13 @@ define cli
         }
         else
             cmd_builder.append(link_compiler())
-        cmd_builder.append " "
+        ; every PATH on this line is quoted: the scratch directory, the
+        ; runtime archive and a library directory lie under a home or a
+        ; program directory, and either may carry a space. The line begins
+        ; with the compiler's name, not with a quote, so cmd.exe strips nothing.
+        cmd_builder.append " \""
         cmd_builder.append tmp_obj
+        cmd_builder.append "\""
         ; Append the scaly stdlib static archive. Provides runtime
         ; functions (Page.allocate_root_page etc.) that stage-1 emits
         ; as declarations only because it can't fully plan
@@ -1189,8 +1194,9 @@ define cli
             let e_ptr opts.extra_objects.get ei
             if e_ptr <> null
             {
-                cmd_builder.append " "
+                cmd_builder.append " \""
                 cmd_builder.append((*e_ptr))
+                cmd_builder.append "\""
             }
             set ei: ei + 1
         }
@@ -1223,8 +1229,9 @@ define cli
         }
         else
         {
-            cmd_builder.append " "
+            cmd_builder.append " \""
             cmd_builder.append(runtime_archive_path(coff))
+            cmd_builder.append "\""
         }
 
         ; Forward -L<path> entries.
@@ -1234,8 +1241,9 @@ define cli
             let l_ptr opts.library_paths.get li
             if l_ptr <> null
             {
-                cmd_builder.append " -L"
+                cmd_builder.append " \"-L"
                 cmd_builder.append((*l_ptr))
+                cmd_builder.append "\""
             }
             set li: li + 1
         }
@@ -1298,8 +1306,9 @@ define cli
             cmd_builder.append opts.target_triple
         }
 
-        cmd_builder.append " -o "
+        cmd_builder.append " -o \""
         cmd_builder.append opts.output_file
+        cmd_builder.append "\""
         let cmd_str cmd_builder.to_string()
         let link_rc system(cmd_str.c_data())
 
@@ -1311,7 +1320,7 @@ define cli
         if opts.debug
             if link_rc = 0
             {
-                let dsym_str "dsymutil `opts.output_file` 2>/dev/null"
+                let dsym_str "dsymutil \"`opts.output_file`\" 2>/dev/null"
                 let dsym_rc system(dsym_str.c_data())
             }
 
