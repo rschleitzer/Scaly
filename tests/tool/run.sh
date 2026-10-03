@@ -18,6 +18,11 @@
 #   release    `scaly build --release`: hello and the http server as ONE module
 #              (package bitcode from the cache, linked and optimised in
 #              process), the binary smaller than the plain build's
+#   export     `--release --export`: the stdlib's definitions stay in the
+#              binary as symbols its own process finds -- what a program that
+#              runs others in process (the compiler, the tool) is built with;
+#              without the flag the same build keeps none of them. SKIPs by
+#              name on Windows (the export there is the link script's)
 #   target     `--target x86_64-apple-darwin`, plain and --release: an x86_64
 #              binary that runs under Rosetta 2; SKIPs by name elsewhere
 #   pgo        `--pgo-train`, a run, `--pgo <profile>`: the same output
@@ -173,6 +178,21 @@ if "$SCALY" build tests/http/server.scaly --release -o "$TMP/server_rel$SCALY_EX
   [ "$out" = "$(sed -n 's/^; Expected: //p' tests/http/server.scaly)" ] && ok || bad "release http: '$out'"
 else
   bad "release http(build): $(tail -1 "$TMP/rel2.log")"
+fi
+
+# export: a release build that keeps every definition as a visible symbol.
+# Counted on a name the hello program never calls (HashMap's), so the plain
+# release build has none of it.
+if [ "$SCALY_COFF" = 1 ]; then
+  echo "SKIP export (the Windows export is tools/win-link.sh --export)"
+elif "$SCALY" build tests/tool/hello.scaly --release --export -o "$TMP/hello_exp" > "$TMP/exp.log" 2>&1; then
+  out=$("$TMP/hello_exp" one two)
+  kept=$(nm -g "$TMP/hello_exp" 2>/dev/null | grep -c ' [TtWw] _*_ZN7HashMap')
+  plain_kept=$(nm -g "$TMP/hello_rel" 2>/dev/null | grep -c ' [TtWw] _*_ZN7HashMap')
+  [ "$out" = "hello one two" ] && [ "$kept" -gt 0 ] && [ "$plain_kept" = 0 ] && ok \
+    || bad "export: got '$out', $kept HashMap symbols with --export, $plain_kept without"
+else
+  bad "export: rc=$? $(tail -3 "$TMP/exp.log" | tr '\n' ' ')"
 fi
 
 # target: `scaly build --target` links for the target as well -- an x86_64

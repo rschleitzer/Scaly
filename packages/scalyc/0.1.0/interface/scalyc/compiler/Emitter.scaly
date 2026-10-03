@@ -83,6 +83,7 @@ define Emitter
         release: bool               ; `scaly build --release`: one module of the whole program, internal definitions hidden
         pgo_train: bool             ; `--pgo-train`: the release module instrumented, its run writes a profile
         pgo_profile: String         ; `--pgo <file>`: the release module optimised with that profile (.profdata)
+        export_symbols: bool        ; `--export`: a release module whose definitions all stay, visible to the process
     )
     {
         init() linked
@@ -1897,6 +1898,27 @@ define Emitter
         ; llvm-link, in process). False when the file cannot be read or does not
         ; link.
         procedure link_bitcode(mutable this, mutable filename: String) @ret_caller true @deep true returns bool io linked
+
+        ; --export, the two edits tools/build-from-seed.sh makes on the seed's
+        ; text, in process. A program that runs others in its own process --
+        ; the compiler under --jit, `scaly run`, `scaly test`, the REPL --
+        ; hands them the runtime and the stdlib out of ITS OWN image
+        ; (emit_jit_stubs# asks dlsym, and stubs what it does not find with a
+        ; routine answering 0: silent). A release module drops every body
+        ; nothing calls and hides the rest; measured 2026-10-03, such a
+        ; `scaly` exported 154 symbols where the seed build exports 10 217,
+        ; ran hello and printed NOTHING for a program with arguments.
+        ;   keep_every_definition#   linkonce_odr -> weak_odr: not discardable,
+        ;                            so the link and GlobalDCE leave it, and
+        ;                            not hidden (the release pass hides
+        ;                            linkonce_odr only)
+        ;   show_every_definition#   unnamed_addr off, AFTER the optimiser used
+        ;                            it: a weak definition carrying it is
+        ;                            `weak_def_can_be_hidden`, which the Mach-O
+        ;                            linker makes a local symbol
+        procedure keep_every_definition(mutable this, mutable in_module: LLVMModuleRef) @deep true linked
+
+        procedure show_every_definition(mutable this, mutable in_module: LLVMModuleRef) @deep true linked
 
         ; The release pipeline around the profile passes. The pass builder
         ; puts them after a first simplification and a small inlining round

@@ -8,7 +8,10 @@
 #   payload    the tarball carries the seed and the standard packages and none
 #              of the compiler's, the language server's or the ports' sources
 #   programs   the archive of programs is built, and they load nothing but
-#              the system's own libraries (make-bindist checks it)
+#              the system's own libraries (make-bindist checks it). With
+#              $SCALY_PGO_PROFILE set (tools/make-profile.sh) they are the
+#              programs built with the profile, and everything below runs on
+#              those -- what a release hands out
 #   install    the installer takes the READY-MADE programs and ends with rc 0
 #              (its own check ran and built a program), leaves bin/ and
 #              toolchain/ and no toolchain.new

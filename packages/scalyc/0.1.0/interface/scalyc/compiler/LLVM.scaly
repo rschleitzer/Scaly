@@ -288,6 +288,8 @@ procedure LLVMSetLinkage(global: LLVMValueRef, linkage: i32) extern
 ; LLVMVisibility: 0 default, 1 hidden, 2 protected
 procedure LLVMSetVisibility(global: LLVMValueRef, viz: i32) extern
 function LLVMGetLinkage(global: LLVMValueRef) returns i32 extern
+; LLVMUnnamedAddr: 0 none, 1 local, 2 global
+procedure LLVMSetUnnamedAddress(global: LLVMValueRef, unnamed_addr: i32) extern
 
 ; Comdats (stage 7). A `linkonce_odr` function needs one on COFF and MUST NOT
 ; have one on Mach-O — see Emitter.set_linkonce_odr for the whole argument.

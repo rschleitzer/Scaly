@@ -203,9 +203,16 @@ failed run leaves the installed toolchain alone and a second run is the upgrade.
 **Before publishing:**
 
 ```sh
-tests/install/run.sh          # both archives of THIS tree -> scratch prefix, both routes, 13 checks, ~50 s
+tools/make-profile.sh         # ONCE, on the fast machine: dist/scalyc.profdata (the compiler trained on its own sources)
+tests/install/run.sh          # both archives of THIS tree -> scratch prefix, both routes, 13 checks (with the profile ~2 min)
 tools/make-bindist.sh <version>   # on EACH system we hand programs out for; leaves dist/scaly-<version>-<system>-<machine>.tar.gz
 ```
+
+`make-bindist.sh` builds scalyc and scaly with `dist/scalyc.profdata` when it
+is there (or `$SCALY_PGO_PROFILE`), about 30 % faster compilers; without it
+the programs are the seed recipe's and the script says so. The profile is the
+same file on every system — copy it to the other machines with the tree. Make
+it again whenever the compiler's sources changed.
 
 For Linux, in a clean container (`ubuntu:26.04` with `llvm-21 llvm-21-dev
 lld-21 clang zlib1g-dev libzstd-dev libxml2-dev`); collect the archives of the

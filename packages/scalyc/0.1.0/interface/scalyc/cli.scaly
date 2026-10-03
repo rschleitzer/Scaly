@@ -96,6 +96,7 @@ define Options
     bitcode: bool                   ; with -c: write bitcode (a package for a release build)
     pgo_train: bool                 ; `scaly build --pgo-train`: the release build instrumented
     pgo_profile: String             ; `scaly build --pgo <file>`: the release build with a profile
+    export_symbols: bool            ; `scaly build --release --export`: every definition kept and visible (a JIT host)
     program_argc: int               ; `scaly run file args`: what the program's main receives
     program_argv: pointer[pointer[char]]
     test_mode: bool                 ; `scaly test file [filter]`: run the test functions

@@ -96,6 +96,7 @@ define Options
     bitcode: bool                   ; with -c: write bitcode (a package for a release build)
     pgo_train: bool                 ; `scaly build --pgo-train`: the release build instrumented
     pgo_profile: String             ; `scaly build --pgo <file>`: the release build with a profile
+    export_symbols: bool            ; `scaly build --release --export`: every definition kept and visible (a JIT host)
     program_argc: int               ; `scaly run file args`: what the program's main receives
     program_argv: pointer[pointer[char]]
     test_mode: bool                 ; `scaly test file [filter]`: run the test functions
@@ -143,6 +144,7 @@ define Options
         set bitcode: false
         set pgo_train: false
         set pgo_profile: String()
+        set export_symbols: false
         set program_argc: 0
         set program_argv: null
         set test_mode: false
@@ -285,6 +287,10 @@ define cli
                     set opts.opt_level: 2
                     set opts.release: true
                     set opts.pgo_train: true
+                }
+                else if arg = "--export"
+                {
+                    set opts.export_symbols: true
                 }
                 else if arg = "--pgo"
                 {
@@ -430,6 +436,7 @@ define cli
         Console.println "       scaly build <file> [-o <out>] [--release]   build an executable"
         Console.println "             --pgo-train          ... instrumented: its run writes default.profraw ($LLVM_PROFILE_FILE)"
         Console.println "             --pgo <profile>      ... optimised with that profile"
+        Console.println "             --export             ... every definition kept and visible: a program that runs others in process"
         Console.println "             --target <t>, -g, -mcpu=<cpu>, -L<path>, -l<name>   as scalyc takes them"
         Console.println "       scaly test <file> [filter]       run its test functions"
         Console.println ""
@@ -1010,6 +1017,7 @@ define cli
             set config.release: true
             set config.opt_level: 2
             set config.pgo_train: opts.pgo_train
+            set config.export_symbols: opts.export_symbols
             if opts.pgo_profile.get_length() > 0
             {
                 set config.pgo_profile: cli.indexed_profile(opts.pgo_profile)
@@ -1233,6 +1241,12 @@ define cli
             cmd_builder.append(runtime_archive_path(coff))
             cmd_builder.append "\""
         }
+
+        ; --export: an ELF executable puts a symbol where its own process can
+        ; find it only when asked to; a Mach-O one keeps it past dead
+        ; stripping. What tools/build-from-seed.sh passes for the seed build.
+        if opts.export_symbols and opts.release and opts.tool_build and coff = false
+            cmd_builder.append " -rdynamic"
 
         ; Forward -L<path> entries.
         var li: size_t 0
