@@ -345,6 +345,7 @@ function LLVMIsAReturnInst(val: LLVMValueRef) returns LLVMValueRef extern
 ; substituted call target).
 function LLVMGetFirstFunction(mod: LLVMModuleRef) returns LLVMValueRef extern
 function LLVMGetNextFunction(func: LLVMValueRef) returns LLVMValueRef extern
+function LLVMGetIntrinsicID(func: LLVMValueRef) returns u32 extern
 function LLVMIsDeclaration(global: LLVMValueRef) returns i32 extern
 
 ; ============================================================================
@@ -408,6 +409,7 @@ procedure LLVMSetGlobalConstant(global_var: LLVMValueRef, is_constant: i32) exte
 
 ; Mark a global as thread-local (one instance per OS thread)
 procedure LLVMSetThreadLocal(global_var: LLVMValueRef, is_thread_local: i32) extern
+procedure LLVMSetDLLStorageClass(global: LLVMValueRef, class: i32) extern
 
 ; Walk the global variables of a module + query the thread-local bit.
 ; Used by the JIT's de-TLS pass (jit_clear_thread_locals): a thread-local
@@ -855,6 +857,10 @@ function LLVMOrcCreateLLJIT(result: pointer[LLVMOrcLLJITRef], builder: LLVMOrcLL
 function LLVMOrcCreateLLJITBuilder() returns LLVMOrcLLJITBuilderRef extern
 function LLVMOrcJITTargetMachineBuilderCreateFromTargetMachine(tm: LLVMTargetMachineRef) returns LLVMOrcJITTargetMachineBuilderRef extern
 procedure LLVMOrcLLJITBuilderSetJITTargetMachineBuilder(builder: LLVMOrcLLJITBuilderRef, jtmb: LLVMOrcJITTargetMachineBuilderRef) extern
+; Not LLVM: the runtime's JIT memory arena on a COFF host (scaly/fiber/eio_windows.c;
+; a no-op in eio.c). It installs a linking layer whose sections all come out of
+; one reservation, so a PC-relative reference between them stays in range.
+procedure scaly_jit_use_arena(builder: LLVMOrcLLJITBuilderRef) extern
 function LLVMOrcLLJITGetMainJITDylib(j: LLVMOrcLLJITRef) returns LLVMOrcJITDylibRef extern
 function LLVMOrcLLJITGetGlobalPrefix(j: LLVMOrcLLJITRef) returns char extern
 
@@ -862,6 +868,7 @@ function LLVMOrcLLJITGetGlobalPrefix(j: LLVMOrcLLJITRef) returns char extern
 ; aligned_alloc/exit) referenced by the JITted RBMM runtime against the host
 ; process. filter/filter_ctx are null (accept all). Returns LLVMErrorRef.
 function LLVMOrcCreateDynamicLibrarySearchGeneratorForProcess(result: pointer[LLVMOrcDefinitionGeneratorRef], global_prefix: char, filter: pointer[void], filter_ctx: pointer[void]) returns LLVMErrorRef extern
+function LLVMOrcCreateDynamicLibrarySearchGeneratorForPath(result: pointer[LLVMOrcDefinitionGeneratorRef], file_name: pointer[const_char], global_prefix: char, filter: pointer[void], filter_ctx: pointer[void]) returns LLVMErrorRef extern
 procedure LLVMOrcJITDylibAddGenerator(jd: LLVMOrcJITDylibRef, g: LLVMOrcDefinitionGeneratorRef) extern
 
 ; Add the module (consumes the ThreadSafeModule) + look up a symbol. Lookup

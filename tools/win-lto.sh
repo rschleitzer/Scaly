@@ -24,9 +24,10 @@
 # before llc ever sees them, so the seed carried 58 and nobody knew. Dropping
 # a declaration whose name occurs exactly once in its own module is safe by
 # construction: nothing in that module can refer to it.
-# ★No weak_odr promotion: it exists to keep stdlib bodies visible to the
-# in-process ORC JIT, which does not work on Windows (an .exe exports nothing
-# for GetProcAddress). Discarding what an executable cannot reach is correct.
+# ★No weak_odr promotion: on POSIX it keeps stdlib bodies visible to the
+# in-process ORC JIT. Here a JIT host EXPORTS them instead (below, since
+# 2026-10-03), and an export is a root LTO keeps; everything else an
+# executable cannot reach is discarded, which is correct.
 # ★The C shims go in as OBJECTS, never through libscaly.lib: that archive
 # holds a Scaly runtime too, and pulling it in would resolve the runtime twice
 # and measure nothing.
@@ -72,5 +73,12 @@ tools/ctime.sh       "$W/ctime.o"
 tools/panic.sh       "$W/panic.o"
 tools/posixcompat.sh "$W/posixcompat.o"
 
-tools/win-link.sh --lto ${LLVM[@]+"${LLVM[@]}"} "$OUT" "${objs[@]}" \
+# A JIT host (--llvm) exports the runtime it carries -- the stdlib root and the
+# shims -- for the in-process JIT's GetProcAddress (tools/win-link.sh --export).
+EXP=()
+if [ ${#LLVM[@]} -gt 0 ]; then
+  [ -f "$W/scaly.obj" ] && EXP+=(--export "$W/scaly.obj")
+  for o in fcontext eio ctime panic posixcompat; do EXP+=(--export "$W/$o.o"); done
+fi
+tools/win-link.sh --lto ${LLVM[@]+"${LLVM[@]}"} ${EXP[@]+"${EXP[@]}"} "$OUT" "${objs[@]}" \
   "$W/fcontext.o" "$W/eio.o" "$W/ctime.o" "$W/panic.o" "$W/posixcompat.o"

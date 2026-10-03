@@ -1649,11 +1649,83 @@ int scaly_proc_wait_readable(int fd, int timeout_ms)
  * console shows a lone "\n" as a new line; what a console READS keeps its "\r",
  * which the line readers strip. scaly_proc_stdio_binary stays for its callers
  * (scalyls' main) and is now a second, harmless call. */
+/* SCALY_CRASH_REPORT=1: a hard fault (access violation, illegal instruction)
+ * is reported as it happens, before the process dies -- code, PC, the faulting address, the return address and the
+ * module the PC lies in ("none": memory no module maps, e.g. the JIT's). A
+ * crash witness for the cases a debugger cannot reach: under lldb every
+ * guard-page exception of the runtime stops the debugger, and a JIT run then
+ * crawls (2026-10-03). Off by default; the report is the only effect. */
+static void scaly_crash_put(const char* s)
+{
+    DWORD w = 0;
+    WriteFile(GetStdHandle(STD_ERROR_HANDLE), s, (DWORD)strlen(s), &w, NULL);
+}
+
+static LONG WINAPI scaly_crash_report(EXCEPTION_POINTERS* ep)
+{
+    char buf[512];
+    char mod[MAX_PATH] = "none";
+    HMODULE h = NULL;
+    void* pc = ep->ExceptionRecord->ExceptionAddress;
+    unsigned long long fault = ep->ExceptionRecord->NumberParameters >= 2
+        ? (unsigned long long)ep->ExceptionRecord->ExceptionInformation[1] : 0;
+    unsigned long long ret = 0;
+#if defined(_M_ARM64) || defined(__aarch64__)
+    ret = ep->ContextRecord->Lr;
+#else
+    ret = *(unsigned long long*)ep->ContextRecord->Rsp;
+#endif
+    if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS
+                           | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                           (LPCSTR)pc, &h) && h != NULL)
+        GetModuleFileNameA(h, mod, sizeof mod);
+    MEMORY_BASIC_INFORMATION mbi;
+    memset(&mbi, 0, sizeof mbi);
+    VirtualQuery(pc, &mbi, sizeof mbi);
+    snprintf(buf, sizeof buf,
+             "scaly crash: code 0x%08lx at pc %p (module %s, +0x%llx), fault address 0x%llx, return 0x%llx; "
+             "pc page: state 0x%lx protect 0x%lx, allocation %p\n",
+             (unsigned long)ep->ExceptionRecord->ExceptionCode, pc, mod,
+             h ? (unsigned long long)((char*)pc - (char*)h) : 0ull, fault, ret,
+             (unsigned long)mbi.State, (unsigned long)mbi.Protect, mbi.AllocationBase);
+    scaly_crash_put(buf);
+    /* The frames the OS can walk: through the exception dispatcher back into
+     * the faulting code, as far as unwind data reaches (the JIT's has none). */
+    void* frames[16];
+    USHORT n = RtlCaptureStackBackTrace(0, 16, frames, NULL);
+    for (USHORT i = 0; i < n; i++) {
+        char fmod[MAX_PATH] = "none";
+        HMODULE fh = NULL;
+        if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS
+                               | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                               (LPCSTR)frames[i], &fh) && fh != NULL)
+            GetModuleFileNameA(fh, fmod, sizeof fmod);
+        snprintf(buf, sizeof buf, "  #%u %p %s +0x%llx\n", (unsigned)i, frames[i], fmod,
+                 fh ? (unsigned long long)((char*)frames[i] - (char*)fh) : 0ull);
+        scaly_crash_put(buf);
+    }
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+
+/* Vectored and registered LAST, because a fault in code without unwind data
+ * (the JIT's) ends the frame-based search before an unhandled-exception
+ * filter is ever asked; first-chance, so only the hard faults are named. */
+static LONG CALLBACK scaly_crash_vectored(EXCEPTION_POINTERS* ep)
+{
+    DWORD code = ep->ExceptionRecord->ExceptionCode;
+    if (code == EXCEPTION_ACCESS_VIOLATION || code == EXCEPTION_ILLEGAL_INSTRUCTION
+        || code == EXCEPTION_DATATYPE_MISALIGNMENT || code == EXCEPTION_PRIV_INSTRUCTION)
+        scaly_crash_report(ep);
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+
 static void scaly_stdio_binary_at_start(void)
 {
     _setmode(0, _O_BINARY);
     _setmode(1, _O_BINARY);
     _setmode(2, _O_BINARY);
+    if (getenv("SCALY_CRASH_REPORT") != NULL)
+        AddVectoredExceptionHandler(0, scaly_crash_vectored);
 }
 #pragma section(".CRT$XCU", read)
 __declspec(allocate(".CRT$XCU")) void (*const scaly_stdio_binary_hook)(void) = scaly_stdio_binary_at_start;
@@ -1667,6 +1739,152 @@ int scaly_eio_is_symlink(const char* path)
 {
     DWORD a = GetFileAttributesA(path);
     return a != INVALID_FILE_ATTRIBUTES && (a & FILE_ATTRIBUTE_REPARSE_POINT) != 0 ? 1 : 0;
+}
+
+/* ---- the JIT's memory: one arena for every section --------------------
+ *
+ * ★★★WHY (2026-10-03, tests/win32/WINDOWS-BOX.md §8). ORC's default memory
+ * manager allocates each SECTION of a JIT'd object on its own, and on COFF
+ * every linkonce function is a section of its own (a comdat). VirtualAlloc
+ * places those allocations anywhere in the address space, sometimes more than
+ * 4 GB apart -- and a PC-relative reference between two of them (ADRP on
+ * arm64, +-4 GB; a REL32 on x64, +-2 GB) was then silently TRUNCATED: the
+ * jump landed in someone's read-write data with the caller's high bits
+ * (SCALY_CRASH_REPORT: pc = fault address, the page MEM_COMMIT and
+ * PAGE_READWRITE). How far apart the sections landed varied with the layout,
+ * so the opensp tests under the JIT crashed in a different test each run and
+ * the small programs never. Here every section of the JIT session comes out
+ * of ONE reservation: code from its base upward (direct branches reach
+ * +-128 MB on arm64), data from 256 MB above it, so every reference stays in
+ * range.
+ *
+ * ★The LLVM C API is reached through GetProcAddress on LLVM-C.dll, because
+ * this object is in every Scaly program and an ordinary program must not
+ * depend on LLVM; only a JIT host has the DLL loaded when this runs.
+ *
+ * Allocation is a bump in pages, never freed: a JIT session lives as long as
+ * the process. Sections are committed read-write, and at finalize the code
+ * turns execute-read and read-only data read-only. */
+typedef void* (*scaly_mm_ctx_fn)(void*);
+typedef void (*scaly_mm_term_fn)(void*);
+typedef unsigned char* (*scaly_mm_code_fn)(void*, uintptr_t, unsigned, unsigned, const char*);
+typedef unsigned char* (*scaly_mm_data_fn)(void*, uintptr_t, unsigned, unsigned, const char*, int);
+typedef int (*scaly_mm_final_fn)(void*, char**);
+typedef void (*scaly_mm_destroy_fn)(void*);
+typedef void* (*scaly_rtdyld_cb_fn)(void*, void*, scaly_mm_ctx_fn, scaly_mm_term_fn, scaly_mm_code_fn,
+                                    scaly_mm_data_fn, scaly_mm_final_fn, scaly_mm_destroy_fn);
+typedef void* (*scaly_rtdyld_default_fn)(void*);
+typedef void* (*scaly_layer_creator_fn)(void*, void*, const char*);
+typedef void (*scaly_set_creator_fn)(void*, scaly_layer_creator_fn, void*);
+
+#define SCALY_JIT_ARENA (1024ull << 20)     /* reserved once, committed as used */
+#define SCALY_JIT_DATA_AT (256ull << 20)    /* code below, data above */
+
+static SRWLOCK scaly_jit_lock = SRWLOCK_INIT;
+static unsigned char* scaly_jit_base;
+static size_t scaly_jit_code_top, scaly_jit_data_top;
+
+typedef struct { unsigned char* at; size_t size; int kind; } scaly_jit_section; /* kind 0 code, 1 ro, 2 rw */
+typedef struct { scaly_jit_section* s; size_t n, cap; } scaly_jit_ctx;
+
+static unsigned char* scaly_jit_take(scaly_jit_ctx* c, uintptr_t size, unsigned align, int kind)
+{
+    size_t page = 4096, a = align > page ? align : page;
+    size_t rounded = (size + page - 1) & ~(page - 1);
+    unsigned char* at = NULL;
+    if (rounded == 0)
+        rounded = page;
+    AcquireSRWLockExclusive(&scaly_jit_lock);
+    if (kind == 0) {
+        size_t off = (scaly_jit_code_top + a - 1) & ~(a - 1);
+        if (off + rounded <= SCALY_JIT_DATA_AT) { at = scaly_jit_base + off; scaly_jit_code_top = off + rounded; }
+    } else {
+        size_t off = (scaly_jit_data_top + a - 1) & ~(a - 1);
+        if (off + rounded <= SCALY_JIT_ARENA) { at = scaly_jit_base + off; scaly_jit_data_top = off + rounded; }
+    }
+    ReleaseSRWLockExclusive(&scaly_jit_lock);
+    if (at == NULL || VirtualAlloc(at, rounded, MEM_COMMIT, PAGE_READWRITE) == NULL)
+        return NULL;
+    if (c->n == c->cap) {
+        size_t cap = c->cap ? c->cap * 2 : 16;
+        scaly_jit_section* s = (scaly_jit_section*)realloc(c->s, cap * sizeof *s);
+        if (s == NULL)
+            return NULL;
+        c->s = s; c->cap = cap;
+    }
+    c->s[c->n].at = at; c->s[c->n].size = rounded; c->s[c->n].kind = kind; c->n++;
+    return at;
+}
+
+static void* scaly_jit_ctx_new(void* unused) { (void)unused; return calloc(1, sizeof(scaly_jit_ctx)); }
+static void scaly_jit_terminating(void* unused) { (void)unused; }
+
+static unsigned char* scaly_jit_code(void* c, uintptr_t size, unsigned align, unsigned id, const char* name)
+{
+    (void)id; (void)name;
+    return scaly_jit_take((scaly_jit_ctx*)c, size, align, 0);
+}
+
+static unsigned char* scaly_jit_data(void* c, uintptr_t size, unsigned align, unsigned id, const char* name, int ro)
+{
+    (void)id; (void)name;
+    return scaly_jit_take((scaly_jit_ctx*)c, size, align, ro ? 1 : 2);
+}
+
+static int scaly_jit_finalize(void* cv, char** err)
+{
+    scaly_jit_ctx* c = (scaly_jit_ctx*)cv;
+    (void)err;
+    for (size_t i = 0; i < c->n; i++) {
+        DWORD old = 0;
+        if (c->s[i].kind == 0) {
+            VirtualProtect(c->s[i].at, c->s[i].size, PAGE_EXECUTE_READ, &old);
+            FlushInstructionCache(GetCurrentProcess(), c->s[i].at, c->s[i].size);
+        } else if (c->s[i].kind == 1) {
+            VirtualProtect(c->s[i].at, c->s[i].size, PAGE_READONLY, &old);
+        }
+    }
+    c->n = 0;                               /* finalized; the memory stays */
+    return 0;
+}
+
+static void scaly_jit_destroy(void* cv)
+{
+    scaly_jit_ctx* c = (scaly_jit_ctx*)cv;
+    free(c->s);
+    free(c);
+}
+
+static void* scaly_jit_layer(void* unused, void* es, const char* triple)
+{
+    HMODULE llvm = GetModuleHandleA("LLVM-C.dll");
+    (void)unused; (void)triple;
+    if (scaly_jit_base == NULL)
+        scaly_jit_base = (unsigned char*)VirtualAlloc(NULL, SCALY_JIT_ARENA, MEM_RESERVE, PAGE_NOACCESS);
+    if (scaly_jit_base != NULL && scaly_jit_data_top == 0)
+        scaly_jit_data_top = SCALY_JIT_DATA_AT;
+    if (scaly_jit_base != NULL) {
+        scaly_rtdyld_cb_fn make = (scaly_rtdyld_cb_fn)(void*)GetProcAddress(llvm,
+            "LLVMOrcCreateRTDyldObjectLinkingLayerWithMCJITMemoryManagerLikeCallbacks");
+        if (make != NULL)
+            return make(es, NULL, scaly_jit_ctx_new, scaly_jit_terminating, scaly_jit_code,
+                        scaly_jit_data, scaly_jit_finalize, scaly_jit_destroy);
+    }
+    scaly_rtdyld_default_fn plain = (scaly_rtdyld_default_fn)(void*)GetProcAddress(llvm,
+        "LLVMOrcCreateRTDyldObjectLinkingLayerWithSectionMemoryManager");
+    return plain != NULL ? plain(es) : NULL;
+}
+
+/* Called by the compiler's JIT set-up on a COFF host, with its LLJIT builder. */
+void scaly_jit_use_arena(void* builder)
+{
+    HMODULE llvm = GetModuleHandleA("LLVM-C.dll");
+    if (llvm == NULL || builder == NULL)
+        return;
+    scaly_set_creator_fn set = (scaly_set_creator_fn)(void*)GetProcAddress(llvm,
+        "LLVMOrcLLJITBuilderSetObjectLinkingLayerCreator");
+    if (set != NULL)
+        set(builder, scaly_jit_layer, NULL);
 }
 
 #else

@@ -188,3 +188,79 @@ scaly_jump_context:
     movq  %rax, %rcx                    // deliver the jumper's context
     jmp   *%r10
 .seh_endproc
+
+// ---- the catch point: scaly_setjmp / scaly_longjmp ----------------------
+//
+// The panic shim's catch point on Windows (scaly/memory/panic.c, TRAPS.md
+// 3.22b). The CRT's longjmp UNWINDS through SEH (RtlUnwindEx) when the
+// buffer's Frame is set, and that needs registered unwind data for every frame
+// between the throw and the catch, which code the JIT generated does not
+// have. These two do what longjmp does on POSIX: save the callee-saved state
+// at the catch point, restore it at the throw, and return a second time from
+// scaly_setjmp. Nothing between is unwound, which is all Scaly needs: its own
+// unwind (the region stack) runs from the catch frame's record.
+//
+// Buffer (256 bytes, from scaly_catch_push): rbx, rbp, rdi, rsi, r12..r15 at
+// 0..56, rsp (after the return) at 64, the return address at 72, xmm6..xmm15
+// at 80..224 (unaligned stores: the buffer is only 8-aligned), mxcsr at 240,
+// the x87 control word at 244. Leaf routines, no frame of their own.
+
+.p2align 4
+.globl scaly_setjmp
+scaly_setjmp:
+    movq    %rbx, 0x00(%rcx)
+    movq    %rbp, 0x08(%rcx)
+    movq    %rdi, 0x10(%rcx)
+    movq    %rsi, 0x18(%rcx)
+    movq    %r12, 0x20(%rcx)
+    movq    %r13, 0x28(%rcx)
+    movq    %r14, 0x30(%rcx)
+    movq    %r15, 0x38(%rcx)
+    leaq    8(%rsp), %rdx               // rsp as the caller sees it after the return
+    movq    %rdx, 0x40(%rcx)
+    movq    (%rsp), %rdx                // the return address
+    movq    %rdx, 0x48(%rcx)
+    movdqu  %xmm6,  0x50(%rcx)
+    movdqu  %xmm7,  0x60(%rcx)
+    movdqu  %xmm8,  0x70(%rcx)
+    movdqu  %xmm9,  0x80(%rcx)
+    movdqu  %xmm10, 0x90(%rcx)
+    movdqu  %xmm11, 0xa0(%rcx)
+    movdqu  %xmm12, 0xb0(%rcx)
+    movdqu  %xmm13, 0xc0(%rcx)
+    movdqu  %xmm14, 0xd0(%rcx)
+    movdqu  %xmm15, 0xe0(%rcx)
+    stmxcsr 0xf0(%rcx)
+    fnstcw  0xf4(%rcx)
+    xorl    %eax, %eax
+    ret
+
+.p2align 4
+.globl scaly_longjmp
+scaly_longjmp:
+    movq    0x00(%rcx), %rbx
+    movq    0x08(%rcx), %rbp
+    movq    0x10(%rcx), %rdi
+    movq    0x18(%rcx), %rsi
+    movq    0x20(%rcx), %r12
+    movq    0x28(%rcx), %r13
+    movq    0x30(%rcx), %r14
+    movq    0x38(%rcx), %r15
+    movdqu  0x50(%rcx), %xmm6
+    movdqu  0x60(%rcx), %xmm7
+    movdqu  0x70(%rcx), %xmm8
+    movdqu  0x80(%rcx), %xmm9
+    movdqu  0x90(%rcx), %xmm10
+    movdqu  0xa0(%rcx), %xmm11
+    movdqu  0xb0(%rcx), %xmm12
+    movdqu  0xc0(%rcx), %xmm13
+    movdqu  0xd0(%rcx), %xmm14
+    movdqu  0xe0(%rcx), %xmm15
+    ldmxcsr 0xf0(%rcx)
+    fldcw   0xf4(%rcx)
+    movl    %edx, %eax                  // longjmp(buf, 0) returns 1, as in C
+    testl   %eax, %eax
+    jnz     1f
+    movl    $1, %eax
+1:  movq    0x40(%rcx), %rsp
+    jmp     *0x48(%rcx)                 // to scaly_setjmp's caller, a second time

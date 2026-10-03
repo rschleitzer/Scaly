@@ -142,9 +142,7 @@ define Emitter
         ; OBJECT FORMAT, not of the host — a cross-emit for Windows from a Mac
         ; must set it and a native Mac build must not.
         var target_is_coff: bool
-        ; The emission triple is AArch64, whatever --portable-simd says. Read
-        ; with target_is_coff by the catch point: the arm64 Windows CRT has
-        ; another one than the x64 CRT (get_setjmp_fn_coff).
+        ; The emission triple is AArch64, whatever --portable-simd says.
         var target_is_arm64: bool
         ; The emission triple is AArch64 and --portable-simd is off: the SIMD
         ; operations with a NEON form take it (ROADMAP-simd.md phase 6).
@@ -1193,8 +1191,11 @@ define Emitter
         ; the jmp_buf layout, which is OS- and arch-specific and must not reach
         ; the ONE committed seed), so this declaration only needs the pointer.
         ;
-        ; ★★★COFF IS DIFFERENT, AND IT IS NOT A SPELLING QUESTION (2026-09-20,
-        ; TRAPS.md 3.22). On Win64 the CRT's catch point is `_setjmp` and it
+        ; ★★★COFF IS DIFFERENT (TRAPS.md 3.22, 3.22b): since 2026-10-03 the
+        ; catch point there is the runtime's own `scaly_setjmp`
+        ; (get_setjmp_fn_coff). What follows is why the CRT's form was hard to
+        ; call at all, kept for the trap it describes.
+        ; On Win64 the CRT's catch point is `_setjmp` and it
         ; takes the FRAME as a SECOND argument, in RDX. The C header declares
         ; one parameter because the COMPILER supplies the second — which is why
         ; the two-argument form cannot be written in C and can be written here,
@@ -1211,31 +1212,19 @@ define Emitter
         ; bug). Every catching program on Windows died this way.
         procedure get_setjmp_fn(mutable this) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
-        ; The COFF half of get_setjmp_fn: `i32 @_setjmp(ptr buf, ptr frame)`.
-        ; Exactly what clang emits for a C `setjmp` on this target, read off
-        ; its own output rather than guessed.
-        ;
-        ; ★The arm64 CRT has no `_setjmp` at all (2026-10-02, measured on the
-        ; first Windows-on-arm64 machine: `undefined symbol: _setjmp`, seven
-        ; corpus programs). Its catch point is `_setjmpex`, same two pointers,
-        ; and the second one is the stack pointer AT ENTRY of the catching
-        ; function (emit_catch_setjmp) -- again read off clang's output.
+        ; The COFF half of get_setjmp_fn: `i32 @scaly_setjmp(ptr buf)`, the
+        ; runtime's own catch point (fiber/fcontext_*_windows.S, TRAPS.md 3.22b).
+        ; It replaced the CRT's `_setjmp(buf, frame)` (x64) and
+        ; `_setjmpex(buf, sponentry)` (arm64) on 2026-10-03: their longjmp
+        ; unwinds through SEH, which needs registered unwind data for every
+        ; frame between the throw and the catch -- code the JIT generated has
+        ; none, and arm64 offers no way out of the unwind. Its longjmp restores
+        ; the callee-saved state and nothing else, as on POSIX.
         procedure get_setjmp_fn_coff(mutable this) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
-        ; `declare ptr @llvm.sponentry.p0()` — the stack pointer at entry of
-        ; the current function, which is what arm64 Windows' `_setjmpex` wants
-        ; where x64's `_setjmp` wants the frame address.
-        procedure get_sponentry_fn(mutable this) @direct true @ret_caller true @deep true returns LLVMValueRef linked
-
-        ; `declare ptr @llvm.frameaddress.p0(i32 immarg)` — the frame `_setjmp`
-        ; wants. Declared by NAME and TYPE: LLVM recognises an intrinsic by its
-        ; mangled name, and `p0` is the address space of the pointer it
-        ; answers. It is the only `llvm.*` this emitter declares.
-        procedure get_frameaddress_fn(mutable this) @direct true @ret_caller true @deep true returns LLVMValueRef linked
-
-        ; Build the catch point's `setjmp` call — two arguments on COFF, one
-        ; everywhere else. It is its own procedure so the `try` emission stays
-        ; one statement at the call site.
+        ; Build the catch point's `setjmp` call: one argument, the buffer, on
+        ; every target. It is its own procedure so the `try` emission stays one
+        ; statement at the call site.
         procedure emit_catch_setjmp(mutable this, mutable sj_fn: LLVMValueRef, mutable buf: LLVMValueRef) @direct true @ret_caller true @deep true returns LLVMValueRef linked
 
         ; The catch-point shim (scaly/memory/panic.c). push takes the two
@@ -1840,6 +1829,16 @@ define Emitter
         ; and clearing the bit there would read the descriptor as the value.
         ; AOT emission is untouched — this runs inside jit_run, after emit.
         procedure jit_clear_thread_locals(mutable this) @deep true linked
+
+        ; On COFF every symbol the JIT module only DECLARES is reached through
+        ; an import slot (dllimport): the runtime lives in the host .exe or a
+        ; DLL, gigabytes away from the JIT's memory, and a PC-relative reference
+        ; (ADRP, +-4 GB on arm64) to it was silently TRUNCATED -- the high bits
+        ; of a function's address came out wrong and the first call through
+        ; that pointer ran into unmapped memory. A dllimport reference loads
+        ; the 64-bit address from a `__imp_` slot RuntimeDyld places beside the
+        ; code, so any distance works. LLVM's own intrinsics stay as they are.
+        procedure jit_import_externals(mutable this) @deep true linked
 
         ; Print an ORC/LLVM error (a non-null LLVMErrorRef) and consume it.
         ; LLVMGetErrorMessage itself consumes the error and yields a C string the

@@ -19,11 +19,15 @@
 #                        a suite that LINKS calls this first: on Windows nothing
 #                        tops the archive up, so a missing /tmp/libscaly.lib is
 #                        refused with the command that builds it
-#   scaly_jit_available  false on Windows: the in-process JIT resolves the runtime
-#                        through GetProcAddress, and an .exe exports nothing
-#                        (tests/win32/WINDOWS-BOX.md §1; measured 2026-09-20,
-#                        `--jit` dies with SIGSEGV). A suite that needs it says
-#                        SKIP by name instead of failing or passing vacuously.
+#   scaly_jit_available  true on every host since 2026-10-03. It was false on
+#                        Windows: the in-process JIT resolves the runtime through
+#                        GetProcAddress, and an .exe exported nothing (measured
+#                        2026-09-20, `--jit` died with SIGSEGV). A JIT host
+#                        exports its runtime now (tools/win-link.sh --export),
+#                        the JIT reaches it through import slots
+#                        (Emitter.jit_import_externals) and catches without SEH
+#                        (TRAPS.md 3.22b) -- tests/win32/WINDOWS-BOX.md §8. A
+#                        compiler built before that still cannot JIT there.
 #
 # The POSIX values are byte-for-byte what every runner hard-coded before
 # 2026-09-20; sourcing this on a POSIX host changes nothing. tools/win-env.sh
@@ -74,7 +78,7 @@ scaly_need_archive() {
   return 0
 }
 
-scaly_jit_available() { [ "$SCALY_COFF" = 0 ]; }
+scaly_jit_available() { true; }
 
 # stdout of a program on the Windows box arrived with CRLF until 2026-10-03: the
 # CRT's fd 1 starts in TEXT mode and turned every `\n` our runtime writes into

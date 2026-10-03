@@ -1804,6 +1804,13 @@ void scaly_proc_stdio_binary(void)
 {
 }
 
+/* The JIT's memory arena is a Windows question (eio_windows.c): POSIX JIT
+ * memory comes from mmap near itself, and ORC's default manager stays. */
+void scaly_jit_use_arena(void* builder)
+{
+    (void)builder;
+}
+
 int scaly_eio_is_symlink(const char* path)
 {
     struct stat st;

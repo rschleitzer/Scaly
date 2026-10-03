@@ -62,7 +62,9 @@
 #include <winsock2.h>   /* before windows.h — it defines the socket API */
 #include <ws2tcpip.h>   /* IPPROTO_TCP/TCP_NODELAY for the socketpair emulation */
 #include <windows.h>
-#include <io.h>         /* _pipe */
+#include <io.h>         /* _pipe, _write &co. */
+#include <direct.h>     /* _mkdir, _rmdir, _getcwd */
+#include <process.h>    /* _getpid */
 #include <fcntl.h>      /* _O_BINARY — NOT in io.h, despite _pipe living there */
 #include <sys/stat.h>   /* _S_IREAD/_S_IWRITE for creat's pmode */
 #include <errno.h>      /* setenv's EINVAL */
@@ -525,6 +527,25 @@ int creat(const char* path, unsigned mode)
     int pmode = (mode & 0200u) ? (_S_IREAD | _S_IWRITE) : _S_IREAD;
     return _open(path, _O_WRONLY | _O_CREAT | _O_TRUNC | _O_BINARY, pmode);
 }
+
+/* The POSIX names the language's externs use that the UCRT DLL exports only
+ * with an underscore. An AOT link resolves them through oldnames.lib, which
+ * makes them weak aliases nobody can export; defined here they are ordinary
+ * functions, so the in-process JIT finds them among the runtime's exports
+ * (tools/win-link.sh --export; 2026-10-03, tests/win32/WINDOWS-BOX.md §8).
+ * They forward unchanged -- the behaviour oldnames.lib gave them -- in the
+ * shape the Scaly side DECLARES them (POSIX's): read and write take and answer
+ * a size_t, so the CRT's int result is sign-extended and -1 stays -1 (the
+ * LLP64 rule); mkdir takes a mode Windows has no use for. */
+intptr_t write(int fd, const void* buf, size_t n) { return _write(fd, buf, (unsigned)n); }
+intptr_t read(int fd, void* buf, size_t n) { return _read(fd, buf, (unsigned)n); }
+int access(const char* path, int mode) { return _access(path, mode); }
+char* getcwd(char* buf, size_t size) { return _getcwd(buf, (int)size); }
+int getpid(void) { return _getpid(); }
+int mkdir(const char* path, int mode) { (void)mode; return _mkdir(path); }
+int rmdir(const char* path) { return _rmdir(path); }
+char* strdup(const char* s) { return _strdup(s); }
+int unlink(const char* path) { return _unlink(path); }
 
 int poll(void* fds, unsigned long long nfds, int timeout)
 {

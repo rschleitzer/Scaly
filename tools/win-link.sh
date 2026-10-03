@@ -3,7 +3,7 @@
 # (.github/workflows/seed.yml, rungs 9 and 12) — the ONE place the link line
 # lives locally, so the bar's scripts never spell it a second time.
 #
-#   tools/win-link.sh [--llvm] [--runtime] [--lto] <out.exe> <inputs...>
+#   tools/win-link.sh [--llvm] [--runtime] [--lto] [--export F]... <out.exe> <inputs...>
 #
 #   --runtime  append the runtime archive, $TMP/libscaly.lib (Git Bash mounts
 #              $TMP as /tmp; tools/win-archive.sh builds it, cli.scaly's link
@@ -18,6 +18,9 @@
 #              on the LINK is what sets the LTO pipeline's level) and
 #              -errorlimit:0 (lld-link stops at 20 errors, and that truncation
 #              reads like a short clean answer — rung 12's own lesson)
+#   --export F export the functions input F defines (repeatable; an object,
+#              an archive or bitcode): what a JIT host's GetProcAddress needs.
+#              A --llvm --runtime link exports the runtime archive by itself.
 #
 # Always: -lws2_32 (the one-object runtime archive drags in the IOCP backend,
 # same argument as -lm on Linux, opposite library; no -lm here — the MSVC CRT
@@ -31,12 +34,13 @@ cd "$(dirname "$0")/.."
 . tools/win-env.sh || exit 1
 source tools/llvm-env.sh > /dev/null
 T=${SCALY_WIN_TRIPLE:-x86_64-pc-windows-msvc}
-LLVM=0; RT=0; LTO=0
+LLVM=0; RT=0; LTO=0; EXPORTS=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --llvm) LLVM=1 ;;
     --runtime) RT=1 ;;
     --lto) LTO=1 ;;
+    --export) shift; EXPORTS+=("$1") ;;
     --) shift; break ;;
     -*) echo "win-link: unknown flag $1" >&2; exit 2 ;;
     *) break ;;
@@ -57,6 +61,36 @@ if [ "$RT" = 1 ]; then
 fi
 args+=(-lws2_32)
 [ "$LLVM" = 1 ] && args+=(-L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME")
+# ★A JIT host takes the UCRT from ucrtbase.dll (the "hybrid" CRT: startup and
+# vcruntime static as everywhere, the C library dynamic). The JIT resolves
+# fopen, malloc & co. in that DLL, and the runtime's shims in this .exe must
+# use the SAME instance: with the static UCRT here, scaly_eio_seek locked a
+# FILE* the JIT had opened in ucrtbase -- two CRTs, one stream, an access
+# violation inside the lock (2026-10-03). ucrtbase is part of Windows 10+.
+[ "$LLVM" = 1 ] && args+=(-Xlinker -nodefaultlib:libucrt.lib -Xlinker -defaultlib:ucrt.lib)
+# The JIT host: a program that runs the in-process JIT resolves the runtime
+# through GetProcAddress on ITSELF, and an .exe exports nothing -- every stdlib
+# function was then a stub answering 0 (Emitter.emit_jit_stubs) and every C
+# shim an unresolved symbol (2026-10-03, tests/win32/WINDOWS-BOX.md §8). So a
+# link that names runtime inputs with --export (and every --llvm --runtime
+# link: the archive) exports the FUNCTIONS they define, through a .def written
+# here. Only the runtime: exporting the whole compiler would keep LTO from
+# dropping and internalising it. No import library and no .exp beside the .exe.
+[ "$LLVM" = 1 ] && [ "$RT" = 1 ] && EXPORTS+=("$rt")
+if [ ${#EXPORTS[@]} -gt 0 ]; then
+  def="$(dirname "$OUT")/$(basename "$OUT" .exe).exports.def"
+  mkdir -p "$(dirname "$OUT")"
+  # ★Beside the runtime's own functions -- among them the POSIX names the UCRT
+  # DLL exports only with an underscore, which posixcompat_windows.c defines --
+  # `atexit`, which lives in the static startup code only. Checked 2026-10-03
+  # against every extern of packages/ with GetProcAddress over the system DLLs.
+  { echo EXPORTS
+    llvm-nm --defined-only --extern-only "${EXPORTS[@]}" 2>/dev/null \
+      | awk 'NF==3 && ($2=="T" || $2=="W") && $3 !~ /^[?.]/ && $3 !~ /^__/ {print "    " $3}' | sort -u
+    echo "    atexit"
+  } > "$def"
+  args+=(-Xlinker "-def:$(cygpath -w "$def")" -Xlinker -noimplib)
+fi
 args+=(-Xlinker -stack:67108864,1048576)
 [ "$LTO" = 1 ] && args+=(-Xlinker -errorlimit:0)
 args+=(-o "$OUT")

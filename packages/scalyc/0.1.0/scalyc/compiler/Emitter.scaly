@@ -184,9 +184,7 @@ define Emitter
         ; OBJECT FORMAT, not of the host — a cross-emit for Windows from a Mac
         ; must set it and a native Mac build must not.
         var target_is_coff: bool
-        ; The emission triple is AArch64, whatever --portable-simd says. Read
-        ; with target_is_coff by the catch point: the arm64 Windows CRT has
-        ; another one than the x64 CRT (get_setjmp_fn_coff).
+        ; The emission triple is AArch64, whatever --portable-simd says.
         var target_is_arm64: bool
         ; The emission triple is AArch64 and --portable-simd is off: the SIMD
         ; operations with a NEON form take it (ROADMAP-simd.md phase 6).
@@ -4127,8 +4125,11 @@ define Emitter
         ; the jmp_buf layout, which is OS- and arch-specific and must not reach
         ; the ONE committed seed), so this declaration only needs the pointer.
         ;
-        ; ★★★COFF IS DIFFERENT, AND IT IS NOT A SPELLING QUESTION (2026-09-20,
-        ; TRAPS.md 3.22). On Win64 the CRT's catch point is `_setjmp` and it
+        ; ★★★COFF IS DIFFERENT (TRAPS.md 3.22, 3.22b): since 2026-10-03 the
+        ; catch point there is the runtime's own `scaly_setjmp`
+        ; (get_setjmp_fn_coff). What follows is why the CRT's form was hard to
+        ; call at all, kept for the trap it describes.
+        ; On Win64 the CRT's catch point is `_setjmp` and it
         ; takes the FRAME as a SECOND argument, in RDX. The C header declares
         ; one parameter because the COMPILER supplies the second — which is why
         ; the two-argument form cannot be written in C and can be written here,
@@ -4163,100 +4164,37 @@ define Emitter
             fn
         }
 
-        ; The COFF half of get_setjmp_fn: `i32 @_setjmp(ptr buf, ptr frame)`.
-        ; Exactly what clang emits for a C `setjmp` on this target, read off
-        ; its own output rather than guessed.
-        ;
-        ; ★The arm64 CRT has no `_setjmp` at all (2026-10-02, measured on the
-        ; first Windows-on-arm64 machine: `undefined symbol: _setjmp`, seven
-        ; corpus programs). Its catch point is `_setjmpex`, same two pointers,
-        ; and the second one is the stack pointer AT ENTRY of the catching
-        ; function (emit_catch_setjmp) -- again read off clang's output.
+        ; The COFF half of get_setjmp_fn: `i32 @scaly_setjmp(ptr buf)`, the
+        ; runtime's own catch point (fiber/fcontext_*_windows.S, TRAPS.md 3.22b).
+        ; It replaced the CRT's `_setjmp(buf, frame)` (x64) and
+        ; `_setjmpex(buf, sponentry)` (arm64) on 2026-10-03: their longjmp
+        ; unwinds through SEH, which needs registered unwind data for every
+        ; frame between the throw and the catch -- code the JIT generated has
+        ; none, and arm64 offers no way out of the unwind. Its longjmp restores
+        ; the callee-saved state and nothing else, as on POSIX.
         procedure get_setjmp_fn_coff(mutable this) returns LLVMValueRef
         {
-            var sj_name "_setjmp" as pointer[const_char]
-            if target_is_arm64
-                set sj_name: "_setjmpex" as pointer[const_char]
-            var fn LLVMGetNamedFunction(llvm_module, sj_name)
+            var fn LLVMGetNamedFunction(llvm_module, "scaly_setjmp")
             if fn = null
             {
                 let i32_ty LLVMInt32TypeInContext(context)
                 let ptr_ty LLVMPointerTypeInContext(context, 0)
-                var ptys Vector[LLVMTypeRef](2)
+                var ptys Vector[LLVMTypeRef](1)
                 ptys.put(0, ptr_ty)
-                ptys.put(1, ptr_ty)
-                let fty LLVMFunctionType(i32_ty, ptys.data, 2, 0)
-                set fn: LLVMAddFunction(llvm_module, sj_name, fty)
+                let fty LLVMFunctionType(i32_ty, ptys.data, 1, 0)
+                set fn: LLVMAddFunction(llvm_module, "scaly_setjmp", fty)
                 LLVMSetLinkage(fn, LLVMLinkage.External())
             }
             mark_returns_twice_callee(fn)
             fn
         }
 
-        ; `declare ptr @llvm.sponentry.p0()` — the stack pointer at entry of
-        ; the current function, which is what arm64 Windows' `_setjmpex` wants
-        ; where x64's `_setjmp` wants the frame address.
-        procedure get_sponentry_fn(mutable this) returns LLVMValueRef
-        {
-            var fn LLVMGetNamedFunction(llvm_module, "llvm.sponentry.p0")
-            if fn = null
-            {
-                let ptr_ty LLVMPointerTypeInContext(context, 0)
-                let fty LLVMFunctionType(ptr_ty, null as pointer[LLVMTypeRef], 0, 0)
-                set fn: LLVMAddFunction(llvm_module, "llvm.sponentry.p0", fty)
-            }
-            fn
-        }
-
-        ; `declare ptr @llvm.frameaddress.p0(i32 immarg)` — the frame `_setjmp`
-        ; wants. Declared by NAME and TYPE: LLVM recognises an intrinsic by its
-        ; mangled name, and `p0` is the address space of the pointer it
-        ; answers. It is the only `llvm.*` this emitter declares.
-        procedure get_frameaddress_fn(mutable this) returns LLVMValueRef
-        {
-            var fn LLVMGetNamedFunction(llvm_module, "llvm.frameaddress.p0")
-            if fn = null
-            {
-                let i32_ty LLVMInt32TypeInContext(context)
-                let ptr_ty LLVMPointerTypeInContext(context, 0)
-                var ptys Vector[LLVMTypeRef](1)
-                ptys.put(0, i32_ty)
-                let fty LLVMFunctionType(ptr_ty, ptys.data, 1, 0)
-                set fn: LLVMAddFunction(llvm_module, "llvm.frameaddress.p0", fty)
-            }
-            fn
-        }
-
-        ; Build the catch point's `setjmp` call — two arguments on COFF, one
-        ; everywhere else. It is its own procedure so the `try` emission stays
-        ; one statement at the call site.
+        ; Build the catch point's `setjmp` call: one argument, the buffer, on
+        ; every target. It is its own procedure so the `try` emission stays one
+        ; statement at the call site.
         procedure emit_catch_setjmp(mutable this, mutable sj_fn: LLVMValueRef, mutable buf: LLVMValueRef) returns LLVMValueRef
         {
             let sj_ty LLVMGlobalGetValueType(sj_fn)
-            if target_is_coff and target_is_arm64
-            {
-                let sp_fn get_sponentry_fn()
-                let sp_ty LLVMGlobalGetValueType(sp_fn)
-                let entry_sp LLVMBuildCall2(builder, sp_ty, sp_fn, null as pointer[LLVMValueRef], 0, "catch.sp")
-                var sp_args Vector[LLVMValueRef](2)
-                sp_args.put(0, buf)
-                sp_args.put(1, entry_sp)
-                return LLVMBuildCall2(builder, sj_ty, sj_fn, sp_args.data, 2, "catch.sj")
-            }
-            if target_is_coff
-            {
-                let fa_fn get_frameaddress_fn()
-                let fa_ty LLVMGlobalGetValueType(fa_fn)
-                let i32_ty LLVMInt32TypeInContext(context)
-                var fa_args Vector[LLVMValueRef](1)
-                fa_args.put(0, LLVMConstInt(i32_ty, 0, 0))
-                let frame LLVMBuildCall2(builder, fa_ty, fa_fn, fa_args.data, 1, "catch.frame")
-                var two_args Vector[LLVMValueRef](2)
-                two_args.put(0, buf)
-                two_args.put(1, frame)
-                return LLVMBuildCall2(builder, sj_ty, sj_fn, two_args.data, 2, "catch.sj")
-            }
-
             var one_arg Vector[LLVMValueRef](1)
             one_arg.put(0, buf)
             LLVMBuildCall2(builder, sj_ty, sj_fn, one_arg.data, 1, "catch.sj")
@@ -8465,6 +8403,32 @@ define Emitter
             }
         }
 
+        ; On COFF every symbol the JIT module only DECLARES is reached through
+        ; an import slot (dllimport): the runtime lives in the host .exe or a
+        ; DLL, gigabytes away from the JIT's memory, and a PC-relative reference
+        ; (ADRP, +-4 GB on arm64) to it was silently TRUNCATED -- the high bits
+        ; of a function's address came out wrong and the first call through
+        ; that pointer ran into unmapped memory. A dllimport reference loads
+        ; the 64-bit address from a `__imp_` slot RuntimeDyld places beside the
+        ; code, so any distance works. LLVM's own intrinsics stay as they are.
+        procedure jit_import_externals(mutable this)
+        {
+            var f LLVMGetFirstFunction(llvm_module)
+            while f <> null
+            {
+                if LLVMIsDeclaration(f) <> 0 and LLVMGetIntrinsicID(f) = 0
+                    LLVMSetDLLStorageClass(f, 1)
+                set f: LLVMGetNextFunction(f)
+            }
+            var gv LLVMGetFirstGlobal(llvm_module)
+            while gv <> null
+            {
+                if LLVMIsDeclaration(gv) <> 0
+                    LLVMSetDLLStorageClass(gv, 1)
+                set gv: LLVMGetNextGlobal(gv)
+            }
+        }
+
         ; Print an ORC/LLVM error (a non-null LLVMErrorRef) and consume it.
         ; LLVMGetErrorMessage itself consumes the error and yields a C string the
         ; caller must dispose; do NOT also call LLVMConsumeError.
@@ -8536,6 +8500,8 @@ define Emitter
 
             ; A thread-local the JIT materializes itself has no TLV descriptor.
             jit_clear_thread_locals()
+            if target_is_coff
+                this.jit_import_externals()
             let dbg_dump getenv("SCALYC_JIT_DUMP")
             if dbg_dump <> null
                 this.write_module_to_file(String(dbg_dump))
@@ -8576,6 +8542,10 @@ define Emitter
                         let jtmb LLVMOrcJITTargetMachineBuilderCreateFromTargetMachine(jit_tm)
                         set jit_builder: LLVMOrcCreateLLJITBuilder()
                         LLVMOrcLLJITBuilderSetJITTargetMachineBuilder(jit_builder, jtmb)
+                        ; COFF: every section in one arena, or a reference
+                        ; between two of them can be truncated (the shim says why)
+                        if target_is_coff
+                            scaly_jit_use_arena(jit_builder)
                     }
                 }
             }
@@ -8589,6 +8559,19 @@ define Emitter
             ; Resolve libc symbols (malloc/free/write/exit/...) from the host.
             let jd LLVMOrcLLJITGetMainJITDylib(jit)
             let prefix LLVMOrcLLJITGetGlobalPrefix(jit)
+            ; COFF: the C library comes from ucrtbase.dll FIRST -- the instance
+            ; the runtime's shims in this executable use (tools/win-link.sh, the
+            ; hybrid CRT). The process search alone answered by module order,
+            ; and a system DLL's msvcrt.dll exports fopen too: a third CRT.
+            if target_is_coff
+            {
+                var ucrt: LLVMOrcDefinitionGeneratorRef null
+                let ucrt_err LLVMOrcCreateDynamicLibrarySearchGeneratorForPath(&ucrt, "ucrtbase.dll" as pointer[const_char], prefix, null as pointer[void], null as pointer[void])
+                if ucrt_err = null
+                    LLVMOrcJITDylibAddGenerator(jd, ucrt)
+                else
+                    report_jit_error(ucrt_err, "JIT: ucrtbase.dll not found")
+            }
             var gen: LLVMOrcDefinitionGeneratorRef null
             let gen_err LLVMOrcCreateDynamicLibrarySearchGeneratorForProcess(&gen, prefix, null as pointer[void], null as pointer[void])
             if gen_err <> null

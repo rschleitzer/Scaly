@@ -47,6 +47,27 @@
 #include <stddef.h>
 #include <stdlib.h>   /* malloc/free for the emitter-side frames */
 
+/* ★★★WINDOWS CATCHES WITH ITS OWN PAIR (2026-10-03, TRAPS.md 3.22b). The
+ * CRT's longjmp unwinds through SEH there, and that needs registered unwind
+ * data for every frame between the throw and the catch -- which code the JIT
+ * generated does not have, and which arm64 does not let a caller opt out of
+ * (a `Frame` of 0 broke the AOT catch too, measured). scaly_setjmp and
+ * scaly_longjmp (fiber/fcontext_*_windows.S) save and restore the callee-saved
+ * state and nothing else, as longjmp does on POSIX; the emitter calls
+ * scaly_setjmp at a `try` on a COFF target. The buffer is 256 bytes on both
+ * Windows ABIs, so the frame record below has the same shape everywhere. */
+#ifdef _WIN32
+typedef unsigned long long scaly_jmp_buf[32];
+__attribute__((returns_twice)) int scaly_setjmp(void *buf);
+__attribute__((noreturn)) void scaly_longjmp(void *buf, int value);
+#define SCALY_SETJMP(b) scaly_setjmp(b)
+#define SCALY_LONGJMP(b) scaly_longjmp((b), 1)
+#else
+typedef jmp_buf scaly_jmp_buf;
+#define SCALY_SETJMP(b) setjmp(b)
+#define SCALY_LONGJMP(b) longjmp((b), 1)
+#endif
+
 /* ★★★THE CONTRACT WITH scaly/memory/runtime.scaly: these are the variant TAGS
  * of the prelude's `RuntimeFault` union, and a tag is a variant's POSITION in
  * that declaration. Appending a kind means appending it THERE and here in the
@@ -70,7 +91,7 @@ typedef void (*scaly_unwind_fn)(void *);
 typedef long long (*scaly_body_fn)(void *);
 
 typedef struct scaly_catch_frame {
-    jmp_buf buf;
+    scaly_jmp_buf buf;
     struct scaly_catch_frame *prev;
     void *mark;                    /* region watermark at entry */
     scaly_unwind_fn unwind;
@@ -104,7 +125,7 @@ long long scaly_catch_run(scaly_body_fn body, void *arg,
     f.unwind = unwind;
     f.what = 0; f.index = 0; f.length = 0; f.kind = 0; f.code = 0; f.reserve_slot = -1;
 
-    if (setjmp(f.buf) == 0) {
+    if (SCALY_SETJMP(f.buf) == 0) {
         scaly_catch_top = &f;
         long long r = body(arg);
         scaly_catch_top = f.prev;
@@ -135,7 +156,7 @@ int scaly_panic_jump(const char *what, size_t index, size_t length, int code)
     t->what = what; t->index = index; t->length = length;
     t->kind = SCALY_FAULT_OUT_OF_BOUNDS;
     t->code = code;
-    longjmp(t->buf, 1);
+    SCALY_LONGJMP(t->buf);
     return 0;                      /* unreachable; longjmp is noreturn */
 }
 
@@ -154,7 +175,7 @@ int scaly_panic_null_jump(const char *where, int code)
     t->what = where; t->index = 0; t->length = 0;
     t->kind = SCALY_FAULT_NULL_REFERENCE;
     t->code = code;
-    longjmp(t->buf, 1);
+    SCALY_LONGJMP(t->buf);
     return 0;                      /* unreachable; longjmp is noreturn */
 }
 
@@ -183,7 +204,7 @@ int scaly_panic_region_jump(const char *what, size_t address, int code)
     t->what = what; t->index = address; t->length = 0;
     t->kind = SCALY_FAULT_INVALID_REGION;
     t->code = code;
-    longjmp(t->buf, 1);
+    SCALY_LONGJMP(t->buf);
     return 0;                      /* unreachable; longjmp is noreturn */
 }
 
@@ -203,7 +224,7 @@ int scaly_panic_size_jump(const char *what, size_t added, size_t length, int cod
     t->what = what; t->index = added; t->length = length;
     t->kind = SCALY_FAULT_SIZE_OVERFLOW;
     t->code = code;
-    longjmp(t->buf, 1);
+    SCALY_LONGJMP(t->buf);
     return 0;                      /* unreachable; longjmp is noreturn */
 }
 
@@ -226,7 +247,7 @@ int scaly_panic_oom_jump(const char *what, size_t bytes, int code)
     t->what = what; t->index = bytes; t->length = 0;
     t->kind = SCALY_FAULT_OUT_OF_MEMORY;
     t->code = code;
-    longjmp(t->buf, 1);
+    SCALY_LONGJMP(t->buf);
     return 0;                      /* unreachable; longjmp is noreturn */
 }
 
@@ -251,7 +272,7 @@ int scaly_panic_resource_jump(const char *what, size_t requested, int code)
     t->what = what; t->index = requested; t->length = 0;
     t->kind = SCALY_FAULT_RESOURCE;
     t->code = code;
-    longjmp(t->buf, 1);
+    SCALY_LONGJMP(t->buf);
     return 0;                      /* unreachable; longjmp is noreturn */
 }
 
@@ -271,7 +292,7 @@ int scaly_panic_deadlock_jump(const char *what, int code)
     t->what = what; t->index = 0; t->length = 0;
     t->kind = SCALY_FAULT_DEADLOCK;
     t->code = code;
-    longjmp(t->buf, 1);
+    SCALY_LONGJMP(t->buf);
     return 0;                      /* unreachable; longjmp is noreturn */
 }
 
@@ -473,7 +494,7 @@ void scaly_panic_reraise(int kind, const char *what, size_t index,
     if (t) {
         t->what = what; t->index = index; t->length = length;
         t->kind = kind; t->code = code;
-        longjmp(t->buf, 1);
+        SCALY_LONGJMP(t->buf);
     }
     exit(code);
 }
