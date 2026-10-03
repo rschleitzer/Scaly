@@ -13,76 +13,55 @@
       <title>Installing Scaly</title>
       <para>This section starts from a blank machine — a fresh Linux
         installation or a new Mac — and ends with the whole Scaly toolchain
-        installed: the compiler, the language server, and (in the next section)
-        editor support in Visual Studio Code with syntax highlighting and a
-        source-level debugger.</para>
+        installed: the tool, the compiler, the language server, and (in the
+        next section) editor support in Visual Studio Code with syntax
+        highlighting and a source-level debugger.</para>
       <para>The quickest way to get the toolchain is the installer hosted on
         scaly.io. Scaly ships as its own LLVM IR (a <emphasis>seed</emphasis>)
-        and is turned into a native binary on your own machine, so first install
-        LLVM 18 and a C compiler:</para>
+        and is turned into native programs on your own machine, so first
+        install LLVM 21 and a C compiler:</para>
       <programlisting>; macOS (install Homebrew first from https://brew.sh if you don't have it)
-brew install llvm@18
+brew install llvm@21
 
-; Ubuntu / Debian
-sudo apt install llvm-18 clang</programlisting>
+; Ubuntu 26.04
+sudo apt install llvm-21 llvm-21-dev lld-21 clang</programlisting>
       <para>Then run the installer. It downloads Scaly, builds it for your
-        machine, and puts two commands on your <envar>PATH</envar> under
-        <filename>~/.scaly</filename> — no <command>sudo</command>
-        required:</para>
+        machine — about half a minute — and puts three commands on your
+        <envar>PATH</envar> under <filename>~/.scaly</filename>; no
+        <command>sudo</command> is required:</para>
       <programlisting>curl -fsSL https://scaly.io/install.sh | sh</programlisting>
-      <para>The two commands are <command>scalyc</command>, the compiler, and
-        <command>scalyls</command>, the language server that powers the editor
-        features in <xref linkend="tut-vscode"/>. Open a new terminal afterwards
-        so the updated <envar>PATH</envar> takes effect; then both work from any
-        directory, as the rest of this tutorial assumes. To uninstall, remove
+      <para>The three commands are:</para>
+      <itemizedlist>
+        <listitem>
+          <para><command>scaly</command>, the tool you will use most:
+            <userinput>scaly run</userinput>, <userinput>scaly build</userinput>
+            and <userinput>scaly test</userinput>, and, started without
+            arguments, an interactive session.</para>
+        </listitem>
+        <listitem>
+          <para><command>scalyc</command>, the compiler by itself, with the
+            command line of a C compiler (<option>-o</option>,
+            <option>-c</option>, <option>-S</option>,
+            <option>-O2</option>).</para>
+        </listitem>
+        <listitem>
+          <para><command>scalyls</command>, the language server that powers
+            the editor features in <xref linkend="tut-vscode"/>.</para>
+        </listitem>
+      </itemizedlist>
+      <para>The standard library and the standard packages —
+        <literal>http</literal>, <literal>https</literal>,
+        <literal>tls</literal>, <literal>json</literal>,
+        <literal>compress</literal>, <literal>pg</literal>,
+        <literal>redis</literal> and <literal>h3</literal> — are installed with
+        them, as sources; a package is compiled the first time a program uses
+        it and kept in <filename>~/.scaly/cache</filename>.</para>
+      <para>Open a new terminal afterwards so the updated <envar>PATH</envar>
+        takes effect; then all three work from any directory, as the rest of
+        this tutorial assumes. Running the installer again replaces the
+        toolchain with the current one. To uninstall, remove
         <filename>~/.scaly</filename> and the <envar>PATH</envar> line the
         installer added to your shell profile.</para>
-    </section>
-
-    <section xml:id="tut-build">
-      <title>Building from Source</title>
-      <para>If you have the source repository — for contributing to the compiler
-        itself — you can build <command>scalyc</command> directly instead of
-        using the installer. Scaly is self-hosted: the compiler is written in
-        Scaly and compiles itself, distributed as a <emphasis>seed</emphasis> —
-        the compiler emitted as its own LLVM IR, the <filename>.ll</filename>
-        files committed under <filename>seed/</filename>. A single seed serves
-        every 64-bit little-endian target — the IR carries no target triple, so
-        the compiler you build from it targets whatever machine it runs on.
-        Turning the seed back into a working <command>scalyc</command> needs only
-        LLVM 18 and a C compiler for the final link; no C++ toolchain is
-        involved.</para>
-      <para>With the prerequisites above installed, run the build script from the
-        repository root:</para>
-      <programlisting>tools/build-from-seed.sh</programlisting>
-      <para>This compiles the seed with <command>llc</command>, links it into
-        <filename>scalyc/build/scalyc</filename>, builds the
-        <command>scalyls</command> language server beside it, and builds the
-        small runtime archive the compiler links your programs against. To put
-        both on your <envar>PATH</envar> from a repository checkout:</para>
-      <programlisting>tools/install.sh</programlisting>
-      <para>This installs small <command>scalyc</command> and
-        <command>scalyls</command> wrappers in
-        <filename>/usr/local/bin</filename> (override with <envar>BINDIR</envar>,
-        e.g. <userinput>BINDIR="$HOME/.local/bin" tools/install.sh</userinput>)
-        that point back at the binaries in this repository and set
-        <envar>SCALY_HOME</envar> so the prelude and standard library are found
-        whatever your current directory is; rebuilding is picked up
-        automatically with no reinstall. Remove them again with
-        <filename>tools/uninstall.sh</filename>.</para>
-      <note>
-        <para><filename>tools/install.sh</filename> builds the small runtime
-          archive into a persistent location under the repository, and the
-          installed <command>scalyc</command> rebuilds it automatically if it
-          ever goes missing. If you instead run
-          <filename>scalyc/build/scalyc</filename> directly without installing,
-          its archive lives at <filename>/tmp/libscaly.a</filename>, which is
-          cleared on reboot; re-run <filename>tools/build-from-seed.sh</filename>
-          to rebuild it.</para>
-      </note>
-      <para>How the seed came to be — and how it is refreshed and verified — is
-        described in <xref linkend="appendix-bootstrap"/>; you do not need any
-        of it for everyday use.</para>
     </section>
 
     <section xml:id="tut-hello">
@@ -91,14 +70,41 @@ sudo apt install llvm-18 clang</programlisting>
         <code>main</code> function to declare and nothing to import. Put this
         single line in a file called <filename>hello.scaly</filename>:</para>
       <programlisting>print("Hello, World!")</programlisting>
-      <para>Compile it to an executable with <option>-o</option>, then run the
-        result:</para>
-      <programlisting>scalyc -o hello hello.scaly
-./hello</programlisting>
+      <para>Run it:</para>
+      <programlisting>scaly run hello.scaly</programlisting>
       <para>The program prints:</para>
       <screen>Hello, World!</screen>
+      <para><userinput>scaly run</userinput> compiles the file in memory and
+        runs it at once; nothing is left on disk. To get a program you can keep
+        and hand to someone else, build it:</para>
+      <programlisting>scaly build hello.scaly -o hello
+./hello</programlisting>
+      <para>Add <option>--release</option> for the optimised build: the whole
+        program — your code, the standard library and every package it uses —
+        is optimised as one piece.</para>
       <para>That is the whole edit-compile-run loop. Everything that follows is
         just more interesting things to put between the braces.</para>
+    </section>
+
+    <section xml:id="tut-repl">
+      <title>Trying Things Out</title>
+      <para><command>scaly</command> without arguments starts an interactive
+        session. An expression shows its value and its type; a
+        <code>let</code> or <code>var</code> keeps a value for the entries that
+        follow:</para>
+      <screen>$ scaly
+scaly> 6 * 7
+it: int = 42
+scaly> let name "Scaly"
+name: String = "Scaly"
+scaly> :where name
+  name: String
+    the value   8 bytes, on the session page of its entry
+    its text    5 bytes, on a page of its own
+scaly> :quit</screen>
+      <para><userinput>:where</userinput> shows where a value lives — Scaly
+        manages memory in regions, and here you can watch it do so.
+        <userinput>:help</userinput> lists the other commands.</para>
     </section>
   </section>
 
@@ -641,7 +647,7 @@ choose result
         print("cannot divide by zero")</programlisting>
     <para>Put both pieces in <filename>divide.scaly</filename>, then build and
       run it:</para>
-    <programlisting>scalyc -o divide divide.scaly
+    <programlisting>scaly build divide.scaly -o divide
 ./divide</programlisting>
     <para>It prints:</para>
     <screen>20 / 4 = 5</screen>

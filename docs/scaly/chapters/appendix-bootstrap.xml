@@ -4,8 +4,9 @@
   <para>Scaly is self-hosted, and the committed <emphasis>seed</emphasis> — the
     compiler emitted as its own textual LLVM IR under
     <filename>seed/</filename> — is the sole bootstrap root. The normal way to
-    build the compiler is from that seed, as described in
-    <xref linkend="tut-build"/>; it needs only LLVM 18 and a C compiler. A
+    build the compiler is from that seed — it is what the installer of
+    <xref linkend="tut-install"/> does on your machine; it needs only LLVM 21
+    and a C compiler. A
     single seed covers every 64-bit little-endian (LP64) target, and a CI
     matrix builds and verifies it natively on macOS and Linux, on both x86-64
     and AArch64.</para>
