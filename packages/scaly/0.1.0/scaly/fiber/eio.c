@@ -1811,6 +1811,17 @@ void scaly_jit_use_arena(void* builder)
     (void)builder;
 }
 
+/* The file of the running program (eio_windows.c answers it). NOT answered
+ * here: macOS and Linux hand out wrapper scripts that set SCALY_HOME
+ * (docs/website/install.sh), so nothing asks. -1 is "not known", and the
+ * caller then resolves as it always did. Filling it in is
+ * _NSGetExecutablePath and readlink("/proc/self/exe"). */
+int scaly_eio_self_path(char* buffer, size_t capacity)
+{
+    (void)buffer; (void)capacity;
+    return -1;
+}
+
 int scaly_eio_is_symlink(const char* path)
 {
     struct stat st;

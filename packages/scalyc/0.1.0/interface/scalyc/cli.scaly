@@ -22,6 +22,8 @@ use scaly.memory.root_pages.getenv
 function getpid() returns i32 extern
 function system(command: pointer[const_char]) returns i32 extern
 function unlink(path: pointer[const_char]) returns i32 extern
+procedure setenv(name: pointer[const_char], value: pointer[const_char], overwrite: i32) returns i32 extern
+procedure scaly_eio_self_path(mutable buffer: pointer[char], capacity: size_t) returns i32 extern
 
 ; Compiler module imports
 use scalyc.compiler.Modeler
@@ -314,6 +316,20 @@ define cli
     ; Entry point of scalyc, the compiler: a command line like a C
     ; compiler's (-o, -c, -S, -O2, -L, -l) and nothing else. The REPL and the
     ; commands run, build and test belong to `scaly` (tool_main#).
+    ; ★A handed-out program finds its packages BESIDE ITSELF (2026-10-03):
+    ; with SCALY_HOME unset, the program `<home>/libexec/<name>` whose <home>
+    ; holds `packages/scaly` takes that <home> -- it SETS the variable for
+    ; this process, so every reader (the Modeler's package base, the runtime
+    ; archive, the language server's, a child process) stays as it is. A
+    ; program of the source tree (scalyc/build, /tmp/scalyc_stage2) has no
+    ; such neighbour and resolves from the current directory as always; a
+    ; SCALY_HOME that is set wins, as always. Why: on Windows there is no
+    ; wrapper script to set it, and a user-wide variable would reach a
+    ; developer's checkout too. Windows answers where the program is; macOS
+    ; and Linux do not yet (eio.c) and keep their wrapper.
+    ; true when a home was adopted.
+    procedure adopt_home() @ret_nonlocal true @deep true returns bool io linked
+
     procedure main(argc: int, mutable argv: pointer[pointer[char]]) @ret_nonlocal true @deep true returns int io mutable modeler_error_count reads modeler_error_count linked
 
     ; Entry point of `scaly`, the tool (ROADMAP-public.md): alone it is the

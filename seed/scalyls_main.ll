@@ -22,14 +22,17 @@ entry:
 
 declare i32 @puts(ptr)
 
+declare i1 @_ZN3cli10adopt_homeEv()
+
 declare i1 @_ZN6worker13run_if_workerEiPPc(i64, ptr)
 
 declare void @_ZN6server3runEv()
 
 define i64 @main(i64 %0, ptr %1) {
 entry:
-  %call = call i1 @_ZN6worker13run_if_workerEiPPc(i64 %0, ptr %1)
-  br i1 %call, label %if.then, label %if.end
+  %call = call i1 @_ZN3cli10adopt_homeEv()
+  %call1 = call i1 @_ZN6worker13run_if_workerEiPPc(i64 %0, ptr %1)
+  br i1 %call1, label %if.then, label %if.end
 
 if.then:                                          ; preds = %entry
   ret i64 0
@@ -44,5 +47,5 @@ declare void @scaly_proc_stdio_binary(...)
 
 define i64 @scaly_build_stamp() {
 entry:
-  ret i64 1231106759664512894
+  ret i64 -420814130034237712
 }

@@ -22,6 +22,8 @@ use scaly.memory.root_pages.getenv
 function getpid() returns i32 extern
 function system(command: pointer[const_char]) returns i32 extern
 function unlink(path: pointer[const_char]) returns i32 extern
+procedure setenv(name: pointer[const_char], value: pointer[const_char], overwrite: i32) returns i32 extern
+procedure scaly_eio_self_path(mutable buffer: pointer[char], capacity: size_t) returns i32 extern
 
 ; Compiler module imports
 use scalyc.compiler.Modeler
@@ -2301,8 +2303,54 @@ define cli
     ; Entry point of scalyc, the compiler: a command line like a C
     ; compiler's (-o, -c, -S, -O2, -L, -l) and nothing else. The REPL and the
     ; commands run, build and test belong to `scaly` (tool_main#).
+    ; ★A handed-out program finds its packages BESIDE ITSELF (2026-10-03):
+    ; with SCALY_HOME unset, the program `<home>/libexec/<name>` whose <home>
+    ; holds `packages/scaly` takes that <home> -- it SETS the variable for
+    ; this process, so every reader (the Modeler's package base, the runtime
+    ; archive, the language server's, a child process) stays as it is. A
+    ; program of the source tree (scalyc/build, /tmp/scalyc_stage2) has no
+    ; such neighbour and resolves from the current directory as always; a
+    ; SCALY_HOME that is set wins, as always. Why: on Windows there is no
+    ; wrapper script to set it, and a user-wide variable would reach a
+    ; developer's checkout too. Windows answers where the program is; macOS
+    ; and Linux do not yet (eio.c) and keep their wrapper.
+    ; true when a home was adopted.
+    procedure adopt_home() returns bool
+    {
+        let given getenv "SCALY_HOME"
+        if given <> null
+        {
+            let g String(given)
+            if g.get_length() > 0
+                return false
+        }
+        var buffer char[1024]
+        let n scaly_eio_self_path(&buffer[0] as pointer[char], 1024)
+        if n <= 0
+            return false
+        let path String(&buffer[0] as pointer[const_char])
+        ; two names up: <home>/libexec/<program>
+        var end path.get_length()
+        var cut: int 0
+        while end > 0 and cut < 2
+        {
+            set end: end - 1
+            let c path.get(end)
+            if c = 92 or c = 47
+                set cut: cut + 1
+        }
+        if cut < 2
+            return false
+        let home path.substring(0, end)
+        var probe "`home`/packages/scaly"
+        if Directory.is_directory(probe) = false
+            return false
+        setenv("SCALY_HOME", home.to_c_string(), 1) = 0
+    }
+
     procedure main(argc: int, mutable argv: pointer[pointer[char]]) returns int mutable modeler_error_count
     {
+        let adopted adopt_home()
         if argc = 1
         {
             print_usage()
@@ -2318,6 +2366,7 @@ define cli
     ; or a flag is scalyc's command line, not this one's.
     procedure tool_main(argc: int, mutable argv: pointer[pointer[char]]) returns int mutable modeler_error_count
     {
+        let adopted adopt_home()
         if argc = 1
             return repl.main()
         let command String(*(argv + 1))

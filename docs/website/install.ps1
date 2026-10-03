@@ -23,20 +23,19 @@
 #   SCALY_VERSION         version to fetch            (default 0.1.0)
 #   SCALY_INSTALL_BASE    base URL for downloads, or a local directory holding
 #                         the two archives            (default https://scaly.io)
-#   SCALY_NO_MODIFY_PATH  set to 1 to leave PATH and SCALY_HOME alone
+#   SCALY_NO_MODIFY_PATH  set to 1 to leave PATH alone
 #   SCALY_BUILD_TOOLS     ask (default) | install | skip -- what to do when the
 #                         Build Tools are missing
 #
 # Layout:  %USERPROFILE%\.scaly\toolchain   libexec\ (the three programs, put
 #                                           on PATH), lib\, packages\, seed\
 #          %USERPROFILE%\.scaly\cache       compiled packages (made on first use)
-# SCALY_HOME (a user environment variable) names the toolchain: the programs
-# find the packages through it.
+# The programs find the packages beside themselves; no variable names the
+# toolchain, and the directory can be moved (a SCALY_HOME that is set wins).
 # Running the script again replaces the toolchain; a run that fails leaves the
 # installed one as it was.
 #
-# Uninstall: remove %USERPROFILE%\.scaly, the user variable SCALY_HOME and the
-# PATH entry this script adds.
+# Uninstall: remove %USERPROFILE%\.scaly and the PATH entry this script adds.
 #
 # *tests/install/run-windows.sh installs with this script from archives made
 # of the tree and runs what the installed programs must be able to do. NOT
@@ -108,7 +107,8 @@ function Install-Scaly {
         }
 
         # ---- the programs run here: a program through the in-process JIT
-        $env:SCALY_HOME = $new
+        # no SCALY_HOME: the programs are to find the toolchain they lie in
+        $env:SCALY_HOME = $null
         $env:SCALY_CACHE = Join-Path $work 'cache'
         $hello = Join-Path $work 'hello.scaly'
         [System.IO.File]::WriteAllText($hello, "print(`"Hello from Scaly!`")`n")
@@ -184,16 +184,14 @@ function Install-Scaly {
 
         if ($env:SCALY_NO_MODIFY_PATH -eq '1') {
             Say "installed into $toolchain"
-            Say "PATH and SCALY_HOME left alone: put $bin on PATH and set SCALY_HOME=$toolchain"
+            Say "PATH left alone: put $bin on it"
         } else {
-            [Environment]::SetEnvironmentVariable('SCALY_HOME', $toolchain, 'User')
             $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
             if (-not $userPath) { $userPath = '' }
             if (($userPath -split ';') -notcontains $bin) {
                 [Environment]::SetEnvironmentVariable('Path', (($userPath.TrimEnd(';') + ';' + $bin).TrimStart(';')), 'User')
             }
             # this session too
-            $savedHome = $toolchain
             if (($env:Path -split ';') -notcontains $bin) { $env:Path = "$env:Path;$bin" }
             Say "installed into $toolchain; scaly, scalyc and scalyls are on PATH (new terminals see it)"
         }

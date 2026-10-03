@@ -10,11 +10,14 @@ package scalyc 0.1.0
 package json 0.1.0
 package scalyls 0.1.0
 
+use scalyc.cli
 use scalyls.server
 use scalyls.worker
 
 procedure main(argc: int, argv: pointer[pointer[char]]) returns int mutable dir_slots, doc_slots, idx_epoch, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, modeler_error_count, ph_blob_data, ph_blob_len, ph_hash, ph_path_data, ph_path_len, ph_used, prof_bytes, prof_fresh, prof_list, prof_read, prof_sig, worker_in, worker_out, worker_pid, ws_root_data, ws_root_len
 {
+    ; a handed-out server finds its packages beside itself (cli.adopt_home)
+    let adopted cli.adopt_home()
     ; a worker process is this program started again (worker.scaly)
     if worker.run_if_worker(argc, argv)
         return 0

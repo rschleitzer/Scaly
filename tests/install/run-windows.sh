@@ -16,7 +16,7 @@
 #              made objects
 #   install    install.ps1 ends with rc 0 (its own check ran a program and
 #              built one), leaves toolchain\ and no toolchain.new, and touched
-#              neither the user's PATH nor SCALY_HOME (SCALY_NO_MODIFY_PATH)
+#              neither the user's PATH nor a SCALY_HOME (SCALY_NO_MODIFY_PATH)
 #   run        `scaly run`, arguments handed on (the JIT)
 #   build      `scaly build`, the program run with arguments; no native file
 #              was compiled for it
@@ -27,6 +27,10 @@
 #   repl       `scaly` alone answers an expression
 #   scalyls    the language server answers `initialize`
 #   again      a second installation over the first leaves a working one
+#   moved      the toolchain directory copied elsewhere builds and runs a
+#              program: nothing names where it was installed
+# ★SCALY_HOME is UNSET throughout: the programs find their packages beside
+# themselves (cli.adopt_home).
 # Not here: the installer's winget route (it installs the Build Tools
 # system-wide), and a build from the seed (the POSIX installer's fallback;
 # the Windows one has none).
@@ -135,7 +139,8 @@ cd "$TMP/work" || exit 1
 printf 'print("Hello, World!")\n' > hello.scaly
 unset LIB INCLUDE SCALY_CC CC
 export PATH="/usr/bin:/bin:$(cygpath -u "${SYSTEMROOT:-C:\\Windows}")/System32"
-export SCALY_HOME="$(cygpath -m "$T")" SCALY_CACHE="$(cygpath -m "$TMP/cache")"
+unset SCALY_HOME
+export SCALY_CACHE="$(cygpath -m "$TMP/cache")"
 
 # run
 out=$("$B/scaly.exe" run "$ROOT/tests/tool/hello.scaly" one two 2> run.log)
@@ -205,6 +210,17 @@ if ( SCALY_PREFIX="$(cygpath -w "$PREFIX")" SCALY_INSTALL_BASE="$(cygpath -w "$T
     && ok || bad "again: the second installation is incomplete: $(tail -3 "$TMP/again.log" | tr '\n' ' ')"
 else
   bad "again: rc=$? $(tail -4 "$TMP/again.log" | tr '\n' ' ')"
+fi
+
+# moved
+cp -R "$T" "$TMP/elsewhere"
+cd "$TMP/work" || exit 1
+if "$TMP/elsewhere/libexec/scaly.exe" build "$ROOT/tests/tool/hello.scaly" -o h_m.exe > moved.log 2>&1; then
+  out=$(./h_m.exe one two)
+  [ "$out" = "hello one two" ] && [ "$("$TMP/elsewhere/libexec/scaly.exe" run hello.scaly 2>/dev/null)" = "Hello, World!" ] \
+    && ok || bad "moved: got '$out'"
+else
+  bad "moved: rc=$? $(tail -3 moved.log | tr '\n' ' ')"
 fi
 
 finish

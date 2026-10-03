@@ -1739,6 +1739,15 @@ void scaly_proc_stdio_binary(void)
     scaly_stdio_binary_at_start();
 }
 
+/* The file of the running program, for a handed-out program that finds its
+ * packages beside itself (cli.scaly, adopt_home). Rule (a): every system asks
+ * this differently. The length, or -1 when it is not known or does not fit. */
+int scaly_eio_self_path(char* buffer, size_t capacity)
+{
+    DWORD n = GetModuleFileNameA(NULL, buffer, (DWORD)capacity);
+    return n == 0 || n >= capacity ? -1 : (int)n;
+}
+
 int scaly_eio_is_symlink(const char* path)
 {
     DWORD a = GetFileAttributesA(path);
