@@ -30,7 +30,8 @@ if [ "$SCALY_COFF" = 1 ]; then
     # select(), LF text writes and a drive-less cwd (its header says why).
     LSP_DRIVE_TMP="/$(pwd -W | cut -c1 | tr 'A-Z' 'a-z')/tmp"
     if [ ! -e "$LSP_DRIVE_TMP" ]; then
-        cmd //c mklink /J "$(cygpath -w "$LSP_DRIVE_TMP")" "$(cygpath -w /tmp)" > /dev/null \
+        # no path conversion: this Git Bash (2.55) reads `/J` as drive J
+        MSYS_NO_PATHCONV=1 cmd /c mklink /J "$(cygpath -w "$LSP_DRIVE_TMP")" "$(cygpath -w /tmp)" > /dev/null \
             || { echo "FAIL  cannot create the junction $LSP_DRIVE_TMP -> /tmp"; exit 1; }
         echo "lsp: created the junction $(cygpath -w "$LSP_DRIVE_TMP") -> $(cygpath -w /tmp)"
     fi
