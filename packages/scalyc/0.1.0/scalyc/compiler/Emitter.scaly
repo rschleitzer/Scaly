@@ -7869,7 +7869,7 @@ define Emitter
             {
                 emit_build_stamp()
                 if target_is_coff
-                    this.emit_stdio_binary_directive()
+                    this.emit_stdio_binary_ctor()
             }
             let pkg_stamp LLVMGetNamedGlobal(llvm_module, "scaly_package_stamp" as pointer[const_char])
             if pkg_stamp <> null and LLVMIsDeclaration(pkg_stamp) = 0
@@ -8008,23 +8008,65 @@ define Emitter
                 LLVMPositionBuilderAtEnd(builder, saved_block)
         }
 
-        ; A PROGRAM module for a COFF target asks the linker for the runtime's
-        ; start-up hook that sets the standard streams binary
-        ; (`scaly_stdio_binary_hook`, scaly/fiber/eio_windows.c; decided
-        ; 2026-10-03, tests/win32/WINDOWS-BOX.md §8). A directive, not a call: a
-        ; program that never calls into the runtime archive -- hello, whose only
-        ; external is `puts` -- pulls no member of it, and the hook is DATA the
-        ; CRT's initializer table runs before main. The directive goes into the
-        ; object as `.drectve`, so every link of it brings the hook, whatever
-        ; script spells the link line.
-        procedure emit_stdio_binary_directive(this)
+        ; A PROGRAM module for a COFF target sets the standard streams binary
+        ; before main (decided 2026-10-03, tests/win32/WINDOWS-BOX.md §8): a
+        ; constructor of its own, `_setmode(fd, _O_BINARY)` for 0, 1 and 2,
+        ; entered in `llvm.global_ctors`, which COFF emits into the CRT's
+        ; initializer table (.CRT$XCU). In the object itself, because a program
+        ; must not need the runtime archive for it: hello's only external is
+        ; `puts`, and CI's first Windows rung links it against the bare CRT --
+        ; a `/include:` of a hook in the archive made that link fail
+        ; (LNK2001, the first CI run of the day). The executables built from the
+        ; target-neutral seed (compiler, tool) get the same from the runtime's
+        ; own hook in scaly/fiber/eio_windows.c; setting a mode twice is free.
+        procedure emit_stdio_binary_ctor(mutable this)
         {
-            let option "/include:scaly_stdio_binary_hook"
-            let text LLVMMDStringInContext2(context, option.c_data(), option.get_length())
-            let mds Vector[LLVMMetadataRef](1)
-            mds.put(0, text)
-            let node LLVMMDNodeInContext2(context, mds.data, 1)
-            LLVMAddNamedMetadataOperand(llvm_module, "llvm.linker.options" as pointer[const_char], LLVMMetadataAsValue(context, node))
+            let void_ty LLVMVoidTypeInContext(context)
+            let i32_ty LLVMInt32TypeInContext(context)
+            let ptr_ty LLVMPointerTypeInContext(context, 0)
+
+            var setmode LLVMGetNamedFunction(llvm_module, "_setmode")
+            if setmode = null
+            {
+                var sm_params Vector[LLVMTypeRef](2)
+                sm_params.put(0, i32_ty)
+                sm_params.put(1, i32_ty)
+                set setmode: LLVMAddFunction(llvm_module, "_setmode", LLVMFunctionType(i32_ty, sm_params.data, 2, 0))
+            }
+            let setmode_ty LLVMGlobalGetValueType(setmode)
+
+            let ctor LLVMAddFunction(llvm_module, "scaly.stdio.binary", LLVMFunctionType(void_ty, null as pointer[LLVMTypeRef], 0, 0))
+            LLVMSetLinkage(ctor, LLVMLinkage.Internal())
+            let saved_block LLVMGetInsertBlock(builder)
+            clear_debug_location()
+            LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlockInContext(context, ctor, "entry"))
+            var fd: u32 0
+            while fd < 3
+            {
+                var args Vector[LLVMValueRef](2)
+                args.put(0, LLVMConstInt(i32_ty, fd as size_t, 0))
+                args.put(1, LLVMConstInt(i32_ty, 32768, 0))
+                LLVMBuildCall2(builder, setmode_ty, setmode, args.data, 2, "")
+                set fd: fd + 1
+            }
+            LLVMBuildRetVoid builder
+            if saved_block <> null
+                LLVMPositionBuilderAtEnd(builder, saved_block)
+
+            var fields Vector[LLVMTypeRef](3)
+            fields.put(0, i32_ty)
+            fields.put(1, ptr_ty)
+            fields.put(2, ptr_ty)
+            let entry_ty LLVMStructTypeInContext(context, fields.data, 3, 0)
+            var vals Vector[LLVMValueRef](3)
+            vals.put(0, LLVMConstInt(i32_ty, 65535, 0))
+            vals.put(1, ctor)
+            vals.put(2, LLVMConstPointerNull(ptr_ty))
+            var entries Vector[LLVMValueRef](1)
+            entries.put(0, LLVMConstStructInContext(context, vals.data, 3, 0))
+            let ctors LLVMAddGlobal(llvm_module, LLVMArrayType2(entry_ty, 1), "llvm.global_ctors")
+            LLVMSetLinkage(ctors, LLVMLinkage.Appending())
+            LLVMSetInitializer(ctors, LLVMConstArray2(entry_ty, entries.data, 1))
         }
 
         ; A module that DEFINES the global `scaly_package_stamp` (a `shared u64`,

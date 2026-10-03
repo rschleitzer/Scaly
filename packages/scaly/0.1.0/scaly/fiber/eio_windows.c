@@ -1644,8 +1644,12 @@ int scaly_proc_wait_readable(int fd, int timeout_ms)
  * on POSIX, and a protocol framed by byte counts (the language server, a JSON
  * pipe) or a byte-compared golden needs no filter. So every program sets them
  * binary BEFORE main, through the CRT's own initializer table (.CRT$XCU, the
- * section C++ static constructors run from). It lives in THIS file because this
- * object is in every link: the page allocator calls scaly_aligned_alloc. A
+ * section C++ static constructors run from). A program the compiler emitted
+ * for COFF carries its own constructor for it (Emitter.emit_stdio_binary_ctor#,
+ * so a program needs no runtime archive for it); this one serves the
+ * executables built from the target-neutral seed -- the compiler and the tool
+ * -- and every link that pulls this object (the page allocator calls
+ * scaly_aligned_alloc). A
  * console shows a lone "\n" as a new line; what a console READS keeps its "\r",
  * which the line readers strip. scaly_proc_stdio_binary stays for its callers
  * (scalyls' main) and is now a second, harmless call. */

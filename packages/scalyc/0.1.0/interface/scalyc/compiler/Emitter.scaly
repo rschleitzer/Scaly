@@ -1734,16 +1734,18 @@ define Emitter
 
         procedure emit_build_stamp(mutable this) @deep true linked
 
-        ; A PROGRAM module for a COFF target asks the linker for the runtime's
-        ; start-up hook that sets the standard streams binary
-        ; (`scaly_stdio_binary_hook`, scaly/fiber/eio_windows.c; decided
-        ; 2026-10-03, tests/win32/WINDOWS-BOX.md §8). A directive, not a call: a
-        ; program that never calls into the runtime archive -- hello, whose only
-        ; external is `puts` -- pulls no member of it, and the hook is DATA the
-        ; CRT's initializer table runs before main. The directive goes into the
-        ; object as `.drectve`, so every link of it brings the hook, whatever
-        ; script spells the link line.
-        procedure emit_stdio_binary_directive(this) @ret_caller true @deep true linked
+        ; A PROGRAM module for a COFF target sets the standard streams binary
+        ; before main (decided 2026-10-03, tests/win32/WINDOWS-BOX.md §8): a
+        ; constructor of its own, `_setmode(fd, _O_BINARY)` for 0, 1 and 2,
+        ; entered in `llvm.global_ctors`, which COFF emits into the CRT's
+        ; initializer table (.CRT$XCU). In the object itself, because a program
+        ; must not need the runtime archive for it: hello's only external is
+        ; `puts`, and CI's first Windows rung links it against the bare CRT --
+        ; a `/include:` of a hook in the archive made that link fail
+        ; (LNK2001, the first CI run of the day). The executables built from the
+        ; target-neutral seed (compiler, tool) get the same from the runtime's
+        ; own hook in scaly/fiber/eio_windows.c; setting a mode twice is free.
+        procedure emit_stdio_binary_ctor(mutable this) @ret_caller true @deep true linked
 
         ; A module that DEFINES the global `scaly_package_stamp` (a `shared u64`,
         ; 0 in its source) gets the FNV-1a-64 of its pre-stamp IR as the
