@@ -19,7 +19,30 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/../.."
-SCALYC="${1:-/tmp/scalyc_stage2}"
+. tests/platform.sh || exit 1
+SCALYC="${1:-$SCALY_STAGE_DEFAULT}"
+X="$SCALY_EXE"
+if [ "$SCALY_COFF" = 1 ]; then
+    # The Python blocks spell /tmp/scalyls, /tmp/lsp_ws/... and build uris as
+    # "file://" + path. A Windows Python and the server's CRT read "/tmp" as
+    # <drive>:/tmp, Git Bash as $TEMP: a junction makes the two one directory.
+    # tests/lsp/win/sitecustomize.py gives every Python started below pipe
+    # select(), LF text writes and a drive-less cwd (its header says why).
+    LSP_DRIVE_TMP="/$(pwd -W | cut -c1 | tr 'A-Z' 'a-z')/tmp"
+    if [ ! -e "$LSP_DRIVE_TMP" ]; then
+        cmd //c mklink /J "$(cygpath -w "$LSP_DRIVE_TMP")" "$(cygpath -w /tmp)" > /dev/null \
+            || { echo "FAIL  cannot create the junction $LSP_DRIVE_TMP -> /tmp"; exit 1; }
+        echo "lsp: created the junction $(cygpath -w "$LSP_DRIVE_TMP") -> $(cygpath -w /tmp)"
+    fi
+    probe="lsp_tmp_probe_$$"; : > "/tmp/$probe"
+    [ -e "$LSP_DRIVE_TMP/$probe" ] || { rm -f "/tmp/$probe"; echo "FAIL  $LSP_DRIVE_TMP is not Git Bash's /tmp ($(cygpath -w /tmp)): make it a junction to it"; exit 1; }
+    rm -f "/tmp/$probe"
+    export PYTHONPATH="$(cygpath -w "$PWD/tests/lsp/win")${PYTHONPATH:+;$PYTHONPATH}"
+    export PYTHONUTF8=1
+    # The Python blocks start "$SCALYC" themselves, and CreateProcess finds a
+    # program by a RELATIVE path only with backslashes: hand them an absolute one.
+    case "$SCALYC" in /*) ;; *) SCALYC="$PWD/$SCALYC" ;; esac
+fi
 MODE="${2:-selfhosted}"
 export SCALYLS_MODE="$MODE"   # available to python blocks (no self-hosted gaps remain)
 
@@ -81,7 +104,9 @@ if [ "$MODE" = selfhosted ]; then
     }
     pids=()
     lsp_root scalyc       packages/scalyc/0.1.0/scalyc.scaly & pids+=($!)
-    lsp_root scaly        packages/scaly/0.1.0/scaly.scaly & pids+=($!)
+    # On Windows the runtime comes from the archive (tools/win-archive.sh): the
+    # stdlib object and the five shims, as every other suite there links it.
+    [ "$SCALY_COFF" = 1 ] || { lsp_root scaly packages/scaly/0.1.0/scaly.scaly & pids+=($!); }
     lsp_root scalyls      packages/scalyls/0.1.0/scalyls.scaly & pids+=($!)
     lsp_root json         packages/json/0.1.0/json.scaly & pids+=($!)
     lsp_root scalyls_main packages/scalyls/0.1.0/main.scaly & pids+=($!)
@@ -89,18 +114,31 @@ if [ "$MODE" = selfhosted ]; then
     # scaly.o references the fiber context-switch primitives (vendored asm)
     # and the evented-I/O backend shim (kqueue/epoll C); ctime.o is the
     # civil-time shim every scalyc-family link carries (scaly/time/ctime.c).
-    tools/fcontext.sh "$LSO/fcontext.o" || { echo "FAIL  fcontext assembly"; exit 1; }
-    tools/eio.sh "$LSO/eio.o" || { echo "FAIL  eio shim compile"; exit 1; }
-    tools/ctime.sh "$LSO/ctime.o" || { echo "FAIL  ctime shim compile"; exit 1; }
-    tools/panic.sh "$LSO/panic.o" || { echo "FAIL  panic shim compile"; exit 1; }
+    if [ "$SCALY_COFF" = 1 ]; then
+        scaly_need_archive lsp "$SCALYC" || exit 1
+    else
+        tools/fcontext.sh "$LSO/fcontext.o" || { echo "FAIL  fcontext assembly"; exit 1; }
+        tools/eio.sh "$LSO/eio.o" || { echo "FAIL  eio shim compile"; exit 1; }
+        tools/ctime.sh "$LSO/ctime.o" || { echo "FAIL  ctime shim compile"; exit 1; }
+        tools/panic.sh "$LSO/panic.o" || { echo "FAIL  panic shim compile"; exit 1; }
+    fi
 fi
+
+# Link a scalyls consumer from its main object ($1) beside the shared roots: $2=out.
+lsp_link() {
+    if [ "$SCALY_COFF" = 1 ]; then
+        tools/win-link.sh --llvm --runtime "$2" "$1" "$LSO/scalyls.o" "$LSO/json.o" "$LSO/scalyc.o" > /dev/null 2>&1
+    else
+        clang "$1" "$LSO/scalyls.o" "$LSO/json.o" "$LSO/scalyc.o" "$LSO/scaly.o" "$LSO/fcontext.o" "$LSO/eio.o" "$LSO/ctime.o" "$LSO/panic.o" "${LINK[@]}" -o "$2" 2>/dev/null
+    fi
+}
 
 # Build a scalyls CONSUMER program (json_test / echo): $1=src $2=out-binary.
 lsp_build_prog() {
     if [ "$MODE" = selfhosted ]; then
         ( ulimit -s 65520; "$SCALYC" -S --no-tests -o "$LSO/prog.ll" "$1" ) || return 1
         "$LLC" -relocation-model=pic -filetype=obj "$LSO/prog.ll" -o "$LSO/prog.o" || return 1
-        clang "$LSO/prog.o" "$LSO/scalyls.o" "$LSO/json.o" "$LSO/scalyc.o" "$LSO/scaly.o" "$LSO/fcontext.o" "$LSO/eio.o" "$LSO/ctime.o" "$LSO/panic.o" "${LINK[@]}" -o "$2" 2>/dev/null
+        lsp_link "$LSO/prog.o" "$2"
     else
         "$SCALYC" -o "$2" "$1" "${LINK[@]}" 2>/dev/null
     fi
@@ -109,26 +147,32 @@ lsp_build_prog() {
 # Build the scalyls SERVER (main.scaly): $1=out-binary.
 lsp_build_server() {
     if [ -n "${SCALYLS_PREBUILT:-}" ]; then
-        [ -x "$SCALYLS_PREBUILT" ] || return 1
-        cp "$SCALYLS_PREBUILT" "$1"
+        # tools/bar.sh names it without the suffix on every host.
+        local pre="$SCALYLS_PREBUILT"
+        [ -f "$pre" ] || pre="$pre$X"
+        [ -x "$pre" ] || return 1
+        cp "$pre" "$1"
+        # The server calls LLVM-C, and a DLL beside the .exe is the one found.
+        [ "$SCALY_COFF" = 1 ] && [ -f "$(dirname "$pre")/LLVM-C.dll" ] && cp "$(dirname "$pre")/LLVM-C.dll" "$(dirname "$1")/"
+        return 0
     elif [ "$MODE" = selfhosted ]; then
-        clang "$LSO/scalyls_main.o" "$LSO/scalyls.o" "$LSO/json.o" "$LSO/scalyc.o" "$LSO/scaly.o" "$LSO/fcontext.o" "$LSO/eio.o" "$LSO/ctime.o" "$LSO/panic.o" "${LINK[@]}" -o "$1" 2>/dev/null
+        lsp_link "$LSO/scalyls_main.o" "$1"
     else
         "$SCALYC" -o "$1" packages/scalyls/0.1.0/main.scaly "${LINK[@]}" 2>/dev/null
     fi
 }
 
 # ---- json + rpc unit test -------------------------------------------------
-lsp_build_prog tests/lsp/json_test.scaly /tmp/scalyls_json_test
-if [ "$(/tmp/scalyls_json_test)" = "PASS" ]; then ok "json_test"; else bad "json_test"; fi
+lsp_build_prog tests/lsp/json_test.scaly /tmp/scalyls_json_test$X
+if [ "$(/tmp/scalyls_json_test$X)" = "PASS" ]; then ok "json_test"; else bad "json_test"; fi
 
 # ---- transport echo round-trip -------------------------------------------
-lsp_build_prog tests/lsp/echo.scaly /tmp/scalyls_echo
-echoed=$(printf 'Content-Length: 5\r\n\r\nhello' | /tmp/scalyls_echo)
+lsp_build_prog tests/lsp/echo.scaly /tmp/scalyls_echo$X
+echoed=$(printf 'Content-Length: 5\r\n\r\nhello' | /tmp/scalyls_echo$X)
 if [ "$echoed" = $'Content-Length: 5\r\n\r\nhello' ]; then ok "echo transport"; else bad "echo transport"; fi
 
 # ---- LSP server: lifecycle + diagnostics ----------------------------------
-lsp_build_server /tmp/scalyls
+lsp_build_server /tmp/scalyls$X
 
 # Driven INTERACTIVELY (one message, then read its answer) because that is what
 # an editor does — and since server.process_one# defers an owed analysis while
@@ -230,7 +274,12 @@ try:
         "uri":"file:///t.scaly","languageId":"scaly","version":1,"text":bad}}})
     readframe(p.stdout)                      # diag (worker now alive)
     time.sleep(0.2)
-    kids=subprocess.run(["pgrep","-P",str(p.pid)],stdout=subprocess.PIPE).stdout.decode().split()
+    if os.name == "nt":   # no pgrep: ask the process table for the server's children
+        kids=subprocess.run(["powershell","-NoProfile","-Command",
+            "(Get-CimInstance Win32_Process -Filter 'ParentProcessId=%d').ProcessId" % p.pid],
+            stdout=subprocess.PIPE).stdout.decode().split()
+    else:
+        kids=subprocess.run(["pgrep","-P",str(p.pid)],stdout=subprocess.PIPE).stdout.decode().split()
     for k in kids: os.kill(int(k), 9)        # simulate a compiler crash
     time.sleep(0.2)
     send({"jsonrpc":"2.0","method":"textDocument/didChange","params":{
@@ -3028,7 +3077,7 @@ bg_add $! "lsp package-root diagnostics" "$BGDIR/lsp_package_root_diagnostics.ou
 # Shrinking this list is a source change, never a formatter change: if a file
 # is reformatted into the house form, its line here must go -- which the last
 # check below enforces, so the list cannot rot into a list of excuses.
-lsp_build_prog tests/lsp/format_test.scaly /tmp/scalyls_format_test
+lsp_build_prog tests/lsp/format_test.scaly /tmp/scalyls_format_test$X
 { python3 - <<'PY'
 import sys, glob, os, subprocess
 
@@ -6069,6 +6118,11 @@ def lens_count(path, stack_kb):
     res = (r or {}).get("result")
     return len(res) if isinstance(res, list) else -1
 f = "packages/dazzle/0.1.0/dazzle/Style.scaly"
+if os.name == "nt":
+    # A Windows thread's stack is the PE header's (tools/win-link.sh), and no
+    # ulimit of a parent reaches it: the check would compare one run with itself.
+    print("SKIP  codeLens at 1 MB: the stack is fixed by the link on Windows")
+    sys.exit(0)
 big = lens_count(f, None)
 small = lens_count(f, 1024)
 ok = big > 0 and small == big

@@ -746,6 +746,13 @@ function LLVMFinalizeFunctionPassManager(fpm: LLVMPassManagerRef) returns i32 ex
 function LLVMValueAsMetadata(val: LLVMValueRef) returns LLVMMetadataRef extern
 procedure LLVMAddModuleFlag(mod: LLVMModuleRef, behavior: i32, key: pointer[const_char], key_len: size_t, val: LLVMMetadataRef) extern
 
+; Named metadata: `llvm.linker.options`, the COFF .drectve a program module
+; carries (Emitter.emit_stdio_binary_directive#).
+procedure LLVMMDStringInContext2(c: LLVMContextRef, str: pointer[const_char], len: size_t) returns LLVMMetadataRef extern
+procedure LLVMMDNodeInContext2(c: LLVMContextRef, mds: pointer[LLVMMetadataRef], count: size_t) returns LLVMMetadataRef extern
+procedure LLVMMetadataAsValue(c: LLVMContextRef, md: LLVMMetadataRef) returns LLVMValueRef extern
+procedure LLVMAddNamedMetadataOperand(mod: LLVMModuleRef, name: pointer[const_char], val: LLVMValueRef) extern
+
 ; Builder lifecycle.
 function LLVMCreateDIBuilder(mod: LLVMModuleRef) returns LLVMDIBuilderRef extern
 procedure LLVMDIBuilderFinalize(builder: LLVMDIBuilderRef) extern

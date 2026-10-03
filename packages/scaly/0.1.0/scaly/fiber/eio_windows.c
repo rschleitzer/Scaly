@@ -1637,12 +1637,30 @@ int scaly_proc_wait_readable(int fd, int timeout_ms)
     }
 }
 
-/* The CRT opens stdin and stdout in TEXT mode: "\n" goes out as "\r\n" and a
- * Ctrl-Z byte ends the input — both fatal to a protocol framed by byte counts. */
-void scaly_proc_stdio_binary(void)
+/* The CRT opens stdin, stdout and stderr in TEXT mode: "\n" goes out as
+ * "\r\n", a "\r\n" comes in as "\n" and a Ctrl-Z byte ends the input. A Scaly
+ * program's standard streams carry BYTES on every target (decided 2026-10-03,
+ * tests/win32/WINDOWS-BOX.md §8): what the program writes is what leaves it, as
+ * on POSIX, and a protocol framed by byte counts (the language server, a JSON
+ * pipe) or a byte-compared golden needs no filter. So every program sets them
+ * binary BEFORE main, through the CRT's own initializer table (.CRT$XCU, the
+ * section C++ static constructors run from). It lives in THIS file because this
+ * object is in every link: the page allocator calls scaly_aligned_alloc. A
+ * console shows a lone "\n" as a new line; what a console READS keeps its "\r",
+ * which the line readers strip. scaly_proc_stdio_binary stays for its callers
+ * (scalyls' main) and is now a second, harmless call. */
+static void scaly_stdio_binary_at_start(void)
 {
     _setmode(0, _O_BINARY);
     _setmode(1, _O_BINARY);
+    _setmode(2, _O_BINARY);
+}
+#pragma section(".CRT$XCU", read)
+__declspec(allocate(".CRT$XCU")) void (*const scaly_stdio_binary_hook)(void) = scaly_stdio_binary_at_start;
+
+void scaly_proc_stdio_binary(void)
+{
+    scaly_stdio_binary_at_start();
 }
 
 int scaly_eio_is_symlink(const char* path)

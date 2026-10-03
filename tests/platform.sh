@@ -76,10 +76,13 @@ scaly_need_archive() {
 
 scaly_jit_available() { [ "$SCALY_COFF" = 0 ]; }
 
-# stdout of a program on the Windows box arrives with CRLF: the CRT's fd 1 starts
-# in TEXT mode and turns every `\n` our runtime writes into `\r\n`. Every Windows
-# rung of CI strips those at the COMPARISON (tests/win32/lf-wrapper.sh has the
-# account, and the product question it leaves open); this is the same filter,
+# stdout of a program on the Windows box arrived with CRLF until 2026-10-03: the
+# CRT's fd 1 starts in TEXT mode and turned every `\n` our runtime writes into
+# `\r\n`. A Scaly program's standard streams are BINARY there since (set before
+# main by the runtime; tests/win32/WINDOWS-BOX.md §8), so for a program a current
+# compiler built this filter removes nothing; it stays for objects an older
+# compiler emitted. Every Windows rung of CI strips at the COMPARISON
+# (tests/win32/lf-wrapper.sh has the account); this is the same filter,
 # in the C locale so that it is a byte filter. Never in a pipeline with the
 # program itself — `prog | scaly_lf` reports the FILTER's exit code — always on
 # a captured file. Identity on POSIX. ★The single-line comparisons pass without

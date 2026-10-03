@@ -363,7 +363,14 @@ define lineedit
                 break
             line.append(b as char)
         }
-        out.append(line.to_string())
+        ; A line that arrives as CRLF -- a Windows console or a file written
+        ; there; the standard streams are binary on every target -- ends with
+        ; its LF like any other.
+        var text line.to_string()
+        let n text.get_length()
+        if n > 0 and text.get(n - 1) = 13
+            set text: text.substring(0, n - 1)
+        out.append(text)
         true
     }
 }

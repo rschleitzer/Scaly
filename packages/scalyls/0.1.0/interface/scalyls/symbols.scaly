@@ -1672,6 +1672,11 @@ define symbols
     ; what workspace/symbol already ships) — kept intentionally.
     procedure find_definition_in_dir(mutable dir: String, self_path: String, mutable name: String) @page true @direct true @ret_caller true @deep true returns String io mutable dir_slots, idx_slots, lc_active, lc_col, lc_data, lc_len, lc_line, lc_off, prof_fresh, prof_list, prof_read reads prof_list linked
 
+    ; The SymbolKind of the first record named `name` in a ws blob that is not a
+    ; `module` statement (kind 2), 0 when there is none: def_from_ws_blob#'s
+    ; definition pass, asked for the KIND of what it answers (22 = a variant).
+    function def_kind_in_ws_blob(blob: String, name: String) @ret_nonlocal true @deep true returns i64 linked
+
     ; The content-hash-cached ws symbol blob of `fpath` — the SAME blob
     ; workspace/symbol and semanticTokens build (parse-once, shared), built and
     ; stored here on a cache miss. "" when the file does not exist.
