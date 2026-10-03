@@ -33,4 +33,4 @@ LLVM_LINK=()
 [ -n "${LLVM_LIBDIR:-}" ] && LLVM_LINK=(-L"$LLVM_LIBDIR" -l"$LLVM_LIBNAME")
 JOBS=${REGRESS_JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)}
 PY=$(command -v python3 || command -v python) || { echo "regress: no python3" >&2; exit 2; }
-exec "$PY" tests/regress/run.py "$STAGE" "$SCALY" "$SCALY_EXE" "$(cd /tmp && pwd -W 2>/dev/null || echo /tmp)" "$JOBS" ${LLVM_LINK[@]+"${LLVM_LINK[@]}"}
+exec "$PY" tests/regress/run.py "$STAGE" "$SCALY" "$SCALY_EXE" "$(cygpath -ms /tmp 2>/dev/null || echo /tmp)" "$JOBS" ${LLVM_LINK[@]+"${LLVM_LINK[@]}"}

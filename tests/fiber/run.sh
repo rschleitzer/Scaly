@@ -29,4 +29,4 @@ SCALY=$(tools/scaly-of.sh "$STAGE")
 rm -f "/tmp/fb_warm_$$$SCALY_EXE"
 JOBS=${FIBER_JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)}
 PY=$(command -v python3 || command -v python) || { echo "fiber: no python3" >&2; exit 2; }
-exec "$PY" tests/fiber/run.py "$SCALY" "$SCALY_EXE" "$(cd /tmp && pwd -W 2>/dev/null || echo /tmp)" "$JOBS"
+exec "$PY" tests/fiber/run.py "$SCALY" "$SCALY_EXE" "$(cygpath -ms /tmp 2>/dev/null || echo /tmp)" "$JOBS"
