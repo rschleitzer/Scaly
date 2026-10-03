@@ -52,6 +52,16 @@ mkdir -p "$LOG"
 BIN=$ROOT/scalyc/build/scalyc
 T0=$(date +%s)
 
+# glibc's malloc may ask for transparent huge pages (MADV_HUGEPAGE), and the
+# compiler's sparse page use then costs twice the memory: tscaly's interface
+# compilation measured 12.1 GB against 6.76 GB with the tunable off, on glibc
+# 2.43 / aarch64 (2026-10-03), same bytes out, no slower. Beside the other
+# lanes that was the difference between a bar and an OOM kill on 18 GB.
+# Appended, so a caller's own tunables stay.
+if [ "$(uname -s)" = Linux ]; then
+  export GLIBC_TUNABLES="${GLIBC_TUNABLES:+$GLIBC_TUNABLES:}glibc.malloc.hugetlb=0"
+fi
+
 # step <name> <command...>: run into $LOG/<name>.log, print one verdict line.
 step() {
   local name=$1 st rc; shift
@@ -217,9 +227,19 @@ lane_vscode() {
 }
 
 # Memory beside the run: the tscaly compilations take 6.5 GB each and a machine
-# that swaps measures nothing. One line every 10 s: time, swap used, free pages.
+# that swaps measures nothing. One line every 10 s: time, swap used, free pages
+# (macOS) or available memory (Linux, /proc/meminfo — sysctl vm.swapusage and
+# vm_stat exist only on macOS and left the file empty there).
+mem_line() {
+  if [ -r /proc/meminfo ]; then
+    awk '/^SwapTotal:/ {t=$2} /^SwapFree:/ {f=$2} /^MemAvailable:/ {a=$2}
+         END {printf "swap_used=%.2fM avail=%.0fM", (t-f)/1024, a/1024}' /proc/meminfo
+  else
+    echo "$(sysctl -n vm.swapusage 2>/dev/null | awk '{print "swap_used=" $6}') $(vm_stat 2>/dev/null | awk '/Pages free/ {print "free_pages=" $3}')"
+  fi
+}
 ( while :; do
-    echo "$(( $(date +%s) - T0 ))s $(sysctl -n vm.swapusage 2>/dev/null | awk '{print "swap_used=" $6}') $(vm_stat 2>/dev/null | awk '/Pages free/ {print "free_pages=" $3}')"
+    echo "$(( $(date +%s) - T0 ))s $(mem_line)"
     sleep 10
   done ) > "$LOG/memory.txt" 2>&1 & MEM_PID=$!
 
@@ -247,5 +267,5 @@ kill $MEM_PID 2>/dev/null
 for l in "${LANES[@]}"; do cat "$LOG/lane_$l.txt"; done
 cat "$LOG/lane_tail.txt"
 echo "bar: phase 1 $(( T1 - T0 ))s, phase 2 $(( $(date +%s) - T1 ))s, total $(( $(date +%s) - T0 ))s — $([ $RC = 0 ] && echo PASS || echo FAIL)"
-echo "bar: peak swap $(awk '{print $2}' "$LOG/memory.txt" | sort -t= -k2 -n | tail -1)  (logs: $LOG)"
+echo "bar: peak swap $(awk '{print $2}' "$LOG/memory.txt" | sort -t '=' -k2 -n | tail -1)  (logs: $LOG)"
 exit $RC
