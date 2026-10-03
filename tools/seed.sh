@@ -278,7 +278,8 @@ inp += frame({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDoc
 inp += frame({"jsonrpc":"2.0","id":2,"method":"textDocument/documentSymbol","params":{"textDocument":{"uri":uri}}})
 inp += frame({"jsonrpc":"2.0","id":3,"method":"shutdown"})
 inp += frame({"jsonrpc":"2.0","method":"exit"})
-out = subprocess.run([sys.argv[1]], input=inp, stdout=subprocess.PIPE, timeout=30).stdout
+# absolute: CreateProcess does not find a relative path spelled with forward slashes
+out = subprocess.run([os.path.abspath(sys.argv[1])], input=inp, stdout=subprocess.PIPE, timeout=30).stdout
 os.unlink(path)
 got_init = got_sym = False
 i = 0
