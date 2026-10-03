@@ -70,12 +70,24 @@ args+=(-lws2_32)
 # day, tools/build-from-seed.sh SCALY_STATIC_LLVM). Every LLVM*.lib but
 # LLVM-C.lib, which IS the DLL's import library; lld-link takes from an
 # archive only what is referenced. The system libraries are the ones LLVM's
-# Support asks for on Windows. Unset, nothing here changes.
+# Support asks for on Windows (`llvm-config --link-static --system-libs` adds
+# ws2_32, which is on the line anyway, and xml2s.lib, which the archive does
+# not ship and nothing here references). Unset, nothing here changes.
+# ★`-lucrt` BEFORE LLVM's libraries is load-bearing: the release is built with
+# LLVM_INTEGRATED_CRT_ALLOC, so LLVMSupport.lib carries rpmalloc and with it
+# `malloc`, `free`, `_malloc_base` & co. -- meant to replace the heap of a
+# STATIC C library. The first archive on the line that defines `free` wins;
+# without this line that was LLVMSupport, and the program freed with rpmalloc
+# what ucrtbase.dll had allocated (strdup): an access violation in `free`
+# under Emitter.emit, on hello world. With the UCRT's import library first the
+# rpmalloc member is never taken and there is ONE heap, ucrtbase's -- the same
+# one the JIT's code resolves (the comment on the hybrid CRT below).
 STATIC_LLVM=0
 if [ "$LLVM" = 1 ] && [ -n "${SCALY_STATIC_LLVM_DIR:-}" ]; then
   STATIC_LLVM=1
   sdir="$(cygpath -u "$SCALY_STATIC_LLVM_DIR")/lib"
   [ -f "$sdir/LLVMCore.lib" ] || { echo "win-link: no LLVMCore.lib in $sdir (\$SCALY_STATIC_LLVM_DIR)" >&2; exit 1; }
+  args+=(-lucrt)
   for lib in "$sdir"/LLVM*.lib; do
     [ "$(basename "$lib")" = "LLVM-C.lib" ] && continue
     args+=("$lib")

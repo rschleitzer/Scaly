@@ -3,7 +3,8 @@
 # x64 or arm64: can the three programs be linked with LLVM's STATIC libraries,
 # so that what we hand out loads no LLVM-C.dll? macOS and Linux do it since
 # 2026-10-03 (tools/make-bindist.sh); this is the same question for Windows,
-# written on a Mac and NOT RUN before it was committed.
+# written on a Mac; first run 2026-10-03 on the arm64 VM, all five steps OK
+# after one change to the link (tests/win32/WINDOWS-BOX.md §10). x64 not run.
 #
 #   tests/win32/static-llvm.sh [dir]
 #
