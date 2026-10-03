@@ -106,7 +106,7 @@ What you get:
    (Or in VS Code: Extensions view > `···` menu > "Install from VSIX…".)
 
 3. Open any folder and create a `.scaly` file. The extension finds `scalyls`
-   on `PATH`; the installer's wrapper sets `SCALY_HOME` itself, so the server
+   on `PATH`; the installed server finds its packages beside itself, so it
    resolves the prelude and standard library from `~/.scaly` no matter where
    your sources live.
 
@@ -114,9 +114,9 @@ What you get:
 
 | Setting | Default | Meaning |
 |---------|---------|---------|
-| `scaly.server.path` | `scalyls` | Path to the `scalyls` binary. The default resolves it on `PATH` (the scaly.io installer's wrapper); falls back to `~/.scaly/bin/scalyls`. |
+| `scaly.server.path` | `scalyls` | Path to the `scalyls` binary. The default resolves it on `PATH` (the scaly.io installer's link to it); falls back to `~/.scaly/bin/scalyls`. |
 | `scaly.compiler.path` | `scalyc` | Path to `scalyc`, used by the **Run** code lens. Resolved like the server: setting, then `PATH`, then `~/.scaly/bin/scalyc`. |
-| `scaly.home` | `""` | `SCALY_HOME` for the server (prelude/packages search root). If empty and a workspace folder is itself a Scaly checkout (contains `packages/scaly`), that folder is used; otherwise the server wrapper's own `SCALY_HOME` applies. |
+| `scaly.home` | `""` | `SCALY_HOME` for the server (prelude/packages search root). If empty and a workspace folder is itself a Scaly checkout (contains `packages/scaly`), that folder is used; otherwise the installed server finds its own packages. |
 
 ## Restart the server
 

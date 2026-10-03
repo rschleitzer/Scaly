@@ -14,7 +14,8 @@
 #              below runs on those -- what a release hands out
 #   install    the installer takes the READY-MADE programs and ends with rc 0
 #              (its own check ran and built a program), leaves bin/ and
-#              toolchain/ and no toolchain.new
+#              toolchain/ and no toolchain.new; the three commands are LINKS
+#              to the programs, not scripts
 #   scalyc     `scalyc -o` links a program against the installed runtime archive
 #   build      `scaly build`, the program run with arguments
 #   run        `scaly run`, arguments handed on (the in-process JIT finds the
@@ -30,6 +31,8 @@
 #              DIRECTLY (no script, SCALY_HOME unset): they find their
 #              packages beside themselves (cli.adopt_home) and build, link
 #              and run a program
+#   compiler   a toolchain whose CC file names a C compiler builds with that
+#              one (what the installer writes where it found no plain clang)
 #   seed       a second installation over the first, offered programs that do
 #              not start: the installer says so, builds from the SEED, and the
 #              result runs and links
@@ -87,6 +90,7 @@ fi
 if install "$TMP/base" "$TMP/install.log"; then
   grep -q 'installed the programs for' "$TMP/install.log" \
     && [ -x "$B/scaly" ] && [ -x "$B/scalyc" ] && [ -x "$B/scalyls" ] && [ -d "$PREFIX/toolchain/packages/scaly" ] \
+    && [ -L "$B/scaly" ] && [ -L "$B/scalyc" ] && [ -L "$B/scalyls" ] \
     && [ ! -e "$PREFIX/toolchain.new" ] && ok || bad "install: rc 0 but not the ready-made programs, or the prefix is incomplete"
 else
   bad "install: rc=$? $(tail -4 "$TMP/install.log" | tr '\n' ' ')"
@@ -175,6 +179,16 @@ if "$E/scaly" build "$ROOT/tests/tool/hello.scaly" -o h_m > moved.log 2>&1 \
     && ok || bad "moved: got '$out'"
 else
   bad "moved: rc=$? $(tail -3 moved.log | tr '\n' ' ')"
+fi
+
+# compiler
+printf '#!/bin/sh\necho used >> "%s"\nexec clang "$@"\n' "$TMP/cc.used" > "$TMP/mycc"
+chmod 755 "$TMP/mycc"
+printf '%s\n' "$TMP/mycc" > "$TMP/elsewhere/CC"
+if ( unset SCALY_CC CC; SCALY_CACHE="$TMP/cache-cc" "$E/scaly" build hello.scaly -o h_cc ) > compiler.log 2>&1; then
+  [ -s "$TMP/cc.used" ] && [ "$(./h_cc)" = "Hello, World!" ] && ok || bad "compiler: the CC file's compiler was not the one used"
+else
+  bad "compiler: rc=$? $(tail -3 compiler.log | tr '\n' ' ')"
 fi
 
 # seed: the same packages, and "programs" that cannot start

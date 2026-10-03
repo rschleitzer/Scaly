@@ -29,7 +29,9 @@
 #   LLVM21                path to an LLVM 21 install (building from the seed)
 #   CC                    the C compiler to use      (default clang)
 #
-# Layout:  ~/.scaly/bin        the three commands (put on PATH)
+# Layout:  ~/.scaly/bin        the three commands (put on PATH): links to
+#                              the programs, which find their packages
+#                              beside themselves -- no script, no variable
 #          ~/.scaly/toolchain  the programs, the packages, the seed
 #          ~/.scaly/cache      compiled packages (made on first use)
 # Running the script again replaces the toolchain; a run that fails leaves the
@@ -307,34 +309,31 @@ fi   # built from the seed
 
 # ---------------------------------------------------------------------------
 # 7. The new toolchain takes the old one's place, and the three commands are
-#    written: each sets SCALY_HOME, where the packages are looked up, and
-#    starts its program.
+#    LINKS to its programs. A program finds the packages beside itself
+#    (<toolchain>/libexec/<name> -> <toolchain>/packages, the link resolved
+#    first), so nothing sets SCALY_HOME; a SCALY_HOME that is set still wins.
+#    The links are relative: the whole prefix can be moved.
 # ---------------------------------------------------------------------------
 # an installation of the first layout (everything directly under the prefix)
 if [ -f "$PREFIX/seed/scalyc.ll" ]; then
   rm -rf "$PREFIX/seed" "$PREFIX/libexec" "$PREFIX/lib" "$PREFIX/packages/scaly" "$PREFIX/LICENSE" "$PREFIX/VERSION"
   rmdir "$PREFIX/packages" 2>/dev/null || true
 fi
+# The programs call `clang` to link and to compile a package's C files unless
+# $SCALY_CC or $CC names another; say so only where `clang` is not what was
+# found: the file CC in the toolchain, which a program reads as its SCALY_CC
+# when the variable is not set.
+if [ -n "$CC" ] && [ "$CC" != "clang" ]; then
+  printf '%s\n' "$CC" > "$NEW/CC"
+fi
 rm -rf "$TOOLCHAIN"
 mv "$NEW" "$TOOLCHAIN"
 
-# The programs call `clang` to link and to compile a package's C files unless
-# $SCALY_CC or $CC names another; say so only where `clang` is not what was found.
-CC_LINE=""
-if [ -n "$CC" ] && [ "$CC" != "clang" ]; then
-  CC_LINE="export SCALY_CC=\"\${SCALY_CC:-$CC}\""
-fi
 BINDIR="$PREFIX/bin"
 mkdir -p "$BINDIR"
 for name in scaly scalyc scalyls; do
-  cat > "$BINDIR/$name" <<EOF
-#!/bin/sh
-# $name — installed by https://scaly.io/install.sh
-export SCALY_HOME="\${SCALY_HOME:-$TOOLCHAIN}"
-$CC_LINE
-exec "$TOOLCHAIN/libexec/$name" "\$@"
-EOF
-  chmod 755 "$BINDIR/$name"
+  rm -f "$BINDIR/$name"     # the script of an earlier installation
+  ln -s "../$(basename "$TOOLCHAIN")/libexec/$name" "$BINDIR/$name"
 done
 
 # ---------------------------------------------------------------------------

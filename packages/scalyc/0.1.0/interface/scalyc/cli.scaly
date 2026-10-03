@@ -143,7 +143,7 @@ define cli
     procedure windows_scratch_dir() @page true @direct true @ret_caller true @deep true returns String io linked
 
     ; Resolve the runtime static archive the linker pulls in. When SCALY_HOME
-    ; is set (the installed `scalyc` wrapper sets it), the archive lives at a
+    ; is set (an installed `scalyc` sets it itself, adopt_home#), the archive lives at a
     ; PERSISTENT path under the install tree, $SCALY_HOME/lib/libscaly.a, so it
     ; survives reboots — unlike /tmp, which is cleared on boot. With SCALY_HOME
     ; unset (CI, bootstrap, AOT harness) it stays /tmp/libscaly.a exactly as
@@ -155,8 +155,8 @@ define cli
     procedure runtime_archive_path(coff: bool) @page true @direct true @deep true returns String io linked
 
     ; Resolve the C compiler used to link the final executable. Honors
-    ; $SCALY_CC (the installed wrapper bakes in the compiler the installer
-    ; found, e.g. clang-18 on a box that has no plain `clang`), then $CC,
+    ; $SCALY_CC (an installed program takes it from its toolchain's CC file,
+    ; adopt_compiler#, e.g. clang-21 on a box that has no plain `clang`), then $CC,
     ; falling back to `clang`. Unset → `clang`, exactly as before, so CI /
     ; bootstrap / AOT linking is byte-for-byte unchanged.
     procedure link_compiler() @page true @direct true @ret_caller true @deep true returns String io linked
@@ -325,10 +325,20 @@ define cli
     ; such neighbour and resolves from the current directory as always; a
     ; SCALY_HOME that is set wins, as always. Why: on Windows there is no
     ; wrapper script to set it, and a user-wide variable would reach a
-    ; developer's checkout too. Where the program is: scaly_eio_self_path
-    ; (macOS and Linux answer since 2026-10-03 and still have their wrapper).
+    ; developer's checkout too. Where the program is: scaly_eio_self_path.
+    ; macOS and Linux answer since 2026-10-03 and have no wrapper script any
+    ; more: the installer's bin/ holds links to the programs, and the link is
+    ; resolved before the two names are cut off.
     ; true when a home was adopted.
     procedure adopt_home() @ret_nonlocal true @deep true returns bool io linked
+
+    ; The C compiler of an adopted home: `<home>/CC`, one line, written by the
+    ; installer where the compiler it found is not plain `clang` (clang-21 on
+    ; a box without `clang`, cc, gcc) -- what the wrapper script exported
+    ; until 2026-10-03. It becomes SCALY_CC for this process unless that is
+    ; set, so link_compiler and the tool read it as they always did.
+    ; true when a compiler was adopted.
+    procedure adopt_compiler(home: String) @ret_nonlocal true @deep true returns bool io linked
 
     procedure main(argc: int, mutable argv: pointer[pointer[char]]) @ret_nonlocal true @deep true returns int io mutable modeler_error_count reads modeler_error_count linked
 
