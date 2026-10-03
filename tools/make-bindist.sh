@@ -15,16 +15,23 @@
 #   1. tools/build-from-seed.sh with SCALY_STATIC_LLVM=1 — the recipe every
 #      development build uses, with LLVM linked in. It gives all three
 #      programs and the runtime archive.
-#   2. With a profile ($SCALY_PGO_PROFILE, or dist/scalyc.profdata when it
-#      exists — tools/make-profile.sh makes it), scalyc and scaly are built
+#   2. With a profile, ALWAYS unless told otherwise (as
+#      tools/make-bindist-windows.sh): the one $SCALY_PGO_PROFILE names --
+#      made once on the fast machine and carried over, say -- else one made
+#      here and now by tools/make-profile.sh with the tool of step 1 (a
+#      profile belongs to its sources; dist/scalyc.profdata is not taken by
+#      itself, it may be old). SCALY_PGO_PROFILE=none builds without.
+#      scalyc and scaly are built
 #      AGAIN, from the compiler's sources, by the tool of step 1:
 #      `scaly build --pgo <profile> --export` and the same static libraries.
 #      About -30 % compile time (ROADMAP-public.md). A profile applies only
 #      where the compiler is compiled from its sources, which is why the seed
 #      recipe of step 1 cannot take it. scalyls stays step 1's: it holds no
 #      LLVM and was not measured.
-#      Without a profile the programs of step 1 are packed, and the script
-#      says so.
+#      Making the profile needs the clang, the profile runtime and
+#      llvm-profdata of LLVM 21 (Ubuntu: libclang-rt-21-dev); where they are
+#      missing the script FAILS and names the way out, it does not pack a
+#      slower compiler silently.
 #
 # Needs the static LLVM libraries beside the tools:
 #   macOS    brew install llvm@21 zstd
@@ -43,8 +50,7 @@ SYSTEM="$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)"
 TARBALL="$OUT/scaly-$VERSION-$SYSTEM.tar.gz"
 
 PROFILE="${SCALY_PGO_PROFILE:-}"
-if [ -z "$PROFILE" ] && [ -f dist/scalyc.profdata ]; then PROFILE=dist/scalyc.profdata; fi
-if [ -n "$PROFILE" ] && [ ! -f "$PROFILE" ]; then echo "make-bindist: FAIL — no profile $PROFILE"; exit 1; fi
+if [ -n "$PROFILE" ] && [ "$PROFILE" != none ] && [ ! -f "$PROFILE" ]; then echo "make-bindist: FAIL — no profile $PROFILE"; exit 1; fi
 
 STAGE="$(mktemp -d)"
 trap 'rm -rf "$STAGE"' EXIT
@@ -60,7 +66,15 @@ cp /tmp/libscaly.a "$STAGE/lib/libscaly.a"
 rm -f "$STAGE/build.log"
 
 # 2. the compiler and the tool again, from the sources, with the profile
-if [ -n "$PROFILE" ]; then
+MADE=""
+if [ -z "$PROFILE" ]; then
+  PROFILE="$STAGE/scalyc.profdata"
+  SCALYC="$STAGE/libexec/scalyc" tools/make-profile.sh "$PROFILE" > "$STAGE/profile.log" 2>&1 \
+    || { tail -10 "$STAGE/profile.log"; echo "make-bindist: FAIL — make-profile (SCALY_PGO_PROFILE=<file> names a profile made elsewhere, =none builds without one)"; exit 1; }
+  rm -f "$STAGE/profile.log"
+  MADE=" made on the way"
+fi
+if [ "$PROFILE" != none ]; then
   source tools/llvm-env.sh > /dev/null
   LLVM_CONFIG=""
   for c in "$LLVM_PREFIX/bin/llvm-config" "llvm-config-$LLVM_MAJOR"; do
@@ -120,9 +134,10 @@ if [ -n "$PROFILE" ]; then
   mv "$PGO/scalyc" "$STAGE/libexec/scalyc"
   mv "$PGO/scaly" "$STAGE/libexec/scaly"
   rm -rf "$PGO"
-  BUILT="with the profile $PROFILE"
+  if [ -n "$MADE" ]; then BUILT="with a profile$MADE"; else BUILT="with the profile $PROFILE"; fi
+  rm -f "$STAGE/scalyc.profdata"
 else
-  echo "make-bindist: NOTE — no profile (\$SCALY_PGO_PROFILE, dist/scalyc.profdata): the programs are the seed recipe's, about 30 % slower to compile with"
+  echo "make-bindist: NOTE — SCALY_PGO_PROFILE=none: the programs are the seed recipe's, about 30 % slower to compile with"
   BUILT="without a profile"
 fi
 

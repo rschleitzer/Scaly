@@ -9,9 +9,9 @@
 #              of the compiler's, the language server's or the ports' sources
 #   programs   the archive of programs is built, and they load nothing but
 #              the system's own libraries (make-bindist checks it). With
-#              $SCALY_PGO_PROFILE set (tools/make-profile.sh) they are the
-#              programs built with the profile, and everything below runs on
-#              those -- what a release hands out
+#              They are built with a profile, made on the way unless
+#              $SCALY_PGO_PROFILE names one (=none: without), and everything
+#              below runs on those -- what a release hands out
 #   install    the installer takes the READY-MADE programs and ends with rc 0
 #              (its own check ran and built a program), leaves bin/ and
 #              toolchain/ and no toolchain.new
@@ -26,6 +26,10 @@
 #   test       `scaly test` names a failing test and answers rc 1
 #   repl       `scaly` alone answers an expression
 #   scalyls    the language server answers `initialize`
+#   moved      the toolchain directory copied elsewhere, its programs started
+#              DIRECTLY (no script, SCALY_HOME unset): they find their
+#              packages beside themselves (cli.adopt_home) and build, link
+#              and run a program
 #   seed       a second installation over the first, offered programs that do
 #              not start: the installer says so, builds from the SEED, and the
 #              result runs and links
@@ -159,6 +163,19 @@ case "$out" in
   *'"capabilities"'*) ok ;;
   *) bad "scalyls: no answer to initialize: '$out'" ;;
 esac
+
+# moved
+cp -R "$PREFIX/toolchain" "$TMP/elsewhere"
+E="$TMP/elsewhere/libexec"
+if "$E/scaly" build "$ROOT/tests/tool/hello.scaly" -o h_m > moved.log 2>&1 \
+   && "$E/scalyc" -o h_mc hello.scaly >> moved.log 2>&1; then
+  out=$(./h_m one two)
+  [ "$out" = "hello one two" ] && [ "$(./h_mc)" = "Hello, World!" ] \
+    && [ "$("$E/scaly" run hello.scaly 2>/dev/null)" = "Hello, World!" ] \
+    && ok || bad "moved: got '$out'"
+else
+  bad "moved: rc=$? $(tail -3 moved.log | tr '\n' ' ')"
+fi
 
 # seed: the same packages, and "programs" that cannot start
 mkdir -p "$TMP/base2/downloads" "$TMP/broken/libexec" "$TMP/broken/lib"
