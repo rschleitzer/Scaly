@@ -146,7 +146,12 @@ lane_ports() {
     rc=1
   fi
   if step onsgmls-build tests/sgml/build-onsgmls.sh; then
-    step sgml env SCALY_POISON=1 tests/sgml/run.sh /tmp/scaly-onsgmls || rc=1
+    # On Windows /tmp/scaly-onsgmls is a bash front-end over
+    # tests/win32/lf-wrapper.sh; the driver starts the native binary itself
+    # (no CR to strip since the streams are binary): 45 s against 1.7 s.
+    local sgml_bin=/tmp/scaly-onsgmls
+    [ -f /tmp/scaly-onsgmls-native.exe ] && sgml_bin=/tmp/scaly-onsgmls-native.exe
+    step sgml env SCALY_POISON=1 tests/sgml/run.sh "$sgml_bin" || rc=1
   else
     rc=1
   fi
