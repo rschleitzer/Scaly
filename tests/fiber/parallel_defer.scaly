@@ -10,6 +10,7 @@
 ; calibration exists for) must fork mid-loop, and their sums verify
 ; the warmup-prefix + forked-suffix split, capture transport into the
 ; chunk cells, and `continue` on both the inline and the chunked path.
+; Isolated: its verdict counts forks and submits, which follow measured time -- run alone
 ; Expected: parallel-defer-ok done
 
 define Item(idx: size_t, val: i64)

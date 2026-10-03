@@ -8,6 +8,7 @@
 ; Wave N: the reduced variable is also READ elsewhere in the body -- a chunk
 ; would see its partial there -- so that loop must stay sequential.
 ;
+; Isolated: its verdict counts forks and submits, which follow measured time -- run alone
 ; Expected: parallel-reduce-ok done
 
 ; Pure leaf, ~10us scale; a value that varies with its seed.

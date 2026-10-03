@@ -21,6 +21,7 @@
 ; The two-window rule arms instead, re-bases the measurement, and the
 ; confirming window (the cheap iterations 2-3) falls below the 4096ns
 ; noise floor: no fork. The sum verifies every iteration still ran.
+; Isolated: its verdict counts forks and submits, which follow measured time -- run alone
 ; Expected: spike-no-fork-ok done
 
 function spike(seed: i64) returns i64

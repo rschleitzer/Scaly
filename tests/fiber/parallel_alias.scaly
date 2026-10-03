@@ -11,6 +11,7 @@
 ; control — the canonical disjoint-slot wave on the same site scale
 ; MUST still fork (no over-tainting).
 ;
+; Isolated: its verdict counts forks and submits, which follow measured time -- run alone
 ; Expected: parallel-alias-ok done
 
 ; Pure leaf, ~10µs scale. spin_big(seed) = seed + 799980000.

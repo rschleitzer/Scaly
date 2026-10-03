@@ -6,6 +6,7 @@
 ; call was ever stolen. It also raced fork-join's own setup (both workers of a
 ; two-worker pool faster than ready(): forkjoin_emit failed 1 in 60 on Linux
 ; CI). ready() now wakes every worker once, and each re-blocks counted.
+; Isolated: its verdict counts forks and submits, which follow measured time -- run alone
 ; Expected: forkjoin-after-pool-ok done
 
 function spin(seed: int) returns int

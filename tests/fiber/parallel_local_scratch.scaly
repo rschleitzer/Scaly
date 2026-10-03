@@ -9,6 +9,7 @@
 ; Wave S: a scratch Vector per call, filled and reversed in place — must fork,
 ;         every value right.
 ; Wave G: the same body, but it also bumps a global — must NOT fork.
+; Isolated: its verdict counts forks and submits, which follow measured time -- run alone
 ; Expected: scratch-forked scratch-ok global-sequential done
 
 define N: int 64

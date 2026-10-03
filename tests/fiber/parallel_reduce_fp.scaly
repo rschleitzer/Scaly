@@ -7,6 +7,7 @@
 ; the last bits. With several contributions per iteration the iteration sums
 ; them first; checked against that fold written out. Every wave must fork.
 ;
+; Isolated: its verdict counts forks and submits, which follow measured time -- run alone
 ; Expected: parallel-reduce-fp-ok done
 
 ; Pure leaf, ~10us scale.

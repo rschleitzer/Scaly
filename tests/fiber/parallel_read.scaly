@@ -14,6 +14,7 @@
 ; file_read: on Windows an absolute "/tmp/..." resolves against the drive
 ; root, the writes failed without a word and every read wave came back wrong
 ; (the first Windows CI run, 2026-09-27).
+; Isolated: its verdict counts forks and submits, which follow measured time -- run alone
 ; Expected: read-forked read-ok kept-ok exists-ok write-sequential done
 
 define FILES: int 64

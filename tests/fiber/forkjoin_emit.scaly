@@ -5,6 +5,7 @@
 ; value; a heavy integer recursion, a float recursion and one over a buffer
 ; must each be stolen at least once when there is a second worker.
 ;
+; Isolated: its verdict counts forks and submits, which follow measured time -- run alone
 ; Expected: forkjoin-emit-ok done
 
 ; the worst case: no work per node

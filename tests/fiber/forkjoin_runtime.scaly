@@ -5,6 +5,7 @@
 ; once (the beat promotes, an idle worker steals) and agree with the plain
 ; recursion; a stream of small sums must agree too.
 ;
+; Isolated: its verdict counts forks and submits, which follow measured time -- run alone
 ; Expected: forkjoin-runtime-ok done
 
 define LIMIT: i64 12

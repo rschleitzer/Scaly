@@ -13,6 +13,7 @@
 ; persisted calibration (head-fork; the iterator forks at its C-th
 ; element by counter compare alone). Sums verify every execution,
 ; including capture transport through the promoted dispatch.
+; Isolated: its verdict counts forks and submits, which follow measured time -- run alone
 ; Expected: parallel-hotspot-ok done
 
 ; Pure leaf work. spin(seed) = seed + 1999000.

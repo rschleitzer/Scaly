@@ -11,6 +11,7 @@
 ; sequential path -- which catches for entirely ordinary reasons. The proof is
 ; the pool's own submit counter: a promoted wave submits, a sequential loop
 ; does not.
+; Isolated: its verdict counts forks and submits, which follow measured time -- run alone
 ; Expected: caught index=n length=n submitted continued
 ; ExpectedExit: 0
 

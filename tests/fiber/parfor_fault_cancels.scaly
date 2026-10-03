@@ -39,6 +39,7 @@
 ;
 ; The vacuity guard is per round and is the POOL's submit counter, not the
 ; work count: a promoted wave submits, an inline fault does not.
+; Isolated: its verdict counts forks and submits, which follow measured time -- run alone
 ; Expected: caught submitted partial
 ; ExpectedExit: 0
 
