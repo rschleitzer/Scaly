@@ -405,6 +405,11 @@ define cli
                 else
                 {
                     set opts.input_file: String(arg_ptr)
+                    ; --jit: the program's argv[0] is its file, and what
+                    ; follows it is its own (as `scaly run file args` hands
+                    ; it); main got (0, null) before -- on every host
+                    set opts.program_argc: argc - i
+                    set opts.program_argv: argv + i
                 }
             }
 

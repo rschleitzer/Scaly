@@ -1,0 +1,23 @@
+; JIT regression (2026-10-03): `scalyc --jit file` called the program's main
+; with (0, null) -- on every host -- where an AOT start and `scaly run file`
+; give argv[0] = the program and argc >= 1. A program that reads argv[0], or
+; derives anything from argc, saw nothing; tests/aot/catch_on_main_stack.scaly
+; (which adds argc to a local) failed only under --jit. The CLI hands main the
+; command line from the input file on now (cli.parse_args), as `scaly run`
+; does. The previous compiler prints FAIL here.
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    if argc < 1 or argv = null
+    {
+        print "FAIL argc=`argc`"
+        return 0
+    }
+    let name String(*argv)
+    if name.ends_with("main_argc.scaly") = false
+    {
+        print "FAIL argv[0]"
+        return 0
+    }
+    print "PASS"
+    0
+}
