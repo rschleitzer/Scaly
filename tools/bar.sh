@@ -71,7 +71,11 @@ seed_refresh() {
     cmp -s "$out/$f" "seed/$f" || { cp "$out/$f" "seed/$f"; changed="$changed $f"; }
   done
   if [ -n "$changed" ]; then
-    ( cd seed && shasum -a 256 main.ll scaly_main.ll scalyc.ll scaly.ll scalyls.ll scalyls_main.ll json.ll > SHA256SUMS )
+    # The sed: Perl's shasum marks the read mode before the name, a space for
+    # text and a `*` for binary -- and in Git Bash it reads binary, so a refresh
+    # on Windows rewrote every line of an unchanged manifest. Same digests,
+    # one spelling everywhere (2026-10-03).
+    ( cd seed && shasum -a 256 main.ll scaly_main.ll scalyc.ll scaly.ll scalyls.ll scalyls_main.ll json.ll | sed 's/ \*/  /' > SHA256SUMS )
     echo "seed REFRESHED:$changed"
   else
     echo "seed unchanged"

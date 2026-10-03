@@ -43,7 +43,7 @@ if [ -f "$SRC/json.ll" ]; then
 fi
 
 # shellcheck disable=SC2086
-( cd seed && shasum -a 256 $SUM_FILES > SHA256SUMS )
+( cd seed && shasum -a 256 $SUM_FILES | sed 's/ \*/  /' > SHA256SUMS )   # one spelling everywhere: see tools/bar.sh seed_refresh
 
 echo "install-seed: OK — seed/ updated ($SUM_FILES)"
 echo "  git add seed && git commit -m \"Refresh seed\""
