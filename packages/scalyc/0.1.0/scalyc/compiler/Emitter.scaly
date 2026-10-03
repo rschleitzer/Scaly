@@ -19952,8 +19952,10 @@ define Emitter
         ; materialised -- see the note at the switch.
         ;
         ; ★No value is bound on the catch path: the binding leaks into the
-        ; enclosing scope (see plan_try) and the else arm of every shape in the
-        ; tree ends in a return or a throw, so nothing downstream reads it.
+        ; enclosing scope (see plan_try). Where a catch path falls through to
+        ; the end (a `when` arm that does not return, the unmatched path with
+        ; no `else`), the value goes through a slot so it dominates its uses
+        ; (try_value_at_end#); after a caught fault it is meaningless.
         procedure emit_try_panic_catch(mutable this, mutable try_expr: PlannedTry) returns LLVMValueRef
         {
             let i32_ty LLVMInt32TypeInContext(context)
@@ -19994,9 +19996,12 @@ define Emitter
                 if result_value <> null
                     define_variable(name, result_value)
             }
-            let body_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
+            let body_exit LLVMGetInsertBlock builder
+            let body_term LLVMGetBasicBlockTerminator body_exit
             if body_term = null
                 LLVMBuildBr(builder, end_block)
+            ; set where a catch path falls through to the end (try_value_at_end#)
+            var catch_reaches_end false
 
             ; --- the jump lands here: unlink, unwind, then the arms
             LLVMPositionBuilderAtEnd(builder, catch_block)
@@ -20060,7 +20065,10 @@ define Emitter
 
                     let aterm LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
                     if aterm = null
+                    {
                         LLVMBuildBr(builder, end_block)
+                        set catch_reaches_end: true
+                    }
                 }
 
                 ; The unmatched path: the else arm when there is one, otherwise
@@ -20074,7 +20082,10 @@ define Emitter
                 }
                 let uterm LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
                 if uterm = null
+                {
                     LLVMBuildBr(builder, end_block)
+                    set catch_reaches_end: true
+                }
             }
             else
             {
@@ -20085,11 +20096,45 @@ define Emitter
                 }
                 let catch_term LLVMGetBasicBlockTerminator(LLVMGetInsertBlock builder)
                 if catch_term = null
+                {
                     LLVMBuildBr(builder, end_block)
+                    set catch_reaches_end: true
+                }
             }
 
             LLVMPositionBuilderAtEnd(builder, end_block)
+            if catch_reaches_end
+                return this.try_value_at_end(try_expr, result_value, body_exit, end_block)
             result_value
+        }
+
+        ; A `try let x f()` whose CATCH path falls through to the end as well --
+        ; a `when` arm that does not return, or the unmatched path when no `else`
+        ; is written: `x` was the body's SSA value, which does not dominate the
+        ; end block, and every use after the try was invalid IR. The in-process
+        ; object path built it without a word; the JIT's verifier refused it
+        ; (tests/aot/catch_on_main_stack.scaly, "Instruction does not dominate
+        ; all uses", on every target; found 2026-10-03). The value is spilled on
+        ; the body's way out and read back at the end; after a caught fault the
+        ; slot holds nothing anyone may rely on, as before.
+        procedure try_value_at_end(mutable this, try_expr: PlannedTry, mutable value: LLVMValueRef, mutable body_exit: LLVMBasicBlockRef, mutable end_block: LLVMBasicBlockRef) returns LLVMValueRef
+        {
+            if value = null or try_expr.cond.binding_item.name = null
+                return value
+            if LLVMIsAInstruction(value) = null
+                return value
+            let exit_term LLVMGetBasicBlockTerminator body_exit
+            if exit_term = null
+                return value
+            let ty LLVMTypeOf value
+            let slot entry_alloca(ty, "try.value")
+            LLVMPositionBuilderBefore(builder, exit_term)
+            LLVMBuildStore(builder, value, slot)
+            LLVMPositionBuilderAtEnd(builder, end_block)
+            let back LLVMBuildLoad2(builder, ty, slot, "try.value")
+            let name_ref try_expr.cond.binding_item.name
+            define_variable(*name_ref, back)
+            back
         }
 
         procedure emit_try(mutable this, mutable try_expr: PlannedTry) returns LLVMValueRef

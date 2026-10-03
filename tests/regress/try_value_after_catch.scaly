@@ -1,0 +1,33 @@
+; Regression (2026-10-03): `try let v f()` whose CATCH path falls through to
+; the end of the try -- a `when` arm that does not return, or a fault kind no
+; arm names when there is no `else` -- bound `v` to the body's SSA value, which
+; does not dominate the end block. Every use of `v` after the try was INVALID
+; IR on every target: the in-process object path built it without a word, the
+; JIT's verifier refused it ("Instruction does not dominate all uses",
+; tests/aot/catch_on_main_stack.scaly under --jit). Emitter.try_value_at_end#
+; spills the value on the body's way out and reads it back at the end.
+;
+; An IR gate, because a run cannot tell: the AOT binary of the broken IR runs
+; correctly. The previous compiler emits `icmp ne i64 %call, 9` in try.end.
+; expect-ir: store i64 %call, ptr %try.value
+; expect-ir: = load i64, ptr %try.value
+
+function element(n: i64) returns i64
+{
+    var buf int[2]
+    set buf[0]: 7
+    set buf[1]: 9
+    let v Slice[int](2, &buf[0])
+    v[n as size_t]
+}
+
+procedure main(argc: int, argv: pointer[pointer[const_char]]) returns int
+{
+    try let ok element(1)
+        when e0: OutOfBounds
+            print "caught\n"
+    if ok <> 9
+        return 1
+    print "PASS\n"
+    0
+}

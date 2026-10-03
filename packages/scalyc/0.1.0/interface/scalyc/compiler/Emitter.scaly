@@ -2656,9 +2656,22 @@ define Emitter
         ; materialised -- see the note at the switch.
         ;
         ; ★No value is bound on the catch path: the binding leaks into the
-        ; enclosing scope (see plan_try) and the else arm of every shape in the
-        ; tree ends in a return or a throw, so nothing downstream reads it.
+        ; enclosing scope (see plan_try). Where a catch path falls through to
+        ; the end (a `when` arm that does not return, the unmatched path with
+        ; no `else`), the value goes through a slot so it dominates its uses
+        ; (try_value_at_end#); after a caught fault it is meaningless.
         procedure emit_try_panic_catch(mutable this, mutable try_expr: PlannedTry) @direct true @deep true @deep_beyond_2 true returns LLVMValueRef linked
+
+        ; A `try let x f()` whose CATCH path falls through to the end as well --
+        ; a `when` arm that does not return, or the unmatched path when no `else`
+        ; is written: `x` was the body's SSA value, which does not dominate the
+        ; end block, and every use after the try was invalid IR. The in-process
+        ; object path built it without a word; the JIT's verifier refused it
+        ; (tests/aot/catch_on_main_stack.scaly, "Instruction does not dominate
+        ; all uses", on every target; found 2026-10-03). The value is spilled on
+        ; the body's way out and read back at the end; after a caught fault the
+        ; slot holds nothing anyone may rely on, as before.
+        procedure try_value_at_end(mutable this, try_expr: PlannedTry, mutable value: LLVMValueRef, mutable body_exit: LLVMBasicBlockRef, mutable end_block: LLVMBasicBlockRef) @direct true @deep true @deep_beyond_4 true @deep_whole_4 true returns LLVMValueRef linked
 
         procedure emit_try(mutable this, mutable try_expr: PlannedTry) @direct true @deep true @deep_beyond_2 true returns LLVMValueRef linked
 
