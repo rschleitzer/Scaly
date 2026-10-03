@@ -1811,15 +1811,40 @@ void scaly_jit_use_arena(void* builder)
     (void)builder;
 }
 
-/* The file of the running program (eio_windows.c answers it). NOT answered
- * here: macOS and Linux hand out wrapper scripts that set SCALY_HOME
- * (docs/website/install.sh), so nothing asks. -1 is "not known", and the
- * caller then resolves as it always did. Filling it in is
- * _NSGetExecutablePath and readlink("/proc/self/exe"). */
+/* The file of the running program, symbolic links resolved, as
+ * cli.adopt_home asks it: a handed-out program finds its packages beside
+ * itself. Rule (a): _NSGetExecutablePath on macOS (which may answer a path
+ * through a link, hence realpath), /proc/self/exe on Linux,
+ * GetModuleFileName in eio_windows.c. The length, or -1 for "not known"
+ * (another system, or a path that does not fit) -- the caller then resolves
+ * as it always did. */
+#if defined(__APPLE__)
+#include <limits.h>
+#include <mach-o/dyld.h>
+#endif
 int scaly_eio_self_path(char* buffer, size_t capacity)
 {
+#if defined(__APPLE__)
+    char raw[PATH_MAX];
+    char real[PATH_MAX];
+    uint32_t size = (uint32_t)sizeof raw;
+    if (_NSGetExecutablePath(raw, &size) != 0 || realpath(raw, real) == NULL)
+        return -1;
+    size_t n = strlen(real);
+    if (n == 0 || n >= capacity)
+        return -1;
+    memcpy(buffer, real, n + 1);
+    return (int)n;
+#elif defined(__linux__)
+    ssize_t n = capacity > 0 ? readlink("/proc/self/exe", buffer, capacity) : -1;
+    if (n <= 0 || (size_t)n >= capacity)
+        return -1;
+    buffer[n] = 0;
+    return (int)n;
+#else
     (void)buffer; (void)capacity;
     return -1;
+#endif
 }
 
 int scaly_eio_is_symlink(const char* path)

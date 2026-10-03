@@ -325,8 +325,8 @@ define cli
     ; such neighbour and resolves from the current directory as always; a
     ; SCALY_HOME that is set wins, as always. Why: on Windows there is no
     ; wrapper script to set it, and a user-wide variable would reach a
-    ; developer's checkout too. Windows answers where the program is; macOS
-    ; and Linux do not yet (eio.c) and keep their wrapper.
+    ; developer's checkout too. Where the program is: scaly_eio_self_path
+    ; (macOS and Linux answer since 2026-10-03 and still have their wrapper).
     ; true when a home was adopted.
     procedure adopt_home() @ret_nonlocal true @deep true returns bool io linked
 
