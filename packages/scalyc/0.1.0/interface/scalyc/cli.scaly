@@ -159,6 +159,19 @@ define cli
     ; adopt_compiler#, e.g. clang-21 on a box that has no plain `clang`), then $CC,
     ; falling back to `clang`. Unset → `clang`, exactly as before, so CI /
     ; bootstrap / AOT linking is byte-for-byte unchanged.
+    ; On a Mac without the Command Line Tools, /usr/bin/clang is Apple's stub:
+    ; it fails and asks the system for an installation dialog. Asked BEFORE
+    ; the compiler is run -- `xcode-select -p` tells without raising the
+    ; dialog, as docs/website/install.sh does -- so the tool can say what is
+    ; missing in its own words. Only where the compiler is the default one
+    ; (SCALY_CC and CC name no other), and only where xcode-select exists:
+    ; that is what makes it a question about macOS, in a seed that serves
+    ; every system. Found 2026-10-04 on a vanilla Tahoe VM, where `scaly
+    ; build` said "panic.c did not compile".
+    procedure developer_tools_missing() @ret_nonlocal true @deep true returns bool io linked
+
+    procedure report_developer_tools_missing() @ret_nonlocal true @deep true io linked
+
     procedure link_compiler() @page true @direct true @ret_caller true @deep true returns String io linked
 
     ; ★Windows, Rust's way (ROADMAP-public.md, 2026-10-03): a program is linked

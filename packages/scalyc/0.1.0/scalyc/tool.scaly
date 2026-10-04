@@ -469,6 +469,11 @@ define tool
             }
             if File.exists(nobj) = false
             {
+                if given_triple.get_length() = 0 and cli.developer_tools_missing()
+                {
+                    cli.report_developer_tools_missing()
+                    return false
+                }
                 let ntmp "`nobj`.`getpid() as int`.tmp"
                 ; cmd.exe strips the first and the last quote of a line that
                 ; begins with one and holds more than two, so on a Windows

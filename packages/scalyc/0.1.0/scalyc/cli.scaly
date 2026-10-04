@@ -542,6 +542,31 @@ define cli
     ; adopt_compiler#, e.g. clang-21 on a box that has no plain `clang`), then $CC,
     ; falling back to `clang`. Unset → `clang`, exactly as before, so CI /
     ; bootstrap / AOT linking is byte-for-byte unchanged.
+    ; On a Mac without the Command Line Tools, /usr/bin/clang is Apple's stub:
+    ; it fails and asks the system for an installation dialog. Asked BEFORE
+    ; the compiler is run -- `xcode-select -p` tells without raising the
+    ; dialog, as docs/website/install.sh does -- so the tool can say what is
+    ; missing in its own words. Only where the compiler is the default one
+    ; (SCALY_CC and CC name no other), and only where xcode-select exists:
+    ; that is what makes it a question about macOS, in a seed that serves
+    ; every system. Found 2026-10-04 on a vanilla Tahoe VM, where `scaly
+    ; build` said "panic.c did not compile".
+    procedure developer_tools_missing() returns bool
+    {
+        if getenv("SCALY_CC") <> null or getenv("CC") <> null
+            return false
+        if File.exists(String("/usr/bin/xcode-select")) = false
+            return false
+        system("/usr/bin/xcode-select -p > /dev/null 2>&1") <> 0
+    }
+
+    procedure report_developer_tools_missing()
+    {
+        Console.println("Error: no C compiler - a built program is linked by one, and this Mac has no developer tools.")
+        Console.println("       Install them with:  xcode-select --install")
+        Console.println("       (scaly run, scaly test and the REPL need none.)")
+    }
+
     procedure link_compiler() returns String
     {
         var name getenv "SCALY_CC"
@@ -1398,7 +1423,14 @@ define cli
                 cmd_builder.append " -fprofile-instr-generate"
             }
             else
+            {
+                if cli.developer_tools_missing()
+                {
+                    cli.report_developer_tools_missing()
+                    return 9
+                }
                 cmd_builder.append(link_compiler())
+            }
         }
         ; every PATH on this line is quoted: the scratch directory, the
         ; runtime archive and a library directory lie under a home or a
